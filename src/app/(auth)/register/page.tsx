@@ -97,7 +97,7 @@ export default function RegisterPage() {
           city: data.city,
           license_url: licenseUrl,
           cr_url: crUrl,
-        })
+        } as any)
         .eq('id', userId)
 
       if (profileError) throw new Error(profileError.message)
@@ -107,7 +107,7 @@ export default function RegisterPage() {
         profile_id: userId,
         sector,
       }))
-      await supabase.from('profile_sectors').insert(sectorsToInsert)
+      await supabase.from('profile_sectors').insert(sectorsToInsert as any)
 
       toast.success('تم إنشاء حسابك! جارٍ التحقق من بياناتك...')
       router.push(data.role === 'contractor' ? '/contractor' : '/supplier/dashboard')
