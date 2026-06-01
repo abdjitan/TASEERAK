@@ -32,6 +32,7 @@ export default function RegisterPage() {
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
   const [crFile, setCrFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [formError, setFormError] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -61,6 +62,7 @@ export default function RegisterPage() {
 
   async function onSubmit(data: FormData) {
     setUploading(true)
+    setFormError('')
     try {
       // 1. Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -110,11 +112,10 @@ export default function RegisterPage() {
       }))
       await supabase.from('profile_sectors').insert(sectorsToInsert as any)
 
-      toast.success('تم إنشاء حسابك! جارٍ التحقق من بياناتك...')
-      router.push(data.role === 'contractor' ? '/contractor' : '/supplier/dashboard')
+      window.location.href = data.role === 'contractor' ? '/contractor' : '/supplier/dashboard'
 
     } catch (err: any) {
-      toast.error(err.message || 'حدث خطأ أثناء التسجيل')
+      setFormError(err.message || 'حدث خطأ أثناء التسجيل')
     } finally {
       setUploading(false)
     }
@@ -329,6 +330,12 @@ export default function RegisterPage() {
 
               {errors.sectors && (
                 <p className="text-red-500 text-sm mb-4">{errors.sectors.message}</p>
+              )}
+
+              {formError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
+                  {formError}
+                </div>
               )}
 
               <div className="flex gap-3">
