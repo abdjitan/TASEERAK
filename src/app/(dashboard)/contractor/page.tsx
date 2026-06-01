@@ -17,10 +17,8 @@ export default function ContractorDashboard() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
-
       const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       setProfile(p)
-
       const { data: r } = await supabase.from('rfqs').select('*').eq('contractor_id', session.user.id).order('created_at', { ascending: false })
       setRfqs(r || [])
       setLoading(false)
@@ -35,8 +33,11 @@ export default function ContractorDashboard() {
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="animate-pulse text-blue-600 font-semibold">جارٍ التحميل...</div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="text-center animate-pulse">
+        <img src="/logo-outlined.png" alt="" className="w-16 h-16 mx-auto mb-4 animate-float" />
+        <div className="text-blue-600 font-semibold">جارٍ التحميل...</div>
+      </div>
     </div>
   )
 
@@ -45,104 +46,112 @@ export default function ContractorDashboard() {
   const totalOffers = rfqs.reduce((s, r) => s + (r.offer_count || 0), 0)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50" dir="rtl">
-      {/* Top Nav */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 bg-dots" dir="rtl">
+      {/* Nav */}
+      <nav className="glass sticky top-0 z-50 border-b border-gray-100/50">
+        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo-outlined.png" alt="Taseerak" className="w-9 h-9" />
-            <div>
-              <span className="font-bold text-gray-900">Taseerak</span>
-              <span className="text-xs text-gray-400 mr-2">| {profile?.company_name_ar}</span>
-            </div>
+            <img src="/logo-outlined.png" alt="Taseerak" className="w-8 h-8" />
+            <span className="font-bold text-gray-900">Taseerak</span>
+            <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">مقاول</span>
           </div>
           <div className="flex items-center gap-3">
             <a href="/contractor/rfq/new"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-all shadow-sm hover:shadow">
+              className="gradient-blue text-white px-5 py-2 rounded-xl text-sm font-semibold
+              hover:shadow-lg hover:shadow-blue-300/30 transition-all duration-300 active:scale-[0.98]">
               + طلب تسعير
             </a>
             <button onClick={handleSignOut}
-              className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+              className="text-xs text-gray-400 hover:text-red-500 px-3 py-2 rounded-lg hover:bg-red-50 transition-all">
               خروج
             </button>
           </div>
         </div>
-      </div>
+      </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Welcome */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">أهلاً، {profile?.company_name_ar} 👋</h1>
-          <p className="text-sm text-gray-500 mt-1">إليك ملخص طلباتك وعروضك</p>
+        <div className="mb-8 animate-fade-in">
+          <h1 className="text-2xl font-bold text-gray-900">
+            أهلاً، {profile?.company_name_ar} 👋
+          </h1>
+          <p className="text-gray-500 mt-1">إليك ملخص طلباتك وعروضك</p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
-            { label: 'طلبات نشطة', value: active.length, icon: '📋', color: 'blue' },
-            { label: 'إجمالي العروض', value: totalOffers, icon: '💬', color: 'emerald' },
-            { label: 'صفقات مكتملة', value: closed.length, icon: '✅', color: 'amber' },
-            { label: 'إجمالي الطلبات', value: rfqs.length, icon: '📊', color: 'purple' },
-          ].map(({ label, value, icon, color }) => (
-            <div key={label} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xl">{icon}</span>
-                <span className={`text-2xl font-bold text-${color}-600`}>{value}</span>
+            { label: 'طلبات نشطة', value: active.length, icon: '📋', gradient: 'from-blue-500 to-blue-600' },
+            { label: 'إجمالي العروض', value: totalOffers, icon: '💬', gradient: 'from-emerald-500 to-emerald-600' },
+            { label: 'صفقات مكتملة', value: closed.length, icon: '✅', gradient: 'from-amber-500 to-orange-500' },
+            { label: 'إجمالي الطلبات', value: rfqs.length, icon: '📊', gradient: 'from-purple-500 to-indigo-600' },
+          ].map(({ label, value, icon, gradient }) => (
+            <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+              <div className="flex items-start justify-between">
+                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-lg shadow-sm`}>
+                  {icon}
+                </div>
+                <div className="text-left">
+                  <div className="text-3xl font-bold text-gray-900">{value}</div>
+                </div>
               </div>
-              <div className="text-xs text-gray-500">{label}</div>
+              <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
             </div>
           ))}
         </div>
 
         {/* RFQ List */}
         {rfqs.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 shadow-sm border border-gray-100 text-center">
-            <div className="text-6xl mb-4">📋</div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">لا يوجد طلبات بعد</h2>
-            <p className="text-sm text-gray-500 mb-6">أرسل أول طلب تسعير وابدأ تلقي عروض من الموردين</p>
+          <div className="bg-white rounded-2xl p-16 shadow-sm border border-gray-100 text-center animate-slide-up">
+            <div className="text-7xl mb-6 animate-float">📋</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">لا يوجد طلبات بعد</h2>
+            <p className="text-gray-500 mb-8 max-w-sm mx-auto">أرسل أول طلب تسعير وابدأ تلقي عروض من مئات الموردين المعتمدين</p>
             <a href="/contractor/rfq/new"
-              className="inline-block bg-blue-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all shadow-sm hover:shadow">
+              className="inline-block gradient-blue text-white px-10 py-4 rounded-xl font-semibold
+              hover:shadow-lg hover:shadow-blue-300/30 transition-all duration-300 text-lg">
               + طلب تسعير جديد
             </a>
           </div>
         ) : (
-          <div>
-            <h2 className="text-sm font-bold text-gray-900 mb-4">طلبات التسعير</h2>
-            <div className="space-y-3">
+          <div className="animate-fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-gray-900">طلبات التسعير</h2>
+              <span className="text-xs text-gray-400">{rfqs.length} طلب</span>
+            </div>
+            <div className="space-y-3 stagger">
               {rfqs.map(rfq => (
                 <a key={rfq.id} href={`/contractor/rfq/${rfq.id}`}
-                  className="block bg-white rounded-xl p-5 border border-gray-100 shadow-sm hover:shadow hover:border-blue-200 transition-all">
+                  className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm
+                  hover:shadow-md hover:border-blue-200 hover:-translate-y-0.5 transition-all duration-300">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                        rfq.status === 'open' ? 'bg-blue-50' : rfq.status === 'closed' ? 'bg-green-50' : 'bg-gray-50'
+                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg ${
+                        rfq.status === 'open' ? 'bg-blue-50' : rfq.status === 'closed' ? 'bg-emerald-50' : 'bg-gray-50'
                       }`}>
                         {rfq.status === 'open' ? '📋' : rfq.status === 'closed' ? '✅' : '⏰'}
                       </div>
                       <div>
-                        <span className="font-bold text-gray-900">{rfq.product_name}</span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-semibold">
-                            {SECTOR_LABELS[rfq.sector] || rfq.sector}
-                          </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                            rfq.status === 'open' ? 'bg-green-100 text-green-700' :
-                            rfq.status === 'closed' ? 'bg-gray-100 text-gray-600' : 'bg-red-100 text-red-700'
+                        <div className="font-bold text-gray-900">{rfq.product_name}</div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="badge badge-blue text-[10px]">{SECTOR_LABELS[rfq.sector] || rfq.sector}</span>
+                          <span className={`badge text-[10px] ${
+                            rfq.status === 'open' ? 'badge-green' : rfq.status === 'closed' ? 'badge-gray' : 'badge-red'
                           }`}>
                             {rfq.status === 'open' ? '● مفتوح' : rfq.status === 'closed' ? '● مغلق' : '● منتهي'}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="text-left">
-                      <div className="text-lg font-bold text-blue-600">{rfq.offer_count || 0}</div>
-                      <div className="text-[10px] text-gray-400">عرض</div>
+                    <div className="text-center bg-blue-50 rounded-xl px-4 py-2">
+                      <div className="text-xl font-bold text-blue-600">{rfq.offer_count || 0}</div>
+                      <div className="text-[10px] text-blue-400 font-medium">عرض</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-500 pr-13">
+                  <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
                     <span>📦 {rfq.quantity} {rfq.unit}</span>
-                    <span>📍 {rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</span>
+                    <span>📍 {rfq.region}</span>
                     {rfq.specification && <span>⚙️ {rfq.specification}</span>}
+                    <span className="mr-auto text-blue-500">عرض التفاصيل ←</span>
                   </div>
                 </a>
               ))}
