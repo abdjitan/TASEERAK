@@ -117,7 +117,7 @@ export default function ContractorDashboard() {
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-gray-900">طلبات التسعير ({rfqs.length})</h2>
             {rfqs.map(rfq => (
-              <div key={rfq.id} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+              <a key={rfq.id} href={`/contractor/rfq/${rfq.id}`} className="block bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:border-blue-300 transition-colors">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-gray-900">{rfq.product_name}</span>
@@ -144,7 +144,7 @@ export default function ContractorDashboard() {
                 {rfq.notes && (
                   <p className="text-xs text-gray-400 mt-2">{rfq.notes}</p>
                 )}
-              </div>
+              </a>
             ))}
           </div>
         )}
