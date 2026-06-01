@@ -60,9 +60,7 @@ export default function SupplierDashboard() {
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-sm">🏪</span>
-            </div>
+            <img src="/logo-outlined.png" alt="Taseerak" className="w-9 h-9" />
             <div>
               <span className="font-bold text-gray-900">Taseerak</span>
               <span className="text-xs text-gray-400 mr-2">| {profile?.company_name_ar}</span>
