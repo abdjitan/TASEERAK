@@ -27,7 +27,7 @@ type FormData = z.infer<typeof schema>
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1)
-  const [selectedType, setSelectedType] = useState<UserRole | null>(null)
+  const [selectedType, setSelectedType] = useState<'contractor' | 'supplier' | null>(null)
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
   const [crFile, setCrFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
