@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 
 export default function SupplierDashboard() {
   const [user, setUser] = useState(null)
@@ -55,10 +56,11 @@ export default function SupplierDashboard() {
       <nav className="glass sticky top-0 z-50 border-b border-gray-100/50">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo-outlined.png" alt="Taseerak" className="w-8 h-8" />
-            <span className="font-bold text-gray-900">Taseerak</span>
+            <img src="/logo-outlined.png" alt="تسعيرك" className="w-8 h-8" />
+            <span className="font-bold text-gray-900">تسعيرك</span>
             <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">مورد</span>
           </div>
+          <LanguageSwitcher variant="minimal" />
           <button onClick={handleSignOut}
             className="text-xs text-gray-400 hover:text-red-500 px-3 py-2 rounded-lg hover:bg-red-50 transition-all">
             خروج
