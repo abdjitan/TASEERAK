@@ -70,9 +70,9 @@ export default function LoginPage() {
           {/* Features */}
           <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto">
             {[
-              { icon: '⚡', label: locale === 'en' ? 'Fast & Easy' : 'سريع وسهل', sub: locale === 'en' ? 'RFQ in 1 minute' : 'طلب تسعير بدقيقة' },
-              { icon: '🔒', label: locale === 'en' ? 'Secure & Trusted' : 'آمن وموثوق', sub: locale === 'en' ? 'Verified suppliers' : 'موردين معتمدين' },
-              { icon: '📊', label: locale === 'en' ? 'Smart Compare' : 'مقارنة ذكية', sub: locale === 'en' ? 'Best prices' : 'أفضل الأسعار' },
+              { icon: '⚡', label: locale === 'en' ? 'Fast & Easy' : locale === 'ur' ? 'تیز اور آسان' : 'سريع وسهل', sub: locale === 'en' ? 'RFQ in 1 minute' : locale === 'ur' ? 'ایک منٹ میں قیمت کی درخواست' : 'طلب تسعير بدقيقة' },
+              { icon: '🔒', label: locale === 'en' ? 'Secure & Trusted' : locale === 'ur' ? 'محفوظ اور قابل اعتماد' : 'آمن وموثوق', sub: locale === 'en' ? 'Verified suppliers' : locale === 'ur' ? 'تصدیق شدہ سپلائرز' : 'موردين معتمدين' },
+              { icon: '📊', label: locale === 'en' ? 'Smart Compare' : locale === 'ur' ? 'سمارٹ موازنہ' : 'مقارنة ذكية', sub: locale === 'en' ? 'Best prices' : locale === 'ur' ? 'بہترین قیمتیں' : 'أفضل الأسعار' },
             ].map(f => (
               <div key={f.label} className="text-center">
                 <div className="w-14 h-14 bg-white/10 backdrop-blur rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 border border-white/10">
@@ -88,9 +88,9 @@ export default function LoginPage() {
           <div className="mt-14 bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10 max-w-md mx-auto">
             <div className="flex items-center justify-around text-white">
               {[
-                { val: '+500', label: locale === 'en' ? 'Verified Suppliers' : 'مورد معتمد' },
-                { val: '+1000', label: locale === 'en' ? 'RFQs Sent' : 'طلب تسعير' },
-                { val: '+50M', label: locale === 'en' ? 'SAR in Deals' : 'ريال صفقات' },
+                { val: '+500', label: locale === 'en' ? 'Verified Suppliers' : locale === 'ur' ? 'تصدیق شدہ سپلائرز' : 'مورد معتمد' },
+                { val: '+1000', label: locale === 'en' ? 'RFQs Sent' : locale === 'ur' ? 'قیمت کی درخواستیں' : 'طلب تسعير' },
+                { val: '+50M', label: locale === 'en' ? 'SAR in Deals' : locale === 'ur' ? 'ریال سودے' : 'ريال صفقات' },
               ].map(s => (
                 <div key={s.label} className="text-center">
                   <div className="text-2xl font-bold">{s.val}</div>
@@ -168,7 +168,7 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center text-xs text-gray-400 pb-4">
-          {locale === 'en' ? '© 2026 Taseerak — All rights reserved' : '© 2026 تسعيرك — جميع الحقوق محفوظة'}
+          {locale === 'en' ? '© 2026 Taseerak — All rights reserved' : locale === 'ur' ? '© 2026 Taseerak — جملہ حقوق محفوظ ہیں' : '© 2026 تسعيرك — جميع الحقوق محفوظة'}
         </div>
       </div>
     </div>
