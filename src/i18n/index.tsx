@@ -29,7 +29,8 @@ const DEFAULT_LOCALE: Locale = 'ar'
 
 // ─── Helper: deep get by dot-path ────────────────────────
 function get(obj: Record<string, any>, path: string): string | undefined {
-  return path.split('.').reduce((acc, key) => acc?.[key], obj)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return path.split('.').reduce((acc: any, key) => acc?.[key], obj)
 }
 
 // ─── Context ─────────────────────────────────────────────
