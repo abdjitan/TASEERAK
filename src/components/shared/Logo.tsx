@@ -1,0 +1,60 @@
+'use client'
+
+interface LogoProps {
+  variant?: 'full' | 'icon' | 'wordmark'
+  theme?: 'light' | 'dark'
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
+}
+
+const sizes = {
+  sm: { icon: 28, fontSize: '15px' },
+  md: { icon: 38, fontSize: '20px' },
+  lg: { icon: 52, fontSize: '26px' },
+}
+
+export default function Logo({
+  variant = 'full',
+  theme = 'light',
+  size = 'md',
+  className = '',
+}: LogoProps) {
+  const s = sizes[size]
+
+  // light = خلفيات فاتحة (بيضاء، رمادية)
+  // dark  = خلفيات داكنة أو زرقاء
+  const src = theme === 'dark' ? '/logo-outlined.png' : '/logo.png'
+
+  const Icon = () => (
+    <img
+      src={src}
+      alt="Taseerak"
+      width={s.icon}
+      height={s.icon}
+      style={{ objectFit: 'contain', display: 'block' }}
+    />
+  )
+
+  const Wordmark = () => (
+    <span style={{
+      fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
+      fontWeight: 900,
+      fontSize: s.fontSize,
+      letterSpacing: '-0.5px',
+      lineHeight: 1,
+    }}>
+      <span style={{ color: theme === 'dark' ? '#ffffff' : '#1B2D5B' }}>Taseer</span>
+      <span style={{ color: '#F5831F' }}>ak</span>
+    </span>
+  )
+
+  if (variant === 'icon') return <Icon />
+  if (variant === 'wordmark') return <Wordmark />
+
+  return (
+    <div className={`inline-flex items-center gap-2 ${className}`}>
+      <Icon />
+      <Wordmark />
+    </div>
+  )
+}

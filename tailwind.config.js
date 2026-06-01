@@ -1,0 +1,25 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
+  theme: {
+    extend: {
+      colors: {
+        blue: {
+          50: '#E6F1FB', 100: '#B5D4F4', 200: '#85B7EB',
+          400: '#378ADD', 600: '#185FA5', 800: '#0C447C', 900: '#042C53',
+        },
+        green: {
+          50: '#E1F5EE', 100: '#9FE1CB', 200: '#5DCAA5',
+          400: '#1D9E75', 600: '#0F6E56', 800: '#085041', 900: '#04342C',
+        },
+      },
+      fontFamily: {
+        sans: ['Segoe UI', 'Tahoma', 'Arial', 'sans-serif'],
+      },
+      borderRadius: {
+        xl: '12px', '2xl': '16px',
+      },
+    },
+  },
+  plugins: [],
+}
