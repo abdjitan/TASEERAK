@@ -4,9 +4,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation, locales, type Locale } from '@/i18n'
 
 const FLAGS: Record<Locale, string> = {
-  ar: '🇸🇦',
-  en: '🇬🇧',
-  ur: '🇵🇰',
+  ar: 'AR',
+  en: 'EN',
+  ur: 'UR',
 }
 
 interface Props {

@@ -7,7 +7,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 
 export default function LoginPage() {
-  const { t, dir } = useTranslation()
+  const { t, dir, locale } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -62,7 +62,7 @@ export default function LoginPage() {
 
         <div className="relative z-10 text-center px-12 animate-fade-in">
           <img src="/logo-outlined.png" alt="تسعيرك" className="w-36 h-36 mx-auto mb-10 animate-float drop-shadow-2xl" />
-          <h2 className="text-5xl font-bold text-white mb-4">تسعيرك</h2>
+          <h2 className="text-5xl font-bold text-white mb-4">{t('common.app_name')}</h2>
           <p className="text-blue-200 text-xl max-w-md mx-auto leading-relaxed mb-12">
             {t('common.app_tagline')}
           </p>
@@ -70,9 +70,9 @@ export default function LoginPage() {
           {/* Features */}
           <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto">
             {[
-              { icon: '⚡', label: 'سريع وسهل', sub: 'طلب تسعير بدقيقة' },
-              { icon: '🔒', label: 'آمن وموثوق', sub: 'موردين معتمدين' },
-              { icon: '📊', label: 'مقارنة ذكية', sub: 'أفضل الأسعار' },
+              { icon: '⚡', label: locale === 'en' ? 'Fast & Easy' : 'سريع وسهل', sub: locale === 'en' ? 'RFQ in 1 minute' : 'طلب تسعير بدقيقة' },
+              { icon: '🔒', label: locale === 'en' ? 'Secure & Trusted' : 'آمن وموثوق', sub: locale === 'en' ? 'Verified suppliers' : 'موردين معتمدين' },
+              { icon: '📊', label: locale === 'en' ? 'Smart Compare' : 'مقارنة ذكية', sub: locale === 'en' ? 'Best prices' : 'أفضل الأسعار' },
             ].map(f => (
               <div key={f.label} className="text-center">
                 <div className="w-14 h-14 bg-white/10 backdrop-blur rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3 border border-white/10">
@@ -88,9 +88,9 @@ export default function LoginPage() {
           <div className="mt-14 bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/10 max-w-md mx-auto">
             <div className="flex items-center justify-around text-white">
               {[
-                { val: '+500', label: 'مورد معتمد' },
-                { val: '+1000', label: 'طلب تسعير' },
-                { val: '+50M', label: 'ريال صفقات' },
+                { val: '+500', label: locale === 'en' ? 'Verified Suppliers' : 'مورد معتمد' },
+                { val: '+1000', label: locale === 'en' ? 'RFQs Sent' : 'طلب تسعير' },
+                { val: '+50M', label: locale === 'en' ? 'SAR in Deals' : 'ريال صفقات' },
               ].map(s => (
                 <div key={s.label} className="text-center">
                   <div className="text-2xl font-bold">{s.val}</div>
@@ -115,13 +115,13 @@ export default function LoginPage() {
             {/* Mobile Logo */}
             <div className="lg:hidden text-center mb-10">
               <img src="/logo-outlined.png" alt="تسعيرك" className="w-20 h-20 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-gray-900">تسعيرك</h2>
+              <h2 className="text-3xl font-bold text-gray-900">{t('common.app_name')}</h2>
               <p className="text-gray-500 text-sm mt-1">{t('common.app_tagline')}</p>
             </div>
 
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900">{t('auth.welcome_back')}</h1>
-              <p className="text-gray-500 mt-2">سجّل دخولك للوصول إلى لوحة التحكم</p>
+              <p className="text-gray-500 mt-2">{locale === 'en' ? 'Sign in to access your dashboard' : locale === 'ur' ? 'اپنے ڈیش بورڈ تک رسائی کے لیے سائن ان کریں' : 'سجّل دخولك للوصول إلى لوحة التحكم'}</p>
             </div>
 
             <form onSubmit={handleLogin}>
@@ -168,7 +168,7 @@ export default function LoginPage() {
         </div>
 
         <div className="text-center text-xs text-gray-400 pb-4">
-          © 2024 تسعيرك — جميع الحقوق محفوظة
+          {locale === 'en' ? '© 2026 Taseerak — All rights reserved' : '© 2026 تسعيرك — جميع الحقوق محفوظة'}
         </div>
       </div>
     </div>
