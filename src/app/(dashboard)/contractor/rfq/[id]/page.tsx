@@ -50,11 +50,34 @@ export default function RFQDetailPage() {
     window.location.reload()
   }
 
-  async function saveEdit() {
+  const [showEditWarning, setShowEditWarning] = useState(false)
+
+  function handleEditSave() {
+    if (offers.length > 0) {
+      setShowEditWarning(true)
+    } else {
+      doSaveEdit()
+    }
+  }
+
+  async function doSaveEdit() {
     const supabase = createClient()
-    await supabase.from('rfqs').update({ notes: editNotes, specification: editSpec }).eq('id', id)
-    setRfq({ ...rfq, notes: editNotes, specification: editSpec })
+    // 1. Update RFQ
+    await supabase.from('rfqs').update({
+      notes: editNotes,
+      specification: editSpec,
+      offer_count: 0,
+    }).eq('id', id)
+
+    // 2. Delete all existing offers for this RFQ
+    if (offers.length > 0) {
+      await supabase.from('offers').delete().eq('rfq_id', id)
+    }
+
+    setRfq({ ...rfq, notes: editNotes, specification: editSpec, offer_count: 0 })
+    setOffers([])
     setEditing(false)
+    setShowEditWarning(false)
   }
 
   async function cancelRfq() {
@@ -120,9 +143,31 @@ export default function RFQDetailPage() {
                 <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} className="input-field" rows={3} placeholder="ملاحظات" />
               </div>
               <div className="flex gap-2">
-                <button onClick={saveEdit} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">حفظ</button>
-                <button onClick={() => setEditing(false)} className="text-sm text-gray-500">إلغاء</button>
+                <button onClick={handleEditSave} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">حفظ التعديل</button>
+                <button onClick={() => { setEditing(false); setShowEditWarning(false) }} className="text-sm text-gray-500">إلغاء</button>
               </div>
+
+              {showEditWarning && (
+                <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-4 animate-fade-in">
+                  <div className="flex items-start gap-2">
+                    <span className="text-xl">⚠️</span>
+                    <div>
+                      <h4 className="font-bold text-amber-800 text-sm">تنبيه: سيتم إلغاء جميع العروض الحالية</h4>
+                      <p className="text-xs text-amber-700 mt-1">عند تعديل المواصفات أو الملاحظات، سيتم إلغاء العروض القديمة ({offers.length} عرض) وإرسال الطلب مرة أخرى للموردين بالمتطلبات الجديدة لتقديم عروض جديدة.</p>
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={doSaveEdit}
+                          className="bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-amber-700 transition-colors">
+                          نعم، عدّل وأعد الإرسال
+                        </button>
+                        <button onClick={() => setShowEditWarning(false)}
+                          className="text-xs text-gray-500 px-3 py-2">
+                          تراجع
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
