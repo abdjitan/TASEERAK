@@ -137,8 +137,8 @@ export default function RegisterPage() {
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             {[
-              { type: 'contractor' as UserRole, icon: '👷', title: 'مقاول', desc: 'أبحث عن موردين وأطلب تسعيرات' },
-              { type: 'supplier' as UserRole, icon: '🏪', title: 'مورد', desc: 'أعرض منتجاتي وأستقبل طلبات' },
+              { type: 'contractor' as 'contractor', icon: '👷', title: 'مقاول', desc: 'أبحث عن موردين وأطلب تسعيرات' },
+              { type: 'supplier' as 'supplier', icon: '🏪', title: 'مورد', desc: 'أعرض منتجاتي وأستقبل طلبات' },
             ].map(({ type, icon, title, desc }) => (
               <button
                 key={type}
