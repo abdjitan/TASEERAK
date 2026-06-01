@@ -1,38 +1,54 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [status, setStatus] = useState('')
+
+  // Check if already logged in
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        setStatus('لديك جلسة نشطة، جارٍ التحويل...')
+        window.location.href = '/contractor'
+      }
+    })
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    setError('')
-
-    const supabase = createClient()
+    setStatus('جارٍ الاتصال بالسيرفر...')
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      const supabase = createClient()
+      setStatus('جارٍ تسجيل الدخول...')
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
       if (error) {
-        setError(`خطأ: ${error.message}`)
+        setStatus(`خطأ: ${error.message}`)
         setLoading(false)
         return
       }
 
-      if (data.user) {
-        window.location.replace('/contractor')
+      if (data.session) {
+        setStatus('تم تسجيل الدخول! جارٍ التحويل...')
+        window.location.href = '/contractor'
       } else {
-        setError('لم يتم إرجاع مستخدم')
+        setStatus('تم الدخول بدون جلسة — تحقق من إعدادات Supabase')
         setLoading(false)
       }
     } catch (err: any) {
-      setError(`استثناء: ${err.message}`)
+      setStatus(`استثناء: ${err?.message || 'خطأ غير معروف'}`)
       setLoading(false)
     }
   }
@@ -54,9 +70,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">
-              {error}
+          {status && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-800 text-xs rounded-lg p-3 mb-4 text-center">
+              {status}
             </div>
           )}
 
@@ -94,14 +110,12 @@ export default function LoginPage() {
           >
             {loading ? 'جارٍ الدخول...' : 'دخول ←'}
           </button>
-
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-4">
           ليس لديك حساب؟{' '}
           <a href="/register" className="text-blue-600 font-medium hover:underline">سجّل مجاناً</a>
         </p>
-
       </div>
     </div>
   )

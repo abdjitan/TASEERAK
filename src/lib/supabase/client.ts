@@ -1,9 +1,12 @@
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-// Browser client — use in components and hooks
+let _client: ReturnType<typeof createSupabaseClient> | null = null
+
 export function createClient() {
-  return createBrowserClient(
+  if (_client) return _client
+  _client = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
+  return _client
 }
