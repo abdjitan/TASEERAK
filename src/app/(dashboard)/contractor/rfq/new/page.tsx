@@ -24,6 +24,8 @@ export default function NewRFQPage() {
   const [hideIdentity, setHideIdentity] = useState(false)
   const [notes, setNotes] = useState('')
   const [validityHours, setValidityHours] = useState(48)
+  const [specFile, setSpecFile] = useState(null)
+  const [specFileUrl, setSpecFileUrl] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
@@ -39,11 +41,26 @@ export default function NewRFQPage() {
     setLoading(true); setError('')
     const supabase = createClient()
     const expiresAt = new Date(Date.now() + validityHours * 60 * 60 * 1000).toISOString()
+
+    // Upload spec file if exists
+    let uploadedSpecUrl = null
+    if (specFile) {
+      const ext = specFile.name.split('.').pop()
+      const path = `${user.id}/spec-${Date.now()}.${ext}`
+      const { data: uploadData } = await supabase.storage.from('licenses').upload(path, specFile, { upsert: true })
+      if (uploadData) {
+        const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(uploadData.path)
+        uploadedSpecUrl = publicUrl
+      }
+    }
+
     const { error: insertError } = await supabase.from('rfqs').insert({
       contractor_id: user.id, sector, product_name: productName,
       specification: specification || null, quantity: parseFloat(quantity), unit, region,
       city: city || null, delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
-      hide_identity: hideIdentity, notes: notes || null, expires_at: expiresAt,
+      hide_identity: hideIdentity,
+      notes: uploadedSpecUrl ? `${notes || ''}\n[مواصفات مرفقة: ${uploadedSpecUrl}]` : notes || null,
+      expires_at: expiresAt,
     })
     if (insertError) { setError(`خطأ: ${insertError.message}`); setLoading(false); return }
     setSuccess(true); setLoading(false)
@@ -176,6 +193,33 @@ export default function NewRFQPage() {
                       className="input-field" placeholder="اسم المدينة" />
                   </div>
                 </div>
+              </div>
+
+              {/* Spec File Upload */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>رفع ملف المواصفات</h3>
+                <p className="text-xs text-gray-400 mb-4">ارفع جدول الكميات أو المواصفات التقنية — سيصل للموردين مع الطلب</p>
+                <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 cursor-pointer transition-all ${
+                  specFile ? 'border-[#1B2D5B] bg-[#1B2D5B]/5' : 'border-gray-200 hover:border-[#F5831F]/50'
+                }`}>
+                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
+                    onChange={e => setSpecFile(e.target.files?.[0] ?? null)} />
+                  {specFile ? (
+                    <div className="text-center">
+                      <div className="text-3xl mb-2">📎</div>
+                      <div className="font-semibold text-sm" style={{ color: '#1B2D5B' }}>{specFile.name}</div>
+                      <div className="text-xs text-gray-400 mt-1">{(specFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                      <button type="button" onClick={e => { e.preventDefault(); setSpecFile(null) }}
+                        className="mt-2 text-xs text-red-500 hover:underline">إزالة الملف</button>
+                    </div>
+                  ) : (
+                    <div className="text-center">
+                      <div className="text-3xl mb-2">📄</div>
+                      <div className="font-semibold text-sm text-gray-700">اضغط لرفع ملف المواصفات</div>
+                      <div className="text-xs text-gray-400 mt-1">PDF، Excel، Word، صورة — حجم أقصى 10MB</div>
+                    </div>
+                  )}
+                </label>
               </div>
 
               {/* Notes */}
