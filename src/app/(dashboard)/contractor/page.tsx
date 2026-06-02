@@ -48,9 +48,13 @@ export default function ContractorDashboard() {
   const totalOffers = rfqs.reduce((s, r) => s + (r.offer_count || 0), 0)
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9]" dir="rtl">
+    <div className="min-h-screen" dir="rtl" style={{ background: '#f4f6f9' }}>
+      {/* Background pattern */}
+      <div className="fixed inset-0 pointer-events-none z-0" style={{
+        backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(27,45,91,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(245,131,31,0.04) 0%, transparent 50%)',
+      }} />
       {/* Nav */}
-      <nav className="bg-white sticky top-0 z-50 border-b border-gray-100">
+      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           <Logo theme="light" size="sm" />
           <div className="flex items-center gap-3">
@@ -61,7 +65,7 @@ export default function ContractorDashboard() {
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
         <div className="mb-8 animate-fade-in">
           <h1 className="text-2xl font-bold text-[#1B2D5B]">أهلاً، {profile?.company_name_ar} 👋</h1>
           <p className="text-gray-500 mt-1 text-sm">إليك ملخص طلباتك وعروضك</p>

@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslation } from '@/i18n'
+
 interface LogoProps {
   variant?: 'full' | 'icon' | 'wordmark'
   theme?: 'light' | 'dark'
@@ -19,11 +21,13 @@ export default function Logo({
   size = 'md',
   className = '',
 }: LogoProps) {
+  const { locale } = useTranslation()
   const s = sizes[size]
   const src = theme === 'dark' ? '/logo-outlined.png' : '/logo.png'
+  const isArabic = locale === 'ar'
 
   const Icon = () => (
-    <img src={src} alt="Taseerak" width={s.icon} height={s.icon}
+    <img src={src} alt="تسعيرك" width={s.icon} height={s.icon}
       style={{ objectFit: 'contain', display: 'block' }} />
   )
 
@@ -32,8 +36,17 @@ export default function Logo({
       fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
       fontWeight: 900, fontSize: s.fontSize, letterSpacing: '-0.5px', lineHeight: 1,
     }}>
-      <span style={{ color: theme === 'dark' ? '#ffffff' : '#1B2D5B' }}>Taseer</span>
-      <span style={{ color: '#F5831F' }}>ak</span>
+      {isArabic ? (
+        <>
+          <span style={{ color: theme === 'dark' ? '#ffffff' : '#1B2D5B' }}>تسعير</span>
+          <span style={{ color: '#F5831F' }}>ك</span>
+        </>
+      ) : (
+        <>
+          <span style={{ color: theme === 'dark' ? '#ffffff' : '#1B2D5B' }}>Taseer</span>
+          <span style={{ color: '#F5831F' }}>ak</span>
+        </>
+      )}
     </span>
   )
 
