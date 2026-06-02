@@ -69,7 +69,21 @@ export default function SupplierDashboard() {
       setUser(session.user)
       const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       setProfile(p)
-      const { data: rfqs } = await supabase.from('rfqs').select('*, contractor:profiles(company_name_ar, company_name_en)').eq('status', 'open').order('created_at', { ascending: false })
+      // فلترة الطلبات حسب تصنيف المورد
+      const tier = p?.supplier_tier || 'local'
+      const minVal = p?.min_order_value || 0
+
+      let rfqQuery = supabase.from('rfqs')
+        .select('*, contractor:profiles(company_name_ar, company_name_en, contractor_grade)')
+        .eq('status', 'open')
+        .order('created_at', { ascending: false })
+
+      // الحد الأدنى للقيمة — فقط لو المورد حدد minimum
+      if (minVal > 0) {
+        rfqQuery = rfqQuery.or(`estimated_value.gte.${minVal},estimated_value.is.null`)
+      }
+
+      const { data: rfqs } = await rfqQuery
       setOpenRfqs(rfqs || [])
       const { data: offers } = await supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status)').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
       setMyOffers(offers || [])

@@ -110,6 +110,11 @@ export default function SettingsPage() {
   const [passMsg, setPassMsg] = useState('')
   const [passSaving, setPassSaving] = useState(false)
 
+  // Classification
+  const [supplierTier, setSupplierTier] = useState('local')
+  const [minOrderValue, setMinOrderValue] = useState('')
+  const [contractorGrade, setContractorGrade] = useState('')
+
   // Docs
   const [licenseFile, setLicenseFile] = useState(null)
   const [crFile, setCrFile] = useState(null)
@@ -130,6 +135,9 @@ export default function SettingsPage() {
         setPhone(p.phone || '')
         setRegion(p.region || '')
         setCity(p.city || '')
+        setSupplierTier(p.supplier_tier || 'local')
+        setMinOrderValue(p.min_order_value ? String(p.min_order_value) : '')
+        setContractorGrade(p.contractor_grade || '')
       }
       setLoading(false)
     }
@@ -140,11 +148,15 @@ export default function SettingsPage() {
     e.preventDefault()
     setProfileSaving(true); setProfileMsg('')
     const supabase = createClient()
-    const { error } = await supabase.from('profiles').update({
-      company_name_ar: companyAr,
-      company_name_en: companyEn,
-      phone, region, city,
-    }).eq('id', user.id)
+    const updateData: any = { company_name_ar: companyAr, company_name_en: companyEn, phone, region, city }
+    if (profile?.role === 'supplier') {
+      updateData.supplier_tier = supplierTier
+      updateData.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
+    }
+    if (profile?.role === 'contractor' && contractorGrade) {
+      updateData.contractor_grade = contractorGrade
+    }
+    const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id)
     setProfileSaving(false)
     setProfileMsg(error ? t.error : t.saved)
     setTimeout(() => setProfileMsg(''), 3000)
@@ -338,6 +350,53 @@ export default function SettingsPage() {
                       <input value={city} onChange={e => setCity(e.target.value)} className="input-field" />
                     </div>
                   </div>
+
+                  {/* Supplier Tier */}
+                  {profile?.role === 'supplier' && (
+                    <div className="border-t border-gray-100 pt-5">
+                      <label className="block text-xs font-bold text-gray-500 mb-2">تصنيف شركتك</label>
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        {[
+                          { key: 'manufacturer', icon: '🏭', label: 'مصنع / موزع رئيسي' },
+                          { key: 'commercial', icon: '🏪', label: 'موزع تجاري' },
+                          { key: 'local', icon: '🏬', label: 'مورد محلي' },
+                        ].map(t => (
+                          <button key={t.key} type="button" onClick={() => setSupplierTier(t.key)}
+                            className={`p-3 rounded-xl border-2 text-center text-xs font-semibold transition-all ${
+                              supplierTier === t.key ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#F5831F]' : 'border-gray-200 text-gray-600'
+                            }`}>
+                            <div className="text-lg mb-1">{t.icon}</div>{t.label}
+                          </button>
+                        ))}
+                      </div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">الحد الأدنى لقيمة الطلب (ر.س)</label>
+                      <input type="number" value={minOrderValue} onChange={e => setMinOrderValue(e.target.value)}
+                        className="input-field" placeholder="0 = بدون حد أدنى" min="0" />
+                      <p className="text-[10px] text-gray-400 mt-1">سيتم تأكيد التصنيف النهائي من الإدارة عند مراجعة رخصتك</p>
+                    </div>
+                  )}
+
+                  {/* Contractor Grade */}
+                  {profile?.role === 'contractor' && (
+                    <div className="border-t border-gray-100 pt-5">
+                      <label className="block text-xs font-bold text-gray-500 mb-2">درجة تصنيف شركتك — وزارة الشؤون البلدية</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          { g: 'A', label: 'أ', desc: '> 100M', color: '#F5831F' },
+                          { g: 'B', label: 'ب', desc: '30–100M', color: '#1B2D5B' },
+                          { g: 'C', label: 'ج', desc: '5–30M', color: '#0F6E56' },
+                          { g: 'D', label: 'د', desc: '< 5M', color: '#888780' },
+                        ].map(g => (
+                          <button key={g.g} type="button" onClick={() => setContractorGrade(g.g)}
+                            className={`p-3 rounded-xl border-2 text-center transition-all ${contractorGrade === g.g ? '' : 'border-gray-200'}`}
+                            style={contractorGrade === g.g ? { borderColor: g.color, background: g.color + '12' } : {}}>
+                            <div className="text-xl font-black" style={{ color: g.color }}>{g.label}</div>
+                            <div className="text-[10px] text-gray-500 mt-0.5">{g.desc}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {profileMsg && (
                     <div className={`text-sm rounded-xl p-3 ${profileMsg.includes('✓') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>

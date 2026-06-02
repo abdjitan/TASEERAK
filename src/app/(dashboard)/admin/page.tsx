@@ -177,6 +177,17 @@ export default function AdminPanel() {
                         <span className={`badge text-[10px] ${u.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>
                           {u.role === 'contractor' ? '👷 مقاول' : '🏪 مورد'}
                         </span>
+                        {u.role === 'contractor' && u.contractor_grade && (
+                          <span className="badge text-[10px] bg-indigo-100 text-indigo-700">درجة {u.contractor_grade}</span>
+                        )}
+                        {u.role === 'supplier' && u.supplier_tier && (
+                          <span className="badge text-[10px] bg-purple-100 text-purple-700">
+                            {u.supplier_tier === 'manufacturer' ? '🏭 مصنع' : u.supplier_tier === 'commercial' ? '🏪 تجاري' : '🏬 محلي'}
+                          </span>
+                        )}
+                        {u.role === 'supplier' && u.min_order_value > 0 && (
+                          <span className="badge text-[10px] badge-gray">حد أدنى: {Number(u.min_order_value).toLocaleString()} ر.س</span>
+                        )}
                         <span className={`badge text-[10px] ${
                           u.verification_status === 'verified' ? 'badge-green' :
                           u.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'
@@ -192,7 +203,7 @@ export default function AdminPanel() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                     {/* License Links */}
                     {u.license_url && (
                       <a href={u.license_url} target="_blank" rel="noopener noreferrer"
@@ -207,7 +218,41 @@ export default function AdminPanel() {
                       </a>
                     )}
 
-                    {/* Actions */}
+                    {/* Supplier Tier Selector */}
+                    {u.role === 'supplier' && u.verification_status === 'verified' && (
+                      <select
+                        value={u.supplier_tier || 'local'}
+                        onChange={async (e) => {
+                          const supabase = createClient()
+                          await supabase.from('profiles').update({ supplier_tier: e.target.value }).eq('id', u.id)
+                          await loadData()
+                        }}
+                        className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5 cursor-pointer">
+                        <option value="manufacturer">🏭 مصنع/موزع رئيسي</option>
+                        <option value="commercial">🏪 موزع تجاري</option>
+                        <option value="local">🏬 مورد محلي</option>
+                      </select>
+                    )}
+
+                    {/* Contractor Grade Selector */}
+                    {u.role === 'contractor' && u.verification_status === 'verified' && (
+                      <select
+                        value={u.contractor_grade || ''}
+                        onChange={async (e) => {
+                          const supabase = createClient()
+                          await supabase.from('profiles').update({ contractor_grade: e.target.value || null }).eq('id', u.id)
+                          await loadData()
+                        }}
+                        className="text-xs border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg px-2 py-1.5 cursor-pointer">
+                        <option value="">-- الدرجة --</option>
+                        <option value="A">أ — فوق 100M</option>
+                        <option value="B">ب — 30–100M</option>
+                        <option value="C">ج — 5–30M</option>
+                        <option value="D">د — أقل من 5M</option>
+                      </select>
+                    )}
+
+                    {/* Approve/Reject */}
                     {u.verification_status !== 'verified' && (
                       <button onClick={() => updateStatus(u.id, 'verified')}
                         disabled={actionLoading === u.id}

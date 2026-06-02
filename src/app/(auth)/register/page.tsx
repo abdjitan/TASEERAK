@@ -33,6 +33,10 @@ export default function RegisterPage() {
   const [crFile, setCrFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [formError, setFormError] = useState('')
+  // Classification
+  const [supplierTier, setSupplierTier] = useState<'manufacturer' | 'commercial' | 'local'>('local')
+  const [contractorGrade, setContractorGrade] = useState<'A' | 'B' | 'C' | 'D' | ''>('')
+  const [minOrderValue, setMinOrderValue] = useState('')
   const router = useRouter()
   const supabase = createClient()
 
@@ -90,17 +94,26 @@ export default function RegisterPage() {
       }
 
       // 3. Update profile with full data
+      const updateData: any = {
+        company_name_en: data.company_name_en,
+        commercial_registration: data.commercial_registration,
+        vat_number: data.vat_number,
+        region: data.region,
+        city: data.city,
+        license_url: licenseUrl,
+        cr_url: crUrl,
+      }
+      if (data.role === 'supplier') {
+        updateData.supplier_tier = supplierTier
+        if (minOrderValue) updateData.min_order_value = parseFloat(minOrderValue)
+      }
+      if (data.role === 'contractor' && contractorGrade) {
+        updateData.contractor_grade = contractorGrade
+      }
+
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({
-          company_name_en: data.company_name_en,
-          commercial_registration: data.commercial_registration,
-          vat_number: data.vat_number,
-          region: data.region,
-          city: data.city,
-          license_url: licenseUrl,
-          cr_url: crUrl,
-        } as any)
+        .update(updateData)
         .eq('id', userId)
 
       if (profileError) throw new Error(profileError.message)
@@ -345,6 +358,62 @@ export default function RegisterPage() {
 
               {errors.sectors && (
                 <p className="text-red-500 text-sm mb-4">{errors.sectors.message}</p>
+              )}
+
+              {/* ── تصنيف المورد ── */}
+              {selectedType === 'supplier' && (
+                <div className="mb-5 border-t border-gray-100 pt-5">
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">تصنيف شركتك</h3>
+                  <p className="text-xs text-gray-500 mb-3">يساعد المقاولين على إيجادك حسب حجم طلباتهم</p>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {[
+                      { key: 'manufacturer', icon: '🏭', label: 'مصنع / موزع رئيسي', desc: 'إنتاج أو توزيع بكميات كبيرة' },
+                      { key: 'commercial', icon: '🏪', label: 'موزع تجاري', desc: 'متوسط الحجم والكميات' },
+                      { key: 'local', icon: '🏬', label: 'مورد محلي', desc: 'كميات صغيرة إلى متوسطة' },
+                    ].map(t => (
+                      <button key={t.key} type="button"
+                        onClick={() => setSupplierTier(t.key as any)}
+                        className={`p-3 rounded-xl border-2 text-center transition-all ${
+                          supplierTier === t.key ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'
+                        }`}>
+                        <div className="text-xl mb-1">{t.icon}</div>
+                        <div className={`text-xs font-bold ${supplierTier === t.key ? 'text-[#F5831F]' : 'text-gray-700'}`}>{t.label}</div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">{t.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">الحد الأدنى لقيمة الطلب (ر.س) — اختياري</label>
+                    <input type="number" value={minOrderValue} onChange={e => setMinOrderValue(e.target.value)}
+                      className="input-field" placeholder="مثال: 50000 — اتركه فارغاً لاستقبال كل الطلبات" min="0" />
+                  </div>
+                </div>
+              )}
+
+              {/* ── درجة المقاول ── */}
+              {selectedType === 'contractor' && (
+                <div className="mb-5 border-t border-gray-100 pt-5">
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">درجة تصنيف شركتك</h3>
+                  <p className="text-xs text-gray-500 mb-3">وزارة الشؤون البلدية — اختياري</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { grade: 'A', label: 'أ', desc: 'أكثر من 100M ر.س', color: '#F5831F' },
+                      { grade: 'B', label: 'ب', desc: '30–100M ر.س', color: '#1B2D5B' },
+                      { grade: 'C', label: 'ج', desc: '5–30M ر.س', color: '#0F6E56' },
+                      { grade: 'D', label: 'د', desc: 'أقل من 5M ر.س', color: '#888780' },
+                    ].map(g => (
+                      <button key={g.grade} type="button"
+                        onClick={() => setContractorGrade(g.grade as any)}
+                        className={`p-3 rounded-xl border-2 text-center transition-all ${
+                          contractorGrade === g.grade ? 'border-current' : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        style={contractorGrade === g.grade ? { borderColor: g.color, background: g.color + '10' } : {}}>
+                        <div className="text-xl font-black mb-0.5" style={{ color: g.color }}>{g.label}</div>
+                        <div className="text-[10px] text-gray-500">{g.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {formError && (

@@ -104,6 +104,7 @@ export default function NewRFQPage() {
   const [validityHours, setValidityHours] = useState(48)
   const [specFile, setSpecFile] = useState(null)
   const [specFileUrl, setSpecFileUrl] = useState('')
+  const [estimatedValue, setEstimatedValue] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
@@ -137,6 +138,7 @@ export default function NewRFQPage() {
       specification: specification || null, quantity: parseFloat(quantity), unit, region,
       city: city || null, delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
       hide_identity: hideIdentity,
+      estimated_value: estimatedValue ? parseFloat(estimatedValue) : null,
       notes: uploadedSpecUrl ? `${notes || ''}\n[مواصفات مرفقة: ${uploadedSpecUrl}]` : notes || null,
       expires_at: expiresAt,
     })
@@ -286,6 +288,35 @@ export default function NewRFQPage() {
                     </div>
                   )}
                 </label>
+              </div>
+
+              {/* Estimated Value */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                  {locale === 'en' ? 'Estimated Value (SAR)' : locale === 'ur' ? 'تخمینی قیمت (ریال)' : 'القيمة التقديرية (ر.س)'}
+                </h3>
+                <p className="text-xs text-gray-400 mb-3">
+                  {locale === 'en' ? 'Optional — helps match you with suitable suppliers by capacity'
+                  : locale === 'ur' ? 'اختیاری — مناسب سپلائرز سے ملانے میں مدد کرتا ہے'
+                  : 'اختياري — يساعد في إيصال طلبك للموردين المناسبين لحجمك'}
+                </p>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  {[
+                    { label: locale === 'en' ? '< 50K SAR' : 'أقل من 50,000', val: '50000' },
+                    { label: locale === 'en' ? '50K–200K SAR' : '50,000–200,000', val: '200000' },
+                    { label: locale === 'en' ? '200K–1M SAR' : '200,000–1,000,000', val: '1000000' },
+                    { label: locale === 'en' ? '> 1M SAR' : 'أكثر من 1,000,000', val: '5000000' },
+                  ].map(opt => (
+                    <button key={opt.val} type="button" onClick={() => setEstimatedValue(opt.val)}
+                      className={`py-2.5 rounded-xl text-xs font-semibold border transition-all ${
+                        estimatedValue === opt.val ? 'text-white border-transparent' : 'border-gray-200 text-gray-600'
+                      }`} style={estimatedValue === opt.val ? { background: '#1B2D5B' } : {}}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <input type="number" value={estimatedValue} onChange={e => setEstimatedValue(e.target.value)}
+                  className="input-field" placeholder={locale === 'en' ? 'Or enter exact value...' : 'أو أدخل قيمة محددة...'} min="0" />
               </div>
 
               {/* Notes */}
