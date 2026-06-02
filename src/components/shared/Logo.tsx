@@ -20,28 +20,17 @@ export default function Logo({
   className = '',
 }: LogoProps) {
   const s = sizes[size]
-
-  // light = خلفيات فاتحة (بيضاء، رمادية)
-  // dark  = خلفيات داكنة أو زرقاء
   const src = theme === 'dark' ? '/logo-outlined.png' : '/logo.png'
 
   const Icon = () => (
-    <img
-      src={src}
-      alt="Taseerak"
-      width={s.icon}
-      height={s.icon}
-      style={{ objectFit: 'contain', display: 'block' }}
-    />
+    <img src={src} alt="Taseerak" width={s.icon} height={s.icon}
+      style={{ objectFit: 'contain', display: 'block' }} />
   )
 
   const Wordmark = () => (
     <span style={{
       fontFamily: "'Segoe UI', Tahoma, Arial, sans-serif",
-      fontWeight: 900,
-      fontSize: s.fontSize,
-      letterSpacing: '-0.5px',
-      lineHeight: 1,
+      fontWeight: 900, fontSize: s.fontSize, letterSpacing: '-0.5px', lineHeight: 1,
     }}>
       <span style={{ color: theme === 'dark' ? '#ffffff' : '#1B2D5B' }}>Taseer</span>
       <span style={{ color: '#F5831F' }}>ak</span>
