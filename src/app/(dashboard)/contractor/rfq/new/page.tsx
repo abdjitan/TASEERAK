@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS } from '@/types'
+import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, getProductLabel } from '@/types'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { useTranslation } from '@/i18n'
@@ -212,7 +212,7 @@ export default function NewRFQPage() {
                       <button key={p} type="button" onClick={() => setProductName(p)}
                         className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
                         style={productName === p ? { background: '#1B2D5B' } : {}}>
-                        {p}
+                        {getProductLabel(p, locale)}
                       </button>
                     ))}
                   </div>

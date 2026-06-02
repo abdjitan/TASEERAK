@@ -35,6 +35,100 @@ export const SECTOR_COLORS: Record<Sector, string> = {
   mechanical: '#d1fae5',
 }
 
+// Product translations — keys are Arabic (stored in DB), values are EN/UR display names
+export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
+  // Civil
+  'حديد تسليح':         { en: 'Steel Reinforcement',    ur: 'اسٹیل ریانفورسمنٹ' },
+  'أسمنت':              { en: 'Cement',                  ur: 'سیمنٹ' },
+  'خرسانة جاهزة':       { en: 'Ready Mix Concrete',      ur: 'ریڈی مکس کنکریٹ' },
+  'رمل بناء':           { en: 'Construction Sand',       ur: 'تعمیراتی ریت' },
+  'حصى':                { en: 'Gravel',                  ur: 'بجری' },
+  'زلط':                { en: 'Crushed Stone',           ur: 'کچا پتھر' },
+  'طوب أحمر':           { en: 'Red Brick',               ur: 'سرخ اینٹ' },
+  'طوب فارغ':           { en: 'Hollow Brick',            ur: 'کھوکھلی اینٹ' },
+  'بلوك خرساني':        { en: 'Concrete Block',          ur: 'کنکریٹ بلاک' },
+  'شبك رابيتز':         { en: 'Rabitz Wire Mesh',        ur: 'ربٹز جالی' },
+  'كسارة':              { en: 'Crusher Stone',           ur: 'کرشر پتھر' },
+  'جير':                { en: 'Lime',                    ur: 'چونا' },
+  'صلب هيكلي':          { en: 'Structural Steel',        ur: 'ساختی اسٹیل' },
+  'أوتاد خرسانية':      { en: 'Concrete Piles',          ur: 'کنکریٹ پائل' },
+  'عتبات خرسانية':      { en: 'Concrete Beams',          ur: 'کنکریٹ بیم' },
+  'أنابيب صرف صحي':    { en: 'Sanitary Pipes',          ur: 'سینیٹری پائپ' },
+  'ركام':               { en: 'Aggregates',              ur: 'مجموعی مواد' },
+  'جبصين':              { en: 'Gypsum Plaster',          ur: 'جپسم پلاسٹر' },
+  'حجر طبيعي خام':      { en: 'Raw Natural Stone',       ur: 'خام قدرتی پتھر' },
+  // Architectural
+  'بلاط سيراميك':       { en: 'Ceramic Tiles',           ur: 'سیرامک ٹائلز' },
+  'بلاط بورسلين':       { en: 'Porcelain Tiles',         ur: 'پورسلین ٹائلز' },
+  'رخام طبيعي':         { en: 'Natural Marble',          ur: 'قدرتی سنگ مرمر' },
+  'جرانيت':             { en: 'Granite',                 ur: 'گرینائٹ' },
+  'دهان أكريليك':       { en: 'Acrylic Paint',           ur: 'اکریلک پینٹ' },
+  'دهان زيتي':          { en: 'Oil Paint',               ur: 'آئل پینٹ' },
+  'جبس':                { en: 'Gypsum Board',            ur: 'جپسم بورڈ' },
+  'زجاج عادي':          { en: 'Clear Glass',             ur: 'شفاف شیشہ' },
+  'زجاج معشش':          { en: 'Wired Glass',             ur: 'تار والا شیشہ' },
+  'أبواب خشب':          { en: 'Wooden Doors',            ur: 'لکڑی کے دروازے' },
+  'نوافذ ألمنيوم':       { en: 'Aluminum Windows',        ur: 'ایلومینیم کھڑکیاں' },
+  'نوافذ UPVC':          { en: 'UPVC Windows',            ur: 'یو پی وی سی کھڑکیاں' },
+  'حجر بازلت':          { en: 'Basalt Stone',            ur: 'بازالٹ پتھر' },
+  'فوم عازل حراري':     { en: 'Thermal Insulation Foam', ur: 'تھرمل انسولیشن فوم' },
+  'صوف صخري':           { en: 'Rock Wool',               ur: 'راک وول' },
+  'ديكور خشبي':         { en: 'Wooden Decor',            ur: 'لکڑی کی سجاوٹ' },
+  'قرميد سقف':          { en: 'Roof Tiles',              ur: 'چھت کی ٹائلز' },
+  'مشربيات':            { en: 'Mashrabiya',              ur: 'مشربیہ' },
+  'حجر صناعي':          { en: 'Artificial Stone',        ur: 'مصنوعی پتھر' },
+  'سيراميك حمام':       { en: 'Bathroom Ceramics',       ur: 'باتھ روم سیرامک' },
+  // Electrical
+  'كابلات NYY':         { en: 'NYY Cables',              ur: 'این وائی وائی کیبل' },
+  'كابلات NYCY':        { en: 'NYCY Cables',             ur: 'این وائی سی وائی کیبل' },
+  'سلك نحاس':           { en: 'Copper Wire',             ur: 'تانبے کی تار' },
+  'قواطع كهربائية':     { en: 'Circuit Breakers',        ur: 'سرکٹ بریکر' },
+  'لوحات توزيع':        { en: 'Distribution Panels',     ur: 'ڈسٹریبیوشن پینل' },
+  'مفاتيح كهربائية':    { en: 'Electrical Switches',     ur: 'برقی سوئچ' },
+  'مقابس كهربائية':     { en: 'Electrical Outlets',      ur: 'برقی ساکٹ' },
+  'إضاءة LED':          { en: 'LED Lighting',            ur: 'ایل ای ڈی روشنی' },
+  'مصابيح فلورسنت':     { en: 'Fluorescent Lamps',       ur: 'فلوروسینٹ بلب' },
+  'أنابيب كهربائية':    { en: 'Electrical Conduits',     ur: 'برقی کنڈوٹ' },
+  'فيوزات':             { en: 'Fuses',                   ur: 'فیوز' },
+  'عوازل كهربائية':     { en: 'Electrical Insulators',   ur: 'برقی عایق' },
+  'محول كهربائي':       { en: 'Electrical Transformer',  ur: 'ٹرانسفارمر' },
+  'مولد كهرباء':        { en: 'Generator',               ur: 'جنریٹر' },
+  'أجهزة حماية':        { en: 'Protection Devices',      ur: 'حفاظتی آلات' },
+  'رايات كهربائية':     { en: 'Cable Trays',             ur: 'کیبل ٹرے' },
+  'كيبل ارضي':          { en: 'Underground Cable',       ur: 'زیر زمین کیبل' },
+  'كشافات خارجية':      { en: 'Outdoor Floodlights',     ur: 'آؤٹ ڈور فلڈ لائٹ' },
+  'طبلون كهربائي':      { en: 'Electrical Panel Board',  ur: 'برقی پینل بورڈ' },
+  // Mechanical
+  'مضخات مياه':         { en: 'Water Pumps',             ur: 'واٹر پمپ' },
+  'مكيفات VRV':         { en: 'VRV Air Conditioners',    ur: 'وی آر وی ایئر کنڈیشنر' },
+  'أنابيب HDPE':        { en: 'HDPE Pipes',              ur: 'ایچ ڈی پی ای پائپ' },
+  'أنابيب PPR':         { en: 'PPR Pipes',               ur: 'پی پی آر پائپ' },
+  'أنابيب PVC':         { en: 'PVC Pipes',               ur: 'پی وی سی پائپ' },
+  'أنابيب نحاس':        { en: 'Copper Pipes',            ur: 'تانبے کے پائپ' },
+  'أنابيب CPVC':        { en: 'CPVC Pipes',              ur: 'سی پی وی سی پائپ' },
+  'أنابيب PEX':         { en: 'PEX Pipes',               ur: 'پی ای ایکس پائپ' },
+  'صمامات كرة':         { en: 'Ball Valves',             ur: 'بال والو' },
+  'صمامات بوابة':       { en: 'Gate Valves',             ur: 'گیٹ والو' },
+  'صمامات فحص':         { en: 'Check Valves',            ur: 'چیک والو' },
+  'فلانشات':            { en: 'Flanges',                 ur: 'فلانج' },
+  'وصلات أنابيب':       { en: 'Pipe Fittings',           ur: 'پائپ فٹنگ' },
+  'خزانات ضغط':         { en: 'Pressure Tanks',          ur: 'پریشر ٹینک' },
+  'مرشحات مياه':        { en: 'Water Filters',           ur: 'واٹر فلٹر' },
+  'سخانات مياه':        { en: 'Water Heaters',           ur: 'واٹر ہیٹر' },
+  'مراوح هواء':         { en: 'Air Fans',                ur: 'ہوا کے پنکھے' },
+  'مجاري هواء':         { en: 'Air Ducts',               ur: 'ایئر ڈکٹ' },
+  'ضواغط هواء':         { en: 'Air Compressors',         ur: 'ایئر کمپریسر' },
+  'وحدات تكييف':        { en: 'AC Units',                ur: 'ایئر کنڈیشنر یونٹ' },
+}
+
+// Helper to get translated product name
+export function getProductLabel(arabicName: string, locale: string): string {
+  if (locale === 'ar') return arabicName
+  const trans = PRODUCT_TRANSLATIONS[arabicName]
+  if (!trans) return arabicName
+  return locale === 'ur' ? trans.ur : trans.en
+}
+
 export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
   civil: [
     'حديد تسليح', 'أسمنت', 'خرسانة جاهزة', 'رمل بناء', 'حصى', 'زلط',
