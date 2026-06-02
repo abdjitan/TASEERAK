@@ -261,7 +261,24 @@ export default function RegisterPage() {
 
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => setStep(1)} className="btn-ghost flex-1">← رجوع</button>
-                <button type="button" onClick={() => setStep(3)} className="btn-primary flex-1">التالي ←</button>
+                <button type="button" onClick={async () => {
+                  // Validate step 2 fields before proceeding
+                  const result = await handleSubmit(() => {})()
+                  const vals = watch()
+                  const hasErrors =
+                    !vals.company_name_ar || vals.company_name_ar.length < 3 ||
+                    !vals.commercial_registration || vals.commercial_registration.length < 10 ||
+                    !vals.phone || vals.phone.length < 10 ||
+                    !vals.email || !vals.email.includes('@') ||
+                    !vals.password || vals.password.length < 8 ||
+                    !vals.region || !vals.city || vals.city.length < 2
+                  if (hasErrors) {
+                    // trigger validation display
+                    handleSubmit(() => {})()
+                    return
+                  }
+                  setStep(3)
+                }} className="btn-primary flex-1">التالي ←</button>
               </div>
             </div>
           )}

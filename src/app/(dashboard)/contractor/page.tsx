@@ -139,7 +139,9 @@ export default function ContractorDashboard() {
           <Logo theme="light" size="sm" />
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="minimal" />
-            <a href="/contractor/rfq/new" className="btn-orange text-xs px-4 py-2">{t.newRfq}</a>
+            {profile?.verification_status !== 'rejected' && (
+              <a href="/contractor/rfq/new" className="btn-orange text-xs px-4 py-2">{t.newRfq}</a>
+            )}
             <a href="/settings" className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded transition-all">⚙️</a>
             <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded transition-all">{t.logout}</button>
           </div>
@@ -147,6 +149,49 @@ export default function ContractorDashboard() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
+        {/* Verification Status Banner */}
+        {profile?.verification_status === 'rejected' && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">
+            <div className="flex items-start gap-3 mb-3">
+              <span className="text-2xl">❌</span>
+              <div>
+                <div className="font-bold text-red-700 mb-1">
+                  {locale === 'en' ? 'Account Rejected' : locale === 'ur' ? 'اکاؤنٹ مسترد' : 'تم رفض حسابك'}
+                </div>
+                <div className="text-sm text-red-600">
+                  {locale === 'en' ? 'Your account has been rejected. Please review the reason below and reupload your documents.'
+                  : locale === 'ur' ? 'آپ کا اکاؤنٹ مسترد ہو گیا۔ وجہ دیکھیں اور دستاویزات دوبارہ اپلوڈ کریں۔'
+                  : 'تم رفض حسابك. يرجى مراجعة السبب وإعادة رفع المستندات المطلوبة.'}
+                </div>
+                {profile?.rejection_reason && (
+                  <div className="mt-2 bg-red-100 rounded-lg px-3 py-2 text-sm text-red-800 font-medium">
+                    📋 {locale === 'en' ? 'Reason: ' : locale === 'ur' ? 'وجہ: ' : 'السبب: '}{profile.rejection_reason}
+                  </div>
+                )}
+              </div>
+            </div>
+            <a href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
+              {locale === 'en' ? '📤 Reupload Documents' : locale === 'ur' ? '📤 دستاویزات دوبارہ اپلوڈ کریں' : '📤 إعادة رفع المستندات'}
+            </a>
+          </div>
+        )}
+
+        {profile?.verification_status === 'pending' && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3 animate-fade-in">
+            <span className="text-2xl">⏳</span>
+            <div>
+              <div className="font-bold text-amber-700 mb-1">
+                {locale === 'en' ? 'Account Under Review' : locale === 'ur' ? 'اکاؤنٹ زیر جائزہ' : 'حسابك قيد المراجعة'}
+              </div>
+              <div className="text-sm text-amber-600">
+                {locale === 'en' ? 'Your account is being reviewed. This usually takes up to 24 hours.'
+                : locale === 'ur' ? 'آپ کے اکاؤنٹ کا جائزہ لیا جا رہا ہے۔ اس میں عام طور پر 24 گھنٹے لگتے ہیں۔'
+                : 'يتم مراجعة بياناتك ورخصة عملك. عادةً تستغرق 24 ساعة.'}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mb-8 animate-fade-in">
           <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>
             {t.welcome}، {profile?.company_name_ar || profile?.company_name_en} 👋

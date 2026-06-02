@@ -11,7 +11,7 @@ import { REGIONS } from '@/types'
 const txt = {
   ar: {
     title: 'إعدادات الحساب', back: '← رجوع', logout: 'خروج',
-    profileTab: 'معلومات الشركة', passwordTab: 'كلمة المرور', langTab: 'اللغة',
+    profileTab: 'معلومات الشركة', passwordTab: 'كلمة المرور', langTab: 'اللغة', docsTab: 'المستندات',
     companyAr: 'اسم الشركة (عربي)', companyEn: 'اسم الشركة (إنجليزي)',
     phone: 'رقم الجوال (واتساب)', region: 'المنطقة', city: 'المدينة',
     selectRegion: 'اختر المنطقة', saveProfile: 'حفظ التغييرات',
@@ -25,10 +25,16 @@ const txt = {
     email: 'البريد الإلكتروني', emailNote: 'لا يمكن تغيير البريد الإلكتروني',
     role: 'نوع الحساب', contractor: 'مقاول', supplier: 'مورد',
     verStatus: 'حالة التحقق', pending: 'قيد المراجعة', verified: 'موثق', rejected: 'مرفوض',
+    docsTitle: 'المستندات الرسمية', docsSub: 'ارفع مستنداتك لإتمام عملية التحقق',
+    licenseLabel: 'رخصة العمل', crLabel: 'السجل التجاري',
+    uploadDoc: 'اضغط لرفع الملف', docHint: 'PDF أو صورة — حجم أقصى 5MB',
+    uploadBtn: 'رفع المستندات', uploaded: '✓ تم رفع المستندات بنجاح',
+    currentDoc: 'المستند الحالي', viewDoc: 'عرض',
+    rejectedBanner: 'تم رفض حسابك — يرجى رفع المستندات المطلوبة مرة أخرى',
   },
   en: {
     title: 'Account Settings', back: '← Back', logout: 'Logout',
-    profileTab: 'Company Info', passwordTab: 'Password', langTab: 'Language',
+    profileTab: 'Company Info', passwordTab: 'Password', langTab: 'Language', docsTab: 'Documents',
     companyAr: 'Company Name (Arabic)', companyEn: 'Company Name (English)',
     phone: 'Phone (WhatsApp)', region: 'Region', city: 'City',
     selectRegion: 'Select region', saveProfile: 'Save Changes',
@@ -42,10 +48,16 @@ const txt = {
     email: 'Email Address', emailNote: 'Email cannot be changed',
     role: 'Account Type', contractor: 'Contractor', supplier: 'Supplier',
     verStatus: 'Verification Status', pending: 'Pending', verified: 'Verified', rejected: 'Rejected',
+    docsTitle: 'Official Documents', docsSub: 'Upload your documents to complete verification',
+    licenseLabel: 'Business License', crLabel: 'Commercial Registration',
+    uploadDoc: 'Click to upload file', docHint: 'PDF or image — max 5MB',
+    uploadBtn: 'Upload Documents', uploaded: '✓ Documents uploaded successfully',
+    currentDoc: 'Current document', viewDoc: 'View',
+    rejectedBanner: 'Your account was rejected — please reupload required documents',
   },
   ur: {
     title: 'اکاؤنٹ کی ترتیبات', back: '← واپس', logout: 'لاگ آؤٹ',
-    profileTab: 'کمپنی کی معلومات', passwordTab: 'پاسورڈ', langTab: 'زبان',
+    profileTab: 'کمپنی کی معلومات', passwordTab: 'پاسورڈ', langTab: 'زبان', docsTab: 'دستاویزات',
     companyAr: 'کمپنی کا نام (عربی)', companyEn: 'کمپنی کا نام (انگریزی)',
     phone: 'فون (واٹس ایپ)', region: 'علاقہ', city: 'شہر',
     selectRegion: 'علاقہ منتخب کریں', saveProfile: 'تبدیلیاں محفوظ کریں',
@@ -59,6 +71,12 @@ const txt = {
     email: 'ای میل ایڈریس', emailNote: 'ای میل تبدیل نہیں کی جا سکتی',
     role: 'اکاؤنٹ کی قسم', contractor: 'ٹھیکیدار', supplier: 'سپلائر',
     verStatus: 'تصدیق کی حیثیت', pending: 'زیر التواء', verified: 'تصدیق شدہ', rejected: 'مسترد',
+    docsTitle: 'سرکاری دستاویزات', docsSub: 'تصدیق مکمل کرنے کے لیے دستاویزات اپلوڈ کریں',
+    licenseLabel: 'کاروباری لائسنس', crLabel: 'تجارتی رجسٹریشن',
+    uploadDoc: 'فائل اپلوڈ کرنے کے لیے کلک کریں', docHint: 'PDF یا تصویر — زیادہ سے زیادہ 5MB',
+    uploadBtn: 'دستاویزات اپلوڈ کریں', uploaded: '✓ دستاویزات کامیابی سے اپلوڈ',
+    currentDoc: 'موجودہ دستاویز', viewDoc: 'دیکھیں',
+    rejectedBanner: 'آپ کا اکاؤنٹ مسترد ہو گیا — مطلوبہ دستاویزات دوبارہ اپلوڈ کریں',
   },
 }
 
@@ -91,6 +109,12 @@ export default function SettingsPage() {
   const [confirmPass, setConfirmPass] = useState('')
   const [passMsg, setPassMsg] = useState('')
   const [passSaving, setPassSaving] = useState(false)
+
+  // Docs
+  const [licenseFile, setLicenseFile] = useState(null)
+  const [crFile, setCrFile] = useState(null)
+  const [docsMsg, setDocsMsg] = useState('')
+  const [docsSaving, setDocsSaving] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -139,6 +163,49 @@ export default function SettingsPage() {
     setPassMsg(t.passChanged)
     setNewPass(''); setConfirmPass('')
     setTimeout(() => setPassMsg(''), 3000)
+  }
+
+  async function uploadDocs(e) {
+    e.preventDefault()
+    if (!licenseFile && !crFile) return
+    setDocsSaving(true); setDocsMsg('')
+    const supabase = createClient()
+
+    let licenseUrl = profile?.license_url
+    let crUrl = profile?.cr_url
+
+    if (licenseFile) {
+      const ext = licenseFile.name.split('.').pop()
+      const path = `${user.id}/license.${ext}`
+      const { data } = await supabase.storage.from('licenses').upload(path, licenseFile, { upsert: true })
+      if (data) {
+        const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(data.path)
+        licenseUrl = publicUrl
+      }
+    }
+
+    if (crFile) {
+      const ext = crFile.name.split('.').pop()
+      const path = `${user.id}/cr.${ext}`
+      const { data } = await supabase.storage.from('licenses').upload(path, crFile, { upsert: true })
+      if (data) {
+        const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(data.path)
+        crUrl = publicUrl
+      }
+    }
+
+    const { error } = await supabase.from('profiles').update({
+      license_url: licenseUrl,
+      cr_url: crUrl,
+      verification_status: 'pending',
+    }).eq('id', user.id)
+
+    setDocsSaving(false)
+    if (error) { setDocsMsg(t.error); return }
+    setDocsMsg(t.uploaded)
+    setProfile({ ...profile, license_url: licenseUrl, cr_url: crUrl, verification_status: 'pending' })
+    setLicenseFile(null); setCrFile(null)
+    setTimeout(() => setDocsMsg(''), 4000)
   }
 
   async function handleSignOut() {
@@ -200,6 +267,7 @@ export default function SettingsPage() {
 
               {[
                 { key: 'profile', icon: '🏢', label: t.profileTab },
+                { key: 'docs', icon: '📄', label: t.docsTab },
                 { key: 'password', icon: '🔒', label: t.passwordTab },
                 { key: 'language', icon: '🌐', label: t.langTab },
               ].map(item => (
@@ -318,6 +386,85 @@ export default function SettingsPage() {
                     className="px-8 py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
                     style={{ background: '#1B2D5B' }}>
                     {passSaving ? t.saving : t.changePass}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Docs Tab */}
+            {tab === 'docs' && (
+              <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
+                <h2 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>{t.docsTitle}</h2>
+                <p className="text-sm text-gray-500 mb-6">{t.docsSub}</p>
+
+                {profile?.verification_status === 'rejected' && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 flex items-start gap-2">
+                    <span>❌</span>
+                    <div className="text-sm text-red-600 font-medium">{t.rejectedBanner}</div>
+                  </div>
+                )}
+
+                <form onSubmit={uploadDocs} className="space-y-5">
+                  {/* License */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-2">{t.licenseLabel}</label>
+                    {profile?.license_url && !licenseFile && (
+                      <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                        <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
+                        <a href={profile.license_url} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:underline font-semibold">{t.viewDoc}</a>
+                      </div>
+                    )}
+                    <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
+                      licenseFile ? 'border-[#1B2D5B] bg-[#1B2D5B]/5' : 'border-gray-200 hover:border-[#F5831F]/50'
+                    }`}>
+                      <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={e => setLicenseFile(e.target.files?.[0] ?? null)} />
+                      <span className="text-2xl">{licenseFile ? '📎' : '📄'}</span>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-700">
+                          {licenseFile ? licenseFile.name : t.uploadDoc}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5">{t.docHint}</div>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* CR */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-2">{t.crLabel}</label>
+                    {profile?.cr_url && !crFile && (
+                      <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                        <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
+                        <a href={profile.cr_url} target="_blank" rel="noopener noreferrer"
+                          className="text-xs text-blue-600 hover:underline font-semibold">{t.viewDoc}</a>
+                      </div>
+                    )}
+                    <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
+                      crFile ? 'border-[#1B2D5B] bg-[#1B2D5B]/5' : 'border-gray-200 hover:border-[#F5831F]/50'
+                    }`}>
+                      <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={e => setCrFile(e.target.files?.[0] ?? null)} />
+                      <span className="text-2xl">{crFile ? '📎' : '📋'}</span>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-700">
+                          {crFile ? crFile.name : t.uploadDoc}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-0.5">{t.docHint}</div>
+                      </div>
+                    </label>
+                  </div>
+
+                  {docsMsg && (
+                    <div className={`text-sm rounded-xl p-3 ${docsMsg.includes('✓') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                      {docsMsg}
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={docsSaving || (!licenseFile && !crFile)}
+                    className="px-8 py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
+                    style={{ background: '#F5831F' }}>
+                    {docsSaving ? t.saving : t.uploadBtn}
                   </button>
                 </form>
               </div>

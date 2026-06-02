@@ -14,6 +14,8 @@ export default function AdminPanel() {
   const [actionLoading, setActionLoading] = useState('')
   const [msg, setMsg] = useState('')
   const [search, setSearch] = useState('')
+  const [rejectModal, setRejectModal] = useState(null) // { id, name }
+  const [rejectReason, setRejectReason] = useState('')
 
   useEffect(() => {
     async function init() {
@@ -46,14 +48,18 @@ export default function AdminPanel() {
     })
   }
 
-  async function updateStatus(profileId: string, status: 'verified' | 'rejected') {
+  async function updateStatus(profileId: string, status: 'verified' | 'rejected', reason?: string) {
     setActionLoading(profileId)
     const supabase = createClient()
-    await supabase.from('profiles').update({ verification_status: status }).eq('id', profileId)
+    const updateData: any = { verification_status: status }
+    if (reason) updateData.rejection_reason = reason
+    await supabase.from('profiles').update(updateData).eq('id', profileId)
     setMsg(`✓ تم ${status === 'verified' ? 'الموافقة' : 'الرفض'} بنجاح`)
     setTimeout(() => setMsg(''), 3000)
     await loadData()
     setActionLoading('')
+    setRejectModal(null)
+    setRejectReason('')
   }
 
   async function handleSignOut() {
@@ -211,10 +217,10 @@ export default function AdminPanel() {
                       </button>
                     )}
                     {u.verification_status !== 'rejected' && (
-                      <button onClick={() => updateStatus(u.id, 'rejected')}
+                      <button onClick={() => { setRejectModal({ id: u.id, name: u.company_name_ar }); setRejectReason('') }}
                         disabled={actionLoading === u.id}
                         className="text-xs px-4 py-2 rounded-xl font-semibold text-white transition-all hover:shadow disabled:opacity-50 bg-red-500 hover:bg-red-600">
-                        {actionLoading === u.id ? '...' : '✕ رفض'}
+                        ✕ رفض
                       </button>
                     )}
                   </div>
@@ -228,6 +234,58 @@ export default function AdminPanel() {
           </div>
         )}
       </div>
+
+      {/* Reject Modal */}
+      {rejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl p-7 max-w-md w-full shadow-2xl animate-slide-up" dir="rtl">
+            <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>سبب الرفض</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              رفض حساب <strong>{rejectModal.name}</strong> — سيتم إرسال السبب للمستخدم
+            </p>
+
+            <div className="space-y-3 mb-4">
+              {[
+                'مستندات غير واضحة أو ناقصة',
+                'رخصة العمل منتهية الصلاحية',
+                'بيانات السجل التجاري غير مطابقة',
+                'السجل التجاري لا يشمل النشاط المطلوب',
+                'صور المستندات غير مقروءة',
+              ].map(reason => (
+                <button key={reason} type="button"
+                  onClick={() => setRejectReason(reason)}
+                  className={`w-full text-right px-4 py-3 rounded-xl border text-sm transition-all ${
+                    rejectReason === reason
+                      ? 'border-red-400 bg-red-50 text-red-700 font-semibold'
+                      : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                  }`}>
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <div className="mb-5">
+              <label className="block text-xs font-bold text-gray-500 mb-1.5">أو اكتب سبب مخصص</label>
+              <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)}
+                className="input-field" rows={3}
+                placeholder="أدخل سبب الرفض..." />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => updateStatus(rejectModal.id, 'rejected', rejectReason)}
+                disabled={!rejectReason || actionLoading === rejectModal.id}
+                className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all bg-red-500 hover:bg-red-600">
+                {actionLoading === rejectModal.id ? '...' : '✕ تأكيد الرفض'}
+              </button>
+              <button onClick={() => { setRejectModal(null); setRejectReason('') }}
+                className="flex-1 py-3 rounded-xl font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
