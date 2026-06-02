@@ -6,8 +6,79 @@ import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import { useTranslation } from '@/i18n'
+
+const txt = {
+  ar: {
+    welcome: 'أهلاً',
+    subtitle: 'إليك ملخص طلباتك وعروضك',
+    newRfq: '+ طلب تسعير',
+    logout: 'خروج',
+    activeRfqs: 'طلبات نشطة',
+    totalOffers: 'إجمالي العروض',
+    completed: 'صفقات مكتملة',
+    total: 'إجمالي الطلبات',
+    rfqList: 'طلبات التسعير',
+    requests: 'طلب',
+    noRfqs: 'لا يوجد طلبات بعد',
+    noRfqsSub: 'أرسل أول طلب تسعير وابدأ تلقي عروض من مئات الموردين',
+    newRfqBtn: '+ طلب تسعير جديد',
+    viewDetails: 'عرض التفاصيل ←',
+    open: '● مفتوح', closed: '● مغلق', expired: '● منتهي', cancelled: '● ملغي',
+    offers: 'عرض',
+    qty: 'الكمية',
+  },
+  en: {
+    welcome: 'Hello',
+    subtitle: 'Here is a summary of your requests and offers',
+    newRfq: '+ New RFQ',
+    logout: 'Logout',
+    activeRfqs: 'Active RFQs',
+    totalOffers: 'Total Offers',
+    completed: 'Completed Deals',
+    total: 'Total Requests',
+    rfqList: 'RFQ Requests',
+    requests: 'requests',
+    noRfqs: 'No requests yet',
+    noRfqsSub: 'Send your first RFQ and start receiving offers from hundreds of suppliers',
+    newRfqBtn: '+ New RFQ Request',
+    viewDetails: 'View Details →',
+    open: '● Open', closed: '● Closed', expired: '● Expired', cancelled: '● Cancelled',
+    offers: 'offer',
+    qty: 'Qty',
+  },
+  ur: {
+    welcome: 'خوش آمدید',
+    subtitle: 'آپ کی درخواستوں اور پیشکشوں کا خلاصہ',
+    newRfq: '+ نئی درخواست',
+    logout: 'لاگ آؤٹ',
+    activeRfqs: 'فعال درخواستیں',
+    totalOffers: 'کل پیشکشیں',
+    completed: 'مکمل سودے',
+    total: 'کل درخواستیں',
+    rfqList: 'قیمت کی درخواستیں',
+    requests: 'درخواست',
+    noRfqs: 'ابھی تک کوئی درخواست نہیں',
+    noRfqsSub: 'پہلی قیمت کی درخواست بھیجیں اور سینکڑوں سپلائرز سے پیشکشیں وصول کریں',
+    newRfqBtn: '+ نئی درخواست',
+    viewDetails: 'تفصیلات دیکھیں →',
+    open: '● کھلا', closed: '● بند', expired: '● ختم', cancelled: '● منسوخ',
+    offers: 'پیشکش',
+    qty: 'مقدار',
+  },
+}
+
+const sectorLabels = {
+  ar: { civil: 'مدني', architectural: 'معماري', electrical: 'كهرباء', mechanical: 'ميكانيك' },
+  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical' },
+  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل' },
+}
 
 export default function ContractorDashboard() {
+  const { locale, dir } = useTranslation()
+  const t = txt[locale] || txt.ar
+  const sectors = sectorLabels[locale] || sectorLabels.ar
+
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [rfqs, setRfqs] = useState([])
@@ -38,7 +109,9 @@ export default function ContractorDashboard() {
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
       <div className="text-center animate-pulse">
         <img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" />
-        <div className="text-[#1B2D5B] font-semibold text-sm">جارٍ التحميل...</div>
+        <div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>
+          {locale === 'en' ? 'Loading...' : locale === 'ur' ? 'لوڈ ہو رہا ہے...' : 'جارٍ التحميل...'}
+        </div>
       </div>
     </div>
   )
@@ -47,42 +120,52 @@ export default function ContractorDashboard() {
   const closed = rfqs.filter(r => r.status === 'closed')
   const totalOffers = rfqs.reduce((s, r) => s + (r.offer_count || 0), 0)
 
+  const statusLabel = (status) => {
+    if (status === 'open') return t.open
+    if (status === 'closed') return t.closed
+    if (status === 'cancelled') return t.cancelled
+    return t.expired
+  }
+
   return (
-    <div className="min-h-screen" dir="rtl" style={{ background: '#f4f6f9' }}>
-      {/* Background pattern */}
+    <div className="min-h-screen" dir={dir} style={{ background: '#f4f6f9' }}>
       <div className="fixed inset-0 pointer-events-none z-0" style={{
         backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(27,45,91,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(245,131,31,0.04) 0%, transparent 50%)',
       }} />
+
       {/* Nav */}
       <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
           <Logo theme="light" size="sm" />
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="minimal" />
-            <a href="/contractor/rfq/new" className="btn-orange text-xs px-4 py-2">+ طلب تسعير</a>
-            <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded transition-all">خروج</button>
+            <a href="/contractor/rfq/new" className="btn-orange text-xs px-4 py-2">{t.newRfq}</a>
+            <a href="/settings" className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded transition-all">⚙️</a>
+            <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded transition-all">{t.logout}</button>
           </div>
         </div>
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
         <div className="mb-8 animate-fade-in">
-          <h1 className="text-2xl font-bold text-[#1B2D5B]">أهلاً، {profile?.company_name_ar} 👋</h1>
-          <p className="text-gray-500 mt-1 text-sm">إليك ملخص طلباتك وعروضك</p>
+          <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>
+            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en} 👋
+          </h1>
+          <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
-            { label: 'طلبات نشطة', value: active.length, icon: '📋', bg: '#1B2D5B' },
-            { label: 'إجمالي العروض', value: totalOffers, icon: '💬', bg: '#F5831F' },
-            { label: 'صفقات مكتملة', value: closed.length, icon: '✅', bg: '#0F6E56' },
-            { label: 'إجمالي الطلبات', value: rfqs.length, icon: '📊', bg: '#7c3aed' },
+            { label: t.activeRfqs, value: active.length, icon: '📋', bg: '#1B2D5B' },
+            { label: t.totalOffers, value: totalOffers, icon: '💬', bg: '#F5831F' },
+            { label: t.completed, value: closed.length, icon: '✅', bg: '#0F6E56' },
+            { label: t.total, value: rfqs.length, icon: '📊', bg: '#7c3aed' },
           ].map(({ label, value, icon, bg }) => (
             <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex items-start justify-between">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg text-white" style={{ background: bg }}>{icon}</div>
-                <div className="text-3xl font-bold text-[#1B2D5B]">{value}</div>
+                <div className="text-3xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
               </div>
               <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
             </div>
@@ -93,15 +176,15 @@ export default function ContractorDashboard() {
         {rfqs.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 shadow-sm border border-gray-100 text-center animate-slide-up">
             <div className="text-6xl mb-5 animate-float">📋</div>
-            <h2 className="text-xl font-bold text-[#1B2D5B] mb-3">لا يوجد طلبات بعد</h2>
-            <p className="text-gray-500 mb-6 text-sm">أرسل أول طلب تسعير وابدأ تلقي عروض من مئات الموردين</p>
-            <a href="/contractor/rfq/new" className="inline-block btn-orange px-10 py-4 text-base rounded-2xl">+ طلب تسعير جديد</a>
+            <h2 className="text-xl font-bold mb-3" style={{ color: '#1B2D5B' }}>{t.noRfqs}</h2>
+            <p className="text-gray-500 mb-6 text-sm">{t.noRfqsSub}</p>
+            <a href="/contractor/rfq/new" className="inline-block btn-orange px-10 py-4 text-base rounded-2xl">{t.newRfqBtn}</a>
           </div>
         ) : (
           <div className="animate-fade-in">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-[#1B2D5B]">طلبات التسعير</h2>
-              <span className="text-xs text-gray-400">{rfqs.length} طلب</span>
+              <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>{t.rfqList}</h2>
+              <span className="text-xs text-gray-400">{rfqs.length} {t.requests}</span>
             </div>
             <div className="space-y-3 stagger">
               {rfqs.map(rfq => (
@@ -114,25 +197,25 @@ export default function ContractorDashboard() {
                         {rfq.status === 'open' ? '📋' : rfq.status === 'closed' ? '✅' : '⏰'}
                       </div>
                       <div>
-                        <div className="font-bold text-[#1B2D5B]">{rfq.product_name}</div>
+                        <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfq.product_name}</div>
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="badge badge-blue text-[10px]">{SECTOR_LABELS[rfq.sector] || rfq.sector}</span>
+                          <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                           <span className={`badge text-[10px] ${
                             rfq.status === 'open' ? 'badge-green' : rfq.status === 'closed' ? 'badge-gray' : 'badge-red'
-                          }`}>{rfq.status === 'open' ? '● مفتوح' : rfq.status === 'closed' ? '● مغلق' : '● منتهي'}</span>
+                          }`}>{statusLabel(rfq.status)}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="text-center rounded-xl px-4 py-2" style={{ background: '#1B2D5B' }}>
-                      <div className="text-xl font-bold text-white">{rfq.offer_count || 0}</div>
-                      <div className="text-[10px] text-blue-200">عرض</div>
+                    <div className="text-center rounded-xl px-4 py-2 text-white" style={{ background: '#1B2D5B' }}>
+                      <div className="text-xl font-bold">{rfq.offer_count || 0}</div>
+                      <div className="text-[10px] text-blue-200">{t.offers}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
                     <span>📦 {rfq.quantity} {rfq.unit}</span>
                     <span>📍 {rfq.region}</span>
                     {rfq.specification && <span>⚙️ {rfq.specification}</span>}
-                    <span className="mr-auto" style={{ color: '#F5831F' }}>عرض التفاصيل ←</span>
+                    <span className="mr-auto" style={{ color: '#F5831F' }}>{t.viewDetails}</span>
                   </div>
                 </a>
               ))}
