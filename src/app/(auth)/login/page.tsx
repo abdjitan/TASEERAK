@@ -26,7 +26,9 @@ export default function LoginPage() {
     supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
         const { data: p } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single()
-        window.location.href = p?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
+        if (p?.role === 'admin') window.location.href = '/admin'
+        else if (p?.role === 'supplier') window.location.href = '/supplier/dashboard'
+        else window.location.href = '/contractor'
       }
     })
   }, [])
@@ -40,7 +42,9 @@ export default function LoginPage() {
       if (err) { setError(t.error); setLoading(false); return }
       if (data.session) {
         const { data: p } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single()
-        window.location.href = p?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
+        if (p?.role === 'admin') window.location.href = '/admin'
+        else if (p?.role === 'supplier') window.location.href = '/supplier/dashboard'
+        else window.location.href = '/contractor'
       }
     } catch { setError(t.error); setLoading(false) }
   }
