@@ -115,6 +115,22 @@ export default function NewProjectPage() {
       // إنشاء RFQ لكل بند وربطه بالمشروع
       const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
       for (const item of selectedItems) {
+        // رفع ملف مواصفات البند إن وجد
+        let itemSpecUrl = null
+        if (item.specFile) {
+          const ext = item.specFile.name.split('.').pop()
+          const path = `${user.id}/spec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`
+          const { data: up } = await supabase.storage.from('licenses').upload(path, item.specFile, { upsert: true })
+          if (up) {
+            const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path)
+            itemSpecUrl = publicUrl
+          }
+        }
+
+        const itemNotes = itemSpecUrl
+          ? `مشروع: ${title}\n[مواصفات مرفقة: ${itemSpecUrl}]`
+          : `مشروع: ${title}`
+
         const { data: rfq } = await supabase.from('rfqs').insert({
           contractor_id: user.id,
           sector: item.sector,
@@ -126,7 +142,7 @@ export default function NewProjectPage() {
           delivery_required: true,
           vat_invoice_required: true,
           hide_identity: false,
-          notes: `مشروع: ${title}`,
+          notes: itemNotes,
           expires_at: expiresAt,
         }).select().single()
 
@@ -354,6 +370,31 @@ export default function NewProjectPage() {
                               onChange={e => updateItem(item.id, 'specification', e.target.value)}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Specification (optional)' : 'المواصفة (اختياري)'} />
                           </div>
+                          {/* رفع ملف مواصفات للبند */}
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">
+                              {locale === 'en' ? 'Spec file (optional)' : 'ملف مواصفات للبند (اختياري)'}
+                            </label>
+                            {item.specFile ? (
+                              <div className="flex items-center gap-2 bg-[#1B2D5B]/5 rounded-lg p-2 border border-[#1B2D5B]/20">
+                                <span className="text-base">📎</span>
+                                <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#1B2D5B' }}>{item.specFile.name}</span>
+                                <button type="button" onClick={() => updateItem(item.id, 'specFile', null)}
+                                  className="text-xs text-red-500 hover:underline">
+                                  {locale === 'en' ? 'Remove' : 'إزالة'}
+                                </button>
+                              </div>
+                            ) : (
+                              <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg p-2 cursor-pointer hover:border-[#F5831F]/50 transition-all">
+                                <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.dwg,.xlsx,.doc,.docx"
+                                  onChange={e => updateItem(item.id, 'specFile', e.target.files?.[0] ?? null)} />
+                                <span className="text-base">📄</span>
+                                <span className="text-xs text-gray-500">
+                                  {locale === 'en' ? 'Upload drawing/spec (PDF, DWG, Image...)' : 'ارفع رسمة أو مواصفة (PDF، DWG، صورة...)'}
+                                </span>
+                              </label>
+                            )}
+                          </div>
                           <div className="sm:col-span-2 flex gap-2">
                             <button type="button" onClick={() => setEditingIndex(null)}
                               className="text-xs px-4 py-2 rounded-lg text-white font-semibold" style={{ background: '#0F6E56' }}>
@@ -374,6 +415,7 @@ export default function NewProjectPage() {
                               </span>
                               {item.quantity && <span className="text-xs text-gray-500">📦 {item.quantity} {item.unit}</span>}
                               {item.specification && <span className="text-xs text-gray-400 truncate max-w-[200px]">⚙️ {item.specification}</span>}
+                              {item.specFile && <span className="text-xs text-[#1B2D5B] font-semibold">📎 {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
                             </div>
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
