@@ -119,6 +119,19 @@ export default function ContractorDashboard() {
   const active = rfqs.filter(r => r.status === 'open')
   const closed = rfqs.filter(r => r.status === 'closed')
   const totalOffers = rfqs.reduce((s, r) => s + (r.offer_count || 0), 0)
+  const [projects, setProjects] = useState([])
+
+  useEffect(() => {
+    async function loadProjects() {
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const { data } = await supabase.from('project_rfqs').select('*, project_rfq_items(count)')
+        .eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(5)
+      setProjects(data || [])
+    }
+    loadProjects()
+  }, [])
 
   const statusLabel = (status) => {
     if (status === 'open') return t.open
@@ -140,7 +153,14 @@ export default function ContractorDashboard() {
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="minimal" />
             {profile?.verification_status !== 'rejected' && (
-              <a href="/contractor/rfq/new" className="btn-orange text-xs px-4 py-2">{t.newRfq}</a>
+              <>
+                <a href="/contractor/project/new"
+                  className="text-xs px-4 py-2 rounded-xl font-semibold text-white flex items-center gap-1"
+                  style={{ background: '#1B2D5B' }}>
+                  📋 {locale === 'en' ? 'Project RFQ' : locale === 'ur' ? 'پراجیکٹ' : 'مشروع BOQ'}
+                </a>
+                <a href="/contractor/rfq/new" className="btn-orange text-xs px-4 py-2">{t.newRfq}</a>
+              </>
             )}
             <a href="/market" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">📊 {locale === 'en' ? 'Prices' : locale === 'ur' ? 'قیمتیں' : 'الأسعار'}</a>
             <a href="/settings" className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded transition-all">⚙️</a>
@@ -217,6 +237,37 @@ export default function ContractorDashboard() {
             </div>
           ))}
         </div>
+
+        {/* Projects */}
+        {projects.length > 0 && (
+          <div className="mb-6 animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>
+                📋 {locale === 'en' ? 'Project RFQs' : 'مشاريع BOQ'}
+              </h2>
+              <a href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#F5831F' }}>
+                + {locale === 'en' ? 'New Project' : 'مشروع جديد'}
+              </a>
+            </div>
+            <div className="space-y-2 stagger">
+              {projects.map(p => (
+                <a key={p.id} href={`/contractor/project/${p.id}`}
+                  className="flex items-center justify-between bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 transition-all">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white" style={{ background: '#1B2D5B' }}>📋</div>
+                    <div>
+                      <div className="font-semibold text-sm" style={{ color: '#1B2D5B' }}>{p.title}</div>
+                      <div className="text-xs text-gray-400">📍 {p.region} • {new Date(p.created_at).toLocaleDateString('ar-SA')}</div>
+                    </div>
+                  </div>
+                  <div className="text-xs font-semibold" style={{ color: '#F5831F' }}>
+                    {locale === 'en' ? 'View Results →' : 'النتائج ←'}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* RFQs */}
         {rfqs.length === 0 ? (

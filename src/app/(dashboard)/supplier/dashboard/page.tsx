@@ -69,14 +69,23 @@ export default function SupplierDashboard() {
       setUser(session.user)
       const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       setProfile(p)
+
+      // جلب قطاعات المورد المتخصص فيها
+      const { data: sectorRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
+      const mySectors = (sectorRows || []).map(r => r.sector)
+
       // فلترة الطلبات حسب تصنيف المورد
-      const tier = p?.supplier_tier || 'local'
       const minVal = p?.min_order_value || 0
 
       let rfqQuery = supabase.from('rfqs')
         .select('*, contractor:profiles(company_name_ar, company_name_en, contractor_grade)')
         .eq('status', 'open')
         .order('created_at', { ascending: false })
+
+      // ✅ فلترة بالقطاع — المورد يشوف بس طلبات قطاعاته
+      if (mySectors.length > 0) {
+        rfqQuery = rfqQuery.in('sector', mySectors)
+      }
 
       // الحد الأدنى للقيمة — فقط لو المورد حدد minimum
       if (minVal > 0) {
