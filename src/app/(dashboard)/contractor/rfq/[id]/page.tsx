@@ -28,7 +28,7 @@ export default function RFQDetailPage() {
       setEditSpec(rfqData?.specification || '')
 
       const { data: offersData } = await supabase
-        .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier)')
+        .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district)')
         .eq('rfq_id', id).order('total_price', { ascending: true })
       setOffers(offersData || [])
 
@@ -275,7 +275,40 @@ export default function RFQDetailPage() {
                   {offer.unit_price && <span>سعر الوحدة: {offer.unit_price} ر.س</span>}
                   {offer.delivery_days && <span>📦 التوصيل: {offer.delivery_days} يوم</span>}
                 </div>
-                {offer.notes && <p className="text-xs text-gray-400 bg-gray-50 p-2 rounded-lg mb-3">{offer.notes}</p>}
+                {offer.notes && <p className="text-xs text-gray-400 bg-gray-50 p-2 rounded-lg mb-2">{offer.notes}</p>}
+
+                {/* خصائص المنتج */}
+                {offer.attributes && Object.keys(offer.attributes).length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {Object.entries(offer.attributes).map(([k, v]) => (
+                      <span key={k} className="text-[10px] bg-blue-50 text-blue-700 px-2 py-1 rounded-lg">
+                        <strong>{k}:</strong> {v}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* الملف المرفق + الموقع */}
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                  {offer.attachment_url && (
+                    <a href={offer.attachment_url} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[10px] bg-[#1B2D5B]/10 text-[#1B2D5B] px-2 py-1 rounded-lg font-semibold hover:bg-[#1B2D5B]/20 transition-all">
+                      📎 {offer.attachment_name || 'كتالوج'}
+                    </a>
+                  )}
+                  {offer.supplier?.latitude && offer.supplier?.longitude && (
+                    <a href={`https://www.google.com/maps?q=${offer.supplier.latitude},${offer.supplier.longitude}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg font-semibold hover:bg-emerald-100 transition-all">
+                      🗺 موقع المورد
+                    </a>
+                  )}
+                  {offer.supplier?.national_short_address && (
+                    <span className="text-[10px] bg-gray-50 text-gray-500 px-2 py-1 rounded-lg font-mono" dir="ltr">
+                      🏛 {offer.supplier.national_short_address}
+                    </span>
+                  )}
+                </div>
 
                 {offer.status === 'pending' && rfq.status === 'open' && (
                   <div className="flex gap-2">

@@ -30,6 +30,9 @@ export default function SupplierRFQPage() {
   // خصائص المنتج (key-value)
   const [attributes, setAttributes] = useState([{ key: '', value: '' }])
 
+  // ملف مرفق (كتالوج/بيانات منتج)
+  const [attachFile, setAttachFile] = useState(null)
+
   // dismiss modal
   const [showDismiss, setShowDismiss] = useState(false)
   const [dismissReason, setDismissReason] = useState('')
@@ -83,6 +86,20 @@ export default function SupplierRFQPage() {
     const attrObj = validAttrs.reduce((acc, a) => { acc[a.key] = a.value; return acc }, {})
 
     const supabase = createClient()
+
+    // رفع الملف المرفق إن وجد
+    let attachUrl = null, attachName = null
+    if (attachFile) {
+      const ext = attachFile.name.split('.').pop()
+      const path = `${user.id}/offer-${Date.now()}.${ext}`
+      const { data: up } = await supabase.storage.from('licenses').upload(path, attachFile, { upsert: true })
+      if (up) {
+        const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path)
+        attachUrl = publicUrl
+        attachName = attachFile.name
+      }
+    }
+
     const { error: insertError } = await supabase.from('offers').insert({
       rfq_id: id,
       supplier_id: user.id,
@@ -91,6 +108,8 @@ export default function SupplierRFQPage() {
       delivery_days: deliveryDays ? parseInt(deliveryDays) : null,
       notes: notes || null,
       attributes: validAttrs.length > 0 ? attrObj : null,
+      attachment_url: attachUrl,
+      attachment_name: attachName,
     })
 
     if (insertError) { setError(`خطأ: ${insertError.message}`); setSubmitting(false); return }
@@ -115,6 +134,8 @@ export default function SupplierRFQPage() {
       deliveryDays: 'مدة التوصيل (أيام)', attributes: 'خصائص المنتج المعروض',
       attrHint: 'أضف خصائص مثل: العلامة التجارية، بلد المنشأ، الضمان...',
       attrKey: 'الخاصية', attrValue: 'القيمة', addAttr: '+ إضافة خاصية',
+      attachTitle: 'إرفاق ملف (كتالوج / بيانات منتج)', attachHint: 'PDF، صورة، Excel — يصل للمقاول مع عرضك',
+      attachBtn: 'اضغط لرفع كتالوج أو ملف المنتج', removeAttach: 'إزالة',
       offerNotes: 'ملاحظات إضافية', send: 'إرسال العرض ←', sending: 'جارٍ الإرسال...',
       dismiss: 'تجاهل الطلب', dismissTitle: 'تجاهل هذا الطلب؟',
       dismissSub: 'لن يظهر هذا الطلب مرة أخرى في قائمتك', dismissReason: 'سبب التجاهل (اختياري)',
@@ -134,6 +155,8 @@ export default function SupplierRFQPage() {
       deliveryDays: 'Delivery Time (days)', attributes: 'Product Attributes',
       attrHint: 'Add attributes like: Brand, Country of origin, Warranty...',
       attrKey: 'Attribute', attrValue: 'Value', addAttr: '+ Add Attribute',
+      attachTitle: 'Attach File (catalog / product data)', attachHint: 'PDF, image, Excel — sent to contractor with your offer',
+      attachBtn: 'Click to upload catalog or product file', removeAttach: 'Remove',
       offerNotes: 'Additional Notes', send: 'Send Offer →', sending: 'Sending...',
       dismiss: 'Dismiss Request', dismissTitle: 'Dismiss this request?',
       dismissSub: 'This request will not appear again in your list', dismissReason: 'Reason (optional)',
@@ -153,6 +176,8 @@ export default function SupplierRFQPage() {
       deliveryDays: 'ڈیلیوری وقت (دن)', attributes: 'پروڈکٹ کی خصوصیات',
       attrHint: 'خصوصیات شامل کریں: برانڈ، ملک، وارنٹی...',
       attrKey: 'خصوصیت', attrValue: 'قیمت', addAttr: '+ خصوصیت شامل کریں',
+      attachTitle: 'فائل منسلک کریں (کیٹلاگ)', attachHint: 'PDF، تصویر، Excel',
+      attachBtn: 'کیٹلاگ یا فائل اپلوڈ کریں', removeAttach: 'ہٹائیں',
       offerNotes: 'اضافی نوٹس', send: 'پیشکش بھیجیں →', sending: 'بھیجا جا رہا ہے...',
       dismiss: 'درخواست نظر انداز کریں', dismissTitle: 'یہ درخواست نظر انداز کریں؟',
       dismissSub: 'یہ درخواست دوبارہ نظر نہیں آئے گی', dismissReason: 'وجہ (اختیاری)',
@@ -301,6 +326,27 @@ export default function SupplierRFQPage() {
                 </div>
                 <button type="button" onClick={addAttribute}
                   className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>{T.addAttr}</button>
+              </div>
+
+              {/* إرفاق ملف (كتالوج) */}
+              <div className="border-t border-gray-100 pt-4">
+                <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>📎 {T.attachTitle}</label>
+                <p className="text-xs text-gray-400 mb-3">{T.attachHint}</p>
+                {attachFile ? (
+                  <div className="flex items-center gap-3 bg-[#1B2D5B]/5 rounded-xl p-3 border border-[#1B2D5B]/20">
+                    <span className="text-2xl">📄</span>
+                    <span className="text-sm font-semibold flex-1 truncate" style={{ color: '#1B2D5B' }}>{attachFile.name}</span>
+                    <button type="button" onClick={() => setAttachFile(null)}
+                      className="text-xs text-red-500 hover:underline">{T.removeAttach}</button>
+                  </div>
+                ) : (
+                  <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-4 cursor-pointer hover:border-[#F5831F]/50 transition-all">
+                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
+                      onChange={e => setAttachFile(e.target.files?.[0] ?? null)} />
+                    <span className="text-2xl">📤</span>
+                    <span className="text-sm text-gray-500">{T.attachBtn}</span>
+                  </label>
+                )}
               </div>
 
               <div>

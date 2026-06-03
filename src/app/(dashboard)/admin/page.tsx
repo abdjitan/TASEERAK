@@ -199,6 +199,7 @@ export default function AdminPanel() {
                         )}
                         {u.phone && <span className="text-[10px] text-gray-400">📞 {u.phone}</span>}
                         {u.region && <span className="text-[10px] text-gray-400">📍 {u.region}</span>}
+                        {u.national_short_address && <span className="text-[10px] text-gray-400 font-mono" dir="ltr">🏛 {u.national_short_address}</span>}
                       </div>
                     </div>
                   </div>
@@ -215,6 +216,12 @@ export default function AdminPanel() {
                       <a href={u.cr_url} target="_blank" rel="noopener noreferrer"
                         className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-all">
                         📋 السجل
+                      </a>
+                    )}
+                    {u.latitude && u.longitude && (
+                      <a href={`https://www.google.com/maps?q=${u.latitude},${u.longitude}`} target="_blank" rel="noopener noreferrer"
+                        className="text-xs px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-all">
+                        🗺 الموقع
                       </a>
                     )}
 

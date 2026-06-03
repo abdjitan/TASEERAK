@@ -113,8 +113,47 @@ export default function OrderDetailPage() {
               )}
               {supplier?.phone && <div className="text-sm text-gray-500">جوال: {supplier.phone}</div>}
               {supplier?.region && <div className="text-sm text-gray-500">{supplier.region}{supplier.city ? ` - ${supplier.city}` : ''}</div>}
+              {supplier?.national_short_address && (
+                <div className="text-sm text-gray-500 font-mono" dir="ltr">🏛 {supplier.national_short_address}</div>
+              )}
+              {supplier?.building_number && supplier?.street_name && (
+                <div className="text-xs text-gray-400">
+                  {supplier.building_number}, {supplier.street_name}{supplier.district ? `, ${supplier.district}` : ''}{supplier.postal_code ? `, ${supplier.postal_code}` : ''}
+                </div>
+              )}
+              {supplier?.latitude && supplier?.longitude && (
+                <a href={`https://www.google.com/maps?q=${supplier.latitude},${supplier.longitude}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="inline-block text-xs text-blue-600 hover:underline mt-1 print:hidden">
+                  🗺 عرض الموقع على الخريطة ←
+                </a>
+              )}
             </div>
           </div>
+
+          {/* خصائص المنتج المعروض + الملف المرفق */}
+          {(offer?.attributes || offer?.attachment_url) && (
+            <div className="px-8 pb-6 border-b border-gray-100">
+              {offer?.attributes && Object.keys(offer.attributes).length > 0 && (
+                <div className="mb-3">
+                  <div className="text-xs font-bold text-gray-400 uppercase mb-2">خصائص المنتج</div>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(offer.attributes).map(([k, v]) => (
+                      <span key={k} className="text-sm bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                        <strong className="text-gray-700">{k}:</strong> <span className="text-gray-600">{v}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {offer?.attachment_url && (
+                <a href={offer.attachment_url} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:underline print:hidden">
+                  📎 {offer.attachment_name || 'كتالوج المنتج'} ←
+                </a>
+              )}
+            </div>
+          )}
 
           {/* Items Table */}
           <div className="p-8 border-b border-gray-100">
