@@ -20,6 +20,9 @@ export default function ProjectResultsPage() {
   const [loading, setLoading] = useState(true)
   const [showAllOffers, setShowAllOffers] = useState({})
   const [selectedOffers, setSelectedOffers] = useState({}) // item_id → offer_id
+  const [filter, setFilter] = useState('all') // all | has_offers | pending | accepted
+  const [sectorFilter, setSectorFilter] = useState('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -31,7 +34,7 @@ export default function ProjectResultsPage() {
       setProject(proj)
 
       const { data: projItems } = await supabase
-        .from('project_rfq_items').select('*, rfq:rfqs(*, offers(*, supplier:profiles(company_name_ar, phone, rating_avg, supplier_tier)))')
+        .from('project_rfq_items').select('*, rfq:rfqs(*, offers(*, supplier:profiles(company_name_ar, phone, rating_avg, supplier_tier, latitude, longitude)))')
         .eq('project_rfq_id', id)
         .order('sector')
 
@@ -128,14 +131,68 @@ export default function ProjectResultsPage() {
           ))}
         </div>
 
+        {/* Filters */}
+        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4 sticky top-[60px] z-40">
+          <div className="flex flex-col gap-3">
+            {/* Status filter */}
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {[
+                { key: 'all', label: locale === 'en' ? 'All' : 'الكل', icon: '📋' },
+                { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: '💬' },
+                { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: '⏳' },
+                { key: 'accepted', label: locale === 'en' ? 'Accepted' : 'تم القبول', icon: '✅' },
+              ].map(f => {
+                const count = f.key === 'all' ? items.length
+                  : f.key === 'has_offers' ? items.filter(i => (i.rfq?.offers?.length || 0) > 0 && !i.rfq?.offers?.some(o => o.status === 'accepted')).length
+                  : f.key === 'pending' ? items.filter(i => (i.rfq?.offers?.length || 0) === 0).length
+                  : items.filter(i => i.rfq?.offers?.some(o => o.status === 'accepted')).length
+                return (
+                  <button key={f.key} onClick={() => setFilter(f.key)}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      filter === f.key ? 'text-white' : 'bg-gray-50 text-gray-600 border border-gray-200'
+                    }`} style={filter === f.key ? { background: '#1B2D5B' } : {}}>
+                    {f.icon} {f.label}
+                    <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${filter === f.key ? 'bg-white/20' : 'bg-gray-200'}`}>{count}</span>
+                  </button>
+                )
+              })}
+            </div>
+            {/* Sector + Search */}
+            <div className="flex gap-2">
+              <select value={sectorFilter} onChange={e => setSectorFilter(e.target.value)}
+                className="input-field text-xs flex-shrink-0 w-auto py-2">
+                <option value="all">{locale === 'en' ? 'All Sectors' : 'كل القطاعات'}</option>
+                {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{SECTOR_LABELS[s]}</option>)}
+              </select>
+              <input value={search} onChange={e => setSearch(e.target.value)}
+                className="input-field text-xs flex-1 py-2" placeholder={`🔍 ${locale === 'en' ? 'Search material...' : 'ابحث عن مادة...'}`} />
+            </div>
+          </div>
+        </div>
+
         {/* Items with Offers */}
         <div className="space-y-4 stagger">
-          {items.length === 0 ? (
-            <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
-              <div className="text-5xl mb-4">📭</div>
-              <p className="text-gray-500">{locale === 'en' ? 'No items found' : 'لا توجد بنود'}</p>
-            </div>
-          ) : items.map(item => {
+          {(() => {
+            const filtered = items.filter(item => {
+              const offers = item.rfq?.offers || []
+              const hasAccepted = offers.some(o => o.status === 'accepted')
+              // status filter
+              if (filter === 'has_offers' && (offers.length === 0 || hasAccepted)) return false
+              if (filter === 'pending' && offers.length > 0) return false
+              if (filter === 'accepted' && !hasAccepted) return false
+              // sector filter
+              if (sectorFilter !== 'all' && item.sector !== sectorFilter) return false
+              // search
+              if (search && !item.product_name?.toLowerCase().includes(search.toLowerCase())) return false
+              return true
+            })
+            if (filtered.length === 0) return (
+              <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
+                <div className="text-5xl mb-4">🔍</div>
+                <p className="text-gray-500">{locale === 'en' ? 'No matching items' : 'لا توجد بنود مطابقة للفلتر'}</p>
+              </div>
+            )
+            return filtered.map(item => {
             const offers = item.rfq?.offers || []
             const sortedOffers = [...offers].sort((a, b) => a.total_price - b.total_price)
             const top3 = sortedOffers.slice(0, 3)
@@ -182,6 +239,46 @@ export default function ProjectResultsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Accepted offer details + PO link */}
+                {acceptedOffer && (
+                  <div className="px-4 sm:px-5 pt-3 pb-1">
+                    <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="text-sm">
+                          <span className="text-gray-500">{locale === 'en' ? 'Supplier: ' : 'المورد: '}</span>
+                          <strong style={{ color: '#1B2D5B' }}>{acceptedOffer.supplier?.company_name_ar}</strong>
+                          {acceptedOffer.supplier?.phone && <span className="text-xs text-gray-400 mr-2">📞 {acceptedOffer.supplier.phone}</span>}
+                        </div>
+                        <a href={`/contractor/orders/${acceptedOffer.id}`}
+                          className="text-xs font-bold text-white px-4 py-2 rounded-lg transition-all hover:shadow"
+                          style={{ background: '#0F6E56' }}>
+                          📄 {locale === 'en' ? 'View Purchase Order' : 'عرض أمر الشراء'} ←
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        {acceptedOffer.attachment_url && (
+                          <a href={acceptedOffer.attachment_url} target="_blank" rel="noopener noreferrer"
+                            className="text-[10px] bg-white text-[#1B2D5B] px-2 py-1 rounded-lg font-semibold border border-gray-200">
+                            📎 {acceptedOffer.attachment_name || 'كتالوج'}
+                          </a>
+                        )}
+                        {acceptedOffer.supplier?.latitude && acceptedOffer.supplier?.longitude && (
+                          <a href={`https://www.google.com/maps?q=${acceptedOffer.supplier.latitude},${acceptedOffer.supplier.longitude}`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="text-[10px] bg-white text-emerald-700 px-2 py-1 rounded-lg font-semibold border border-emerald-200">
+                            🗺 موقع المورد
+                          </a>
+                        )}
+                        {acceptedOffer.attributes && Object.entries(acceptedOffer.attributes).map(([k, v]) => (
+                          <span key={k} className="text-[10px] bg-white text-gray-600 px-2 py-1 rounded-lg border border-gray-100">
+                            {k}: {v}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Offers */}
                 {hasOffers ? (
@@ -259,7 +356,8 @@ export default function ProjectResultsPage() {
                 )}
               </div>
             )
-          })}
+            })
+          })()}
         </div>
 
         {/* Summary if all accepted */}
