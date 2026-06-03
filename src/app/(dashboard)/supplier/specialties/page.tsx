@@ -101,7 +101,7 @@ export default function SpecialtiesPage() {
 
     setSaving(false)
     setMsg(T.saved)
-    setTimeout(() => setMsg(''), 3000)
+    setTimeout(() => { window.location.href = '/supplier/dashboard' }, 1200)
   }
 
   if (loading) return (

@@ -8,7 +8,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { REGIONS, SECTOR_LABELS, type UserRole, type Sector } from '@/types'
+import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, type UserRole, type Sector } from '@/types'
+
+const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56' }
 
 const schema = z.object({
   role: z.enum(['contractor', 'supplier'] as const),
@@ -16,7 +18,7 @@ const schema = z.object({
   company_name_en: z.string().optional(),
   commercial_registration: z.string().min(10, 'رقم السجل التجاري غير صحيح'),
   vat_number: z.string().optional(),
-  phone: z.string().min(10, 'رقم الجوال غير صحيح'),
+  phone: z.string().regex(/^05[0-9]{8}$/, 'رقم الجوال يجب أن يكون 10 أرقام ويبدأ بـ 05'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
   password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
   region: z.string().min(1, 'اختر المنطقة'),
@@ -37,6 +39,11 @@ export default function RegisterPage() {
   const [supplierTier, setSupplierTier] = useState<'manufacturer' | 'commercial' | 'local'>('local')
   const [contractorGrade, setContractorGrade] = useState<'A' | 'B' | 'C' | 'D' | ''>('')
   const [minOrderValue, setMinOrderValue] = useState('')
+  const [specialties, setSpecialties] = useState<string[]>([])
+
+  function toggleSpecialty(key: string) {
+    setSpecialties(prev => prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key])
+  }
   const router = useRouter()
   const supabase = createClient()
 
@@ -124,6 +131,12 @@ export default function RegisterPage() {
         sector,
       }))
       await supabase.from('profile_sectors').insert(sectorsToInsert as any)
+
+      // 5. Insert specialties (للمورد)
+      if (data.role === 'supplier' && specialties.length > 0) {
+        const specsToInsert = specialties.map(specialty => ({ profile_id: userId, specialty }))
+        await supabase.from('profile_specialties').insert(specsToInsert as any)
+      }
 
       window.location.href = data.role === 'contractor' ? '/contractor' : '/supplier/dashboard'
 
@@ -255,7 +268,10 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">رقم الجوال (واتساب) *</label>
-                  <input {...register('phone')} className="input-field" placeholder="+966 5X XXX XXXX" type="tel"/>
+                  <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel"
+                    inputMode="numeric" maxLength={10} dir="ltr"
+                    onInput={e => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10) }} />
+                  <p className="text-[10px] text-gray-400 mt-1">10 أرقام تبدأ بـ 05 (بدون مفتاح الدولة)</p>
                   {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                 </div>
 
@@ -333,18 +349,29 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Step 4: Sectors */}
+          {/* Step 4: Sectors + Specialties */}
           {step === 4 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">التخصصات</h2>
-              <p className="text-sm text-gray-500 mb-5">اختر القطاعات التي تعمل فيها</p>
+              <h2 className="text-lg font-bold text-gray-900 mb-1">القطاعات والتخصصات</h2>
+              <p className="text-sm text-gray-500 mb-5">
+                {selectedType === 'supplier'
+                  ? 'اختر القطاعات ثم حدد المواد التي توردها بالضبط'
+                  : 'اختر القطاعات التي تعمل فيها'}
+              </p>
 
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-2 gap-3 mb-5">
                 {(Object.keys(SECTOR_LABELS) as Sector[]).map(sector => (
                   <button
                     key={sector}
                     type="button"
-                    onClick={() => toggleSector(sector)}
+                    onClick={() => {
+                      toggleSector(sector)
+                      // عند إزالة قطاع، احذف تخصصاته
+                      if (sectors?.includes(sector)) {
+                        const subKeys = Object.keys(SUB_CATEGORIES[sector] || {})
+                        setSpecialties(prev => prev.filter(s => !subKeys.includes(s)))
+                      }
+                    }}
                     className={`p-4 rounded-xl border-2 text-right transition-all ${
                       sectors?.includes(sector)
                         ? 'border-blue-600 bg-blue-50'
@@ -355,6 +382,54 @@ export default function RegisterPage() {
                   </button>
                 ))}
               </div>
+
+              {/* التخصصات الدقيقة — للمورد فقط */}
+              {selectedType === 'supplier' && sectors?.length > 0 && (
+                <div className="mb-5 border-t border-gray-100 pt-5">
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">المواد التي توردها بالضبط 🎯</h3>
+                  <p className="text-xs text-gray-500 mb-3">حدد تخصصك الدقيق لتصلك الطلبات المطابقة فقط ({specialties.length} محدد)</p>
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                    {sectors.map((sector: Sector) => {
+                      const subs = SUB_CATEGORIES[sector] || {}
+                      const groups: Record<string, string[]> = {}
+                      Object.entries(subs).forEach(([key, sub]) => {
+                        if (!groups[sub.group]) groups[sub.group] = []
+                        groups[sub.group].push(key)
+                      })
+                      const color = SECTOR_COLORS[sector]
+                      return (
+                        <div key={sector}>
+                          <div className="text-xs font-bold mb-2" style={{ color }}>{SECTOR_LABELS[sector]}</div>
+                          {Object.entries(groups).map(([groupKey, keys]) => {
+                            const grp = GROUP_LABELS[groupKey]
+                            return (
+                              <div key={groupKey} className="mb-2 bg-gray-50/50 rounded-lg p-2 border border-gray-100">
+                                <div className="text-[11px] font-bold text-gray-600 mb-1.5 flex items-center gap-1">
+                                  <span>{grp?.icon}</span>{grp?.ar || groupKey}
+                                </div>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {keys.map(key => {
+                                    const sub = subs[key]
+                                    const active = specialties.includes(key)
+                                    return (
+                                      <button key={key} type="button" onClick={() => toggleSpecialty(key)}
+                                        className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${
+                                          active ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600'
+                                        }`} style={active ? { background: color } : {}}>
+                                        {sub.icon} {sub.ar}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
 
               {errors.sectors && (
                 <p className="text-red-500 text-sm mb-4">{errors.sectors.message}</p>
