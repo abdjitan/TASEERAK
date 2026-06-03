@@ -14,6 +14,7 @@ export default function RFQDetailPage() {
   const [editing, setEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editSpec, setEditSpec] = useState('')
+  const [marketAvg, setMarketAvg] = useState(null) // متوسط السوق
 
   useEffect(() => {
     async function load() {
@@ -27,9 +28,25 @@ export default function RFQDetailPage() {
       setEditSpec(rfqData?.specification || '')
 
       const { data: offersData } = await supabase
-        .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region)')
+        .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier)')
         .eq('rfq_id', id).order('total_price', { ascending: true })
       setOffers(offersData || [])
+
+      // متوسط السوق من عروض مشابهة
+      if (rfqData) {
+        const { data: similarOffers } = await supabase
+          .from('offers')
+          .select('unit_price, rfq:rfqs(product_name, sector)')
+          .not('unit_price', 'is', null)
+          .not('status', 'eq', 'rejected')
+        const similar = (similarOffers || []).filter(o =>
+          o.rfq?.product_name === rfqData.product_name
+        )
+        if (similar.length >= 2) {
+          const avg = similar.reduce((s, o) => s + o.unit_price, 0) / similar.length
+          setMarketAvg(Math.round(avg))
+        }
+      }
       setLoading(false)
     }
     load()
@@ -192,7 +209,15 @@ export default function RFQDetailPage() {
         )}
 
         {/* Offers List */}
-        <h3 className="text-sm font-bold text-gray-900 mb-3">العروض ({offers.length})</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-900">العروض ({offers.length})</h3>
+          {marketAvg && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+              <span className="text-xs text-amber-600">📊 متوسط السوق:</span>
+              <span className="text-sm font-bold text-amber-700">{marketAvg?.toLocaleString()} ر.س/وحدة</span>
+            </div>
+          )}
+        </div>
         {offers.length === 0 ? (
           <div className="bg-white rounded-xl p-8 border border-gray-100 text-center">
             <div className="text-4xl mb-3">⏳</div>
@@ -212,7 +237,18 @@ export default function RFQDetailPage() {
                       {i + 1}
                     </div>
                     <div>
-                      <span className="font-bold text-gray-900">{offer.supplier?.company_name_ar || 'مورد'}</span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold text-gray-900">{offer.supplier?.company_name_ar || 'مورد'}</span>
+                        {offer.supplier?.supplier_tier && (
+                          <span className={`badge text-[10px] ${
+                            offer.supplier.supplier_tier === 'manufacturer' ? 'bg-purple-100 text-purple-700' :
+                            offer.supplier.supplier_tier === 'commercial' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {offer.supplier.supplier_tier === 'manufacturer' ? '🏭 مصنع' :
+                             offer.supplier.supplier_tier === 'commercial' ? '🏪 تجاري' : '🏬 محلي'}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
                         {offer.supplier?.rating_avg > 0 && <span>⭐ {offer.supplier.rating_avg}</span>}
                         {offer.supplier?.region && <span>📍 {offer.supplier.region}</span>}
@@ -221,8 +257,17 @@ export default function RFQDetailPage() {
                     </div>
                   </div>
                   <div className="text-left">
-                    <div className="text-xl font-bold text-blue-600">{offer.total_price?.toLocaleString()}</div>
+                    <div className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{offer.total_price?.toLocaleString()}</div>
                     <div className="text-xs text-gray-400">ر.س</div>
+                    {marketAvg && offer.unit_price && (() => {
+                      const diff = Math.abs(((offer.unit_price - marketAvg) / marketAvg * 100)).toFixed(0)
+                      const isLow = offer.unit_price < marketAvg
+                      return (
+                        <div className={`text-[10px] font-bold mt-0.5 ${isLow ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {isLow ? `📉 ${diff}% دون السوق` : `📈 ${diff}% فوق السوق`}
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
 

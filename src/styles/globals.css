@@ -80,3 +80,13 @@
 
 [dir="rtl"] { text-align: right; }
 @media print { .print\:hidden { display:none !important; } body { background:white !important; } }
+
+/* Mobile improvements */
+@media (max-width: 640px) {
+  .stagger > * { animation-duration: 0.3s; }
+  .input-field { font-size: 16px !important; } /* Prevents iOS zoom */
+}
+
+/* Touch-friendly tap targets */
+button, a { min-height: 36px; }
+.badge { min-height: auto; }
