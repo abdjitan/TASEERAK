@@ -310,15 +310,15 @@ export default function SupplierRFQPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 mt-5">
+            <div className="mt-5 space-y-3">
               <button type="submit" disabled={submitting || !totalPrice}
-                className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-40 transition-all hover:shadow-lg"
+                className="w-full py-3.5 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg"
                 style={{ background: '#0F6E56' }}>
                 {submitting ? T.sending : T.send}
               </button>
               <button type="button" onClick={() => setShowDismiss(true)}
-                className="px-5 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
-                {T.dismiss}
+                className="w-full py-3 rounded-xl font-semibold text-sm border-2 border-red-200 text-red-500 hover:bg-red-50 transition-all flex items-center justify-center gap-2">
+                ✕ {T.dismiss}
               </button>
             </div>
           </form>
