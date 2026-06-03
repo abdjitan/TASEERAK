@@ -108,8 +108,8 @@ export default function LocationPage() {
       longitude: lng,
     }).eq('id', user.id)
     setSaving(false)
-    setMsg(error ? 'حدث خطأ' : T.saved)
-    setTimeout(() => setMsg(''), 3000)
+    setMsg(error ? `خطأ: ${error.message}` : T.saved)
+    setTimeout(() => setMsg(''), 6000)
   }
 
   const backHref = profile?.role === 'supplier' ? '/supplier/dashboard' : profile?.role === 'admin' ? '/admin' : '/contractor'
