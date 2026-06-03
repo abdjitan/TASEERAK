@@ -336,12 +336,27 @@ export default function ContractorDashboard() {
                 )
                 return filtered.map(rfq => (
                 <a key={rfq.id} href={`/contractor/rfq/${rfq.id}`}
-                  className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 hover:-translate-y-0.5 transition-all duration-300">
+                  className={`block bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative ${
+                    rfq.status === 'open' && (rfq.offer_count || 0) > 0
+                      ? 'border-[#F5831F] ring-2 ring-[#F5831F]/20'
+                      : 'border-gray-100 hover:border-[#F5831F]/30'
+                  }`}>
+                  {/* شارة "جديد" للطلبات اللي وصلها عروض */}
+                  {rfq.status === 'open' && (rfq.offer_count || 0) > 0 && (
+                    <div className="absolute -top-2 ltr:-right-2 rtl:-left-2 z-10">
+                      <span className="inline-flex items-center gap-1 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg animate-pulse"
+                        style={{ background: '#F5831F' }}>
+                        🔔 {locale === 'en' ? 'New Offers!' : locale === 'ur' ? 'نئی پیشکشیں!' : 'عروض جديدة!'}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg ${
+                        rfq.status === 'open' && (rfq.offer_count || 0) > 0 ? 'bg-[#F5831F]/10' :
                         rfq.status === 'open' ? 'bg-[#1B2D5B]/10' : rfq.status === 'closed' ? 'bg-emerald-50' : 'bg-gray-50'}`}>
-                        {rfq.status === 'open' ? '📋' : rfq.status === 'closed' ? '✅' : '⏰'}
+                        {rfq.status === 'open' && (rfq.offer_count || 0) > 0 ? '🔔' :
+                         rfq.status === 'open' ? '📋' : rfq.status === 'closed' ? '✅' : '⏰'}
                       </div>
                       <div>
                         <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfq.product_name}</div>
@@ -353,9 +368,9 @@ export default function ContractorDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-center rounded-xl px-4 py-2 text-white" style={{ background: '#1B2D5B' }}>
+                    <div className="text-center rounded-xl px-4 py-2 text-white" style={{ background: (rfq.offer_count || 0) > 0 ? '#F5831F' : '#1B2D5B' }}>
                       <div className="text-xl font-bold">{rfq.offer_count || 0}</div>
-                      <div className="text-[10px] text-blue-200">{t.offers}</div>
+                      <div className="text-[10px] text-white/70">{t.offers}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
