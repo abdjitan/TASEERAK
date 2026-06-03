@@ -41,16 +41,38 @@ const UNIT_PATTERNS = [
   { pattern: /\b(m|metre|meter)\b/i, unit: 'متر' },
 ]
 
+// كلمات مميزة جداً — لو ظهرت تحدد القطاع فوراً بوزن عالي
+const STRONG_SIGNALS = {
+  electrical: ['cable','xlpe','swa','lszh','nyy','nycy','cu/','busbar','luminaire','mcb','mccb','rccb','kv','distribution board','conduit','earthing','cct','cabling','كابل','تأريض','لوحة توزيع','قاطع'],
+  mechanical: ['ppr','cpvc','pex','sprinkler','ahu','fcu','chiller','duct','hvac','pump','valve','pipe.*water','chilled water','fire pump','sanitary','مضخة','صمام','مكيف','مجرى هواء','صرف صحي'],
+  architectural: ['tile','ceramic','porcelain','gypsum','paint','door','window','glass','ceiling','cladding','carpet','vinyl','بلاط','سيراميك','دهان','باب','نافذة','جبس','سجاد','أسقف'],
+  civil: ['concrete','reinforc','rebar','bar reinforcement','formwork','excavat','pile','blinding','masonry','blockwork','kerb','خرسانة','حديد تسليح','حفر','أوتاد','بلوك','ردم'],
+}
+
 function detectSector(text: string): string {
   const lower = text.toLowerCase()
+
+  // 1. تحقق من الإشارات القوية أولاً (أولوية)
+  const strongScores: Record<string, number> = { electrical: 0, mechanical: 0, architectural: 0, civil: 0 }
+  for (const [sector, signals] of Object.entries(STRONG_SIGNALS)) {
+    for (const sig of signals) {
+      if (new RegExp(sig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\.\\*', '.*'), 'i').test(lower)) {
+        strongScores[sector] += 3
+      }
+    }
+  }
+
+  // 2. أضف نقاط من الكلمات العادية
+  for (const [sector, keywords] of Object.entries(SECTOR_KEYWORDS)) {
+    for (const kw of keywords) {
+      if (lower.includes(kw.toLowerCase())) strongScores[sector] = (strongScores[sector] || 0) + 1
+    }
+  }
+
+  // 3. اختر الأعلى
   let maxScore = 0
   let bestSector = 'civil'
-
-  for (const [sector, keywords] of Object.entries(SECTOR_KEYWORDS)) {
-    let score = 0
-    for (const kw of keywords) {
-      if (lower.includes(kw.toLowerCase())) score++
-    }
+  for (const [sector, score] of Object.entries(strongScores)) {
     if (score > maxScore) { maxScore = score; bestSector = sector }
   }
   return bestSector

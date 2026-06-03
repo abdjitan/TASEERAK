@@ -93,7 +93,13 @@ export default function SupplierDashboard() {
       }
 
       const { data: rfqs } = await rfqQuery
-      setOpenRfqs(rfqs || [])
+
+      // استبعاد الطلبات المتجاهلة
+      const { data: dismissals } = await supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', session.user.id)
+      const dismissedIds = new Set((dismissals || []).map(d => d.rfq_id))
+      const visibleRfqs = (rfqs || []).filter(r => !dismissedIds.has(r.id))
+
+      setOpenRfqs(visibleRfqs)
       const { data: offers } = await supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status)').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
       setMyOffers(offers || [])
       setLoading(false)
