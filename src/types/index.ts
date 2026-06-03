@@ -100,10 +100,6 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['طوبار','بليود','plywood','مرابيع','أخشاب','timber','formwork','خشب بناء'] },
     scaffolding: { ar: 'سقالات وجاكات تدعيم', en: 'Scaffolding & Props', ur: 'سکیفولڈنگ', icon: '🏗', group: 'equipment',
       keywords: ['سقالات','scaffold','جاكات','props','تدعيم','shoring','دعامات'] },
-    aggregates: { ar: 'ركام ورمل', en: 'Aggregates & Sand', ur: 'ریت اور بجری', icon: '⛰',
-      keywords: ['رمل','حصى','زلط','ركام','كسارة','sand','gravel','aggregate','crusher'] },
-    drainage: { ar: 'صرف وأعمال خارجية', en: 'Drainage & External', ur: 'نکاسی', icon: '🚧',
-      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','كيرب','kerb','إسفلت','asphalt','ري','irrigation'] },
   },
   architectural: {
     // ═══ الأرضيات والحوائط ═══
