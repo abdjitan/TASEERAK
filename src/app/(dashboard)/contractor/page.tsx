@@ -82,6 +82,7 @@ export default function ContractorDashboard() {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [rfqs, setRfqs] = useState([])
+  const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -94,6 +95,12 @@ export default function ContractorDashboard() {
       setProfile(p)
       const { data: r } = await supabase.from('rfqs').select('*').eq('contractor_id', session.user.id).order('created_at', { ascending: false })
       setRfqs(r || [])
+      // جلب المشاريع
+      try {
+        const { data: proj } = await supabase.from('project_rfqs').select('*')
+          .eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(5)
+        setProjects(proj || [])
+      } catch { setProjects([]) }
       setLoading(false)
     }
     init()
@@ -119,19 +126,6 @@ export default function ContractorDashboard() {
   const active = rfqs.filter(r => r.status === 'open')
   const closed = rfqs.filter(r => r.status === 'closed')
   const totalOffers = rfqs.reduce((s, r) => s + (r.offer_count || 0), 0)
-  const [projects, setProjects] = useState([])
-
-  useEffect(() => {
-    async function loadProjects() {
-      const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      const { data } = await supabase.from('project_rfqs').select('*, project_rfq_items(count)')
-        .eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(5)
-      setProjects(data || [])
-    }
-    loadProjects()
-  }, [])
 
   const statusLabel = (status) => {
     if (status === 'open') return t.open
