@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { useTranslation } from '@/i18n'
+import { getSubCategoryLabel } from '@/types'
 
 const txt = {
   ar: {
@@ -60,6 +61,7 @@ export default function SupplierDashboard() {
   const [myOffers, setMyOffers] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('rfqs')
+  const [hasSpecialties, setHasSpecialties] = useState(true)
 
   useEffect(() => {
     async function init() {
@@ -73,6 +75,11 @@ export default function SupplierDashboard() {
       // جلب قطاعات المورد المتخصص فيها
       const { data: sectorRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
       const mySectors = (sectorRows || []).map(r => r.sector)
+
+      // جلب التخصصات الفرعية للمورد
+      const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
+      const mySpecialties = (specRows || []).map(r => r.specialty)
+      setHasSpecialties(mySpecialties.length > 0)
 
       // فلترة الطلبات حسب تصنيف المورد
       const minVal = p?.min_order_value || 0
@@ -92,7 +99,14 @@ export default function SupplierDashboard() {
         rfqQuery = rfqQuery.or(`estimated_value.gte.${minVal},estimated_value.is.null`)
       }
 
-      const { data: rfqs } = await rfqQuery
+      const { data: rfqsRaw } = await rfqQuery
+
+      // ✅ فلترة دقيقة بالتخصص الفرعي — إذا المورد حدد تخصصات فرعية
+      // يشوف فقط الطلبات في تخصصاته الدقيقة + الطلبات بدون تخصص فرعي محدد
+      let rfqs = rfqsRaw || []
+      if (mySpecialties.length > 0) {
+        rfqs = rfqs.filter(r => !r.sub_category || mySpecialties.includes(r.sub_category))
+      }
 
       // استبعاد الطلبات المتجاهلة
       const { data: dismissals } = await supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', session.user.id)
@@ -145,6 +159,7 @@ export default function SupplierDashboard() {
           <Logo theme="light" size="sm" />
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="minimal" />
+            <a href="/supplier/specialties" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">🎯 {locale === 'en' ? 'Specialties' : locale === 'ur' ? 'مہارتیں' : 'تخصصاتي'}</a>
             <a href="/market" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">📊 {locale === 'en' ? 'Prices' : locale === 'ur' ? 'قیمتیں' : 'الأسعار'}</a>
             <a href="/settings" className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded transition-all">⚙️</a>
             <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded transition-all">{t.logout}</button>
@@ -195,10 +210,35 @@ export default function SupplierDashboard() {
           </div>
         )}
 
-        <div className="mb-8 animate-fade-in">
+        <div className="mb-6 animate-fade-in">
           <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.welcome}، {companyName} 👋</h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
+
+        {/* تنبيه: حدد تخصصاتك الدقيقة */}
+        {!hasSpecialties && profile?.verification_status !== 'rejected' && (
+          <a href="/supplier/specialties"
+            className="block mb-6 bg-gradient-to-l from-[#F5831F]/10 to-[#1B2D5B]/5 border-2 border-[#F5831F]/30 rounded-2xl p-5 hover:shadow-md transition-all animate-fade-in">
+            <div className="flex items-center gap-4">
+              <div className="text-3xl">🎯</div>
+              <div className="flex-1">
+                <div className="font-bold" style={{ color: '#1B2D5B' }}>
+                  {locale === 'en' ? 'Set your exact specialties for precise matching!'
+                  : locale === 'ur' ? 'درست مماثلت کے لیے اپنی مہارتیں مقرر کریں!'
+                  : 'حدد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!'}
+                </div>
+                <div className="text-sm text-gray-500 mt-0.5">
+                  {locale === 'en' ? 'e.g. only "Bricks" or only "Marble" — get only relevant requests'
+                  : locale === 'ur' ? 'مثلاً صرف "اینٹ" یا صرف "سنگ مرمر"'
+                  : 'مثلاً: محل طوب فقط، أو محل رخام فقط — تصلك الطلبات المطابقة لتخصصك'}
+                </div>
+              </div>
+              <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#F5831F' }}>
+                {locale === 'en' ? 'Setup →' : 'إعداد ←'}
+              </div>
+            </div>
+          </a>
+        )}
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
@@ -247,6 +287,11 @@ export default function SupplierDashboard() {
                           <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfq.product_name}</div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
+                            {rfq.sub_category && (
+                              <span className="badge text-[10px] bg-[#F5831F]/10 text-[#F5831F] font-semibold">
+                                🎯 {getSubCategoryLabel(rfq.sector, rfq.sub_category, locale)}
+                              </span>
+                            )}
                             {!rfq.hide_identity && rfq.contractor && (
                               <span className="text-[10px] text-gray-400">
                                 🏢 {locale === 'en' && rfq.contractor.company_name_en ? rfq.contractor.company_name_en : rfq.contractor.company_name_ar}

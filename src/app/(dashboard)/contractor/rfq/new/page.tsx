@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, getProductLabel } from '@/types'
+import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, getProductLabel, detectSubCategory } from '@/types'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { useTranslation } from '@/i18n'
@@ -135,6 +135,7 @@ export default function NewRFQPage() {
 
     const { error: insertError } = await supabase.from('rfqs').insert({
       contractor_id: user.id, sector, product_name: productName,
+      sub_category: detectSubCategory(`${productName} ${specification}`, sector),
       specification: specification || null, quantity: parseFloat(quantity), unit, region,
       city: city || null, delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
       hide_identity: hideIdentity,

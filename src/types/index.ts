@@ -28,6 +28,113 @@ export const SECTOR_LABELS: Record<Sector, string> = {
   mechanical: 'ميكانيك',
 }
 
+// =============================================
+// SUB-CATEGORIES (التخصصات الفرعية) — 3-level taxonomy
+// Each sub-category: labels in 3 languages + keywords for auto-detection
+// =============================================
+export interface SubCategory {
+  ar: string
+  en: string
+  ur: string
+  icon: string
+  keywords: string[] // for auto-matching product names → sub-category
+}
+
+export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
+  civil: {
+    bricks: { ar: 'طوب وبلوك', en: 'Bricks & Blocks', ur: 'اینٹ اور بلاک', icon: '🧱',
+      keywords: ['طوب','بلوك','block','brick','aac','مدماك','مسلح خفيف'] },
+    rebar: { ar: 'حديد تسليح', en: 'Rebar / Reinforcement', ur: 'سریا', icon: '🔩',
+      keywords: ['حديد تسليح','تسليح','سلك','شبكة حديد','rebar','reinforc','bar','mesh','fabric'] },
+    structural_steel: { ar: 'حديد هيكلي', en: 'Structural Steel', ur: 'ساختی اسٹیل', icon: '🏗',
+      keywords: ['هيكلي','صلب','HEB','HEA','IPE','قطاع','structural steel','section','hollow','channel','صفائح'] },
+    readymix: { ar: 'خرسانة جاهزة', en: 'Ready Mix Concrete', ur: 'ریڈی مکس', icon: '🏭',
+      keywords: ['خرسانة','concrete','readymix','ready mix','C25','C30','C35','C40','blinding','مسبق'] },
+    cement: { ar: 'أسمنت ومواد رابطة', en: 'Cement & Binders', ur: 'سیمنٹ', icon: '🪨',
+      keywords: ['أسمنت','اسمنت','cement','جير','lime','جبصين','grout','mortar','رابط'] },
+    aggregates: { ar: 'ركام ورمل', en: 'Aggregates & Sand', ur: 'ریت اور بجری', icon: '⛰',
+      keywords: ['رمل','حصى','زلط','ركام','كسارة','sand','gravel','aggregate','crusher'] },
+    drainage: { ar: 'صرف وأعمال خارجية', en: 'Drainage & External', ur: 'نکاسی', icon: '🚧',
+      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','كيرب','kerb','إسفلت','asphalt','ري','irrigation'] },
+  },
+  architectural: {
+    marble: { ar: 'رخام وجرانيت', en: 'Marble & Granite', ur: 'سنگ مرمر', icon: '💎',
+      keywords: ['رخام','جرانيت','marble','granite','حجر طبيعي','natural stone','بازلت','basalt'] },
+    tiles: { ar: 'بلاط وسيراميك', en: 'Tiles & Ceramic', ur: 'ٹائلز', icon: '🔲',
+      keywords: ['بلاط','سيراميك','بورسلين','tile','ceramic','porcelain','موزاييك','mosaic'] },
+    paint: { ar: 'دهانات', en: 'Paints', ur: 'پینٹ', icon: '🎨',
+      keywords: ['دهان','دهانات','paint','أكريليك','acrylic','زيتي','ورق جدران','wallpaper'] },
+    gypsum: { ar: 'جبس وأسقف', en: 'Gypsum & Ceilings', ur: 'جپسم', icon: '⬜',
+      keywords: ['جبس','أسقف','gypsum','ceiling','بورد','board','GRC','مستعارة','partition','قواطع'] },
+    doors: { ar: 'أبواب ونوافذ', en: 'Doors & Windows', ur: 'دروازے', icon: '🚪',
+      keywords: ['أبواب','نوافذ','باب','نافذة','door','window','ألمنيوم','aluminum','UPVC','shutter','ستائر'] },
+    glass: { ar: 'زجاج وواجهات', en: 'Glass & Facades', ur: 'شیشہ', icon: '🪟',
+      keywords: ['زجاج','glass','سيكوريت','tempered','واجهات','facade','curtain wall','كومبوزيت','cladding','كلادينج'] },
+    insulation: { ar: 'عزل', en: 'Insulation', ur: 'انسولیشن', icon: '🧊',
+      keywords: ['عزل','عازل','insulation','XPS','صوف صخري','rock wool','فوم','foam','rfs','waterproof'] },
+    flooring: { ar: 'أرضيات خاصة', en: 'Special Flooring', ur: 'فرش', icon: '🟫',
+      keywords: ['إيبوكسي','epoxy','باركيه','parquet','سجاد','carpet','فينيل','vinyl','تيرازو','terrazzo','raised access','screed','فرشة'] },
+  },
+  electrical: {
+    lv_cables: { ar: 'كابلات جهد منخفض LV', en: 'LV Cables', ur: 'LV کیبل', icon: '🔌',
+      keywords: ['كابل','cable','NYY','XLPE','SWA','LSZH','سلك','wire','CU/','mm²','نحاس','copper'] },
+    mv_cables: { ar: 'كابلات جهد متوسط MV', en: 'MV Cables', ur: 'MV کیبل', icon: '⚡',
+      keywords: ['متوسط جهد','medium voltage','MV','11kV','33kV','kV cable'] },
+    panels: { ar: 'لوحات توزيع', en: 'Distribution Panels', ur: 'پینل', icon: '🎛',
+      keywords: ['لوحة','لوحات','panel','MDB','SMDB','SDB','distribution board','MCB','MCCB','RCCB','قاطع','breaker','busbar'] },
+    lighting: { ar: 'إضاءة', en: 'Lighting', ur: 'روشنی', icon: '💡',
+      keywords: ['إضاءة','كشاف','لمبة','luminaire','lighting','LED','light','downlight','floodlight','مصباح'] },
+    transformers: { ar: 'محولات ومولدات', en: 'Transformers & Generators', ur: 'ٹرانسفارمر', icon: '🔋',
+      keywords: ['محول','مولد','transformer','generator','UPS','ATS','مكثفات','capacitor'] },
+    special_systems: { ar: 'أنظمة خاصة (إنذار/مراقبة)', en: 'Special Systems (FA/CCTV)', ur: 'خصوصی نظام', icon: '📹',
+      keywords: ['إنذار حريق','fire alarm','CCTV','مراقبة','ACS','تحكم دخول','BMS','data','بيانات','PA','صوت'] },
+    earthing: { ar: 'تأريض وحماية', en: 'Earthing & Protection', ur: 'ارتھنگ', icon: '🛡',
+      keywords: ['تأريض','earthing','earth','أرضي','حماية برق','lightning','أقطاب','rod'] },
+    containment: { ar: 'مسارات ومواسير', en: 'Conduit & Trays', ur: 'کنڈوٹ', icon: '🪛',
+      keywords: ['أنبوب كهرب','conduit','سكة كابل','tray','ladder','علب توزيع','junction','مفاتيح','socket','أبراز'] },
+  },
+  mechanical: {
+    water_pipes: { ar: 'أنابيب مياه', en: 'Water Pipes', ur: 'پانی پائپ', icon: '🚰',
+      keywords: ['أنبوب مياه','PPR','CPVC','PEX','نحاس مياه','مياه باردة','مياه حارة','مياه مبردة','chilled water','cold water','hot water'] },
+    sanitary_drainage: { ar: 'صرف صحي داخلي', en: 'Sanitary Drainage', ur: 'سینیٹری', icon: '🚽',
+      keywords: ['صرف صحي','uPVC','sanitary','soil','waste','vent','floor drain','مصرف'] },
+    hvac: { ar: 'تكييف وتهوية HVAC', en: 'HVAC', ur: 'ایئر کنڈیشنگ', icon: '❄️',
+      keywords: ['تكييف','AHU','FCU','chiller','مكيف','VRF','VRV','cooling','مبرد','تبريد','مجاري هواء','duct','مراوح','fan','تهوية'] },
+    pumps_valves: { ar: 'مضخات وصمامات', en: 'Pumps & Valves', ur: 'پمپ اور والو', icon: '⚙️',
+      keywords: ['مضخة','صمام','pump','valve','PICV','صمامات','مضخات','booster','فلانش','flange'] },
+    fire_fighting: { ar: 'إطفاء حريق', en: 'Fire Fighting', ur: 'فائر فائٹنگ', icon: '🧯',
+      keywords: ['إطفاء','حريق','sprinkler','fire','رش','hydrant','هيدرنت','hose reel','رؤوس رش'] },
+    sanitary_ware: { ar: 'أدوات صحية', en: 'Sanitary Ware', ur: 'سینیٹری ویئر', icon: '🛁',
+      keywords: ['أدوات صحية','مرحاض','مغسلة','حوض','sanitary ware','WC','basin','sink','shower','دش','خلاط','mixer','صنبور'] },
+    tanks: { ar: 'خزانات ومعالجة مياه', en: 'Tanks & Water Treatment', ur: 'ٹینک', icon: '🪣',
+      keywords: ['خزان','tank','GRP','سخان','heater','RO','تحلية','مرشح','filter','معالجة مياه'] },
+  },
+}
+
+// كشف التخصص الفرعي تلقائياً من اسم المادة
+export function detectSubCategory(productName: string, sector: Sector): string | null {
+  const lower = productName.toLowerCase()
+  const subs = SUB_CATEGORIES[sector]
+  if (!subs) return null
+  let bestMatch: string | null = null
+  let maxScore = 0
+  for (const [key, sub] of Object.entries(subs)) {
+    let score = 0
+    for (const kw of sub.keywords) {
+      if (lower.includes(kw.toLowerCase())) score++
+    }
+    if (score > maxScore) { maxScore = score; bestMatch = key }
+  }
+  return bestMatch
+}
+
+// جلب label التخصص الفرعي بأي لغة
+export function getSubCategoryLabel(sector: Sector, subKey: string, locale: string): string {
+  const sub = SUB_CATEGORIES[sector]?.[subKey]
+  if (!sub) return subKey
+  return locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
+}
+
 export const SECTOR_COLORS: Record<Sector, string> = {
   civil: '#dbeafe',
   architectural: '#fce7f3',

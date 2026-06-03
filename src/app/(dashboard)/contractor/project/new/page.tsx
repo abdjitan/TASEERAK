@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
-import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS } from '@/types'
+import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, detectSubCategory, getSubCategoryLabel } from '@/types'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️' }
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56' }
@@ -53,7 +53,12 @@ export default function NewProjectPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       if (data.items?.length > 0) {
-        setItems(data.items.map((item, i) => ({ ...item, id: `item-${i}`, selected: true })))
+        setItems(data.items.map((item, i) => ({
+          ...item,
+          id: `item-${i}`,
+          selected: true,
+          sub_category: detectSubCategory(item.product_name + ' ' + (item.specification || ''), item.sector),
+        })))
         setStep('items')
       } else {
         setParseError(locale === 'en' ? 'No items found in the BOQ' : 'لم يتم استخراج بنود من الملف')
@@ -134,6 +139,7 @@ export default function NewProjectPage() {
         const { data: rfq } = await supabase.from('rfqs').insert({
           contractor_id: user.id,
           sector: item.sector,
+          sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector),
           product_name: item.product_name,
           specification: item.specification || null,
           quantity: parseFloat(item.quantity) || 1,
@@ -413,6 +419,11 @@ export default function NewProjectPage() {
                               <span className="badge text-white text-[10px]" style={{ background: SECTOR_COLORS[item.sector] }}>
                                 {SECTOR_ICONS[item.sector]} {SECTOR_LABELS[item.sector]}
                               </span>
+                              {item.sub_category && (
+                                <span className="badge text-[10px] bg-gray-100 text-gray-600">
+                                  → {getSubCategoryLabel(item.sector, item.sub_category, locale)}
+                                </span>
+                              )}
                               {item.quantity && <span className="text-xs text-gray-500">📦 {item.quantity} {item.unit}</span>}
                               {item.specification && <span className="text-xs text-gray-400 truncate max-w-[200px]">⚙️ {item.specification}</span>}
                               {item.specFile && <span className="text-xs text-[#1B2D5B] font-semibold">📎 {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
