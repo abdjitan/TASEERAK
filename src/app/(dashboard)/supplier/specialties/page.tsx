@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
-import { SECTOR_LABELS, SUB_CATEGORIES } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS } from '@/types'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️' }
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56' }
@@ -162,6 +162,12 @@ export default function SpecialtiesPage() {
             {mySectors.map(sector => {
               const subs = SUB_CATEGORIES[sector] || {}
               const selectedInSector = Object.keys(subs).filter(k => mySpecialties.includes(k)).length
+              // تجميع التخصصات تحت مجموعاتها
+              const groups: Record<string, string[]> = {}
+              Object.entries(subs).forEach(([key, sub]) => {
+                if (!groups[sub.group]) groups[sub.group] = []
+                groups[sub.group].push(key)
+              })
               return (
                 <div key={sector} className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
                   <div className="flex items-center justify-between mb-4">
@@ -171,21 +177,49 @@ export default function SpecialtiesPage() {
                     </h3>
                     <span className="text-xs text-gray-400">{selectedInSector} {T.selected}</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {Object.entries(subs).map(([key, sub]) => (
-                      <button key={key} onClick={() => toggleSpecialty(key)}
-                        className={`flex items-center gap-3 p-3 rounded-xl border-2 text-right transition-all ${
-                          mySpecialties.includes(key) ? 'border-current' : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        style={mySpecialties.includes(key) ? { borderColor: SECTOR_COLORS[sector], background: SECTOR_COLORS[sector] + '0d' } : {}}>
-                        <span className="text-xl">{sub.icon}</span>
-                        <span className={`text-sm font-semibold flex-1 ${mySpecialties.includes(key) ? '' : 'text-gray-700'}`}
-                          style={mySpecialties.includes(key) ? { color: SECTOR_COLORS[sector] } : {}}>
-                          {locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar}
-                        </span>
-                        {mySpecialties.includes(key) && <span style={{ color: SECTOR_COLORS[sector] }}>✓</span>}
-                      </button>
-                    ))}
+
+                  {/* المجموعات (المستوى الثاني) */}
+                  <div className="space-y-4">
+                    {Object.entries(groups).map(([groupKey, keys]) => {
+                      const grp = GROUP_LABELS[groupKey]
+                      const selectedInGroup = keys.filter(k => mySpecialties.includes(k)).length
+                      return (
+                        <div key={groupKey} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
+                          {/* عنوان المجموعة */}
+                          <div className="flex items-center gap-2 mb-2.5">
+                            <span className="text-base">{grp?.icon}</span>
+                            <span className="text-sm font-bold text-gray-700">
+                              {grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey}
+                            </span>
+                            {selectedInGroup > 0 && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: SECTOR_COLORS[sector] }}>
+                                {selectedInGroup}
+                              </span>
+                            )}
+                          </div>
+                          {/* التخصصات الدقيقة (المستوى الثالث) */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {keys.map(key => {
+                              const sub = subs[key]
+                              return (
+                                <button key={key} onClick={() => toggleSpecialty(key)}
+                                  className={`flex items-center gap-2.5 p-2.5 rounded-lg border-2 text-right transition-all bg-white ${
+                                    mySpecialties.includes(key) ? 'border-current' : 'border-gray-200 hover:border-gray-300'
+                                  }`}
+                                  style={mySpecialties.includes(key) ? { borderColor: SECTOR_COLORS[sector], background: SECTOR_COLORS[sector] + '0d' } : {}}>
+                                  <span className="text-lg">{sub.icon}</span>
+                                  <span className={`text-xs font-semibold flex-1 leading-tight ${mySpecialties.includes(key) ? '' : 'text-gray-700'}`}
+                                    style={mySpecialties.includes(key) ? { color: SECTOR_COLORS[sector] } : {}}>
+                                    {locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar}
+                                  </span>
+                                  {mySpecialties.includes(key) && <span style={{ color: SECTOR_COLORS[sector] }}>✓</span>}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               )
