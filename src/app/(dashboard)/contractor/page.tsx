@@ -84,6 +84,9 @@ export default function ContractorDashboard() {
   const [rfqs, setRfqs] = useState([])
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('all') // all | has_offers | pending | closed
+  const [sectorFilter, setSectorFilter] = useState('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     async function init() {
@@ -278,8 +281,60 @@ export default function ContractorDashboard() {
               <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>{t.rfqList}</h2>
               <span className="text-xs text-gray-400">{rfqs.length} {t.requests}</span>
             </div>
+
+            {/* Filters */}
+            <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4">
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {[
+                    { key: 'all', label: locale === 'en' ? 'All' : 'الكل', icon: '📋' },
+                    { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: '💬' },
+                    { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: '⏳' },
+                    { key: 'closed', label: locale === 'en' ? 'Completed' : 'مكتملة', icon: '✅' },
+                  ].map(f => {
+                    const count = f.key === 'all' ? rfqs.length
+                      : f.key === 'has_offers' ? rfqs.filter(r => r.status === 'open' && (r.offer_count || 0) > 0).length
+                      : f.key === 'pending' ? rfqs.filter(r => r.status === 'open' && (r.offer_count || 0) === 0).length
+                      : rfqs.filter(r => r.status === 'closed').length
+                    return (
+                      <button key={f.key} onClick={() => setFilter(f.key)}
+                        className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                          filter === f.key ? 'text-white' : 'bg-gray-50 text-gray-600 border border-gray-200'
+                        }`} style={filter === f.key ? { background: '#1B2D5B' } : {}}>
+                        {f.icon} {f.label}
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${filter === f.key ? 'bg-white/20' : 'bg-gray-200'}`}>{count}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="flex gap-2">
+                  <select value={sectorFilter} onChange={e => setSectorFilter(e.target.value)}
+                    className="input-field text-xs flex-shrink-0 w-auto py-2">
+                    <option value="all">{locale === 'en' ? 'All Sectors' : 'كل القطاعات'}</option>
+                    {Object.keys(sectors).map(s => <option key={s} value={s}>{sectors[s]}</option>)}
+                  </select>
+                  <input value={search} onChange={e => setSearch(e.target.value)}
+                    className="input-field text-xs flex-1 py-2" placeholder={`🔍 ${locale === 'en' ? 'Search...' : 'ابحث عن طلب...'}`} />
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-3 stagger">
-              {rfqs.map(rfq => (
+              {(() => {
+                const filtered = rfqs.filter(rfq => {
+                  if (filter === 'has_offers' && !(rfq.status === 'open' && (rfq.offer_count || 0) > 0)) return false
+                  if (filter === 'pending' && !(rfq.status === 'open' && (rfq.offer_count || 0) === 0)) return false
+                  if (filter === 'closed' && rfq.status !== 'closed') return false
+                  if (sectorFilter !== 'all' && rfq.sector !== sectorFilter) return false
+                  if (search && !rfq.product_name?.toLowerCase().includes(search.toLowerCase())) return false
+                  return true
+                })
+                if (filtered.length === 0) return (
+                  <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center text-gray-400 text-sm">
+                    🔍 {locale === 'en' ? 'No matching requests' : 'لا توجد طلبات مطابقة'}
+                  </div>
+                )
+                return filtered.map(rfq => (
                 <a key={rfq.id} href={`/contractor/rfq/${rfq.id}`}
                   className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 hover:-translate-y-0.5 transition-all duration-300">
                   <div className="flex items-center justify-between mb-3">
@@ -310,7 +365,8 @@ export default function ContractorDashboard() {
                     <span className="mr-auto" style={{ color: '#F5831F' }}>{t.viewDetails}</span>
                   </div>
                 </a>
-              ))}
+                ))
+              })()}
             </div>
           </div>
         )}
