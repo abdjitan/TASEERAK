@@ -40,10 +40,23 @@ export default function MarketPricePage() {
   const T = txt[locale] || txt.ar
 
   const [priceData, setPriceData] = useState([])
+  const [livePrices, setLivePrices] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedSector, setSelectedSector] = useState('all')
   const [search, setSearch] = useState('')
   const [userRole, setUserRole] = useState('')
+
+  function timeAgo(date) {
+    const diff = Date.now() - new Date(date).getTime()
+    const mins = Math.floor(diff / 60000)
+    const ar = locale === 'ar'
+    if (mins < 1) return ar ? 'الآن' : 'now'
+    if (mins < 60) return ar ? `قبل ${mins} دقيقة` : `${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return ar ? `قبل ${hours} ساعة` : `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    return ar ? `قبل ${days} يوم` : `${days}d ago`
+  }
 
   useEffect(() => {
     async function load() {
@@ -53,6 +66,13 @@ export default function MarketPricePage() {
 
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
       setUserRole(profile?.role || 'contractor')
+
+      // الأسعار اللحظية المباشرة من المصانع/الموردين
+      const { data: live } = await supabase
+        .from('live_prices')
+        .select('*, supplier:profiles(company_name_ar, supplier_tier)')
+        .order('updated_at', { ascending: false })
+      setLivePrices(live || [])
 
       // حساب متوسط الأسعار من العروض المقبولة والمعلقة
       const { data: offers } = await supabase
@@ -137,6 +157,61 @@ export default function MarketPricePage() {
             </div>
           </div>
         </div>
+
+        {/* ═══ الأسعار اللحظية المباشرة من المصانع ═══ */}
+        {livePrices.filter(p => selectedSector === 'all' || p.sector === selectedSector)
+          .filter(p => !search || p.product_name?.toLowerCase().includes(search.toLowerCase())).length > 0 && (
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              </span>
+              <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>
+                {locale === 'en' ? '🔴 LIVE Prices from Factories' : locale === 'ur' ? '🔴 لائیو قیمتیں' : '🔴 أسعار مباشرة من المصانع'}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger">
+              {livePrices
+                .filter(p => selectedSector === 'all' || p.sector === selectedSector)
+                .filter(p => !search || p.product_name?.toLowerCase().includes(search.toLowerCase()))
+                .map(p => {
+                  const trend = p.previous_price ? (p.price > p.previous_price ? 'up' : p.price < p.previous_price ? 'down' : 'same') : null
+                  const pct = p.previous_price ? Math.abs(((p.price - p.previous_price) / p.previous_price * 100)).toFixed(1) : null
+                  return (
+                    <div key={p.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{p.product_name}</div>
+                          <span className="badge badge-blue text-[10px] mt-1">{SECTOR_LABELS[p.sector] || p.sector}</span>
+                        </div>
+                        {p.supplier?.supplier_tier === 'manufacturer' && <span className="text-base">🏭</span>}
+                      </div>
+                      <div className="flex items-end justify-between">
+                        <div>
+                          <div className="flex items-center gap-1">
+                            {trend === 'up' && <span className="text-red-500 text-sm">▲</span>}
+                            {trend === 'down' && <span className="text-emerald-500 text-sm">▼</span>}
+                            <span className="text-2xl font-bold" style={{ color: trend === 'up' ? '#ef4444' : trend === 'down' ? '#0F6E56' : '#1B2D5B' }}>
+                              {p.price?.toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="text-[10px] text-gray-400">ر.س / {p.unit}{pct ? ` · ${trend === 'up' ? '+' : '-'}${pct}%` : ''}</div>
+                        </div>
+                        <div className="text-left">
+                          <div className="text-[10px] text-gray-400">🕐 {timeAgo(p.updated_at)}</div>
+                          {p.region && <div className="text-[10px] text-gray-400">📍 {p.region}</div>}
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-2 pt-2 border-t border-gray-50 truncate">
+                        {p.supplier?.company_name_ar}
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        )}
 
         {/* Stats summary */}
         {priceData.length > 0 && (
