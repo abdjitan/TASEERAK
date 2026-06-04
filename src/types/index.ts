@@ -272,6 +272,7 @@ export const SECTOR_COLORS: Record<Sector, string> = {
   architectural: '#fce7f3',
   electrical: '#fef3c7',
   mechanical: '#d1fae5',
+  equipment: '#e7e5e4',
 }
 
 // Product translations — keys are Arabic (stored in DB), values are EN/UR display names
