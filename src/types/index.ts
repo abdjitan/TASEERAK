@@ -52,11 +52,15 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   infrastructure: { ar: 'البنية التحتية والتدعيم', en: 'Infrastructure & Support', ur: 'انفراسٹرکچر', icon: '🚧' },
   rawmaterials: { ar: 'الكسارات والمواد الأولية', en: 'Aggregates & Raw Materials', ur: 'خام مواد', icon: '⛰' },
   equipment: { ar: 'أخشاب ومعدات المقاولات', en: 'Formwork & Equipment', ur: 'آلات', icon: '🪵' },
+  landscape: { ar: 'التنسيق والأعمال الخارجية', en: 'Landscape & Hardscape', ur: 'لینڈ اسکیپ', icon: '🌳' },
   // معماري
   floors_walls: { ar: 'الأرضيات والحوائط', en: 'Floors & Walls', ur: 'فرش اور دیواریں', icon: '🔲' },
   paint_facade: { ar: 'الدهانات والديكورات الخارجية', en: 'Paints & Facades', ur: 'پینٹ', icon: '🎨' },
   ceiling_decor: { ar: 'الأسقف والديكورات الداخلية', en: 'Ceilings & Interior Decor', ur: 'چھتیں', icon: '⬜' },
   doors_windows: { ar: 'الأبواب والشبابيك والواجهات', en: 'Doors, Windows & Facades', ur: 'دروازے', icon: '🚪' },
+  facade_systems: { ar: 'الواجهات المتطورة', en: 'Facade Systems', ur: 'فیسڈ سسٹم', icon: '🏢' },
+  joinery: { ar: 'النجارة والأثاث الثابت', en: 'Joinery & Millwork', ur: 'جوائنری', icon: '🪑' },
+  acoustic: { ar: 'العزل الصوتي', en: 'Acoustic Systems', ur: 'صوتی نظام', icon: '🔊' },
   sanitary_finish: { ar: 'الأدوات الصحية والتشطيبات', en: 'Sanitary Ware & Finishes', ur: 'سینیٹری', icon: '🛁' },
   // ميكانيك
   hvac: { ar: 'التكييف والتهوية', en: 'HVAC & Ventilation', ur: 'ایئر کنڈیشنگ', icon: '❄️' },
@@ -115,6 +119,17 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['طوبار','بليود','plywood','مرابيع','أخشاب','timber','formwork','خشب بناء'] },
     scaffolding: { ar: 'سقالات وجاكات تدعيم', en: 'Scaffolding & Props', ur: 'سکیفولڈنگ', icon: '🏗', group: 'equipment',
       keywords: ['سقالات','scaffold','جاكات','props','تدعيم','shoring','دعامات'] },
+    // ═══ التنسيق والأعمال الخارجية (Landscape) ═══
+    turf: { ar: 'عشب (طبيعي/صناعي/هجين)', en: 'Turf (Natural/Artificial/Hybrid)', ur: 'گھاس', icon: '🌱', group: 'landscape',
+      keywords: ['عشب','turf','grass','نجيل','صناعي','artificial','hybrid','هجين','طبيعي','lawn','ملعب عشب'] },
+    irrigation: { ar: 'شبكات ري ورشاشات', en: 'Irrigation Systems', ur: 'آبپاشی', icon: '💧', group: 'landscape',
+      keywords: ['ري','irrigation','رشاش','sprinkler','rain bird','rainbird','تنقيط','drip','بخاخ','شبكة ري'] },
+    fountains: { ar: 'نوافير وبرك مائية', en: 'Fountains & Water Features', ur: 'فوارے', icon: '⛲', group: 'landscape',
+      keywords: ['نافورة','fountain','بركة','pool','water feature','شلال','waterfall','مسطح مائي'] },
+    hardscape: { ar: 'إنترلوك وبردورات وتبليط خارجي', en: 'Interlock, Kerbs & Paving', ur: 'پیونگ', icon: '🧱', group: 'landscape',
+      keywords: ['إنترلوك','interlock','بردورة','kerb','curb','تبليط','paving','بلاط خارجي','حجر صناعي','رصف','tactile'] },
+    planters: { ar: 'أحواض زراعة وعناصر تنسيق', en: 'Planters & Landscape Elements', ur: 'پلانٹر', icon: '🪴', group: 'landscape',
+      keywords: ['حوض زراعة','planter','تربة','soil','مشتل','plant','شجر','tree','نباتات','pergola','مظلة حديقة'] },
   },
   architectural: {
     // ═══ الأرضيات والحوائط ═══
@@ -141,14 +156,31 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ الأبواب والشبابيك والواجهات ═══
     aluminum: { ar: 'ألمنيوم وشبابيك', en: 'Aluminum & Windows', ur: 'ایلومینیم', icon: '🪟', group: 'doors_windows',
       keywords: ['ألمنيوم','aluminum','شبابيك','نوافذ','window','UPVC'] },
-    curtain_wall: { ar: 'واجهات زجاجية (Curtain Wall)', en: 'Curtain Wall / Glazing', ur: 'کرٹن وال', icon: '🏢', group: 'doors_windows',
-      keywords: ['زجاج','glass','واجهات زجاجية','curtain wall','structural glazing','سيكوريت','tempered','كومبوزيت','كلادينج'] },
     wood_doors: { ar: 'أبواب خشبية', en: 'Wooden Doors', ur: 'لکڑی دروازے', icon: '🚪', group: 'doors_windows',
       keywords: ['أبواب خشب','wooden door','كبس','حشو','سنديان','خشبية'] },
     fire_doors: { ar: 'أبواب حديد وحريق', en: 'Steel & Fire-Rated Doors', ur: 'فائر دروازے', icon: '🔥', group: 'doors_windows',
       keywords: ['أبواب حديد','fire door','مقاومة حريق','fire rated','طوارئ','حديدية'] },
     auto_doors: { ar: 'أبواب أوتوماتيكية وكراجات', en: 'Automatic & Garage Doors', ur: 'آٹومیٹک دروازے', icon: '🚗', group: 'doors_windows',
       keywords: ['أوتوماتيك','automatic','كراج','garage','rolling','شتر','أتوماتيكية'] },
+    // ═══ الواجهات المتطورة (Facade) ═══
+    curtain_wall: { ar: 'واجهات ستائرية وزجاجية (Curtain Wall)', en: 'Curtain Wall & Glazing', ur: 'کرٹن وال', icon: '🏢', group: 'facade_systems',
+      keywords: ['curtain wall','واجهة ستائرية','واجهة زجاجية','structural glazing','spider','مشدات زجاج','زجاج','glass','سيكوريت','tempered','glazed facade'] },
+    rainscreen: { ar: 'كسوة واجهات (Rainscreen/ألمنيوم)', en: 'Aluminium Cladding & Rainscreen', ur: 'رین اسکرین', icon: '🔲', group: 'facade_systems',
+      keywords: ['rainscreen','cladding','كسوة','ألمنيوم واجهات','aluminium panel','كومبوزيت','ACP','معدن مثقب'] },
+    louvers: { ar: 'مظلات وكاسرات شمس', en: 'Louvers & Shading', ur: 'لوور', icon: '🪟', group: 'facade_systems',
+      keywords: ['louver','مظلة','كاسر شمس','shading','بريز سوليه','brise soleil','مشربية معدنية'] },
+    // ═══ النجارة والأثاث الثابت (Joinery) ═══
+    millwork: { ar: 'نجارة وكاونترات', en: 'Joinery & Counters', ur: 'جوائنری', icon: '🪵', group: 'joinery',
+      keywords: ['نجارة','joinery','millwork','كاونتر','counter','reception','مكتب استقبال','بار','bar counter','خشب مفصل'] },
+    fitted_furniture: { ar: 'أثاث ثابت وخزائن', en: 'Fitted Furniture & Wardrobes', ur: 'فکسڈ فرنیچر', icon: '🪑', group: 'joinery',
+      keywords: ['خزائن','wardrobe','أثاث ثابت','fitted','بانكيت','banquette','vanity','solid surface','corian'] },
+    cubicles: { ar: 'قواطع حمامات وكبائن', en: 'Toilet Cubicles & Partitions', ur: 'کیوبیکل', icon: '🚪', group: 'joinery',
+      keywords: ['قواطع حمام','cubicle','toilet partition','كبائن','HPL partition','لوكرات','locker'] },
+    // ═══ العزل الصوتي (Acoustic) ═══
+    acoustic_panels: { ar: 'ألواح وأسقف صوتية', en: 'Acoustic Panels & Ceilings', ur: 'صوتی پینل', icon: '🔊', group: 'acoustic',
+      keywords: ['صوتي','acoustic','عزل صوت','baffle','sound absorb','بافل','صوف صخري صوتي','بوليستر صوتي'] },
+    acoustic_timber: { ar: 'خشب صوتي مشقوق', en: 'Acoustic Timber Slats', ur: 'صوتی لکڑی', icon: '🪵', group: 'acoustic',
+      keywords: ['خشب صوتي','acoustic timber','slat','مشقوق','veneer acoustic','شرائح خشب'] },
     // ═══ الأدوات الصحية والتشطيبات ═══
     sanitary_ware: { ar: 'أدوات صحية (خلاطات/مغاسل)', en: 'Sanitary Ware', ur: 'سینیٹری ویئر', icon: '🚽', group: 'sanitary_finish',
       keywords: ['أدوات صحية','مرحاض','مغسلة','حوض','خلاط','بانيو','كرسي','sanitary ware','WC','basin','mixer'] },
@@ -188,6 +220,10 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['بيانات','data','شبكات','network','telecom','سنترال','intercom','CAT6','ألياف'] },
     sound_systems: { ar: 'أنظمة صوتيات', en: 'Sound Systems', ur: 'ساؤنڈ سسٹم', icon: '🔊', group: 'low_current',
       keywords: ['صوتيات','sound','PA','speaker','مكبرات','إعلام'] },
+    led_screens: { ar: 'شاشات LED ولوحات نتائج', en: 'LED Screens & Scoreboards', ur: 'ایل ای ڈی اسکرین', icon: '📺', group: 'low_current',
+      keywords: ['شاشة','شاشات','LED screen','scoreboard','لوحة نتائج','perimeter','محيطية','display','عرض','360'] },
+    access_control: { ar: 'أنظمة دخول وبوابات', en: 'Access Control & Turnstiles', ur: 'ایکسیس کنٹرول', icon: '🚪', group: 'low_current',
+      keywords: ['تحكم بالدخول','access control','بوابة','turnstile','gate','بصمة','بطاقة','card reader','تذاكر'] },
   },
   mechanical: {
     // ═══ التكييف والتهوية ═══
