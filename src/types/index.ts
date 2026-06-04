@@ -60,6 +60,7 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   // ميكانيك
   hvac: { ar: 'التكييف والتهوية', en: 'HVAC & Ventilation', ur: 'ایئر کنڈیشنگ', icon: '❄️' },
   plumbing: { ar: 'السباكة والتغذية والصرف', en: 'Plumbing & Drainage', ur: 'پلمبنگ', icon: '🚰' },
+  plumbing_supplies: { ar: 'لوازم وإكسسوارات السباكة', en: 'Plumbing Supplies & Fittings', ur: 'پلمبنگ سامان', icon: '🔧' },
   firefighting: { ar: 'مكافحة الحريق', en: 'Fire Fighting', ur: 'فائر فائٹنگ', icon: '🧯' },
   // كهرباء
   cabling: { ar: 'التمديدات والكابلات', en: 'Cabling & Wiring', ur: 'کیبلنگ', icon: '🔌' },
@@ -69,8 +70,8 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   // معدات وعُدد
   hand_tools: { ar: 'عُدد يدوية', en: 'Hand Tools', ur: 'ہاتھ کے اوزار', icon: '🔧' },
   power_tools: { ar: 'عُدد كهربائية', en: 'Power Tools', ur: 'بجلی کے اوزار', icon: '🔌' },
-  heavy_equipment: { ar: 'معدات ثقيلة وآليات', en: 'Heavy Equipment & Machinery', ur: 'بھاری مشینری', icon: '🚜' },
-  light_equipment: { ar: 'معدات خفيفة', en: 'Light Equipment', ur: 'ہلکی مشینری', icon: '⚙️' },
+  heavy_equipment: { ar: 'آليات ثقيلة (حفر/رفع/نقل)', en: 'Heavy Machinery', ur: 'بھاری مشینری', icon: '🚜' },
+  light_equipment: { ar: 'معدات خفيفة (مولدات/دكاكات)', en: 'Light Equipment', ur: 'ہلکی مشینری', icon: '⚙️' },
   safety: { ar: 'السلامة ومعدات الوقاية', en: 'Safety & PPE', ur: 'حفاظتی سامان', icon: '🦺' },
   consumables: { ar: 'مستهلكات ولوازم', en: 'Consumables & Supplies', ur: 'استعمالی اشیاء', icon: '📦' },
 }
@@ -197,6 +198,23 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['مضخة','pump','رفع','تدوير','ضغط','booster','صمام','valve'] },
     tanks_heaters: { ar: 'خزانات وسخانات مياه', en: 'Tanks & Water Heaters', ur: 'ٹینک', icon: '🪣', group: 'plumbing',
       keywords: ['خزان','tank','GRP','فايبرجلاس','بولي','سخان','heater','RO','تحلية','مرشح'] },
+    // ═══ لوازم وإكسسوارات السباكة (محلات صغيرة) ═══
+    faucets_mixers: { ar: 'خلاطات وصنابير', en: 'Faucets & Mixers', ur: 'نل', icon: '🚿', group: 'plumbing_supplies',
+      keywords: ['خلاط','صنبور','حنفية','مخلط','faucet','mixer','tap','بطارية مغسلة','خلاط مطبخ'] },
+    valves_fittings: { ar: 'محابس ووصلات', en: 'Valves & Fittings', ur: 'والو', icon: '🔩', group: 'plumbing_supplies',
+      keywords: ['محبس','صمام زاوية','angle valve','gate valve','محبس زاوية','وصلة','كوع','تي','fitting','elbow','tee','كوبلن','نبل'] },
+    copper_fittings: { ar: 'لوازم نحاسية', en: 'Copper Fittings', ur: 'تانبے', icon: '🟠', group: 'plumbing_supplies',
+      keywords: ['نحاس','copper','لوازم نحاسية','وصلة نحاس','كوع نحاس'] },
+    traps_drains: { ar: 'سيفونات ومصافي', en: 'Traps & Drains', ur: 'سائفن', icon: '🚽', group: 'plumbing_supplies',
+      keywords: ['سيفون','trap','مصفاة','مصرف أرضي','floor drain','نفbreeze','بلف','شبكة صرف','صفاية'] },
+    flex_hoses: { ar: 'خراطيم مرنة ووصلات', en: 'Flexible Hoses & Connectors', ur: 'لچکدار نلی', icon: '🪢', group: 'plumbing_supplies',
+      keywords: ['خرطوم','hose','مرن','flexible','وصلة مرنة','شطاف','خرطوم سخان','flexi','وصلة شطاف'] },
+    plumbing_consumables: { ar: 'تفلون وعوازل وحشوات', en: 'Teflon, Seals & Sealants', ur: 'ٹیفلون', icon: '🧵', group: 'plumbing_supplies',
+      keywords: ['تفلون','teflon','شريط','عازل','حشوة','جلدة','seal','gasket','معجون','سيليكون سباكة','خيط سباكة'] },
+    shower_accessories: { ar: 'دشات وإكسسوارات حمام', en: 'Shower Heads & Bath Accessories', ur: 'شاور', icon: '🚿', group: 'plumbing_supplies',
+      keywords: ['دش','shower','رأس دش','shower head','إكسسوار حمام','حامل','صابونة','مناديل','معلاق'] },
+    floats_tanks: { ar: 'عوامات وطفايات سيفون', en: 'Float Valves & Cistern Parts', ur: 'فلوٹ', icon: '🎈', group: 'plumbing_supplies',
+      keywords: ['عوامة','float','طفاية','سيفون كرسي','cistern','بكرة','عوامة خزان','محبس عوامة'] },
     // ═══ مكافحة الحريق ═══
     fire_fighting: { ar: 'مواسير ورشاشات حريق', en: 'Fire Fighting Systems', ur: 'فائر فائٹنگ', icon: '🧯', group: 'firefighting',
       keywords: ['إطفاء','حريق','sprinkler','رشاش','مواسير حريق','سكيدول','schedule 40','هيدرنت','صناديق حريق','UL','FM','مضخة حريق'] },
@@ -212,6 +230,8 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['دريل','drill','صاروخ','grinder','منشار كهرب','saw','مفك كهرب','شحن','بطارية','جلاخة','راوتر','router','مثقاب'] },
     welding: { ar: 'معدات لحام وقطع', en: 'Welding & Cutting', ur: 'ویلڈنگ', icon: '⚡', group: 'power_tools',
       keywords: ['لحام','welding','قطع','cutting','ماكينة لحام','أكسجين','استيلين','plasma','إلكترود'] },
+    drill_bits: { ar: 'ريش ولقم دريل وهمر', en: 'Drill Bits & Accessories', ur: 'ڈرل بٹ', icon: '🪛', group: 'power_tools',
+      keywords: ['ريشة','ريش دريل','لقمة','drill bit','همر','hammer bit','بنط','بنطة','لقم','SDS','ريشة حديد','ريشة خشب'] },
     // ═══ معدات ثقيلة وآليات ═══
     heavy_machinery: { ar: 'حفارات وشيولات', en: 'Excavators & Loaders', ur: 'کھدائی مشین', icon: '🚜', group: 'heavy_equipment',
       keywords: ['حفار','حفارة','excavator','شيول','loader','بلدوزر','bulldozer','بوكلين','لودر','جريدر','grader'] },
@@ -766,6 +786,14 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'صنبور مياه', 'خلاط مياه Mixer',
     'مصرف أرضي Floor Drain 100x100',
     'مصرف سقف Roof Drain 100mm',
+    // ═══ لوازم سباكة بسيطة (محلات صغيرة) ═══
+    'خلاط مغسلة', 'خلاط مطبخ', 'خلاط دش', 'صنبور حديقة',
+    'محبس زاوية', 'محبس عمومي', 'وصلة كوع PVC', 'وصلة تي PVC',
+    'كوبلن نحاس', 'لوازم نحاسية', 'سيفون كرسي', 'سيفون مغسلة',
+    'مصفاة أرضية', 'خرطوم سخان مرن', 'خرطوم شطاف', 'وصلة مرنة',
+    'شريط تفلون', 'معجون سباكة', 'جلدة محبس', 'حشوة عزل',
+    'رأس دش', 'دش مطري', 'عوامة خزان', 'طفاية سيفون كرسي',
+    'إكسسوار حمام (حامل مناديل)', 'معلاق منشفة',
     // ═══ معالجة المياه (BOQ: 22-DISPOSAL) ═══
     'فصال دهون Grease Interceptor',
     'حوض ترسيب مياه أمطار',
@@ -799,6 +827,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'دريل كهربائي', 'دريل شحن', 'صاروخ تجليخ', 'صاروخ قص',
     'منشار كهربائي', 'مفك كهربائي', 'جلاخة', 'راوتر خشب',
     'مثقاب مطرقي', 'ماكينة لحام', 'ماكينة قص بلازما',
+    'ريشة دريل حديد', 'ريشة دريل خشب', 'ريشة همر SDS',
+    'لقمة مفك', 'طقم ريش دريل', 'بنطة خرسانة',
     // ═══ معدات ثقيلة ═══
     'حفارة (بوكلين)', 'شيول لودر', 'بلدوزر', 'جريدر',
     'رافعة برجية', 'كرين متحرك', 'رافعة شوكية',
