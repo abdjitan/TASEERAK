@@ -9,8 +9,94 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, type UserRole, type Sector } from '@/types'
+import { useTranslation } from '@/i18n'
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
+
+const TR = {
+  ar: {
+    welcome: 'أهلاً بك', chooseType: 'اختر نوع حسابك للبدء',
+    supplier: 'مورد', supplierDesc: 'أعرض منتجاتي وأستقبل طلبات',
+    contractor: 'مقاول', contractorDesc: 'أبحث عن موردين وأطلب تسعيرات',
+    next: 'التالي ←', back: '← رجوع', haveAccount: 'لديك حساب؟', login: 'تسجيل الدخول',
+    companyData: 'بيانات الشركة', companyDataSub: 'أدخل المعلومات الأساسية لشركتك',
+    companyAr: 'اسم الشركة (عربي)', companyEn: 'الاسم (إنجليزي)',
+    crNumber: 'رقم السجل التجاري', vatNumber: 'رقم الضريبة (VAT)',
+    region: 'المنطقة', selectRegion: '-- اختر --', city: 'المدينة', cityPh: 'اسم المدينة',
+    phone: 'رقم الجوال (واتساب)', phoneHint: '10 أرقام تبدأ بـ 05 (بدون مفتاح الدولة)',
+    email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف على الأقل',
+    licenseTitle: 'رفع رخصة العمل', licenseSub: 'يتم التحقق خلال 24 ساعة — حسابك يعمل فوراً',
+    license: 'رخصة العمل', cr: 'السجل التجاري', uploadHint: 'PDF أو صورة — حجم أقصى 5MB',
+    sectorsTitle: 'القطاعات والتخصصات',
+    sectorsSubSupplier: 'اختر القطاعات ثم حدد المواد التي توردها بالضبط',
+    sectorsSubContractor: 'اختر القطاعات التي تعمل فيها',
+    exactMaterials: 'المواد التي توردها بالضبط 🎯',
+    exactHint: 'حدد تخصصك الدقيق لتصلك الطلبات المطابقة فقط',
+    selected: 'محدد', companyClass: 'تصنيف شركتك',
+    classHintSupplier: 'يساعد المقاولين على إيجادك حسب حجم طلباتهم',
+    manufacturer: 'مصنع / موزع رئيسي', manufacturerD: 'إنتاج أو توزيع بكميات كبيرة',
+    commercial: 'موزع تجاري', commercialD: 'متوسط الحجم والكميات',
+    local: 'مورد محلي', localD: 'كميات صغيرة إلى متوسطة',
+    minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000 — اتركه فارغاً لاستقبال كل الطلبات',
+    gradeTitle: 'درجة تصنيف شركتك', gradeSub: 'وزارة الشؤون البلدية — اختياري',
+    creating: 'جارٍ الإنشاء...', createAccount: 'إنشاء الحساب ←',
+  },
+  en: {
+    welcome: 'Welcome', chooseType: 'Choose your account type to start',
+    supplier: 'Supplier', supplierDesc: 'List products & receive requests',
+    contractor: 'Contractor', contractorDesc: 'Find suppliers & request quotes',
+    next: 'Next →', back: '← Back', haveAccount: 'Have an account?', login: 'Sign In',
+    companyData: 'Company Information', companyDataSub: 'Enter your company basic info',
+    companyAr: 'Company Name (Arabic)', companyEn: 'Name (English)',
+    crNumber: 'Commercial Registration', vatNumber: 'VAT Number',
+    region: 'Region', selectRegion: '-- Select --', city: 'City', cityPh: 'City name',
+    phone: 'Phone (WhatsApp)', phoneHint: '10 digits starting with 05 (no country code)',
+    email: 'Email Address', password: 'Password', passwordPh: 'At least 8 characters',
+    licenseTitle: 'Upload Business License', licenseSub: 'Verified within 24h — account works immediately',
+    license: 'Business License', cr: 'Commercial Registration', uploadHint: 'PDF or image — max 5MB',
+    sectorsTitle: 'Sectors & Specialties',
+    sectorsSubSupplier: 'Select sectors then pick exactly what you supply',
+    sectorsSubContractor: 'Select the sectors you work in',
+    exactMaterials: 'What you supply exactly 🎯',
+    exactHint: 'Set your exact specialty to get only matching requests',
+    selected: 'selected', companyClass: 'Company Classification',
+    classHintSupplier: 'Helps contractors find you by order size',
+    manufacturer: 'Manufacturer / Major', manufacturerD: 'Large-scale production/distribution',
+    commercial: 'Commercial Distributor', commercialD: 'Medium size & quantities',
+    local: 'Local Supplier', localD: 'Small to medium quantities',
+    minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000 — leave empty for all requests',
+    gradeTitle: 'Company Grade', gradeSub: 'Ministry of Municipal Affairs — optional',
+    creating: 'Creating...', createAccount: 'Create Account →',
+  },
+  ur: {
+    welcome: 'خوش آمدید', chooseType: 'شروع کرنے کے لیے اکاؤنٹ کی قسم منتخب کریں',
+    supplier: 'سپلائر', supplierDesc: 'مصنوعات دکھائیں اور درخواستیں وصول کریں',
+    contractor: 'ٹھیکیدار', contractorDesc: 'سپلائرز تلاش کریں اور قیمتیں طلب کریں',
+    next: 'آگے →', back: '← واپس', haveAccount: 'اکاؤنٹ ہے؟', login: 'سائن ان',
+    companyData: 'کمپنی کی معلومات', companyDataSub: 'اپنی کمپنی کی بنیادی معلومات درج کریں',
+    companyAr: 'کمپنی کا نام (عربی)', companyEn: 'نام (انگریزی)',
+    crNumber: 'تجارتی رجسٹریشن', vatNumber: 'VAT نمبر',
+    region: 'علاقہ', selectRegion: '-- منتخب کریں --', city: 'شہر', cityPh: 'شہر کا نام',
+    phone: 'فون (واٹس ایپ)', phoneHint: '05 سے شروع 10 ہندسے',
+    email: 'ای میل', password: 'پاسورڈ', passwordPh: 'کم از کم 8 حروف',
+    licenseTitle: 'کاروباری لائسنس اپلوڈ کریں', licenseSub: '24 گھنٹوں میں تصدیق',
+    license: 'کاروباری لائسنس', cr: 'تجارتی رجسٹریشن', uploadHint: 'PDF یا تصویر — زیادہ سے زیادہ 5MB',
+    sectorsTitle: 'شعبے اور مہارتیں',
+    sectorsSubSupplier: 'شعبے منتخب کریں پھر بالکل وہی منتخب کریں جو آپ فراہم کرتے ہیں',
+    sectorsSubContractor: 'وہ شعبے منتخب کریں جہاں آپ کام کرتے ہیں',
+    exactMaterials: 'آپ بالکل کیا فراہم کرتے ہیں 🎯',
+    exactHint: 'صرف متعلقہ درخواستیں حاصل کرنے کے لیے اپنی مہارت مقرر کریں',
+    selected: 'منتخب', companyClass: 'کمپنی کی درجہ بندی',
+    classHintSupplier: 'ٹھیکیداروں کو آرڈر سائز کے مطابق آپ کو تلاش کرنے میں مدد',
+    manufacturer: 'مینوفیکچرر / بڑا', manufacturerD: 'بڑے پیمانے پر',
+    commercial: 'تجارتی تقسیم کار', commercialD: 'درمیانے سائز',
+    local: 'مقامی سپلائر', localD: 'چھوٹی سے درمیانی مقدار',
+    minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000',
+    gradeTitle: 'کمپنی کا درجہ', gradeSub: 'وزارت بلدیات — اختیاری',
+    creating: 'بن رہا ہے...', createAccount: 'اکاؤنٹ بنائیں →',
+  },
+}
 
 const schema = z.object({
   role: z.enum(['contractor', 'supplier'] as const),
@@ -29,6 +115,9 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export default function RegisterPage() {
+  const { locale, dir } = useTranslation()
+  const t = TR[locale] || TR.ar
+  const sl = (s) => SECTOR_LABELS[s] // sector label helper (uses AR labels; sub-labels are localized below)
   const [step, setStep] = useState(1)
   const [selectedType, setSelectedType] = useState<'contractor' | 'supplier' | null>(null)
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
@@ -151,21 +240,22 @@ export default function RegisterPage() {
   // Step 1: Choose type
   if (step === 1) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50" dir="rtl">
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50" dir={dir}>
+        <div className="absolute top-4 left-4"><LanguageSwitcher variant="minimal" /></div>
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-3 mb-4">
               <img src="/logo-outlined.png" alt="Taseerak" className="w-12 h-12" />
-              <span className="text-2xl font-bold">Taseerak</span>
+              <span className="text-2xl font-bold">{locale === 'ar' ? 'تسعيرك' : 'Taseerak'}</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">أهلاً بك</h1>
-            <p className="text-gray-500 mt-2">اختر نوع حسابك للبدء</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t.welcome}</h1>
+            <p className="text-gray-500 mt-2">{t.chooseType}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             {[
-              { type: 'contractor' as 'contractor', icon: '👷', title: 'مقاول', desc: 'أبحث عن موردين وأطلب تسعيرات' },
-              { type: 'supplier' as 'supplier', icon: '🏪', title: 'مورد', desc: 'أعرض منتجاتي وأستقبل طلبات' },
+              { type: 'contractor' as 'contractor', icon: '👷', title: t.contractor, desc: t.contractorDesc },
+              { type: 'supplier' as 'supplier', icon: '🏪', title: t.supplier, desc: t.supplierDesc },
             ].map(({ type, icon, title, desc }) => (
               <button
                 key={type}
@@ -188,12 +278,12 @@ export default function RegisterPage() {
             disabled={!selectedType}
             className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
           >
-            التالي ←
+            {t.next}
           </button>
 
           <p className="text-center text-sm text-gray-500 mt-4">
-            لديك حساب؟{' '}
-            <a href="/login" className="text-blue-600 font-medium hover:underline">تسجيل الدخول</a>
+            {t.haveAccount}{' '}
+            <a href="/login" className="text-blue-600 font-medium hover:underline">{t.login}</a>
           </p>
         </div>
       </div>
@@ -201,7 +291,8 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4" dir="rtl">
+    <div className="min-h-screen bg-slate-50 p-4" dir={dir}>
+      <div className="absolute top-4 left-4 z-10"><LanguageSwitcher variant="minimal" /></div>
       <div className="max-w-lg mx-auto">
         {/* Steps indicator */}
         <div className="flex items-center justify-center gap-2 py-6 mb-2">
@@ -223,85 +314,83 @@ export default function RegisterPage() {
           {/* Step 2: Company info */}
           {step === 2 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">بيانات الشركة</h2>
-              <p className="text-sm text-gray-500 mb-5">أدخل المعلومات الأساسية لشركتك</p>
+              <h2 className="text-lg font-bold text-gray-900 mb-1">{t.companyData}</h2>
+              <p className="text-sm text-gray-500 mb-5">{t.companyDataSub}</p>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">اسم الشركة (عربي) *</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyAr} *</label>
                     <input {...register('company_name_ar')} className="input-field" placeholder="شركة الصخر للمقاولات"/>
                     {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">الاسم (إنجليزي)</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyEn}</label>
                     <input {...register('company_name_en')} className="input-field" placeholder="Al Sakhr Contracting"/>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">رقم السجل التجاري *</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.crNumber} *</label>
                     <input {...register('commercial_registration')} className="input-field" placeholder="1010XXXXXX"
                       inputMode="numeric" maxLength={10} dir="ltr"
                       onInput={e => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10) }} />
                     {errors.commercial_registration && <p className="text-red-500 text-xs mt-1">{errors.commercial_registration.message}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">رقم الضريبة (VAT)</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.vatNumber}</label>
                     <input {...register('vat_number')} className="input-field" placeholder="3XXXXXXXXXXXXXXX"/>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">المنطقة *</label>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.region} *</label>
                     <select {...register('region')} className="input-field">
-                      <option value="">-- اختر --</option>
+                      <option value="">{t.selectRegion}</option>
                       {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                     {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region.message}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">المدينة *</label>
-                    <input {...register('city')} className="input-field" placeholder="اسم المدينة"/>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.city} *</label>
+                    <input {...register('city')} className="input-field" placeholder={t.cityPh}/>
                     {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">رقم الجوال (واتساب) *</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
                   <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel"
                     inputMode="numeric" maxLength={10} dir="ltr"
                     onInput={e => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10) }} />
-                  <p className="text-[10px] text-gray-400 mt-1">10 أرقام تبدأ بـ 05 (بدون مفتاح الدولة)</p>
+                  <p className="text-[10px] text-gray-400 mt-1">{t.phoneHint}</p>
                   {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">البريد الإلكتروني *</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
                   <input {...register('email')} className="input-field" placeholder="info@company.com" type="email"/>
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">كلمة المرور *</label>
-                  <input {...register('password')} className="input-field" type="password" placeholder="8 أحرف على الأقل"/>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
+                  <input {...register('password')} className="input-field" type="password" placeholder={t.passwordPh}/>
                   {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
                 </div>
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button type="button" onClick={() => setStep(1)} className="btn-ghost flex-1">← رجوع</button>
+                <button type="button" onClick={() => setStep(1)} className="btn-ghost flex-1">{t.back}</button>
                 <button type="button" onClick={async () => {
-                  // التحقق من حقول الخطوة 2 فقط باستخدام schema الكامل (Zod)
                   const valid = await trigger([
                     'company_name_ar', 'commercial_registration', 'vat_number',
                     'phone', 'email', 'password', 'region', 'city'
                   ])
                   if (valid) setStep(3)
-                  // لو في خطأ، react-hook-form يعرض الأخطاء تلقائياً تحت كل حقل
-                }} className="btn-primary flex-1">التالي ←</button>
+                }} className="btn-primary flex-1">{t.next}</button>
               </div>
             </div>
           )}
@@ -309,13 +398,13 @@ export default function RegisterPage() {
           {/* Step 3: License upload */}
           {step === 3 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">رفع رخصة العمل</h2>
-              <p className="text-sm text-gray-500 mb-5">يتم التحقق خلال 24 ساعة — حسابك يعمل فوراً</p>
+              <h2 className="text-lg font-bold text-gray-900 mb-1">{t.licenseTitle}</h2>
+              <p className="text-sm text-gray-500 mb-5">{t.licenseSub}</p>
 
               <div className="space-y-4">
                 {[
-                  { label: 'رخصة العمل *', state: licenseFile, setter: setLicenseFile, required: true },
-                  { label: 'السجل التجاري', state: crFile, setter: setCrFile, required: false },
+                  { label: `${t.license} *`, state: licenseFile, setter: setLicenseFile, required: true },
+                  { label: t.cr, state: crFile, setter: setCrFile, required: false },
                 ].map(({ label, state, setter }) => (
                   <label key={label} className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
                     state ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-blue-400'
@@ -329,7 +418,7 @@ export default function RegisterPage() {
                       <>
                         <div className="text-2xl mb-1">📄</div>
                         <div className="font-medium text-gray-700">{label}</div>
-                        <div className="text-xs text-gray-400 mt-1">PDF أو صورة — حجم أقصى 5MB</div>
+                        <div className="text-xs text-gray-400 mt-1">{t.uploadHint}</div>
                       </>
                     )}
                   </label>
@@ -337,8 +426,8 @@ export default function RegisterPage() {
               </div>
 
               <div className="flex gap-3 mt-6">
-                <button type="button" onClick={() => setStep(2)} className="btn-ghost flex-1">← رجوع</button>
-                <button type="button" onClick={() => setStep(4)} className="btn-primary flex-1">التالي ←</button>
+                <button type="button" onClick={() => setStep(2)} className="btn-ghost flex-1">{t.back}</button>
+                <button type="button" onClick={() => setStep(4)} className="btn-primary flex-1">{t.next}</button>
               </div>
             </div>
           )}
@@ -346,11 +435,9 @@ export default function RegisterPage() {
           {/* Step 4: Sectors + Specialties */}
           {step === 4 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">القطاعات والتخصصات</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-1">{t.sectorsTitle}</h2>
               <p className="text-sm text-gray-500 mb-5">
-                {selectedType === 'supplier'
-                  ? 'اختر القطاعات ثم حدد المواد التي توردها بالضبط'
-                  : 'اختر القطاعات التي تعمل فيها'}
+                {selectedType === 'supplier' ? t.sectorsSubSupplier : t.sectorsSubContractor}
               </p>
 
               <div className="grid grid-cols-2 gap-3 mb-5">
@@ -360,17 +447,17 @@ export default function RegisterPage() {
                     type="button"
                     onClick={() => {
                       toggleSector(sector)
-                      // عند إزالة قطاع، احذف تخصصاته
                       if (sectors?.includes(sector)) {
                         const subKeys = Object.keys(SUB_CATEGORIES[sector] || {})
                         setSpecialties(prev => prev.filter(s => !subKeys.includes(s)))
                       }
                     }}
-                    className={`p-4 rounded-xl border-2 text-right transition-all ${
+                    className={`p-4 rounded-xl border-2 transition-all ${
                       sectors?.includes(sector)
                         ? 'border-blue-600 bg-blue-50'
                         : 'border-gray-200 hover:border-blue-300'
                     }`}
+                    style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}
                   >
                     <div className="font-semibold text-sm text-gray-900">{SECTOR_LABELS[sector]}</div>
                   </button>
@@ -380,8 +467,8 @@ export default function RegisterPage() {
               {/* التخصصات الدقيقة — للمورد فقط */}
               {selectedType === 'supplier' && sectors?.length > 0 && (
                 <div className="mb-5 border-t border-gray-100 pt-5">
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">المواد التي توردها بالضبط 🎯</h3>
-                  <p className="text-xs text-gray-500 mb-3">حدد تخصصك الدقيق لتصلك الطلبات المطابقة فقط ({specialties.length} محدد)</p>
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">{t.exactMaterials}</h3>
+                  <p className="text-xs text-gray-500 mb-3">{t.exactHint} ({specialties.length} {t.selected})</p>
                   <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
                     {sectors.map((sector: Sector) => {
                       const subs = SUB_CATEGORIES[sector] || {}
@@ -396,21 +483,23 @@ export default function RegisterPage() {
                           <div className="text-xs font-bold mb-2" style={{ color }}>{SECTOR_LABELS[sector]}</div>
                           {Object.entries(groups).map(([groupKey, keys]) => {
                             const grp = GROUP_LABELS[groupKey]
+                            const grpLabel = grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey
                             return (
                               <div key={groupKey} className="mb-2 bg-gray-50/50 rounded-lg p-2 border border-gray-100">
                                 <div className="text-[11px] font-bold text-gray-600 mb-1.5 flex items-center gap-1">
-                                  <span>{grp?.icon}</span>{grp?.ar || groupKey}
+                                  <span>{grp?.icon}</span>{grpLabel}
                                 </div>
                                 <div className="flex flex-wrap gap-1.5">
                                   {keys.map(key => {
                                     const sub = subs[key]
                                     const active = specialties.includes(key)
+                                    const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
                                     return (
                                       <button key={key} type="button" onClick={() => toggleSpecialty(key)}
                                         className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${
                                           active ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600'
                                         }`} style={active ? { background: color } : {}}>
-                                        {sub.icon} {sub.ar}
+                                        {sub.icon} {subLabel}
                                       </button>
                                     )
                                   })}
@@ -432,29 +521,29 @@ export default function RegisterPage() {
               {/* ── تصنيف المورد ── */}
               {selectedType === 'supplier' && (
                 <div className="mb-5 border-t border-gray-100 pt-5">
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">تصنيف شركتك</h3>
-                  <p className="text-xs text-gray-500 mb-3">يساعد المقاولين على إيجادك حسب حجم طلباتهم</p>
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">{t.companyClass}</h3>
+                  <p className="text-xs text-gray-500 mb-3">{t.classHintSupplier}</p>
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {[
-                      { key: 'manufacturer', icon: '🏭', label: 'مصنع / موزع رئيسي', desc: 'إنتاج أو توزيع بكميات كبيرة' },
-                      { key: 'commercial', icon: '🏪', label: 'موزع تجاري', desc: 'متوسط الحجم والكميات' },
-                      { key: 'local', icon: '🏬', label: 'مورد محلي', desc: 'كميات صغيرة إلى متوسطة' },
-                    ].map(t => (
-                      <button key={t.key} type="button"
-                        onClick={() => setSupplierTier(t.key as any)}
+                      { key: 'manufacturer', icon: '🏭', label: t.manufacturer, desc: t.manufacturerD },
+                      { key: 'commercial', icon: '🏪', label: t.commercial, desc: t.commercialD },
+                      { key: 'local', icon: '🏬', label: t.local, desc: t.localD },
+                    ].map(tier => (
+                      <button key={tier.key} type="button"
+                        onClick={() => setSupplierTier(tier.key as any)}
                         className={`p-3 rounded-xl border-2 text-center transition-all ${
-                          supplierTier === t.key ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'
+                          supplierTier === tier.key ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'
                         }`}>
-                        <div className="text-xl mb-1">{t.icon}</div>
-                        <div className={`text-xs font-bold ${supplierTier === t.key ? 'text-[#F5831F]' : 'text-gray-700'}`}>{t.label}</div>
-                        <div className="text-[10px] text-gray-400 mt-0.5">{t.desc}</div>
+                        <div className="text-xl mb-1">{tier.icon}</div>
+                        <div className={`text-xs font-bold ${supplierTier === tier.key ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</div>
+                        <div className="text-[10px] text-gray-400 mt-0.5">{tier.desc}</div>
                       </button>
                     ))}
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1">الحد الأدنى لقيمة الطلب (ر.س) — اختياري</label>
+                    <label className="block text-xs font-bold text-gray-500 mb-1">{t.minOrder}</label>
                     <input type="number" value={minOrderValue} onChange={e => setMinOrderValue(e.target.value)}
-                      className="input-field" placeholder="مثال: 50000 — اتركه فارغاً لاستقبال كل الطلبات" min="0" />
+                      className="input-field" placeholder={t.minOrderPh} min="0" />
                   </div>
                 </div>
               )}
@@ -462,14 +551,14 @@ export default function RegisterPage() {
               {/* ── درجة المقاول ── */}
               {selectedType === 'contractor' && (
                 <div className="mb-5 border-t border-gray-100 pt-5">
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">درجة تصنيف شركتك</h3>
-                  <p className="text-xs text-gray-500 mb-3">وزارة الشؤون البلدية — اختياري</p>
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">{t.gradeTitle}</h3>
+                  <p className="text-xs text-gray-500 mb-3">{t.gradeSub}</p>
                   <div className="grid grid-cols-4 gap-2">
                     {[
-                      { grade: 'A', label: 'أ', desc: 'أكثر من 100M ر.س', color: '#F5831F' },
-                      { grade: 'B', label: 'ب', desc: '30–100M ر.س', color: '#1B2D5B' },
-                      { grade: 'C', label: 'ج', desc: '5–30M ر.س', color: '#0F6E56' },
-                      { grade: 'D', label: 'د', desc: 'أقل من 5M ر.س', color: '#888780' },
+                      { grade: 'A', label: locale === 'ar' ? 'أ' : 'A', desc: '> 100M', color: '#F5831F' },
+                      { grade: 'B', label: locale === 'ar' ? 'ب' : 'B', desc: '30–100M', color: '#1B2D5B' },
+                      { grade: 'C', label: locale === 'ar' ? 'ج' : 'C', desc: '5–30M', color: '#0F6E56' },
+                      { grade: 'D', label: locale === 'ar' ? 'د' : 'D', desc: '< 5M', color: '#888780' },
                     ].map(g => (
                       <button key={g.grade} type="button"
                         onClick={() => setContractorGrade(g.grade as any)}
@@ -492,13 +581,13 @@ export default function RegisterPage() {
               )}
 
               <div className="flex gap-3">
-                <button type="button" onClick={() => setStep(3)} className="btn-ghost flex-1">← رجوع</button>
+                <button type="button" onClick={() => setStep(3)} className="btn-ghost flex-1">{t.back}</button>
                 <button
                   type="submit"
                   disabled={isSubmitting || uploading}
                   className="btn-primary flex-2 flex-1 disabled:opacity-50"
                 >
-                  {isSubmitting || uploading ? 'جارٍ الإنشاء...' : 'إنشاء الحساب ←'}
+                  {isSubmitting || uploading ? t.creating : t.createAccount}
                 </button>
               </div>
             </div>
