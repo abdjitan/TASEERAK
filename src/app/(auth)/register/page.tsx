@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, type UserRole, type Sector } from '@/types'
+import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, getRegionLabel, CITIES_BY_REGION, type UserRole, type Sector } from '@/types'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 
@@ -347,15 +347,21 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{t.region} *</label>
-                    <select {...register('region')} className="input-field">
+                    <select {...register('region')} className="input-field"
+                      onChange={e => { setValue('region', e.target.value); setValue('city', '') }}>
                       <option value="">{t.selectRegion}</option>
-                      {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                      {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
                     </select>
                     {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{t.city} *</label>
-                    <input {...register('city')} className="input-field" placeholder={t.cityPh}/>
+                    <select {...register('city')} className="input-field" disabled={!watch('region')}>
+                      <option value="">{watch('region') ? t.selectRegion : '—'}</option>
+                      {(CITIES_BY_REGION[watch('region')] || []).map(c => (
+                        <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>
+                      ))}
+                    </select>
                     {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
                   </div>
                 </div>

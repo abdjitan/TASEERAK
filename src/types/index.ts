@@ -916,10 +916,90 @@ export const UNIT_OPTIONS = [
   'بند', 'مقطوعية', 'إجمالي',
 ]
 
+// المناطق الإدارية السعودية (13 منطقة)
 export const REGIONS = [
-  'الرياض', 'جدة', 'مكة المكرمة', 'المدينة المنورة', 'الدمام',
-  'ينبع', 'تبوك', 'أبها', 'حائل', 'القصيم', 'جازان', 'نجران',
+  'الرياض', 'مكة المكرمة', 'المدينة المنورة', 'القصيم', 'المنطقة الشرقية',
+  'عسير', 'تبوك', 'حائل', 'الحدود الشمالية', 'جازان', 'نجران', 'الباحة', 'الجوف',
 ]
+
+// ترجمة المناطق (عربي → إنجليزي)
+export const REGION_LABELS: Record<string, { en: string; ur: string }> = {
+  'الرياض': { en: 'Riyadh', ur: 'ریاض' },
+  'مكة المكرمة': { en: 'Makkah', ur: 'مکہ' },
+  'المدينة المنورة': { en: 'Madinah', ur: 'مدینہ' },
+  'القصيم': { en: 'Qassim', ur: 'قصیم' },
+  'المنطقة الشرقية': { en: 'Eastern Province', ur: 'مشرقی صوبہ' },
+  'عسير': { en: 'Asir', ur: 'عسیر' },
+  'تبوك': { en: 'Tabuk', ur: 'تبوک' },
+  'حائل': { en: 'Hail', ur: 'حائل' },
+  'الحدود الشمالية': { en: 'Northern Borders', ur: 'شمالی سرحدیں' },
+  'جازان': { en: 'Jazan', ur: 'جازان' },
+  'نجران': { en: 'Najran', ur: 'نجران' },
+  'الباحة': { en: 'Al Bahah', ur: 'الباحہ' },
+  'الجوف': { en: 'Al Jouf', ur: 'الجوف' },
+}
+
+// مدن كل منطقة
+export const CITIES_BY_REGION: Record<string, { ar: string; en: string }[]> = {
+  'الرياض': [
+    { ar: 'الرياض', en: 'Riyadh' }, { ar: 'الخرج', en: 'Al Kharj' },
+    { ar: 'الدوادمي', en: 'Dawadmi' }, { ar: 'المجمعة', en: 'Al Majmaah' },
+    { ar: 'الزلفي', en: 'Az Zulfi' }, { ar: 'وادي الدواسر', en: 'Wadi ad-Dawasir' },
+    { ar: 'عفيف', en: 'Afif' }, { ar: 'الأفلاج', en: 'Al Aflaj' },
+  ],
+  'مكة المكرمة': [
+    { ar: 'مكة المكرمة', en: 'Makkah' }, { ar: 'جدة', en: 'Jeddah' },
+    { ar: 'الطائف', en: 'Taif' }, { ar: 'رابغ', en: 'Rabigh' },
+    { ar: 'القنفذة', en: 'Al Qunfudhah' }, { ar: 'الليث', en: 'Al Lith' },
+  ],
+  'المدينة المنورة': [
+    { ar: 'المدينة المنورة', en: 'Madinah' }, { ar: 'ينبع', en: 'Yanbu' },
+    { ar: 'العلا', en: 'AlUla' }, { ar: 'بدر', en: 'Badr' }, { ar: 'خيبر', en: 'Khaybar' },
+  ],
+  'القصيم': [
+    { ar: 'بريدة', en: 'Buraidah' }, { ar: 'عنيزة', en: 'Unaizah' },
+    { ar: 'الرس', en: 'Ar Rass' }, { ar: 'المذنب', en: 'Al Midhnab' },
+  ],
+  'المنطقة الشرقية': [
+    { ar: 'الدمام', en: 'Dammam' }, { ar: 'الخبر', en: 'Khobar' },
+    { ar: 'الظهران', en: 'Dhahran' }, { ar: 'الأحساء', en: 'Al Ahsa' },
+    { ar: 'الجبيل', en: 'Jubail' }, { ar: 'القطيف', en: 'Qatif' },
+    { ar: 'حفر الباطن', en: 'Hafar Al Batin' }, { ar: 'الخفجي', en: 'Khafji' },
+  ],
+  'عسير': [
+    { ar: 'أبها', en: 'Abha' }, { ar: 'خميس مشيط', en: 'Khamis Mushait' },
+    { ar: 'بيشة', en: 'Bisha' }, { ar: 'النماص', en: 'An Namas' },
+  ],
+  'تبوك': [
+    { ar: 'تبوك', en: 'Tabuk' }, { ar: 'ضباء', en: 'Duba' },
+    { ar: 'تيماء', en: 'Tayma' }, { ar: 'الوجه', en: 'Al Wajh' }, { ar: 'نيوم', en: 'NEOM' },
+  ],
+  'حائل': [
+    { ar: 'حائل', en: 'Hail' }, { ar: 'بقعاء', en: 'Baqaa' }, { ar: 'الشنان', en: 'Ash Shinan' },
+  ],
+  'الحدود الشمالية': [
+    { ar: 'عرعر', en: 'Arar' }, { ar: 'رفحاء', en: 'Rafha' }, { ar: 'طريف', en: 'Turaif' },
+  ],
+  'جازان': [
+    { ar: 'جازان', en: 'Jazan' }, { ar: 'صبيا', en: 'Sabya' },
+    { ar: 'أبو عريش', en: 'Abu Arish' }, { ar: 'صامطة', en: 'Samtah' },
+  ],
+  'نجران': [
+    { ar: 'نجران', en: 'Najran' }, { ar: 'شرورة', en: 'Sharurah' },
+  ],
+  'الباحة': [
+    { ar: 'الباحة', en: 'Al Bahah' }, { ar: 'بلجرشي', en: 'Baljurashi' },
+    { ar: 'المخواة', en: 'Al Makhwah' },
+  ],
+  'الجوف': [
+    { ar: 'سكاكا', en: 'Sakaka' }, { ar: 'القريات', en: 'Qurayyat' }, { ar: 'دومة الجندل', en: 'Dumat Al Jandal' },
+  ],
+}
+
+export function getRegionLabel(region: string, locale: string): string {
+  if (locale === 'ar') return region
+  return REGION_LABELS[region] ? (locale === 'ur' ? REGION_LABELS[region].ur : REGION_LABELS[region].en) : region
+}
 
 // =============================================
 // DATABASE MODELS
