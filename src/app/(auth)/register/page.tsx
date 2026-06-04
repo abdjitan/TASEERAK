@@ -16,7 +16,7 @@ const schema = z.object({
   role: z.enum(['contractor', 'supplier'] as const),
   company_name_ar: z.string().min(3, 'اسم الشركة مطلوب'),
   company_name_en: z.string().optional(),
-  commercial_registration: z.string().min(10, 'رقم السجل التجاري غير صحيح'),
+  commercial_registration: z.string().regex(/^[0-9]{10}$/, 'رقم السجل التجاري يجب أن يكون 10 أرقام بالضبط'),
   vat_number: z.string().optional(),
   phone: z.string().regex(/^05[0-9]{8}$/, 'رقم الجوال يجب أن يكون 10 أرقام ويبدأ بـ 05'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
@@ -47,7 +47,7 @@ export default function RegisterPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const { register, handleSubmit, watch, setValue, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, trigger, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { sectors: [] },
   })
@@ -241,7 +241,9 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">رقم السجل التجاري *</label>
-                    <input {...register('commercial_registration')} className="input-field" placeholder="1010XXXXXXX"/>
+                    <input {...register('commercial_registration')} className="input-field" placeholder="1010XXXXXX"
+                      inputMode="numeric" maxLength={10} dir="ltr"
+                      onInput={e => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10) }} />
                     {errors.commercial_registration && <p className="text-red-500 text-xs mt-1">{errors.commercial_registration.message}</p>}
                   </div>
                   <div>
@@ -291,22 +293,13 @@ export default function RegisterPage() {
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => setStep(1)} className="btn-ghost flex-1">← رجوع</button>
                 <button type="button" onClick={async () => {
-                  // Validate step 2 fields before proceeding
-                  const result = await handleSubmit(() => {})()
-                  const vals = watch()
-                  const hasErrors =
-                    !vals.company_name_ar || vals.company_name_ar.length < 3 ||
-                    !vals.commercial_registration || vals.commercial_registration.length < 10 ||
-                    !vals.phone || vals.phone.length < 10 ||
-                    !vals.email || !vals.email.includes('@') ||
-                    !vals.password || vals.password.length < 8 ||
-                    !vals.region || !vals.city || vals.city.length < 2
-                  if (hasErrors) {
-                    // trigger validation display
-                    handleSubmit(() => {})()
-                    return
-                  }
-                  setStep(3)
+                  // التحقق من حقول الخطوة 2 فقط باستخدام schema الكامل (Zod)
+                  const valid = await trigger([
+                    'company_name_ar', 'commercial_registration', 'vat_number',
+                    'phone', 'email', 'password', 'region', 'city'
+                  ])
+                  if (valid) setStep(3)
+                  // لو في خطأ، react-hook-form يعرض الأخطاء تلقائياً تحت كل حقل
                 }} className="btn-primary flex-1">التالي ←</button>
               </div>
             </div>
