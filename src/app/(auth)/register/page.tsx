@@ -50,6 +50,7 @@ export default function RegisterPage() {
   const { register, handleSubmit, watch, setValue, trigger, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { sectors: [] },
+    mode: 'onChange',
   })
 
   const sectors = watch('sectors') as Sector[]
