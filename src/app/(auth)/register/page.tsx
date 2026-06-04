@@ -117,7 +117,12 @@ type FormData = z.infer<typeof schema>
 export default function RegisterPage() {
   const { locale, dir } = useTranslation()
   const t = TR[locale] || TR.ar
-  const sl = (s) => SECTOR_LABELS[s] // sector label helper (uses AR labels; sub-labels are localized below)
+  const SECTOR_TR = {
+    civil: { en: 'Civil', ur: 'سول' }, architectural: { en: 'Architectural', ur: 'تعمیراتی' },
+    electrical: { en: 'Electrical', ur: 'برقی' }, mechanical: { en: 'Mechanical', ur: 'مکینیکل' },
+    equipment: { en: 'Machinery', ur: 'مشینری' }, supply_store: { en: 'Supply Store', ur: 'سپلائی اسٹور' },
+  }
+  const sl = (s) => locale === 'ar' ? SECTOR_LABELS[s] : (SECTOR_TR[s]?.[locale] || SECTOR_LABELS[s])
   const [step, setStep] = useState(1)
   const [selectedType, setSelectedType] = useState<'contractor' | 'supplier' | null>(null)
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
@@ -465,7 +470,7 @@ export default function RegisterPage() {
                     }`}
                     style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}
                   >
-                    <div className="font-semibold text-sm text-gray-900">{SECTOR_LABELS[sector]}</div>
+                    <div className="font-semibold text-sm text-gray-900">{sl(sector)}</div>
                   </button>
                 ))}
               </div>
@@ -486,7 +491,7 @@ export default function RegisterPage() {
                       const color = SECTOR_COLORS[sector]
                       return (
                         <div key={sector}>
-                          <div className="text-xs font-bold mb-2" style={{ color }}>{SECTOR_LABELS[sector]}</div>
+                          <div className="text-xs font-bold mb-2" style={{ color }}>{sl(sector)}</div>
                           {Object.entries(groups).map(([groupKey, keys]) => {
                             const grp = GROUP_LABELS[groupKey]
                             const grpLabel = grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey
