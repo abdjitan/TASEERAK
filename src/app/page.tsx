@@ -69,7 +69,7 @@ const txt = {
   },
 }
 
-const sectorIcons = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️' }
+const sectorIcons = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🔧' }
 
 export default function LandingPage() {
   const { locale, dir } = useTranslation()

@@ -5,7 +5,7 @@
 export type UserRole = 'contractor' | 'supplier' | 'admin'
 export type VerificationStatus = 'pending' | 'verified' | 'rejected'
 export type SubscriptionPlan = 'free' | 'professional'
-export type Sector = 'civil' | 'architectural' | 'electrical' | 'mechanical'
+export type Sector = 'civil' | 'architectural' | 'electrical' | 'mechanical' | 'equipment'
 export type RFQStatus = 'open' | 'closed' | 'expired' | 'cancelled'
 export type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'expired'
 export type MessageType = 'text' | 'offer' | 'file' | 'system'
@@ -26,6 +26,7 @@ export const SECTOR_LABELS: Record<Sector, string> = {
   architectural: 'معماري',
   electrical: 'كهرباء',
   mechanical: 'ميكانيك',
+  equipment: 'معدات وعُدد',
 }
 
 // =============================================
@@ -65,6 +66,13 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   panels_switches: { ar: 'اللوحات والمفاتيح', en: 'Panels & Switches', ur: 'پینل', icon: '🎛' },
   lighting: { ar: 'أنظمة الإنارة', en: 'Lighting Systems', ur: 'روشنی', icon: '💡' },
   low_current: { ar: 'أنظمة التيار الخفيف', en: 'Low Current Systems', ur: 'لو کرنٹ', icon: '📹' },
+  // معدات وعُدد
+  hand_tools: { ar: 'عُدد يدوية', en: 'Hand Tools', ur: 'ہاتھ کے اوزار', icon: '🔧' },
+  power_tools: { ar: 'عُدد كهربائية', en: 'Power Tools', ur: 'بجلی کے اوزار', icon: '🔌' },
+  heavy_equipment: { ar: 'معدات ثقيلة وآليات', en: 'Heavy Equipment & Machinery', ur: 'بھاری مشینری', icon: '🚜' },
+  light_equipment: { ar: 'معدات خفيفة', en: 'Light Equipment', ur: 'ہلکی مشینری', icon: '⚙️' },
+  safety: { ar: 'السلامة ومعدات الوقاية', en: 'Safety & PPE', ur: 'حفاظتی سامان', icon: '🦺' },
+  consumables: { ar: 'مستهلكات ولوازم', en: 'Consumables & Supplies', ur: 'استعمالی اشیاء', icon: '📦' },
 }
 
 export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
@@ -192,6 +200,46 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ مكافحة الحريق ═══
     fire_fighting: { ar: 'مواسير ورشاشات حريق', en: 'Fire Fighting Systems', ur: 'فائر فائٹنگ', icon: '🧯', group: 'firefighting',
       keywords: ['إطفاء','حريق','sprinkler','رشاش','مواسير حريق','سكيدول','schedule 40','هيدرنت','صناديق حريق','UL','FM','مضخة حريق'] },
+  },
+  equipment: {
+    // ═══ عُدد يدوية ═══
+    hand_tools: { ar: 'عُدد يدوية (مفكات/زراديات)', en: 'Hand Tools', ur: 'ہاتھ کے اوزار', icon: '🔧', group: 'hand_tools',
+      keywords: ['مفك','مفكات','زرادية','زراديات','كماشة','مفتاح','wrench','screwdriver','plier','مطرقة','hammer','منشار يدوي','شاكوش','عدة يدوية','صامولة'] },
+    measuring: { ar: 'أدوات قياس وتسوية', en: 'Measuring & Leveling', ur: 'پیمائش', icon: '📏', group: 'hand_tools',
+      keywords: ['متر','ميزان','level','قياس','measuring','شريط قياس','tape','ليزر','laser','زاوية','square','ميزان ماء'] },
+    // ═══ عُدد كهربائية ═══
+    power_tools: { ar: 'عُدد كهربائية (دريل/صاروخ)', en: 'Power Tools', ur: 'بجلی کے اوزار', icon: '🔌', group: 'power_tools',
+      keywords: ['دريل','drill','صاروخ','grinder','منشار كهرب','saw','مفك كهرب','شحن','بطارية','جلاخة','راوتر','router','مثقاب'] },
+    welding: { ar: 'معدات لحام وقطع', en: 'Welding & Cutting', ur: 'ویلڈنگ', icon: '⚡', group: 'power_tools',
+      keywords: ['لحام','welding','قطع','cutting','ماكينة لحام','أكسجين','استيلين','plasma','إلكترود'] },
+    // ═══ معدات ثقيلة وآليات ═══
+    heavy_machinery: { ar: 'حفارات وشيولات', en: 'Excavators & Loaders', ur: 'کھدائی مشین', icon: '🚜', group: 'heavy_equipment',
+      keywords: ['حفار','حفارة','excavator','شيول','loader','بلدوزر','bulldozer','بوكلين','لودر','جريدر','grader'] },
+    cranes: { ar: 'رافعات وكرينات', en: 'Cranes & Lifting', ur: 'کرین', icon: '🏗', group: 'heavy_equipment',
+      keywords: ['رافعة','crane','كرين','ونش','winch','رفع','lifting','برج رفع','tower crane','مناولة','forklift','رافعة شوكية'] },
+    trucks: { ar: 'شاحنات ومعدات نقل', en: 'Trucks & Transport', ur: 'ٹرک', icon: '🚛', group: 'heavy_equipment',
+      keywords: ['شاحنة','truck','قلاب','dump','نقل','transport','صهريج','tanker','مقطورة','trailer'] },
+    concrete_equip: { ar: 'معدات خرسانة', en: 'Concrete Equipment', ur: 'کنکریٹ مشین', icon: '🏭', group: 'heavy_equipment',
+      keywords: ['خلاطة','mixer','مضخة خرسانة','concrete pump','هزاز','vibrator','صب خرسانة','baching'] },
+    // ═══ معدات خفيفة ═══
+    compaction: { ar: 'معدات دك ورص', en: 'Compaction Equipment', ur: 'کمپیکشن', icon: '🛞', group: 'light_equipment',
+      keywords: ['دكاكة','compactor','رصاصة','plate','هراس','roller','رص','مدماك','دك تربة'] },
+    generators_equip: { ar: 'مولدات وكمبروسرات', en: 'Generators & Compressors', ur: 'جنریٹر', icon: '⚙️', group: 'light_equipment',
+      keywords: ['مولد','generator','كمبروسر','compressor','ضاغط هواء','مكينة','محرك','engine','دينمو'] },
+    pumps_equip: { ar: 'طرمبات ومضخات نزح', en: 'Dewatering Pumps', ur: 'پمپ', icon: '💧', group: 'light_equipment',
+      keywords: ['طرمبة','مضخة نزح','dewatering','submersible','غطاسة','مضخة مياه','شفط'] },
+    // ═══ السلامة ومعدات الوقاية ═══
+    ppe: { ar: 'معدات وقاية شخصية (PPE)', en: 'Personal Protective Equipment', ur: 'حفاظتی سامان', icon: '🦺', group: 'safety',
+      keywords: ['خوذة','helmet','قفازات','gloves','نظارة','goggles','حذاء سلامة','safety shoes','سترة','vest','كمامة','mask','حزام أمان','harness','PPE','وقاية'] },
+    site_safety: { ar: 'سلامة الموقع', en: 'Site Safety', ur: 'سائٹ سیفٹی', icon: '🚧', group: 'safety',
+      keywords: ['حواجز','barrier','شريط تحذير','أقماع','cone','لافتات','signage','طفاية','مظلة','شبك أمان','safety net'] },
+    // ═══ مستهلكات ولوازم ═══
+    fasteners: { ar: 'مسامير وبراغي ومثبتات', en: 'Fasteners & Fixings', ur: 'پیچ', icon: '🔩', group: 'consumables',
+      keywords: ['مسمار','برغي','screw','bolt','nail','صامولة','nut','مثبت','fixing','anchor','رول بلت','خابور'] },
+    abrasives: { ar: 'أقراص قص وتجليخ', en: 'Cutting & Grinding Discs', ur: 'ڈسک', icon: '⭕', group: 'consumables',
+      keywords: ['قرص قص','disc','تجليخ','grinding','صنفرة','sandpaper','شفرة','blade','بريد','cutting disc'] },
+    adhesives_equip: { ar: 'لواصق وسيليكون وفوم', en: 'Adhesives & Sealants', ur: 'چپکنے والا', icon: '🧴', group: 'consumables',
+      keywords: ['سيليكون','silicone','فوم','foam','لاصق','adhesive','glue','سيلانت','sealant','صمغ','شريط لاصق','tape'] },
   },
 }
 
@@ -737,6 +785,38 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ وقود (BOQ: 26-FUEL) ═══
     'خزان وقود ديزل تحت أرضي', 'خزان وقود ديزل يومي',
     'مضخة نقل وقود', 'وحدة تصفية وقود', 'خطوط تغذية وقود',
+  ],
+  equipment: [
+    // ═══ عُدد يدوية ═══
+    'مفك عادي', 'مفك صليبة', 'طقم مفكات', 'زرادية', 'كماشة',
+    'مفتاح ربط إنجليزي', 'طقم مفاتيح', 'مطرقة', 'شاكوش',
+    'منشار يدوي', 'مبرد حديد', 'إزميل', 'سكين قص',
+    // ═══ أدوات قياس ═══
+    'متر قياس 5م', 'متر قياس 8م', 'ميزان ماء', 'ميزان ليزر',
+    'زاوية قياس', 'شريط قياس معدني',
+    // ═══ عُدد كهربائية ═══
+    'دريل كهربائي', 'دريل شحن', 'صاروخ تجليخ', 'صاروخ قص',
+    'منشار كهربائي', 'مفك كهربائي', 'جلاخة', 'راوتر خشب',
+    'مثقاب مطرقي', 'ماكينة لحام', 'ماكينة قص بلازما',
+    // ═══ معدات ثقيلة ═══
+    'حفارة (بوكلين)', 'شيول لودر', 'بلدوزر', 'جريدر',
+    'رافعة برجية', 'كرين متحرك', 'رافعة شوكية',
+    'شاحنة قلاب', 'صهريج مياه', 'مقطورة نقل',
+    'خلاطة خرسانة', 'مضخة خرسانة', 'هزاز خرسانة',
+    // ═══ معدات خفيفة ═══
+    'دكاكة (كومباكتور)', 'رصاصة دك', 'هراس أسطواني',
+    'مولد كهرباء ديزل', 'كمبروسر هواء', 'ضاغط هواء',
+    'طرمبة غطاسة', 'مضخة نزح مياه',
+    // ═══ السلامة ═══
+    'خوذة سلامة', 'قفازات عمل', 'نظارة واقية',
+    'حذاء سلامة', 'سترة عاكسة', 'كمامة غبار',
+    'حزام أمان', 'حواجز تحذير', 'أقماع مرورية',
+    'شريط تحذير', 'طفاية حريق', 'شبك أمان',
+    // ═══ مستهلكات ═══
+    'مسامير حديد', 'براغي', 'صواميل', 'رول بلت',
+    'خوابير تثبيت', 'قرص قص حديد', 'قرص تجليخ',
+    'ورق صنفرة', 'شفرات قص', 'سيليكون', 'فوم عازل',
+    'شريط لاصق', 'لاصق قوي',
   ],
 }
 
