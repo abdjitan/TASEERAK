@@ -130,7 +130,7 @@ export default function LandingPage() {
       <section className="bg-white py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-2xl font-bold text-[#1B2D5B] text-center mb-12">{t.sectorsTitle}</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 stagger">
             {(Object.keys(SECTOR_LABELS) as any[]).map(s => (
               <div key={s} className="bg-[#f4f6f9] rounded-2xl p-6 text-center hover:shadow-md hover:-translate-y-1 transition-all duration-300 border border-gray-100">
                 <div className="text-4xl mb-3">{sectorIcons[s]}</div>
