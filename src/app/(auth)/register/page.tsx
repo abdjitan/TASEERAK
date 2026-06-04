@@ -10,7 +10,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, type UserRole, type Sector } from '@/types'
 
-const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f' }
+const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 const schema = z.object({
   role: z.enum(['contractor', 'supplier'] as const),
