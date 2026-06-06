@@ -45,7 +45,7 @@ const UNIT_PATTERNS = [
 // كلمات مميزة جداً — لو ظهرت تحدد القطاع فوراً بوزن عالي
 const STRONG_SIGNALS = {
   electrical: ['cable','xlpe','swa','lszh','nyy','nycy','cu/','busbar','luminaire','mcb','mccb','rccb','kv','distribution board','conduit','earthing','cct','cabling','led screen','scoreboard','turnstile','access control','كابل','تأريض','لوحة توزيع','قاطع','شاشة','بوابة'],
-  mechanical: ['ppr','cpvc','pex','sprinkler','ahu','fcu','chiller','duct','hvac','pump','valve','pipe.*water','chilled water','fire pump','sanitary','مضخة','صمام','مكيف','مجرى هواء','صرف صحي'],
+  mechanical: ['ppr','cpvc','pex','sprinkler','ahu','fcu','chiller','duct','hvac','pump','valve','pipe.*water','chilled water','fire pump','sanitary','damper','exhaust fan','smoke fan','fire hose','hose cabinet','siamese','os&y','storm','roof drain','silent drain','jockey','cladding','duct insulation','مضخة','صمام','مكيف','مجرى هواء','صرف صحي','خانق','مروحة شفط','صندوق حريق','صرف أمطار','عزل دكت','مياه مثلجة'],
   architectural: ['tile','ceramic','porcelain','gypsum','paint','door','window','glass','ceiling','cladding','carpet','vinyl','curtain wall','rainscreen','louver','joinery','millwork','acoustic','wardrobe','banquette','بلاط','سيراميك','دهان','باب','نافذة','جبس','سجاد','أسقف','واجهة ستائرية','نجارة','صوتي'],
   civil: ['concrete','reinforc','rebar','bar reinforcement','formwork','excavat','pile','blinding','masonry','blockwork','kerb','turf','irrigation','rain bird','interlock','fountain','landscape','planter','خرسانة','حديد تسليح','حفر','أوتاد','بلوك','ردم','عشب','ري','إنترلوك','نافورة'],
 }
