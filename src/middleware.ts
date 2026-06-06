@@ -45,21 +45,27 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // IMPORTANT: the installed @supabase/ssr (0.3.0) uses the get/set/remove
+      // cookie interface — NOT getAll/setAll (that arrived in 0.4.0). With the
+      // wrong interface the server reads NO cookies, so getUser() is always
+      // null and every protected route bounces to /login → infinite refresh
+      // loop, even though the browser thinks it is logged in.
       cookies: {
-        getAll() {
-          return request.cookies.getAll()
+        get(name: string) {
+          return request.cookies.get(name)?.value
         },
-        setAll(cookiesToSet) {
-          // Write cookies to the *request* first so downstream server
-          // components see the refreshed session immediately.
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          // Re-create response so we can set cookies on it as well.
+        set(name: string, value: string, options: any) {
+          // Write to the *request* so downstream server code sees the refreshed
+          // session immediately, then re-issue the response so the refreshed
+          // cookie is also sent back to the browser.
+          request.cookies.set({ name, value, ...options })
           response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
+          response.cookies.set({ name, value, ...options })
+        },
+        remove(name: string, options: any) {
+          request.cookies.set({ name, value: '', ...options })
+          response = NextResponse.next({ request })
+          response.cookies.set({ name, value: '', ...options })
         },
       },
     }
