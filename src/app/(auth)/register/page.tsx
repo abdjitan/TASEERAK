@@ -145,6 +145,7 @@ export default function RegisterPage() {
   const [crFile, setCrFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [formError, setFormError] = useState('')
+  const [emailSent, setEmailSent] = useState(false)
   const [crVerify, setCrVerify] = useState<any>(null)
   const [crChecking, setCrChecking] = useState(false)
   // Classification
@@ -223,94 +224,63 @@ export default function RegisterPage() {
     setUploading(true)
     setFormError('')
     try {
-      // 1. Create auth user
+      // Build the metadata the DB trigger uses to create the FULL profile
+      // (works whether email confirmation is on or off — no session needed).
+      const meta: any = {
+        role: data.role,
+        company_name_ar: data.company_name_ar,
+        company_name_en: data.company_name_en || '',
+        phone: data.phone || '',
+        commercial_registration: data.commercial_registration,
+        vat_number: data.vat_number || '',
+        region: data.region,
+        city: data.city,
+        sectors: data.sectors,
+      }
+      if (data.role === 'supplier') {
+        meta.supplier_tier = supplierTier
+        if (minOrderValue) meta.min_order_value = String(minOrderValue)
+        if (specialties.length > 0) meta.specialties = specialties
+        if (extraMaterials.length > 0) meta.extra_materials = extraMaterials
+      }
+      if (data.role === 'contractor' && contractorGrade) meta.contractor_grade = contractorGrade
+      if (crVerify?.mode === 'wathq' && crVerify?.verified) {
+        meta.cr_verification_source = 'wathq'
+        meta.cr_official_name = crVerify.name || ''
+        meta.cr_activity = crVerify.activity || ''
+        meta.cr_status = crVerify.status || ''
+        if (crVerify.expiryDate) meta.cr_expiry_date = crVerify.expiryDate
+        if (crVerify.issueDate) meta.cr_issue_date = crVerify.issueDate
+      }
+
+      // 1. Create the auth user. The DB trigger builds the full profile
+      //    (sectors, specialties, tier, verification, materials) from `meta`.
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-          data: {
-            role: data.role,
-            company_name_ar: data.company_name_ar,
-            phone: data.phone,
-          }
-        }
+          data: meta,
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
       })
-
       if (authError) throw new Error(authError.message)
       const userId = authData.user!.id
 
-      // 2. Upload license files
+      // 2. Email confirmation ON → no session. Show "verify your email";
+      //    documents are uploaded later from Settings.
+      if (!authData.session) {
+        setEmailSent(true)
+        return
+      }
+
+      // 3. Email confirmation OFF → we have a session. Finish documents + AI check.
       let licenseUrl = null, crUrl = null
-      if (licenseFile) {
-        licenseUrl = await uploadFile(licenseFile, `${userId}/license.${licenseFile.name.split('.').pop()}`)
-      }
-      if (crFile) {
-        crUrl = await uploadFile(crFile, `${userId}/cr.${crFile.name.split('.').pop()}`)
-      }
-
-      // 3. Update profile with full data
-      const updateData: any = {
-        company_name_en: data.company_name_en,
-        commercial_registration: data.commercial_registration,
-        vat_number: data.vat_number,
-        region: data.region,
-        city: data.city,
-        license_url: licenseUrl,
-        cr_url: crUrl,
-      }
-      if (data.role === 'supplier') {
-        updateData.supplier_tier = supplierTier
-        if (minOrderValue) updateData.min_order_value = parseFloat(minOrderValue)
-      }
-      if (data.role === 'contractor' && contractorGrade) {
-        updateData.contractor_grade = contractorGrade
+      if (licenseFile) licenseUrl = await uploadFile(licenseFile, `${userId}/license.${licenseFile.name.split('.').pop()}`)
+      if (crFile) crUrl = await uploadFile(crFile, `${userId}/cr.${crFile.name.split('.').pop()}`)
+      if (licenseUrl || crUrl) {
+        await supabase.from('profiles').update({ license_url: licenseUrl, cr_url: crUrl }).eq('id', userId)
       }
 
-      // Official CR verification result (Wathq) — instant verify when active
-      if (crVerify?.mode === 'wathq' && crVerify?.verified) {
-        updateData.cr_verification_source = 'wathq'
-        updateData.cr_verified_at = new Date().toISOString()
-        updateData.cr_official_name = crVerify.name || null
-        updateData.cr_activity = crVerify.activity || null
-        updateData.cr_status = crVerify.status || null
-        if (crVerify.expiryDate) updateData.cr_expiry_date = crVerify.expiryDate
-        if (crVerify.issueDate) updateData.cr_issue_date = crVerify.issueDate
-        updateData.cr_data = crVerify.raw || null
-        updateData.verification_status = 'verified'
-      }
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId)
-
-      if (profileError) throw new Error(profileError.message)
-
-      // 4. Insert sectors
-      const sectorsToInsert = data.sectors.map(sector => ({
-        profile_id: userId,
-        sector,
-      }))
-      await supabase.from('profile_sectors').insert(sectorsToInsert as any)
-
-      // 5. Insert specialties (للمورد)
-      if (data.role === 'supplier' && specialties.length > 0) {
-        const specsToInsert = specialties.map(specialty => ({ profile_id: userId, specialty }))
-        await supabase.from('profile_specialties').insert(specsToInsert as any)
-      }
-
-      // 6. Suggested materials not in the list (للمورد) → تُراجَع من الإدارة
-      if (data.role === 'supplier' && extraMaterials.length > 0) {
-        const reqs = extraMaterials.map(name => ({
-          supplier_id: userId,
-          name,
-          sector: (data.sectors && data.sectors[0]) || null,
-        }))
-        await supabase.from('material_requests').insert(reqs as any)
-      }
-
-      // 7. تصنيف تلقائي للمورد (كلمات مفتاحية فوراً + ذكاء اصطناعي إن وُجد المفتاح)
-      //    لا يوقف التسجيل أبداً مهما حصل.
       if (data.role === 'supplier') {
         try {
           await fetch('/api/classify-supplier', {
@@ -328,6 +298,37 @@ export default function RegisterPage() {
     } finally {
       setUploading(false)
     }
+  }
+
+  // After sign-up when email confirmation is ON
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50" dir={dir}>
+        <div className="absolute top-4 left-4"><LanguageSwitcher variant="minimal" /></div>
+        <a href="/" className="absolute top-4 right-4 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+          {locale === 'en' ? '🏠 Home' : locale === 'ur' ? '🏠 مرکزی صفحہ' : '🏠 الرئيسية'}
+        </a>
+        <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
+          <div className="text-5xl mb-4">📬</div>
+          <h1 className="text-xl font-bold text-gray-900 mb-2">
+            {locale === 'en' ? 'Verify your email' : locale === 'ur' ? 'اپنا ای میل تصدیق کریں' : 'فعّل بريدك الإلكتروني'}
+          </h1>
+          <p className="text-sm text-gray-500 mb-2">
+            {locale === 'en' ? 'We sent a confirmation link to your email. Open it to activate your account, then sign in.'
+            : locale === 'ur' ? 'ہم نے آپ کے ای میل پر تصدیقی لنک بھیجا ہے۔ اسے کھول کر اکاؤنٹ فعال کریں، پھر سائن ان کریں۔'
+            : 'أرسلنا رابط تأكيد إلى بريدك الإلكتروني. افتحه لتفعيل حسابك، ثم سجّل الدخول.'}
+          </p>
+          <p className="text-xs text-gray-400 mb-6">
+            {locale === 'en' ? 'You can upload your license / CR documents later from Settings.'
+            : locale === 'ur' ? 'آپ اپنی دستاویزات بعد میں ترتیبات سے اپلوڈ کر سکتے ہیں۔'
+            : 'يمكنك رفع مستندات الرخصة / السجل لاحقاً من الإعدادات.'}
+          </p>
+          <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#1B2D5B' }}>
+            {locale === 'en' ? 'Go to sign in' : locale === 'ur' ? 'سائن ان پر جائیں' : 'الذهاب لتسجيل الدخول'}
+          </a>
+        </div>
+      </div>
+    )
   }
 
   // Step 1: Choose type
