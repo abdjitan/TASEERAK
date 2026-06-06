@@ -93,6 +93,11 @@ function LoginForm() {
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.password}</label>
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="input-field" placeholder="••••••••" required disabled={loading} />
+                <div className="text-end mt-1.5">
+                  <a href="/forgot-password" className="text-xs font-medium hover:underline" style={{ color: '#F5831F' }}>
+                    {locale === 'en' ? 'Forgot password?' : locale === 'ur' ? 'پاسورڈ بھول گئے؟' : 'نسيت كلمة المرور؟'}
+                  </a>
+                </div>
               </div>
             </div>
             <button type="submit" disabled={loading}
