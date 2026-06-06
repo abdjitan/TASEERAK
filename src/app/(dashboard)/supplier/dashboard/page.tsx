@@ -114,6 +114,7 @@ export default function SupplierDashboard() {
       rfqs = rfqs.filter(r => {
         if (r.verified_only && !isVerified) return false
         if (Array.isArray(r.target_tiers) && r.target_tiers.length > 0 && !r.target_tiers.includes(myTier)) return false
+        if (r.nearby_only && p?.region && r.region !== p.region) return false
         return true
       })
 

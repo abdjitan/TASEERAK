@@ -124,6 +124,7 @@ export default function NewRFQPage() {
   // استهداف نوع الموردين + الموثّقون فقط
   const [targetTiers, setTargetTiers] = useState<string[]>([])
   const [verifiedOnly, setVerifiedOnly] = useState(false)
+  const [nearbyOnly, setNearbyOnly] = useState(false)
 
   function toggleTier(tier: string) {
     setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
@@ -165,6 +166,7 @@ export default function NewRFQPage() {
       hide_identity: hideIdentity,
       target_tiers: targetTiers.length > 0 ? targetTiers : null,
       verified_only: verifiedOnly,
+      nearby_only: nearbyOnly,
       estimated_value: estimatedValue ? parseFloat(estimatedValue) : null,
       notes: uploadedSpecUrl ? `${notes || ''}\n[مواصفات مرفقة: ${uploadedSpecUrl}]` : notes || null,
       expires_at: expiresAt,
@@ -404,6 +406,16 @@ export default function NewRFQPage() {
                   </div>
                   <div onClick={() => setVerifiedOnly(!verifiedOnly)} className={`w-11 h-6 rounded-full transition-all cursor-pointer flex items-center px-1 shrink-0 ${verifiedOnly ? 'justify-end' : 'justify-start'}`}
                     style={{ background: verifiedOnly ? '#0F6E56' : '#e5e7eb' }}>
+                    <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-800">📍 {locale === 'en' ? 'Nearby only (same region)' : locale === 'ur' ? 'صرف قریب (اسی علاقہ)' : 'القريبون فقط (نفس المنطقة)'}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">{locale === 'en' ? 'Only suppliers in your region — closer, cheaper shipping' : locale === 'ur' ? 'صرف آپ کے علاقے کے سپلائرز' : 'موردو منطقتك فقط — أقرب وشحن أرخص'}</div>
+                  </div>
+                  <div onClick={() => setNearbyOnly(!nearbyOnly)} className={`w-11 h-6 rounded-full transition-all cursor-pointer flex items-center px-1 shrink-0 ${nearbyOnly ? 'justify-end' : 'justify-start'}`}
+                    style={{ background: nearbyOnly ? '#1B2D5B' : '#e5e7eb' }}>
                     <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
                   </div>
                 </div>

@@ -1150,6 +1150,8 @@ export interface RFQ {
   estimated_value?: number | null
   target_tiers?: string[] | null   // null/empty = open to all supplier tiers
   verified_only?: boolean          // only verified suppliers may see/offer
+  nearby_only?: boolean            // only suppliers in the same region
+  delivery_location?: string | null // detailed delivery address when delivery required
   notes?: string
   status: RFQStatus
   expires_at: string

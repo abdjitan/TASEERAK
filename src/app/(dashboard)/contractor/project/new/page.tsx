@@ -38,6 +38,7 @@ export default function NewProjectPage() {
   // استهداف نوع الموردين + الموثّقون فقط (يطبَّق على كل بنود المشروع)
   const [targetTiers, setTargetTiers] = useState<string[]>([])
   const [verifiedOnly, setVerifiedOnly] = useState(false)
+  const [nearbyOnly, setNearbyOnly] = useState(false)
   function toggleTier(tier: string) {
     setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
   }
@@ -161,6 +162,7 @@ export default function NewProjectPage() {
           hide_identity: false,
           target_tiers: targetTiers.length > 0 ? targetTiers : null,
           verified_only: verifiedOnly,
+          nearby_only: nearbyOnly,
           notes: itemNotes,
           expires_at: expiresAt,
         }).select().single()
@@ -517,6 +519,16 @@ export default function NewProjectPage() {
                 </div>
                 <div onClick={() => setVerifiedOnly(!verifiedOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${verifiedOnly ? 'justify-end' : 'justify-start'}`}
                   style={{ background: verifiedOnly ? '#0F6E56' : '#e5e7eb' }}>
+                  <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5 mt-2">
+                <div>
+                  <div className="text-sm font-semibold text-gray-800">📍 {locale === 'en' ? 'Nearby only (same region)' : locale === 'ur' ? 'صرف قریب (اسی علاقہ)' : 'القريبون فقط (نفس المنطقة)'}</div>
+                  <div className="text-xs text-gray-400">{locale === 'en' ? 'Only suppliers in your region' : locale === 'ur' ? 'صرف آپ کے علاقے کے سپلائرز' : 'موردو منطقتك فقط — شحن أقرب وأرخص'}</div>
+                </div>
+                <div onClick={() => setNearbyOnly(!nearbyOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${nearbyOnly ? 'justify-end' : 'justify-start'}`}
+                  style={{ background: nearbyOnly ? '#1B2D5B' : '#e5e7eb' }}>
                   <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
                 </div>
               </div>
