@@ -48,6 +48,27 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // 1.5) DEMO MODE — lets the owner experience the full auto-verification
+    //      with fake data (no Wathq subscription needed). Enable by setting
+    //      WATHQ_DEMO=1 in the environment. Turn OFF before going live.
+    const DEMO = process.env.WATHQ_DEMO === '1' || process.env.WATHQ_DEMO === 'true'
+    if (!WATHQ_KEY && DEMO) {
+      return NextResponse.json({
+        ok: true,
+        mode: 'wathq',
+        verified: true,
+        cr,
+        name: 'مؤسسة تجريبية للمقاولات والتوريدات (DEMO)',
+        status: 'نشط',
+        activity: 'مقاولات عامة للمباني وتجارة مواد البناء',
+        expiryDate: '2027-01-01',
+        issueDate: '2020-01-01',
+        city: 'الرياض',
+        raw: { demo: true, cr },
+        message: '🧪 وضع تجريبي — هذه بيانات وهمية للعرض فقط. فعّل واثق للتحقق الحقيقي.',
+      })
+    }
+
     // 2) MANUAL MODE — Wathq not connected yet
     if (!WATHQ_KEY) {
       return NextResponse.json({
