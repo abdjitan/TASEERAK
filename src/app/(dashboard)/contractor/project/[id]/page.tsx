@@ -34,7 +34,7 @@ export default function ProjectResultsPage() {
       setProject(proj)
 
       const { data: projItems } = await supabase
-        .from('project_rfq_items').select('*, rfq:rfqs(*, offers(*, supplier:profiles(company_name_ar, phone, rating_avg, supplier_tier, latitude, longitude)))')
+        .from('project_rfq_items').select('*, rfq:rfqs(*, offers(*, supplier:profiles(company_name_ar, phone, rating_avg, supplier_tier, latitude, longitude, verification_status, cr_verification_source)))')
         .eq('project_rfq_id', id)
         .order('sector')
 
@@ -307,6 +307,11 @@ export default function ProjectResultsPage() {
                                 <div className="flex items-center gap-2 text-[10px] text-gray-400 flex-wrap">
                                   {offer.supplier?.supplier_tier && (
                                     <span>{offer.supplier.supplier_tier === 'manufacturer' ? '🏭' : offer.supplier.supplier_tier === 'commercial' ? '🏪' : '🏬'}</span>
+                                  )}
+                                  {offer.supplier?.verification_status === 'verified' && (
+                                    <span title={offer.supplier?.cr_verification_source === 'wathq' ? 'موثّق عبر واثق' : 'موثّق'} style={{ color: '#0F6E56', fontWeight: 700 }}>
+                                      {offer.supplier?.cr_verification_source === 'wathq' ? '🛡' : '✓'}
+                                    </span>
                                   )}
                                   {offer.supplier?.rating_avg > 0 && <span>⭐ {offer.supplier.rating_avg}</span>}
                                   {offer.delivery_days && <span>📦 {offer.delivery_days} {locale === 'en' ? 'days' : 'يوم'}</span>}

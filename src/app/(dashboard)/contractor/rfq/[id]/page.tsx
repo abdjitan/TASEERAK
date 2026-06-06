@@ -28,7 +28,7 @@ export default function RFQDetailPage() {
       setEditSpec(rfqData?.specification || '')
 
       const { data: offersData } = await supabase
-        .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district)')
+        .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source)')
         .eq('rfq_id', id).order('total_price', { ascending: true })
       setOffers(offersData || [])
 
@@ -246,6 +246,14 @@ export default function RFQDetailPage() {
                           }`}>
                             {offer.supplier.supplier_tier === 'manufacturer' ? '🏭 مصنع' :
                              offer.supplier.supplier_tier === 'commercial' ? '🏪 تجاري' : '🏬 محلي'}
+                          </span>
+                        )}
+                        {offer.supplier?.verification_status === 'verified' && (
+                          <span className="badge text-[10px] inline-flex items-center gap-0.5"
+                            style={offer.supplier?.cr_verification_source === 'wathq'
+                              ? { background: '#0F6E56', color: '#fff' }
+                              : { background: '#E1F5EE', color: '#0F6E56' }}>
+                            {offer.supplier?.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}
                           </span>
                         )}
                       </div>

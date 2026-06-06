@@ -123,12 +123,21 @@ export default function RegisterPage() {
     equipment: { en: 'Machinery', ur: 'مشینری' }, supply_store: { en: 'Supply Store', ur: 'سپلائی اسٹور' },
   }
   const sl = (s) => locale === 'ar' ? SECTOR_LABELS[s] : (SECTOR_TR[s]?.[locale] || SECTOR_LABELS[s])
+  // CR verification (Wathq) labels
+  const CRV = {
+    ar: { verifyBtn: 'تحقق عبر واثق', checking: 'جارٍ التحقق...', invalid: 'أدخل 10 أرقام أولاً', error: 'تعذّر التحقق، حاول لاحقاً' },
+    en: { verifyBtn: 'Verify via Wathq', checking: 'Checking...', invalid: 'Enter 10 digits first', error: 'Verification failed, try later' },
+    ur: { verifyBtn: 'واثق سے تصدیق', checking: 'تصدیق ہو رہی ہے...', invalid: 'پہلے 10 ہندسے درج کریں', error: 'تصدیق ناکام، بعد میں کوشش کریں' },
+  }
+  const cv = CRV[locale] || CRV.ar
   const [step, setStep] = useState(1)
   const [selectedType, setSelectedType] = useState<'contractor' | 'supplier' | null>(null)
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
   const [crFile, setCrFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [formError, setFormError] = useState('')
+  const [crVerify, setCrVerify] = useState<any>(null)
+  const [crChecking, setCrChecking] = useState(false)
   // Classification
   const [supplierTier, setSupplierTier] = useState<'manufacturer' | 'commercial' | 'local'>('local')
   const [contractorGrade, setContractorGrade] = useState<'A' | 'B' | 'C' | 'D' | ''>('')
@@ -164,6 +173,30 @@ export default function RegisterPage() {
     if (error) return null
     const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(data.path)
     return publicUrl
+  }
+
+  // Verify the Commercial Registration against the official source (Wathq)
+  async function verifyCR() {
+    const cr = (watch('commercial_registration') || '').toString()
+    if (!/^[0-9]{10}$/.test(cr)) { setCrVerify({ ok: false, message: cv.invalid }); return }
+    setCrChecking(true); setCrVerify(null)
+    try {
+      const res = await fetch('/api/verify-cr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cr }),
+      })
+      const j = await res.json()
+      setCrVerify(j)
+      // auto-fill official name if returned and field is empty
+      if (j?.verified && j?.name) {
+        if (!watch('company_name_en') && /[A-Za-z]/.test(j.name)) setValue('company_name_en', j.name)
+        if ((!watch('company_name_ar') || watch('company_name_ar').length < 3) && /[؀-ۿ]/.test(j.name)) setValue('company_name_ar', j.name)
+      }
+    } catch {
+      setCrVerify({ ok: false, message: cv.error })
+    }
+    setCrChecking(false)
   }
 
   async function onSubmit(data: FormData) {
@@ -211,6 +244,19 @@ export default function RegisterPage() {
       }
       if (data.role === 'contractor' && contractorGrade) {
         updateData.contractor_grade = contractorGrade
+      }
+
+      // Official CR verification result (Wathq) — instant verify when active
+      if (crVerify?.mode === 'wathq' && crVerify?.verified) {
+        updateData.cr_verification_source = 'wathq'
+        updateData.cr_verified_at = new Date().toISOString()
+        updateData.cr_official_name = crVerify.name || null
+        updateData.cr_activity = crVerify.activity || null
+        updateData.cr_status = crVerify.status || null
+        if (crVerify.expiryDate) updateData.cr_expiry_date = crVerify.expiryDate
+        if (crVerify.issueDate) updateData.cr_issue_date = crVerify.issueDate
+        updateData.cr_data = crVerify.raw || null
+        updateData.verification_status = 'verified'
       }
 
       const { error: profileError } = await supabase
@@ -338,9 +384,16 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{t.crNumber} *</label>
-                    <input {...register('commercial_registration')} className="input-field" placeholder="1010XXXXXX"
-                      inputMode="numeric" maxLength={10} dir="ltr"
-                      onInput={e => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10) }} />
+                    <div className="flex gap-2">
+                      <input {...register('commercial_registration')} className="input-field flex-1" placeholder="1010XXXXXX"
+                        inputMode="numeric" maxLength={10} dir="ltr"
+                        onInput={e => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); if (crVerify) setCrVerify(null) }} />
+                      <button type="button" onClick={verifyCR} disabled={crChecking}
+                        className="px-3 rounded-xl text-xs font-bold text-white whitespace-nowrap disabled:opacity-50 transition-all hover:shadow"
+                        style={{ background: '#0F6E56' }}>
+                        {crChecking ? cv.checking : `🛡 ${cv.verifyBtn}`}
+                      </button>
+                    </div>
                     {errors.commercial_registration && <p className="text-red-500 text-xs mt-1">{errors.commercial_registration.message}</p>}
                   </div>
                   <div>
@@ -348,6 +401,21 @@ export default function RegisterPage() {
                     <input {...register('vat_number')} className="input-field" placeholder="3XXXXXXXXXXXXXXX"/>
                   </div>
                 </div>
+
+                {crVerify && (
+                  <div className={`text-xs rounded-xl p-3 border flex items-start gap-2 ${
+                    crVerify.verified ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                    : crVerify.mode === 'manual' ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : 'bg-amber-50 border-amber-200 text-amber-700'
+                  }`}>
+                    <span className="text-sm flex-shrink-0">{crVerify.verified ? '🛡' : crVerify.mode === 'manual' ? 'ℹ️' : '⚠️'}</span>
+                    <div>
+                      {crVerify.name && <div className="font-bold">{crVerify.name}</div>}
+                      {crVerify.activity && <div className="opacity-80">{crVerify.activity}</div>}
+                      <div>{crVerify.message}</div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>

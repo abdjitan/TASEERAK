@@ -89,6 +89,13 @@ const langOptions = [
 export default function SettingsPage() {
   const { locale, dir, setLocale } = useTranslation()
   const t = txt[locale] || txt.ar
+  // CR verification (Wathq) labels
+  const CRV = {
+    ar: { card: 'التحقق الرسمي من السجل التجاري', sub: 'تحقق فوري عبر منصة واثق (وزارة التجارة)', btn: 'تحقق عبر واثق', checking: 'جارٍ التحقق...', noCr: 'لا يوجد رقم سجل تجاري في حسابك' },
+    en: { card: 'Official CR Verification', sub: 'Instant verification via Wathq (Ministry of Commerce)', btn: 'Verify via Wathq', checking: 'Checking...', noCr: 'No commercial registration on your account' },
+    ur: { card: 'سرکاری CR تصدیق', sub: 'واثق کے ذریعے فوری تصدیق', btn: 'واثق سے تصدیق', checking: 'تصدیق ہو رہی ہے...', noCr: 'آپ کے اکاؤنٹ میں کوئی CR نمبر نہیں' },
+  }
+  const cv = CRV[locale] || CRV.ar
 
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
@@ -120,6 +127,8 @@ export default function SettingsPage() {
   const [crFile, setCrFile] = useState(null)
   const [docsMsg, setDocsMsg] = useState('')
   const [docsSaving, setDocsSaving] = useState(false)
+  const [crCheck, setCrCheck] = useState(null)
+  const [crChecking, setCrChecking] = useState(false)
 
   useEffect(() => {
     async function init() {
@@ -218,6 +227,41 @@ export default function SettingsPage() {
     setProfile({ ...profile, license_url: licenseUrl, cr_url: crUrl, verification_status: 'pending' })
     setLicenseFile(null); setCrFile(null)
     setTimeout(() => setDocsMsg(''), 4000)
+  }
+
+  // Verify existing profile's CR against the official source (Wathq)
+  async function verifyCRSettings() {
+    const cr = (profile?.commercial_registration || '').toString()
+    if (!/^[0-9]{10}$/.test(cr)) { setCrCheck({ ok: false, message: cv.noCr }); return }
+    setCrChecking(true); setCrCheck(null)
+    try {
+      const res = await fetch('/api/verify-cr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cr }),
+      })
+      const j = await res.json()
+      setCrCheck(j)
+      if (j?.mode === 'wathq' && j?.verified) {
+        const supabase = createClient()
+        const upd = {
+          cr_verification_source: 'wathq',
+          cr_verified_at: new Date().toISOString(),
+          cr_official_name: j.name || null,
+          cr_activity: j.activity || null,
+          cr_status: j.status || null,
+          cr_expiry_date: j.expiryDate || null,
+          cr_issue_date: j.issueDate || null,
+          cr_data: j.raw || null,
+          verification_status: 'verified',
+        }
+        await supabase.from('profiles').update(upd).eq('id', user.id)
+        setProfile({ ...profile, ...upd })
+      }
+    } catch {
+      setCrCheck({ ok: false, message: t.error })
+    }
+    setCrChecking(false)
   }
 
   async function handleSignOut() {
@@ -487,6 +531,44 @@ export default function SettingsPage() {
                         <div className="text-xs text-gray-400 mt-0.5">{t.docHint}</div>
                       </div>
                     </label>
+                  </div>
+
+                  {/* Official CR verification via Wathq */}
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div>
+                        <div className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#0F6E56' }}>
+                          🛡 {cv.card}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-0.5">{cv.sub}</div>
+                        {profile?.commercial_registration && (
+                          <div className="text-[11px] text-gray-400 mt-1 font-mono" dir="ltr">CR: {profile.commercial_registration}</div>
+                        )}
+                      </div>
+                      {profile?.verification_status === 'verified' && profile?.cr_verification_source === 'wathq' ? (
+                        <span className="text-xs px-3 py-1.5 rounded-lg font-bold text-white" style={{ background: '#0F6E56' }}>🛡 {t.verified}</span>
+                      ) : (
+                        <button type="button" onClick={verifyCRSettings} disabled={crChecking}
+                          className="text-xs px-4 py-2 rounded-xl font-bold text-white whitespace-nowrap disabled:opacity-50 transition-all hover:shadow"
+                          style={{ background: '#0F6E56' }}>
+                          {crChecking ? cv.checking : `🛡 ${cv.btn}`}
+                        </button>
+                      )}
+                    </div>
+                    {crCheck && (
+                      <div className={`text-xs rounded-lg p-2.5 mt-3 flex items-start gap-2 ${
+                        crCheck.verified ? 'bg-emerald-100 text-emerald-800'
+                        : crCheck.mode === 'manual' ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}>
+                        <span>{crCheck.verified ? '🛡' : crCheck.mode === 'manual' ? 'ℹ️' : '⚠️'}</span>
+                        <div>
+                          {crCheck.name && <div className="font-bold">{crCheck.name}</div>}
+                          {crCheck.activity && <div className="opacity-80">{crCheck.activity}</div>}
+                          <div>{crCheck.message}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* CR */}

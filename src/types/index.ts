@@ -1060,6 +1060,23 @@ export interface Profile {
   is_active: boolean
   created_at: string
   updated_at: string
+  // classification / verification
+  supplier_tier?: 'manufacturer' | 'commercial' | 'local'
+  contractor_grade?: 'A' | 'B' | 'C' | 'D'
+  min_order_value?: number
+  rejection_reason?: string
+  national_short_address?: string
+  latitude?: number
+  longitude?: number
+  // official CR data pulled from Wathq
+  cr_verification_source?: 'manual' | 'wathq'
+  cr_verified_at?: string
+  cr_official_name?: string
+  cr_activity?: string
+  cr_status?: string
+  cr_issue_date?: string
+  cr_expiry_date?: string
+  cr_data?: any
   // joined
   sectors?: Sector[]
 }

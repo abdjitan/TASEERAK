@@ -194,8 +194,14 @@ export default function AdminPanel() {
                         }`}>
                           {u.verification_status === 'verified' ? '✓ موثق' : u.verification_status === 'rejected' ? '✕ مرفوض' : '⏳ قيد المراجعة'}
                         </span>
+                        {u.cr_verification_source === 'wathq' && (
+                          <span className="badge text-[10px] inline-flex items-center gap-0.5" style={{ background: '#0F6E56', color: '#fff' }}>🛡 واثق</span>
+                        )}
                         {u.commercial_registration && (
                           <span className="text-[10px] text-gray-400">سجل: {u.commercial_registration}</span>
+                        )}
+                        {u.cr_official_name && (
+                          <span className="text-[10px] text-emerald-600">🏛 {u.cr_official_name}</span>
                         )}
                         {u.phone && <span className="text-[10px] text-gray-400">📞 {u.phone}</span>}
                         {u.region && <span className="text-[10px] text-gray-400">📍 {u.region}</span>}
