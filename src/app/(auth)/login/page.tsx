@@ -49,10 +49,27 @@ function LoginForm() {
         window.location.href = safeRedirect(next, roleHome(p?.role))
         return
       }
-      // No valid server-side session. If a stale one lingers in cookies, clear
-      // it so the form is usable and no redirect loop can start.
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) { try { await supabase.auth.signOut() } catch {} }
+      // No valid server-side session. SELF-HEAL: wipe any stale/corrupt auth
+      // artifacts left behind by older versions of the app (the previous build
+      // stored the session in localStorage; a half-written cookie can also
+      // linger). Clearing them guarantees the next login starts 100% clean and
+      // no login <-> dashboard redirect loop can survive across versions.
+      try { await supabase.auth.signOut({ scope: 'local' }) } catch {}
+      try {
+        // 1) Legacy localStorage keys from the old @supabase/supabase-js client
+        Object.keys(window.localStorage).forEach((k) => {
+          if (k.startsWith('sb-') || k.toLowerCase().includes('supabase')) {
+            window.localStorage.removeItem(k)
+          }
+        })
+        // 2) Any leftover Supabase auth cookies (incl. chunked .0/.1 variants)
+        document.cookie.split(';').forEach((c) => {
+          const name = c.split('=')[0].trim()
+          if (name.startsWith('sb-')) {
+            document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`
+          }
+        })
+      } catch {}
     })()
   }, [])
 
