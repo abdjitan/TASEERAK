@@ -11,6 +11,8 @@ const C = {
     updated: 'آخر تحديث: يونيو 2026',
     home: '🏠 الرئيسية',
     intro: 'مرحباً بك في منصة «تسعيرك». باستخدامك المنصة فإنك توافق على هذه الشروط والأحكام بالكامل. إذا لم توافق عليها، يُرجى عدم استخدام المنصة.',
+    liabilityTitle: 'إخلاء مسؤولية مهم',
+    liability: '«تسعيرك» منصة وسيطة لنقل المعلومات وتسهيل التواصل فقط — لا تبيع ولا توّرد ولا تشتري ولا تتوسّط مالياً. جميع الاتفاقيات والمدفوعات والتسليم والجودة تتم مباشرةً بين المقاول والمورد وعلى مسؤوليتهما الكاملة. لا تتحمّل المنصة أيّ مسؤولية — قانونية أو مالية أو جنائية أو غيرها — عن أي عملية نصب أو احتيال أو سرقة أو غشّ أو تزوير أو إخلال بالاتفاق أو ضرر أو أي تصرّف غير قانوني يقع بين المستخدمين أو من أي طرف. التحقّق والعناية الواجبة مسؤولية الطرفين وحدهما. وتتعاون المنصة مع الجهات المختصة عند ورود طلب نظامي، لكنها ليست طرفاً في أي نزاع ولا تضمن أو تكفل أي طرف أو منتج أو خدمة.',
     note: 'ملاحظة: هذه نسخة مبدئية. يُنصح بمراجعتها من قِبل مستشار قانوني معتمد قبل الإطلاق الرسمي لضمان توافقها مع أنظمة المملكة العربية السعودية.',
     sections: [
       ['1. طبيعة المنصة', 'تسعيرك منصة وسيطة إلكترونية تربط المقاولين بالموردين والمصانع لطلب أسعار المواد وتلقي العروض. المنصة ليست طرفاً في أي صفقة تتم بين المستخدمين، ولا تبيع ولا توّرد المواد بنفسها.'],
@@ -32,6 +34,8 @@ const C = {
     updated: 'Last updated: June 2026',
     home: '🏠 Home',
     intro: 'Welcome to Taseerak. By using the platform you agree to these Terms & Conditions in full. If you do not agree, please do not use the platform.',
+    liabilityTitle: 'Important disclaimer',
+    liability: 'Taseerak is an intermediary for transmitting information and enabling contact only — it does not sell, supply, buy, or act as a financial intermediary. All agreements, payments, delivery, and quality take place directly between the contractor and the supplier and at their full responsibility. The platform bears NO liability — legal, financial, criminal, or otherwise — for any scam, fraud, theft, deception, forgery, breach of agreement, damage, or any illegal act occurring between users or by any party. Verification and due diligence are solely the responsibility of both parties. The platform cooperates with the competent authorities upon lawful request, but is not a party to any dispute and does not guarantee any party, product, or service.',
     note: 'Note: This is a preliminary version. Please have it reviewed by a qualified legal advisor before official launch to ensure compliance with the laws of Saudi Arabia.',
     sections: [
       ['1. Nature of the platform', 'Taseerak is an online intermediary that connects contractors with suppliers and factories to request material prices and receive offers. The platform is not a party to any transaction between users and does not itself sell or supply materials.'],
@@ -71,6 +75,15 @@ export default function TermsPage() {
         <p className="text-xs text-gray-400 mb-5">{t.updated}</p>
 
         <p className="text-sm text-gray-700 leading-relaxed mb-4">{t.intro}</p>
+
+        <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-4">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-lg">⚠️</span>
+            <h2 className="text-base font-extrabold text-red-700">{t.liabilityTitle}</h2>
+          </div>
+          <p className="text-sm text-red-800 leading-relaxed font-medium">{t.liability}</p>
+        </div>
+
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 mb-6">⚠️ {t.note}</div>
 
         <div className="space-y-5">
