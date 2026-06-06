@@ -73,9 +73,18 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  // Build a redirect that PRESERVES any refreshed auth cookies. Without this,
+  // when getUser() rotates the session, the redirect would drop the new
+  // cookies and the next request would fail auth → redirect loop.
+  const redirectTo = (url: URL) => {
+    const res = NextResponse.redirect(url)
+    response.cookies.getAll().forEach((c) => res.cookies.set(c.name, c.value, c))
+    return res
+  }
+
   // ── Rule 1: Already logged in → skip login/register ──────────────────────
   if (user && AUTH_PAGES.some((p) => pathname.startsWith(p))) {
-    return NextResponse.redirect(new URL('/', request.url))
+    return redirectTo(new URL('/', request.url))
   }
 
   // ── Rule 2: Not logged in → can't access protected pages ─────────────────
@@ -83,7 +92,7 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url)
     // Remember where they were going so we can redirect back after login
     loginUrl.searchParams.set('next', pathname)
-    return NextResponse.redirect(loginUrl)
+    return redirectTo(loginUrl)
   }
 
   // ── Rule 3: Admin routes → verify role in database ───────────────────────
@@ -98,7 +107,7 @@ export async function middleware(request: NextRequest) {
 
     if (profile?.role !== 'admin') {
       // Not an admin — send them home silently
-      return NextResponse.redirect(new URL('/', request.url))
+      return redirectTo(new URL('/', request.url))
     }
   }
 
