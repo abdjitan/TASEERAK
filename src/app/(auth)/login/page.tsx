@@ -9,9 +9,9 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 
 const txt = {
-  ar: { welcome:'مرحباً بعودتك', sub:'سجّل دخولك للوصول إلى لوحة التحكم', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'سجّل مجاناً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© 2026 تسعيرك — جميع الحقوق محفوظة' },
-  en: { welcome:'Welcome back', sub:'Sign in to access your dashboard', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Register for Free', error:'Invalid email or password', copyright:'© 2026 Taseerak — All rights reserved' },
-  ur: { welcome:'خوش آمدید', sub:'اپنے ڈیش بورڈ تک رسائی کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'مفت رجسٹر کریں', error:'غلط ای میل یا پاسورڈ', copyright:'© 2026 Taseerak — جملہ حقوق محفوظ ہیں' },
+  ar: { welcome:'مرحباً بعودتك', sub:'سجّل دخولك للوصول إلى لوحة التحكم', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'سجّل مجاناً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© 2026 تسعيرك — جميع الحقوق محفوظة', s_auth:'الخطوة 1/3: جارٍ التحقق من بياناتك…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'الخطوة 3/3: تم الدخول ✓ جارٍ التحويل…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.' },
+  en: { welcome:'Welcome back', sub:'Sign in to access your dashboard', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Register for Free', error:'Invalid email or password', copyright:'© 2026 Taseerak — All rights reserved', s_auth:'Step 1/3: verifying your credentials…', s_role:'Step 2/3: reading your role…', s_go:'Step 3/3: signed in ✓ redirecting…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.' },
+  ur: { welcome:'خوش آمدید', sub:'اپنے ڈیش بورڈ تک رسائی کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'مفت رجسٹر کریں', error:'غلط ای میل یا پاسورڈ', copyright:'© 2026 Taseerak — جملہ حقوق محفوظ ہیں', s_auth:'مرحلہ 1/3: تصدیق ہو رہی ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'مرحلہ 3/3: سائن ان ✓ منتقل ہو رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔' },
 }
 
 function LoginForm() {
@@ -22,6 +22,16 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [status, setStatus] = useState('')
+
+  // Reject if a promise doesn't settle in `ms` — converts an invisible hang
+  // into a clear, reportable error instead of a spinner that never stops.
+  function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+    return Promise.race([
+      p,
+      new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT:' + label)), ms)),
+    ]) as Promise<T>
+  }
 
   // Helper: role → default landing page
   function roleHome(role: string) {
@@ -75,17 +85,39 @@ function LoginForm() {
 
   async function handleLogin(e) {
     e.preventDefault()
-    setLoading(true); setError('')
+    setLoading(true); setError(''); setStatus(t.s_auth)
+    const supabase = createClient()
     try {
-      const supabase = createClient()
-      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password })
-      if (err) { setError(t.error); setLoading(false); return }
-      if (data.session) {
-        const { data: p } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single()
-        const next = searchParams.get('next')
-        window.location.href = safeRedirect(next, roleHome(p?.role))
-      }
-    } catch { setError(t.error); setLoading(false) }
+      // STEP 1/3 — authenticate (with a hard 15s ceiling so it can never hang)
+      const { data, error: err } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }), 15000, 'signin'
+      )
+      if (err) { setError(t.error); setLoading(false); setStatus(''); return }
+      if (!data?.session) { setError(t.error); setLoading(false); setStatus(''); return }
+
+      // STEP 2/3 — read role (don't block login if it stalls; fall back gracefully)
+      setStatus(t.s_role)
+      let role = 'contractor'
+      try {
+        const { data: p } = await withTimeout(
+          supabase.from('profiles').select('role').eq('id', data.session.user.id).single(),
+          12000, 'profile'
+        )
+        if (p?.role) role = p.role
+      } catch (e2) { console.error('[login] role read failed:', e2) }
+
+      // STEP 3/3 — hard redirect (full reload so middleware sees the cookie)
+      setStatus(t.s_go)
+      const next = searchParams.get('next')
+      window.location.href = safeRedirect(next, roleHome(role))
+    } catch (e) {
+      console.error('[login] failed:', e)
+      const msg = (e && (e as any).message) || ''
+      if (msg.indexOf('TIMEOUT:signin') === 0) setError(t.err_timeout + ' (1/3)')
+      else if (msg.indexOf('TIMEOUT:profile') === 0) setError(t.err_timeout + ' (2/3)')
+      else setError(t.error)
+      setLoading(false); setStatus('')
+    }
   }
 
   return (
@@ -131,6 +163,9 @@ function LoginForm() {
               style={{ background: '#F5831F' }}>
               {loading ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>{t.logging}</span> : t.login}
             </button>
+            {loading && status && (
+              <p className="text-center text-xs text-gray-500 mt-3 animate-fade-in">{status}</p>
+            )}
           </form>
 
           <p className="text-center text-sm text-gray-500 mt-5">
