@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
@@ -16,19 +17,32 @@ const txt = {
 export default function LoginPage() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Helper: role → default landing page
+  function roleHome(role: string) {
+    if (role === 'admin') return '/admin'
+    if (role === 'supplier') return '/supplier/dashboard'
+    return '/contractor'
+  }
+
+  // Safe redirect: only allow same-origin paths (guard against open-redirect)
+  function safeRedirect(path: string | null, fallback: string) {
+    if (path && path.startsWith('/') && !path.startsWith('//')) return path
+    return fallback
+  }
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(async ({ data }) => {
       if (data.session) {
         const { data: p } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single()
-        if (p?.role === 'admin') window.location.href = '/admin'
-        else if (p?.role === 'supplier') window.location.href = '/supplier/dashboard'
-        else window.location.href = '/contractor'
+        const next = searchParams.get('next')
+        window.location.href = safeRedirect(next, roleHome(p?.role))
       }
     })
   }, [])
@@ -42,9 +56,8 @@ export default function LoginPage() {
       if (err) { setError(t.error); setLoading(false); return }
       if (data.session) {
         const { data: p } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single()
-        if (p?.role === 'admin') window.location.href = '/admin'
-        else if (p?.role === 'supplier') window.location.href = '/supplier/dashboard'
-        else window.location.href = '/contractor'
+        const next = searchParams.get('next')
+        window.location.href = safeRedirect(next, roleHome(p?.role))
       }
     } catch { setError(t.error); setLoading(false) }
   }
