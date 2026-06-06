@@ -13,6 +13,13 @@ export default function OrderDetailPage() {
   const [supplier, setSupplier] = useState(null)
   const [contractor, setContractor] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [myId, setMyId] = useState(null)
+  const [existingReview, setExistingReview] = useState(null)
+  const [rating, setRating] = useState(0)
+  const [hoverRating, setHoverRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewMsg, setReviewMsg] = useState('')
+  const [reviewSubmitting, setReviewSubmitting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -39,6 +46,13 @@ export default function OrderDetailPage() {
         setContractor(contractorData)
       }
 
+      // current user + any existing review for this order
+      setMyId(session.user.id)
+      const { data: rev } = await supabase
+        .from('reviews').select('*')
+        .eq('offer_id', id).eq('reviewer_id', session.user.id).maybeSingle()
+      if (rev) setExistingReview(rev)
+
       setLoading(false)
     }
     load()
@@ -46,6 +60,22 @@ export default function OrderDetailPage() {
 
   function handlePrint() {
     window.print()
+  }
+
+  async function submitReview() {
+    if (!rating || !myId || !supplier) return
+    setReviewSubmitting(true); setReviewMsg('')
+    const supabase = createClient()
+    const { error } = await supabase.from('reviews').insert({
+      reviewer_id: myId,
+      reviewed_id: supplier.id,
+      offer_id: offer.id,
+      rating,
+      comment: reviewComment || null,
+    })
+    setReviewSubmitting(false)
+    if (error) { setReviewMsg('حدث خطأ، حاول مرة أخرى'); return }
+    setExistingReview({ rating, comment: reviewComment })
   }
 
   if (loading) return (
@@ -245,6 +275,48 @@ export default function OrderDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* تقييم المورد — للمقاول فقط بعد القبول */}
+        {offer.status === 'accepted' && myId && rfq.contractor_id === myId && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-6 print:hidden" dir="rtl">
+            {existingReview ? (
+              <div className="text-center">
+                <div className="text-sm font-bold text-gray-900 mb-2">شكراً لتقييمك ⭐</div>
+                <div className="flex items-center justify-center gap-0.5 text-xl">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <span key={n} className={n <= existingReview.rating ? 'text-yellow-400' : 'text-gray-200'}>★</span>
+                  ))}
+                </div>
+                {existingReview.comment && <p className="text-xs text-gray-500 mt-2">{existingReview.comment}</p>}
+              </div>
+            ) : (
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 mb-1">قيّم تعاملك مع {supplier?.company_name_ar || 'المورد'}</h3>
+                <p className="text-xs text-gray-400 mb-3">تقييمك يساعد بقية المقاولين على اختيار الموردين</p>
+                <div className="flex items-center gap-1 mb-3">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button key={n} type="button"
+                      onClick={() => setRating(n)}
+                      onMouseEnter={() => setHoverRating(n)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="text-3xl transition-transform hover:scale-110 leading-none">
+                      <span className={n <= (hoverRating || rating) ? 'text-yellow-400' : 'text-gray-200'}>★</span>
+                    </button>
+                  ))}
+                </div>
+                <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl p-3 text-sm mb-3 focus:border-[#0F6E56] outline-none" rows={2}
+                  placeholder="تعليق اختياري عن جودة المنتج والتعامل..." />
+                {reviewMsg && <p className="text-xs text-red-500 mb-2">{reviewMsg}</p>}
+                <button onClick={submitReview} disabled={!rating || reviewSubmitting}
+                  className="px-6 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow"
+                  style={{ background: '#0F6E56' }}>
+                  {reviewSubmitting ? 'جارٍ الإرسال...' : 'إرسال التقييم'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
