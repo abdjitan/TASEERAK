@@ -335,6 +335,10 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50" dir={dir}>
         <div className="absolute top-4 left-4"><LanguageSwitcher variant="minimal" /></div>
+        <a href="/" className="absolute top-4 right-4 flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+          <span>🏠</span>
+          <span>{locale === 'en' ? 'Home' : locale === 'ur' ? 'مرکزی صفحہ' : 'الرئيسية'}</span>
+        </a>
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-3 mb-4">
@@ -386,6 +390,10 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-4" dir={dir}>
       <div className="absolute top-4 left-4 z-10"><LanguageSwitcher variant="minimal" /></div>
+      <a href="/" className="absolute top-4 right-4 z-10 flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+        <span>🏠</span>
+        <span>{locale === 'en' ? 'Home' : locale === 'ur' ? 'مرکزی صفحہ' : 'الرئيسية'}</span>
+      </a>
       <div className="max-w-3xl mx-auto">
         {/* Steps indicator */}
         <div className="flex items-center justify-center gap-2 py-6 mb-2">
