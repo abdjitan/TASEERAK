@@ -469,9 +469,9 @@ export default function NewProjectPage() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
                 {[
-                  { key: 'manufacturer', icon: '🏭', label: locale === 'en' ? 'Factory' : locale === 'ur' ? 'فیکٹری' : 'مصنع', desc: locale === 'en' ? 'Large volumes, wholesale' : locale === 'ur' ? 'بڑی مقدار، تھوک' : 'كميات كبيرة وأسعار جملة' },
-                  { key: 'commercial', icon: '🏪', label: locale === 'en' ? 'Distributor' : locale === 'ur' ? 'تقسیم کار' : 'موزع تجاري', desc: locale === 'en' ? 'Medium to large' : locale === 'ur' ? 'درمیانی تا بڑی' : 'كميات متوسطة لكبيرة' },
-                  { key: 'local', icon: '🏬', label: locale === 'en' ? 'Local Supplier' : locale === 'ur' ? 'مقامی سپلائر' : 'مورد محلي', desc: locale === 'en' ? 'Small, fast delivery' : locale === 'ur' ? 'چھوٹی، تیز' : 'كميات صغيرة وتسليم سريع' },
+                  { key: 'manufacturer', icon: '🏭', label: locale === 'en' ? 'Factory / Major' : locale === 'ur' ? 'فیکٹری / بڑا' : 'مصنع / مورد رئيسي', desc: locale === 'en' ? 'Production or bulk supply' : locale === 'ur' ? 'بڑی سپلائی' : 'إنتاج أو توريد بكميات كبيرة' },
+                  { key: 'commercial', icon: '🏪', label: locale === 'en' ? 'Commercial Supplier' : locale === 'ur' ? 'تجارتی سپلائر' : 'مورد تجاري', desc: locale === 'en' ? 'Regular medium-volume supply' : locale === 'ur' ? 'باقاعدہ درمیانی سپلائی' : 'توريد بكميات متوسطة ومنتظمة' },
+                  { key: 'local', icon: '🏬', label: locale === 'en' ? 'Local Supplier' : locale === 'ur' ? 'مقامی سپلائر' : 'مورد محلي', desc: locale === 'en' ? 'Small-medium, direct service' : locale === 'ur' ? 'چھوٹی تا درمیانی' : 'بكميات صغيرة إلى متوسطة وخدمة مباشرة' },
                 ].map(tier => {
                   const active = targetTiers.includes(tier.key)
                   return (

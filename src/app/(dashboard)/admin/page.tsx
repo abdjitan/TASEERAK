@@ -356,8 +356,8 @@ export default function AdminPanel() {
                           await loadData()
                         }}
                         className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5 cursor-pointer">
-                        <option value="manufacturer">🏭 مصنع/موزع رئيسي</option>
-                        <option value="commercial">🏪 موزع تجاري</option>
+                        <option value="manufacturer">🏭 مصنع / مورد رئيسي</option>
+                        <option value="commercial">🏪 مورد تجاري</option>
                         <option value="local">🏬 مورد محلي</option>
                       </select>
                     )}

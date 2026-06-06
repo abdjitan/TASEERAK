@@ -405,8 +405,8 @@ export default function SettingsPage() {
                       <label className="block text-xs font-bold text-gray-500 mb-2">تصنيف شركتك</label>
                       <div className="grid grid-cols-3 gap-2 mb-3">
                         {[
-                          { key: 'manufacturer', icon: '🏭', label: 'مصنع / موزع رئيسي' },
-                          { key: 'commercial', icon: '🏪', label: 'موزع تجاري' },
+                          { key: 'manufacturer', icon: '🏭', label: 'مصنع / مورد رئيسي' },
+                          { key: 'commercial', icon: '🏪', label: 'مورد تجاري' },
                           { key: 'local', icon: '🏬', label: 'مورد محلي' },
                         ].map(t => (
                           <button key={t.key} type="button" onClick={() => setSupplierTier(t.key)}
