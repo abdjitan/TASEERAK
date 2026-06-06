@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
@@ -14,7 +14,7 @@ const txt = {
   ur: { welcome:'خوش آمدید', sub:'اپنے ڈیش بورڈ تک رسائی کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'مفت رجسٹر کریں', error:'غلط ای میل یا پاسورڈ', copyright:'© 2026 Taseerak — جملہ حقوق محفوظ ہیں' },
 }
 
-export default function LoginPage() {
+function LoginForm() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
   const searchParams = useSearchParams()
@@ -110,5 +110,15 @@ export default function LoginPage() {
         <p className="text-center text-xs text-blue-300/50 mt-6">{t.copyright}</p>
       </div>
     </div>
+  )
+}
+
+// useSearchParams() must sit inside a Suspense boundary, otherwise Next.js
+// fails to prerender the page (missing-suspense-with-csr-bailout).
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   )
 }
