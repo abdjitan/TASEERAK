@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
+import { normalizeText } from '@/lib/normalize'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -50,13 +51,16 @@ const STRONG_SIGNALS = {
 }
 
 function detectSector(text: string): string {
-  const lower = text.toLowerCase()
+  // تطبيع النص ليتسامح مع الأخطاء الإملائية (همزة ناقصة، تاء/هاء، تشكيل، تطويل، أوردو)
+  const norm = normalizeText(text)
 
   // 1. تحقق من الإشارات القوية أولاً (أولوية)
   const strongScores: Record<string, number> = { electrical: 0, mechanical: 0, architectural: 0, civil: 0 }
   for (const [sector, signals] of Object.entries(STRONG_SIGNALS)) {
     for (const sig of signals) {
-      if (new RegExp(sig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\.\\*', '.*'), 'i').test(lower)) {
+      const nsig = normalizeText(sig)
+      if (!nsig) continue
+      if (new RegExp(nsig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\.\\*', '.*'), 'i').test(norm)) {
         strongScores[sector] += 3
       }
     }
@@ -65,7 +69,8 @@ function detectSector(text: string): string {
   // 2. أضف نقاط من الكلمات العادية
   for (const [sector, keywords] of Object.entries(SECTOR_KEYWORDS)) {
     for (const kw of keywords) {
-      if (lower.includes(kw.toLowerCase())) strongScores[sector] = (strongScores[sector] || 0) + 1
+      const nkw = normalizeText(kw)
+      if (nkw && norm.includes(nkw)) strongScores[sector] = (strongScores[sector] || 0) + 1
     }
   }
 

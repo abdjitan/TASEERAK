@@ -2,6 +2,8 @@
 // TASEERAK — TypeScript Types
 // =============================================
 
+import { normalizeText } from '@/lib/normalize'
+
 export type UserRole = 'contractor' | 'supplier' | 'admin'
 export type VerificationStatus = 'pending' | 'verified' | 'rejected'
 export type SubscriptionPlan = 'free' | 'professional'
@@ -324,8 +326,9 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
 }
 
 // كشف التخصص الفرعي تلقائياً من اسم المادة
+// يستخدم التطبيع ليتسامح مع الأخطاء الإملائية (همزة ناقصة، تاء/هاء، تشكيل، تطويل، أوردو)
 export function detectSubCategory(productName: string, sector: Sector): string | null {
-  const lower = productName.toLowerCase()
+  const norm = normalizeText(productName)
   const subs = SUB_CATEGORIES[sector]
   if (!subs) return null
   let bestMatch: string | null = null
@@ -333,7 +336,8 @@ export function detectSubCategory(productName: string, sector: Sector): string |
   for (const [key, sub] of Object.entries(subs)) {
     let score = 0
     for (const kw of sub.keywords) {
-      if (lower.includes(kw.toLowerCase())) score++
+      const nkw = normalizeText(kw)
+      if (nkw && norm.includes(nkw)) score++
     }
     if (score > maxScore) { maxScore = score; bestMatch = key }
   }
