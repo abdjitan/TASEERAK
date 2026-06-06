@@ -38,13 +38,22 @@ function LoginForm() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session) {
-        const { data: p } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single()
+    ;(async () => {
+      // Validate with getUser() (same check the middleware uses) so the client
+      // and server always agree — otherwise a stale local cookie causes an
+      // infinite login <-> dashboard redirect loop.
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: p } = await supabase.from('profiles').select('role').eq('id', user.id).single()
         const next = searchParams.get('next')
         window.location.href = safeRedirect(next, roleHome(p?.role))
+        return
       }
-    })
+      // No valid server-side session. If a stale one lingers in cookies, clear
+      // it so the form is usable and no redirect loop can start.
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) { try { await supabase.auth.signOut() } catch {} }
+    })()
   }, [])
 
   async function handleLogin(e) {
