@@ -8,7 +8,8 @@ export function createServerSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      // @supabase/ssr 0.3.0 uses get/set/remove (NOT getAll/setAll).
+      // Expose BOTH cookie interfaces so this works on any @supabase/ssr
+      // version: get/set/remove (0.3.x, installed now) + getAll/setAll (0.4+).
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value
@@ -18,6 +19,16 @@ export function createServerSupabaseClient() {
         },
         remove(name: string, options: any) {
           try { cookieStore.set({ name, value: '', ...options }) } catch {}
+        },
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
         },
       },
     }
@@ -31,7 +42,7 @@ export function createAdminSupabaseClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
-      // @supabase/ssr 0.3.0 uses get/set/remove (NOT getAll/setAll).
+      // Both cookie interfaces (version-resilient).
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value
@@ -41,6 +52,16 @@ export function createAdminSupabaseClient() {
         },
         remove(name: string, options: any) {
           try { cookieStore.set({ name, value: '', ...options }) } catch {}
+        },
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {}
         },
       },
     }

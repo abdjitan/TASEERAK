@@ -45,12 +45,17 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      // IMPORTANT: the installed @supabase/ssr (0.3.0) uses the get/set/remove
-      // cookie interface — NOT getAll/setAll (that arrived in 0.4.0). With the
-      // wrong interface the server reads NO cookies, so getUser() is always
-      // null and every protected route bounces to /login → infinite refresh
-      // loop, even though the browser thinks it is logged in.
+      // RESILIENT cookie adapter: we expose BOTH cookie interfaces so this
+      // works no matter which @supabase/ssr version is installed:
+      //   • get/set/remove  → used by 0.3.x (the version installed today)
+      //   • getAll/setAll   → used by 0.4.0+ (if the library is ever upgraded)
+      // History: the app shipped with ONLY getAll/setAll while 0.3.0 was
+      // installed; 0.3.0 ignored it, read NO cookies, getUser() was always
+      // null on the server, and every protected route bounced to /login →
+      // infinite refresh loop. Providing both interfaces makes that class of
+      // version-mismatch bug impossible to reintroduce.
       cookies: {
+        // ── 0.3.x interface ──────────────────────────────────────────────
         get(name: string) {
           return request.cookies.get(name)?.value
         },
@@ -66,6 +71,17 @@ export async function middleware(request: NextRequest) {
           request.cookies.set({ name, value: '', ...options })
           response = NextResponse.next({ request })
           response.cookies.set({ name, value: '', ...options })
+        },
+        // ── 0.4.0+ interface (forward-compatible) ────────────────────────
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
         },
       },
     }
