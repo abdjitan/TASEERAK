@@ -146,6 +146,7 @@ export default function RegisterPage() {
   const [uploading, setUploading] = useState(false)
   const [formError, setFormError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [crVerify, setCrVerify] = useState<any>(null)
   const [crChecking, setCrChecking] = useState(false)
   // Classification
@@ -221,6 +222,10 @@ export default function RegisterPage() {
   }
 
   async function onSubmit(data: FormData) {
+    if (!agreedToTerms) {
+      setFormError(locale === 'en' ? 'You must agree to the Terms & Privacy Policy' : 'يجب الموافقة على الشروط وسياسة الخصوصية')
+      return
+    }
     setUploading(true)
     setFormError('')
     try {
@@ -739,11 +744,26 @@ export default function RegisterPage() {
                 </div>
               )}
 
+              <label className="flex items-start gap-2 mb-4 cursor-pointer">
+                <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-[#1B2D5B] flex-shrink-0" />
+                <span className="text-xs text-gray-600 leading-relaxed">
+                  {locale === 'en' ? 'I agree to the ' : locale === 'ur' ? 'میں متفق ہوں ' : 'أوافق على '}
+                  <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#F5831F' }}>
+                    {locale === 'en' ? 'Terms & Conditions' : locale === 'ur' ? 'شرائط و ضوابط' : 'الشروط والأحكام'}
+                  </a>
+                  {locale === 'en' ? ' and ' : ' و'}
+                  <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#F5831F' }}>
+                    {locale === 'en' ? 'Privacy Policy' : locale === 'ur' ? 'پرائیویسی پالیسی' : 'سياسة الخصوصية'}
+                  </a>
+                </span>
+              </label>
+
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep(3)} className="btn-ghost flex-1">{t.back}</button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || uploading}
+                  disabled={isSubmitting || uploading || !agreedToTerms}
                   className="btn-primary flex-2 flex-1 disabled:opacity-50"
                 >
                   {isSubmitting || uploading ? t.creating : t.createAccount}
