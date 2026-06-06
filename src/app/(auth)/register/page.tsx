@@ -309,6 +309,18 @@ export default function RegisterPage() {
         await supabase.from('material_requests').insert(reqs as any)
       }
 
+      // 7. تصنيف تلقائي للمورد (كلمات مفتاحية فوراً + ذكاء اصطناعي إن وُجد المفتاح)
+      //    لا يوقف التسجيل أبداً مهما حصل.
+      if (data.role === 'supplier') {
+        try {
+          await fetch('/api/classify-supplier', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+          })
+        } catch {}
+      }
+
       window.location.href = data.role === 'contractor' ? '/contractor' : '/supplier/dashboard'
 
     } catch (err: any) {

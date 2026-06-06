@@ -78,6 +78,25 @@ export default function AdminPanel() {
     setActionLoading('')
   }
 
+  // 🤖 إعادة فحص تصنيف المورد (كلمات مفتاحية + ذكاء اصطناعي إن وُجد المفتاح)
+  async function reclassify(profileId: string) {
+    setActionLoading(profileId)
+    try {
+      const res = await fetch('/api/classify-supplier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ supplierId: profileId }),
+      })
+      const j = await res.json()
+      setMsg(j?.autoVerified ? '✓ تطابق واضح — تم التوثيق تلقائياً' : '🤖 تم تحديث نتيجة الفحص')
+    } catch {
+      setMsg('تعذّر الفحص، حاول لاحقاً')
+    }
+    setTimeout(() => setMsg(''), 3000)
+    await loadData()
+    setActionLoading('')
+  }
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -257,6 +276,17 @@ export default function AdminPanel() {
                             {u.supplier_tier === 'manufacturer' ? '🏭 مصنع' : u.supplier_tier === 'commercial' ? '🏪 تجاري' : '🏬 محلي'}
                           </span>
                         )}
+                        {u.role === 'supplier' && u.auto_classification && (
+                          <span className={`badge text-[10px] ${
+                            u.auto_classification === 'match' ? 'bg-emerald-100 text-emerald-700' :
+                            u.auto_classification === 'mismatch' ? 'bg-red-100 text-red-700' :
+                            'bg-amber-100 text-amber-700'
+                          }`} title={u.auto_classification_note || ''}>
+                            {u.auto_classification === 'match' ? '🤖 تصنيف مطابق' :
+                             u.auto_classification === 'mismatch' ? '🤖 تصنيف مشكوك ⚠' : '🤖 يحتاج مراجعة'}
+                            {u.auto_classification_source === 'ai' ? ' (ذكاء)' : ''}
+                          </span>
+                        )}
                         {u.role === 'supplier' && u.min_order_value > 0 && (
                           <span className="badge text-[10px] badge-gray">حد أدنى: {Number(u.min_order_value).toLocaleString()} ر.س</span>
                         )}
@@ -279,6 +309,11 @@ export default function AdminPanel() {
                         {u.region && <span className="text-[10px] text-gray-400">📍 {u.region}</span>}
                         {u.national_short_address && <span className="text-[10px] text-gray-400 font-mono" dir="ltr">🏛 {u.national_short_address}</span>}
                       </div>
+                      {u.role === 'supplier' && u.auto_classification_note && u.auto_classification !== 'match' && (
+                        <div className={`text-[11px] mt-1.5 rounded-lg px-2 py-1 inline-block ${u.auto_classification === 'mismatch' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'}`}>
+                          🤖 {u.auto_classification_note}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -301,6 +336,14 @@ export default function AdminPanel() {
                         className="text-xs px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-all">
                         🗺 الموقع
                       </a>
+                    )}
+
+                    {/* 🤖 Re-run auto-classification */}
+                    {u.role === 'supplier' && (
+                      <button type="button" disabled={actionLoading === u.id} onClick={() => reclassify(u.id)}
+                        className="text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-all disabled:opacity-50">
+                        🤖 إعادة فحص
+                      </button>
                     )}
 
                     {/* Supplier Tier Selector */}
