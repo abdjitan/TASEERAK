@@ -33,6 +33,13 @@ export default function NewProjectPage() {
   const [items, setItems] = useState([])
   const [editingIndex, setEditingIndex] = useState(null)
 
+  // استهداف نوع الموردين + الموثّقون فقط (يطبَّق على كل بنود المشروع)
+  const [targetTiers, setTargetTiers] = useState<string[]>([])
+  const [verifiedOnly, setVerifiedOnly] = useState(false)
+  function toggleTier(tier: string) {
+    setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
+  }
+
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data }) => {
@@ -148,6 +155,8 @@ export default function NewProjectPage() {
           delivery_required: true,
           vat_invoice_required: true,
           hide_identity: false,
+          target_tiers: targetTiers.length > 0 ? targetTiers : null,
+          verified_only: verifiedOnly,
           notes: itemNotes,
           expires_at: expiresAt,
         }).select().single()
@@ -448,6 +457,48 @@ export default function NewProjectPage() {
         {/* Submit */}
         {items.length > 0 && (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+            {/* Target supplier types + verified-only (applies to all items) */}
+            <div className="mb-4 pb-4 border-b border-gray-100">
+              <h4 className="text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                {locale === 'en' ? 'Who should receive this?' : locale === 'ur' ? 'یہ کس کو بھیجیں؟' : 'لمن تريد إرسال الطلب؟'}
+              </h4>
+              <p className="text-xs text-gray-400 mb-3">
+                {locale === 'en' ? 'Pick supplier types — leave empty for all'
+                : locale === 'ur' ? 'سپلائر کی قسم منتخب کریں — سب کے لیے خالی چھوڑیں'
+                : 'اختر نوع الموردين — اتركه فارغاً للجميع'}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+                {[
+                  { key: 'manufacturer', icon: '🏭', label: locale === 'en' ? 'Factory' : locale === 'ur' ? 'فیکٹری' : 'مصنع', desc: locale === 'en' ? 'Large volumes, wholesale' : locale === 'ur' ? 'بڑی مقدار، تھوک' : 'كميات كبيرة وأسعار جملة' },
+                  { key: 'commercial', icon: '🏪', label: locale === 'en' ? 'Distributor' : locale === 'ur' ? 'تقسیم کار' : 'موزع تجاري', desc: locale === 'en' ? 'Medium to large' : locale === 'ur' ? 'درمیانی تا بڑی' : 'كميات متوسطة لكبيرة' },
+                  { key: 'local', icon: '🏬', label: locale === 'en' ? 'Local Supplier' : locale === 'ur' ? 'مقامی سپلائر' : 'مورد محلي', desc: locale === 'en' ? 'Small, fast delivery' : locale === 'ur' ? 'چھوٹی، تیز' : 'كميات صغيرة وتسليم سريع' },
+                ].map(tier => {
+                  const active = targetTiers.includes(tier.key)
+                  return (
+                    <button key={tier.key} type="button" onClick={() => toggleTier(tier.key)}
+                      className={`p-3 rounded-xl border-2 text-start transition-all ${active ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{tier.icon}</span>
+                        <span className={`text-sm font-bold ${active ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</span>
+                        {active && <span className="ms-auto text-[#F5831F] font-bold">✓</span>}
+                      </div>
+                      <div className="text-[11px] text-gray-400 mt-1">{tier.desc}</div>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5">
+                <div>
+                  <div className="text-sm font-semibold text-gray-800">{locale === 'en' ? 'Verified only' : locale === 'ur' ? 'صرف تصدیق شدہ' : 'الموثّقون فقط'}</div>
+                  <div className="text-xs text-gray-400">{locale === 'en' ? 'Receive offers from verified suppliers only ✓' : locale === 'ur' ? 'صرف تصدیق شدہ سپلائرز سے ✓' : 'استقبل عروضاً من الموثّقين فقط ✓'}</div>
+                </div>
+                <div onClick={() => setVerifiedOnly(!verifiedOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${verifiedOnly ? 'justify-end' : 'justify-start'}`}
+                  style={{ background: verifiedOnly ? '#0F6E56' : '#e5e7eb' }}>
+                  <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-bold" style={{ color: '#1B2D5B' }}>
