@@ -74,43 +74,22 @@ export default function MarketPricePage() {
         .order('updated_at', { ascending: false })
       setLivePrices(live || [])
 
-      // حساب متوسط الأسعار من العروض المقبولة والمعلقة
-      const { data: offers } = await supabase
-        .from('offers')
-        .select('total_price, unit_price, rfq:rfqs(product_name, sector, unit, quantity)')
-        .not('status', 'eq', 'rejected')
+      // متوسط الأسعار عبر دالة آمنة (SECURITY DEFINER) ترجّع المتوسطات فقط
+      // بدون كشف أي عرض فردي أو هوية مورد — لذلك جدول العروض يبقى مقفلاً.
+      const { data: rows } = await supabase.rpc('get_market_prices')
 
-      if (!offers || offers.length === 0) { setLoading(false); return }
+      if (!rows || rows.length === 0) { setLoading(false); return }
 
-      // تجميع بيانات الأسعار
-      const grouped: Record<string, { prices: number[], sector: string, unit: string, count: number }> = {}
-
-      offers.forEach(o => {
-        if (!o.rfq || !o.unit_price) return
-        const key = `${o.rfq.product_name}__${o.rfq.sector}`
-        if (!grouped[key]) {
-          grouped[key] = { prices: [], sector: o.rfq.sector, unit: o.rfq.unit || '', count: 0 }
-        }
-        grouped[key].prices.push(o.unit_price)
-        grouped[key].count++
-      })
-
-      const result = Object.entries(grouped)
-        .filter(([, v]) => v.count >= 1)
-        .map(([key, v]) => {
-          const [name] = key.split('__')
-          const sorted = [...v.prices].sort((a, b) => a - b)
-          const avg = v.prices.reduce((s, p) => s + p, 0) / v.prices.length
-          return {
-            name,
-            sector: v.sector,
-            unit: v.unit,
-            avg: Math.round(avg),
-            min: sorted[0],
-            max: sorted[sorted.length - 1],
-            count: v.count,
-          }
-        })
+      const result = rows
+        .map((r: any) => ({
+          name: r.product_name,
+          sector: r.sector,
+          unit: r.unit || '',
+          avg: Math.round(Number(r.avg_price)),
+          min: Number(r.min_price),
+          max: Number(r.max_price),
+          count: Number(r.offer_count),
+        }))
         .sort((a, b) => b.count - a.count)
 
       setPriceData(result)
