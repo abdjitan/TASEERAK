@@ -327,6 +327,13 @@ export default function ProjectResultsPage() {
                                 {offer.unit_price && (
                                   <div className="text-[10px] text-gray-400">{offer.unit_price?.toLocaleString()} / {item.unit}</div>
                                 )}
+                                {offer.extra_charges && offer.extra_charges.length > 0 && (
+                                  <div className="text-[10px] text-amber-600"
+                                    title={offer.extra_charges.map(e => `${e.label}: ${Number(e.amount).toLocaleString()} ر.س`).join('  •  ')}>
+                                    {locale === 'en' ? 'incl. ' : 'شامل '}
+                                    {offer.extra_charges.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString()} {locale === 'en' ? 'extras' : 'إضافات'} ⓘ
+                                  </div>
+                                )}
                               </div>
                               {offer.status === 'accepted' ? (
                                 <span className="badge badge-green text-[10px]">✓</span>

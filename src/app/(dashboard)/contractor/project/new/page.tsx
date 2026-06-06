@@ -23,6 +23,8 @@ export default function NewProjectPage() {
   const [region, setRegion] = useState('')
   const [city, setCity] = useState('')
   const [projectNotes, setProjectNotes] = useState('')
+  const [deliveryRequired, setDeliveryRequired] = useState(true)
+  const [deliveryLocation, setDeliveryLocation] = useState('')
 
   // BOQ upload
   const [boqFile, setBoqFile] = useState(null)
@@ -99,6 +101,7 @@ export default function NewProjectPage() {
   // إرسال المشروع
   async function handleSubmit() {
     if (!user || !title || !region) return
+    if (deliveryRequired && !deliveryLocation) return
     setLoading(true)
     const supabase = createClient()
 
@@ -152,7 +155,8 @@ export default function NewProjectPage() {
           quantity: parseFloat(item.quantity) || 1,
           unit: item.unit || 'عدد',
           region, city: city || null,
-          delivery_required: true,
+          delivery_required: deliveryRequired,
+          delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
           vat_invoice_required: true,
           hide_identity: false,
           target_tiers: targetTiers.length > 0 ? targetTiers : null,
@@ -242,6 +246,25 @@ export default function NewProjectPage() {
               <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'City' : 'المدينة'}</label>
               <input value={city} onChange={e => setCity(e.target.value)}
                 className="input-field" placeholder={locale === 'en' ? 'City name' : 'اسم المدينة'} />
+            </div>
+            <div className="sm:col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-amber-800">🚚 {locale === 'en' ? 'Delivery required (for the whole project)' : 'التوصيل مطلوب (لكل المشروع)'}</div>
+                <div onClick={() => setDeliveryRequired(!deliveryRequired)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${deliveryRequired ? 'justify-end' : 'justify-start'}`}
+                  style={{ background: deliveryRequired ? '#0F6E56' : '#e5e7eb' }}>
+                  <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                </div>
+              </div>
+              {deliveryRequired && (
+                <div className="mt-2">
+                  <input value={deliveryLocation} onChange={e => setDeliveryLocation(e.target.value)}
+                    className="input-field"
+                    placeholder={locale === 'en' ? 'Delivery location: district / site address *' : 'موقع التوصيل: الحي / عنوان الموقع *'} />
+                  <p className="text-[11px] text-amber-700 mt-1">
+                    {locale === 'en' ? 'Helps suppliers calculate shipping cost.' : 'يساعد الموردين على حساب تكلفة الشحن.'}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -518,7 +541,7 @@ export default function NewProjectPage() {
             </div>
 
             <button onClick={handleSubmit}
-              disabled={loading || !title || !region || selectedCount === 0}
+              disabled={loading || !title || !region || selectedCount === 0 || (deliveryRequired && !deliveryLocation)}
               className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg"
               style={{ background: '#F5831F' }}>
               {loading ? (
