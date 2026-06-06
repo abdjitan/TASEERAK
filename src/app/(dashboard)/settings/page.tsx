@@ -198,21 +198,15 @@ export default function SettingsPage() {
     if (licenseFile) {
       const ext = licenseFile.name.split('.').pop()
       const path = `${user.id}/license.${ext}`
-      const { data } = await supabase.storage.from('licenses').upload(path, licenseFile, { upsert: true })
-      if (data) {
-        const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(data.path)
-        licenseUrl = publicUrl
-      }
+      const { data } = await supabase.storage.from('verification').upload(path, licenseFile, { upsert: true })
+      if (data) licenseUrl = data.path
     }
 
     if (crFile) {
       const ext = crFile.name.split('.').pop()
       const path = `${user.id}/cr.${ext}`
-      const { data } = await supabase.storage.from('licenses').upload(path, crFile, { upsert: true })
-      if (data) {
-        const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(data.path)
-        crUrl = publicUrl
-      }
+      const { data } = await supabase.storage.from('verification').upload(path, crFile, { upsert: true })
+      if (data) crUrl = data.path
     }
 
     const { error } = await supabase.from('profiles').update({
@@ -262,6 +256,16 @@ export default function SettingsPage() {
       setCrCheck({ ok: false, message: t.error })
     }
     setCrChecking(false)
+  }
+
+  // open a sensitive doc via a short-lived signed URL (private bucket).
+  // legacy values stored as full public URLs still open directly.
+  async function openDoc(val) {
+    if (!val) return
+    if (typeof val === 'string' && val.startsWith('http')) { window.open(val, '_blank'); return }
+    const supabase = createClient()
+    const { data } = await supabase.storage.from('verification').createSignedUrl(val, 3600)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
   async function handleSignOut() {
@@ -514,8 +518,8 @@ export default function SettingsPage() {
                     {profile?.license_url && !licenseFile && (
                       <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
-                        <a href={profile.license_url} target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline font-semibold">{t.viewDoc}</a>
+                        <button type="button" onClick={() => openDoc(profile.license_url)}
+                          className="text-xs text-blue-600 hover:underline font-semibold">{t.viewDoc}</button>
                       </div>
                     )}
                     <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
@@ -577,8 +581,8 @@ export default function SettingsPage() {
                     {profile?.cr_url && !crFile && (
                       <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
-                        <a href={profile.cr_url} target="_blank" rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline font-semibold">{t.viewDoc}</a>
+                        <button type="button" onClick={() => openDoc(profile.cr_url)}
+                          className="text-xs text-blue-600 hover:underline font-semibold">{t.viewDoc}</button>
                       </div>
                     )}
                     <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${

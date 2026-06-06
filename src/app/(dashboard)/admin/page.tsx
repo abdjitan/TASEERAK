@@ -68,6 +68,16 @@ export default function AdminPanel() {
     window.location.href = '/login'
   }
 
+  // open a private verification doc via a short-lived signed URL (admin reads all).
+  // legacy values stored as full public URLs still open directly.
+  async function openDoc(val: string) {
+    if (!val) return
+    if (val.startsWith('http')) { window.open(val, '_blank'); return }
+    const supabase = createClient()
+    const { data } = await supabase.storage.from('verification').createSignedUrl(val, 3600)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
       <div className="text-center animate-pulse">
@@ -213,16 +223,16 @@ export default function AdminPanel() {
                   <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                     {/* License Links */}
                     {u.license_url && (
-                      <a href={u.license_url} target="_blank" rel="noopener noreferrer"
+                      <button type="button" onClick={() => openDoc(u.license_url)}
                         className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-all">
                         📄 الرخصة
-                      </a>
+                      </button>
                     )}
                     {u.cr_url && (
-                      <a href={u.cr_url} target="_blank" rel="noopener noreferrer"
+                      <button type="button" onClick={() => openDoc(u.cr_url)}
                         className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-all">
                         📋 السجل
-                      </a>
+                      </button>
                     )}
                     {u.latitude && u.longitude && (
                       <a href={`https://www.google.com/maps?q=${u.latitude},${u.longitude}`} target="_blank" rel="noopener noreferrer"

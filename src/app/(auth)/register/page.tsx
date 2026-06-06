@@ -167,12 +167,13 @@ export default function RegisterPage() {
   }
 
   async function uploadFile(file: File, path: string) {
+    // sensitive docs (license / CR) → PRIVATE "verification" bucket.
+    // store the PATH; signed URLs are generated on display.
     const { data, error } = await supabase.storage
-      .from('licenses')
+      .from('verification')
       .upload(path, file, { upsert: true })
     if (error) return null
-    const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(data.path)
-    return publicUrl
+    return data.path
   }
 
   // Verify the Commercial Registration against the official source (Wathq)
