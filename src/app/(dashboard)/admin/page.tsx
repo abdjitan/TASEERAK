@@ -16,6 +16,7 @@ export default function AdminPanel() {
   const [search, setSearch] = useState('')
   const [rejectModal, setRejectModal] = useState(null) // { id, name }
   const [rejectReason, setRejectReason] = useState('')
+  const [materialReqs, setMaterialReqs] = useState([])
 
   useEffect(() => {
     async function init() {
@@ -38,6 +39,9 @@ export default function AdminPanel() {
     const client = supabase || createClient()
     const { data: allUsers } = await client.from('profiles').select('*').order('created_at', { ascending: false })
     setUsers(allUsers || [])
+    const { data: mreqs } = await client.from('material_requests')
+      .select('*, supplier:profiles(company_name_ar)').order('created_at', { ascending: false })
+    setMaterialReqs(mreqs || [])
     const u = allUsers || []
     setStats({
       total: u.length,
@@ -60,6 +64,18 @@ export default function AdminPanel() {
     setActionLoading('')
     setRejectModal(null)
     setRejectReason('')
+  }
+
+  async function reviewMaterial(reqId: string, status: 'approved' | 'rejected') {
+    setActionLoading(reqId)
+    const supabase = createClient()
+    await supabase.from('material_requests')
+      .update({ status, reviewed_at: new Date().toISOString() })
+      .eq('id', reqId)
+    setMsg(`✓ تم ${status === 'approved' ? 'قبول' : 'رفض'} المادة`)
+    setTimeout(() => setMsg(''), 3000)
+    await loadData()
+    setActionLoading('')
   }
 
   async function handleSignOut() {
@@ -149,6 +165,7 @@ export default function AdminPanel() {
               { key: 'verified', label: `موثقون (${stats.verified})` },
               { key: 'rejected', label: 'مرفوضون' },
               { key: 'all', label: `الكل (${stats.total})` },
+              { key: 'materials', label: `📦 طلبات المواد (${materialReqs.filter(r => r.status === 'pending').length})` },
             ].map(t => (
               <button key={t.key} onClick={() => setTab(t.key)}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === t.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
@@ -161,8 +178,53 @@ export default function AdminPanel() {
             className="input-field max-w-xs text-sm" placeholder="🔍 بحث بالاسم أو الجوال" />
         </div>
 
-        {/* Users List */}
-        {filtered.length === 0 ? (
+        {/* Material Requests view */}
+        {tab === 'materials' ? (
+          materialReqs.length === 0 ? (
+            <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
+              <div className="text-5xl mb-4">📦</div>
+              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد طلبات مواد</h3>
+            </div>
+          ) : (
+            <div className="space-y-3 stagger">
+              {materialReqs.map(r => (
+                <div key={r.id} className={`bg-white rounded-2xl p-5 border shadow-sm ${
+                  r.status === 'pending' ? 'border-amber-200' : r.status === 'approved' ? 'border-emerald-200' : 'border-red-200'
+                }`}>
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-bold" style={{ color: '#1B2D5B' }}>{r.name}</span>
+                        {r.sector && <span className="badge text-[10px] badge-gray">{r.sector}</span>}
+                        <span className={`badge text-[10px] ${
+                          r.status === 'approved' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-amber'
+                        }`}>
+                          {r.status === 'approved' ? '✓ مقبولة' : r.status === 'rejected' ? '✕ مرفوضة' : '⏳ قيد المراجعة'}
+                        </span>
+                      </div>
+                      {r.description && <p className="text-sm text-gray-500 mt-1">{r.description}</p>}
+                      <div className="text-[11px] text-gray-400 mt-1">
+                        من: {r.supplier?.company_name_ar || '—'} · {new Date(r.created_at).toLocaleDateString('ar-SA')}
+                      </div>
+                    </div>
+                    {r.status === 'pending' && (
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <button onClick={() => reviewMaterial(r.id, 'approved')} disabled={actionLoading === r.id}
+                          className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>
+                          {actionLoading === r.id ? '...' : '✓ قبول'}
+                        </button>
+                        <button onClick={() => reviewMaterial(r.id, 'rejected')} disabled={actionLoading === r.id}
+                          className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50">
+                          ✕ رفض
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
             <div className="text-5xl mb-4 animate-float">📭</div>
             <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>لا يوجد مستخدمين</h3>

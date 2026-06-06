@@ -19,6 +19,16 @@ const txt = {
     selected: 'تخصص محدد', noSectors: 'اختر قطاعاً واحداً على الأقل من الأعلى لعرض التخصصات',
     hint: '💡 كلما حددت تخصصك بدقة، وصلتك طلبات أكثر صلة بعملك',
     loading: 'جارٍ التحميل...',
+    suggestTitle: 'ما لقيت مادتك في القائمة؟',
+    suggestSub: 'اقترح إضافتها وسيراجعها الفريق ويضيفها للقائمة',
+    sNamePh: 'اسم المادة (مثال: عزل بولي يوريا)',
+    sSectorPh: 'القطاع المناسب (اختياري)',
+    sDescPh: 'وصف مختصر أو مواصفات (اختياري)',
+    sBtn: '+ إرسال الاقتراح للإدارة',
+    sSending: 'جارٍ الإرسال...',
+    sSent: '✓ تم إرسال اقتراحك، سيراجعه الفريق',
+    myReq: 'اقتراحاتي السابقة',
+    stPending: 'قيد المراجعة', stApproved: 'تمت الموافقة', stRejected: 'مرفوض',
   },
   en: {
     title: 'My Specialties', sub: 'Select exactly what you supply — you only get matching requests',
@@ -27,6 +37,16 @@ const txt = {
     selected: 'selected', noSectors: 'Select at least one sector above to show specialties',
     hint: '💡 The more precise your specialties, the more relevant requests you receive',
     loading: 'Loading...',
+    suggestTitle: "Didn't find your material?",
+    suggestSub: 'Suggest it — our team will review and add it to the list',
+    sNamePh: 'Material name (e.g. Polyurea insulation)',
+    sSectorPh: 'Relevant sector (optional)',
+    sDescPh: 'Short description or specs (optional)',
+    sBtn: '+ Send suggestion to admin',
+    sSending: 'Sending...',
+    sSent: '✓ Suggestion sent, our team will review it',
+    myReq: 'My previous suggestions',
+    stPending: 'Under review', stApproved: 'Approved', stRejected: 'Rejected',
   },
   ur: {
     title: 'میری مہارتیں', sub: 'بالکل وہی منتخب کریں جو آپ فراہم کرتے ہیں',
@@ -35,6 +55,16 @@ const txt = {
     selected: 'منتخب', noSectors: 'مہارتیں دکھانے کے لیے کم از کم ایک شعبہ منتخب کریں',
     hint: '💡 جتنی درست مہارت، اتنی متعلقہ درخواستیں',
     loading: 'لوڈ ہو رہا ہے...',
+    suggestTitle: 'اپنا مواد نہیں ملا؟',
+    suggestSub: 'تجویز کریں، ٹیم جائزہ لے کر شامل کرے گی',
+    sNamePh: 'مواد کا نام',
+    sSectorPh: 'متعلقہ شعبہ (اختیاری)',
+    sDescPh: 'مختصر تفصیل (اختیاری)',
+    sBtn: '+ تجویز بھیجیں',
+    sSending: 'بھیجا جا رہا ہے...',
+    sSent: '✓ آپ کی تجویز بھیج دی گئی',
+    myReq: 'میری پچھلی تجاویز',
+    stPending: 'زیر جائزہ', stApproved: 'منظور', stRejected: 'مسترد',
   },
 }
 
@@ -48,6 +78,13 @@ export default function SpecialtiesPage() {
   const [msg, setMsg] = useState('')
   const [mySectors, setMySectors] = useState([])
   const [mySpecialties, setMySpecialties] = useState([])
+  // suggest-a-material
+  const [suggestName, setSuggestName] = useState('')
+  const [suggestSector, setSuggestSector] = useState('')
+  const [suggestDesc, setSuggestDesc] = useState('')
+  const [suggestMsg, setSuggestMsg] = useState('')
+  const [suggestSubmitting, setSuggestSubmitting] = useState(false)
+  const [myRequests, setMyRequests] = useState([])
 
   useEffect(() => {
     async function load() {
@@ -61,6 +98,10 @@ export default function SpecialtiesPage() {
 
       const { data: specs } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
       setMySpecialties((specs || []).map(s => s.specialty))
+
+      const { data: reqs } = await supabase.from('material_requests')
+        .select('*').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
+      setMyRequests(reqs || [])
 
       setLoading(false)
     }
@@ -102,6 +143,24 @@ export default function SpecialtiesPage() {
     setSaving(false)
     setMsg(T.saved)
     setTimeout(() => { window.location.href = '/supplier/dashboard' }, 1200)
+  }
+
+  async function submitSuggestion() {
+    if (!suggestName.trim() || !user) return
+    setSuggestSubmitting(true); setSuggestMsg('')
+    const supabase = createClient()
+    const { data, error } = await supabase.from('material_requests').insert({
+      supplier_id: user.id,
+      name: suggestName.trim(),
+      sector: suggestSector || null,
+      description: suggestDesc.trim() || null,
+    }).select().single()
+    setSuggestSubmitting(false)
+    if (error) { setSuggestMsg('حدث خطأ، حاول مرة أخرى'); return }
+    setMyRequests(prev => [data, ...prev])
+    setSuggestName(''); setSuggestSector(''); setSuggestDesc('')
+    setSuggestMsg(T.sSent)
+    setTimeout(() => setSuggestMsg(''), 4000)
   }
 
   if (loading) return (
@@ -226,6 +285,53 @@ export default function SpecialtiesPage() {
             })}
           </div>
         )}
+
+        {/* اقتراح مادة جديدة غير موجودة بالقائمة */}
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
+          <h2 className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{T.suggestTitle}</h2>
+          <p className="text-xs text-gray-500 mt-0.5 mb-4">{T.suggestSub}</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input value={suggestName} onChange={e => setSuggestName(e.target.value)}
+              className="input-field" placeholder={T.sNamePh} />
+            <select value={suggestSector} onChange={e => setSuggestSector(e.target.value)} className="input-field">
+              <option value="">{T.sSectorPh}</option>
+              {Object.keys(SECTOR_LABELS).map(s => (
+                <option key={s} value={s}>{SECTOR_ICONS[s]} {SECTOR_LABELS[s]}</option>
+              ))}
+            </select>
+          </div>
+          <textarea value={suggestDesc} onChange={e => setSuggestDesc(e.target.value)}
+            className="input-field mt-3" rows={2} placeholder={T.sDescPh} />
+
+          {suggestMsg && <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mt-3">{suggestMsg}</div>}
+
+          <button onClick={submitSuggestion} disabled={!suggestName.trim() || suggestSubmitting}
+            className="mt-3 px-5 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow"
+            style={{ background: '#0F6E56' }}>
+            {suggestSubmitting ? T.sSending : T.sBtn}
+          </button>
+
+          {myRequests.length > 0 && (
+            <div className="mt-5 border-t border-gray-100 pt-4">
+              <div className="text-xs font-bold text-gray-500 mb-2">{T.myReq}</div>
+              <div className="space-y-2">
+                {myRequests.map(r => (
+                  <div key={r.id} className="flex items-center justify-between gap-2 text-sm bg-gray-50 rounded-xl px-3 py-2">
+                    <span className="font-semibold text-gray-700">{r.name}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                      r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+                      r.status === 'rejected' ? 'bg-red-100 text-red-600' :
+                      'bg-amber-100 text-amber-700'
+                    }`}>
+                      {r.status === 'approved' ? T.stApproved : r.status === 'rejected' ? T.stRejected : T.stPending}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Save */}
         <div className="sticky bottom-4 mt-6">
