@@ -76,6 +76,12 @@ export default function SupplierRFQPage() {
     setAttributes(prev => prev.filter((_, idx) => idx !== i))
   }
 
+  // إضافات الفاتورة (توصيل/تركيب/رسوم) — label + amount
+  const [extras, setExtras] = useState([{ label: '', amount: '' }])
+  function addExtra() { setExtras(prev => [...prev, { label: '', amount: '' }]) }
+  function updateExtra(i, field, val) { setExtras(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: val } : e)) }
+  function removeExtra(i) { setExtras(prev => prev.filter((_, idx) => idx !== i)) }
+
   async function handleSubmit(e) {
     e.preventDefault()
     if (!user) return
@@ -100,14 +106,22 @@ export default function SupplierRFQPage() {
       }
     }
 
+    // إضافات الفاتورة → total النهائي = سعر البضاعة + الإضافات
+    const validExtras = extras
+      .filter(e => e.label && e.amount)
+      .map(e => ({ label: e.label, amount: parseFloat(e.amount) || 0 }))
+    const goods = parseFloat(totalPrice) || 0
+    const finalTotal = goods + validExtras.reduce((s, e) => s + e.amount, 0)
+
     const { error: insertError } = await supabase.from('offers').insert({
       rfq_id: id,
       supplier_id: user.id,
-      total_price: parseFloat(totalPrice),
+      total_price: finalTotal,
       unit_price: unitPrice ? parseFloat(unitPrice) : null,
       delivery_days: deliveryDays ? parseInt(deliveryDays) : null,
       notes: notes || null,
       attributes: validAttrs.length > 0 ? attrObj : null,
+      extra_charges: validExtras.length > 0 ? validExtras : null,
       attachment_url: attachUrl,
       attachment_name: attachName,
     })
@@ -247,6 +261,12 @@ export default function SupplierRFQPage() {
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏗 {T.sector}</span><br/><strong>{sectors[rfq.sector] || rfq.sector}</strong></div>
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📍 {T.location}</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
+            <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
+              <span className="text-gray-400 text-xs">🚚 {T.delivery}</span><br/>
+              {rfq.delivery_required
+                ? <strong className="text-amber-800">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
+                : <strong className="text-gray-500">{T.notRequired}</strong>}
+            </div>
             {!rfq.hide_identity && rfq.contractor && (
               <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏢 {T.contractor}</span><br/><strong>{rfq.contractor.company_name_ar}</strong></div>
             )}
@@ -288,7 +308,7 @@ export default function SupplierRFQPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.totalPrice} *</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Goods Price (SAR)' : locale === 'ur' ? 'سامان کی قیمت (ریال)' : 'سعر البضاعة (ر.س)'} *</label>
                 <input type="number" value={totalPrice} onChange={e => handleTotalChange(e.target.value)}
                   className="input-field" placeholder="0.00" required min="0" step="any" />
               </div>
@@ -305,6 +325,52 @@ export default function SupplierRFQPage() {
                     className="input-field" placeholder="3" min="0" />
                 </div>
               </div>
+
+              {/* إضافات الفاتورة (توصيل/تركيب/رسوم) */}
+              <div className="border-t border-gray-100 pt-4">
+                <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                  🧾 {locale === 'en' ? 'Invoice extras (delivery / installation / fees)' : locale === 'ur' ? 'انوائس اضافی (ڈیلیوری/تنصیب/فیس)' : 'إضافات الفاتورة (توصيل / تركيب / رسوم)'}
+                </label>
+                <p className="text-xs text-gray-400 mb-3">
+                  {rfq.delivery_required
+                    ? (locale === 'en' ? 'Contractor requested delivery — add the shipping cost here.' : locale === 'ur' ? 'ٹھیکیدار نے ڈیلیوری طلب کی — شپنگ لاگت یہاں شامل کریں۔' : 'المقاول طلب التوصيل — أضف تكلفة الشحن هنا.')
+                    : (locale === 'en' ? 'Optional charges added on top of the goods price.' : locale === 'ur' ? 'سامان کی قیمت کے علاوہ اختیاری چارجز۔' : 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
+                </p>
+                <div className="space-y-2">
+                  {extras.map((ex, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input value={ex.label} onChange={e => updateExtra(i, 'label', e.target.value)}
+                        className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Item (e.g. Delivery)' : locale === 'ur' ? 'آئٹم (مثلاً ڈیلیوری)' : 'البند (مثال: توصيل)'} />
+                      <input type="number" value={ex.amount} onChange={e => updateExtra(i, 'amount', e.target.value)}
+                        className="input-field text-sm w-28" placeholder={locale === 'en' ? 'Amount' : locale === 'ur' ? 'رقم' : 'المبلغ'} min="0" step="any" />
+                      {extras.length > 1 && (
+                        <button type="button" onClick={() => removeExtra(i)}
+                          className="px-3 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
+                  + {locale === 'en' ? 'Add item' : locale === 'ur' ? 'شامل کریں' : 'إضافة بند'}
+                </button>
+              </div>
+
+              {/* الإجمالي النهائي = سعر البضاعة + الإضافات */}
+              {(() => {
+                const goods = parseFloat(totalPrice) || 0
+                const exSum = extras.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+                if (goods + exSum <= 0) return null
+                return (
+                  <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 flex items-center justify-between">
+                    <span className="text-sm font-bold" style={{ color: '#0F6E56' }}>
+                      {locale === 'en' ? 'Grand Total' : locale === 'ur' ? 'کل میزان' : 'الإجمالي النهائي'}
+                    </span>
+                    <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>
+                      {(goods + exSum).toLocaleString()} {locale === 'en' ? 'SAR' : 'ر.س'}
+                    </span>
+                  </div>
+                )
+              })()}
 
               {/* خصائص المنتج */}
               <div className="border-t border-gray-100 pt-4">

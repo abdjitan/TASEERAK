@@ -113,6 +113,7 @@ export default function NewRFQPage() {
   const [region, setRegion] = useState('')
   const [city, setCity] = useState('')
   const [deliveryRequired, setDeliveryRequired] = useState(true)
+  const [deliveryLocation, setDeliveryLocation] = useState('')
   const [vatRequired, setVatRequired] = useState(true)
   const [hideIdentity, setHideIdentity] = useState(false)
   const [notes, setNotes] = useState('')
@@ -160,6 +161,7 @@ export default function NewRFQPage() {
       sub_category: detectSubCategory(`${productName} ${specification}`, sector),
       specification: specification || null, quantity: parseFloat(quantity), unit, region,
       city: city || null, delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
+      delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
       hide_identity: hideIdentity,
       target_tiers: targetTiers.length > 0 ? targetTiers : null,
       verified_only: verifiedOnly,
@@ -289,6 +291,19 @@ export default function NewRFQPage() {
                       className="input-field" placeholder={t.cityHint} />
                   </div>
                 </div>
+                {deliveryRequired && (
+                  <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3">
+                    <label className="block text-xs font-bold text-amber-800 mb-1.5">
+                      🚚 {locale === 'en' ? 'Delivery location (for shipping cost) *' : locale === 'ur' ? 'ڈیلیوری مقام (شپنگ لاگت کے لیے) *' : 'موقع التوصيل (لحساب تكلفة الشحن) *'}
+                    </label>
+                    <input type="text" value={deliveryLocation} onChange={e => setDeliveryLocation(e.target.value)}
+                      className="input-field"
+                      placeholder={locale === 'en' ? 'District / site address / nearest landmark' : locale === 'ur' ? 'علاقہ / سائٹ کا پتہ' : 'الحي / عنوان الموقع / أقرب معلم'} />
+                    <p className="text-[11px] text-amber-700 mt-1">
+                      {locale === 'en' ? 'Helps suppliers calculate the shipping cost accurately.' : locale === 'ur' ? 'سپلائرز کو شپنگ لاگت کا درست حساب لگانے میں مدد کرتا ہے۔' : 'يساعد الموردين على حساب تكلفة الشحن بدقة.'}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Spec File */}
@@ -451,7 +466,7 @@ export default function NewRFQPage() {
               </div>
 
               {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3">⚠️ {error}</div>}
-              <button type="submit" disabled={loading || !sector || !productName || !quantity || !unit || !region}
+              <button type="submit" disabled={loading || !sector || !productName || !quantity || !unit || !region || (deliveryRequired && !deliveryLocation)}
                 className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg active:scale-[0.98]"
                 style={{ background: '#F5831F' }}>
                 {loading ? t.submitting : t.submit}

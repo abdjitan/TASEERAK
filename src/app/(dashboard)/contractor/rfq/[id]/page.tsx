@@ -283,6 +283,22 @@ export default function RFQDetailPage() {
                   {offer.unit_price && <span>سعر الوحدة: {offer.unit_price} ر.س</span>}
                   {offer.delivery_days && <span>📦 التوصيل: {offer.delivery_days} يوم</span>}
                 </div>
+
+                {/* تفصيل الفاتورة: البضاعة + الإضافات */}
+                {offer.extra_charges && offer.extra_charges.length > 0 && (() => {
+                  const exSum = offer.extra_charges.reduce((s, e) => s + (Number(e.amount) || 0), 0)
+                  const goods = (Number(offer.total_price) || 0) - exSum
+                  return (
+                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-2.5 mb-2 text-xs">
+                      <div className="flex justify-between text-gray-600"><span>البضاعة</span><span>{goods.toLocaleString()} ر.س</span></div>
+                      {offer.extra_charges.map((e, idx) => (
+                        <div key={idx} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString()} ر.س</span></div>
+                      ))}
+                      <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>الإجمالي</span><span>{Number(offer.total_price).toLocaleString()} ر.س</span></div>
+                    </div>
+                  )
+                })()}
+
                 {offer.notes && <p className="text-xs text-gray-400 bg-gray-50 p-2 rounded-lg mb-2">{offer.notes}</p>}
 
                 {/* خصائص المنتج */}
