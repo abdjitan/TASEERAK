@@ -29,6 +29,11 @@ const txt = {
     week: 'أسبوع', hours: 'ساعة', submit: 'إرسال طلب التسعير ←', submitting: 'جارٍ الإرسال...',
     successTitle: 'تم إرسال طلب التسعير', successSub: 'سيتم إخطار الموردين في قطاعك فوراً',
     dashboard: 'لوحة التحكم', anotherReq: 'طلب آخر', na: '—',
+    targetTitle: 'لمن تريد إرسال الطلب؟', targetSub: 'اختر نوع الموردين — اتركه فارغاً للجميع',
+    tierMfg: 'مصنع', tierMfgD: 'إنتاج مباشر — كميات كبيرة وأسعار جملة',
+    tierCom: 'موزع تجاري', tierComD: 'يستورد ويوزّع ماركات — كميات متوسطة لكبيرة',
+    tierLoc: 'مورد محلي', tierLocD: 'متجر بالمنطقة — كميات صغيرة وتسليم سريع',
+    verifiedTitle: 'الموثّقون فقط', verifiedSub: 'استقبل عروضاً من الموردين الموثّقين فقط ✓',
   },
   en: {
     title: 'New RFQ Request', sub: 'Will be sent automatically to all verified suppliers in the region',
@@ -50,6 +55,11 @@ const txt = {
     week: 'Week', hours: 'hours', submit: 'Send RFQ →', submitting: 'Sending...',
     successTitle: 'RFQ Sent Successfully', successSub: 'Suppliers in your sector will be notified immediately',
     dashboard: 'Dashboard', anotherReq: 'Another Request', na: '—',
+    targetTitle: 'Who should receive this?', targetSub: 'Pick supplier types — leave empty for all',
+    tierMfg: 'Factory', tierMfgD: 'Direct production — large volumes, wholesale prices',
+    tierCom: 'Distributor', tierComD: 'Imports & distributes brands — medium to large',
+    tierLoc: 'Local Supplier', tierLocD: 'Local store — small quantities, fast delivery',
+    verifiedTitle: 'Verified only', verifiedSub: 'Receive offers from verified suppliers only ✓',
   },
   ur: {
     title: 'نئی قیمت کی درخواست', sub: 'خطے میں تمام تصدیق شدہ سپلائرز کو خودکار طور پر بھیجی جائے گی',
@@ -71,6 +81,11 @@ const txt = {
     week: 'ہفتہ', hours: 'گھنٹے', submit: 'قیمت کی درخواست بھیجیں →', submitting: 'بھیجا جا رہا ہے...',
     successTitle: 'درخواست کامیابی سے بھیجی گئی', successSub: 'سپلائرز کو فوری طور پر مطلع کیا جائے گا',
     dashboard: 'ڈیش بورڈ', anotherReq: 'دوسری درخواست', na: '—',
+    targetTitle: 'یہ کس کو بھیجیں؟', targetSub: 'سپلائر کی قسم منتخب کریں — سب کے لیے خالی چھوڑیں',
+    tierMfg: 'فیکٹری', tierMfgD: 'براہ راست پیداوار — بڑی مقدار، تھوک قیمت',
+    tierCom: 'تقسیم کار', tierComD: 'برانڈز درآمد و تقسیم — درمیانی تا بڑی',
+    tierLoc: 'مقامی سپلائر', tierLocD: 'مقامی اسٹور — چھوٹی مقدار، تیز ڈیلیوری',
+    verifiedTitle: 'صرف تصدیق شدہ', verifiedSub: 'صرف تصدیق شدہ سپلائرز سے آفرز ✓',
   },
 }
 
@@ -105,6 +120,13 @@ export default function NewRFQPage() {
   const [specFile, setSpecFile] = useState(null)
   const [specFileUrl, setSpecFileUrl] = useState('')
   const [estimatedValue, setEstimatedValue] = useState('')
+  // استهداف نوع الموردين + الموثّقون فقط
+  const [targetTiers, setTargetTiers] = useState<string[]>([])
+  const [verifiedOnly, setVerifiedOnly] = useState(false)
+
+  function toggleTier(tier: string) {
+    setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
+  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -139,6 +161,8 @@ export default function NewRFQPage() {
       specification: specification || null, quantity: parseFloat(quantity), unit, region,
       city: city || null, delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
       hide_identity: hideIdentity,
+      target_tiers: targetTiers.length > 0 ? targetTiers : null,
+      verified_only: verifiedOnly,
       estimated_value: estimatedValue ? parseFloat(estimatedValue) : null,
       notes: uploadedSpecUrl ? `${notes || ''}\n[مواصفات مرفقة: ${uploadedSpecUrl}]` : notes || null,
       expires_at: expiresAt,
@@ -330,6 +354,46 @@ export default function NewRFQPage() {
 
             {/* Right Column */}
             <div className="space-y-5">
+              {/* Target supplier types + verified-only */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>{t.targetTitle}</h3>
+                <p className="text-xs text-gray-400 mb-4">{t.targetSub}</p>
+                <div className="space-y-2">
+                  {[
+                    { key: 'manufacturer', icon: '🏭', label: t.tierMfg, desc: t.tierMfgD },
+                    { key: 'commercial', icon: '🏪', label: t.tierCom, desc: t.tierComD },
+                    { key: 'local', icon: '🏬', label: t.tierLoc, desc: t.tierLocD },
+                  ].map(tier => {
+                    const active = targetTiers.includes(tier.key)
+                    return (
+                      <button key={tier.key} type="button" onClick={() => toggleTier(tier.key)}
+                        className={`w-full flex items-start gap-3 p-3 rounded-xl border-2 text-start transition-all ${
+                          active ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'
+                        }`}>
+                        <span className="text-xl leading-none mt-0.5">{tier.icon}</span>
+                        <span className="flex-1">
+                          <span className={`block text-sm font-bold ${active ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</span>
+                          <span className="block text-[11px] text-gray-400 mt-0.5">{tier.desc}</span>
+                        </span>
+                        <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 ${active ? 'bg-[#F5831F] border-[#F5831F] text-white' : 'border-gray-300'}`}>
+                          {active && <span className="text-xs">✓</span>}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div className="flex items-center justify-between pt-4 mt-3 border-t border-gray-100">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-800">{t.verifiedTitle}</div>
+                    <div className="text-xs text-gray-400 mt-0.5">{t.verifiedSub}</div>
+                  </div>
+                  <div onClick={() => setVerifiedOnly(!verifiedOnly)} className={`w-11 h-6 rounded-full transition-all cursor-pointer flex items-center px-1 shrink-0 ${verifiedOnly ? 'justify-end' : 'justify-start'}`}
+                    style={{ background: verifiedOnly ? '#0F6E56' : '#e5e7eb' }}>
+                    <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                  </div>
+                </div>
+              </div>
+
               {/* Options */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.options}</h3>

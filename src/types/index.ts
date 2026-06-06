@@ -1118,6 +1118,10 @@ export interface RFQ {
   delivery_required: boolean
   vat_invoice_required: boolean
   hide_identity: boolean
+  sub_category?: string | null
+  estimated_value?: number | null
+  target_tiers?: string[] | null   // null/empty = open to all supplier tiers
+  verified_only?: boolean          // only verified suppliers may see/offer
   notes?: string
   status: RFQStatus
   expires_at: string

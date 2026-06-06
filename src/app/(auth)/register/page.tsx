@@ -41,6 +41,9 @@ const TR = {
     minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000 — اتركه فارغاً لاستقبال كل الطلبات',
     gradeTitle: 'درجة تصنيف شركتك', gradeSub: 'وزارة الشؤون البلدية — اختياري',
     creating: 'جارٍ الإنشاء...', createAccount: 'إنشاء الحساب ←',
+    addMatTitle: 'تبيع مادة غير موجودة بالقائمة؟',
+    addMatHint: 'أضِفها هنا وسنراجعها ونضيفها — تابع تسجيلك عادي',
+    addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', addMatAdded: 'ستتم مراجعتها',
   },
   en: {
     welcome: 'Welcome', chooseType: 'Choose your account type to start',
@@ -68,6 +71,9 @@ const TR = {
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000 — leave empty for all requests',
     gradeTitle: 'Company Grade', gradeSub: 'Ministry of Municipal Affairs — optional',
     creating: 'Creating...', createAccount: 'Create Account →',
+    addMatTitle: 'Selling a material not in the list?',
+    addMatHint: 'Add it here for review — continue registering normally',
+    addMatPh: 'Material name...', addMatBtn: 'Add', addMatAdded: 'pending review',
   },
   ur: {
     welcome: 'خوش آمدید', chooseType: 'شروع کرنے کے لیے اکاؤنٹ کی قسم منتخب کریں',
@@ -95,6 +101,9 @@ const TR = {
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000',
     gradeTitle: 'کمپنی کا درجہ', gradeSub: 'وزارت بلدیات — اختیاری',
     creating: 'بن رہا ہے...', createAccount: 'اکاؤنٹ بنائیں →',
+    addMatTitle: 'فہرست میں کوئی مواد نہیں جو آپ بیچتے ہیں؟',
+    addMatHint: 'یہاں شامل کریں — رجسٹریشن جاری رکھیں',
+    addMatPh: 'مواد کا نام...', addMatBtn: 'شامل کریں', addMatAdded: 'زیر جائزہ',
   },
 }
 
@@ -143,6 +152,16 @@ export default function RegisterPage() {
   const [contractorGrade, setContractorGrade] = useState<'A' | 'B' | 'C' | 'D' | ''>('')
   const [minOrderValue, setMinOrderValue] = useState('')
   const [specialties, setSpecialties] = useState<string[]>([])
+  // مواد يبيعها المورد وغير موجودة بالقائمة — تُرسَل للإدارة للمراجعة
+  const [extraMaterials, setExtraMaterials] = useState<string[]>([])
+  const [extraMaterialInput, setExtraMaterialInput] = useState('')
+
+  function addExtraMaterial() {
+    const v = extraMaterialInput.trim()
+    if (!v) return
+    setExtraMaterials(prev => prev.includes(v) ? prev : [...prev, v])
+    setExtraMaterialInput('')
+  }
 
   function toggleSpecialty(key: string) {
     setSpecialties(prev => prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key])
@@ -278,6 +297,16 @@ export default function RegisterPage() {
       if (data.role === 'supplier' && specialties.length > 0) {
         const specsToInsert = specialties.map(specialty => ({ profile_id: userId, specialty }))
         await supabase.from('profile_specialties').insert(specsToInsert as any)
+      }
+
+      // 6. Suggested materials not in the list (للمورد) → تُراجَع من الإدارة
+      if (data.role === 'supplier' && extraMaterials.length > 0) {
+        const reqs = extraMaterials.map(name => ({
+          supplier_id: userId,
+          name,
+          sector: (data.sectors && data.sectors[0]) || null,
+        }))
+        await supabase.from('material_requests').insert(reqs as any)
       }
 
       window.location.href = data.role === 'contractor' ? '/contractor' : '/supplier/dashboard'
@@ -591,6 +620,35 @@ export default function RegisterPage() {
                       )
                     })}
                   </div>
+                </div>
+              )}
+
+              {/* مواد يبيعها المورد وغير موجودة بالقائمة — تُرسَل للإدارة للمراجعة */}
+              {selectedType === 'supplier' && sectors?.length > 0 && (
+                <div className="mb-5 border-t border-gray-100 pt-5">
+                  <h3 className="text-sm font-bold text-gray-900 mb-1">{t.addMatTitle}</h3>
+                  <p className="text-xs text-gray-500 mb-3">{t.addMatHint}</p>
+                  <div className="flex gap-2">
+                    <input type="text" value={extraMaterialInput}
+                      onChange={e => setExtraMaterialInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial() } }}
+                      className="input-field flex-1" placeholder={t.addMatPh} />
+                    <button type="button" onClick={addExtraMaterial}
+                      className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#1B2D5B' }}>
+                      {t.addMatBtn}
+                    </button>
+                  </div>
+                  {extraMaterials.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {extraMaterials.map(m => (
+                        <span key={m} className="inline-flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                          {m}
+                          <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => x !== m))}
+                            className="text-amber-500 hover:text-amber-800 font-bold leading-none">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -108,6 +108,15 @@ export default function SupplierDashboard() {
         rfqs = rfqs.filter(r => !r.sub_category || mySpecialties.includes(r.sub_category))
       }
 
+      // ✅ فلترة حسب استهداف المقاول: نوع المورد (مصنع/تجاري/محلي) + الموثّقون فقط
+      const myTier = p?.supplier_tier || 'local'
+      const isVerified = p?.verification_status === 'verified'
+      rfqs = rfqs.filter(r => {
+        if (r.verified_only && !isVerified) return false
+        if (Array.isArray(r.target_tiers) && r.target_tiers.length > 0 && !r.target_tiers.includes(myTier)) return false
+        return true
+      })
+
       // استبعاد الطلبات المتجاهلة
       const { data: dismissals } = await supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', session.user.id)
       const dismissedIds = new Set((dismissals || []).map(d => d.rfq_id))
