@@ -176,6 +176,29 @@ export default function AdminPanel() {
     window.open(data?.signedUrl || val, '_blank')
   }
 
+  // Export the currently-filtered users to a CSV file (Excel-friendly, UTF-8 BOM)
+  function exportCSV() {
+    const rows = filtered.map((u: any) => ({
+      الاسم: u.company_name_ar || '', 'الاسم (EN)': u.company_name_en || '',
+      النوع: u.role === 'contractor' ? 'مقاول' : 'مورد',
+      البريد: emails[u.id]?.email || '', الجوال: u.phone || '',
+      المنطقة: u.region || '', المدينة: u.city || '',
+      'السجل التجاري': u.commercial_registration || '', 'الرقم الضريبي': u.vat_number || '',
+      الفئة: u.supplier_tier || u.contractor_grade || '',
+      'حالة التحقق': u.verification_status || '', نشط: u.is_active === false ? 'لا' : 'نعم',
+      'تاريخ التسجيل': u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : '',
+    }))
+    const headers = Object.keys(rows[0] || { الاسم: '' })
+    const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const csv = [headers.map(esc).join(','), ...rows.map((r: any) => headers.map(h => esc(r[h])).join(','))].join('\r\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `taseerak-users-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -222,6 +245,24 @@ export default function AdminPanel() {
   })
   const conversations: any[] = Object.values(convByUser).sort((a: any, b: any) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime())
   const totalUnread = conversations.reduce((s: number, c: any) => s + c.unread, 0)
+
+  // ── Analytics (computed from already-loaded data) ──
+  const dayKey = (d: any) => new Date(d).toISOString().slice(0, 10)
+  const _today = new Date()
+  const last30days = [...Array(30)].map((_, i) => { const d = new Date(_today); d.setDate(d.getDate() - (29 - i)); return dayKey(d) })
+  const signupsByDay: any = {}
+  users.forEach((u: any) => { if (u.created_at) { const k = dayKey(u.created_at); signupsByDay[k] = (signupsByDay[k] || 0) + 1 } })
+  const signupSeries = last30days.map(k => ({ day: k, n: signupsByDay[k] || 0 }))
+  const maxSignup = Math.max(1, ...signupSeries.map(s => s.n))
+  const newLast7 = signupSeries.slice(-7).reduce((s, x) => s + x.n, 0)
+  const newLast30 = signupSeries.reduce((s, x) => s + x.n, 0)
+  const countBy = (arr: any[], key: string) => { const m: any = {}; arr.forEach((x: any) => { const v = x[key]; if (v) m[v] = (m[v] || 0) + 1 }); return Object.entries(m).sort((a: any, b: any) => b[1] - a[1]) }
+  const topRegions = countBy(users, 'region').slice(0, 6)
+  const topSectors = countBy(rfqs, 'sector').slice(0, 6)
+  const tierBreakdown = countBy(users.filter((u: any) => u.role === 'supplier'), 'supplier_tier')
+  const offersPerRfq = rfqs.length ? (offers.length / rfqs.length).toFixed(1) : '0'
+  const acceptedOffers = offers.filter((o: any) => o.status === 'accepted').length
+  const TIERLBL: any = { manufacturer: '🏭 مصنع/رئيسي', commercial: '🏪 تجاري', local: '🏬 محلي' }
 
   const rfqSearch = (r: any) => !search
     || r.product_name?.includes(search) || r.sector?.includes(search)
@@ -293,6 +334,7 @@ export default function AdminPanel() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-5">
           <div className="flex gap-2 flex-wrap">
             {[
+              { key: 'analytics', label: '📊 الإحصائيات' },
               { key: 'pending', label: `قيد المراجعة (${stats.pending})` },
               { key: 'verified', label: `موثقون (${stats.verified})` },
               { key: 'rejected', label: 'مرفوضون' },
@@ -308,8 +350,13 @@ export default function AdminPanel() {
               </button>
             ))}
           </div>
-          <input value={search} onChange={e => setSearch(e.target.value)}
-            className="input-field max-w-xs text-sm" placeholder="🔍 بحث بالاسم أو الجوال" />
+          <div className="flex items-center gap-2">
+            {['pending', 'verified', 'rejected', 'all'].includes(tab) && filtered.length > 0 && (
+              <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-all">⬇ تصدير CSV</button>
+            )}
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              className="input-field max-w-xs text-sm" placeholder="🔍 بحث بالاسم أو الجوال" />
+          </div>
         </div>
 
         {/* Active role filter chip (set by clicking the stat cards) */}
@@ -323,8 +370,66 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* Support inbox */}
-        {tab === 'messages' ? (
+        {/* Analytics */}
+        {tab === 'analytics' ? (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'تسجيلات آخر 7 أيام', value: newLast7, icon: '🆕', bg: '#0F6E56' },
+                { label: 'تسجيلات آخر 30 يوم', value: newLast30, icon: '📈', bg: '#1B2D5B' },
+                { label: 'طلبات التسعير', value: rfqs.length, icon: '📋', bg: '#F5831F' },
+                { label: 'المشاريع (BOQ)', value: projects.length, icon: '🏗', bg: '#2a4a8a' },
+                { label: 'إجمالي العروض', value: offers.length, icon: '📨', bg: '#7c3aed' },
+                { label: 'عروض مقبولة', value: acceptedOffers, icon: '✅', bg: '#0F6E56' },
+                { label: 'متوسط العروض/طلب', value: offersPerRfq, icon: '⚖️', bg: '#1B2D5B' },
+                { label: 'رسائل الدعم', value: support.length, icon: '💬', bg: '#F5831F' },
+              ].map((k: any) => (
+                <div key={k.label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white" style={{ background: k.bg }}>{k.icon}</div>
+                    <div className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{k.value}</div>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-2">{k.label}</div>
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h3 className="text-sm font-bold mb-4" style={{ color: '#1B2D5B' }}>📈 التسجيلات خلال آخر 30 يوماً</h3>
+              <div className="flex items-end gap-1 h-40">
+                {signupSeries.map((s: any) => (
+                  <div key={s.day} className="flex-1 flex flex-col items-center justify-end" title={`${s.day}: ${s.n}`}>
+                    <div className="w-full rounded-t transition-all" style={{ height: `${(s.n / maxSignup) * 100}%`, minHeight: s.n ? '4px' : '0', background: s.n ? '#F5831F' : 'transparent' }} />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-400 mt-2">
+                <span>{signupSeries[0]?.day}</span><span>اليوم →</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <h3 className="text-sm font-bold mb-3" style={{ color: '#1B2D5B' }}>📍 أعلى المناطق</h3>
+                {topRegions.length === 0 ? <div className="text-xs text-gray-400">—</div> : topRegions.map(([k, v]: any) => (
+                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{k}</span><span className="font-bold" style={{ color: '#1B2D5B' }}>{v}</span></div>
+                ))}
+              </div>
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <h3 className="text-sm font-bold mb-3" style={{ color: '#1B2D5B' }}>🏷 أكثر القطاعات طلباً</h3>
+                {topSectors.length === 0 ? <div className="text-xs text-gray-400">—</div> : topSectors.map(([k, v]: any) => (
+                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{k}</span><span className="font-bold" style={{ color: '#1B2D5B' }}>{v}</span></div>
+                ))}
+              </div>
+              <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+                <h3 className="text-sm font-bold mb-3" style={{ color: '#1B2D5B' }}>🏭 فئات الموردين</h3>
+                {tierBreakdown.length === 0 ? <div className="text-xs text-gray-400">—</div> : tierBreakdown.map(([k, v]: any) => (
+                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{TIERLBL[k] || k}</span><span className="font-bold" style={{ color: '#1B2D5B' }}>{v}</span></div>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : tab === 'messages' ? (
           conversations.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
               <div className="text-5xl mb-4">💬</div>
