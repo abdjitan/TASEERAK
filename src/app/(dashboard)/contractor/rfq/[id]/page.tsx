@@ -15,6 +15,7 @@ export default function RFQDetailPage() {
   const [editNotes, setEditNotes] = useState('')
   const [editSpec, setEditSpec] = useState('')
   const [marketAvg, setMarketAvg] = useState(null) // متوسط السوق
+  const [supplierStats, setSupplierStats] = useState({}) // سجل أداء كل مورد
 
   useEffect(() => {
     async function load() {
@@ -31,6 +32,14 @@ export default function RFQDetailPage() {
         .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source)')
         .eq('rfq_id', id).order('total_price', { ascending: true })
       setOffers(offersData || [])
+
+      // سجل أداء الموردين (سرعة الرد، نسبة الترسية، عدد العروض السابقة)
+      const supplierIds = [...new Set((offersData || []).map(o => o.supplier_id).filter(Boolean))]
+      if (supplierIds.length) {
+        const { data: stats } = await supabase.rpc('get_supplier_stats', { ids: supplierIds })
+        const m: any = {}; (stats || []).forEach((s: any) => { m[s.supplier_id] = s })
+        setSupplierStats(m)
+      }
 
       // متوسط السوق من عروض مشابهة
       if (rfqData) {
@@ -262,6 +271,22 @@ export default function RFQDetailPage() {
                         {offer.supplier?.region && <span>📍 {offer.supplier.region}</span>}
                         {offer.supplier?.phone && <span>📞 {offer.supplier.phone}</span>}
                       </div>
+                      {/* بطاقة أداء المورد — سرعة الرد، نسبة الترسية، الخبرة */}
+                      {(() => {
+                        const st = supplierStats[offer.supplier_id]
+                        if (!st) return null
+                        return (
+                          <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+                            {st.avg_response_hours != null && (
+                              <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">⚡ يردّ خلال ~{st.avg_response_hours} س</span>
+                            )}
+                            {st.won_rate != null && (
+                              <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold">🤝 نسبة الترسية {st.won_rate}%</span>
+                            )}
+                            <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">📨 {st.total_offers} عرض سابق</span>
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
                   <div className="text-left">
