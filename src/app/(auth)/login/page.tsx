@@ -129,6 +129,9 @@ function LoginForm() {
       </div>
 
       <div className="absolute top-4 left-4 z-20"><LanguageSwitcher variant="minimal" /></div>
+      <a href="/" className="absolute top-4 right-4 z-20 text-sm font-medium text-white/70 hover:text-white transition-colors">
+        {locale === 'en' ? '🏠 Home' : locale === 'ur' ? '🏠 مرکزی صفحہ' : '🏠 الرئيسية'}
+      </a>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8 animate-fade-in">
