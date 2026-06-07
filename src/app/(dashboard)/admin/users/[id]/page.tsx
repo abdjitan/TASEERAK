@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
+import SupportThread from '@/components/shared/SupportThread'
 
 const TIER_LABEL = { manufacturer: '🏭 مصنع / مورد رئيسي', commercial: '🏪 مورد تجاري', local: '🏬 مورد محلي' }
 const RFQ_STATUS = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
@@ -331,6 +332,13 @@ export default function AdminUserDetail() {
               )}
             </Section>
           ) : null}
+        </div>
+
+        {/* Support / internal messaging with this user */}
+        <div className="mt-5">
+          <Section title="الرسائل / الدعم" icon="💬">
+            <SupportThread userId={id} viewerRole="admin" />
+          </Section>
         </div>
       </div>
     </div>

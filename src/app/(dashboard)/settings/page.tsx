@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import SupportThread from '@/components/shared/SupportThread'
 import { REGIONS } from '@/types'
 
 const txt = {
@@ -328,6 +329,7 @@ export default function SettingsPage() {
               {[
                 { key: 'profile', icon: '🏢', label: t.profileTab },
                 { key: 'docs', icon: '📄', label: t.docsTab },
+                { key: 'support', icon: '💬', label: locale === 'en' ? 'Support' : locale === 'ur' ? 'سپورٹ' : 'الدعم والرسائل' },
                 { key: 'password', icon: '🔒', label: t.passwordTab },
                 { key: 'language', icon: '🌐', label: t.langTab },
               ].map(item => (
@@ -612,6 +614,21 @@ export default function SettingsPage() {
                     {docsSaving ? t.saving : t.uploadBtn}
                   </button>
                 </form>
+              </div>
+            )}
+
+            {/* Support / Messages Tab */}
+            {tab === 'support' && (
+              <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
+                <h2 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                  {locale === 'en' ? 'Support & Messages' : locale === 'ur' ? 'سپورٹ اور پیغامات' : 'الدعم والرسائل'}
+                </h2>
+                <p className="text-sm text-gray-500 mb-5">
+                  {locale === 'en' ? 'Message the admin team directly about any issue — they will reply here.'
+                    : locale === 'ur' ? 'کسی بھی مسئلے پر انتظامیہ کو پیغام بھیجیں — وہ یہیں جواب دیں گے۔'
+                    : 'راسل فريق الإدارة مباشرة حول أي مشكلة — وسيردّون عليك هنا.'}
+                </p>
+                {user && <SupportThread userId={user.id} viewerRole="user" />}
               </div>
             )}
 

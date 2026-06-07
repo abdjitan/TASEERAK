@@ -24,6 +24,7 @@ export default function AdminPanel() {
   const [projects, setProjects] = useState([])
   const [projectItems, setProjectItems] = useState([])
   const [emails, setEmails] = useState({}) // { [userId]: { email, phone, last_sign_in_at, ... } }
+  const [support, setSupport] = useState([]) // all support_messages (admin reads all)
   const [expandedRfq, setExpandedRfq] = useState(null)
   const [expandedProject, setExpandedProject] = useState(null)
   // Admin password change
@@ -68,6 +69,9 @@ export default function AdminPanel() {
     setOffers(offerData || [])
     setProjects(projData || [])
     setProjectItems(pItems || [])
+
+    const { data: supp } = await client.from('support_messages').select('*').order('created_at', { ascending: false })
+    setSupport(supp || [])
 
     // Auth emails via the privileged edge function (non-blocking — cards still
     // render if this fails, e.g. function not yet deployed).
@@ -209,6 +213,16 @@ export default function AdminPanel() {
   offers.forEach((o: any) => { offerCountBy[o.supplier_id] = (offerCountBy[o.supplier_id] || 0) + 1 })
   const nameOf = (id: string) => profileById[id]?.company_name_ar || '—'
 
+  // Support conversations grouped by user (latest message + unread-from-user count)
+  const convByUser: any = {}
+  support.forEach((m: any) => {
+    const g = convByUser[m.user_id] = convByUser[m.user_id] || { userId: m.user_id, last: '', lastAt: null, lastSender: '', unread: 0 }
+    if (!g.lastAt || new Date(m.created_at) > new Date(g.lastAt)) { g.last = m.content; g.lastAt = m.created_at; g.lastSender = m.sender }
+    if (m.sender === 'user' && !m.read_by_admin) g.unread++
+  })
+  const conversations: any[] = Object.values(convByUser).sort((a: any, b: any) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime())
+  const totalUnread = conversations.reduce((s: number, c: any) => s + c.unread, 0)
+
   const rfqSearch = (r: any) => !search
     || r.product_name?.includes(search) || r.sector?.includes(search)
     || nameOf(r.contractor_id)?.includes(search)
@@ -284,6 +298,7 @@ export default function AdminPanel() {
               { key: 'rejected', label: 'مرفوضون' },
               { key: 'all', label: `الكل (${stats.total})` },
               { key: 'rfqs', label: `📋 طلبات التسعير (${rfqs.length + projects.length})` },
+              { key: 'messages', label: `💬 الرسائل${totalUnread ? ' (' + totalUnread + ')' : ''}` },
               { key: 'materials', label: `📦 طلبات المواد (${materialReqs.filter(r => r.status === 'pending').length})` },
             ].map(t => (
               <button key={t.key} onClick={() => { setTab(t.key); setRoleFilter('') }}
@@ -308,8 +323,40 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* Requests / Offers overview */}
-        {tab === 'rfqs' ? (
+        {/* Support inbox */}
+        {tab === 'messages' ? (
+          conversations.length === 0 ? (
+            <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
+              <div className="text-5xl mb-4">💬</div>
+              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد رسائل</h3>
+              <p className="text-sm text-gray-400 mt-1">تظهر هنا رسائل المقاولين والموردين</p>
+            </div>
+          ) : (
+            <div className="space-y-3 stagger">
+              {conversations.map((cv: any) => (
+                <a key={cv.userId} href={`/admin/users/${cv.userId}`}
+                  className="block bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0"
+                        style={{ background: profileById[cv.userId]?.role === 'supplier' ? '#7c3aed' : '#1B2D5B' }}>
+                        {nameOf(cv.userId)?.[0] || '?'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{nameOf(cv.userId)}</div>
+                        <div className="text-xs text-gray-500 truncate max-w-md">{cv.lastSender === 'admin' ? 'أنت: ' : ''}{cv.last}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      {cv.unread > 0 && <span className="text-[10px] font-bold text-white rounded-full px-2 py-0.5" style={{ background: '#F5831F' }}>{cv.unread} جديد</span>}
+                      <span className="text-[10px] text-gray-400">{dt(cv.lastAt)}</span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          )
+        ) : tab === 'rfqs' ? (
           <div className="space-y-8">
             {/* Single RFQs */}
             <div>
