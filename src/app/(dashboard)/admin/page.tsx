@@ -14,6 +14,7 @@ export default function AdminPanel() {
   const [actionLoading, setActionLoading] = useState('')
   const [msg, setMsg] = useState('')
   const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('') // '' | 'contractor' | 'supplier'
   const [rejectModal, setRejectModal] = useState(null) // { id, name }
   const [rejectReason, setRejectReason] = useState('')
   const [materialReqs, setMaterialReqs] = useState([])
@@ -216,10 +217,12 @@ export default function AdminPanel() {
 
   const filtered = users.filter(u => {
     const matchSearch = !search || u.company_name_ar?.includes(search) || u.phone?.includes(search) || emails[u.id]?.email?.includes(search)
-    if (tab === 'pending') return u.verification_status === 'pending' && matchSearch
-    if (tab === 'verified') return u.verification_status === 'verified' && matchSearch
-    if (tab === 'rejected') return u.verification_status === 'rejected' && matchSearch
-    return matchSearch
+    const matchRole = !roleFilter || u.role === roleFilter
+    if (!matchSearch || !matchRole) return false
+    if (tab === 'pending') return u.verification_status === 'pending'
+    if (tab === 'verified') return u.verification_status === 'verified'
+    if (tab === 'rejected') return u.verification_status === 'rejected'
+    return true
   })
 
   return (
@@ -248,19 +251,23 @@ export default function AdminPanel() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 stagger">
           {[
-            { label: 'إجمالي المستخدمين', value: stats.total, icon: '👥', bg: '#1B2D5B' },
-            { label: 'مقاولون', value: stats.contractors, icon: '👷', bg: '#2a4a8a' },
-            { label: 'موردون', value: stats.suppliers, icon: '🏪', bg: '#7c3aed' },
-            { label: 'قيد المراجعة', value: stats.pending, icon: '⏳', bg: '#F5831F' },
-            { label: 'موثقون', value: stats.verified, icon: '✅', bg: '#0F6E56' },
-          ].map(({ label, value, icon, bg }) => (
-            <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all">
+            { label: 'إجمالي المستخدمين', value: stats.total, icon: '👥', bg: '#1B2D5B', go: () => { setTab('all'); setRoleFilter('') } },
+            { label: 'مقاولون', value: stats.contractors, icon: '👷', bg: '#2a4a8a', go: () => { setTab('all'); setRoleFilter('contractor') } },
+            { label: 'موردون', value: stats.suppliers, icon: '🏪', bg: '#7c3aed', go: () => { setTab('all'); setRoleFilter('supplier') } },
+            { label: 'قيد المراجعة', value: stats.pending, icon: '⏳', bg: '#F5831F', go: () => { setTab('pending'); setRoleFilter('') } },
+            { label: 'موثقون', value: stats.verified, icon: '✅', bg: '#0F6E56', go: () => { setTab('verified'); setRoleFilter('') } },
+          ].map(({ label, value, icon, bg, go }) => (
+            <button key={label} type="button" onClick={go}
+              className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#F5831F]/40">
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-base text-white" style={{ background: bg }}>{icon}</div>
                 <div className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
               </div>
-              <div className="text-xs text-gray-500 mt-2 font-medium">{label}</div>
-            </div>
+              <div className="text-xs text-gray-500 mt-2 font-medium flex items-center justify-between">
+                <span>{label}</span>
+                <span className="text-gray-300">↗</span>
+              </div>
+            </button>
           ))}
         </div>
 
@@ -279,7 +286,7 @@ export default function AdminPanel() {
               { key: 'rfqs', label: `📋 طلبات التسعير (${rfqs.length + projects.length})` },
               { key: 'materials', label: `📦 طلبات المواد (${materialReqs.filter(r => r.status === 'pending').length})` },
             ].map(t => (
-              <button key={t.key} onClick={() => setTab(t.key)}
+              <button key={t.key} onClick={() => { setTab(t.key); setRoleFilter('') }}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === t.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
                 style={tab === t.key ? { background: '#1B2D5B' } : {}}>
                 {t.label}
@@ -289,6 +296,17 @@ export default function AdminPanel() {
           <input value={search} onChange={e => setSearch(e.target.value)}
             className="input-field max-w-xs text-sm" placeholder="🔍 بحث بالاسم أو الجوال" />
         </div>
+
+        {/* Active role filter chip (set by clicking the stat cards) */}
+        {roleFilter && tab !== 'rfqs' && tab !== 'materials' && (
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-xs text-gray-500">عرض:</span>
+            <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-[#1B2D5B] text-white">
+              {roleFilter === 'contractor' ? '👷 المقاولون فقط' : '🏪 الموردون فقط'} ({filtered.length})
+              <button onClick={() => setRoleFilter('')} className="hover:text-orange-300">✕</button>
+            </span>
+          </div>
+        )}
 
         {/* Requests / Offers overview */}
         {tab === 'rfqs' ? (
@@ -482,7 +500,7 @@ export default function AdminPanel() {
                       {u.company_name_ar?.[0] || '?'}
                     </div>
                     <div>
-                      <div className="font-bold" style={{ color: '#1B2D5B' }}>{u.company_name_ar}</div>
+                      <a href={`/admin/users/${u.id}`} className="font-bold hover:underline decoration-dotted" style={{ color: '#1B2D5B' }}>{u.company_name_ar}</a>
                       {u.company_name_en && <div className="text-xs text-gray-400">{u.company_name_en}</div>}
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className={`badge text-[10px] ${u.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>
@@ -550,6 +568,10 @@ export default function AdminPanel() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                    {/* Full detail page */}
+                    <a href={`/admin/users/${u.id}`} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition-all hover:shadow" style={{ background: '#1B2D5B' }}>
+                      👁 التفاصيل
+                    </a>
                     {/* License Links */}
                     {u.license_url && (
                       <button type="button" onClick={() => openDoc(u.license_url)}
