@@ -85,6 +85,7 @@ export default function SpecialtiesPage() {
   const [suggestMsg, setSuggestMsg] = useState('')
   const [suggestSubmitting, setSuggestSubmitting] = useState(false)
   const [myRequests, setMyRequests] = useState([])
+  const [openSector, setOpenSector] = useState(null) // single-open accordion (Step 2)
 
   useEffect(() => {
     async function load() {
@@ -116,6 +117,7 @@ export default function SpecialtiesPage() {
         setMySpecialties(s => s.filter(sp => !subKeys.includes(sp)))
         return prev.filter(x => x !== sector)
       }
+      setOpenSector(sector) // افتح القطاع الجديد تلقائياً (وأغلق الباقي)
       return [...prev, sector]
     })
   }
@@ -229,15 +231,16 @@ export default function SpecialtiesPage() {
               })
               return (
                 <div key={sector} className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
+                  <button type="button" onClick={() => setOpenSector(openSector === sector ? null : sector)} className="w-full flex items-center justify-between mb-4">
                     <h3 className="font-bold flex items-center gap-2" style={{ color: SECTOR_COLORS[sector] }}>
                       <span className="text-xl">{SECTOR_ICONS[sector]}</span>
                       {SECTOR_LABELS[sector]}
                     </h3>
-                    <span className="text-xs text-gray-400">{selectedInSector} {T.selected}</span>
-                  </div>
+                    <span className="flex items-center gap-2 text-xs text-gray-400">{selectedInSector} {T.selected} <span className="text-sm">{openSector === sector ? '▲' : '▼'}</span></span>
+                  </button>
 
-                  {/* المجموعات (المستوى الثاني) */}
+                  {/* المجموعات — تظهر فقط للقطاع المفتوح (واحد في المرة) */}
+                  {openSector === sector && (
                   <div className="space-y-4">
                     {Object.entries(groups).map(([groupKey, keys]) => {
                       const grp = GROUP_LABELS[groupKey]
@@ -280,6 +283,7 @@ export default function SpecialtiesPage() {
                       )
                     })}
                   </div>
+                  )}
                 </div>
               )
             })}
