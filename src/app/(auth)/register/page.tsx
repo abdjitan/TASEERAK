@@ -155,15 +155,16 @@ export default function RegisterPage() {
   const [minOrderValue, setMinOrderValue] = useState('')
   const [specialties, setSpecialties] = useState<string[]>([])
   // مواد يبيعها المورد وغير موجودة بالقائمة — تُرسَل للإدارة للمراجعة
-  const [extraMaterials, setExtraMaterials] = useState<string[]>([])
+  const [extraMaterials, setExtraMaterials] = useState<{ sector: string; name: string }[]>([])
   const [extraMaterialInput, setExtraMaterialInput] = useState('')
+  const [openSector, setOpenSector] = useState<Sector | null>(null)
   const [district, setDistrict] = useState('')
   const [prefLang, setPrefLang] = useState<'ar' | 'en' | 'ur'>(locale)
 
-  function addExtraMaterial() {
+  function addExtraMaterial(sector: string) {
     const v = extraMaterialInput.trim()
-    if (!v) return
-    setExtraMaterials(prev => prev.includes(v) ? prev : [...prev, v])
+    if (!v || !sector) return
+    setExtraMaterials(prev => prev.some(m => m.name === v && m.sector === sector) ? prev : [...prev, { sector, name: v }])
     setExtraMaterialInput('')
   }
 
@@ -250,7 +251,7 @@ export default function RegisterPage() {
         meta.supplier_tier = supplierTier
         if (minOrderValue) meta.min_order_value = String(minOrderValue)
         if (specialties.length > 0) meta.specialties = specialties
-        if (extraMaterials.length > 0) meta.extra_materials = extraMaterials
+        if (extraMaterials.length > 0) meta.extra_materials = extraMaterials.map(m => m.name)
       }
       if (data.role === 'contractor' && contractorGrade) meta.contractor_grade = contractorGrade
       if (crVerify?.mode === 'wathq' && crVerify?.verified) {
@@ -596,106 +597,98 @@ export default function RegisterPage() {
                 {selectedType === 'supplier' ? t.sectorsSubSupplier : t.sectorsSubContractor}
               </p>
 
-              <div className="grid grid-cols-2 gap-3 mb-5">
-                {(Object.keys(SECTOR_LABELS) as Sector[]).map(sector => (
-                  <button
-                    key={sector}
-                    type="button"
-                    onClick={() => {
-                      toggleSector(sector)
-                      if (sectors?.includes(sector)) {
-                        const subKeys = Object.keys(SUB_CATEGORIES[sector] || {})
-                        setSpecialties(prev => prev.filter(s => !subKeys.includes(s)))
-                      }
-                    }}
-                    className={`p-4 rounded-xl border-2 transition-all ${
-                      sectors?.includes(sector)
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
-                    style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}
-                  >
-                    <div className="font-semibold text-sm text-gray-900">{sl(sector)}</div>
-                  </button>
-                ))}
-              </div>
-
-              {/* التخصصات الدقيقة — للمورد فقط */}
-              {selectedType === 'supplier' && sectors?.length > 0 && (
-                <div className="mb-5 border-t border-gray-100 pt-5">
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">{t.exactMaterials}</h3>
-                  <p className="text-xs text-gray-500 mb-3">{t.exactHint} ({specialties.length} {t.selected})</p>
-                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
-                    {sectors.map((sector: Sector) => {
-                      const subs = SUB_CATEGORIES[sector] || {}
-                      const groups: Record<string, string[]> = {}
-                      Object.entries(subs).forEach(([key, sub]) => {
-                        if (!groups[sub.group]) groups[sub.group] = []
-                        groups[sub.group].push(key)
-                      })
-                      const color = SECTOR_COLORS[sector]
-                      return (
-                        <div key={sector}>
-                          <div className="text-xs font-bold mb-2" style={{ color }}>{sl(sector)}</div>
-                          {Object.entries(groups).map(([groupKey, keys]) => {
-                            const grp = GROUP_LABELS[groupKey]
-                            const grpLabel = grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey
-                            return (
-                              <div key={groupKey} className="mb-2 bg-gray-50/50 rounded-lg p-2 border border-gray-100">
-                                <div className="text-[11px] font-bold text-gray-600 mb-1.5 flex items-center gap-1">
-                                  <span>{grp?.icon}</span>{grpLabel}
-                                </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {keys.map(key => {
-                                    const sub = subs[key]
-                                    const active = specialties.includes(key)
-                                    const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
-                                    return (
-                                      <button key={key} type="button" onClick={() => toggleSpecialty(key)}
-                                        className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${
-                                          active ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600'
-                                        }`} style={active ? { background: color } : {}}>
-                                        {sub.icon} {subLabel}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )
-                    })}
-                  </div>
+              {/* CONTRACTOR — simple multi-select sector cards */}
+              {selectedType !== 'supplier' && (
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  {(Object.keys(SECTOR_LABELS) as Sector[]).map(sector => (
+                    <button key={sector} type="button" onClick={() => toggleSector(sector)}
+                      className={`p-4 rounded-xl border-2 transition-all ${sectors?.includes(sector) ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
+                      style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}>
+                      <div className="font-semibold text-sm text-gray-900">{sl(sector)}</div>
+                    </button>
+                  ))}
                 </div>
               )}
 
-              {/* مواد يبيعها المورد وغير موجودة بالقائمة — تُرسَل للإدارة للمراجعة */}
-              {selectedType === 'supplier' && sectors?.length > 0 && (
-                <div className="mb-5 border-t border-gray-100 pt-5">
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">{t.addMatTitle}</h3>
-                  <p className="text-xs text-gray-500 mb-3">{t.addMatHint}</p>
-                  <div className="flex gap-2">
-                    <input type="text" value={extraMaterialInput}
-                      onChange={e => setExtraMaterialInput(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial() } }}
-                      className="input-field flex-1" placeholder={t.addMatPh} />
-                    <button type="button" onClick={addExtraMaterial}
-                      className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#1B2D5B' }}>
-                      {t.addMatBtn}
-                    </button>
-                  </div>
-                  {extraMaterials.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {extraMaterials.map(m => (
-                        <span key={m} className="inline-flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-2.5 py-1.5">
-                          {m}
-                          <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => x !== m))}
-                            className="text-amber-500 hover:text-amber-800 font-bold leading-none">×</button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
+              {/* SUPPLIER — accordion: one sector open at a time, with its specialties + materials */}
+              {selectedType === 'supplier' && (
+                <div className="space-y-2 mb-5">
+                  {(Object.keys(SECTOR_LABELS) as Sector[]).map(sector => {
+                    const selected = sectors?.includes(sector)
+                    const isOpen = openSector === sector
+                    const subs = SUB_CATEGORIES[sector] || {}
+                    const subKeys = Object.keys(subs)
+                    const selCount = specialties.filter(s => subKeys.includes(s)).length
+                    const color = SECTOR_COLORS[sector]
+                    const sectorMats = extraMaterials.filter(m => m.sector === sector)
+                    const groups: Record<string, string[]> = {}
+                    Object.entries(subs).forEach(([key, sub]: any) => { (groups[sub.group] = groups[sub.group] || []).push(key) })
+                    return (
+                      <div key={sector} className={`rounded-xl border-2 overflow-hidden transition-all ${selected ? 'border-blue-600' : 'border-gray-200'}`}>
+                        <div onClick={() => { if (!selected) toggleSector(sector); setOpenSector(isOpen ? null : sector) }}
+                          className={`w-full flex items-center justify-between p-3.5 cursor-pointer ${selected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-sm" style={{ color: selected ? color : '#374151' }}>{sl(sector)}</span>
+                            {selCount > 0 && <span className="text-[10px] font-bold text-white rounded-full px-2 py-0.5" style={{ background: color }}>{selCount}</span>}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {selected && (
+                              <button type="button" onClick={(e) => { e.stopPropagation(); setSpecialties(prev => prev.filter(s => !subKeys.includes(s))); setExtraMaterials(prev => prev.filter(m => m.sector !== sector)); toggleSector(sector); if (isOpen) setOpenSector(null) }}
+                                className="text-[11px] text-red-400 hover:text-red-600">إزالة</button>
+                            )}
+                            <span className="text-gray-400 text-xs">{isOpen ? '▲' : '▼'}</span>
+                          </div>
+                        </div>
+
+                        {isOpen && (
+                          <div className="p-3 border-t border-gray-100 bg-white">
+                            {Object.entries(groups).map(([groupKey, keys]) => {
+                              const grp = GROUP_LABELS[groupKey]
+                              const grpLabel = grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey
+                              return (
+                                <div key={groupKey} className="mb-2 bg-gray-50/50 rounded-lg p-2 border border-gray-100">
+                                  <div className="text-[11px] font-bold text-gray-600 mb-1.5 flex items-center gap-1"><span>{grp?.icon}</span>{grpLabel}</div>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {keys.map(key => {
+                                      const sub = subs[key]
+                                      const active = specialties.includes(key)
+                                      const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
+                                      return (
+                                        <button key={key} type="button" onClick={() => toggleSpecialty(key)}
+                                          className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${active ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600'}`}
+                                          style={active ? { background: color } : {}}>{sub.icon} {subLabel}</button>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )
+                            })}
+
+                            {/* add a missing material UNDER this open sector */}
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <div className="text-[11px] font-bold text-gray-600 mb-1.5">{t.addMatTitle}</div>
+                              <div className="flex gap-2">
+                                <input type="text" value={extraMaterialInput} onChange={e => setExtraMaterialInput(e.target.value)}
+                                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
+                                  className="input-field flex-1" placeholder={t.addMatPh} />
+                                <button type="button" onClick={() => addExtraMaterial(sector)} className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#1B2D5B' }}>{t.addMatBtn}</button>
+                              </div>
+                              {sectorMats.length > 0 && (
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {sectorMats.map(m => (
+                                    <span key={m.name} className="inline-flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                                      {m.name}
+                                      <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => !(x.name === m.name && x.sector === sector)))} className="text-amber-500 hover:text-amber-800 font-bold leading-none">×</button>
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
 
