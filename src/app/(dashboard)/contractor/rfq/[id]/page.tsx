@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
+import { waLink } from '@/lib/wa'
 
 export default function RFQDetailPage() {
   const { id } = useParams()
@@ -286,6 +287,15 @@ export default function RFQDetailPage() {
                             <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">📨 {st.total_offers} عرض سابق</span>
                           </div>
                         )
+                      })()}
+                      {offer.supplier?.phone && (() => {
+                        const w = waLink(offer.supplier.phone, `السلام عليكم، بخصوص عرضكم في منصة تسعيرك على «${rfq.product_name}»`)
+                        return w ? (
+                          <a href={w} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] mt-1.5 px-2.5 py-1 rounded-full font-semibold text-white" style={{ background: '#25D366' }}>
+                            💬 تواصل واتساب
+                          </a>
+                        ) : null
                       })()}
                     </div>
                   </div>

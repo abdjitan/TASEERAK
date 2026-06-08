@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
+import { waLink } from '@/lib/wa'
 import QRCode from 'qrcode'
 
 // ZATCA Phase-1 simplified-invoice QR: base64 of TLV (Tag-Length-Value) fields:
@@ -373,7 +374,17 @@ export default function OrderDetailPage() {
         {offer.status === 'accepted' && (isContractor || isSupplier) && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-6 print:hidden" dir="rtl">
             <h3 className="text-base font-bold mb-1" style={{ color: '#1B2D5B' }}>🛡 حماية الصفقة</h3>
-            <p className="text-xs text-gray-400 mb-4">توثّق المنصة مراحل الصفقة كدليل يحمي الطرفين — ولا تحتفظ بأي مبالغ.</p>
+            <p className="text-xs text-gray-400 mb-3">توثّق المنصة مراحل الصفقة كدليل يحمي الطرفين — ولا تحتفظ بأي مبالغ.</p>
+            {(() => {
+              const other = isContractor ? supplier : contractor
+              const w = waLink(other?.phone, `بخصوص أمر الشراء ${poNumber} في منصة تسعيرك`)
+              return w ? (
+                <a href={w} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs mb-4 px-3 py-1.5 rounded-full font-semibold text-white" style={{ background: '#25D366' }}>
+                  💬 تواصل مع {isContractor ? 'المورد' : 'المقاول'} عبر واتساب
+                </a>
+              ) : null
+            })()}
 
             {/* Tracker */}
             <div className="grid grid-cols-4 gap-2 mb-5 text-center text-[11px]">
