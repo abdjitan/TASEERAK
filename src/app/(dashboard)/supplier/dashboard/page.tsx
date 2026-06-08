@@ -58,6 +58,7 @@ export default function SupplierDashboard() {
 
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [pricesCount, setPricesCount] = useState(null)
   const [openRfqs, setOpenRfqs] = useState([])
   const [myOffers, setMyOffers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -127,6 +128,8 @@ export default function SupplierDashboard() {
       setOpenRfqs(visibleRfqs)
       const { data: offers } = await supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status)').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
       setMyOffers(offers || [])
+      const { count: lpCount } = await supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', session.user.id)
+      setPricesCount(lpCount ?? 0)
       setLoading(false)
     }
     init()
@@ -182,6 +185,29 @@ export default function SupplierDashboard() {
       </nav>
 
       <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
+        {/* Onboarding / liquidity prompts */}
+        {pricesCount === 0 && (
+          <a href="/supplier/prices" className="block mb-4 bg-gradient-to-l from-[#F5831F]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📈</span>
+              <div className="flex-1">
+                <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>انشر أسعارك في بورصة الأسعار</div>
+                <div className="text-xs text-gray-500">المقاولون يبحثون عن أحدث الأسعار — كن أول من يظهر. اضغط لإضافة أسعارك ←</div>
+              </div>
+            </div>
+          </a>
+        )}
+        {profile && !profile.vat_number && (
+          <a href="/settings" className="block mb-4 bg-blue-50 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🧾</span>
+              <div className="flex-1">
+                <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>أضف رقمك الضريبي</div>
+                <div className="text-xs text-gray-500">يلزم لإصدار فواتير ضريبية (ZATCA) لصفقاتك. اضغط للإضافة ←</div>
+              </div>
+            </div>
+          </a>
+        )}
         {profile?.verification_status === 'rejected' && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">
             <div className="flex items-start gap-3 mb-3">

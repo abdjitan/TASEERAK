@@ -109,6 +109,7 @@ export default function SettingsPage() {
   const [phone, setPhone] = useState('')
   const [region, setRegion] = useState('')
   const [city, setCity] = useState('')
+  const [vatNumber, setVatNumber] = useState('')
   const [profileMsg, setProfileMsg] = useState('')
   const [profileSaving, setProfileSaving] = useState(false)
 
@@ -145,6 +146,7 @@ export default function SettingsPage() {
         setPhone(p.phone || '')
         setRegion(p.region || '')
         setCity(p.city || '')
+        setVatNumber(p.vat_number || '')
         setSupplierTier(p.supplier_tier || 'local')
         setMinOrderValue(p.min_order_value ? String(p.min_order_value) : '')
         setContractorGrade(p.contractor_grade || '')
@@ -158,7 +160,7 @@ export default function SettingsPage() {
     e.preventDefault()
     setProfileSaving(true); setProfileMsg('')
     const supabase = createClient()
-    const updateData: any = { company_name_ar: companyAr, company_name_en: companyEn, phone, region, city }
+    const updateData: any = { company_name_ar: companyAr, company_name_en: companyEn, phone, region, city, vat_number: vatNumber || null }
     if (profile?.role === 'supplier') {
       updateData.supplier_tier = supplierTier
       updateData.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
@@ -385,6 +387,17 @@ export default function SettingsPage() {
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.phone}</label>
                     <input value={phone} onChange={e => setPhone(e.target.value)}
                       className="input-field" placeholder="+966 5X XXX XXXX" />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                      {locale === 'en' ? 'VAT Number' : locale === 'ur' ? 'ٹیکس نمبر' : 'الرقم الضريبي (ضريبة القيمة المضافة)'}
+                    </label>
+                    <input value={vatNumber} onChange={e => setVatNumber(e.target.value)}
+                      className="input-field font-mono" dir="ltr" placeholder="3XXXXXXXXXXXXX3" maxLength={15} />
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {locale === 'en' ? 'Required to issue ZATCA tax invoices.' : locale === 'ur' ? 'ٹیکس انوائس کے لیے ضروری۔' : 'يلزم لإصدار الفواتير الضريبية المتوافقة مع هيئة الزكاة والضريبة.'}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
