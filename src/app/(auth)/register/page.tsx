@@ -157,6 +157,8 @@ export default function RegisterPage() {
   // مواد يبيعها المورد وغير موجودة بالقائمة — تُرسَل للإدارة للمراجعة
   const [extraMaterials, setExtraMaterials] = useState<string[]>([])
   const [extraMaterialInput, setExtraMaterialInput] = useState('')
+  const [district, setDistrict] = useState('')
+  const [prefLang, setPrefLang] = useState<'ar' | 'en' | 'ur'>(locale)
 
   function addExtraMaterial() {
     const v = extraMaterialInput.trim()
@@ -240,6 +242,8 @@ export default function RegisterPage() {
         vat_number: data.vat_number || '',
         region: data.region,
         city: data.city,
+        district: district || '',
+        preferred_language: prefLang,
         sectors: data.sectors,
       }
       if (data.role === 'supplier') {
@@ -492,6 +496,23 @@ export default function RegisterPage() {
                       ))}
                     </select>
                     {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city.message}</p>}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'} <span className="text-gray-400 font-normal">({locale === 'en' ? 'optional' : 'اختياري'})</span></label>
+                  <input value={district} onChange={e => setDistrict(e.target.value)} className="input-field" placeholder={locale === 'en' ? 'e.g. Al-Olaya' : 'مثال: العليا'} />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'Notification language (email/WhatsApp)' : locale === 'ur' ? 'اطلاعات کی زبان' : 'لغة الإشعارات (بريد/واتساب)'}</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[{ k: 'ar', l: 'العربية' }, { k: 'en', l: 'English' }, { k: 'ur', l: 'اردو' }].map(o => (
+                      <button key={o.k} type="button" onClick={() => setPrefLang(o.k as any)}
+                        className={`py-2 rounded-xl border-2 text-sm font-semibold transition-all ${prefLang === o.k ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600'}`}>
+                        {o.l}
+                      </button>
+                    ))}
                   </div>
                 </div>
 

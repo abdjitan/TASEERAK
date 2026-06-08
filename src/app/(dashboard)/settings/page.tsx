@@ -110,6 +110,8 @@ export default function SettingsPage() {
   const [region, setRegion] = useState('')
   const [city, setCity] = useState('')
   const [vatNumber, setVatNumber] = useState('')
+  const [district, setDistrict] = useState('')
+  const [prefLang, setPrefLang] = useState('ar')
   const [profileMsg, setProfileMsg] = useState('')
   const [profileSaving, setProfileSaving] = useState(false)
 
@@ -147,6 +149,8 @@ export default function SettingsPage() {
         setRegion(p.region || '')
         setCity(p.city || '')
         setVatNumber(p.vat_number || '')
+        setDistrict(p.district || '')
+        setPrefLang(p.preferred_language || 'ar')
         setSupplierTier(p.supplier_tier || 'local')
         setMinOrderValue(p.min_order_value ? String(p.min_order_value) : '')
         setContractorGrade(p.contractor_grade || '')
@@ -160,7 +164,7 @@ export default function SettingsPage() {
     e.preventDefault()
     setProfileSaving(true); setProfileMsg('')
     const supabase = createClient()
-    const updateData: any = { company_name_ar: companyAr, company_name_en: companyEn, phone, region, city, vat_number: vatNumber || null }
+    const updateData: any = { company_name_ar: companyAr, company_name_en: companyEn, phone, region, city, vat_number: vatNumber || null, district: district || null, preferred_language: prefLang }
     if (profile?.role === 'supplier') {
       updateData.supplier_tier = supplierTier
       updateData.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
@@ -411,6 +415,21 @@ export default function SettingsPage() {
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.city}</label>
                       <input value={city} onChange={e => setCity(e.target.value)} className="input-field" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'}</label>
+                      <input value={district} onChange={e => setDistrict(e.target.value)} className="input-field" placeholder={locale === 'en' ? 'e.g. Al-Olaya' : 'مثال: العليا'} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Notification language' : locale === 'ur' ? 'اطلاعات کی زبان' : 'لغة الإشعارات'}</label>
+                      <select value={prefLang} onChange={e => setPrefLang(e.target.value)} className="input-field">
+                        <option value="ar">العربية</option>
+                        <option value="en">English</option>
+                        <option value="ur">اردو</option>
+                      </select>
                     </div>
                   </div>
 
