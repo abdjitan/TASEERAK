@@ -64,6 +64,7 @@ export default function SupplierDashboard() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('rfqs')
   const [hasSpecialties, setHasSpecialties] = useState(true)
+  const [hasSectors, setHasSectors] = useState(true)
 
   useEffect(() => {
     async function init() {
@@ -77,6 +78,7 @@ export default function SupplierDashboard() {
       // جلب قطاعات المورد المتخصص فيها
       const { data: sectorRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
       const mySectors = (sectorRows || []).map(r => r.sector)
+      setHasSectors(mySectors.length > 0)
 
       // جلب التخصصات الفرعية للمورد
       const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
@@ -262,7 +264,7 @@ export default function SupplierDashboard() {
         </div>
 
         {/* تنبيه: حدد تخصصاتك الدقيقة */}
-        {!hasSpecialties && profile?.verification_status !== 'rejected' && (
+        {!hasSpecialties && !hasSectors && profile?.verification_status !== 'rejected' && (
           <a href="/supplier/specialties"
             className="block mb-6 bg-gradient-to-l from-[#F5831F]/10 to-[#1B2D5B]/5 border-2 border-[#F5831F]/30 rounded-2xl p-5 hover:shadow-md transition-all animate-fade-in">
             <div className="flex items-center gap-4">
