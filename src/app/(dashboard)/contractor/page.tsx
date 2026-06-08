@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 
 const txt = {
@@ -161,6 +162,7 @@ export default function ContractorDashboard() {
             )}
             <a href="/market" className="text-xs px-3 py-2 rounded-lg hover:bg-gray-50 transition-all font-semibold" style={{ color: '#F5831F' }}>📈 {locale === 'en' ? 'Price Index' : locale === 'ur' ? 'بورس' : 'بورصة الأسعار'}</a>
             <a href="/location" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">📍 {locale === 'en' ? 'Location' : locale === 'ur' ? 'مقام' : 'الموقع'}</a>
+            <NotificationBell userId={user?.id} />
             <a href="/settings" className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded transition-all">⚙️</a>
             <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded transition-all">{t.logout}</button>
           </div>

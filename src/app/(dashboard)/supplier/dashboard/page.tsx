@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import { getSubCategoryLabel } from '@/types'
 
@@ -173,6 +174,7 @@ export default function SupplierDashboard() {
             <a href="/location" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">📍 {locale === 'en' ? 'Location' : locale === 'ur' ? 'مقام' : 'الموقع'}</a>
             <a href="/supplier/prices" className="text-xs px-3 py-2 rounded-lg transition-all font-semibold" style={{ color: '#F5831F' }}>📈 {locale === 'en' ? 'Live Prices' : locale === 'ur' ? 'لائیو' : 'أسعاري'}</a>
             <a href="/market" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">📊 {locale === 'en' ? 'Index' : locale === 'ur' ? 'انڈیکس' : 'البورصة'}</a>
+            <NotificationBell userId={user?.id} />
             <a href="/settings" className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1 rounded transition-all">⚙️</a>
             <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-red-500 px-2 py-1 rounded transition-all">{t.logout}</button>
           </div>
