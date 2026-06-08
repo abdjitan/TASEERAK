@@ -388,6 +388,7 @@ export default function AdminPanel() {
             ))}
           </div>
           <div className="flex items-center gap-2">
+            <a href="/admin/discover" className="text-xs px-3 py-2 rounded-xl font-semibold text-white whitespace-nowrap transition-all hover:shadow-md" style={{ background: '#0F6E56' }}>🔎 اكتشاف موردين</a>
             {['pending', 'verified', 'rejected', 'all'].includes(tab) && filtered.length > 0 && (
               <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-all">⬇ تصدير CSV</button>
             )}
