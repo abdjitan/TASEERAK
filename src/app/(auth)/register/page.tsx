@@ -113,7 +113,7 @@ const schema = z.object({
   company_name_en: z.string().optional(),
   commercial_registration: z.string().regex(/^[0-9]{10}$/, 'رقم السجل التجاري يجب أن يكون 10 أرقام بالضبط'),
   vat_number: z.string().optional(),
-  phone: z.string().regex(/^05[0-9]{8}$/, 'رقم الجوال يجب أن يكون 10 أرقام ويبدأ بـ 05').optional().or(z.literal('')),
+  phone: z.string().regex(/^05[0-9]{8}$/, 'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
   password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
   region: z.string().min(1, 'اختر المنطقة'),
@@ -545,7 +545,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} <span className="text-gray-400 font-normal">({locale === 'en' ? 'optional' : locale === 'ur' ? 'اختیاری' : 'اختياري'})</span></label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
                   <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel"
                     inputMode="numeric" maxLength={10} dir="ltr"
                     onInput={e => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10) }} />

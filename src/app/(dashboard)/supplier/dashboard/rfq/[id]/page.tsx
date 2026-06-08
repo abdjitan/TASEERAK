@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { SECTOR_LABELS } from '@/types'
+import { validateUploadFile } from '@/lib/fileSafety'
 
 export default function SupplierRFQPage() {
   const { id } = useParams()
@@ -96,6 +97,8 @@ export default function SupplierRFQPage() {
     // رفع الملف المرفق إن وجد
     let attachUrl = null, attachName = null
     if (attachFile) {
+      const safe = await validateUploadFile(attachFile)
+      if (!safe.ok) { setError(safe.error); setSubmitting(false); return }
       const ext = attachFile.name.split('.').pop()
       const path = `${user.id}/offer-${Date.now()}.${ext}`
       const { data: up, error: upErr } = await supabase.storage.from('licenses').upload(path, attachFile, { upsert: true })
@@ -418,7 +421,13 @@ export default function SupplierRFQPage() {
                 ) : (
                   <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-4 cursor-pointer hover:border-[#F5831F]/50 transition-all">
                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
-                      onChange={e => setAttachFile(e.target.files?.[0] ?? null)} />
+                      onChange={async e => {
+                        const f = e.target.files?.[0] ?? null
+                        if (!f) { setAttachFile(null); return }
+                        const v = await validateUploadFile(f)
+                        if (!v.ok) { setError(v.error); e.currentTarget.value = ''; setAttachFile(null); return }
+                        setError(''); setAttachFile(f)
+                      }} />
                     <span className="text-2xl">📤</span>
                     <span className="text-sm text-gray-500">{T.attachBtn}</span>
                   </label>
