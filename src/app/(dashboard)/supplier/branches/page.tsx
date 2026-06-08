@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { REGIONS, CITIES_BY_REGION } from '@/types'
+import DistrictField from '@/components/shared/DistrictField'
 
 export default function SupplierBranchesPage() {
   const { dir } = useTranslation()
@@ -118,7 +119,7 @@ export default function SupplierBranchesPage() {
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">الحي</label>
-                <input value={district} onChange={e => setDistrict(e.target.value)} className="input-field" placeholder="العليا" />
+                <DistrictField city={city} value={district} onChange={setDistrict} />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">جوال الفرع</label>

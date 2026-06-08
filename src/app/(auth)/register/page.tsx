@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, getRegionLabel, CITIES_BY_REGION, type UserRole, type Sector } from '@/types'
+import DistrictField from '@/components/shared/DistrictField'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 
@@ -529,7 +530,7 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'} <span className="text-gray-400 font-normal">({locale === 'en' ? 'optional' : 'اختياري'})</span></label>
-                  <input value={district} onChange={e => setDistrict(e.target.value)} className="input-field" placeholder={locale === 'en' ? 'e.g. Al-Olaya' : 'مثال: العليا'} />
+                  <DistrictField city={watch('city')} value={district} onChange={setDistrict} />
                 </div>
 
                 <div>

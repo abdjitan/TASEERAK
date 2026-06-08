@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import SupportThread from '@/components/shared/SupportThread'
+import DistrictField from '@/components/shared/DistrictField'
 import { REGIONS } from '@/types'
 
 const txt = {
@@ -421,7 +422,7 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'}</label>
-                      <input value={district} onChange={e => setDistrict(e.target.value)} className="input-field" placeholder={locale === 'en' ? 'e.g. Al-Olaya' : 'مثال: العليا'} />
+                      <DistrictField city={city} value={district} onChange={setDistrict} />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Notification language' : locale === 'ur' ? 'اطلاعات کی زبان' : 'لغة الإشعارات'}</label>
