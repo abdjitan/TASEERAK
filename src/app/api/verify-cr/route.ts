@@ -4,25 +4,27 @@ export const runtime = 'nodejs'
 
 // =============================================================
 // CR VERIFICATION — pulls official Commercial Registration data
-// from the Saudi Ministry of Commerce "Wathq (واثق)" platform.
+// from the Saudi Ministry of Commerce "Wathq (واثق)" platform,
+// using the new-legislation `fullinfo` endpoint.
 //
-// • If WATHQ_API_KEY is NOT set  → returns mode:'manual'
-//   (the app falls back to document upload + admin review).
-// • If WATHQ_API_KEY IS set      → returns mode:'wathq' with the
-//   official entity name, activity, status, dates pulled live.
+// • If WATHQ_API_KEY is NOT set  → mode:'manual' (document upload + admin review).
+// • If WATHQ_API_KEY IS set      → mode:'wathq' with official name, status,
+//   city, capital, AND the partners/managers list.
 //
-// Configure in Vercel (Project → Settings → Environment Variables)
-// and/or .env.local:
-//   WATHQ_API_KEY = <your apiKey from api.wathq.sa>
-//   WATHQ_API_BASE = https://api.wathq.sa            (optional override)
-//   WATHQ_CR_PATH  = /v5/commercialregistration/info/ (optional override)
+// Anti-fraud: pass { cr, nationalId } and we report whether that national ID
+// is actually an owner/partner/manager of the CR.
+//
+// Configure (Vercel → Settings → Environment Variables, and/or .env.local):
+//   WATHQ_API_KEY  = <مفتاح الأمان from api.wathq.sa>
+//   WATHQ_API_BASE = https://api.wathq.sa            (optional)
+//   WATHQ_CR_PATH  = /sandbox/commercial-registration/fullinfo/   (sandbox default;
+//                    switch to the production path once the commercial plan is active)
 // =============================================================
 
 const WATHQ_KEY = process.env.WATHQ_API_KEY
 const WATHQ_BASE = process.env.WATHQ_API_BASE || 'https://api.wathq.sa'
-const WATHQ_CR_PATH = process.env.WATHQ_CR_PATH || '/v5/commercialregistration/info/'
+const WATHQ_CR_PATH = process.env.WATHQ_CR_PATH || '/sandbox/commercial-registration/fullinfo/'
 
-// safely read nested fields with several possible names
 function pick(obj: any, paths: string[]): any {
   for (const p of paths) {
     const val = p.split('.').reduce((o: any, k: string) => (o == null ? undefined : o[k]), obj)
@@ -30,15 +32,52 @@ function pick(obj: any, paths: string[]): any {
   }
   return undefined
 }
+function safeJson(t: string): any { try { return JSON.parse(t) } catch { return (t || '').slice(0, 300) } }
 
-function safeJson(t: string): any {
-  try { return JSON.parse(t) } catch { return (t || '').slice(0, 300) }
+// Map the fullinfo payload to the shape our app uses.
+function extract(j: any) {
+  const parties = Array.isArray(j?.parties) ? j.parties.map((p: any) => ({
+    name: p?.name ?? null,
+    idNumber: p?.identity?.id != null ? String(p.identity.id) : null,
+    idType: p?.identity?.typeName ?? null,
+    role: Array.isArray(p?.partnership) ? p.partnership.map((x: any) => x?.name).filter(Boolean).join('، ') : null,
+  })) : []
+  const managers = Array.isArray(j?.management?.managers) ? j.management.managers.map((m: any) => ({
+    name: m?.name ?? null,
+    idNumber: m?.identity?.id != null ? String(m.identity.id) : null,
+  })) : []
+  const statusName = pick(j, ['status.name', 'status', 'crStatus.name'])
+  const isActive = j?.status?.id === 1 || /نشط|active|ساري|قائم|valid/i.test(String(statusName ?? ''))
+  return {
+    name: j?.name ?? pick(j, ['crName', 'entityName', 'businessName']) ?? null,
+    status: statusName ?? null,
+    isActive: !!isActive,
+    crNationalNumber: j?.crNationalNumber ?? null,
+    crNumber: j?.crNumber ?? null,
+    entityType: j?.entityType?.name ?? null,
+    city: j?.headquarterCityName ?? pick(j, ['address.city', 'city']) ?? null,
+    activity: pick(j, ['activities.0.name', 'isicActivity.name', 'mainActivity', 'activity']) ?? null,
+    capital: j?.crCapital ?? null,
+    issueDate: j?.issueDateGregorian ?? pick(j, ['issueDate']) ?? null,
+    isEcommerce: j?.hasEcommerce ?? null,
+    parties,
+    managers,
+  }
+}
+
+// Anti-fraud: is this national ID an owner/partner/manager of the CR?
+function ownerCheck(ex: any, nationalId: string) {
+  if (!nationalId) return null
+  const isOwner = ex.parties.some((p: any) => p.idNumber === nationalId)
+  const isManager = ex.managers.some((m: any) => m.idNumber === nationalId)
+  return { checked: true, nationalId, isOwner, isManager, authorized: isOwner || isManager }
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
     const cr = String(body?.cr || '').trim()
+    const nationalId = String(body?.nationalId || '').trim()
 
     // 1) format check (Saudi CR = exactly 10 digits)
     if (!/^\d{10}$/.test(cr)) {
@@ -48,52 +87,38 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 1.5) DEMO MODE — lets the owner experience the full auto-verification
-    //      with fake data (no Wathq subscription needed). Enable by setting
-    //      WATHQ_DEMO=1 in the environment. Turn OFF before going live.
+    // 1.5) DEMO MODE (set WATHQ_DEMO=1) — fake data, no subscription needed
     const DEMO = process.env.WATHQ_DEMO === '1' || process.env.WATHQ_DEMO === 'true'
     if (!WATHQ_KEY && DEMO) {
       return NextResponse.json({
-        ok: true,
-        mode: 'wathq',
-        verified: true,
-        cr,
-        name: 'مؤسسة تجريبية للمقاولات والتوريدات (DEMO)',
-        status: 'نشط',
+        ok: true, mode: 'wathq', verified: true, cr,
+        name: 'مؤسسة تجريبية للمقاولات والتوريدات (DEMO)', status: 'نشط',
         activity: 'مقاولات عامة للمباني وتجارة مواد البناء',
-        expiryDate: '2027-01-01',
-        issueDate: '2020-01-01',
-        city: 'الرياض',
-        raw: { demo: true, cr },
-        message: '🧪 وضع تجريبي — هذه بيانات وهمية للعرض فقط. فعّل واثق للتحقق الحقيقي.',
+        issueDate: '2020-01-01', city: 'الرياض', parties: [], managers: [], ownerCheck: null,
+        raw: { demo: true, cr }, message: '🧪 وضع تجريبي — بيانات وهمية للعرض فقط.',
       })
     }
 
     // 2) MANUAL MODE — Wathq not connected yet
     if (!WATHQ_KEY) {
       return NextResponse.json({
-        ok: true,
-        mode: 'manual',
-        verified: false,
-        cr,
+        ok: true, mode: 'manual', verified: false, cr,
         message: 'الربط الآلي مع واثق غير مُفعّل بعد — سيتم التوثيق عبر رفع صورة السجل ومراجعة الإدارة.',
       })
     }
 
-    // 3) WATHQ MODE — pull from the Ministry of Commerce
-    const url = `${WATHQ_BASE}${WATHQ_CR_PATH}${cr}`
+    // 3) WATHQ MODE — pull from the Ministry of Commerce (fullinfo)
+    const url = `${WATHQ_BASE}${WATHQ_CR_PATH}${cr}?language=ar`
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 12000)
-
     let res: Response
     try {
       res = await fetch(url, {
         method: 'GET',
         headers: { apiKey: WATHQ_KEY, Accept: 'application/json' },
-        signal: controller.signal,
-        cache: 'no-store',
+        signal: controller.signal, cache: 'no-store',
       })
-    } catch (err: any) {
+    } catch {
       clearTimeout(timeout)
       return NextResponse.json({
         ok: true, mode: 'wathq', verified: false, cr,
@@ -116,35 +141,18 @@ export async function POST(req: NextRequest) {
     }
 
     const j: any = await res.json().catch(() => ({}))
-
-    // robust field extraction (field names differ by Wathq product/version)
-    const name = pick(j, ['crName', 'name', 'entityName', 'crNameAr', 'businessName'])
-    const statusName = pick(j, ['status.name', 'status', 'crStatus.name', 'crStatus', 'crStatusName'])
-    const activity = pick(j, ['activities.0.name', 'isicActivity.name', 'mainActivity', 'activity', 'activities.0'])
-    const expiry = pick(j, ['expiryDate', 'crExpiryDate', 'expiry', 'expiryDateHijri'])
-    const issue = pick(j, ['issueDate', 'crIssueDate', 'issue', 'issueDateHijri'])
-    const city = pick(j, ['location.city', 'address.city', 'city', 'location.name'])
-
-    const statusStr = String(statusName ?? '').toLowerCase()
-    const isActive = /active|ساري|قائم|نشط|valid/.test(statusStr) || statusStr === '1' || statusStr === 'true'
+    const ex = extract(j)
+    const oc = ownerCheck(ex, nationalId)
 
     return NextResponse.json({
-      ok: true,
-      mode: 'wathq',
-      verified: !!isActive,
-      cr,
-      name: name ?? null,
-      status: statusName ?? null,
-      activity: activity ?? null,
-      expiryDate: expiry ?? null,
-      issueDate: issue ?? null,
-      city: city ?? null,
-      raw: j,
-      message: isActive
+      ok: true, mode: 'wathq', verified: ex.isActive, cr,
+      ...ex,
+      ownerCheck: oc,
+      message: ex.isActive
         ? 'تم التحقق من السجل التجاري عبر واثق ✓'
         : 'السجل التجاري غير ساري المفعول حسب واثق — يحتاج مراجعة',
     })
-  } catch (e: any) {
+  } catch {
     return NextResponse.json(
       { ok: false, error: 'SERVER_ERROR', message: 'حدث خطأ غير متوقع أثناء التحقق' },
       { status: 500 },
