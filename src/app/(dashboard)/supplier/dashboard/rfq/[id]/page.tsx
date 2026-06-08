@@ -293,6 +293,13 @@ export default function SupplierRFQPage() {
             <div className="text-4xl mb-2">{existingOffer.status === 'accepted' ? '✅' : existingOffer.status === 'rejected' ? '❌' : '⏳'}</div>
             <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>{T.alreadyTitle[existingOffer.status] || T.alreadyTitle.pending}</h3>
             <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString()} ر.س</p>
+            {existingOffer.status === 'accepted' && (
+              <a href={`/contractor/orders/${existingOffer.id}`}
+                className="inline-block mt-4 px-5 py-2.5 rounded-xl font-semibold text-white text-sm transition-all hover:shadow"
+                style={{ background: '#0F6E56' }}>
+                📄 أمر الشراء وحماية الصفقة ←
+              </a>
+            )}
           </div>
         ) : rfq.status !== 'open' ? (
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-center">

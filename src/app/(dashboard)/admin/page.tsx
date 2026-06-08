@@ -199,6 +199,22 @@ export default function AdminPanel() {
     URL.revokeObjectURL(a.href)
   }
 
+  async function resolveDispute(offerId: string) {
+    const resolution = prompt('ملخص حل النزاع (يظهر للطرفين):')
+    if (resolution === null) return
+    setActionLoading('disp-' + offerId)
+    const supabase = createClient()
+    await supabase.from('offers').update({
+      dispute_status: 'resolved',
+      dispute_resolution: resolution || 'تم الحل بالتوافق',
+      dispute_resolved_at: new Date().toISOString(),
+    }).eq('id', offerId)
+    setMsg('✓ تم حل النزاع')
+    setTimeout(() => setMsg(''), 3000)
+    await loadData()
+    setActionLoading('')
+  }
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -245,6 +261,10 @@ export default function AdminPanel() {
   })
   const conversations: any[] = Object.values(convByUser).sort((a: any, b: any) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime())
   const totalUnread = conversations.reduce((s: number, c: any) => s + c.unread, 0)
+
+  // Open deal disputes (for admin mediation)
+  const rfqById: any = Object.fromEntries(rfqs.map((r: any) => [r.id, r]))
+  const disputes = offers.filter((o: any) => o.dispute_status === 'open')
 
   // ── Analytics (computed from already-loaded data) ──
   const dayKey = (d: any) => new Date(d).toISOString().slice(0, 10)
@@ -341,6 +361,7 @@ export default function AdminPanel() {
               { key: 'all', label: `الكل (${stats.total})` },
               { key: 'rfqs', label: `📋 طلبات التسعير (${rfqs.length + projects.length})` },
               { key: 'messages', label: `💬 الرسائل${totalUnread ? ' (' + totalUnread + ')' : ''}` },
+              { key: 'disputes', label: `⚠ النزاعات${disputes.length ? ' (' + disputes.length + ')' : ''}` },
               { key: 'materials', label: `📦 طلبات المواد (${materialReqs.filter(r => r.status === 'pending').length})` },
             ].map(t => (
               <button key={t.key} onClick={() => { setTab(t.key); setRoleFilter('') }}
@@ -370,8 +391,48 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* Analytics */}
-        {tab === 'analytics' ? (
+        {/* Disputes */}
+        {tab === 'disputes' ? (
+          disputes.length === 0 ? (
+            <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
+              <div className="text-5xl mb-4">🕊️</div>
+              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد نزاعات مفتوحة</h3>
+              <p className="text-sm text-gray-400 mt-1">تظهر هنا النزاعات بين المقاولين والموردين للوساطة</p>
+            </div>
+          ) : (
+            <div className="space-y-3 stagger">
+              {disputes.map((o: any) => {
+                const r = rfqById[o.rfq_id]
+                return (
+                  <div key={o.id} className="bg-white rounded-2xl p-5 border border-red-200 shadow-sm">
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="badge text-[10px] bg-red-100 text-red-700">⚠ نزاع مفتوح</span>
+                          <span className="font-bold" style={{ color: '#1B2D5B' }}>{r?.product_name || 'طلب'}</span>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
+                          <span>🏢 المقاول: <b>{nameOf(r?.contractor_id)}</b></span>
+                          <span>🏪 المورد: <b>{nameOf(o.supplier_id)}</b></span>
+                          <span>💰 القيمة: {sar(o.total_price)}</span>
+                          <span>📅 فُتح: {dt(o.dispute_opened_at)}</span>
+                        </div>
+                        <div className="mt-2 bg-red-50 rounded-lg p-2.5 text-sm text-red-700">📝 {o.dispute_reason}</div>
+                        <div className="text-[11px] text-gray-400 mt-1.5">
+                          التسليم: {o.supplier_delivered_at ? '✓' : '—'} · الاستلام: {o.received_at ? '✓' : '—'} · الدفع: {o.payment_status === 'paid' ? '✓' : '—'}
+                        </div>
+                      </div>
+                      <button onClick={() => resolveDispute(o.id)} disabled={actionLoading === 'disp-' + o.id}
+                        className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 flex-shrink-0" style={{ background: '#0F6E56' }}>
+                        {actionLoading === 'disp-' + o.id ? '...' : '✓ حل النزاع'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        ) : tab === 'analytics' ? (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
