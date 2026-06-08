@@ -583,7 +583,7 @@ export default function RegisterPage() {
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'} <span className="text-gray-400 font-normal">({locale === 'en' ? 'optional' : 'اختياري'})</span></label>
-                  <DistrictField city={watch('city')} value={district} onChange={setDistrict} />
+                  <DistrictField city={watch('city')} value={district} onChange={setDistrict} locale={locale} />
                 </div>
 
                 <div>
