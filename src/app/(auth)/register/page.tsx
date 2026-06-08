@@ -151,6 +151,7 @@ export default function RegisterPage() {
   const [crVerify, setCrVerify] = useState<any>(null)
   const [crDup, setCrDup] = useState<any>(null) // { company } if CR already registered
   const [branchConfirmed, setBranchConfirmed] = useState(false)
+  const [phoneDup, setPhoneDup] = useState<any>(null) // { company } if phone already registered
   const [crChecking, setCrChecking] = useState(false)
   // Report a fake/fraudulent account registered with my CR
   const [objOpen, setObjOpen] = useState(false)
@@ -221,6 +222,16 @@ export default function RegisterPage() {
       setCrDup(data && data.length > 0 ? { company: data[0].company_name_ar } : null)
     } catch { setCrDup(null) }
     setObjOpen(false); setObjSent(false)
+  }
+
+  // Check (pre-auth) whether a phone is already registered — phones must be unique.
+  async function checkPhoneDup(phone: string) {
+    if (!/^05[0-9]{8}$/.test(phone)) { setPhoneDup(null); return }
+    try {
+      const supabase = createClient()
+      const { data } = await supabase.rpc('phone_exists', { p_phone: phone })
+      setPhoneDup(data && data.length > 0 ? { company: data[0].company_name_ar } : null)
+    } catch { setPhoneDup(null) }
   }
 
   // Submit an objection that the account registered with this CR is fake.
@@ -602,9 +613,14 @@ export default function RegisterPage() {
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
                   <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel"
                     inputMode="numeric" maxLength={10} dir="ltr"
-                    onInput={e => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10) }} />
+                    onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(null) }} />
                   <p className="text-[10px] text-gray-400 mt-1">{t.phoneHint}</p>
                   {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+                  {phoneDup && (
+                    <p className="text-red-600 text-xs mt-1 bg-red-50 border border-red-200 rounded-lg p-2">
+                      ⚠ {locale === 'en' ? 'This phone number is already registered' : locale === 'ur' ? 'یہ فون نمبر پہلے سے رجسٹرڈ ہے' : 'رقم الجوال هذا مسجّل مسبقاً'}{phoneDup.company ? ` («${phoneDup.company}»)` : ''} — {locale === 'en' ? 'use a different number.' : locale === 'ur' ? 'مختلف نمبر استعمال کریں۔' : 'استخدم رقماً آخر.'}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -630,6 +646,10 @@ export default function RegisterPage() {
                   if (!valid) return
                   if (crDup && !branchConfirmed) {
                     setFormError(locale === 'en' ? 'This commercial registration is already registered — sign in, or confirm it is a separate branch to continue.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن پہلے سے موجود ہے — سائن اِن کریں یا الگ شاخ کی تصدیق کریں۔' : 'هذا السجل التجاري مسجّل مسبقاً — سجّل الدخول، أو أكّد أنه فرع منفصل للمتابعة.')
+                    return
+                  }
+                  if (phoneDup) {
+                    setFormError(locale === 'en' ? 'This phone number is already registered — use a different one.' : locale === 'ur' ? 'یہ فون نمبر پہلے سے رجسٹرڈ ہے — مختلف نمبر استعمال کریں۔' : 'رقم الجوال مسجّل مسبقاً — استخدم رقماً آخر.')
                     return
                   }
                   setFormError('')
