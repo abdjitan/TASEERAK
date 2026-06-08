@@ -98,12 +98,15 @@ export default function SupplierRFQPage() {
     if (attachFile) {
       const ext = attachFile.name.split('.').pop()
       const path = `${user.id}/offer-${Date.now()}.${ext}`
-      const { data: up } = await supabase.storage.from('licenses').upload(path, attachFile, { upsert: true })
-      if (up) {
-        const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path)
-        attachUrl = publicUrl
-        attachName = attachFile.name
+      const { data: up, error: upErr } = await supabase.storage.from('licenses').upload(path, attachFile, { upsert: true })
+      if (upErr || !up) {
+        setError('تعذّر رفع الملف المرفق — حاول مجدداً، أو أزل المرفق وأرسل العرض بدونه. (File upload failed)')
+        setSubmitting(false)
+        return
       }
+      const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path)
+      attachUrl = publicUrl
+      attachName = attachFile.name
     }
 
     // إضافات الفاتورة → total النهائي = سعر البضاعة + الإضافات
