@@ -156,22 +156,56 @@ export default function SettingsPage() {
         setMinOrderValue(p.min_order_value ? String(p.min_order_value) : '')
         setContractorGrade(p.contractor_grade || '')
       }
+      const { data: reqs } = await supabase.from('profile_change_requests').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false })
+      setMyRequests(reqs || [])
       setLoading(false)
     }
     init()
   }, [])
 
+  // Locked-field change requests (name / classification)
+  const [myRequests, setMyRequests] = useState([])
+  const [crqModal, setCrqModal] = useState(null) // 'name' | 'classification'
+  const [crqValue, setCrqValue] = useState('')
+  const [crqReason, setCrqReason] = useState('')
+  const [crqSaving, setCrqSaving] = useState(false)
+  const [crqMsg, setCrqMsg] = useState('')
+  const pendingFor = (field) => myRequests.find(r => r.field === field && r.status === 'pending')
+
+  async function submitChangeRequest() {
+    if (!crqValue.trim()) { setCrqMsg(locale === 'en' ? 'Enter the new value' : 'اكتب القيمة الجديدة'); return }
+    setCrqSaving(true); setCrqMsg('')
+    const supabase = createClient()
+    const { data, error } = await supabase.rpc('request_profile_change', {
+      p_field: crqModal, p_new_value: crqValue.trim(), p_reason: crqReason.trim() || null, p_document_url: null,
+    })
+    setCrqSaving(false)
+    if (error || !data?.ok) {
+      const map = {
+        pending_exists: 'لديك طلب قيد المراجعة لنفس الحقل بالفعل.',
+        cooldown: 'لا يمكن طلب تغيير هذا الحقل إلا بعد ٩٠ يوم من آخر تغيير معتمد.',
+        empty: 'القيمة فارغة.',
+        unauthorized: 'سجّل الدخول أولاً.',
+      }
+      setCrqMsg(map[data?.error] || 'تعذّر إرسال الطلب. حاول مرة ثانية.')
+      return
+    }
+    const { data: reqs } = await supabase.from('profile_change_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+    setMyRequests(reqs || [])
+    setCrqModal(null); setCrqValue(''); setCrqReason('')
+    setProfileMsg(locale === 'en' ? '✓ Request sent to admin' : '✓ تم إرسال الطلب للإدارة')
+    setTimeout(() => setProfileMsg(''), 4000)
+  }
+
   async function saveProfile(e) {
     e.preventDefault()
     setProfileSaving(true); setProfileMsg('')
     const supabase = createClient()
-    const updateData: any = { company_name_ar: companyAr, company_name_en: companyEn, phone, region, city, vat_number: vatNumber || null, district: district || null, preferred_language: prefLang }
+    // Note: name (company_name_*) and classification (supplier_tier / contractor_grade)
+    // are LOCKED — they change only via an approved request, enforced by a DB trigger.
+    const updateData: any = { phone, region, city, vat_number: vatNumber || null, district: district || null, preferred_language: prefLang }
     if (profile?.role === 'supplier') {
-      updateData.supplier_tier = supplierTier
       updateData.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
-    }
-    if (profile?.role === 'contractor' && contractorGrade) {
-      updateData.contractor_grade = contractorGrade
     }
     const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id)
     setProfileSaving(false)
@@ -377,15 +411,18 @@ export default function SettingsPage() {
                 <form onSubmit={saveProfile} className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr}</label>
-                      <input value={companyAr} onChange={e => setCompanyAr(e.target.value)}
-                        className="input-field" required />
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} 🔒</label>
+                      <div className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyEn}</label>
-                      <input value={companyEn} onChange={e => setCompanyEn(e.target.value)}
-                        className="input-field" />
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyEn} 🔒</label>
+                      <div className="input-field bg-gray-50 text-gray-500 flex items-center min-h-[44px]" dir="ltr">{companyEn || '—'}</div>
                     </div>
+                  </div>
+                  <div className="-mt-3">
+                    {pendingFor('name')
+                      ? <p className="text-[11px] text-amber-600">⏳ طلب تغيير الاسم قيد مراجعة الإدارة (إلى «{pendingFor('name').new_value}»).</p>
+                      : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#1B2D5B' }}>🔒 الاسم ثابت لارتباطه بالسجل التجاري — اطلب تعديله</button>}
                   </div>
 
                   <div>
@@ -434,50 +471,37 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Supplier Tier */}
+                  {/* Supplier Tier — locked */}
                   {profile?.role === 'supplier' && (
                     <div className="border-t border-gray-100 pt-5">
-                      <label className="block text-xs font-bold text-gray-500 mb-2">تصنيف شركتك</label>
-                      <div className="grid grid-cols-3 gap-2 mb-3">
-                        {[
-                          { key: 'manufacturer', icon: '🏭', label: 'مصنع / مورد رئيسي' },
-                          { key: 'commercial', icon: '🏪', label: 'مورد تجاري' },
-                          { key: 'local', icon: '🏬', label: 'مورد محلي' },
-                        ].map(t => (
-                          <button key={t.key} type="button" onClick={() => setSupplierTier(t.key)}
-                            className={`p-3 rounded-xl border-2 text-center text-xs font-semibold transition-all ${
-                              supplierTier === t.key ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#F5831F]' : 'border-gray-200 text-gray-600'
-                            }`}>
-                            <div className="text-lg mb-1">{t.icon}</div>{t.label}
-                          </button>
-                        ))}
+                      <label className="block text-xs font-bold text-gray-500 mb-2">تصنيف شركتك 🔒</label>
+                      <div className="mb-1">
+                        <span className="inline-block px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-700">
+                          {supplierTier === 'manufacturer' ? '🏭 مصنع / مورد رئيسي' : supplierTier === 'commercial' ? '🏪 مورد تجاري' : '🏬 مورد محلي'}
+                        </span>
                       </div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1">الحد الأدنى لقيمة الطلب (ر.س)</label>
+                      {pendingFor('classification')
+                        ? <p className="text-[11px] text-amber-600 mb-3">⏳ طلب تغيير التصنيف قيد مراجعة الإدارة.</p>
+                        : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(supplierTier || 'local'); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline mb-3 inline-block" style={{ color: '#1B2D5B' }}>🔒 التصنيف ثابت — اطلب تعديله</button>}
+                      <label className="block text-xs font-bold text-gray-500 mb-1 mt-2">الحد الأدنى لقيمة الطلب (ر.س)</label>
                       <input type="number" value={minOrderValue} onChange={e => setMinOrderValue(e.target.value)}
                         className="input-field" placeholder="0 = بدون حد أدنى" min="0" />
-                      <p className="text-[10px] text-gray-400 mt-1">سيتم تأكيد التصنيف النهائي من الإدارة عند مراجعة رخصتك</p>
+                      <p className="text-[10px] text-gray-400 mt-1">التصنيف يُعتمد من الإدارة — لتعديله قدّم طلباً.</p>
                     </div>
                   )}
 
-                  {/* Contractor Grade */}
+                  {/* Contractor Grade — locked */}
                   {profile?.role === 'contractor' && (
                     <div className="border-t border-gray-100 pt-5">
-                      <label className="block text-xs font-bold text-gray-500 mb-2">درجة تصنيف شركتك — وزارة الشؤون البلدية</label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[
-                          { g: 'A', label: 'أ', desc: '> 100M', color: '#F5831F' },
-                          { g: 'B', label: 'ب', desc: '30–100M', color: '#1B2D5B' },
-                          { g: 'C', label: 'ج', desc: '5–30M', color: '#0F6E56' },
-                          { g: 'D', label: 'د', desc: '< 5M', color: '#888780' },
-                        ].map(g => (
-                          <button key={g.g} type="button" onClick={() => setContractorGrade(g.g)}
-                            className={`p-3 rounded-xl border-2 text-center transition-all ${contractorGrade === g.g ? '' : 'border-gray-200'}`}
-                            style={contractorGrade === g.g ? { borderColor: g.color, background: g.color + '12' } : {}}>
-                            <div className="text-xl font-black" style={{ color: g.color }}>{g.label}</div>
-                            <div className="text-[10px] text-gray-500 mt-0.5">{g.desc}</div>
-                          </button>
-                        ))}
+                      <label className="block text-xs font-bold text-gray-500 mb-2">درجة تصنيف شركتك — وزارة الشؤون البلدية 🔒</label>
+                      <div className="mb-1">
+                        <span className="inline-block px-5 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm font-black text-gray-700">
+                          {contractorGrade ? `درجة ${({ A: 'أ', B: 'ب', C: 'ج', D: 'د' })[contractorGrade] || contractorGrade}` : '— غير محدّدة —'}
+                        </span>
                       </div>
+                      {pendingFor('classification')
+                        ? <p className="text-[11px] text-amber-600">⏳ طلب تغيير الدرجة قيد مراجعة الإدارة.</p>
+                        : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(contractorGrade || 'C'); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#1B2D5B' }}>🔒 الدرجة ثابتة — اطلب تعديلها</button>}
                     </div>
                   )}
 
@@ -493,6 +517,56 @@ export default function SettingsPage() {
                     {profileSaving ? t.saving : t.saveProfile}
                   </button>
                 </form>
+
+                {/* Locked-field change request modal */}
+                {crqModal && (
+                  <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !crqSaving && setCrqModal(null)}>
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" dir="rtl" onClick={e => e.stopPropagation()}>
+                      <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                        {crqModal === 'name' ? '🔒 طلب تعديل اسم الشركة' : '🔒 طلب تعديل التصنيف'}
+                      </h3>
+                      <p className="text-xs text-gray-500 mb-4">يُرسل الطلب للإدارة للمراجعة — لا يتغيّر شيء قبل الموافقة.</p>
+
+                      {crqModal === 'name' ? (
+                        <>
+                          <label className="block text-xs font-bold text-gray-500 mb-1">الاسم الجديد</label>
+                          <input value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3" />
+                        </>
+                      ) : profile?.role === 'supplier' ? (
+                        <>
+                          <label className="block text-xs font-bold text-gray-500 mb-1">التصنيف الجديد</label>
+                          <select value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3">
+                            <option value="manufacturer">🏭 مصنع / مورد رئيسي</option>
+                            <option value="commercial">🏪 مورد تجاري</option>
+                            <option value="local">🏬 مورد محلي</option>
+                          </select>
+                        </>
+                      ) : (
+                        <>
+                          <label className="block text-xs font-bold text-gray-500 mb-1">الدرجة الجديدة</label>
+                          <select value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3">
+                            <option value="A">درجة أ</option>
+                            <option value="B">درجة ب</option>
+                            <option value="C">درجة ج</option>
+                            <option value="D">درجة د</option>
+                          </select>
+                        </>
+                      )}
+
+                      <label className="block text-xs font-bold text-gray-500 mb-1">سبب التغيير{crqModal === 'name' ? ' (قد تطلب الإدارة سجلاً تجارياً محدّثاً)' : ''}</label>
+                      <textarea value={crqReason} onChange={e => setCrqReason(e.target.value)} rows={3} className="input-field mb-3" placeholder="وضّح سبب التعديل..." />
+
+                      {crqMsg && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 mb-3">{crqMsg}</div>}
+
+                      <div className="flex gap-2">
+                        <button type="button" disabled={crqSaving} onClick={submitChangeRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>
+                          {crqSaving ? 'جارٍ الإرسال...' : 'إرسال الطلب للإدارة'}
+                        </button>
+                        <button type="button" onClick={() => setCrqModal(null)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

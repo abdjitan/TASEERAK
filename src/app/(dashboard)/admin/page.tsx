@@ -26,6 +26,7 @@ export default function AdminPanel() {
   const [emails, setEmails] = useState({}) // { [userId]: { email, phone, last_sign_in_at, ... } }
   const [support, setSupport] = useState([]) // all support_messages (admin reads all)
   const [objections, setObjections] = useState([]) // cr_objections (fake-account reports)
+  const [changeReqs, setChangeReqs] = useState([]) // profile_change_requests (name/classification)
   const [expandedRfq, setExpandedRfq] = useState(null)
   const [expandedProject, setExpandedProject] = useState(null)
   // Admin password change
@@ -76,6 +77,9 @@ export default function AdminPanel() {
 
     const { data: objs } = await client.from('cr_objections').select('*').order('created_at', { ascending: false })
     setObjections(objs || [])
+
+    const { data: pcr } = await client.from('profile_change_requests').select('*').order('created_at', { ascending: false })
+    setChangeReqs(pcr || [])
 
     // Auth emails via the privileged edge function (non-blocking — cards still
     // render if this fails, e.g. function not yet deployed).
@@ -229,6 +233,18 @@ export default function AdminPanel() {
     setActionLoading('')
   }
 
+  async function reviewChangeReq(id: string, approve: boolean) {
+    const note = approve ? '' : (prompt('سبب الرفض (يظهر للمستخدم، اختياري):') ?? '')
+    setActionLoading('pcr-' + id)
+    const supabase = createClient()
+    const { data, error } = await supabase.rpc('review_profile_change', { p_id: id, p_approve: approve, p_note: note || null })
+    if (error || !data?.ok) setMsg('تعذّر تنفيذ الإجراء')
+    else setMsg(approve ? '✓ تم اعتماد التغيير وتطبيقه' : '✕ تم رفض الطلب')
+    setTimeout(() => setMsg(''), 3000)
+    await loadData()
+    setActionLoading('')
+  }
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -280,6 +296,8 @@ export default function AdminPanel() {
   const rfqById: any = Object.fromEntries(rfqs.map((r: any) => [r.id, r]))
   const disputes = offers.filter((o: any) => o.dispute_status === 'open')
   const openObjections = objections.filter((o: any) => o.status === 'open')
+  const openChangeReqs = changeReqs.filter((r: any) => r.status === 'pending')
+  const crLabel = (v: string) => (({ manufacturer: 'مصنع/مورد رئيسي', commercial: 'مورد تجاري', local: 'مورد محلي', A: 'درجة أ', B: 'درجة ب', C: 'درجة ج', D: 'درجة د' } as any)[v] || v || '—')
 
   // ── Analytics (computed from already-loaded data) ──
   const dayKey = (d: any) => new Date(d).toISOString().slice(0, 10)
@@ -378,6 +396,7 @@ export default function AdminPanel() {
               { key: 'messages', label: `💬 الرسائل${totalUnread ? ' (' + totalUnread + ')' : ''}` },
               { key: 'disputes', label: `⚠ النزاعات${disputes.length ? ' (' + disputes.length + ')' : ''}` },
               { key: 'objections', label: `🚩 بلاغات حسابات وهمية${openObjections.length ? ' (' + openObjections.length + ')' : ''}` },
+              { key: 'changereqs', label: `📝 طلبات التعديل${openChangeReqs.length ? ' (' + openChangeReqs.length + ')' : ''}` },
               { key: 'materials', label: `📦 طلبات المواد (${materialReqs.filter(r => r.status === 'pending').length})` },
             ].map(t => (
               <button key={t.key} onClick={() => { setTab(t.key); setRoleFilter('') }}
@@ -492,6 +511,57 @@ export default function AdminPanel() {
                   </div>
                 </div>
               ))}
+            </div>
+          )
+        ) : tab === 'changereqs' ? (
+          changeReqs.length === 0 ? (
+            <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
+              <div className="text-5xl mb-4">📝</div>
+              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد طلبات تعديل</h3>
+              <p className="text-sm text-gray-400 mt-1">تظهر هنا طلبات تغيير الاسم أو التصنيف المرسلة من المستخدمين</p>
+            </div>
+          ) : (
+            <div className="space-y-3 stagger">
+              {changeReqs.map((r: any) => {
+                const isName = r.field === 'name'
+                const oldL = isName ? (r.old_value || '—') : crLabel(r.old_value)
+                const newL = isName ? r.new_value : crLabel(r.new_value)
+                return (
+                  <div key={r.id} className={`bg-white rounded-2xl p-5 border shadow-sm ${r.status === 'pending' ? 'border-amber-200' : 'border-gray-100 opacity-70'}`}>
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`badge text-[10px] ${r.status === 'pending' ? 'bg-amber-100 text-amber-700' : r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {r.status === 'pending' ? '⏳ بانتظار المراجعة' : r.status === 'approved' ? '✓ معتمد' : '✕ مرفوض'}
+                          </span>
+                          <span className="badge badge-blue text-[10px]">{isName ? '🏢 تغيير الاسم' : '🏷 تغيير التصنيف'}</span>
+                          <span className="font-bold" style={{ color: '#1B2D5B' }}>{nameOf(r.user_id)}</span>
+                        </div>
+                        <div className="mt-2 text-sm flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 line-through">{oldL}</span>
+                          <span className="text-gray-400">←</span>
+                          <span className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">{newL}</span>
+                        </div>
+                        {r.reason && <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-600">📝 {r.reason}</div>}
+                        {r.document_url && <a href={r.document_url} target="_blank" rel="noreferrer" className="text-xs underline text-blue-600 mt-1 inline-block">📎 مستند مرفق</a>}
+                        <div className="text-[11px] text-gray-400 mt-1.5">📅 {dt(r.created_at)}{r.admin_note ? ` · ملاحظة الإدارة: ${r.admin_note}` : ''}</div>
+                      </div>
+                      {r.status === 'pending' && (
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <button onClick={() => reviewChangeReq(r.id, true)} disabled={actionLoading === 'pcr-' + r.id}
+                            className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>
+                            {actionLoading === 'pcr-' + r.id ? '...' : '✓ اعتماد وتطبيق'}
+                          </button>
+                          <button onClick={() => reviewChangeReq(r.id, false)} disabled={actionLoading === 'pcr-' + r.id}
+                            className="text-xs px-4 py-2 rounded-xl font-semibold border border-gray-200 text-gray-600 disabled:opacity-50">
+                            ✕ رفض
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )
         ) : tab === 'analytics' ? (
