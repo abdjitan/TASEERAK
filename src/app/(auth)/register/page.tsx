@@ -148,6 +148,8 @@ export default function RegisterPage() {
   const [emailSent, setEmailSent] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [crVerify, setCrVerify] = useState<any>(null)
+  const [crDup, setCrDup] = useState<any>(null) // { company } if CR already registered
+  const [branchConfirmed, setBranchConfirmed] = useState(false)
   const [crChecking, setCrChecking] = useState(false)
   // Classification
   const [supplierTier, setSupplierTier] = useState<'manufacturer' | 'commercial' | 'local'>('local')
@@ -201,6 +203,17 @@ export default function RegisterPage() {
   }
 
   // Verify the Commercial Registration against the official source (Wathq)
+  // Check (pre-auth) whether a CR is already registered, to warn about duplicates.
+  async function checkCrDup(cr: string) {
+    setBranchConfirmed(false)
+    if (!/^[0-9]{10}$/.test(cr)) { setCrDup(null); return }
+    try {
+      const supabase = createClient()
+      const { data } = await supabase.rpc('cr_exists', { p_cr: cr })
+      setCrDup(data && data.length > 0 ? { company: data[0].company_name_ar } : null)
+    } catch { setCrDup(null) }
+  }
+
   async function verifyCR() {
     const cr = (watch('commercial_registration') || '').toString()
     if (!/^[0-9]{10}$/.test(cr)) { setCrVerify({ ok: false, message: cv.invalid }); return }
@@ -448,7 +461,7 @@ export default function RegisterPage() {
                     <div className="flex gap-2">
                       <input {...register('commercial_registration')} className="input-field flex-1" placeholder="1010XXXXXX"
                         inputMode="numeric" maxLength={10} dir="ltr"
-                        onInput={e => { e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); if (crVerify) setCrVerify(null) }} />
+                        onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
                       <button type="button" onClick={verifyCR} disabled={crChecking}
                         className="px-3 rounded-xl text-xs font-bold text-white whitespace-nowrap disabled:opacity-50 transition-all hover:shadow"
                         style={{ background: '#0F6E56' }}>
@@ -474,6 +487,20 @@ export default function RegisterPage() {
                       {crVerify.name && <div className="font-bold">{crVerify.name}</div>}
                       {crVerify.activity && <div className="opacity-80">{crVerify.activity}</div>}
                       <div>{crVerify.message}</div>
+                    </div>
+                  </div>
+                )}
+
+                {crDup && (
+                  <div className="text-xs rounded-xl p-3 border bg-amber-50 border-amber-300 text-amber-900">
+                    <div className="font-bold mb-1.5">⚠ {locale === 'en' ? 'This commercial registration is already registered' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن پہلے سے رجسٹرڈ ہے' : 'هذا السجل التجاري مسجّل مسبقاً'}{crDup.company ? ` — «${crDup.company}»` : ''}.</div>
+                    <div className="space-y-1.5">
+                      <div>• {locale === 'en' ? 'Have an account?' : locale === 'ur' ? 'اکاؤنٹ ہے؟' : 'لديك حساب؟'} <a href="/login" className="font-bold underline" style={{ color: '#0F6E56' }}>{locale === 'en' ? 'Sign in' : locale === 'ur' ? 'سائن ان' : 'سجّل الدخول'}</a></div>
+                      <div>• {locale === 'en' ? 'To add a branch to the same account: sign in, then "Branches".' : locale === 'ur' ? 'اسی اکاؤنٹ میں شاخ شامل کرنے کے لیے: سائن اِن کریں، پھر «شاخیں»۔' : 'لإضافة فرع لنفس الحساب: سجّل الدخول ثم صفحة «فروعي».'}</div>
+                      <label className="flex items-start gap-2 mt-1.5 cursor-pointer">
+                        <input type="checkbox" checked={branchConfirmed} onChange={e => setBranchConfirmed(e.target.checked)} className="mt-0.5" />
+                        <span>{locale === 'en' ? 'Or: this is a separate branch of the same company — continue with a separate account.' : locale === 'ur' ? 'یا: یہ اسی کمپنی کی الگ شاخ ہے — الگ اکاؤنٹ کے ساتھ جاری رکھیں۔' : 'أو: هذا فرع منفصل لنفس الشركة وأرغب بحساب مستقل — متابعة التسجيل.'}</span>
+                      </label>
                     </div>
                   </div>
                 )}
@@ -546,7 +573,13 @@ export default function RegisterPage() {
                     'company_name_ar', 'commercial_registration', 'vat_number',
                     'phone', 'email', 'password', 'region', 'city'
                   ])
-                  if (valid) setStep(3)
+                  if (!valid) return
+                  if (crDup && !branchConfirmed) {
+                    setFormError(locale === 'en' ? 'This commercial registration is already registered — sign in, or confirm it is a separate branch to continue.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن پہلے سے موجود ہے — سائن اِن کریں یا الگ شاخ کی تصدیق کریں۔' : 'هذا السجل التجاري مسجّل مسبقاً — سجّل الدخول، أو أكّد أنه فرع منفصل للمتابعة.')
+                    return
+                  }
+                  setFormError('')
+                  setStep(3)
                 }} className="btn-primary flex-1">{t.next}</button>
               </div>
             </div>
