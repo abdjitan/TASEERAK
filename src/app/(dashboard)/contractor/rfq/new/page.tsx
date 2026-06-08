@@ -125,6 +125,7 @@ export default function NewRFQPage() {
   const [targetTiers, setTargetTiers] = useState<string[]>([])
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [nearbyOnly, setNearbyOnly] = useState(false)
+  const [targetRegions, setTargetRegions] = useState<string[]>([])
 
   function toggleTier(tier: string) {
     setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
@@ -167,6 +168,7 @@ export default function NewRFQPage() {
       target_tiers: targetTiers.length > 0 ? targetTiers : null,
       verified_only: verifiedOnly,
       nearby_only: nearbyOnly,
+      target_regions: (!nearbyOnly && targetRegions.length > 0) ? targetRegions : null,
       estimated_value: estimatedValue ? parseFloat(estimatedValue) : null,
       notes: uploadedSpecUrl ? `${notes || ''}\n[مواصفات مرفقة: ${uploadedSpecUrl}]` : notes || null,
       expires_at: expiresAt,
@@ -419,6 +421,27 @@ export default function NewRFQPage() {
                     <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
                   </div>
                 </div>
+
+                {/* 🗺 استهداف مناطق محددة (يبحث عن مورد فيها — يشمل فروع الموردين) */}
+                {!nearbyOnly && (
+                  <div className="pt-3 mt-3 border-t border-gray-100">
+                    <div className="text-sm font-semibold text-gray-800 mb-1">🗺 {locale === 'en' ? 'Search specific regions (optional)' : locale === 'ur' ? 'مخصوص علاقے (اختیاری)' : 'ابحث في مناطق محددة (اختياري)'}</div>
+                    <div className="text-xs text-gray-400 mb-2">{locale === 'en' ? 'Leave empty to reach suppliers in all regions. Matches a supplier if any of its branches is here.' : locale === 'ur' ? 'تمام علاقوں کے لیے خالی چھوڑیں۔' : 'اتركها فارغة للوصول لكل المناطق. يشمل الموردين الذين لهم فرع في المنطقة.'}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {REGIONS.map(r => {
+                        const on = targetRegions.includes(r)
+                        return (
+                          <button key={r} type="button"
+                            onClick={() => setTargetRegions(on ? targetRegions.filter(x => x !== r) : [...targetRegions, r])}
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-all ${on ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
+                            style={on ? { background: '#1B2D5B' } : {}}>
+                            {on ? '✓ ' : ''}{r}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Options */}

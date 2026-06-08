@@ -113,10 +113,15 @@ export default function SupplierDashboard() {
       // ✅ فلترة حسب استهداف المقاول: نوع المورد (مصنع/تجاري/محلي) + الموثّقون فقط
       const myTier = p?.supplier_tier || 'local'
       const isVerified = p?.verification_status === 'verified'
+      // الفروع: المورد يخدم منطقته الرئيسية + كل مناطق فروعه
+      const { data: myBranches } = await supabase.from('branches').select('region').eq('supplier_id', session.user.id)
+      const servedRegions = [p?.region, ...(myBranches || []).map(b => b.region)].filter(Boolean)
       rfqs = rfqs.filter(r => {
         if (r.verified_only && !isVerified) return false
         if (Array.isArray(r.target_tiers) && r.target_tiers.length > 0 && !r.target_tiers.includes(myTier)) return false
-        if (r.nearby_only && p?.region && r.region !== p.region) return false
+        if (r.nearby_only && servedRegions.length > 0 && !servedRegions.includes(r.region)) return false
+        // المقاول حدّد مناطق معيّنة — أظهر الطلب فقط لو أخدم إحداها
+        if (Array.isArray(r.target_regions) && r.target_regions.length > 0 && !r.target_regions.some(reg => servedRegions.includes(reg))) return false
         return true
       })
 
@@ -174,6 +179,7 @@ export default function SupplierDashboard() {
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="minimal" />
             <a href="/supplier/specialties" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">🎯 {locale === 'en' ? 'Specialties' : locale === 'ur' ? 'مہارتیں' : 'تخصصاتي'}</a>
+            <a href="/supplier/branches" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">🏢 {locale === 'en' ? 'Branches' : locale === 'ur' ? 'شاخیں' : 'فروعي'}</a>
             <a href="/location" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">📍 {locale === 'en' ? 'Location' : locale === 'ur' ? 'مقام' : 'الموقع'}</a>
             <a href="/supplier/prices" className="text-xs px-3 py-2 rounded-lg transition-all font-semibold" style={{ color: '#F5831F' }}>📈 {locale === 'en' ? 'Live Prices' : locale === 'ur' ? 'لائیو' : 'أسعاري'}</a>
             <a href="/market" className="text-xs text-gray-500 hover:text-[#1B2D5B] px-3 py-2 rounded-lg hover:bg-gray-50 transition-all">📊 {locale === 'en' ? 'Index' : locale === 'ur' ? 'انڈیکس' : 'البورصة'}</a>
