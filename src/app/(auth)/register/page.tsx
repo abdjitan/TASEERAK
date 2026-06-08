@@ -152,6 +152,13 @@ export default function RegisterPage() {
   const [crDup, setCrDup] = useState<any>(null) // { company } if CR already registered
   const [branchConfirmed, setBranchConfirmed] = useState(false)
   const [crChecking, setCrChecking] = useState(false)
+  // Report a fake/fraudulent account registered with my CR
+  const [objOpen, setObjOpen] = useState(false)
+  const [objName, setObjName] = useState('')
+  const [objPhone, setObjPhone] = useState('')
+  const [objReason, setObjReason] = useState('')
+  const [objSending, setObjSending] = useState(false)
+  const [objSent, setObjSent] = useState(false)
   // Classification
   const [supplierTier, setSupplierTier] = useState<'manufacturer' | 'commercial' | 'local'>('local')
   const [contractorGrade, setContractorGrade] = useState<'A' | 'B' | 'C' | 'D' | ''>('')
@@ -213,6 +220,28 @@ export default function RegisterPage() {
       const { data } = await supabase.rpc('cr_exists', { p_cr: cr })
       setCrDup(data && data.length > 0 ? { company: data[0].company_name_ar } : null)
     } catch { setCrDup(null) }
+    setObjOpen(false); setObjSent(false)
+  }
+
+  // Submit an objection that the account registered with this CR is fake.
+  async function submitObjection() {
+    const cr = (watch('commercial_registration') || '').toString()
+    if (!objReason.trim() && !objName.trim() && !objPhone.trim()) return
+    setObjSending(true)
+    try {
+      const supabase = createClient()
+      await supabase.rpc('report_cr_objection', {
+        p_cr: cr,
+        p_name: objName.trim() || null,
+        p_phone: objPhone.trim() || null,
+        p_email: (watch('email') || '').toString().trim() || null,
+        p_reason: objReason.trim() || null,
+      })
+      setObjSent(true); setObjOpen(false)
+    } catch {
+      setObjSent(true); setObjOpen(false)
+    }
+    setObjSending(false)
   }
 
   async function verifyCR() {
@@ -502,6 +531,30 @@ export default function RegisterPage() {
                         <input type="checkbox" checked={branchConfirmed} onChange={e => setBranchConfirmed(e.target.checked)} className="mt-0.5" />
                         <span>{locale === 'en' ? 'Or: this is a separate branch of the same company — continue with a separate account.' : locale === 'ur' ? 'یا: یہ اسی کمپنی کی الگ شاخ ہے — الگ اکاؤنٹ کے ساتھ جاری رکھیں۔' : 'أو: هذا فرع منفصل لنفس الشركة وأرغب بحساب مستقل — متابعة التسجيل.'}</span>
                       </label>
+
+                      {/* Report a fake account registered with my CR */}
+                      <div className="pt-2 mt-1 border-t border-amber-200">
+                        {objSent ? (
+                          <div className="text-emerald-700 font-semibold">✓ {locale === 'en' ? 'Your report was received. Our team will review it and contact you.' : locale === 'ur' ? 'آپ کی رپورٹ موصول ہوگئی۔ ہماری ٹیم جائزہ لے کر آپ سے رابطہ کرے گی۔' : 'تم استلام بلاغك. سيراجعه فريقنا ويتواصل معك.'}</div>
+                        ) : !objOpen ? (
+                          <button type="button" onClick={() => setObjOpen(true)} className="font-bold underline text-red-600">
+                            🚩 {locale === 'en' ? 'This is my CR and this account is fake — report it' : locale === 'ur' ? 'یہ میرا CR ہے اور یہ اکاؤنٹ جعلی ہے — رپورٹ کریں' : 'هذا سجلي التجاري وهذا الحساب وهمي — أبلغ عنه'}
+                          </button>
+                        ) : (
+                          <div className="space-y-2">
+                            <div className="font-semibold text-red-700">🚩 {locale === 'en' ? 'Report a fraudulent account' : locale === 'ur' ? 'جعلی اکاؤنٹ کی اطلاع' : 'الإبلاغ عن حساب وهمي'}</div>
+                            <input value={objName} onChange={e => setObjName(e.target.value)} className="input-field text-xs" placeholder={locale === 'en' ? 'Your name' : locale === 'ur' ? 'آپ کا نام' : 'اسمك'} />
+                            <input value={objPhone} onChange={e => setObjPhone(e.target.value)} className="input-field text-xs" dir="ltr" placeholder={locale === 'en' ? 'Your phone (05XXXXXXXX)' : '05XXXXXXXX'} />
+                            <textarea value={objReason} onChange={e => setObjReason(e.target.value)} rows={2} className="input-field text-xs" placeholder={locale === 'en' ? 'Why is this account fraudulent?' : locale === 'ur' ? 'یہ اکاؤنٹ جعلی کیوں ہے؟' : 'لماذا هذا الحساب وهمي؟'} />
+                            <div className="flex gap-2">
+                              <button type="button" disabled={objSending} onClick={submitObjection} className="px-3 py-1.5 rounded-lg font-semibold text-white text-xs disabled:opacity-50" style={{ background: '#DC2626' }}>
+                                {objSending ? '...' : (locale === 'en' ? 'Send report' : locale === 'ur' ? 'رپورٹ بھیجیں' : 'إرسال البلاغ')}
+                              </button>
+                              <button type="button" onClick={() => setObjOpen(false)} className="px-3 py-1.5 rounded-lg text-xs border border-gray-300 text-gray-600">{locale === 'en' ? 'Cancel' : locale === 'ur' ? 'منسوخ' : 'إلغاء'}</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}

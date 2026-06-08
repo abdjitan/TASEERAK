@@ -25,6 +25,7 @@ export default function AdminPanel() {
   const [projectItems, setProjectItems] = useState([])
   const [emails, setEmails] = useState({}) // { [userId]: { email, phone, last_sign_in_at, ... } }
   const [support, setSupport] = useState([]) // all support_messages (admin reads all)
+  const [objections, setObjections] = useState([]) // cr_objections (fake-account reports)
   const [expandedRfq, setExpandedRfq] = useState(null)
   const [expandedProject, setExpandedProject] = useState(null)
   // Admin password change
@@ -72,6 +73,9 @@ export default function AdminPanel() {
 
     const { data: supp } = await client.from('support_messages').select('*').order('created_at', { ascending: false })
     setSupport(supp || [])
+
+    const { data: objs } = await client.from('cr_objections').select('*').order('created_at', { ascending: false })
+    setObjections(objs || [])
 
     // Auth emails via the privileged edge function (non-blocking — cards still
     // render if this fails, e.g. function not yet deployed).
@@ -215,6 +219,16 @@ export default function AdminPanel() {
     setActionLoading('')
   }
 
+  async function resolveObjection(id: string, status: 'reviewed' | 'dismissed') {
+    setActionLoading('obj-' + id)
+    const supabase = createClient()
+    await supabase.from('cr_objections').update({ status }).eq('id', id)
+    setMsg(status === 'reviewed' ? '✓ تم وسم البلاغ كمراجَع' : '✕ تم رفض البلاغ')
+    setTimeout(() => setMsg(''), 3000)
+    await loadData()
+    setActionLoading('')
+  }
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -265,6 +279,7 @@ export default function AdminPanel() {
   // Open deal disputes (for admin mediation)
   const rfqById: any = Object.fromEntries(rfqs.map((r: any) => [r.id, r]))
   const disputes = offers.filter((o: any) => o.dispute_status === 'open')
+  const openObjections = objections.filter((o: any) => o.status === 'open')
 
   // ── Analytics (computed from already-loaded data) ──
   const dayKey = (d: any) => new Date(d).toISOString().slice(0, 10)
@@ -362,6 +377,7 @@ export default function AdminPanel() {
               { key: 'rfqs', label: `📋 طلبات التسعير (${rfqs.length + projects.length})` },
               { key: 'messages', label: `💬 الرسائل${totalUnread ? ' (' + totalUnread + ')' : ''}` },
               { key: 'disputes', label: `⚠ النزاعات${disputes.length ? ' (' + disputes.length + ')' : ''}` },
+              { key: 'objections', label: `🚩 بلاغات حسابات وهمية${openObjections.length ? ' (' + openObjections.length + ')' : ''}` },
               { key: 'materials', label: `📦 طلبات المواد (${materialReqs.filter(r => r.status === 'pending').length})` },
             ].map(t => (
               <button key={t.key} onClick={() => { setTab(t.key); setRoleFilter('') }}
@@ -430,6 +446,51 @@ export default function AdminPanel() {
                   </div>
                 )
               })}
+            </div>
+          )
+        ) : tab === 'objections' ? (
+          objections.length === 0 ? (
+            <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
+              <div className="text-5xl mb-4">🚩</div>
+              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد بلاغات</h3>
+              <p className="text-sm text-gray-400 mt-1">تظهر هنا بلاغات «هذا الحساب وهمي» المرسلة من صفحة التسجيل</p>
+            </div>
+          ) : (
+            <div className="space-y-3 stagger">
+              {objections.map((o: any) => (
+                <div key={o.id} className={`bg-white rounded-2xl p-5 border shadow-sm ${o.status === 'open' ? 'border-red-200' : 'border-gray-100 opacity-70'}`}>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`badge text-[10px] ${o.status === 'open' ? 'bg-red-100 text-red-700' : o.status === 'reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {o.status === 'open' ? '🚩 بلاغ جديد' : o.status === 'reviewed' ? '✓ تمت المراجعة' : '✕ مرفوض'}
+                        </span>
+                        <span className="font-bold" style={{ color: '#1B2D5B' }} dir="ltr">سجل تجاري: {o.commercial_registration}</span>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
+                        <span>🏢 الحساب المُبلَّغ عنه: <b>{o.existing_company || '—'}</b></span>
+                        <span>🙍 المُبلِّغ: <b>{o.reporter_name || '—'}</b></span>
+                        {o.reporter_phone && <span dir="ltr">📞 {o.reporter_phone}</span>}
+                        {o.reporter_email && <span dir="ltr">✉ {o.reporter_email}</span>}
+                        <span>📅 {dt(o.created_at)}</span>
+                      </div>
+                      {o.reason && <div className="mt-2 bg-amber-50 rounded-lg p-2.5 text-sm text-amber-800">📝 {o.reason}</div>}
+                    </div>
+                    {o.status === 'open' && (
+                      <div className="flex flex-col gap-2 flex-shrink-0">
+                        <button onClick={() => resolveObjection(o.id, 'reviewed')} disabled={actionLoading === 'obj-' + o.id}
+                          className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>
+                          {actionLoading === 'obj-' + o.id ? '...' : '✓ تمت المراجعة'}
+                        </button>
+                        <button onClick={() => resolveObjection(o.id, 'dismissed')} disabled={actionLoading === 'obj-' + o.id}
+                          className="text-xs px-4 py-2 rounded-xl font-semibold border border-gray-200 text-gray-600 disabled:opacity-50">
+                          ✕ رفض البلاغ
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           )
         ) : tab === 'analytics' ? (
