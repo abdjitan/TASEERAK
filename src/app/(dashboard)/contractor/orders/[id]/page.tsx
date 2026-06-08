@@ -5,6 +5,17 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
+import QRCode from 'qrcode'
+
+// ZATCA Phase-1 simplified-invoice QR: base64 of TLV (Tag-Length-Value) fields:
+// 1=seller name, 2=VAT number, 3=timestamp (ISO), 4=total w/ VAT, 5=VAT total.
+function zatcaQrPayload(sellerName: string, vatNumber: string, isoTs: string, totalWithVat: string, vatTotal: string) {
+  const enc = new TextEncoder()
+  const tlv = (tag: number, val: string) => { const v = enc.encode(val); return [tag, v.length, ...Array.from(v)] }
+  const bytes = [...tlv(1, sellerName), ...tlv(2, vatNumber), ...tlv(3, isoTs), ...tlv(4, totalWithVat), ...tlv(5, vatTotal)]
+  let bin = ''; for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin)
+}
 
 export default function OrderDetailPage() {
   const { id } = useParams() // offer id
@@ -24,6 +35,22 @@ export default function OrderDetailPage() {
   const [busy, setBusy] = useState('')
   const [showDispute, setShowDispute] = useState(false)
   const [disputeReason, setDisputeReason] = useState('')
+  const [qrUrl, setQrUrl] = useState('')
+
+  // Generate the ZATCA invoice QR once the deal parties are loaded.
+  useEffect(() => {
+    if (!offer || !supplier) return
+    const base = Number(offer.total_price) || 0
+    const iso = new Date(offer.accepted_at || offer.created_at).toISOString()
+    const payload = zatcaQrPayload(
+      supplier.company_name_ar || 'Supplier',
+      supplier.vat_number || '0',
+      iso,
+      (base * 1.15).toFixed(2),
+      (base * 0.15).toFixed(2),
+    )
+    QRCode.toDataURL(payload, { margin: 1, width: 160 }).then(setQrUrl).catch(() => {})
+  }, [offer, supplier])
 
   useEffect(() => {
     async function load() {
@@ -289,6 +316,56 @@ export default function OrderDetailPage() {
                 <div className="text-xs text-green-600">بتاريخ {date}</div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* 🧾 فاتورة ضريبية متوافقة مع ZATCA */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+          <div className="p-6 border-b border-gray-100 flex items-start justify-between flex-wrap gap-4">
+            <div>
+              <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>فاتورة ضريبية</h2>
+              <p className="text-xs text-gray-400">Tax Invoice · متوافقة مع هيئة الزكاة والضريبة (ZATCA)</p>
+              <div className="text-xs text-gray-500 mt-2">رقم الفاتورة: <span className="font-mono" dir="ltr">INV-{offer.id.slice(0, 8).toUpperCase()}</span></div>
+              <div className="text-xs text-gray-500">التاريخ: {new Date(offer.accepted_at || offer.created_at).toLocaleString('ar-SA')}</div>
+            </div>
+            {qrUrl && (
+              <div className="text-center">
+                <img src={qrUrl} alt="ZATCA QR" className="w-28 h-28" />
+                <div className="text-[9px] text-gray-400 mt-1">رمز التحقق الضريبي</div>
+              </div>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-6 p-6 border-b border-gray-100 text-sm">
+            <div>
+              <div className="text-xs font-bold text-gray-400 mb-1">البائع (المورد)</div>
+              <div className="font-bold text-gray-900">{supplier?.company_name_ar || '—'}</div>
+              <div className="text-gray-500">الرقم الضريبي: {supplier?.vat_number || '— غير مُسجّل'}</div>
+              {supplier?.commercial_registration && <div className="text-gray-500">سجل تجاري: {supplier.commercial_registration}</div>}
+            </div>
+            <div>
+              <div className="text-xs font-bold text-gray-400 mb-1">المشتري (المقاول)</div>
+              <div className="font-bold text-gray-900">{contractor?.company_name_ar || '—'}</div>
+              <div className="text-gray-500">الرقم الضريبي: {contractor?.vat_number || '—'}</div>
+              {contractor?.commercial_registration && <div className="text-gray-500">سجل تجاري: {contractor.commercial_registration}</div>}
+            </div>
+          </div>
+          <div className="p-6">
+            <table className="w-full text-sm mb-4">
+              <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">الصنف</th><th className="text-right pb-2">الكمية</th><th className="text-right pb-2">سعر الوحدة</th><th className="text-right pb-2">الإجمالي</th></tr></thead>
+              <tbody><tr><td className="py-2 font-semibold text-gray-900">{rfq.product_name}</td><td className="py-2 text-gray-600">{rfq.quantity} {rfq.unit}</td><td className="py-2 text-gray-600">{offer.unit_price ? offer.unit_price.toLocaleString() : '—'}</td><td className="py-2 font-bold text-gray-900">{offer.total_price?.toLocaleString()} ر.س</td></tr></tbody>
+            </table>
+            <div className="flex justify-end">
+              <div className="w-64 space-y-1 text-sm">
+                <div className="flex justify-between"><span className="text-gray-500">المجموع (غير شامل الضريبة)</span><span>{offer.total_price?.toLocaleString()} ر.س</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">ضريبة القيمة المضافة 15%</span><span>{(offer.total_price * 0.15).toLocaleString(undefined, { maximumFractionDigits: 2 })} ر.س</span></div>
+                <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>الإجمالي شامل الضريبة</span><span style={{ color: '#0F6E56' }}>{(offer.total_price * 1.15).toLocaleString(undefined, { maximumFractionDigits: 2 })} ر.س</span></div>
+              </div>
+            </div>
+            {!supplier?.vat_number && (
+              <div className="mt-3 text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2 print:hidden">
+                ⚠ المورد لم يسجّل رقمه الضريبي بعد — يلزم لإصدار فاتورة ضريبية رسمية. (يضيفه من الإعدادات)
+              </div>
+            )}
           </div>
         </div>
 
