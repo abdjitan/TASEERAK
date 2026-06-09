@@ -97,19 +97,20 @@ export default function SupplierRFQPage() {
     // رفع الملف المرفق إن وجد
     let attachUrl = null, attachName = null
     if (attachFile) {
-      const safe = await validateUploadFile(attachFile)
+      const safe = await validateUploadFile(attachFile) // fast client pre-check (UX only)
       if (!safe.ok) { setError(safe.error); setSubmitting(false); return }
-      const ext = attachFile.name.split('.').pop()
-      const path = `${user.id}/offer-${Date.now()}.${ext}`
-      const { data: up, error: upErr } = await supabase.storage.from('licenses').upload(path, attachFile, { upsert: true })
-      if (upErr || !up) {
-        setError('تعذّر رفع الملف المرفق — حاول مجدداً، أو أزل المرفق وأرسل العرض بدونه. (File upload failed)')
+      // Authoritative server-side validation + upload (the magic-byte check here
+      // can't be bypassed from the browser).
+      const fd = new FormData(); fd.append('file', attachFile)
+      const res = await fetch('/api/upload-attachment', { method: 'POST', body: fd })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j.ok) {
+        setError(j?.message || 'تعذّر رفع الملف المرفق — حاول مجدداً، أو أزل المرفق وأرسل العرض بدونه.')
         setSubmitting(false)
         return
       }
-      const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path)
-      attachUrl = publicUrl
-      attachName = attachFile.name
+      attachUrl = j.url
+      attachName = j.name
     }
 
     // إضافات الفاتورة → total النهائي = سعر البضاعة + الإضافات

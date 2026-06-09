@@ -219,7 +219,7 @@ export default function RegisterPage() {
     try {
       const supabase = createClient()
       const { data } = await supabase.rpc('cr_exists', { p_cr: cr })
-      setCrDup(data && data.length > 0 ? { company: data[0].company_name_ar } : null)
+      setCrDup(data === true ? { exists: true } : null) // boolean only (no name — privacy)
     } catch { setCrDup(null) }
     setObjOpen(false); setObjSent(false)
   }
