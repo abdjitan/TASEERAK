@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const sector = searchParams.get('sector')
   const region = searchParams.get('region')
 
-  let query = supabase.from('rfqs').select('*, contractor:contractor_id(company_name_ar, region)')
+  let query = supabase.from('rfqs').select('*, contractor:profiles_public!contractor_id(company_name_ar, region)')
 
   // Contractors see their own RFQs
   if (profile?.role === 'contractor') {

@@ -89,7 +89,7 @@ export default function SupplierDashboard() {
       const minVal = p?.min_order_value || 0
 
       let rfqQuery = supabase.from('rfqs')
-        .select('*, contractor:profiles(company_name_ar, company_name_en, contractor_grade)')
+        .select('*, contractor:profiles_public(company_name_ar, company_name_en, contractor_grade)')
         .eq('status', 'open')
         .order('created_at', { ascending: false })
 

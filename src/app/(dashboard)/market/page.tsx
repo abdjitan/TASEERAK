@@ -70,7 +70,7 @@ export default function MarketPricePage() {
       // الأسعار اللحظية المباشرة من المصانع/الموردين
       const { data: live } = await supabase
         .from('live_prices')
-        .select('*, supplier:profiles(company_name_ar, supplier_tier)')
+        .select('*, supplier:profiles_public(company_name_ar, supplier_tier)')
         .order('updated_at', { ascending: false })
       setLivePrices(live || [])
 

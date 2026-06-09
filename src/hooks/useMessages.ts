@@ -68,7 +68,7 @@ export function useMessages(conversationId?: string, currentUserId?: string) {
       }, async (payload) => {
         const { data } = await supabase
           .from('messages')
-          .select('*, sender:sender_id(id, company_name_ar)')
+          .select('*, sender:profiles_public!sender_id(id, company_name_ar)')
           .eq('id', payload.new.id)
           .single()
         if (data) {
@@ -89,7 +89,7 @@ export function useMessages(conversationId?: string, currentUserId?: string) {
     setLoading(true)
     const { data, error } = await supabase
       .from('messages')
-      .select('*, sender:sender_id(id, company_name_ar)')
+      .select('*, sender:profiles_public!sender_id(id, company_name_ar)')
       .eq('conversation_id', conversationId!)
       .order('created_at', { ascending: true })
 

@@ -105,7 +105,7 @@ export function useIncomingRFQs(supplierId?: string, sectors?: string[]) {
     setLoading(true)
     const { data, error } = await supabase
       .from('rfqs')
-      .select('*, contractor:contractor_id(company_name_ar, rating_avg, region)')
+      .select('*, contractor:profiles_public!contractor_id(company_name_ar, rating_avg, region)')
       .eq('status', 'open')
       .in('sector', sectors ?? [])
       .gt('expires_at', new Date().toISOString())
@@ -143,7 +143,7 @@ export function useOffers(rfqId?: string) {
     setLoading(true)
     const { data, error } = await supabase
       .from('offers')
-      .select('*, supplier:supplier_id(company_name_ar, rating_avg, rating_count, region, verification_status)')
+      .select('*, supplier:profiles_public!supplier_id(company_name_ar, rating_avg, rating_count, region, verification_status)')
       .eq('rfq_id', rfqId!)
       .order('total_price', { ascending: true })
 

@@ -72,7 +72,7 @@ export default function SupplierRFQPage() {
       setUser(session.user)
 
       const { data: rfqData } = await supabase
-        .from('rfqs').select('*, contractor:profiles(company_name_ar, company_name_en)').eq('id', id).single()
+        .from('rfqs').select('*, contractor:profiles_public(company_name_ar, company_name_en)').eq('id', id).single()
       setRfq(rfqData)
 
       // auto-calc unit price from quantity

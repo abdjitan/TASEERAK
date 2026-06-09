@@ -77,7 +77,7 @@ export function useSubcontractors(filters?: {
     setLoading(true)
     let query = supabase
       .from('profiles')
-      .select('*, contractor_specialties(specialty)')
+      .select('id, company_name_ar, company_name_en, contractor_grade, rating_avg, rating_count, region, city, district, verification_status, contractor_specialties(specialty)')
       .eq('is_subcontractor', true)
       .eq('verification_status', 'verified')
 
@@ -135,7 +135,7 @@ export function useIncomingSubRequests(contractorId?: string, specialties?: Subc
     setLoading(true)
     const { data, error } = await supabase
       .from('subcontractor_requests')
-      .select('*, requester:requester_id(company_name_ar, region, contractor_grade, rating_avg)')
+      .select('*, requester:profiles_public!requester_id(company_name_ar, region, contractor_grade, rating_avg)')
       .eq('status', 'open')
       .in('specialty', specialties ?? [])
       .gt('expires_at', new Date().toISOString())
