@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 
@@ -75,6 +76,14 @@ function ownerCheck(ex: any, nationalId: string) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate-limit by IP — protects the (paid) Wathq quota from abuse.
+    const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'anon'
+    const rl = createServerSupabaseClient()
+    const { data: allowed } = await rl.rpc('check_rate_limit', { p_bucket: 'verify-cr:' + ip, p_max: 20, p_window_seconds: 3600 })
+    if (allowed === false) {
+      return NextResponse.json({ ok: false, error: 'rate_limited', message: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })
+    }
+
     const body = await req.json().catch(() => ({}))
     const cr = String(body?.cr || '').trim()
     const nationalId = String(body?.nationalId || '').trim()
