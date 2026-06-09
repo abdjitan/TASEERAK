@@ -267,10 +267,12 @@ export default function RegisterPage() {
       })
       const j = await res.json()
       setCrVerify(j)
-      // auto-fill official name if returned and field is empty
-      if (j?.verified && j?.name) {
-        if (!watch('company_name_en') && /[A-Za-z]/.test(j.name)) setValue('company_name_en', j.name)
-        if ((!watch('company_name_ar') || watch('company_name_ar').length < 3) && /[؀-ۿ]/.test(j.name)) setValue('company_name_ar', j.name)
+      // When verified, lock in the official name (Arabic always; English only if
+      // Wathq actually returns a Latin name).
+      if (j?.verified) {
+        if (j.name && /[؀-ۿ]/.test(j.name)) setValue('company_name_ar', j.name)
+        if (j.nameEn && /[A-Za-z]/.test(j.nameEn)) setValue('company_name_en', j.nameEn)
+        else setValue('company_name_en', '')
       }
     } catch {
       setCrVerify({ ok: false, message: cv.error })
@@ -486,13 +488,18 @@ export default function RegisterPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyAr} *</label>
-                    <input {...register('company_name_ar')} className="input-field" placeholder="شركة الصخر للمقاولات"/>
-                    {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyAr} * {crVerify?.verified && <span className="text-emerald-600">🔒</span>}</label>
+                    <input {...register('company_name_ar')} readOnly={!!crVerify?.verified}
+                      className={`input-field ${crVerify?.verified ? 'bg-emerald-50/60 text-gray-700 cursor-not-allowed' : ''}`} placeholder="شركة الصخر للمقاولات"/>
+                    {crVerify?.verified
+                      ? <p className="text-[10px] text-emerald-600 mt-1">{locale === 'en' ? 'Verified via Wathq — cannot be changed' : locale === 'ur' ? 'واثق سے تصدیق شدہ — تبدیل نہیں ہو سکتا' : 'موثّق من واثق — لا يمكن تعديله'}</p>
+                      : errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyEn}</label>
-                    <input {...register('company_name_en')} className="input-field" placeholder="Al Sakhr Contracting"/>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyEn} {crVerify?.verified && crVerify?.nameEn && <span className="text-emerald-600">🔒</span>}</label>
+                    <input {...register('company_name_en')} readOnly={!!(crVerify?.verified && crVerify?.nameEn)}
+                      className={`input-field ${(crVerify?.verified && crVerify?.nameEn) ? 'bg-emerald-50/60 text-gray-700' : ''}`} placeholder="Al Sakhr Contracting"/>
+                    {crVerify?.verified && !crVerify?.nameEn && <p className="text-[10px] text-gray-400 mt-1">{locale === 'en' ? 'No English name in Wathq — optional' : locale === 'ur' ? 'واثق میں انگریزی نام نہیں — اختیاری' : 'لا يوجد اسم إنجليزي في واثق — اختياري'}</p>}
                   </div>
                 </div>
 

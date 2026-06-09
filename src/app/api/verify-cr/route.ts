@@ -144,9 +144,19 @@ export async function POST(req: NextRequest) {
     const ex = extract(j)
     const oc = ownerCheck(ex, nationalId)
 
+    // Best-effort English name (production CRs may carry one; the sandbox returns
+    // Arabic). Only used if it actually contains Latin letters.
+    let nameEn: string | null = null
+    try {
+      const enRes = await fetch(`${WATHQ_BASE}${WATHQ_CR_PATH}${cr}?language=en`, {
+        headers: { apiKey: WATHQ_KEY, Accept: 'application/json' }, cache: 'no-store',
+      })
+      if (enRes.ok) { const ej: any = await enRes.json(); if (ej?.name && /[A-Za-z]/.test(ej.name)) nameEn = ej.name }
+    } catch {}
+
     return NextResponse.json({
       ok: true, mode: 'wathq', verified: ex.isActive, cr,
-      ...ex,
+      ...ex, nameEn,
       ownerCheck: oc,
       message: ex.isActive
         ? 'تم التحقق من السجل التجاري عبر واثق ✓'
