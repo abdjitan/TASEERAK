@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 // Server client — use in Server Components, API Routes, Middleware
@@ -32,6 +33,17 @@ export function createServerSupabaseClient() {
         },
       },
     }
+  )
+}
+
+// Pure service-role client (no cookies → always authenticated as `service_role`).
+// Use ONLY in trusted server code for privileged actions (e.g. auto-verification
+// via admin_set_verification, which is granted to service_role only).
+export function createServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
   )
 }
 

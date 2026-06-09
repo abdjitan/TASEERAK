@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
 import { keywordClassify } from '@/lib/classify'
 import { SECTOR_LABELS } from '@/types'
 
@@ -80,14 +80,26 @@ export async function POST(req: NextRequest) {
     auto_classified_at: new Date().toISOString(),
   }
 
+  await supabase.from('profiles').update(update).eq('id', targetId)
+
   // ---- Auto-verify a clear, confident match (only while still pending) ----
+  // Verification fields are locked against client/authenticated writes, so we
+  // set them from the TRUSTED SERVER only (service role → admin_set_verification).
+  // This keeps verification automatic/AI-driven without reopening the spoof hole.
   let autoVerified = false
   if (result.verdict === 'match' && result.confidence >= AUTO_VERIFY_MIN_CONFIDENCE && profile.verification_status === 'pending') {
-    update.verification_status = 'verified'
-    autoVerified = true
+    try {
+      const svc = createServiceClient()
+      await svc.rpc('admin_set_verification', {
+        p_user_id: targetId,
+        p_source: source === 'ai' ? 'ai_match' : 'auto_match',
+        p_official_name: profile.cr_official_name || null,
+        p_cr_status: null,
+        p_activity: profile.cr_activity || null,
+      })
+      autoVerified = true
+    } catch (e: any) { console.error('auto-verify failed:', e?.message || e) }
   }
-
-  await supabase.from('profiles').update(update).eq('id', targetId)
 
   return NextResponse.json({ ok: true, ...result, source, autoVerified })
 }
