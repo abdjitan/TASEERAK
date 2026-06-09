@@ -13,9 +13,11 @@ export async function GET(request: NextRequest) {
   const minGrade  = searchParams.get('minGrade')
   const region    = searchParams.get('region')
 
+  // SECURITY: never ship phone/CR/VAT/coords of the whole subcontractor directory
+  // to a browsing contractor. Select only directory-safe columns.
   let query = supabase
     .from('profiles')
-    .select('*, contractor_specialties(specialty)')
+    .select('id, company_name_ar, company_name_en, contractor_grade, rating_avg, rating_count, region, city, district, verification_status, contractor_specialties(specialty)')
     .eq('is_subcontractor', true)
     .eq('verification_status', 'verified')
     .eq('is_active', true)
