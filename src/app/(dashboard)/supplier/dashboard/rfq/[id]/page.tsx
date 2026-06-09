@@ -51,6 +51,19 @@ export default function SupplierRFQPage() {
     window.location.reload()
   }
 
+  // رد على طلب معلومات إضافية من المقاول
+  const [infoReply, setInfoReply] = useState('')
+  const [infoReplying, setInfoReplying] = useState(false)
+  async function submitInfoResponse() {
+    if (!infoReply.trim()) return
+    setInfoReplying(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('respond_offer_info', { p_offer_id: existingOffer.id, p_answer: infoReply.trim() })
+    setInfoReplying(false)
+    if (error) { setError('تعذّر إرسال الرد — حاول مرة ثانية.'); return }
+    window.location.reload()
+  }
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -327,6 +340,21 @@ export default function SupplierRFQPage() {
                   <input type="number" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={`أقل من ${existingOffer.total_price?.toLocaleString()} ر.س`} min="0" step="any" />
                   <button type="button" onClick={submitReduction} disabled={reducing} className="px-4 rounded-xl font-semibold text-white text-sm disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>{reducing ? '...' : 'إرسال السعر الجديد'}</button>
                 </div>
+              </div>
+            )}
+
+            {existingOffer.info_request && (
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 text-right">
+                <div className="font-bold text-blue-700 mb-1">❓ المقاول يطلب معلومات إضافية</div>
+                <div className="text-sm text-gray-700 bg-white rounded-lg p-2.5 mb-2">{existingOffer.info_request}</div>
+                {existingOffer.info_response ? (
+                  <div className="text-sm bg-emerald-50 rounded-lg p-2.5"><span className="text-emerald-600 text-[11px]">ردّك:</span><div>{existingOffer.info_response}</div></div>
+                ) : existingOffer.status === 'pending' ? (
+                  <div>
+                    <textarea value={infoReply} onChange={e => setInfoReply(e.target.value)} rows={2} className="input-field mb-2" placeholder="اكتب ردّك للمقاول عن المنتج..." />
+                    <button type="button" onClick={submitInfoResponse} disabled={infoReplying} className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoReplying ? '...' : 'إرسال الرد'}</button>
+                  </div>
+                ) : null}
               </div>
             )}
             {existingOffer.status === 'accepted' && (

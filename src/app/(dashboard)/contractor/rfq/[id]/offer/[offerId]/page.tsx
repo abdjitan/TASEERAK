@@ -29,6 +29,27 @@ export default function OfferDetailPage() {
     setReqOpen(false); setReqDone(true)
   }
 
+  async function cancelReduction() {
+    if (!confirm('إلغاء طلب التخفيض والعودة للسعر الأصلي؟')) return
+    setActing(true)
+    const supabase = createClient()
+    await supabase.from('offers').update({ reduction_deadline: null, reduction_note: null }).eq('id', offerId)
+    window.location.reload()
+  }
+
+  const [infoOpen, setInfoOpen] = useState(false)
+  const [infoText, setInfoText] = useState('')
+  const [infoBusy, setInfoBusy] = useState(false)
+  async function submitInfoRequest() {
+    if (!infoText.trim()) return
+    setInfoBusy(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('request_offer_info', { p_offer_id: offerId, p_question: infoText.trim() })
+    setInfoBusy(false)
+    if (error) { alert('تعذّر إرسال الطلب — حاول مرة ثانية.'); return }
+    setInfoOpen(false); window.location.reload()
+  }
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -174,21 +195,48 @@ export default function OfferDetailPage() {
           )}
         </div>
 
+        {/* معلومات إضافية عن المنتج */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-bold text-sm" style={{ color: '#1B2D5B' }}>❓ معلومات إضافية عن المنتج</h2>
+            {offer.status === 'pending' && !offer.info_request && (
+              <button type="button" onClick={() => setInfoOpen(true)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 font-semibold">اطلب معلومات</button>
+            )}
+          </div>
+          {offer.info_request ? (
+            <div className="space-y-2">
+              <div className="bg-gray-50 rounded-lg p-2.5 text-sm"><span className="text-gray-400 text-[11px]">سؤالك:</span><div>{offer.info_request}</div></div>
+              {offer.info_response
+                ? <div className="bg-emerald-50 rounded-lg p-2.5 text-sm"><span className="text-emerald-600 text-[11px]">رد المورد:</span><div>{offer.info_response}</div></div>
+                : <div className="text-xs text-amber-600">⏳ بانتظار رد المورد...</div>}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">اطلب من المورد تفاصيل إضافية عن المنتج (النوع، المواصفات، المنشأ، الضمان...).</p>
+          )}
+        </div>
+
         {/* الإجراءات */}
         {offer.status === 'pending' && (
           <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm sticky bottom-3">
             {(reqDone || offer.reduction_deadline) ? (
-              <div className="text-center text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-3">
-                ✓ تم إرسال طلب التخفيض — بانتظار رد المورد{offer.reduction_deadline ? ` (المهلة: ${new Date(offer.reduction_deadline).toLocaleString('ar-SA')})` : ''}
-              </div>
+              <>
+                <div className="text-center text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-2">
+                  ✓ تم إرسال طلب التخفيض — بانتظار رد المورد{offer.reduction_deadline ? ` (المهلة: ${new Date(offer.reduction_deadline).toLocaleString('ar-SA')})` : ''}
+                </div>
+                <button type="button" onClick={cancelReduction} disabled={acting} className="block w-full text-center text-xs mb-3 px-4 py-2 rounded-xl font-semibold border border-gray-300 text-gray-600 disabled:opacity-50">
+                  ✕ إلغاء طلب التخفيض
+                </button>
+              </>
             ) : (
-              <button type="button" onClick={() => setReqOpen(true)} className="block w-full text-center text-sm mb-2 px-4 py-2.5 rounded-xl font-semibold border" style={{ borderColor: '#F5831F', color: '#F5831F' }}>
-                📉 اطلب تخفيض إضافي (بمهلة محددة)
-              </button>
+              <>
+                <button type="button" onClick={() => setReqOpen(true)} className="block w-full text-center text-sm mb-2 px-4 py-2.5 rounded-xl font-semibold border" style={{ borderColor: '#F5831F', color: '#F5831F' }}>
+                  📉 اطلب تخفيض إضافي (بمهلة محددة)
+                </button>
+                {waReduce && <a href={waReduce} target="_blank" rel="noreferrer" className="block text-center text-[11px] text-gray-400 underline mb-3">أو راسله عبر واتساب</a>}
+              </>
             )}
-            {waReduce && <a href={waReduce} target="_blank" rel="noreferrer" className="block text-center text-[11px] text-gray-400 underline mb-3">أو راسله عبر واتساب</a>}
             <div className="flex gap-2">
-              <button onClick={acceptOffer} disabled={acting} className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>✓ قبول العرض</button>
+              <button onClick={acceptOffer} disabled={acting} className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>✓ {(reqDone || offer.reduction_deadline) ? 'قبول السعر الأصلي' : 'قبول العرض'}</button>
               <button onClick={rejectOffer} disabled={acting} className="px-6 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600">✕ رفض</button>
             </div>
           </div>
@@ -213,6 +261,21 @@ export default function OfferDetailPage() {
               <div className="flex gap-2">
                 <button type="button" disabled={reqBusy} onClick={submitReductionRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#F5831F' }}>{reqBusy ? 'جارٍ الإرسال...' : 'إرسال الطلب'}</button>
                 <button type="button" onClick={() => setReqOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* نموذج طلب معلومات إضافية */}
+        {infoOpen && (
+          <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !infoBusy && setInfoOpen(false)}>
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={e => e.stopPropagation()}>
+              <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>❓ طلب معلومات إضافية</h3>
+              <p className="text-xs text-gray-500 mb-3">وش المعلومات اللي تبيها عن المنتج؟ (النوع، المواصفات، المنشأ، الضمان…)</p>
+              <textarea value={infoText} onChange={e => setInfoText(e.target.value)} rows={3} className="input-field mb-3" placeholder="مثال: ما منشأ الحديد؟ هل يطابق مواصفة ASTM؟ هل يوجد شهادة جودة؟" />
+              <div className="flex gap-2">
+                <button type="button" disabled={infoBusy} onClick={submitInfoRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoBusy ? 'جارٍ الإرسال...' : 'إرسال للمورد'}</button>
+                <button type="button" onClick={() => setInfoOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
               </div>
             </div>
           </div>
