@@ -369,14 +369,14 @@ export default function RegisterPage() {
   // After sign-up when email confirmation is ON
   if (emailSent) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50" dir={dir}>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-canvas" dir={dir}>
         <div className="absolute top-4 left-4"><LanguageSwitcher variant="minimal" /></div>
-        <a href="/" className="absolute top-4 right-4 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+        <a href="/" className="absolute top-4 right-4 text-sm font-medium text-gray-500 hover:text-navy transition-colors">
           {locale === 'en' ? '🏠 Home' : locale === 'ur' ? '🏠 مرکزی صفحہ' : '🏠 الرئيسية'}
         </a>
         <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
           <div className="text-5xl mb-4">📬</div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
+          <h1 className="text-xl font-bold text-navy mb-2">
             {locale === 'en' ? 'Verify your email' : locale === 'ur' ? 'اپنا ای میل تصدیق کریں' : 'فعّل بريدك الإلكتروني'}
           </h1>
           <p className="text-sm text-gray-500 mb-2">
@@ -400,19 +400,19 @@ export default function RegisterPage() {
   // Step 1: Choose type
   if (step === 1) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50" dir={dir}>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-canvas" dir={dir}>
         <div className="absolute top-4 left-4"><LanguageSwitcher variant="minimal" /></div>
-        <a href="/" className="absolute top-4 right-4 flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+        <a href="/" className="absolute top-4 right-4 flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-navy transition-colors">
           <span>🏠</span>
           <span>{locale === 'en' ? 'Home' : locale === 'ur' ? 'مرکزی صفحہ' : 'الرئيسية'}</span>
         </a>
         <div className="w-full max-w-2xl">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-3 mb-4">
-              <img src="/logo-outlined.png" alt="Taseerak" className="w-12 h-12" />
+              <img src="/logo.png" alt="Taseerak" className="w-12 h-12" />
               <span className="text-2xl font-bold">{locale === 'ar' ? 'تسعيرك' : 'Taseerak'}</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">{t.welcome}</h1>
+            <h1 className="text-2xl font-bold text-navy">{t.welcome}</h1>
             <p className="text-gray-500 mt-2">{t.chooseType}</p>
           </div>
 
@@ -426,12 +426,12 @@ export default function RegisterPage() {
                 onClick={() => { setSelectedType(type); setValue('role', type) }}
                 className={`p-6 rounded-2xl border-2 text-center transition-all ${
                   selectedType === type
-                    ? 'border-blue-600 bg-blue-50'
-                    : 'border-gray-200 bg-white hover:border-blue-300'
+                    ? 'border-[#F5831F] bg-[#F5831F]/5'
+                    : 'border-gray-200 bg-white hover:border-[#F5831F]/40'
                 }`}
               >
                 <div className="text-3xl mb-2">{icon}</div>
-                <div className="font-semibold text-gray-900">{title}</div>
+                <div className="font-semibold text-navy">{title}</div>
                 <div className="text-xs text-gray-500 mt-1">{desc}</div>
               </button>
             ))}
@@ -440,14 +440,14 @@ export default function RegisterPage() {
           <button
             onClick={() => selectedType && setStep(2)}
             disabled={!selectedType}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700 transition-colors"
+            className="w-full bg-[#1B2D5B] text-white py-3 rounded-xl font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#0f1d3d] transition-colors"
           >
             {t.next}
           </button>
 
           <p className="text-center text-sm text-gray-500 mt-4">
             {t.haveAccount}{' '}
-            <a href="/login" className="text-blue-600 font-medium hover:underline">{t.login}</a>
+            <a href="/login" className="text-[#d96f15] font-medium hover:underline">{t.login}</a>
           </p>
         </div>
       </div>
@@ -455,9 +455,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4" dir={dir}>
+    <div className="min-h-screen bg-canvas p-4" dir={dir}>
       <div className="absolute top-4 left-4 z-10"><LanguageSwitcher variant="minimal" /></div>
-      <a href="/" className="absolute top-4 right-4 z-10 flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
+      <a href="/" className="absolute top-4 right-4 z-10 flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-navy transition-colors">
         <span>🏠</span>
         <span>{locale === 'en' ? 'Home' : locale === 'ur' ? 'مرکزی صفحہ' : 'الرئيسية'}</span>
       </a>
@@ -467,13 +467,13 @@ export default function RegisterPage() {
           {[1,2,3,4].map(s => (
             <div key={s} className="flex items-center gap-2">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                s < step ? 'bg-green-500 text-white' :
-                s === step ? 'bg-blue-600 text-white' :
+                s < step ? 'bg-[#0F6E56] text-white' :
+                s === step ? 'bg-[#1B2D5B] text-white' :
                 'bg-gray-200 text-gray-500'
               }`}>
                 {s < step ? '✓' : s}
               </div>
-              {s < 4 && <div className={`w-8 h-0.5 ${s < step ? 'bg-green-500' : 'bg-gray-200'}`}/>}
+              {s < 4 && <div className={`w-8 h-0.5 ${s < step ? 'bg-[#0F6E56]' : 'bg-gray-200'}`}/>}
             </div>
           ))}
         </div>
@@ -482,7 +482,7 @@ export default function RegisterPage() {
           {/* Step 2: Company info */}
           {step === 2 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">{t.companyData}</h2>
+              <h2 className="text-lg font-bold text-navy mb-1">{t.companyData}</h2>
               <p className="text-sm text-gray-500 mb-5">{t.companyDataSub}</p>
 
               <div className="space-y-4">
@@ -527,7 +527,7 @@ export default function RegisterPage() {
                 {crVerify && (
                   <div className={`text-xs rounded-xl p-3 border flex items-start gap-2 ${
                     crVerify.verified ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                    : crVerify.mode === 'manual' ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : crVerify.mode === 'manual' ? 'bg-[#F5831F]/5 border-blue-200 text-[#d96f15]'
                     : 'bg-amber-50 border-amber-200 text-amber-700'
                   }`}>
                     <span className="text-sm flex-shrink-0">{crVerify.verified ? '🛡' : crVerify.mode === 'manual' ? 'ℹ️' : '⚠️'}</span>
@@ -609,7 +609,7 @@ export default function RegisterPage() {
                   <div className="grid grid-cols-3 gap-2">
                     {[{ k: 'ar', l: 'العربية' }, { k: 'en', l: 'English' }, { k: 'ur', l: 'اردو' }].map(o => (
                       <button key={o.k} type="button" onClick={() => setPrefLang(o.k as any)}
-                        className={`py-2 rounded-xl border-2 text-sm font-semibold transition-all ${prefLang === o.k ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600'}`}>
+                        className={`py-2 rounded-xl border-2 text-sm font-semibold transition-all ${prefLang === o.k ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'border-gray-200 text-gray-600'}`}>
                         {o.l}
                       </button>
                     ))}
@@ -669,7 +669,7 @@ export default function RegisterPage() {
           {/* Step 3: License upload */}
           {step === 3 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">{t.licenseTitle}</h2>
+              <h2 className="text-lg font-bold text-navy mb-1">{t.licenseTitle}</h2>
               <p className="text-sm text-gray-500 mb-5">{t.licenseSub}</p>
 
               <div className="space-y-4">
@@ -678,7 +678,7 @@ export default function RegisterPage() {
                   { label: t.cr, state: crFile, setter: setCrFile, required: false },
                 ].map(({ label, state, setter }) => (
                   <label key={label} className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
-                    state ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-blue-400'
+                    state ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-[#F5831F]/50'
                   }`}>
                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
                       onChange={e => setter(e.target.files?.[0] ?? null)}
@@ -706,7 +706,7 @@ export default function RegisterPage() {
           {/* Step 4: Sectors + Specialties */}
           {step === 4 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">{t.sectorsTitle}</h2>
+              <h2 className="text-lg font-bold text-navy mb-1">{t.sectorsTitle}</h2>
               <p className="text-sm text-gray-500 mb-5">
                 {selectedType === 'supplier' ? t.sectorsSubSupplier : t.sectorsSubContractor}
               </p>
@@ -716,9 +716,9 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-2 gap-3 mb-5">
                   {(Object.keys(SECTOR_LABELS) as Sector[]).map(sector => (
                     <button key={sector} type="button" onClick={() => toggleSector(sector)}
-                      className={`p-4 rounded-xl border-2 transition-all ${sectors?.includes(sector) ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}
+                      className={`p-4 rounded-xl border-2 transition-all ${sectors?.includes(sector) ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-[#F5831F]/40'}`}
                       style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}>
-                      <div className="font-semibold text-sm text-gray-900">{sl(sector)}</div>
+                      <div className="font-semibold text-sm text-navy">{sl(sector)}</div>
                     </button>
                   ))}
                 </div>
@@ -738,9 +738,9 @@ export default function RegisterPage() {
                     const groups: Record<string, string[]> = {}
                     Object.entries(subs).forEach(([key, sub]: any) => { (groups[sub.group] = groups[sub.group] || []).push(key) })
                     return (
-                      <div key={sector} className={`rounded-xl border-2 overflow-hidden transition-all ${selected ? 'border-blue-600' : 'border-gray-200'}`}>
+                      <div key={sector} className={`rounded-xl border-2 overflow-hidden transition-all ${selected ? 'border-[#F5831F]' : 'border-gray-200'}`}>
                         <div onClick={() => { if (!selected) toggleSector(sector); setOpenSector(isOpen ? null : sector) }}
-                          className={`w-full flex items-center justify-between p-3.5 cursor-pointer ${selected ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+                          className={`w-full flex items-center justify-between p-3.5 cursor-pointer ${selected ? 'bg-[#F5831F]/5' : 'hover:bg-gray-50'}`}>
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-sm" style={{ color: selected ? color : '#374151' }}>{sl(sector)}</span>
                             {selCount > 0 && <span className="text-[10px] font-bold text-white rounded-full px-2 py-0.5" style={{ background: color }}>{selCount}</span>}
@@ -813,7 +813,7 @@ export default function RegisterPage() {
               {/* ── تصنيف المورد ── */}
               {selectedType === 'supplier' && (
                 <div className="mb-5 border-t border-gray-100 pt-5">
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">{t.companyClass}</h3>
+                  <h3 className="text-sm font-bold text-navy mb-1">{t.companyClass}</h3>
                   <p className="text-xs text-gray-500 mb-3">{t.classHintSupplier}</p>
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {[
@@ -843,7 +843,7 @@ export default function RegisterPage() {
               {/* ── درجة المقاول ── */}
               {selectedType === 'contractor' && (
                 <div className="mb-5 border-t border-gray-100 pt-5">
-                  <h3 className="text-sm font-bold text-gray-900 mb-1">{t.gradeTitle}</h3>
+                  <h3 className="text-sm font-bold text-navy mb-1">{t.gradeTitle}</h3>
                   <p className="text-xs text-gray-500 mb-3">{t.gradeSub}</p>
                   <div className="grid grid-cols-4 gap-2">
                     {[
