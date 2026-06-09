@@ -11,6 +11,9 @@ export default function RFQDetailPage() {
   const { id } = useParams()
   const [rfq, setRfq] = useState(null)
   const [offers, setOffers] = useState([])
+  const [sortBy, setSortBy] = useState('price_asc') // price_asc | price_desc | delivery | rating
+  const [onlyVerified, setOnlyVerified] = useState(false)
+  const [tierFilter, setTierFilter] = useState('') // '' | manufacturer | commercial | local
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
@@ -118,6 +121,17 @@ export default function RFQDetailPage() {
   if (!rfq) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-gray-500">الطلب غير موجود</div></div>
 
   const acceptedOffer = offers.find(o => o.status === 'accepted')
+
+  // Filtered + sorted offers for display (contractor may receive many).
+  const displayedOffers = [...offers]
+    .filter(o => !onlyVerified || o.supplier?.verification_status === 'verified')
+    .filter(o => !tierFilter || o.supplier?.supplier_tier === tierFilter)
+    .sort((a: any, b: any) => {
+      if (sortBy === 'price_desc') return (b.total_price || 0) - (a.total_price || 0)
+      if (sortBy === 'delivery') return (a.delivery_days || 99999) - (b.delivery_days || 99999)
+      if (sortBy === 'rating') return (b.supplier?.rating_avg || 0) - (a.supplier?.rating_avg || 0)
+      return (a.total_price || 0) - (b.total_price || 0) // price_asc (default)
+    })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4" dir="rtl">
@@ -228,6 +242,26 @@ export default function RFQDetailPage() {
             </div>
           )}
         </div>
+        {offers.length > 1 && (
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white font-semibold text-gray-700">
+              <option value="price_asc">💰 السعر: الأقل أولاً</option>
+              <option value="price_desc">💰 السعر: الأعلى أولاً</option>
+              <option value="delivery">📦 التوصيل: الأسرع</option>
+              <option value="rating">⭐ التقييم: الأعلى</option>
+            </select>
+            <select value={tierFilter} onChange={e => setTierFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700">
+              <option value="">كل الموردين</option>
+              <option value="manufacturer">🏭 مصنع</option>
+              <option value="commercial">🏪 تجاري</option>
+              <option value="local">🏬 محلي</option>
+            </select>
+            <button type="button" onClick={() => setOnlyVerified(v => !v)}
+              className={`text-xs px-3 py-1.5 rounded-lg border font-semibold transition-all ${onlyVerified ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
+              style={onlyVerified ? { background: '#0F6E56' } : {}}>✓ موثّق فقط</button>
+            {(onlyVerified || tierFilter) && <span className="text-[11px] text-gray-400">({displayedOffers.length} من {offers.length})</span>}
+          </div>
+        )}
         {offers.length === 0 ? (
           <div className="bg-white rounded-xl p-8 border border-gray-100 text-center">
             <div className="text-4xl mb-3">⏳</div>
@@ -236,7 +270,7 @@ export default function RFQDetailPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {offers.map((offer, i) => (
+            {displayedOffers.map((offer, i) => (
               <div key={offer.id} className={`bg-white rounded-xl p-5 border shadow-sm transition-all ${
                 offer.status === 'accepted' ? 'border-green-300 bg-green-50' :
                 offer.status === 'rejected' ? 'border-gray-200 opacity-50' : 'border-gray-100 hover:border-blue-200'
@@ -294,6 +328,15 @@ export default function RFQDetailPage() {
                           <a href={w} target="_blank" rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] mt-1.5 px-2.5 py-1 rounded-full font-semibold text-white" style={{ background: '#25D366' }}>
                             💬 تواصل واتساب
+                          </a>
+                        ) : null
+                      })()}
+                      {offer.supplier?.phone && offer.status === 'pending' && (() => {
+                        const w = waLink(offer.supplier.phone, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» بسعر ${offer.total_price?.toLocaleString()} ر.س في منصة تسعيرك — هل بالإمكان تخفيض السعر؟ نقدّر تعاونكم 🌟`)
+                        return w ? (
+                          <a href={w} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] mt-1.5 mr-1.5 px-2.5 py-1 rounded-full font-semibold border" style={{ borderColor: '#F5831F', color: '#F5831F' }}>
+                            📉 اطلب تخفيض السعر
                           </a>
                         ) : null
                       })()}
