@@ -154,9 +154,14 @@ export async function POST(req: NextRequest) {
       if (enRes.ok) { const ej: any = await enRes.json(); if (ej?.name && /[A-Za-z]/.test(ej.name)) nameEn = ej.name }
     } catch {}
 
+    // PRIVACY (PDPL): never ship national ID numbers to the browser. The
+    // owner-match (ownerCheck) is computed server-side above and returns only
+    // booleans; the client gets names/roles, not identities.
     return NextResponse.json({
       ok: true, mode: 'wathq', verified: ex.isActive, cr,
       ...ex, nameEn,
+      parties: ex.parties.map((p: any) => ({ name: p.name, role: p.role, idType: p.idType })),
+      managers: ex.managers.map((m: any) => ({ name: m.name })),
       ownerCheck: oc,
       message: ex.isActive
         ? 'تم التحقق من السجل التجاري عبر واثق ✓'
