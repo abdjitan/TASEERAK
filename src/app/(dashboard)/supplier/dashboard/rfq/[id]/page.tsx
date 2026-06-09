@@ -38,6 +38,19 @@ export default function SupplierRFQPage() {
   const [showDismiss, setShowDismiss] = useState(false)
   const [dismissReason, setDismissReason] = useState('')
 
+  // رد على طلب تخفيض السعر من المقاول
+  const [newPrice, setNewPrice] = useState('')
+  const [reducing, setReducing] = useState(false)
+  async function submitReduction() {
+    if (!newPrice || Number(newPrice) <= 0) return
+    setReducing(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('submit_price_reduction', { p_offer_id: existingOffer.id, p_new_total: Number(newPrice) })
+    setReducing(false)
+    if (error) { setError('تعذّر إرسال السعر الجديد — حاول مرة ثانية.'); return }
+    window.location.reload()
+  }
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -297,9 +310,25 @@ export default function SupplierRFQPage() {
             existingOffer.status === 'accepted' ? 'border-emerald-300 bg-emerald-50' :
             existingOffer.status === 'rejected' ? 'border-red-300 bg-red-50' : 'border-amber-300 bg-amber-50'
           }`}>
-            <div className="text-4xl mb-2">{existingOffer.status === 'accepted' ? '✅' : existingOffer.status === 'rejected' ? '❌' : '⏳'}</div>
-            <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>{T.alreadyTitle[existingOffer.status] || T.alreadyTitle.pending}</h3>
-            <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString()} ر.س</p>
+            <div className="text-4xl mb-2">{existingOffer.status === 'accepted' ? '✅' : (existingOffer.status === 'rejected' && rfq.status === 'closed') ? '🔒' : existingOffer.status === 'rejected' ? '❌' : '⏳'}</div>
+            <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>
+              {existingOffer.status === 'rejected' && rfq.status === 'closed'
+                ? (locale === 'en' ? 'Pricing closed — another offer was accepted' : locale === 'ur' ? 'پرائسنگ بند — دوسری پیشکش قبول ہوگئی' : 'انتهى التسعير — تم اعتماد عرض آخر')
+                : (T.alreadyTitle[existingOffer.status] || T.alreadyTitle.pending)}
+            </h3>
+            <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString()} ر.س{existingOffer.status === 'rejected' && rfq.status === 'closed' ? (locale === 'en' ? ' — thanks for participating' : ' — شكراً لمشاركتك') : ''}</p>
+
+            {existingOffer.status === 'pending' && existingOffer.reduction_deadline && new Date(existingOffer.reduction_deadline) > new Date() && (
+              <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 text-right">
+                <div className="font-bold text-orange-700 mb-1">📉 المقاول يطلب تخفيض السعر</div>
+                {existingOffer.reduction_note && <div className="text-xs text-gray-600 mb-1">«{existingOffer.reduction_note}»</div>}
+                <div className="text-[11px] text-gray-500 mb-3">المهلة للرد: {new Date(existingOffer.reduction_deadline).toLocaleString('ar-SA')}</div>
+                <div className="flex gap-2">
+                  <input type="number" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={`أقل من ${existingOffer.total_price?.toLocaleString()} ر.س`} min="0" step="any" />
+                  <button type="button" onClick={submitReduction} disabled={reducing} className="px-4 rounded-xl font-semibold text-white text-sm disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>{reducing ? '...' : 'إرسال السعر الجديد'}</button>
+                </div>
+              </div>
+            )}
             {existingOffer.status === 'accepted' && (
               <a href={`/contractor/orders/${existingOffer.id}`}
                 className="inline-block mt-4 px-5 py-2.5 rounded-xl font-semibold text-white text-sm transition-all hover:shadow"

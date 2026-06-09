@@ -14,6 +14,20 @@ export default function OfferDetailPage() {
   const [offer, setOffer] = useState(null)
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(false)
+  const [reqOpen, setReqOpen] = useState(false)
+  const [reqHours, setReqHours] = useState(24)
+  const [reqNote, setReqNote] = useState('')
+  const [reqBusy, setReqBusy] = useState(false)
+  const [reqDone, setReqDone] = useState(false)
+
+  async function submitReductionRequest() {
+    setReqBusy(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('request_price_reduction', { p_offer_id: offerId, p_hours: Number(reqHours), p_note: reqNote.trim() || null })
+    setReqBusy(false)
+    if (error) { alert('تعذّر إرسال الطلب — حاول مرة ثانية.'); return }
+    setReqOpen(false); setReqDone(true)
+  }
 
   useEffect(() => {
     async function load() {
@@ -163,14 +177,43 @@ export default function OfferDetailPage() {
         {/* الإجراءات */}
         {offer.status === 'pending' && (
           <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm sticky bottom-3">
-            {waReduce && (
-              <a href={waReduce} target="_blank" rel="noreferrer" className="block text-center text-sm mb-3 px-4 py-2.5 rounded-xl font-semibold border" style={{ borderColor: '#F5831F', color: '#F5831F' }}>
-                📉 اطلب تخفيض السعر
-              </a>
+            {(reqDone || offer.reduction_deadline) ? (
+              <div className="text-center text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-3">
+                ✓ تم إرسال طلب التخفيض — بانتظار رد المورد{offer.reduction_deadline ? ` (المهلة: ${new Date(offer.reduction_deadline).toLocaleString('ar-SA')})` : ''}
+              </div>
+            ) : (
+              <button type="button" onClick={() => setReqOpen(true)} className="block w-full text-center text-sm mb-2 px-4 py-2.5 rounded-xl font-semibold border" style={{ borderColor: '#F5831F', color: '#F5831F' }}>
+                📉 اطلب تخفيض إضافي (بمهلة محددة)
+              </button>
             )}
+            {waReduce && <a href={waReduce} target="_blank" rel="noreferrer" className="block text-center text-[11px] text-gray-400 underline mb-3">أو راسله عبر واتساب</a>}
             <div className="flex gap-2">
               <button onClick={acceptOffer} disabled={acting} className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>✓ قبول العرض</button>
               <button onClick={rejectOffer} disabled={acting} className="px-6 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600">✕ رفض</button>
+            </div>
+          </div>
+        )}
+
+        {/* نموذج طلب تخفيض السعر بمهلة */}
+        {reqOpen && (
+          <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !reqBusy && setReqOpen(false)}>
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={e => e.stopPropagation()}>
+              <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>📉 طلب تخفيض إضافي</h3>
+              <p className="text-xs text-gray-500 mb-4">نرسل طلباً للمورد لتخفيض سعره، ويرد خلال المهلة اللي تحددها أنت.</p>
+              <label className="block text-xs font-bold text-gray-500 mb-1">مهلة الرد</label>
+              <select value={reqHours} onChange={e => setReqHours(Number(e.target.value))} className="input-field mb-3">
+                <option value={6}>٦ ساعات</option>
+                <option value={12}>١٢ ساعة</option>
+                <option value={24}>٢٤ ساعة (يوم)</option>
+                <option value={48}>٤٨ ساعة (يومين)</option>
+                <option value={72}>٣ أيام</option>
+              </select>
+              <label className="block text-xs font-bold text-gray-500 mb-1">ملاحظة للمورد (اختياري)</label>
+              <textarea value={reqNote} onChange={e => setReqNote(e.target.value)} rows={2} className="input-field mb-3" placeholder="مثال: السعر أعلى من السوق، نطلب تخفيض ٥٪" />
+              <div className="flex gap-2">
+                <button type="button" disabled={reqBusy} onClick={submitReductionRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#F5831F' }}>{reqBusy ? 'جارٍ الإرسال...' : 'إرسال الطلب'}</button>
+                <button type="button" onClick={() => setReqOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
+              </div>
             </div>
           </div>
         )}
