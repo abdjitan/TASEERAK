@@ -412,6 +412,11 @@ export default function RFQDetailPage() {
                   )}
                 </div>
 
+                <a href={`/contractor/rfq/${id}/offer/${offer.id}`}
+                  className="block text-center text-xs font-semibold py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#1B2D5B] hover:text-[#1B2D5B] transition-all mb-2">
+                  📄 عرض كل التفاصيل ←
+                </a>
+
                 {offer.status === 'pending' && rfq.status === 'open' && (
                   <div className="flex gap-2">
                     <button onClick={() => acceptOffer(offer.id)}
