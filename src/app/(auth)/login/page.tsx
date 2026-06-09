@@ -5,13 +5,12 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
-import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 
 const txt = {
-  ar: { welcome:'مرحباً بعودتك', sub:'سجّل دخولك للوصول إلى لوحة التحكم', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'سجّل مجاناً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© 2026 تسعيرك — جميع الحقوق محفوظة', s_auth:'الخطوة 1/3: جارٍ التحقق من بياناتك…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'الخطوة 3/3: تم الدخول ✓ جارٍ التحويل…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.' },
-  en: { welcome:'Welcome back', sub:'Sign in to access your dashboard', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Register for Free', error:'Invalid email or password', copyright:'© 2026 Taseerak — All rights reserved', s_auth:'Step 1/3: verifying your credentials…', s_role:'Step 2/3: reading your role…', s_go:'Step 3/3: signed in ✓ redirecting…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.' },
-  ur: { welcome:'خوش آمدید', sub:'اپنے ڈیش بورڈ تک رسائی کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'مفت رجسٹر کریں', error:'غلط ای میل یا پاسورڈ', copyright:'© 2026 Taseerak — جملہ حقوق محفوظ ہیں', s_auth:'مرحلہ 1/3: تصدیق ہو رہی ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'مرحلہ 3/3: سائن ان ✓ منتقل ہو رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔' },
+  ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساب جديد', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد للمقاولين', s_auth:'الخطوة 1/3: جارٍ التحقق من بياناتك…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'الخطوة 3/3: تم الدخول ✓ جارٍ التحويل…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، يتنافس عليه أفضل الموردين.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'موردون موثّقون ومصنّفون', l2:'قارن العروض بالأسعار ومتوسط السوق', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية' },
+  en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Procurement platform for contractors', s_auth:'Step 1/3: verifying your credentials…', s_role:'Step 2/3: reading your role…', s_go:'Step 3/3: signed in ✓ redirecting…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, competed for by the best suppliers.', brandP:'Sign in and track your RFQs and offers in one place — from request to purchase order.', l1:'Verified, classified suppliers', l2:'Compare offers vs market average', l3:'Upload a BOQ and auto-route it', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home' },
+  ur: { welcome:'خوش آمدید', sub:'اپنے اکاؤنٹ تک جاری رکھنے کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'نیا اکاؤنٹ بنائیں', error:'غلط ای میل یا پاسورڈ', copyright:'© ۲۰۲۶ تسعیرک · ٹھیکیداروں کے لیے پلیٹ فارم', s_auth:'مرحلہ 1/3: تصدیق ہو رہی ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'مرحلہ 3/3: سائن ان ✓ منتقل ہو رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔', brandH:'ایک درخواست، بہترین سپلائرز کا مقابلہ۔', brandP:'سائن ان کریں اور اپنی درخواستیں اور پیشکشیں ایک جگہ دیکھیں۔', l1:'تصدیق شدہ، درجہ بند سپلائرز', l2:'مارکیٹ اوسط کے مقابلے موازنہ', l3:'BOQ اپ لوڈ کریں اور خودکار تقسیم', remember:'مجھے یاد رکھیں', forgot:'پاسورڈ بھول گئے؟', or:'یا', home:'ہوم' },
 }
 
 function LoginForm() {
@@ -20,6 +19,7 @@ function LoginForm() {
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
@@ -60,19 +60,14 @@ function LoginForm() {
         return
       }
       // No valid server-side session. SELF-HEAL: wipe any stale/corrupt auth
-      // artifacts left behind by older versions of the app (the previous build
-      // stored the session in localStorage; a half-written cookie can also
-      // linger). Clearing them guarantees the next login starts 100% clean and
-      // no login <-> dashboard redirect loop can survive across versions.
+      // artifacts left behind by older versions of the app.
       try { await supabase.auth.signOut({ scope: 'local' }) } catch {}
       try {
-        // 1) Legacy localStorage keys from the old @supabase/supabase-js client
         Object.keys(window.localStorage).forEach((k) => {
           if (k.startsWith('sb-') || k.toLowerCase().includes('supabase')) {
             window.localStorage.removeItem(k)
           }
         })
-        // 2) Any leftover Supabase auth cookies (incl. chunked .0/.1 variants)
         document.cookie.split(';').forEach((c) => {
           const name = c.split('=')[0].trim()
           if (name.startsWith('sb-')) {
@@ -121,62 +116,95 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden" dir={dir}
-      style={{ background: 'linear-gradient(135deg, #0B1D3A 0%, #1B2D5B 50%, #2a4a8a 100%)' }}>
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[5%] right-[10%] w-[500px] h-[500px] bg-[#F5831F]/8 rounded-full blur-3xl" />
-        <div className="absolute bottom-[10%] left-[5%] w-[600px] h-[600px] bg-white/5 rounded-full blur-3xl" />
+    <div className="min-h-screen flex" dir={dir}>
+      {/* ===== Brand panel (hidden on small screens) ===== */}
+      <div className="hidden lg:flex lg:w-[54%] relative overflow-hidden flex-col justify-between p-12 text-white"
+        style={{ background: 'linear-gradient(135deg,#0a1530 0%,#1B2D5B 55%,#2a4a8a 100%)' }}>
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[8%] right-[8%] w-[420px] h-[420px] rounded-full blur-3xl" style={{ background: 'rgba(245,131,31,.12)' }} />
+          <div className="absolute bottom-[6%] left-[6%] w-[480px] h-[480px] rounded-full blur-3xl bg-white/5" />
+        </div>
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="w-11 h-11 rounded-2xl bg-white grid place-items-center shadow-lg"><img src="/logo.png" alt="تسعيرك" className="w-8 h-8 object-contain" /></span>
+          <span className="text-2xl font-extrabold">تسعير<span className="text-orange">ك</span></span>
+        </div>
+        <div className="relative z-10 max-w-md">
+          <h2 className="text-3xl xl:text-[40px] font-extrabold leading-[1.25] mb-4">{t.brandH}</h2>
+          <p className="text-blue-100/80 text-base mb-8 leading-relaxed">{t.brandP}</p>
+          <ul className="space-y-4">
+            {[t.l1, t.l2, t.l3].map((it, i) => (
+              <li key={i} className="flex items-center gap-3 text-[15px] text-blue-50">
+                <span className="w-6 h-6 rounded-full grid place-items-center shrink-0" style={{ background: '#F5831F' }}>
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                </span>{it}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="relative z-10 text-xs text-blue-200/50">{t.copyright}</div>
       </div>
 
-      <div className="absolute top-4 left-4 z-20"><LanguageSwitcher variant="minimal" /></div>
-      <a href="/" className="absolute top-4 right-4 z-20 text-sm font-medium text-white/70 hover:text-white transition-colors">
-        {locale === 'en' ? '🏠 Home' : locale === 'ur' ? '🏠 مرکزی صفحہ' : '🏠 الرئيسية'}
-      </a>
-
-      <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8 animate-fade-in">
-          <img src="/logo-outlined.png" alt="" className="w-24 h-24 mx-auto mb-5 animate-float" />
-          <Logo theme="dark" size="lg" className="justify-center mb-2" variant="wordmark" />
+      {/* ===== Form panel ===== */}
+      <div className="flex-1 flex flex-col" style={{ background: 'var(--bg)' }}>
+        <div className="flex items-center justify-between p-5">
+          <a href="/" className="text-sm font-semibold text-ink-2 hover:text-navy transition-colors">⌂ {t.home}</a>
+          <LanguageSwitcher variant="minimal" />
         </div>
 
-        <div className="bg-white rounded-3xl p-8 shadow-2xl animate-slide-up">
-          <h2 className="text-xl font-bold text-[#1B2D5B] mb-1">{t.welcome}</h2>
-          <p className="text-sm text-gray-500 mb-6">{t.sub}</p>
+        <div className="flex-1 flex items-center justify-center px-5 pb-12">
+          <div className="w-full max-w-[400px] animate-slide-up">
+            <div className="flex lg:hidden items-center gap-3 justify-center mb-7">
+              <span className="w-11 h-11 rounded-2xl grid place-items-center shadow-md" style={{ background: '#1B2D5B' }}><img src="/logo.png" alt="تسعيرك" className="w-8 h-8 object-contain" /></span>
+              <span className="text-2xl font-extrabold text-navy">تسعير<span className="text-orange">ك</span></span>
+            </div>
 
-          {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in">⚠️ {error}</div>}
+            <h1 className="text-[26px] font-extrabold text-navy mb-1">{t.welcome}</h1>
+            <p className="text-ink-2 text-sm mb-6">{t.sub}</p>
 
-          <form onSubmit={handleLogin}>
-            <div className="space-y-4 mb-6">
+            {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in">⚠️ {error}</div>}
+
+            <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="info@company.com" required disabled={loading} />
+                <label className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.email}</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="name@company.com" autoComplete="username" required disabled={loading} />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.password}</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="input-field" placeholder="••••••••" required disabled={loading} />
-                <div className="text-end mt-1.5">
-                  <a href="/forgot-password" className="text-xs font-medium hover:underline" style={{ color: '#F5831F' }}>
-                    {locale === 'en' ? 'Forgot password?' : locale === 'ur' ? 'پاسورڈ بھول گئے؟' : 'نسيت كلمة المرور؟'}
-                  </a>
+                <label className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.password}</label>
+                <div className="relative">
+                  <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="input-field pe-11" placeholder="••••••••" autoComplete="current-password" required disabled={loading} />
+                  <button type="button" onClick={() => setShowPass(s => !s)} aria-label="إظهار كلمة المرور"
+                    className="absolute inset-y-0 end-3 my-auto h-5 w-5 text-ink-3 hover:text-orange-dark transition-colors">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+                  </button>
                 </div>
               </div>
+
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 text-sm text-ink-2 cursor-pointer select-none">
+                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded accent-[#F5831F]" /> {t.remember}
+                </label>
+                <a href="/forgot-password" className="text-[13px] font-bold text-orange-dark hover:underline">{t.forgot}</a>
+              </div>
+
+              <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{t.logging}</span>
+                ) : (
+                  <>{t.login}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] rtl:rotate-180"><path d="M5 12h14M13 6l6 6-6 6" /></svg></>
+                )}
+              </button>
+              {loading && status && <p className="text-center text-xs text-ink-3 mt-1 animate-fade-in">{status}</p>}
+            </form>
+
+            <div className="my-6 flex items-center gap-3 text-ink-3 text-xs">
+              <span className="h-px flex-1" style={{ background: 'var(--line)' }} />{t.or}<span className="h-px flex-1" style={{ background: 'var(--line)' }} />
             </div>
-            <button type="submit" disabled={loading}
-              className="w-full py-3.5 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"
-              style={{ background: '#F5831F' }}>
-              {loading ? <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>{t.logging}</span> : t.login}
-            </button>
-            {loading && status && (
-              <p className="text-center text-xs text-gray-500 mt-3 animate-fade-in">{status}</p>
-            )}
-          </form>
 
-          <p className="text-center text-sm text-gray-500 mt-5">
-            {t.noAccount} <a href="/register" className="font-bold hover:underline" style={{ color: '#F5831F' }}>{t.register}</a>
-          </p>
+            <p className="text-center text-sm text-ink-2">
+              {t.noAccount} <a href="/register" className="font-extrabold text-orange-dark hover:underline">{t.register}</a>
+            </p>
+          </div>
         </div>
-
-        <p className="text-center text-xs text-blue-300/50 mt-6">{t.copyright}</p>
       </div>
     </div>
   )
