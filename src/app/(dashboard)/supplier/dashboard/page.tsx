@@ -17,7 +17,7 @@ const txt = {
     tabRfqs: 'طلبات التسعير', tabOffers: 'عروضي',
     noRfqs: 'لا توجد طلبات مفتوحة', noRfqsSub: 'سيتم إخطارك عند وصول طلبات جديدة',
     noOffers: 'لم تقدم أي عروض بعد', noOffersSub: 'تصفح طلبات التسعير وقدم أول عرض',
-    submitOffer: 'تقديم عرض →', accepted: '✓ مقبول', rejected: '✕ مرفوض', pending: '⏳ قيد المراجعة',
+    submitOffer: 'تقديم عرض →', offerSubmitted: '✓ تم تقديم عرضك — راجِعه', accepted: '✓ مقبول', rejected: '✕ مرفوض', pending: '⏳ قيد المراجعة',
     day: 'يوم', offer: 'عرض', loading: 'جارٍ التحميل...',
     sar: 'ر.س',
   },
@@ -28,7 +28,7 @@ const txt = {
     tabRfqs: 'RFQ Requests', tabOffers: 'My Offers',
     noRfqs: 'No open requests', noRfqsSub: 'You will be notified when new requests arrive',
     noOffers: 'No offers submitted yet', noOffersSub: 'Browse RFQs and submit your first offer',
-    submitOffer: 'Submit Offer →', accepted: '✓ Accepted', rejected: '✕ Rejected', pending: '⏳ Pending',
+    submitOffer: 'Submit Offer →', offerSubmitted: '✓ Offer submitted — review', accepted: '✓ Accepted', rejected: '✕ Rejected', pending: '⏳ Pending',
     day: 'days', offer: 'offer', loading: 'Loading...',
     sar: 'SAR',
   },
@@ -39,7 +39,7 @@ const txt = {
     tabRfqs: 'قیمت کی درخواستیں', tabOffers: 'میری پیشکشیں',
     noRfqs: 'کوئی کھلی درخواست نہیں', noRfqsSub: 'نئی درخواستیں آنے پر آپ کو مطلع کیا جائے گا',
     noOffers: 'ابھی تک کوئی پیشکش نہیں', noOffersSub: 'درخواستیں دیکھیں اور پہلی پیشکش جمع کریں',
-    submitOffer: 'پیشکش جمع کریں →', accepted: '✓ قبول', rejected: '✕ مسترد', pending: '⏳ زیر التواء',
+    submitOffer: 'پیشکش جمع کریں →', offerSubmitted: '✓ پیشکش جمع ہو گئی — دیکھیں', accepted: '✓ قبول', rejected: '✕ مسترد', pending: '⏳ زیر التواء',
     day: 'دن', offer: 'پیشکش', loading: 'لوڈ ہو رہا ہے...',
     sar: 'ریال',
   },
@@ -157,6 +157,7 @@ export default function SupplierDashboard() {
     </div>
   )
 
+  const offeredRfqIds = new Set(myOffers.map((o: any) => o.rfq_id)) // RFQs the supplier already bid on
   const accepted = myOffers.filter(o => o.status === 'accepted').length
   const pending = myOffers.filter(o => o.status === 'pending').length
   const totalRevenue = myOffers.filter(o => o.status === 'accepted').reduce((s, o) => s + (o.total_price || 0), 0)
@@ -348,7 +349,9 @@ export default function SupplierDashboard() {
                           </div>
                         </div>
                       </div>
-                      <div className="text-white text-xs font-semibold px-4 py-2 rounded-xl" style={{ background: '#F5831F' }}>{t.submitOffer}</div>
+                      {offeredRfqIds.has(rfq.id)
+                        ? <div className="text-white text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#0F6E56' }}>{t.offerSubmitted}</div>
+                        : <div className="text-white text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#F5831F' }}>{t.submitOffer}</div>}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
                       <span>📦 {rfq.quantity} {rfq.unit}</span>
