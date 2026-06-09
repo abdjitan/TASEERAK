@@ -36,9 +36,8 @@ export default function OfferDetailPage() {
     if (!confirm('تأكيد قبول هذا العرض؟ سيتم رفض باقي العروض وإغلاق الطلب.')) return
     setActing(true)
     const supabase = createClient()
-    await supabase.from('offers').update({ status: 'accepted', accepted_at: new Date().toISOString() }).eq('id', offerId)
-    await supabase.from('offers').update({ status: 'rejected' }).eq('rfq_id', id).neq('id', offerId).eq('status', 'pending')
-    await supabase.from('rfqs').update({ status: 'closed' }).eq('id', id)
+    const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
+    if (error) { setActing(false); alert('تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة.'); return }
     window.location.href = `/contractor/orders/${offerId}`
   }
 

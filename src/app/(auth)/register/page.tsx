@@ -230,7 +230,7 @@ export default function RegisterPage() {
     try {
       const supabase = createClient()
       const { data } = await supabase.rpc('phone_exists', { p_phone: phone })
-      setPhoneDup(data && data.length > 0 ? { company: data[0].company_name_ar } : null)
+      setPhoneDup(data === true ? { taken: true } : null) // boolean only (no name — privacy)
     } catch { setPhoneDup(null) }
   }
 
