@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import SupportThread from '@/components/shared/SupportThread'
 import DistrictField from '@/components/shared/DistrictField'
 import { REGIONS } from '@/types'
@@ -328,23 +330,8 @@ export default function SettingsPage() {
   )
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ background: '#f4f6f9' }}>
-      <div className="fixed inset-0 pointer-events-none z-0" style={{
-        backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(27,45,91,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(245,131,31,0.04) 0%, transparent 50%)',
-      }} />
-
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="minimal" />
-            <a href={backHref} className="text-xs text-gray-400 hover:text-gray-600">{t.back}</a>
-            <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-red-500">{t.logout}</button>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-4xl mx-auto px-6 py-8 relative z-10">
+    <AppShell title={t.title} company={companyAr} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} onSignOut={handleSignOut} dir={dir}>
+      <div className="max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold mb-8" style={{ color: '#1B2D5B' }}>{t.title}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -765,6 +752,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AppShell>
   )
 }

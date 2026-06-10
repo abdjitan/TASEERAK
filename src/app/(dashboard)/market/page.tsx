@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 
 const txt = {
@@ -109,23 +111,8 @@ export default function MarketPricePage() {
   const sectors = ['all', ...Object.keys(SECTOR_LABELS)]
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ background: '#f4f6f9' }}>
-      <div className="fixed inset-0 pointer-events-none z-0" style={{
-        backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(27,45,91,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(245,131,31,0.04) 0%, transparent 50%)',
-      }} />
-
-      {/* Nav */}
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="minimal" />
-            <a href={backHref} className="text-xs text-gray-400 hover:text-gray-600 hidden sm:block">{T.back}</a>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
+    <AppShell title={T.title} nav={getNav(userRole, locale, '/market')} dir={dir}>
+      <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
@@ -306,6 +293,6 @@ export default function MarketPricePage() {
           </>
         )}
       </div>
-    </div>
+    </AppShell>
   )
 }
