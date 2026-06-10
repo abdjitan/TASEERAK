@@ -580,10 +580,11 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{t.crNumber} *</label>
-                    <input {...register('commercial_registration')} className="input-field" placeholder="1010XXXXXX"
+                    <input {...register('commercial_registration')} className="input-field" placeholder="7001234567"
                       inputMode="numeric" maxLength={10} dir="ltr"
                       onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
                     {errors.commercial_registration && <p className="text-red-500 text-xs mt-1">{errors.commercial_registration.message}</p>}
+                    <p className="text-[10px] text-gray-400 mt-1">{locale === 'en' ? 'Unified CR number (starts with 700) — on your CR certificate' : locale === 'ur' ? 'متحدہ رجسٹریشن نمبر (700 سے شروع) — آپ کے سرٹیفکیٹ پر' : 'الرقم الموحّد للسجل (يبدأ بـ 700) — تجده في شهادة السجل التجاري'}</p>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{cv.idLabel} *</label>

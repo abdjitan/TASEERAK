@@ -146,12 +146,17 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const txt = await res.text().catch(() => '')
+      // The new-legislation "fullinfo" endpoint expects the UNIFIED national
+      // number (starts with 7). An old CR number (1010/4030…) returns 500/404 —
+      // guide the user to the right number instead of a vague error.
+      const looksOldCr = !/^7\d{9}$/.test(cr)
       return NextResponse.json({
         ok: true, mode: 'wathq', verified: false, cr,
         error: 'WATHQ_ERROR', httpStatus: res.status,
         message:
-          res.status === 404 ? 'لم يتم العثور على سجل تجاري بهذا الرقم في واثق'
-          : res.status === 401 || res.status === 403 ? 'مفتاح واثق غير صالح أو الاشتراك منتهي'
+          res.status === 401 || res.status === 403 ? 'مفتاح واثق غير صالح أو الاشتراك منتهي'
+          : looksOldCr ? 'يبدو أنك أدخلت رقم السجل القديم — الرجاء إدخال الرقم الوطني الموحّد للمنشأة (يبدأ بـ 700) الموجود في شهادة السجل التجاري.'
+          : res.status === 404 ? 'لم يتم العثور على سجل تجاري بهذا الرقم في واثق'
           : 'تعذّر التحقق من واثق حالياً، حاول لاحقاً أو ارفع صورة السجل.',
         raw: safeJson(txt),
       })
