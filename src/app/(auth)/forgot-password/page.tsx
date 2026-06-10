@@ -1,11 +1,13 @@
 // @ts-nocheck
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import Turnstile from '@/components/shared/Turnstile'
+import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 
 const txt = {
   ar: {
@@ -41,6 +43,8 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
+  const captchaRef = useRef<any>(null)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -49,10 +53,11 @@ export default function ForgotPasswordPage() {
       const supabase = createClient()
       const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
+        captchaToken: captchaToken || undefined,
       })
-      if (err) { setError(t.err); setLoading(false); return }
+      if (err) { captchaRef.current?.reset(); setCaptchaToken(''); setError(t.err); setLoading(false); return }
       setSent(true)
-    } catch { setError(t.err) }
+    } catch { captchaRef.current?.reset(); setCaptchaToken(''); setError(t.err) }
     setLoading(false)
   }
 
@@ -83,7 +88,10 @@ export default function ForgotPasswordPage() {
               {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">⚠️ {error}</div>}
               <form onSubmit={handleSubmit}>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-5" placeholder="info@company.com" required disabled={loading} />
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-4" placeholder="info@company.com" required disabled={loading} />
+                <div className="flex justify-center mb-5">
+                  <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
+                </div>
                 <button type="submit" disabled={loading}
                   className="w-full py-3.5 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"
                   style={{ background: '#F5831F' }}>

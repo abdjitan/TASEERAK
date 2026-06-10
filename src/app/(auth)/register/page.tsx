@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useForm } from 'react-hook-form'
@@ -12,6 +12,8 @@ import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, getRegionLabel, C
 import DistrictField from '@/components/shared/DistrictField'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import Turnstile from '@/components/shared/Turnstile'
+import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
@@ -149,6 +151,8 @@ export default function RegisterPage() {
   const [formError, setFormError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const captchaRef = useRef<any>(null)
   const [crVerify, setCrVerify] = useState<any>(null)
   const [crDup, setCrDup] = useState<any>(null) // { company } if CR already registered
   const [branchConfirmed, setBranchConfirmed] = useState(false)
@@ -335,6 +339,7 @@ export default function RegisterPage() {
         options: {
           data: meta,
           emailRedirectTo: `${window.location.origin}/login`,
+          captchaToken: captchaToken || undefined,
         },
       })
       if (authError) throw new Error(authError.message)
@@ -381,7 +386,14 @@ export default function RegisterPage() {
       window.location.href = data.role === 'contractor' ? '/contractor' : '/supplier/dashboard'
 
     } catch (err: any) {
-      setFormError(err.message || 'حدث خطأ أثناء التسجيل')
+      // A used/expired CAPTCHA token can't be reused — refresh it for the retry.
+      captchaRef.current?.reset(); setCaptchaToken('')
+      const msg = err?.message || ''
+      setFormError(/captcha/i.test(msg)
+        ? (locale === 'en' ? 'Please complete the “I am human” check and try again.'
+           : locale === 'ur' ? 'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔'
+           : 'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.')
+        : (msg || 'حدث خطأ أثناء التسجيل'))
     } finally {
       setUploading(false)
     }
@@ -934,6 +946,10 @@ export default function RegisterPage() {
                   </a>
                 </span>
               </label>
+
+              <div className="flex justify-center mb-1">
+                <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
+              </div>
 
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep(3)} className="btn-ghost flex-1">{t.back}</button>
