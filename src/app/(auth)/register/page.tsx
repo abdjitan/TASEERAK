@@ -400,55 +400,66 @@ export default function RegisterPage() {
   // Step 1: Choose type
   if (step === 1) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-canvas" dir={dir}>
-        <div className="absolute top-4 left-4"><LanguageSwitcher variant="minimal" /></div>
-        <a href="/" className="absolute top-4 right-4 flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-navy transition-colors">
-          <span>🏠</span>
-          <span>{locale === 'en' ? 'Home' : locale === 'ur' ? 'مرکزی صفحہ' : 'الرئيسية'}</span>
-        </a>
-        <div className="w-full max-w-2xl">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-3 mb-4">
-              <img src="/logo.png" alt="Taseerak" className="w-12 h-12" />
-              <span className="text-2xl font-bold">{locale === 'ar' ? 'تسعيرك' : 'Taseerak'}</span>
+      <div className="min-h-screen bg-canvas" dir={dir}>
+        <header className="bg-white/90 backdrop-blur border-b border-line sticky top-0 z-20">
+          <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/" className="flex items-center gap-2">
+              <span className="w-9 h-9 rounded-xl bg-white border border-line grid place-items-center"><img src="/logo.png" alt="تسعيرك" className="w-7 h-7 object-contain" /></span>
+              <span className="font-extrabold text-navy text-lg">تسعير<span className="text-orange">ك</span></span>
+            </a>
+            <div className="flex items-center gap-3">
+              <LanguageSwitcher variant="minimal" />
+              <a href="/login" className="text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</a>
             </div>
-            <h1 className="text-2xl font-bold text-navy">{t.welcome}</h1>
-            <p className="text-gray-500 mt-2">{t.chooseType}</p>
           </div>
+        </header>
 
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            {[
-              { type: 'contractor' as 'contractor', icon: '👷', title: t.contractor, desc: t.contractorDesc },
-              { type: 'supplier' as 'supplier', icon: '🏪', title: t.supplier, desc: t.supplierDesc },
-            ].map(({ type, icon, title, desc }) => (
-              <button
-                key={type}
-                onClick={() => { setSelectedType(type); setValue('role', type) }}
-                className={`p-6 rounded-2xl border-2 text-center transition-all ${
-                  selectedType === type
-                    ? 'border-[#F5831F] bg-[#F5831F]/5'
-                    : 'border-gray-200 bg-white hover:border-[#F5831F]/40'
-                }`}
-              >
-                <div className="text-3xl mb-2">{icon}</div>
-                <div className="font-semibold text-navy">{title}</div>
-                <div className="text-xs text-gray-500 mt-1">{desc}</div>
-              </button>
+        <div className="max-w-3xl mx-auto px-4 py-6">
+          {/* Stepper — step 1 active */}
+          <div className="flex items-center justify-center gap-2 py-4 mb-4">
+            {[1, 2, 3, 4].map(s => (
+              <div key={s} className="flex items-center gap-2">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${s === 1 ? 'bg-[#F5831F] text-white ring-4 ring-[#F5831F]/20' : 'bg-white border-2 border-gray-200 text-gray-400'}`}>{s}</div>
+                {s < 4 && <div className="w-10 h-1 rounded-full bg-gray-200" />}
+              </div>
             ))}
           </div>
 
-          <button
-            onClick={() => selectedType && setStep(2)}
-            disabled={!selectedType}
-            className="w-full bg-[#1B2D5B] text-white py-3 rounded-xl font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#0f1d3d] transition-colors"
-          >
-            {t.next}
-          </button>
+          <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-line max-w-xl mx-auto">
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-extrabold text-navy">{t.welcome}</h1>
+              <p className="text-ink-2 mt-2">{t.chooseType}</p>
+            </div>
 
-          <p className="text-center text-sm text-gray-500 mt-4">
-            {t.haveAccount}{' '}
-            <a href="/login" className="text-[#d96f15] font-medium hover:underline">{t.login}</a>
-          </p>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { type: 'contractor' as 'contractor', icon: '👷', title: t.contractor, desc: t.contractorDesc },
+                { type: 'supplier' as 'supplier', icon: '🏪', title: t.supplier, desc: t.supplierDesc },
+              ].map(({ type, icon, title, desc }) => (
+                <button
+                  key={type}
+                  onClick={() => { setSelectedType(type); setValue('role', type) }}
+                  className={`p-6 rounded-2xl border-2 text-center transition-all ${
+                    selectedType === type
+                      ? 'border-[#F5831F] bg-[#F5831F]/5'
+                      : 'border-gray-200 bg-white hover:border-[#F5831F]/40'
+                  }`}
+                >
+                  <div className="text-4xl mb-2">{icon}</div>
+                  <div className="font-bold text-navy">{title}</div>
+                  <div className="text-xs text-gray-500 mt-1">{desc}</div>
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => selectedType && setStep(2)}
+              disabled={!selectedType}
+              className="btn-orange w-full mt-6 disabled:opacity-40"
+            >
+              {t.next}
+            </button>
+          </div>
         </div>
       </div>
     )
