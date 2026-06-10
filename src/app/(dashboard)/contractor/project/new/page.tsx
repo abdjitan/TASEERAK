@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, detectSubCategory, getSubCategoryLabel } from '@/types'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
@@ -195,24 +197,8 @@ export default function NewProjectPage() {
   }, {})
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ background: '#f4f6f9' }}>
-      <div className="fixed inset-0 pointer-events-none z-0" style={{
-        backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(27,45,91,0.04) 0%, transparent 50%)',
-      }} />
-
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="minimal" />
-            <a href="/contractor" className="text-xs text-gray-400 hover:text-gray-600">
-              {locale === 'en' ? '← Dashboard' : '← لوحة التحكم'}
-            </a>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 relative z-10">
+    <AppShell title={locale === 'en' ? 'New Project RFQ' : locale === 'ur' ? 'نیا پراجیکٹ' : 'طلب تسعير مشروع'} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
+      <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>
             {locale === 'en' ? '📋 New Project RFQ' : locale === 'ur' ? '📋 نیا پراجیکٹ' : '📋 طلب تسعير مشروع'}
@@ -566,6 +552,6 @@ export default function NewProjectPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   )
 }

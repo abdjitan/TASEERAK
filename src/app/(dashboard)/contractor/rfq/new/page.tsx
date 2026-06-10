@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, getProductLabel, detectSubCategory } from '@/types'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import { useTranslation } from '@/i18n'
 
 const txt = {
@@ -197,22 +199,8 @@ export default function NewRFQPage() {
   }
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ background: '#f4f6f9' }}>
-      <div className="fixed inset-0 pointer-events-none z-0" style={{
-        backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(27,45,91,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(245,131,31,0.04) 0%, transparent 50%)',
-      }} />
-
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="minimal" />
-            <a href="/contractor" className="text-xs text-gray-400 hover:text-gray-600">{t.back}</a>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
+    <AppShell title={t.title} nav={getNav('contractor', locale, '/contractor/rfq/new')} dir={dir}>
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.title}</h1>
           <p className="text-gray-500 mt-1 text-sm">{t.sub}</p>
@@ -510,6 +498,6 @@ export default function NewRFQPage() {
           </div>
         </form>
       </div>
-    </div>
+    </AppShell>
   )
 }

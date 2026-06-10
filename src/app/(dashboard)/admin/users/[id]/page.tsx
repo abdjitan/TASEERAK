@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import SupportThread from '@/components/shared/SupportThread'
 
 const TIER_LABEL = { manufacturer: '🏭 مصنع / مورد رئيسي', commercial: '🏪 مورد تجاري', local: '🏬 مورد محلي' }
@@ -141,18 +143,8 @@ export default function AdminUserDetail() {
   const active = p.is_active !== false
 
   return (
-    <div className="min-h-screen bg-[#f4f6f9]" dir="rtl">
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo theme="light" size="sm" />
-            <span className="text-xs px-2 py-0.5 rounded-full text-white font-bold" style={{ background: '#F5831F' }}>Admin</span>
-          </div>
-          <a href="/admin" className="text-xs text-gray-500 hover:text-gray-800">← رجوع للوحة</a>
-        </div>
-      </nav>
-
-      <div className="max-w-5xl mx-auto px-6 py-8">
+    <AppShell title="تفاصيل المستخدم" nav={getNav('admin', 'ar', '/admin')} dir="rtl">
+      <div className="max-w-5xl mx-auto">
         {msg && <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl p-3">{msg}</div>}
 
         {/* Header */}
@@ -341,6 +333,6 @@ export default function AdminUserDetail() {
           </Section>
         </div>
       </div>
-    </div>
+    </AppShell>
   )
 }

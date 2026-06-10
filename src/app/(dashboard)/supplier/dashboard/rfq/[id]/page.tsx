@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 import { validateUploadFile } from '@/lib/fileSafety'
 
@@ -275,18 +277,8 @@ export default function SupplierRFQPage() {
   }
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ background: '#f4f6f9' }}>
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="minimal" />
-            <a href="/supplier/dashboard" className="text-xs text-gray-400 hover:text-gray-600">{T.back}</a>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
+    <AppShell title={locale === 'en' ? 'Submit Offer' : locale === 'ur' ? 'پیشکش' : 'تقديم عرض'} nav={getNav('supplier', locale, '/supplier/dashboard')} dir={dir}>
+      <div className="max-w-3xl mx-auto">
         {/* RFQ Details */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 mb-5">
           <h2 className="text-lg font-bold mb-4" style={{ color: '#1B2D5B' }}>{rfq.product_name}</h2>
@@ -536,6 +528,6 @@ export default function SupplierRFQPage() {
           </div>
         </div>
       )}
-    </div>
+    </AppShell>
   )
 }

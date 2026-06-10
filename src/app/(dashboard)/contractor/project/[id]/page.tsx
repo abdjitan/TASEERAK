@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
@@ -71,22 +73,8 @@ export default function ProjectResultsPage() {
   )
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ background: '#f4f6f9' }}>
-      <div className="fixed inset-0 pointer-events-none z-0" style={{
-        backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(27,45,91,0.04) 0%, transparent 50%)',
-      }} />
-
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="minimal" />
-            <a href="/contractor" className="text-xs text-gray-400 hover:text-gray-600">← {locale === 'en' ? 'Dashboard' : 'لوحة التحكم'}</a>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 relative z-10">
+    <AppShell title={locale === 'en' ? 'Project Results' : locale === 'ur' ? 'پراجیکٹ نتائج' : 'نتائج المشروع'} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
+      <div className="max-w-5xl mx-auto">
         {/* Project Header */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5 animate-fade-in">
           <div className="flex items-start justify-between gap-4">
@@ -396,6 +384,6 @@ export default function ProjectResultsPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   )
 }

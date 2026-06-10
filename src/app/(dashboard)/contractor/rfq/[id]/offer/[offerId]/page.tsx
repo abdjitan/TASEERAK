@@ -7,6 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
 import { waLink } from '@/lib/wa'
 import Logo from '@/components/shared/Logo'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 
 export default function OfferDetailPage() {
   const { id, offerId } = useParams()
@@ -115,15 +117,8 @@ export default function OfferDetailPage() {
   ) : null
 
   return (
-    <div className="min-h-screen" dir="rtl" style={{ background: '#f4f6f9' }}>
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <a href={`/contractor/rfq/${id}`} className="text-xs text-gray-400 hover:text-gray-600">← رجوع للعروض</a>
-        </div>
-      </nav>
-
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 space-y-5">
+    <AppShell title="تفاصيل العرض" nav={getNav('contractor', 'ar', '/contractor')} dir="rtl">
+      <div className="max-w-3xl mx-auto space-y-5">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ background: '#1B2D5B' }}>📋</div>
           <div>
@@ -281,6 +276,6 @@ export default function OfferDetailPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   )
 }
