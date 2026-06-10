@@ -18,6 +18,12 @@ const WATHQ_KEY = process.env.WATHQ_API_KEY
 const WATHQ_BASE = process.env.WATHQ_API_BASE || 'https://api.wathq.sa'
 const WATHQ_CR_PATH = process.env.WATHQ_CR_PATH || '/sandbox/commercial-registration/fullinfo/'
 
+// SAFETY: never auto-verify from Wathq's sandbox (fixed fake company for any
+// number) unless explicitly allowed. A sandbox path counts as "Wathq off".
+const IS_SANDBOX = /\/sandbox\//.test(WATHQ_CR_PATH)
+const ALLOW_SANDBOX = process.env.WATHQ_ALLOW_SANDBOX === '1' || process.env.WATHQ_ALLOW_SANDBOX === 'true'
+const WATHQ_LIVE = !!WATHQ_KEY && (!IS_SANDBOX || ALLOW_SANDBOX)
+
 export async function POST(req: NextRequest) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -29,7 +35,7 @@ export async function POST(req: NextRequest) {
   if (!/^\d{10}$/.test(cr) || !/^[12]\d{9}$/.test(nationalId)) {
     return NextResponse.json({ ok: false, error: 'bad_input' }, { status: 400 })
   }
-  if (!WATHQ_KEY) return NextResponse.json({ ok: true, verified: false, reason: 'wathq_off' })
+  if (!WATHQ_LIVE) return NextResponse.json({ ok: true, verified: false, reason: 'wathq_off' })
 
   // Only verify against the CR the user actually registered with (anti-tamper).
   const { data: prof } = await supabase.from('profiles').select('commercial_registration, verification_status').eq('id', user.id).single()

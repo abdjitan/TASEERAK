@@ -26,6 +26,14 @@ const WATHQ_KEY = process.env.WATHQ_API_KEY
 const WATHQ_BASE = process.env.WATHQ_API_BASE || 'https://api.wathq.sa'
 const WATHQ_CR_PATH = process.env.WATHQ_CR_PATH || '/sandbox/commercial-registration/fullinfo/'
 
+// SAFETY: Wathq's sandbox returns ONE fixed fake company (masked with x's) for
+// ANY number. It must never act as real verification in production. So unless
+// WATHQ_ALLOW_SANDBOX is explicitly set, a sandbox path is treated as "not
+// connected" → the user gets honest manual review instead of a fake "verified".
+const IS_SANDBOX = /\/sandbox\//.test(WATHQ_CR_PATH)
+const ALLOW_SANDBOX = process.env.WATHQ_ALLOW_SANDBOX === '1' || process.env.WATHQ_ALLOW_SANDBOX === 'true'
+const WATHQ_LIVE = !!WATHQ_KEY && (!IS_SANDBOX || ALLOW_SANDBOX)
+
 function pick(obj: any, paths: string[]): any {
   for (const p of paths) {
     const val = p.split('.').reduce((o: any, k: string) => (o == null ? undefined : o[k]), obj)
@@ -98,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     // 1.5) DEMO MODE (set WATHQ_DEMO=1) — fake data, no subscription needed
     const DEMO = process.env.WATHQ_DEMO === '1' || process.env.WATHQ_DEMO === 'true'
-    if (!WATHQ_KEY && DEMO) {
+    if (!WATHQ_LIVE && DEMO) {
       return NextResponse.json({
         ok: true, mode: 'wathq', verified: true, cr,
         name: 'مؤسسة تجريبية للمقاولات والتوريدات (DEMO)', status: 'نشط',
@@ -108,8 +116,8 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // 2) MANUAL MODE — Wathq not connected yet
-    if (!WATHQ_KEY) {
+    // 2) MANUAL MODE — Wathq not connected (no key, or sandbox-only/test key)
+    if (!WATHQ_LIVE) {
       return NextResponse.json({
         ok: true, mode: 'manual', verified: false, cr,
         message: 'الربط الآلي مع واثق غير مُفعّل بعد — سيتم التوثيق عبر رفع صورة السجل ومراجعة الإدارة.',
