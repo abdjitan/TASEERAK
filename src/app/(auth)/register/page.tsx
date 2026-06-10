@@ -109,6 +109,7 @@ const TR = {
 }
 
 const schema = z.object({
+  full_name: z.string().min(3, 'الاسم مطلوب'),
   role: z.enum(['contractor', 'supplier'] as const),
   company_name_ar: z.string().min(3, 'اسم الشركة مطلوب'),
   company_name_en: z.string().optional(),
@@ -298,6 +299,7 @@ export default function RegisterPage() {
       // (works whether email confirmation is on or off — no session needed).
       const meta: any = {
         role: data.role,
+        full_name: data.full_name || '',
         company_name_ar: data.company_name_ar,
         company_name_en: data.company_name_en || '',
         phone: data.phone || '',
@@ -446,36 +448,43 @@ export default function RegisterPage() {
 
           <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-line max-w-xl mx-auto">
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-extrabold text-navy">{t.welcome}</h1>
-              <p className="text-ink-2 mt-2">{t.chooseType}</p>
+              <h1 className="text-2xl font-extrabold text-navy">{locale === 'en' ? 'Create your account' : locale === 'ur' ? 'اپنا اکاؤنٹ بنائیں' : 'أنشئ حسابك'}</h1>
+              <p className="text-ink-2 mt-2">{locale === 'en' ? 'Start with the basic login info.' : locale === 'ur' ? 'بنیادی لاگ اِن معلومات سے شروع کریں۔' : 'ابدأ بمعلومات الدخول الأساسية.'}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { type: 'contractor' as 'contractor', icon: '👷', title: t.contractor, desc: t.contractorDesc },
-                { type: 'supplier' as 'supplier', icon: '🏪', title: t.supplier, desc: t.supplierDesc },
-              ].map(({ type, icon, title, desc }) => (
-                <button
-                  key={type}
-                  onClick={() => { setSelectedType(type); setValue('role', type) }}
-                  className={`p-6 rounded-2xl border-2 text-center transition-all ${
-                    selectedType === type
-                      ? 'border-[#F5831F] bg-[#F5831F]/5'
-                      : 'border-gray-200 bg-white hover:border-[#F5831F]/40'
-                  }`}
-                >
-                  <div className="text-4xl mb-2">{icon}</div>
-                  <div className="font-bold text-navy">{title}</div>
-                  <div className="text-xs text-gray-500 mt-1">{desc}</div>
-                </button>
-              ))}
+            <div className="space-y-4 text-start">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'Full name' : locale === 'ur' ? 'پورا نام' : 'الاسم الكامل'} *</label>
+                  <input {...register('full_name')} className="input-field" placeholder={locale === 'en' ? 'Mohammed Al-Otaibi' : 'محمد العتيبي'} />
+                  {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
+                  <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel"
+                    inputMode="numeric" maxLength={10} dir="ltr"
+                    onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(null) }} />
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+                </div>
+              </div>
+              {phoneDup && (
+                <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2">⚠ {locale === 'en' ? 'This phone is already registered — use another.' : 'رقم الجوال مسجّل مسبقاً — استخدم رقماً آخر.'}</p>
+              )}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
+                <input {...register('email')} className="input-field" placeholder="name@company.com" type="email" />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
+                <input {...register('password')} className="input-field" type="password" placeholder={t.passwordPh} />
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              </div>
             </div>
 
-            <button
-              onClick={() => selectedType && setStep(2)}
-              disabled={!selectedType}
-              className="btn-orange w-full mt-6 disabled:opacity-40"
-            >
+            <button type="button"
+              onClick={async () => { const ok = await trigger(['full_name', 'phone', 'email', 'password']); if (!ok || phoneDup) return; setStep(2) }}
+              className="btn-orange w-full mt-6">
               {t.next}
             </button>
           </div>
@@ -519,8 +528,23 @@ export default function RegisterPage() {
           {/* Step 2: Company info */}
           {step === 2 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-navy mb-1">{t.companyData}</h2>
+              <h2 className="text-lg font-bold text-navy mb-1">{locale === 'en' ? 'Account type & company' : locale === 'ur' ? 'اکاؤنٹ کی قسم اور کمپنی' : 'نوع الحساب وبيانات الشركة'}</h2>
               <p className="text-sm text-gray-500 mb-5">{t.companyDataSub}</p>
+
+              {/* Account type (role) — chosen before the company details */}
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                {[
+                  { type: 'contractor', icon: '👷', title: t.contractor, desc: t.contractorDesc },
+                  { type: 'supplier', icon: '🏪', title: t.supplier, desc: t.supplierDesc },
+                ].map(({ type, icon, title, desc }) => (
+                  <button key={type} type="button" onClick={() => { setSelectedType(type as any); setValue('role', type as any) }}
+                    className={`p-4 rounded-2xl border-2 text-center transition-all ${selectedType === type ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 bg-white hover:border-[#F5831F]/40'}`}>
+                    <div className="text-3xl mb-1">{icon}</div>
+                    <div className="font-bold text-navy text-sm">{title}</div>
+                    <div className="text-[11px] text-gray-500 mt-0.5">{desc}</div>
+                  </button>
+                ))}
+              </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -663,40 +687,14 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
-                  <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel"
-                    inputMode="numeric" maxLength={10} dir="ltr"
-                    onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(null) }} />
-                  <p className="text-[10px] text-gray-400 mt-1">{t.phoneHint}</p>
-                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
-                  {phoneDup && (
-                    <p className="text-red-600 text-xs mt-1 bg-red-50 border border-red-200 rounded-lg p-2">
-                      ⚠ {locale === 'en' ? 'This phone number is already registered' : locale === 'ur' ? 'یہ فون نمبر پہلے سے رجسٹرڈ ہے' : 'رقم الجوال هذا مسجّل مسبقاً'}{phoneDup.company ? ` («${phoneDup.company}»)` : ''} — {locale === 'en' ? 'use a different number.' : locale === 'ur' ? 'مختلف نمبر استعمال کریں۔' : 'استخدم رقماً آخر.'}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
-                  <input {...register('email')} className="input-field" placeholder="info@company.com" type="email"/>
-                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
-                  <input {...register('password')} className="input-field" type="password" placeholder={t.passwordPh}/>
-                  {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
-                </div>
+                {/* name / phone / email / password are collected in step 1 (Account) */}
               </div>
 
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => setStep(1)} className="btn-ghost flex-1">{t.back}</button>
                 <button type="button" onClick={async () => {
-                  const valid = await trigger([
-                    'company_name_ar', 'commercial_registration', 'vat_number',
-                    'phone', 'email', 'password', 'region', 'city'
-                  ])
+                  if (!selectedType) { setFormError(locale === 'en' ? 'Choose account type (contractor/supplier)' : 'اختر نوع الحساب (مقاول/مورد)'); return }
+                  const valid = await trigger(['company_name_ar', 'commercial_registration', 'vat_number', 'region', 'city'])
                   if (!valid) return
                   if (crDup && !branchConfirmed) {
                     setFormError(locale === 'en' ? 'This commercial registration is already registered — sign in, or confirm it is a separate branch to continue.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن پہلے سے موجود ہے — سائن اِن کریں یا الگ شاخ کی تصدیق کریں۔' : 'هذا السجل التجاري مسجّل مسبقاً — سجّل الدخول، أو أكّد أنه فرع منفصل للمتابعة.')
