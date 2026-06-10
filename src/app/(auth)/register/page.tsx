@@ -670,10 +670,12 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'}</label>
-                  <DistrictField city={watch('city')} value={district} onChange={setDistrict} locale={locale} />
-                </div>
+                {watch('city') && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'}</label>
+                    <DistrictField city={watch('city')} value={district} onChange={setDistrict} locale={locale} />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'Notification language (email/WhatsApp)' : locale === 'ur' ? 'اطلاعات کی زبان' : 'لغة الإشعارات (بريد/واتساب)'}</label>
@@ -863,16 +865,16 @@ export default function RegisterPage() {
                   <p className="text-xs text-gray-500 mb-3">{t.classHintSupplier}</p>
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {[
-                      { key: 'manufacturer', icon: '🏭', label: t.manufacturer, desc: t.manufacturerD },
-                      { key: 'commercial', icon: '🏪', label: t.commercial, desc: t.commercialD },
-                      { key: 'local', icon: '🏬', label: t.local, desc: t.localD },
+                      { key: 'manufacturer', svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 21h18" /><path d="M3 21V11l4 2.5V11l4 2.5V11l4 2.5V8l4 2.5V21" /><path d="M7 7V4l2 1.6L11 4v3" /><path d="M6.5 17h.01M10.5 17h.01M14.5 17h.01M18 17h.01" /></svg>, label: t.manufacturer, desc: t.manufacturerD },
+                      { key: 'commercial', svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M2 8.5 12 4l10 4.5" /><path d="M4 10v10h16V10" /><rect x="9" y="13" width="6" height="7" /><path d="M7 10.5h.01M17 10.5h.01" /></svg>, label: t.commercial, desc: t.commercialD },
+                      { key: 'local', svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M4 9h16l-1-4H5L4 9z" /><path d="M5 9v11h14V9" /><path d="M9 20v-5a3 3 0 0 1 6 0v5" /></svg>, label: t.local, desc: t.localD },
                     ].map(tier => (
                       <button key={tier.key} type="button"
                         onClick={() => setSupplierTier(tier.key as any)}
                         className={`p-3 rounded-xl border-2 text-center transition-all ${
                           supplierTier === tier.key ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'
                         }`}>
-                        <div className="text-xl mb-1">{tier.icon}</div>
+                        <div className="w-10 h-10 rounded-xl grid place-items-center mx-auto mb-1.5" style={{ background: supplierTier === tier.key ? 'rgba(245,131,31,.12)' : '#eef2f8', color: supplierTier === tier.key ? '#F5831F' : '#1B2D5B' }}>{tier.svg}</div>
                         <div className={`text-xs font-bold ${supplierTier === tier.key ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</div>
                         <div className="text-[10px] text-gray-400 mt-0.5">{tier.desc}</div>
                       </button>
