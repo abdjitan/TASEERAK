@@ -354,6 +354,18 @@ export default function RegisterPage() {
         await supabase.from('profiles').update({ license_url: licenseUrl, cr_url: crUrl }).eq('id', userId)
       }
 
+      // Two-factor: the server re-verifies the CR + owner national ID and marks
+      // the account verified ONLY if the ID is a listed owner/manager (trusted).
+      if (crVerify?.verified && /^[12][0-9]{9}$/.test(nationalId)) {
+        try {
+          await fetch('/api/verify-identity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cr: data.commercial_registration, nationalId }),
+          })
+        } catch {}
+      }
+
       if (data.role === 'supplier') {
         try {
           await fetch('/api/classify-supplier', {
