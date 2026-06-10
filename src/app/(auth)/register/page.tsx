@@ -534,12 +534,12 @@ export default function RegisterPage() {
               {/* Account type (role) — chosen before the company details */}
               <div className="grid grid-cols-2 gap-3 mb-5">
                 {[
-                  { type: 'contractor', icon: '👷', title: t.contractor, desc: t.contractorDesc },
-                  { type: 'supplier', icon: '🏪', title: t.supplier, desc: t.supplierDesc },
-                ].map(({ type, icon, title, desc }) => (
+                  { type: 'contractor', title: t.contractor, desc: t.contractorDesc, svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 21V8l6-5 6 5v13" /><path d="M15 21V11l6 4v6" /></svg> },
+                  { type: 'supplier', title: t.supplier, desc: t.supplierDesc, svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg> },
+                ].map(({ type, title, desc, svg }) => (
                   <button key={type} type="button" onClick={() => { setSelectedType(type as any); setValue('role', type as any) }}
                     className={`p-4 rounded-2xl border-2 text-center transition-all ${selectedType === type ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 bg-white hover:border-[#F5831F]/40'}`}>
-                    <div className="text-3xl mb-1">{icon}</div>
+                    <div className="w-12 h-12 rounded-2xl grid place-items-center mx-auto mb-2 text-white transition-colors" style={{ background: selectedType === type ? '#F5831F' : '#1B2D5B' }}>{svg}</div>
                     <div className="font-bold text-navy text-sm">{title}</div>
                     <div className="text-[11px] text-gray-500 mt-0.5">{desc}</div>
                   </button>
@@ -671,7 +671,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'} <span className="text-gray-400 font-normal">({locale === 'en' ? 'optional' : 'اختياري'})</span></label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'}</label>
                   <DistrictField city={watch('city')} value={district} onChange={setDistrict} locale={locale} />
                 </div>
 
