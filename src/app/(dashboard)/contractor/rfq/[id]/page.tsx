@@ -6,6 +6,8 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
 import { waLink } from '@/lib/wa'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 
 export default function RFQDetailPage() {
   const { id } = useParams()
@@ -133,12 +135,8 @@ export default function RFQDetailPage() {
     })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4" dir="rtl">
+    <AppShell title="تفاصيل طلب التسعير" nav={getNav('contractor', 'ar', '/contractor')} dir="rtl">
       <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-6 mt-4">
-          <h1 className="text-xl font-bold text-gray-900">تفاصيل طلب التسعير</h1>
-          <a href="/contractor" className="text-sm text-gray-500 hover:text-gray-700">← رجوع</a>
-        </div>
 
         {/* RFQ Card */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
@@ -448,6 +446,6 @@ export default function RFQDetailPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   )
 }
