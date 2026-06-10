@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { REGIONS, CITIES_BY_REGION } from '@/types'
 import Logo from '@/components/shared/Logo'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 
 // Common building-material categories to search for. The admin can also type a
 // free query. Keep the wedge narrow at launch: 1 city + a few of these.
@@ -136,15 +138,8 @@ export default function DiscoverSuppliersPage() {
   const cities = CITIES_BY_REGION[region] || []
 
   return (
-    <div className="min-h-screen" dir="rtl" style={{ background: '#f4f6f9' }}>
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <a href="/admin" className="text-xs text-gray-400 hover:text-gray-600">← رجوع للوحة الإدارة</a>
-        </div>
-      </nav>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+    <AppShell title="اكتشاف الموردين" nav={getNav('admin', 'ar', '/admin/discover')} dir="rtl">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#1B2D5B' }}>🔎</div>
           <div>
@@ -254,6 +249,6 @@ export default function DiscoverSuppliersPage() {
           </button>
         )}
       </div>
-    </div>
+    </AppShell>
   )
 }

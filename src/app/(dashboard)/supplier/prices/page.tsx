@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS } from '@/types'
 
 const txt = {
@@ -128,18 +130,8 @@ export default function SupplierPricesPage() {
   )
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ background: '#f4f6f9' }}>
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="minimal" />
-            <a href="/supplier/dashboard" className="text-xs text-gray-400 hover:text-gray-600">{T.back}</a>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+    <AppShell title={T.title} nav={getNav('supplier', locale, '/supplier/prices')} dir={dir}>
+      <div className="max-w-4xl mx-auto">
         <div className="mb-4">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#F5831F' }}>📈</div>
@@ -258,6 +250,6 @@ export default function SupplierPricesPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   )
 }

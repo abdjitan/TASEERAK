@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION } from '@/types'
 import DistrictField from '@/components/shared/DistrictField'
 
@@ -64,18 +66,8 @@ export default function SupplierBranchesPage() {
   )
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ background: '#f4f6f9' }}>
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="minimal" />
-            <a href="/supplier/dashboard" className="text-xs text-gray-400 hover:text-gray-600">← رجوع</a>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+    <AppShell title="فروع الشركة" nav={getNav('supplier', 'ar', '/supplier/branches')} dir={dir}>
+      <div className="max-w-4xl mx-auto">
         <div className="mb-4">
           <div className="flex items-center gap-3 mb-1">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#1B2D5B' }}>🏢</div>
@@ -165,6 +157,6 @@ export default function SupplierBranchesPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppShell>
   )
 }
