@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة الإدارة — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Admin Panel" data-admin-page="verify">
+<div class="app">
+
+  <aside id="admin-side" class="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">طلبات التوثيق</div><div class="tb-sub">مراجعة وتوثيق المستخدمين والمواد</div></div>
+      <div class="tb-spacer"></div>
+      <div class="tb-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="ابحث عن مستخدم…"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <!-- stats -->
+      <div class="stats-row">
+        <div class="scard"><div class="ic ic-navy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="v">٢٤</div><div class="l">إجمالي المستخدمين</div></div>
+        <div class="scard"><div class="ic ic-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/></svg></div><div class="v">١٣</div><div class="l">مقاولون</div></div>
+        <div class="scard"><div class="ic ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div><div class="v">١١</div><div class="l">موردون</div></div>
+        <div class="scard"><div class="ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div><div class="v">١٩</div><div class="l">موثّقون</div></div>
+      </div>
+
+      <div class="tabs">
+        <button class="on" data-tab="pending">قيد المراجعة <span style="opacity:.6">٥</span></button>
+        <button data-tab="all">كل المستخدمين</button>
+        <button data-tab="materials">طلبات المواد <span style="opacity:.6">٣</span></button>
+      </div>
+
+      <!-- PENDING -->
+      <div class="tabpane on" data-pane="pending">
+        <div id="pending-list"></div>
+      </div>
+
+      <!-- ALL USERS -->
+      <div class="tabpane" data-pane="all">
+        <div class="panel"><div style="overflow-x:auto"><table class="tbl">
+          <thead><tr><th>المنشأة</th><th>الدور</th><th>التصنيف</th><th>التوثيق</th><th>المنطقة</th><th></th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:700;color:var(--navy)">مصنع الراجحي للحديد</td><td><span class="rolebadge supplier">🏪 مورّد</span></td><td>🏭 مصنع</td><td><span class="vbadge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 12l2 2 4-4"/></svg> موثّق</span></td><td>الرياض</td><td><span class="link">عرض</span></td></tr>
+            <tr><td style="font-weight:700;color:var(--navy)">شركة الإنشاءات الحديثة</td><td><span class="rolebadge contractor">👷 مقاول</span></td><td>تصنيف ب</td><td><span class="vbadge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 12l2 2 4-4"/></svg> موثّق</span></td><td>الرياض</td><td><span class="link">عرض</span></td></tr>
+            <tr><td style="font-weight:700;color:var(--navy)">معرض السيراميك الذهبي</td><td><span class="rolebadge supplier">🏪 مورّد</span></td><td>🏪 موزّع</td><td><span class="pill pill-pend"><span class="d"></span> معلّق</span></td><td>جدة</td><td><span class="link">عرض</span></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <!-- MATERIAL REQUESTS -->
+      <div class="tabpane" data-pane="materials">
+        <div class="panel"><div style="overflow-x:auto"><table class="tbl">
+          <thead><tr><th>المادة المقترحة</th><th>المورّد</th><th>القطاع</th><th>التاريخ</th><th></th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:700;color:var(--navy)">حديد مجلفن</td><td>مصنع الراجحي</td><td><span class="chip c-civil" style="padding:2px 9px">مدني</span></td><td>٤ يونيو</td><td><div style="display:flex;gap:8px"><button class="btn btn-navy" style="padding:6px 14px;font-size:12.5px">اعتماد</button><button class="btn btn-ghost" style="padding:6px 14px;font-size:12.5px">رفض</button></div></td></tr>
+            <tr><td style="font-weight:700;color:var(--navy)">عوازل صوتية</td><td>بلاط الخليج</td><td><span class="chip c-arch" style="padding:2px 9px">معماري</span></td><td>٣ يونيو</td><td><div style="display:flex;gap:8px"><button class="btn btn-navy" style="padding:6px 14px;font-size:12.5px">اعتماد</button><button class="btn btn-ghost" style="padding:6px 14px;font-size:12.5px">رفض</button></div></td></tr>
+            <tr><td style="font-weight:700;color:var(--navy)">قواطع ذكية</td><td>النور للكهرباء</td><td><span class="chip c-elec" style="padding:2px 9px">كهرباء</span></td><td>٢ يونيو</td><td><div style="display:flex;gap:8px"><button class="btn btn-navy" style="padding:6px 14px;font-size:12.5px">اعتماد</button><button class="btn btn-ghost" style="padding:6px 14px;font-size:12.5px">رفض</button></div></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- reject modal -->
+<div class="modal-bg" id="reject-modal">
+  <div class="modal">
+    <h3>سبب الرفض</h3>
+    <p>سيصل السبب للمستخدم عبر البريد.</p>
+    <textarea class="textarea" placeholder="مثال: صورة الرخصة غير واضحة…"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="reject-cancel">إلغاء</button>
+      <button class="btn btn-primary" id="reject-confirm" style="background:#ef4444;box-shadow:none">تأكيد الرفض</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/admin-shell.js"></script>
+<script>
+const PENDING = [
+  { n:"معرض السيراميك الذهبي", role:"supplier", roleLbl:"🏪 مورّد", tier:"🏪 موزّع", cr:"٤٠٣٠١٢٨٨٧٧", official:"معرض السيراميك الذهبي للتجارة", wathq:true, phone:"+966 12 345 6789", region:"جدة", addr:"JEDA2211", ai:"match", aiReason:"النشاط الرسمي (تجارة مواد بناء) يطابق القطاع المعماري" },
+  { n:"مؤسسة التيار الكهربائي", role:"supplier", roleLbl:"🏪 مورّد", tier:"🏬 محلي", cr:"١٠١٠٩٩٨٨٧٧", official:"مؤسسة التيار للمقاولات", wathq:true, phone:"+966 11 555 4433", region:"الرياض", addr:"RRRD2929", ai:"mismatch", aiReason:"النشاط الرسمي (مقاولات) لا يطابق توريد مواد كهرباء" },
+  { n:"شركة عمار للمقاولات", role:"contractor", roleLbl:"👷 مقاول", tier:"تصنيف ج", cr:"١٠١٠٤٤٥٥٦٦", official:"شركة عمار التجارية", wathq:false, phone:"+966 50 111 2233", region:"الدمام", addr:"DMMM1010", ai:"review", aiReason:"يتطلب مراجعة يدوية — الرخصة قيد الرفع" },
+];
+const aiBadge = a => a==='match' ? '<span class="aibadge match">🤖 مطابق</span>' : a==='mismatch' ? '<span class="aibadge mismatch">🤖 غير مطابق</span>' : '<span class="aibadge review">🤖 مراجعة يدوية</span>';
+const wrap = document.getElementById('pending-list');
+PENDING.forEach(u => {
+  const card = document.createElement('div');
+  card.className = 'panel panel-pad';
+  card.style.marginBottom = '14px';
+  card.innerHTML = `
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+      <span class="uavatar" style="background:${u.role==='supplier'?'var(--orange)':'var(--navy)'}">${u.n.charAt(0)}</span>
+      <div style="flex:1;min-width:220px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:800;font-size:16px;color:var(--navy)">${u.n}</span>
+          <span class="rolebadge ${u.role}">${u.roleLbl}</span>
+          <span class="tierb"><span class="ic"></span>${u.tier}</span>
+          ${u.wathq ? '<span class="vbadge wathq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 12l2 2 4-4"/></svg> واثق</span>' : '<span class="pill pill-pend"><span class="d"></span> بانتظار التوثيق</span>'}
+        </div>
+        <div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.9">
+          <div>الاسم الرسمي: <b style="color:var(--navy)">${u.official}</b></div>
+          <div>س.ت: ${u.cr} · ${u.phone}</div>
+          <div>📍 ${u.region} · العنوان الوطني: ${u.addr}</div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          ${aiBadge(u.ai)}
+          <span style="font-size:12px;color:var(--ink-3)">${u.aiReason}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;min-width:150px">
+        <div style="display:flex;gap:8px">
+          <span class="attr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> الرخصة</span>
+          <span class="attr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> الموقع</span>
+        </div>
+        <button class="btn btn-ghost recheck" style="padding:8px 14px;font-size:12.5px">🤖 إعادة فحص</button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-navy verify" style="padding:9px 16px;font-size:13px;flex:1">توثيق</button>
+          <button class="btn btn-ghost reject" style="padding:9px 16px;font-size:13px;color:#ef4444;border-color:rgba(239,68,68,.3)">رفض</button>
+        </div>
+      </div>
+    </div>`;
+  wrap.appendChild(card);
+});
+
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.toggle('on', p.dataset.pane === b.dataset.tab));
+}));
+document.querySelectorAll('.verify').forEach(b => b.addEventListener('click', () => {
+  const card = b.closest('.panel'); card.style.opacity = '.55';
+  b.textContent = '✓ تم التوثيق'; b.disabled = true;
+}));
+const modal = document.getElementById('reject-modal');
+document.querySelectorAll('.reject').forEach(b => b.addEventListener('click', () => modal.classList.add('show')));
+document.getElementById('reject-cancel').addEventListener('click', () => modal.classList.remove('show'));
+document.getElementById('reject-confirm').addEventListener('click', () => modal.classList.remove('show'));
+document.querySelectorAll('.recheck').forEach(b => b.addEventListener('click', () => { b.textContent = '🤖 جارٍ الفحص…'; setTimeout(() => b.textContent = '🤖 إعادة فحص', 900); }));
+</script>
+</body>
+</html>

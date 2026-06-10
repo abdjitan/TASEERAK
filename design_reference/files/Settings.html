@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الإعدادات — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Settings">
+<div class="app">
+
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section">المورّد</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Supplier Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> الرئيسية</a>
+      <a class="side-item" href="Supplier Offer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> طلبات واردة <span class="count">٨</span></a>
+      <a class="side-item" href="Supplier Prices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> أسعاري</a>
+      <a class="side-item" href="Supplier Specialties.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> تخصصاتي</a>
+      <a class="side-item" href="Supplier Branches.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg> فروع الشركة</a>
+    </nav>
+    <div class="side-section">الحساب</div>
+    <nav class="side-nav">
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 7.5 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15"/></svg> الإعدادات</a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av" style="background:var(--orange)">ر</span><div><div class="nm">مصنع الراجحي للحديد</div><div class="rl">مُصنّع · موثّق ✓</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">الإعدادات</div><div class="tb-sub">إدارة حسابك ومنشأتك والتوثيق</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="utabs">
+        <button class="on" data-tab="profile">الملف</button>
+        <button data-tab="docs">المستندات والتوثيق</button>
+        <button data-tab="class">التصنيف والخدمات</button>
+        <button data-tab="security">كلمة المرور</button>
+        <button data-tab="prefs">التفضيلات</button>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="tabpane on" data-pane="profile">
+        <div class="panel panel-pad" style="max-width:760px">
+          <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:18px">بيانات المنشأة</h3>
+          <div class="row-2">
+            <div class="field"><label>اسم المنشأة (عربي)</label><input class="input" value="مصنع الراجحي للحديد"></div>
+            <div class="field"><label>اسم المنشأة (إنجليزي)</label><input class="input" value="Al-Rajhi Steel Mill" dir="ltr"></div>
+          </div>
+          <div class="row-2">
+            <div class="field"><label>رقم السجل التجاري</label><input class="input num" value="١٠١٠٤٢٨٨٩٠"></div>
+            <div class="field"><label>الرقم الضريبي (VAT)</label><input class="input num" value="٣٠٠٤٢٨٨٩٠٠٠٠٠٣"></div>
+          </div>
+          <div class="row-3">
+            <div class="field"><label>الجوال</label><div class="input-group"><span class="input-affix">+966</span><input class="input num" value="11 876 5432"></div></div>
+            <div class="field"><label>المنطقة</label><select class="select"><option>منطقة الرياض</option><option>المنطقة الشرقية</option></select></div>
+            <div class="field"><label>المدينة</label><input class="input" value="الرياض"></div>
+          </div>
+          <button class="btn btn-primary" id="save-profile">حفظ التغييرات</button>
+        </div>
+      </div>
+
+      <!-- DOCS & VERIFICATION -->
+      <div class="tabpane" data-pane="docs">
+        <div class="grid-3-2">
+          <div>
+            <div class="panel panel-pad" style="margin-bottom:20px">
+              <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:6px">المستندات</h3>
+              <p style="font-size:12.5px;color:var(--ink-3);margin-bottom:16px">تُحفظ بشكل خاص وتُعرض عبر روابط آمنة للإدارة فقط.</p>
+              <div style="display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:12px;margin-bottom:12px">
+                <span class="lic" style="width:42px;height:42px;background:rgba(15,110,86,.1);color:var(--mech);border-radius:11px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13l2 2 4-4"/></svg></span>
+                <div style="flex:1"><div style="font-weight:700;font-size:14px">الرخصة التجارية.pdf</div><div style="font-size:12px;color:var(--mech);font-weight:700">✓ تم الرفع</div></div>
+                <span class="link">عرض آمن</span>
+              </div>
+              <div class="filebox" style="padding:22px">
+                <div class="fic" style="width:44px;height:44px;margin-bottom:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></div>
+                <div class="ft" style="font-size:14px">ارفع السجل التجاري</div>
+                <div class="fs">PDF · حتى 10 ميجا</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wathq verify -->
+          <div>
+            <div class="panel panel-pad" style="background:linear-gradient(155deg,var(--navy),var(--navy-deep));color:#fff">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--orange-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg>
+                <h3 style="color:#fff;font-size:16px;font-weight:800">التوثيق عبر واثق</h3>
+              </div>
+              <p style="color:rgba(255,255,255,.78);font-size:13px;margin-bottom:14px">أدخل رقم السجل التجاري للتحقق الرسمي الفوري.</p>
+              <div class="input-group" style="margin-bottom:12px">
+                <input class="input" id="wathq-cr" value="١٠١٠٤٢٨٨٩٠" style="background:rgba(255,255,255,.95)">
+                <span class="input-affix" id="wathq-btn" style="cursor:pointer;background:var(--orange);color:#fff;border-color:var(--orange)">تحقّق</span>
+              </div>
+              <div id="wathq-result" style="display:none;background:rgba(255,255,255,.1);border:1px solid rgba(95,214,171,.4);border-radius:12px;padding:14px">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="vbadge green" style="background:rgba(95,214,171,.2);color:#5fd6ab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 12l2 2 4-4"/></svg> تم التحقق</span></div>
+                <div style="font-size:13px;color:rgba(255,255,255,.85);line-height:1.9">
+                  <div>الاسم الرسمي: <b style="color:#fff">مصنع الراجحي للحديد المحدودة</b></div>
+                  <div>النشاط: <b style="color:#fff">تصنيع منتجات الحديد والصلب</b></div>
+                  <div>الحالة: <b style="color:#5fd6ab">سارية</b></div>
+                </div>
+              </div>
+              <div id="wathq-status" style="font-size:12.5px;color:rgba(255,255,255,.6);margin-top:10px">الحالة الحالية: <b style="color:#5fd6ab">موثّق ✓</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLASSIFICATION -->
+      <div class="tabpane" data-pane="class">
+        <div class="panel panel-pad" style="max-width:620px">
+          <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:6px">تصنيف المورّد</h3>
+          <p style="font-size:12.5px;color:var(--ink-3);margin-bottom:16px">يحدّد حجم الطلبات التي تصلك.</p>
+          <div class="role-tabs" style="grid-template-columns:repeat(3,1fr)">
+            <div class="role-tab sel"><div class="ri">🏭</div><div class="rt">مصنع / كبير</div><div class="rd">إنتاج ضخم</div></div>
+            <div class="role-tab"><div class="ri">🏪</div><div class="rt">موزّع تجاري</div><div class="rd">كميات متوسطة</div></div>
+            <div class="role-tab"><div class="ri">🏬</div><div class="rt">مورّد محلي</div><div class="rd">كميات صغيرة</div></div>
+          </div>
+          <div class="field" style="margin:18px 0 0"><label>الحد الأدنى لقيمة الطلب</label><div class="input-group"><span class="input-affix">ر.س</span><input class="input num" value="5000"></div></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+            <button class="btn btn-primary">حفظ التصنيف</button>
+            <a href="Supplier Specialties.html" class="btn btn-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:17px;height:17px"><path d="M20 6L9 17l-5-5"/></svg> إدارة الخدمات والتخصصات</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECURITY / CHANGE PASSWORD -->
+      <div class="tabpane" data-pane="security">
+        <div class="panel panel-pad" style="max-width:520px">
+          <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:6px">تغيير كلمة المرور</h3>
+          <p style="font-size:12.5px;color:var(--ink-3);margin-bottom:18px">اختر كلمة مرور قوية لا تقل عن ٨ أحرف.</p>
+          <form id="pw-form" novalidate>
+            <div class="field"><label>كلمة المرور الحالية</label>
+              <div class="password-wrap"><input class="input" type="password" id="cp0" placeholder="••••••••"><svg class="eye" data-for="cp0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+            </div>
+            <div class="field"><label>كلمة المرور الجديدة</label>
+              <div class="password-wrap"><input class="input" type="password" id="cp1" placeholder="٨ أحرف على الأقل"><svg class="eye" data-for="cp1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+            </div>
+            <div class="field"><label>تأكيد كلمة المرور الجديدة</label>
+              <div class="password-wrap"><input class="input" type="password" id="cp2" placeholder="أعد الإدخال"><svg class="eye" data-for="cp2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
+              <div class="hint" id="pw-hint" style="display:none;color:#ef4444">كلمتا المرور غير متطابقتين</div>
+            </div>
+            <button type="submit" class="btn btn-primary">تحديث كلمة المرور</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- PREFERENCES -->
+      <div class="tabpane" data-pane="prefs">
+        <div class="panel panel-pad" style="max-width:560px">
+          <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:16px">التفضيلات</h3>
+          <div class="field"><label>لغة الواجهة</label>
+            <div class="choice-row">
+              <span class="choice sel">العربية</span><span class="choice">English</span><span class="choice">اردو</span>
+            </div>
+          </div>
+          <div class="toggle on" style="margin-bottom:12px"><div><div class="tl">إشعارات الطلبات الجديدة</div><div class="td">عند وصول طلب مطابق لتخصصك</div></div><span class="sw"></span></div>
+          <div class="toggle on" style="margin-bottom:20px"><div><div class="tl">إشعارات قبول العروض</div><div class="td">عند قبول/رفض عرضك</div></div><span class="sw"></span></div>
+          <button class="btn btn-ghost" style="color:#ef4444;border-color:rgba(239,68,68,.3)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg> تسجيل الخروج</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/shell.js"></script>
+<script>
+document.querySelectorAll('.utabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.utabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.toggle('on', p.dataset.pane === b.dataset.tab));
+}));
+document.querySelectorAll('.toggle').forEach(t => t.addEventListener('click', () => t.classList.toggle('on')));
+document.querySelectorAll('.role-tab').forEach(t => t.addEventListener('click', () => { document.querySelectorAll('.role-tab').forEach(x => x.classList.remove('sel')); t.classList.add('sel'); }));
+document.querySelectorAll('.choice-row .choice').forEach(c => c.addEventListener('click', () => { c.parentElement.querySelectorAll('.choice').forEach(x => x.classList.remove('sel')); c.classList.add('sel'); }));
+document.getElementById('wathq-btn').addEventListener('click', () => { document.getElementById('wathq-result').style.display = 'block'; });
+document.querySelectorAll('.eye').forEach(eye => eye.addEventListener('click', () => { const i = document.getElementById(eye.dataset.for); const s = i.type === 'password'; i.type = s ? 'text' : 'password'; eye.style.color = s ? 'var(--orange-dark)' : 'var(--ink-3)'; }));
+var pwf = document.getElementById('pw-form');
+pwf && pwf.addEventListener('submit', e => {
+  e.preventDefault();
+  const p1 = document.getElementById('cp1').value, p2 = document.getElementById('cp2').value;
+  if (p1.length < 8) { document.getElementById('cp1').style.borderColor = '#ef4444'; return; }
+  if (p1 !== p2) { document.getElementById('pw-hint').style.display = 'block'; document.getElementById('cp2').style.borderColor = '#ef4444'; return; }
+  const b = e.target.querySelector('button'); b.textContent = '✓ تم تحديث كلمة المرور'; b.classList.remove('btn-primary'); b.classList.add('btn-navy');
+});
+var sp = document.getElementById('save-profile');
+sp && sp.addEventListener('click', () => { sp.textContent = '✓ تم الحفظ'; sp.classList.remove('btn-primary'); sp.classList.add('btn-navy'); });
+</script>
+</body>
+</html>

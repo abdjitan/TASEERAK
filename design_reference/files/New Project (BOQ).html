@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مشروع BOQ جديد — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+</head>
+<body class="app-body">
+<div class="app" data-screen-label="New Project (BOQ)">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section" data-i18n="n_menu">القائمة</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Contractor Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> <span data-i18n="n_home">الرئيسية</span></a>
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> <span data-i18n="n_boq">مشروع BOQ جديد</span></a>
+      <a class="side-item" href="New RFQ.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> <span data-i18n="n_rfq">طلب تسعير جديد</span></a>
+      <a class="side-item" href="Project Results.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> <span data-i18n="n_myrfq">طلباتي</span> <span class="count">6</span></a>
+      <a class="side-item" href="Price Index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg> <span data-i18n="n_price">مؤشر الأسعار</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user">
+        <span class="av">ش</span>
+        <div><div class="nm">شركة الإنشاءات الحديثة</div><div class="rl" data-i18n="role_contractor">مقاول · تصنيف ب</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title" data-i18n="tb_boq_t">مشروع BOQ جديد</div><div class="tb-sub" data-i18n="tb_boq_s">ارفع جدول الكميات ووزّعه على الموردين</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="crumbs">
+        <a href="Contractor Dashboard.html">الرئيسية</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <span>مشروع BOQ جديد</span>
+      </div>
+
+      <div class="grid-3-2">
+        <!-- LEFT: upload + table -->
+        <div>
+          <!-- Step A: upload -->
+          <div class="panel panel-pad" id="upload-card" style="margin-bottom:20px">
+            <div class="field" style="margin-bottom:14px">
+              <label>اسم المشروع</label>
+              <input class="input" value="برج سكني — حي الياسمين" id="proj-name">
+            </div>
+            <div class="row-2">
+              <div class="field"><label>المدينة</label>
+                <select class="select"><option>الرياض</option><option>جدة</option><option>الدمام</option><option>الخبر</option><option>مكة</option></select>
+              </div>
+              <div class="field"><label>موعد التسليم المطلوب</label>
+                <input class="input" type="text" value="خلال ٣٠ يوم"></div>
+            </div>
+
+            <label style="display:block;font-size:13.5px;font-weight:700;color:var(--navy);margin-bottom:7px">جدول الكميات (BOQ)</label>
+            <div class="filebox" id="filebox">
+              <div class="fic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></div>
+              <div class="ft">اسحب ملف الـ BOQ هنا أو اضغط للرفع</div>
+              <div class="fs">يدعم Excel (.xlsx) و CSV — حتى 10 ميجابايت</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:14px;font-size:13px;color:var(--ink-3)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h0"/></svg>
+              لا تملك ملف جاهز؟ <a href="#" style="font-weight:700;color:var(--orange-dark)" id="sample-link">جرّب نموذجاً تجريبياً</a>
+            </div>
+          </div>
+
+          <!-- Step B: extracted table (hidden until upload) -->
+          <div class="panel" id="extract-card" style="display:none">
+            <div class="panel-head">
+              <h3>البنود المستخرجة <span class="pill pill-info" style="margin-inline-start:6px"><span class="d"></span> تصنيف تلقائي</span></h3>
+              <span class="link" id="add-row">+ إضافة بند</span>
+            </div>
+            <div style="overflow-x:auto">
+              <table class="tbl" id="boq-table">
+                <thead>
+                  <tr><th>المادة</th><th>الكمية</th><th>الوحدة</th><th>القطاع المكتشف</th><th></th></tr>
+                </thead>
+                <tbody id="boq-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: summary -->
+        <div>
+          <div class="panel panel-pad summary">
+            <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:6px">ملخص الطلب</h3>
+            <p style="font-size:13px;color:var(--ink-3);margin-bottom:14px">يُرسل كل بند تلقائياً للموردين المختصين بقطاعه.</p>
+
+            <div class="sum-row"><span class="k">إجمالي البنود</span><span class="v" id="sum-items">٠</span></div>
+            <div class="sum-row"><span class="k">القطاعات المشمولة</span><span class="v" id="sum-sectors">٠</span></div>
+            <div class="sum-row"><span class="k">موردون مطابقون</span><span class="v" id="sum-suppliers">٠</span></div>
+
+            <div style="margin:16px 0 8px;font-size:12px;font-weight:800;color:var(--ink-3)">التوزيع على القطاعات</div>
+            <div id="sector-breakdown" style="display:grid;gap:9px">
+              <div class="empty" style="padding:24px 0"><p>ارفع الملف لعرض التوزيع</p></div>
+            </div>
+
+            <button class="btn btn-primary btn-block btn-lg2" id="send-btn" style="margin-top:18px" disabled>
+              إرسال للموردين
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+            <p style="text-align:center;font-size:12px;color:var(--ink-3);margin-top:10px">بدون عمولة على التسعير</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app-i18n.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+const SECT = {
+  civil: { name: "مدني", cls: "c-civil", tcls: "t-civil", color: "#1B2D5B" },
+  arch:  { name: "معماري", cls: "c-arch", tcls: "t-arch", color: "#7c3aed" },
+  elec:  { name: "كهرباء", cls: "c-elec", tcls: "t-elec", color: "#F5831F" },
+  mech:  { name: "ميكانيك", cls: "c-mech", tcls: "t-mech", color: "#0F6E56" },
+};
+const SAMPLE = [
+  { m: "حديد تسليح Ø16", q: "٤٢", u: "طن", s: "civil" },
+  { m: "أسمنت بورتلاندي", q: "٣٢٠", u: "كيس", s: "civil" },
+  { m: "بلاط بورسلان 60×60", q: "٨٥٠", u: "م²", s: "arch" },
+  { m: "دهان جوتن داخلي", q: "٤٨٠", u: "لتر", s: "arch" },
+  { m: "كابل XLPE 4×16", q: "٣٢٠", u: "م", s: "elec" },
+  { m: "لوحة توزيع 12 خط", q: "٦", u: "قطعة", s: "elec" },
+  { m: "مواسير PPR 1\"", q: "١٨٠", u: "م", s: "mech" },
+  { m: "مضخة مياه 2HP", q: "٤", u: "قطعة", s: "mech" },
+];
+const SUP = { civil: 14, arch: 11, elec: 9, mech: 7 };
+
+const body = document.getElementById('boq-body');
+const fmtAr = n => n.toLocaleString('ar-EG');
+
+function sectorOptions(sel) {
+  return Object.entries(SECT).map(([k, v]) =>
+    `<option value="${k}" ${k === sel ? 'selected' : ''}>${v.name}</option>`).join('');
+}
+function addRow(item) {
+  const tr = document.createElement('tr');
+  tr.className = 'fade-up';
+  tr.dataset.sector = item.s;
+  tr.innerHTML = `
+    <td style="min-width:180px"><input class="cell" value="${item.m}"></td>
+    <td style="width:90px"><input class="cell num" value="${item.q}"></td>
+    <td style="width:90px"><input class="cell" value="${item.u}"></td>
+    <td style="width:140px">
+      <select class="select sect-sel" style="padding:7px 30px 7px 10px;font-size:13px;font-weight:700">${sectorOptions(item.s)}</select>
+    </td>
+    <td style="width:40px"><span class="icon-btn del" style="width:32px;height:32px;background:transparent;color:var(--ink-3);cursor:pointer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span></td>`;
+  body.appendChild(tr);
+  tr.querySelector('.del').addEventListener('click', () => { tr.remove(); recompute(); });
+  tr.querySelector('.sect-sel').addEventListener('change', e => { tr.dataset.sector = e.target.value; recompute(); });
+}
+function recompute() {
+  const rows = [...body.querySelectorAll('tr')];
+  const counts = {};
+  rows.forEach(r => counts[r.dataset.sector] = (counts[r.dataset.sector] || 0) + 1);
+  const sectors = Object.keys(counts);
+  document.getElementById('sum-items').textContent = fmtAr(rows.length);
+  document.getElementById('sum-sectors').textContent = fmtAr(sectors.length);
+  let sup = 0; sectors.forEach(s => sup += SUP[s] || 0);
+  document.getElementById('sum-suppliers').textContent = fmtAr(sup);
+  // breakdown bars
+  const bd = document.getElementById('sector-breakdown');
+  if (!rows.length) { bd.innerHTML = '<div class="empty" style="padding:24px 0"><p>ارفع الملف لعرض التوزيع</p></div>'; }
+  else {
+    const max = Math.max(...Object.values(counts));
+    bd.innerHTML = sectors.map(s => {
+      const v = SECT[s];
+      return `<div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;margin-bottom:4px">
+          <span style="color:${v.color}">${v.name}</span><span style="color:var(--ink-3)">${fmtAr(counts[s])} بند</span>
+        </div>
+        <div class="bar-line"><span style="width:${counts[s] / max * 100}%;background:${v.color}"></span></div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('send-btn').disabled = rows.length === 0;
+}
+function loadSample() {
+  document.getElementById('upload-card').style.display = 'none';
+  document.getElementById('extract-card').style.display = 'block';
+  body.innerHTML = '';
+  SAMPLE.forEach((it, i) => setTimeout(() => { addRow(it); recompute(); }, i * 90));
+}
+document.getElementById('filebox').addEventListener('click', loadSample);
+document.getElementById('sample-link').addEventListener('click', e => { e.preventDefault(); loadSample(); });
+document.getElementById('add-row').addEventListener('click', () => { addRow({ m: "بند جديد", q: "١", u: "قطعة", s: "civil" }); recompute(); });
+document.getElementById('send-btn').addEventListener('click', () => { window.location.href = 'Project Results.html'; });
+</script>
+</body>
+</html>

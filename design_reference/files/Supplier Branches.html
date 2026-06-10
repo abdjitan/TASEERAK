@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>فروعي — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Supplier Branches">
+<div class="app">
+
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section">المورّد</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Supplier Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> الرئيسية</a>
+      <a class="side-item" href="Supplier Offer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> طلبات واردة <span class="count">٨</span></a>
+      <a class="side-item" href="Supplier Prices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> أسعاري</a>
+      <a class="side-item" href="Supplier Specialties.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> تخصصاتي</a>
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9v.01M9 13v.01M9 17v.01"/></svg> فروع الشركة</a>
+    </nav>
+    <div class="side-section">الحساب</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 7.5 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15"/></svg> الإعدادات</a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av" style="background:var(--orange)">د</span><div><div class="nm">دهانات الخليج</div><div class="rl">موزّع · موثّق ✓</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">فروع الشركة</div><div class="tb-sub">أضف فروعك لتصلك طلبات كل منطقة فيها فرع</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="banner info">
+        <span class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div class="bmain"><div class="bt">شركتك في أكثر من منطقة؟</div><div class="bs">مثلاً: شركة دهانات لها فروع في عدة مناطق — أضفها لتصلك طلبات «القريبون فقط» في كل منطقة فيها فرع.</div></div>
+        <span style="font-weight:800;color:var(--navy)" id="branch-count">٣ فروع</span>
+      </div>
+
+      <div class="grid-3-2">
+        <!-- branches list -->
+        <div class="panel">
+          <div class="panel-head"><h3>فروعي</h3></div>
+          <div class="panel-pad" id="branch-list">
+            <div class="branch">
+              <span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></span>
+              <div class="bmain">
+                <div class="bn">الفرع الرئيسي — الرياض</div>
+                <div class="bmeta"><span class="chip c-civil" style="padding:2px 9px">الرياض</span> <span>حي السلي</span> <span dir="ltr">+966 11 456 7890</span></div>
+              </div>
+              <span class="dismiss del" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span>
+            </div>
+            <div class="branch">
+              <span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></span>
+              <div class="bmain">
+                <div class="bn">فرع جدة</div>
+                <div class="bmeta"><span class="chip c-arch" style="padding:2px 9px">مكة المكرمة</span> <span>حي الصفا</span> <span dir="ltr">+966 12 345 6789</span></div>
+              </div>
+              <span class="dismiss del" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span>
+            </div>
+            <div class="branch">
+              <span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></span>
+              <div class="bmain">
+                <div class="bn">فرع الدمام</div>
+                <div class="bmeta"><span class="chip c-elec" style="padding:2px 9px">المنطقة الشرقية</span> <span>حي الفيصلية</span> <span dir="ltr">+966 13 876 5432</span></div>
+              </div>
+              <span class="dismiss del" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- add branch form -->
+        <div>
+          <div class="panel panel-pad summary">
+            <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:14px">إضافة فرع</h3>
+            <div class="field"><label>اسم الفرع <span style="color:#ef4444">*</span></label><input class="input" id="b-name" placeholder="مثال: فرع القصيم"></div>
+            <div class="field"><label>المنطقة <span style="color:#ef4444">*</span></label>
+              <select class="select" id="b-region"><option value="">اختر المنطقة</option><option>الرياض</option><option>مكة المكرمة</option><option>المنطقة الشرقية</option><option>المدينة المنورة</option><option>القصيم</option><option>عسير</option></select>
+            </div>
+            <div class="row-2">
+              <div class="field"><label>المدينة</label><input class="input" id="b-city" placeholder="المدينة"></div>
+              <div class="field"><label>الحي</label><input class="input" id="b-district" placeholder="الحي"></div>
+            </div>
+            <div class="field"><label>جوال الفرع</label><div class="input-group"><span class="input-affix">+966</span><input class="input num" id="b-phone" placeholder="5X XXX XXXX"></div></div>
+            <div class="field" style="margin-bottom:14px"><label>العنوان</label><input class="input" id="b-addr" placeholder="العنوان التفصيلي"></div>
+            <button class="btn btn-primary btn-block btn-lg2" id="add-branch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> إضافة الفرع</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/shell.js"></script>
+<script>
+const regionCls = { "الرياض":"c-civil", "مكة المكرمة":"c-arch", "المنطقة الشرقية":"c-elec", "المدينة المنورة":"c-mech", "القصيم":"c-civil", "عسير":"c-arch" };
+const list = document.getElementById('branch-list');
+function recount() { document.getElementById('branch-count').textContent = list.querySelectorAll('.branch').length.toLocaleString('ar-EG') + ' فروع'; }
+function bindDel(el) { el.querySelector('.del').addEventListener('click', () => { el.remove(); recount(); }); }
+list.querySelectorAll('.branch').forEach(bindDel);
+document.getElementById('add-branch').addEventListener('click', () => {
+  const name = document.getElementById('b-name').value.trim();
+  const region = document.getElementById('b-region').value;
+  if (!name) { document.getElementById('b-name').style.borderColor = '#ef4444'; return; }
+  if (!region) { document.getElementById('b-region').style.borderColor = '#ef4444'; return; }
+  const city = document.getElementById('b-city').value.trim();
+  const district = document.getElementById('b-district').value.trim();
+  const phone = document.getElementById('b-phone').value.trim();
+  const div = document.createElement('div');
+  div.className = 'branch fade-up';
+  div.innerHTML = `
+    <span class="bi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg></span>
+    <div class="bmain">
+      <div class="bn">${name}</div>
+      <div class="bmeta"><span class="chip ${regionCls[region]||'c-civil'}" style="padding:2px 9px">${region}</span> ${city?'<span>'+city+'</span>':''} ${district?'<span>'+district+'</span>':''} ${phone?'<span dir="ltr">+966 '+phone+'</span>':''}</div>
+    </div>
+    <span class="dismiss del" title="حذف"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span>`;
+  list.appendChild(div); bindDel(div); recount();
+  ['b-name','b-city','b-district','b-phone','b-addr'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('b-region').value = '';
+});
+</script>
+</body>
+</html>

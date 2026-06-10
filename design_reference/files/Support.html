@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الدعم — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Support">
+<div class="app">
+
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section">القائمة</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Contractor Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> الرئيسية</a>
+      <a class="side-item" href="New RFQ.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> طلب تسعير جديد</a>
+      <a class="side-item" href="Project Results.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> طلباتي</a>
+    </nav>
+    <div class="side-section">الحساب</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Contractor Settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 7.5 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15"/></svg> الإعدادات</a>
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> الدعم</a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av">ش</span><div><div class="nm">شركة الإنشاءات الحديثة</div><div class="rl">مقاول · تصنيف ب</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">الدعم</div><div class="tb-sub">راسل فريق المنصة وسنردّ عليك هنا</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="chat-main" style="height:calc(100vh - 64px)">
+      <div class="chat-head">
+        <span class="uavatar" style="width:40px;height:40px;font-size:15px;background:var(--navy)"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></span>
+        <div><div style="font-weight:800;color:var(--navy)">فريق دعم تسعيرك</div><div style="font-size:12px;color:var(--mech);font-weight:700">● متصل عادةً خلال ساعة</div></div>
+      </div>
+      <div class="chat-msgs" id="msgs">
+        <div class="bubble them">مرحباً 👋 كيف نقدر نساعدك اليوم؟<div class="bt2">١٠:٠٢ ص</div></div>
+        <div class="bubble me">عندي استفسار عن توثيق حسابي عبر واثق<div class="bt2">١٠:٠٤ ص</div></div>
+        <div class="bubble them">بكل سرور. أرسل رقم السجل التجاري من صفحة الإعدادات ← التوثيق، وسيتم التحقق فوراً. هل تحتاج مساعدة في خطوة معينة؟<div class="bt2">١٠:٠٥ ص</div></div>
+      </div>
+      <div class="chat-compose">
+        <input id="ci" placeholder="اكتب رسالتك…">
+        <button class="send" id="cs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/shell.js"></script>
+<script>
+const msgs = document.getElementById('msgs'), ci = document.getElementById('ci');
+function add(text, cls) {
+  const b = document.createElement('div'); b.className = 'bubble ' + cls;
+  const now = new Date(); const h = now.getHours() % 12 || 12; const m = String(now.getMinutes()).padStart(2, '0');
+  b.innerHTML = text + '<div class="bt2">' + h.toLocaleString('ar-EG') + ':' + m.replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]) + '</div>';
+  msgs.appendChild(b); msgs.scrollTop = msgs.scrollHeight;
+}
+function send() {
+  const t = ci.value.trim(); if (!t) return;
+  add(t, 'me'); ci.value = '';
+  setTimeout(() => add('شكراً لتواصلك! استلمنا رسالتك وسيردّ عليك أحد أعضاء الفريق قريباً.', 'them'), 800);
+}
+document.getElementById('cs').addEventListener('click', send);
+ci.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+</script>
+</body>
+</html>

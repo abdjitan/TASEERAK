@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>شعار تسعيرك — مرسوم ومتحرك بالتفاصيل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--navy:#1B3157;--navy2:#16264f;--orange:#F5831F;--orange-d:#e0701a;--bg:#f5f7fb;--line:#e4e9f2;--ink:#0f1b34;--ink2:#475069;--ink3:#8089a0}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Cairo",sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;padding:40px 20px 80px}
+  .head{max-width:1100px;margin:0 auto 24px;text-align:center}
+  .ey{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--orange-d);background:rgba(245,131,31,.1);border:1px solid rgba(245,131,31,.22);padding:7px 14px;border-radius:100px}
+  .ey .dot{width:7px;height:7px;border-radius:50%;background:var(--orange)}
+  h1{font-size:clamp(24px,4vw,36px);font-weight:900;color:var(--navy);margin-top:16px}
+  .head p{color:var(--ink2);font-size:15px;margin-top:10px;max-width:660px;margin-inline:auto}
+
+  .hero{max-width:1100px;margin:0 auto 24px;background:radial-gradient(circle at 50% 42%,#fff,#eef2f8);border:1px solid var(--line);border-radius:26px;padding:40px;display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;position:relative;overflow:hidden;cursor:pointer}
+  .hero .glow{position:absolute;width:440px;height:440px;border-radius:50%;background:radial-gradient(circle,rgba(245,131,31,.13),transparent 70%);filter:blur(34px)}
+  .hero svg{width:210px;height:222px;z-index:2;overflow:visible}
+  .hero .wm{font-size:clamp(40px,7vw,58px);font-weight:900;color:var(--navy);z-index:2}
+  .hero .wm i{color:var(--orange);font-style:normal}
+  .hero .rh{position:absolute;bottom:16px;inset-inline-start:20px;font-size:12px;font-weight:700;color:var(--ink3);z-index:2}
+
+  .controls{max-width:1100px;margin:0 auto 26px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .btn{font-size:13.5px;font-weight:800;padding:10px 20px;border-radius:100px;border:1.5px solid var(--line);background:#fff;color:var(--navy);cursor:pointer;transition:.18s}
+  .btn:hover{border-color:var(--navy)} .btn.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+  .compare{max-width:1100px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;gap:26px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .compare .col{text-align:center}
+  .compare .col img,.compare .col svg{width:150px;height:160px}
+  .compare .lbl{font-size:13px;font-weight:800;color:var(--ink3);margin-top:8px}
+
+  /* part animations */
+  svg .pc{transform-box:fill-box}
+  @keyframes hexDraw{from{stroke-dashoffset:1600}to{stroke-dashoffset:0}}
+  @keyframes riseUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes growMast{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideRight{from{transform:translateX(70px);opacity:0}to{transform:translateX(0);opacity:1}}
+  @keyframes cartIn{0%{transform:translateX(-260px);opacity:0}60%{transform:translateX(18px);opacity:1}80%{transform:translateX(-6px)}100%{transform:translateX(0)}}
+  @keyframes linesIn{0%{opacity:0;transform:translateX(-60px)}45%{opacity:1}100%{opacity:0;transform:translateX(8px)}}
+  @keyframes jibSettle{0%{transform:rotate(-16deg)}45%{transform:rotate(9deg)}72%{transform:rotate(-4deg)}100%{transform:rotate(0)}}
+  @keyframes jibSway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+  @keyframes hookBob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+  @keyframes cartBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+  @keyframes dollarBlink{0%,100%{opacity:1}50%{opacity:.5}}
+
+  .assemble .hex{stroke-dasharray:1600;animation:hexDraw 1.15s ease forwards}
+  .assemble .bld{opacity:0;transform-origin:bottom;animation:riseUp .55s ease forwards}
+  .assemble .bld1{animation-delay:.45s}.assemble .bld2{animation-delay:.57s}.assemble .bld3{animation-delay:.69s}
+  .assemble .mast{transform-origin:bottom;transform:scaleY(0);animation:growMast .6s cubic-bezier(.3,1,.5,1) .65s forwards}
+  .assemble .jib{opacity:0;transform-origin:218px 150px;animation:fadeIn .01s 1.2s forwards,jibSettle 1s cubic-bezier(.3,1.2,.4,1) 1.2s forwards}
+  .assemble .invoice{transform-origin:right center;animation:slideRight .7s cubic-bezier(.2,.9,.3,1) .85s both}
+  .assemble .cart{animation:cartIn 1s cubic-bezier(.2,.9,.3,1) 1.45s both}
+  .assemble .mlines path{opacity:0;animation:linesIn 1.1s ease 1.5s forwards}
+
+  .live .jib{transform-origin:218px 150px;animation:jibSway 4s ease-in-out infinite}
+  .live .hook{transform-origin:top;animation:hookBob 2.2s ease-in-out infinite}
+  .live .cart{animation:cartBob 2.6s ease-in-out infinite}
+  .live .dollar{animation:dollarBlink 2.4s ease-in-out infinite}
+
+  @media(max-width:600px){.hero svg{width:150px;height:158px}.hero .wm{font-size:38px}}
+</style>
+</head>
+<body>
+  <div class="head">
+    <span class="ey"><span class="dot"></span> الشعار مُعاد رسمه بالتفاصيل — طبقات SVG</span>
+    <h1>شعارك الحقيقي يتحرّك قطعة قطعة</h1>
+    <p>حلّلت اللوجو وأعدت رسم كل عنصر فيه كمسار متجه مستقل: السداسي، السكايلاين، الرافعة بذراعها وخطّافها، الفاتورة بعلامة $ والصح، والعربة بخطوط السرعة. لتشوف التطابق، تحت في مقارنة جنب الأصل.</p>
+  </div>
+
+  <div class="hero" id="hero">
+    <div class="glow"></div>
+    <span class="wm">تسعير<i>ك</i></span>
+    <svg id="logo" class="assemble" viewBox="0 0 560 590" aria-label="تسعيرك">
+      <!-- ===== hexagon frame (pointy top) ===== -->
+      <path class="pc hex" d="M280 44 L496 168 a22 22 0 0 1 11 19 V404 a22 22 0 0 1 -11 19 L280 547 L64 423 a22 22 0 0 1 -11 -19 V187 a22 22 0 0 1 11 -19 Z"
+            fill="none" stroke="#1B3157" stroke-width="30" stroke-linejoin="round"/>
+
+      <!-- ===== skyline (behind, left) ===== -->
+      <g fill="#1B3157">
+        <path class="pc bld bld1" d="M96 430 V300 h40 v-16 h14 v16 h6 V430 Z"/>
+        <rect class="pc bld bld2" x="120" y="338" width="30" height="92"/>
+        <path class="pc bld bld3" d="M250 430 V296 h34 v134 Z"/>
+      </g>
+      <!-- window dots -->
+      <g fill="#fff">
+        <rect x="104" y="316" width="7" height="7"/><rect x="118" y="316" width="7" height="7"/>
+        <rect x="104" y="334" width="7" height="7"/><rect x="118" y="334" width="7" height="7"/>
+        <rect x="104" y="352" width="7" height="7"/><rect x="118" y="352" width="7" height="7"/>
+      </g>
+
+      <!-- ===== tower crane ===== -->
+      <!-- lattice mast -->
+      <g class="pc mast">
+        <polygon points="196,176 240,176 232,430 204,430" fill="#fff" stroke="#1B3157" stroke-width="9" stroke-linejoin="round"/>
+        <g stroke="#1B3157" stroke-width="7" stroke-linecap="round">
+          <line x1="200" y1="210" x2="236" y2="246"/><line x1="236" y1="210" x2="200" y2="246"/>
+          <line x1="201" y1="262" x2="235" y2="298"/><line x1="235" y1="262" x2="201" y2="298"/>
+          <line x1="203" y1="314" x2="233" y2="350"/><line x1="233" y1="314" x2="203" y2="350"/>
+          <line x1="204" y1="366" x2="232" y2="400"/><line x1="232" y1="366" x2="204" y2="400"/>
+          <line x1="194" y1="430" x2="242" y2="430" stroke-width="9"/>
+        </g>
+      </g>
+      <!-- jib group (rotates/settles as one) -->
+      <g class="pc jib" fill="none" stroke="#1B3157" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+        <!-- counter-jib (left) + jib (right) -->
+        <line x1="132" y1="150" x2="322" y2="150" stroke-width="11"/>
+        <line x1="150" y1="166" x2="300" y2="166" stroke-width="6"/>
+        <!-- A-frame apex + tie cables -->
+        <line x1="218" y1="98" x2="132" y2="150"/>
+        <line x1="218" y1="98" x2="322" y2="150"/>
+        <line x1="218" y1="98" x2="218" y2="150"/>
+        <!-- counterweight -->
+        <rect x="120" y="150" width="20" height="20" rx="3" fill="#1B3157" stroke="none"/>
+        <!-- hook line + hook -->
+        <g class="hook">
+          <line x1="300" y1="166" x2="300" y2="232" stroke="#F5831F" stroke-width="7"/>
+          <path d="M291 232 q9 18 18 0" stroke="#F5831F" stroke-width="7" fill="none"/>
+        </g>
+      </g>
+
+      <!-- ===== invoice document ===== -->
+      <g class="pc invoice">
+        <path d="M324 120 H446 l34 34 V352 a10 10 0 0 1 -10 10 H324 a10 10 0 0 1 -10 -10 V130 a10 10 0 0 1 10 -10 Z"
+              fill="#fff" stroke="#1B3157" stroke-width="10" stroke-linejoin="round"/>
+        <path d="M446 120 V154 h34" fill="none" stroke="#1B3157" stroke-width="9" stroke-linejoin="round"/>
+        <!-- big $ -->
+        <g class="dollar" fill="none" stroke="#F5831F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M398 182 q-32 -9 -32 15 q0 19 26 21 q26 2 26 21 q0 24 -32 15"/>
+          <line x1="392" y1="164" x2="392" y2="256"/>
+        </g>
+        <!-- navy text lines -->
+        <g stroke="#1B3157" stroke-width="10" stroke-linecap="round">
+          <line x1="340" y1="292" x2="404" y2="292"/>
+          <line x1="340" y1="320" x2="404" y2="320"/>
+          <line x1="340" y1="348" x2="388" y2="348"/>
+        </g>
+        <!-- orange checks -->
+        <g fill="none" stroke="#F5831F" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M420 288 l9 10 17 -21"/>
+          <path d="M420 316 l9 10 17 -21"/>
+          <path d="M420 344 l9 10 17 -21"/>
+        </g>
+      </g>
+
+      <!-- ===== speed lines (bottom-left) ===== -->
+      <g class="pc mlines" stroke="#F5831F" stroke-width="12" stroke-linecap="round">
+        <path d="M48 486 H214"/>
+        <path d="M80 452 H196"/>
+        <path d="M112 420 H172"/>
+      </g>
+
+      <!-- ===== shopping cart ===== -->
+      <g class="pc cart">
+        <!-- white halo -->
+        <path d="M250 360 H470 L444 458 H296 Z" fill="none" stroke="#fff" stroke-width="20" stroke-linejoin="round"/>
+        <path d="M212 332 H236" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round"/>
+        <!-- handle -->
+        <path d="M250 360 L228 334 H210" fill="none" stroke="#F5831F" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+        <!-- basket -->
+        <path d="M250 360 H470 L444 458 H296 Z" fill="#F5831F" stroke="#fff" stroke-width="7" stroke-linejoin="round"/>
+        <g stroke="#fff" stroke-width="6" stroke-linecap="round">
+          <line x1="306" y1="360" x2="298" y2="458"/>
+          <line x1="362" y1="360" x2="360" y2="458"/>
+          <line x1="418" y1="360" x2="412" y2="458"/>
+          <line x1="270" y1="408" x2="456" y2="408"/>
+        </g>
+        <!-- wheels -->
+        <circle cx="322" cy="488" r="19" fill="#F5831F" stroke="#fff" stroke-width="7"/>
+        <circle cx="414" cy="488" r="19" fill="#F5831F" stroke="#fff" stroke-width="7"/>
+      </g>
+    </svg>
+    <span class="rh">↻ اضغط للإعادة</span>
+  </div>
+
+  <div class="controls">
+    <button class="btn on" data-mode="assemble">▶ التجميع + حياة</button>
+    <button class="btn" data-mode="cart">↪ العربة فقط</button>
+    <button class="btn" data-mode="crane">⟲ الرافعة فقط</button>
+    <button class="btn" data-mode="replay">↻ إعادة</button>
+  </div>
+
+  <div class="compare">
+    <div class="col">
+      <img src="assets/logo.png" alt="الأصلي">
+      <div class="lbl">الأصلي (PNG)</div>
+    </div>
+    <div class="col">
+      <svg viewBox="0 0 560 590" id="static-svg" aria-label="المرسوم"></svg>
+      <div class="lbl">المرسوم (SVG متجه)</div>
+    </div>
+  </div>
+
+  <script>
+    const logo = document.getElementById('logo');
+    // clone the drawn svg into the comparison (static)
+    document.getElementById('static-svg').innerHTML = logo.innerHTML;
+    let liveTimer;
+    function clearAll(){ clearTimeout(liveTimer); logo.className=''; void logo.offsetWidth; }
+    function assemble(){ clearAll(); logo.className='assemble'; liveTimer=setTimeout(()=>logo.classList.add('live'),2600); }
+    function only(part){
+      clearAll(); logo.className='live'; void logo.offsetWidth;
+      if(part==='cart'){ const c=logo.querySelector('.cart'),l=logo.querySelector('.mlines'); logo.classList.remove('live');
+        c.style.animation='cartIn 1s cubic-bezier(.2,.9,.3,1) both'; l.querySelectorAll('path').forEach(p=>p.style.animation='linesIn 1.1s ease both');
+        setTimeout(()=>{c.style.animation='';l.querySelectorAll('path').forEach(p=>p.style.animation='');logo.classList.add('live');},1200); }
+      if(part==='crane'){ const j=logo.querySelector('.jib'),m=logo.querySelector('.mast'); logo.classList.remove('live');
+        m.style.transformOrigin='bottom'; m.style.animation='growMast .6s cubic-bezier(.3,1,.5,1) both';
+        j.style.transformOrigin='218px 150px'; j.style.animation='jibSettle 1.1s cubic-bezier(.3,1.2,.4,1) .5s both';
+        setTimeout(()=>{m.style.animation='';j.style.animation='';logo.classList.add('live');},1700); }
+    }
+    document.querySelectorAll('.controls .btn').forEach(b=>b.addEventListener('click',()=>{
+      document.querySelectorAll('.controls .btn').forEach(x=>x.classList.toggle('on',x===b));
+      const m=b.dataset.mode; (m==='assemble'||m==='replay')?assemble():only(m);
+    }));
+    document.getElementById('hero').addEventListener('click',assemble);
+    assemble();
+  </script>
+</body>
+</html>

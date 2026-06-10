@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة المورّد — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Supplier Dashboard">
+<div class="app">
+
+  <!-- ===== Supplier Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section">المورّد</div>
+    <nav class="side-nav">
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> الرئيسية</a>
+      <a class="side-item" href="Supplier Offer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> طلبات واردة <span class="count">٨</span></a>
+      <a class="side-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> عروضي المرسلة</a>
+      <a class="side-item" href="Supplier Prices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> أسعاري</a>
+      <a class="side-item" href="Supplier Specialties.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> تخصصاتي</a>
+      <a class="side-item" href="Supplier Branches.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg> فروع الشركة</a>
+    </nav>
+    <div class="side-section">الحساب</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 7.5 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15"/></svg> الإعدادات</a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av" style="background:var(--orange)">ر</span><div><div class="nm">مصنع الراجحي للحديد</div><div class="rl">مُصنّع · موثّق ✓</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">لوحة المورّد</div><div class="tb-sub">الطلبات المتاحة لك وعروضك</div></div>
+      <div class="tb-spacer"></div>
+      <div class="tb-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="ابحث في الطلبات…"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+      <button class="icon-btn" aria-label="الإشعارات"><span class="badge-dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+    </header>
+
+    <div class="page">
+      <div class="page-head">
+        <div><h1>أهلاً، مصنع الراجحي 👋</h1><p>عندك <b style="color:var(--orange-dark)">٨ طلبات</b> مطابقة لتخصصك بانتظار عرضك.</p></div>
+      </div>
+
+      <!-- verified banner (this supplier is verified) -->
+      <div class="banner ok">
+        <span class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></span>
+        <div class="bmain"><div class="bt">حسابك موثّق عبر واثق ✓</div><div class="bs">شارة "موثّق" تظهر للمقاولين وترفع فرص قبول عروضك.</div></div>
+        <span class="vbadge wathq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 12l2 2 4-4"/></svg> موثّق عبر واثق</span>
+      </div>
+
+      <!-- stats -->
+      <div class="stats-row">
+        <div class="scard"><div class="ic ic-navy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="v">٨</div><div class="l">طلبات مطابقة مفتوحة</div></div>
+        <div class="scard"><div class="ic ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></div><div class="v">٣١</div><div class="l">عروض مُرسلة</div></div>
+        <div class="scard"><div class="ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div><div class="v">١٩</div><div class="l">عروض مقبولة</div></div>
+        <div class="scard">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div class="ring" style="position:relative;--p:61;--c:var(--mech)"><span>٦١٪</span></div>
+            <div><div class="v" style="font-size:22px">٦١٪</div><div class="l">نسبة الفوز</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- tabs -->
+      <div class="tabs">
+        <button class="on" data-tab="incoming">الطلبات الواردة</button>
+        <button data-tab="offers">عروضي</button>
+      </div>
+
+      <!-- INCOMING -->
+      <div class="tabpane on" data-pane="incoming">
+        <div class="filter-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+          تُعرض الطلبات المطابقة لقطاعاتك وتخصصاتك فقط.
+        </div>
+        <div class="panel"><div class="panel-body">
+          <div class="lrow">
+            <span class="lic t-civil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+            <div class="lmain">
+              <div class="lt">حديد تسليح Ø16 — SABIC B500</div>
+              <div class="lm"><span class="chip c-civil">مدني · حديد</span> <span>٤٢ طن</span> <span>· الرياض</span> <span>· شركة الإنشاءات الحديثة</span></div>
+            </div>
+            <div class="lend"><div class="sm" style="color:var(--orange-dark);font-weight:700">ينتهي خلال ٢١ ساعة</div></div>
+            <a href="Supplier Offer.html" class="btn btn-primary" style="padding:9px 16px;font-size:13.5px">قدّم عرض</a>
+            <span class="dismiss" title="إخفاء"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></span>
+          </div>
+          <div class="lrow">
+            <span class="lic t-civil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+            <div class="lmain">
+              <div class="lt">أسمنت بورتلاندي مقاوم</div>
+              <div class="lm"><span class="chip c-civil">مدني · أسمنت</span> <span>٣٢٠ كيس</span> <span>· الرياض</span> <span>· مقاول مخفي</span></div>
+            </div>
+            <div class="lend"><div class="sm" style="color:var(--ink-3)">ينتهي خلال يومين</div></div>
+            <a href="Supplier Offer.html" class="btn btn-primary" style="padding:9px 16px;font-size:13.5px">قدّم عرض</a>
+            <span class="dismiss" title="إخفاء"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></span>
+          </div>
+          <div class="lrow">
+            <span class="lic t-civil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+            <div class="lmain">
+              <div class="lt">شبك حديد ملحوم 6مم</div>
+              <div class="lm"><span class="chip c-civil">مدني · حديد</span> <span>٦٠٠ م²</span> <span>· الخرج</span> <span>· مؤسسة عمار</span></div>
+            </div>
+            <div class="lend"><div class="sm" style="color:var(--ink-3)">ينتهي خلال ٣ أيام</div></div>
+            <a href="Supplier Offer.html" class="btn btn-primary" style="padding:9px 16px;font-size:13.5px">قدّم عرض</a>
+            <span class="dismiss" title="إخفاء"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></span>
+          </div>
+        </div></div>
+      </div>
+
+      <!-- MY OFFERS -->
+      <div class="tabpane" data-pane="offers">
+        <div class="panel"><div class="panel-body">
+          <div class="lrow">
+            <span class="lic t-civil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+            <div class="lmain"><div class="lt">حديد تسليح Ø16 — ٤٢ طن</div><div class="lm"><span>عرضك: ١٠٧٬٣١٠ ر.س</span> <span>· شركة الإنشاءات الحديثة</span></div></div>
+            <div class="lend"><span class="pill pill-open"><span class="d"></span> مقبول</span></div>
+          </div>
+          <div class="lrow">
+            <span class="lic t-civil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+            <div class="lmain"><div class="lt">أسمنت بورتلاندي — ٢٠٠ كيس</div><div class="lm"><span>عرضك: ٣٬٤٠٠ ر.س</span> <span>· مقاول مخفي</span></div></div>
+            <div class="lend"><span class="pill pill-pend"><span class="d"></span> قيد المراجعة</span></div>
+          </div>
+          <div class="lrow">
+            <span class="lic t-civil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+            <div class="lmain"><div class="lt">حديد زاوية 50مم — ١٢ طن</div><div class="lm"><span>عرضك: ٣٤٬٢٠٠ ر.س</span> <span>· مؤسسة البناء</span></div></div>
+            <div class="lend"><span class="pill pill-rej"><span class="d"></span> غير مقبول</span></div>
+          </div>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script src="assets/shell.js"></script>
+<script>
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.toggle('on', p.dataset.pane === b.dataset.tab));
+}));
+document.querySelectorAll('.dismiss').forEach(d => d.addEventListener('click', e => { e.currentTarget.closest('.lrow').style.display = 'none'; }));
+</script>
+<script src="assets/notif.js"></script>
+</body>
+</html>

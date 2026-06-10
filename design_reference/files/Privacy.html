@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سياسة الخصوصية — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="doc-shell" data-screen-label="Privacy">
+  <div class="doc-top">
+    <div class="wrap">
+      <a href="Taseerak Landing.html" class="logo"><span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span><span class="logo-text"><b>تسعير</b><i>ك</i></span></a>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+        <a href="Taseerak Landing.html" class="btn btn-ghost" style="padding:9px 18px">رجوع</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-wrap">
+    <div class="doc-card">
+      <h1>سياسة الخصوصية</h1>
+      <div class="updated">آخر تحديث: ٤ يونيو ٢٠٢٦ · متوافقة مع نظام حماية البيانات الشخصية (PDPL)</div>
+
+      <h2>١. البيانات التي نجمعها</h2>
+      <ul>
+        <li>بيانات الحساب: الاسم، الجوال، البريد، اسم المنشأة، السجل التجاري.</li>
+        <li>بيانات النشاط: طلبات التسعير، العروض، أوامر الشراء، التخصصات.</li>
+        <li>بيانات الموقع: العنوان الوطني والإحداثيات لخدمة المطابقة حسب القرب.</li>
+        <li>مستندات التوثيق: الرخصة والسجل التجاري (تُحفظ بشكل آمن ومشفّر).</li>
+      </ul>
+
+      <h2>٢. كيف نستخدم بياناتك</h2>
+      <p>نستخدم بياناتك لتشغيل المنصة: توجيه طلبات التسعير للموردين المناسبين، توثيق الحسابات عبر واثق، عرض مؤشر الأسعار بشكل مجمّع ومجهول الهوية، وتحسين الخدمة.</p>
+
+      <h2>٣. مشاركة البيانات</h2>
+      <p>لا نبيع بياناتك الشخصية. تُشارك بيانات محدودة فقط عند الضرورة (مثل اسم المنشأة وعرضها مع المقاول صاحب الطلب)، ومع جهات التوثيق الرسمية (واثق) بموافقتك.</p>
+
+      <h2>٤. حماية البيانات</h2>
+      <p>نطبّق إجراءات تقنية وتنظيمية لحماية بياناتك، وتُعرض المستندات الحسّاسة عبر روابط آمنة ومؤقتة للإدارة المخوّلة فقط.</p>
+
+      <h2>٥. حقوقك</h2>
+      <ul>
+        <li>الوصول إلى بياناتك وتصحيحها أو تحديثها.</li>
+        <li>طلب حذف حسابك وبياناتك وفق الأنظمة المعمول بها.</li>
+        <li>الاعتراض على معالجة بعض بياناتك أو سحب موافقتك.</li>
+      </ul>
+
+      <h2>٦. الاحتفاظ بالبيانات</h2>
+      <p>نحتفظ ببياناتك طوال فترة نشاط حسابك وللمدة التي تتطلبها الأنظمة، ثم تُحذف أو تُجهَّل هويتها بشكل آمن.</p>
+
+      <h2>٧. التواصل</h2>
+      <p>لممارسة حقوقك أو لأي استفسار حول الخصوصية، تواصل معنا على <a href="#" style="color:var(--orange-dark);font-weight:700">privacy@taseerak.sa</a>.</p>
+    </div>
+  </div>
+
+<script>
+document.querySelectorAll('.mini-lang button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.mini-lang button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); document.documentElement.dir = b.dataset.lang === 'en' ? 'ltr' : 'rtl'; document.documentElement.lang = b.dataset.lang;
+}));
+</script>
+</body>
+</html>

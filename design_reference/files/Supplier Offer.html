@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة المورّد — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+</head>
+<body class="app-body">
+<div class="app" data-screen-label="Supplier Offer">
+
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section" data-i18n="n_supplier">المورّد</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Supplier Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> <span data-i18n="n_home">الرئيسية</span></a>
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> <span data-i18n="n_incoming">طلبات واردة</span> <span class="count">٨</span></a>
+      <a class="side-item" href="Supplier Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> <span data-i18n="n_myoffers">عروضي المرسلة</span></a>
+      <a class="side-item" href="Supplier Prices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> <span data-i18n="n_prices">أسعاري</span></a>
+      <a class="side-item" href="Supplier Specialties.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> <span data-i18n="n_specialties">تخصصاتي</span></a>
+      <a class="side-item" href="Supplier Branches.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg> فروع الشركة</a>
+      <a class="side-item" href="Purchase Order.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 13l2 2 4-4"/></svg> <span data-i18n="n_po">أوامر الشراء</span></a>
+    </nav>
+    <div class="side-section" data-i18n="n_account">الحساب</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 7.5 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15"/></svg> <span data-i18n="n_settings">الإعدادات</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av" style="background:var(--mech)">ر</span><div><div class="nm">مصنع الراجحي للحديد</div><div class="rl" data-i18n="role_supplier">مُصنّع · موثّق ✓</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title" data-i18n="tb_sup_t">طلب تسعير وارد</div><div class="tb-sub" data-i18n="tb_sup_s">قدّم عرضك وتنافس على الطلب</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="crumbs">
+        <a href="#">الطلبات الواردة</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <span>حديد تسليح Ø16</span>
+      </div>
+
+      <div class="grid-3-2">
+        <!-- LEFT: RFQ details + offer form -->
+        <div>
+          <div class="panel panel-pad" style="margin-bottom:20px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+              <span class="lic t-civil" style="width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+              <div>
+                <h3 style="font-size:19px;font-weight:800;color:var(--navy)">حديد تسليح Ø16 — ٤٢ طن</h3>
+                <div style="font-size:13px;color:var(--ink-3);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap">
+                  <span class="chip c-civil" style="padding:2px 9px">مدني</span>
+                  <span>الرياض · حي الياسمين</span>
+                </div>
+              </div>
+            </div>
+            <div class="row-3">
+              <div><div style="font-size:12px;color:var(--ink-3);font-weight:600">المواصفة</div><div style="font-weight:800;color:var(--navy);margin-top:3px">SABIC B500</div></div>
+              <div><div style="font-size:12px;color:var(--ink-3);font-weight:600">التسليم المطلوب</div><div style="font-weight:800;color:var(--navy);margin-top:3px">خلال ٧ أيام</div></div>
+              <div><div style="font-size:12px;color:var(--ink-3);font-weight:600">ينتهي الطلب</div><div style="font-weight:800;color:var(--orange-dark);margin-top:3px">خلال ٢١ ساعة</div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>قدّم عرضك</h3><span class="pill pill-pend"><span class="d"></span> ٤ موردين قدّموا بالفعل</span></div>
+            <div class="panel-pad">
+              <div class="row-2">
+                <div class="field">
+                  <label>سعر الوحدة (للطن)</label>
+                  <div class="input-group">
+                    <span class="input-affix">ر.س</span>
+                    <input class="input num" id="unit-price" value="2555" inputmode="numeric">
+                  </div>
+                  <div class="hint" id="market-hint">متوسط السوق: ٢٬٨١٠ ر.س/طن</div>
+                </div>
+                <div class="field">
+                  <label>الإجمالي (٤٢ طن)</label>
+                  <div class="input-group">
+                    <span class="input-affix">ر.س</span>
+                    <input class="input num" id="total-price" value="107310" readonly style="background:var(--bg-2);font-weight:800">
+                  </div>
+                  <div class="hint" id="saving-hint" style="color:var(--mech);font-weight:700">أوفر بـ ٩٪ من متوسط السوق</div>
+                </div>
+              </div>
+              <div class="row-2">
+                <div class="field"><label>مدة التسليم</label>
+                  <select class="select"><option>خلال ٣ أيام</option><option>خلال ٥ أيام</option><option>خلال أسبوع</option></select>
+                </div>
+                <div class="field"><label>صلاحية العرض</label>
+                  <select class="select"><option>٧ أيام</option><option>١٤ يوم</option><option>٣٠ يوم</option></select>
+                </div>
+              </div>
+              <div class="field">
+                <label>ملاحظات للمقاول (اختياري)</label>
+                <textarea class="textarea" placeholder="مثال: السعر شامل التوصيل لموقع المشروع داخل الرياض…"></textarea>
+              </div>
+
+              <div class="toggle on" id="del-toggle" style="margin-bottom:14px">
+                <div><div class="tl">يشمل التوصيل للموقع</div><div class="td">داخل حدود مدينة الرياض</div></div>
+                <span class="sw"></span>
+              </div>
+
+              <div style="display:flex;gap:12px">
+                <button class="btn btn-primary btn-lg2" id="submit-offer" style="flex:1">
+                  إرسال العرض
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+                </button>
+                <button class="btn btn-ghost btn-lg2">حفظ كمسودة</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: position + competitiveness -->
+        <div>
+          <div class="panel panel-pad summary">
+            <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px">موقعك التنافسي</h3>
+            <p style="font-size:13px;color:var(--ink-3);margin-bottom:16px">حيّ — يتحدث مع تغيير سعرك</p>
+
+            <div style="text-align:center;padding:18px;background:linear-gradient(150deg,rgba(15,110,86,.08),transparent);border:1px solid rgba(15,110,86,.2);border-radius:var(--r-md);margin-bottom:16px">
+              <div style="font-size:13px;color:var(--ink-2);font-weight:600">ترتيبك المتوقّع</div>
+              <div style="font-size:42px;font-weight:900;color:var(--mech);line-height:1.1" id="rank">#١</div>
+              <div style="font-size:12.5px;color:var(--ink-3)" id="rank-note">الأوفر بين ٥ عروض</div>
+            </div>
+
+            <div style="font-size:12px;font-weight:800;color:var(--ink-3);margin-bottom:10px">العروض الحالية (مجهولة الهوية)</div>
+            <div id="ladder" style="display:grid;gap:8px"></div>
+
+            <div style="margin-top:16px;padding:12px;background:var(--bg);border-radius:12px;font-size:12.5px;color:var(--ink-2);display:flex;gap:9px">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--orange)" stroke-width="2" style="flex:none"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h0" stroke-linecap="round"/></svg>
+              التصنيف الذكي يضمن وصول طلبك للمقاولين المناسبين لحجم مصنعك.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app-i18n.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+const QTY = 42, MARKET = 2810;
+const COMP = [2660, 2730, 2840, 2890]; // competitor unit prices
+const fmt = n => Math.round(n).toLocaleString('ar-EG');
+const up = document.getElementById('unit-price');
+const total = document.getElementById('total-price');
+const saving = document.getElementById('saving-hint');
+const rank = document.getElementById('rank');
+const rankNote = document.getElementById('rank-note');
+const ladder = document.getElementById('ladder');
+
+function update() {
+  const u = parseFloat(up.value) || 0;
+  total.value = fmt(u * QTY);
+  const sv = Math.round((MARKET - u) / MARKET * 100);
+  if (sv > 0) { saving.style.color = 'var(--mech)'; saving.textContent = 'أوفر بـ ' + fmt(sv) + '٪ من متوسط السوق'; }
+  else { saving.style.color = '#ef4444'; saving.textContent = 'أعلى بـ ' + fmt(-sv) + '٪ من متوسط السوق'; }
+
+  // rank among competitors + me
+  const all = [...COMP, u].sort((a, b) => a - b);
+  const pos = all.indexOf(u) + 1;
+  const arNum = ['#١','#٢','#٣','#٤','#٥'][pos-1] || ('#'+pos);
+  rank.textContent = arNum;
+  if (pos === 1) { rank.style.color = 'var(--mech)'; rankNote.textContent = 'الأوفر بين ' + fmt(all.length) + ' عروض'; }
+  else { rank.style.color = 'var(--orange-dark)'; rankNote.textContent = 'المركز ' + arNum + ' بين ' + fmt(all.length) + ' عروض'; }
+
+  // ladder
+  ladder.innerHTML = all.map((p, i) => {
+    const mine = p === u;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;${mine?'background:rgba(245,131,31,.1);border:1px solid rgba(245,131,31,.3)':'background:var(--bg)'}">
+      <span class="medal g${i+1}" style="width:26px;height:26px;border-radius:8px;font-size:12px">${i+1}</span>
+      <span style="flex:1;font-size:13px;font-weight:700;color:${mine?'var(--orange-dark)':'var(--ink-2)'}">${mine?'عرضك':'مورّد مجهول'}</span>
+      <span style="font-weight:800;font-size:13.5px;color:var(--navy)">${fmt(p)} <span style="font-size:10px;color:var(--ink-3)">ر.س</span></span>
+    </div>`;
+  }).join('');
+}
+up.addEventListener('input', update);
+update();
+
+document.getElementById('del-toggle').addEventListener('click', e => e.currentTarget.classList.toggle('on'));
+document.getElementById('submit-offer').addEventListener('click', () => {
+  const b = document.getElementById('submit-offer');
+  b.innerHTML = '✓ تم إرسال عرضك بنجاح';
+  b.classList.remove('btn-primary'); b.classList.add('btn-navy');
+});
+</script>
+</body>
+</html>

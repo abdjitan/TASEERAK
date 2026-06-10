@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة المقاول — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+</head>
+<body class="app-body">
+<div class="app" data-screen-label="Contractor Dashboard">
+
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section">القائمة</div>
+    <nav class="side-nav">
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> <span data-i18n="n_home">الرئيسية</span></a>
+      <a class="side-item" href="New Project (BOQ).html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> <span data-i18n="n_boq">مشروع BOQ جديد</span></a>
+      <a class="side-item" href="New RFQ.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> <span data-i18n="n_rfq">طلب تسعير جديد</span></a>
+      <a class="side-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>
+        <span data-i18n="n_myrfq">طلباتي</span> <span class="count">6</span>
+      </a>
+      <a class="side-item" href="Price Index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg> <span data-i18n="n_price">مؤشر الأسعار</span></a>
+    </nav>
+    <div class="side-section" data-i18n="n_account">الحساب</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Contractor Settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 7.5 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15"/></svg> <span data-i18n="n_settings">الإعدادات</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user">
+        <span class="av">ش</span>
+        <div><div class="nm">شركة الإنشاءات الحديثة</div><div class="rl" data-i18n="role_contractor">مقاول · تصنيف ب</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div>
+        <div class="tb-title" data-i18n="tb_title">لوحة التحكم</div>
+        <div class="tb-sub" data-i18n="tb_sub">نظرة عامة على طلباتك ومشاريعك</div>
+      </div>
+      <div class="tb-spacer"></div>
+      <div class="tb-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input data-i18n-ph="search" placeholder="ابحث عن طلب أو مشروع…">
+      </div>
+      <div class="mini-lang">
+        <button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button>
+      </div>
+      <button class="icon-btn" aria-label="الإشعارات"><span class="badge-dot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
+    </header>
+
+    <div class="page">
+      <!-- head -->
+      <div class="page-head">
+        <div>
+          <h1 data-i18n="greet">أهلاً، شركة الإنشاءات الحديثة 👋</h1>
+          <p><span data-i18n="greet_sub_a">عندك</span> <b style="color:var(--orange-dark)" data-i18n="greet_sub_b">٤ عروض جديدة</b> <span data-i18n="greet_sub_c">بانتظار المراجعة اليوم.</span></p>
+        </div>
+        <div style="display:flex;gap:10px">
+          <a class="btn btn-ghost" href="New RFQ.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg> <span data-i18n="btn_rfq">طلب تسعير</span></a>
+          <a class="btn btn-primary" href="New Project (BOQ).html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> <span data-i18n="btn_boq">مشروع BOQ جديد</span></a>
+        </div>
+      </div>
+
+      <!-- stats -->
+      <div class="stats-row">
+        <div class="scard">
+          <div class="ic ic-navy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+          <div class="v">٦</div><div class="l" data-i18n="s_active">طلبات تسعير نشطة</div>
+        </div>
+        <div class="scard">
+          <div class="ic ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></div>
+          <div class="v">٢٣</div><div class="l" data-i18n="s_offers">عروض واردة</div>
+          <div class="tr up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="12" height="12"><path d="M7 17L17 7M17 7H9M17 7v8"/></svg> <span data-i18n="s_new_today">٤ جديدة اليوم</span></div>
+        </div>
+        <div class="scard">
+          <div class="ic ic-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></div>
+          <div class="v">٢</div><div class="l" data-i18n="s_projects">مشاريع جارية</div>
+        </div>
+        <div class="scard">
+          <div class="ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div class="v">٨٪</div><div class="l" data-i18n="s_saving">متوسط التوفير</div>
+          <div class="tr up" data-i18n="s_vs_market">مقابل متوسط السوق</div>
+        </div>
+      </div>
+
+      <div class="grid-3-2">
+        <!-- RFQs -->
+        <div class="panel">
+          <div class="panel-head">
+            <h3 data-i18n="recent_rfqs">طلبات التسعير الأخيرة</h3>
+            <span class="link" data-i18n="view_all">عرض الكل</span>
+          </div>
+          <div class="panel-body">
+            <a class="lrow" href="RFQ Offers.html">
+              <span class="lic t-civil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+              <div class="lmain">
+                <div class="lt">حديد تسليح Ø16 — ٤٢ طن</div>
+                <div class="lm"><span class="chip c-civil">مدني</span> <span>ينتهي خلال ٢١ ساعة</span></div>
+              </div>
+              <div class="lend"><div class="big">٥ عروض</div><span class="pill pill-open"><span class="d"></span> <span data-i18n="st_open">مفتوح</span></span></div>
+              <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+            </a>
+            <a class="lrow" href="RFQ Offers.html">
+              <span class="lic t-arch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-7h6v7"/></svg></span>
+              <div class="lmain">
+                <div class="lt">بلاط بورسلان 60×60 — ٨٥٠ م²</div>
+                <div class="lm"><span class="chip c-arch">معماري</span> <span>ينتهي خلال يومين</span></div>
+              </div>
+              <div class="lend"><div class="big">٣ عروض</div><span class="pill pill-open"><span class="d"></span> <span data-i18n="st_open">مفتوح</span></span></div>
+              <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+            </a>
+            <a class="lrow" href="RFQ Offers.html">
+              <span class="lic t-elec"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span>
+              <div class="lmain">
+                <div class="lt">كابل XLPE 4×16 — ٣٢٠ م</div>
+                <div class="lm"><span class="chip c-elec">كهرباء</span> <span>بانتظار العروض</span></div>
+              </div>
+              <div class="lend"><div class="big" style="color:var(--ink-3)">٠ عروض</div><span class="pill pill-pend"><span class="d"></span> <span data-i18n="st_new">جديد</span></span></div>
+              <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+            </a>
+            <a class="lrow" href="RFQ Offers.html">
+              <span class="lic t-mech"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
+              <div class="lmain">
+                <div class="lt">مواسير PPR 1" — ١٨٠ م</div>
+                <div class="lm"><span class="chip c-mech">ميكانيك</span> <span>تم قبول عرض الراجحي</span></div>
+              </div>
+              <div class="lend"><div class="big">٤ عروض</div><span class="pill pill-closed"><span class="d"></span> <span data-i18n="st_done">مكتمل</span></span></div>
+              <span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Projects -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="panel">
+            <div class="panel-head"><h3 data-i18n="my_projects">مشاريعي</h3><span class="link" data-i18n="all">الكل</span></div>
+            <div class="panel-body">
+              <a class="lrow" href="Project Results.html">
+                <span class="lic t-navy" style="background:rgba(27,45,91,.1);color:var(--navy)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+                <div class="lmain">
+                  <div class="lt">برج سكني — حي الياسمين</div>
+                  <div class="lm"><span>٤٢ بند</span> · <span>٢٨ عرض</span></div>
+                  <div class="bar-line" style="margin-top:8px"><span style="width:64%"></span></div>
+                </div>
+              </a>
+              <a class="lrow">
+                <span class="lic t-navy" style="background:rgba(15,110,86,.12);color:var(--mech)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+                <div class="lmain">
+                  <div class="lt">مجمع تجاري — الخبر</div>
+                  <div class="lm"><span>١٨ بند</span> · <span>مكتمل</span></div>
+                  <div class="bar-line" style="margin-top:8px"><span style="width:100%;background:var(--mech)"></span></div>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <div class="panel panel-pad" style="background:linear-gradient(150deg,var(--navy),var(--navy-deep));color:#fff">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--orange-soft)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+              <h3 style="color:#fff;font-size:16px;font-weight:800" data-i18n="promo_title">جرّب رفع جدول الكميات</h3>
+            </div>
+            <p style="color:rgba(255,255,255,.75);font-size:13.5px" data-i18n="promo_sub">ارفع ملف BOQ ونوزّع كل بند تلقائياً على المورّد المختص بقطاعه.</p>
+            <a href="New Project (BOQ).html" class="btn btn-primary" style="margin-top:14px;width:100%" data-i18n="promo_btn">ابدأ مشروع BOQ</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/app-i18n.js"></script>
+<script src="assets/shell.js"></script>
+<script src="assets/notif.js"></script>
+</body>
+</html>

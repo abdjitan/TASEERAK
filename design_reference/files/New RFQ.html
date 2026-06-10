@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>طلب تسعير جديد — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="New RFQ">
+<div class="app">
+
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section">القائمة</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Contractor Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> الرئيسية</a>
+      <a class="side-item" href="New Project (BOQ).html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> مشروع BOQ جديد</a>
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> طلب تسعير جديد</a>
+      <a class="side-item" href="Project Results.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> طلباتي <span class="count">6</span></a>
+      <a class="side-item" href="Price Index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg> مؤشر الأسعار</a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av">ش</span><div><div class="nm">شركة الإنشاءات الحديثة</div><div class="rl">مقاول · تصنيف ب</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">طلب تسعير جديد</div><div class="tb-sub">اطلب سعر مادة واحدة بسرعة</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="crumbs">
+        <a href="Contractor Dashboard.html">الرئيسية</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <span>طلب تسعير جديد</span>
+      </div>
+
+      <div class="grid-3-2">
+        <!-- FORM -->
+        <div>
+          <div class="panel panel-pad" style="margin-bottom:20px">
+            <div class="field">
+              <label>القطاع</label>
+              <div class="sector-cards">
+                <div class="sector-pick sel" data-s="civil"><div class="si" style="background:linear-gradient(135deg,#1B2D5B,#2a4a8a)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></div><div class="sn">مدني</div><div class="se">Civil</div></div>
+                <div class="sector-pick" data-s="arch"><div class="si" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-7h6v7"/></svg></div><div class="sn">معماري</div><div class="se">Arch</div></div>
+                <div class="sector-pick" data-s="elec"><div class="si" style="background:linear-gradient(135deg,#F5831F,#d96f15)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div><div class="sn">كهرباء</div><div class="se">Elec</div></div>
+                <div class="sector-pick" data-s="mech"><div class="si" style="background:linear-gradient(135deg,#0F6E56,#0a5641)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div><div class="sn">ميكانيك</div><div class="se">Mech</div></div>
+              </div>
+            </div>
+            <div class="field">
+              <label>المادة</label>
+              <div class="choice-row" id="materials">
+                <span class="choice sel">حديد تسليح Ø16</span>
+                <span class="choice">حديد Ø12</span>
+                <span class="choice">أسمنت بورتلاندي</span>
+                <span class="choice">خرسانة جاهزة</span>
+                <span class="choice">بلوك أسمنتي</span>
+              </div>
+              <input class="input" style="margin-top:10px" placeholder="أو اكتب اسم المادة…">
+            </div>
+            <div class="row-3">
+              <div class="field"><label>الكمية</label><input class="input num" value="42"></div>
+              <div class="field"><label>الوحدة</label><select class="select"><option>طن</option><option>كيس</option><option>م³</option><option>م²</option><option>م</option><option>قطعة</option></select></div>
+              <div class="field"><label>المواصفة</label><input class="input" placeholder="SABIC B500"></div>
+            </div>
+            <div class="row-2">
+              <div class="field"><label>المنطقة</label><select class="select"><option>منطقة الرياض</option><option>المنطقة الشرقية</option><option>مكة المكرمة</option></select></div>
+              <div class="field"><label>المدينة</label><input class="input" value="الرياض"></div>
+            </div>
+
+            <div class="toggle on" id="del-toggle" style="margin-bottom:0">
+              <div><div class="tl">يشمل التوصيل للموقع</div><div class="td">فعّلها ليُسعّر الموردون الشحن</div></div>
+              <span class="sw"></span>
+            </div>
+            <div class="field" id="del-loc" style="margin-top:14px">
+              <label>موقع التسليم <span style="color:#ef4444">*</span></label>
+              <input class="input" placeholder="حي الياسمين، الرياض — أو العنوان الوطني المختصر">
+              <div class="hint">يساعد الموردين على حساب تكلفة الشحن بدقة.</div>
+            </div>
+
+            <div class="field" style="margin-top:4px">
+              <label>ملف المواصفات (اختياري)</label>
+              <div class="filebox" style="padding:20px">
+                <div class="fic" style="width:44px;height:44px;margin-bottom:10px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></div>
+                <div class="ft" style="font-size:14px">اسحب ملف المواصفات أو اضغط للرفع</div>
+                <div class="fs">PDF أو صورة</div>
+              </div>
+            </div>
+            <div class="field" style="margin-bottom:0">
+              <label>ملاحظات</label>
+              <textarea class="textarea" placeholder="أي تفاصيل إضافية للموردين…"></textarea>
+            </div>
+          </div>
+
+          <!-- targeting -->
+          <div class="panel panel-pad">
+            <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:4px">من يستقبل هذا الطلب؟</h3>
+            <p style="font-size:13px;color:var(--ink-3);margin-bottom:14px">حدّد نوع الموردين المناسب لحجم طلبك.</p>
+            <div class="choice-row" id="types" style="margin-bottom:16px">
+              <span class="choice sel orange">🏭 مصنع / كبير</span>
+              <span class="choice sel orange">🏪 موزّع تجاري</span>
+              <span class="choice">🏬 مورّد محلي</span>
+            </div>
+            <div class="toggle on" id="t-verified" style="margin-bottom:10px"><div><div class="tl">موثّقون فقط</div><div class="td">الموردون الموثّقون عبر واثق</div></div><span class="sw"></span></div>
+            <div class="toggle" id="t-nearby"><div><div class="tl">📍 القريبون فقط</div><div class="td">ضمن نفس المنطقة</div></div><span class="sw"></span></div>
+
+            <div id="region-block" style="margin-top:16px">
+              <label style="display:block;font-size:13.5px;font-weight:700;color:var(--navy);margin-bottom:9px">🗺 ابحث في مناطق محددة</label>
+              <div class="region-chips" id="region-chips">
+                <span class="rchip"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>الرياض</span>
+                <span class="rchip"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>مكة المكرمة</span>
+                <span class="rchip"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>المنطقة الشرقية</span>
+                <span class="rchip"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>المدينة المنورة</span>
+                <span class="rchip"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>القصيم</span>
+                <span class="rchip"><svg class="ck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>عسير</span>
+              </div>
+              <div class="hint" style="margin-top:9px">اتركها فارغة للوصول لكل المناطق. يشمل الموردين الذين لهم فرع في المنطقة.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUMMARY -->
+        <div>
+          <div class="panel panel-pad summary">
+            <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:14px">ملخص الطلب</h3>
+            <div class="sum-row"><span class="k">القطاع</span><span class="v">مدني</span></div>
+            <div class="sum-row"><span class="k">المادة</span><span class="v">حديد تسليح Ø16</span></div>
+            <div class="sum-row"><span class="k">الكمية</span><span class="v">٤٢ طن</span></div>
+            <div class="sum-row"><span class="k">المنطقة</span><span class="v">الرياض</span></div>
+            <div class="sum-row"><span class="k">موردون مطابقون</span><span class="v" style="color:var(--orange-dark)">١٤ مورّد</span></div>
+
+            <div class="field" style="margin:16px 0 0">
+              <label>صلاحية الطلب</label>
+              <div class="choice-row">
+                <span class="choice">٢٤ساعة</span>
+                <span class="choice sel">٤٨ ساعة</span>
+                <span class="choice">أسبوع</span>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-block btn-lg2" id="send" style="margin-top:18px">
+              إرسال الطلب
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+            </button>
+            <p style="text-align:center;font-size:12px;color:var(--ink-3);margin-top:10px">بدون عمولة على التسعير</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/shell.js"></script>
+<script>
+// single-select sector + material + types(multi) + validity
+function single(scope){scope.querySelectorAll('.choice,.sector-pick').forEach(c=>c.addEventListener('click',()=>{scope.querySelectorAll('.choice,.sector-pick').forEach(x=>{x.classList.remove('sel');x.classList.remove('orange');});c.classList.add('sel');}));}
+single(document.getElementById('materials'));
+single(document.querySelector('.sector-cards'));
+document.querySelectorAll('.summary .choice-row .choice').forEach(c=>c.addEventListener('click',()=>{c.parentElement.querySelectorAll('.choice').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');}));
+// types multi
+document.querySelectorAll('#types .choice').forEach(c=>c.addEventListener('click',()=>{c.classList.toggle('sel');c.classList.toggle('orange');}));
+// toggles
+['del-toggle','t-verified','t-nearby'].forEach(id=>{var t=document.getElementById(id);t.addEventListener('click',()=>{t.classList.toggle('on');if(id==='del-toggle')document.getElementById('del-loc').style.display=t.classList.contains('on')?'':'none';if(id==='t-nearby')document.getElementById('region-block').style.display=t.classList.contains('on')?'none':'';});});
+// region chips toggle
+document.querySelectorAll('#region-chips .rchip').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('on')));
+// send
+document.getElementById('send').addEventListener('click',()=>{var b=document.getElementById('send');b.innerHTML='✓ تم إرسال الطلب';b.classList.remove('btn-primary');b.classList.add('btn-navy');setTimeout(()=>location.href='RFQ Offers.html',700);});
+</script>
+</body>
+</html>

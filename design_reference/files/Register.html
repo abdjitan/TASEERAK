@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إنشاء حساب — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<style>
+  .reg-shell { min-height: 100vh; display: flex; flex-direction: column; }
+  .reg-top { display: flex; align-items: center; justify-content: space-between; padding: 18px 30px; border-bottom: 1px solid var(--line); background: #fff; }
+  .reg-main { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 38px 24px 60px; }
+  .reg-card { width: 100%; max-width: 720px; }
+  .step-pane { display: none; }
+  .step-pane.on { display: block; animation: fadeUp .4s cubic-bezier(.2,.8,.2,1); }
+  .reg-panel { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 32px; box-shadow: var(--sh-sm); }
+  .reg-panel h2 { font-size: 22px; font-weight: 800; color: var(--navy); }
+  .reg-panel .ps { color: var(--ink-2); font-size: 14px; margin: 6px 0 24px; }
+  .reg-actions { display: flex; justify-content: space-between; gap: 12px; margin-top: 26px; }
+</style>
+</head>
+<body class="app-body" style="background:var(--bg-2)">
+<div class="reg-shell" data-screen-label="Register">
+
+  <div class="reg-top">
+    <a href="Taseerak Landing.html" class="logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b>تسعير</b><i>ك</i></span>
+    </a>
+    <div style="font-size:13.5px;color:var(--ink-2)">لديك حساب؟ <a href="Login.html" style="font-weight:800;color:var(--orange-dark)">سجّل الدخول</a></div>
+  </div>
+
+  <div class="reg-main">
+    <div class="reg-card">
+      <!-- stepper -->
+      <div class="stepper">
+        <div class="stp active" data-step="1"><span class="dot">١</span><span class="stl">الحساب</span><span class="bar"></span></div>
+        <div class="stp" data-step="2"><span class="dot">٢</span><span class="stl">النوع</span><span class="bar"></span></div>
+        <div class="stp" data-step="3"><span class="dot">٣</span><span class="stl">التفاصيل</span><span class="bar"></span></div>
+        <div class="stp" data-step="4"><span class="dot">٤</span><span class="stl">التأكيد</span></div>
+      </div>
+
+      <!-- STEP 1: account -->
+      <div class="step-pane on" data-pane="1">
+        <div class="reg-panel">
+          <h2>أنشئ حسابك</h2>
+          <p class="ps">ابدأ بمعلومات الدخول الأساسية.</p>
+          <div class="row-2">
+            <div class="field"><label>الاسم الكامل</label><input class="input" placeholder="محمد العتيبي"></div>
+            <div class="field"><label>رقم الجوال</label>
+              <div class="input-group"><span class="input-affix">+966</span><input class="input num" placeholder="5X XXX XXXX" inputmode="numeric"></div>
+            </div>
+          </div>
+          <div class="field"><label>البريد الإلكتروني</label><input class="input" type="email" placeholder="name@company.com"></div>
+          <div class="field"><label>كلمة المرور</label>
+            <div class="password-wrap">
+              <input class="input" type="password" id="rp" placeholder="٨ أحرف على الأقل">
+              <svg class="eye" id="re" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+          <div class="reg-actions">
+            <span></span>
+            <button class="btn btn-primary btn-lg2 next">التالي <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: role -->
+      <div class="step-pane" data-pane="2">
+        <div class="reg-panel">
+          <h2>سجّل كـ</h2>
+          <p class="ps">اختر نوع الحساب الذي يناسب نشاطك.</p>
+          <div class="role-tabs" style="grid-template-columns:1fr 1fr;gap:14px">
+            <div class="role-tab sel" data-role="contractor">
+              <div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></div>
+              <div class="rt">مقاول</div><div class="rd">أطلب تسعيرات وأقارن العروض</div>
+            </div>
+            <div class="role-tab" data-role="supplier">
+              <div class="ri"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+              <div class="rt">مورّد</div><div class="rd">أستقبل الطلبات وأقدّم عروضي</div>
+            </div>
+          </div>
+          <div style="margin-top:22px" id="grade-block">
+            <label style="display:block;font-size:13.5px;font-weight:700;color:var(--navy);margin-bottom:9px" id="grade-label">تصنيف المقاول</label>
+            <div class="choice-row" id="grade-choices">
+              <span class="choice sel orange" data-g="أ">تصنيف أ</span>
+              <span class="choice" data-g="ب">تصنيف ب</span>
+              <span class="choice" data-g="ج">تصنيف ج</span>
+              <span class="choice" data-g="د">تصنيف د</span>
+              <span class="choice" data-g="غير مصنّف">غير مصنّف</span>
+            </div>
+          </div>
+          <div class="reg-actions">
+            <button class="btn btn-ghost btn-lg2 back">رجوع</button>
+            <button class="btn btn-primary btn-lg2 next">التالي <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: details -->
+      <div class="step-pane" data-pane="3">
+        <div class="reg-panel">
+          <h2>تفاصيل النشاط</h2>
+          <p class="ps">تساعدنا في توجيه الطلبات المناسبة لك.</p>
+          <div class="row-2">
+            <div class="field"><label>اسم الشركة / المؤسسة</label><input class="input" placeholder="شركة ..."></div>
+            <div class="field"><label>رقم السجل التجاري</label><input class="input num" placeholder="١٠١٠XXXXXX"></div>
+          </div>
+          <div class="field">
+            <label id="sectors-label">القطاعات التي تعمل بها</label>
+            <div class="sector-cards">
+              <div class="sector-pick sel" data-s="civil"><div class="si" style="background:linear-gradient(135deg,#1B2D5B,#2a4a8a)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></div><div class="sn">مدني</div><div class="se">Civil</div></div>
+              <div class="sector-pick" data-s="arch"><div class="si" style="background:linear-gradient(135deg,#7c3aed,#5b21b6)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-7h6v7"/></svg></div><div class="sn">معماري</div><div class="se">Arch</div></div>
+              <div class="sector-pick" data-s="elec"><div class="si" style="background:linear-gradient(135deg,#F5831F,#d96f15)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div><div class="sn">كهرباء</div><div class="se">Elec</div></div>
+              <div class="sector-pick" data-s="mech"><div class="si" style="background:linear-gradient(135deg,#0F6E56,#0a5641)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div><div class="sn">ميكانيك</div><div class="se">Mech</div></div>
+            </div>
+          </div>
+          <div class="field" style="margin-top:6px">
+            <label>اللغة المفضّلة للتواصل</label>
+            <div class="choice-row">
+              <span class="choice sel" data-l="ar">العربية</span>
+              <span class="choice" data-l="en">English</span>
+              <span class="choice" data-l="ur">اردو</span>
+            </div>
+          </div>
+          <div class="reg-actions">
+            <button class="btn btn-ghost btn-lg2 back">رجوع</button>
+            <button class="btn btn-primary btn-lg2 next">التالي <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: confirm -->
+      <div class="step-pane" data-pane="4">
+        <div class="reg-panel" style="text-align:center">
+          <div style="width:76px;height:76px;border-radius:50%;background:rgba(15,110,86,.12);display:flex;align-items:center;justify-content:center;margin:6px auto 18px">
+            <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="var(--mech)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <h2 style="text-align:center">تم إنشاء حسابك بنجاح!</h2>
+          <p class="ps" style="text-align:center">باقي خطوة: نراجع رخصتك التجارية للتوثيق خلال ٢٤ ساعة. بإمكانك البدء فوراً.</p>
+          <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:8px">
+            <a href="Contractor Dashboard.html" class="btn btn-primary btn-lg2">الذهاب للوحة التحكم <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+            <a href="New Project (BOQ).html" class="btn btn-ghost btn-lg2">ابدأ أول مشروع</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const eye = document.getElementById('re'), rp = document.getElementById('rp');
+eye.addEventListener('click', () => { const s = rp.type === 'password'; rp.type = s ? 'text' : 'password'; eye.style.color = s ? 'var(--orange-dark)' : 'var(--ink-3)'; });
+
+let step = 1; const TOTAL = 4;
+const panes = document.querySelectorAll('.step-pane');
+const stps = document.querySelectorAll('.stp');
+function show(n) {
+  step = Math.max(1, Math.min(TOTAL, n));
+  panes.forEach(p => p.classList.toggle('on', +p.dataset.pane === step));
+  stps.forEach(s => {
+    const sn = +s.dataset.step;
+    s.classList.toggle('active', sn === step);
+    s.classList.toggle('done', sn < step);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+document.querySelectorAll('.next').forEach(b => b.addEventListener('click', () => show(step + 1)));
+document.querySelectorAll('.back').forEach(b => b.addEventListener('click', () => show(step - 1)));
+
+// role selection -> changes labels
+document.querySelectorAll('.role-tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.role-tab').forEach(x => x.classList.remove('sel'));
+  t.classList.add('sel');
+  const supplier = t.dataset.role === 'supplier';
+  document.getElementById('grade-label').textContent = supplier ? 'نوع المورّد' : 'تصنيف المقاول';
+  document.getElementById('sectors-label').textContent = supplier ? 'القطاعات التي تورّدها' : 'القطاعات التي تعمل بها';
+  const gc = document.getElementById('grade-choices');
+  gc.innerHTML = supplier
+    ? '<span class="choice sel orange" data-g="مصنع">مُصنّع</span><span class="choice" data-g="موزع">موزّع تجاري</span><span class="choice" data-g="محلي">مورّد محلي</span>'
+    : '<span class="choice sel orange" data-g="أ">تصنيف أ</span><span class="choice" data-g="ب">تصنيف ب</span><span class="choice" data-g="ج">تصنيف ج</span><span class="choice" data-g="د">تصنيف د</span><span class="choice" data-g="غير مصنّف">غير مصنّف</span>';
+  bindChoices(gc, true);
+}));
+
+// generic single-select choice rows
+function bindChoices(scope, orange) {
+  scope.querySelectorAll('.choice').forEach(c => c.addEventListener('click', () => {
+    scope.querySelectorAll('.choice').forEach(x => { x.classList.remove('sel'); x.classList.remove('orange'); });
+    c.classList.add('sel'); if (orange) c.classList.add('orange');
+  }));
+}
+document.querySelectorAll('.choice-row').forEach(r => bindChoices(r, r.id === 'grade-choices'));
+
+// multi-select sector cards
+document.querySelectorAll('.sector-pick').forEach(s => s.addEventListener('click', () => s.classList.toggle('sel')));
+</script>
+</body>
+</html>

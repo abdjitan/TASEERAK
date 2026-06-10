@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>طلبات التسعير والعروض — إدارة تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Admin RFQs" data-admin-page="rfqs">
+<div class="app">
+  <aside id="admin-side" class="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">طلبات التسعير والعروض</div><div class="tb-sub">مراقبة كل الطلبات والعروض على المنصة</div></div>
+      <div class="tb-spacer"></div>
+      <div class="tb-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="ابحث في الطلبات…"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="stats-row">
+        <div class="scard"><div class="v">١٤٨</div><div class="l">إجمالي الطلبات</div></div>
+        <div class="scard"><div class="v">٣١</div><div class="l">نشطة الآن</div></div>
+        <div class="scard"><div class="v">٥٩٢</div><div class="l">عروض إجمالية</div></div>
+        <div class="scard"><div class="v">٤.٠</div><div class="l">متوسط العروض/طلب</div></div>
+      </div>
+
+      <div class="tabs" id="st">
+        <button class="on" data-s="all">الكل</button>
+        <button data-s="open">مفتوحة</button>
+        <button data-s="closed">مكتملة</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>الطلبات</h3></div>
+        <div style="overflow-x:auto"><table class="tbl" id="rtable">
+          <thead><tr><th>المادة</th><th>المقاول</th><th>القطاع</th><th>الكمية</th><th>العروض</th><th>الحالة</th><th></th></tr></thead>
+          <tbody id="rbody"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/admin-shell.js"></script>
+<script>
+const RFQS = [
+  { m:"حديد تسليح Ø16", c:"شركة الإنشاءات الحديثة", s:"مدني", cls:"c-civil", q:"٤٢ طن", offers:"٥", st:"open" },
+  { m:"بلاط بورسلان 60×60", c:"مقاولات البنيان", s:"معماري", cls:"c-arch", q:"٨٥٠ م²", offers:"٣", st:"open" },
+  { m:"كابل XLPE 4×16", c:"شركة الإنشاءات الحديثة", s:"كهرباء", cls:"c-elec", q:"٣٢٠ م", offers:"٠", st:"open" },
+  { m:"مواسير PPR 1\"", c:"مؤسسة عمار", s:"ميكانيك", cls:"c-mech", q:"١٨٠ م", offers:"٤", st:"closed" },
+  { m:"أسمنت بورتلاندي", c:"مقاولات البنيان", s:"مدني", cls:"c-civil", q:"٣٢٠ كيس", offers:"٦", st:"closed" },
+];
+const pill = s => s==='open' ? '<span class="pill pill-open"><span class="d"></span> مفتوح</span>' : '<span class="pill pill-closed"><span class="d"></span> مكتمل</span>';
+let filt = 'all';
+const body = document.getElementById('rbody');
+function render() {
+  body.innerHTML = RFQS.filter(r => filt === 'all' || r.st === filt).map(r => `
+    <tr>
+      <td style="font-weight:700;color:var(--navy);min-width:150px">${r.m}</td>
+      <td>${r.c}</td>
+      <td><span class="chip ${r.cls}" style="padding:2px 9px">${r.s}</span></td>
+      <td class="num">${r.q}</td>
+      <td><b style="color:${r.offers==='٠'?'var(--ink-3)':'var(--navy)'}">${r.offers}</b> عروض</td>
+      <td>${pill(r.st)}</td>
+      <td><a href="RFQ Offers.html" class="btn btn-ghost" style="padding:6px 14px;font-size:12.5px">عرض العروض</a></td>
+    </tr>`).join('');
+}
+render();
+document.querySelectorAll('#st button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#st button').forEach(x => x.classList.toggle('on', x === b));
+  filt = b.dataset.s; render();
+}));
+</script>
+</body>
+</html>

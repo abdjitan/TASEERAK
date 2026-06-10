@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ملف المستخدم — إدارة تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+<style>
+  .kv { display:grid; grid-template-columns: 130px 1fr; gap:10px 14px; font-size:14px; }
+  .kv .k { color: var(--ink-3); font-weight:600; }
+  .kv .v { color: var(--navy); font-weight:700; }
+  .prof-head { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .prof-head .uavatar { width:70px; height:70px; border-radius:20px; font-size:28px; }
+</style>
+</head>
+<body class="app-body" data-screen-label="Admin User Detail" data-admin-page="users">
+<div class="app">
+  <aside id="admin-side" class="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">ملف المستخدم</div><div class="tb-sub">التفاصيل الكاملة والنشاط</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="crumbs">
+        <a href="Admin Users.html">المستخدمون</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <span>مصنع الراجحي للحديد</span>
+      </div>
+
+      <!-- header card -->
+      <div class="panel panel-pad" style="margin-bottom:20px">
+        <div class="prof-head">
+          <span class="uavatar" style="background:var(--orange)">ر</span>
+          <div style="flex:1;min-width:200px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <h2 style="font-size:22px;font-weight:900;color:var(--navy)">مصنع الراجحي للحديد</h2>
+              <span class="rolebadge supplier">🏪 مورّد</span>
+              <span class="vbadge wathq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 12l2 2 4-4"/></svg> موثّق عبر واثق</span>
+            </div>
+            <div style="font-size:13.5px;color:var(--ink-3);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap">
+              <span>🏭 مصنع</span><span>📍 الرياض</span><span>عضو منذ ١٢ ينا ٢٠٢٦</span>
+              <span class="stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.5L22 9l-5 4.5L18.5 21 12 17l-6.5 4L7 13.5 2 9l7-.5z"/></svg><span class="rv">4.9</span></span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-ghost" style="color:#ef4444;border-color:rgba(239,68,68,.3)">تعليق الحساب</button>
+            <button class="btn btn-navy">مراسلة</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI strip -->
+      <div class="stats-row">
+        <div class="scard"><div class="v">٣١</div><div class="l">عروض مقدّمة</div></div>
+        <div class="scard"><div class="v">١٩</div><div class="l">عروض مقبولة</div></div>
+        <div class="scard"><div class="v">٦١٪</div><div class="l">نسبة الفوز</div></div>
+        <div class="scard"><div class="v">١.٨ م</div><div class="l">إجمالي المبيعات (ر.س)</div></div>
+      </div>
+
+      <div class="grid-3-2">
+        <!-- left: details + activity -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="panel">
+            <div class="panel-head"><h3>بيانات المنشأة</h3></div>
+            <div class="panel-pad">
+              <div class="kv">
+                <span class="k">الاسم الرسمي</span><span class="v">مصنع الراجحي للحديد المحدودة</span>
+                <span class="k">السجل التجاري</span><span class="v">١٠١٠٤٢٨٨٩٠</span>
+                <span class="k">الرقم الضريبي</span><span class="v">٣٠٠٤٢٨٨٩٠٠٠٠٠٣</span>
+                <span class="k">النشاط الرسمي</span><span class="v">تصنيع منتجات الحديد والصلب</span>
+                <span class="k">الجوال</span><span class="v" dir="ltr">+966 11 876 5432</span>
+                <span class="k">البريد</span><span class="v" dir="ltr">sales@alrajhisteel.sa</span>
+                <span class="k">العنوان الوطني</span><span class="v">RRRD2929 — المنطقة الصناعية الثانية، الرياض</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>التخصصات</h3><a class="link" href="#">تعديل</a></div>
+            <div class="panel-pad">
+              <div class="choice-row">
+                <span class="chip c-civil">حديد تسليح</span><span class="chip c-civil">شبك ملحوم</span>
+                <span class="chip c-civil">حديد زاوية</span><span class="chip c-civil">أسمنت مقاوم</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3>آخر العروض</h3></div>
+            <div class="panel-body">
+              <div class="lrow"><span class="lic t-civil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/></svg></span><div class="lmain"><div class="lt">حديد تسليح Ø16 — ٤٢ طن</div><div class="lm"><span>عرض: ١٠٧٬٣١٠ ر.س</span></div></div><div class="lend"><span class="pill pill-open"><span class="d"></span> مقبول</span></div></div>
+              <div class="lrow"><span class="lic t-civil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/></svg></span><div class="lmain"><div class="lt">أسمنت مقاوم — ٣٢٠ كيس</div><div class="lm"><span>عرض: ٥٬٤٤٠ ر.س</span></div></div><div class="lend"><span class="pill pill-pend"><span class="d"></span> قيد المراجعة</span></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- right: documents + verification -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="panel panel-pad">
+            <h3 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:6px">التوثيق</h3>
+            <div class="banner ok" style="margin:10px 0 0"><span class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 12l2 2 4-4"/></svg></span><div class="bmain"><div class="bt">موثّق عبر واثق</div><div class="bs">تطابق النشاط الرسمي مع القطاع.</div></div></div>
+          </div>
+          <div class="panel panel-pad">
+            <h3 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:12px">المستندات</h3>
+            <div style="display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:11px;margin-bottom:10px">
+              <span class="lic" style="width:36px;height:36px;background:rgba(15,110,86,.1);color:var(--mech);border-radius:9px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></span>
+              <div style="flex:1;font-size:13px;font-weight:700">الرخصة التجارية.pdf</div><span class="link">عرض آمن</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--line);border-radius:11px">
+              <span class="lic" style="width:36px;height:36px;background:rgba(27,45,91,.08);color:var(--navy);border-radius:9px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+              <div style="flex:1;font-size:13px;font-weight:700">الموقع الجغرافي</div><span class="link">على الخريطة</span>
+            </div>
+          </div>
+          <div class="panel panel-pad">
+            <h3 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:12px">إجراءات</h3>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-ghost" style="justify-content:flex-start">إعادة فحص التوثيق 🤖</button>
+              <button class="btn btn-ghost" style="justify-content:flex-start">تغيير التصنيف</button>
+              <button class="btn btn-ghost" style="justify-content:flex-start;color:#ef4444;border-color:rgba(239,68,68,.25)">حظر الحساب</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/admin-shell.js"></script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مؤشر الأسعار — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<style>
+  .spark { display: flex; align-items: flex-end; gap: 3px; height: 40px; }
+  .spark span { flex: 1; border-radius: 3px 3px 0 0; background: var(--bg-2); animation: growH .8s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes growH { from { height: 0 !important; } }
+  .trend-chart { padding: 4px 0; display: grid; gap: 14px; }
+  .trow { display: grid; grid-template-columns: 42px 1fr 70px; align-items: center; gap: 12px; }
+  .trow .m { font-size: 12.5px; font-weight: 700; color: var(--ink-3); }
+  .trow .track { height: 14px; border-radius: 100px; background: var(--bg-2); overflow: hidden; }
+  .trow .track > i { display: block; height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--navy-soft), var(--navy)); animation: growW .9s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes growW { from { width: 0 !important; } }
+  .trow.up .track > i { background: linear-gradient(90deg, var(--orange-soft), var(--orange)); }
+  .trow .val { font-size: 13px; font-weight: 800; color: var(--navy); text-align: end; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body class="app-body" data-screen-label="Price Index">
+<div class="app">
+
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section" data-i18n="n_menu">القائمة</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Contractor Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> <span data-i18n="n_home">الرئيسية</span></a>
+      <a class="side-item" href="New Project (BOQ).html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> <span data-i18n="n_boq">مشروع BOQ جديد</span></a>
+      <a class="side-item" href="Project Results.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> <span data-i18n="n_myrfq">طلباتي</span> <span class="count">6</span></a>
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg> <span data-i18n="n_price">مؤشر الأسعار</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av">ش</span><div><div class="nm">شركة الإنشاءات الحديثة</div><div class="rl" data-i18n="role_contractor">مقاول · تصنيف ب</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title" data-i18n="tb_price_t">مؤشر أسعار المواد</div><div class="tb-sub" data-i18n="tb_price_s">متوسط أسعار السوق المحدّثة من عروض المنصة</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <!-- sector filter -->
+      <div class="choice-row" style="margin-bottom:22px">
+        <span class="choice sel">كل القطاعات</span>
+        <span class="choice">مدني</span>
+        <span class="choice">معماري</span>
+        <span class="choice">كهرباء</span>
+        <span class="choice">ميكانيك</span>
+      </div>
+
+      <div class="grid-3-2">
+        <!-- main chart -->
+        <div class="panel">
+          <div class="panel-head">
+            <div><h3>حديد التسليح Ø16</h3><div style="font-size:12.5px;color:var(--ink-3);margin-top:2px">متوسط السعر الشهري · ر.س/طن</div></div>
+            <span class="pill pill-rej"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:rotate(0)"><path d="M7 7l10 10M17 17H9M17 17V9"/></svg> ‎+٤٪ هذا الشهر</span>
+          </div>
+          <div class="panel-pad">
+            <div class="trend-chart" id="bars">
+              <div class="trow" data-h="58"><span class="m">يناير</span><div class="track"><i style="width:58%"></i></div><span class="val">٢٬٦٢٠</span></div>
+              <div class="trow" data-h="54"><span class="m">فبراير</span><div class="track"><i style="width:54%"></i></div><span class="val">٢٬٥٨٠</span></div>
+              <div class="trow" data-h="62"><span class="m">مارس</span><div class="track"><i style="width:62%"></i></div><span class="val">٢٬٦٧٠</span></div>
+              <div class="trow" data-h="70"><span class="m">أبريل</span><div class="track"><i style="width:70%"></i></div><span class="val">٢٬٧٤٠</span></div>
+              <div class="trow" data-h="66"><span class="m">مايو</span><div class="track"><i style="width:66%"></i></div><span class="val">٢٬٧٠٠</span></div>
+              <div class="trow up" data-h="100"><span class="m">يونيو</span><div class="track"><i style="width:100%"></i></div><span class="val">٢٬٨١٠</span></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)">
+              <div><div style="font-size:12px;color:var(--ink-3)">أدنى عرض حالي</div><div style="font-weight:900;color:var(--mech);font-size:18px">٢٬٥٥٥ ر.س</div></div>
+              <div><div style="font-size:12px;color:var(--ink-3)">متوسط السوق</div><div style="font-weight:900;color:var(--navy);font-size:18px">٢٬٨١٠ ر.س</div></div>
+              <div><div style="font-size:12px;color:var(--ink-3)">أعلى عرض</div><div style="font-weight:900;color:var(--ink-2);font-size:18px">٢٬٩٩٠ ر.س</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- insight -->
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="panel panel-pad" style="background:linear-gradient(150deg,var(--navy),var(--navy-deep));color:#fff">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:10px">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--orange-soft)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h0" stroke-linecap="round"/></svg>
+              <h3 style="color:#fff;font-size:15px;font-weight:800">توصية المنصة</h3>
+            </div>
+            <p style="color:rgba(255,255,255,.8);font-size:13.5px;line-height:1.7">أسعار الحديد ترتفع موسمياً. أنصح بإصدار طلبات التسعير لمشاريع الربع القادم <b style="color:var(--orange-soft)">خلال أسبوعين</b> قبل ارتفاع متوقّع ٣–٥٪.</p>
+          </div>
+          <div class="panel panel-pad">
+            <h3 style="font-size:15px;font-weight:800;color:var(--navy);margin-bottom:14px">الأكثر طلباً هذا الأسبوع</h3>
+            <div style="display:grid;gap:12px">
+              <div style="display:flex;align-items:center;gap:10px"><span class="grade" style="background:var(--orange)">١</span><span style="flex:1;font-size:13.5px;font-weight:700">أسمنت بورتلاندي</span><span style="font-size:12.5px;color:var(--mech);font-weight:800">مستقر</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><span class="grade">٢</span><span style="flex:1;font-size:13.5px;font-weight:700">حديد تسليح</span><span style="font-size:12.5px;color:#ef4444;font-weight:800">‎+٤٪</span></div>
+              <div style="display:flex;align-items:center;gap:10px"><span class="grade">٣</span><span style="flex:1;font-size:13.5px;font-weight:700">بلاط بورسلان</span><span style="font-size:12.5px;color:var(--mech);font-weight:800">‎−٢٪</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- materials table -->
+      <div class="panel" style="margin-top:20px">
+        <div class="panel-head"><h3>جدول أسعار المواد</h3><span class="link">تصدير CSV</span></div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr><th>المادة</th><th>القطاع</th><th>الوحدة</th><th>متوسط السوق</th><th>أدنى عرض</th><th>الاتجاه (٦ أشهر)</th><th>التغيّر</th></tr></thead>
+            <tbody id="ptable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app-i18n.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+const ROWS = [
+  { m:"حديد تسليح Ø16", s:"مدني", cls:"c-civil", u:"طن", avg:"٢٬٨١٠", low:"٢٬٥٥٥", spark:[55,52,60,68,64,80], ch:"+٤٪", up:true },
+  { m:"أسمنت بورتلاندي", s:"مدني", cls:"c-civil", u:"كيس", avg:"١٤", low:"١٢", spark:[50,52,51,50,49,50], ch:"٠٪", up:false, flat:true },
+  { m:"بلاط بورسلان 60×60", s:"معماري", cls:"c-arch", u:"م²", avg:"١٠٥", low:"١٠٠", spark:[62,60,58,55,54,52], ch:"−٢٪", up:false },
+  { m:"دهان جوتن داخلي", s:"معماري", cls:"c-arch", u:"لتر", avg:"٢٨", low:"٢٥", spark:[40,42,45,44,46,48], ch:"+١٪", up:true },
+  { m:"كابل XLPE 4×16", s:"كهرباء", cls:"c-elec", u:"م", avg:"٨٦", low:"٨٢", spark:[48,50,49,52,51,50], ch:"٠٪", up:false, flat:true },
+  { m:"مواسير PPR 1\"", s:"ميكانيك", cls:"c-mech", u:"م", avg:"٥٣", low:"٥٠", spark:[44,45,46,45,47,46], ch:"+١٪", up:true },
+];
+const tb = document.getElementById('ptable');
+ROWS.forEach(r => {
+  const max = Math.max(...r.spark);
+  const sp = r.spark.map(v => `<span style="height:${Math.round(v/max*100)}%"></span>`).join('');
+  const chColor = r.flat ? 'var(--ink-3)' : (r.up ? '#ef4444' : 'var(--mech)');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="font-weight:700;color:var(--navy);min-width:170px">${r.m}</td>
+    <td><span class="chip ${r.cls}" style="padding:2px 9px">${r.s}</span></td>
+    <td>${r.u}</td>
+    <td class="num">${r.avg} ر.س</td>
+    <td class="num" style="color:var(--mech);font-weight:800">${r.low} ر.س</td>
+    <td style="width:120px"><div class="spark">${sp}</div></td>
+    <td style="font-weight:800;color:${chColor}">${r.ch}</td>`;
+  tb.appendChild(tr);
+});
+
+// reveal-on-load handled by static inline sizes + CSS keyframes; nothing else needed.
+</script>
+</body>
+</html>

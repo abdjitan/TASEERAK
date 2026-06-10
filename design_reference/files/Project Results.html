@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نتائج المشروع — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+</head>
+<body class="app-body">
+<div class="app" data-screen-label="Project Results">
+
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section" data-i18n="n_menu">القائمة</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Contractor Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> <span data-i18n="n_home">الرئيسية</span></a>
+      <a class="side-item" href="New Project (BOQ).html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg> <span data-i18n="n_boq">مشروع BOQ جديد</span></a>
+      <a class="side-item" href="New RFQ.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> <span data-i18n="n_rfq">طلب تسعير جديد</span></a>
+      <a class="side-item on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> <span data-i18n="n_myrfq">طلباتي</span> <span class="count">6</span></a>
+      <a class="side-item" href="Price Index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg> <span data-i18n="n_price">مؤشر الأسعار</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av">ش</span><div><div class="nm">شركة الإنشاءات الحديثة</div><div class="rl" data-i18n="role_contractor">مقاول · تصنيف ب</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">برج سكني — حي الياسمين</div><div class="tb-sub">٤ بنود · قارن العروض واختر الأفضل</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+      <button class="icon-btn" aria-label="طباعة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg></button>
+    </header>
+
+    <div class="page">
+      <div class="crumbs">
+        <a href="Contractor Dashboard.html">الرئيسية</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <a href="#">طلباتي</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <span>برج سكني</span>
+      </div>
+
+      <!-- summary stats -->
+      <div class="stats-row">
+        <div class="scard"><div class="ic ic-navy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="v">٢٨</div><div class="l">إجمالي العروض الواردة</div></div>
+        <div class="scard"><div class="ic ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg></div><div class="v">١٧</div><div class="l">مورّد مشارك</div></div>
+        <div class="scard"><div class="ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="v">٩٪</div><div class="l">توفير المختار مقابل السوق</div></div>
+        <div class="scard"><div class="ic ic-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div><div class="v" id="picked-count">٠/٤</div><div class="l">بنود تم اختيارها</div></div>
+      </div>
+
+      <div id="materials"></div>
+
+      <!-- sticky total bar -->
+      <div class="panel panel-pad" style="position:sticky;bottom:16px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:var(--sh-lg);flex-wrap:wrap">
+        <div>
+          <div style="font-size:13px;color:var(--ink-3);font-weight:600">إجمالي العروض المختارة</div>
+          <div style="font-size:26px;font-weight:900;color:var(--navy)"><span id="grand">٠</span> <span style="font-size:15px;color:var(--ink-3)">ر.س</span></div>
+        </div>
+        <button class="btn btn-primary btn-lg" id="po-btn" disabled>
+          إصدار أمر الشراء
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 13l2 2 4-4"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app-i18n.js"></script>
+<script src="assets/shell.js"></script>
+<script>
+const SECT = {
+  civil:{name:"مدني",cls:"c-civil",tcls:"t-civil",ic:'<path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/>'},
+  arch:{name:"معماري",cls:"c-arch",tcls:"t-arch",ic:'<path d="M4 21V10l8-6 8 6v11"/><path d="M9 21v-7h6v7"/>'},
+  elec:{name:"كهرباء",cls:"c-elec",tcls:"t-elec",ic:'<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'},
+  mech:{name:"ميكانيك",cls:"c-mech",tcls:"t-mech",ic:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>'},
+};
+const MATS = [
+  { m:"حديد تسليح Ø16", q:"٤٢ طن", s:"civil", market:118000, offers:[
+    {n:"مصنع الراجحي للحديد", meta:"مُصنّع · موثّق", grade:"أ", price:107310, unit:"٢٬٥٥٥ ر.س/طن", days:"٣ أيام", best:true},
+    {n:"شركة المعادن المتحدة", meta:"موزّع تجاري", grade:"ب", price:111720, unit:"٢٬٦٦٠ ر.س/طن", days:"٤ أيام"},
+    {n:"مؤسسة البناء الحديثة", meta:"مورّد محلي", grade:"ب", price:114660, unit:"٢٬٧٣٠ ر.س/طن", days:"٢ يوم"},
+  ]},
+  { m:"بلاط بورسلان 60×60", q:"٨٥٠ م²", s:"arch", market:93500, offers:[
+    {n:"معرض السيراميك الذهبي", meta:"موزّع معتمد", grade:"أ", price:85000, unit:"١٠٠ ر.س/م²", days:"٥ أيام", best:true},
+    {n:"بلاط الخليج", meta:"مستورد", grade:"ب", price:89250, unit:"١٠٥ ر.س/م²", days:"٧ أيام"},
+    {n:"سيراميك الوطنية", meta:"مورّد محلي", grade:"ج", price:91800, unit:"١٠٨ ر.س/م²", days:"٣ أيام"},
+  ]},
+  { m:"كابل XLPE 4×16", q:"٣٢٠ م", s:"elec", market:28800, offers:[
+    {n:"الأسلاك السعودية", meta:"مُصنّع · موثّق", grade:"أ", price:26240, unit:"٨٢ ر.س/م", days:"٢ يوم", best:true},
+    {n:"النور للكهرباء", meta:"موزّع", grade:"ب", price:27520, unit:"٨٦ ر.س/م", days:"٤ أيام"},
+    {n:"مؤسسة التيار", meta:"مورّد محلي", grade:"ب", price:28160, unit:"٨٨ ر.س/م", days:"يوم واحد"},
+  ]},
+  { m:"مواسير PPR 1\"", q:"١٨٠ م", s:"mech", market:9900, offers:[
+    {n:"أنابيب الجزيرة", meta:"مُصنّع", grade:"أ", price:9000, unit:"٥٠ ر.س/م", days:"٣ أيام", best:true},
+    {n:"السباكة المتقدمة", meta:"موزّع", grade:"ب", price:9540, unit:"٥٣ ر.س/م", days:"٢ يوم"},
+    {n:"مواسير الراشد", meta:"مورّد محلي", grade:"ج", price:9720, unit:"٥٤ ر.س/م", days:"يوم واحد"},
+  ]},
+];
+const fmt = n => n.toLocaleString('ar-EG');
+const picks = {}; // matIndex -> offerIndex
+
+const wrap = document.getElementById('materials');
+MATS.forEach((mat, mi) => {
+  const v = SECT[mat.s];
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  panel.style.marginBottom = '18px';
+  panel.innerHTML = `
+    <div class="panel-head">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="lic ${v.tcls}" style="width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${v.ic}</svg></span>
+        <div>
+          <h3>${mat.m}</h3>
+          <div style="font-size:12.5px;color:var(--ink-3);margin-top:2px"><span class="chip ${v.cls}" style="padding:2px 9px">${v.name}</span> &nbsp;${mat.q} · ${mat.offers.length} عروض</div>
+        </div>
+      </div>
+      <div style="text-align:end"><div style="font-size:12px;color:var(--ink-3)">متوسط السوق</div><div style="font-weight:800;color:var(--ink-2)">${fmt(mat.market)} ر.س</div></div>
+    </div>
+    <div class="panel-pad" id="offers-${mi}"></div>`;
+  wrap.appendChild(panel);
+
+  const ob = panel.querySelector('#offers-' + mi);
+  mat.offers.forEach((o, oi) => {
+    const saved = Math.round((mat.market - o.price) / mat.market * 100);
+    const card = document.createElement('div');
+    card.className = 'offer-card' + (o.best ? ' win' : '');
+    card.innerHTML = `
+      <span class="medal g${oi+1}">${oi+1}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:800;font-size:14.5px;color:var(--ink)">${o.n}</span>
+          ${o.best ? '<span class="pill pill-open"><span class="d"></span> الأوفر</span>' : ''}
+        </div>
+        <div style="font-size:12px;color:var(--ink-3);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap">
+          <span class="tier"><span class="grade" style="width:20px;height:20px;border-radius:6px;font-size:11px">${o.grade}</span> ${o.meta}</span>
+          <span>التسليم: ${o.days}</span>
+        </div>
+      </div>
+      <div style="text-align:end">
+        <div style="font-weight:900;font-size:17px;color:${o.best ? 'var(--mech)' : 'var(--navy)'}">${fmt(o.price)} <span style="font-size:11px;color:var(--ink-3)">ر.س</span></div>
+        <div style="font-size:11.5px;color:var(--ink-3)">${o.unit} · توفير ${fmt(saved)}٪</div>
+      </div>
+      <button class="btn ${o.best ? 'btn-primary' : 'btn-ghost'} pick" data-mi="${mi}" data-oi="${oi}" data-price="${o.price}" style="padding:9px 18px;font-size:13.5px">اختر</button>`;
+    ob.appendChild(card);
+  });
+});
+
+function recompute() {
+  let grand = 0, n = 0;
+  Object.entries(picks).forEach(([mi, oi]) => { grand += MATS[mi].offers[oi].price; n++; });
+  document.getElementById('grand').textContent = fmt(grand);
+  document.getElementById('picked-count').textContent = fmt(n) + '/٤';
+  document.getElementById('po-btn').disabled = n === 0;
+}
+document.querySelectorAll('.pick').forEach(btn => btn.addEventListener('click', () => {
+  const mi = btn.dataset.mi, oi = +btn.dataset.oi;
+  picks[mi] = oi;
+  // reset siblings in this material panel
+  document.querySelectorAll(`.pick[data-mi="${mi}"]`).forEach(b => {
+    const card = b.closest('.offer-card');
+    if (b === btn) {
+      b.textContent = '✓ مختار'; b.className = 'btn btn-navy pick'; b.style.padding = '9px 18px'; b.style.fontSize = '13.5px';
+      card.style.boxShadow = '0 0 0 2px var(--navy)';
+    } else {
+      b.textContent = 'اختر'; b.className = 'btn btn-ghost pick'; b.style.padding = '9px 18px'; b.style.fontSize = '13.5px';
+      if (!card.classList.contains('win')) card.style.boxShadow = '';
+    }
+  });
+  recompute();
+}));
+document.getElementById('po-btn').addEventListener('click', () => {
+  const b = document.getElementById('po-btn');
+  b.innerHTML = '✓ تم الإصدار — جارٍ الفتح…';
+  b.classList.remove('btn-primary'); b.classList.add('btn-navy');
+  setTimeout(() => { window.location.href = 'Purchase Order.html'; }, 650);
+});
+</script>
+</body>
+</html>

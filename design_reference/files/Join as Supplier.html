@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>انضم كمورّد — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  .sup-hero { position: relative; overflow: hidden; background: linear-gradient(160deg, var(--navy-deep), var(--navy) 55%, #16264f); color: #fff; padding: 120px 0 90px; }
+  .sup-hero canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .sup-hero .wrap { position: relative; z-index: 2; }
+  .sup-hero-inner { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; }
+  .sup-hero h1 { font-size: clamp(32px,4.6vw,52px); font-weight: 900; line-height: 1.14; letter-spacing: -.015em; margin-top: 18px; text-wrap: balance; }
+  .sup-hero h1 .hl { color: var(--orange-soft); }
+  .sup-hero p.lead { font-size: clamp(16px,1.9vw,19px); color: rgba(255,255,255,.8); margin-top: 20px; max-width: 520px; }
+  .sup-form { background: #fff; border-radius: var(--r-lg); padding: 28px; box-shadow: var(--sh-lg); }
+  .sup-form h3 { font-size: 19px; font-weight: 800; color: var(--navy); }
+  .sup-form .sub { font-size: 13.5px; color: var(--ink-2); margin: 4px 0 18px; }
+  .ben-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; }
+  .ben { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 28px 24px; transition: .25s; }
+  .ben:hover { transform: translateY(-5px); box-shadow: var(--sh-md); }
+  .ben .bi { width: 52px; height: 52px; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: #fff; margin-bottom: 16px; }
+  .ben .bi svg { width: 25px; height: 25px; }
+  .ben h4 { font-size: 17px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+  .ben p { font-size: 14px; color: var(--ink-2); }
+  .steps-h { counter-reset: s; display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; }
+  .sh { position: relative; padding-top: 16px; }
+  .sh .n { width: 40px; height: 40px; border-radius: 50%; background: var(--navy); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; margin-bottom: 14px; }
+  .sh:nth-child(2) .n { background: var(--orange); } .sh:nth-child(3) .n { background: var(--mech); } .sh:nth-child(4) .n { background: var(--arch); }
+  .sh h4 { font-size: 16px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+  .sh p { font-size: 13.5px; color: var(--ink-2); }
+  .sup-field { margin-bottom: 14px; }
+  .sup-field label { display: block; font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+  .sup-input { width: 100%; font-family: inherit; font-size: 14.5px; border: 1.5px solid var(--line); border-radius: 11px; padding: 11px 13px; outline: none; transition: .18s; }
+  .sup-input:focus { border-color: var(--navy); box-shadow: 0 0 0 4px rgba(27,45,91,.08); }
+  @media (max-width:900px){ .sup-hero-inner{grid-template-columns:1fr;gap:36px} .ben-grid{grid-template-columns:1fr} .steps-h{grid-template-columns:1fr 1fr} }
+</style>
+</head>
+<body data-screen-label="Join as Supplier">
+
+<!-- Nav -->
+<header class="nav scrolled" style="position:sticky">
+  <div class="wrap nav-inner">
+    <a href="Taseerak Landing.html" class="logo"><span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span><span class="logo-text"><b>تسعير</b><i>ك</i></span></a>
+    <nav class="nav-links">
+      <a href="Taseerak Landing.html">الرئيسية</a>
+      <a href="#benefits">المزايا</a>
+      <a href="#how">كيف تنضم</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="Login.html" class="btn btn-ghost">تسجيل الدخول</a>
+      <a href="#apply" class="btn btn-primary">انضم الآن</a>
+    </div>
+  </div>
+</header>
+
+<!-- Hero with form -->
+<section class="sup-hero">
+  <canvas id="sup-canvas"></canvas>
+  <div class="wrap">
+    <div class="sup-hero-inner">
+      <div>
+        <span class="eyebrow" style="color:var(--orange-soft);background:rgba(245,131,31,.14);border-color:rgba(245,131,31,.3)"><span class="dot"></span> انضم لشبكة موردي تسعيرك</span>
+        <h1>طلبات تسعير <span class="hl">جاهزة</span><br>توصلك كل يوم.</h1>
+        <p class="lead">سجّل مصنعك أو مؤسستك، واستقبل طلبات المقاولين المطابقة لقطاعك وحجمك تلقائياً. قدّم عرضك، وتنافس بالسعر — بدون رسوم اشتراك.</p>
+        <div class="hero-trust" style="margin-top:28px">
+          <div class="t" style="color:rgba(255,255,255,.78);display:flex;align-items:center;gap:9px;font-weight:600"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--orange-soft)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> توثيق مجاني عبر الرخصة</div>
+          <div class="t" style="color:rgba(255,255,255,.78);display:flex;align-items:center;gap:9px;font-weight:600;margin-top:10px"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--orange-soft)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> طلبات مطابقة لتخصصك فقط</div>
+        </div>
+      </div>
+
+      <div class="sup-form" id="apply">
+        <h3>سجّل اهتمامك</h3>
+        <p class="sub">نتواصل معك خلال ٢٤ ساعة لإكمال التوثيق.</p>
+        <div class="sup-field"><label>اسم المصنع / المؤسسة</label><input class="sup-input" placeholder="مثال: مصنع الراجحي للحديد"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="sup-field"><label>الجوال</label><input class="sup-input" placeholder="5X XXX XXXX" inputmode="numeric"></div>
+          <div class="sup-field"><label>المدينة</label><input class="sup-input" placeholder="الرياض"></div>
+        </div>
+        <div class="sup-field"><label>القطاع الرئيسي</label>
+          <select class="sup-input" style="appearance:none"><option>مدني</option><option>معماري</option><option>كهرباء</option><option>ميكانيك</option></select>
+        </div>
+        <a href="Register.html" class="btn btn-primary btn-lg" style="width:100%;margin-top:6px">أنشئ حساب المورّد <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <p style="text-align:center;font-size:12px;color:var(--ink-3);margin-top:10px">بدون رسوم اشتراك · توثيق مجاني</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Benefits -->
+<section class="section" id="benefits" style="background:var(--white)">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span> لماذا تسعيرك للموردين</span>
+      <h2>عملاء جاهزون يصلونك</h2>
+      <p>وفّر جهد البحث عن المقاولين — نوصّل لك الطلبات المناسبة لك مباشرة.</p>
+    </div>
+    <div class="ben-grid">
+      <div class="ben">
+        <div class="bi" style="background:linear-gradient(135deg,var(--navy),var(--navy-soft))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg></div>
+        <h4>طلبات مطابقة لتخصصك</h4>
+        <p>التصنيف الذكي يوصّل لك فقط الطلبات في قطاعك وبحجم يناسب طاقتك الإنتاجية.</p>
+      </div>
+      <div class="ben">
+        <div class="bi" style="background:linear-gradient(135deg,var(--orange),var(--orange-dark))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h4>منافسة عادلة بالسعر</h4>
+        <p>قدّم عرضك وشوف ترتيبك التنافسي حيّاً، بدون وسطاء وبدون عمولة على التسعير.</p>
+      </div>
+      <div class="ben">
+        <div class="bi" style="background:linear-gradient(135deg,var(--mech),#0a5641)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div>
+        <h4>توثيق يرفع ثقتك</h4>
+        <p>شارة "موثّق" بعد فحص الرخصة تمنح المقاولين ثقة أكبر في عروضك.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How to join -->
+<section class="section" id="how" style="background:var(--bg)">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span> أربع خطوات</span>
+      <h2>انضم خلال دقائق</h2>
+    </div>
+    <div class="steps-h">
+      <div class="sh"><div class="n">١</div><h4>سجّل حسابك</h4><p>اسم المؤسسة، الجوال، والقطاعات التي تورّدها.</p></div>
+      <div class="sh"><div class="n">٢</div><h4>وثّق رخصتك</h4><p>ارفع السجل التجاري لاعتمادك كمورّد موثّق.</p></div>
+      <div class="sh"><div class="n">٣</div><h4>استقبل الطلبات</h4><p>تصلك طلبات التسعير المطابقة لتخصصك تلقائياً.</p></div>
+      <div class="sh"><div class="n">٤</div><h4>قدّم وافز</h4><p>قدّم عرضك، تنافس بالسعر، واحصل على أمر الشراء.</p></div>
+    </div>
+    <div style="text-align:center;margin-top:44px">
+      <a href="Register.html" class="btn btn-primary btn-lg">ابدأ التسجيل كمورّد <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer" style="padding:50px 0 30px">
+  <div class="wrap">
+    <div class="foot-bottom" style="padding-top:0;border:none">
+      <a href="Taseerak Landing.html" class="logo"><span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span><span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span></a>
+      <span>© ٢٠٢٦ تسعيرك. جميع الحقوق محفوظة.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// compact network canvas (reuse style from login)
+(function () {
+  const c = document.getElementById('sup-canvas'); if (!c) return;
+  const x = c.getContext('2d'); let W, H, D, nodes = [], hub, pulses = [], t = 0, last = performance.now(), nb = .8;
+  function rs() { D = Math.min(devicePixelRatio || 1, 2); const p = c.parentElement; W = p.clientWidth; H = p.clientHeight; c.width = W * D; c.height = H * D; c.style.width = W + 'px'; c.style.height = H + 'px'; x.setTransform(D, 0, 0, D, 0, 0); hub = { x: W * .7, y: H * .5 }; nodes = []; const n = Math.min(14, Math.max(8, (W * H / 52000) | 0)), mr = Math.min(W, H) * .45; for (let i = 0; i < n; i++) { const a = i / n * 6.28 + Math.random() * .4, r = mr * (.5 + Math.random() * .55); const bx = hub.x + Math.cos(a) * r, by = hub.y + Math.sin(a) * r; nodes.push({ bx, by, x: bx, y: by, dr: Math.random() * 6.28, dist: Math.hypot(bx - hub.x, by - hub.y), g: 0, q: false }); } pulses = []; }
+  function bc() { pulses.push({ r: 0 }); nodes.forEach(s => s.q = Math.random() < .8 ? false : 'skip'); }
+  function fr(now) { const dt = Math.min((now - last) / 1000, .05); last = now; t += dt; nb -= dt; if (nb <= 0) { bc(); nb = 3.4 + Math.random() * 1.2; } x.clearRect(0, 0, W, H); for (const s of nodes) { s.dr += dt * .5; s.x = s.bx + Math.cos(s.dr) * 6; s.y = s.by + Math.sin(s.dr * .8) * 6; s.dist = Math.hypot(s.x - hub.x, s.y - hub.y); } for (const s of nodes) { const a = .07 + s.g * .5, col = s.g > .02 ? '245,131,31' : '120,160,235'; const g = x.createLinearGradient(hub.x, hub.y, s.x, s.y); g.addColorStop(0, 'rgba(' + col + ',' + a + ')'); g.addColorStop(1, 'rgba(' + col + ',0)'); x.strokeStyle = g; x.lineWidth = .7 + s.g; x.beginPath(); x.moveTo(hub.x, hub.y); x.lineTo(s.x, s.y); x.stroke(); } const mx = Math.hypot(W, H) * .6; for (let i = pulses.length - 1; i >= 0; i--) { const p = pulses[i]; p.r += dt * 320; const lf = 1 - p.r / mx; if (lf <= 0) { pulses.splice(i, 1); continue; } x.beginPath(); x.arc(hub.x, hub.y, p.r, 0, 6.28); x.strokeStyle = 'rgba(180,205,255,' + (lf * .26) + ')'; x.lineWidth = 1.3; x.stroke(); for (const s of nodes) if (s.q === false && p.r >= s.dist) { s.q = true; s.g = 1; } } for (const s of nodes) { s.g *= .965; if (s.g > .02) { x.beginPath(); x.arc(s.x, s.y, 2 + 7 * s.g, 0, 6.28); x.fillStyle = 'rgba(245,131,31,' + (s.g * .16) + ')'; x.fill(); } x.beginPath(); x.arc(s.x, s.y, 2.2, 0, 6.28); x.fillStyle = s.g > .02 ? 'rgba(245,131,31,.95)' : 'rgba(170,198,250,.55)'; x.shadowColor = s.g > .02 ? 'rgba(245,131,31,.8)' : 'transparent'; x.shadowBlur = 9 * s.g; x.fill(); x.shadowBlur = 0; } const hg = x.createRadialGradient(hub.x, hub.y, 0, hub.x, hub.y, 38); hg.addColorStop(0, 'rgba(245,131,31,.26)'); hg.addColorStop(1, 'rgba(245,131,31,0)'); x.fillStyle = hg; x.beginPath(); x.arc(hub.x, hub.y, 38, 0, 6.28); x.fill(); x.beginPath(); x.arc(hub.x, hub.y, 8 + Math.sin(now / 600) * 1.2, 0, 6.28); x.strokeStyle = 'rgba(245,131,31,.85)'; x.lineWidth = 2; x.stroke(); x.beginPath(); x.arc(hub.x, hub.y, 3.6, 0, 6.28); x.fillStyle = '#fff'; x.shadowColor = 'rgba(245,131,31,.9)'; x.shadowBlur = 13; x.fill(); x.shadowBlur = 0; requestAnimationFrame(fr); }
+  addEventListener('resize', rs); rs(); requestAnimationFrame(fr);
+})();
+</script>
+</body>
+</html>

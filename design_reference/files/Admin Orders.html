@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أوامر الشراء والمعاملات — إدارة تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Admin Orders" data-admin-page="orders">
+<div class="app">
+  <aside id="admin-side" class="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">أوامر الشراء والمعاملات</div><div class="tb-sub">سجل العمليات بين المقاولين والموردين</div></div>
+      <div class="tb-spacer"></div>
+      <div class="tb-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="ابحث برقم الأمر…"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="stats-row">
+        <div class="scard"><div class="ic ic-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 13l2 2 4-4"/></svg></div><div class="v">٨٩</div><div class="l">أوامر شراء</div></div>
+        <div class="scard"><div class="ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div class="v">٤.٢ م</div><div class="l">قيمة المعاملات (ر.س)</div></div>
+        <div class="scard"><div class="ic ic-orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><div class="v">٤٧٬٢٠٠</div><div class="l">متوسط قيمة الأمر</div></div>
+        <div class="scard"><div class="ic ic-navy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div class="v">٦</div><div class="l">قيد التنفيذ</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>أوامر الشراء</h3><span class="filter-note" style="margin:0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h0" stroke-linecap="round"/></svg> المنصة لا تتدخل في الدفع — تسجيل فقط</span></div>
+        <div style="overflow-x:auto"><table class="tbl">
+          <thead><tr><th>رقم الأمر</th><th>المقاول</th><th>المورّد</th><th>المادة</th><th>القيمة</th><th>التاريخ</th><th>الحالة</th><th></th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:800;color:var(--navy)">PO-2026-0418</td><td>شركة الإنشاءات الحديثة</td><td>مصنع الراجحي</td><td>حديد تسليح Ø16</td><td class="num" style="font-weight:800">١٠٩٬١١٠</td><td style="color:var(--ink-3);font-size:13px">٤ يون</td><td><span class="pill pill-pend"><span class="d"></span> قيد التنفيذ</span></td><td><a href="Purchase Order.html" class="link">عرض</a></td></tr>
+            <tr><td style="font-weight:800;color:var(--navy)">PO-2026-0417</td><td>مقاولات البنيان</td><td>معرض السيراميك</td><td>بلاط بورسلان</td><td class="num" style="font-weight:800">٨٧٬٢٠٠</td><td style="color:var(--ink-3);font-size:13px">٣ يون</td><td><span class="pill pill-open"><span class="d"></span> مكتمل</span></td><td><a href="Purchase Order.html" class="link">عرض</a></td></tr>
+            <tr><td style="font-weight:800;color:var(--navy)">PO-2026-0402</td><td>مؤسسة عمار</td><td>أنابيب الجزيرة</td><td>مواسير PPR</td><td class="num" style="font-weight:800">٩٬٢٤٠</td><td style="color:var(--ink-3);font-size:13px">١ يون</td><td><span class="pill pill-rej"><span class="d"></span> نزاع</span></td><td><a href="Admin Disputes.html" class="link">عرض النزاع</a></td></tr>
+            <tr><td style="font-weight:800;color:var(--navy)">PO-2026-0391</td><td>شركة الإنشاءات الحديثة</td><td>النور للكهرباء</td><td>كابل XLPE</td><td class="num" style="font-weight:800">٢٦٬٢٤٠</td><td style="color:var(--ink-3);font-size:13px">٢٨ ماي</td><td><span class="pill pill-open"><span class="d"></span> مكتمل</span></td><td><a href="Purchase Order.html" class="link">عرض</a></td></tr>
+            <tr><td style="font-weight:800;color:var(--navy)">PO-2026-0388</td><td>مقاولات البنيان</td><td>شركة المعادن</td><td>حديد زاوية</td><td class="num" style="font-weight:800">٣٤٬٢٠٠</td><td style="color:var(--ink-3);font-size:13px">٢٦ ماي</td><td><span class="pill pill-open"><span class="d"></span> مكتمل</span></td><td><a href="Purchase Order.html" class="link">عرض</a></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/admin-shell.js"></script>
+</body>
+</html>

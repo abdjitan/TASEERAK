@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المستخدمون — إدارة تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Admin Users" data-admin-page="users">
+<div class="app">
+  <aside id="admin-side" class="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">المستخدمون</div><div class="tb-sub">كل المقاولين والموردين على المنصة</div></div>
+      <div class="tb-spacer"></div>
+      <div class="tb-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="ابحث بالاسم أو السجل…" id="search"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <!-- filters -->
+      <div class="tabs" id="role-tabs">
+        <button class="on" data-role="all">الكل <span style="opacity:.6">٢٤</span></button>
+        <button data-role="contractor">مقاولون <span style="opacity:.6">١٣</span></button>
+        <button data-role="supplier">موردون <span style="opacity:.6">١١</span></button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h3>قائمة المستخدمين</h3>
+          <div style="display:flex;gap:8px">
+            <span class="chip" id="f-verified" style="cursor:pointer">موثّق فقط</span>
+            <span class="chip" id="f-pending" style="cursor:pointer">قيد المراجعة</span>
+          </div>
+        </div>
+        <div style="overflow-x:auto"><table class="tbl" id="utable">
+          <thead><tr><th>المنشأة</th><th>الدور</th><th>التصنيف</th><th>التوثيق</th><th>المنطقة</th><th>التسجيل</th><th></th></tr></thead>
+          <tbody id="ubody"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/admin-shell.js"></script>
+<script>
+const USERS = [
+  { id:1, n:"مصنع الراجحي للحديد", role:"supplier", tier:"🏭 مصنع", v:"green", region:"الرياض", date:"١٢ ينا ٢٠٢٦" },
+  { id:2, n:"شركة الإنشاءات الحديثة", role:"contractor", tier:"تصنيف ب", v:"green", region:"الرياض", date:"٣ ينا ٢٠٢٦" },
+  { id:3, n:"معرض السيراميك الذهبي", role:"supplier", tier:"🏪 موزّع", v:"pending", region:"جدة", date:"٤ يون ٢٠٢٦" },
+  { id:4, n:"النور للكهرباء", role:"supplier", tier:"🏪 موزّع", v:"green", region:"الرياض", date:"٢١ فبر ٢٠٢٦" },
+  { id:5, n:"مؤسسة عمار للمقاولات", role:"contractor", tier:"تصنيف ج", v:"pending", region:"الدمام", date:"٢ يون ٢٠٢٦" },
+  { id:6, n:"أنابيب الجزيرة", role:"supplier", tier:"🏭 مصنع", v:"green", region:"الخبر", date:"٩ مار ٢٠٢٦" },
+  { id:7, n:"شركة المعادن المتحدة", role:"supplier", tier:"🏪 موزّع", v:"green", region:"الرياض", date:"١٥ فبر ٢٠٢٦" },
+  { id:8, n:"مقاولات البنيان", role:"contractor", tier:"تصنيف أ", v:"green", region:"مكة", date:"٢٨ ينا ٢٠٢٦" },
+  { id:9, n:"مؤسسة التيار الكهربائي", role:"supplier", tier:"🏬 محلي", v:"pending", region:"الرياض", date:"٥ يون ٢٠٢٦" },
+];
+const vbadge = v => v==='green' ? '<span class="vbadge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 12l2 2 4-4"/></svg> موثّق</span>'
+  : '<span class="pill pill-pend"><span class="d"></span> قيد المراجعة</span>';
+const roleBadge = r => r==='supplier' ? '<span class="rolebadge supplier">🏪 مورّد</span>' : '<span class="rolebadge contractor">👷 مقاول</span>';
+let role = 'all', vfilter = null, q = '';
+const body = document.getElementById('ubody');
+function render() {
+  const rows = USERS.filter(u =>
+    (role === 'all' || u.role === role) &&
+    (!vfilter || u.v === vfilter) &&
+    (!q || u.n.includes(q)));
+  body.innerHTML = rows.map(u => `
+    <tr>
+      <td style="font-weight:700;color:var(--navy);min-width:170px"><div style="display:flex;align-items:center;gap:10px"><span class="uavatar" style="width:34px;height:34px;font-size:13px;background:${u.role==='supplier'?'var(--orange)':'var(--navy)'}">${u.n.charAt(0)}</span>${u.n}</div></td>
+      <td>${roleBadge(u.role)}</td>
+      <td>${u.tier}</td>
+      <td>${vbadge(u.v)}</td>
+      <td>${u.region}</td>
+      <td style="color:var(--ink-3);font-size:13px">${u.date}</td>
+      <td><a href="Admin User Detail.html" class="btn btn-ghost" style="padding:6px 14px;font-size:12.5px">عرض الملف</a></td>
+    </tr>`).join('') || '<tr><td colspan="7"><div class="empty" style="padding:30px"><p>لا نتائج مطابقة</p></div></td></tr>';
+}
+render();
+document.querySelectorAll('#role-tabs button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#role-tabs button').forEach(x => x.classList.toggle('on', x === b));
+  role = b.dataset.role; render();
+}));
+function toggleV(el, val) { const on = el.classList.toggle('c-civil'); vfilter = on ? val : null;
+  // clear the other
+  if (val==='green') { document.getElementById('f-pending').classList.remove('c-elec'); if(vfilter)vfilter='green'; }
+  render();
+}
+document.getElementById('f-verified').addEventListener('click', e => { const on = e.target.classList.toggle('c-civil'); document.getElementById('f-pending').classList.remove('c-elec'); vfilter = on ? 'green' : null; render(); });
+document.getElementById('f-pending').addEventListener('click', e => { const on = e.target.classList.toggle('c-elec'); document.getElementById('f-verified').classList.remove('c-civil'); vfilter = on ? 'pending' : null; render(); });
+document.getElementById('search').addEventListener('input', e => { q = e.target.value.trim(); render(); });
+</script>
+</body>
+</html>

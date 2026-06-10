@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الرسائل — إدارة تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Admin Messages" data-admin-page="messages">
+<div class="app">
+  <aside id="admin-side" class="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">الرسائل</div><div class="tb-sub">رسائل الدعم من المستخدمين</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="chat" id="chat">
+      <!-- conversation list -->
+      <div class="chat-list" id="conv-list"></div>
+
+      <!-- thread -->
+      <div class="chat-main">
+        <div class="chat-head" id="thread-head">
+          <button class="icon-btn" id="back-list" style="display:none;width:38px;height:38px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          <span class="uavatar" id="th-av" style="width:40px;height:40px;font-size:15px;background:var(--navy)">ش</span>
+          <div><div style="font-weight:800;color:var(--navy)" id="th-name">شركة الإنشاءات الحديثة</div><div style="font-size:12px;color:var(--ink-3)" id="th-role">مقاول · تصنيف ب</div></div>
+        </div>
+        <div class="chat-msgs" id="msgs"></div>
+        <div class="chat-compose">
+          <input id="ci" placeholder="اكتب ردّك…">
+          <button class="send" id="cs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/admin-shell.js"></script>
+<script>
+const CONVS = [
+  { id:0, name:"شركة الإنشاءات الحديثة", role:"مقاول · تصنيف ب", av:"ش", avbg:"var(--navy)", last:"تمام، شكراً للمساعدة!", time:"١٠:٠٥", unread:0,
+    thread:[["them","السلام عليكم، عندي استفسار عن توثيق حسابي"],["me","وعليكم السلام، تفضّل كيف نساعدك؟"],["them","كيف أوثّق عبر واثق؟"],["me","من الإعدادات ← التوثيق، أدخل رقم السجل التجاري وسيتم التحقق فوراً."],["them","تمام، شكراً للمساعدة!"]] },
+  { id:1, name:"مصنع الراجحي للحديد", role:"مورّد · مصنع", av:"ر", avbg:"var(--orange)", last:"هل يمكن إضافة مادة جديدة؟", time:"أمس", unread:2,
+    thread:[["them","مساء الخير"],["them","هل يمكن إضافة مادة جديدة غير موجودة في القائمة؟"]] },
+  { id:2, name:"مؤسسة عمار للمقاولات", role:"مقاول · تصنيف ج", av:"ع", avbg:"var(--mech)", last:"شكراً، تم حل المشكلة", time:"٣ يونيو", unread:0,
+    thread:[["them","واجهت مشكلة في رفع جدول الكميات"],["me","جرّب ملف Excel بصيغة xlsx والأعمدة: المادة/الكمية/الوحدة."],["them","شكراً، تم حل المشكلة"]] },
+];
+let active = 0;
+const convList = document.getElementById('conv-list');
+const msgs = document.getElementById('msgs');
+const chat = document.getElementById('chat');
+
+function renderList() {
+  convList.innerHTML = CONVS.map(c => `
+    <div class="chat-li ${c.id===active?'on':''}" data-i="${c.id}">
+      <span class="uavatar" style="width:42px;height:42px;font-size:15px;background:${c.avbg}">${c.av}</span>
+      <div class="clmain">
+        <div class="cln">${c.name}<span class="t">${c.time}</span></div>
+        <div class="clmsg">${c.last}</div>
+      </div>
+      ${c.unread?`<span class="unread-b">${c.unread.toLocaleString('ar-EG')}</span>`:''}
+    </div>`).join('');
+  convList.querySelectorAll('.chat-li').forEach(li => li.addEventListener('click', () => openConv(+li.dataset.i)));
+}
+function openConv(i) {
+  active = i; const c = CONVS[i]; c.unread = 0;
+  document.getElementById('th-name').textContent = c.name;
+  document.getElementById('th-role').textContent = c.role;
+  const av = document.getElementById('th-av'); av.textContent = c.av; av.style.background = c.avbg;
+  msgs.innerHTML = c.thread.map(([who, t]) => `<div class="bubble ${who}">${t}</div>`).join('');
+  msgs.scrollTop = msgs.scrollHeight;
+  chat.classList.add('thread-open');
+  renderList();
+}
+document.getElementById('back-list').addEventListener('click', () => chat.classList.remove('thread-open'));
+function checkMobile() { document.getElementById('back-list').style.display = window.innerWidth <= 760 ? 'flex' : 'none'; }
+window.addEventListener('resize', checkMobile); checkMobile();
+
+const ci = document.getElementById('ci');
+function send() {
+  const t = ci.value.trim(); if (!t) return;
+  CONVS[active].thread.push(["me", t]); ci.value = '';
+  msgs.innerHTML += `<div class="bubble me">${t}</div>`; msgs.scrollTop = msgs.scrollHeight;
+}
+document.getElementById('cs').addEventListener('click', send);
+ci.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+
+renderList(); openConv(0);
+</script>
+</body>
+</html>

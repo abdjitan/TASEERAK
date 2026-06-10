@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تأكيد البريد — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+</head>
+<body>
+<div class="auth">
+  <div class="auth-brand">
+    <canvas id="auth-canvas"></canvas>
+    <div class="ab-top">
+      <a href="Taseerak Landing.html" class="logo"><span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span><span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span></a>
+    </div>
+    <div class="ab-mid">
+      <h2>خطوة أخيرة<br>قبل أن تبدأ.</h2>
+      <p>أكّد بريدك الإلكتروني لتفعيل حسابك بالكامل.</p>
+      <ul class="ab-list">
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>افتح الرابط في بريدك</li>
+        <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>ارفع مستنداتك لاحقاً من الإعدادات</li>
+      </ul>
+    </div>
+    <div class="ab-foot">© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد للمقاولين</div>
+  </div>
+
+  <div class="auth-form">
+    <div class="af-inner fade-up" style="text-align:center">
+      <a href="Taseerak Landing.html" class="logo af-logo" style="justify-content:center"><span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span><span class="logo-text"><b>تسعير</b><i>ك</i></span></a>
+
+      <div style="width:84px;height:84px;border-radius:24px;background:rgba(245,131,31,.12);display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="var(--orange-dark)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+      </div>
+      <h1>أكّد بريدك الإلكتروني 📬</h1>
+      <p class="sub">أرسلنا رابط التأكيد إلى <b style="color:var(--navy)">name@company.com</b>. افتح الرابط ثم سجّل الدخول.</p>
+
+      <div class="banner info" style="text-align:start;margin:6px 0 22px">
+        <span class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h0" stroke-linecap="round"/></svg></span>
+        <div class="bmain"><div class="bt">يمكنك رفع المستندات لاحقاً</div><div class="bs">ارفع الرخصة والسجل التجاري من الإعدادات في أي وقت.</div></div>
+      </div>
+
+      <a href="Login.html" class="btn btn-primary btn-block btn-lg2">تابع لتسجيل الدخول</a>
+      <p style="text-align:center;font-size:13px;color:var(--ink-3);margin-top:18px">لم يصلك البريد؟ <a href="#" id="resend" style="font-weight:800;color:var(--orange-dark)">إعادة الإرسال</a> <span id="resent" style="display:none;color:var(--mech);font-weight:700">✓ تم الإرسال</span></p>
+    </div>
+  </div>
+</div>
+
+<script src="assets/auth-canvas.js"></script>
+<script>
+document.getElementById('resend').addEventListener('click', e => { e.preventDefault(); document.getElementById('resent').style.display = 'inline'; e.target.style.display = 'none'; });
+</script>
+</body>
+</html>

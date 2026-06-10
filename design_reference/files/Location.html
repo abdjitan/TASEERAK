@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الموقع — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Location">
+<div class="app">
+
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section">المورّد</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Supplier Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> الرئيسية</a>
+      <a class="side-item" href="Supplier Offer.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> طلبات واردة <span class="count">٨</span></a>
+      <a class="side-item" href="Supplier Prices.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> أسعاري</a>
+      <a class="side-item" href="Supplier Specialties.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg> تخصصاتي</a>
+    </nav>
+    <div class="side-section">الحساب</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Settings.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 7.5 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15"/></svg> الإعدادات</a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av" style="background:var(--orange)">ر</span><div><div class="nm">مصنع الراجحي للحديد</div><div class="rl">مُصنّع · موثّق ✓</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">موقع المنشأة</div><div class="tb-sub">للمطابقة حسب القرب وحساب الشحن</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="banner info">
+        <span class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+        <div class="bmain"><div class="bt">حدّد موقعك بدقة</div><div class="bs">يساعد المقاولين على إيجاد الموردين القريبين وحساب تكلفة الشحن.</div></div>
+      </div>
+
+      <div class="grid-3-2">
+        <!-- map -->
+        <div>
+          <div class="map">
+            <div class="road" style="top:0;bottom:0;inset-inline-start:42%;width:14px"></div>
+            <div class="road" style="inset-inline:0;top:58%;height:14px"></div>
+            <div class="pulse-ring"></div>
+            <div class="pin"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5" fill="#fff"/></svg></div>
+            <div class="hint">📍 اسحب الدبوس لتحديد الموقع</div>
+          </div>
+          <div class="row-2" style="margin-top:14px">
+            <div class="field" style="margin-bottom:0"><label>خط العرض (Latitude)</label><input class="input num" value="24.7136" dir="ltr"></div>
+            <div class="field" style="margin-bottom:0"><label>خط الطول (Longitude)</label><input class="input num" value="46.6753" dir="ltr"></div>
+          </div>
+        </div>
+
+        <!-- national address -->
+        <div>
+          <div class="panel panel-pad">
+            <h3 style="font-size:16px;font-weight:800;color:var(--navy);margin-bottom:16px">العنوان الوطني المختصر</h3>
+            <div class="field"><label>الرمز المختصر</label><input class="input" value="RRRD2929" dir="ltr" style="letter-spacing:.1em;font-weight:800"></div>
+            <div class="row-2">
+              <div class="field"><label>رقم المبنى</label><input class="input num" value="2929"></div>
+              <div class="field"><label>الرقم الإضافي</label><input class="input num" value="7531"></div>
+            </div>
+            <div class="field"><label>الشارع</label><input class="input" value="طريق الملك فهد الصناعي"></div>
+            <div class="row-2">
+              <div class="field"><label>الحي</label><input class="input" value="المنطقة الصناعية الثانية"></div>
+              <div class="field"><label>الرمز البريدي</label><input class="input num" value="13245"></div>
+            </div>
+            <button class="btn btn-primary btn-block btn-lg2" id="save-loc" style="margin-top:6px">حفظ الموقع</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/shell.js"></script>
+<script>
+// draggable pin within map
+(function () {
+  const map = document.querySelector('.map'), pin = document.querySelector('.pin'), ring = document.querySelector('.pulse-ring');
+  let drag = false;
+  const move = (cx, cy) => {
+    const r = map.getBoundingClientRect();
+    let x = Math.max(6, Math.min(94, (cx - r.left) / r.width * 100));
+    let y = Math.max(10, Math.min(92, (cy - r.top) / r.height * 100));
+    pin.style.insetInlineStart = x + '%'; pin.style.top = y + '%';
+    ring.style.insetInlineStart = x + '%'; ring.style.top = y + '%';
+  };
+  pin.addEventListener('mousedown', e => { drag = true; pin.style.cursor = 'grabbing'; e.preventDefault(); });
+  window.addEventListener('mousemove', e => { if (drag) move(e.clientX, e.clientY); });
+  window.addEventListener('mouseup', () => { drag = false; pin.style.cursor = 'grab'; });
+  map.addEventListener('click', e => { if (!e.target.closest('.pin')) move(e.clientX, e.clientY); });
+})();
+document.getElementById('save-loc').addEventListener('click', () => { var b = document.getElementById('save-loc'); b.textContent = '✓ تم حفظ الموقع'; b.classList.remove('btn-primary'); b.classList.add('btn-navy'); });
+</script>
+</body>
+</html>

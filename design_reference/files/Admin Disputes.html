@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>البلاغات والنزاعات — إدارة تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Admin Disputes" data-admin-page="disputes">
+<div class="app">
+  <aside id="admin-side" class="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">البلاغات والنزاعات</div><div class="tb-sub">مراجعة الشكاوى بين المستخدمين</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="banner warn">
+        <span class="bic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h0"/></svg></span>
+        <div class="bmain"><div class="bt">المنصة وسيط معلومات فقط</div><div class="bs">دور الإدارة هو التوثيق والوساطة؛ المنصة غير مسؤولة عن المعاملات المالية بين الأطراف.</div></div>
+      </div>
+
+      <div class="tabs" id="dt">
+        <button class="on" data-d="open">مفتوحة <span style="opacity:.6">٣</span></button>
+        <button data-d="resolved">مُغلقة</button>
+      </div>
+
+      <!-- OPEN -->
+      <div class="tabpane on" data-pane="open" id="open-list"></div>
+
+      <!-- RESOLVED -->
+      <div class="tabpane" data-pane="resolved">
+        <div class="panel panel-pad"><div class="empty" style="padding:30px"><div class="ei">✓</div><h4>٨ نزاعات مُغلقة</h4><p>تم حلّها خلال آخر ٣٠ يوم.</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- resolve modal -->
+<div class="modal-bg" id="rmodal">
+  <div class="modal">
+    <h3>إغلاق النزاع</h3>
+    <p>سجّل قرار الوساطة. يصل للطرفين عبر البريد.</p>
+    <textarea class="textarea" placeholder="ملخص القرار…"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="rcancel">إلغاء</button>
+      <button class="btn btn-primary" id="rconfirm">تأكيد الإغلاق</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/admin-shell.js"></script>
+<script>
+const DISPUTES = [
+  { id:"D-211", po:"PO-2026-0402", by:"مؤسسة عمار (مقاول)", against:"أنابيب الجزيرة (مورّد)", reason:"تأخر التسليم", detail:"المورّد لم يسلّم خلال المدة المتفق عليها (٣ أيام) وتأخر ٦ أيام.", date:"قبل ساعتين", sev:"عالية" },
+  { id:"D-209", po:"PO-2026-0395", by:"شركة الإنشاءات (مقاول)", against:"شركة المعادن (مورّد)", reason:"جودة المادة", detail:"المواصفة المستلمة لا تطابق المتفق عليه في العرض.", date:"أمس", sev:"متوسطة" },
+  { id:"D-205", po:"PO-2026-0380", by:"النور للكهرباء (مورّد)", against:"مقاولات البنيان (مقاول)", reason:"إلغاء بعد القبول", detail:"المقاول ألغى الطلب بعد قبول العرض وتجهيز البضاعة.", date:"قبل ٣ أيام", sev:"متوسطة" },
+];
+const sevPill = s => s==='عالية' ? '<span class="pill pill-rej"><span class="d"></span> أولوية عالية</span>' : '<span class="pill pill-pend"><span class="d"></span> متوسطة</span>';
+const wrap = document.getElementById('open-list');
+DISPUTES.forEach(d => {
+  const c = document.createElement('div');
+  c.className = 'panel panel-pad';
+  c.style.marginBottom = '14px';
+  c.innerHTML = `
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start">
+      <span class="lic" style="width:46px;height:46px;border-radius:13px;background:rgba(239,68,68,.1);color:#ef4444;display:flex;align-items:center;justify-content:center;flex:none"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h0"/></svg></span>
+      <div style="flex:1;min-width:220px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-weight:800;font-size:15px;color:var(--navy)">${d.reason}</span>
+          ${sevPill(d.sev)}
+          <span class="pill pill-info"><span class="d"></span> ${d.id}</span>
+        </div>
+        <div style="font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.8">
+          <div>أمر الشراء: <b style="color:var(--navy)">${d.po}</b></div>
+          <div>مُقدّم البلاغ: <b style="color:var(--navy)">${d.by}</b> · ضد: <b style="color:var(--navy)">${d.against}</b></div>
+          <div style="margin-top:6px;color:var(--ink-2)">${d.detail}</div>
+          <div style="color:var(--ink-3);margin-top:6px">${d.date}</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <a href="Purchase Order.html" class="btn btn-ghost" style="padding:8px 16px;font-size:13px">عرض أمر الشراء</a>
+          <button class="btn btn-navy contact" style="padding:8px 16px;font-size:13px">مراسلة الطرفين</button>
+          <button class="btn btn-primary resolve" style="padding:8px 16px;font-size:13px">إغلاق النزاع</button>
+        </div>
+      </div>
+    </div>`;
+  wrap.appendChild(c);
+});
+
+document.querySelectorAll('#dt button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#dt button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.toggle('on', p.dataset.pane === b.dataset.d));
+}));
+const modal = document.getElementById('rmodal');
+document.querySelectorAll('.resolve').forEach(b => b.addEventListener('click', () => modal.classList.add('show')));
+document.getElementById('rcancel').addEventListener('click', () => modal.classList.remove('show'));
+document.getElementById('rconfirm').addEventListener('click', () => modal.classList.remove('show'));
+</script>
+</body>
+</html>

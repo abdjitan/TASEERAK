@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سجل التدقيق — إدارة تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+<style>
+  .timeline { position: relative; padding-inline-start: 26px; }
+  .timeline::before { content:""; position:absolute; inset-inline-start: 7px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+  .tl { position: relative; padding: 12px 0; }
+  .tl::before { content:""; position:absolute; inset-inline-start: -23px; top: 17px; width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--c, var(--navy)); }
+  .tl .th { font-size: 14px; color: var(--ink); }
+  .tl .th b { color: var(--navy); font-weight: 800; }
+  .tl .tm { font-size: 12px; color: var(--ink-3); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
+</style>
+</head>
+<body class="app-body" data-screen-label="Admin Audit" data-admin-page="audit">
+<div class="app">
+  <aside id="admin-side" class="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">سجل التدقيق</div><div class="tb-sub">كل الأحداث والإجراءات على المنصة</div></div>
+      <div class="tb-spacer"></div>
+      <div class="tb-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg><input placeholder="ابحث في السجل…"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="tabs" id="at">
+        <button class="on" data-f="all">الكل</button>
+        <button data-f="verify">توثيق</button>
+        <button data-f="rfq">طلبات</button>
+        <button data-f="order">أوامر</button>
+        <button data-f="dispute">نزاعات</button>
+      </div>
+
+      <div class="panel panel-pad">
+        <div class="timeline" id="tl"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/admin-shell.js"></script>
+<script>
+const C = { verify:'#0F6E56', rfq:'#F5831F', order:'#7c3aed', dispute:'#ef4444', user:'#1B2D5B' };
+const LOG = [
+  { t:"verify", html:"توثيق المورّد <b>معرض السيراميك الذهبي</b> عبر واثق", who:"مشرف عام", when:"اليوم ١٤:٠٢" },
+  { t:"rfq", html:"طلب تسعير جديد <b>حديد تسليح Ø16</b> (٤٢ طن)", who:"شركة الإنشاءات الحديثة", when:"اليوم ١٣:٤٠" },
+  { t:"order", html:"إصدار أمر الشراء <b>#PO-2026-0418</b> بقيمة ١٠٩٬١١٠ ر.س", who:"شركة الإنشاءات الحديثة", when:"اليوم ١٣:١٢" },
+  { t:"dispute", html:"فتح نزاع <b>D-211</b> على أمر الشراء #PO-2026-0402", who:"مؤسسة عمار", when:"اليوم ١٢:٢٠" },
+  { t:"user", html:"تسجيل مستخدم جديد <b>مؤسسة التيار الكهربائي</b> (مورّد)", who:"النظام", when:"أمس ٠٩:١٥" },
+  { t:"verify", html:"رفض توثيق <b>مؤسسة التيار</b> — عدم تطابق النشاط", who:"مشرف عام", when:"أمس ١٠:٠٢" },
+  { t:"order", html:"اكتمال أمر الشراء <b>#PO-2026-0391</b>", who:"النظام", when:"٢٨ ماي ١٦:٣٠" },
+  { t:"rfq", html:"انتهاء مهلة الطلب <b>دهان جوتن داخلي</b> دون عروض كافية", who:"النظام", when:"٢٧ ماي ٠٨:٠٠" },
+];
+const labelT = { verify:"توثيق", rfq:"طلب", order:"أمر شراء", dispute:"نزاع", user:"مستخدم" };
+const tl = document.getElementById('tl');
+let filt = 'all';
+function render() {
+  tl.innerHTML = LOG.filter(l => filt === 'all' || l.t === filt).map(l => `
+    <div class="tl" style="--c:${C[l.t]}">
+      <div class="th">${l.html}</div>
+      <div class="tm"><span class="pill pill-info" style="padding:2px 9px">${labelT[l.t]}</span> <span>${l.who}</span> <span>· ${l.when}</span></div>
+    </div>`).join('') || '<div class="empty" style="padding:30px"><p>لا أحداث</p></div>';
+}
+render();
+document.querySelectorAll('#at button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#at button').forEach(x => x.classList.toggle('on', x === b));
+  filt = b.dataset.f; render();
+}));
+</script>
+</body>
+</html>

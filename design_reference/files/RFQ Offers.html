@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>عروض الطلب — تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="RFQ Offers">
+<div class="app">
+
+  <aside class="sidebar">
+    <a href="Taseerak Landing.html" class="logo side-logo">
+      <span class="logo-badge"><img src="assets/logo.png" alt="تسعيرك"></span>
+      <span class="logo-text"><b style="color:#fff">تسعير</b><i>ك</i></span>
+    </a>
+    <div class="side-section">القائمة</div>
+    <nav class="side-nav">
+      <a class="side-item" href="Contractor Dashboard.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg> الرئيسية</a>
+      <a class="side-item" href="New RFQ.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg> طلب تسعير جديد</a>
+      <a class="side-item on" href="Project Results.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> طلباتي <span class="count">6</span></a>
+      <a class="side-item" href="Price Index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg> مؤشر الأسعار</a>
+    </nav>
+    <div class="side-foot">
+      <div class="side-user"><span class="av">ش</span><div><div class="nm">شركة الإنشاءات الحديثة</div><div class="rl">مقاول · تصنيف ب</div></div></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">عروض الطلب</div><div class="tb-sub">قارن العروض الواردة واقبل الأفضل</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="crumbs">
+        <a href="Contractor Dashboard.html">الرئيسية</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <a href="#">طلباتي</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+        <span>حديد تسليح Ø16</span>
+      </div>
+
+      <!-- RFQ detail header -->
+      <div class="panel panel-pad" style="margin-bottom:20px">
+        <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+          <span class="lic t-civil" style="width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></span>
+          <div style="flex:1;min-width:200px">
+            <h3 style="font-size:19px;font-weight:800;color:var(--navy)">حديد تسليح Ø16 — ٤٢ طن</h3>
+            <div style="font-size:13px;color:var(--ink-3);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <span class="chip c-civil" style="padding:2px 9px">مدني</span>
+              <span>المواصفة: SABIC B500</span> <span>· الرياض، حي الياسمين</span> <span>· التوصيل مطلوب</span>
+            </div>
+          </div>
+          <div style="text-align:end">
+            <div style="font-size:12px;color:var(--ink-3)">متوسط السوق</div>
+            <div style="font-weight:900;color:var(--navy);font-size:18px">٢٬٨١٠ ر.س/طن</div>
+            <span class="pill pill-open" style="margin-top:6px"><span class="d"></span> مفتوح · ٥ عروض</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="offers"></div>
+
+      <div class="empty" id="empty" style="display:none"><div class="ei">📭</div><h4>لا توجد عروض بعد</h4><p>سيتم تنبيهك عند وصول عروض جديدة.</p></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/shell.js"></script>
+<script>
+const MARKET = 2810, QTY = 42;
+const OFFERS = [
+  { n:"مصنع الراجحي للحديد", tier:"🏭", verified:"wathq", rating:"4.9", region:"الرياض", phone:"+966 11 876 5432",
+    unit:2555, days:"٣ أيام", extras:[["البضاعة",107310],["التوصيل",1800]],
+    attrs:["ماركة: الراجحي","المنشأ: سعودي","ضمان: شهادة مطابقة"], best:true, resp:"٢س", winrate:"٦١٪", prev:"٣١" },
+  { n:"شركة المعادن المتحدة", tier:"🏪", verified:"green", rating:"4.6", region:"الرياض", phone:"+966 11 222 3344",
+    unit:2660, days:"٤ أيام", extras:[["البضاعة",111720],["التوصيل",2200]],
+    attrs:["ماركة: متعدد","المنشأ: مستورد","ضمان: ٦ أشهر"], resp:"٥س", winrate:"٤٧٪", prev:"١٨" },
+  { n:"مؤسسة البناء الحديثة", tier:"🏬", verified:null, rating:"4.2", region:"الخرج", phone:"+966 50 998 7766",
+    unit:2730, days:"يومان", extras:[["البضاعة",114660],["التوصيل",3000]],
+    attrs:["ماركة: محلي","المنشأ: سعودي"], resp:"٨س", winrate:"٣٣٪", prev:"٩" },
+];
+const fmt = n => n.toLocaleString('ar-EG');
+const vbadge = v => v==='wathq' ? '<span class="vbadge wathq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 12l2 2 4-4"/></svg> موثّق عبر واثق</span>'
+  : v==='green' ? '<span class="vbadge green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M9 12l2 2 4-4"/></svg> موثّق</span>' : '';
+const wrap = document.getElementById('offers');
+
+OFFERS.forEach((o, i) => {
+  const total = o.extras.reduce((s, e) => s + e[1], 0);
+  const saved = Math.round((MARKET - o.unit) / MARKET * 100);
+  const card = document.createElement('div');
+  card.className = 'boffer' + (o.best ? ' win' : '');
+  card.dataset.i = i;
+  card.innerHTML = `
+    <div class="boffer-head">
+      <span class="medal g${i+1}">${i+1}</span>
+      <div class="who">
+        <div class="nm">${o.n} ${o.best ? '<span class="pill pill-open" style="font-size:11px"><span class="d"></span> الأوفر</span>' : ''}</div>
+        <div class="meta">
+          <span class="tierb"><span class="ic">${o.tier}</span> ${o.tier==='🏭'?'مصنع':o.tier==='🏪'?'موزّع':'محلي'}</span>
+          ${vbadge(o.verified)}
+          <span class="stars"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 6.5L22 9l-5 4.5L18.5 21 12 17l-6.5 4L7 13.5 2 9l7-.5z"/></svg><span class="rv">${o.rating}</span></span>
+          <span>📍 ${o.region}</span>
+          <span>${o.phone}</span>
+        </div>
+        <div class="attrs" style="margin-top:8px">
+          <span class="score fast">⚡ يردّ خلال ~${o.resp}</span>
+          <span class="score win">🤝 نسبة الترسية ${o.winrate}</span>
+          <span class="score exp">📨 ${o.prev} عرض سابق</span>
+        </div>
+      </div>
+      <div class="price">
+        <div class="big ${o.best ? 'win' : ''}">${fmt(total)}<span style="font-size:12px;color:var(--ink-3)"> ر.س</span></div>
+        <div class="sub">${fmt(o.unit)} ر.س/طن · توفير ${fmt(saved)}٪</div>
+      </div>
+    </div>
+    <div class="invoice">
+      ${o.extras.map(e => `<div class="ir"><span class="k">${e[0]}</span><span class="v">${fmt(e[1])} ر.س</span></div>`).join('')}
+      <div class="ir tot"><span class="k">الإجمالي</span><span class="v">${fmt(total)} ر.س</span></div>
+    </div>
+    <div class="attrs">
+      ${o.attrs.map(a => `<span class="attr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>${a}</span>`).join('')}
+      <span class="attr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>كتالوج</span>
+      <span class="attr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>الموقع على الخريطة</span>
+      <span class="attr">التسليم: ${o.days}</span>
+    </div>
+    <div class="boffer-actions">
+      <button class="btn ${o.best ? 'btn-primary' : 'btn-navy'} accept" style="padding:11px 22px">قبول العرض</button>
+      <button class="btn btn-wa" style="padding:11px 18px"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.15-1.77-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.8.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.22 3.08.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.62.71.23 1.36.2 1.87.12.57-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.13-.27-.2-.57-.35z"/><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18.2c-1.5 0-2.95-.4-4.2-1.15l-.3-.18-3.1.97.99-3.02-.2-.31A8.2 8.2 0 1 1 12 20.2z"/></svg> واتساب</button>
+      <button class="btn btn-ghost reject" style="padding:11px 18px">رفض</button>
+    </div>`;
+  wrap.appendChild(card);
+});
+
+document.querySelectorAll('.accept').forEach(btn => btn.addEventListener('click', () => {
+  const card = btn.closest('.boffer');
+  document.querySelectorAll('.boffer').forEach(c => { c.classList.remove('win'); c.style.opacity = ''; });
+  card.classList.add('win');
+  document.querySelectorAll('.boffer-actions').forEach(a => {
+    if (a.closest('.boffer') === card) {
+      a.innerHTML = '<span class="pill pill-open" style="padding:8px 16px"><span class="d"></span> ✓ تم القبول</span> <a href="Purchase Order.html" class="btn btn-navy" style="padding:10px 18px">عرض أمر الشراء</a>';
+    } else {
+      a.closest('.boffer').style.opacity = '.55';
+    }
+  });
+  card.scrollIntoView({ block: 'nearest' });
+}));
+document.querySelectorAll('.reject').forEach(btn => btn.addEventListener('click', () => {
+  btn.closest('.boffer').style.opacity = '.4';
+  btn.textContent = 'مرفوض';
+}));
+</script>
+</body>
+</html>

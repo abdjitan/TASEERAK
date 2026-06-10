@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>المواد والقطاعات — إدارة تسعيرك</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/app-ui.css">
+<link rel="stylesheet" href="assets/app-ui2.css">
+</head>
+<body class="app-body" data-screen-label="Admin Materials" data-admin-page="materials">
+<div class="app">
+  <aside id="admin-side" class="sidebar"></aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="القائمة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div><div class="tb-title">المواد والقطاعات</div><div class="tb-sub">إدارة كتالوج المواد والموافقة على المقترحات</div></div>
+      <div class="tb-spacer"></div>
+      <div class="mini-lang"><button data-lang="ar" class="on">ع</button><button data-lang="en">EN</button><button data-lang="ur">اردو</button></div>
+    </header>
+
+    <div class="page">
+      <div class="tabs" id="mt">
+        <button class="on" data-t="catalog">كتالوج المواد</button>
+        <button data-t="pending">مقترحات بانتظار الموافقة <span style="opacity:.6">٣</span></button>
+      </div>
+
+      <!-- CATALOG -->
+      <div class="tabpane on" data-pane="catalog">
+        <div class="sector-cards" style="margin-bottom:20px">
+          <div class="scard" style="text-align:center"><div class="se-ic" style="width:48px;height:48px;border-radius:14px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#1B2D5B,#2a4a8a)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/></svg></div><div class="v" style="font-size:24px">٢٤</div><div class="l">مادة · مدني</div></div>
+          <div class="scard" style="text-align:center"><div class="se-ic" style="width:48px;height:48px;border-radius:14px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#7c3aed,#5b21b6)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V10l8-6 8 6v11"/></svg></div><div class="v" style="font-size:24px">١٨</div><div class="l">مادة · معماري</div></div>
+          <div class="scard" style="text-align:center"><div class="se-ic" style="width:48px;height:48px;border-radius:14px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#F5831F,#d96f15)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div><div class="v" style="font-size:24px">١٥</div><div class="l">مادة · كهرباء</div></div>
+          <div class="scard" style="text-align:center"><div class="se-ic" style="width:48px;height:48px;border-radius:14px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#0F6E56,#0a5641)"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div><div class="v" style="font-size:24px">١٢</div><div class="l">مادة · ميكانيك</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3>المواد المعتمدة</h3><button class="btn btn-primary" style="padding:8px 16px;font-size:13.5px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M12 5v14M5 12h14"/></svg> مادة جديدة</button></div>
+          <div style="overflow-x:auto"><table class="tbl">
+            <thead><tr><th>المادة</th><th>القطاع</th><th>المجموعة</th><th>الوحدة الافتراضية</th><th>طلبات</th><th></th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:700;color:var(--navy)">حديد تسليح Ø16</td><td><span class="chip c-civil" style="padding:2px 9px">مدني</span></td><td>الحديد والصلب</td><td>طن</td><td class="num">٣٨</td><td><div style="display:flex;gap:6px"><span class="link">تعديل</span></div></td></tr>
+              <tr><td style="font-weight:700;color:var(--navy)">أسمنت بورتلاندي</td><td><span class="chip c-civil" style="padding:2px 9px">مدني</span></td><td>الأسمنت والخرسانة</td><td>كيس</td><td class="num">٢٧</td><td><span class="link">تعديل</span></td></tr>
+              <tr><td style="font-weight:700;color:var(--navy)">بلاط بورسلان 60×60</td><td><span class="chip c-arch" style="padding:2px 9px">معماري</span></td><td>التشطيبات</td><td>م²</td><td class="num">١٩</td><td><span class="link">تعديل</span></td></tr>
+              <tr><td style="font-weight:700;color:var(--navy)">كابل XLPE 4×16</td><td><span class="chip c-elec" style="padding:2px 9px">كهرباء</span></td><td>الكابلات</td><td>م</td><td class="num">١٤</td><td><span class="link">تعديل</span></td></tr>
+              <tr><td style="font-weight:700;color:var(--navy)">مواسير PPR 1"</td><td><span class="chip c-mech" style="padding:2px 9px">ميكانيك</span></td><td>السباكة</td><td>م</td><td class="num">١١</td><td><span class="link">تعديل</span></td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- PENDING SUGGESTIONS -->
+      <div class="tabpane" data-pane="pending">
+        <div class="panel"><div style="overflow-x:auto"><table class="tbl">
+          <thead><tr><th>المادة المقترحة</th><th>المورّد</th><th>القطاع المقترح</th><th>التاريخ</th><th></th></tr></thead>
+          <tbody id="sug-body">
+            <tr><td style="font-weight:700;color:var(--navy)">حديد مجلفن</td><td>مصنع الراجحي</td><td><span class="chip c-civil" style="padding:2px 9px">مدني</span></td><td style="color:var(--ink-3);font-size:13px">٤ يون</td><td><div style="display:flex;gap:8px"><button class="btn btn-navy ap" style="padding:6px 14px;font-size:12.5px">اعتماد</button><button class="btn btn-ghost rj" style="padding:6px 14px;font-size:12.5px">رفض</button></div></td></tr>
+            <tr><td style="font-weight:700;color:var(--navy)">عوازل صوتية</td><td>بلاط الخليج</td><td><span class="chip c-arch" style="padding:2px 9px">معماري</span></td><td style="color:var(--ink-3);font-size:13px">٣ يون</td><td><div style="display:flex;gap:8px"><button class="btn btn-navy ap" style="padding:6px 14px;font-size:12.5px">اعتماد</button><button class="btn btn-ghost rj" style="padding:6px 14px;font-size:12.5px">رفض</button></div></td></tr>
+            <tr><td style="font-weight:700;color:var(--navy)">قواطع ذكية</td><td>النور للكهرباء</td><td><span class="chip c-elec" style="padding:2px 9px">كهرباء</span></td><td style="color:var(--ink-3);font-size:13px">٢ يون</td><td><div style="display:flex;gap:8px"><button class="btn btn-navy ap" style="padding:6px 14px;font-size:12.5px">اعتماد</button><button class="btn btn-ghost rj" style="padding:6px 14px;font-size:12.5px">رفض</button></div></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="assets/admin-shell.js"></script>
+<script>
+document.querySelectorAll('#mt button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#mt button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tabpane').forEach(p => p.classList.toggle('on', p.dataset.pane === b.dataset.t));
+}));
+document.querySelectorAll('.ap').forEach(b => b.addEventListener('click', () => { const r = b.closest('tr'); r.style.opacity = '.5'; b.parentElement.innerHTML = '<span class="pill pill-open"><span class="d"></span> معتمد</span>'; }));
+document.querySelectorAll('.rj').forEach(b => b.addEventListener('click', () => { const r = b.closest('tr'); r.style.opacity = '.5'; b.parentElement.innerHTML = '<span class="pill pill-rej"><span class="d"></span> مرفوض</span>'; }));
+</script>
+</body>
+</html>
