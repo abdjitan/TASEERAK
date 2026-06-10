@@ -1,16 +1,18 @@
 // @ts-nocheck
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import Turnstile from '@/components/shared/Turnstile'
+import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 
 const txt = {
-  ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساب جديد', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد للمقاولين', s_auth:'الخطوة 1/3: جارٍ التحقق من بياناتك…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'الخطوة 3/3: تم الدخول ✓ جارٍ التحويل…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، يتنافس عليه أفضل الموردين.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'موردون موثّقون ومصنّفون', l2:'قارن العروض بالأسعار ومتوسط السوق', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية' },
-  en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Procurement platform for contractors', s_auth:'Step 1/3: verifying your credentials…', s_role:'Step 2/3: reading your role…', s_go:'Step 3/3: signed in ✓ redirecting…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, competed for by the best suppliers.', brandP:'Sign in and track your RFQs and offers in one place — from request to purchase order.', l1:'Verified, classified suppliers', l2:'Compare offers vs market average', l3:'Upload a BOQ and auto-route it', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home' },
-  ur: { welcome:'خوش آمدید', sub:'اپنے اکاؤنٹ تک جاری رکھنے کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'نیا اکاؤنٹ بنائیں', error:'غلط ای میل یا پاسورڈ', copyright:'© ۲۰۲۶ تسعیرک · ٹھیکیداروں کے لیے پلیٹ فارم', s_auth:'مرحلہ 1/3: تصدیق ہو رہی ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'مرحلہ 3/3: سائن ان ✓ منتقل ہو رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔', brandH:'ایک درخواست، بہترین سپلائرز کا مقابلہ۔', brandP:'سائن ان کریں اور اپنی درخواستیں اور پیشکشیں ایک جگہ دیکھیں۔', l1:'تصدیق شدہ، درجہ بند سپلائرز', l2:'مارکیٹ اوسط کے مقابلے موازنہ', l3:'BOQ اپ لوڈ کریں اور خودکار تقسیم', remember:'مجھے یاد رکھیں', forgot:'پاسورڈ بھول گئے؟', or:'یا', home:'ہوم' },
+  ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساب جديد', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد للمقاولين', s_auth:'الخطوة 1/3: جارٍ التحقق من بياناتك…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'الخطوة 3/3: تم الدخول ✓ جارٍ التحويل…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، يتنافس عليه أفضل الموردين.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'موردون موثّقون ومصنّفون', l2:'قارن العروض بالأسعار ومتوسط السوق', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.' },
+  en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Procurement platform for contractors', s_auth:'Step 1/3: verifying your credentials…', s_role:'Step 2/3: reading your role…', s_go:'Step 3/3: signed in ✓ redirecting…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, competed for by the best suppliers.', brandP:'Sign in and track your RFQs and offers in one place — from request to purchase order.', l1:'Verified, classified suppliers', l2:'Compare offers vs market average', l3:'Upload a BOQ and auto-route it', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home', captchaErr:'Please complete the “I am human” check and try again.' },
+  ur: { welcome:'خوش آمدید', sub:'اپنے اکاؤنٹ تک جاری رکھنے کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'نیا اکاؤنٹ بنائیں', error:'غلط ای میل یا پاسورڈ', copyright:'© ۲۰۲۶ تسعیرک · ٹھیکیداروں کے لیے پلیٹ فارم', s_auth:'مرحلہ 1/3: تصدیق ہو رہی ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'مرحلہ 3/3: سائن ان ✓ منتقل ہو رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔', brandH:'ایک درخواست، بہترین سپلائرز کا مقابلہ۔', brandP:'سائن ان کریں اور اپنی درخواستیں اور پیشکشیں ایک جگہ دیکھیں۔', l1:'تصدیق شدہ، درجہ بند سپلائرز', l2:'مارکیٹ اوسط کے مقابلے موازنہ', l3:'BOQ اپ لوڈ کریں اور خودکار تقسیم', remember:'مجھے یاد رکھیں', forgot:'پاسورڈ بھول گئے؟', or:'یا', home:'ہوم', captchaErr:'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔' },
 }
 
 function LoginForm() {
@@ -23,6 +25,8 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
+  const [captchaToken, setCaptchaToken] = useState('')
+  const captchaRef = useRef<any>(null)
 
   // Reject if a promise doesn't settle in `ms` — converts an invisible hang
   // into a clear, reportable error instead of a spinner that never stops.
@@ -85,9 +89,14 @@ function LoginForm() {
     try {
       // STEP 1/3 — authenticate (with a hard 15s ceiling so it can never hang)
       const { data, error: err } = await withTimeout(
-        supabase.auth.signInWithPassword({ email, password }), 15000, 'signin'
+        supabase.auth.signInWithPassword({ email, password, options: { captchaToken: captchaToken || undefined } }), 15000, 'signin'
       )
-      if (err) { setError(t.error); setLoading(false); setStatus(''); return }
+      if (err) {
+        // A used/expired CAPTCHA token can't be reused — refresh it for the retry.
+        captchaRef.current?.reset(); setCaptchaToken('')
+        setError(/captcha/i.test(err.message || '') ? t.captchaErr : t.error)
+        setLoading(false); setStatus(''); return
+      }
       if (!data?.session) { setError(t.error); setLoading(false); setStatus(''); return }
 
       // STEP 2/3 — read role (don't block login if it stalls; fall back gracefully)
@@ -108,6 +117,7 @@ function LoginForm() {
     } catch (e) {
       console.error('[login] failed:', e)
       const msg = (e && (e as any).message) || ''
+      captchaRef.current?.reset(); setCaptchaToken('')
       if (msg.indexOf('TIMEOUT:signin') === 0) setError(t.err_timeout + ' (1/3)')
       else if (msg.indexOf('TIMEOUT:profile') === 0) setError(t.err_timeout + ' (2/3)')
       else setError(t.error)
@@ -184,6 +194,10 @@ function LoginForm() {
                   <input type="checkbox" defaultChecked className="w-4 h-4 rounded accent-[#F5831F]" /> {t.remember}
                 </label>
                 <a href="/forgot-password" className="text-[13px] font-bold text-orange-dark hover:underline">{t.forgot}</a>
+              </div>
+
+              <div className="flex justify-center">
+                <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
               </div>
 
               <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">

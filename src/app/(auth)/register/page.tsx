@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useForm } from 'react-hook-form'
@@ -12,6 +12,8 @@ import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, getRegionLabel, C
 import DistrictField from '@/components/shared/DistrictField'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import Turnstile from '@/components/shared/Turnstile'
+import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
@@ -109,6 +111,7 @@ const TR = {
 }
 
 const schema = z.object({
+  full_name: z.string().min(3, 'الاسم مطلوب'),
   role: z.enum(['contractor', 'supplier'] as const),
   company_name_ar: z.string().min(3, 'اسم الشركة مطلوب'),
   company_name_en: z.string().optional(),
@@ -135,9 +138,9 @@ export default function RegisterPage() {
   const sl = (s) => locale === 'ar' ? SECTOR_LABELS[s] : (SECTOR_TR[s]?.[locale] || SECTOR_LABELS[s])
   // CR verification (Wathq) labels
   const CRV = {
-    ar: { verifyBtn: 'تحقق من السجل التجاري', checking: 'جارٍ التحقق...', invalid: 'أدخل 10 أرقام أولاً', error: 'تعذّر التحقق، حاول لاحقاً' },
-    en: { verifyBtn: 'Verify CR', checking: 'Checking...', invalid: 'Enter 10 digits first', error: 'Verification failed, try later' },
-    ur: { verifyBtn: 'تجارتی رجسٹریشن کی تصدیق', checking: 'تصدیق ہو رہی ہے...', invalid: 'پہلے 10 ہندسے درج کریں', error: 'تصدیق ناکام، بعد میں کوشش کریں' },
+    ar: { verifyBtn: 'تحقق من السجل التجاري', checking: 'جارٍ التحقق...', invalid: 'أدخل رقم السجل (10 أرقام) أولاً', needId: 'أدخل رقم هوية صاحب/مفوّض السجل (10 أرقام)', error: 'تعذّر التحقق، حاول لاحقاً', idLabel: 'رقم هوية صاحب/مفوّض السجل', ownerOk: '✓ رقم هويتك مُدرج ضمن ملّاك/مدراء السجل — توثيق مؤكّد', ownerNo: '⚠ رقم هويتك غير مُدرج في هذا السجل — سيُحوَّل لمراجعة الإدارة', idDoc: 'صورة الهوية الوطنية / الإقامة', idHint: 'لإثبات أنك صاحب السجل — تُراجَع بسرّية' },
+    en: { verifyBtn: 'Verify CR', checking: 'Checking...', invalid: 'Enter the CR number (10 digits) first', needId: 'Enter the owner/authorized national ID (10 digits)', error: 'Verification failed, try later', idLabel: 'Owner/authorized national ID', ownerOk: '✓ Your ID is listed among the CR owners/managers — verified', ownerNo: '⚠ Your ID is not in this CR — sent to admin review', idDoc: 'National ID / Iqama image', idHint: 'Proves you own the CR — reviewed confidentially' },
+    ur: { verifyBtn: 'تجارتی رجسٹریشن کی تصدیق', checking: 'تصدیق ہو رہی ہے...', invalid: 'پہلے CR نمبر (10 ہندسے) درج کریں', needId: 'مالک/مجاز کا شناختی نمبر درج کریں (10 ہندسے)', error: 'تصدیق ناکام، بعد میں کوشش کریں', idLabel: 'مالک/مجاز کا قومی شناختی نمبر', ownerOk: '✓ آپ کا شناختی نمبر مالکان میں شامل ہے — تصدیق شدہ', ownerNo: '⚠ آپ کا شناختی نمبر اس CR میں نہیں — جائزے کے لیے بھیجا گیا', idDoc: 'قومی شناختی کارڈ / اقامہ کی تصویر', idHint: 'ثبوت کہ آپ مالک ہیں — رازداری سے جائزہ' },
   }
   const cv = CRV[locale] || CRV.ar
   const [step, setStep] = useState(1)
@@ -148,11 +151,17 @@ export default function RegisterPage() {
   const [formError, setFormError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState('')
+  const captchaRef = useRef<any>(null)
   const [crVerify, setCrVerify] = useState<any>(null)
   const [crDup, setCrDup] = useState<any>(null) // { company } if CR already registered
   const [branchConfirmed, setBranchConfirmed] = useState(false)
   const [phoneDup, setPhoneDup] = useState<any>(null) // { company } if phone already registered
   const [crChecking, setCrChecking] = useState(false)
+  // Two-factor verification: the owner/authorized national ID is matched against
+  // the CR's owners (Wathq), and an ID document is uploaded as proof.
+  const [nationalId, setNationalId] = useState('')
+  const [idFile, setIdFile] = useState<File | null>(null)
   // Report a fake/fraudulent account registered with my CR
   const [objOpen, setObjOpen] = useState(false)
   const [objName, setObjName] = useState('')
@@ -257,13 +266,15 @@ export default function RegisterPage() {
 
   async function verifyCR() {
     const cr = (watch('commercial_registration') || '').toString()
+    const nid = nationalId.trim()
     if (!/^[0-9]{10}$/.test(cr)) { setCrVerify({ ok: false, message: cv.invalid }); return }
+    if (!/^[12][0-9]{9}$/.test(nid)) { setCrVerify({ ok: false, message: cv.needId }); return }
     setCrChecking(true); setCrVerify(null)
     try {
       const res = await fetch('/api/verify-cr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cr }),
+        body: JSON.stringify({ cr, nationalId: nid }),
       })
       const j = await res.json()
       setCrVerify(j)
@@ -292,6 +303,7 @@ export default function RegisterPage() {
       // (works whether email confirmation is on or off — no session needed).
       const meta: any = {
         role: data.role,
+        full_name: data.full_name || '',
         company_name_ar: data.company_name_ar,
         company_name_en: data.company_name_en || '',
         phone: data.phone || '',
@@ -327,6 +339,7 @@ export default function RegisterPage() {
         options: {
           data: meta,
           emailRedirectTo: `${window.location.origin}/login`,
+          captchaToken: captchaToken || undefined,
         },
       })
       if (authError) throw new Error(authError.message)
@@ -341,10 +354,23 @@ export default function RegisterPage() {
 
       // 3. Email confirmation OFF → we have a session. Finish documents + AI check.
       let licenseUrl = null, crUrl = null
+      if (idFile) await uploadFile(idFile, `${userId}/national-id.${idFile.name.split('.').pop()}`)
       if (licenseFile) licenseUrl = await uploadFile(licenseFile, `${userId}/license.${licenseFile.name.split('.').pop()}`)
       if (crFile) crUrl = await uploadFile(crFile, `${userId}/cr.${crFile.name.split('.').pop()}`)
       if (licenseUrl || crUrl) {
         await supabase.from('profiles').update({ license_url: licenseUrl, cr_url: crUrl }).eq('id', userId)
+      }
+
+      // Two-factor: the server re-verifies the CR + owner national ID and marks
+      // the account verified ONLY if the ID is a listed owner/manager (trusted).
+      if (crVerify?.verified && /^[12][0-9]{9}$/.test(nationalId)) {
+        try {
+          await fetch('/api/verify-identity', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cr: data.commercial_registration, nationalId }),
+          })
+        } catch {}
       }
 
       if (data.role === 'supplier') {
@@ -360,7 +386,14 @@ export default function RegisterPage() {
       window.location.href = data.role === 'contractor' ? '/contractor' : '/supplier/dashboard'
 
     } catch (err: any) {
-      setFormError(err.message || 'حدث خطأ أثناء التسجيل')
+      // A used/expired CAPTCHA token can't be reused — refresh it for the retry.
+      captchaRef.current?.reset(); setCaptchaToken('')
+      const msg = err?.message || ''
+      setFormError(/captcha/i.test(msg)
+        ? (locale === 'en' ? 'Please complete the “I am human” check and try again.'
+           : locale === 'ur' ? 'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔'
+           : 'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.')
+        : (msg || 'حدث خطأ أثناء التسجيل'))
     } finally {
       setUploading(false)
     }
@@ -427,36 +460,43 @@ export default function RegisterPage() {
 
           <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-line max-w-xl mx-auto">
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-extrabold text-navy">{t.welcome}</h1>
-              <p className="text-ink-2 mt-2">{t.chooseType}</p>
+              <h1 className="text-2xl font-extrabold text-navy">{locale === 'en' ? 'Create your account' : locale === 'ur' ? 'اپنا اکاؤنٹ بنائیں' : 'أنشئ حسابك'}</h1>
+              <p className="text-ink-2 mt-2">{locale === 'en' ? 'Start with the basic login info.' : locale === 'ur' ? 'بنیادی لاگ اِن معلومات سے شروع کریں۔' : 'ابدأ بمعلومات الدخول الأساسية.'}</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { type: 'contractor' as 'contractor', icon: '👷', title: t.contractor, desc: t.contractorDesc },
-                { type: 'supplier' as 'supplier', icon: '🏪', title: t.supplier, desc: t.supplierDesc },
-              ].map(({ type, icon, title, desc }) => (
-                <button
-                  key={type}
-                  onClick={() => { setSelectedType(type); setValue('role', type) }}
-                  className={`p-6 rounded-2xl border-2 text-center transition-all ${
-                    selectedType === type
-                      ? 'border-[#F5831F] bg-[#F5831F]/5'
-                      : 'border-gray-200 bg-white hover:border-[#F5831F]/40'
-                  }`}
-                >
-                  <div className="text-4xl mb-2">{icon}</div>
-                  <div className="font-bold text-navy">{title}</div>
-                  <div className="text-xs text-gray-500 mt-1">{desc}</div>
-                </button>
-              ))}
+            <div className="space-y-4 text-start">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'Full name' : locale === 'ur' ? 'پورا نام' : 'الاسم الكامل'} *</label>
+                  <input {...register('full_name')} className="input-field" placeholder={locale === 'en' ? 'Mohammed Al-Otaibi' : 'محمد العتيبي'} />
+                  {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
+                  <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel"
+                    inputMode="numeric" maxLength={10} dir="ltr"
+                    onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(null) }} />
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+                </div>
+              </div>
+              {phoneDup && (
+                <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2">⚠ {locale === 'en' ? 'This phone is already registered — use another.' : 'رقم الجوال مسجّل مسبقاً — استخدم رقماً آخر.'}</p>
+              )}
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
+                <input {...register('email')} className="input-field" placeholder="name@company.com" type="email" />
+                {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
+                <input {...register('password')} className="input-field" type="password" placeholder={t.passwordPh} />
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              </div>
             </div>
 
-            <button
-              onClick={() => selectedType && setStep(2)}
-              disabled={!selectedType}
-              className="btn-orange w-full mt-6 disabled:opacity-40"
-            >
+            <button type="button"
+              onClick={async () => { const ok = await trigger(['full_name', 'phone', 'email', 'password']); if (!ok || phoneDup) return; setStep(2) }}
+              className="btn-orange w-full mt-6">
               {t.next}
             </button>
           </div>
@@ -500,8 +540,23 @@ export default function RegisterPage() {
           {/* Step 2: Company info */}
           {step === 2 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-navy mb-1">{t.companyData}</h2>
+              <h2 className="text-lg font-bold text-navy mb-1">{locale === 'en' ? 'Account type & company' : locale === 'ur' ? 'اکاؤنٹ کی قسم اور کمپنی' : 'نوع الحساب وبيانات الشركة'}</h2>
               <p className="text-sm text-gray-500 mb-5">{t.companyDataSub}</p>
+
+              {/* Account type (role) — chosen before the company details */}
+              <div className="grid grid-cols-2 gap-3 mb-5">
+                {[
+                  { type: 'contractor', title: t.contractor, desc: t.contractorDesc, svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 21V8l6-5 6 5v13" /><path d="M15 21V11l6 4v6" /></svg> },
+                  { type: 'supplier', title: t.supplier, desc: t.supplierDesc, svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg> },
+                ].map(({ type, title, desc, svg }) => (
+                  <button key={type} type="button" onClick={() => { setSelectedType(type as any); setValue('role', type as any) }}
+                    className={`p-4 rounded-2xl border-2 text-center transition-all ${selectedType === type ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 bg-white hover:border-[#F5831F]/40'}`}>
+                    <div className="w-12 h-12 rounded-2xl grid place-items-center mx-auto mb-2 text-white transition-colors" style={{ background: selectedType === type ? '#F5831F' : '#1B2D5B' }}>{svg}</div>
+                    <div className="font-bold text-navy text-sm">{title}</div>
+                    <div className="text-[11px] text-gray-500 mt-0.5">{desc}</div>
+                  </button>
+                ))}
+              </div>
 
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
@@ -521,25 +576,30 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
+                {/* Two-factor: CR number + owner national ID, matched against Wathq owners */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{t.crNumber} *</label>
-                    <div className="flex gap-2">
-                      <input {...register('commercial_registration')} className="input-field flex-1" placeholder="1010XXXXXX"
-                        inputMode="numeric" maxLength={10} dir="ltr"
-                        onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
-                      <button type="button" onClick={verifyCR} disabled={crChecking}
-                        className="px-3 rounded-xl text-xs font-bold text-white whitespace-nowrap disabled:opacity-50 transition-all hover:shadow"
-                        style={{ background: '#0F6E56' }}>
-                        {crChecking ? cv.checking : `🛡 ${cv.verifyBtn}`}
-                      </button>
-                    </div>
+                    <input {...register('commercial_registration')} className="input-field" placeholder="1010XXXXXX"
+                      inputMode="numeric" maxLength={10} dir="ltr"
+                      onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
                     {errors.commercial_registration && <p className="text-red-500 text-xs mt-1">{errors.commercial_registration.message}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.vatNumber}</label>
-                    <input {...register('vat_number')} className="input-field" placeholder="3XXXXXXXXXXXXXXX"/>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{cv.idLabel} *</label>
+                    <input value={nationalId} onChange={e => { setNationalId(e.target.value.replace(/[^0-9]/g, '').slice(0, 10)); if (crVerify) setCrVerify(null) }}
+                      className="input-field" placeholder="1XXXXXXXXX" inputMode="numeric" maxLength={10} dir="ltr" />
+                    <p className="text-[10px] text-gray-400 mt-1">{cv.idHint}</p>
                   </div>
+                </div>
+
+                <button type="button" onClick={verifyCR} disabled={crChecking} className="btn-orange w-full">
+                  {crChecking ? cv.checking : `🛡 ${cv.verifyBtn}`}
+                </button>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.vatNumber}</label>
+                  <input {...register('vat_number')} className="input-field" placeholder="3XXXXXXXXXXXXXXX"/>
                 </div>
 
                 {crVerify && (
@@ -553,6 +613,11 @@ export default function RegisterPage() {
                       {crVerify.name && <div className="font-bold">{crVerify.name}</div>}
                       {crVerify.activity && <div className="opacity-80">{crVerify.activity}</div>}
                       <div>{crVerify.message}</div>
+                      {crVerify.ownerCheck && (
+                        <div className={`mt-1.5 font-bold ${crVerify.ownerCheck.authorized ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {crVerify.ownerCheck.authorized ? cv.ownerOk : cv.ownerNo}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -617,10 +682,12 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'} <span className="text-gray-400 font-normal">({locale === 'en' ? 'optional' : 'اختياري'})</span></label>
-                  <DistrictField city={watch('city')} value={district} onChange={setDistrict} locale={locale} />
-                </div>
+                {watch('city') && (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'}</label>
+                    <DistrictField city={watch('city')} value={district} onChange={setDistrict} locale={locale} />
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'Notification language (email/WhatsApp)' : locale === 'ur' ? 'اطلاعات کی زبان' : 'لغة الإشعارات (بريد/واتساب)'}</label>
@@ -634,40 +701,14 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
-                  <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel"
-                    inputMode="numeric" maxLength={10} dir="ltr"
-                    onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(null) }} />
-                  <p className="text-[10px] text-gray-400 mt-1">{t.phoneHint}</p>
-                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
-                  {phoneDup && (
-                    <p className="text-red-600 text-xs mt-1 bg-red-50 border border-red-200 rounded-lg p-2">
-                      ⚠ {locale === 'en' ? 'This phone number is already registered' : locale === 'ur' ? 'یہ فون نمبر پہلے سے رجسٹرڈ ہے' : 'رقم الجوال هذا مسجّل مسبقاً'}{phoneDup.company ? ` («${phoneDup.company}»)` : ''} — {locale === 'en' ? 'use a different number.' : locale === 'ur' ? 'مختلف نمبر استعمال کریں۔' : 'استخدم رقماً آخر.'}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
-                  <input {...register('email')} className="input-field" placeholder="info@company.com" type="email"/>
-                  {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
-                  <input {...register('password')} className="input-field" type="password" placeholder={t.passwordPh}/>
-                  {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
-                </div>
+                {/* name / phone / email / password are collected in step 1 (Account) */}
               </div>
 
               <div className="flex gap-3 mt-6">
                 <button type="button" onClick={() => setStep(1)} className="btn-ghost flex-1">{t.back}</button>
                 <button type="button" onClick={async () => {
-                  const valid = await trigger([
-                    'company_name_ar', 'commercial_registration', 'vat_number',
-                    'phone', 'email', 'password', 'region', 'city'
-                  ])
+                  if (!selectedType) { setFormError(locale === 'en' ? 'Choose account type (contractor/supplier)' : 'اختر نوع الحساب (مقاول/مورد)'); return }
+                  const valid = await trigger(['company_name_ar', 'commercial_registration', 'vat_number', 'region', 'city'])
                   if (!valid) return
                   if (crDup && !branchConfirmed) {
                     setFormError(locale === 'en' ? 'This commercial registration is already registered — sign in, or confirm it is a separate branch to continue.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن پہلے سے موجود ہے — سائن اِن کریں یا الگ شاخ کی تصدیق کریں۔' : 'هذا السجل التجاري مسجّل مسبقاً — سجّل الدخول، أو أكّد أنه فرع منفصل للمتابعة.')
@@ -692,6 +733,7 @@ export default function RegisterPage() {
 
               <div className="space-y-4">
                 {[
+                  { label: `${cv.idDoc} *`, state: idFile, setter: setIdFile, required: true },
                   { label: `${t.license} *`, state: licenseFile, setter: setLicenseFile, required: true },
                   { label: t.cr, state: crFile, setter: setCrFile, required: false },
                 ].map(({ label, state, setter }) => (
@@ -835,16 +877,16 @@ export default function RegisterPage() {
                   <p className="text-xs text-gray-500 mb-3">{t.classHintSupplier}</p>
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {[
-                      { key: 'manufacturer', icon: '🏭', label: t.manufacturer, desc: t.manufacturerD },
-                      { key: 'commercial', icon: '🏪', label: t.commercial, desc: t.commercialD },
-                      { key: 'local', icon: '🏬', label: t.local, desc: t.localD },
+                      { key: 'manufacturer', svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 21h18" /><path d="M3 21V11l4 2.5V11l4 2.5V11l4 2.5V8l4 2.5V21" /><path d="M7 7V4l2 1.6L11 4v3" /><path d="M6.5 17h.01M10.5 17h.01M14.5 17h.01M18 17h.01" /></svg>, label: t.manufacturer, desc: t.manufacturerD },
+                      { key: 'commercial', svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M2 8.5 12 4l10 4.5" /><path d="M4 10v10h16V10" /><rect x="9" y="13" width="6" height="7" /><path d="M7 10.5h.01M17 10.5h.01" /></svg>, label: t.commercial, desc: t.commercialD },
+                      { key: 'local', svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M4 9h16l-1-4H5L4 9z" /><path d="M5 9v11h14V9" /><path d="M9 20v-5a3 3 0 0 1 6 0v5" /></svg>, label: t.local, desc: t.localD },
                     ].map(tier => (
                       <button key={tier.key} type="button"
                         onClick={() => setSupplierTier(tier.key as any)}
                         className={`p-3 rounded-xl border-2 text-center transition-all ${
                           supplierTier === tier.key ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'
                         }`}>
-                        <div className="text-xl mb-1">{tier.icon}</div>
+                        <div className="w-10 h-10 rounded-xl grid place-items-center mx-auto mb-1.5" style={{ background: supplierTier === tier.key ? 'rgba(245,131,31,.12)' : '#eef2f8', color: supplierTier === tier.key ? '#F5831F' : '#1B2D5B' }}>{tier.svg}</div>
                         <div className={`text-xs font-bold ${supplierTier === tier.key ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</div>
                         <div className="text-[10px] text-gray-400 mt-0.5">{tier.desc}</div>
                       </button>
@@ -904,6 +946,10 @@ export default function RegisterPage() {
                   </a>
                 </span>
               </label>
+
+              <div className="flex justify-center mb-1">
+                <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
+              </div>
 
               <div className="flex gap-3">
                 <button type="button" onClick={() => setStep(3)} className="btn-ghost flex-1">{t.back}</button>
