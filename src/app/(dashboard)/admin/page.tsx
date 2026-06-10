@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
+import AppShell from '@/components/shared/AppShell'
 
 export default function AdminPanel() {
   const [user, setUser] = useState(null)
@@ -333,24 +334,14 @@ export default function AdminPanel() {
     return true
   })
 
+  const adminNav = [
+    { href: '/admin', label: 'لوحة الإدارة', icon: '🛡️', active: true },
+    { href: '/admin/discover', label: 'اكتشاف موردين', icon: '🔍' },
+  ]
+
   return (
-    <div className="min-h-screen bg-[#f4f6f9]" dir="rtl">
-      <div className="fixed inset-0 pointer-events-none z-0" style={{
-        backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(27,45,91,0.04) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(245,131,31,0.04) 0%, transparent 50%)',
-      }} />
-
-      {/* Nav */}
-      <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo theme="light" size="sm" />
-            <span className="text-xs px-2 py-0.5 rounded-full text-white font-bold" style={{ background: '#F5831F' }}>Admin</span>
-          </div>
-          <button onClick={handleSignOut} className="text-xs text-gray-400 hover:text-red-500 transition-all">خروج</button>
-        </div>
-      </nav>
-
-      <div className="max-w-6xl mx-auto px-6 py-8 relative z-10">
+    <AppShell title="لوحة الإدارة" userId={user?.id} nav={adminNav} onSignOut={handleSignOut} dir="rtl">
+      <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>لوحة الإدارة</h1>
           <p className="text-gray-500 mt-1 text-sm">إدارة المستخدمين والتحقق من الرخص</p>
@@ -1105,6 +1096,6 @@ export default function AdminPanel() {
           </div>
         </div>
       )}
-    </div>
+    </AppShell>
   )
 }
