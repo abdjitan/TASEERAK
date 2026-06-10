@@ -615,7 +615,7 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
                         <button type="button" onClick={() => openDoc(profile.license_url)}
-                          className="text-xs text-blue-600 hover:underline font-semibold">{t.viewDoc}</button>
+                          className="text-xs text-[#d96f15] hover:underline font-semibold">{t.viewDoc}</button>
                       </div>
                     )}
                     <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
@@ -658,7 +658,7 @@ export default function SettingsPage() {
                     {crCheck && (
                       <div className={`text-xs rounded-lg p-2.5 mt-3 flex items-start gap-2 ${
                         crCheck.verified ? 'bg-emerald-100 text-emerald-800'
-                        : crCheck.mode === 'manual' ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : crCheck.mode === 'manual' ? 'bg-[#F5831F]/5 text-[#d96f15] border border-blue-200'
                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}>
                         <span>{crCheck.verified ? '🛡' : crCheck.mode === 'manual' ? 'ℹ️' : '⚠️'}</span>
@@ -678,7 +678,7 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
                         <button type="button" onClick={() => openDoc(profile.cr_url)}
-                          className="text-xs text-blue-600 hover:underline font-semibold">{t.viewDoc}</button>
+                          className="text-xs text-[#d96f15] hover:underline font-semibold">{t.viewDoc}</button>
                       </div>
                     )}
                     <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${

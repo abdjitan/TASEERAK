@@ -39,7 +39,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
         <div className="absolute left-0 mt-2 w-80 max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden" dir="rtl">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <span className="font-bold text-sm" style={{ color: '#1B2D5B' }}>الإشعارات</span>
-            {unreadCount > 0 && <button onClick={markAllAsRead} className="text-xs text-blue-600 hover:underline">تعليم الكل كمقروء</button>}
+            {unreadCount > 0 && <button onClick={markAllAsRead} className="text-xs text-[#d96f15] hover:underline">تعليم الكل كمقروء</button>}
           </div>
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
@@ -47,7 +47,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
             ) : notifications.map((n: any) => (
               <button key={n.id}
                 onClick={() => { markAsRead(n.id); const url = n.data?.url; if (url) window.location.href = url }}
-                className={`w-full text-right px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-all ${n.is_read ? '' : 'bg-blue-50/40'}`}>
+                className={`w-full text-right px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-all ${n.is_read ? '' : 'bg-[#F5831F]/5/40'}`}>
                 <div className="flex items-start gap-2">
                   {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
                   <div className="min-w-0 flex-1">

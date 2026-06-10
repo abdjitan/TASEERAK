@@ -122,7 +122,7 @@ export default function OrderDetailPage() {
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="text-blue-600 font-semibold">جارٍ التحميل...</div>
+      <div className="text-[#d96f15] font-semibold">جارٍ التحميل...</div>
     </div>
   )
 
@@ -145,7 +145,7 @@ export default function OrderDetailPage() {
         <div className="flex items-center justify-between mb-6 mt-4 print:hidden">
           <a href="/contractor" className="text-sm text-gray-500 hover:text-gray-700">← رجوع للوحة التحكم</a>
           <button onClick={handlePrint}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors">
+            className="bg-[#1B2D5B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0f1d3d] transition-colors">
             🖨️ طباعة أمر الشراء
           </button>
         </div>
@@ -198,7 +198,7 @@ export default function OrderDetailPage() {
               {supplier?.latitude && supplier?.longitude && (
                 <a href={`https://www.google.com/maps?q=${supplier.latitude},${supplier.longitude}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="inline-block text-xs text-blue-600 hover:underline mt-1 print:hidden">
+                  className="inline-block text-xs text-[#d96f15] hover:underline mt-1 print:hidden">
                   🗺 عرض الموقع على الخريطة ←
                 </a>
               )}
@@ -222,7 +222,7 @@ export default function OrderDetailPage() {
               )}
               {offer?.attachment_url && (
                 <a href={offer.attachment_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:underline print:hidden">
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#d96f15] hover:underline print:hidden">
                   📎 {offer.attachment_name || 'كتالوج المنتج'} ←
                 </a>
               )}
@@ -272,7 +272,7 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="border-t border-gray-200 pt-2 flex justify-between">
                   <span className="font-bold text-gray-900">الإجمالي شامل الضريبة</span>
-                  <span className="font-bold text-blue-600 text-lg">{(offer.total_price * 1.15)?.toLocaleString()} ر.س</span>
+                  <span className="font-bold text-[#d96f15] text-lg">{(offer.total_price * 1.15)?.toLocaleString()} ر.س</span>
                 </div>
               </div>
             </div>

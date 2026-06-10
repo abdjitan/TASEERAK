@@ -302,10 +302,10 @@ export default function SupplierRFQPage() {
           {/* ملف المواصفات المرفق */}
           {specFileUrl && (
             <a href={specFileUrl} target="_blank" rel="noopener noreferrer"
-              className="mt-3 flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 hover:bg-blue-100 transition-all">
+              className="mt-3 flex items-center gap-2 bg-[#F5831F]/5 border border-blue-200 rounded-xl p-3 hover:bg-blue-100 transition-all">
               <span className="text-xl">📎</span>
-              <span className="text-sm font-semibold text-blue-700 flex-1">{T.attachedFile}</span>
-              <span className="text-xs text-blue-600">{T.viewFile} ←</span>
+              <span className="text-sm font-semibold text-[#d96f15] flex-1">{T.attachedFile}</span>
+              <span className="text-xs text-[#d96f15]">{T.viewFile} ←</span>
             </a>
           )}
         </div>
@@ -336,8 +336,8 @@ export default function SupplierRFQPage() {
             )}
 
             {existingOffer.info_request && (
-              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 text-right">
-                <div className="font-bold text-blue-700 mb-1">❓ المقاول يطلب معلومات إضافية</div>
+              <div className="mt-4 bg-[#F5831F]/5 border border-blue-200 rounded-xl p-4 text-right">
+                <div className="font-bold text-[#d96f15] mb-1">❓ المقاول يطلب معلومات إضافية</div>
                 <div className="text-sm text-gray-700 bg-white rounded-lg p-2.5 mb-2">{existingOffer.info_request}</div>
                 {existingOffer.info_response ? (
                   <div className="text-sm bg-emerald-50 rounded-lg p-2.5"><span className="text-emerald-600 text-[11px]">ردّك:</span><div>{existingOffer.info_response}</div></div>

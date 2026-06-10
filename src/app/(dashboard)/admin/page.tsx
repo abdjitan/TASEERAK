@@ -534,7 +534,7 @@ export default function AdminPanel() {
                           <span className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">{newL}</span>
                         </div>
                         {r.reason && <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-600">📝 {r.reason}</div>}
-                        {r.document_url && <a href={r.document_url} target="_blank" rel="noreferrer" className="text-xs underline text-blue-600 mt-1 inline-block">📎 مستند مرفق</a>}
+                        {r.document_url && <a href={r.document_url} target="_blank" rel="noreferrer" className="text-xs underline text-[#d96f15] mt-1 inline-block">📎 مستند مرفق</a>}
                         <div className="text-[11px] text-gray-400 mt-1.5">📅 {dt(r.created_at)}{r.admin_note ? ` · ملاحظة الإدارة: ${r.admin_note}` : ''}</div>
                       </div>
                       {r.status === 'pending' && (
@@ -680,7 +680,7 @@ export default function AdminPanel() {
                               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                                 {(r.target_tiers || []).map((t: string) => <span key={t} className="badge text-[10px] bg-purple-100 text-purple-700">{TIER_LABEL[t] || t}</span>)}
                                 {r.verified_only && <span className="badge text-[10px] bg-emerald-100 text-emerald-700">موثقون فقط</span>}
-                                {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-blue-700">القريبون فقط</span>}
+                                {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-[#d96f15]">القريبون فقط</span>}
                               </div>
                             )}
                             {r.specification && <p className="text-xs text-gray-500 mt-1.5">📋 {r.specification}</p>}
@@ -709,7 +709,7 @@ export default function AdminPanel() {
                                   <div className="text-gray-500 mt-1">رسوم إضافية: {o.extra_charges.map((e: any) => `${e.label || e.name || 'بند'}: ${sar(e.amount ?? e.value)}`).join(' · ')}</div>
                                 )}
                                 {o.notes && <div className="text-gray-400 mt-1">📝 {o.notes}</div>}
-                                {o.attachment_url && <button onClick={() => openBoq(o.attachment_url)} className="text-blue-600 hover:underline mt-1">📎 {o.attachment_name || 'مرفق'}</button>}
+                                {o.attachment_url && <button onClick={() => openBoq(o.attachment_url)} className="text-[#d96f15] hover:underline mt-1">📎 {o.attachment_name || 'مرفق'}</button>}
                                 <div className="text-[10px] text-gray-400 mt-1">{dt(o.created_at)}{o.accepted_at ? ` · قُبل: ${dt(o.accepted_at)}` : ''}</div>
                               </div>
                             ))}
@@ -744,7 +744,7 @@ export default function AdminPanel() {
                             <div className="text-[10px] text-gray-400 mt-1.5">أُنشئ: {dt(p.created_at)}</div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {p.boq_url && <button onClick={() => openBoq(p.boq_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50">📄 BOQ</button>}
+                            {p.boq_url && <button onClick={() => openBoq(p.boq_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5">📄 BOQ</button>}
                             {items.length > 0 && <button onClick={() => setExpandedProject(open ? null : p.id)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">{open ? '▲ إخفاء' : '▼ البنود'}</button>}
                           </div>
                         </div>
@@ -911,13 +911,13 @@ export default function AdminPanel() {
                     {/* License Links */}
                     {u.license_url && (
                       <button type="button" onClick={() => openDoc(u.license_url)}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-all">
+                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5 transition-all">
                         📄 الرخصة
                       </button>
                     )}
                     {u.cr_url && (
                       <button type="button" onClick={() => openDoc(u.cr_url)}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 transition-all">
+                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5 transition-all">
                         📋 السجل
                       </button>
                     )}

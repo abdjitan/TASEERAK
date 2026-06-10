@@ -94,7 +94,7 @@ export default function OfferDetailPage() {
   if (!offer || !rfq) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9] text-center">
       <div><div className="text-5xl mb-3">🔍</div><p className="font-bold" style={{ color: '#1B2D5B' }}>العرض غير موجود</p>
-        <a href={`/contractor/rfq/${id}`} className="text-sm text-blue-600 underline mt-2 inline-block">← رجوع للطلب</a></div>
+        <a href={`/contractor/rfq/${id}`} className="text-sm text-[#d96f15] underline mt-2 inline-block">← رجوع للطلب</a></div>
     </div>
   )
 
@@ -144,7 +144,7 @@ export default function OfferDetailPage() {
           <h2 className="font-bold text-sm mb-3" style={{ color: '#1B2D5B' }}>🏪 المورد</h2>
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="font-bold text-gray-900">{s.company_name_ar || 'مورد'}</span>
-            {s.supplier_tier && <span className="badge text-[10px] bg-blue-50 text-blue-700">{tierLabel}</span>}
+            {s.supplier_tier && <span className="badge text-[10px] bg-[#F5831F]/5 text-[#d96f15]">{tierLabel}</span>}
             {s.verification_status === 'verified' && (
               <span className="badge text-[10px]" style={s.cr_verification_source === 'wathq' ? { background: '#0F6E56', color: '#fff' } : { background: '#E1F5EE', color: '#0F6E56' }}>
                 {s.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}
@@ -178,13 +178,13 @@ export default function OfferDetailPage() {
           {offer.attributes && Object.keys(offer.attributes).length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {Object.entries(offer.attributes).map(([k, v]) => (
-                <span key={k} className="text-[11px] bg-blue-50 text-blue-700 px-2 py-1 rounded-lg"><strong>{k}:</strong> {String(v)}</span>
+                <span key={k} className="text-[11px] bg-[#F5831F]/5 text-[#d96f15] px-2 py-1 rounded-lg"><strong>{k}:</strong> {String(v)}</span>
               ))}
             </div>
           )}
           {offer.notes && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-2">📝 {offer.notes}</p>}
           {offer.attachment_url && (
-            <a href={offer.attachment_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-blue-600 underline mt-1">
+            <a href={offer.attachment_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-[#d96f15] underline mt-1">
               📎 {offer.attachment_name || 'مرفق العرض'}
             </a>
           )}

@@ -122,7 +122,7 @@ export default function AdminUserDetail() {
   )
   if (!p) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]" dir="rtl">
-      <div className="text-center"><div className="text-5xl mb-3">🔍</div><div className="font-bold" style={{ color: '#1B2D5B' }}>الحساب غير موجود</div><a href="/admin" className="text-sm text-blue-600 hover:underline mt-2 inline-block">← رجوع للوحة</a></div>
+      <div className="text-center"><div className="text-5xl mb-3">🔍</div><div className="font-bold" style={{ color: '#1B2D5B' }}>الحساب غير موجود</div><a href="/admin" className="text-sm text-[#d96f15] hover:underline mt-2 inline-block">← رجوع للوحة</a></div>
     </div>
   )
 
@@ -230,7 +230,7 @@ export default function AdminUserDetail() {
             <Field label="الرمز البريدي / الرقم الإضافي">{[p.postal_code, p.additional_number].filter(Boolean).join(' — ') || '—'}</Field>
             <Field label="العنوان الوطني المختصر"><span className="font-mono" dir="ltr">{p.national_short_address || '—'}</span></Field>
             {p.latitude && p.longitude && (
-              <Field label="الإحداثيات"><a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">🗺 فتح على الخريطة</a></Field>
+              <Field label="الإحداثيات"><a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" className="text-[#d96f15] hover:underline">🗺 فتح على الخريطة</a></Field>
             )}
           </Section>
 
@@ -269,8 +269,8 @@ export default function AdminUserDetail() {
             {p.rejection_reason && <Field label="سبب الرفض"><span className="text-red-600">{p.rejection_reason}</span></Field>}
             <Field label="مصدر التحقق">{p.cr_verification_source || '—'}{p.cr_verified_at ? ` (${dt(p.cr_verified_at)})` : ''}</Field>
             <div className="flex gap-2 mt-2 flex-wrap">
-              {p.license_url && <button onClick={() => openDoc(p.license_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50">📄 الرخصة</button>}
-              {p.cr_url && <button onClick={() => openDoc(p.cr_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50">📋 السجل</button>}
+              {p.license_url && <button onClick={() => openDoc(p.license_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5">📄 الرخصة</button>}
+              {p.cr_url && <button onClick={() => openDoc(p.cr_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5">📋 السجل</button>}
               {!p.license_url && !p.cr_url && <span className="text-xs text-gray-400">لا توجد مستندات مرفوعة</span>}
             </div>
           </Section>
@@ -298,7 +298,7 @@ export default function AdminUserDetail() {
                     </div>
                   ))}
                   {projects.map(pr => (
-                    <div key={pr.id} className="flex items-center justify-between gap-2 text-xs bg-blue-50 rounded-lg p-2.5 flex-wrap">
+                    <div key={pr.id} className="flex items-center justify-between gap-2 text-xs bg-[#F5831F]/5 rounded-lg p-2.5 flex-wrap">
                       <span className="font-semibold" style={{ color: '#1B2D5B' }}>🏗 {pr.title}</span>
                       <span className="badge text-[10px] badge-gray">{RFQ_STATUS[pr.status] || pr.status}</span>
                       <span className="text-gray-400">{dt(pr.created_at)}</span>

@@ -204,7 +204,7 @@ export default function SupplierDashboard() {
           </a>
         )}
         {profile && !profile.vat_number && (
-          <a href="/settings" className="block mb-4 bg-blue-50 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
+          <a href="/settings" className="block mb-4 bg-[#F5831F]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
             <div className="flex items-center gap-3">
               <span className="text-2xl">🧾</span>
               <div className="flex-1">

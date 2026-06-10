@@ -116,7 +116,7 @@ export default function RFQDetailPage() {
     window.location.href = '/contractor'
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-blue-600 font-semibold animate-pulse">جارٍ التحميل...</div></div>
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-[#d96f15] font-semibold animate-pulse">جارٍ التحميل...</div></div>
   if (!rfq) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-gray-500">الطلب غير موجود</div></div>
 
   const acceptedOffer = offers.find(o => o.status === 'accepted')
@@ -146,7 +146,7 @@ export default function RFQDetailPage() {
             <div>
               <h2 className="text-xl font-bold text-gray-900">{rfq.product_name}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-semibold">
+                <span className="bg-blue-100 text-[#d96f15] text-xs px-2 py-0.5 rounded-full font-semibold">
                   {SECTOR_LABELS[rfq.sector] || rfq.sector}
                 </span>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
@@ -161,7 +161,7 @@ export default function RFQDetailPage() {
             {rfq.status === 'open' && (
               <div className="flex gap-2">
                 <button onClick={() => setEditing(!editing)}
-                  className="text-xs text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors">
+                  className="text-xs text-[#d96f15] border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-[#F5831F]/5 transition-colors">
                   ✏️ تعديل
                 </button>
                 <button onClick={cancelRfq}
@@ -173,7 +173,7 @@ export default function RFQDetailPage() {
           </div>
 
           {editing ? (
-            <div className="space-y-3 bg-blue-50 rounded-xl p-4">
+            <div className="space-y-3 bg-[#F5831F]/5 rounded-xl p-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">المواصفات</label>
                 <input value={editSpec} onChange={e => setEditSpec(e.target.value)} className="input-field" placeholder="المواصفات" />
@@ -183,7 +183,7 @@ export default function RFQDetailPage() {
                 <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} className="input-field" rows={3} placeholder="ملاحظات" />
               </div>
               <div className="flex gap-2">
-                <button onClick={handleEditSave} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700">حفظ التعديل</button>
+                <button onClick={handleEditSave} className="bg-[#1B2D5B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0f1d3d]">حفظ التعديل</button>
                 <button onClick={() => { setEditing(false); setShowEditWarning(false) }} className="text-sm text-gray-500">إلغاء</button>
               </div>
 
@@ -276,7 +276,7 @@ export default function RFQDetailPage() {
               }`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-[#d96f15]">
                       {i + 1}
                     </div>
                     <div>
@@ -285,7 +285,7 @@ export default function RFQDetailPage() {
                         {offer.supplier?.supplier_tier && (
                           <span className={`badge text-[10px] ${
                             offer.supplier.supplier_tier === 'manufacturer' ? 'bg-purple-100 text-purple-700' :
-                            offer.supplier.supplier_tier === 'commercial' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                            offer.supplier.supplier_tier === 'commercial' ? 'bg-blue-100 text-[#d96f15]' : 'bg-gray-100 text-gray-600'
                           }`}>
                             {offer.supplier.supplier_tier === 'manufacturer' ? '🏭 مصنع' :
                              offer.supplier.supplier_tier === 'commercial' ? '🏪 تجاري' : '🏬 محلي'}
@@ -315,7 +315,7 @@ export default function RFQDetailPage() {
                               <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">⚡ يردّ خلال ~{st.avg_response_hours} س</span>
                             )}
                             {st.won_rate != null && (
-                              <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-semibold">🤝 نسبة الترسية {st.won_rate}%</span>
+                              <span className="text-[10px] bg-[#F5831F]/5 text-[#d96f15] px-2 py-0.5 rounded-full font-semibold">🤝 نسبة الترسية {st.won_rate}%</span>
                             )}
                             <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">📨 {st.total_offers} عرض سابق</span>
                           </div>
@@ -382,7 +382,7 @@ export default function RFQDetailPage() {
                 {offer.attributes && Object.keys(offer.attributes).length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {Object.entries(offer.attributes).map(([k, v]) => (
-                      <span key={k} className="text-[10px] bg-blue-50 text-blue-700 px-2 py-1 rounded-lg">
+                      <span key={k} className="text-[10px] bg-[#F5831F]/5 text-[#d96f15] px-2 py-1 rounded-lg">
                         <strong>{k}:</strong> {v}
                       </span>
                     ))}

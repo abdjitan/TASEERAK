@@ -37,7 +37,7 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
             title={locales[l].name}
             className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center transition-all ${
               locale === l
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#1B2D5B] text-white'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
             }`}
           >
@@ -57,14 +57,14 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
             onClick={() => setLocale(l)}
             className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
               locale === l
-                ? 'border-blue-600 bg-blue-50'
-                : 'border-gray-200 hover:border-blue-300'
+                ? 'border-[#F5831F] bg-[#F5831F]/5'
+                : 'border-gray-200 hover:border-[#F5831F]/40'
             }`}
           >
             <span className="text-2xl">{FLAGS[l]}</span>
             <span className="text-sm font-semibold text-gray-900">{locales[l].name}</span>
             {locale === l && (
-              <span className="text-xs text-blue-600 font-medium">✓ محدد</span>
+              <span className="text-xs text-[#d96f15] font-medium">✓ محدد</span>
             )}
           </button>
         ))}
@@ -77,7 +77,7 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-blue-400 bg-white transition-all text-sm"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-[#F5831F]/50 bg-white transition-all text-sm"
       >
         <span>{FLAGS[locale]}</span>
         <span className="font-medium text-gray-700">{locales[locale].name}</span>
@@ -97,7 +97,7 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
               onClick={() => { setLocale(l); setOpen(false) }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-left ${
                 locale === l
-                  ? 'bg-blue-50 text-blue-600 font-semibold'
+                  ? 'bg-[#F5831F]/5 text-[#d96f15] font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >

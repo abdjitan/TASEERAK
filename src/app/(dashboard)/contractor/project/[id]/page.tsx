@@ -89,7 +89,7 @@ export default function ProjectResultsPage() {
               </div>
               {project?.boq_url && (
                 <a href={project.boq_url} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 mt-2 text-xs text-blue-600 hover:underline">
+                  className="inline-flex items-center gap-1 mt-2 text-xs text-[#d96f15] hover:underline">
                   📊 {locale === 'en' ? 'View Original BOQ' : 'عرض BOQ الأصلي'}
                 </a>
               )}
