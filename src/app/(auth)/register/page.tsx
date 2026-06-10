@@ -135,9 +135,9 @@ export default function RegisterPage() {
   const sl = (s) => locale === 'ar' ? SECTOR_LABELS[s] : (SECTOR_TR[s]?.[locale] || SECTOR_LABELS[s])
   // CR verification (Wathq) labels
   const CRV = {
-    ar: { verifyBtn: 'تحقق عبر واثق', checking: 'جارٍ التحقق...', invalid: 'أدخل 10 أرقام أولاً', error: 'تعذّر التحقق، حاول لاحقاً' },
-    en: { verifyBtn: 'Verify via Wathq', checking: 'Checking...', invalid: 'Enter 10 digits first', error: 'Verification failed, try later' },
-    ur: { verifyBtn: 'واثق سے تصدیق', checking: 'تصدیق ہو رہی ہے...', invalid: 'پہلے 10 ہندسے درج کریں', error: 'تصدیق ناکام، بعد میں کوشش کریں' },
+    ar: { verifyBtn: 'تحقق من السجل التجاري', checking: 'جارٍ التحقق...', invalid: 'أدخل 10 أرقام أولاً', error: 'تعذّر التحقق، حاول لاحقاً' },
+    en: { verifyBtn: 'Verify CR', checking: 'Checking...', invalid: 'Enter 10 digits first', error: 'Verification failed, try later' },
+    ur: { verifyBtn: 'تجارتی رجسٹریشن کی تصدیق', checking: 'تصدیق ہو رہی ہے...', invalid: 'پہلے 10 ہندسے درج کریں', error: 'تصدیق ناکام، بعد میں کوشش کریں' },
   }
   const cv = CRV[locale] || CRV.ar
   const [step, setStep] = useState(1)
@@ -455,25 +455,32 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-canvas p-4" dir={dir}>
-      <div className="absolute top-4 left-4 z-10"><LanguageSwitcher variant="minimal" /></div>
-      <a href="/" className="absolute top-4 right-4 z-10 flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-navy transition-colors">
-        <span>🏠</span>
-        <span>{locale === 'en' ? 'Home' : locale === 'ur' ? 'مرکزی صفحہ' : 'الرئيسية'}</span>
-      </a>
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-canvas" dir={dir}>
+      <header className="bg-white/90 backdrop-blur border-b border-line sticky top-0 z-20">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+          <a href="/" className="flex items-center gap-2">
+            <span className="w-9 h-9 rounded-xl bg-white border border-line grid place-items-center"><img src="/logo.png" alt="تسعيرك" className="w-7 h-7 object-contain" /></span>
+            <span className="font-extrabold text-navy text-lg">تسعير<span className="text-orange">ك</span></span>
+          </a>
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher variant="minimal" />
+            <a href="/login" className="text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</a>
+          </div>
+        </div>
+      </header>
+      <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Steps indicator */}
         <div className="flex items-center justify-center gap-2 py-6 mb-2">
           {[1,2,3,4].map(s => (
             <div key={s} className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
-                s < step ? 'bg-[#0F6E56] text-white' :
-                s === step ? 'bg-[#1B2D5B] text-white' :
-                'bg-gray-200 text-gray-500'
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                s < step ? 'bg-[#F5831F] text-white' :
+                s === step ? 'bg-[#F5831F] text-white ring-4 ring-[#F5831F]/20' :
+                'bg-white border-2 border-gray-200 text-gray-400'
               }`}>
                 {s < step ? '✓' : s}
               </div>
-              {s < 4 && <div className={`w-8 h-0.5 ${s < step ? 'bg-[#0F6E56]' : 'bg-gray-200'}`}/>}
+              {s < 4 && <div className={`w-10 h-1 rounded-full ${s < step ? 'bg-[#F5831F]' : 'bg-gray-200'}`}/>}
             </div>
           ))}
         </div>
@@ -492,14 +499,14 @@ export default function RegisterPage() {
                     <input {...register('company_name_ar')} readOnly={!!crVerify?.verified}
                       className={`input-field ${crVerify?.verified ? 'bg-emerald-50/60 text-gray-700 cursor-not-allowed' : ''}`} placeholder="شركة الصخر للمقاولات"/>
                     {crVerify?.verified
-                      ? <p className="text-[10px] text-emerald-600 mt-1">{locale === 'en' ? 'Verified via Wathq — cannot be changed' : locale === 'ur' ? 'واثق سے تصدیق شدہ — تبدیل نہیں ہو سکتا' : 'موثّق من واثق — لا يمكن تعديله'}</p>
+                      ? <p className="text-[10px] text-emerald-600 mt-1">{locale === 'en' ? 'Officially verified — cannot be changed' : locale === 'ur' ? 'تصدیق شدہ — تبدیل نہیں ہو سکتا' : 'موثّق رسمياً — لا يمكن تعديله'}</p>
                       : errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyEn} {crVerify?.verified && crVerify?.nameEn && <span className="text-emerald-600">🔒</span>}</label>
                     <input {...register('company_name_en')} readOnly={!!(crVerify?.verified && crVerify?.nameEn)}
                       className={`input-field ${(crVerify?.verified && crVerify?.nameEn) ? 'bg-emerald-50/60 text-gray-700' : ''}`} placeholder="Al Sakhr Contracting"/>
-                    {crVerify?.verified && !crVerify?.nameEn && <p className="text-[10px] text-gray-400 mt-1">{locale === 'en' ? 'No English name in Wathq — optional' : locale === 'ur' ? 'واثق میں انگریزی نام نہیں — اختیاری' : 'لا يوجد اسم إنجليزي في واثق — اختياري'}</p>}
+                    {crVerify?.verified && !crVerify?.nameEn && <p className="text-[10px] text-gray-400 mt-1">{locale === 'en' ? 'No official English name — optional' : locale === 'ur' ? 'سرکاری انگریزی نام نہیں — اختیاری' : 'لا يوجد اسم إنجليزي رسمي — اختياري'}</p>}
                   </div>
                 </div>
 
