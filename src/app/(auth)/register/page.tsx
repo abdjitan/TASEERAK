@@ -135,9 +135,9 @@ export default function RegisterPage() {
   const sl = (s) => locale === 'ar' ? SECTOR_LABELS[s] : (SECTOR_TR[s]?.[locale] || SECTOR_LABELS[s])
   // CR verification (Wathq) labels
   const CRV = {
-    ar: { verifyBtn: 'تحقق من السجل التجاري', checking: 'جارٍ التحقق...', invalid: 'أدخل 10 أرقام أولاً', error: 'تعذّر التحقق، حاول لاحقاً' },
-    en: { verifyBtn: 'Verify CR', checking: 'Checking...', invalid: 'Enter 10 digits first', error: 'Verification failed, try later' },
-    ur: { verifyBtn: 'تجارتی رجسٹریشن کی تصدیق', checking: 'تصدیق ہو رہی ہے...', invalid: 'پہلے 10 ہندسے درج کریں', error: 'تصدیق ناکام، بعد میں کوشش کریں' },
+    ar: { verifyBtn: 'تحقق من السجل التجاري', checking: 'جارٍ التحقق...', invalid: 'أدخل رقم السجل (10 أرقام) أولاً', needId: 'أدخل رقم هوية صاحب/مفوّض السجل (10 أرقام)', error: 'تعذّر التحقق، حاول لاحقاً', idLabel: 'رقم هوية صاحب/مفوّض السجل', ownerOk: '✓ رقم هويتك مُدرج ضمن ملّاك/مدراء السجل — توثيق مؤكّد', ownerNo: '⚠ رقم هويتك غير مُدرج في هذا السجل — سيُحوَّل لمراجعة الإدارة', idDoc: 'صورة الهوية الوطنية / الإقامة', idHint: 'لإثبات أنك صاحب السجل — تُراجَع بسرّية' },
+    en: { verifyBtn: 'Verify CR', checking: 'Checking...', invalid: 'Enter the CR number (10 digits) first', needId: 'Enter the owner/authorized national ID (10 digits)', error: 'Verification failed, try later', idLabel: 'Owner/authorized national ID', ownerOk: '✓ Your ID is listed among the CR owners/managers — verified', ownerNo: '⚠ Your ID is not in this CR — sent to admin review', idDoc: 'National ID / Iqama image', idHint: 'Proves you own the CR — reviewed confidentially' },
+    ur: { verifyBtn: 'تجارتی رجسٹریشن کی تصدیق', checking: 'تصدیق ہو رہی ہے...', invalid: 'پہلے CR نمبر (10 ہندسے) درج کریں', needId: 'مالک/مجاز کا شناختی نمبر درج کریں (10 ہندسے)', error: 'تصدیق ناکام، بعد میں کوشش کریں', idLabel: 'مالک/مجاز کا قومی شناختی نمبر', ownerOk: '✓ آپ کا شناختی نمبر مالکان میں شامل ہے — تصدیق شدہ', ownerNo: '⚠ آپ کا شناختی نمبر اس CR میں نہیں — جائزے کے لیے بھیجا گیا', idDoc: 'قومی شناختی کارڈ / اقامہ کی تصویر', idHint: 'ثبوت کہ آپ مالک ہیں — رازداری سے جائزہ' },
   }
   const cv = CRV[locale] || CRV.ar
   const [step, setStep] = useState(1)
@@ -153,6 +153,10 @@ export default function RegisterPage() {
   const [branchConfirmed, setBranchConfirmed] = useState(false)
   const [phoneDup, setPhoneDup] = useState<any>(null) // { company } if phone already registered
   const [crChecking, setCrChecking] = useState(false)
+  // Two-factor verification: the owner/authorized national ID is matched against
+  // the CR's owners (Wathq), and an ID document is uploaded as proof.
+  const [nationalId, setNationalId] = useState('')
+  const [idFile, setIdFile] = useState<File | null>(null)
   // Report a fake/fraudulent account registered with my CR
   const [objOpen, setObjOpen] = useState(false)
   const [objName, setObjName] = useState('')
@@ -257,13 +261,15 @@ export default function RegisterPage() {
 
   async function verifyCR() {
     const cr = (watch('commercial_registration') || '').toString()
+    const nid = nationalId.trim()
     if (!/^[0-9]{10}$/.test(cr)) { setCrVerify({ ok: false, message: cv.invalid }); return }
+    if (!/^[12][0-9]{9}$/.test(nid)) { setCrVerify({ ok: false, message: cv.needId }); return }
     setCrChecking(true); setCrVerify(null)
     try {
       const res = await fetch('/api/verify-cr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cr }),
+        body: JSON.stringify({ cr, nationalId: nid }),
       })
       const j = await res.json()
       setCrVerify(j)
@@ -341,6 +347,7 @@ export default function RegisterPage() {
 
       // 3. Email confirmation OFF → we have a session. Finish documents + AI check.
       let licenseUrl = null, crUrl = null
+      if (idFile) await uploadFile(idFile, `${userId}/national-id.${idFile.name.split('.').pop()}`)
       if (licenseFile) licenseUrl = await uploadFile(licenseFile, `${userId}/license.${licenseFile.name.split('.').pop()}`)
       if (crFile) crUrl = await uploadFile(crFile, `${userId}/cr.${crFile.name.split('.').pop()}`)
       if (licenseUrl || crUrl) {
@@ -521,25 +528,30 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
+                {/* Two-factor: CR number + owner national ID, matched against Wathq owners */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{t.crNumber} *</label>
-                    <div className="flex gap-2">
-                      <input {...register('commercial_registration')} className="input-field flex-1" placeholder="1010XXXXXX"
-                        inputMode="numeric" maxLength={10} dir="ltr"
-                        onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
-                      <button type="button" onClick={verifyCR} disabled={crChecking}
-                        className="px-3 rounded-xl text-xs font-bold text-white whitespace-nowrap disabled:opacity-50 transition-all hover:shadow"
-                        style={{ background: '#0F6E56' }}>
-                        {crChecking ? cv.checking : `🛡 ${cv.verifyBtn}`}
-                      </button>
-                    </div>
+                    <input {...register('commercial_registration')} className="input-field" placeholder="1010XXXXXX"
+                      inputMode="numeric" maxLength={10} dir="ltr"
+                      onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
                     {errors.commercial_registration && <p className="text-red-500 text-xs mt-1">{errors.commercial_registration.message}</p>}
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.vatNumber}</label>
-                    <input {...register('vat_number')} className="input-field" placeholder="3XXXXXXXXXXXXXXX"/>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{cv.idLabel} *</label>
+                    <input value={nationalId} onChange={e => { setNationalId(e.target.value.replace(/[^0-9]/g, '').slice(0, 10)); if (crVerify) setCrVerify(null) }}
+                      className="input-field" placeholder="1XXXXXXXXX" inputMode="numeric" maxLength={10} dir="ltr" />
+                    <p className="text-[10px] text-gray-400 mt-1">{cv.idHint}</p>
                   </div>
+                </div>
+
+                <button type="button" onClick={verifyCR} disabled={crChecking} className="btn-orange w-full">
+                  {crChecking ? cv.checking : `🛡 ${cv.verifyBtn}`}
+                </button>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.vatNumber}</label>
+                  <input {...register('vat_number')} className="input-field" placeholder="3XXXXXXXXXXXXXXX"/>
                 </div>
 
                 {crVerify && (
@@ -553,6 +565,11 @@ export default function RegisterPage() {
                       {crVerify.name && <div className="font-bold">{crVerify.name}</div>}
                       {crVerify.activity && <div className="opacity-80">{crVerify.activity}</div>}
                       <div>{crVerify.message}</div>
+                      {crVerify.ownerCheck && (
+                        <div className={`mt-1.5 font-bold ${crVerify.ownerCheck.authorized ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {crVerify.ownerCheck.authorized ? cv.ownerOk : cv.ownerNo}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -692,6 +709,7 @@ export default function RegisterPage() {
 
               <div className="space-y-4">
                 {[
+                  { label: `${cv.idDoc} *`, state: idFile, setter: setIdFile, required: true },
                   { label: `${t.license} *`, state: licenseFile, setter: setLicenseFile, required: true },
                   { label: t.cr, state: crFile, setter: setCrFile, required: false },
                 ].map(({ label, state, setter }) => (
