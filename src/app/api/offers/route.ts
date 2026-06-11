@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     user_id: rfq.contractor_id,
     type: 'rfq_offer',
     title: 'عرض سعر جديد',
-    body: `وصلك عرض جديد بسعر SAR ${body.total_price.toLocaleString()}`,
+    body: `وصلك عرض جديد بسعر SAR ${body.total_price.toLocaleString('en-US')}`,
     data: { rfq_id: body.rfq_id, offer_id: data.id },
   })
 

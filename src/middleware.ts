@@ -104,9 +104,16 @@ export async function middleware(request: NextRequest) {
     return res
   }
 
-  // ── Rule 1: Already logged in → skip login/register ──────────────────────
+  // ── Rule 1: Already logged in → skip login/register, go to the DASHBOARD ──
+  // (not the marketing landing) so a post-login cookie-refresh race can't bounce
+  // the user back to "/" and look like the login "failed".
   if (user && AUTH_PAGES.some((p) => pathname.startsWith(p))) {
-    return redirectTo(new URL('/', request.url))
+    let home = '/contractor'
+    try {
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      home = profile?.role === 'admin' ? '/admin' : profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
+    } catch {}
+    return redirectTo(new URL(home, request.url))
   }
 
   // ── Rule 2: Not logged in → can't access protected pages ─────────────────

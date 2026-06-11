@@ -862,7 +862,7 @@ export default function AdminPanel() {
                           </span>
                         )}
                         {u.role === 'supplier' && u.min_order_value > 0 && (
-                          <span className="badge text-[10px] badge-gray">حد أدنى: {Number(u.min_order_value).toLocaleString()} ر.س</span>
+                          <span className="badge text-[10px] badge-gray">حد أدنى: {Number(u.min_order_value).toLocaleString('en-US')} ر.س</span>
                         )}
                         <span className={`badge text-[10px] ${
                           u.verification_status === 'verified' ? 'badge-green' :

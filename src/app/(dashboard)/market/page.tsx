@@ -159,7 +159,7 @@ export default function MarketPricePage() {
                             {trend === 'up' && <span className="text-red-500 text-sm">▲</span>}
                             {trend === 'down' && <span className="text-emerald-500 text-sm">▼</span>}
                             <span className="text-2xl font-bold" style={{ color: trend === 'up' ? '#ef4444' : trend === 'down' ? '#0F6E56' : '#1B2D5B' }}>
-                              {p.price?.toLocaleString()}
+                              {p.price?.toLocaleString('en-US')}
                             </span>
                           </div>
                           <div className="text-[10px] text-gray-400">ر.س / {p.unit}{pct ? ` · ${trend === 'up' ? '+' : '-'}${pct}%` : ''}</div>
@@ -241,11 +241,11 @@ export default function MarketPricePage() {
                         <span className="badge badge-blue text-[10px]">{SECTOR_LABELS[p.sector] || p.sector}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500">{p.unit}</td>
-                      <td className="px-4 py-3 text-sm text-emerald-600 font-semibold">{p.min?.toLocaleString()} {T.sar}</td>
+                      <td className="px-4 py-3 text-sm text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
-                        <div className="text-base font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString()} {T.sar}</div>
+                        <div className="text-base font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString('en-US')} {T.sar}</div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-red-500 font-semibold">{p.max?.toLocaleString()} {T.sar}</td>
+                      <td className="px-4 py-3 text-sm text-red-500 font-semibold">{p.max?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1 text-xs text-gray-500">
                           <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold">{p.count}</span>
@@ -268,21 +268,21 @@ export default function MarketPricePage() {
                       <span className="badge badge-blue text-[10px] mt-1">{SECTOR_LABELS[p.sector] || p.sector}</span>
                     </div>
                     <div className="text-left">
-                      <div className="text-lg font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString()}</div>
+                      <div className="text-lg font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString('en-US')}</div>
                       <div className="text-[10px] text-gray-400">{T.sar} / {p.unit}</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
                     <div className="bg-emerald-50 rounded-lg p-2">
-                      <div className="text-emerald-600 font-semibold">{p.min?.toLocaleString()}</div>
+                      <div className="text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')}</div>
                       <div className="text-gray-400 text-[10px]">{T.minPrice}</div>
                     </div>
                     <div className="rounded-lg p-2" style={{ background: '#F5831F15' }}>
-                      <div className="font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString()}</div>
+                      <div className="font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString('en-US')}</div>
                       <div className="text-gray-400 text-[10px]">{T.avgPrice}</div>
                     </div>
                     <div className="bg-red-50 rounded-lg p-2">
-                      <div className="text-red-500 font-semibold">{p.max?.toLocaleString()}</div>
+                      <div className="text-red-500 font-semibold">{p.max?.toLocaleString('en-US')}</div>
                       <div className="text-gray-400 text-[10px]">{T.maxPrice}</div>
                     </div>
                   </div>

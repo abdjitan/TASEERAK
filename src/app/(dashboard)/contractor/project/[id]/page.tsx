@@ -96,7 +96,7 @@ export default function ProjectResultsPage() {
             </div>
             <div className="text-left">
               <div className="text-2xl font-bold" style={{ color: '#F5831F' }}>
-                {totalAcceptedCost > 0 ? totalAcceptedCost.toLocaleString() + ' ر.س' : '—'}
+                {totalAcceptedCost > 0 ? totalAcceptedCost.toLocaleString('en-US') + ' ر.س' : '—'}
               </div>
               <div className="text-xs text-gray-400">{locale === 'en' ? 'Total Accepted' : 'إجمالي المقبول'}</div>
             </div>
@@ -215,7 +215,7 @@ export default function ProjectResultsPage() {
                     <div className="text-left flex-shrink-0">
                       {acceptedOffer ? (
                         <div>
-                          <div className="text-base font-bold text-emerald-600">{acceptedOffer.total_price?.toLocaleString()} ر.س</div>
+                          <div className="text-base font-bold text-emerald-600">{acceptedOffer.total_price?.toLocaleString('en-US')} ر.س</div>
                           <div className="badge badge-green text-[10px]">✓ {locale === 'en' ? 'Accepted' : 'مقبول'}</div>
                         </div>
                       ) : (
@@ -310,16 +310,16 @@ export default function ProjectResultsPage() {
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <div className="text-right">
                                 <div className="font-bold text-sm" style={{ color: rank === 0 && !acceptedOffer ? '#F5831F' : '#1B2D5B' }}>
-                                  {offer.total_price?.toLocaleString()} ر.س
+                                  {offer.total_price?.toLocaleString('en-US')} ر.س
                                 </div>
                                 {offer.unit_price && (
-                                  <div className="text-[10px] text-gray-400">{offer.unit_price?.toLocaleString()} / {item.unit}</div>
+                                  <div className="text-[10px] text-gray-400">{offer.unit_price?.toLocaleString('en-US')} / {item.unit}</div>
                                 )}
                                 {offer.extra_charges && offer.extra_charges.length > 0 && (
                                   <div className="text-[10px] text-amber-600"
-                                    title={offer.extra_charges.map(e => `${e.label}: ${Number(e.amount).toLocaleString()} ر.س`).join('  •  ')}>
+                                    title={offer.extra_charges.map(e => `${e.label}: ${Number(e.amount).toLocaleString('en-US')} ر.س`).join('  •  ')}>
                                     {locale === 'en' ? 'incl. ' : 'شامل '}
-                                    {offer.extra_charges.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString()} {locale === 'en' ? 'extras' : 'إضافات'} ⓘ
+                                    {offer.extra_charges.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US')} {locale === 'en' ? 'extras' : 'إضافات'} ⓘ
                                   </div>
                                 )}
                               </div>
@@ -372,13 +372,13 @@ export default function ProjectResultsPage() {
                 return (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-gray-600 truncate ml-4">{item.product_name}</span>
-                    <span className="font-semibold text-emerald-700 flex-shrink-0">{acc.total_price?.toLocaleString()} ر.س</span>
+                    <span className="font-semibold text-emerald-700 flex-shrink-0">{acc.total_price?.toLocaleString('en-US')} ر.س</span>
                   </div>
                 )
               })}
               <div className="border-t border-emerald-200 pt-2 flex justify-between font-bold">
                 <span style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Total' : 'الإجمالي'}</span>
-                <span style={{ color: '#F5831F' }}>{totalAcceptedCost.toLocaleString()} ر.س</span>
+                <span style={{ color: '#F5831F' }}>{totalAcceptedCost.toLocaleString('en-US')} ر.س</span>
               </div>
             </div>
           </div>
