@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, getProductLabel, detectSubCategory, getGroupedProducts, getProductSpecs } from '@/types'
+import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, getProductLabel, detectSubCategory, getGroupedProducts, getProductSpecs } from '@/types'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
@@ -464,9 +464,15 @@ export default function NewRFQPage() {
                         </div>
                       </div>
                       <button type="button" onClick={addItem} disabled={!productName || !quantity || !effectiveUnit}
-                        className="mt-3 w-full py-2.5 rounded-xl font-semibold text-sm border-2 border-dashed border-[#1B2D5B]/30 text-[#1B2D5B] disabled:opacity-40 hover:bg-[#1B2D5B]/5 transition-all">
-                        ➕ {locale === 'en' ? 'Add this material & add another' : 'أضف هذه المادة وأضف غيرها'}
+                        className="mt-4 w-full py-3.5 rounded-xl font-bold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed transition-all"
+                        style={{ background: (!productName || !quantity || !effectiveUnit) ? '#9ca3af' : '#F5831F' }}>
+                        ➕ {locale === 'en' ? 'Add this material to the list' : 'أضف هذه المادة إلى القائمة'}
                       </button>
+                      {(!productName || !quantity || !effectiveUnit) && (
+                        <p className="text-[11px] text-gray-400 mt-1.5 text-center">
+                          {locale === 'en' ? 'Complete the material, quantity and order unit to enable adding.' : 'أكمل المادة + الكمية + وحدة الطلب لتفعيل الإضافة.'}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -476,24 +482,40 @@ export default function NewRFQPage() {
               {/* Location */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.location}</h3>
+
+                {/* توصيل أو استلام (السعر يختلف) */}
+                <div className="grid grid-cols-2 gap-3 mb-2">
+                  <button type="button" onClick={() => setDeliveryRequired(true)}
+                    className={`py-3 rounded-xl border-2 text-sm font-bold transition-all ${deliveryRequired ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    🚚 {locale === 'en' ? 'Delivery to site' : 'توصيل للموقع'}
+                  </button>
+                  <button type="button" onClick={() => setDeliveryRequired(false)}
+                    className={`py-3 rounded-xl border-2 text-sm font-bold transition-all ${!deliveryRequired ? 'border-[#1B2D5B] bg-[#1B2D5B]/5 text-[#1B2D5B]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    🏬 {locale === 'en' ? 'Pickup from supplier' : 'استلام من المورد'}
+                  </button>
+                </div>
+                <p className="text-[11px] text-gray-400 mb-4">💡 {locale === 'en' ? 'Price differs between delivery and pickup.' : 'السعر يختلف بين التوصيل والاستلام.'}</p>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.region}</label>
-                    <select value={region} onChange={e => setRegion(e.target.value)} className="input-field" required>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.region} *</label>
+                    <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" required>
                       <option value="">{t.regionDefault}</option>
                       {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.city}</label>
-                    <input type="text" value={city} onChange={e => setCity(e.target.value)}
-                      className="input-field" placeholder={t.cityHint} />
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.city} *</label>
+                    <select value={city} onChange={e => setCity(e.target.value)} className="input-field" required disabled={!region}>
+                      <option value="">{region ? (locale === 'en' ? '— Select city —' : '— اختر المدينة —') : '—'}</option>
+                      {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
+                    </select>
                   </div>
                 </div>
                 {deliveryRequired && (
                   <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3">
                     <label className="block text-xs font-bold text-amber-800 mb-1.5">
-                      🚚 {locale === 'en' ? 'Delivery location (for shipping cost) *' : locale === 'ur' ? 'ڈیلیوری مقام (شپنگ لاگت کے لیے) *' : 'موقع التوصيل (لحساب تكلفة الشحن) *'}
+                      🚚 {locale === 'en' ? 'District / address (optional)' : 'الحي / عنوان الموقع (اختياري)'}
                     </label>
                     <input type="text" value={deliveryLocation} onChange={e => setDeliveryLocation(e.target.value)}
                       className="input-field"
@@ -668,7 +690,6 @@ export default function NewRFQPage() {
                 <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.options}</h3>
                 <div className="space-y-4">
                   {[
-                    { label: t.delivery, sub: t.deliverySub, value: deliveryRequired, setter: setDeliveryRequired },
                     { label: t.vat, sub: t.vatSub, value: vatRequired, setter: setVatRequired },
                     { label: t.hide, sub: t.hideSub, value: hideIdentity, setter: setHideIdentity },
                   ].map(({ label, sub, value, setter }) => (
@@ -719,11 +740,14 @@ export default function NewRFQPage() {
               </div>
 
               {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3">⚠️ {error}</div>}
-              <button type="submit" disabled={loading || !sector || !productName || !quantity || !unit || !region || (deliveryRequired && !deliveryLocation)}
+              <button type="submit" disabled={loading || !region || !city || (items.length === 0 && !buildDraftItem())}
                 className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg active:scale-[0.98]"
                 style={{ background: '#F5831F' }}>
                 {loading ? t.submitting : t.submit}
               </button>
+              {(items.length === 0 && !buildDraftItem()) && (
+                <p className="text-[11px] text-gray-400 text-center">{locale === 'en' ? 'Add at least one material and choose region + city.' : 'أضف مادة واحدة على الأقل واختر المنطقة + المدينة.'}</p>
+              )}
             </div>
           </div>
         </form>
