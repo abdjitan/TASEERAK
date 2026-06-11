@@ -251,8 +251,8 @@ export default function OrderDetailPage() {
                   </td>
                   <td className="py-4 text-sm text-gray-600">{SECTOR_LABELS[rfq.sector] || rfq.sector}</td>
                   <td className="py-4 text-sm text-gray-600">{rfq.quantity} {rfq.unit}</td>
-                  <td className="py-4 text-sm text-gray-600">{offer.unit_price ? `${offer.unit_price.toLocaleString()} ر.س` : '—'}</td>
-                  <td className="py-4 font-bold text-gray-900">{offer.total_price?.toLocaleString()} ر.س</td>
+                  <td className="py-4 text-sm text-gray-600">{offer.unit_price ? `${offer.unit_price.toLocaleString('en-US')} ر.س` : '—'}</td>
+                  <td className="py-4 font-bold text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</td>
                 </tr>
               </tbody>
             </table>
@@ -264,15 +264,15 @@ export default function OrderDetailPage() {
               <div className="w-64 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">المجموع الفرعي</span>
-                  <span className="text-gray-900">{offer.total_price?.toLocaleString()} ر.س</span>
+                  <span className="text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">ضريبة القيمة المضافة (15%)</span>
-                  <span className="text-gray-900">{(offer.total_price * 0.15)?.toLocaleString()} ر.س</span>
+                  <span className="text-gray-900">{(offer.total_price * 0.15)?.toLocaleString('en-US')} ر.س</span>
                 </div>
                 <div className="border-t border-gray-200 pt-2 flex justify-between">
                   <span className="font-bold text-gray-900">الإجمالي شامل الضريبة</span>
-                  <span className="font-bold text-[#d96f15] text-lg">{(offer.total_price * 1.15)?.toLocaleString()} ر.س</span>
+                  <span className="font-bold text-[#d96f15] text-lg">{(offer.total_price * 1.15)?.toLocaleString('en-US')} ر.س</span>
                 </div>
               </div>
             </div>
@@ -353,11 +353,11 @@ export default function OrderDetailPage() {
           <div className="p-6">
             <table className="w-full text-sm mb-4">
               <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">الصنف</th><th className="text-right pb-2">الكمية</th><th className="text-right pb-2">سعر الوحدة</th><th className="text-right pb-2">الإجمالي</th></tr></thead>
-              <tbody><tr><td className="py-2 font-semibold text-gray-900">{rfq.product_name}</td><td className="py-2 text-gray-600">{rfq.quantity} {rfq.unit}</td><td className="py-2 text-gray-600">{offer.unit_price ? offer.unit_price.toLocaleString() : '—'}</td><td className="py-2 font-bold text-gray-900">{offer.total_price?.toLocaleString()} ر.س</td></tr></tbody>
+              <tbody><tr><td className="py-2 font-semibold text-gray-900">{rfq.product_name}</td><td className="py-2 text-gray-600">{rfq.quantity} {rfq.unit}</td><td className="py-2 text-gray-600">{offer.unit_price ? offer.unit_price.toLocaleString('en-US') : '—'}</td><td className="py-2 font-bold text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</td></tr></tbody>
             </table>
             <div className="flex justify-end">
               <div className="w-64 space-y-1 text-sm">
-                <div className="flex justify-between"><span className="text-gray-500">المجموع (غير شامل الضريبة)</span><span>{offer.total_price?.toLocaleString()} ر.س</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">المجموع (غير شامل الضريبة)</span><span>{offer.total_price?.toLocaleString('en-US')} ر.س</span></div>
                 <div className="flex justify-between"><span className="text-gray-500">ضريبة القيمة المضافة 15%</span><span>{(offer.total_price * 0.15).toLocaleString(undefined, { maximumFractionDigits: 2 })} ر.س</span></div>
                 <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>الإجمالي شامل الضريبة</span><span style={{ color: '#0F6E56' }}>{(offer.total_price * 1.15).toLocaleString(undefined, { maximumFractionDigits: 2 })} ر.س</span></div>
               </div>

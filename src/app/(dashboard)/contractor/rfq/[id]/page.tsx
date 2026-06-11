@@ -225,7 +225,7 @@ export default function RFQDetailPage() {
             className="block bg-green-50 rounded-2xl p-6 border border-green-200 mb-6 hover:shadow transition-shadow text-center">
             <div className="text-3xl mb-2">📄</div>
             <h3 className="font-bold text-green-800 mb-1">تم قبول عرض من {acceptedOffer.supplier?.company_name_ar}</h3>
-            <p className="text-sm text-green-600">السعر: {acceptedOffer.total_price?.toLocaleString()} ر.س — اضغط لعرض أمر الشراء</p>
+            <p className="text-sm text-green-600">السعر: {acceptedOffer.total_price?.toLocaleString('en-US')} ر.س — اضغط لعرض أمر الشراء</p>
           </a>
         )}
 
@@ -235,7 +235,7 @@ export default function RFQDetailPage() {
           {marketAvg && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
               <span className="text-xs text-amber-600">📊 متوسط السوق:</span>
-              <span className="text-sm font-bold text-amber-700">{marketAvg?.toLocaleString()} ر.س/وحدة</span>
+              <span className="text-sm font-bold text-amber-700">{marketAvg?.toLocaleString('en-US')} ر.س/وحدة</span>
             </div>
           )}
         </div>
@@ -329,7 +329,7 @@ export default function RFQDetailPage() {
                         ) : null
                       })()}
                       {offer.supplier?.phone && offer.status === 'pending' && (() => {
-                        const w = waLink(offer.supplier.phone, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» بسعر ${offer.total_price?.toLocaleString()} ر.س في منصة تسعيرك — هل بالإمكان تخفيض السعر؟ نقدّر تعاونكم 🌟`)
+                        const w = waLink(offer.supplier.phone, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» بسعر ${offer.total_price?.toLocaleString('en-US')} ر.س في منصة تسعيرك — هل بالإمكان تخفيض السعر؟ نقدّر تعاونكم 🌟`)
                         return w ? (
                           <a href={w} target="_blank" rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] mt-1.5 mr-1.5 px-2.5 py-1 rounded-full font-semibold border" style={{ borderColor: '#F5831F', color: '#F5831F' }}>
@@ -340,7 +340,7 @@ export default function RFQDetailPage() {
                     </div>
                   </div>
                   <div className="text-left">
-                    <div className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{offer.total_price?.toLocaleString()}</div>
+                    <div className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{offer.total_price?.toLocaleString('en-US')}</div>
                     <div className="text-xs text-gray-400">ر.س</div>
                     {marketAvg && offer.unit_price && (() => {
                       const diff = Math.abs(((offer.unit_price - marketAvg) / marketAvg * 100)).toFixed(0)
@@ -365,11 +365,11 @@ export default function RFQDetailPage() {
                   const goods = (Number(offer.total_price) || 0) - exSum
                   return (
                     <div className="bg-amber-50 border border-amber-100 rounded-lg p-2.5 mb-2 text-xs">
-                      <div className="flex justify-between text-gray-600"><span>البضاعة</span><span>{goods.toLocaleString()} ر.س</span></div>
+                      <div className="flex justify-between text-gray-600"><span>البضاعة</span><span>{goods.toLocaleString('en-US')} ر.س</span></div>
                       {offer.extra_charges.map((e, idx) => (
-                        <div key={idx} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString()} ر.س</span></div>
+                        <div key={idx} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString('en-US')} ر.س</span></div>
                       ))}
-                      <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>الإجمالي</span><span>{Number(offer.total_price).toLocaleString()} ر.س</span></div>
+                      <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>الإجمالي</span><span>{Number(offer.total_price).toLocaleString('en-US')} ر.س</span></div>
                     </div>
                   )
                 })()}

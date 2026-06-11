@@ -4,6 +4,7 @@
 import { useState, ReactNode } from 'react'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
+import { useTranslation } from '@/i18n'
 
 export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean }
 
@@ -22,6 +23,7 @@ export default function AppShell({
   children: ReactNode
   dir?: string
 }) {
+  const { locale } = useTranslation()
   const [open, setOpen] = useState(false)
   const sideEdge = dir === 'rtl' ? 'right-0' : 'left-0'
   const hidden = dir === 'rtl' ? 'translate-x-full' : '-translate-x-full'
@@ -36,7 +38,11 @@ export default function AppShell({
       >
         <div className="p-5 flex items-center gap-3 border-b border-white/10">
           <span className="w-10 h-10 rounded-xl bg-white grid place-items-center shadow"><img src="/logo.png" alt="تسعيرك" className="w-7 h-7 object-contain" /></span>
-          <span className="text-xl font-extrabold">تسعير<span style={{ color: '#F5831F' }}>ك</span></span>
+          <span className="text-xl font-extrabold">
+            {locale === 'en' ? <>TASEER<span style={{ color: '#F5831F' }}>AK</span></>
+              : locale === 'ur' ? <>تسعیر<span style={{ color: '#F5831F' }}>ک</span></>
+              : <>تسعير<span style={{ color: '#F5831F' }}>ك</span></>}
+          </span>
         </div>
         <nav className="flex-1 overflow-y-auto p-3 space-y-1">
           {nav.map((n) => (

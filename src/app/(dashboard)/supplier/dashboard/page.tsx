@@ -291,7 +291,7 @@ export default function SupplierDashboard() {
             { label: t.openRfqs, value: openRfqs.length, icon: '📋', bg: '#1B2D5B' },
             { label: t.pendingOffers, value: pending, icon: '⏳', bg: '#F5831F' },
             { label: t.acceptedOffers, value: accepted, icon: '✅', bg: '#0F6E56' },
-            { label: t.revenue, value: totalRevenue.toLocaleString(), icon: '💰', bg: '#7c3aed' },
+            { label: t.revenue, value: totalRevenue.toLocaleString('en-US'), icon: '💰', bg: '#7c3aed' },
           ].map(({ label, value, icon, bg }) => (
             <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
               <div className="flex items-start justify-between">
@@ -391,7 +391,7 @@ export default function SupplierDashboard() {
                         </div>
                       </div>
                       <div className="text-left">
-                        <div className="text-lg font-bold" style={{ color: '#1B2D5B' }}>{offer.total_price?.toLocaleString()} <span className="text-xs text-gray-400">{t.sar}</span></div>
+                        <div className="text-lg font-bold" style={{ color: '#1B2D5B' }}>{offer.total_price?.toLocaleString('en-US')} <span className="text-xs text-gray-400">{t.sar}</span></div>
                         <span className={`badge text-[10px] ${
                           offer.status === 'accepted' ? 'badge-green' : offer.status === 'rejected' ? 'badge-red' : 'badge-amber'
                         }`}>{offerStatusLabel(offer.status)}</span>

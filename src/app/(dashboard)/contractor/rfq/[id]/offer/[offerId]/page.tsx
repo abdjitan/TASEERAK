@@ -105,7 +105,7 @@ export default function OfferDetailPage() {
   const tierLabel = s.supplier_tier === 'manufacturer' ? '🏭 مصنع / مورد رئيسي' : s.supplier_tier === 'commercial' ? '🏪 مورد تجاري' : '🏬 مورد محلي'
   const mapsUrl = (s.latitude && s.longitude) ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}` : null
   const wa = s.phone ? waLink(s.phone, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» في منصة تسعيرك`) : ''
-  const waReduce = s.phone ? waLink(s.phone, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» بسعر ${offer.total_price?.toLocaleString()} ر.س في منصة تسعيرك — هل بالإمكان تخفيض السعر؟ نقدّر تعاونكم 🌟`) : ''
+  const waReduce = s.phone ? waLink(s.phone, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» بسعر ${offer.total_price?.toLocaleString('en-US')} ر.س في منصة تسعيرك — هل بالإمكان تخفيض السعر؟ نقدّر تعاونكم 🌟`) : ''
   const statusBadge = offer.status === 'accepted' ? { t: '✓ مقبول', c: 'bg-emerald-100 text-emerald-700' }
     : offer.status === 'rejected' ? { t: '✕ مرفوض', c: 'bg-gray-100 text-gray-500' }
     : { t: '⏳ قيد المراجعة', c: 'bg-amber-100 text-amber-700' }
@@ -164,15 +164,15 @@ export default function OfferDetailPage() {
         {/* العرض */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <h2 className="font-bold text-sm mb-3" style={{ color: '#1B2D5B' }}>💰 تفاصيل العرض</h2>
-          <Row label="سعر الوحدة" value={offer.unit_price ? `${offer.unit_price.toLocaleString()} ر.س` : null} />
+          <Row label="سعر الوحدة" value={offer.unit_price ? `${offer.unit_price.toLocaleString('en-US')} ر.س` : null} />
           <Row label="مدة التوصيل" value={offer.delivery_days ? `${offer.delivery_days} يوم` : null} />
 
           <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 my-3 text-sm">
-            <div className="flex justify-between text-gray-600"><span>البضاعة</span><span>{goods.toLocaleString()} ر.س</span></div>
+            <div className="flex justify-between text-gray-600"><span>البضاعة</span><span>{goods.toLocaleString('en-US')} ر.س</span></div>
             {exList.map((e, i) => (
-              <div key={i} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString()} ر.س</span></div>
+              <div key={i} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString('en-US')} ر.س</span></div>
             ))}
-            <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>الإجمالي</span><span>{Number(offer.total_price).toLocaleString()} ر.س</span></div>
+            <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>الإجمالي</span><span>{Number(offer.total_price).toLocaleString('en-US')} ر.س</span></div>
           </div>
 
           {offer.attributes && Object.keys(offer.attributes).length > 0 && (

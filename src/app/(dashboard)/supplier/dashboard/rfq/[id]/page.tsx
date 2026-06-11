@@ -321,7 +321,7 @@ export default function SupplierRFQPage() {
                 ? (locale === 'en' ? 'Pricing closed — another offer was accepted' : locale === 'ur' ? 'پرائسنگ بند — دوسری پیشکش قبول ہوگئی' : 'انتهى التسعير — تم اعتماد عرض آخر')
                 : (T.alreadyTitle[existingOffer.status] || T.alreadyTitle.pending)}
             </h3>
-            <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString()} ر.س{existingOffer.status === 'rejected' && rfq.status === 'closed' ? (locale === 'en' ? ' — thanks for participating' : ' — شكراً لمشاركتك') : ''}</p>
+            <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString('en-US')} ر.س{existingOffer.status === 'rejected' && rfq.status === 'closed' ? (locale === 'en' ? ' — thanks for participating' : ' — شكراً لمشاركتك') : ''}</p>
 
             {existingOffer.status === 'pending' && existingOffer.reduction_deadline && new Date(existingOffer.reduction_deadline) > new Date() && (
               <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 text-right">
@@ -329,7 +329,7 @@ export default function SupplierRFQPage() {
                 {existingOffer.reduction_note && <div className="text-xs text-gray-600 mb-1">«{existingOffer.reduction_note}»</div>}
                 <div className="text-[11px] text-gray-500 mb-3">المهلة للرد: {new Date(existingOffer.reduction_deadline).toLocaleString('ar-SA')}</div>
                 <div className="flex gap-2">
-                  <input type="number" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={`أقل من ${existingOffer.total_price?.toLocaleString()} ر.س`} min="0" step="any" />
+                  <input type="number" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={`أقل من ${existingOffer.total_price?.toLocaleString('en-US')} ر.س`} min="0" step="any" />
                   <button type="button" onClick={submitReduction} disabled={reducing} className="px-4 rounded-xl font-semibold text-white text-sm disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>{reducing ? '...' : 'إرسال السعر الجديد'}</button>
                 </div>
               </div>
@@ -429,7 +429,7 @@ export default function SupplierRFQPage() {
                       {locale === 'en' ? 'Grand Total' : locale === 'ur' ? 'کل میزان' : 'الإجمالي النهائي'}
                     </span>
                     <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>
-                      {(goods + exSum).toLocaleString()} {locale === 'en' ? 'SAR' : 'ر.س'}
+                      {(goods + exSum).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}
                     </span>
                   </div>
                 )

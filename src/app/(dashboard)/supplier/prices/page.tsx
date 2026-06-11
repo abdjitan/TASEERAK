@@ -290,7 +290,7 @@ export default function SupplierPricesPage() {
                       <div className="flex items-center gap-1">
                         {trend === 'up' && <span className="text-red-500 text-xs">▲</span>}
                         {trend === 'down' && <span className="text-emerald-500 text-xs">▼</span>}
-                        <span className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{p.price?.toLocaleString()}</span>
+                        <span className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{p.price?.toLocaleString('en-US')}</span>
                       </div>
                       <div className="text-[10px] text-gray-400">ر.س / {p.unit}</div>
                     </div>
