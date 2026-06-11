@@ -163,6 +163,8 @@ export default function NewRFQPage() {
   const activeGroup = groups.find(g => g.group === group)
   const groupLabel = (g: any) => (locale === 'en' ? g.en : locale === 'ur' ? g.ur : g.ar)
   const specFields = getProductSpecs(productName)
+  const unitSpec = specFields.find((f: any) => f.key === 'unit') // وحدة الطلب من المواصفات (إن وُجدت)
+  const effectiveUnit = unitSpec ? (specs[unitSpec.key] || '') : unit
   // بحث سريع فوق التصنيفات: يفلتر كل مواد القطاع عبر المجموعات
   const allItems = useMemo(() => groups.flatMap(g => g.items), [groups])
   const q = productSearch.trim().toLowerCase()
@@ -176,9 +178,12 @@ export default function NewRFQPage() {
 
   // يبني المادة الحالية من المسودّة (المادة + المواصفات + الكمية)؛ null لو ناقصة
   function buildDraftItem() {
-    if (!sector || !productName || !quantity || !unit) return null
     const sf = getProductSpecs(productName)
-    const specStr = sf.map(f => (specs[f.key] ? `${f.ar}: ${specs[f.key]}` : null)).filter(Boolean).join('، ')
+    const uSpec = sf.find(f => f.key === 'unit')
+    const effUnit = uSpec ? (specs[uSpec.key] || '') : unit // الوحدة من المواصفات إن وُجدت، وإلا من خانة الوحدة
+    if (!sector || !productName || !quantity || !effUnit) return null
+    // نستثني وحدة الطلب من نص المواصفات (صارت هي الوحدة، مو سطر مواصفة)
+    const specStr = sf.filter(f => f.key !== 'unit').map(f => (specs[f.key] ? `${f.ar}: ${specs[f.key]}` : null)).filter(Boolean).join('، ')
     const fullItemSpec = [specStr, specification].filter(Boolean).join(' — ')
     return {
       sector,
@@ -186,7 +191,7 @@ export default function NewRFQPage() {
       sub_category: detectSubCategory(`${productName} ${specStr}`, sector),
       specification: fullItemSpec || null,
       quantity: parseFloat(quantity),
-      unit,
+      unit: effUnit,
       supplier_tiers: draftTiers.length > 0 ? draftTiers : null,
     }
   }
@@ -418,20 +423,31 @@ export default function NewRFQPage() {
                   {productName && (
                     <div className="pt-3 border-t border-gray-100 mt-1 animate-fade-in">
                       <p className="text-xs font-bold text-[#1B2D5B] mb-2">📦 {locale === 'en' ? 'Required quantity' : 'الكمية المطلوبة'}</p>
-                      <div className="grid grid-cols-2 gap-3">
+                      {unitSpec ? (
+                        // الوحدة محدّدة فوق في المواصفات (وحدة الطلب) — نطلب الرقم فقط
                         <div>
-                          <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.qtyLabel}</label>
+                          <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                            {t.qtyLabel} <span className="text-gray-400 font-normal">({specs[unitSpec.key] || (locale === 'en' ? 'choose unit above' : 'اختر وحدة الطلب فوق')})</span>
+                          </label>
                           <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
                             className="input-field" placeholder="50" min="0" step="any" />
                         </div>
-                        <div>
-                          <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.unitLabel}</label>
-                          <select value={unit} onChange={e => setUnit(e.target.value)} className="input-field">
-                            <option value="">{t.unitDefault}</option>
-                            {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
-                          </select>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.qtyLabel}</label>
+                            <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
+                              className="input-field" placeholder="50" min="0" step="any" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.unitLabel}</label>
+                            <select value={unit} onChange={e => setUnit(e.target.value)} className="input-field">
+                              <option value="">{t.unitDefault}</option>
+                              {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                            </select>
+                          </div>
                         </div>
-                      </div>
+                      )}
                       {/* نوع المورد لهذه المادة (اختياري) */}
                       <div className="mt-3">
                         <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? 'Who should price this? (optional)' : 'مين يسعّر هذه المادة؟ (اختياري)'}</p>
@@ -447,7 +463,7 @@ export default function NewRFQPage() {
                           })}
                         </div>
                       </div>
-                      <button type="button" onClick={addItem} disabled={!productName || !quantity || !unit}
+                      <button type="button" onClick={addItem} disabled={!productName || !quantity || !effectiveUnit}
                         className="mt-3 w-full py-2.5 rounded-xl font-semibold text-sm border-2 border-dashed border-[#1B2D5B]/30 text-[#1B2D5B] disabled:opacity-40 hover:bg-[#1B2D5B]/5 transition-all">
                         ➕ {locale === 'en' ? 'Add this material & add another' : 'أضف هذه المادة وأضف غيرها'}
                       </button>
