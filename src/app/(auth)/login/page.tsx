@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
+import AuthLoader from '@/components/shared/AuthLoader'
 
 const txt = {
   ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساب جديد', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد للمقاولين', s_auth:'الخطوة 1/3: جارٍ التحقق من بياناتك…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'الخطوة 3/3: تم الدخول ✓ جارٍ التحويل…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، يتنافس عليه أفضل الموردين.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'موردون موثّقون ومصنّفون', l2:'قارن العروض بالأسعار ومتوسط السوق', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.' },
@@ -25,6 +26,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [status, setStatus] = useState('')
+  const [progress, setProgress] = useState(0)
   const [captchaToken, setCaptchaToken] = useState('')
   const captchaRef = useRef<any>(null)
 
@@ -84,7 +86,7 @@ function LoginForm() {
 
   async function handleLogin(e) {
     e.preventDefault()
-    setLoading(true); setError(''); setStatus(t.s_auth)
+    setLoading(true); setError(''); setStatus(t.s_auth); setProgress(18)
     const supabase = createClient()
     try {
       // STEP 1/3 — authenticate (with a hard 15s ceiling so it can never hang)
@@ -95,12 +97,12 @@ function LoginForm() {
         // A used/expired CAPTCHA token can't be reused — refresh it for the retry.
         captchaRef.current?.reset(); setCaptchaToken('')
         setError(/captcha/i.test(err.message || '') ? t.captchaErr : t.error)
-        setLoading(false); setStatus(''); return
+        setLoading(false); setStatus(''); setProgress(0); return
       }
-      if (!data?.session) { setError(t.error); setLoading(false); setStatus(''); return }
+      if (!data?.session) { setError(t.error); setLoading(false); setStatus(''); setProgress(0); return }
 
       // STEP 2/3 — read role (don't block login if it stalls; fall back gracefully)
-      setStatus(t.s_role)
+      setStatus(t.s_role); setProgress(62)
       let role = 'contractor'
       try {
         const { data: p } = await withTimeout(
@@ -111,7 +113,7 @@ function LoginForm() {
       } catch (e2) { console.error('[login] role read failed:', e2) }
 
       // STEP 3/3 — hard redirect (full reload so middleware sees the cookie)
-      setStatus(t.s_go)
+      setStatus(t.s_go); setProgress(100)
       const next = searchParams.get('next')
       window.location.href = safeRedirect(next, roleHome(role))
     } catch (e) {
@@ -121,12 +123,13 @@ function LoginForm() {
       if (msg.indexOf('TIMEOUT:signin') === 0) setError(t.err_timeout + ' (1/3)')
       else if (msg.indexOf('TIMEOUT:profile') === 0) setError(t.err_timeout + ' (2/3)')
       else setError(t.error)
-      setLoading(false); setStatus('')
+      setLoading(false); setStatus(''); setProgress(0)
     }
   }
 
   return (
     <div className="min-h-screen flex" dir={dir}>
+      <AuthLoader show={loading} progress={progress} status={status} locale={locale} dir={dir} />
       {/* ===== Brand panel (hidden on small screens) ===== */}
       <div className="hidden lg:flex lg:w-[54%] relative overflow-hidden flex-col justify-between p-12 text-white"
         style={{ background: 'linear-gradient(135deg,#0a1530 0%,#1B2D5B 55%,#2a4a8a 100%)' }}>
