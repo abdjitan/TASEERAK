@@ -446,6 +446,70 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
   ],
 }
 
+// ===== مكتبة موسّعة: مواصفات تفصيلية لمزيد من المواد (تُضاف بالحلقات لكفاءة) =====
+const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
+  // البلاط والبورسلين والسيراميك (الوحدة م²)
+  { products: ['بلاط بورسلين حجري','بلاط بورسلين رمادي','بلاط بورسلين رخامي','بلاط بورسلين خشبي','بلاط بورسلين خرساني','بلاط سيراميك','بلاط سيراميك جدار','بلاط بورسلين جدار'], spec: [
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['60×60','80×80','120×60','30×60','30×30','100×100','120×120','حسب الطلب'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['مطفي Matt','لامع Polished','نصف لامع','محبب Anti-slip','مزخرف'] },
+    { key: 'grade', ar: 'الدرجة', en: 'Grade', options: ['أولى','ممتازة','تجارية'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['8 مم','9 مم','10 مم','12 مم','20 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','كرتون'] },
+  ] },
+  // الرخام والجرانيت والحجر (الوحدة م²)
+  { products: ['بلاط رخام طبيعي','جرانيت','حجر بازلت','حجر صناعي'], spec: [
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['2 سم','3 سم','حسب الطلب'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['مصقول Polished','مطفي Honed','مفجّر Flamed','مضلّع'] },
+    { key: 'origin', ar: 'المصدر', en: 'Origin', options: ['سعودي','مصري','تركي','إيطالي','صيني','حسب الطلب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','حسب القطعة'] },
+  ] },
+  // الأرضيات الخشبية (باركيه/فينيل/SPC)
+  { products: ['باركيه خشبي','فينيل'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['HDF','SPC','WPC','فينيل لاصق','باركيه طبيعي'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['4 مم','6 مم','8 مم','12 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','كرتون'] },
+  ] },
+  // الدهانات (الوحدة جالون/لتر)
+  { products: ['دهان أكريليك','دهان زيتي','دهان مضاد للرطوبة'], spec: [
+    { key: 'usage', ar: 'الاستخدام', en: 'Usage', options: ['داخلي','خارجي','معدن','خشب','أساس Primer'] },
+    { key: 'sheen', ar: 'اللمعان', en: 'Sheen', options: ['مطفي Matt','نصف لامع','لامع','حريري Silk'] },
+    { key: 'base', ar: 'الأساس', en: 'Base', options: ['مائي Water-based','زيتي Oil-based','أكريليك','إيبوكسي'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['جالون 18 لتر','بستلة','لتر'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة','جوتن Jotun','الجزيرة','ناشيونال','سايبس'] },
+  ] },
+  // الجبس بورد
+  { products: ['جبس بورد حوائط','جبس بورد مقاوم رطوبة MR','جبس بورد مقاوم حريق FR','جبس بورد مزدوج'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['عادي','مقاوم رطوبة MR','مقاوم حريق FR','مزدوج'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['9 مم','12.5 مم','15 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لوح','م² (متر مربع)'] },
+  ] },
+  // العزل (صوف/فوم/XPS)
+  { products: ['عازل XPS للأسطح','صوف صخري Rock Wool','فوم عازل حراري'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['صوف صخري Rockwool','صوف زجاجي','XPS','EPS','فوم بولي يوريثان','فويل'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['25 مم','40 مم','50 مم','75 مم','100 مم'] },
+    { key: 'density', ar: 'الكثافة', en: 'Density', options: ['حسب المواصفة','40 kg/m³','60 kg/m³','80 kg/m³','100 kg/m³'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','م³ (متر مكعب)','لفة'] },
+  ] },
+  // أنابيب السباكة (القطر + الوحدة)
+  { products: ['أنابيب PPR PN20','أنابيب PPR PN25','أنابيب نحاس مياه باردة','أنابيب نحاس مياه حارة','أنابيب CPVC مياه حارة','أنابيب PEX'], spec: [
+    { key: 'diameter', ar: 'القطر', en: 'Diameter', options: ['20 مم','25 مم','32 مم','40 مم','50 مم','63 مم','75 مم','90 مم','110 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','ماسورة 4م','ماسورة 6م'] },
+  ] },
+  // إنارة LED (القدرة + اللون)
+  { products: ['كشاف LED Downlight','كشاف LED سطحي','كشاف LED متدلي','كشاف LED فلود خارجي','كشاف LED صناعي High Bay','كشاف LED بانل 600×600','كشاف LED بانل 300×1200'], spec: [
+    { key: 'power', ar: 'القدرة', en: 'Power', options: ['3W','5W','7W','9W','12W','18W','24W','36W','50W','100W','150W','200W'] },
+    { key: 'color', ar: 'لون الإضاءة', en: 'Color temp', options: ['أبيض بارد 6500K','أبيض طبيعي 4000K','أصفر دافئ 3000K'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','كرتون'] },
+  ] },
+  // قواطع كهربائية
+  { products: ['قاطع MCB 1P','قاطع MCB 3P','قاطع MCCB'], spec: [
+    { key: 'amp', ar: 'الأمبير', en: 'Rating (A)', options: ['6A','10A','16A','20A','25A','32A','40A','63A','80A','100A','125A'] },
+    { key: 'poles', ar: 'عدد الأقطاب', en: 'Poles', options: ['1P','2P','3P','4P'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة'] },
+  ] },
+]
+for (const g of SPEC_GROUPS) { for (const p of g.products) PRODUCT_SPECS[p] = g.spec }
+
 export function getProductSpecs(productName: string): SpecField[] {
   return PRODUCT_SPECS[(productName || '').trim()] || []
 }
