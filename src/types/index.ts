@@ -449,6 +449,24 @@ export function getProductSpecs(productName: string): SpecField[] {
   return PRODUCT_SPECS[(productName || '').trim()] || []
 }
 
+// تجميع التخصصات الفرعية (SUB_CATEGORIES) حسب المجموعة — لصفحة تسعير المورد
+// (نفس فكرة getGroupedProducts لكن على تصنيف المورد).
+export interface SubCatGroup { group: string; ar: string; en: string; ur: string; icon: string; subs: { key: string; ar: string; en: string; ur: string; icon: string }[] }
+export function getGroupedSubCategories(sector: Sector): SubCatGroup[] {
+  const subs = SUB_CATEGORIES[sector] || {}
+  const order: string[] = []
+  const buckets: Record<string, any[]> = {}
+  for (const [key, sub] of Object.entries(subs)) {
+    const g = (sub as any).group || '_other'
+    if (!buckets[g]) { buckets[g] = []; order.push(g) }
+    buckets[g].push({ key, ar: sub.ar, en: sub.en, ur: sub.ur, icon: sub.icon })
+  }
+  return order.map(g => {
+    const gl = GROUP_LABELS[g]
+    return { group: g, ar: gl?.ar || 'متنوّع', en: gl?.en || 'Other', ur: gl?.ur || 'متفرقہ', icon: gl?.icon || '📦', subs: buckets[g] }
+  })
+}
+
 export const SECTOR_COLORS: Record<Sector, string> = {
   civil: '#dbeafe',
   architectural: '#fce7f3',

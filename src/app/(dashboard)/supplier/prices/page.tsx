@@ -1,14 +1,14 @@
 // @ts-nocheck
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, SUB_CATEGORIES } from '@/types'
+import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, SUB_CATEGORIES, getGroupedSubCategories } from '@/types'
 
 const txt = {
   ar: {
@@ -74,9 +74,19 @@ export default function SupplierPricesPage() {
   const [product, setProduct] = useState('')
   const [productOther, setProductOther] = useState(false)
   const [sector, setSector] = useState('')
+  const [pgroup, setPgroup] = useState('')
+  const [psearch, setPsearch] = useState('')
   const [unit, setUnit] = useState('')
   const [price, setPrice] = useState('')
   const [region, setRegion] = useState('')
+
+  // تصفّح متدرّج + بحث للسلع (نفس شكل صفحة طلب التسعير)
+  const subGroups = useMemo(() => (sector ? getGroupedSubCategories(sector) : []), [sector])
+  const activeSubGroup = subGroups.find(g => g.group === pgroup)
+  const subLabel = (x: any) => (locale === 'en' ? x.en : locale === 'ur' ? x.ur : x.ar)
+  const allSubs = useMemo(() => subGroups.flatMap(g => g.subs), [subGroups])
+  const psq = psearch.trim().toLowerCase()
+  const subResults = psq.length >= 1 ? allSubs.filter(x => (x.ar + ' ' + x.en).toLowerCase().includes(psq)).slice(0, 60) : []
 
   useEffect(() => { load() }, [])
 
@@ -100,7 +110,7 @@ export default function SupplierPricesPage() {
       supplier_id: user.id, product_name: product, sector, unit,
       price: parseFloat(price), region: region || null,
     })
-    setProduct(''); setSector(''); setUnit(''); setPrice(''); setRegion('')
+    setProduct(''); setSector(''); setUnit(''); setPrice(''); setRegion(''); setPgroup(''); setPsearch(''); setProductOther(false)
     setShowForm(false); setSaving(false)
     load()
   }
@@ -160,27 +170,64 @@ export default function SupplierPricesPage() {
               {/* Sector first — the item list depends on it */}
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1">{T.sector}</label>
-                <select value={sector} onChange={e => { setSector(e.target.value); setProduct(''); setProductOther(false) }} className="input-field" required>
+                <select value={sector} onChange={e => { setSector(e.target.value); setProduct(''); setProductOther(false); setPgroup(''); setPsearch('') }} className="input-field" required>
                   <option value="">{T.selectSector}</option>
                   {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{SECTOR_LABELS[s]}</option>)}
                 </select>
               </div>
-              <div>
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-gray-500 mb-1">{T.product}</label>
-                {sector && SUB_CATEGORIES[sector] && !productOther ? (
-                  <select value={product} onChange={e => { if (e.target.value === '__other__') { setProductOther(true); setProduct('') } else setProduct(e.target.value) }} className="input-field" required>
-                    <option value="">{locale === 'en' ? '— Select item —' : '— اختر السلعة —'}</option>
-                    {Object.entries(SUB_CATEGORIES[sector]).map(([k, sub]: any) => {
-                      const label = locale === 'ar' ? sub.ar : (sub[locale] || sub.ar)
-                      return <option key={k} value={label}>{sub.icon} {label}</option>
-                    })}
-                    <option value="__other__">{locale === 'en' ? 'Other (type)…' : 'أخرى (اكتب يدوياً)…'}</option>
-                  </select>
-                ) : (
+                {!sector ? (
+                  <input disabled className="input-field" placeholder={locale === 'en' ? 'Select a sector first' : 'اختر القطاع أولاً'} />
+                ) : productOther ? (
                   <div className="flex gap-2">
                     <input value={product} onChange={e => setProduct(e.target.value)} className="input-field flex-1"
-                      placeholder={sector ? (locale === 'en' ? 'Item name' : 'اسم السلعة') : (locale === 'en' ? 'Select a sector first' : 'اختر القطاع أولاً')} required disabled={!sector} />
-                    {sector && SUB_CATEGORIES[sector] && <button type="button" onClick={() => { setProductOther(false); setProduct('') }} className="text-xs text-gray-500 whitespace-nowrap px-2">{locale === 'en' ? '↩ List' : '↩ القائمة'}</button>}
+                      placeholder={locale === 'en' ? 'Item name' : 'اسم السلعة'} required />
+                    <button type="button" onClick={() => { setProductOther(false); setProduct('') }} className="text-xs text-gray-500 whitespace-nowrap px-2">{locale === 'en' ? '↩ List' : '↩ القائمة'}</button>
+                  </div>
+                ) : (
+                  <div className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
+                    {/* بحث */}
+                    <div className="relative mb-3">
+                      <span className="absolute inset-y-0 start-3 my-auto h-5 w-5 text-gray-400 grid place-items-center">🔍</span>
+                      <input type="text" value={psearch} onChange={e => setPsearch(e.target.value)} className="input-field ps-10 bg-white"
+                        placeholder={locale === 'en' ? 'Search an item…' : 'ابحث عن سلعة…'} />
+                    </div>
+
+                    {psq ? (
+                      <div className="flex flex-wrap gap-2">
+                        {subResults.length ? subResults.map(x => (
+                          <button key={x.key} type="button" onClick={() => setProduct(x.ar)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${product === x.ar ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                            style={product === x.ar ? { background: '#1B2D5B' } : {}}>{x.icon} {subLabel(x)}</button>
+                        )) : <p className="text-xs text-gray-400">{locale === 'en' ? 'No match — type it manually.' : 'لا نتائج — اكتبها يدوياً.'}</p>}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {subGroups.map(g => (
+                            <button key={g.group} type="button" onClick={() => setPgroup(g.group)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${pgroup === g.group ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                              <span className="me-1">{g.icon}</span>{subLabel(g)} <span className="opacity-60">({g.subs.length})</span>
+                            </button>
+                          ))}
+                        </div>
+                        {activeSubGroup && (
+                          <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                            {activeSubGroup.subs.map(x => (
+                              <button key={x.key} type="button" onClick={() => setProduct(x.ar)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${product === x.ar ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                                style={product === x.ar ? { background: '#1B2D5B' } : {}}>{x.icon} {subLabel(x)}</button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
+                      <span className="text-xs text-gray-500">{product ? <>✓ <span className="font-bold text-[#1B2D5B]">{product}</span></> : (locale === 'en' ? 'Pick an item above' : 'اختر سلعة من الأعلى')}</span>
+                      <button type="button" onClick={() => { setProductOther(true) }} className="text-xs font-semibold text-[#d96f15]">{locale === 'en' ? '✎ Type manually' : '✎ اكتب يدوياً'}</button>
+                    </div>
                   </div>
                 )}
               </div>
