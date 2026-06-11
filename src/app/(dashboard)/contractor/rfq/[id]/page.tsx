@@ -143,7 +143,8 @@ export default function RFQDetailPage() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{rfq.product_name}</h2>
+              <h2 className="text-xl font-bold text-gray-900">{rfq.title || rfq.product_name}</h2>
+              {rfq.title && <div className="text-xs text-gray-400">{rfq.product_name}</div>}
               <div className="flex items-center gap-2 mt-1">
                 <span className="bg-blue-100 text-[#d96f15] text-xs px-2 py-0.5 rounded-full font-semibold">
                   {SECTOR_LABELS[rfq.sector] || rfq.sector}
@@ -209,14 +210,50 @@ export default function RFQDetailPage() {
               )}
             </div>
           ) : (
+            <>
+            {Array.isArray(rfq.items) && rfq.items.length > 0 && (
+              <div className="mb-4">
+                <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 المواد المطلوبة ({rfq.items.length})</h3>
+                <div className="overflow-x-auto rounded-xl border border-gray-100">
+                  <table className="w-full text-sm">
+                    <thead><tr className="text-xs text-gray-400 bg-gray-50 border-b border-gray-100">
+                      <th className="text-start py-2 px-3 font-bold">#</th>
+                      <th className="text-start py-2 px-3 font-bold">المادة</th>
+                      <th className="text-start py-2 px-3 font-bold">الكمية</th>
+                      <th className="text-start py-2 px-3 font-bold">المواصفات</th>
+                    </tr></thead>
+                    <tbody>
+                      {rfq.items.map((it: any, i: number) => (
+                        <tr key={i} className="border-b border-gray-50 align-top">
+                          <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
+                          <td className="py-2.5 px-3">
+                            <div className="font-semibold text-[#1B2D5B]">{it.product_name}</div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{SECTOR_LABELS[it.sector] || it.sector}</span>
+                              {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'}</span>)}
+                              {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
+                              {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}ي</span>}
+                              {it.spec_file_url && <a href={it.spec_file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 font-bold text-[#d96f15] whitespace-nowrap">{it.quantity} {it.unit}</td>
+                          <td className="py-2.5 px-3 text-xs text-gray-500">{it.specification || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
-              <div className="bg-gray-50 rounded-lg p-3"><span className="text-gray-400">📦 الكمية</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>
+              {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-gray-50 rounded-lg p-3"><span className="text-gray-400">📦 الكمية</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
               <div className="bg-gray-50 rounded-lg p-3"><span className="text-gray-400">📍 الموقع</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
-              {rfq.specification && <div className="bg-gray-50 rounded-lg p-3 col-span-2"><span className="text-gray-400">⚙️ المواصفات</span><br/><strong>{rfq.specification}</strong></div>}
+              {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-gray-50 rounded-lg p-3 col-span-2"><span className="text-gray-400">⚙️ المواصفات</span><br/><strong>{rfq.specification}</strong></div>}
               {rfq.notes && <div className="bg-gray-50 rounded-lg p-3 col-span-2"><span className="text-gray-400">📝 ملاحظات</span><br/>{rfq.notes}</div>}
               <div className="bg-gray-50 rounded-lg p-3"><span className="text-gray-400">🚚 التوصيل</span><br/><strong>{rfq.delivery_required ? 'مطلوب' : 'غير مطلوب'}</strong></div>
               <div className="bg-gray-50 rounded-lg p-3"><span className="text-gray-400">🧾 فاتورة ضريبية</span><br/><strong>{rfq.vat_invoice_required ? 'مطلوبة' : 'غير مطلوبة'}</strong></div>
             </div>
+            </>
           )}
         </div>
 
