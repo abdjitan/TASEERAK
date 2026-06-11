@@ -146,6 +146,9 @@ export default function NewRFQPage() {
   const [specFile, setSpecFile] = useState(null)
   const [specFileUrl, setSpecFileUrl] = useState('')
   const [estimatedValue, setEstimatedValue] = useState('')
+  // التوفّر والتوريد
+  const [inStockOnly, setInStockOnly] = useState(false)
+  const [maxDeliveryDays, setMaxDeliveryDays] = useState('')
   // استهداف نوع الموردين + الموثّقون فقط
   const [targetTiers, setTargetTiers] = useState<string[]>([])
   const [verifiedOnly, setVerifiedOnly] = useState(false)
@@ -195,10 +198,14 @@ export default function NewRFQPage() {
       }
     }
 
-    // Fold the structured spec choices into the specification text (no DB change).
+    // Fold the structured spec choices + availability requirements into the
+    // specification text (no DB change needed).
     const sf = getProductSpecs(productName)
     const specStr = sf.map(f => (specs[f.key] ? `${f.ar}: ${specs[f.key]}` : null)).filter(Boolean).join('، ')
-    const fullSpec = [specStr, specification].filter(Boolean).join(' — ')
+    const reqLines: string[] = []
+    if (inStockOnly) reqLines.push('⚡ مطلوب توفّر فوري للمواد')
+    if (maxDeliveryDays) reqLines.push(`⏱ أقصى مدة توريد: ${maxDeliveryDays} يوم`)
+    const fullSpec = [specStr, reqLines.join('، '), specification].filter(Boolean).join(' — ')
 
     const { error: insertError } = await supabase.from('rfqs').insert({
       contractor_id: user.id, sector, product_name: productName,
@@ -328,6 +335,13 @@ export default function NewRFQPage() {
                     </>
                   )}
 
+                  {/* ما لقيت المادة؟ اكتبها هنا (احتياطي قريب من المواد) */}
+                  <div className="pt-3 border-t border-gray-100 mb-1">
+                    <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? "Didn't find it? Type the exact material" : locale === 'ur' ? 'نہیں ملی؟ مواد لکھیں' : 'ما لقيت المادة؟ اكتب اسمها بدقّة'}</p>
+                    <input type="text" value={productName} onChange={e => { setProductName(e.target.value); setSpecs({}) }}
+                      className="input-field" placeholder={t.orType} required />
+                  </div>
+
                   {/* مواصفات المنتج المنظّمة (لو المنتج له مواصفات معرّفة) */}
                   {specFields.length > 0 && (
                     <div className="pt-3 border-t border-gray-100 mb-4 animate-fade-in">
@@ -346,36 +360,28 @@ export default function NewRFQPage() {
                     </div>
                   )}
 
-                  {/* كتابة يدوية دائماً متاحة */}
-                  <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '3) Or type the exact material' : locale === 'ur' ? '۳) یا مواد لکھیں' : '٣) أو اكتب اسم المادة بدقّة'}</p>
-                  <input type="text" value={productName} onChange={e => { setProductName(e.target.value); setSpecs({}) }}
-                    className="input-field" placeholder={t.orType} required />
+                  {/* الكمية + الوحدة — مدمجة مع المادة (تظهر بعد اختيار المادة) */}
+                  {productName && (
+                    <div className="pt-3 border-t border-gray-100 mt-1 animate-fade-in">
+                      <p className="text-xs font-bold text-[#1B2D5B] mb-2">📦 {locale === 'en' ? 'Required quantity' : 'الكمية المطلوبة'}</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.qtyLabel}</label>
+                          <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
+                            className="input-field" placeholder="50" required min="0" step="any" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.unitLabel}</label>
+                          <select value={unit} onChange={e => setUnit(e.target.value)} className="input-field" required>
+                            <option value="">{t.unitDefault}</option>
+                            {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-
-              {/* Quantity */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.qty}</h3>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.qtyLabel}</label>
-                    <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
-                      className="input-field" placeholder="50" required min="0" step="any" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.unitLabel}</label>
-                    <select value={unit} onChange={e => setUnit(e.target.value)} className="input-field" required>
-                      <option value="">{t.unitDefault}</option>
-                      {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.specLabel}</label>
-                  <input type="text" value={specification} onChange={e => setSpecification(e.target.value)}
-                    className="input-field" placeholder={t.specHint} />
-                </div>
-              </div>
 
               {/* Location */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -407,6 +413,25 @@ export default function NewRFQPage() {
                     </p>
                   </div>
                 )}
+              </div>
+
+              {/* التوفّر والتوريد */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                <h3 className="font-bold mb-3" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Availability & delivery' : 'التوفّر والتوريد'}</h3>
+                <label className="flex items-start justify-between gap-3 cursor-pointer select-none">
+                  <div>
+                    <div className="text-sm font-semibold text-gray-700">⚡ {locale === 'en' ? 'Require items in stock (immediate supply)' : 'اشترط توفّر المواد للتوريد الفوري'}</div>
+                    {inStockOnly && <p className="text-[11px] text-amber-600 mt-1">{locale === 'en' ? 'Note: fewer suppliers may match your request.' : 'ملاحظة: قد يقل عدد الموردين المطابقين لطلبك.'}</p>}
+                  </div>
+                  <div onClick={() => setInStockOnly(!inStockOnly)} className="w-11 h-6 rounded-full transition-all cursor-pointer flex items-center px-1 shrink-0 mt-0.5" style={{ background: inStockOnly ? '#0F6E56' : '#d1d5db', justifyContent: inStockOnly ? 'flex-end' : 'flex-start' }}>
+                    <div className="w-4 h-4 bg-white rounded-full shadow" />
+                  </div>
+                </label>
+                <div className="mt-3 pt-3 border-t border-gray-50">
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {locale === 'en' ? 'Max delivery time (days) — optional' : 'أقصى مدة للتوريد (أيام) — اختياري'}</label>
+                  <input type="number" value={maxDeliveryDays} onChange={e => setMaxDeliveryDays(e.target.value)}
+                    className="input-field" placeholder={locale === 'en' ? 'e.g. 7' : 'مثال: 7'} min="0" />
+                </div>
               </div>
 
               {/* Spec File */}
