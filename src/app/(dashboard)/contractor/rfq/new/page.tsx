@@ -253,7 +253,9 @@ export default function NewRFQPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!user || !sector) return
+    // على الخطوة 1: التالي بدل الإرسال (يمنع إرسال مبكر بالضغط على Enter)
+    if (step === 1) { if (items.length > 0 || buildDraftItem()) setStep(2); return }
+    if (!user) return
     // المواد النهائية = القائمة + المسودّة الحالية (لو معبّأة) — يسمح بطلب مادة واحدة بدون "إضافة"
     const draft = buildDraftItem()
     const finalItems = draft ? [...items, draft] : [...items]
@@ -319,7 +321,7 @@ export default function NewRFQPage() {
           <p className="text-gray-500 mb-8">{t.successSub}</p>
           <div className="flex gap-3">
             <a href="/contractor" className="flex-1 py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#1B2D5B' }}>{t.dashboard}</a>
-            <button onClick={() => { setSuccess(false); setSector(''); setProductName(''); setQuantity(''); setUnit(''); setRegion(''); setCity(''); setNotes(''); setSpecification(''); setItems([]); setGroup(''); setProductSearch(''); setRfqName(''); setDraftTiers([]); setManualEntry(false) }}
+            <button onClick={() => { setSuccess(false); setSector(''); setProductName(''); setQuantity(''); setUnit(''); setRegion(''); setCity(''); setNotes(''); setSpecification(''); setItems([]); setGroup(''); setProductSearch(''); setRfqName(''); setDraftTiers([]); setManualEntry(false); setStep(1) }}
               className="flex-1 py-3 rounded-xl font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">
               {t.anotherReq}
             </button>
@@ -332,15 +334,29 @@ export default function NewRFQPage() {
   return (
     <AppShell title={t.title} nav={getNav('contractor', locale, '/contractor/rfq/new')} dir={dir}>
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.title}</h1>
           <p className="text-gray-500 mt-1 text-sm">{t.sub}</p>
+        </div>
+
+        {/* مؤشّر الخطوات */}
+        <div className="flex items-center gap-3 mb-6 max-w-md">
+          {[{ n: 1, lbl: locale === 'en' ? 'Materials' : 'المواد' }, { n: 2, lbl: locale === 'en' ? 'Request details' : 'تفاصيل الطلب' }].map((st, idx) => (
+            <div key={st.n} className="flex items-center gap-3 flex-1">
+              <div className={`flex items-center gap-2 ${step === st.n ? 'text-[#d96f15]' : step > st.n ? 'text-emerald-600' : 'text-gray-400'}`}>
+                <span className={`w-7 h-7 rounded-full grid place-items-center text-xs font-bold shrink-0 ${step === st.n ? 'bg-[#F5831F] text-white' : step > st.n ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'}`}>{step > st.n ? '✓' : st.n}</span>
+                <span className="text-sm font-bold whitespace-nowrap">{st.lbl}</span>
+              </div>
+              {idx === 0 && <div className="flex-1 h-0.5 bg-gray-200" />}
+            </div>
+          ))}
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <div className="lg:col-span-2 space-y-5">
+              {step === 1 && (<>
               {/* اسم التسعيرة (اختياري) */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <label className="block font-bold mb-2" style={{ color: '#1B2D5B' }}>
@@ -564,6 +580,51 @@ export default function NewRFQPage() {
               )}
 
 
+              </>)}
+
+              {step === 2 && (<>
+              {/* جدول المواد المفصّل (مع تعديل) */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: '#1B2D5B' }}>🧾 {locale === 'en' ? 'Materials summary' : 'ملخّص المواد'} <span className="text-xs px-2 py-0.5 rounded-full bg-[#F5831F]/10 text-[#d96f15] font-bold">{items.length}</span></h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-gray-400 border-b border-gray-100">
+                        <th className="text-start py-2 font-bold">#</th>
+                        <th className="text-start py-2 font-bold">{locale === 'en' ? 'Material' : 'المادة'}</th>
+                        <th className="text-start py-2 font-bold">{locale === 'en' ? 'Qty' : 'الكمية'}</th>
+                        <th className="text-start py-2 font-bold">{locale === 'en' ? 'Specs' : 'المواصفات'}</th>
+                        <th className="py-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((it, i) => (
+                        <tr key={i} className="border-b border-gray-50 align-top">
+                          <td className="py-2.5 text-gray-400">{i + 1}</td>
+                          <td className="py-2.5">
+                            <div className="font-bold text-[#1B2D5B]">{getProductLabel(it.product_name, locale)}</div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
+                              {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'}</span>)}
+                              {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡</span>}
+                              {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱{it.max_days}</span>}
+                              {(it.specFileObj || it.spec_file_url) && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600">📎</span>}
+                            </div>
+                          </td>
+                          <td className="py-2.5 font-bold text-[#d96f15] whitespace-nowrap">{it.quantity} {it.unit}</td>
+                          <td className="py-2.5 text-xs text-gray-500 max-w-[160px]">{it.specification || '—'}</td>
+                          <td className="py-2.5 whitespace-nowrap text-end">
+                            <button type="button" onClick={() => { editItem(i); setStep(1) }} className="text-xs font-semibold text-[#1B2D5B] hover:underline px-1">✎ {locale === 'en' ? 'Edit' : 'تعديل'}</button>
+                            <button type="button" onClick={() => removeItem(i)} className="text-xs text-red-400 hover:underline px-1">🗑</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {items.length === 0 && <p className="text-xs text-gray-400 text-center py-4">{locale === 'en' ? 'No materials. Go back to add some.' : 'لا مواد — ارجع لإضافتها.'}</p>}
+              </div>
+
               {/* Location */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.location}</h3>
@@ -671,10 +732,12 @@ export default function NewRFQPage() {
                 <textarea value={notes} onChange={e => setNotes(e.target.value)}
                   className="input-field" rows={4} placeholder={t.notesHint} />
               </div>
+              </>)}
             </div>
 
             {/* Right Column */}
             <div className="space-y-5">
+              {step === 1 && (<>
               {/* 🧾 المواد المطلوبة */}
               <div className="bg-white rounded-2xl p-5 border-2 border-[#F5831F]/30 shadow-sm">
                 <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: '#1B2D5B' }}>
@@ -719,6 +782,15 @@ export default function NewRFQPage() {
                 )}
               </div>
 
+              <button type="button" onClick={() => { if (items.length > 0) setStep(2) }} disabled={items.length === 0}
+                className="w-full py-3.5 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg active:scale-[0.98]"
+                style={{ background: '#F5831F' }}>
+                {locale === 'en' ? 'Next: request details →' : 'التالي: تفاصيل الطلب ←'}
+              </button>
+              {items.length === 0 && <p className="text-[11px] text-gray-400 text-center">{locale === 'en' ? 'Add at least one material to continue.' : 'أضف مادة واحدة على الأقل للمتابعة.'}</p>}
+              </>)}
+
+              {step === 2 && (<>
               {/* Target supplier types + verified-only */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Supplier filters' : 'تصفية الموردين'}</h3>
@@ -821,14 +893,21 @@ export default function NewRFQPage() {
               </div>
 
               {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3">⚠️ {error}</div>}
-              <button type="submit" disabled={loading || (items.length === 0 && !buildDraftItem()) || ((deliveryRequired || pickupScope === 'city') && (!region || !city))}
-                className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg active:scale-[0.98]"
-                style={{ background: '#F5831F' }}>
-                {loading ? t.submitting : t.submit}
-              </button>
-              {(items.length === 0 && !buildDraftItem()) && (
-                <p className="text-[11px] text-gray-400 text-center">{locale === 'en' ? 'Add at least one material.' : 'أضف مادة واحدة على الأقل.'}</p>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setStep(1)}
+                  className="px-5 py-4 rounded-xl font-bold border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
+                  ↩ {locale === 'en' ? 'Back' : 'رجوع'}
+                </button>
+                <button type="submit" disabled={loading || (items.length === 0 && !buildDraftItem()) || ((deliveryRequired || pickupScope === 'city') && (!region || !city))}
+                  className="flex-1 py-4 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg active:scale-[0.98]"
+                  style={{ background: '#F5831F' }}>
+                  {loading ? t.submitting : t.submit}
+                </button>
+              </div>
+              {((deliveryRequired || pickupScope === 'city') && (!region || !city)) && (
+                <p className="text-[11px] text-gray-400 text-center">{locale === 'en' ? 'Choose region + city to send.' : 'اختر المنطقة + المدينة للإرسال.'}</p>
               )}
+              </>)}
             </div>
           </div>
         </form>
