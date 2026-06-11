@@ -465,6 +465,15 @@ export default function NewRFQPage() {
                     </div>
                   )}
 
+                  {/* مواصفات إضافية حرّة (مثل تفاصيل الخلطة) */}
+                  {productName && (
+                    <div className="pt-3 border-t border-gray-100 mb-1">
+                      <p className="text-xs font-bold text-gray-400 mb-1.5">📝 {locale === 'en' ? 'Extra specs / mix details (optional)' : 'مواصفات إضافية / تفاصيل الخلطة (اختياري)'}</p>
+                      <input type="text" value={specification} onChange={e => setSpecification(e.target.value)}
+                        className="input-field" placeholder={locale === 'en' ? 'e.g. mix design, brand, finish…' : 'مثال: تصميم الخلطة، علامة، تشطيب…'} />
+                    </div>
+                  )}
+
                   {/* الكمية + الوحدة — مدمجة مع المادة (تظهر بعد اختيار المادة) */}
                   {productName && (
                     <div className="pt-3 border-t border-gray-100 mt-1 animate-fade-in">

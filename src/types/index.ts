@@ -420,14 +420,23 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','سابك (SABIC)','الراجحي','اليمامة','حديد عمار','مستورد'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','سيخ'] },
   ],
+  // أكياس الأسمنت
   'أسمنت': [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['بورتلاندي عادي OPC','مقاوم للأملاح SRC','مقاوم للكبريتات','أسمنت أبيض','أسمنت بوزولاني'] },
-    { key: 'packaging', ar: 'التعبئة', en: 'Packaging', options: ['كيس 50 كجم','سائب (Bulk)'] },
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['بورتلاند عادي OPC','مقاوم للكبريت SRC','أسمنت تشطيب Finishing','أسمنت أبيض','أسمنت بوزولاني'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كيس 50 كجم','طن','سائب (Bulk)'] },
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','أسمنت اليمامة','أسمنت السعودية','أسمنت القصيم','أسمنت الجنوب','أسمنت ينبع','أسمنت العربية'] },
   ],
+  // الخرسانة الجاهزة — القوة كخيار + الإضافات (fly ash / microsilica) + الوحدة م³
+  'خرسانة جاهزة': [
+    { key: 'strength', ar: 'قوة الخرسانة', en: 'Strength', options: ['C-15','C-20','C-25','C-30','C-35','C-40','C-45','C-50','C-60'] },
+    { key: 'additive', ar: 'الإضافات', en: 'Additives', options: ['بدون','Fly Ash (رماد متطاير)','Microsilica (سيليكا دقيقة)','Fly Ash + Microsilica','ملدّن (Plasticizer)','مؤخّر شك (Retarder)','ألياف'] },
+    { key: 'slump', ar: 'الهبوط (Slump)', en: 'Slump', options: ['10 سم','12 سم','15 سم','18 سم (مضخة)'] },
+    { key: 'placing', ar: 'طريقة الصب', en: 'Placing', options: ['بالمضخة','مضخة بوم (Boom)','صب مباشر'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م³ (متر مكعب)'] },
+  ],
   'بلوك خرساني': [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['مجوف Hollow','معزول Insulated','مصمت Solid','خفيف AAC'] },
     { key: 'size', ar: 'المقاس', en: 'Size', options: ['20×20×40 سم','15×20×40 سم','10×20×40 سم','25×20×40 سم'] },
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['مفرّغ (مجوف)','مصمت','عازل','خفيف'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','متر مربع','بالألف حبة'] },
   ],
   'طوب أحمر': [
@@ -435,14 +444,6 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
     { key: 'size', ar: 'المقاس', en: 'Size', options: ['قياسي 6×12×25','كبير','حسب الطلب'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['بالألف حبة','حبة','متر مربع'] },
   ],
-}
-// نفس مواصفات الخرسانة لكل درجة جاهزة (الدرجة موجودة باسم المنتج)
-for (const g of ['خرسانة جاهزة C25','خرسانة جاهزة C30','خرسانة جاهزة C35','خرسانة جاهزة C40']) {
-  PRODUCT_SPECS[g] = [
-    { key: 'slump', ar: 'الهبوط (Slump)', en: 'Slump', options: ['10 سم','12 سم','15 سم','18 سم (مضخة)'] },
-    { key: 'placing', ar: 'طريقة الصب', en: 'Placing', options: ['بالمضخة','صب مباشر','مضخة بوم (Boom)'] },
-    { key: 'admixture', ar: 'الإضافات', en: 'Admixtures', options: ['بدون','ملدّن (Plasticizer)','مؤخّر شك (Retarder)','مقاوم كبريتات','ألياف'] },
-  ]
 }
 
 export function getProductSpecs(productName: string): SpecField[] {
@@ -727,7 +728,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
   civil: [
     // ═══ الخرسانة (BOQ: C2 POURED CONCRETE, C5 PRECAST) ═══
     'حديد تسليح', 'حديد تسليح سلك', 'شبكة حديد جاهزة', 'أسمنت',
-    'خرسانة جاهزة C25', 'خرسانة جاهزة C30', 'خرسانة جاهزة C35', 'خرسانة جاهزة C40',
+    'خرسانة جاهزة',
     'خرسانة مسبقة الصب', 'عتبات خرسانية مسبقة الصب', 'أعمدة مسبقة الصب',
     'بلاطات مسبقة الصب', 'مدرجات مسبقة الصب',
     // ═══ الركام والرمل ═══
