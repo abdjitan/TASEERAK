@@ -136,6 +136,9 @@ export default function NewRFQPage() {
   const [rfqName, setRfqName] = useState('')      // اسم التسعيرة (اختياري)
   const [draftTiers, setDraftTiers] = useState<string[]>([]) // نوع المورد لهذه المادة
   const [manualEntry, setManualEntry] = useState(false) // كتابة اسم المادة يدوياً
+  const [step, setStep] = useState(1)             // 1: المواد · 2: تفاصيل التسليم
+  const [pickupScope, setPickupScope] = useState<'any' | 'city'>('any') // للاستلام: أي مكان / مدينة محددة
+  const [geoMsg, setGeoMsg] = useState('')        // حالة تحديد الموقع الآلي
   const [specification, setSpecification] = useState('')
   const [quantity, setQuantity] = useState('')
   const [unit, setUnit] = useState('')
@@ -194,11 +197,16 @@ export default function NewRFQPage() {
       quantity: parseFloat(quantity),
       unit: effUnit,
       supplier_tiers: draftTiers.length > 0 ? draftTiers : null,
+      in_stock: inStockOnly,
+      max_days: maxDeliveryDays ? parseInt(maxDeliveryDays) : null,
       specsObj: { ...specs }, // نسخة خام للمواصفات لإتاحة التعديل لاحقاً
+      specFileObj: specFile,  // ملف مواصفات هذه المادة (يُرفع عند الإرسال)
+      spec_file_name: specFile ? specFile.name : null,
     }
   }
   function resetDraft() {
     setProductName(''); setSpecs({}); setQuantity(''); setUnit(''); setGroup(''); setProductSearch(''); setSpecification(''); setDraftTiers([]); setManualEntry(false)
+    setInStockOnly(false); setMaxDeliveryDays(''); setSpecFile(null)
   }
   function addItem() {
     const it = buildDraftItem()
@@ -211,6 +219,7 @@ export default function NewRFQPage() {
     if (!it) return
     setSector(it.sector); setProductName(it.product_name); setSpecs(it.specsObj || {})
     setQuantity(String(it.quantity)); setUnit(it.unit || ''); setDraftTiers(it.supplier_tiers || [])
+    setInStockOnly(it.in_stock || false); setMaxDeliveryDays(it.max_days ? String(it.max_days) : ''); setSpecFile(it.specFileObj || null)
     const known = getGroupedProducts(it.sector).some((g: any) => g.items.includes(it.product_name))
     setSpecification(''); setGroup(''); setProductSearch(''); setManualEntry(!known)
     setItems(prev => prev.filter((_, idx) => idx !== i))
@@ -220,6 +229,19 @@ export default function NewRFQPage() {
     setDraftTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
   }
   function removeItem(i: number) { setItems(prev => prev.filter((_, idx) => idx !== i)) }
+  function geolocate() {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) { setGeoMsg(locale === 'en' ? 'Geolocation not supported' : 'المتصفح لا يدعم تحديد الموقع'); return }
+    setGeoMsg(locale === 'en' ? 'Locating…' : 'جارٍ تحديد الموقع…')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const link = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`
+        setDeliveryLocation(prev => (prev ? `${prev} — ${link}` : link))
+        setGeoMsg(locale === 'en' ? 'Location added ✓' : 'تم تحديد موقعك ✓')
+      },
+      () => setGeoMsg(locale === 'en' ? 'Could not get location (check permission)' : 'تعذّر تحديد الموقع (تحقق من الصلاحية)'),
+      { enableHighAccuracy: true, timeout: 10000 },
+    )
+  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -240,41 +262,40 @@ export default function NewRFQPage() {
     const supabase = createClient()
     const expiresAt = new Date(Date.now() + validityHours * 60 * 60 * 1000).toISOString()
 
-    // Upload spec file if exists
-    let uploadedSpecUrl = null
-    if (specFile) {
-      const ext = specFile.name.split('.').pop()
-      const path = `${user.id}/spec-${Date.now()}.${ext}`
-      const { data: uploadData } = await supabase.storage.from('licenses').upload(path, specFile, { upsert: true })
-      if (uploadData) {
-        const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(uploadData.path)
-        uploadedSpecUrl = publicUrl
+    // رفع ملف مواصفات كل مادة (إن وُجد) وبناء قائمة قابلة للحفظ (بدون كائنات الملفات)
+    const serializableItems: any[] = []
+    for (let idx = 0; idx < finalItems.length; idx++) {
+      const it: any = finalItems[idx]
+      let spec_file_url = null
+      if (it.specFileObj) {
+        try {
+          const ext = it.specFileObj.name.split('.').pop()
+          const path = `${user.id}/item-${Date.now()}-${idx}.${ext}`
+          const { data: up } = await supabase.storage.from('licenses').upload(path, it.specFileObj, { upsert: true })
+          if (up) { const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path); spec_file_url = publicUrl }
+        } catch {}
       }
+      const { specFileObj, ...rest } = it
+      serializableItems.push({ ...rest, spec_file_url })
     }
 
-    // التوفّر/التوريد على مستوى الطلب كامل → يُحفظ في الملاحظات
-    const reqLines: string[] = []
-    if (inStockOnly) reqLines.push('⚡ مطلوب توفّر فوري للمواد')
-    if (maxDeliveryDays) reqLines.push(`⏱ أقصى مدة توريد: ${maxDeliveryDays} يوم`)
-    const baseNotes = [reqLines.join('، '), notes].filter(Boolean).join(' — ')
-    const finalNotes = uploadedSpecUrl ? `${baseNotes}\n[مواصفات مرفقة: ${uploadedSpecUrl}]` : (baseNotes || null)
-
     // الأعمدة المفردة تعكس أول مادة (توافق رجعي)؛ القائمة الكاملة في items
-    const first = finalItems[0]
-    const summaryName = finalItems.length > 1
-      ? `${first.product_name} +${finalItems.length - 1} ${locale === 'en' ? 'more' : 'أصناف أخرى'}`
+    const first = serializableItems[0]
+    const summaryName = serializableItems.length > 1
+      ? `${first.product_name} +${serializableItems.length - 1} ${locale === 'en' ? 'more' : 'أصناف أخرى'}`
       : first.product_name
     // أنواع الموردين = اتحاد أنواع كل المواد (للوصول/الإشعار)
-    const unionTiers = Array.from(new Set(finalItems.flatMap((it: any) => it.supplier_tiers || [])))
+    const unionTiers = Array.from(new Set(serializableItems.flatMap((it: any) => it.supplier_tiers || [])))
+    const isPickupAny = !deliveryRequired && pickupScope === 'any'
 
     const { error: insertError } = await supabase.from('rfqs').insert({
       contractor_id: user.id, sector: first.sector, product_name: summaryName,
       title: rfqName || null,
       sub_category: first.sub_category,
       specification: first.specification, quantity: first.quantity, unit: first.unit,
-      items: finalItems,
-      region,
-      city: city || null, delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
+      items: serializableItems,
+      region: isPickupAny ? (region || 'كل المناطق') : region,
+      city: isPickupAny ? null : (city || null), delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
       delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
       hide_identity: hideIdentity,
       target_tiers: unionTiers.length > 0 ? unionTiers : null,
@@ -282,7 +303,7 @@ export default function NewRFQPage() {
       nearby_only: nearbyOnly,
       target_regions: (!nearbyOnly && targetRegions.length > 0) ? targetRegions : null,
       estimated_value: estimatedValue ? parseFloat(estimatedValue) : null,
-      notes: finalNotes,
+      notes: notes || null,
       expires_at: expiresAt,
     })
     if (insertError) { setError(`خطأ: ${insertError.message}`); setLoading(false); return }
@@ -488,6 +509,36 @@ export default function NewRFQPage() {
                           })}
                         </div>
                       </div>
+                      {/* توفّر/توريد + ملف مواصفات — لهذه المادة (كل مادة لمورد مختلف) */}
+                      <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+                        <label className="flex items-center justify-between gap-3 cursor-pointer select-none">
+                          <span className="text-xs font-bold text-gray-600">⚡ {locale === 'en' ? 'Require this item in stock (urgent)' : 'اشترط توفّر هذه المادة فورياً (مستعجل)'}</span>
+                          <div onClick={() => setInStockOnly(!inStockOnly)} className="w-11 h-6 rounded-full transition-all cursor-pointer flex items-center px-1 shrink-0" style={{ background: inStockOnly ? '#0F6E56' : '#d1d5db', justifyContent: inStockOnly ? 'flex-end' : 'flex-start' }}>
+                            <div className="w-4 h-4 bg-white rounded-full shadow" />
+                          </div>
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-gray-500 mb-1">⏱ {locale === 'en' ? 'Max delivery (days)' : 'أقصى مدة توريد (أيام)'}</label>
+                            <input type="number" value={maxDeliveryDays} onChange={e => setMaxDeliveryDays(e.target.value)} className="input-field" placeholder={locale === 'en' ? 'e.g. 7' : '7'} min="0" />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-gray-500 mb-1">📎 {locale === 'en' ? 'Spec file (optional)' : 'ملف مواصفات (اختياري)'}</label>
+                            {specFile ? (
+                              <div className="input-field flex items-center gap-2 text-xs">
+                                <span className="truncate flex-1" title={specFile.name}>{specFile.name}</span>
+                                <button type="button" onClick={() => setSpecFile(null)} className="text-red-400 shrink-0">✕</button>
+                              </div>
+                            ) : (
+                              <label className="input-field flex items-center gap-2 cursor-pointer text-xs text-gray-400">
+                                📎 {locale === 'en' ? 'Attach' : 'إرفاق ملف'}
+                                <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx" onChange={e => setSpecFile(e.target.files?.[0] ?? null)} />
+                              </label>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
                       <button type="button" onClick={addItem} disabled={!productName || !quantity || !effectiveUnit}
                         className="mt-4 w-full py-3.5 rounded-xl font-bold text-white shadow-md hover:shadow-lg disabled:cursor-not-allowed transition-all"
                         style={{ background: (!productName || !quantity || !effectiveUnit) ? '#9ca3af' : '#F5831F' }}>
@@ -521,78 +572,59 @@ export default function NewRFQPage() {
                 </div>
                 <p className="text-[11px] text-gray-400 mb-4">💡 {locale === 'en' ? 'Price differs between delivery and pickup.' : 'السعر يختلف بين التوصيل والاستلام.'}</p>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.region} *</label>
-                    <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" required>
-                      <option value="">{t.regionDefault}</option>
-                      {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
+                {/* استلام: نطاق الموردين (أي مكان / مدينة محددة) */}
+                {!deliveryRequired && (
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <button type="button" onClick={() => setPickupScope('any')}
+                      className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${pickupScope === 'any' ? 'border-[#1B2D5B] bg-[#1B2D5B]/5 text-[#1B2D5B]' : 'border-gray-200 text-gray-600'}`}>
+                      🇸🇦 {locale === 'en' ? 'Anywhere in KSA' : 'أي مكان بالسعودية'}
+                    </button>
+                    <button type="button" onClick={() => setPickupScope('city')}
+                      className={`py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${pickupScope === 'city' ? 'border-[#1B2D5B] bg-[#1B2D5B]/5 text-[#1B2D5B]' : 'border-gray-200 text-gray-600'}`}>
+                      📍 {locale === 'en' ? 'A specific city' : 'مدينة محددة'}
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.city} *</label>
-                    <select value={city} onChange={e => setCity(e.target.value)} className="input-field" required disabled={!region}>
-                      <option value="">{region ? (locale === 'en' ? '— Select city —' : '— اختر المدينة —') : '—'}</option>
-                      {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
-                    </select>
+                )}
+
+                {/* المنطقة + المدينة: تظهر للتوصيل دائماً، وللاستلام فقط عند "مدينة محددة" */}
+                {(deliveryRequired || pickupScope === 'city') && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.region} *</label>
+                      <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" required>
+                        <option value="">{t.regionDefault}</option>
+                        {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.city} *</label>
+                      <select value={city} onChange={e => setCity(e.target.value)} className="input-field" required disabled={!region}>
+                        <option value="">{region ? (locale === 'en' ? '— Select city —' : '— اختر المدينة —') : '—'}</option>
+                        {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
+                      </select>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {!deliveryRequired && pickupScope === 'any' && (
+                  <p className="text-xs text-gray-500 bg-gray-50 rounded-xl p-3">🇸🇦 {locale === 'en' ? 'Your request reaches suppliers across all regions.' : 'طلبك يوصل لموردين في كل مناطق السعودية.'}</p>
+                )}
+
                 {deliveryRequired && (
                   <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3">
-                    <label className="block text-xs font-bold text-amber-800 mb-1.5">
-                      🚚 {locale === 'en' ? 'District / address (optional)' : 'الحي / عنوان الموقع (اختياري)'}
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-amber-800">🚚 {locale === 'en' ? 'District / address (optional)' : 'الحي / عنوان الموقع (اختياري)'}</label>
+                      <button type="button" onClick={geolocate} className="text-[11px] font-bold text-[#1B2D5B] bg-white border border-amber-300 rounded-lg px-2 py-1 hover:bg-amber-100">📍 {locale === 'en' ? 'Auto-locate' : 'تحديد موقعي تلقائياً'}</button>
+                    </div>
                     <input type="text" value={deliveryLocation} onChange={e => setDeliveryLocation(e.target.value)}
                       className="input-field"
                       placeholder={locale === 'en' ? 'District / site address / nearest landmark' : locale === 'ur' ? 'علاقہ / سائٹ کا پتہ' : 'الحي / عنوان الموقع / أقرب معلم'} />
+                    {geoMsg && <p className="text-[11px] text-amber-700 mt-1">{geoMsg}</p>}
                     <p className="text-[11px] text-amber-700 mt-1">
-                      {locale === 'en' ? 'Helps suppliers calculate the shipping cost accurately.' : locale === 'ur' ? 'سپلائرز کو شپنگ لاگت کا درست حساب لگانے میں مدد کرتا ہے۔' : 'يساعد الموردين على حساب تكلفة الشحن بدقة.'}
+                      {locale === 'en' ? 'Helps suppliers calculate the shipping cost accurately.' : 'يساعد الموردين على حساب تكلفة الشحن بدقة.'}
                     </p>
                   </div>
                 )}
-              </div>
-
-              {/* التوفّر والتوريد */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 className="font-bold mb-3" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Availability & delivery' : 'التوفّر والتوريد'}</h3>
-                <label className="flex items-start justify-between gap-3 cursor-pointer select-none">
-                  <div>
-                    <div className="text-sm font-semibold text-gray-700">⚡ {locale === 'en' ? 'Require items in stock (immediate supply)' : 'اشترط توفّر المواد للتوريد الفوري'}</div>
-                    {inStockOnly && <p className="text-[11px] text-amber-600 mt-1">{locale === 'en' ? 'Note: fewer suppliers may match your request.' : 'ملاحظة: قد يقل عدد الموردين المطابقين لطلبك.'}</p>}
-                  </div>
-                  <div onClick={() => setInStockOnly(!inStockOnly)} className="w-11 h-6 rounded-full transition-all cursor-pointer flex items-center px-1 shrink-0 mt-0.5" style={{ background: inStockOnly ? '#0F6E56' : '#d1d5db', justifyContent: inStockOnly ? 'flex-end' : 'flex-start' }}>
-                    <div className="w-4 h-4 bg-white rounded-full shadow" />
-                  </div>
-                </label>
-                <div className="mt-3 pt-3 border-t border-gray-50">
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {locale === 'en' ? 'Max delivery time (days) — optional' : 'أقصى مدة للتوريد (أيام) — اختياري'}</label>
-                  <input type="number" value={maxDeliveryDays} onChange={e => setMaxDeliveryDays(e.target.value)}
-                    className="input-field" placeholder={locale === 'en' ? 'e.g. 7' : 'مثال: 7'} min="0" />
-                </div>
-              </div>
-
-              {/* Spec File */}
-              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>{t.specFile}</h3>
-                <p className="text-xs text-gray-400 mb-4">{t.specFileSub}</p>
-                <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-6 cursor-pointer transition-all ${specFile ? 'border-[#1B2D5B] bg-[#1B2D5B]/5' : 'border-gray-200 hover:border-[#F5831F]/50'}`}>
-                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
-                    onChange={e => setSpecFile(e.target.files?.[0] ?? null)} />
-                  {specFile ? (
-                    <div className="text-center">
-                      <div className="text-3xl mb-2">📎</div>
-                      <div className="font-semibold text-sm" style={{ color: '#1B2D5B' }}>{specFile.name}</div>
-                      <div className="text-xs text-gray-400 mt-1">{(specFile.size / 1024 / 1024).toFixed(2)} MB</div>
-                      <button type="button" onClick={e => { e.preventDefault(); setSpecFile(null) }} className="mt-2 text-xs text-red-500 hover:underline">{t.removeFile}</button>
-                    </div>
-                  ) : (
-                    <div className="text-center">
-                      <div className="text-3xl mb-2">📄</div>
-                      <div className="font-semibold text-sm text-gray-700">{t.specFileBtn}</div>
-                      <div className="text-xs text-gray-400 mt-1">{t.specFileHint}</div>
-                    </div>
-                  )}
-                </label>
               </div>
 
               {/* Estimated Value */}
@@ -661,6 +693,9 @@ export default function NewRFQPage() {
                                 {(it.supplier_tiers || []).map((tr: string) => (
                                   <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'} {tierLabel(tr)}</span>
                                 ))}
+                                {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ {locale === 'en' ? 'in stock' : 'توفّر فوري'}</span>}
+                                {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{locale === 'en' ? 'd' : 'ي'}</span>}
+                                {(it.specFileObj || it.spec_file_url) && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600">📎 {locale === 'en' ? 'file' : 'ملف'}</span>}
                               </div>
                             </div>
                             <div className="flex flex-col gap-1 shrink-0">
@@ -777,13 +812,13 @@ export default function NewRFQPage() {
               </div>
 
               {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3">⚠️ {error}</div>}
-              <button type="submit" disabled={loading || !region || !city || (items.length === 0 && !buildDraftItem())}
+              <button type="submit" disabled={loading || (items.length === 0 && !buildDraftItem()) || ((deliveryRequired || pickupScope === 'city') && (!region || !city))}
                 className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg active:scale-[0.98]"
                 style={{ background: '#F5831F' }}>
                 {loading ? t.submitting : t.submit}
               </button>
               {(items.length === 0 && !buildDraftItem()) && (
-                <p className="text-[11px] text-gray-400 text-center">{locale === 'en' ? 'Add at least one material and choose region + city.' : 'أضف مادة واحدة على الأقل واختر المنطقة + المدينة.'}</p>
+                <p className="text-[11px] text-gray-400 text-center">{locale === 'en' ? 'Add at least one material.' : 'أضف مادة واحدة على الأقل.'}</p>
               )}
             </div>
           </div>
