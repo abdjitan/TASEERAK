@@ -379,6 +379,31 @@ export function getSubCategoryLabel(sector: Sector, subKey: string, locale: stri
   return locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
 }
 
+// التصفّح المتدرّج: القطاع → المجموعة → النوع.
+// نوزّع منتجات القطاع (SECTOR_PRODUCTS) على المجموعات (GROUP_LABELS) عبر كشف
+// التخصص الفرعي لكل منتج ثم أخذ مجموعته. المنتجات التي لا تطابق أي تخصص تقع في
+// مجموعة "متنوّع". يحافظ على ترتيب أول ظهور للمجموعة.
+export interface ProductGroup { group: string; ar: string; en: string; ur: string; icon: string; items: string[] }
+export function getGroupedProducts(sector: Sector): ProductGroup[] {
+  const subs = SUB_CATEGORIES[sector] || {}
+  const products = SECTOR_PRODUCTS[sector] || []
+  const order: string[] = []
+  const buckets: Record<string, string[]> = {}
+  for (const p of products) {
+    const subKey = detectSubCategory(p, sector)
+    const group = (subKey && subs[subKey]?.group) || '_other'
+    if (!buckets[group]) { buckets[group] = []; order.push(group) }
+    buckets[group].push(p)
+  }
+  return order.map(g => {
+    const gl = GROUP_LABELS[g]
+    return {
+      group: g, items: buckets[g],
+      ar: gl?.ar || 'متنوّع', en: gl?.en || 'Other', ur: gl?.ur || 'متفرقہ', icon: gl?.icon || '📦',
+    }
+  })
+}
+
 export const SECTOR_COLORS: Record<Sector, string> = {
   civil: '#dbeafe',
   architectural: '#fce7f3',

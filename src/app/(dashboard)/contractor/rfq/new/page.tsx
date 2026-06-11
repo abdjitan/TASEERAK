@@ -1,9 +1,9 @@
 // @ts-nocheck
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, getProductLabel, detectSubCategory } from '@/types'
+import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, getProductLabel, detectSubCategory, getGroupedProducts } from '@/types'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
@@ -108,6 +108,7 @@ export default function NewRFQPage() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
   const [sector, setSector] = useState('')
+  const [group, setGroup] = useState('')
   const [productName, setProductName] = useState('')
   const [specification, setSpecification] = useState('')
   const [quantity, setQuantity] = useState('')
@@ -128,6 +129,11 @@ export default function NewRFQPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [nearbyOnly, setNearbyOnly] = useState(false)
   const [targetRegions, setTargetRegions] = useState<string[]>([])
+
+  // التصفّح المتدرّج: القطاع → المجموعة → النوع
+  const groups = useMemo(() => (sector ? getGroupedProducts(sector) : []), [sector])
+  const activeGroup = groups.find(g => g.group === group)
+  const groupLabel = (g: any) => (locale === 'en' ? g.en : locale === 'ur' ? g.ur : g.ar)
 
   function toggleTier(tier: string) {
     setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
@@ -215,7 +221,7 @@ export default function NewRFQPage() {
                 <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.sector}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {Object.keys(sectors).map(s => (
-                    <button key={s} type="button" onClick={() => { setSector(s); setProductName('') }}
+                    <button key={s} type="button" onClick={() => { setSector(s); setGroup(''); setProductName('') }}
                       className={`p-4 rounded-xl border-2 text-center transition-all duration-200 hover:-translate-y-0.5 ${sector === s ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
                       <div className="text-2xl mb-1">{sectorIcons[s]}</div>
                       <div className={`text-sm font-semibold ${sector === s ? 'text-[#F5831F]' : 'text-gray-700'}`}>{sectors[s]}</div>
@@ -224,19 +230,41 @@ export default function NewRFQPage() {
                 </div>
               </div>
 
-              {/* Product */}
+              {/* Product — cascading browse: المجموعة → النوع → كتابة يدوية */}
               {sector && (
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in">
                   <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.product}</h3>
+
+                  {/* المستوى الثاني: المجموعات */}
+                  <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '1) Pick a group' : locale === 'ur' ? '۱) گروپ منتخب کریں' : '١) اختر المجموعة'}</p>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {SECTOR_PRODUCTS[sector]?.map(p => (
-                      <button key={p} type="button" onClick={() => setProductName(p)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                        style={productName === p ? { background: '#1B2D5B' } : {}}>
-                        {getProductLabel(p, locale)}
+                    {groups.map(g => (
+                      <button key={g.group} type="button" onClick={() => { setGroup(g.group); setProductName('') }}
+                        className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${group === g.group ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        <span className="me-1">{g.icon}</span>{groupLabel(g)}
+                        <span className="text-[11px] opacity-60"> ({g.items.length})</span>
                       </button>
                     ))}
                   </div>
+
+                  {/* المستوى الثالث: الأنواع داخل المجموعة */}
+                  {activeGroup && (
+                    <div className="pt-3 border-t border-gray-100 mb-4 animate-fade-in">
+                      <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '2) Pick the type' : locale === 'ur' ? '۲) قسم منتخب کریں' : '٢) اختر النوع'}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {activeGroup.items.map(p => (
+                          <button key={p} type="button" onClick={() => setProductName(p)}
+                            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                            style={productName === p ? { background: '#1B2D5B' } : {}}>
+                            {getProductLabel(p, locale)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* كتابة يدوية دائماً متاحة */}
+                  <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '3) Or type the exact material' : locale === 'ur' ? '۳) یا مواد لکھیں' : '٣) أو اكتب اسم المادة بدقّة'}</p>
                   <input type="text" value={productName} onChange={e => setProductName(e.target.value)}
                     className="input-field" placeholder={t.orType} required />
                 </div>
