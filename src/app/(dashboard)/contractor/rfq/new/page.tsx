@@ -132,6 +132,7 @@ export default function NewRFQPage() {
   const [productName, setProductName] = useState('')
   const [productSearch, setProductSearch] = useState('')
   const [specs, setSpecs] = useState<Record<string, string>>({})
+  const [items, setItems] = useState<any[]>([]) // المواد المضافة للطلب (نفس القطاع)
   const [specification, setSpecification] = useState('')
   const [quantity, setQuantity] = useState('')
   const [unit, setUnit] = useState('')
@@ -171,6 +172,28 @@ export default function NewRFQPage() {
     setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
   }
 
+  // يبني المادة الحالية من المسودّة (المادة + المواصفات + الكمية)؛ null لو ناقصة
+  function buildDraftItem() {
+    if (!productName || !quantity || !unit) return null
+    const sf = getProductSpecs(productName)
+    const specStr = sf.map(f => (specs[f.key] ? `${f.ar}: ${specs[f.key]}` : null)).filter(Boolean).join('، ')
+    const fullItemSpec = [specStr, specification].filter(Boolean).join(' — ')
+    return {
+      product_name: productName,
+      sub_category: detectSubCategory(`${productName} ${specStr}`, sector),
+      specification: fullItemSpec || null,
+      quantity: parseFloat(quantity),
+      unit,
+    }
+  }
+  function addItem() {
+    const it = buildDraftItem()
+    if (!it) return
+    setItems(prev => [...prev, it])
+    setProductName(''); setSpecs({}); setQuantity(''); setUnit(''); setGroup(''); setProductSearch(''); setSpecification('')
+  }
+  function removeItem(i: number) { setItems(prev => prev.filter((_, idx) => idx !== i)) }
+
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data }) => {
@@ -182,6 +205,10 @@ export default function NewRFQPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!user || !sector) return
+    // المواد النهائية = القائمة + المسودّة الحالية (لو معبّأة) — يسمح بطلب مادة واحدة بدون "إضافة"
+    const draft = buildDraftItem()
+    const finalItems = draft ? [...items, draft] : [...items]
+    if (finalItems.length === 0) { setError(locale === 'en' ? 'Add at least one material' : 'أضف مادة واحدة على الأقل'); return }
     setLoading(true); setError('')
     const supabase = createClient()
     const expiresAt = new Date(Date.now() + validityHours * 60 * 60 * 1000).toISOString()
@@ -198,19 +225,25 @@ export default function NewRFQPage() {
       }
     }
 
-    // Fold the structured spec choices + availability requirements into the
-    // specification text (no DB change needed).
-    const sf = getProductSpecs(productName)
-    const specStr = sf.map(f => (specs[f.key] ? `${f.ar}: ${specs[f.key]}` : null)).filter(Boolean).join('، ')
+    // التوفّر/التوريد على مستوى الطلب كامل → يُحفظ في الملاحظات
     const reqLines: string[] = []
     if (inStockOnly) reqLines.push('⚡ مطلوب توفّر فوري للمواد')
     if (maxDeliveryDays) reqLines.push(`⏱ أقصى مدة توريد: ${maxDeliveryDays} يوم`)
-    const fullSpec = [specStr, reqLines.join('، '), specification].filter(Boolean).join(' — ')
+    const baseNotes = [reqLines.join('، '), notes].filter(Boolean).join(' — ')
+    const finalNotes = uploadedSpecUrl ? `${baseNotes}\n[مواصفات مرفقة: ${uploadedSpecUrl}]` : (baseNotes || null)
+
+    // الأعمدة المفردة تعكس أول مادة (توافق رجعي)؛ القائمة الكاملة في items
+    const first = finalItems[0]
+    const summaryName = finalItems.length > 1
+      ? `${first.product_name} +${finalItems.length - 1} ${locale === 'en' ? 'more' : 'أصناف أخرى'}`
+      : first.product_name
 
     const { error: insertError } = await supabase.from('rfqs').insert({
-      contractor_id: user.id, sector, product_name: productName,
-      sub_category: detectSubCategory(`${productName} ${specification}`, sector),
-      specification: fullSpec || null, quantity: parseFloat(quantity), unit, region,
+      contractor_id: user.id, sector, product_name: summaryName,
+      sub_category: first.sub_category,
+      specification: first.specification, quantity: first.quantity, unit: first.unit,
+      items: finalItems,
+      region,
       city: city || null, delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
       delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
       hide_identity: hideIdentity,
@@ -219,7 +252,7 @@ export default function NewRFQPage() {
       nearby_only: nearbyOnly,
       target_regions: (!nearbyOnly && targetRegions.length > 0) ? targetRegions : null,
       estimated_value: estimatedValue ? parseFloat(estimatedValue) : null,
-      notes: uploadedSpecUrl ? `${notes || ''}\n[مواصفات مرفقة: ${uploadedSpecUrl}]` : notes || null,
+      notes: finalNotes,
       expires_at: expiresAt,
     })
     if (insertError) { setError(`خطأ: ${insertError.message}`); setLoading(false); return }
@@ -235,7 +268,7 @@ export default function NewRFQPage() {
           <p className="text-gray-500 mb-8">{t.successSub}</p>
           <div className="flex gap-3">
             <a href="/contractor" className="flex-1 py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#1B2D5B' }}>{t.dashboard}</a>
-            <button onClick={() => { setSuccess(false); setSector(''); setProductName(''); setQuantity(''); setUnit(''); setRegion(''); setCity(''); setNotes(''); setSpecification('') }}
+            <button onClick={() => { setSuccess(false); setSector(''); setProductName(''); setQuantity(''); setUnit(''); setRegion(''); setCity(''); setNotes(''); setSpecification(''); setItems([]); setGroup(''); setProductSearch('') }}
               className="flex-1 py-3 rounded-xl font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">
               {t.anotherReq}
             </button>
@@ -259,18 +292,20 @@ export default function NewRFQPage() {
             <div className="lg:col-span-2 space-y-5">
               {/* Sector */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.sector}</h3>
+                <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.sector}{items.length > 0 && <span className="text-[11px] font-normal text-gray-400"> · {locale === 'en' ? 'locked (same sector for all items)' : 'مقفل — كل المواد من نفس القطاع'}</span>}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {Object.keys(sectors).map(s => (
-                    <button key={s} type="button" onClick={() => { setSector(s); setGroup(''); setProductName(''); setSpecs({}); setProductSearch('') }}
-                      className={`p-3 rounded-2xl border-2 text-center transition-all duration-200 hover:-translate-y-0.5 ${sector === s ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                  {Object.keys(sectors).map(s => {
+                    const locked = items.length > 0 && s !== sector
+                    return (
+                    <button key={s} type="button" disabled={locked} onClick={() => { if (locked) return; setSector(s); setGroup(''); setProductName(''); setSpecs({}); setProductSearch('') }}
+                      className={`p-3 rounded-2xl border-2 text-center transition-all duration-200 ${locked ? 'opacity-30 cursor-not-allowed' : 'hover:-translate-y-0.5'} ${sector === s ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
                       <div className="w-11 h-11 mx-auto mb-2 rounded-xl grid place-items-center shadow-sm" style={{ background: sectorMeta[s]?.color || '#1B2D5B' }}>
                         <SectorGlyph s={s} />
                       </div>
                       <div className={`text-sm font-bold ${sector === s ? 'text-[#F5831F]' : 'text-gray-700'}`}>{sectors[s]}</div>
                       <div className="text-[10px] font-semibold tracking-wide text-gray-400">{sectorMeta[s]?.en}</div>
                     </button>
-                  ))}
+                  ) })}
                 </div>
               </div>
 
@@ -339,7 +374,7 @@ export default function NewRFQPage() {
                   <div className="pt-3 border-t border-gray-100 mb-1">
                     <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? "Didn't find it? Type the exact material" : locale === 'ur' ? 'نہیں ملی؟ مواد لکھیں' : 'ما لقيت المادة؟ اكتب اسمها بدقّة'}</p>
                     <input type="text" value={productName} onChange={e => { setProductName(e.target.value); setSpecs({}) }}
-                      className="input-field" placeholder={t.orType} required />
+                      className="input-field" placeholder={t.orType} />
                   </div>
 
                   {/* مواصفات المنتج المنظّمة (لو المنتج له مواصفات معرّفة) */}
@@ -368,18 +403,41 @@ export default function NewRFQPage() {
                         <div>
                           <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.qtyLabel}</label>
                           <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
-                            className="input-field" placeholder="50" required min="0" step="any" />
+                            className="input-field" placeholder="50" min="0" step="any" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.unitLabel}</label>
-                          <select value={unit} onChange={e => setUnit(e.target.value)} className="input-field" required>
+                          <select value={unit} onChange={e => setUnit(e.target.value)} className="input-field">
                             <option value="">{t.unitDefault}</option>
                             {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
                           </select>
                         </div>
                       </div>
+                      <button type="button" onClick={addItem} disabled={!productName || !quantity || !unit}
+                        className="mt-3 w-full py-2.5 rounded-xl font-semibold text-sm border-2 border-dashed border-[#1B2D5B]/30 text-[#1B2D5B] disabled:opacity-40 hover:bg-[#1B2D5B]/5 transition-all">
+                        ➕ {locale === 'en' ? 'Add this material & add another' : 'أضف هذه المادة وأضف غيرها'}
+                      </button>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* قائمة المواد المضافة */}
+              {items.length > 0 && (
+                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in">
+                  <h3 className="font-bold mb-3" style={{ color: '#1B2D5B' }}>🧾 {locale === 'en' ? 'Requested materials' : 'المواد المطلوبة'} ({items.length})</h3>
+                  <div className="space-y-2">
+                    {items.map((it, i) => (
+                      <div key={i} className="flex items-start justify-between gap-3 bg-gray-50 rounded-xl p-3">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-sm text-[#1B2D5B]">{i + 1}. {getProductLabel(it.product_name, locale)}</div>
+                          <div className="text-xs text-gray-500 mt-0.5">{it.quantity} {it.unit}{it.specification ? ` · ${it.specification}` : ''}</div>
+                        </div>
+                        <button type="button" onClick={() => removeItem(i)} className="text-red-400 hover:text-red-600 text-base shrink-0" aria-label="حذف">🗑</button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-3">{locale === 'en' ? 'Add more above, or send the request below.' : 'أضف المزيد من الأعلى، أو أرسل الطلب من الأسفل.'}</p>
                 </div>
               )}
 
