@@ -5,3 +5,5 @@ node_modules
 google-maps-key.local
 wathq-key.local
 ../.mcp.json
+
+tsconfig.tsbuildinfo
