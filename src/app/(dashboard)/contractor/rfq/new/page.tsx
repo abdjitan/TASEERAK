@@ -132,7 +132,9 @@ export default function NewRFQPage() {
   const [productName, setProductName] = useState('')
   const [productSearch, setProductSearch] = useState('')
   const [specs, setSpecs] = useState<Record<string, string>>({})
-  const [items, setItems] = useState<any[]>([]) // المواد المضافة للطلب (نفس القطاع)
+  const [items, setItems] = useState<any[]>([]) // المواد المضافة للطلب (يسمح بقطاعات مختلفة)
+  const [rfqName, setRfqName] = useState('')      // اسم التسعيرة (اختياري)
+  const [draftTiers, setDraftTiers] = useState<string[]>([]) // نوع المورد لهذه المادة
   const [specification, setSpecification] = useState('')
   const [quantity, setQuantity] = useState('')
   const [unit, setUnit] = useState('')
@@ -174,23 +176,29 @@ export default function NewRFQPage() {
 
   // يبني المادة الحالية من المسودّة (المادة + المواصفات + الكمية)؛ null لو ناقصة
   function buildDraftItem() {
-    if (!productName || !quantity || !unit) return null
+    if (!sector || !productName || !quantity || !unit) return null
     const sf = getProductSpecs(productName)
     const specStr = sf.map(f => (specs[f.key] ? `${f.ar}: ${specs[f.key]}` : null)).filter(Boolean).join('، ')
     const fullItemSpec = [specStr, specification].filter(Boolean).join(' — ')
     return {
+      sector,
       product_name: productName,
       sub_category: detectSubCategory(`${productName} ${specStr}`, sector),
       specification: fullItemSpec || null,
       quantity: parseFloat(quantity),
       unit,
+      supplier_tiers: draftTiers.length > 0 ? draftTiers : null,
     }
   }
   function addItem() {
     const it = buildDraftItem()
     if (!it) return
     setItems(prev => [...prev, it])
-    setProductName(''); setSpecs({}); setQuantity(''); setUnit(''); setGroup(''); setProductSearch(''); setSpecification('')
+    // نُبقي القطاع (يسهّل إضافة مادة أخرى من نفسه)، ونصفّر باقي المسودّة
+    setProductName(''); setSpecs({}); setQuantity(''); setUnit(''); setGroup(''); setProductSearch(''); setSpecification(''); setDraftTiers([])
+  }
+  function toggleDraftTier(tier: string) {
+    setDraftTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
   }
   function removeItem(i: number) { setItems(prev => prev.filter((_, idx) => idx !== i)) }
 
@@ -237,9 +245,12 @@ export default function NewRFQPage() {
     const summaryName = finalItems.length > 1
       ? `${first.product_name} +${finalItems.length - 1} ${locale === 'en' ? 'more' : 'أصناف أخرى'}`
       : first.product_name
+    // أنواع الموردين = اتحاد أنواع كل المواد (للوصول/الإشعار)
+    const unionTiers = Array.from(new Set(finalItems.flatMap((it: any) => it.supplier_tiers || [])))
 
     const { error: insertError } = await supabase.from('rfqs').insert({
-      contractor_id: user.id, sector, product_name: summaryName,
+      contractor_id: user.id, sector: first.sector, product_name: summaryName,
+      title: rfqName || null,
       sub_category: first.sub_category,
       specification: first.specification, quantity: first.quantity, unit: first.unit,
       items: finalItems,
@@ -247,7 +258,7 @@ export default function NewRFQPage() {
       city: city || null, delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
       delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
       hide_identity: hideIdentity,
-      target_tiers: targetTiers.length > 0 ? targetTiers : null,
+      target_tiers: unionTiers.length > 0 ? unionTiers : null,
       verified_only: verifiedOnly,
       nearby_only: nearbyOnly,
       target_regions: (!nearbyOnly && targetRegions.length > 0) ? targetRegions : null,
@@ -268,7 +279,7 @@ export default function NewRFQPage() {
           <p className="text-gray-500 mb-8">{t.successSub}</p>
           <div className="flex gap-3">
             <a href="/contractor" className="flex-1 py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#1B2D5B' }}>{t.dashboard}</a>
-            <button onClick={() => { setSuccess(false); setSector(''); setProductName(''); setQuantity(''); setUnit(''); setRegion(''); setCity(''); setNotes(''); setSpecification(''); setItems([]); setGroup(''); setProductSearch('') }}
+            <button onClick={() => { setSuccess(false); setSector(''); setProductName(''); setQuantity(''); setUnit(''); setRegion(''); setCity(''); setNotes(''); setSpecification(''); setItems([]); setGroup(''); setProductSearch(''); setRfqName(''); setDraftTiers([]) }}
               className="flex-1 py-3 rounded-xl font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">
               {t.anotherReq}
             </button>
@@ -290,15 +301,23 @@ export default function NewRFQPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <div className="lg:col-span-2 space-y-5">
+              {/* اسم التسعيرة (اختياري) */}
+              <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                <label className="block font-bold mb-2" style={{ color: '#1B2D5B' }}>
+                  {locale === 'en' ? 'Request name' : 'اسم التسعيرة'} <span className="text-xs font-normal text-gray-400">({locale === 'en' ? 'optional' : 'اختياري'})</span>
+                </label>
+                <input type="text" value={rfqName} onChange={e => setRfqName(e.target.value)}
+                  className="input-field" placeholder={locale === 'en' ? 'e.g. Tiling package, Ceiling materials…' : 'مثال: تسعيرة بلاط، مواد سقف…'} />
+              </div>
+
               {/* Sector */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.sector}{items.length > 0 && <span className="text-[11px] font-normal text-gray-400"> · {locale === 'en' ? 'locked (same sector for all items)' : 'مقفل — كل المواد من نفس القطاع'}</span>}</h3>
+                <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.sector}{items.length > 0 && <span className="text-[11px] font-normal text-gray-400"> · {locale === 'en' ? 'pick a sector for the next material' : 'اختر قطاع المادة التالية'}</span>}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {Object.keys(sectors).map(s => {
-                    const locked = items.length > 0 && s !== sector
                     return (
-                    <button key={s} type="button" disabled={locked} onClick={() => { if (locked) return; setSector(s); setGroup(''); setProductName(''); setSpecs({}); setProductSearch('') }}
-                      className={`p-3 rounded-2xl border-2 text-center transition-all duration-200 ${locked ? 'opacity-30 cursor-not-allowed' : 'hover:-translate-y-0.5'} ${sector === s ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                    <button key={s} type="button" onClick={() => { setSector(s); setGroup(''); setProductName(''); setSpecs({}); setProductSearch('') }}
+                      className={`p-3 rounded-2xl border-2 text-center transition-all duration-200 hover:-translate-y-0.5 ${sector === s ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
                       <div className="w-11 h-11 mx-auto mb-2 rounded-xl grid place-items-center shadow-sm" style={{ background: sectorMeta[s]?.color || '#1B2D5B' }}>
                         <SectorGlyph s={s} />
                       </div>
@@ -413,6 +432,21 @@ export default function NewRFQPage() {
                           </select>
                         </div>
                       </div>
+                      {/* نوع المورد لهذه المادة (اختياري) */}
+                      <div className="mt-3">
+                        <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? 'Who should price this? (optional)' : 'مين يسعّر هذه المادة؟ (اختياري)'}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {[{ key: 'manufacturer', icon: '🏭', label: t.tierMfg }, { key: 'commercial', icon: '🏪', label: t.tierCom }, { key: 'local', icon: '🏬', label: t.tierLoc }].map(tier => {
+                            const on = draftTiers.includes(tier.key)
+                            return (
+                              <button key={tier.key} type="button" onClick={() => toggleDraftTier(tier.key)}
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${on ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                                {on ? '✓ ' : ''}{tier.icon} {tier.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
                       <button type="button" onClick={addItem} disabled={!productName || !quantity || !unit}
                         className="mt-3 w-full py-2.5 rounded-xl font-semibold text-sm border-2 border-dashed border-[#1B2D5B]/30 text-[#1B2D5B] disabled:opacity-40 hover:bg-[#1B2D5B]/5 transition-all">
                         ➕ {locale === 'en' ? 'Add this material & add another' : 'أضف هذه المادة وأضف غيرها'}
@@ -422,24 +456,6 @@ export default function NewRFQPage() {
                 </div>
               )}
 
-              {/* قائمة المواد المضافة */}
-              {items.length > 0 && (
-                <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in">
-                  <h3 className="font-bold mb-3" style={{ color: '#1B2D5B' }}>🧾 {locale === 'en' ? 'Requested materials' : 'المواد المطلوبة'} ({items.length})</h3>
-                  <div className="space-y-2">
-                    {items.map((it, i) => (
-                      <div key={i} className="flex items-start justify-between gap-3 bg-gray-50 rounded-xl p-3">
-                        <div className="min-w-0">
-                          <div className="font-semibold text-sm text-[#1B2D5B]">{i + 1}. {getProductLabel(it.product_name, locale)}</div>
-                          <div className="text-xs text-gray-500 mt-0.5">{it.quantity} {it.unit}{it.specification ? ` · ${it.specification}` : ''}</div>
-                        </div>
-                        <button type="button" onClick={() => removeItem(i)} className="text-red-400 hover:text-red-600 text-base shrink-0" aria-label="حذف">🗑</button>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-[11px] text-gray-400 mt-3">{locale === 'en' ? 'Add more above, or send the request below.' : 'أضف المزيد من الأعلى، أو أرسل الطلب من الأسفل.'}</p>
-                </div>
-              )}
 
               {/* Location */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -555,35 +571,40 @@ export default function NewRFQPage() {
 
             {/* Right Column */}
             <div className="space-y-5">
+              {/* 🧾 المواد المطلوبة (خانة جانبية) */}
+              <div className="bg-white rounded-2xl p-5 border-2 border-[#F5831F]/30 shadow-sm lg:sticky lg:top-4">
+                <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: '#1B2D5B' }}>
+                  🧾 {locale === 'en' ? 'Requested materials' : 'المواد المطلوبة'}
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#F5831F]/10 text-[#d96f15]">{items.length}</span>
+                </h3>
+                {items.length === 0 ? (
+                  <p className="text-xs text-gray-400 py-3 text-center">{locale === 'en' ? 'No materials yet — configure one on the left and press “Add”.' : 'لا مواد بعد — جهّز مادة على اليمين واضغط "أضف".'}</p>
+                ) : (
+                  <div className="space-y-2">
+                    {items.map((it, i) => (
+                      <div key={i} className="flex items-start justify-between gap-2 bg-gray-50 rounded-xl p-2.5">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-[13px] text-[#1B2D5B] leading-snug">{i + 1}. {getProductLabel(it.product_name, locale)}</div>
+                          <div className="text-[11px] text-gray-500 mt-0.5">{it.quantity} {it.unit}{it.specification ? ` · ${it.specification}` : ''}</div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
+                            {(it.supplier_tiers || []).map((tr: string) => (
+                              <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => removeItem(i)} className="text-red-400 hover:text-red-600 text-sm shrink-0" aria-label="حذف">🗑</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Target supplier types + verified-only */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>{t.targetTitle}</h3>
-                <p className="text-xs text-gray-400 mb-4">{t.targetSub}</p>
-                <div className="space-y-2">
-                  {[
-                    { key: 'manufacturer', icon: '🏭', label: t.tierMfg, desc: t.tierMfgD },
-                    { key: 'commercial', icon: '🏪', label: t.tierCom, desc: t.tierComD },
-                    { key: 'local', icon: '🏬', label: t.tierLoc, desc: t.tierLocD },
-                  ].map(tier => {
-                    const active = targetTiers.includes(tier.key)
-                    return (
-                      <button key={tier.key} type="button" onClick={() => toggleTier(tier.key)}
-                        className={`w-full flex items-start gap-3 p-3 rounded-xl border-2 text-start transition-all ${
-                          active ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'
-                        }`}>
-                        <span className="text-xl leading-none mt-0.5">{tier.icon}</span>
-                        <span className="flex-1">
-                          <span className={`block text-sm font-bold ${active ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</span>
-                          <span className="block text-[11px] text-gray-400 mt-0.5">{tier.desc}</span>
-                        </span>
-                        <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 ${active ? 'bg-[#F5831F] border-[#F5831F] text-white' : 'border-gray-300'}`}>
-                          {active && <span className="text-xs">✓</span>}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-                <div className="flex items-center justify-between pt-4 mt-3 border-t border-gray-100">
+                <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Supplier filters' : 'تصفية الموردين'}</h3>
+                <p className="text-xs text-gray-400 mb-4">{locale === 'en' ? 'Supplier type is chosen per material above. These apply to the whole request.' : 'نوع المورد يُحدّد لكل مادة بالأعلى. هذي الخيارات تنطبق على الطلب كامل.'}</p>
+                <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-semibold text-gray-800">{t.verifiedTitle}</div>
                     <div className="text-xs text-gray-400 mt-0.5">{t.verifiedSub}</div>
@@ -668,9 +689,8 @@ export default function NewRFQPage() {
                 <h3 className="font-bold mb-4 text-white">{t.summary}</h3>
                 <div className="space-y-2 text-sm">
                   {[
-                    { label: t.sumSector, value: sector ? sectors[sector] : t.na },
-                    { label: t.sumProduct, value: productName || t.na },
-                    { label: t.sumQty, value: quantity && unit ? `${quantity} ${unit}` : t.na },
+                    { label: locale === 'en' ? 'Name' : 'الاسم', value: rfqName || t.na },
+                    { label: locale === 'en' ? 'Materials' : 'عدد المواد', value: String(items.length + (buildDraftItem() ? 1 : 0)) },
                     { label: t.sumRegion, value: region || t.na },
                     { label: t.sumValidity, value: validityHours === 168 ? t.week : `${validityHours} ${t.hours}` },
                   ].map(({ label, value }) => (

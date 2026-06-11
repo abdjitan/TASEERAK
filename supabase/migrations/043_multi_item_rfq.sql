@@ -11,3 +11,6 @@ alter table public.rfqs add column if not exists items jsonb;
 -- The scalar offers.price keeps holding the TOTAL (sum) for sorting and for
 -- legacy single-item offer displays.
 alter table public.offers add column if not exists item_prices jsonb;
+
+-- Optional human title for the whole request (e.g. "تسعيرة بلاط").
+alter table public.rfqs add column if not exists title text;
