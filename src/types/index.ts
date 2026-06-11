@@ -404,6 +404,51 @@ export function getGroupedProducts(sector: Sector): ProductGroup[] {
   })
 }
 
+// =============================================
+// PRODUCT SPECS — structured attribute choices per product (مثل بركز لكن كمتطلبات)
+// Keyed by the EXACT product name in SECTOR_PRODUCTS. Products without an entry
+// just use the free-text specification field. Specs are folded into the RFQ's
+// `specification` text on submit (no DB change needed).
+// =============================================
+export interface SpecField { key: string; ar: string; en: string; options: string[] }
+
+export const PRODUCT_SPECS: Record<string, SpecField[]> = {
+  'حديد تسليح': [
+    { key: 'diameter', ar: 'القطر', en: 'Diameter', options: ['8 مم','10 مم','12 مم','14 مم','16 مم','18 مم','20 مم','25 مم','32 مم'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['12 متر','6 متر','حسب القص (مقصوص)'] },
+    { key: 'grade', ar: 'درجة الحديد', en: 'Grade', options: ['B500B-W','B500C','Grade 60 (جراد 60)'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','سابك (SABIC)','الراجحي','اليمامة','حديد عمار','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','سيخ'] },
+  ],
+  'أسمنت': [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['بورتلاندي عادي OPC','مقاوم للأملاح SRC','مقاوم للكبريتات','أسمنت أبيض','أسمنت بوزولاني'] },
+    { key: 'packaging', ar: 'التعبئة', en: 'Packaging', options: ['كيس 50 كجم','سائب (Bulk)'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','أسمنت اليمامة','أسمنت السعودية','أسمنت القصيم','أسمنت الجنوب','أسمنت ينبع','أسمنت العربية'] },
+  ],
+  'بلوك خرساني': [
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['20×20×40 سم','15×20×40 سم','10×20×40 سم','25×20×40 سم'] },
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['مفرّغ (مجوف)','مصمت','عازل','خفيف'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','متر مربع','بالألف حبة'] },
+  ],
+  'طوب أحمر': [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['مفرّغ','مصمت','حراري'] },
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['قياسي 6×12×25','كبير','حسب الطلب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['بالألف حبة','حبة','متر مربع'] },
+  ],
+}
+// نفس مواصفات الخرسانة لكل درجة جاهزة (الدرجة موجودة باسم المنتج)
+for (const g of ['خرسانة جاهزة C25','خرسانة جاهزة C30','خرسانة جاهزة C35','خرسانة جاهزة C40']) {
+  PRODUCT_SPECS[g] = [
+    { key: 'slump', ar: 'الهبوط (Slump)', en: 'Slump', options: ['10 سم','12 سم','15 سم','18 سم (مضخة)'] },
+    { key: 'placing', ar: 'طريقة الصب', en: 'Placing', options: ['بالمضخة','صب مباشر','مضخة بوم (Boom)'] },
+    { key: 'admixture', ar: 'الإضافات', en: 'Admixtures', options: ['بدون','ملدّن (Plasticizer)','مؤخّر شك (Retarder)','مقاوم كبريتات','ألياف'] },
+  ]
+}
+
+export function getProductSpecs(productName: string): SpecField[] {
+  return PRODUCT_SPECS[(productName || '').trim()] || []
+}
+
 export const SECTOR_COLORS: Record<Sector, string> = {
   civil: '#dbeafe',
   architectural: '#fce7f3',
