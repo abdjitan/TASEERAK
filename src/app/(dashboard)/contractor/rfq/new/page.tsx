@@ -135,6 +135,7 @@ export default function NewRFQPage() {
   const [items, setItems] = useState<any[]>([]) // المواد المضافة للطلب (يسمح بقطاعات مختلفة)
   const [rfqName, setRfqName] = useState('')      // اسم التسعيرة (اختياري)
   const [draftTiers, setDraftTiers] = useState<string[]>([]) // نوع المورد لهذه المادة
+  const [manualEntry, setManualEntry] = useState(false) // كتابة اسم المادة يدوياً
   const [specification, setSpecification] = useState('')
   const [quantity, setQuantity] = useState('')
   const [unit, setUnit] = useState('')
@@ -193,14 +194,27 @@ export default function NewRFQPage() {
       quantity: parseFloat(quantity),
       unit: effUnit,
       supplier_tiers: draftTiers.length > 0 ? draftTiers : null,
+      specsObj: { ...specs }, // نسخة خام للمواصفات لإتاحة التعديل لاحقاً
     }
+  }
+  function resetDraft() {
+    setProductName(''); setSpecs({}); setQuantity(''); setUnit(''); setGroup(''); setProductSearch(''); setSpecification(''); setDraftTiers([]); setManualEntry(false)
   }
   function addItem() {
     const it = buildDraftItem()
     if (!it) return
     setItems(prev => [...prev, it])
-    // نُبقي القطاع (يسهّل إضافة مادة أخرى من نفسه)، ونصفّر باقي المسودّة
-    setProductName(''); setSpecs({}); setQuantity(''); setUnit(''); setGroup(''); setProductSearch(''); setSpecification(''); setDraftTiers([])
+    resetDraft() // نُبقي القطاع لتسهيل إضافة مادة أخرى من نفسه
+  }
+  function editItem(i: number) {
+    const it = items[i]
+    if (!it) return
+    setSector(it.sector); setProductName(it.product_name); setSpecs(it.specsObj || {})
+    setQuantity(String(it.quantity)); setUnit(it.unit || ''); setDraftTiers(it.supplier_tiers || [])
+    const known = getGroupedProducts(it.sector).some((g: any) => g.items.includes(it.product_name))
+    setSpecification(''); setGroup(''); setProductSearch(''); setManualEntry(!known)
+    setItems(prev => prev.filter((_, idx) => idx !== i))
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   function toggleDraftTier(tier: string) {
     setDraftTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
@@ -284,7 +298,7 @@ export default function NewRFQPage() {
           <p className="text-gray-500 mb-8">{t.successSub}</p>
           <div className="flex gap-3">
             <a href="/contractor" className="flex-1 py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#1B2D5B' }}>{t.dashboard}</a>
-            <button onClick={() => { setSuccess(false); setSector(''); setProductName(''); setQuantity(''); setUnit(''); setRegion(''); setCity(''); setNotes(''); setSpecification(''); setItems([]); setGroup(''); setProductSearch(''); setRfqName(''); setDraftTiers([]) }}
+            <button onClick={() => { setSuccess(false); setSector(''); setProductName(''); setQuantity(''); setUnit(''); setRegion(''); setCity(''); setNotes(''); setSpecification(''); setItems([]); setGroup(''); setProductSearch(''); setRfqName(''); setDraftTiers([]); setManualEntry(false) }}
               className="flex-1 py-3 rounded-xl font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">
               {t.anotherReq}
             </button>
@@ -351,7 +365,7 @@ export default function NewRFQPage() {
                       {searchResults.length ? (
                         <div className="flex flex-wrap gap-2">
                           {searchResults.map(p => (
-                            <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}) }}
+                            <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false) }}
                               className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
                               style={productName === p ? { background: '#1B2D5B' } : {}}>
                               {getProductLabel(p, locale)}
@@ -382,7 +396,7 @@ export default function NewRFQPage() {
                           <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '2) Pick the type' : locale === 'ur' ? '۲) قسم منتخب کریں' : '٢) اختر النوع'}</p>
                           <div className="flex flex-wrap gap-2">
                             {activeGroup.items.map(p => (
-                              <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}) }}
+                              <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false) }}
                                 className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
                                 style={productName === p ? { background: '#1B2D5B' } : {}}>
                                 {getProductLabel(p, locale)}
@@ -394,12 +408,23 @@ export default function NewRFQPage() {
                     </>
                   )}
 
-                  {/* ما لقيت المادة؟ اكتبها هنا (احتياطي قريب من المواد) */}
-                  <div className="pt-3 border-t border-gray-100 mb-1">
-                    <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? "Didn't find it? Type the exact material" : locale === 'ur' ? 'نہیں ملی؟ مواد لکھیں' : 'ما لقيت المادة؟ اكتب اسمها بدقّة'}</p>
-                    <input type="text" value={productName} onChange={e => { setProductName(e.target.value); setSpecs({}) }}
-                      className="input-field" placeholder={t.orType} />
-                  </div>
+                  {/* الكتابة اليدوية: تظهر فقط في وضع "اكتبها" أو عند عدم اختيار مادة */}
+                  {manualEntry ? (
+                    <div className="pt-3 border-t border-gray-100 mb-1">
+                      <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? 'Type the exact material' : 'اكتب اسم المادة بدقّة'}</p>
+                      <div className="flex gap-2">
+                        <input type="text" value={productName} onChange={e => { setProductName(e.target.value); setSpecs({}) }} autoFocus
+                          className="input-field flex-1" placeholder={t.orType} />
+                        <button type="button" onClick={() => { setManualEntry(false); setProductName(''); setSpecs({}) }}
+                          className="text-xs text-gray-500 whitespace-nowrap px-2 hover:text-[#1B2D5B]">↩ {locale === 'en' ? 'List' : 'القائمة'}</button>
+                      </div>
+                    </div>
+                  ) : !productName ? (
+                    <div className="pt-3 border-t border-gray-100 mb-1">
+                      <button type="button" onClick={() => { setManualEntry(true); setProductName(''); setSpecs({}) }}
+                        className="text-xs font-bold text-[#d96f15] hover:underline">✍️ {locale === 'en' ? "Didn't find it? Type it manually" : 'ما لقيت المادة؟ اكتبها يدوياً'}</button>
+                    </div>
+                  ) : null}
 
                   {/* مواصفات المنتج المنظّمة (لو المنتج له مواصفات معرّفة) */}
                   {specFields.length > 0 && (
@@ -609,31 +634,43 @@ export default function NewRFQPage() {
 
             {/* Right Column */}
             <div className="space-y-5">
-              {/* 🧾 المواد المطلوبة (خانة جانبية) */}
-              <div className="bg-white rounded-2xl p-5 border-2 border-[#F5831F]/30 shadow-sm lg:sticky lg:top-4">
+              {/* 🧾 المواد المطلوبة */}
+              <div className="bg-white rounded-2xl p-5 border-2 border-[#F5831F]/30 shadow-sm">
                 <h3 className="font-bold mb-3 flex items-center gap-2" style={{ color: '#1B2D5B' }}>
                   🧾 {locale === 'en' ? 'Requested materials' : 'المواد المطلوبة'}
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#F5831F]/10 text-[#d96f15]">{items.length}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-[#F5831F]/10 text-[#d96f15] font-bold">{items.length}</span>
                 </h3>
                 {items.length === 0 ? (
-                  <p className="text-xs text-gray-400 py-3 text-center">{locale === 'en' ? 'No materials yet — configure one on the left and press “Add”.' : 'لا مواد بعد — جهّز مادة على اليمين واضغط "أضف".'}</p>
+                  <div className="text-center py-6 border-2 border-dashed border-gray-200 rounded-xl">
+                    <div className="text-2xl mb-1">📋</div>
+                    <p className="text-xs text-gray-400">{locale === 'en' ? 'No materials yet. Configure one and press “Add to list”.' : 'لا مواد بعد. جهّز مادة واضغط "أضف هذه المادة إلى القائمة".'}</p>
+                  </div>
                 ) : (
-                  <div className="space-y-2">
-                    {items.map((it, i) => (
-                      <div key={i} className="flex items-start justify-between gap-2 bg-gray-50 rounded-xl p-2.5">
-                        <div className="min-w-0">
-                          <div className="font-semibold text-[13px] text-[#1B2D5B] leading-snug">{i + 1}. {getProductLabel(it.product_name, locale)}</div>
-                          <div className="text-[11px] text-gray-500 mt-0.5">{it.quantity} {it.unit}{it.specification ? ` · ${it.specification}` : ''}</div>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
-                            {(it.supplier_tiers || []).map((tr: string) => (
-                              <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'}</span>
-                            ))}
+                  <div className="space-y-2.5">
+                    {items.map((it, i) => {
+                      const tierLabel = (tr: string) => tr === 'manufacturer' ? t.tierMfg : tr === 'commercial' ? t.tierCom : t.tierLoc
+                      return (
+                        <div key={i} className="rounded-xl border border-gray-100 p-3 hover:border-[#F5831F]/40 transition-colors">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="font-bold text-[13px] text-[#1B2D5B] leading-snug">{i + 1}. {getProductLabel(it.product_name, locale)}</div>
+                              <div className="text-[13px] font-bold text-[#d96f15] mt-0.5">{it.quantity} {it.unit}</div>
+                              {it.specification && <div className="text-[11px] text-gray-500 mt-0.5 leading-snug">{it.specification}</div>}
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
+                                {(it.supplier_tiers || []).map((tr: string) => (
+                                  <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'} {tierLabel(tr)}</span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex flex-col gap-1 shrink-0">
+                              <button type="button" onClick={() => editItem(i)} title={locale === 'en' ? 'Edit' : 'تعديل'} className="w-7 h-7 grid place-items-center rounded-lg text-[#1B2D5B] hover:bg-gray-100 text-sm">✎</button>
+                              <button type="button" onClick={() => removeItem(i)} title={locale === 'en' ? 'Delete' : 'حذف'} className="w-7 h-7 grid place-items-center rounded-lg text-red-400 hover:bg-red-50 text-sm">🗑</button>
+                            </div>
                           </div>
                         </div>
-                        <button type="button" onClick={() => removeItem(i)} className="text-red-400 hover:text-red-600 text-sm shrink-0" aria-label="حذف">🗑</button>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
