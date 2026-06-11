@@ -233,10 +233,33 @@ export default function NewRFQPage() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) { setGeoMsg(locale === 'en' ? 'Geolocation not supported' : 'المتصفح لا يدعم تحديد الموقع'); return }
     setGeoMsg(locale === 'en' ? 'Locating…' : 'جارٍ تحديد الموقع…')
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const link = `https://maps.google.com/?q=${pos.coords.latitude},${pos.coords.longitude}`
-        setDeliveryLocation(prev => (prev ? `${prev} — ${link}` : link))
-        setGeoMsg(locale === 'en' ? 'Location added ✓' : 'تم تحديد موقعك ✓')
+      async (pos) => {
+        const { latitude, longitude } = pos.coords
+        const link = `https://maps.google.com/?q=${latitude},${longitude}`
+        setGeoMsg(locale === 'en' ? 'Reading city…' : 'جارٍ قراءة المدينة…')
+        try {
+          const r = await fetch(`/api/reverse-geocode?lat=${latitude}&lng=${longitude}`)
+          const d = await r.json()
+          if (d.ok) {
+            // طابق المنطقة من نتيجة الخرائط مع مناطقنا (يزيل كلمة "منطقة")
+            const geoR = String(d.region || '').replace('منطقة', '').trim()
+            const matchedRegion = REGIONS.find((rr: string) => geoR.includes(rr) || rr.includes(geoR) || String(d.region || '').includes(rr))
+            let cityName = ''
+            if (matchedRegion) {
+              const cities = CITIES_BY_REGION[matchedRegion] || []
+              const geoCity = String(d.city || '').trim()
+              const mc = cities.find((c: any) => c.ar === geoCity || geoCity.includes(c.ar) || c.ar.includes(geoCity))
+              setRegion(matchedRegion); setCity(mc ? mc.ar : '')
+              cityName = mc ? mc.ar : (d.city || '')
+            } else { cityName = d.city || d.region || '' }
+            setDeliveryLocation(d.formatted || link)
+            setGeoMsg(`${locale === 'en' ? 'Location set ✓' : 'تم تحديد موقعك ✓'}${cityName ? ` — ${cityName}` : ''}`)
+            return
+          }
+        } catch {}
+        // بدون مفتاح خرائط أو فشل القراءة — نحفظ الرابط فقط
+        setDeliveryLocation(link)
+        setGeoMsg(locale === 'en' ? 'Location set ✓ (city not detected)' : 'تم تحديد موقعك ✓ (تعذّرت قراءة المدينة)')
       },
       () => setGeoMsg(locale === 'en' ? 'Could not get location (check permission)' : 'تعذّر تحديد الموقع (تحقق من الصلاحية)'),
       { enableHighAccuracy: true, timeout: 10000 },
@@ -484,9 +507,9 @@ export default function NewRFQPage() {
                   {/* مواصفات إضافية حرّة (مثل تفاصيل الخلطة) */}
                   {productName && (
                     <div className="pt-3 border-t border-gray-100 mb-1">
-                      <p className="text-xs font-bold text-gray-400 mb-1.5">📝 {locale === 'en' ? 'Extra specs / mix details (optional)' : 'مواصفات إضافية / تفاصيل الخلطة (اختياري)'}</p>
+                      <p className="text-xs font-bold text-gray-400 mb-1.5">📝 {locale === 'en' ? 'Extra specs (optional)' : 'مواصفات إضافية (اختياري)'}</p>
                       <input type="text" value={specification} onChange={e => setSpecification(e.target.value)}
-                        className="input-field" placeholder={locale === 'en' ? 'e.g. mix design, brand, finish…' : 'مثال: تصميم الخلطة، علامة، تشطيب…'} />
+                        className="input-field" placeholder={locale === 'en' ? 'Any extra details for suppliers…' : 'أي تفاصيل إضافية للمورد…'} />
                     </div>
                   )}
 
