@@ -97,7 +97,27 @@ const sectorLabels = {
   ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'سپلائی اسٹور' },
 }
 
-const sectorIcons = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
+// Sector visual identity — colored tile + white SVG glyph + EN code (matches design)
+const sectorMeta: Record<string, { color: string; en: string }> = {
+  civil:         { color: '#1B2D5B', en: 'CIVIL' },
+  architectural: { color: '#7C3AED', en: 'ARCH' },
+  electrical:    { color: '#F5831F', en: 'ELEC' },
+  mechanical:    { color: '#0F8A6E', en: 'MECH' },
+  equipment:     { color: '#6B5B4F', en: 'EQUIP' },
+  supply_store:  { color: '#C026D3', en: 'STORE' },
+}
+function SectorGlyph({ s }: { s: string }) {
+  const cls = 'w-5 h-5'
+  const sp: any = { fill: 'none', stroke: '#fff', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  switch (s) {
+    case 'electrical': return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9z" /></svg>
+    case 'mechanical': return <svg viewBox="0 0 24 24" className={cls} {...sp}><circle cx="12" cy="12" r="3.2" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" /></svg>
+    case 'architectural': return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" /></svg>
+    case 'equipment': return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M3 17V8h11v9M14 12h4l2 5M3 17h17" /><circle cx="7" cy="19" r="1.6" /><circle cx="17" cy="19" r="1.6" /></svg>
+    case 'supply_store': return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M4 9 5 4h14l1 5M4 9v11h16V9M4 9h16M9 20v-6h6v6" /></svg>
+    default: return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M4 21V6l8-3 8 3v15M9 21v-5h6v5M8 9h.01M12 9h.01M16 9h.01M8 13h.01M12 13h.01M16 13h.01" /></svg>
+  }
+}
 
 export default function NewRFQPage() {
   const { locale, dir } = useTranslation()
@@ -229,9 +249,12 @@ export default function NewRFQPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {Object.keys(sectors).map(s => (
                     <button key={s} type="button" onClick={() => { setSector(s); setGroup(''); setProductName(''); setSpecs({}) }}
-                      className={`p-4 rounded-xl border-2 text-center transition-all duration-200 hover:-translate-y-0.5 ${sector === s ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <div className="text-2xl mb-1">{sectorIcons[s]}</div>
-                      <div className={`text-sm font-semibold ${sector === s ? 'text-[#F5831F]' : 'text-gray-700'}`}>{sectors[s]}</div>
+                      className={`p-3 rounded-2xl border-2 text-center transition-all duration-200 hover:-translate-y-0.5 ${sector === s ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                      <div className="w-11 h-11 mx-auto mb-2 rounded-xl grid place-items-center shadow-sm" style={{ background: sectorMeta[s]?.color || '#1B2D5B' }}>
+                        <SectorGlyph s={s} />
+                      </div>
+                      <div className={`text-sm font-bold ${sector === s ? 'text-[#F5831F]' : 'text-gray-700'}`}>{sectors[s]}</div>
+                      <div className="text-[10px] font-semibold tracking-wide text-gray-400">{sectorMeta[s]?.en}</div>
                     </button>
                   ))}
                 </div>
