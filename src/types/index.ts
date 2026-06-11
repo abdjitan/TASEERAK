@@ -113,7 +113,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     construction_chemicals: { ar: 'مواد كيميائية للبناء', en: 'Construction Chemicals', ur: 'کیمیکل', icon: '🧪', group: 'infrastructure',
       keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي'] },
     drainage: { ar: 'صرف خارجي وبنية تحتية', en: 'External Drainage', ur: 'نکاسی', icon: '🚧', group: 'infrastructure',
-      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','كيرب','kerb','إسفلت','asphalt','ري'] },
+      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','كيرب','kerb','إسفلت','asphalt','ري','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة'] },
     // ═══ الكسارات والمواد الأولية ═══
     aggregates: { ar: 'رمل وبحص وبودرة', en: 'Sand, Gravel & Powder', ur: 'ریت اور بجری', icon: '⛰', group: 'rawmaterials',
       keywords: ['رمل','بطحاء','حصى','بحص','زلط','ركام','كسارة','sand','gravel','aggregate','بودرة','crusher'] },
@@ -244,9 +244,9 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['دكت مرن','flexible duct','flexible connector','وصلة مرنة','flexible','spiral duct','دكت لولبي'] },
     // ═══ السباكة والتغذية والصرف ═══
     water_supply: { ar: 'أنابيب تغذية (PPR)', en: 'Water Supply Pipes (PPR)', ur: 'پانی سپلائی', icon: '🚰', group: 'plumbing',
-      keywords: ['PPR','تغذية','مياه باردة','مياه حارة','CPVC','PEX','نحاس مياه','مياه مبردة','chilled water'] },
+      keywords: ['PPR','تغذية','مياه باردة','مياه حارة','CPVC','PEX','نحاس مياه','مياه مبردة','chilled water','GI','مجلفن','galvanized','GRP','فايبرجلاس','معزولة مسبقا','pre-insulated','pre insulated'] },
     drainage_pipes: { ar: 'مواسير صرف (PVC/UPVC)', en: 'Drainage Pipes (PVC)', ur: 'نکاسی پائپ', icon: '🚽', group: 'plumbing',
-      keywords: ['صرف صحي','uPVC','PVC','sanitary','soil','waste','قسامات','أكواع','مصرف'] },
+      keywords: ['صرف صحي','uPVC','PVC','sanitary','soil','waste','قسامات','أكواع','مصرف','حديد زهر','cast iron','زهر'] },
     silent_drainage: { ar: 'صرف صامت (أكوستيك)', en: 'Silent / Acoustic Drainage', ur: 'سائلنٹ ڈرینج', icon: '🔇', group: 'plumbing',
       keywords: ['صرف صامت','silent','acoustic drainage','أكوستيك','db20','geberit silent','poloplast','صرف هادئ'] },
     storm_drainage: { ar: 'صرف مياه الأمطار', en: 'Storm Water Drainage', ur: 'بارش نکاسی', icon: '🌧', group: 'plumbing',
@@ -657,7 +657,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'أنابيب HDPE SDR11 صرف أمطار 200mm',
     'أنابيب HDPE SDR11 صرف أمطار 300mm',
     'أنابيب HDPE SDR11 صرف أمطار 400mm',
-    'أنابيب خرسانية صرف خارجي',
+    'أنابيب خرسانية صرف خارجي', 'أنابيب خرسانية مسلحة RCP',
+    'أنابيب حديد مرن Ductile Iron مياه رئيسية',
     'غرف تفتيش خرسانية', 'أغطية منهول حديد', 'مصارف خطية',
     // ═══ الأعمال الخارجية (BOQ: B SITE WORK) ═══
     'أعمال ترابية وحفر', 'مواد ردم وتسوية', 'إسفلت',
@@ -821,12 +822,15 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'أنابيب HDPE PN16 مياه شرب', 'أنابيب HDPE PN10 مياه شرب',
     'أنابيب فولاذية مياه مبردة Schedule 40',
     'أنابيب مياه مبردة Chilled Water',
+    'أنابيب حديد مجلفن GI', 'أنابيب معزولة مسبقاً Pre-Insulated (تبريد منطقي)',
+    'أنابيب GRP فايبرجلاس',
     // ═══ أنابيب الصرف الصحي الداخلي (BOQ: Q SANITARY) ═══
     // ✅ الصرف الداخلي = ميكانيك (عكس الصرف الخارجي الذي = مدني)
     'أنابيب uPVC صرف صحي داخلي', 'أنابيب uPVC صرف صحي 50mm',
     'أنابيب uPVC صرف صحي 75mm', 'أنابيب uPVC صرف صحي 100mm',
-    'أنابيب uPVC صرف صحي 150mm',
+    'أنابيب uPVC صرف صحي 150mm', 'أنابيب uPVC صرف صحي 200mm',
     'أنابيب HDPE صرف صحي داخلي',
+    'أنابيب حديد زهر Cast Iron صرف صامت',
     // ═══ أنابيب إطفاء الحريق (BOQ: Q FIRE PROTECTION) ═══
     'أنابيب فولاذية sprinkler 25mm', 'أنابيب فولاذية sprinkler 32mm',
     'أنابيب فولاذية sprinkler 40mm', 'أنابيب فولاذية sprinkler 50mm',
