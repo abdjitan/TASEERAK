@@ -130,6 +130,7 @@ export default function NewRFQPage() {
   const [sector, setSector] = useState('')
   const [group, setGroup] = useState('')
   const [productName, setProductName] = useState('')
+  const [productSearch, setProductSearch] = useState('')
   const [specs, setSpecs] = useState<Record<string, string>>({})
   const [specification, setSpecification] = useState('')
   const [quantity, setQuantity] = useState('')
@@ -156,6 +157,12 @@ export default function NewRFQPage() {
   const activeGroup = groups.find(g => g.group === group)
   const groupLabel = (g: any) => (locale === 'en' ? g.en : locale === 'ur' ? g.ur : g.ar)
   const specFields = getProductSpecs(productName)
+  // بحث سريع فوق التصنيفات: يفلتر كل مواد القطاع عبر المجموعات
+  const allItems = useMemo(() => groups.flatMap(g => g.items), [groups])
+  const q = productSearch.trim().toLowerCase()
+  const searchResults = q.length >= 1
+    ? allItems.filter(p => (p + ' ' + getProductLabel(p, 'en')).toLowerCase().includes(q)).slice(0, 60)
+    : []
 
   function toggleTier(tier: string) {
     setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
@@ -248,7 +255,7 @@ export default function NewRFQPage() {
                 <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.sector}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {Object.keys(sectors).map(s => (
-                    <button key={s} type="button" onClick={() => { setSector(s); setGroup(''); setProductName(''); setSpecs({}) }}
+                    <button key={s} type="button" onClick={() => { setSector(s); setGroup(''); setProductName(''); setSpecs({}); setProductSearch('') }}
                       className={`p-3 rounded-2xl border-2 text-center transition-all duration-200 hover:-translate-y-0.5 ${sector === s ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
                       <div className="w-11 h-11 mx-auto mb-2 rounded-xl grid place-items-center shadow-sm" style={{ background: sectorMeta[s]?.color || '#1B2D5B' }}>
                         <SectorGlyph s={s} />
@@ -265,32 +272,60 @@ export default function NewRFQPage() {
                 <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm animate-fade-in">
                   <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.product}</h3>
 
-                  {/* المستوى الثاني: المجموعات */}
-                  <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '1) Pick a group' : locale === 'ur' ? '۱) گروپ منتخب کریں' : '١) اختر المجموعة'}</p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {groups.map(g => (
-                      <button key={g.group} type="button" onClick={() => { setGroup(g.group); setProductName(''); setSpecs({}) }}
-                        className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${group === g.group ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                        <span className="me-1">{g.icon}</span>{groupLabel(g)}
-                        <span className="text-[11px] opacity-60"> ({g.items.length})</span>
-                      </button>
-                    ))}
+                  {/* بحث سريع فوق التصنيفات */}
+                  <div className="relative mb-4">
+                    <span className="absolute inset-y-0 start-3 my-auto h-5 w-5 text-gray-400 grid place-items-center">🔍</span>
+                    <input type="text" value={productSearch} onChange={e => setProductSearch(e.target.value)}
+                      className="input-field ps-10" placeholder={locale === 'en' ? 'Search a material…' : locale === 'ur' ? 'مواد تلاش کریں…' : 'ابحث عن مادة…'} />
                   </div>
 
-                  {/* المستوى الثالث: الأنواع داخل المجموعة */}
-                  {activeGroup && (
-                    <div className="pt-3 border-t border-gray-100 mb-4 animate-fade-in">
-                      <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '2) Pick the type' : locale === 'ur' ? '۲) قسم منتخب کریں' : '٢) اختر النوع'}</p>
-                      <div className="flex flex-wrap gap-2">
-                        {activeGroup.items.map(p => (
-                          <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}) }}
-                            className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                            style={productName === p ? { background: '#1B2D5B' } : {}}>
-                            {getProductLabel(p, locale)}
+                  {q ? (
+                    /* نتائج البحث (مسطّحة عبر كل المجموعات) */
+                    <div className="mb-4 animate-fade-in">
+                      {searchResults.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {searchResults.map(p => (
+                            <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}) }}
+                              className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                              style={productName === p ? { background: '#1B2D5B' } : {}}>
+                              {getProductLabel(p, locale)}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400">{locale === 'en' ? 'No match — type it manually below.' : 'لا توجد نتائج — اكتب اسم المادة يدوياً بالأسفل.'}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      {/* المستوى الثاني: المجموعات */}
+                      <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '1) Pick a group' : locale === 'ur' ? '۱) گروپ منتخب کریں' : '١) اختر المجموعة'}</p>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {groups.map(g => (
+                          <button key={g.group} type="button" onClick={() => { setGroup(g.group); setProductName(''); setSpecs({}) }}
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${group === g.group ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                            <span className="me-1">{g.icon}</span>{groupLabel(g)}
+                            <span className="text-[11px] opacity-60"> ({g.items.length})</span>
                           </button>
                         ))}
                       </div>
-                    </div>
+
+                      {/* المستوى الثالث: الأنواع داخل المجموعة */}
+                      {activeGroup && (
+                        <div className="pt-3 border-t border-gray-100 mb-4 animate-fade-in">
+                          <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '2) Pick the type' : locale === 'ur' ? '۲) قسم منتخب کریں' : '٢) اختر النوع'}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {activeGroup.items.map(p => (
+                              <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}) }}
+                                className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                                style={productName === p ? { background: '#1B2D5B' } : {}}>
+                                {getProductLabel(p, locale)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {/* مواصفات المنتج المنظّمة (لو المنتج له مواصفات معرّفة) */}
