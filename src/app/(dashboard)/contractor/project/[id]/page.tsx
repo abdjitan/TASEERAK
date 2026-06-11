@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
@@ -63,14 +64,7 @@ export default function ProjectResultsPage() {
     return s + (accepted?.total_price || 0)
   }, 0)
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
-      <div className="text-center animate-pulse">
-        <img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" />
-        <div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>جارٍ التحميل...</div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   return (
     <AppShell title={locale === 'en' ? 'Project Results' : locale === 'ur' ? 'پراجیکٹ نتائج' : 'نتائج المشروع'} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>

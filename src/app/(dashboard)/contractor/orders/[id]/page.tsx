@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
@@ -120,11 +121,7 @@ export default function OrderDetailPage() {
     setExistingReview({ rating, comment: reviewComment })
   }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="text-[#d96f15] font-semibold">جارٍ التحميل...</div>
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   if (!offer || !rfq) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50">
