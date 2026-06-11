@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
@@ -86,11 +87,7 @@ export default function OfferDetailPage() {
     window.location.href = `/contractor/rfq/${id}`
   }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
-      <div className="text-center animate-pulse"><img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" /><div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>جارٍ التحميل...</div></div>
-    </div>
-  )
+  if (loading) return <PageLoader />
   if (!offer || !rfq) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9] text-center">
       <div><div className="text-5xl mb-3">🔍</div><p className="font-bold" style={{ color: '#1B2D5B' }}>العرض غير موجود</p>

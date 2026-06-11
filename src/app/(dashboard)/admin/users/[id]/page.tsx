@@ -8,6 +8,7 @@ import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import SupportThread from '@/components/shared/SupportThread'
+import PageLoader from '@/components/shared/PageLoader'
 
 const TIER_LABEL = { manufacturer: '🏭 مصنع / مورد رئيسي', commercial: '🏪 مورد تجاري', local: '🏬 مورد محلي' }
 const RFQ_STATUS = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
@@ -115,11 +116,7 @@ export default function AdminUserDetail() {
   const dtt = (d: any) => d ? new Date(d).toLocaleString('ar-SA') : '—'
   const sar = (n: any) => (n || n === 0) ? Number(n).toLocaleString('en-US') + ' ر.س' : '—'
 
-  if (loading || !ok) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
-      <div className="text-center animate-pulse"><img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" /><div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>جارٍ التحميل...</div></div>
-    </div>
-  )
+  if (loading || !ok) return <PageLoader />
   if (!p) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]" dir="rtl">
       <div className="text-center"><div className="text-5xl mb-3">🔍</div><div className="font-bold" style={{ color: '#1B2D5B' }}>الحساب غير موجود</div><a href="/admin" className="text-sm text-[#d96f15] hover:underline mt-2 inline-block">← رجوع للوحة</a></div>

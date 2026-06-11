@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
@@ -59,11 +60,7 @@ export default function SupplierBranchesPage() {
     load()
   }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
-      <div className="text-center animate-pulse"><img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" /><div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>جارٍ التحميل...</div></div>
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   return (
     <AppShell title="فروع الشركة" nav={getNav('supplier', 'ar', '/supplier/branches')} dir={dir}>

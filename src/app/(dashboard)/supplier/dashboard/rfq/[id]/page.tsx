@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
@@ -247,14 +248,7 @@ export default function SupplierRFQPage() {
   const specFileUrl = specFileMatch ? specFileMatch[1] : null
   const cleanNotes = rfq?.notes?.replace(/\n?\[مواصفات مرفقة:[^\]]+\]/, '').trim()
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
-      <div className="text-center animate-pulse">
-        <img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" />
-        <div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>...</div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   if (!rfq) return <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]"><div className="text-gray-500">الطلب غير موجود</div></div>
 

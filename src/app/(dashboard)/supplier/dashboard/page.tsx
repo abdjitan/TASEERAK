@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -149,14 +150,7 @@ export default function SupplierDashboard() {
     window.location.href = '/login'
   }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
-      <div className="text-center animate-pulse">
-        <img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" />
-        <div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>{t.loading}</div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   const offeredRfqIds = new Set(myOffers.map((o: any) => o.rfq_id)) // RFQs the supplier already bid on
   const accepted = myOffers.filter(o => o.status === 'accepted').length

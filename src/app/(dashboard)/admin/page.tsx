@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
@@ -262,14 +263,7 @@ export default function AdminPanel() {
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
-      <div className="text-center animate-pulse">
-        <img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" />
-        <div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>جارٍ التحميل...</div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   // Lookup maps for the requests/offers overview
   const profileById = Object.fromEntries(users.map((u: any) => [u.id, u]))

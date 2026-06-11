@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
@@ -320,14 +321,7 @@ export default function SettingsPage() {
 
   const backHref = profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
-      <div className="text-center animate-pulse">
-        <img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" />
-        <div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>{t.loading}</div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   return (
     <AppShell title={t.title} company={companyAr} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} onSignOut={handleSignOut} dir={dir}>

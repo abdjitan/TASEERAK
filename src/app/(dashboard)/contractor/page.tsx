@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
 import Logo from '@/components/shared/Logo'
@@ -117,16 +118,7 @@ export default function ContractorDashboard() {
     window.location.href = '/login'
   }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]">
-      <div className="text-center animate-pulse">
-        <img src="/logo.png" alt="" className="w-14 h-14 mx-auto mb-3" />
-        <div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>
-          {locale === 'en' ? 'Loading...' : locale === 'ur' ? 'لوڈ ہو رہا ہے...' : 'جارٍ التحميل...'}
-        </div>
-      </div>
-    </div>
-  )
+  if (loading) return <PageLoader />
 
   const active = rfqs.filter(r => r.status === 'open')
   const closed = rfqs.filter(r => r.status === 'closed')

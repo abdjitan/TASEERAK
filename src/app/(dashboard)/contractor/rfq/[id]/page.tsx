@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
@@ -118,7 +119,7 @@ export default function RFQDetailPage() {
     window.location.href = '/contractor'
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-[#d96f15] font-semibold animate-pulse">جارٍ التحميل...</div></div>
+  if (loading) return <PageLoader />
   if (!rfq) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-gray-500">الطلب غير موجود</div></div>
 
   const acceptedOffer = offers.find(o => o.status === 'accepted')
