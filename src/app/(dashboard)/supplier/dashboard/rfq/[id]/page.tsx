@@ -27,7 +27,9 @@ export default function SupplierRFQPage() {
 
   const [totalPrice, setTotalPrice] = useState('')
   const [unitPrice, setUnitPrice] = useState('')
-  const [itemPrices, setItemPrices] = useState<string[]>([]) // سعر وحدة لكل مادة (تسعير بند-بند)
+  // تسعير بند-بند: لكل مادة بطاقة مستقلة (سعر الوحدة + خصائص + ملاحظة + كتالوج خاص)
+  const [itemForms, setItemForms] = useState<any[]>([])
+  const [openItem, setOpenItem] = useState<number | null>(null) // البطاقة المفتوحة (أكورديون)
   const [deliveryDays, setDeliveryDays] = useState('')
   const [notes, setNotes] = useState('')
   const [validity, setValidity] = useState('')
@@ -78,7 +80,10 @@ export default function SupplierRFQPage() {
       const { data: rfqData } = await supabase
         .from('rfqs').select('*, contractor:profiles_public(company_name_ar, company_name_en)').eq('id', id).single()
       setRfq(rfqData)
-      if (Array.isArray(rfqData?.items) && rfqData.items.length > 0) setItemPrices(rfqData.items.map(() => ''))
+      if (Array.isArray(rfqData?.items) && rfqData.items.length > 0) {
+        setItemForms(rfqData.items.map(() => ({ unit_price: '', attrs: [{ key: '', value: '' }], notes: '', file: null })))
+        setOpenItem(0)
+      }
 
       // auto-calc unit price from quantity
       const { data: offerData } = await supabase
@@ -98,17 +103,36 @@ export default function SupplierRFQPage() {
     }
   }
 
-  // تسعير بند-بند: سعر وحدة لكل مادة → يحسب إجمالي البضاعة تلقائياً
+  // تسعير بند-بند: لكل مادة سعر وحدة + خصائص + ملاحظة + كتالوج خاص
   const isMultiItem = Array.isArray(rfq?.items) && rfq.items.length > 0
-  function setItemPrice(i, val) {
-    setItemPrices(prev => {
-      const next = [...prev]; next[i] = val
-      const sum = (rfq?.items || []).reduce((s, it, idx) => s + ((parseFloat(next[idx]) || 0) * (it.quantity || 0)), 0)
-      setTotalPrice(sum ? String(+sum.toFixed(2)) : '')
+  function recomputeGoods(forms) {
+    const sum = (rfq?.items || []).reduce((s, it, idx) => s + ((parseFloat(forms[idx]?.unit_price) || 0) * (it.quantity || 0)), 0)
+    setTotalPrice(sum ? String(+sum.toFixed(2)) : '')
+  }
+  function setItemField(i, field, val) {
+    setItemForms(prev => {
+      const next = prev.map((f, idx) => idx === i ? { ...f, [field]: val } : f)
+      if (field === 'unit_price') recomputeGoods(next)
       return next
     })
   }
-  const allItemsPriced = isMultiItem ? (rfq.items || []).every((_, i) => parseFloat(itemPrices[i]) > 0) : true
+  function addItemAttr(i) {
+    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: [...(f.attrs || []), { key: '', value: '' }] } : f))
+  }
+  function updateItemAttr(i, ai, field, val) {
+    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: f.attrs.map((a, aj) => aj === ai ? { ...a, [field]: val } : a) } : f))
+  }
+  function removeItemAttr(i, ai) {
+    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: f.attrs.filter((_, aj) => aj !== ai) } : f))
+  }
+  async function setItemFile(i, f) {
+    if (!f) { setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: null } : x)); return }
+    const v = await validateUploadFile(f)
+    if (!v.ok) { setError(v.error); return }
+    setError('')
+    setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: f } : x))
+  }
+  const allItemsPriced = isMultiItem ? (rfq.items || []).every((_, i) => parseFloat(itemForms[i]?.unit_price) > 0) : true
 
   function addAttribute() {
     setAttributes(prev => [...prev, { key: '', value: '' }])
@@ -167,13 +191,41 @@ export default function SupplierRFQPage() {
     const goods = parseFloat(totalPrice) || 0
     const finalTotal = goods + validExtras.reduce((s, e) => s + e.amount, 0)
 
-    // تسعير بند-بند: حفظ سعر كل مادة (متوافق مع items)
-    const itemPricesPayload = isMultiItem ? (rfq.items || []).map((it: any, i: number) => ({
-      product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
-      unit: it.unit, quantity: it.quantity,
-      unit_price: parseFloat(itemPrices[i]) || 0,
-      total: (parseFloat(itemPrices[i]) || 0) * (it.quantity || 0),
-    })) : null
+    // تسعير بند-بند: لكل مادة سعرها + خصائصها + كتالوجها الخاص
+    let itemPricesPayload = null
+    if (isMultiItem) {
+      itemPricesPayload = []
+      for (let i = 0; i < rfq.items.length; i++) {
+        const it = rfq.items[i]
+        const form = itemForms[i] || {}
+        // رفع كتالوج هذه المادة (إن وُجد) — فحص أمني على الخادم
+        let upUrl = null, upName = null
+        if (form.file) {
+          const safe = await validateUploadFile(form.file)
+          if (!safe.ok) { setError(`كتالوج «${it.product_name}»: ${safe.error}`); setSubmitting(false); return }
+          const ifd = new FormData(); ifd.append('file', form.file)
+          const ires = await fetch('/api/upload-attachment', { method: 'POST', body: ifd })
+          const ij = await ires.json().catch(() => ({}))
+          if (!ires.ok || !ij.ok) {
+            setError(`تعذّر رفع كتالوج «${it.product_name}» — أزله أو حاول مجدداً.`)
+            setSubmitting(false); return
+          }
+          upUrl = ij.url; upName = ij.name
+        }
+        const itemAttrs = (form.attrs || [])
+          .filter(a => a.key && a.value)
+          .reduce((acc, a) => { acc[a.key] = a.value; return acc }, {})
+        const up = parseFloat(form.unit_price) || 0
+        itemPricesPayload.push({
+          product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
+          unit: it.unit, quantity: it.quantity,
+          unit_price: up, total: up * (it.quantity || 0),
+          attributes: Object.keys(itemAttrs).length ? itemAttrs : null,
+          notes: form.notes || null,
+          attachment_url: upUrl, attachment_name: upName,
+        })
+      }
+    }
 
     const { error: insertError } = await supabase.from('offers').insert({
       rfq_id: id,
@@ -438,33 +490,122 @@ export default function SupplierRFQPage() {
             <div className="space-y-4">
               {isMultiItem ? (
                 <div>
-                  <label className="block text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>
-                    {locale === 'en' ? 'Price each material (per unit)' : locale === 'ur' ? 'ہر مواد کی قیمت (فی یونٹ)' : 'سعّر كل مادة (سعر الوحدة)'} *
+                  <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                    {locale === 'en' ? 'Price each material' : locale === 'ur' ? 'ہر مواد کی قیمت' : 'سعّر كل مادة على حدة'} *
                   </label>
+                  <p className="text-xs text-gray-400 mb-3">
+                    {locale === 'en' ? 'Tap a material to enter its unit price, specs and its own catalog.' : 'اضغط على كل مادة لإدخال سعرها وخصائصها وكتالوجها الخاص.'}
+                  </p>
                   <div className="space-y-2">
                     {rfq.items.map((it, i) => {
-                      const up = parseFloat(itemPrices[i]) || 0
+                      const form = itemForms[i] || {}
+                      const up = parseFloat(form.unit_price) || 0
                       const line = up * (it.quantity || 0)
+                      const isOpen = openItem === i
+                      const done = up > 0
                       return (
-                        <div key={i} className="border border-gray-200 rounded-xl p-3">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="min-w-0">
-                              <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{it.product_name}</div>
-                              <div className="text-xs text-gray-400">
-                                {it.sub_category ? it.sub_category + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {it.unit}
+                        <div key={i} className={`border rounded-xl overflow-hidden transition-all ${isOpen ? 'border-[#F5831F]/60 shadow-sm' : 'border-gray-200'}`}>
+                          {/* رأس البطاقة — اضغط للفتح/الإغلاق */}
+                          <button type="button" onClick={() => setOpenItem(isOpen ? null : i)}
+                            className="w-full flex items-center justify-between gap-2 p-3 text-right">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold ${done ? 'bg-[#0F6E56] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                {done ? '✓' : i + 1}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{it.product_name}</div>
+                                <div className="text-[11px] text-gray-400">
+                                  {it.sub_category ? it.sub_category + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {it.unit}
+                                </div>
                               </div>
                             </div>
-                            {line > 0 && (
-                              <div className="text-sm font-extrabold whitespace-nowrap" style={{ color: '#0F6E56' }}>
-                                {(+line.toFixed(2)).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}
+                            <div className="flex items-center gap-2 shrink-0">
+                              {line > 0 && (
+                                <span className="text-sm font-extrabold whitespace-nowrap" style={{ color: '#0F6E56' }}>
+                                  {(+line.toFixed(2)).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}
+                                </span>
+                              )}
+                              <span className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                            </div>
+                          </button>
+
+                          {/* تفاصيل التسعير — تنزل عند الفتح */}
+                          {isOpen && (
+                            <div className="px-3 pb-3 pt-1 space-y-3 border-t border-gray-100">
+                              {/* مواصفات المقاول المطلوبة (للتذكير) */}
+                              {it.specification && (
+                                <div className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-2">
+                                  <span className="font-bold">مواصفات المقاول: </span>{it.specification}
+                                </div>
+                              )}
+
+                              {/* سعر الوحدة */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  {(locale === 'en' ? 'Unit price / ' : 'سعر الوحدة / ') + it.unit} *
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input type="number" value={form.unit_price || ''} onChange={e => setItemField(i, 'unit_price', e.target.value)}
+                                    className="input-field text-sm flex-1" placeholder="0.00" min="0" step="any" />
+                                  <span className="text-xs text-gray-400 whitespace-nowrap">× {(it.quantity || 0).toLocaleString('en-US')} = <b className="text-[#0F6E56]">{(+line.toFixed(2)).toLocaleString('en-US')}</b> {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input type="number" value={itemPrices[i] || ''} onChange={e => setItemPrice(i, e.target.value)}
-                              className="input-field text-sm flex-1" placeholder={(locale === 'en' ? 'Unit price / ' : 'سعر الوحدة / ') + it.unit} min="0" step="any" />
-                            <span className="text-xs text-gray-400 whitespace-nowrap">× {(it.quantity || 0).toLocaleString('en-US')}</span>
-                          </div>
+
+                              {/* خصائص هذه المادة (نوع/منشأ/علامة...) */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  🏷 {locale === 'en' ? 'Material specs (type / origin / brand…)' : 'خصائص المادة (النوع / المنشأ / العلامة…)'}
+                                </label>
+                                <div className="space-y-2">
+                                  {(form.attrs || []).map((attr, ai) => (
+                                    <div key={ai} className="flex gap-2">
+                                      <input value={attr.key} onChange={e => updateItemAttr(i, ai, 'key', e.target.value)}
+                                        className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Property' : 'الخاصية'} />
+                                      <input value={attr.value} onChange={e => updateItemAttr(i, ai, 'value', e.target.value)}
+                                        className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Value' : 'القيمة'} />
+                                      {(form.attrs || []).length > 1 && (
+                                        <button type="button" onClick={() => removeItemAttr(i, ai)}
+                                          className="px-3 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">×</button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                                <button type="button" onClick={() => addItemAttr(i)} className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
+                                  + {locale === 'en' ? 'Add property' : 'إضافة خاصية'}
+                                </button>
+                              </div>
+
+                              {/* ملاحظة لهذه المادة */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  📝 {locale === 'en' ? 'Note for this material' : 'ملاحظة لهذه المادة'}
+                                </label>
+                                <textarea value={form.notes || ''} onChange={e => setItemField(i, 'notes', e.target.value)}
+                                  rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Optional…' : 'اختياري…'} />
+                              </div>
+
+                              {/* كتالوج خاص لهذه المادة */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  📎 {locale === 'en' ? 'Catalog for this material' : 'كتالوج خاص بهذه المادة'}
+                                </label>
+                                {form.file ? (
+                                  <div className="flex items-center gap-3 bg-[#1B2D5B]/5 rounded-xl p-2.5 border border-[#1B2D5B]/20">
+                                    <span className="text-xl">📄</span>
+                                    <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#1B2D5B' }}>{form.file.name}</span>
+                                    <button type="button" onClick={() => setItemFile(i, null)} className="text-xs text-red-500 hover:underline">{locale === 'en' ? 'Remove' : 'إزالة'}</button>
+                                  </div>
+                                ) : (
+                                  <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-3 cursor-pointer hover:border-[#F5831F]/50 transition-all">
+                                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
+                                      onChange={e => setItemFile(i, e.target.files?.[0] ?? null)} />
+                                    <span className="text-xl">📤</span>
+                                    <span className="text-xs text-gray-500">{locale === 'en' ? 'Attach catalog / datasheet' : 'إرفاق كتالوج / بيانات المنتج'}</span>
+                                  </label>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )
                     })}
@@ -544,7 +685,8 @@ export default function SupplierRFQPage() {
                 )
               })()}
 
-              {/* خصائص المنتج */}
+              {/* خصائص المنتج — للطلب أحادي المادة فقط (متعدد المواد: الخصائص لكل مادة بداخل بطاقتها) */}
+              {!isMultiItem && (
               <div className="border-t border-gray-100 pt-4">
                 <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>{T.attributes}</label>
                 <p className="text-xs text-gray-400 mb-3">{T.attrHint}</p>
@@ -565,8 +707,10 @@ export default function SupplierRFQPage() {
                 <button type="button" onClick={addAttribute}
                   className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>{T.addAttr}</button>
               </div>
+              )}
 
-              {/* إرفاق ملف (كتالوج) */}
+              {/* إرفاق ملف (كتالوج) — للطلب أحادي المادة فقط (متعدد المواد: كتالوج لكل مادة) */}
+              {!isMultiItem && (
               <div className="border-t border-gray-100 pt-4">
                 <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>📎 {T.attachTitle}</label>
                 <p className="text-xs text-gray-400 mb-3">{T.attachHint}</p>
@@ -592,6 +736,7 @@ export default function SupplierRFQPage() {
                   </label>
                 )}
               </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.offerNotes}</label>

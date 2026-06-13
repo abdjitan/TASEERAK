@@ -172,14 +172,30 @@ export default function OfferDetailPage() {
                 <span>تسعير المواد ({ip.length})</span><span>السعر</span>
               </div>
               {ip.map((it, i) => (
-                <div key={i} className="px-3 py-2 border-t border-gray-100 flex items-start justify-between gap-3 text-sm">
-                  <div className="min-w-0">
-                    <div className="font-semibold text-gray-800 truncate">{it.product_name}</div>
-                    <div className="text-[11px] text-gray-400">
-                      {(Number(it.unit_price) || 0).toLocaleString('en-US')} ر.س × {(Number(it.quantity) || 0).toLocaleString('en-US')} {it.unit || ''}
+                <div key={i} className="px-3 py-2.5 border-t border-gray-100 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-gray-800 truncate">{it.product_name}</div>
+                      <div className="text-[11px] text-gray-400">
+                        {(Number(it.unit_price) || 0).toLocaleString('en-US')} ر.س × {(Number(it.quantity) || 0).toLocaleString('en-US')} {it.unit || ''}
+                      </div>
                     </div>
+                    <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</div>
                   </div>
-                  <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</div>
+                  {/* خصائص المادة من المورد */}
+                  {it.attributes && Object.keys(it.attributes).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {Object.entries(it.attributes).map(([k, v]) => (
+                        <span key={k} className="text-[10px] bg-[#F5831F]/5 text-[#d96f15] px-2 py-0.5 rounded-lg"><strong>{k}:</strong> {String(v)}</span>
+                      ))}
+                    </div>
+                  )}
+                  {it.notes && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5">📝 {it.notes}</p>}
+                  {it.attachment_url && (
+                    <a href={it.attachment_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#d96f15] underline mt-1.5">
+                      📎 {it.attachment_name || 'كتالوج المادة'}
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
