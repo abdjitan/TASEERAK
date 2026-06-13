@@ -6,6 +6,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
+import { SECTOR_LABELS, getGroupedSubCategories } from '@/types'
 
 export default function AdminPanel() {
   const [user, setUser] = useState(null)
@@ -115,16 +116,31 @@ export default function AdminPanel() {
     setRejectReason('')
   }
 
-  async function reviewMaterial(reqId: string, status: 'approved' | 'rejected') {
+  // مودال مراجعة/تعديل طلب المادة قبل الاعتماد
+  const [matEdit, setMatEdit] = useState(null) // الطلب الجاري مراجعته
+  const [matName, setMatName] = useState('')
+  const [matSector, setMatSector] = useState('')
+  const [matGroup, setMatGroup] = useState('')
+  const [matNote, setMatNote] = useState('')
+  function openMatEdit(r) {
+    setMatEdit(r); setMatName(r.name || ''); setMatSector(r.sector || 'civil'); setMatGroup(r.sub_category || ''); setMatNote(r.admin_note || '')
+  }
+
+  async function reviewMaterial(reqId: string, status: 'approved' | 'rejected', edits?: any) {
     setActionLoading(reqId)
     const supabase = createClient()
     if (status === 'approved') {
-      // الاعتماد يضيف المادة فعلياً لقائمة المواد (catalog) عبر دالة آمنة
-      const { error } = await supabase.rpc('approve_material_request', { p_id: reqId })
+      // الاعتماد يضيف المادة فعلياً لقائمة المواد (catalog) عبر دالة آمنة — مع تعديلات الأدمن
+      const { error } = await supabase.rpc('approve_material_request', {
+        p_id: reqId,
+        p_sector: edits?.sector || null, p_sub_category: edits?.group || null,
+        p_name: edits?.name || null, p_admin_note: edits?.note || null,
+      })
       if (error) { setMsg('تعذّر الاعتماد — حاول مجدداً'); setTimeout(() => setMsg(''), 3000); setActionLoading(''); return }
     } else {
-      await supabase.from('material_requests').update({ status, reviewed_at: new Date().toISOString() }).eq('id', reqId)
+      await supabase.from('material_requests').update({ status, reviewed_at: new Date().toISOString(), admin_note: edits?.note || null }).eq('id', reqId)
     }
+    setMatEdit(null)
     setMsg(`✓ تم ${status === 'approved' ? 'قبول وإضافة' : 'رفض'} المادة`)
     setTimeout(() => setMsg(''), 3000)
     await loadData()
@@ -794,7 +810,8 @@ export default function AdminPanel() {
                           {r.status === 'approved' ? '✓ مقبولة' : r.status === 'rejected' ? '✕ مرفوضة' : '⏳ قيد المراجعة'}
                         </span>
                       </div>
-                      {r.description && <p className="text-sm text-gray-500 mt-1">{r.description}</p>}
+                      {r.description && <p className="text-sm text-gray-500 mt-1">📝 {r.description}</p>}
+                      {r.admin_note && <p className="text-xs text-[#0F6E56] bg-emerald-50 rounded-lg px-2 py-1 mt-1 inline-block">ملاحظة الإدارة: {r.admin_note}</p>}
                       <div className="text-[11px] text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
                         {r.requester?.role && ` (${r.requester.role === 'contractor' ? 'مقاول' : r.requester.role === 'supplier' ? 'مورد' : r.requester.role})`}
@@ -803,9 +820,9 @@ export default function AdminPanel() {
                     </div>
                     {r.status === 'pending' && (
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <button onClick={() => reviewMaterial(r.id, 'approved')} disabled={actionLoading === r.id}
+                        <button onClick={() => openMatEdit(r)} disabled={actionLoading === r.id}
                           className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>
-                          {actionLoading === r.id ? '...' : '✓ قبول'}
+                          ✎ مراجعة وتعديل
                         </button>
                         <button onClick={() => reviewMaterial(r.id, 'rejected')} disabled={actionLoading === r.id}
                           className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50">
@@ -1094,6 +1111,57 @@ export default function AdminPanel() {
               <button onClick={() => { setPwModal(null); setPwValue(''); setPwConfirm(''); setPwMsg('') }}
                 className="flex-1 py-3 rounded-xl font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">إلغاء</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* مراجعة/تعديل طلب مادة قبل الاعتماد */}
+      {matEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" dir="rtl" onClick={() => actionLoading !== matEdit.id && setMatEdit(null)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>✎ مراجعة المادة المقترحة</h3>
+            <p className="text-xs text-gray-400 mb-4">عدّل القطاع والمجموعة والاسم لتضعها في المكان الصحيح، ثم اعتمدها.</p>
+
+            <label className="block text-xs font-bold text-gray-500 mb-1.5">اسم المادة</label>
+            <input value={matName} onChange={e => setMatName(e.target.value)} className="input-field mb-3 text-sm" />
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">القطاع</label>
+                <select value={matSector} onChange={e => { setMatSector(e.target.value); setMatGroup('') }} className="input-field text-sm">
+                  {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{SECTOR_LABELS[s]}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">المجموعة</label>
+                <select value={matGroup} onChange={e => setMatGroup(e.target.value)} className="input-field text-sm">
+                  <option value="">— اختر —</option>
+                  {getGroupedSubCategories(matSector).map(g => <option key={g.group} value={g.group}>{g.ar}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {matEdit.description && (
+              <div className="mb-3 text-xs text-gray-500 bg-gray-50 rounded-lg p-2.5">
+                <span className="font-bold text-gray-400">تفاصيل مقدّم الطلب:</span> {matEdit.description}
+              </div>
+            )}
+
+            <label className="block text-xs font-bold text-gray-500 mb-1.5">ملاحظة الإدارة (اختياري — تظهر لك)</label>
+            <textarea value={matNote} onChange={e => setMatNote(e.target.value)} rows={2} className="input-field mb-4 text-sm" placeholder="مثال: نقلتها لمجموعة الخرسانة، أو سبب الرفض…" />
+
+            <div className="flex gap-2">
+              <button type="button" disabled={actionLoading === matEdit.id || !matName.trim() || !matGroup}
+                onClick={() => reviewMaterial(matEdit.id, 'approved', { name: matName.trim(), sector: matSector, group: matGroup, note: matNote.trim() })}
+                className="flex-1 py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>
+                {actionLoading === matEdit.id ? '...' : '✓ قبول وإضافة'}
+              </button>
+              <button type="button" disabled={actionLoading === matEdit.id}
+                onClick={() => reviewMaterial(matEdit.id, 'rejected', { note: matNote.trim() })}
+                className="px-4 py-2.5 rounded-xl font-semibold text-white text-sm bg-red-500 hover:bg-red-600 disabled:opacity-50">✕ رفض</button>
+              <button type="button" onClick={() => setMatEdit(null)} className="px-4 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
+            </div>
+            {!matGroup && <p className="text-[11px] text-amber-600 mt-2">اختر المجموعة قبل القبول حتى تظهر في المكان الصحيح.</p>}
           </div>
         </div>
       )}
