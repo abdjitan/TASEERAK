@@ -49,10 +49,12 @@ export default function ProjectResultsPage() {
 
   async function acceptOffer(offerId, rfqId, itemId) {
     const supabase = createClient()
-    await supabase.from('offers').update({ status: 'accepted', accepted_at: new Date().toISOString() }).eq('id', offerId)
-    await supabase.from('rfqs').update({ status: 'closed' }).eq('id', rfqId)
+    // Atomic: accept + reject the competing offers + close the RFQ in one
+    // transaction (same as the single-RFQ flow) — prevents double-accept and
+    // leaving rival offers "pending".
+    const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
+    if (error) { alert('تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة وحاول مرة ثانية.'); return }
     setSelectedOffers(prev => ({ ...prev, [itemId]: offerId }))
-    // Reload
     window.location.reload()
   }
 
