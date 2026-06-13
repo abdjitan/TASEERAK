@@ -788,6 +788,40 @@ export function getProductLabel(arabicName: string, locale: string): string {
   return locale === 'ur' ? trans.ur : trans.en
 }
 
+// Unit translations (طن، سيخ، كيس…) — symbols like م³/م² are kept as-is.
+const UNIT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
+  'طن': { en: 'ton', ur: 'ٹن' },
+  'سيخ': { en: 'bar', ur: 'سریا' },
+  'كيس': { en: 'bag', ur: 'بوری' },
+  'شيكارة': { en: 'sack', ur: 'بوری' },
+  'قطعة': { en: 'piece', ur: 'عدد' },
+  'عدد': { en: 'pcs', ur: 'عدد' },
+  'حبة': { en: 'piece', ur: 'عدد' },
+  'لتر': { en: 'liter', ur: 'لیٹر' },
+  'متر طولي': { en: 'linear m', ur: 'میٹر' },
+  'متر': { en: 'm', ur: 'میٹر' },
+  'م.ط': { en: 'lin.m', ur: 'میٹر' },
+  'لفة': { en: 'roll', ur: 'رول' },
+  'رول': { en: 'roll', ur: 'رول' },
+  'صندوق': { en: 'box', ur: 'باکس' },
+  'كرتون': { en: 'carton', ur: 'کارٹن' },
+  'لوح': { en: 'sheet', ur: 'شیٹ' },
+  'كيلو': { en: 'kg', ur: 'کلو' },
+  'كيلوغرام': { en: 'kg', ur: 'کلو' },
+  'جالون': { en: 'gallon', ur: 'گیلن' },
+  'برميل': { en: 'barrel', ur: 'بیرل' },
+  'باكيت': { en: 'pack', ur: 'پیکٹ' },
+  'متر مكعب': { en: 'm³', ur: 'm³' },
+  'متر مربع': { en: 'm²', ur: 'm²' },
+}
+export function getUnitLabel(unit: string | null | undefined, locale: string): string {
+  if (!unit) return ''
+  if (locale === 'ar') return unit
+  const t = UNIT_TRANSLATIONS[unit.trim()]
+  if (!t) return unit
+  return locale === 'ur' ? t.ur : t.en
+}
+
 export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
   civil: [
     // ═══ الخرسانة (BOQ: C2 POURED CONCRETE, C5 PRECAST) ═══

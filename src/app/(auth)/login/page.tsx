@@ -8,7 +8,6 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
-import AuthLoader from '@/components/shared/AuthLoader'
 
 const txt = {
   ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساب جديد', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد للمقاولين', s_auth:'الخطوة 1/3: جارٍ التحقق من بياناتك…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'الخطوة 3/3: تم الدخول ✓ جارٍ التحويل…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، يتنافس عليه أفضل الموردين.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'موردون موثّقون ومصنّفون', l2:'قارن العروض بالأسعار ومتوسط السوق', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.' },
@@ -129,7 +128,6 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex" dir={dir}>
-      <AuthLoader show={loading} progress={progress} status={status} locale={locale} dir={dir} />
       {/* ===== Brand panel (hidden on small screens) ===== */}
       <div className="hidden lg:flex lg:w-[54%] relative overflow-hidden flex-col justify-between p-12 text-white"
         style={{ background: 'linear-gradient(135deg,#0a1530 0%,#1B2D5B 55%,#2a4a8a 100%)' }}>
@@ -210,7 +208,6 @@ function LoginForm() {
                   <>{t.login}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] rtl:rotate-180"><path d="M5 12h14M13 6l6 6-6 6" /></svg></>
                 )}
               </button>
-              {loading && status && <p className="text-center text-xs text-ink-3 mt-1 animate-fade-in">{status}</p>}
             </form>
 
             <div className="my-6 flex items-center gap-3 text-ink-3 text-xs">

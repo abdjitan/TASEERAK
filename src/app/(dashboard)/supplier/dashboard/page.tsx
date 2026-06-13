@@ -9,7 +9,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
-import { getSubCategoryLabel, getProductLabel } from '@/types'
+import { getSubCategoryLabel, getProductLabel, getUnitLabel } from '@/types'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
@@ -397,7 +397,7 @@ export default function SupplierDashboard() {
                         : <div className="text-white text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#F5831F' }}>{t.submitOffer}</div>}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium flex-wrap">
-                      <span>📦 {rfq.quantity} {rfq.unit}</span>
+                      <span>📦 {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>
                       <span>📍 {rfq.region}</span>
                       {rfq.specification && <span>⚙️ {rfq.specification}</span>}
                       <span>💬 {rfq.offer_count || 0} {t.offer}</span>

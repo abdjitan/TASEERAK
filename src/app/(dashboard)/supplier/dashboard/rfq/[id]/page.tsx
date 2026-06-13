@@ -10,7 +10,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel } from '@/types'
+import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel, getUnitLabel } from '@/types'
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 
@@ -451,7 +451,7 @@ export default function SupplierRFQPage() {
                             {it.spec_file_url && <a href={it.spec_file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 font-bold text-[#d96f15] whitespace-nowrap">{it.quantity} {it.unit}</td>
+                        <td className="py-2.5 px-3 font-bold text-[#d96f15] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
                         <td className="py-2.5 px-3 text-xs text-gray-500">{it.specification || '—'}</td>
                       </tr>
                     ))}
@@ -613,7 +613,7 @@ export default function SupplierRFQPage() {
                               <div className="min-w-0">
                                 <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{getProductLabel(it.product_name, locale)}</div>
                                 <div className="text-[11px] text-gray-400">
-                                  {it.sub_category ? getSubCategoryLabel(it.sector, it.sub_category, locale) + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {it.unit}
+                                  {it.sub_category ? getSubCategoryLabel(it.sector, it.sub_category, locale) + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}
                                 </div>
                               </div>
                             </div>
@@ -640,7 +640,7 @@ export default function SupplierRFQPage() {
                               {/* السعر الإجمالي للمادة هو الأساس — وتفاصيل سعر الوحدة اختيارية */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  💰 {locale === 'en' ? `Total price for this material (for ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit})` : `السعر الإجمالي للمادة (لـ ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit})`} *
+                                  💰 {locale === 'en' ? `Total price for this material (for ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)})` : `السعر الإجمالي للمادة (لـ ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit})`} *
                                 </label>
                                 <input type="number" value={form.line_total || ''} onChange={e => setItemTotal(i, e.target.value)}
                                   className="input-field text-sm font-bold" placeholder={locale === 'en' ? 'e.g. 5200' : 'مثال: 5200'} min="0" step="any" />
@@ -671,7 +671,7 @@ export default function SupplierRFQPage() {
                                     </div>
                                     <p className="text-[10px] text-gray-400 mt-1.5">
                                       {sameUnit(form, i)
-                                        ? (locale === 'en' ? `Total auto-calculates (unit price × ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit}).` : `الإجمالي يُحسب تلقائياً (سعر الوحدة × ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit}).`)
+                                        ? (locale === 'en' ? `Total auto-calculates (unit price × ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}).` : `الإجمالي يُحسب تلقائياً (سعر الوحدة × ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit}).`)
                                         : (locale === 'en' ? 'Custom unit — enter the material total above manually.' : 'وحدة خاصة — أدخل إجمالي المادة بالأعلى يدوياً.')}
                                     </p>
                                   </div>
