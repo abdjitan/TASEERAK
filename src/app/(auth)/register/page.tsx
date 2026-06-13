@@ -160,7 +160,7 @@ export default function RegisterPage() {
   const [crChecking, setCrChecking] = useState(false)
   // Two-factor verification: the owner/authorized national ID is matched against
   // the CR's owners (Wathq), and an ID document is uploaded as proof.
-  const [nationalId, setNationalId] = useState('')
+  // (أُزيل جمع رقم الهوية — التوثيق عبر واثق + مراجعة الإدارة)
   const [idFile, setIdFile] = useState<File | null>(null)
   // Report a fake/fraudulent account registered with my CR
   const [objOpen, setObjOpen] = useState(false)
@@ -266,15 +266,13 @@ export default function RegisterPage() {
 
   async function verifyCR() {
     const cr = (watch('commercial_registration') || '').toString()
-    const nid = nationalId.trim()
     if (!/^[0-9]{10}$/.test(cr)) { setCrVerify({ ok: false, message: cv.invalid }); return }
-    if (!/^[12][0-9]{9}$/.test(nid)) { setCrVerify({ ok: false, message: cv.needId }); return }
     setCrChecking(true); setCrVerify(null)
     try {
       const res = await fetch('/api/verify-cr', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cr, nationalId: nid }),
+        body: JSON.stringify({ cr }), // لا نرسل رقم الهوية — PDPL
       })
       const j = await res.json()
       setCrVerify(j)
@@ -361,17 +359,8 @@ export default function RegisterPage() {
         await supabase.from('profiles').update({ license_url: licenseUrl, cr_url: crUrl }).eq('id', userId)
       }
 
-      // Two-factor: the server re-verifies the CR + owner national ID and marks
-      // the account verified ONLY if the ID is a listed owner/manager (trusted).
-      if (crVerify?.verified && /^[12][0-9]{9}$/.test(nationalId)) {
-        try {
-          await fetch('/api/verify-identity', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cr: data.commercial_registration, nationalId }),
-          })
-        } catch {}
-      }
+      // ملاحظة: ألغينا التحقق التلقائي عبر مطابقة رقم الهوية (حفاظاً على الخصوصية).
+      // التوثيق يتم عبر مراجعة الإدارة لصورة السجل التجاري (واثق يؤكّد أن السجل ساري).
 
       if (data.role === 'supplier') {
         try {
@@ -576,22 +565,14 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                {/* Two-factor: CR number + owner national ID, matched against Wathq owners */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.crNumber} *</label>
-                    <input {...register('commercial_registration')} className="input-field" placeholder="7001234567"
-                      inputMode="numeric" maxLength={10} dir="ltr"
-                      onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
-                    {errors.commercial_registration && <p className="text-red-500 text-xs mt-1">{errors.commercial_registration.message}</p>}
-                    <p className="text-[10px] text-gray-400 mt-1">{locale === 'en' ? 'Unified CR number (starts with 700) — on your CR certificate' : locale === 'ur' ? 'متحدہ رجسٹریشن نمبر (700 سے شروع) — آپ کے سرٹیفکیٹ پر' : 'الرقم الموحّد للسجل (يبدأ بـ 700) — تجده في شهادة السجل التجاري'}</p>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">{cv.idLabel} *</label>
-                    <input value={nationalId} onChange={e => { setNationalId(e.target.value.replace(/[^0-9]/g, '').slice(0, 10)); if (crVerify) setCrVerify(null) }}
-                      className="input-field" placeholder="1XXXXXXXXX" inputMode="numeric" maxLength={10} dir="ltr" />
-                    <p className="text-[10px] text-gray-400 mt-1">{cv.idHint}</p>
-                  </div>
+                {/* التحقق عبر السجل التجاري (واثق) فقط — لا نجمع رقم الهوية حفاظاً على الخصوصية (PDPL) */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.crNumber} *</label>
+                  <input {...register('commercial_registration')} className="input-field" placeholder="7001234567"
+                    inputMode="numeric" maxLength={10} dir="ltr"
+                    onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
+                  {errors.commercial_registration && <p className="text-red-500 text-xs mt-1">{errors.commercial_registration.message}</p>}
+                  <p className="text-[10px] text-gray-400 mt-1">{locale === 'en' ? 'Unified CR number (starts with 700) — on your CR certificate. Verified officially via Wathq; no national ID is collected.' : locale === 'ur' ? 'متحدہ رجسٹریشن نمبر (700 سے شروع)۔ واثق کے ذریعے تصدیق؛ قومی شناختی نمبر نہیں لیا جاتا۔' : 'الرقم الموحّد للسجل (يبدأ بـ 700) — تجده في شهادة السجل. يُوثّق رسمياً عبر واثق دون جمع رقم الهوية.'}</p>
                 </div>
 
                 <button type="button" onClick={verifyCR} disabled={crChecking} className="btn-orange w-full">
