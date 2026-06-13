@@ -27,6 +27,11 @@ export default function SupplierRFQPage() {
 
   const [totalPrice, setTotalPrice] = useState('')
   const [unitPrice, setUnitPrice] = useState('')
+  // تسعير بند-بند: لكل مادة بطاقة مستقلة (سعر الوحدة + خصائص + ملاحظة + كتالوج خاص)
+  const [itemForms, setItemForms] = useState<any[]>([])
+  const [openItem, setOpenItem] = useState<number | null>(null) // البطاقة المفتوحة (أكورديون)
+  // المواد التي تخصّ هذا المورد فقط (ضمن قطاعاته/تخصصاته) — هي وحدها التي يسعّرها ويراها
+  const [myItems, setMyItems] = useState<any[]>([])
   const [deliveryDays, setDeliveryDays] = useState('')
   const [notes, setNotes] = useState('')
   const [validity, setValidity] = useState('')
@@ -78,6 +83,25 @@ export default function SupplierRFQPage() {
         .from('rfqs').select('*, contractor:profiles_public(company_name_ar, company_name_en)').eq('id', id).single()
       setRfq(rfqData)
 
+      // ✅ المورد يرى/يسعّر فقط المواد ضمن تخصصه — لا تظهر له مواد قطاع لا يخدمه
+      if (Array.isArray(rfqData?.items) && rfqData.items.length > 0) {
+        const { data: p2 } = await supabase.from('profiles').select('supplier_tier').eq('id', session.user.id).single()
+        const { data: secRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
+        const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
+        const mySectors = (secRows || []).map(r => r.sector)
+        const mySpecialties = (specRows || []).map(r => r.specialty)
+        const myTier = p2?.supplier_tier || 'local'
+        const filtered = rfqData.items.filter((it: any) => {
+          if (mySectors.length > 0 && !mySectors.includes(it.sector)) return false
+          if (mySpecialties.length > 0 && it.sub_category && !mySpecialties.includes(it.sub_category)) return false
+          if (Array.isArray(it.supplier_tiers) && it.supplier_tiers.length > 0 && !it.supplier_tiers.includes(myTier)) return false
+          return true
+        })
+        setMyItems(filtered)
+        setItemForms(filtered.map(() => ({ unit_price: '', line_total: '', saved: false, attrs: [{ key: '', value: '' }], notes: '', file: null })))
+        if (filtered.length > 0) setOpenItem(0)
+      }
+
       // auto-calc unit price from quantity
       const { data: offerData } = await supabase
         .from('offers').select('*').eq('rfq_id', id).eq('supplier_id', session.user.id).single()
@@ -95,6 +119,71 @@ export default function SupplierRFQPage() {
       setUnitPrice((parseFloat(val) / rfq.quantity).toFixed(2))
     }
   }
+
+  // تسعير بند-بند: لكل مادة سعر وحدة + خصائص + ملاحظة + كتالوج خاص
+  // المورد يسعّر فقط myItems (مواد تخصصه) — لا كل مواد الطلب
+  const rfqIsMulti = Array.isArray(rfq?.items) && rfq.items.length > 0
+  const isMultiItem = rfqIsMulti
+  // الإجمالي = مجموع سعر كل مادة (line_total) — المورد حر يدخله مباشرة أو يحسبه من سعر الوحدة
+  function recomputeGoods(forms) {
+    const sum = (myItems || []).reduce((s, it, idx) => s + (parseFloat(forms[idx]?.line_total) || 0), 0)
+    setTotalPrice(sum ? String(+sum.toFixed(2)) : '')
+  }
+  // أي تعديل على السعر يلغي حالة "محفوظ" حتى يحفظ المورد من جديد
+  function setItemUnit(i, val) {
+    setItemForms(prev => {
+      const next = prev.map((f, idx) => {
+        if (idx !== i) return f
+        const q = myItems[i]?.quantity || 0
+        const lt = val === '' ? '' : (q > 0 ? String(+((parseFloat(val) || 0) * q).toFixed(2)) : f.line_total)
+        return { ...f, unit_price: val, line_total: lt, saved: false }
+      })
+      recomputeGoods(next)
+      return next
+    })
+  }
+  function setItemTotal(i, val) {
+    setItemForms(prev => {
+      const next = prev.map((f, idx) => {
+        if (idx !== i) return f
+        const q = myItems[i]?.quantity || 0
+        const up = val === '' ? '' : (q > 0 ? String(+((parseFloat(val) || 0) / q).toFixed(4)) : f.unit_price)
+        return { ...f, line_total: val, unit_price: up, saved: false }
+      })
+      recomputeGoods(next)
+      return next
+    })
+  }
+  function setItemField(i, field, val) {
+    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, [field]: val } : f))
+  }
+  // حفظ المادة: لازم سعر، ثم يُقفل البطاقة وينتقل للمادة التالية غير المحفوظة
+  function saveItem(i) {
+    const f = itemForms[i] || {}
+    if (!(parseFloat(f.line_total) > 0)) { setError(`أدخل سعر «${myItems[i]?.product_name}» قبل الحفظ`); return }
+    setError('')
+    setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, saved: true } : x))
+    const nextIdx = myItems.findIndex((_, idx) => idx !== i && !(itemForms[idx]?.saved) && idx > i)
+    setOpenItem(nextIdx >= 0 ? nextIdx : null)
+  }
+  function addItemAttr(i) {
+    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: [...(f.attrs || []), { key: '', value: '' }] } : f))
+  }
+  function updateItemAttr(i, ai, field, val) {
+    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: f.attrs.map((a, aj) => aj === ai ? { ...a, [field]: val } : a) } : f))
+  }
+  function removeItemAttr(i, ai) {
+    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: f.attrs.filter((_, aj) => aj !== ai) } : f))
+  }
+  async function setItemFile(i, f) {
+    if (!f) { setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: null } : x)); return }
+    const v = await validateUploadFile(f)
+    if (!v.ok) { setError(v.error); return }
+    setError('')
+    setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: f } : x))
+  }
+  // لإتاحة الإرسال: كل مادة لها سعر ومحفوظة
+  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.every((_, i) => itemForms[i]?.saved && parseFloat(itemForms[i]?.line_total) > 0)) : true
 
   function addAttribute() {
     setAttributes(prev => [...prev, { key: '', value: '' }])
@@ -115,6 +204,10 @@ export default function SupplierRFQPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!user) return
+    if (isMultiItem && !allItemsPriced) {
+      setError('فيه مواد لسا ما حفظتها — افتح كل مادة، أدخل سعرها، واضغط «حفظ».')
+      return
+    }
     setSubmitting(true)
     setError('')
 
@@ -149,11 +242,49 @@ export default function SupplierRFQPage() {
     const goods = parseFloat(totalPrice) || 0
     const finalTotal = goods + validExtras.reduce((s, e) => s + e.amount, 0)
 
+    // تسعير بند-بند: لكل مادة سعرها + خصائصها + كتالوجها الخاص
+    let itemPricesPayload = null
+    if (isMultiItem) {
+      itemPricesPayload = []
+      for (let i = 0; i < myItems.length; i++) {
+        const it = myItems[i]
+        const form = itemForms[i] || {}
+        // رفع كتالوج هذه المادة (إن وُجد) — فحص أمني على الخادم
+        let upUrl = null, upName = null
+        if (form.file) {
+          const safe = await validateUploadFile(form.file)
+          if (!safe.ok) { setError(`كتالوج «${it.product_name}»: ${safe.error}`); setSubmitting(false); return }
+          const ifd = new FormData(); ifd.append('file', form.file)
+          const ires = await fetch('/api/upload-attachment', { method: 'POST', body: ifd })
+          const ij = await ires.json().catch(() => ({}))
+          if (!ires.ok || !ij.ok) {
+            setError(`تعذّر رفع كتالوج «${it.product_name}» — أزله أو حاول مجدداً.`)
+            setSubmitting(false); return
+          }
+          upUrl = ij.url; upName = ij.name
+        }
+        const itemAttrs = (form.attrs || [])
+          .filter(a => a.key && a.value)
+          .reduce((acc, a) => { acc[a.key] = a.value; return acc }, {})
+        const up = parseFloat(form.unit_price) || 0
+        const lineTotal = parseFloat(form.line_total) || (up * (it.quantity || 0))
+        itemPricesPayload.push({
+          product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
+          unit: it.unit, quantity: it.quantity,
+          unit_price: up || null, total: +lineTotal.toFixed(2),
+          attributes: Object.keys(itemAttrs).length ? itemAttrs : null,
+          notes: form.notes || null,
+          attachment_url: upUrl, attachment_name: upName,
+        })
+      }
+    }
+
     const { error: insertError } = await supabase.from('offers').insert({
       rfq_id: id,
       supplier_id: user.id,
       total_price: finalTotal,
-      unit_price: unitPrice ? parseFloat(unitPrice) : null,
+      item_prices: itemPricesPayload,
+      unit_price: isMultiItem ? null : (unitPrice ? parseFloat(unitPrice) : null),
       delivery_days: deliveryDays ? parseInt(deliveryDays) : null,
       notes: notes || null,
       attributes: validAttrs.length > 0 ? attrObj : null,
@@ -275,21 +406,69 @@ export default function SupplierRFQPage() {
       <div className="max-w-3xl mx-auto">
         {/* RFQ Details */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 mb-5">
-          <h2 className="text-lg font-bold mb-4" style={{ color: '#1B2D5B' }}>{rfq.product_name}</h2>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏗 {T.sector}</span><br/><strong>{sectors[rfq.sector] || rfq.sector}</strong></div>
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>
+          {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المقاول للطلب */}
+          <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>
+            {rfqIsMulti ? (locale === 'en' ? 'Price request' : locale === 'ur' ? 'قیمت کی درخواست' : 'طلب تسعير مواد') : rfq.product_name}
+          </h2>
+
+          {rfqIsMulti && myItems.length > 0 && (
+            <div className="my-4">
+              <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 المواد ضمن تخصصك ({myItems.length})</h3>
+              <p className="text-[11px] text-gray-400 mb-2">تظهر لك فقط المواد التي تقدر توردها — سعّرها وأرسل عرضك.</p>
+              <div className="overflow-x-auto rounded-xl border border-gray-100">
+                <table className="w-full text-sm">
+                  <thead><tr className="text-xs text-gray-400 bg-[#f4f6f9] border-b border-gray-100">
+                    <th className="text-start py-2 px-3 font-bold">#</th>
+                    <th className="text-start py-2 px-3 font-bold">المادة</th>
+                    <th className="text-start py-2 px-3 font-bold">الكمية</th>
+                    <th className="text-start py-2 px-3 font-bold">المواصفات</th>
+                  </tr></thead>
+                  <tbody>
+                    {myItems.map((it: any, i: number) => (
+                      <tr key={i} className="border-b border-gray-50 align-top">
+                        <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
+                        <td className="py-2.5 px-3">
+                          <div className="font-semibold text-[#1B2D5B]">{it.product_name}</div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
+                            {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
+                            {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}ي</span>}
+                            {it.spec_file_url && <a href={it.spec_file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 font-bold text-[#d96f15] whitespace-nowrap">{it.quantity} {it.unit}</td>
+                        <td className="py-2.5 px-3 text-xs text-gray-500">{it.specification || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 text-sm mt-4">
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => sectors[s] || s).join(' + ') : (sectors[rfq.sector] || rfq.sector)}</strong></div>
+            {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📍 {T.location}</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
             <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
               <span className="text-gray-400 text-xs">🚚 {T.delivery}</span><br/>
-              {rfq.delivery_required
-                ? <strong className="text-amber-800">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
-                : <strong className="text-gray-500">{T.notRequired}</strong>}
+              {rfq.delivery_required ? (
+                <div className="flex items-center justify-between gap-2 flex-wrap mt-0.5">
+                  <strong className="text-amber-800">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
+                  {(rfq.delivery_geo || rfq.delivery_location) && (
+                    <a href={rfq.delivery_geo ? `https://www.google.com/maps?q=${rfq.delivery_geo}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rfq.delivery_location)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="text-xs font-bold text-white rounded-lg px-3 py-1.5 hover:opacity-90 whitespace-nowrap shrink-0" style={{ background: '#1B2D5B' }}>
+                      📍 {locale === 'en' ? 'Open in Maps' : 'افتح في الخرائط'}
+                    </a>
+                  )}
+                </div>
+              ) : <strong className="text-gray-500">{T.notRequired}</strong>}
             </div>
             {!rfq.hide_identity && rfq.contractor && (
               <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏢 {T.contractor}</span><br/><strong>{rfq.contractor.company_name_ar}</strong></div>
             )}
-            {rfq.specification && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
+            {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
             {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">📝 {T.notes}</span><br/>{cleanNotes}</div>}
           </div>
 
@@ -364,24 +543,179 @@ export default function SupplierRFQPage() {
             {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>}
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Goods Price (SAR)' : locale === 'ur' ? 'سامان کی قیمت (ریال)' : 'سعر البضاعة (ر.س)'} *</label>
-                <input type="number" value={totalPrice} onChange={e => handleTotalChange(e.target.value)}
-                  className="input-field" placeholder="0.00" required min="0" step="any" />
-              </div>
+              {isMultiItem && myItems.length === 0 ? (
+                <div className="text-center py-6">
+                  <div className="text-4xl mb-2">🚫</div>
+                  <p className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'No materials match your specialties' : 'لا توجد مواد ضمن تخصصك في هذا الطلب'}</p>
+                  <p className="text-xs text-gray-400 mt-1">{locale === 'en' ? 'This request has no items in your sectors.' : 'مواد هذا الطلب خارج قطاعاتك — لا يلزمك تسعيرها.'}</p>
+                </div>
+              ) : isMultiItem ? (
+                <div>
+                  <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                    {locale === 'en' ? 'Price each material' : locale === 'ur' ? 'ہر مواد کی قیمت' : 'سعّر كل مادة على حدة'} *
+                  </label>
+                  <p className="text-xs text-gray-400 mb-3">
+                    {locale === 'en' ? 'Tap a material to enter its unit price, specs and its own catalog.' : 'اضغط على كل مادة لإدخال سعرها وخصائصها وكتالوجها الخاص.'}
+                  </p>
+                  <div className="space-y-2">
+                    {myItems.map((it, i) => {
+                      const form = itemForms[i] || {}
+                      const line = parseFloat(form.line_total) || 0
+                      const isOpen = openItem === i
+                      const done = !!form.saved && line > 0
+                      return (
+                        <div key={i} className={`border rounded-xl overflow-hidden transition-all ${isOpen ? 'border-[#F5831F]/60 shadow-sm' : 'border-gray-200'}`}>
+                          {/* رأس البطاقة — اضغط للفتح/الإغلاق */}
+                          <button type="button" onClick={() => setOpenItem(isOpen ? null : i)}
+                            className="w-full flex items-center justify-between gap-2 p-3 text-right">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold ${done ? 'bg-[#0F6E56] text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                {done ? '✓' : i + 1}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{it.product_name}</div>
+                                <div className="text-[11px] text-gray-400">
+                                  {it.sub_category ? it.sub_category + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {it.unit}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {line > 0 && (
+                                <span className="text-sm font-extrabold whitespace-nowrap" style={{ color: done ? '#0F6E56' : '#d96f15' }}>
+                                  {(+line.toFixed(2)).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}{!done && <span className="text-[10px] font-normal"> · {locale === 'en' ? 'unsaved' : 'غير محفوظ'}</span>}
+                                </span>
+                              )}
+                              <span className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
+                            </div>
+                          </button>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.unitPrice}</label>
-                  <input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
-                    className="input-field bg-gray-50" placeholder="تلقائي" min="0" step="any" />
+                          {/* تفاصيل التسعير — تنزل عند الفتح */}
+                          {isOpen && (
+                            <div className="px-3 pb-3 pt-1 space-y-3 border-t border-gray-100">
+                              {/* مواصفات المقاول المطلوبة (للتذكير) */}
+                              {it.specification && (
+                                <div className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-2">
+                                  <span className="font-bold">مواصفات المقاول: </span>{it.specification}
+                                </div>
+                              )}
+
+                              {/* السعر — المورد حر: يدخل سعر الوحدة أو إجمالي المادة مباشرة */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  💰 {locale === 'en' ? 'Your price for this material' : 'سعرك لهذه المادة'} *
+                                </label>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <input type="number" value={form.unit_price || ''} onChange={e => setItemUnit(i, e.target.value)}
+                                      className="input-field text-sm" placeholder={(locale === 'en' ? 'Unit / ' : 'سعر الوحدة / ') + it.unit} min="0" step="any" />
+                                    <div className="text-[10px] text-gray-400 mt-1 text-center">{locale === 'en' ? `per ${it.unit}` : `لكل ${it.unit}`}</div>
+                                  </div>
+                                  <div>
+                                    <input type="number" value={form.line_total || ''} onChange={e => setItemTotal(i, e.target.value)}
+                                      className="input-field text-sm font-bold" placeholder={locale === 'en' ? 'Total (SAR)' : 'الإجمالي (ر.س)'} min="0" step="any" />
+                                    <div className="text-[10px] text-gray-400 mt-1 text-center">{locale === 'en' ? 'material total' : 'إجمالي المادة'}</div>
+                                  </div>
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-1.5">
+                                  {locale === 'en' ? 'Fill either field — the other is auto-calculated, and you can override it. Price as you wish.' : 'عبّئ أي خانة — الثانية تُحسب تلقائياً وتقدر تعدّلها. سعّر بالطريقة اللي تناسبك.'}
+                                </p>
+                              </div>
+
+                              {/* خصائص هذه المادة (نوع/منشأ/علامة...) */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  🏷 {locale === 'en' ? 'Material specs (type / origin / brand…)' : 'خصائص المادة (النوع / المنشأ / العلامة…)'}
+                                </label>
+                                <div className="space-y-2">
+                                  {(form.attrs || []).map((attr, ai) => (
+                                    <div key={ai} className="flex gap-2">
+                                      <input value={attr.key} onChange={e => updateItemAttr(i, ai, 'key', e.target.value)}
+                                        className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Property' : 'الخاصية'} />
+                                      <input value={attr.value} onChange={e => updateItemAttr(i, ai, 'value', e.target.value)}
+                                        className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Value' : 'القيمة'} />
+                                      {(form.attrs || []).length > 1 && (
+                                        <button type="button" onClick={() => removeItemAttr(i, ai)}
+                                          className="px-3 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">×</button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                                <button type="button" onClick={() => addItemAttr(i)} className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
+                                  + {locale === 'en' ? 'Add property' : 'إضافة خاصية'}
+                                </button>
+                              </div>
+
+                              {/* ملاحظة لهذه المادة */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  📝 {locale === 'en' ? 'Note for this material' : 'ملاحظة لهذه المادة'}
+                                </label>
+                                <textarea value={form.notes || ''} onChange={e => setItemField(i, 'notes', e.target.value)}
+                                  rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Optional…' : 'اختياري…'} />
+                              </div>
+
+                              {/* كتالوج خاص لهذه المادة */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  📎 {locale === 'en' ? 'Catalog for this material' : 'كتالوج خاص بهذه المادة'}
+                                </label>
+                                {form.file ? (
+                                  <div className="flex items-center gap-3 bg-[#1B2D5B]/5 rounded-xl p-2.5 border border-[#1B2D5B]/20">
+                                    <span className="text-xl">📄</span>
+                                    <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#1B2D5B' }}>{form.file.name}</span>
+                                    <button type="button" onClick={() => setItemFile(i, null)} className="text-xs text-red-500 hover:underline">{locale === 'en' ? 'Remove' : 'إزالة'}</button>
+                                  </div>
+                                ) : (
+                                  <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-3 cursor-pointer hover:border-[#F5831F]/50 transition-all">
+                                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
+                                      onChange={e => setItemFile(i, e.target.files?.[0] ?? null)} />
+                                    <span className="text-xl">📤</span>
+                                    <span className="text-xs text-gray-500">{locale === 'en' ? 'Attach catalog / datasheet' : 'إرفاق كتالوج / بيانات المنتج'}</span>
+                                  </label>
+                                )}
+                              </div>
+
+                              {/* زر حفظ المادة — يقفل البطاقة وينتقل للتالية */}
+                              <button type="button" onClick={() => saveItem(i)}
+                                className="w-full py-2.5 rounded-xl font-bold text-white text-sm transition-all hover:shadow disabled:opacity-40"
+                                disabled={!(parseFloat(form.line_total) > 0)}
+                                style={{ background: '#0F6E56' }}>
+                                ✓ {locale === 'en' ? 'Save material' : 'حفظ المادة'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
+                    <input type="number" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)}
+                      className="input-field" placeholder="3" min="0" />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
-                  <input type="number" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)}
-                    className="input-field" placeholder="3" min="0" />
-                </div>
-              </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Goods Price (SAR)' : locale === 'ur' ? 'سامان کی قیمت (ریال)' : 'سعر البضاعة (ر.س)'} *</label>
+                    <input type="number" value={totalPrice} onChange={e => handleTotalChange(e.target.value)}
+                      className="input-field" placeholder="0.00" required min="0" step="any" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.unitPrice}</label>
+                      <input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
+                        className="input-field bg-gray-50" placeholder="تلقائي" min="0" step="any" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
+                      <input type="number" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)}
+                        className="input-field" placeholder="3" min="0" />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* إضافات الفاتورة (توصيل/تركيب/رسوم) */}
               <div className="border-t border-gray-100 pt-4">
@@ -429,7 +763,8 @@ export default function SupplierRFQPage() {
                 )
               })()}
 
-              {/* خصائص المنتج */}
+              {/* خصائص المنتج — للطلب أحادي المادة فقط (متعدد المواد: الخصائص لكل مادة بداخل بطاقتها) */}
+              {!isMultiItem && (
               <div className="border-t border-gray-100 pt-4">
                 <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>{T.attributes}</label>
                 <p className="text-xs text-gray-400 mb-3">{T.attrHint}</p>
@@ -450,8 +785,10 @@ export default function SupplierRFQPage() {
                 <button type="button" onClick={addAttribute}
                   className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>{T.addAttr}</button>
               </div>
+              )}
 
-              {/* إرفاق ملف (كتالوج) */}
+              {/* إرفاق ملف (كتالوج) — للطلب أحادي المادة فقط (متعدد المواد: كتالوج لكل مادة) */}
+              {!isMultiItem && (
               <div className="border-t border-gray-100 pt-4">
                 <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>📎 {T.attachTitle}</label>
                 <p className="text-xs text-gray-400 mb-3">{T.attachHint}</p>
@@ -477,6 +814,7 @@ export default function SupplierRFQPage() {
                   </label>
                 )}
               </div>
+              )}
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.offerNotes}</label>
@@ -486,7 +824,7 @@ export default function SupplierRFQPage() {
             </div>
 
             <div className="mt-5 space-y-3">
-              <button type="submit" disabled={submitting || !totalPrice}
+              <button type="submit" disabled={submitting || !totalPrice || (isMultiItem && !allItemsPriced)}
                 className="w-full py-3.5 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg"
                 style={{ background: '#0F6E56' }}>
                 {submitting ? T.sending : T.send}

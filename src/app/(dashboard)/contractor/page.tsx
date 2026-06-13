@@ -315,7 +315,7 @@ export default function ContractorDashboard() {
                   if (filter === 'pending' && !(rfq.status === 'open' && (rfq.offer_count || 0) === 0)) return false
                   if (filter === 'closed' && rfq.status !== 'closed') return false
                   if (sectorFilter !== 'all' && rfq.sector !== sectorFilter) return false
-                  if (search && !rfq.product_name?.toLowerCase().includes(search.toLowerCase())) return false
+                  if (search && !`${rfq.title || ''} ${rfq.product_name || ''}`.toLowerCase().includes(search.toLowerCase())) return false
                   return true
                 })
                 if (filtered.length === 0) return (
@@ -348,7 +348,8 @@ export default function ContractorDashboard() {
                          rfq.status === 'open' ? '📋' : rfq.status === 'closed' ? '✅' : '⏰'}
                       </div>
                       <div>
-                        <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfq.product_name}</div>
+                        <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfq.title || rfq.product_name}</div>
+                        {rfq.title && <div className="text-xs text-gray-400 truncate max-w-[260px]">{rfq.product_name}</div>}
                         <div className="flex items-center gap-2 mt-1">
                           <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                           <span className={`badge text-[10px] ${
@@ -363,7 +364,7 @@ export default function ContractorDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
-                    <span>📦 {rfq.quantity} {rfq.unit}</span>
+                    <span>📦 {Array.isArray(rfq.items) && rfq.items.length > 1 ? `${rfq.items.length} ${locale === 'en' ? 'items' : 'أصناف'}` : `${rfq.quantity} ${rfq.unit}`}</span>
                     <span>📍 {rfq.region}</span>
                     {rfq.specification && <span>⚙️ {rfq.specification}</span>}
                     <span className="mr-auto" style={{ color: '#F5831F' }}>{t.viewDetails}</span>
