@@ -216,6 +216,12 @@ export default function NewRFQPage() {
     setItems(prev => [...prev, it])
     resetDraft() // نُبقي القطاع لتسهيل إضافة مادة أخرى من نفسه
   }
+  // الانتقال للخطوة 2 مع تثبيت المسودّة الحالية (مثلاً مادة قيد التعديل) حتى لا تُفقد
+  function goToStep2() {
+    const draft = buildDraftItem()
+    if (draft) { setItems(prev => [...prev, draft]); resetDraft() }
+    if (draft || items.length > 0) setStep(2)
+  }
   function editItem(i: number) {
     const it = items[i]
     if (!it) return
@@ -283,7 +289,7 @@ export default function NewRFQPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     // على الخطوة 1: التالي بدل الإرسال (يمنع إرسال مبكر بالضغط على Enter)
-    if (step === 1) { if (items.length > 0 || buildDraftItem()) setStep(2); return }
+    if (step === 1) { goToStep2(); return }
     if (!user) return
     // المواد النهائية = القائمة + المسودّة الحالية (لو معبّأة) — يسمح بطلب مادة واحدة بدون "إضافة"
     const draft = buildDraftItem()
@@ -816,12 +822,12 @@ export default function NewRFQPage() {
                 )}
               </div>
 
-              <button type="button" onClick={() => { if (items.length > 0) setStep(2) }} disabled={items.length === 0}
+              <button type="button" onClick={goToStep2} disabled={items.length === 0 && !buildDraftItem()}
                 className="w-full py-3.5 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg active:scale-[0.98]"
                 style={{ background: '#F5831F' }}>
                 {locale === 'en' ? 'Next: request details →' : 'التالي: تفاصيل الطلب ←'}
               </button>
-              {items.length === 0 && <p className="text-[11px] text-gray-400 text-center">{locale === 'en' ? 'Add at least one material to continue.' : 'أضف مادة واحدة على الأقل للمتابعة.'}</p>}
+              {items.length === 0 && !buildDraftItem() && <p className="text-[11px] text-gray-400 text-center">{locale === 'en' ? 'Add at least one material to continue.' : 'أضف مادة واحدة على الأقل للمتابعة.'}</p>}
               </>)}
 
               {step === 2 && (<>

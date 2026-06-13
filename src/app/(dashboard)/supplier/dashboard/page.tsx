@@ -157,16 +157,30 @@ export default function SupplierDashboard() {
   useEffect(() => { load() }, [])
 
   // إشعار فوري: لمّا ينزل طلب تسعير جديد والمورد فاتح الصفحة، يوصله تنبيه ويتحدّث
+  // إشعار حيّ موثوق: نستمع لإشعارات هذا المورد نفسه (مفلترة بـ user_id) — الترايجر
+  // في قاعدة البيانات يفتح إشعاراً لكل مورد مطابق عند وصول طلب جديد.
   useEffect(() => {
     const supabase = createClient()
-    const ch = supabase
-      .channel('supplier-new-rfqs')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rfqs' }, () => {
-        toast.success(locale === 'en' ? '🔔 New RFQ received' : '🔔 وصلك طلب تسعير جديد', { duration: 6000 })
-        load()
-      })
-      .subscribe()
-    return () => { supabase.removeChannel(ch) }
+    let ch: any
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      ch = supabase
+        .channel(`sup-noti-${session.user.id}`)
+        .on('postgres_changes', {
+          event: 'INSERT', schema: 'public', table: 'notifications',
+          filter: `user_id=eq.${session.user.id}`,
+        }, (payload: any) => {
+          const n = payload.new
+          if (n?.type === 'new_rfq') {
+            toast.success(n.title || (locale === 'en' ? '🔔 New RFQ received' : '🔔 وصلك طلب تسعير جديد'), {
+              description: n.body || undefined, duration: 7000,
+            })
+            load()
+          }
+        })
+        .subscribe()
+    })
+    return () => { if (ch) supabase.removeChannel(ch) }
   }, [])
 
   async function handleSignOut() {
