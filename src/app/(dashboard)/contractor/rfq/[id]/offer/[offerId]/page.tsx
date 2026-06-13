@@ -154,7 +154,13 @@ export default function OfferDetailPage() {
           <Row label="العنوان الوطني" value={s.national_short_address} />
           <Row label="الجوال" value={s.phone} />
           <div className="flex gap-2 mt-3 flex-wrap">
-            {wa && <a href={wa} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#25D366' }}>💬 تواصل واتساب</a>}
+            <button type="button" onClick={async () => {
+              const supabase = createClient()
+              const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: offer.supplier_id })
+              if (error || !data) { alert('تعذّر فتح المحادثة'); return }
+              window.location.href = `/messages?c=${data}`
+            }} className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#1B2D5B' }}>💬 رسالة داخلية</button>
+            {wa && <a href={wa} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#25D366' }}>تواصل واتساب</a>}
             {mapsUrl && <a href={mapsUrl} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600">🗺 موقع المورد</a>}
           </div>
         </div>

@@ -423,10 +423,18 @@ export default function SupplierRFQPage() {
         <div className={`min-w-0 ${showPanel ? 'lg:col-span-2' : ''}`}>
         {/* RFQ Details */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 mb-5">
-          {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المقاول للطلب */}
-          <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>
-            {rfqIsMulti ? (locale === 'en' ? 'Price request' : locale === 'ur' ? 'قیمت کی درخواست' : 'طلب تسعير مواد') : rfq.product_name}
-          </h2>
+          <div className="flex items-start justify-between gap-2">
+            {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المقاول للطلب */}
+            <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>
+              {rfqIsMulti ? (locale === 'en' ? 'Price request' : locale === 'ur' ? 'قیمت کی درخواست' : 'طلب تسعير مواد') : rfq.product_name}
+            </h2>
+            <button type="button" onClick={async () => {
+              const supabase = createClient()
+              const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: user?.id })
+              if (error || !data) { setError('تعذّر فتح المحادثة'); return }
+              window.location.href = `/messages?c=${data}`
+            }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#1B2D5B' }}>💬 {locale === 'en' ? 'Message contractor' : 'راسل المقاول'}</button>
+          </div>
 
           {rfqIsMulti && myItems.length > 0 && (
             <div className="my-4">
