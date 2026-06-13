@@ -7,6 +7,7 @@ import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
+import CatIcon from '@/components/shared/CatIcon'
 import { getNav } from '@/lib/nav'
 import { useTranslation } from '@/i18n'
 
@@ -509,7 +510,7 @@ export default function NewRFQPage() {
                             <button type="button" onClick={() => { setGroup(open ? '' : g.group) }}
                               className={`w-full flex items-center justify-between gap-2 p-3 text-start transition-colors ${open ? 'bg-[#F5831F]/5' : 'hover:bg-gray-50'}`}>
                               <span className="flex items-center gap-2.5 min-w-0">
-                                <span className="w-9 h-9 rounded-xl grid place-items-center text-lg shrink-0" style={{ background: open ? '#F5831F22' : '#f4f6f9' }}>{g.icon}</span>
+                                <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ background: open ? '#F5831F22' : '#eef1f6', color: open ? '#F5831F' : '#1B2D5B' }}><CatIcon k={g.group} className="w-[18px] h-[18px]" /></span>
                                 <span className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{groupLabel(g)}</span>
                                 <span className="text-[11px] text-gray-400 shrink-0">({g.items.length})</span>
                               </span>
