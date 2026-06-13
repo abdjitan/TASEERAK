@@ -1,9 +1,10 @@
 // @ts-nocheck
 'use client'
 
-import { useState, ReactNode } from 'react'
+import { useState, useEffect, ReactNode } from 'react'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
+import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 
 export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string }
@@ -27,6 +28,26 @@ export default function AppShell({
 }) {
   const { locale } = useTranslation()
   const [open, setOpen] = useState(false)
+  // عدد الرسائل غير المقروءة — شارة على «الرسائل» في القائمة
+  const [unreadMsgs, setUnreadMsgs] = useState(0)
+  useEffect(() => {
+    const supabase = createClient()
+    let ch: any
+    ;(async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const uid = userId || session?.user?.id
+      if (!uid) return
+      const refresh = async () => {
+        const { count } = await supabase.from('messages').select('id', { count: 'exact', head: true }).is('read_at', null).neq('sender_id', uid)
+        setUnreadMsgs(count || 0)
+      }
+      await refresh()
+      ch = supabase.channel(`appshell-msgs-${uid}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { refresh() })
+        .subscribe()
+    })()
+    return () => { if (ch) supabase.removeChannel(ch) }
+  }, [userId])
   const sideEdge = dir === 'rtl' ? 'right-0' : 'left-0'
   const accentEdge = dir === 'rtl' ? 'right-0' : 'left-0'
   const hidden = dir === 'rtl' ? 'translate-x-full' : '-translate-x-full'
@@ -56,6 +77,7 @@ export default function AppShell({
         <nav className="flex-1 overflow-y-auto px-3 pb-3 space-y-0.5">
           {nav.map((n, i) => {
             const showSection = n.section && n.section !== nav[i - 1]?.section
+            const badge = (n.href === '/messages' && unreadMsgs > 0) ? unreadMsgs : n.badge
             return (
               <div key={n.href}>
                 {showSection && (
@@ -66,9 +88,9 @@ export default function AppShell({
                   {n.active && <span className={`absolute ${accentEdge} top-2.5 bottom-2.5 w-1 rounded-full`} style={{ background: '#F5831F' }} />}
                   <span className="w-6 grid place-items-center text-[18px]">{n.icon}</span>
                   <span className="truncate">{n.label}</span>
-                  {n.badge != null && n.badge !== 0 && (
+                  {badge != null && badge !== 0 && (
                     <span className="ml-auto min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full text-[11px] font-extrabold text-white" style={{ background: '#F5831F' }}>
-                      {n.badge}
+                      {badge}
                     </span>
                   )}
                 </a>
