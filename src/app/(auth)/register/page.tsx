@@ -158,10 +158,8 @@ export default function RegisterPage() {
   const [branchConfirmed, setBranchConfirmed] = useState(false)
   const [phoneDup, setPhoneDup] = useState<any>(null) // { company } if phone already registered
   const [crChecking, setCrChecking] = useState(false)
-  // Two-factor verification: the owner/authorized national ID is matched against
-  // the CR's owners (Wathq), and an ID document is uploaded as proof.
-  // (أُزيل جمع رقم الهوية — التوثيق عبر واثق + مراجعة الإدارة)
-  const [idFile, setIdFile] = useState<File | null>(null)
+  // ملاحظة (PDPL): لا نجمع رقم الهوية ولا صورة الهوية/الإقامة إطلاقاً.
+  // التوثيق يتم عبر واثق (السجل التجاري) + رفع رخصة العمل لاحقاً من الإعدادات.
   // Report a fake/fraudulent account registered with my CR
   const [objOpen, setObjOpen] = useState(false)
   const [objName, setObjName] = useState('')
@@ -350,9 +348,9 @@ export default function RegisterPage() {
         return
       }
 
-      // 3. Email confirmation OFF → we have a session. Finish documents + AI check.
+      // 3. Email confirmation OFF → we have a session. Documents are uploaded
+      //    AFTER registration from Settings → Documents. No national-ID is collected.
       let licenseUrl = null, crUrl = null
-      if (idFile) await uploadFile(idFile, `${userId}/national-id.${idFile.name.split('.').pop()}`)
       if (licenseFile) licenseUrl = await uploadFile(licenseFile, `${userId}/license.${licenseFile.name.split('.').pop()}`)
       if (crFile) crUrl = await uploadFile(crFile, `${userId}/cr.${crFile.name.split('.').pop()}`)
       if (licenseUrl || crUrl) {
@@ -439,10 +437,10 @@ export default function RegisterPage() {
         <div className="max-w-3xl mx-auto px-4 py-6">
           {/* Stepper — step 1 active */}
           <div className="flex items-center justify-center gap-2 py-4 mb-4">
-            {[1, 2, 3, 4].map(s => (
+            {[1, 2, 3].map(s => (
               <div key={s} className="flex items-center gap-2">
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${s === 1 ? 'bg-[#F5831F] text-white ring-4 ring-[#F5831F]/20' : 'bg-white border-2 border-gray-200 text-gray-400'}`}>{s}</div>
-                {s < 4 && <div className="w-10 h-1 rounded-full bg-gray-200" />}
+                {s < 3 && <div className="w-10 h-1 rounded-full bg-gray-200" />}
               </div>
             ))}
           </div>
@@ -511,7 +509,7 @@ export default function RegisterPage() {
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Steps indicator */}
         <div className="flex items-center justify-center gap-2 py-6 mb-2">
-          {[1,2,3,4].map(s => (
+          {[1,2,3].map(s => (
             <div key={s} className="flex items-center gap-2">
               <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                 s < step ? 'bg-[#F5831F] text-white' :
@@ -520,7 +518,7 @@ export default function RegisterPage() {
               }`}>
                 {s < step ? '✓' : s}
               </div>
-              {s < 4 && <div className={`w-10 h-1 rounded-full ${s < step ? 'bg-[#F5831F]' : 'bg-gray-200'}`}/>}
+              {s < 3 && <div className={`w-10 h-1 rounded-full ${s < step ? 'bg-[#F5831F]' : 'bg-gray-200'}`}/>}
             </div>
           ))}
         </div>
@@ -700,45 +698,8 @@ export default function RegisterPage() {
           )}
 
           {/* Step 3: License upload */}
+          {/* Step 3: Sectors + Specialties (documents are uploaded later from Settings) */}
           {step === 3 && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h2 className="text-lg font-bold text-navy mb-1">{t.licenseTitle}</h2>
-              <p className="text-sm text-gray-500 mb-5">{t.licenseSub}</p>
-
-              <div className="space-y-4">
-                {[
-                  { label: `${cv.idDoc} *`, state: idFile, setter: setIdFile, required: true },
-                  { label: `${t.license} *`, state: licenseFile, setter: setLicenseFile, required: true },
-                  { label: t.cr, state: crFile, setter: setCrFile, required: false },
-                ].map(({ label, state, setter }) => (
-                  <label key={label} className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all ${
-                    state ? 'border-green-400 bg-green-50' : 'border-gray-200 hover:border-[#F5831F]/50'
-                  }`}>
-                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={e => setter(e.target.files?.[0] ?? null)}
-                    />
-                    {state ? (
-                      <div className="text-green-600 font-medium">✓ {state.name}</div>
-                    ) : (
-                      <>
-                        <div className="text-2xl mb-1">📄</div>
-                        <div className="font-medium text-gray-700">{label}</div>
-                        <div className="text-xs text-gray-400 mt-1">{t.uploadHint}</div>
-                      </>
-                    )}
-                  </label>
-                ))}
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <button type="button" onClick={() => setStep(2)} className="btn-ghost flex-1">{t.back}</button>
-                <button type="button" onClick={() => setStep(4)} className="btn-primary flex-1">{t.next}</button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Sectors + Specialties */}
-          {step === 4 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-lg font-bold text-navy mb-1">{t.sectorsTitle}</h2>
               <p className="text-sm text-gray-500 mb-5">
@@ -926,7 +887,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="flex gap-3">
-                <button type="button" onClick={() => setStep(3)} className="btn-ghost flex-1">{t.back}</button>
+                <button type="button" onClick={() => setStep(2)} className="btn-ghost flex-1">{t.back}</button>
                 <button
                   type="submit"
                   disabled={isSubmitting || uploading || !agreedToTerms}
