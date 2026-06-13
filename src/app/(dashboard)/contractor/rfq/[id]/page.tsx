@@ -24,6 +24,13 @@ export default function RFQDetailPage() {
   const [editSpec, setEditSpec] = useState('')
   const [marketAvg, setMarketAvg] = useState(null) // متوسط السوق
   const [supplierStats, setSupplierStats] = useState({}) // سجل أداء كل مورد
+  const [awards, setAwards] = useState({}) // ترسية بند-بند: item_index → صف الترسية
+
+  async function reloadAwards() {
+    const supabase = createClient()
+    const { data } = await supabase.from('rfq_item_awards').select('*').eq('rfq_id', id)
+    const am: any = {}; (data || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
+  }
 
   useEffect(() => {
     async function load() {
@@ -40,6 +47,10 @@ export default function RFQDetailPage() {
         .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source)')
         .eq('rfq_id', id).order('total_price', { ascending: true })
       setOffers(offersData || [])
+
+      // ترسية بند-بند (إن وُجدت)
+      const { data: awardRows } = await supabase.from('rfq_item_awards').select('*').eq('rfq_id', id)
+      const am: any = {}; (awardRows || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
 
       // سجل أداء الموردين (سرعة الرد، نسبة الترسية، عدد العروض السابقة)
       const supplierIds = [...new Set((offersData || []).map(o => o.supplier_id).filter(Boolean))]
@@ -83,6 +94,24 @@ export default function RFQDetailPage() {
     window.location.reload()
   }
 
+  // ترسية بند-بند: ترسية مادة على مورد مُحدّد (أرخص أو من اختيار المقاول)
+  const [awarding, setAwarding] = useState(null)
+  async function awardItem(itemIndex, offerId) {
+    setAwarding(`${itemIndex}:${offerId}`)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('award_rfq_item', { p_rfq_id: id, p_item_index: itemIndex, p_offer_id: offerId })
+    setAwarding(null)
+    if (error) { alert('تعذّرت الترسية — حدّث الصفحة وحاول مجدداً.'); return }
+    await reloadAwards()
+  }
+  async function unawardItem(itemIndex) {
+    setAwarding(`${itemIndex}:x`)
+    const supabase = createClient()
+    await supabase.rpc('unaward_rfq_item', { p_rfq_id: id, p_item_index: itemIndex })
+    setAwarding(null)
+    await reloadAwards()
+  }
+
   const [showEditWarning, setShowEditWarning] = useState(false)
 
   function handleEditSave() {
@@ -124,6 +153,9 @@ export default function RFQDetailPage() {
   if (!rfq) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-gray-500">الطلب غير موجود</div></div>
 
   const acceptedOffer = offers.find(o => o.status === 'accepted')
+  // طلب متعدّد المواد → الترسية تتم بند-بند (أفضل مورد لكل مادة)
+  const isMulti = Array.isArray(rfq.items) && rfq.items.length > 1
+  const activeOffers = offers.filter(o => o.status !== 'rejected')
 
   // Filtered + sorted offers for display (contractor may receive many).
   const displayedOffers = [...offers]
@@ -281,7 +313,120 @@ export default function RFQDetailPage() {
           </a>
         )}
 
-        {/* Offers List */}
+        {/* ═══ ترسية بند-بند: أفضل مورد لكل مادة (طلب متعدّد المواد) ═══ */}
+        {isMulti && (
+          <div className="mb-6">
+            <div className="mb-3">
+              <h3 className="text-sm font-bold text-gray-900">🧱 ترسية بند-بند</h3>
+              <p className="text-xs text-gray-400">اختر أفضل مورد لكل مادة — الطلب الواحد يقدر ينقسم على أكثر من مورد.</p>
+            </div>
+            {activeOffers.length === 0 ? (
+              <div className="bg-white rounded-xl p-8 border border-gray-100 text-center">
+                <div className="text-4xl mb-3">⏳</div>
+                <h4 className="font-bold text-gray-900 mb-1">لم تصل عروض بعد</h4>
+                <p className="text-sm text-gray-500">سيتم إخطارك فور وصول أي عرض</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {rfq.items.map((it, idx) => {
+                  const bids = activeOffers.map(o => {
+                    const list = Array.isArray(o.item_prices) ? o.item_prices : []
+                    const entry = list.find(ip => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
+                    return entry ? { offer: o, entry } : null
+                  }).filter(Boolean).sort((a, b) => (Number(a.entry.total) || 0) - (Number(b.entry.total) || 0))
+                  const award = awards[idx]
+                  return (
+                    <div key={idx} className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+                      <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{it.product_name}</span>
+                          <span className="text-xs text-gray-400"> · {Number(it.quantity).toLocaleString('en-US')} {it.unit}</span>
+                        </div>
+                        {award ? <span className="badge badge-green text-[10px] whitespace-nowrap">✓ مُرسى</span> : <span className="text-[11px] text-gray-400 whitespace-nowrap">{bids.length} عرض</span>}
+                      </div>
+                      {bids.length === 0 ? (
+                        <div className="px-4 py-3 text-xs text-gray-400">لا يوجد مورد سعّر هذه المادة بعد</div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {bids.map((b, r) => {
+                            const isAwarded = award && award.offer_id === b.offer.id
+                            return (
+                              <div key={b.offer.id} className={`px-4 py-2.5 flex items-center justify-between gap-2 ${isAwarded ? 'bg-emerald-50' : ''}`}>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    {r === 0 && <span title="الأرخص">🥇</span>}
+                                    <span className="font-semibold text-sm text-gray-800 truncate">{b.offer.supplier?.company_name_ar || 'مورد'}</span>
+                                    {b.offer.supplier?.verification_status === 'verified' && <span title="موثّق" style={{ color: '#0F6E56' }}>{b.offer.supplier?.cr_verification_source === 'wathq' ? '🛡' : '✓'}</span>}
+                                    {b.offer.supplier?.rating_avg > 0 && <span className="text-[10px] text-gray-400">⭐ {b.offer.supplier.rating_avg}</span>}
+                                  </div>
+                                  <div className="text-[11px] text-gray-400">
+                                    {Number(b.entry.unit_price) > 0 ? `${Number(b.entry.unit_price).toLocaleString('en-US')} / ${it.unit}` : ''}{b.offer.delivery_days ? ` · 📦 ${b.offer.delivery_days} يوم` : ''}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{Number(b.entry.total).toLocaleString('en-US')} ر.س</span>
+                                  {isAwarded ? (
+                                    <span className="badge badge-green text-[10px] whitespace-nowrap">مُرسى ✓</span>
+                                  ) : rfq.status === 'open' ? (
+                                    <button onClick={() => awardItem(idx, b.offer.id)} disabled={awarding === `${idx}:${b.offer.id}`}
+                                      className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>
+                                      {awarding === `${idx}:${b.offer.id}` ? '...' : 'ترسية'}
+                                    </button>
+                                  ) : null}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                      {award && rfq.status === 'open' && (
+                        <div className="px-4 py-2 border-t border-gray-100 bg-gray-50/50">
+                          <button onClick={() => unawardItem(idx)} disabled={awarding === `${idx}:x`} className="text-[11px] text-red-500 hover:underline disabled:opacity-50">✕ إلغاء ترسية هذه المادة</button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+
+                {/* ملخص الترسية حسب المورد */}
+                {Object.keys(awards).length > 0 && (() => {
+                  const bySupplier = {}
+                  Object.values(awards).forEach((a: any) => {
+                    if (!bySupplier[a.supplier_id]) {
+                      const off = offers.find(o => o.id === a.offer_id)
+                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: off?.supplier?.phone, total: 0, count: 0 }
+                    }
+                    bySupplier[a.supplier_id].total += Number(a.total) || 0
+                    bySupplier[a.supplier_id].count += 1
+                  })
+                  const list: any[] = Object.values(bySupplier)
+                  const grand = list.reduce((s, v) => s + v.total, 0)
+                  const awardedCount = Object.keys(awards).length
+                  return (
+                    <div className="rounded-xl p-4 text-white mt-2" style={{ background: '#1B2D5B' }}>
+                      <h4 className="font-bold text-sm mb-2">📦 ملخص الترسية ({awardedCount}/{rfq.items.length} مادة · {list.length} مورد)</h4>
+                      {list.map((v, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-white/10">
+                          <span className="flex items-center gap-2">{v.name} <span className="text-blue-200 text-xs">({v.count} مادة)</span>
+                            {v.phone && <a href={waLink(v.phone, `بخصوص ترسية مواد من منصة تسعيرك`)} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}>💬 تواصل</a>}
+                          </span>
+                          <span className="font-bold whitespace-nowrap">{v.total.toLocaleString('en-US')} ر.س</span>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between font-extrabold mt-2 pt-1">
+                        <span>الإجمالي</span><span style={{ color: '#F5831F' }}>{grand.toLocaleString('en-US')} ر.س</span>
+                      </div>
+                      <p className="text-[11px] text-blue-200 mt-2">📄 أوامر الشراء الرسمية لكل مورد قيد التطوير — حالياً تواصل مع كل مورد عبر واتساب.</p>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Offers List — للطلب أحادي المادة فقط (متعدّد المواد يستخدم الترسية بند-بند بالأعلى) */}
+        {!isMulti && (<>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-gray-900">العروض ({offers.length})</h3>
           {marketAvg && (
@@ -515,6 +660,7 @@ export default function RFQDetailPage() {
             ))}
           </div>
         )}
+        </>)}
       </div>
     </AppShell>
   )
