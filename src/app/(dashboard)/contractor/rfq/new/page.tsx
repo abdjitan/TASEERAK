@@ -107,17 +107,10 @@ const sectorMeta: Record<string, { color: string; en: string }> = {
   equipment:     { color: '#6B5B4F', en: 'EQUIP' },
   supply_store:  { color: '#C026D3', en: 'STORE' },
 }
+// أيقونة القطاع — تستخدم أيقونات المصمّم (CatIcon) بلون أبيض على البلاطة الملوّنة.
+// الآليات (equipment) ليس لها أيقونة مصمّم → CatIcon يرجع لأيقونة الشاحنة المضمّنة.
 function SectorGlyph({ s }: { s: string }) {
-  const cls = 'w-5 h-5'
-  const sp: any = { fill: 'none', stroke: '#fff', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
-  switch (s) {
-    case 'electrical': return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M13 2 4.5 13H11l-1 9 8.5-11H12l1-9z" /></svg>
-    case 'mechanical': return <svg viewBox="0 0 24 24" className={cls} {...sp}><circle cx="12" cy="12" r="3.2" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" /></svg>
-    case 'architectural': return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" /></svg>
-    case 'equipment': return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M3 17V8h11v9M14 12h4l2 5M3 17h17" /><circle cx="7" cy="19" r="1.6" /><circle cx="17" cy="19" r="1.6" /></svg>
-    case 'supply_store': return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M4 9 5 4h14l1 5M4 9v11h16V9M4 9h16M9 20v-6h6v6" /></svg>
-    default: return <svg viewBox="0 0 24 24" className={cls} {...sp}><path d="M4 21V6l8-3 8 3v15M9 21v-5h6v5M8 9h.01M12 9h.01M16 9h.01M8 13h.01M12 13h.01M16 13h.01" /></svg>
-  }
+  return <CatIcon k={s} className="w-6 h-6 text-white" />
 }
 
 export default function NewRFQPage() {

@@ -51,7 +51,7 @@ const MAP: Record<string, string> = {
   store_fasteners: 'cog', store_safety: 'shield', store_paint: 'paint',
   // قطاعات
   civil: 'building', architectural: 'layers', electrical: 'zap', mechanical: 'cog',
-  equip: 'truck', supply_store: 'box',
+  equip: 'truck', equipment: 'truck', supply_store: 'box',
 }
 
 export default function CatIcon({ k, className = 'w-5 h-5' }: { k: string; className?: string }) {

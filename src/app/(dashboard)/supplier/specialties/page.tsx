@@ -245,7 +245,9 @@ export default function SpecialtiesPage() {
                   mySectors.includes(s) ? 'border-current' : 'border-gray-200'
                 }`}
                 style={mySectors.includes(s) ? { borderColor: SECTOR_COLORS[s], background: SECTOR_COLORS[s] + '0d' } : {}}>
-                <div className="text-2xl mb-1">{SECTOR_ICONS[s]}</div>
+                <div className="w-11 h-11 mx-auto mb-2 rounded-xl grid place-items-center shadow-sm" style={{ background: SECTOR_COLORS[s] }}>
+                  <CatIcon k={s} className="w-6 h-6 text-white" />
+                </div>
                 <div className="text-sm font-semibold" style={{ color: mySectors.includes(s) ? SECTOR_COLORS[s] : '#374151' }}>
                   {SECTOR_LABELS[s]}
                 </div>
