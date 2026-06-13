@@ -11,6 +11,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, sortGroupKeys } from '@/types'
 import { detectSpecialtiesFromText } from '@/lib/classify'
+import CatIcon from '@/components/shared/CatIcon'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
@@ -290,7 +291,7 @@ export default function SpecialtiesPage() {
                         <div key={groupKey} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
                           {/* عنوان المجموعة */}
                           <div className="flex items-center gap-2 mb-2.5">
-                            <span className="text-base">{grp?.icon}</span>
+                            <span className="w-[18px] h-[18px] grid place-items-center shrink-0" style={{ color: SECTOR_COLORS[sector] }}><CatIcon k={groupKey} className="w-[18px] h-[18px]" /></span>
                             <span className="text-sm font-bold text-gray-700">
                               {grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey}
                             </span>

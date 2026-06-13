@@ -15,6 +15,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import { detectSpecialtiesFromText } from '@/lib/classify'
+import CatIcon from '@/components/shared/CatIcon'
 
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
@@ -158,6 +159,7 @@ export default function RegisterPage() {
   const [crDup, setCrDup] = useState<any>(null) // { company } if CR already registered
   const [branchConfirmed, setBranchConfirmed] = useState(false)
   const [phoneDup, setPhoneDup] = useState<any>(null) // { company } if phone already registered
+  const [emailDup, setEmailDup] = useState<any>(null) // { taken } if email already registered
   const [crChecking, setCrChecking] = useState(false)
   // ملاحظة (PDPL): لا نجمع رقم الهوية ولا صورة الهوية/الإقامة إطلاقاً.
   // التوثيق يتم عبر واثق (السجل التجاري) + رفع رخصة العمل لاحقاً من الإعدادات.
@@ -256,6 +258,20 @@ export default function RegisterPage() {
       const { data } = await supabase.rpc('phone_exists', { p_phone: phone })
       setPhoneDup(data === true ? { taken: true } : null) // boolean only (no name — privacy)
     } catch { setPhoneDup(null) }
+  }
+
+  // Check (pre-auth) whether an email is already registered. Returns the boolean
+  // AND updates state, so the step-1 "next" handler can block synchronously.
+  async function checkEmailDup(email: string): Promise<boolean> {
+    const e = (email || '').trim()
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { setEmailDup(null); return false }
+    try {
+      const supabase = createClient()
+      const { data } = await supabase.rpc('email_exists', { p_email: e })
+      const taken = data === true
+      setEmailDup(taken ? { taken: true } : null)
+      return taken
+    } catch { setEmailDup(null); return false }
   }
 
   // Submit an objection that the account registered with this CR is fake.
@@ -488,8 +504,15 @@ export default function RegisterPage() {
               )}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
-                <input {...register('email')} className="input-field" placeholder="name@company.com" type="email" />
+                <input {...register('email', { onBlur: (e) => checkEmailDup(e.target.value), onChange: () => { if (emailDup) setEmailDup(null) } })}
+                  className="input-field" placeholder="name@company.com" type="email" />
                 {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+                {emailDup && (
+                  <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1">
+                    ⚠ {locale === 'en' ? 'This email is already registered — ' : locale === 'ur' ? 'یہ ای میل پہلے سے رجسٹرڈ ہے — ' : 'هذا الإيميل مسجّل مسبقاً — '}
+                    <a href="/login" className="underline font-bold">{locale === 'en' ? 'sign in instead.' : locale === 'ur' ? 'سائن اِن کریں۔' : 'سجّل الدخول.'}</a>
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
@@ -499,7 +522,7 @@ export default function RegisterPage() {
             </div>
 
             <button type="button"
-              onClick={async () => { const ok = await trigger(['full_name', 'phone', 'email', 'password']); if (!ok || phoneDup) return; setStep(2) }}
+              onClick={async () => { const ok = await trigger(['full_name', 'phone', 'email', 'password']); if (!ok || phoneDup) return; if (await checkEmailDup(watch('email'))) return; setStep(2) }}
               className="btn-orange w-full mt-6">
               {t.next}
             </button>
@@ -793,7 +816,7 @@ export default function RegisterPage() {
                               return (
                                 <div key={groupKey} className="mb-3 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                                   <div className="flex items-center gap-2 mb-2.5">
-                                    <span className="text-base">{grp?.icon}</span>
+                                    <span className="w-[18px] h-[18px] grid place-items-center shrink-0" style={{ color }}><CatIcon k={groupKey} className="w-[18px] h-[18px]" /></span>
                                     <span className="text-sm font-bold text-gray-700">{grpLabel}</span>
                                     {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: color }}>{selInGroup}</span>}
                                   </div>
