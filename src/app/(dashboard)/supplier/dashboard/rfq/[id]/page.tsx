@@ -33,6 +33,8 @@ export default function SupplierRFQPage() {
   const [openItem, setOpenItem] = useState<number | null>(null) // البطاقة المفتوحة (أكورديون)
   // المواد التي تخصّ هذا المورد فقط (ضمن قطاعاته/تخصصاته) — هي وحدها التي يسعّرها ويراها
   const [myItems, setMyItems] = useState<any[]>([])
+  // العروض المنافسة (مجهولة الهوية) — لعرض موقع المورد التنافسي
+  const [ranking, setRanking] = useState<any[]>([])
   const [deliveryDays, setDeliveryDays] = useState('')
   const [notes, setNotes] = useState('')
   const [validity, setValidity] = useState('')
@@ -107,6 +109,10 @@ export default function SupplierRFQPage() {
       const { data: offerData } = await supabase
         .from('offers').select('*').eq('rfq_id', id).eq('supplier_id', session.user.id).single()
       if (offerData) setExistingOffer(offerData)
+
+      // الموقع التنافسي: أسعار العروض الحالية (مجهولة الهوية)
+      const { data: rk } = await supabase.rpc('get_rfq_offer_ranking', { p_rfq_id: id })
+      setRanking(rk || [])
 
       setLoading(false)
     }
@@ -403,7 +409,9 @@ export default function SupplierRFQPage() {
 
   return (
     <AppShell title={locale === 'en' ? 'Submit Offer' : locale === 'ur' ? 'پیشکش' : 'تقديم عرض'} nav={getNav('supplier', locale, '/supplier/dashboard')} dir={dir}>
-      <div className="max-w-3xl mx-auto">
+      {(() => { const showPanel = rfq.status === 'open' && !expired; return (
+      <div className={`max-w-6xl mx-auto grid gap-5 items-start ${showPanel ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
+        <div className={`min-w-0 ${showPanel ? 'lg:col-span-2' : ''}`}>
         {/* RFQ Details */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 mb-5">
           {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المقاول للطلب */}
@@ -838,7 +846,65 @@ export default function SupplierRFQPage() {
             </div>
           </form>
         )}
+        </div>{/* main column */}
+
+        {showPanel && (
+          <aside className="lg:col-span-1 lg:sticky lg:top-20">
+            {(() => {
+              const others = (ranking || []).filter((r: any) => !r.is_mine)
+              const myT = parseFloat(totalPrice) || 0
+              const rank = myT > 0 ? others.filter((o: any) => Number(o.total_price) < myT).length + 1 : null
+              const totalCount = others.length + (myT > 0 ? 1 : 0)
+              const avgOthers = others.length ? others.reduce((s: number, o: any) => s + Number(o.total_price || 0), 0) / others.length : 0
+              const savePct = (myT > 0 && avgOthers > 0 && myT < avgOthers) ? Math.round((avgOthers - myT) / avgOthers * 100) : 0
+              const list = others.map((o: any) => ({ total: Number(o.total_price), mine: false }))
+              if (myT > 0) list.push({ total: myT, mine: true })
+              list.sort((a: any, b: any) => a.total - b.total)
+              const isTop = rank === 1
+              return (
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+                  <h3 className="font-extrabold text-base" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Your competitive position' : locale === 'ur' ? 'آپ کی پوزیشن' : 'موقعك التنافسي'}</h3>
+                  <p className="text-[11px] text-gray-400 mb-4">{locale === 'en' ? 'Live — updates as you change your price' : 'حيّ — يتحدّث مع تغيير سعرك'}</p>
+
+                  <div className="rounded-2xl p-4 text-center mb-4" style={{ background: isTop ? '#ecfdf5' : '#f4f6f9', border: `1px solid ${isTop ? '#a7f3d0' : '#eceff4'}` }}>
+                    <div className="text-[11px] text-gray-400">{locale === 'en' ? 'Projected rank' : 'ترتيبك المتوقع'}</div>
+                    <div className="text-4xl font-black leading-tight" style={{ color: isTop ? '#0F6E56' : '#1B2D5B' }}>{rank ? `#${rank}` : '—'}</div>
+                    <div className="text-[11px] font-semibold" style={{ color: isTop ? '#0F6E56' : '#8089a0' }}>
+                      {rank == null ? (totalCount > 0 ? (locale === 'en' ? `${totalCount} offers so far` : `${totalCount} عروض حتى الآن`) : (locale === 'en' ? 'Be the first to price' : 'كن أول من يسعّر'))
+                        : isTop ? (locale === 'en' ? `Cheapest of ${totalCount}` : `الأوفر بين ${totalCount} عروض`)
+                        : (locale === 'en' ? `Among ${totalCount} offers` : `من بين ${totalCount} عروض`)}
+                    </div>
+                  </div>
+
+                  {savePct > 0 && <div className="text-center text-xs font-bold mb-3" style={{ color: '#0F6E56' }}>📉 {locale === 'en' ? `${savePct}% below average offer` : `أوفر بـ ${savePct}% من متوسط العروض`}</div>}
+
+                  {list.length > 0 && (
+                    <>
+                      <div className="text-[11px] font-bold text-gray-400 mb-2">{locale === 'en' ? 'Current offers (anonymous)' : 'العروض الحالية (مجهولة الهوية)'}</div>
+                      <div className="space-y-1.5">
+                        {list.slice(0, 6).map((r: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between rounded-xl px-3 py-2 text-sm" style={r.mine ? { background: '#F5831F12', border: '1px solid #F5831F55' } : { background: '#f7f8fa' }}>
+                            <span className="flex items-center gap-2">
+                              <span className="w-5 h-5 grid place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: r.mine ? '#0F6E56' : '#c3c9d4' }}>{i + 1}</span>
+                              <span style={r.mine ? { color: '#d96f15', fontWeight: 700 } : { color: '#8089a0' }}>{r.mine ? (locale === 'en' ? 'Your offer' : 'عرضك') : (locale === 'en' ? 'Anonymous' : 'مورد مجهول')}</span>
+                            </span>
+                            <span className="font-bold" style={{ color: '#1B2D5B' }}>{r.total.toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  <div className="mt-4 flex items-start gap-2 text-[11px] text-gray-400 bg-gray-50 rounded-xl p-2.5">
+                    <span>🛈</span><span>{locale === 'en' ? 'Smart matching shows the request to the right suppliers for its size.' : 'التصنيف الذكي يضمن وصول الطلب للموردين المناسبين لحجمه.'}</span>
+                  </div>
+                </div>
+              )
+            })()}
+          </aside>
+        )}
       </div>
+      ); })()}
 
       {/* Dismiss Modal */}
       {showDismiss && (
