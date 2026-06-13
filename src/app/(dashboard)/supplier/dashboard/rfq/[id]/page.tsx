@@ -318,9 +318,18 @@ export default function SupplierRFQPage() {
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📍 {T.location}</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
             <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
               <span className="text-gray-400 text-xs">🚚 {T.delivery}</span><br/>
-              {rfq.delivery_required
-                ? <strong className="text-amber-800">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
-                : <strong className="text-gray-500">{T.notRequired}</strong>}
+              {rfq.delivery_required ? (
+                <div className="flex items-center justify-between gap-2 flex-wrap mt-0.5">
+                  <strong className="text-amber-800">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
+                  {(rfq.delivery_geo || rfq.delivery_location) && (
+                    <a href={rfq.delivery_geo ? `https://www.google.com/maps?q=${rfq.delivery_geo}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rfq.delivery_location)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="text-xs font-bold text-white rounded-lg px-3 py-1.5 hover:opacity-90 whitespace-nowrap shrink-0" style={{ background: '#1B2D5B' }}>
+                      📍 {locale === 'en' ? 'Open in Maps' : 'افتح في الخرائط'}
+                    </a>
+                  )}
+                </div>
+              ) : <strong className="text-gray-500">{T.notRequired}</strong>}
             </div>
             {!rfq.hide_identity && rfq.contractor && (
               <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏢 {T.contractor}</span><br/><strong>{rfq.contractor.company_name_ar}</strong></div>

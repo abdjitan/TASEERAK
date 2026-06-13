@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
@@ -68,8 +69,7 @@ export default function SupplierDashboard() {
   const [hasSpecialties, setHasSpecialties] = useState(true)
   const [hasSectors, setHasSectors] = useState(true)
 
-  useEffect(() => {
-    async function init() {
+  async function load() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
@@ -144,8 +144,21 @@ export default function SupplierDashboard() {
       const { count: lpCount } = await supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', session.user.id)
       setPricesCount(lpCount ?? 0)
       setLoading(false)
-    }
-    init()
+  }
+
+  useEffect(() => { load() }, [])
+
+  // إشعار فوري: لمّا ينزل طلب تسعير جديد والمورد فاتح الصفحة، يوصله تنبيه ويتحدّث
+  useEffect(() => {
+    const supabase = createClient()
+    const ch = supabase
+      .channel('supplier-new-rfqs')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'rfqs' }, () => {
+        toast.success(locale === 'en' ? '🔔 New RFQ received' : '🔔 وصلك طلب تسعير جديد', { duration: 6000 })
+        load()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
   }, [])
 
   async function handleSignOut() {

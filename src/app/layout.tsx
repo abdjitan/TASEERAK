@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Toaster } from 'sonner'
 import { LanguageProvider } from '@/i18n'
 import '@/styles/globals.css'
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <LanguageProvider>
           {children}
         </LanguageProvider>
+        <Toaster richColors position="top-center" toastOptions={{ style: { fontFamily: 'Cairo, sans-serif' } }} />
       </body>
     </html>
   )

@@ -146,6 +146,7 @@ export default function NewRFQPage() {
   const [city, setCity] = useState('')
   const [deliveryRequired, setDeliveryRequired] = useState(true)
   const [deliveryLocation, setDeliveryLocation] = useState('')
+  const [deliveryGeo, setDeliveryGeo] = useState('') // إحداثيات دقيقة "lat,lng" من التحديد الآلي
   const [vatRequired, setVatRequired] = useState(true)
   const [hideIdentity, setHideIdentity] = useState(false)
   const [notes, setNotes] = useState('')
@@ -236,6 +237,7 @@ export default function NewRFQPage() {
       async (pos) => {
         const { latitude, longitude } = pos.coords
         const link = `https://maps.google.com/?q=${latitude},${longitude}`
+        setDeliveryGeo(`${latitude},${longitude}`)
         setGeoMsg(locale === 'en' ? 'Reading city…' : 'جارٍ قراءة المدينة…')
         try {
           const r = await fetch(`/api/reverse-geocode?lat=${latitude}&lng=${longitude}`)
@@ -326,6 +328,7 @@ export default function NewRFQPage() {
       region: isPickupAny ? (region || 'كل المناطق') : region,
       city: isPickupAny ? null : (city || null), delivery_required: deliveryRequired, vat_invoice_required: vatRequired,
       delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
+      delivery_geo: deliveryRequired ? (deliveryGeo || null) : null,
       hide_identity: hideIdentity,
       target_tiers: unionTiers.length > 0 ? unionTiers : null,
       verified_only: verifiedOnly,
