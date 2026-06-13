@@ -133,6 +133,8 @@ export default function OrderDetailPage() {
   const date = new Date(offer.accepted_at || offer.created_at).toLocaleDateString('ar-SA')
   const isContractor = rfq?.contractor_id === myId
   const isSupplier = offer?.supplier_id === myId
+  // المواد المسعّرة بند-بند (طلب متعدّد المواد) — تُعرض كأسطر في أمر الشراء والفاتورة
+  const ip = Array.isArray(offer.item_prices) ? offer.item_prices : []
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 print:bg-white print:p-0" dir="rtl">
@@ -240,17 +242,37 @@ export default function OrderDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-100">
-                  <td className="py-4 text-sm text-gray-500">1</td>
-                  <td className="py-4">
-                    <div className="font-semibold text-gray-900">{rfq.product_name}</div>
-                    {rfq.specification && <div className="text-xs text-gray-400 mt-0.5">{rfq.specification}</div>}
-                  </td>
-                  <td className="py-4 text-sm text-gray-600">{SECTOR_LABELS[rfq.sector] || rfq.sector}</td>
-                  <td className="py-4 text-sm text-gray-600">{rfq.quantity} {rfq.unit}</td>
-                  <td className="py-4 text-sm text-gray-600">{offer.unit_price ? `${offer.unit_price.toLocaleString('en-US')} ر.س` : '—'}</td>
-                  <td className="py-4 font-bold text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</td>
-                </tr>
+                {ip.length > 0 ? ip.map((it, idx) => (
+                  <tr key={idx} className="border-b border-gray-100">
+                    <td className="py-4 text-sm text-gray-500">{idx + 1}</td>
+                    <td className="py-4">
+                      <div className="font-semibold text-gray-900">{it.product_name}</div>
+                      {it.attributes && Object.keys(it.attributes).length > 0 && (
+                        <div className="text-xs text-gray-400 mt-0.5">{Object.entries(it.attributes).map(([k, v]) => `${k}: ${v}`).join(' · ')}</div>
+                      )}
+                      {it.notes && <div className="text-xs text-gray-400 mt-0.5">{it.notes}</div>}
+                      {it.attachment_url && (
+                        <a href={it.attachment_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#d96f15] hover:underline print:hidden">📎 {it.attachment_name || 'كتالوج المادة'}</a>
+                      )}
+                    </td>
+                    <td className="py-4 text-sm text-gray-600">{SECTOR_LABELS[it.sector] || it.sector}</td>
+                    <td className="py-4 text-sm text-gray-600">{it.quantity} {it.unit}</td>
+                    <td className="py-4 text-sm text-gray-600">{Number(it.unit_price) > 0 ? `${Number(it.unit_price).toLocaleString('en-US')} ر.س` : '—'}</td>
+                    <td className="py-4 font-bold text-gray-900">{Number(it.total).toLocaleString('en-US')} ر.س</td>
+                  </tr>
+                )) : (
+                  <tr className="border-b border-gray-100">
+                    <td className="py-4 text-sm text-gray-500">1</td>
+                    <td className="py-4">
+                      <div className="font-semibold text-gray-900">{rfq.product_name}</div>
+                      {rfq.specification && <div className="text-xs text-gray-400 mt-0.5">{rfq.specification}</div>}
+                    </td>
+                    <td className="py-4 text-sm text-gray-600">{SECTOR_LABELS[rfq.sector] || rfq.sector}</td>
+                    <td className="py-4 text-sm text-gray-600">{rfq.quantity} {rfq.unit}</td>
+                    <td className="py-4 text-sm text-gray-600">{offer.unit_price ? `${offer.unit_price.toLocaleString('en-US')} ر.س` : '—'}</td>
+                    <td className="py-4 font-bold text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -350,7 +372,18 @@ export default function OrderDetailPage() {
           <div className="p-6">
             <table className="w-full text-sm mb-4">
               <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">الصنف</th><th className="text-right pb-2">الكمية</th><th className="text-right pb-2">سعر الوحدة</th><th className="text-right pb-2">الإجمالي</th></tr></thead>
-              <tbody><tr><td className="py-2 font-semibold text-gray-900">{rfq.product_name}</td><td className="py-2 text-gray-600">{rfq.quantity} {rfq.unit}</td><td className="py-2 text-gray-600">{offer.unit_price ? offer.unit_price.toLocaleString('en-US') : '—'}</td><td className="py-2 font-bold text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</td></tr></tbody>
+              <tbody>
+                {ip.length > 0 ? ip.map((it, idx) => (
+                  <tr key={idx} className="border-b border-gray-50">
+                    <td className="py-2 font-semibold text-gray-900">{it.product_name}</td>
+                    <td className="py-2 text-gray-600">{it.quantity} {it.unit}</td>
+                    <td className="py-2 text-gray-600">{Number(it.unit_price) > 0 ? Number(it.unit_price).toLocaleString('en-US') : '—'}</td>
+                    <td className="py-2 font-bold text-gray-900">{Number(it.total).toLocaleString('en-US')} ر.س</td>
+                  </tr>
+                )) : (
+                  <tr><td className="py-2 font-semibold text-gray-900">{rfq.product_name}</td><td className="py-2 text-gray-600">{rfq.quantity} {rfq.unit}</td><td className="py-2 text-gray-600">{offer.unit_price ? offer.unit_price.toLocaleString('en-US') : '—'}</td><td className="py-2 font-bold text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</td></tr>
+                )}
+              </tbody>
             </table>
             <div className="flex justify-end">
               <div className="w-64 space-y-1 text-sm">
