@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS } from '@/types'
+import { detectSpecialtiesFromText } from '@/lib/classify'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
@@ -89,6 +90,28 @@ export default function SpecialtiesPage() {
   const [suggestSubmitting, setSuggestSubmitting] = useState(false)
   const [myRequests, setMyRequests] = useState([])
   const [openSector, setOpenSector] = useState(null) // single-open accordion (Step 2)
+  // auto-analysis of the CR commercial activity (Wathq)
+  const [crActivity, setCrActivity] = useState('')
+  const [companyName, setCompanyName] = useState('')
+  const [detectMsg, setDetectMsg] = useState('')
+
+  // يقرأ نشاط السجل التجاري ويحدّد التخصصات تلقائياً (يضيف فوق المحدد، لا يحذف)
+  function analyzeFromCR(activity, name, silent = false) {
+    const text = [name, activity].filter(Boolean).join(' ')
+    const { sectors, specialties } = detectSpecialtiesFromText(text)
+    if (!specialties.length) {
+      if (!silent) setDetectMsg(locale === 'en' ? "Couldn't detect specialties from your CR activity — pick them manually." : locale === 'ur' ? 'سرگرمی سے مہارتیں نہیں ملیں — دستی منتخب کریں۔' : 'ما تعرّفنا على تخصصات من نشاط سجلك — اخترها يدوياً.')
+      return
+    }
+    setMySectors(prev => Array.from(new Set([...prev, ...sectors])))
+    setMySpecialties(prev => Array.from(new Set([...prev, ...specialties])))
+    if (sectors.length) setOpenSector(sectors[0])
+    setDetectMsg(
+      locale === 'en' ? `✓ Detected ${specialties.length} specialties across ${sectors.length} sectors from your CR — review, adjust, then save.`
+      : locale === 'ur' ? `✓ آپ کے ریکارڈ سے ${specialties.length} مہارتیں ${sectors.length} شعبوں میں ملیں — جائزہ لے کر محفوظ کریں۔`
+      : `✓ تعرّفنا على ${specialties.length} تخصص في ${sectors.length} قطاع من نشاط سجلك — راجِعها وعدّل ثم احفظ.`
+    )
+  }
 
   useEffect(() => {
     async function load() {
@@ -106,6 +129,14 @@ export default function SpecialtiesPage() {
       const { data: reqs } = await supabase.from('material_requests')
         .select('*').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
       setMyRequests(reqs || [])
+
+      // اقرأ نشاط السجل التجاري — وحدّد التخصصات تلقائياً أول مرة (إن لم يحفظ المورد شيئاً بعد)
+      const { data: prof } = await supabase.from('profiles').select('cr_activity, company_name_ar').eq('id', session.user.id).single()
+      setCrActivity(prof?.cr_activity || '')
+      setCompanyName(prof?.company_name_ar || '')
+      if (prof?.cr_activity && (specs || []).length === 0 && (secs || []).length === 0) {
+        analyzeFromCR(prof.cr_activity, prof.company_name_ar, true)
+      }
 
       setLoading(false)
     }
@@ -179,6 +210,29 @@ export default function SpecialtiesPage() {
         </div>
 
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-700">{T.hint}</div>
+
+        {/* تحليل النشاط التجاري — يُحدّد التخصصات تلقائياً من السجل التجاري */}
+        {crActivity && (
+          <div className="rounded-2xl p-4 mb-5 border shadow-sm" style={{ background: 'linear-gradient(135deg,#0F6E5608,#1B2D5B08)', borderColor: '#0F6E5633' }}>
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <div className="font-bold text-sm flex items-center gap-1.5" style={{ color: '#0F6E56' }}>
+                  🔍 {locale === 'en' ? 'Detected from your CR activity' : locale === 'ur' ? 'آپ کے ریکارڈ سے ملا' : 'تحليل نشاطك التجاري'}
+                </div>
+                <div className="text-xs text-gray-600 mt-0.5 leading-relaxed">
+                  {locale === 'en' ? 'We read your official CR activity and pre-selected your specialties below — review and adjust freely, then save.'
+                  : locale === 'ur' ? 'ہم نے آپ کے سرکاری ریکارڈ سے مہارتیں منتخب کیں — جائزہ لے کر محفوظ کریں۔'
+                  : 'قرأنا نشاطك في السجل التجاري وحدّدنا تخصصاتك بالأسفل تلقائياً — راجِعها وعدّل بحرية ثم احفظ.'}
+                </div>
+                {detectMsg && <div className="text-xs font-semibold mt-1.5" style={{ color: '#0F6E56' }}>{detectMsg}</div>}
+              </div>
+              <button onClick={() => analyzeFromCR(crActivity, companyName)}
+                className="px-4 py-2 rounded-xl font-bold text-white text-xs shrink-0 hover:shadow transition-all" style={{ background: '#0F6E56' }}>
+                {locale === 'en' ? '↻ Re-analyze' : locale === 'ur' ? '↻ دوبارہ' : '↻ إعادة التحليل'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Step 1: Sectors */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">

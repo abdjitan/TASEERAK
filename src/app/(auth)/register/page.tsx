@@ -583,7 +583,7 @@ export default function RegisterPage() {
                     <span className="text-sm flex-shrink-0">{crVerify.verified ? '🛡' : crVerify.mode === 'manual' ? 'ℹ️' : '⚠️'}</span>
                     <div>
                       {crVerify.name && <div className="font-bold">{crVerify.name}</div>}
-                      {crVerify.activity && <div className="opacity-80">{crVerify.activity}</div>}
+                      {crVerify.activity && <div className="opacity-80 line-clamp-2" title={crVerify.activity}>{crVerify.activity}</div>}
                       <div>{crVerify.message}</div>
                       {crVerify.ownerCheck && (
                         <div className={`mt-1.5 font-bold ${crVerify.ownerCheck.authorized ? 'text-emerald-700' : 'text-amber-700'}`}>

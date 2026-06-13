@@ -43,6 +43,33 @@ function pick(obj: any, paths: string[]): any {
 }
 function safeJson(t: string): any { try { return JSON.parse(t) } catch { return (t || '').slice(0, 300) } }
 
+// Gather the FULL commercial-activity text (Wathq returns many activities).
+// Handles the various shapes the fullinfo payload may use (array of objects,
+// object with description[], or a single string) so the supplier-specialty
+// auto-detection has rich text to analyse.
+function allActivities(j: any): string | null {
+  const acts = j?.activities
+  let out: string[] = []
+  if (Array.isArray(acts)) {
+    out = acts.map((a: any) => (typeof a === 'string' ? a : (a?.name || a?.description || a?.activityName || a?.isicActivity?.name || ''))).filter(Boolean)
+  } else if (acts && typeof acts === 'object') {
+    if (Array.isArray(acts.description)) out = acts.description.map(String).filter(Boolean)
+    else if (acts.description) out = [String(acts.description)]
+    else if (Array.isArray(acts.name)) out = acts.name.map(String).filter(Boolean)
+    else if (acts.name) out = [String(acts.name)]
+  } else if (typeof acts === 'string' && acts.trim()) {
+    out = [acts]
+  }
+  if (out.length === 0) {
+    const single = pick(j, ['isicActivity.name', 'mainActivity', 'activity'])
+    if (single) out = [String(single)]
+  }
+  // de-dupe + cap length so we never bloat the profile row
+  const uniq = Array.from(new Set(out.map(s => s.trim()).filter(Boolean)))
+  const joined = uniq.join(' - ')
+  return joined ? joined.slice(0, 4000) : null
+}
+
 // Map the fullinfo payload to the shape our app uses.
 function extract(j: any) {
   const parties = Array.isArray(j?.parties) ? j.parties.map((p: any) => ({
@@ -65,7 +92,7 @@ function extract(j: any) {
     crNumber: j?.crNumber ?? null,
     entityType: j?.entityType?.name ?? null,
     city: j?.headquarterCityName ?? pick(j, ['address.city', 'city']) ?? null,
-    activity: pick(j, ['activities.0.name', 'isicActivity.name', 'mainActivity', 'activity']) ?? null,
+    activity: allActivities(j),
     capital: j?.crCapital ?? null,
     issueDate: j?.issueDateGregorian ?? pick(j, ['issueDate']) ?? null,
     isEcommerce: j?.hasEcommerce ?? null,

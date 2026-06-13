@@ -38,6 +38,26 @@ export function detectSectorsFromText(text: string): { sector: Sector; score: nu
     .sort((a, b) => b.score - a.score)
 }
 
+/**
+ * Detect the exact SPECIALTIES (sub-category keys) + their sectors from free
+ * text (e.g. the CR commercial-activity text from Wathq). A sub-category is
+ * detected when any of its keywords (≥3 chars) appears in the text. Used to
+ * auto-pre-select a supplier's specialties — which the supplier then edits.
+ */
+export function detectSpecialtiesFromText(text: string): { sectors: string[]; specialties: string[] } {
+  const norm = normalizeText(text)
+  if (!norm) return { sectors: [], specialties: [] }
+  const sectors = new Set<string>()
+  const specialties: string[] = []
+  for (const [sector, subs] of Object.entries(SUB_CATEGORIES)) {
+    for (const [key, sub] of Object.entries(subs as Record<string, { keywords: string[] }>)) {
+      const hit = sub.keywords.some(kw => { const n = normalizeText(kw); return n && n.length >= 3 && norm.includes(n) })
+      if (hit) { specialties.push(key); sectors.add(sector) }
+    }
+  }
+  return { sectors: [...sectors], specialties }
+}
+
 /** Guess the supplier tier (factory / distributor / local) from free text. */
 export function detectTierFromText(text: string): 'manufacturer' | 'commercial' | 'local' | null {
   const norm = normalizeText(text)
