@@ -27,6 +27,7 @@ export default function SupplierRFQPage() {
 
   const [totalPrice, setTotalPrice] = useState('')
   const [unitPrice, setUnitPrice] = useState('')
+  const [itemPrices, setItemPrices] = useState<string[]>([]) // سعر وحدة لكل مادة (تسعير بند-بند)
   const [deliveryDays, setDeliveryDays] = useState('')
   const [notes, setNotes] = useState('')
   const [validity, setValidity] = useState('')
@@ -77,6 +78,7 @@ export default function SupplierRFQPage() {
       const { data: rfqData } = await supabase
         .from('rfqs').select('*, contractor:profiles_public(company_name_ar, company_name_en)').eq('id', id).single()
       setRfq(rfqData)
+      if (Array.isArray(rfqData?.items) && rfqData.items.length > 0) setItemPrices(rfqData.items.map(() => ''))
 
       // auto-calc unit price from quantity
       const { data: offerData } = await supabase
@@ -95,6 +97,18 @@ export default function SupplierRFQPage() {
       setUnitPrice((parseFloat(val) / rfq.quantity).toFixed(2))
     }
   }
+
+  // تسعير بند-بند: سعر وحدة لكل مادة → يحسب إجمالي البضاعة تلقائياً
+  const isMultiItem = Array.isArray(rfq?.items) && rfq.items.length > 0
+  function setItemPrice(i, val) {
+    setItemPrices(prev => {
+      const next = [...prev]; next[i] = val
+      const sum = (rfq?.items || []).reduce((s, it, idx) => s + ((parseFloat(next[idx]) || 0) * (it.quantity || 0)), 0)
+      setTotalPrice(sum ? String(+sum.toFixed(2)) : '')
+      return next
+    })
+  }
+  const allItemsPriced = isMultiItem ? (rfq.items || []).every((_, i) => parseFloat(itemPrices[i]) > 0) : true
 
   function addAttribute() {
     setAttributes(prev => [...prev, { key: '', value: '' }])
@@ -115,6 +129,10 @@ export default function SupplierRFQPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!user) return
+    if (isMultiItem && !allItemsPriced) {
+      setError('حدّد سعراً لكل مادة في القائمة قبل إرسال العرض')
+      return
+    }
     setSubmitting(true)
     setError('')
 
@@ -149,11 +167,20 @@ export default function SupplierRFQPage() {
     const goods = parseFloat(totalPrice) || 0
     const finalTotal = goods + validExtras.reduce((s, e) => s + e.amount, 0)
 
+    // تسعير بند-بند: حفظ سعر كل مادة (متوافق مع items)
+    const itemPricesPayload = isMultiItem ? (rfq.items || []).map((it: any, i: number) => ({
+      product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
+      unit: it.unit, quantity: it.quantity,
+      unit_price: parseFloat(itemPrices[i]) || 0,
+      total: (parseFloat(itemPrices[i]) || 0) * (it.quantity || 0),
+    })) : null
+
     const { error: insertError } = await supabase.from('offers').insert({
       rfq_id: id,
       supplier_id: user.id,
       total_price: finalTotal,
-      unit_price: unitPrice ? parseFloat(unitPrice) : null,
+      item_prices: itemPricesPayload,
+      unit_price: isMultiItem ? null : (unitPrice ? parseFloat(unitPrice) : null),
       delivery_days: deliveryDays ? parseInt(deliveryDays) : null,
       notes: notes || null,
       attributes: validAttrs.length > 0 ? attrObj : null,
@@ -409,24 +436,67 @@ export default function SupplierRFQPage() {
             {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>}
 
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Goods Price (SAR)' : locale === 'ur' ? 'سامان کی قیمت (ریال)' : 'سعر البضاعة (ر.س)'} *</label>
-                <input type="number" value={totalPrice} onChange={e => handleTotalChange(e.target.value)}
-                  className="input-field" placeholder="0.00" required min="0" step="any" />
-              </div>
+              {isMultiItem ? (
+                <div>
+                  <label className="block text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>
+                    {locale === 'en' ? 'Price each material (per unit)' : locale === 'ur' ? 'ہر مواد کی قیمت (فی یونٹ)' : 'سعّر كل مادة (سعر الوحدة)'} *
+                  </label>
+                  <div className="space-y-2">
+                    {rfq.items.map((it, i) => {
+                      const up = parseFloat(itemPrices[i]) || 0
+                      const line = up * (it.quantity || 0)
+                      return (
+                        <div key={i} className="border border-gray-200 rounded-xl p-3">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="min-w-0">
+                              <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{it.product_name}</div>
+                              <div className="text-xs text-gray-400">
+                                {it.sub_category ? it.sub_category + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {it.unit}
+                              </div>
+                            </div>
+                            {line > 0 && (
+                              <div className="text-sm font-extrabold whitespace-nowrap" style={{ color: '#0F6E56' }}>
+                                {(+line.toFixed(2)).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input type="number" value={itemPrices[i] || ''} onChange={e => setItemPrice(i, e.target.value)}
+                              className="input-field text-sm flex-1" placeholder={(locale === 'en' ? 'Unit price / ' : 'سعر الوحدة / ') + it.unit} min="0" step="any" />
+                            <span className="text-xs text-gray-400 whitespace-nowrap">× {(it.quantity || 0).toLocaleString('en-US')}</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-3">
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
+                    <input type="number" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)}
+                      className="input-field" placeholder="3" min="0" />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Goods Price (SAR)' : locale === 'ur' ? 'سامان کی قیمت (ریال)' : 'سعر البضاعة (ر.س)'} *</label>
+                    <input type="number" value={totalPrice} onChange={e => handleTotalChange(e.target.value)}
+                      className="input-field" placeholder="0.00" required min="0" step="any" />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.unitPrice}</label>
-                  <input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
-                    className="input-field bg-gray-50" placeholder="تلقائي" min="0" step="any" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
-                  <input type="number" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)}
-                    className="input-field" placeholder="3" min="0" />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.unitPrice}</label>
+                      <input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
+                        className="input-field bg-gray-50" placeholder="تلقائي" min="0" step="any" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
+                      <input type="number" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)}
+                        className="input-field" placeholder="3" min="0" />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* إضافات الفاتورة (توصيل/تركيب/رسوم) */}
               <div className="border-t border-gray-100 pt-4">
@@ -531,7 +601,7 @@ export default function SupplierRFQPage() {
             </div>
 
             <div className="mt-5 space-y-3">
-              <button type="submit" disabled={submitting || !totalPrice}
+              <button type="submit" disabled={submitting || !totalPrice || (isMultiItem && !allItemsPriced)}
                 className="w-full py-3.5 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg"
                 style={{ background: '#0F6E56' }}>
                 {submitting ? T.sending : T.send}
