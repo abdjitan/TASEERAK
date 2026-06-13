@@ -52,8 +52,9 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   concrete: { ar: 'الخرسانة والإسمنت', en: 'Concrete & Cement', ur: 'کنکریٹ اور سیمنٹ', icon: '🏭' },
   masonry: { ar: 'الكتل والطوب والمسبقات', en: 'Blocks, Bricks & Precast', ur: 'بلاک اور اینٹیں', icon: '🧱' },
   steel: { ar: 'الحديد والإنشاءات المعدنية', en: 'Steel & Metalwork', ur: 'اسٹیل', icon: '🔩' },
-  rawmaterials: { ar: 'الكسارات والمواد الأولية', en: 'Aggregates & Raw Materials', ur: 'خام مواد', icon: '⛰' },
-  infrastructure: { ar: 'البنية التحتية والتدعيم', en: 'Infrastructure & Support', ur: 'انفراسٹرکچر', icon: '🚧' },
+  rawmaterials: { ar: 'الركام وأعمال الموقع', en: 'Aggregates & Site Works', ur: 'خام مواد', icon: '⛰' },
+  infrastructure: { ar: 'العزل والأساسات والمعالجات', en: 'Insulation, Foundations & Treatments', ur: 'انسولیشن اور بنیادیں', icon: '🛡' },
+  drainage_grp: { ar: 'الصرف والأنابيب الخارجية', en: 'Drainage & External Pipes', ur: 'نکاسی اور پائپ', icon: '🚧' },
   equipment: { ar: 'أخشاب ومعدات المقاولات', en: 'Formwork & Equipment', ur: 'آلات', icon: '🪵' },
   landscape: { ar: 'التنسيق والأعمال الخارجية', en: 'Landscape & Hardscape', ur: 'لینڈ اسکیپ', icon: '🌳' },
   // معماري
@@ -115,8 +116,8 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['أوتاد','اوتاد','pile','piling','خازوق','وتد خرساني'] },
     construction_chemicals: { ar: 'مواد كيميائية للبناء', en: 'Construction Chemicals', ur: 'کیمیکل', icon: '🧪', group: 'infrastructure',
       keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي'] },
-    drainage: { ar: 'صرف خارجي وبنية تحتية', en: 'External Drainage', ur: 'نکاسی', icon: '🚧', group: 'infrastructure',
-      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','كيرب','kerb','إسفلت','asphalt','ري','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف'] },
+    drainage: { ar: 'صرف خارجي وبنية تحتية', en: 'External Drainage', ur: 'نکاسی', icon: '🚧', group: 'drainage_grp',
+      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','إسفلت','asphalt','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف'] },
     // ═══ الكسارات والمواد الأولية وأعمال الموقع ═══
     aggregates: { ar: 'رمل وبحص وبودرة', en: 'Sand, Gravel & Powder', ur: 'ریت اور بجری', icon: '⛰', group: 'rawmaterials',
       keywords: ['رمل','بطحاء','حصى','بحص','زلط','ركام','كسارة','sand','gravel','aggregate','بودرة','crusher','حجر طبيعي خام','حجر خام'] },
@@ -135,9 +136,9 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     fountains: { ar: 'نوافير وبرك مائية', en: 'Fountains & Water Features', ur: 'فوارے', icon: '⛲', group: 'landscape',
       keywords: ['نافورة','fountain','بركة','pool','water feature','شلال','waterfall','مسطح مائي'] },
     hardscape: { ar: 'إنترلوك وبردورات وتبليط خارجي', en: 'Interlock, Kerbs & Paving', ur: 'پیونگ', icon: '🧱', group: 'landscape',
-      keywords: ['إنترلوك','interlock','بردورة','kerb','curb','تبليط','paving','بلاط خارجي','حجر صناعي','رصف','tactile'] },
+      keywords: ['إنترلوك','interlock','بردورة','كيرب','kerb','curb','تبليط','paving','بلاط خارجي','حجر صناعي','رصف','tactile'] },
     planters: { ar: 'أحواض زراعة وعناصر تنسيق', en: 'Planters & Landscape Elements', ur: 'پلانٹر', icon: '🪴', group: 'landscape',
-      keywords: ['حوض زراعة','planter','تربة','soil','مشتل','plant','شجر','tree','نباتات','pergola','مظلة حديقة'] },
+      keywords: ['حوض زراعة','planter','تربة','soil','مشتل','plant','شجر','tree','نباتات','pergola','مظلة حديقة','تشجير','زراعة','زرع'] },
   },
   architectural: {
     // ═══ الأرضيات والحوائط ═══
@@ -395,7 +396,7 @@ export interface ProductGroup { group: string; ar: string; en: string; ur: strin
 const GROUP_ORDER: Record<string, number> = {}
 ;[
   // مدني — بتسلسل البناء
-  'concrete', 'masonry', 'steel', 'rawmaterials', 'infrastructure', 'equipment', 'landscape',
+  'concrete', 'masonry', 'steel', 'rawmaterials', 'infrastructure', 'drainage_grp', 'equipment', 'landscape',
   // معماري — من الإنشاء للتشطيب
   'floors_walls', 'ceiling_decor', 'doors_windows', 'paint_facade', 'facade_systems', 'joinery', 'sanitary_finish', 'acoustic',
   // ميكانيك
