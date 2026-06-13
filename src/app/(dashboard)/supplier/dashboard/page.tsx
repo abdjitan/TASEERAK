@@ -318,22 +318,23 @@ export default function SupplierDashboard() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
-            { label: t.openRfqs, value: openRfqs.length, icon: '📋', bg: '#1B2D5B' },
-            { label: t.pendingOffers, value: pending, icon: '⏳', bg: '#F5831F' },
-            { label: t.acceptedOffers, value: accepted, icon: '✅', bg: '#0F6E56' },
-            { label: t.revenue, value: totalRevenue.toLocaleString('en-US'), icon: '💰', bg: '#7c3aed' },
-          ].map(({ label, value, icon, bg }) => (
-            <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+            { label: t.openRfqs, value: openRfqs.length, icon: '📋', bg: '#1B2D5B', go: 'rfqs' },
+            { label: t.pendingOffers, value: pending, icon: '⏳', bg: '#F5831F', go: 'offers' },
+            { label: t.acceptedOffers, value: accepted, icon: '✅', bg: '#0F6E56', go: 'offers' },
+            { label: t.revenue, value: totalRevenue.toLocaleString('en-US'), icon: '💰', bg: '#7c3aed', go: 'offers' },
+          ].map(({ label, value, icon, bg, go }) => (
+            <button key={label} type="button" onClick={() => { setTab(go); if (go === 'rfqs') setRfqFilter('all'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+              className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${tab === go ? 'border-[#F5831F] ring-1 ring-[#F5831F]/30' : 'border-gray-100'}`}>
               <div className="flex items-start justify-between">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg text-white" style={{ background: bg }}>{icon}</div>
                 <div className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
               </div>
               <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
-            </div>
+            </button>
           ))}
         </div>
 
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6" id="sup-list" style={{ scrollMarginTop: '70px' }}>
           {[{ key: 'rfqs', label: `${t.tabRfqs} (${openRfqs.length})` }, { key: 'offers', label: `${t.tabOffers} (${myOffers.length})` }].map(tab_ => (
             <button key={tab_.key} onClick={() => setTab(tab_.key)}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === tab_.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}

@@ -208,21 +208,22 @@ export default function ContractorDashboard() {
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
 
-        {/* Stats */}
+        {/* Stats — قابلة للضغط: تفلتر القائمة وتنزّل لها */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
-            { label: t.activeRfqs, value: active.length, icon: '📋', bg: '#1B2D5B' },
-            { label: t.totalOffers, value: totalOffers, icon: '💬', bg: '#F5831F' },
-            { label: t.completed, value: closed.length, icon: '✅', bg: '#0F6E56' },
-            { label: t.total, value: rfqs.length, icon: '📊', bg: '#7c3aed' },
-          ].map(({ label, value, icon, bg }) => (
-            <div key={label} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
+            { label: t.activeRfqs, value: active.length, icon: '📋', bg: '#1B2D5B', f: 'pending' },
+            { label: t.totalOffers, value: totalOffers, icon: '💬', bg: '#F5831F', f: 'has_offers' },
+            { label: t.completed, value: closed.length, icon: '✅', bg: '#0F6E56', f: 'closed' },
+            { label: t.total, value: rfqs.length, icon: '📊', bg: '#7c3aed', f: 'all' },
+          ].map(({ label, value, icon, bg, f }) => (
+            <button key={label} type="button" onClick={() => { setFilter(f); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+              className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${filter === f ? 'border-[#F5831F] ring-1 ring-[#F5831F]/30' : 'border-gray-100'}`}>
               <div className="flex items-start justify-between">
                 <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg text-white" style={{ background: bg }}>{icon}</div>
                 <div className="text-3xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
               </div>
               <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
-            </div>
+            </button>
           ))}
         </div>
 
@@ -266,7 +267,7 @@ export default function ContractorDashboard() {
             <a href="/contractor/rfq/new" className="inline-block btn-orange px-10 py-4 text-base rounded-2xl">{t.newRfqBtn}</a>
           </div>
         ) : (
-          <div className="animate-fade-in">
+          <div className="animate-fade-in" id="rfq-list" style={{ scrollMarginTop: '70px' }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>{t.rfqList}</h2>
               <span className="text-xs text-gray-400">{rfqs.length} {t.requests}</span>
