@@ -789,18 +789,27 @@ export default function RegisterPage() {
                               const keys = groups[groupKey]
                               const grp = GROUP_LABELS[groupKey]
                               const grpLabel = grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey
+                              const selInGroup = keys.filter(k => specialties.includes(k)).length
                               return (
-                                <div key={groupKey} className="mb-2 bg-gray-50/50 rounded-lg p-2 border border-gray-100">
-                                  <div className="text-[11px] font-bold text-gray-600 mb-1.5 flex items-center gap-1"><span>{grp?.icon}</span>{grpLabel}</div>
-                                  <div className="flex flex-wrap gap-1.5">
+                                <div key={groupKey} className="mb-3 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
+                                  <div className="flex items-center gap-2 mb-2.5">
+                                    <span className="text-base">{grp?.icon}</span>
+                                    <span className="text-sm font-bold text-gray-700">{grpLabel}</span>
+                                    {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: color }}>{selInGroup}</span>}
+                                  </div>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                     {keys.map(key => {
                                       const sub = subs[key]
                                       const active = specialties.includes(key)
                                       const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
                                       return (
                                         <button key={key} type="button" onClick={() => toggleSpecialty(key)}
-                                          className={`text-[11px] px-2.5 py-1.5 rounded-lg border transition-all ${active ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600'}`}
-                                          style={active ? { background: color } : {}}>{sub.icon} {subLabel}</button>
+                                          className={`flex items-center gap-2.5 p-2.5 rounded-lg border-2 transition-all bg-white ${active ? 'border-current' : 'border-gray-200 hover:border-gray-300'}`}
+                                          style={{ textAlign: dir === 'rtl' ? 'right' : 'left', ...(active ? { borderColor: color, background: color + '0d' } : {}) }}>
+                                          <span className="text-lg">{sub.icon}</span>
+                                          <span className="text-xs font-semibold flex-1 leading-tight" style={active ? { color } : { color: '#374151' }}>{subLabel}</span>
+                                          {active && <span style={{ color }}>✓</span>}
+                                        </button>
                                       )
                                     })}
                                   </div>
