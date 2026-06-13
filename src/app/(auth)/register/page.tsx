@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, getRegionLabel, CITIES_BY_REGION, type UserRole, type Sector } from '@/types'
+import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, getRegionLabel, CITIES_BY_REGION, sortGroupKeys, type UserRole, type Sector } from '@/types'
 import DistrictField from '@/components/shared/DistrictField'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -785,7 +785,8 @@ export default function RegisterPage() {
 
                         {isOpen && (
                           <div className="p-3 border-t border-gray-100 bg-white">
-                            {Object.entries(groups).map(([groupKey, keys]) => {
+                            {sortGroupKeys(Object.keys(groups)).map((groupKey) => {
+                              const keys = groups[groupKey]
                               const grp = GROUP_LABELS[groupKey]
                               const grpLabel = grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey
                               return (

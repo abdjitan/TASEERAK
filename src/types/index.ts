@@ -486,6 +486,11 @@ const GROUP_ORDER: Record<string, number> = {}
 ].forEach((g, i) => { GROUP_ORDER[g] = i })
 function groupRank(g: string): number { return g === '_other' ? 9999 : (GROUP_ORDER[g] ?? 900) }
 
+// ترتيب مفاتيح المجموعات بالترتيب المنطقي (GROUP_ORDER) — يُستخدم في صفحات اختيار التخصصات
+export function sortGroupKeys(keys: string[]): string[] {
+  return [...keys].sort((a, b) => groupRank(a) - groupRank(b))
+}
+
 // extra = مواد معتمدة من قاعدة البيانات (طلبات مقاولين وافق عليها الأدمن) تُدمج مع المضمّنة
 export function getGroupedProducts(sector: Sector, extra: { name: string; sub_category?: string }[] = []): ProductGroup[] {
   const subs = SUB_CATEGORIES[sector] || {}

@@ -390,9 +390,17 @@ export default function SettingsPage() {
                 </div>
 
                 <form onSubmit={saveProfile} className="space-y-5">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} 🔒</label>
-                    <div className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
+                  <div className={companyEn ? 'grid grid-cols-2 gap-4' : ''}>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} 🔒</label>
+                      <div className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
+                    </div>
+                    {companyEn && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyEn} 🔒</label>
+                        <div className="input-field bg-gray-50 text-gray-500 flex items-center min-h-[44px]" dir="ltr">{companyEn}</div>
+                      </div>
+                    )}
                   </div>
                   <div className="-mt-3">
                     {pendingFor('name')

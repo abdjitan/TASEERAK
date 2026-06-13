@@ -9,7 +9,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, sortGroupKeys } from '@/types'
 import { detectSpecialtiesFromText } from '@/lib/classify'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
@@ -282,7 +282,8 @@ export default function SpecialtiesPage() {
                   {/* المجموعات — تظهر فقط للقطاع المفتوح (واحد في المرة) */}
                   {openSector === sector && (
                   <div className="space-y-4">
-                    {Object.entries(groups).map(([groupKey, keys]) => {
+                    {sortGroupKeys(Object.keys(groups)).map((groupKey) => {
+                      const keys = groups[groupKey]
                       const grp = GROUP_LABELS[groupKey]
                       const selectedInGroup = keys.filter(k => mySpecialties.includes(k)).length
                       return (
