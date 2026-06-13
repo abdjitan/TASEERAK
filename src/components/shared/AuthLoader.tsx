@@ -76,8 +76,6 @@ export default function AuthLoader({ show = false, progress = 0, status = '', lo
         <div className="tk-l-plate"><img src="/logo.png" alt="تسعيرك" /></div>
         <div className="tk-l-wm">{wm}</div>
         <div className="tk-l-bar"><span style={{ width: `${Math.max(0, Math.min(100, progress))}%` }} /></div>
-        <div className="tk-l-status">{status}</div>
-        <div className="tk-l-pct">{Math.round(progress)}%</div>
       </div>
     </div>
   )

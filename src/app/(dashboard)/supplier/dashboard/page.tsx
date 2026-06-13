@@ -68,6 +68,7 @@ export default function SupplierDashboard() {
   const [myOffers, setMyOffers] = useState([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('rfqs')
+  const [rfqFilter, setRfqFilter] = useState('all') // all | expiring
   const [hasSpecialties, setHasSpecialties] = useState(true)
   const [hasSectors, setHasSectors] = useState(true)
 
@@ -342,17 +343,33 @@ export default function SupplierDashboard() {
           ))}
         </div>
 
-        {tab === 'rfqs' && (
+        {tab === 'rfqs' && (() => {
+          const expiringList = openRfqs.filter(r => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
+          const displayedRfqs = rfqFilter === 'expiring' ? expiringList : openRfqs
+          return (
           <div className="stagger">
-            {openRfqs.length === 0 ? (
+            {/* فلاتر الطلبات — منها «تنتهي قريباً» (قابلة للضغط) */}
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {[
+                { key: 'all', label: locale === 'en' ? `All (${openRfqs.length})` : `الكل (${openRfqs.length})`, icon: '📋' },
+                { key: 'expiring', label: locale === 'en' ? `Ending soon (${expiringList.length})` : `تنتهي قريباً (${expiringList.length})`, icon: '⏰' },
+              ].map(f => (
+                <button key={f.key} onClick={() => setRfqFilter(f.key)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${rfqFilter === f.key ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
+                  style={rfqFilter === f.key ? { background: f.key === 'expiring' ? '#d97706' : '#1B2D5B' } : {}}>
+                  {f.icon} {f.label}
+                </button>
+              ))}
+            </div>
+            {displayedRfqs.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
-                <div className="text-5xl mb-4 animate-float">📭</div>
-                <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{t.noRfqs}</h3>
-                <p className="text-sm text-gray-500">{t.noRfqsSub}</p>
+                <div className="text-5xl mb-4 animate-float">{rfqFilter === 'expiring' ? '⏰' : '📭'}</div>
+                <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{rfqFilter === 'expiring' ? (locale === 'en' ? 'Nothing ending soon' : 'لا يوجد طلبات تنتهي قريباً') : t.noRfqs}</h3>
+                <p className="text-sm text-gray-500">{rfqFilter === 'expiring' ? (locale === 'en' ? 'All open requests still have time.' : 'كل الطلبات المفتوحة لسه عندها وقت.') : t.noRfqsSub}</p>
               </div>
             ) : (
               <div className="space-y-3">
-                {openRfqs.map(rfq => (
+                {displayedRfqs.map(rfq => (
                   <a key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`}
                     className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 hover:-translate-y-0.5 transition-all duration-300">
                     <div className="flex items-center justify-between mb-3">
@@ -398,7 +415,7 @@ export default function SupplierDashboard() {
               </div>
             )}
           </div>
-        )}
+          ); })()}
 
         {tab === 'offers' && (
           <div className="stagger">
