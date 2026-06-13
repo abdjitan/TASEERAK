@@ -165,8 +165,42 @@ export default function NewRFQPage() {
   const [nearbyOnly, setNearbyOnly] = useState(false)
   const [targetRegions, setTargetRegions] = useState<string[]>([])
 
+  // مواد معتمدة من الأدمن (طلبات إضافة وافق عليها) تُدمج مع المضمّنة
+  const [dbMaterials, setDbMaterials] = useState<any[]>([])
+  useEffect(() => {
+    if (!sector) { setDbMaterials([]); return }
+    let cancelled = false
+    ;(async () => {
+      const supabase = createClient()
+      const { data } = await supabase.from('materials').select('name, sub_category').eq('sector', sector).eq('is_active', true)
+      if (!cancelled) setDbMaterials(data || [])
+    })()
+    return () => { cancelled = true }
+  }, [sector])
+
+  // طلب إضافة مادة جديدة (يروح للأدمن للاعتماد)
+  const [matReqOpen, setMatReqOpen] = useState(false)
+  const [matReqName, setMatReqName] = useState('')
+  const [matReqGroup, setMatReqGroup] = useState('')
+  const [matReqDesc, setMatReqDesc] = useState('')
+  const [matReqBusy, setMatReqBusy] = useState(false)
+  const [matReqDone, setMatReqDone] = useState(false)
+  async function submitMaterialRequest() {
+    if (!matReqName.trim() || !sector) return
+    setMatReqBusy(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const { error } = await supabase.from('material_requests').insert({
+      requested_by: user?.id, name: matReqName.trim(), sector,
+      sub_category: matReqGroup || null, description: matReqDesc.trim() || null, status: 'pending',
+    })
+    setMatReqBusy(false)
+    if (error) { alert('تعذّر إرسال الطلب — حاول مجدداً.'); return }
+    setMatReqDone(true); setMatReqName(''); setMatReqGroup(''); setMatReqDesc('')
+  }
+
   // التصفّح المتدرّج: القطاع → المجموعة → النوع
-  const groups = useMemo(() => (sector ? getGroupedProducts(sector) : []), [sector])
+  const groups = useMemo(() => (sector ? getGroupedProducts(sector, dbMaterials) : []), [sector, dbMaterials])
   const activeGroup = groups.find(g => g.group === group)
   const groupLabel = (g: any) => (locale === 'en' ? g.en : locale === 'ur' ? g.ur : g.ar)
   const specFields = getProductSpecs(productName)
@@ -501,23 +535,13 @@ export default function NewRFQPage() {
                     </div>
                   )}
 
-                  {/* الكتابة اليدوية: تظهر فقط في وضع "اكتبها" أو عند عدم اختيار مادة */}
-                  {manualEntry ? (
+                  {/* طلب إضافة مادة جديدة — تروح للإدارة للاعتماد (بدل الكتابة الحرة التي تكسر التوجيه) */}
+                  {!productName && (
                     <div className="pt-3 border-t border-gray-100 mb-1">
-                      <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? 'Type the exact material' : 'اكتب اسم المادة بدقّة'}</p>
-                      <div className="flex gap-2">
-                        <input type="text" value={productName} onChange={e => { setProductName(e.target.value); setSpecs({}) }} autoFocus
-                          className="input-field flex-1" placeholder={t.orType} />
-                        <button type="button" onClick={() => { setManualEntry(false); setProductName(''); setSpecs({}) }}
-                          className="text-xs text-gray-500 whitespace-nowrap px-2 hover:text-[#1B2D5B]">↩ {locale === 'en' ? 'List' : 'القائمة'}</button>
-                      </div>
+                      <button type="button" onClick={() => { setMatReqOpen(true); setMatReqDone(false); setMatReqGroup(group || '') }}
+                        className="text-xs font-bold text-[#d96f15] hover:underline">➕ {locale === 'en' ? "Didn't find it? Request a new material (admin approval)" : 'ما لقيت المادة؟ اطلب إضافتها (باعتماد الإدارة)'}</button>
                     </div>
-                  ) : !productName ? (
-                    <div className="pt-3 border-t border-gray-100 mb-1">
-                      <button type="button" onClick={() => { setManualEntry(true); setProductName(''); setSpecs({}) }}
-                        className="text-xs font-bold text-[#d96f15] hover:underline">✍️ {locale === 'en' ? "Didn't find it? Type it manually" : 'ما لقيت المادة؟ اكتبها يدوياً'}</button>
-                    </div>
-                  ) : null}
+                  )}
 
                   {/* مواصفات المنتج المنظّمة (لو المنتج له مواصفات معرّفة) */}
                   {specFields.length > 0 && (
@@ -995,6 +1019,50 @@ export default function NewRFQPage() {
           </div>
         </form>
       </div>
+
+      {/* مودال: طلب إضافة مادة جديدة (للإدارة) */}
+      {matReqOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" dir={dir} onClick={() => !matReqBusy && setMatReqOpen(false)}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+            {matReqDone ? (
+              <div className="text-center py-4">
+                <div className="text-5xl mb-3">✅</div>
+                <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Request sent' : 'تم إرسال طلبك'}</h3>
+                <p className="text-sm text-gray-500 mb-5">{locale === 'en' ? 'The admin will review it and add it to the catalog — then you can request it.' : 'راح تراجعها الإدارة وتضيفها للقائمة بعد الاعتماد، وبعدها تقدر تطلبها.'}</p>
+                <button type="button" onClick={() => setMatReqOpen(false)} className="px-6 py-2.5 rounded-xl font-semibold text-white text-sm" style={{ background: '#1B2D5B' }}>{locale === 'en' ? 'Done' : 'تمام'}</button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>➕ {locale === 'en' ? 'Request a new material' : 'طلب إضافة مادة جديدة'}</h3>
+                <p className="text-xs text-gray-400 mb-4">{locale === 'en' ? 'Reviewed by the admin before it appears — so it reaches the right suppliers.' : 'تُراجَع من الإدارة قبل ظهورها في القائمة، عشان توصل للموردين الصح.'}</p>
+
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Sector' : 'القطاع'}</label>
+                <div className="input-field mb-3 bg-gray-50 text-sm font-semibold" style={{ color: '#1B2D5B' }}>{sectorMeta[sector]?.ar || sector || '—'}</div>
+
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Group' : 'المجموعة'}</label>
+                <select value={matReqGroup} onChange={e => setMatReqGroup(e.target.value)} className="input-field mb-3 text-sm">
+                  <option value="">{locale === 'en' ? '— Select a group —' : '— اختر المجموعة —'}</option>
+                  {groups.map(g => <option key={g.group} value={g.group}>{groupLabel(g)}</option>)}
+                </select>
+
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Material name' : 'اسم المادة'} *</label>
+                <input type="text" value={matReqName} onChange={e => setMatReqName(e.target.value)}
+                  className="input-field mb-3 text-sm" placeholder={locale === 'en' ? 'e.g. Insulated copper pipe 22mm' : 'مثال: ماسورة نحاس معزولة 22مم'} />
+
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Details (optional)' : 'تفاصيل (اختياري)'}</label>
+                <textarea value={matReqDesc} onChange={e => setMatReqDesc(e.target.value)} rows={2}
+                  className="input-field mb-4 text-sm" placeholder={locale === 'en' ? 'Specs, brand, usage…' : 'المواصفات، العلامة التجارية، الاستخدام…'} />
+
+                <div className="flex gap-2">
+                  <button type="button" disabled={matReqBusy || !matReqName.trim()} onClick={submitMaterialRequest}
+                    className="flex-1 py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>{matReqBusy ? '...' : (locale === 'en' ? 'Send request' : 'إرسال الطلب')}</button>
+                  <button type="button" onClick={() => setMatReqOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">{locale === 'en' ? 'Cancel' : 'إلغاء'}</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </AppShell>
   )
 }

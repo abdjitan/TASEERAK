@@ -410,17 +410,25 @@ const GROUP_ORDER: Record<string, number> = {}
 ].forEach((g, i) => { GROUP_ORDER[g] = i })
 function groupRank(g: string): number { return g === '_other' ? 9999 : (GROUP_ORDER[g] ?? 900) }
 
-export function getGroupedProducts(sector: Sector): ProductGroup[] {
+// extra = مواد معتمدة من قاعدة البيانات (طلبات مقاولين وافق عليها الأدمن) تُدمج مع المضمّنة
+export function getGroupedProducts(sector: Sector, extra: { name: string; sub_category?: string }[] = []): ProductGroup[] {
   const subs = SUB_CATEGORIES[sector] || {}
   const products = SECTOR_PRODUCTS[sector] || []
   const order: string[] = []
   const buckets: Record<string, string[]> = {}
-  for (const p of products) {
-    const subKey = detectSubCategory(p, sector)
-    const group = (subKey && subs[subKey]?.group) || '_other'
+  const add = (p: string, hint?: string) => {
+    let group: string
+    if (hint && GROUP_LABELS[hint]) {
+      group = hint // التلميح هو مفتاح مجموعة مباشرة (مواد معتمدة)
+    } else {
+      const subKey = (hint && subs[hint]) ? hint : detectSubCategory(p, sector)
+      group = (subKey && subs[subKey]?.group) || '_other'
+    }
     if (!buckets[group]) { buckets[group] = []; order.push(group) }
-    buckets[group].push(p)
+    if (!buckets[group].includes(p)) buckets[group].push(p)
   }
+  for (const p of products) add(p)
+  for (const e of (extra || [])) if (e?.name) add(e.name, e.sub_category)
   order.sort((a, b) => groupRank(a) - groupRank(b)) // ترتيب منطقي ثابت
   return order.map(g => {
     const gl = GROUP_LABELS[g]

@@ -59,7 +59,8 @@ export default function AdminPanel() {
     const { data: allUsers } = await client.from('profiles').select('*').order('created_at', { ascending: false })
     setUsers(allUsers || [])
     const { data: mreqs } = await client.from('material_requests')
-      .select('*, supplier:profiles(company_name_ar)').order('created_at', { ascending: false })
+      .select('*, supplier:profiles!supplier_id(company_name_ar), requester:profiles!requested_by(company_name_ar, role)')
+      .order('created_at', { ascending: false })
     setMaterialReqs(mreqs || [])
 
     // Requests / offers overview (admin can read all via RLS is_admin())
@@ -117,10 +118,14 @@ export default function AdminPanel() {
   async function reviewMaterial(reqId: string, status: 'approved' | 'rejected') {
     setActionLoading(reqId)
     const supabase = createClient()
-    await supabase.from('material_requests')
-      .update({ status, reviewed_at: new Date().toISOString() })
-      .eq('id', reqId)
-    setMsg(`✓ تم ${status === 'approved' ? 'قبول' : 'رفض'} المادة`)
+    if (status === 'approved') {
+      // الاعتماد يضيف المادة فعلياً لقائمة المواد (catalog) عبر دالة آمنة
+      const { error } = await supabase.rpc('approve_material_request', { p_id: reqId })
+      if (error) { setMsg('تعذّر الاعتماد — حاول مجدداً'); setTimeout(() => setMsg(''), 3000); setActionLoading(''); return }
+    } else {
+      await supabase.from('material_requests').update({ status, reviewed_at: new Date().toISOString() }).eq('id', reqId)
+    }
+    setMsg(`✓ تم ${status === 'approved' ? 'قبول وإضافة' : 'رفض'} المادة`)
     setTimeout(() => setMsg(''), 3000)
     await loadData()
     setActionLoading('')
@@ -791,7 +796,9 @@ export default function AdminPanel() {
                       </div>
                       {r.description && <p className="text-sm text-gray-500 mt-1">{r.description}</p>}
                       <div className="text-[11px] text-gray-400 mt-1">
-                        من: {r.supplier?.company_name_ar || '—'} · {new Date(r.created_at).toLocaleDateString('ar-SA')}
+                        من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
+                        {r.requester?.role && ` (${r.requester.role === 'contractor' ? 'مقاول' : r.requester.role === 'supplier' ? 'مورد' : r.requester.role})`}
+                        {r.sub_category && ` · مجموعة: ${r.sub_category}`} · {new Date(r.created_at).toLocaleDateString('ar-SA')}
                       </div>
                     </div>
                     {r.status === 'pending' && (
