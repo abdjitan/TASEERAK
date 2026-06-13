@@ -4,6 +4,7 @@
 // أيقونات SVG احترافية (خطّية) لمجموعات المواد والقطاعات — بديلة للإيموجي.
 // stroke = currentColor، فاللون يأتي من عنصر الأب (text color).
 import { ReactNode } from 'react'
+import { ICON_SVGS } from './catIconSvgs'
 
 const P: Record<string, ReactNode> = {
   box: <><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></>,
@@ -54,10 +55,12 @@ const MAP: Record<string, string> = {
 }
 
 export default function CatIcon({ k, className = 'w-5 h-5' }: { k: string; className?: string }) {
-  const icon = P[MAP[k] || ''] || P.box
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {icon}
-    </svg>
-  )
+  const svgProps = {
+    viewBox: '0 0 24 24', className, fill: 'none', stroke: 'currentColor',
+    strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, 'aria-hidden': true,
+  }
+  // أيقونات المصمّم (SVG) أولاً — وإلا نرجع للأيقونات المضمّنة (الآليات + أي مجموعة بدون أيقونة جديدة)
+  const designer = ICON_SVGS[k]
+  if (designer) return <svg {...svgProps} dangerouslySetInnerHTML={{ __html: designer }} />
+  return <svg {...svgProps}>{P[MAP[k] || ''] || P.box}</svg>
 }
