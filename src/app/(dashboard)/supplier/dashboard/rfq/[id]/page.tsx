@@ -210,6 +210,7 @@ export default function SupplierRFQPage() {
 
   // إضافات الفاتورة (توصيل/تركيب/رسوم) — label + amount
   const [extras, setExtras] = useState([{ label: '', amount: '' }])
+  const [vatIncluded, setVatIncluded] = useState(false) // هل السعر المُدخل يشمل ضريبة القيمة المضافة 15%؟
   function addExtra() { setExtras(prev => [...prev, { label: '', amount: '' }]) }
   function updateExtra(i, field, val) { setExtras(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: val } : e)) }
   function removeExtra(i) { setExtras(prev => prev.filter((_, idx) => idx !== i)) }
@@ -296,6 +297,7 @@ export default function SupplierRFQPage() {
       rfq_id: id,
       supplier_id: user.id,
       total_price: finalTotal,
+      vat_included: vatIncluded,
       item_prices: itemPricesPayload,
       unit_price: isMultiItem ? null : (unitPrice ? parseFloat(unitPrice) : null),
       delivery_days: deliveryDays ? parseInt(deliveryDays) : null,
@@ -779,19 +781,45 @@ export default function SupplierRFQPage() {
                 </button>
               </div>
 
-              {/* الإجمالي النهائي = سعر البضاعة + الإضافات */}
+              {/* ضريبة القيمة المضافة 15% — خيار: هل السعر يشملها؟ + تفصيل الإجمالي */}
               {(() => {
                 const goods = parseFloat(totalPrice) || 0
                 const exSum = extras.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
-                if (goods + exSum <= 0) return null
+                const entered = goods + exSum
+                const net = vatIncluded ? entered / 1.15 : entered
+                const vat = net * 0.15
+                const gross = net + vat
+                const fmt = (n) => (+n.toFixed(2)).toLocaleString('en-US')
                 return (
-                  <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 flex items-center justify-between">
-                    <span className="text-sm font-bold" style={{ color: '#0F6E56' }}>
-                      {locale === 'en' ? 'Grand Total' : locale === 'ur' ? 'کل میزان' : 'الإجمالي النهائي'}
-                    </span>
-                    <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>
-                      {(goods + exSum).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}
-                    </span>
+                  <div className="border-t border-gray-100 pt-4">
+                    {/* خيار شمول الضريبة */}
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <div className="text-sm font-bold" style={{ color: '#1B2D5B' }}>🧾 {locale === 'en' ? 'Price includes 15% VAT?' : 'هل السعر يشمل ضريبة القيمة المضافة (15%)؟'}</div>
+                        <div className="text-[11px] text-gray-400">{vatIncluded ? (locale === 'en' ? 'Yes — VAT will be extracted from your price.' : 'نعم — تُستخرج الضريبة من سعرك.') : (locale === 'en' ? 'No — VAT is added on top.' : 'لا — تُضاف الضريبة فوق سعرك.')}</div>
+                      </div>
+                      <button type="button" onClick={() => setVatIncluded(v => !v)}
+                        className="w-12 h-7 rounded-full transition-all flex items-center px-1 shrink-0" style={{ background: vatIncluded ? '#0F6E56' : '#d1d5db', justifyContent: vatIncluded ? 'flex-end' : 'flex-start' }}>
+                        <span className="w-5 h-5 bg-white rounded-full shadow" />
+                      </button>
+                    </div>
+                    {/* تفصيل الإجمالي */}
+                    {entered > 0 && (
+                      <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm space-y-1.5">
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>{locale === 'en' ? 'Net (before VAT)' : 'الصافي (قبل الضريبة)'}</span>
+                          <span className="font-semibold">{fmt(net)} {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>{locale === 'en' ? 'VAT 15%' : 'ضريبة القيمة المضافة 15%'}</span>
+                          <span className="font-semibold">+ {fmt(vat)} {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-[#0F6E56]/20 pt-1.5">
+                          <span className="font-bold" style={{ color: '#0F6E56' }}>{locale === 'en' ? 'Grand Total (incl. VAT)' : 'الإجمالي شامل الضريبة'}</span>
+                          <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>{fmt(gross)} {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )
               })()}

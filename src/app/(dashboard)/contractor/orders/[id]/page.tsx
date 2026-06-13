@@ -44,9 +44,10 @@ export default function OrderDetailPage() {
   useEffect(() => {
     if (!offer || !supplier) return
     const exSum = (Array.isArray(offer.extra_charges) ? offer.extra_charges : []).reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0)
-    const base = (Array.isArray(awards) && awards.length > 0)
+    const entered = (Array.isArray(awards) && awards.length > 0)
       ? awards.reduce((s: number, a: any) => s + (Number(a.total) || 0), 0) + exSum
       : (Number(offer.total_price) || 0)
+    const base = offer.vat_included ? entered / 1.15 : entered // net (pre-VAT) — QR adds VAT back
     const iso = new Date(offer.accepted_at || offer.created_at).toISOString()
     const payload = zatcaQrPayload(
       supplier.company_name_ar || 'Supplier',
@@ -154,6 +155,11 @@ export default function OrderDetailPage() {
   const _exSum = _ex.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0)
   // إجمالي هذا الأمر = (مجموع المواد المُرساة + الإضافات) عند الترسية بند-بند، وإلا إجمالي العرض
   const dealTotal = hasAwards ? (awards.reduce((s: number, a: any) => s + (Number(a.total) || 0), 0) + _exSum) : (Number(offer.total_price) || 0)
+  // الضريبة 15% — إن كان سعر المورد يشمل الضريبة نستخرجها، وإلا نضيفها فوقه
+  const vatIncl = !!offer.vat_included
+  const dealNet = vatIncl ? dealTotal / 1.15 : dealTotal
+  const dealVat = dealNet * 0.15
+  const dealGross = dealNet + dealVat
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 print:bg-white print:p-0" dir="rtl">
@@ -298,16 +304,16 @@ export default function OrderDetailPage() {
             <div className="flex justify-end">
               <div className="w-64 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">المجموع الفرعي</span>
-                  <span className="text-gray-900">{dealTotal.toLocaleString('en-US')} ر.س</span>
+                  <span className="text-gray-500">المجموع الفرعي (قبل الضريبة)</span>
+                  <span className="text-gray-900">{dealNet.toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">ضريبة القيمة المضافة (15%)</span>
-                  <span className="text-gray-900">{(dealTotal * 0.15).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span>
+                  <span className="text-gray-900">{dealVat.toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span>
                 </div>
                 <div className="border-t border-gray-200 pt-2 flex justify-between">
                   <span className="font-bold text-gray-900">الإجمالي شامل الضريبة</span>
-                  <span className="font-bold text-[#d96f15] text-lg">{(dealTotal * 1.15).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span>
+                  <span className="font-bold text-[#d96f15] text-lg">{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span>
                 </div>
               </div>
             </div>
@@ -403,9 +409,9 @@ export default function OrderDetailPage() {
             </table>
             <div className="flex justify-end">
               <div className="w-64 space-y-1 text-sm">
-                <div className="flex justify-between"><span className="text-gray-500">المجموع (غير شامل الضريبة)</span><span>{dealTotal.toLocaleString('en-US')} ر.س</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">ضريبة القيمة المضافة 15%</span><span>{(dealTotal * 0.15).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span></div>
-                <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>الإجمالي شامل الضريبة</span><span style={{ color: '#0F6E56' }}>{(dealTotal * 1.15).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">المجموع (غير شامل الضريبة)</span><span>{dealNet.toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">ضريبة القيمة المضافة 15%</span><span>{dealVat.toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span></div>
+                <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>الإجمالي شامل الضريبة</span><span style={{ color: '#0F6E56' }}>{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span></div>
               </div>
             </div>
             {!supplier?.vat_number && (

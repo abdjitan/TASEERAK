@@ -201,7 +201,17 @@ export default function OfferDetailPage() {
             {exList.map((e, i) => (
               <div key={i} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString('en-US')} ر.س</span></div>
             ))}
-            <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>الإجمالي</span><span>{Number(offer.total_price).toLocaleString('en-US')} ر.س</span></div>
+            {(() => {
+              const entered = Number(offer.total_price) || 0
+              const net = offer.vat_included ? entered / 1.15 : entered
+              const vat = net * 0.15
+              const fmt = (n) => (+n.toFixed(2)).toLocaleString('en-US')
+              return (<>
+                <div className="flex justify-between text-gray-600 border-t border-amber-200 mt-1.5 pt-1.5"><span>الصافي (قبل الضريبة)</span><span>{fmt(net)} ر.س</span></div>
+                <div className="flex justify-between text-gray-600"><span>ضريبة القيمة المضافة 15%</span><span>+ {fmt(vat)} ر.س</span></div>
+                <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>الإجمالي شامل الضريبة</span><span>{fmt(net + vat)} ر.س</span></div>
+              </>)
+            })()}
           </div>
 
           {offer.attributes && Object.keys(offer.attributes).length > 0 && (
