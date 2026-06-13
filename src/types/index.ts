@@ -65,6 +65,8 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   facade_systems: { ar: 'الواجهات المتطورة', en: 'Facade Systems', ur: 'فیسڈ سسٹم', icon: '🏢' },
   joinery: { ar: 'النجارة والأثاث الثابت', en: 'Joinery & Millwork', ur: 'جوائنری', icon: '🪑' },
   acoustic: { ar: 'العزل الصوتي', en: 'Acoustic Systems', ur: 'صوتی نظام', icon: '🔊' },
+  building_insulation: { ar: 'العزل الحراري والمائي', en: 'Thermal & Moisture Insulation', ur: 'انسولیشن', icon: '🧊' },
+  arch_metalwork: { ar: 'الأعمال المعدنية والمصاعد', en: 'Metalwork & Elevators', ur: 'دھاتی کام', icon: '🛗' },
   sanitary_finish: { ar: 'الأدوات الصحية والتشطيبات', en: 'Sanitary Ware & Finishes', ur: 'سینیٹری', icon: '🛁' },
   // ميكانيك
   hvac: { ar: 'التكييف والتهوية', en: 'HVAC & Ventilation', ur: 'ایئر کنڈیشنگ', icon: '❄️' },
@@ -144,14 +146,14 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ الأرضيات والحوائط ═══
     tiles: { ar: 'بلاط وبورسلان وسيراميك', en: 'Tiles & Porcelain', ur: 'ٹائلز', icon: '🔲', group: 'floors_walls',
       keywords: ['بلاط','سيراميك','بورسلين','بورسلان','tile','ceramic','porcelain','موزاييك','mosaic'] },
-    marble: { ar: 'رخام وجرانيت', en: 'Marble & Granite', ur: 'سنگ مرمر', icon: '💎', group: 'floors_walls',
-      keywords: ['رخام','جرانيت','marble','granite','حجر طبيعي','natural stone','بازلت','basalt'] },
+    marble: { ar: 'رخام وجرانيت وحجر', en: 'Marble, Granite & Stone', ur: 'سنگ مرمر', icon: '💎', group: 'floors_walls',
+      keywords: ['رخام','جرانيت','marble','granite','حجر طبيعي','natural stone','حجر صناعي','engineered stone','بازلت','basalt'] },
     wood_floor: { ar: 'باركيه وفينيل وSPC', en: 'Parquet, Vinyl & SPC', ur: 'پارکے', icon: '🟫', group: 'floors_walls',
       keywords: ['باركيه','parquet','فينيل','vinyl','SPC','خشبية','أرضية خشب','laminate'] },
     tile_adhesive: { ar: 'مواد تركيب البلاط (غراء/ترويبة)', en: 'Tile Adhesive & Grout', ur: 'ٹائل گلو', icon: '🪣', group: 'floors_walls',
       keywords: ['غراء','ترويبة','grout','adhesive','لاصق بلاط','tile glue'] },
     special_floor: { ar: 'أرضيات خاصة (إيبوكسي/تيرازو)', en: 'Special Flooring', ur: 'خصوصی فرش', icon: '🟪', group: 'floors_walls',
-      keywords: ['إيبوكسي','epoxy','تيرازو','terrazzo','سجاد','carpet','raised access','screed','فرشة','مطاطية','rubber'] },
+      keywords: ['إيبوكسي','epoxy','تيرازو','terrazzo','سجاد','carpet','raised access','screed','فرشة','مطاطية','مطاط','matting','rubber'] },
     // ═══ الدهانات والديكورات الخارجية ═══
     paint: { ar: 'دهانات (جوتن/الجزيرة)', en: 'Paints', ur: 'پینٹ', icon: '🎨', group: 'paint_facade',
       keywords: ['دهان','دهانات','paint','جوتن','jotun','الجزيرة','أكريليك','acrylic','زيتي','ورق جدران','wallpaper'] },
@@ -161,14 +163,14 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     gypsum: { ar: 'جبس بورد وقواطع', en: 'Gypsum Board & Partitions', ur: 'جپسم بورڈ', icon: '⬜', group: 'ceiling_decor',
       keywords: ['جبس بورد','gypsum','بورد','board','partition','قواطع','أوميجا','معجون','جبسوم'] },
     false_ceiling: { ar: 'أسقف مستعارة (ألومنيوم/بلاطات)', en: 'False Ceilings', ur: 'جھوٹی چھت', icon: '🔳', group: 'ceiling_decor',
-      keywords: ['أسقف مستعارة','false ceiling','ألومنيوم','شرائح','بلاطات','ممرات','ceiling tile','صوتية'] },
+      keywords: ['أسقف مستعارة','false ceiling','ألومنيوم','شرائح','بلاطات','ممرات','ceiling tile','صوتية','كالسيوم','calcium silicate','أسقف مكشوفة','مكشوفة'] },
     // ═══ الأبواب والشبابيك والواجهات ═══
     aluminum: { ar: 'ألمنيوم وشبابيك', en: 'Aluminum & Windows', ur: 'ایلومینیم', icon: '🪟', group: 'doors_windows',
       keywords: ['ألمنيوم','aluminum','شبابيك','نوافذ','window','UPVC'] },
     wood_doors: { ar: 'أبواب خشبية', en: 'Wooden Doors', ur: 'لکڑی دروازے', icon: '🚪', group: 'doors_windows',
       keywords: ['أبواب خشب','wooden door','كبس','حشو','سنديان','خشبية'] },
     fire_doors: { ar: 'أبواب حديد وحريق', en: 'Steel & Fire-Rated Doors', ur: 'فائر دروازے', icon: '🔥', group: 'doors_windows',
-      keywords: ['أبواب حديد','fire door','مقاومة حريق','fire rated','طوارئ','حديدية'] },
+      keywords: ['أبواب حديد','fire door','مقاومة حريق','fire rated','طوارئ','حديدية','أبواب ستانلس','stainless door'] },
     auto_doors: { ar: 'أبواب أوتوماتيكية وكراجات', en: 'Automatic & Garage Doors', ur: 'آٹومیٹک دروازے', icon: '🚗', group: 'doors_windows',
       keywords: ['أوتوماتيك','automatic','كراج','garage','rolling','شتر','أتوماتيكية'] },
     // ═══ الواجهات المتطورة (Facade) ═══
@@ -195,6 +197,14 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['أدوات صحية','مرحاض','مغسلة','حوض','خلاط','بانيو','كرسي','sanitary ware','WC','basin','mixer'] },
     bath_accessories: { ar: 'إكسسوارات حمامات ومطابخ', en: 'Bath & Kitchen Accessories', ur: 'لوازمات', icon: '🛁', group: 'sanitary_finish',
       keywords: ['إكسسوارات حمام','accessories','مطبخ','kitchen','مرايا','حوامل'] },
+    // ═══ العزل الحراري والمائي ═══
+    thermal_insulation: { ar: 'عوازل حرارية ومائية', en: 'Thermal & Moisture Insulation', ur: 'انسولیشن', icon: '🧊', group: 'building_insulation',
+      keywords: ['عازل حراري','XPS','EPS عازل','صوف صخري','rock wool','rockwool','فوم عازل','عازل رطوبة','عازل مائي','waterproofing membrane','polystyrene','بولي ستايرين','عزل أسطح'] },
+    // ═══ الأعمال المعدنية والمصاعد ═══
+    metal_features: { ar: 'درابزين وسلالم ومشربيات', en: 'Balustrades, Stairs & Screens', ur: 'دھاتی کام', icon: '🛗', group: 'arch_metalwork',
+      keywords: ['درابزين','handrail','balustrade','سلالم حديد','سلالم ستانلس','درج معدني','staircase','مشربية','مشربيات','screen معماري','railing','بلكونة','سلم حلزوني'] },
+    vertical_transport: { ar: 'مصاعد وسلالم كهربائية', en: 'Elevators & Escalators', ur: 'لفٹ', icon: '🛗', group: 'arch_metalwork',
+      keywords: ['مصعد','مصاعد','elevator','lift','سلالم كهربائية','سلم كهربائي','escalator','dumbwaiter','ممشى متحرك','travelator'] },
   },
   electrical: {
     // ═══ التمديدات والكابلات ═══
@@ -203,26 +213,26 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     mv_cables: { ar: 'كابلات جهد متوسط MV', en: 'MV Cables', ur: 'MV کیبل', icon: '⚡', group: 'cabling',
       keywords: ['متوسط جهد','medium voltage','MV cable','11kV','33kV'] },
     conduits: { ar: 'مواسير وحوامل كابلات', en: 'Conduits & Trays', ur: 'کنڈوٹ', icon: '🪛', group: 'cabling',
-      keywords: ['أنبوب كهرب','conduit','مواسير تمديد','flexible','مرنة','سكة كابل','tray','ladder','حوامل'] },
+      keywords: ['أنبوب كهرب','أنابيب كهرب','conduit','مواسير تمديد','flexible','مرنة','سكة كابل','tray','ladder','حوامل'] },
     // ═══ اللوحات والمفاتيح ═══
     panels: { ar: 'لوحات توزيع (DB)', en: 'Distribution Boards', ur: 'پینل', icon: '🎛', group: 'panels_switches',
-      keywords: ['لوحة','لوحات','panel','MDB','SMDB','SDB','DB','distribution board','busbar'] },
+      keywords: ['لوحة','لوحات','panel','MDB','SMDB','SDB','DB','distribution board','busbar','bus bar','هارمونيك','harmonic'] },
     breakers: { ar: 'قواطع كهربائية', en: 'Circuit Breakers', ur: 'بریکر', icon: '🔘', group: 'panels_switches',
       keywords: ['قاطع','قواطع','breaker','MCB','MCCB','RCCB','ACB','فيوز'] },
     switches: { ar: 'مفاتيح وأفياش وعلب', en: 'Switches & Sockets', ur: 'سوئچ', icon: '🔲', group: 'panels_switches',
-      keywords: ['مفاتيح','أفياش','switch','socket','علب','أبراز','outlet','مقابس'] },
+      keywords: ['مفاتيح','أفياش','switch','socket','علب','أبراز','outlet','مقابس','مقبس','floor box','مقبس طابق'] },
     transformers: { ar: 'محولات ومولدات', en: 'Transformers & Generators', ur: 'ٹرانسفارمر', icon: '🔋', group: 'panels_switches',
-      keywords: ['محول','مولد','transformer','generator','UPS','ATS','مكثفات'] },
+      keywords: ['محول','مولد','transformer','generator','UPS','ATS','مكثفات','محطة تحويل','substation'] },
     // ═══ أنظمة الإنارة ═══
     indoor_lighting: { ar: 'إنارة داخلية (داون لايت/ليد)', en: 'Indoor Lighting', ur: 'اندرونی روشنی', icon: '💡', group: 'lighting',
-      keywords: ['إضاءة داخلية','داون لايت','downlight','سبوت','spot','لوحات ليد','LED panel','لمبة','مصباح'] },
+      keywords: ['إضاءة داخلية','داون لايت','downlight','سبوت','spot','لوحات ليد','LED panel','لمبة','مصباح','طوارئ','emergency','exit','مخرج','شريطية','strip','DALI'] },
     outdoor_lighting: { ar: 'إنارة خارجية وأعمدة', en: 'Outdoor & Landscape Lighting', ur: 'بیرونی روشنی', icon: '🏮', group: 'lighting',
       keywords: ['إنارة خارجية','حدائق','كشاف','floodlight','أعمدة إنارة','واجهات','جمالية','landscape'] },
     earthing: { ar: 'تأريض وحماية برق', en: 'Earthing & Lightning', ur: 'ارتھنگ', icon: '🛡', group: 'lighting',
       keywords: ['تأريض','earthing','earth','حماية برق','lightning','أقطاب','rod'] },
     // ═══ أنظمة التيار الخفيف ═══
     cctv: { ar: 'كاميرات مراقبة CCTV', en: 'CCTV Systems', ur: 'سی سی ٹی وی', icon: '📹', group: 'low_current',
-      keywords: ['كاميرات','مراقبة','CCTV','شاشات','surveillance'] },
+      keywords: ['كاميرات','كاميرا','مراقبة','CCTV','PTZ','شاشات','surveillance'] },
     fire_alarm: { ar: 'إنذار حريق', en: 'Fire Alarm', ur: 'فائر الارم', icon: '🚨', group: 'low_current',
       keywords: ['إنذار حريق','fire alarm','كاشف دخان','smoke detector'] },
     data_network: { ar: 'شبكات بيانات وسنترالات', en: 'Data, Telecom & Intercom', ur: 'ڈیٹا نیٹ ورک', icon: '🌐', group: 'low_current',
@@ -231,15 +241,15 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['صوتيات','sound','PA','speaker','مكبرات','إعلام'] },
     led_screens: { ar: 'شاشات LED ولوحات نتائج', en: 'LED Screens & Scoreboards', ur: 'ایل ای ڈی اسکرین', icon: '📺', group: 'low_current',
       keywords: ['شاشة','شاشات','LED screen','scoreboard','لوحة نتائج','perimeter','محيطية','display','عرض','360'] },
-    access_control: { ar: 'أنظمة دخول وبوابات', en: 'Access Control & Turnstiles', ur: 'ایکسیس کنٹرول', icon: '🚪', group: 'low_current',
-      keywords: ['تحكم بالدخول','access control','بوابة','turnstile','gate','بصمة','بطاقة','card reader','تذاكر'] },
+    access_control: { ar: 'أنظمة دخول وتحكم بالمبنى', en: 'Access Control & BMS', ur: 'ایکسیس کنٹرول', icon: '🚪', group: 'low_current',
+      keywords: ['تحكم بالدخول','تحكم دخول','access control','ACS','بوابة','turnstile','gate','بصمة','بطاقة','card reader','تذاكر','BMS','تحكم مبنى','حساس حركة','PIR','حاجز','barrier'] },
   },
   mechanical: {
     // ═══ التكييف والتهوية ═══
     ac_units: { ar: 'مكيفات (سبليت/مركزي/تشيلر)', en: 'AC Units (Split/Central/Chiller)', ur: 'ایئر کنڈیشنر', icon: '❄️', group: 'hvac',
-      keywords: ['مكيف','سبليت','split','دكت','package','مركزي','تشيلر','chiller','VRF','VRV','AHU','FCU'] },
+      keywords: ['مكيف','سبليت','split','دكت','package','مركزي','تشيلر','chiller','VRF','VRV','AHU','FCU','برج تبريد','cooling tower','مبادل حراري','heat exchanger','مكثف','condenser','مجمد حرارة'] },
     ductwork: { ar: 'مجاري هواء ومخارج', en: 'Ductwork & Grilles', ur: 'ڈکٹ', icon: '🌬', group: 'hvac',
-      keywords: ['مجاري هواء','duct','دكت','مخارج هواء','grille','ديفيوزر','diffuser'] },
+      keywords: ['مجاري هواء','duct','دكت','مخارج هواء','فتحات هواء','موزعات هواء','موزعات','ستائر هواء','air curtain','grille','ديفيوزر','diffuser'] },
     duct_insulation: { ar: 'عزل مجاري الهواء (دكت)', en: 'Duct Insulation', ur: 'ڈکٹ انسولیشن', icon: '🧥', group: 'hvac',
       keywords: ['عزل دكت','عزل مجاري','صوف صخري','rockwool','صوف زجاجي','fiberglass','عزل فوم','rubber insulation','armaflex','nitrile','كانفس','canvas','mastic','foster','ماستيك'] },
     hvac_dampers: { ar: 'خانقات هواء (حريق/دخان/VCD)', en: 'Dampers (Fire/Smoke/VCD)', ur: 'ڈیمپرز', icon: '🛡', group: 'hvac',
@@ -250,9 +260,9 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['دكت مرن','flexible duct','flexible connector','وصلة مرنة','flexible','spiral duct','دكت لولبي'] },
     // ═══ السباكة والتغذية والصرف ═══
     water_supply: { ar: 'أنابيب تغذية (PPR)', en: 'Water Supply Pipes (PPR)', ur: 'پانی سپلائی', icon: '🚰', group: 'plumbing',
-      keywords: ['PPR','تغذية','مياه باردة','مياه حارة','CPVC','PEX','نحاس مياه','مياه مبردة','chilled water','GI','مجلفن','galvanized','GRP','فايبرجلاس','معزولة مسبقا','pre-insulated','pre insulated'] },
+      keywords: ['PPR','تغذية','مياه باردة','مياه حارة','CPVC','PEX','نحاس مياه','مياه مبردة','chilled water','GI','مجلفن','galvanized','GRP','فايبرجلاس','معزولة مسبقا','pre-insulated','pre insulated','HDPE','مياه شرب','عداد مياه','water meter'] },
     drainage_pipes: { ar: 'مواسير صرف (PVC/UPVC)', en: 'Drainage Pipes (PVC)', ur: 'نکاسی پائپ', icon: '🚽', group: 'plumbing',
-      keywords: ['صرف صحي','uPVC','PVC','sanitary','soil','waste','قسامات','أكواع','مصرف','حديد زهر','cast iron','زهر'] },
+      keywords: ['صرف صحي','uPVC','PVC','sanitary','soil','waste','قسامات','أكواع','مصرف','حديد زهر','cast iron','زهر','فصال دهون','grease','interceptor'] },
     silent_drainage: { ar: 'صرف صامت (أكوستيك)', en: 'Silent / Acoustic Drainage', ur: 'سائلنٹ ڈرینج', icon: '🔇', group: 'plumbing',
       keywords: ['صرف صامت','silent','acoustic drainage','أكوستيك','db20','geberit silent','poloplast','صرف هادئ'] },
     storm_drainage: { ar: 'صرف مياه الأمطار', en: 'Storm Water Drainage', ur: 'بارش نکاسی', icon: '🌧', group: 'plumbing',
@@ -260,14 +270,14 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     water_treatment: { ar: 'معالجة وتنقية المياه', en: 'Water Treatment & Filtration', ur: 'واٹر ٹریٹمنٹ', icon: '💧', group: 'plumbing',
       keywords: ['معالجة مياه','تنقية','فلتر','filter','filtration','فلتر رملي','sand filter','فلتر قطني','RO','تحلية','water treatment','softener','تليين','ضخ ضغط عالي'] },
     pumps: { ar: 'مضخات مياه', en: 'Water Pumps', ur: 'پمپ', icon: '⚙️', group: 'plumbing',
-      keywords: ['مضخة','pump','رفع','تدوير','ضغط','booster','صمام','valve'] },
+      keywords: ['مضخة','pump','رفع','تدوير','ضغط','booster','صمام','valve','وعاء تمدد','expansion vessel'] },
     tanks_heaters: { ar: 'خزانات وسخانات مياه', en: 'Tanks & Water Heaters', ur: 'ٹینک', icon: '🪣', group: 'plumbing',
       keywords: ['خزان','tank','GRP','فايبرجلاس','بولي','سخان','heater','RO','تحلية','مرشح'] },
     // ═══ لوازم وإكسسوارات السباكة (محلات صغيرة) ═══
-    faucets_mixers: { ar: 'خلاطات وصنابير', en: 'Faucets & Mixers', ur: 'نل', icon: '🚿', group: 'plumbing_supplies',
-      keywords: ['خلاط','صنبور','حنفية','مخلط','faucet','mixer','tap','بطارية مغسلة','خلاط مطبخ'] },
-    valves_fittings: { ar: 'محابس ووصلات', en: 'Valves & Fittings', ur: 'والو', icon: '🔩', group: 'plumbing_supplies',
-      keywords: ['محبس','صمام زاوية','angle valve','gate valve','محبس زاوية','وصلة','كوع','تي','fitting','elbow','tee','كوبلن','نبل'] },
+    faucets_mixers: { ar: 'خلاطات وأدوات صحية', en: 'Faucets & Sanitary Fixtures', ur: 'نل', icon: '🚿', group: 'plumbing_supplies',
+      keywords: ['خلاط','صنبور','حنفية','مخلط','faucet','mixer','tap','بطارية مغسلة','خلاط مطبخ','مغسلة','حوض','مجلى','مبولة','wash basin','sink','urinal','كرسي حمام','مرحاض','WC'] },
+    valves_fittings: { ar: 'محابس ووصلات وحوامل', en: 'Valves, Fittings & Supports', ur: 'والو', icon: '🔩', group: 'plumbing_supplies',
+      keywords: ['محبس','صمام زاوية','angle valve','gate valve','محبس زاوية','وصلة','وصلات','كوع','تي','fitting','elbow','tee','كوبلن','نبل','فلانش','فلنشة','flange','عازل اهتزاز','اهتزاز','مواسير تمدد','expansion joint','تمدد','حوامل','تعليقات','pipe support','hanger'] },
     copper_fittings: { ar: 'لوازم نحاسية', en: 'Copper Fittings', ur: 'تانبے', icon: '🟠', group: 'plumbing_supplies',
       keywords: ['نحاس','copper','لوازم نحاسية','وصلة نحاس','كوع نحاس'] },
     traps_drains: { ar: 'سيفونات ومصافي', en: 'Traps & Drains', ur: 'سائفن', icon: '🚽', group: 'plumbing_supplies',
@@ -293,7 +303,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['siamese','وصلة دفاع مدني','fire department connection','FDC','breeching','هيدرنت','hydrant','landing','وصلة سيامي','مأخذ حريق'] },
     // ═══ العزل الحراري الميكانيكي ═══
     chilled_water_insulation: { ar: 'عزل أنابيب المياه المثلجة', en: 'Chilled Water Pipe Insulation', ur: 'چلڈ واٹر انسولیشن', icon: '🧊', group: 'mech_insulation',
-      keywords: ['عزل مياه مثلجة','chilled water insulation','عزل أنابيب','pipe insulation','armaflex','nitrile','elastomeric','صوف صخري أنابيب','عزل حراري أنابيب'] },
+      keywords: ['عزل مياه مثلجة','chilled water insulation','عزل أنابيب','عازل أنابيب','عازل أنابيب مياه مبردة','fibreglass','fiberglass عزل','pipe insulation','armaflex','nitrile','elastomeric','صوف صخري أنابيب','عزل حراري أنابيب','عازل حراري أنابيب'] },
     cladding_jacketing: { ar: 'تغليف وكلادينج ألمنيوم', en: 'Aluminum Cladding / Jacketing', ur: 'کلیڈنگ', icon: '🛢', group: 'mech_insulation',
       keywords: ['cladding','كلادينج','جاكيت','jacketing','ألمنيوم أنابيب','aluminum jacket','تغليف أنابيب','foil','رقائق ألمنيوم'] },
   },
@@ -317,14 +327,14 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['طرمبة','مضخة نزح','dewatering','submersible','غطاسة','شفط مياه'] },
     // ═══ سقالات ومنصات رفع ═══
     scaffolding_equip: { ar: 'سقالات ومنصات', en: 'Scaffolding & Platforms', ur: 'سکیفولڈنگ', icon: '🪜', group: 'access_equipment',
-      keywords: ['سقالة','سقالات','scaffold','منصة رفع','platform','سلالم','ladder','رافعة مقصية','scissor lift','بوم'] },
+      keywords: ['سقالة','سقالات','scaffold','منصة رفع','platform','سلالم','ladder','رافعة مقصية','scissor lift','بوم','جاكات','تدعيم','props','shoring','دعامات'] },
   },
   supply_store: {
     // ═══ أدوات سباكة بسيطة ═══
     store_faucets: { ar: 'خلاطات وصنابير', en: 'Faucets & Mixers', ur: 'نل', icon: '🚿', group: 'store_plumbing',
       keywords: ['خلاط','صنبور','حنفية','faucet','mixer','tap','بطارية مغسلة'] },
     store_valves: { ar: 'محابس ووصلات سباكة', en: 'Valves & Fittings', ur: 'والو', icon: '🔩', group: 'store_plumbing',
-      keywords: ['محبس','صمام زاوية','angle valve','وصلة','كوع','تي','elbow','tee','سيفون','trap','نحاس'] },
+      keywords: ['محبس','صمام زاوية','angle valve','وصلة','كوع','تي','elbow','tee','سيفون','trap','نحاس','كوبلن','مصفاة','مصفاة أرضية','floor drain'] },
     store_hoses: { ar: 'خراطيم وتفلون ولوازم', en: 'Hoses, Teflon & Supplies', ur: 'نلی', icon: '🪢', group: 'store_plumbing',
       keywords: ['خرطوم','hose','مرن','شطاف','تفلون','teflon','معجون','جلدة','حشوة','seal','دش','shower','عوامة','float'] },
     // ═══ أدوات كهرباء بسيطة ═══
@@ -342,10 +352,10 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     store_power_tools: { ar: 'عُدد كهربائية (دريل/صاروخ)', en: 'Power Tools', ur: 'بجلی اوزار', icon: '🪚', group: 'store_tools',
       keywords: ['دريل','drill','صاروخ','grinder','منشار كهرب','جلاخة','مثقاب','شحن'] },
     store_bits: { ar: 'ريش ولقم وأقراص', en: 'Bits & Discs', ur: 'بٹ', icon: '🪛', group: 'store_tools',
-      keywords: ['ريشة','ريش','لقمة','drill bit','همر','SDS','قرص قص','disc','شفرة','blade','صنفرة'] },
+      keywords: ['ريشة','ريش','لقمة','drill bit','همر','SDS','قرص قص','قرص','تجليخ','grinding','disc','شفرة','blade','صنفرة'] },
     // ═══ مسامير وبراغي ومثبتات ═══
     store_fasteners: { ar: 'مسامير وبراغي وصواميل', en: 'Screws, Bolts & Nuts', ur: 'پیچ', icon: '🔩', group: 'store_fasteners',
-      keywords: ['مسمار','برغي','screw','bolt','nail','صامولة','nut','مثبت','رول بلت','خابور','anchor','براغي','فيشر'] },
+      keywords: ['مسمار','مسامير','برغي','screw','bolt','nail','صامولة','صواميل','nut','مثبت','رول بلت','خابور','خوابير','anchor','براغي','فيشر'] },
     // ═══ سلامة ومستهلكات ═══
     store_safety: { ar: 'معدات سلامة وقفازات', en: 'Safety & PPE', ur: 'حفاظتی سامان', icon: '🦺', group: 'store_safety',
       keywords: ['خوذة','قفازات','gloves','نظارة','حذاء سلامة','سترة','كمامة','mask','PPE','وقاية','حزام أمان'] },
@@ -398,7 +408,7 @@ const GROUP_ORDER: Record<string, number> = {}
   // مدني — بتسلسل البناء
   'concrete', 'masonry', 'steel', 'rawmaterials', 'infrastructure', 'drainage_grp', 'equipment', 'landscape',
   // معماري — من الإنشاء للتشطيب
-  'floors_walls', 'ceiling_decor', 'doors_windows', 'paint_facade', 'facade_systems', 'joinery', 'sanitary_finish', 'acoustic',
+  'floors_walls', 'ceiling_decor', 'doors_windows', 'paint_facade', 'facade_systems', 'arch_metalwork', 'joinery', 'sanitary_finish', 'acoustic', 'building_insulation',
   // ميكانيك
   'plumbing', 'plumbing_supplies', 'hvac', 'firefighting', 'mech_insulation',
   // كهرباء
@@ -944,6 +954,9 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'درابزين ستانلس', 'درابزين زجاجي بحواجز',
     'سلالم حديد', 'مشربيات',
     'أرفف خشبية', 'لوحات إرشادية Signage',
+    // ═══ النجارة والأثاث الثابت (Joinery) ═══
+    'كاونتر استقبال خشبي', 'خزائن حائط ثابتة', 'أثاث ثابت خشبي Built-in',
+    'قواطع حمامات HPL', 'كبائن دورات مياه Toilet Cubicles',
     // ═══ أرضيات إضافية من BOQ 2 ═══
     'أرضية راتنج إيبوكسي High Build',
     'أرضية تيرازو Terrazzo',
