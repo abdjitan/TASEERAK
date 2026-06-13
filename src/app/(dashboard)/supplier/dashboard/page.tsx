@@ -11,6 +11,7 @@ import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import { getSubCategoryLabel, getProductLabel } from '@/types'
 import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 
 const txt = {
@@ -204,20 +205,15 @@ export default function SupplierDashboard() {
 
   const companyName = locale === 'en' && profile?.company_name_en ? profile.company_name_en : profile?.company_name_ar
 
-  const nav = [
-    { href: '/supplier/dashboard', label: locale === 'en' ? 'Dashboard' : locale === 'ur' ? 'ڈیش بورڈ' : 'الرئيسية', icon: '🏠', active: true },
-    { href: '/supplier/specialties', label: locale === 'en' ? 'Specialties' : locale === 'ur' ? 'مہارتیں' : 'تخصصاتي', icon: '🎯' },
-    { href: '/supplier/prices', label: locale === 'en' ? 'Live Prices' : locale === 'ur' ? 'لائیو قیمتیں' : 'أسعاري', icon: '📈' },
-    { href: '/supplier/branches', label: locale === 'en' ? 'Branches' : locale === 'ur' ? 'شاخیں' : 'فروعي', icon: '🏢' },
-    { href: '/market', label: locale === 'en' ? 'Price Index' : locale === 'ur' ? 'انڈیکس' : 'البورصة', icon: '📊' },
-    { href: '/location', label: locale === 'en' ? 'Location' : locale === 'ur' ? 'مقام' : 'الموقع', icon: '📍' },
-    { href: '/settings', label: locale === 'en' ? 'Settings' : locale === 'ur' ? 'ترتیبات' : 'الإعدادات', icon: '⚙️' },
-  ]
+  const nav = getNav('supplier', locale, '/supplier/dashboard')
+  if (openRfqs.length > 0) nav[0] = { ...nav[0], badge: openRfqs.length } // شارة الطلبات المتاحة
 
   return (
     <AppShell
       title={locale === 'en' ? 'Supplier Dashboard' : locale === 'ur' ? 'سپلائر ڈیش بورڈ' : 'لوحة المورّد'}
       company={companyName}
+      companyMeta={profile?.supplier_tier === 'manufacturer' ? (locale === 'en' ? 'Manufacturer' : 'مصنع') : profile?.supplier_tier === 'commercial' ? (locale === 'en' ? 'Trader' : 'تاجر') : (locale === 'en' ? 'Local' : 'مورد محلي')}
+      companyVerified={profile?.verification_status === 'verified'}
       userId={user?.id}
       nav={nav}
       onSignOut={handleSignOut}

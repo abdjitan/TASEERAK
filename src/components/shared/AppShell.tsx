@@ -6,16 +6,18 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 
-export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean }
+export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string }
 
-// Shared dashboard shell — navy gradient sidebar (264px) + frosted topbar +
+// Shared dashboard shell — navy gradient sidebar (272px) + frosted topbar +
 // off-canvas drawer on mobile. Pages pass their own nav items + header actions.
 export default function AppShell({
-  title, subtitle, company, userId, nav = [], actions, onSignOut, children, dir = 'rtl',
+  title, subtitle, company, companyMeta, companyVerified, userId, nav = [], actions, onSignOut, children, dir = 'rtl',
 }: {
   title?: string
   subtitle?: string
   company?: string
+  companyMeta?: string
+  companyVerified?: boolean
   userId?: string
   nav: ShellNavItem[]
   actions?: ReactNode
@@ -26,33 +28,72 @@ export default function AppShell({
   const { locale } = useTranslation()
   const [open, setOpen] = useState(false)
   const sideEdge = dir === 'rtl' ? 'right-0' : 'left-0'
+  const accentEdge = dir === 'rtl' ? 'right-0' : 'left-0'
   const hidden = dir === 'rtl' ? 'translate-x-full' : '-translate-x-full'
-  const mainPush = dir === 'rtl' ? 'lg:mr-[264px]' : 'lg:ml-[264px]'
+  const mainPush = dir === 'rtl' ? 'lg:mr-[272px]' : 'lg:ml-[272px]'
+  const initial = (company || 'ت').trim().charAt(0)
 
   return (
     <div className="min-h-screen" dir={dir} style={{ background: 'var(--bg)' }}>
       {/* ===== Sidebar ===== */}
       <aside
-        className={`fixed inset-y-0 ${sideEdge} z-50 w-[264px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} lg:translate-x-0`}
-        style={{ background: 'linear-gradient(180deg,#1B2D5B 0%,#0f1d3d 100%)' }}
+        className={`fixed inset-y-0 ${sideEdge} z-50 w-[272px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} lg:translate-x-0`}
+        style={{ background: 'linear-gradient(180deg,#1B2D5B 0%,#10203f 60%,#0c1730 100%)' }}
       >
-        <div className="p-5 flex items-center gap-3 border-b border-white/10">
-          <span className="w-10 h-10 rounded-xl bg-white grid place-items-center shadow"><img src="/logo.png" alt="تسعيرك" className="w-7 h-7 object-contain" /></span>
-          <span className="text-xl font-extrabold">
+        {/* Brand */}
+        <div className="px-5 pt-6 pb-5 flex items-center gap-3">
+          <span className="w-11 h-11 rounded-2xl bg-white grid place-items-center shadow-lg shadow-black/20">
+            <img src="/logo.png" alt="تسعيرك" className="w-7 h-7 object-contain" />
+          </span>
+          <span className="text-2xl font-black tracking-tight">
             {locale === 'en' ? <>TASEER<span style={{ color: '#F5831F' }}>AK</span></>
               : locale === 'ur' ? <>تسعیر<span style={{ color: '#F5831F' }}>ک</span></>
               : <>تسعير<span style={{ color: '#F5831F' }}>ك</span></>}
           </span>
         </div>
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-          {nav.map((n) => (
-            <a key={n.href} href={n.href} onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${n.active ? 'bg-white/15 text-white' : 'text-blue-100/70 hover:bg-white/10 hover:text-white'}`}>
-              <span className="w-5 grid place-items-center text-base">{n.icon}</span>{n.label}
-            </a>
-          ))}
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto px-3 pb-3 space-y-0.5">
+          {nav.map((n, i) => {
+            const showSection = n.section && n.section !== nav[i - 1]?.section
+            return (
+              <div key={n.href}>
+                {showSection && (
+                  <div className="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-blue-200/45">{n.section}</div>
+                )}
+                <a href={n.href} onClick={() => setOpen(false)}
+                  className={`relative flex items-center gap-3 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors ${n.active ? 'bg-white/[0.13] text-white' : 'text-blue-100/70 hover:bg-white/[0.07] hover:text-white'}`}>
+                  {n.active && <span className={`absolute ${accentEdge} top-2.5 bottom-2.5 w-1 rounded-full`} style={{ background: '#F5831F' }} />}
+                  <span className="w-6 grid place-items-center text-[18px]">{n.icon}</span>
+                  <span className="truncate">{n.label}</span>
+                  {n.badge != null && n.badge !== 0 && (
+                    <span className="ml-auto min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full text-[11px] font-extrabold text-white" style={{ background: '#F5831F' }}>
+                      {n.badge}
+                    </span>
+                  )}
+                </a>
+              </div>
+            )
+          })}
         </nav>
-        {company && <div className="p-4 border-t border-white/10 text-xs text-blue-100/60 truncate">{company}</div>}
+
+        {/* User card */}
+        {company && (
+          <div className="px-3 pb-4">
+            <div className="flex items-center gap-3 rounded-2xl p-3 bg-white/[0.06] border border-white/10">
+              <span className="w-10 h-10 rounded-xl grid place-items-center font-black text-white shrink-0 shadow" style={{ background: '#0F6E56' }}>{initial}</span>
+              <div className="min-w-0">
+                <div className="font-bold text-sm truncate">{company}</div>
+                {(companyMeta || companyVerified) && (
+                  <div className="text-[11px] text-blue-200/60 truncate flex items-center gap-1">
+                    {companyMeta}
+                    {companyVerified && <span style={{ color: '#34d399' }}>· موثّق ✓</span>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </aside>
 
       {/* backdrop (mobile) */}
