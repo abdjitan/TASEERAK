@@ -111,6 +111,17 @@ export default function RFQDetailPage() {
     setAwarding(null)
     await reloadAwards()
   }
+  // تأكيد الترسية: قبول الموردين الفائزين + إصدار أوامر الشراء + إغلاق الطلب
+  const [finalizing, setFinalizing] = useState(false)
+  async function finalizeAwards() {
+    if (!confirm('تأكيد الترسية؟ سيتم قبول الموردين الفائزين، إصدار أمر شراء لكل مورد، وإغلاق الطلب.')) return
+    setFinalizing(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('finalize_rfq_awards', { p_rfq_id: id })
+    setFinalizing(false)
+    if (error) { alert('تعذّر تأكيد الترسية — حدّث الصفحة وحاول مجدداً.'); return }
+    window.location.reload()
+  }
 
   const [showEditWarning, setShowEditWarning] = useState(false)
 
@@ -394,7 +405,7 @@ export default function RFQDetailPage() {
                   Object.values(awards).forEach((a: any) => {
                     if (!bySupplier[a.supplier_id]) {
                       const off = offers.find(o => o.id === a.offer_id)
-                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: off?.supplier?.phone, total: 0, count: 0 }
+                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: off?.supplier?.phone, offerId: a.offer_id, total: 0, count: 0 }
                     }
                     bySupplier[a.supplier_id].total += Number(a.total) || 0
                     bySupplier[a.supplier_id].count += 1
@@ -402,13 +413,16 @@ export default function RFQDetailPage() {
                   const list: any[] = Object.values(bySupplier)
                   const grand = list.reduce((s, v) => s + v.total, 0)
                   const awardedCount = Object.keys(awards).length
+                  const finalized = rfq.status !== 'open'
                   return (
                     <div className="rounded-xl p-4 text-white mt-2" style={{ background: '#1B2D5B' }}>
                       <h4 className="font-bold text-sm mb-2">📦 ملخص الترسية ({awardedCount}/{rfq.items.length} مادة · {list.length} مورد)</h4>
                       {list.map((v, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-white/10">
-                          <span className="flex items-center gap-2">{v.name} <span className="text-blue-200 text-xs">({v.count} مادة)</span>
-                            {v.phone && <a href={waLink(v.phone, `بخصوص ترسية مواد من منصة تسعيرك`)} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}>💬 تواصل</a>}
+                        <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-white/10 gap-2">
+                          <span className="flex items-center gap-2 flex-wrap">{v.name} <span className="text-blue-200 text-xs">({v.count} مادة)</span>
+                            {finalized
+                              ? <a href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}>📄 أمر الشراء ←</a>
+                              : v.phone && <a href={waLink(v.phone, `بخصوص ترسية مواد من منصة تسعيرك`)} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}>💬 تواصل</a>}
                           </span>
                           <span className="font-bold whitespace-nowrap">{v.total.toLocaleString('en-US')} ر.س</span>
                         </div>
@@ -416,7 +430,14 @@ export default function RFQDetailPage() {
                       <div className="flex items-center justify-between font-extrabold mt-2 pt-1">
                         <span>الإجمالي</span><span style={{ color: '#F5831F' }}>{grand.toLocaleString('en-US')} ر.س</span>
                       </div>
-                      <p className="text-[11px] text-blue-200 mt-2">📄 أوامر الشراء الرسمية لكل مورد قيد التطوير — حالياً تواصل مع كل مورد عبر واتساب.</p>
+                      {finalized ? (
+                        <p className="text-[11px] text-emerald-300 mt-3">✓ تمت الترسية — افتح أمر الشراء لكل مورد لمتابعة التسليم والدفع وحماية الصفقة.</p>
+                      ) : (
+                        <button type="button" onClick={finalizeAwards} disabled={finalizing}
+                          className="w-full mt-3 py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#0F6E56' }}>
+                          {finalizing ? '...' : '✓ تأكيد الترسية وإصدار أوامر الشراء'}
+                        </button>
+                      )}
                     </div>
                   )
                 })()}
