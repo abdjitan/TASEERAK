@@ -17,7 +17,7 @@ const txt = {
   ar: {
     title: 'إعدادات الحساب', back: '← رجوع', logout: 'خروج',
     profileTab: 'معلومات الشركة', passwordTab: 'كلمة المرور', langTab: 'اللغة', docsTab: 'المستندات',
-    companyAr: 'اسم الشركة (عربي)', companyEn: 'اسم الشركة (إنجليزي)',
+    companyAr: 'اسم الشركة', companyEn: 'اسم الشركة (إنجليزي)',
     phone: 'رقم الجوال (واتساب)', region: 'المنطقة', city: 'المدينة',
     selectRegion: 'اختر المنطقة', saveProfile: 'حفظ التغييرات',
     saving: 'جارٍ الحفظ...', saved: '✓ تم الحفظ بنجاح', error: 'حدث خطأ، حاول مرة أخرى',
@@ -40,7 +40,7 @@ const txt = {
   en: {
     title: 'Account Settings', back: '← Back', logout: 'Logout',
     profileTab: 'Company Info', passwordTab: 'Password', langTab: 'Language', docsTab: 'Documents',
-    companyAr: 'Company Name (Arabic)', companyEn: 'Company Name (English)',
+    companyAr: 'Company Name', companyEn: 'Company Name (English)',
     phone: 'Phone (WhatsApp)', region: 'Region', city: 'City',
     selectRegion: 'Select region', saveProfile: 'Save Changes',
     saving: 'Saving...', saved: '✓ Saved successfully', error: 'An error occurred, try again',
@@ -63,7 +63,7 @@ const txt = {
   ur: {
     title: 'اکاؤنٹ کی ترتیبات', back: '← واپس', logout: 'لاگ آؤٹ',
     profileTab: 'کمپنی کی معلومات', passwordTab: 'پاسورڈ', langTab: 'زبان', docsTab: 'دستاویزات',
-    companyAr: 'کمپنی کا نام (عربی)', companyEn: 'کمپنی کا نام (انگریزی)',
+    companyAr: 'کمپنی کا نام', companyEn: 'کمپنی کا نام (انگریزی)',
     phone: 'فون (واٹس ایپ)', region: 'علاقہ', city: 'شہر',
     selectRegion: 'علاقہ منتخب کریں', saveProfile: 'تبدیلیاں محفوظ کریں',
     saving: 'محفوظ ہو رہا ہے...', saved: '✓ کامیابی سے محفوظ', error: 'خرابی ہوئی، دوبارہ کوشش کریں',
@@ -390,15 +390,9 @@ export default function SettingsPage() {
                 </div>
 
                 <form onSubmit={saveProfile} className="space-y-5">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} 🔒</label>
-                      <div className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyEn} 🔒</label>
-                      <div className="input-field bg-gray-50 text-gray-500 flex items-center min-h-[44px]" dir="ltr">{companyEn || '—'}</div>
-                    </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} 🔒</label>
+                    <div className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
                   </div>
                   <div className="-mt-3">
                     {pendingFor('name')

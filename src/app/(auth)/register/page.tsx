@@ -24,7 +24,7 @@ const TR = {
     contractor: 'مقاول', contractorDesc: 'أبحث عن موردين وأطلب تسعيرات',
     next: 'التالي ←', back: '← رجوع', haveAccount: 'لديك حساب؟', login: 'تسجيل الدخول',
     companyData: 'بيانات الشركة', companyDataSub: 'أدخل المعلومات الأساسية لشركتك',
-    companyAr: 'اسم الشركة (عربي)', companyEn: 'الاسم (إنجليزي)',
+    companyAr: 'اسم الشركة', companyEn: 'الاسم (إنجليزي)',
     crNumber: 'رقم السجل التجاري', vatNumber: 'رقم الضريبة (VAT)',
     region: 'المنطقة', selectRegion: '-- اختر --', city: 'المدينة', cityPh: 'اسم المدينة',
     phone: 'رقم الجوال (واتساب)', phoneHint: '10 أرقام تبدأ بـ 05 (بدون مفتاح الدولة)',
@@ -54,7 +54,7 @@ const TR = {
     contractor: 'Contractor', contractorDesc: 'Find suppliers & request quotes',
     next: 'Next →', back: '← Back', haveAccount: 'Have an account?', login: 'Sign In',
     companyData: 'Company Information', companyDataSub: 'Enter your company basic info',
-    companyAr: 'Company Name (Arabic)', companyEn: 'Name (English)',
+    companyAr: 'Company Name', companyEn: 'Name (English)',
     crNumber: 'Commercial Registration', vatNumber: 'VAT Number',
     region: 'Region', selectRegion: '-- Select --', city: 'City', cityPh: 'City name',
     phone: 'Phone (WhatsApp)', phoneHint: '10 digits starting with 05 (no country code)',
@@ -84,7 +84,7 @@ const TR = {
     contractor: 'ٹھیکیدار', contractorDesc: 'سپلائرز تلاش کریں اور قیمتیں طلب کریں',
     next: 'آگے →', back: '← واپس', haveAccount: 'اکاؤنٹ ہے؟', login: 'سائن ان',
     companyData: 'کمپنی کی معلومات', companyDataSub: 'اپنی کمپنی کی بنیادی معلومات درج کریں',
-    companyAr: 'کمپنی کا نام (عربی)', companyEn: 'نام (انگریزی)',
+    companyAr: 'کمپنی کا نام', companyEn: 'نام (انگریزی)',
     crNumber: 'تجارتی رجسٹریشن', vatNumber: 'VAT نمبر',
     region: 'علاقہ', selectRegion: '-- منتخب کریں --', city: 'شہر', cityPh: 'شہر کا نام',
     phone: 'فون (واٹس ایپ)', phoneHint: '05 سے شروع 10 ہندسے',
@@ -548,21 +548,13 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyAr} * {crVerify?.verified && <span className="text-emerald-600">🔒</span>}</label>
-                    <input {...register('company_name_ar')} readOnly={!!crVerify?.verified}
-                      className={`input-field ${crVerify?.verified ? 'bg-emerald-50/60 text-gray-700 cursor-not-allowed' : ''}`} placeholder="شركة الصخر للمقاولات"/>
-                    {crVerify?.verified
-                      ? <p className="text-[10px] text-emerald-600 mt-1">{locale === 'en' ? 'Officially verified — cannot be changed' : locale === 'ur' ? 'تصدیق شدہ — تبدیل نہیں ہو سکتا' : 'موثّق رسمياً — لا يمكن تعديله'}</p>
-                      : errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyEn} {crVerify?.verified && crVerify?.nameEn && <span className="text-emerald-600">🔒</span>}</label>
-                    <input {...register('company_name_en')} readOnly={!!(crVerify?.verified && crVerify?.nameEn)}
-                      className={`input-field ${(crVerify?.verified && crVerify?.nameEn) ? 'bg-emerald-50/60 text-gray-700' : ''}`} placeholder="Al Sakhr Contracting"/>
-                    {crVerify?.verified && !crVerify?.nameEn && <p className="text-[10px] text-gray-400 mt-1">{locale === 'en' ? 'No official English name — optional' : locale === 'ur' ? 'سرکاری انگریزی نام نہیں — اختیاری' : 'لا يوجد اسم إنجليزي رسمي — اختياري'}</p>}
-                  </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyAr} * {crVerify?.verified && <span className="text-emerald-600">🔒</span>}</label>
+                  <input {...register('company_name_ar')} readOnly={!!crVerify?.verified}
+                    className={`input-field ${crVerify?.verified ? 'bg-emerald-50/60 text-gray-700 cursor-not-allowed' : ''}`} placeholder="شركة الصخر للمقاولات"/>
+                  {crVerify?.verified
+                    ? <p className="text-[10px] text-emerald-600 mt-1">{locale === 'en' ? 'Officially verified — cannot be changed' : locale === 'ur' ? 'تصدیق شدہ — تبدیل نہیں ہو سکتا' : 'موثّق رسمياً — لا يمكن تعديله'}</p>
+                    : errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
                 </div>
 
                 {/* التحقق عبر السجل التجاري (واثق) فقط — لا نجمع رقم الهوية حفاظاً على الخصوصية (PDPL) */}
