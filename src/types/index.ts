@@ -49,10 +49,11 @@ export interface SubCategory {
 // أسماء المجموعات الوسيطة (المستوى الثاني)
 export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; icon: string }> = {
   // مدني
-  concrete: { ar: 'الخرسانة والمنتجات الإسمنتية', en: 'Concrete & Cement Products', ur: 'کنکریٹ', icon: '🏭' },
+  concrete: { ar: 'الخرسانة والإسمنت', en: 'Concrete & Cement', ur: 'کنکریٹ اور سیمنٹ', icon: '🏭' },
+  masonry: { ar: 'الكتل والطوب والمسبقات', en: 'Blocks, Bricks & Precast', ur: 'بلاک اور اینٹیں', icon: '🧱' },
   steel: { ar: 'الحديد والإنشاءات المعدنية', en: 'Steel & Metalwork', ur: 'اسٹیل', icon: '🔩' },
-  infrastructure: { ar: 'البنية التحتية والتدعيم', en: 'Infrastructure & Support', ur: 'انفراسٹرکچر', icon: '🚧' },
   rawmaterials: { ar: 'الكسارات والمواد الأولية', en: 'Aggregates & Raw Materials', ur: 'خام مواد', icon: '⛰' },
+  infrastructure: { ar: 'البنية التحتية والتدعيم', en: 'Infrastructure & Support', ur: 'انفراسٹرکچر', icon: '🚧' },
   equipment: { ar: 'أخشاب ومعدات المقاولات', en: 'Formwork & Equipment', ur: 'آلات', icon: '🪵' },
   landscape: { ar: 'التنسيق والأعمال الخارجية', en: 'Landscape & Hardscape', ur: 'لینڈ اسکیپ', icon: '🌳' },
   // معماري
@@ -94,9 +95,9 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ الخرسانة والمنتجات الإسمنتية ═══
     readymix: { ar: 'خرسانة جاهزة (Ready-Mix)', en: 'Ready-Mix Concrete', ur: 'ریڈی مکس', icon: '🏭', group: 'concrete',
       keywords: ['خرسانة جاهزة','ready mix','readymix','concrete','C25','C30','C35','C40','blinding'] },
-    blocks: { ar: 'بلوك وآجر (أسود/معزول/سيبوريكس)', en: 'Blocks & Bricks', ur: 'بلاک', icon: '🧱', group: 'concrete',
+    blocks: { ar: 'بلوك وآجر (أسود/معزول/سيبوريكس)', en: 'Blocks & Bricks', ur: 'بلاک', icon: '🧱', group: 'masonry',
       keywords: ['طوب','بلوك','block','brick','aac','سيبوريكس','معزول','مدماك','خفيف','siporex'] },
-    precast: { ar: 'خرسانة مسبقة الصنع (Precast)', en: 'Precast Concrete', ur: 'پری کاسٹ', icon: '🏗', group: 'concrete',
+    precast: { ar: 'خرسانة مسبقة الصنع (Precast)', en: 'Precast Concrete', ur: 'پری کاسٹ', icon: '🏗', group: 'masonry',
       keywords: ['مسبق الصنع','precast','مسبقة','بلاطات مسبقة','أعمدة مسبقة','عتبات مسبقة','مدرجات'] },
     cement: { ar: 'أسمنت ومواد رابطة', en: 'Cement & Binders', ur: 'سیمنٹ', icon: '🪨', group: 'concrete',
       keywords: ['أسمنت','اسمنت','cement','جير','lime'] },
@@ -384,6 +385,26 @@ export function getSubCategoryLabel(sector: Sector, subKey: string, locale: stri
 // التخصص الفرعي لكل منتج ثم أخذ مجموعته. المنتجات التي لا تطابق أي تخصص تقع في
 // مجموعة "متنوّع". يحافظ على ترتيب أول ظهور للمجموعة.
 export interface ProductGroup { group: string; ar: string; en: string; ur: string; icon: string; items: string[] }
+
+// ترتيب منطقي ثابت للمجموعات في التصفّح المتدرّج (بتسلسل البناء بدل ترتيب أول ظهور).
+// أي مجموعة غير مذكورة تأتي بعد المذكورة، و«متنوّع» دائماً في النهاية.
+const GROUP_ORDER: Record<string, number> = {}
+;[
+  // مدني — بتسلسل البناء
+  'concrete', 'masonry', 'steel', 'rawmaterials', 'infrastructure', 'equipment', 'landscape',
+  // معماري — من الإنشاء للتشطيب
+  'floors_walls', 'ceiling_decor', 'doors_windows', 'paint_facade', 'facade_systems', 'joinery', 'sanitary_finish', 'acoustic',
+  // ميكانيك
+  'plumbing', 'plumbing_supplies', 'hvac', 'firefighting', 'mech_insulation',
+  // كهرباء
+  'cabling', 'panels_switches', 'lighting', 'low_current',
+  // آليات ومعدات
+  'heavy_equipment', 'concrete_machinery', 'light_equipment', 'access_equipment',
+  // محل توريد
+  'store_plumbing', 'store_electrical', 'store_tools', 'store_fasteners', 'store_paint', 'store_safety',
+].forEach((g, i) => { GROUP_ORDER[g] = i })
+function groupRank(g: string): number { return g === '_other' ? 9999 : (GROUP_ORDER[g] ?? 900) }
+
 export function getGroupedProducts(sector: Sector): ProductGroup[] {
   const subs = SUB_CATEGORIES[sector] || {}
   const products = SECTOR_PRODUCTS[sector] || []
@@ -395,6 +416,7 @@ export function getGroupedProducts(sector: Sector): ProductGroup[] {
     if (!buckets[group]) { buckets[group] = []; order.push(group) }
     buckets[group].push(p)
   }
+  order.sort((a, b) => groupRank(a) - groupRank(b)) // ترتيب منطقي ثابت
   return order.map(g => {
     const gl = GROUP_LABELS[g]
     return {
@@ -526,6 +548,7 @@ export function getGroupedSubCategories(sector: Sector): SubCatGroup[] {
     if (!buckets[g]) { buckets[g] = []; order.push(g) }
     buckets[g].push({ key, ar: sub.ar, en: sub.en, ur: sub.ur, icon: sub.icon })
   }
+  order.sort((a, b) => groupRank(a) - groupRank(b)) // نفس الترتيب المنطقي
   return order.map(g => {
     const gl = GROUP_LABELS[g]
     return { group: g, ar: gl?.ar || 'متنوّع', en: gl?.en || 'Other', ur: gl?.ur || 'متفرقہ', icon: gl?.icon || '📦', subs: buckets[g] }
