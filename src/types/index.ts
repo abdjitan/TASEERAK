@@ -98,9 +98,9 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     blocks: { ar: 'بلوك وآجر (أسود/معزول/سيبوريكس)', en: 'Blocks & Bricks', ur: 'بلاک', icon: '🧱', group: 'masonry',
       keywords: ['طوب','بلوك','block','brick','aac','سيبوريكس','معزول','مدماك','خفيف','siporex'] },
     precast: { ar: 'خرسانة مسبقة الصنع (Precast)', en: 'Precast Concrete', ur: 'پری کاسٹ', icon: '🏗', group: 'masonry',
-      keywords: ['مسبق الصنع','precast','مسبقة','بلاطات مسبقة','أعمدة مسبقة','عتبات مسبقة','مدرجات'] },
+      keywords: ['مسبق الصنع','precast','مسبقة','بلاطات مسبقة','أعمدة مسبقة','عتبات مسبقة','مدرجات','مقاعد','seating','bleacher'] },
     cement: { ar: 'أسمنت ومواد رابطة', en: 'Cement & Binders', ur: 'سیمنٹ', icon: '🪨', group: 'concrete',
-      keywords: ['أسمنت','اسمنت','cement','جير','lime'] },
+      keywords: ['أسمنت','اسمنت','cement','جير','lime','جبص','جبصين','gypsum'] },
     // ═══ الحديد والإنشاءات المعدنية ═══
     rebar: { ar: 'حديد تسليح', en: 'Rebar / Reinforcement', ur: 'سریا', icon: '🔩', group: 'steel',
       keywords: ['حديد تسليح','تسليح','rebar','reinforc','سابك','الراجحي','بسكويت','سلك تربيط'] },
@@ -110,14 +110,18 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['شبكة حديد','mesh','fabric','رابيتز','شبك لياسة','زوايا حماية'] },
     // ═══ البنية التحتية والتدعيم ═══
     waterproofing: { ar: 'عوازل مائية وحرارية للأساسات', en: 'Foundation Waterproofing', ur: 'واٹر پروفنگ', icon: '🛡', group: 'infrastructure',
-      keywords: ['عازل','عزل','waterproof','bitumen','membrane','رطوبة','أساسات','tanking','خيش'] },
+      keywords: ['عازل','عزل','waterproof','bitumen','membrane','رطوبة','أساسات','tanking','خيش','فيلم','بولي','polyethylene','dpm'] },
+    piling: { ar: 'أوتاد وخوازيق الأساسات', en: 'Piling & Foundations', ur: 'پائلنگ', icon: '🛠', group: 'infrastructure',
+      keywords: ['أوتاد','اوتاد','pile','piling','خازوق','وتد خرساني'] },
     construction_chemicals: { ar: 'مواد كيميائية للبناء', en: 'Construction Chemicals', ur: 'کیمیکل', icon: '🧪', group: 'infrastructure',
       keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي'] },
     drainage: { ar: 'صرف خارجي وبنية تحتية', en: 'External Drainage', ur: 'نکاسی', icon: '🚧', group: 'infrastructure',
-      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','كيرب','kerb','إسفلت','asphalt','ري','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة'] },
-    // ═══ الكسارات والمواد الأولية ═══
+      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','كيرب','kerb','إسفلت','asphalt','ري','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف'] },
+    // ═══ الكسارات والمواد الأولية وأعمال الموقع ═══
     aggregates: { ar: 'رمل وبحص وبودرة', en: 'Sand, Gravel & Powder', ur: 'ریت اور بجری', icon: '⛰', group: 'rawmaterials',
-      keywords: ['رمل','بطحاء','حصى','بحص','زلط','ركام','كسارة','sand','gravel','aggregate','بودرة','crusher'] },
+      keywords: ['رمل','بطحاء','حصى','بحص','زلط','ركام','كسارة','sand','gravel','aggregate','بودرة','crusher','حجر طبيعي خام','حجر خام'] },
+    earthworks: { ar: 'أعمال موقع وحفر وردم', en: 'Earthworks & Site Prep', ur: 'مٹی کا کام', icon: '🚧', group: 'rawmaterials',
+      keywords: ['حفر','ردم','تسوية','تمهيد','ترابية','أعمال موقع','excavation','backfill','grading','earthwork'] },
     // ═══ أخشاب ومعدات المقاولات ═══
     formwork: { ar: 'أخشاب طوبار (بليود/مرابيع)', en: 'Formwork Timber', ur: 'فارم ورک', icon: '🪵', group: 'equipment',
       keywords: ['طوبار','بليود','plywood','مرابيع','أخشاب','timber','formwork','خشب بناء'] },
