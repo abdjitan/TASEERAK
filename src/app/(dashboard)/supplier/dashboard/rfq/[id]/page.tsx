@@ -144,25 +144,32 @@ export default function SupplierRFQPage() {
     const sum = (myItems || []).reduce((s, it, idx) => s + (parseFloat(forms[idx]?.line_total) || 0), 0)
     setTotalPrice(sum ? String(+sum.toFixed(2)) : '')
   }
-  // أي تعديل على السعر يلغي حالة "محفوظ" حتى يحفظ المورد من جديد
+  // الوحدة التي يسعّر بها المورد تطابق الوحدة المطلوبة؟ (إن لم يحدّد وحدة خاصة)
+  function sameUnit(f, i) { return !f?.priceUnit || f.priceUnit === (myItems[i]?.unit || '') }
+  // أي تعديل على السعر يلغي حالة "محفوظ" حتى يحفظ المورد من جديد.
+  // الربط التلقائي (سعر الوحدة × الكمية = الإجمالي) يعمل فقط عند التسعير بالوحدة المطلوبة؛
+  // لو اختار المورد وحدة خاصة، يبقى الإجمالي وسعر الوحدة مستقلّين.
   function setItemUnit(i, val) {
     setItemForms(prev => {
       const next = prev.map((f, idx) => {
         if (idx !== i) return f
         const q = myItems[i]?.quantity || 0
-        const lt = val === '' ? '' : (q > 0 ? String(+((parseFloat(val) || 0) * q).toFixed(2)) : f.line_total)
+        const lt = (sameUnit(f, i) && val !== '') ? (q > 0 ? String(+((parseFloat(val) || 0) * q).toFixed(2)) : f.line_total) : f.line_total
         return { ...f, unit_price: val, line_total: lt, saved: false }
       })
       recomputeGoods(next)
       return next
     })
   }
+  function setItemPriceUnit(i, val) {
+    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, priceUnit: val, saved: false } : f))
+  }
   function setItemTotal(i, val) {
     setItemForms(prev => {
       const next = prev.map((f, idx) => {
         if (idx !== i) return f
         const q = myItems[i]?.quantity || 0
-        const up = val === '' ? '' : (q > 0 ? String(+((parseFloat(val) || 0) / q).toFixed(4)) : f.unit_price)
+        const up = (sameUnit(f, i) && val !== '') ? (q > 0 ? String(+((parseFloat(val) || 0) / q).toFixed(4)) : f.unit_price) : f.unit_price
         return { ...f, line_total: val, unit_price: up, saved: false }
       })
       recomputeGoods(next)
@@ -277,7 +284,7 @@ export default function SupplierRFQPage() {
         const lineTotal = parseFloat(form.line_total) || (up * (it.quantity || 0))
         itemPricesPayload.push({
           product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
-          unit: it.unit, quantity: it.quantity,
+          unit: (form.priceUnit && form.priceUnit.trim()) || it.unit, quantity: it.quantity,
           unit_price: up || null, total: +lineTotal.toFixed(2),
           specification: (form.specs || '').trim() || null,
           attachment_url: upUrl, attachment_name: upName,
@@ -645,11 +652,27 @@ export default function SupplierRFQPage() {
                                 </button>
                                 {form.priceDetails && (
                                   <div className="mt-2">
-                                    <label className="block text-[11px] font-bold text-gray-400 mb-1">{(locale === 'en' ? 'Unit price / ' : 'سعر الوحدة / ') + it.unit}</label>
-                                    <input type="number" value={form.unit_price || ''} onChange={e => setItemUnit(i, e.target.value)}
-                                      className="input-field text-sm" placeholder={(locale === 'en' ? 'Price per ' : 'سعر كل ') + it.unit} min="0" step="any" />
-                                    <p className="text-[10px] text-gray-400 mt-1">
-                                      {locale === 'en' ? `Total is auto-calculated (unit × ${(it.quantity || 0).toLocaleString('en-US')}); you can still override either field.` : `الإجمالي يُحسب تلقائياً (سعر الوحدة × ${(it.quantity || 0).toLocaleString('en-US')})، وتقدر تعدّل أي خانة.`}
+                                    <div className="grid grid-cols-5 gap-2">
+                                      {/* وحدة المورد — يقدر يغيّرها لو يبي يسعّر بوحدة خاصة */}
+                                      <div className="col-span-2">
+                                        <label className="block text-[11px] font-bold text-gray-400 mb-1">{locale === 'en' ? 'Unit' : 'الوحدة'}</label>
+                                        <input type="text" value={form.priceUnit ?? it.unit} onChange={e => setItemPriceUnit(i, e.target.value)}
+                                          className="input-field text-sm" placeholder={it.unit} list={`units-${i}`} />
+                                        <datalist id={`units-${i}`}>
+                                          {[it.unit, 'طن', 'سيخ', 'م³', 'م²', 'متر طولي', 'كيس', 'قطعة', 'لتر', 'لفة', 'صندوق'].filter((u, k, a) => u && a.indexOf(u) === k).map(u => <option key={u} value={u} />)}
+                                        </datalist>
+                                      </div>
+                                      {/* سعر الوحدة */}
+                                      <div className="col-span-3">
+                                        <label className="block text-[11px] font-bold text-gray-400 mb-1">{locale === 'en' ? 'Unit price' : 'سعر الوحدة'}</label>
+                                        <input type="number" value={form.unit_price || ''} onChange={e => setItemUnit(i, e.target.value)}
+                                          className="input-field text-sm" placeholder={(locale === 'en' ? 'Price / ' : 'السعر / ') + (form.priceUnit || it.unit)} min="0" step="any" />
+                                      </div>
+                                    </div>
+                                    <p className="text-[10px] text-gray-400 mt-1.5">
+                                      {sameUnit(form, i)
+                                        ? (locale === 'en' ? `Total auto-calculates (unit price × ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit}).` : `الإجمالي يُحسب تلقائياً (سعر الوحدة × ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit}).`)
+                                        : (locale === 'en' ? 'Custom unit — enter the material total above manually.' : 'وحدة خاصة — أدخل إجمالي المادة بالأعلى يدوياً.')}
                                     </p>
                                   </div>
                                 )}
