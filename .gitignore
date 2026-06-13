@@ -7,3 +7,8 @@ wathq-key.local
 ../.mcp.json
 
 tsconfig.tsbuildinfo
+
+# نسخ احتياطية وبيانات شخصية (لا تُرفع على GitHub أبداً)
+data_backup/
+scratch_*
+*backup*.zip
