@@ -446,52 +446,59 @@ export default function NewRFQPage() {
                   </div>
 
                   {q ? (
-                    /* نتائج البحث (مسطّحة عبر كل المجموعات) */
+                    /* نتائج البحث (مسطّحة عبر كل المجموعات) — شبكة كروت */
                     <div className="mb-4 animate-fade-in">
                       {searchResults.length ? (
-                        <div className="flex flex-wrap gap-2">
-                          {searchResults.map(p => (
-                            <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false) }}
-                              className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                              style={productName === p ? { background: '#1B2D5B' } : {}}>
-                              {getProductLabel(p, locale)}
-                            </button>
-                          ))}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {searchResults.map(p => {
+                            const sel = productName === p
+                            return (
+                              <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false) }}
+                                className={`text-start px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${sel ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
+                                style={sel ? { background: '#0F6E56' } : {}}>
+                                {sel && <span className="me-1">✓</span>}{getProductLabel(p, locale)}
+                              </button>
+                            )
+                          })}
                         </div>
                       ) : (
                         <p className="text-sm text-gray-400">{locale === 'en' ? 'No match — type it manually below.' : 'لا توجد نتائج — اكتب اسم المادة يدوياً بالأسفل.'}</p>
                       )}
                     </div>
                   ) : (
-                    <>
-                      {/* المستوى الثاني: المجموعات */}
-                      <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '1) Pick a group' : locale === 'ur' ? '۱) گروپ منتخب کریں' : '١) اختر المجموعة'}</p>
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {groups.map(g => (
-                          <button key={g.group} type="button" onClick={() => { setGroup(g.group); setProductName(''); setSpecs({}) }}
-                            className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 transition-all ${group === g.group ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                            <span className="me-1">{g.icon}</span>{groupLabel(g)}
-                            <span className="text-[11px] opacity-60"> ({g.items.length})</span>
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* المستوى الثالث: الأنواع داخل المجموعة */}
-                      {activeGroup && (
-                        <div className="pt-3 border-t border-gray-100 mb-4 animate-fade-in">
-                          <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? '2) Pick the type' : locale === 'ur' ? '۲) قسم منتخب کریں' : '٢) اختر النوع'}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {activeGroup.items.map(p => (
-                              <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false) }}
-                                className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${productName === p ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                                style={productName === p ? { background: '#1B2D5B' } : {}}>
-                                {getProductLabel(p, locale)}
-                              </button>
-                            ))}
+                    /* تصفّح بالأكورديون: مجموعة وحدة تنفتح بالمرة، منتجاتها كشبكة كروت */
+                    <div className="space-y-2 mb-1">
+                      {groups.map(g => {
+                        const open = group === g.group
+                        return (
+                          <div key={g.group} className={`border rounded-xl overflow-hidden transition-all ${open ? 'border-[#F5831F]/60 shadow-sm' : 'border-gray-200'}`}>
+                            <button type="button" onClick={() => { setGroup(open ? '' : g.group) }}
+                              className={`w-full flex items-center justify-between gap-2 p-3 text-start transition-colors ${open ? 'bg-[#F5831F]/5' : 'hover:bg-gray-50'}`}>
+                              <span className="flex items-center gap-2.5 min-w-0">
+                                <span className="w-9 h-9 rounded-xl grid place-items-center text-lg shrink-0" style={{ background: open ? '#F5831F22' : '#f4f6f9' }}>{g.icon}</span>
+                                <span className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{groupLabel(g)}</span>
+                                <span className="text-[11px] text-gray-400 shrink-0">({g.items.length})</span>
+                              </span>
+                              <span className={`text-gray-400 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`}>▾</span>
+                            </button>
+                            {open && (
+                              <div className="p-3 pt-1 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 gap-2 animate-fade-in">
+                                {g.items.map(p => {
+                                  const sel = productName === p
+                                  return (
+                                    <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false) }}
+                                      className={`text-start px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${sel ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
+                                      style={sel ? { background: '#0F6E56' } : {}}>
+                                      {sel && <span className="me-1">✓</span>}{getProductLabel(p, locale)}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      )}
-                    </>
+                        )
+                      })}
+                    </div>
                   )}
 
                   {/* الكتابة اليدوية: تظهر فقط في وضع "اكتبها" أو عند عدم اختيار مادة */}
