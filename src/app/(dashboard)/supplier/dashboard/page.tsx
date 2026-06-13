@@ -9,7 +9,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
-import { getSubCategoryLabel } from '@/types'
+import { getSubCategoryLabel, getProductLabel } from '@/types'
 import AppShell from '@/components/shared/AppShell'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 
@@ -349,7 +349,7 @@ export default function SupplierDashboard() {
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg" style={{ background: '#1B2D5B20' }}>📦</div>
                         <div>
-                          <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfq.product_name}</div>
+                          <div className="font-bold" style={{ color: '#1B2D5B' }}>{getProductLabel(rfq.product_name, locale)}</div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                             {rfq.sub_category && (

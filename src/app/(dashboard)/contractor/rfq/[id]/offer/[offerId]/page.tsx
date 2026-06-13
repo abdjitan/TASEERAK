@@ -184,18 +184,11 @@ export default function OfferDetailPage() {
                     </div>
                     <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</div>
                   </div>
-                  {/* خصائص المادة من المورد */}
-                  {it.attributes && Object.keys(it.attributes).length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-1.5">
-                      {Object.entries(it.attributes).map(([k, v]) => (
-                        <span key={k} className="text-[10px] bg-[#F5831F]/5 text-[#d96f15] px-2 py-0.5 rounded-lg"><strong>{k}:</strong> {String(v)}</span>
-                      ))}
-                    </div>
-                  )}
-                  {it.notes && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5">📝 {it.notes}</p>}
+                  {/* مواصفات المادة من المورد */}
+                  {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5">📝 {it.specification || it.notes}</p>}
                   {it.attachment_url && (
                     <a href={it.attachment_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#d96f15] underline mt-1.5">
-                      📎 {it.attachment_name || 'كتالوج المادة'}
+                      📎 {it.attachment_name || 'ملف المواصفات'}
                     </a>
                   )}
                 </div>

@@ -10,7 +10,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS } from '@/types'
+import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel } from '@/types'
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 
@@ -99,7 +99,7 @@ export default function SupplierRFQPage() {
           return true
         })
         setMyItems(filtered)
-        setItemForms(filtered.map(() => ({ unit_price: '', line_total: '', saved: false, attrs: [{ key: '', value: '' }], notes: '', file: null })))
+        setItemForms(filtered.map(() => ({ unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false })))
         if (filtered.length > 0) setOpenItem(0)
       }
 
@@ -174,15 +174,6 @@ export default function SupplierRFQPage() {
     setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, saved: true } : x))
     const nextIdx = myItems.findIndex((_, idx) => idx !== i && !(itemForms[idx]?.saved) && idx > i)
     setOpenItem(nextIdx >= 0 ? nextIdx : null)
-  }
-  function addItemAttr(i) {
-    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: [...(f.attrs || []), { key: '', value: '' }] } : f))
-  }
-  function updateItemAttr(i, ai, field, val) {
-    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: f.attrs.map((a, aj) => aj === ai ? { ...a, [field]: val } : a) } : f))
-  }
-  function removeItemAttr(i, ai) {
-    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: f.attrs.filter((_, aj) => aj !== ai) } : f))
   }
   async function setItemFile(i, f) {
     if (!f) { setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: null } : x)); return }
@@ -276,17 +267,13 @@ export default function SupplierRFQPage() {
           }
           upUrl = ij.url; upName = ij.name
         }
-        const itemAttrs = (form.attrs || [])
-          .filter(a => a.key && a.value)
-          .reduce((acc, a) => { acc[a.key] = a.value; return acc }, {})
         const up = parseFloat(form.unit_price) || 0
         const lineTotal = parseFloat(form.line_total) || (up * (it.quantity || 0))
         itemPricesPayload.push({
           product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
           unit: it.unit, quantity: it.quantity,
           unit_price: up || null, total: +lineTotal.toFixed(2),
-          attributes: Object.keys(itemAttrs).length ? itemAttrs : null,
-          notes: form.notes || null,
+          specification: (form.specs || '').trim() || null,
           attachment_url: upUrl, attachment_name: upName,
         })
       }
@@ -441,7 +428,7 @@ export default function SupplierRFQPage() {
                       <tr key={i} className="border-b border-gray-50 align-top">
                         <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                         <td className="py-2.5 px-3">
-                          <div className="font-semibold text-[#1B2D5B]">{it.product_name}</div>
+                          <div className="font-semibold text-[#1B2D5B]">{getProductLabel(it.product_name, locale)}</div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
@@ -609,9 +596,9 @@ export default function SupplierRFQPage() {
                                 {done ? '✓' : i + 1}
                               </span>
                               <div className="min-w-0">
-                                <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{it.product_name}</div>
+                                <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{getProductLabel(it.product_name, locale)}</div>
                                 <div className="text-[11px] text-gray-400">
-                                  {it.sub_category ? it.sub_category + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {it.unit}
+                                  {it.sub_category ? getSubCategoryLabel(it.sector, it.sub_category, locale) + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {it.unit}
                                 </div>
                               </div>
                             </div>
@@ -635,65 +622,44 @@ export default function SupplierRFQPage() {
                                 </div>
                               )}
 
-                              {/* السعر — المورد حر: يدخل سعر الوحدة أو إجمالي المادة مباشرة */}
+                              {/* السعر الإجمالي للمادة هو الأساس — وتفاصيل سعر الوحدة اختيارية */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  💰 {locale === 'en' ? 'Your price for this material' : 'سعرك لهذه المادة'} *
+                                  💰 {locale === 'en' ? `Total price for this material (for ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit})` : `السعر الإجمالي للمادة (لـ ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit})`} *
                                 </label>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div>
-                                    <input type="number" value={form.unit_price || ''} onChange={e => setItemUnit(i, e.target.value)}
-                                      className="input-field text-sm" placeholder={(locale === 'en' ? 'Unit / ' : 'سعر الوحدة / ') + it.unit} min="0" step="any" />
-                                    <div className="text-[10px] text-gray-400 mt-1 text-center">{locale === 'en' ? `per ${it.unit}` : `لكل ${it.unit}`}</div>
-                                  </div>
-                                  <div>
-                                    <input type="number" value={form.line_total || ''} onChange={e => setItemTotal(i, e.target.value)}
-                                      className="input-field text-sm font-bold" placeholder={locale === 'en' ? 'Total (SAR)' : 'الإجمالي (ر.س)'} min="0" step="any" />
-                                    <div className="text-[10px] text-gray-400 mt-1 text-center">{locale === 'en' ? 'material total' : 'إجمالي المادة'}</div>
-                                  </div>
-                                </div>
-                                <p className="text-[10px] text-gray-400 mt-1.5">
-                                  {locale === 'en' ? 'Fill either field — the other is auto-calculated, and you can override it. Price as you wish.' : 'عبّئ أي خانة — الثانية تُحسب تلقائياً وتقدر تعدّلها. سعّر بالطريقة اللي تناسبك.'}
-                                </p>
-                              </div>
-
-                              {/* خصائص هذه المادة (نوع/منشأ/علامة...) */}
-                              <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  🏷 {locale === 'en' ? 'Material specs (type / origin / brand…)' : 'خصائص المادة (النوع / المنشأ / العلامة…)'}
-                                </label>
-                                <div className="space-y-2">
-                                  {(form.attrs || []).map((attr, ai) => (
-                                    <div key={ai} className="flex gap-2">
-                                      <input value={attr.key} onChange={e => updateItemAttr(i, ai, 'key', e.target.value)}
-                                        className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Property' : 'الخاصية'} />
-                                      <input value={attr.value} onChange={e => updateItemAttr(i, ai, 'value', e.target.value)}
-                                        className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Value' : 'القيمة'} />
-                                      {(form.attrs || []).length > 1 && (
-                                        <button type="button" onClick={() => removeItemAttr(i, ai)}
-                                          className="px-3 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">×</button>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                                <button type="button" onClick={() => addItemAttr(i)} className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
-                                  + {locale === 'en' ? 'Add property' : 'إضافة خاصية'}
+                                <input type="number" value={form.line_total || ''} onChange={e => setItemTotal(i, e.target.value)}
+                                  className="input-field text-sm font-bold" placeholder={locale === 'en' ? 'e.g. 5200' : 'مثال: 5200'} min="0" step="any" />
+                                <button type="button" onClick={() => setItemField(i, 'priceDetails', !form.priceDetails)}
+                                  className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
+                                  {form.priceDetails
+                                    ? (locale === 'en' ? '− Hide price details' : '− إخفاء تفاصيل السعر')
+                                    : (locale === 'en' ? '+ Add price details (unit price)' : '+ إضافة تفاصيل السعر (سعر الوحدة)')}
                                 </button>
+                                {form.priceDetails && (
+                                  <div className="mt-2">
+                                    <label className="block text-[11px] font-bold text-gray-400 mb-1">{(locale === 'en' ? 'Unit price / ' : 'سعر الوحدة / ') + it.unit}</label>
+                                    <input type="number" value={form.unit_price || ''} onChange={e => setItemUnit(i, e.target.value)}
+                                      className="input-field text-sm" placeholder={(locale === 'en' ? 'Price per ' : 'سعر كل ') + it.unit} min="0" step="any" />
+                                    <p className="text-[10px] text-gray-400 mt-1">
+                                      {locale === 'en' ? `Total is auto-calculated (unit × ${(it.quantity || 0).toLocaleString('en-US')}); you can still override either field.` : `الإجمالي يُحسب تلقائياً (سعر الوحدة × ${(it.quantity || 0).toLocaleString('en-US')})، وتقدر تعدّل أي خانة.`}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
 
-                              {/* ملاحظة لهذه المادة */}
+                              {/* مواصفات المادة (نص حر) */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  📝 {locale === 'en' ? 'Note for this material' : 'ملاحظة لهذه المادة'}
+                                  📝 {locale === 'en' ? 'Material specifications' : 'مواصفات المادة'}
                                 </label>
-                                <textarea value={form.notes || ''} onChange={e => setItemField(i, 'notes', e.target.value)}
-                                  rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Optional…' : 'اختياري…'} />
+                                <textarea value={form.specs || ''} onChange={e => setItemField(i, 'specs', e.target.value)}
+                                  rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Type, origin, brand, grade…' : 'النوع، المنشأ، العلامة التجارية، الدرجة…'} />
                               </div>
 
-                              {/* كتالوج خاص لهذه المادة */}
+                              {/* رفع ملف المواصفات */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  📎 {locale === 'en' ? 'Catalog for this material' : 'كتالوج خاص بهذه المادة'}
+                                  📎 {locale === 'en' ? 'Upload spec / datasheet file' : 'رفع ملف المواصفات'}
                                 </label>
                                 {form.file ? (
                                   <div className="flex items-center gap-3 bg-[#1B2D5B]/5 rounded-xl p-2.5 border border-[#1B2D5B]/20">

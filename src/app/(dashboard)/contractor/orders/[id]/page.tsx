@@ -247,12 +247,9 @@ export default function OrderDetailPage() {
                     <td className="py-4 text-sm text-gray-500">{idx + 1}</td>
                     <td className="py-4">
                       <div className="font-semibold text-gray-900">{it.product_name}</div>
-                      {it.attributes && Object.keys(it.attributes).length > 0 && (
-                        <div className="text-xs text-gray-400 mt-0.5">{Object.entries(it.attributes).map(([k, v]) => `${k}: ${v}`).join(' · ')}</div>
-                      )}
-                      {it.notes && <div className="text-xs text-gray-400 mt-0.5">{it.notes}</div>}
+                      {(it.specification || it.notes) && <div className="text-xs text-gray-400 mt-0.5">{it.specification || it.notes}</div>}
                       {it.attachment_url && (
-                        <a href={it.attachment_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#d96f15] hover:underline print:hidden">📎 {it.attachment_name || 'كتالوج المادة'}</a>
+                        <a href={it.attachment_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#d96f15] hover:underline print:hidden">📎 {it.attachment_name || 'ملف المواصفات'}</a>
                       )}
                     </td>
                     <td className="py-4 text-sm text-gray-600">{SECTOR_LABELS[it.sector] || it.sector}</td>
