@@ -152,6 +152,7 @@ export default function NewRFQPage() {
   const [notes, setNotes] = useState('')
   const [validityHours, setValidityHours] = useState(48)
   const [customDeadline, setCustomDeadline] = useState('') // datetime-local: وقت محدد لانتهاء التسعير
+  const [showCustomDate, setShowCustomDate] = useState(false) // إظهار حقل التاريخ المخصص عند الضغط
   const [specFile, setSpecFile] = useState(null)
   const [specFileUrl, setSpecFileUrl] = useState('')
   const [estimatedValue, setEstimatedValue] = useState('')
@@ -348,7 +349,15 @@ export default function NewRFQPage() {
       notes: notes || null,
       expires_at: expiresAt,
     })
-    if (insertError) { setError(`خطأ: ${insertError.message}`); setLoading(false); return }
+    if (insertError) {
+      const raw = insertError.message || ''
+      const friendly = raw.includes('rfq_daily_limit')
+        ? (locale === 'en'
+            ? 'Daily request limit reached (25 per 24h for unverified accounts). Verify your CR to remove the limit, or try again later.'
+            : 'وصلت الحد اليومي للطلبات (٢٥ طلب خلال ٢٤ ساعة للحسابات غير الموثّقة). وثّق سجلك التجاري لرفع الحد، أو حاول لاحقاً.')
+        : `${locale === 'en' ? 'Error' : 'خطأ'}: ${raw}`
+      setError(friendly); setLoading(false); return
+    }
     setSuccess(true); setLoading(false)
   }
 
@@ -906,24 +915,39 @@ export default function NewRFQPage() {
                 <p className="text-xs text-gray-400 mb-4">{locale === 'en' ? 'Suppliers can submit offers until this time.' : 'يستقبل الطلب العروض حتى هذا الوقت، ثم يُغلق تلقائياً.'}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[{ label: `24 ${t.hours}`, hours: 24 }, { label: `48 ${t.hours}`, hours: 48 }, { label: `72 ${t.hours}`, hours: 72 }, { label: t.week, hours: 168 }].map(({ label, hours }) => (
-                    <button key={hours} type="button" onClick={() => { setValidityHours(hours); setCustomDeadline('') }}
-                      className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${!customDeadline && validityHours === hours ? 'text-white border-transparent' : 'border-gray-200 text-gray-600'}`}
-                      style={!customDeadline && validityHours === hours ? { background: '#F5831F' } : {}}>
+                    <button key={hours} type="button" onClick={() => { setValidityHours(hours); setCustomDeadline(''); setShowCustomDate(false) }}
+                      className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${!customDeadline && !showCustomDate && validityHours === hours ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#F5831F]/40'}`}
+                      style={!customDeadline && !showCustomDate && validityHours === hours ? { background: '#F5831F' } : {}}>
                       {label}
                     </button>
                   ))}
                 </div>
-                {/* وقت محدد */}
-                <div className="mt-3">
-                  <label className="block text-xs font-bold text-gray-500 mb-1.5">📅 {locale === 'en' ? 'Or pick an exact date & time' : 'أو حدّد تاريخاً ووقتاً بالضبط'}</label>
-                  <input type="datetime-local" value={customDeadline}
-                    min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
-                    onChange={e => setCustomDeadline(e.target.value)}
-                    className={`input-field text-sm ${customDeadline ? 'border-[#F5831F]' : ''}`} />
-                  {customDeadline && new Date(customDeadline).getTime() <= Date.now() && (
-                    <p className="text-[11px] text-red-500 mt-1">{locale === 'en' ? 'Pick a future time.' : 'اختر وقتاً في المستقبل.'}</p>
-                  )}
-                </div>
+
+                {/* خيار وقت محدد — يضغطه المقاول فيظهر منتقي التاريخ */}
+                <button type="button" onClick={() => { const n = !showCustomDate; setShowCustomDate(n); if (!n) setCustomDeadline('') }}
+                  className={`mt-2 w-full flex items-center justify-between gap-2 py-2.5 px-3.5 rounded-xl text-sm font-semibold border transition-all ${showCustomDate ? 'border-[#F5831F] text-[#d96f15] bg-[#F5831F]/5' : 'border-gray-200 text-gray-600 hover:border-[#F5831F]/40'}`}>
+                  <span>📅 {locale === 'en' ? 'Pick an exact date & time' : 'تحديد تاريخ ووقت بالضبط'}</span>
+                  <span className={`transition-transform ${showCustomDate ? 'rotate-180' : ''}`}>▾</span>
+                </button>
+
+                {showCustomDate && (
+                  <div className="mt-2 rounded-xl border-2 p-3" style={{ borderColor: '#F5831F', background: '#fffaf4' }}>
+                    <label className="block text-[11px] font-bold text-gray-500 mb-2">{locale === 'en' ? 'Deadline date & time' : 'تاريخ ووقت انتهاء المهلة'}</label>
+                    <div className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 px-3 py-2.5">
+                      <span className="text-lg">🗓</span>
+                      <input type="datetime-local" value={customDeadline} dir="ltr"
+                        min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                        onChange={e => setCustomDeadline(e.target.value)}
+                        className="flex-1 bg-transparent outline-none text-sm font-bold text-[#1B2D5B] text-left"
+                        style={{ colorScheme: 'light', accentColor: '#F5831F', fontFamily: 'Cairo, sans-serif' }} />
+                    </div>
+                    {customDeadline && new Date(customDeadline).getTime() <= Date.now()
+                      ? <p className="text-[11px] text-red-500 mt-2">⚠ {locale === 'en' ? 'Pick a time in the future.' : 'اختر وقتاً في المستقبل.'}</p>
+                      : customDeadline
+                        ? <p className="text-[11px] mt-2" style={{ color: '#0F6E56' }}>✓ {locale === 'en' ? 'Deadline set to ' : 'تنتهي المهلة في '}{new Date(customDeadline).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</p>
+                        : <p className="text-[11px] text-gray-400 mt-2">{locale === 'en' ? 'Tap the field to choose.' : 'اضغط الخانة لاختيار التاريخ والوقت.'}</p>}
+                  </div>
+                )}
               </div>
 
               {/* Summary */}
