@@ -318,6 +318,7 @@ export default function NewRFQPage() {
 
     const { error: insertError } = await supabase.from('rfqs').insert({
       contractor_id: user.id, sector: first.sector, product_name: summaryName,
+      sectors: Array.from(new Set(serializableItems.map((it: any) => it.sector))),
       title: rfqName || null,
       sub_category: first.sub_category,
       specification: first.specification, quantity: first.quantity, unit: first.unit,

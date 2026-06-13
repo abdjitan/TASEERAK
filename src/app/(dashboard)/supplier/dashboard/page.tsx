@@ -95,9 +95,9 @@ export default function SupplierDashboard() {
         .eq('status', 'open')
         .order('created_at', { ascending: false })
 
-      // ✅ فلترة بالقطاع — المورد يشوف بس طلبات قطاعاته
+      // ✅ فلترة بالقطاع — يشمل أي قطاع من مواد الطلب (طلبات متعددة القطاعات)
       if (mySectors.length > 0) {
-        rfqQuery = rfqQuery.in('sector', mySectors)
+        rfqQuery = rfqQuery.overlaps('sectors', mySectors)
       }
 
       // الحد الأدنى للقيمة — فقط لو المورد حدد minimum
@@ -107,12 +107,16 @@ export default function SupplierDashboard() {
 
       const { data: rfqsRaw } = await rfqQuery
 
-      // ✅ فلترة دقيقة بالتخصص الفرعي — إذا المورد حدد تخصصات فرعية
-      // يشوف فقط الطلبات في تخصصاته الدقيقة + الطلبات بدون تخصص فرعي محدد
-      let rfqs = rfqsRaw || []
-      if (mySpecialties.length > 0) {
-        rfqs = rfqs.filter(r => !r.sub_category || mySpecialties.includes(r.sub_category))
-      }
+      // ✅ مطابقة بند-بند: يظهر الطلب لو يقدر يورّد مادة واحدة على الأقل
+      // (قطاعها ضمن قطاعاته + تخصصها ضمن تخصصاته أو بدون تخصص محدد)
+      let rfqs = (rfqsRaw || []).filter(r => {
+        const its = Array.isArray(r.items) && r.items.length ? r.items : [{ sector: r.sector, sub_category: r.sub_category }]
+        return its.some(it => {
+          if (mySectors.length > 0 && !mySectors.includes(it.sector)) return false
+          if (mySpecialties.length > 0 && it.sub_category && !mySpecialties.includes(it.sub_category)) return false
+          return true
+        })
+      })
 
       // ✅ فلترة حسب استهداف المقاول: نوع المورد (مصنع/تجاري/محلي) + الموثّقون فقط
       const myTier = p?.supplier_tier || 'local'

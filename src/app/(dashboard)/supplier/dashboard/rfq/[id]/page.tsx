@@ -275,10 +275,46 @@ export default function SupplierRFQPage() {
       <div className="max-w-3xl mx-auto">
         {/* RFQ Details */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 mb-5">
-          <h2 className="text-lg font-bold mb-4" style={{ color: '#1B2D5B' }}>{rfq.product_name}</h2>
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏗 {T.sector}</span><br/><strong>{sectors[rfq.sector] || rfq.sector}</strong></div>
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>
+          <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>{rfq.title || rfq.product_name}</h2>
+          {rfq.title && <div className="text-xs text-gray-400">{rfq.product_name}</div>}
+
+          {Array.isArray(rfq.items) && rfq.items.length > 0 && (
+            <div className="my-4">
+              <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 المواد المطلوبة ({rfq.items.length})</h3>
+              <div className="overflow-x-auto rounded-xl border border-gray-100">
+                <table className="w-full text-sm">
+                  <thead><tr className="text-xs text-gray-400 bg-[#f4f6f9] border-b border-gray-100">
+                    <th className="text-start py-2 px-3 font-bold">#</th>
+                    <th className="text-start py-2 px-3 font-bold">المادة</th>
+                    <th className="text-start py-2 px-3 font-bold">الكمية</th>
+                    <th className="text-start py-2 px-3 font-bold">المواصفات</th>
+                  </tr></thead>
+                  <tbody>
+                    {rfq.items.map((it: any, i: number) => (
+                      <tr key={i} className="border-b border-gray-50 align-top">
+                        <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
+                        <td className="py-2.5 px-3">
+                          <div className="font-semibold text-[#1B2D5B]">{it.product_name}</div>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
+                            {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
+                            {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}ي</span>}
+                            {it.spec_file_url && <a href={it.spec_file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 font-bold text-[#d96f15] whitespace-nowrap">{it.quantity} {it.unit}</td>
+                        <td className="py-2.5 px-3 text-xs text-gray-500">{it.specification || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 text-sm mt-4">
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏗 {T.sector}</span><br/><strong>{Array.isArray(rfq.sectors) && rfq.sectors.length > 1 ? rfq.sectors.map((s: string) => sectors[s] || s).join(' + ') : (sectors[rfq.sector] || rfq.sector)}</strong></div>
+            {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📍 {T.location}</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
             <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
               <span className="text-gray-400 text-xs">🚚 {T.delivery}</span><br/>
@@ -289,7 +325,7 @@ export default function SupplierRFQPage() {
             {!rfq.hide_identity && rfq.contractor && (
               <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏢 {T.contractor}</span><br/><strong>{rfq.contractor.company_name_ar}</strong></div>
             )}
-            {rfq.specification && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
+            {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
             {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">📝 {T.notes}</span><br/>{cleanNotes}</div>}
           </div>
 

@@ -147,7 +147,9 @@ export default function RFQDetailPage() {
               {rfq.title && <div className="text-xs text-gray-400">{rfq.product_name}</div>}
               <div className="flex items-center gap-2 mt-1">
                 <span className="bg-blue-100 text-[#d96f15] text-xs px-2 py-0.5 rounded-full font-semibold">
-                  {SECTOR_LABELS[rfq.sector] || rfq.sector}
+                  {Array.isArray(rfq.sectors) && rfq.sectors.length > 1
+                    ? rfq.sectors.map((s: string) => SECTOR_LABELS[s] || s).join(' + ')
+                    : (SECTOR_LABELS[rfq.sector] || rfq.sector)}
                 </span>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
                   rfq.status === 'open' ? 'bg-green-100 text-green-700' :
