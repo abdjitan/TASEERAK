@@ -247,10 +247,13 @@ export default function NewRFQPage() {
             let cityName = ''
             if (matchedRegion) {
               const cities = CITIES_BY_REGION[matchedRegion] || []
-              const geoCity = String(d.city || '').trim()
-              const mc = cities.find((c: any) => c.ar === geoCity || geoCity.includes(c.ar) || c.ar.includes(geoCity))
+              const geoCity = String(d.city || '').replace(/^(محافظة|بلدية)\s*/, '').trim()
+              // 1) مطابقة مباشرة، 2) المدينة التي تحمل اسم المنطقة (العاصمة عادةً)، 3) أول مدينة
+              const mc = cities.find((c: any) => c.ar === geoCity || (geoCity && (geoCity.includes(c.ar) || c.ar.includes(geoCity))))
+                || cities.find((c: any) => c.ar === matchedRegion)
+                || cities[0]
               setRegion(matchedRegion); setCity(mc ? mc.ar : '')
-              cityName = mc ? mc.ar : (d.city || '')
+              cityName = mc ? mc.ar : (matchedRegion)
             } else { cityName = d.city || d.region || '' }
             setDeliveryLocation(d.formatted || link)
             setGeoMsg(`${locale === 'en' ? 'Location set ✓' : 'تم تحديد موقعك ✓'}${cityName ? ` — ${cityName}` : ''}`)
