@@ -409,7 +409,7 @@ export default function RFQDetailPage() {
                       <div key={idx} className="px-2.5 py-1.5 border-t border-gray-100 flex items-center justify-between gap-3 text-xs">
                         <span className="text-gray-700 truncate">
                           {it.attachment_url && <span title="يوجد كتالوج">📎 </span>}
-                          {it.product_name} <span className="text-gray-400">({(Number(it.unit_price) || 0).toLocaleString('en-US')} × {(Number(it.quantity) || 0).toLocaleString('en-US')} {it.unit || ''})</span>
+                          {it.product_name} <span className="text-gray-400">({Number(it.unit_price) > 0 ? `${Number(it.unit_price).toLocaleString('en-US')} × ` : ''}{(Number(it.quantity) || 0).toLocaleString('en-US')} {it.unit || ''})</span>
                         </span>
                         <span className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</span>
                       </div>

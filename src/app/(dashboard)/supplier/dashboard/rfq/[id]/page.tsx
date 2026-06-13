@@ -98,7 +98,7 @@ export default function SupplierRFQPage() {
           return true
         })
         setMyItems(filtered)
-        setItemForms(filtered.map(() => ({ unit_price: '', attrs: [{ key: '', value: '' }], notes: '', file: null })))
+        setItemForms(filtered.map(() => ({ unit_price: '', line_total: '', saved: false, attrs: [{ key: '', value: '' }], notes: '', file: null })))
         if (filtered.length > 0) setOpenItem(0)
       }
 
@@ -124,16 +124,47 @@ export default function SupplierRFQPage() {
   // المورد يسعّر فقط myItems (مواد تخصصه) — لا كل مواد الطلب
   const rfqIsMulti = Array.isArray(rfq?.items) && rfq.items.length > 0
   const isMultiItem = rfqIsMulti
+  // الإجمالي = مجموع سعر كل مادة (line_total) — المورد حر يدخله مباشرة أو يحسبه من سعر الوحدة
   function recomputeGoods(forms) {
-    const sum = (myItems || []).reduce((s, it, idx) => s + ((parseFloat(forms[idx]?.unit_price) || 0) * (it.quantity || 0)), 0)
+    const sum = (myItems || []).reduce((s, it, idx) => s + (parseFloat(forms[idx]?.line_total) || 0), 0)
     setTotalPrice(sum ? String(+sum.toFixed(2)) : '')
   }
-  function setItemField(i, field, val) {
+  // أي تعديل على السعر يلغي حالة "محفوظ" حتى يحفظ المورد من جديد
+  function setItemUnit(i, val) {
     setItemForms(prev => {
-      const next = prev.map((f, idx) => idx === i ? { ...f, [field]: val } : f)
-      if (field === 'unit_price') recomputeGoods(next)
+      const next = prev.map((f, idx) => {
+        if (idx !== i) return f
+        const q = myItems[i]?.quantity || 0
+        const lt = val === '' ? '' : (q > 0 ? String(+((parseFloat(val) || 0) * q).toFixed(2)) : f.line_total)
+        return { ...f, unit_price: val, line_total: lt, saved: false }
+      })
+      recomputeGoods(next)
       return next
     })
+  }
+  function setItemTotal(i, val) {
+    setItemForms(prev => {
+      const next = prev.map((f, idx) => {
+        if (idx !== i) return f
+        const q = myItems[i]?.quantity || 0
+        const up = val === '' ? '' : (q > 0 ? String(+((parseFloat(val) || 0) / q).toFixed(4)) : f.unit_price)
+        return { ...f, line_total: val, unit_price: up, saved: false }
+      })
+      recomputeGoods(next)
+      return next
+    })
+  }
+  function setItemField(i, field, val) {
+    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, [field]: val } : f))
+  }
+  // حفظ المادة: لازم سعر، ثم يُقفل البطاقة وينتقل للمادة التالية غير المحفوظة
+  function saveItem(i) {
+    const f = itemForms[i] || {}
+    if (!(parseFloat(f.line_total) > 0)) { setError(`أدخل سعر «${myItems[i]?.product_name}» قبل الحفظ`); return }
+    setError('')
+    setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, saved: true } : x))
+    const nextIdx = myItems.findIndex((_, idx) => idx !== i && !(itemForms[idx]?.saved) && idx > i)
+    setOpenItem(nextIdx >= 0 ? nextIdx : null)
   }
   function addItemAttr(i) {
     setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, attrs: [...(f.attrs || []), { key: '', value: '' }] } : f))
@@ -151,7 +182,8 @@ export default function SupplierRFQPage() {
     setError('')
     setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: f } : x))
   }
-  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.every((_, i) => parseFloat(itemForms[i]?.unit_price) > 0)) : true
+  // لإتاحة الإرسال: كل مادة لها سعر ومحفوظة
+  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.every((_, i) => itemForms[i]?.saved && parseFloat(itemForms[i]?.line_total) > 0)) : true
 
   function addAttribute() {
     setAttributes(prev => [...prev, { key: '', value: '' }])
@@ -173,7 +205,7 @@ export default function SupplierRFQPage() {
     e.preventDefault()
     if (!user) return
     if (isMultiItem && !allItemsPriced) {
-      setError('حدّد سعراً لكل مادة في القائمة قبل إرسال العرض')
+      setError('فيه مواد لسا ما حفظتها — افتح كل مادة، أدخل سعرها، واضغط «حفظ».')
       return
     }
     setSubmitting(true)
@@ -235,10 +267,11 @@ export default function SupplierRFQPage() {
           .filter(a => a.key && a.value)
           .reduce((acc, a) => { acc[a.key] = a.value; return acc }, {})
         const up = parseFloat(form.unit_price) || 0
+        const lineTotal = parseFloat(form.line_total) || (up * (it.quantity || 0))
         itemPricesPayload.push({
           product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
           unit: it.unit, quantity: it.quantity,
-          unit_price: up, total: up * (it.quantity || 0),
+          unit_price: up || null, total: +lineTotal.toFixed(2),
           attributes: Object.keys(itemAttrs).length ? itemAttrs : null,
           notes: form.notes || null,
           attachment_url: upUrl, attachment_name: upName,
@@ -527,10 +560,9 @@ export default function SupplierRFQPage() {
                   <div className="space-y-2">
                     {myItems.map((it, i) => {
                       const form = itemForms[i] || {}
-                      const up = parseFloat(form.unit_price) || 0
-                      const line = up * (it.quantity || 0)
+                      const line = parseFloat(form.line_total) || 0
                       const isOpen = openItem === i
-                      const done = up > 0
+                      const done = !!form.saved && line > 0
                       return (
                         <div key={i} className={`border rounded-xl overflow-hidden transition-all ${isOpen ? 'border-[#F5831F]/60 shadow-sm' : 'border-gray-200'}`}>
                           {/* رأس البطاقة — اضغط للفتح/الإغلاق */}
@@ -549,8 +581,8 @@ export default function SupplierRFQPage() {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               {line > 0 && (
-                                <span className="text-sm font-extrabold whitespace-nowrap" style={{ color: '#0F6E56' }}>
-                                  {(+line.toFixed(2)).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}
+                                <span className="text-sm font-extrabold whitespace-nowrap" style={{ color: done ? '#0F6E56' : '#d96f15' }}>
+                                  {(+line.toFixed(2)).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}{!done && <span className="text-[10px] font-normal"> · {locale === 'en' ? 'unsaved' : 'غير محفوظ'}</span>}
                                 </span>
                               )}
                               <span className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
@@ -567,16 +599,26 @@ export default function SupplierRFQPage() {
                                 </div>
                               )}
 
-                              {/* سعر الوحدة */}
+                              {/* السعر — المورد حر: يدخل سعر الوحدة أو إجمالي المادة مباشرة */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  {(locale === 'en' ? 'Unit price / ' : 'سعر الوحدة / ') + it.unit} *
+                                  💰 {locale === 'en' ? 'Your price for this material' : 'سعرك لهذه المادة'} *
                                 </label>
-                                <div className="flex items-center gap-2">
-                                  <input type="number" value={form.unit_price || ''} onChange={e => setItemField(i, 'unit_price', e.target.value)}
-                                    className="input-field text-sm flex-1" placeholder="0.00" min="0" step="any" />
-                                  <span className="text-xs text-gray-400 whitespace-nowrap">× {(it.quantity || 0).toLocaleString('en-US')} = <b className="text-[#0F6E56]">{(+line.toFixed(2)).toLocaleString('en-US')}</b> {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <input type="number" value={form.unit_price || ''} onChange={e => setItemUnit(i, e.target.value)}
+                                      className="input-field text-sm" placeholder={(locale === 'en' ? 'Unit / ' : 'سعر الوحدة / ') + it.unit} min="0" step="any" />
+                                    <div className="text-[10px] text-gray-400 mt-1 text-center">{locale === 'en' ? `per ${it.unit}` : `لكل ${it.unit}`}</div>
+                                  </div>
+                                  <div>
+                                    <input type="number" value={form.line_total || ''} onChange={e => setItemTotal(i, e.target.value)}
+                                      className="input-field text-sm font-bold" placeholder={locale === 'en' ? 'Total (SAR)' : 'الإجمالي (ر.س)'} min="0" step="any" />
+                                    <div className="text-[10px] text-gray-400 mt-1 text-center">{locale === 'en' ? 'material total' : 'إجمالي المادة'}</div>
+                                  </div>
                                 </div>
+                                <p className="text-[10px] text-gray-400 mt-1.5">
+                                  {locale === 'en' ? 'Fill either field — the other is auto-calculated, and you can override it. Price as you wish.' : 'عبّئ أي خانة — الثانية تُحسب تلقائياً وتقدر تعدّلها. سعّر بالطريقة اللي تناسبك.'}
+                                </p>
                               </div>
 
                               {/* خصائص هذه المادة (نوع/منشأ/علامة...) */}
@@ -632,6 +674,14 @@ export default function SupplierRFQPage() {
                                   </label>
                                 )}
                               </div>
+
+                              {/* زر حفظ المادة — يقفل البطاقة وينتقل للتالية */}
+                              <button type="button" onClick={() => saveItem(i)}
+                                className="w-full py-2.5 rounded-xl font-bold text-white text-sm transition-all hover:shadow disabled:opacity-40"
+                                disabled={!(parseFloat(form.line_total) > 0)}
+                                style={{ background: '#0F6E56' }}>
+                                ✓ {locale === 'en' ? 'Save material' : 'حفظ المادة'}
+                              </button>
                             </div>
                           )}
                         </div>

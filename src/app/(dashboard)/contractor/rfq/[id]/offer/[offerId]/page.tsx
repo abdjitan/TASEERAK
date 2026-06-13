@@ -177,7 +177,9 @@ export default function OfferDetailPage() {
                     <div className="min-w-0">
                       <div className="font-semibold text-gray-800 truncate">{it.product_name}</div>
                       <div className="text-[11px] text-gray-400">
-                        {(Number(it.unit_price) || 0).toLocaleString('en-US')} ر.س × {(Number(it.quantity) || 0).toLocaleString('en-US')} {it.unit || ''}
+                        {Number(it.unit_price) > 0
+                          ? `${Number(it.unit_price).toLocaleString('en-US')} ر.س × ${(Number(it.quantity) || 0).toLocaleString('en-US')} ${it.unit || ''}`
+                          : `${(Number(it.quantity) || 0).toLocaleString('en-US')} ${it.unit || ''}`}
                       </div>
                     </div>
                     <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</div>
