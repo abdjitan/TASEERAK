@@ -30,6 +30,8 @@ export default function SupplierRFQPage() {
   // تسعير بند-بند: لكل مادة بطاقة مستقلة (سعر الوحدة + خصائص + ملاحظة + كتالوج خاص)
   const [itemForms, setItemForms] = useState<any[]>([])
   const [openItem, setOpenItem] = useState<number | null>(null) // البطاقة المفتوحة (أكورديون)
+  // المواد التي تخصّ هذا المورد فقط (ضمن قطاعاته/تخصصاته) — هي وحدها التي يسعّرها ويراها
+  const [myItems, setMyItems] = useState<any[]>([])
   const [deliveryDays, setDeliveryDays] = useState('')
   const [notes, setNotes] = useState('')
   const [validity, setValidity] = useState('')
@@ -80,9 +82,24 @@ export default function SupplierRFQPage() {
       const { data: rfqData } = await supabase
         .from('rfqs').select('*, contractor:profiles_public(company_name_ar, company_name_en)').eq('id', id).single()
       setRfq(rfqData)
+
+      // ✅ المورد يرى/يسعّر فقط المواد ضمن تخصصه — لا تظهر له مواد قطاع لا يخدمه
       if (Array.isArray(rfqData?.items) && rfqData.items.length > 0) {
-        setItemForms(rfqData.items.map(() => ({ unit_price: '', attrs: [{ key: '', value: '' }], notes: '', file: null })))
-        setOpenItem(0)
+        const { data: p2 } = await supabase.from('profiles').select('supplier_tier').eq('id', session.user.id).single()
+        const { data: secRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
+        const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
+        const mySectors = (secRows || []).map(r => r.sector)
+        const mySpecialties = (specRows || []).map(r => r.specialty)
+        const myTier = p2?.supplier_tier || 'local'
+        const filtered = rfqData.items.filter((it: any) => {
+          if (mySectors.length > 0 && !mySectors.includes(it.sector)) return false
+          if (mySpecialties.length > 0 && it.sub_category && !mySpecialties.includes(it.sub_category)) return false
+          if (Array.isArray(it.supplier_tiers) && it.supplier_tiers.length > 0 && !it.supplier_tiers.includes(myTier)) return false
+          return true
+        })
+        setMyItems(filtered)
+        setItemForms(filtered.map(() => ({ unit_price: '', attrs: [{ key: '', value: '' }], notes: '', file: null })))
+        if (filtered.length > 0) setOpenItem(0)
       }
 
       // auto-calc unit price from quantity
@@ -104,9 +121,11 @@ export default function SupplierRFQPage() {
   }
 
   // تسعير بند-بند: لكل مادة سعر وحدة + خصائص + ملاحظة + كتالوج خاص
-  const isMultiItem = Array.isArray(rfq?.items) && rfq.items.length > 0
+  // المورد يسعّر فقط myItems (مواد تخصصه) — لا كل مواد الطلب
+  const rfqIsMulti = Array.isArray(rfq?.items) && rfq.items.length > 0
+  const isMultiItem = rfqIsMulti
   function recomputeGoods(forms) {
-    const sum = (rfq?.items || []).reduce((s, it, idx) => s + ((parseFloat(forms[idx]?.unit_price) || 0) * (it.quantity || 0)), 0)
+    const sum = (myItems || []).reduce((s, it, idx) => s + ((parseFloat(forms[idx]?.unit_price) || 0) * (it.quantity || 0)), 0)
     setTotalPrice(sum ? String(+sum.toFixed(2)) : '')
   }
   function setItemField(i, field, val) {
@@ -132,7 +151,7 @@ export default function SupplierRFQPage() {
     setError('')
     setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: f } : x))
   }
-  const allItemsPriced = isMultiItem ? (rfq.items || []).every((_, i) => parseFloat(itemForms[i]?.unit_price) > 0) : true
+  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.every((_, i) => parseFloat(itemForms[i]?.unit_price) > 0)) : true
 
   function addAttribute() {
     setAttributes(prev => [...prev, { key: '', value: '' }])
@@ -195,8 +214,8 @@ export default function SupplierRFQPage() {
     let itemPricesPayload = null
     if (isMultiItem) {
       itemPricesPayload = []
-      for (let i = 0; i < rfq.items.length; i++) {
-        const it = rfq.items[i]
+      for (let i = 0; i < myItems.length; i++) {
+        const it = myItems[i]
         const form = itemForms[i] || {}
         // رفع كتالوج هذه المادة (إن وُجد) — فحص أمني على الخادم
         let upUrl = null, upName = null
@@ -354,12 +373,15 @@ export default function SupplierRFQPage() {
       <div className="max-w-3xl mx-auto">
         {/* RFQ Details */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 mb-5">
-          <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>{rfq.title || rfq.product_name}</h2>
-          {rfq.title && <div className="text-xs text-gray-400">{rfq.product_name}</div>}
+          {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المقاول للطلب */}
+          <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>
+            {rfqIsMulti ? (locale === 'en' ? 'Price request' : locale === 'ur' ? 'قیمت کی درخواست' : 'طلب تسعير مواد') : rfq.product_name}
+          </h2>
 
-          {Array.isArray(rfq.items) && rfq.items.length > 0 && (
+          {rfqIsMulti && myItems.length > 0 && (
             <div className="my-4">
-              <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 المواد المطلوبة ({rfq.items.length})</h3>
+              <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 المواد ضمن تخصصك ({myItems.length})</h3>
+              <p className="text-[11px] text-gray-400 mb-2">تظهر لك فقط المواد التي تقدر توردها — سعّرها وأرسل عرضك.</p>
               <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-sm">
                   <thead><tr className="text-xs text-gray-400 bg-[#f4f6f9] border-b border-gray-100">
@@ -369,7 +391,7 @@ export default function SupplierRFQPage() {
                     <th className="text-start py-2 px-3 font-bold">المواصفات</th>
                   </tr></thead>
                   <tbody>
-                    {rfq.items.map((it: any, i: number) => (
+                    {myItems.map((it: any, i: number) => (
                       <tr key={i} className="border-b border-gray-50 align-top">
                         <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                         <td className="py-2.5 px-3">
@@ -392,7 +414,7 @@ export default function SupplierRFQPage() {
           )}
 
           <div className="grid grid-cols-2 gap-3 text-sm mt-4">
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏗 {T.sector}</span><br/><strong>{Array.isArray(rfq.sectors) && rfq.sectors.length > 1 ? rfq.sectors.map((s: string) => sectors[s] || s).join(' + ') : (sectors[rfq.sector] || rfq.sector)}</strong></div>
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => sectors[s] || s).join(' + ') : (sectors[rfq.sector] || rfq.sector)}</strong></div>
             {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📍 {T.location}</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
             <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
@@ -488,7 +510,13 @@ export default function SupplierRFQPage() {
             {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>}
 
             <div className="space-y-4">
-              {isMultiItem ? (
+              {isMultiItem && myItems.length === 0 ? (
+                <div className="text-center py-6">
+                  <div className="text-4xl mb-2">🚫</div>
+                  <p className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'No materials match your specialties' : 'لا توجد مواد ضمن تخصصك في هذا الطلب'}</p>
+                  <p className="text-xs text-gray-400 mt-1">{locale === 'en' ? 'This request has no items in your sectors.' : 'مواد هذا الطلب خارج قطاعاتك — لا يلزمك تسعيرها.'}</p>
+                </div>
+              ) : isMultiItem ? (
                 <div>
                   <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
                     {locale === 'en' ? 'Price each material' : locale === 'ur' ? 'ہر مواد کی قیمت' : 'سعّر كل مادة على حدة'} *
@@ -497,7 +525,7 @@ export default function SupplierRFQPage() {
                     {locale === 'en' ? 'Tap a material to enter its unit price, specs and its own catalog.' : 'اضغط على كل مادة لإدخال سعرها وخصائصها وكتالوجها الخاص.'}
                   </p>
                   <div className="space-y-2">
-                    {rfq.items.map((it, i) => {
+                    {myItems.map((it, i) => {
                       const form = itemForms[i] || {}
                       const up = parseFloat(form.unit_price) || 0
                       const line = up * (it.quantity || 0)
