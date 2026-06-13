@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, getProductLabel, detectSubCategory, getGroupedProducts, getProductSpecs } from '@/types'
+import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, getProductLabel, detectSubCategory, getGroupedProducts, getProductSpecs, getDefaultUnit } from '@/types'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
@@ -488,7 +488,7 @@ export default function NewRFQPage() {
                           {searchResults.map(p => {
                             const sel = productName === p
                             return (
-                              <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false) }}
+                              <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false); setUnit(getDefaultUnit(p, sector)) }}
                                 className={`text-start px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${sel ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
                                 style={sel ? { background: '#0F6E56' } : {}}>
                                 {sel && <span className="me-1">✓</span>}{getProductLabel(p, locale)}
@@ -521,7 +521,7 @@ export default function NewRFQPage() {
                                 {g.items.map(p => {
                                   const sel = productName === p
                                   return (
-                                    <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false) }}
+                                    <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false); setUnit(getDefaultUnit(p, sector)) }}
                                       className={`text-start px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${sel ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
                                       style={sel ? { background: '#0F6E56' } : {}}>
                                       {sel && <span className="me-1">✓</span>}{getProductLabel(p, locale)}

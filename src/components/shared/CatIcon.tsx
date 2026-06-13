@@ -34,10 +34,11 @@ const P: Record<string, ReactNode> = {
 const MAP: Record<string, string> = {
   // مدني
   concrete: 'layers', masonry: 'brick', steel: 'beam', rawmaterials: 'mountain',
-  infrastructure: 'shield', drainage_grp: 'droplet', equipment: 'wrench', landscape: 'tree',
+  infrastructure: 'shield', drainage_grp: 'droplet', formwork: 'beam', scaffolding: 'ladder', landscape: 'tree',
   // معماري
   floors_walls: 'grid', paint_facade: 'paint', ceiling_decor: 'grid', doors_windows: 'door',
   facade_systems: 'building', joinery: 'beam', acoustic: 'waves', sanitary_finish: 'droplet',
+  building_insulation: 'shield', arch_metalwork: 'building',
   // ميكانيك
   hvac: 'snowflake', plumbing: 'droplet', plumbing_supplies: 'wrench', firefighting: 'flame', mech_insulation: 'waves',
   // كهرباء

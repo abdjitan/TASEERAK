@@ -55,7 +55,8 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   rawmaterials: { ar: 'الركام وأعمال الموقع', en: 'Aggregates & Site Works', ur: 'خام مواد', icon: '⛰' },
   infrastructure: { ar: 'العزل والأساسات والمعالجات', en: 'Insulation, Foundations & Treatments', ur: 'انسولیشن اور بنیادیں', icon: '🛡' },
   drainage_grp: { ar: 'الصرف والأنابيب الخارجية', en: 'Drainage & External Pipes', ur: 'نکاسی اور پائپ', icon: '🚧' },
-  equipment: { ar: 'أخشاب ومعدات المقاولات', en: 'Formwork & Equipment', ur: 'آلات', icon: '🪵' },
+  formwork: { ar: 'الطوبار والشدّات الخشبية', en: 'Formwork & Shuttering', ur: 'فارم ورک', icon: '🪵' },
+  scaffolding: { ar: 'السقالات والدعامات', en: 'Scaffolding & Shoring', ur: 'سکیفولڈنگ', icon: '🏗' },
   landscape: { ar: 'التنسيق والأعمال الخارجية', en: 'Landscape & Hardscape', ur: 'لینڈ اسکیپ', icon: '🌳' },
   // معماري
   floors_walls: { ar: 'الأرضيات والحوائط', en: 'Floors & Walls', ur: 'فرش اور دیواریں', icon: '🔲' },
@@ -125,11 +126,20 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['رمل','بطحاء','حصى','بحص','زلط','ركام','كسارة','sand','gravel','aggregate','بودرة','crusher','حجر طبيعي خام','حجر خام'] },
     earthworks: { ar: 'أعمال موقع وحفر وردم', en: 'Earthworks & Site Prep', ur: 'مٹی کا کام', icon: '🚧', group: 'rawmaterials',
       keywords: ['حفر','ردم','تسوية','تمهيد','ترابية','أعمال موقع','excavation','backfill','grading','earthwork'] },
-    // ═══ أخشاب ومعدات المقاولات ═══
-    formwork: { ar: 'أخشاب طوبار (بليود/مرابيع)', en: 'Formwork Timber', ur: 'فارم ورک', icon: '🪵', group: 'equipment',
-      keywords: ['طوبار','بليود','plywood','مرابيع','أخشاب','timber','formwork','خشب بناء'] },
-    scaffolding: { ar: 'سقالات وجاكات تدعيم', en: 'Scaffolding & Props', ur: 'سکیفولڈنگ', icon: '🏗', group: 'equipment',
-      keywords: ['سقالات','scaffold','جاكات','props','تدعيم','shoring','دعامات'] },
+    // ═══ الطوبار والشدّات الخشبية (Formwork) ═══
+    formwork_ply: { ar: 'ألواح بليود وأخشاب الشدّات', en: 'Plywood & Formwork Boards', ur: 'پلائی وڈ', icon: '🪵', group: 'formwork',
+      keywords: ['بليود','plywood','ألواح بليود','لوح بليود','خشب بناء','أخشاب طوبار','شدة خشبية','plywood shuttering','كونتر بلاكيه'] },
+    formwork_timber: { ar: 'مرابيع وعوارض خشبية (H20)', en: 'Battens & H20 Beams', ur: 'لکڑی بیم', icon: '🪚', group: 'formwork',
+      keywords: ['مرابيع','مربوع خشب','عارضة خشب','عوارض خشب','H20','كمر خشب','runner','bearer','طوبار'] },
+    formwork_steel: { ar: 'طوبار معدني وقمط وزيوت فك', en: 'Steel Formwork, Clamps & Release Oil', ur: 'اسٹیل فارم', icon: '🛠', group: 'formwork',
+      keywords: ['طوبار معدني','steel formwork','aluminum formwork','قمط','column clamp','شدة عمود','قضبان شد','tie rod','form tie','زيت فك','release oil','shutter oil','سبيسر خرسانة','spacer','طوبار'] },
+    // ═══ السقالات والدعامات (Scaffolding & Shoring) ═══
+    scaffold_structure: { ar: 'قوائم وعوارض ومواسير السقالات', en: 'Standards, Ledgers & Tubes', ur: 'اسٹینڈرڈ', icon: '🏗', group: 'scaffolding',
+      keywords: ['قائم سقالة','standard','عمود سقالة','vertical scaffold','عارضة أفقية','ledger','دعامة قطرية','قطرية','brace','ماسورة سقالة','scaffold tube','إطار سقالة','سقالة معدنية','سقالات معدنية','frame scaffold','كب لوك','cuplock','رينج لوك','ringlock'] },
+    scaffold_jacks: { ar: 'قواعد وجاكات السقالات (بيس/يو جاك)', en: 'Base Plates & Jacks', ur: 'جیک', icon: '🔩', group: 'scaffolding',
+      keywords: ['قاعدة ثابتة','base plate','بيس بليت','بيس جاك','base jack','يو جاك','يو هيد','u-head','u jack','سكرو جاك','screw jack','جوة سقالة','spigot','جاك سقالة','قاعدة قابلة للتعديل'] },
+    shoring_props: { ar: 'دعامات وأبراج التدعيم ومنصات الوقوف', en: 'Props, Shoring Towers & Platforms', ur: 'پراپس', icon: '🪜', group: 'scaffolding',
+      keywords: ['جاكات تدعيم','جاك تدعيم','acrow','prop','عكر','دعامة','دعامات','شور','shoring','برج تدعيم','shoring tower','كوبلر','coupler','مشبك سقالة','منصة وقوف','steel deck','catwalk','لوح وقوف','plank','سلم سقالة','درابزين أمان','guard rail','toe board','لوح حماية','حاجز سقالة'] },
     // ═══ التنسيق والأعمال الخارجية (Landscape) ═══
     turf: { ar: 'عشب (طبيعي/صناعي/هجين)', en: 'Turf (Natural/Artificial/Hybrid)', ur: 'گھاس', icon: '🌱', group: 'landscape',
       keywords: ['عشب','turf','grass','نجيل','صناعي','artificial','hybrid','هجين','طبيعي','lawn','ملعب عشب'] },
@@ -388,6 +398,62 @@ export function detectSubCategory(productName: string, sector: Sector): string |
   return bestMatch
 }
 
+// وحدة القياس الافتراضية لكل تخصص فرعي — تُملأ تلقائياً عند اختيار المادة
+const SUB_UNITS: Record<string, string> = {
+  // مدني
+  readymix: 'م³', cement: 'كيس', blocks: 'عدد', precast: 'عدد',
+  rebar: 'طن', structural_steel: 'طن', steel_mesh: 'عدد',
+  waterproofing: 'م²', piling: 'م.ط', construction_chemicals: 'عدد',
+  drainage: 'م.ط', aggregates: 'م³', earthworks: 'م³',
+  formwork_ply: 'لوحة', formwork_timber: 'عدد', formwork_steel: 'عدد',
+  scaffold_structure: 'عدد', scaffold_jacks: 'عدد', shoring_props: 'عدد',
+  turf: 'م²', irrigation: 'عدد', fountains: 'عدد', hardscape: 'م²', planters: 'عدد',
+  // معماري
+  tiles: 'م²', marble: 'م²', wood_floor: 'م²', tile_adhesive: 'كيس', special_floor: 'م²',
+  paint: 'جالون', grc_facade: 'م²', gypsum: 'م²', false_ceiling: 'م²',
+  aluminum: 'م²', wood_doors: 'عدد', fire_doors: 'عدد', auto_doors: 'عدد',
+  curtain_wall: 'م²', rainscreen: 'م²', louvers: 'م²',
+  millwork: 'م.ط', fitted_furniture: 'عدد', cubicles: 'عدد',
+  acoustic_panels: 'م²', acoustic_timber: 'م²', thermal_insulation: 'م²',
+  metal_features: 'م.ط', vertical_transport: 'عدد', sanitary_ware: 'عدد', bath_accessories: 'عدد',
+  // كهرباء
+  lv_cables: 'م.ط', mv_cables: 'م.ط', conduits: 'م.ط',
+  panels: 'عدد', breakers: 'عدد', switches: 'عدد', transformers: 'عدد',
+  indoor_lighting: 'عدد', outdoor_lighting: 'عدد', earthing: 'عدد',
+  cctv: 'عدد', fire_alarm: 'عدد', data_network: 'عدد', sound_systems: 'عدد',
+  led_screens: 'م²', access_control: 'عدد',
+  // ميكانيك
+  ac_units: 'عدد', ductwork: 'م²', duct_insulation: 'م²', hvac_dampers: 'عدد',
+  ventilation_fans: 'عدد', flexible_ducts: 'م.ط',
+  water_supply: 'م.ط', drainage_pipes: 'م.ط', silent_drainage: 'م.ط', storm_drainage: 'م.ط',
+  water_treatment: 'عدد', pumps: 'عدد', tanks_heaters: 'عدد',
+  faucets_mixers: 'عدد', valves_fittings: 'عدد', copper_fittings: 'عدد',
+  traps_drains: 'عدد', flex_hoses: 'عدد', plumbing_consumables: 'عدد',
+  shower_accessories: 'عدد', floats_tanks: 'عدد',
+  fire_fighting: 'عدد', fire_pumps: 'عدد', fire_cabinets: 'عدد', fire_valves: 'عدد', fire_connections: 'عدد',
+  chilled_water_insulation: 'م.ط', cladding_jacketing: 'م²',
+  // آليات ومعدات (تأجير باليوم غالباً)
+  heavy_machinery: 'يوم', cranes: 'يوم', trucks: 'يوم', concrete_equip: 'يوم',
+  compaction: 'يوم', generators_equip: 'يوم', pumps_equip: 'يوم', scaffolding_equip: 'عدد',
+  // محل توريد
+  store_faucets: 'عدد', store_valves: 'عدد', store_hoses: 'عدد',
+  store_wires: 'م.ط', store_switches: 'عدد', store_lighting: 'عدد', store_elec_access: 'عدد',
+  store_hand_tools: 'عدد', store_power_tools: 'عدد', store_bits: 'عدد',
+  store_fasteners: 'عدد', store_safety: 'عدد', store_consumables: 'عدد',
+  store_paint: 'عدد', store_adhesives: 'عدد',
+}
+
+// وحدة القياس الافتراضية لمادة: أولوية لوحدة المواصفات إن وُجدت، ثم وحدة التخصص الفرعي
+export function getDefaultUnit(productName: string, sector: Sector): string {
+  const specs = PRODUCT_SPECS[(productName || '').trim()]
+  if (specs) {
+    const u = specs.find(f => f.key === 'unit')
+    if (u && u.options.length) return u.options[0]
+  }
+  const sub = detectSubCategory(productName, sector)
+  return (sub && SUB_UNITS[sub]) || ''
+}
+
 // جلب label التخصص الفرعي بأي لغة
 export function getSubCategoryLabel(sector: Sector, subKey: string, locale: string): string {
   const sub = SUB_CATEGORIES[sector]?.[subKey]
@@ -406,7 +472,7 @@ export interface ProductGroup { group: string; ar: string; en: string; ur: strin
 const GROUP_ORDER: Record<string, number> = {}
 ;[
   // مدني — بتسلسل البناء
-  'concrete', 'masonry', 'steel', 'rawmaterials', 'infrastructure', 'drainage_grp', 'equipment', 'landscape',
+  'concrete', 'masonry', 'steel', 'rawmaterials', 'infrastructure', 'drainage_grp', 'formwork', 'scaffolding', 'landscape',
   // معماري — من الإنشاء للتشطيب
   'floors_walls', 'ceiling_decor', 'doors_windows', 'paint_facade', 'facade_systems', 'arch_metalwork', 'joinery', 'sanitary_finish', 'acoustic', 'building_insulation',
   // ميكانيك
@@ -879,9 +945,17 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'رمل بناء', 'رمل ناعم', 'حصى', 'زلط', 'كسارة', 'ركام مدمج',
     // ═══ المباني (BOQ: D MASONRY) ═══
     'طوب أحمر', 'طوب فارغ', 'بلوك خرساني', 'بلوك AAC خفيف', 'بلوك EPS عازل',
-    // ═══ أخشاب الطوبار ومعدات المقاولات (Formwork & Equipment) ═══
-    'خشب بليود طوبار', 'ألواح بليود', 'مرابيع خشب طوبار', 'خشب بناء',
-    'طوبار معدني (ألواح)', 'سقالات معدنية', 'جاكات تدعيم', 'دعامات معدنية',
+    // ═══ الطوبار والشدّات الخشبية (Formwork) ═══
+    'ألواح بليود (طوبار) Plywood', 'خشب بناء للشدّات',
+    'مرابيع خشب (طوبار)', 'عوارض خشبية H20',
+    'طوبار معدني جاهز', 'قمط شدّة أعمدة Column Clamp',
+    'قضبان شد الطوبار Tie Rods', 'زيت فك الطوبار Shutter Oil',
+    // ═══ السقالات والدعامات (Scaffolding & Shoring) ═══
+    'قائم سقالة Standard', 'عارضة أفقية سقالة Ledger',
+    'دعامة قطرية سقالة Brace', 'ماسورة سقالة Tube', 'إطار سقالة معدنية Frame',
+    'قاعدة ثابتة Base Plate', 'بيس جاك قابل للتعديل', 'يو جاك U-Head', 'سكرو جاك تعديل',
+    'منصة وقوف معدنية Steel Deck', 'سلم سقالة', 'كوبلر مشبك سقالة Coupler',
+    'جاكات تدعيم Acrow Prop', 'برج تدعيم Shoring Tower', 'درابزين أمان سقالة Guard Rail',
     // ═══ الهيكل المعدني (BOQ: E METAL WORK) ═══
     'صلب هيكلي HEB', 'صلب هيكلي HEA', 'صلب هيكلي IPE',
     'صفائح فولاذية', 'أوتاد خرسانية', 'أوتاد حديد مجوف',
@@ -1220,7 +1294,9 @@ export const UNIT_OPTIONS = [
   // العد (BOQ: Nr, No, Item, Each)
   'عدد', 'قطعة', 'وحدة', 'جهاز', 'طقم', 'مجموعة', 'منظومة',
   // التغليف
-  'ربطة', 'كيس', 'لفة', 'لوحة', 'برميل',
+  'ربطة', 'كيس', 'لفة', 'لوحة', 'برميل', 'جالون',
+  // التأجير (آليات ومعدات)
+  'يوم', 'شهر',
   // الكهرباء والأنظمة (BOQ: point, circuit)
   'نقطة', 'دائرة', 'موقع', 'اتصال',
   // أعمال الموقع (BOQ: item, lump sum)
