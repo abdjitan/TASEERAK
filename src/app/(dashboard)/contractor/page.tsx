@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
+import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 
 const txt = {
   ar: {
@@ -355,6 +356,14 @@ export default function ContractorDashboard() {
                           <span className={`badge text-[10px] ${
                             rfq.status === 'open' ? 'badge-green' : rfq.status === 'closed' ? 'badge-gray' : 'badge-red'
                           }`}>{statusLabel(rfq.status)}</span>
+                          {rfq.status === 'open' && rfq.expires_at && (() => {
+                            const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
+                            return (
+                              <span className="badge text-[10px]" style={{ background: st.bg, color: st.fg }}>
+                                {isExpired(rfq.expires_at) ? (locale === 'en' ? '⏰ ended' : '⏰ انتهت') : `⏰ ${formatTimeLeft(rfq.expires_at, locale)}`}
+                              </span>
+                            )
+                          })()}
                         </div>
                       </div>
                     </div>

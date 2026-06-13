@@ -151,6 +151,7 @@ export default function NewRFQPage() {
   const [hideIdentity, setHideIdentity] = useState(false)
   const [notes, setNotes] = useState('')
   const [validityHours, setValidityHours] = useState(48)
+  const [customDeadline, setCustomDeadline] = useState('') // datetime-local: وقت محدد لانتهاء التسعير
   const [specFile, setSpecFile] = useState(null)
   const [specFileUrl, setSpecFileUrl] = useState('')
   const [estimatedValue, setEstimatedValue] = useState('')
@@ -290,7 +291,10 @@ export default function NewRFQPage() {
     if (finalItems.length === 0) { setError(locale === 'en' ? 'Add at least one material' : 'أضف مادة واحدة على الأقل'); return }
     setLoading(true); setError('')
     const supabase = createClient()
-    const expiresAt = new Date(Date.now() + validityHours * 60 * 60 * 1000).toISOString()
+    // وقت محدد له الأولوية، وإلا عدد الساعات المختار
+    const expiresAt = (customDeadline && new Date(customDeadline).getTime() > Date.now())
+      ? new Date(customDeadline).toISOString()
+      : new Date(Date.now() + validityHours * 60 * 60 * 1000).toISOString()
 
     // رفع ملف مواصفات كل مادة (إن وُجد) وبناء قائمة قابلة للحفظ (بدون كائنات الملفات)
     const serializableItems: any[] = []
@@ -890,17 +894,29 @@ export default function NewRFQPage() {
                 </div>
               </div>
 
-              {/* Validity */}
+              {/* Validity — مهلة التسعير: ينتهي استقبال العروض بعدها */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-                <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.validity}</h3>
+                <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>⏰ {locale === 'en' ? 'Pricing deadline' : 'مهلة التسعير'}</h3>
+                <p className="text-xs text-gray-400 mb-4">{locale === 'en' ? 'Suppliers can submit offers until this time.' : 'يستقبل الطلب العروض حتى هذا الوقت، ثم يُغلق تلقائياً.'}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {[{ label: `24 ${t.hours}`, hours: 24 }, { label: `48 ${t.hours}`, hours: 48 }, { label: `72 ${t.hours}`, hours: 72 }, { label: t.week, hours: 168 }].map(({ label, hours }) => (
-                    <button key={hours} type="button" onClick={() => setValidityHours(hours)}
-                      className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${validityHours === hours ? 'text-white border-transparent' : 'border-gray-200 text-gray-600'}`}
-                      style={validityHours === hours ? { background: '#F5831F' } : {}}>
+                    <button key={hours} type="button" onClick={() => { setValidityHours(hours); setCustomDeadline('') }}
+                      className={`py-2.5 rounded-xl text-sm font-semibold border transition-all ${!customDeadline && validityHours === hours ? 'text-white border-transparent' : 'border-gray-200 text-gray-600'}`}
+                      style={!customDeadline && validityHours === hours ? { background: '#F5831F' } : {}}>
                       {label}
                     </button>
                   ))}
+                </div>
+                {/* وقت محدد */}
+                <div className="mt-3">
+                  <label className="block text-xs font-bold text-gray-500 mb-1.5">📅 {locale === 'en' ? 'Or pick an exact date & time' : 'أو حدّد تاريخاً ووقتاً بالضبط'}</label>
+                  <input type="datetime-local" value={customDeadline}
+                    min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                    onChange={e => setCustomDeadline(e.target.value)}
+                    className={`input-field text-sm ${customDeadline ? 'border-[#F5831F]' : ''}`} />
+                  {customDeadline && new Date(customDeadline).getTime() <= Date.now() && (
+                    <p className="text-[11px] text-red-500 mt-1">{locale === 'en' ? 'Pick a future time.' : 'اختر وقتاً في المستقبل.'}</p>
+                  )}
                 </div>
               </div>
 
@@ -912,7 +928,7 @@ export default function NewRFQPage() {
                     { label: locale === 'en' ? 'Name' : 'الاسم', value: rfqName || t.na },
                     { label: locale === 'en' ? 'Materials' : 'عدد المواد', value: String(items.length + (buildDraftItem() ? 1 : 0)) },
                     { label: t.sumRegion, value: region || t.na },
-                    { label: t.sumValidity, value: validityHours === 168 ? t.week : `${validityHours} ${t.hours}` },
+                    { label: t.sumValidity, value: customDeadline ? new Date(customDeadline).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : (validityHours === 168 ? t.week : `${validityHours} ${t.hours}`) },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex justify-between">
                       <span className="text-blue-200">{label}</span>

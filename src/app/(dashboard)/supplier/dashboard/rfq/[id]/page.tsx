@@ -12,6 +12,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 import { validateUploadFile } from '@/lib/fileSafety'
+import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 
 export default function SupplierRFQPage() {
   const { id } = useParams()
@@ -112,6 +113,14 @@ export default function SupplierRFQPage() {
     load()
   }, [id])
 
+  // نبضة كل دقيقة لتحديث العدّاد التنازلي لمهلة التسعير
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 60000)
+    return () => clearInterval(t)
+  }, [])
+  const expired = isExpired(rfq?.expires_at)
+
   // حساب سعر الوحدة تلقائياً
   function handleTotalChange(val) {
     setTotalPrice(val)
@@ -204,6 +213,10 @@ export default function SupplierRFQPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     if (!user) return
+    if (isExpired(rfq?.expires_at)) {
+      setError('انتهت مهلة التسعير لهذا الطلب — لم يعد بالإمكان إرسال عرض.')
+      return
+    }
     if (isMultiItem && !allItemsPriced) {
       setError('فيه مواد لسا ما حفظتها — افتح كل مادة، أدخل سعرها، واضغط «حفظ».')
       return
@@ -470,6 +483,14 @@ export default function SupplierRFQPage() {
             )}
             {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
             {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">📝 {T.notes}</span><br/>{cleanNotes}</div>}
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🗓 {locale === 'en' ? 'Posted' : 'تاريخ الطلب'}</span><br/><strong className="text-xs">{formatDateTime(rfq.created_at)}</strong></div>
+            {rfq.expires_at && (
+              <div className="rounded-lg p-3" style={{ background: urgencyStyle(deadlineUrgency(rfq.expires_at)).bg, border: `1px solid ${urgencyStyle(deadlineUrgency(rfq.expires_at)).border}` }}>
+                <span className="text-gray-400 text-xs">⏰ {locale === 'en' ? 'Pricing deadline' : 'مهلة التسعير'}</span><br/>
+                <strong className="text-xs" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{formatDateTime(rfq.expires_at)}</strong>
+                <span className="text-[10px] block" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{expired ? '' : `(${formatTimeLeft(rfq.expires_at, locale)})`}</span>
+              </div>
+            )}
           </div>
 
           {/* ملف المواصفات المرفق */}
@@ -530,15 +551,30 @@ export default function SupplierRFQPage() {
               </a>
             )}
           </div>
-        ) : rfq.status !== 'open' ? (
+        ) : (rfq.status !== 'open' || expired) ? (
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-center">
-            <div className="text-4xl mb-2">🔒</div>
-            <h3 className="font-bold" style={{ color: '#1B2D5B' }}>{T.closed}</h3>
-            <p className="text-sm text-gray-500">{T.closedSub}</p>
+            <div className="text-4xl mb-2">{expired ? '⏰' : '🔒'}</div>
+            <h3 className="font-bold" style={{ color: '#1B2D5B' }}>{expired ? (locale === 'en' ? 'Pricing window closed' : 'انتهت مهلة التسعير') : T.closed}</h3>
+            <p className="text-sm text-gray-500">{expired ? (locale === 'en' ? 'The deadline passed — offers are no longer accepted.' : 'انتهى الوقت المحدد لاستقبال العروض على هذا الطلب.') : T.closedSub}</p>
+            {rfq.expires_at && <p className="text-xs text-gray-400 mt-2">📅 {formatDateTime(rfq.expires_at)}</p>}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold mb-4" style={{ color: '#1B2D5B' }}>{T.submitOffer}</h3>
+            <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{T.submitOffer}</h3>
+
+            {/* عدّاد مهلة التسعير */}
+            {rfq.expires_at && (() => {
+              const u = deadlineUrgency(rfq.expires_at)
+              const st = urgencyStyle(u)
+              return (
+                <div className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 mb-4 text-sm" style={{ background: st.bg, border: `1px solid ${st.border}` }}>
+                  <span className="font-semibold" style={{ color: st.fg }}>
+                    {u === 'critical' ? '🔴' : u === 'soon' ? '🟠' : '⏰'} {locale === 'en' ? 'Time left to price' : 'الوقت المتبقّي للتسعير'}
+                  </span>
+                  <span className="font-extrabold" style={{ color: st.fg }}>{formatTimeLeft(rfq.expires_at, locale)}</span>
+                </div>
+              )
+            })()}
 
             {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>}
 

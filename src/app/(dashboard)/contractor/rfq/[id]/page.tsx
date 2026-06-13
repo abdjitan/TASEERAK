@@ -9,6 +9,7 @@ import { SECTOR_LABELS } from '@/types'
 import { waLink } from '@/lib/wa'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
+import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 
 export default function RFQDetailPage() {
   const { id } = useParams()
@@ -158,6 +159,17 @@ export default function RFQDetailPage() {
                 }`}>
                   {rfq.status === 'open' ? '● مفتوح' : rfq.status === 'closed' ? '● مغلق' : rfq.status === 'cancelled' ? '● ملغي' : '● منتهي'}
                 </span>
+                {rfq.status === 'open' && rfq.expires_at && (() => {
+                  const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
+                  return (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ background: st.bg, color: st.fg }}>
+                      {isExpired(rfq.expires_at) ? '⏰ انتهت المهلة' : `⏰ ${formatTimeLeft(rfq.expires_at, 'ar')}`}
+                    </span>
+                  )
+                })()}
+              </div>
+              <div className="text-[11px] text-gray-400 mt-1.5">
+                🗓 {formatDateTime(rfq.created_at)}{rfq.expires_at ? ` · ⏰ ${formatDateTime(rfq.expires_at)}` : ''}
               </div>
             </div>
             {rfq.status === 'open' && (

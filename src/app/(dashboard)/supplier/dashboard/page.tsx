@@ -11,6 +11,7 @@ import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import { getSubCategoryLabel } from '@/types'
 import AppShell from '@/components/shared/AppShell'
+import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 
 const txt = {
   ar: {
@@ -133,12 +134,19 @@ export default function SupplierDashboard() {
         return true
       })
 
-      // استبعاد الطلبات المتجاهلة
+      // استبعاد الطلبات المتجاهلة + المنتهية مهلتها (ما عاد يقدر يسعّرها)
       const { data: dismissals } = await supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', session.user.id)
       const dismissedIds = new Set((dismissals || []).map(d => d.rfq_id))
-      const visibleRfqs = (rfqs || []).filter(r => !dismissedIds.has(r.id))
+      const visibleRfqs = (rfqs || []).filter(r => !dismissedIds.has(r.id) && !isExpired(r.expires_at))
 
       setOpenRfqs(visibleRfqs)
+
+      // إنذار: طلبات تنتهي مهلتها قريباً (خلال 12 ساعة) — حثّ المورد على التسعير
+      const expiringSoon = visibleRfqs.filter(r => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
+      if (expiringSoon.length > 0) {
+        toast(`⏰ ${expiringSoon.length} ${expiringSoon.length === 1 ? 'طلب تنتهي مهلته' : 'طلبات تنتهي مهلتها'} قريباً — سارِع بالتسعير`, { duration: 7000 })
+      }
+
       const { data: offers } = await supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status)').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
       setMyOffers(offers || [])
       const { count: lpCount } = await supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', session.user.id)
@@ -361,11 +369,19 @@ export default function SupplierDashboard() {
                         ? <div className="text-white text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#0F6E56' }}>{t.offerSubmitted}</div>
                         : <div className="text-white text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#F5831F' }}>{t.submitOffer}</div>}
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
+                    <div className="flex items-center gap-4 text-xs text-gray-400 font-medium flex-wrap">
                       <span>📦 {rfq.quantity} {rfq.unit}</span>
                       <span>📍 {rfq.region}</span>
                       {rfq.specification && <span>⚙️ {rfq.specification}</span>}
                       <span>💬 {rfq.offer_count || 0} {t.offer}</span>
+                      {rfq.expires_at && (() => {
+                        const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
+                        return (
+                          <span className="px-2 py-0.5 rounded-full font-bold ml-auto" style={{ background: st.bg, color: st.fg }}>
+                            {u === 'critical' ? '🔴' : u === 'soon' ? '🟠' : '⏰'} {formatTimeLeft(rfq.expires_at, locale)}
+                          </span>
+                        )
+                      })()}
                     </div>
                   </a>
                 ))}
