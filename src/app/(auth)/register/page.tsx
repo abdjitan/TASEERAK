@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
+import { detectSpecialtiesFromText } from '@/lib/classify'
 
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
@@ -178,6 +179,7 @@ export default function RegisterPage() {
   const [openSector, setOpenSector] = useState<Sector | null>(null)
   const [district, setDistrict] = useState('')
   const [prefLang, setPrefLang] = useState<'ar' | 'en' | 'ur'>(locale)
+  const [autoDetected, setAutoDetected] = useState(0) // عدد ما تم تحديده تلقائياً من نشاط السجل
 
   function addExtraMaterial(sector: string) {
     const v = extraMaterialInput.trim()
@@ -206,6 +208,21 @@ export default function RegisterPage() {
       ? current.filter(s => s !== sector)
       : [...current, sector]
     setValue('sectors', updated)
+  }
+
+  // يحلّل نشاط السجل التجاري (من واثق) ويحدّد القطاعات/التخصصات تلقائياً — يضيف فوق المحدد
+  function autoDetectFromCR() {
+    const text = [watch('company_name_ar'), crVerify?.activity].filter(Boolean).join(' ')
+    if (!text.trim()) return
+    const { sectors: dSectors, specialties: dSpecs } = detectSpecialtiesFromText(text)
+    if (!dSectors.length) return
+    const cur = (watch('sectors') as string[]) || []
+    setValue('sectors', Array.from(new Set([...cur, ...dSectors])) as Sector[], { shouldValidate: true })
+    if (selectedType === 'supplier' && dSpecs.length) {
+      setSpecialties(prev => Array.from(new Set([...prev, ...dSpecs])))
+      if (dSectors[0]) setOpenSector(dSectors[0] as Sector)
+    }
+    setAutoDetected(selectedType === 'supplier' ? dSpecs.length : dSectors.length)
   }
 
   async function uploadFile(file: File, path: string) {
@@ -691,6 +708,7 @@ export default function RegisterPage() {
                     return
                   }
                   setFormError('')
+                  if (((watch('sectors') as string[]) || []).length === 0) autoDetectFromCR()
                   setStep(3)
                 }} className="btn-primary flex-1">{t.next}</button>
               </div>
@@ -702,9 +720,25 @@ export default function RegisterPage() {
           {step === 3 && (
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h2 className="text-lg font-bold text-navy mb-1">{t.sectorsTitle}</h2>
-              <p className="text-sm text-gray-500 mb-5">
+              <p className="text-sm text-gray-500 mb-4">
                 {selectedType === 'supplier' ? t.sectorsSubSupplier : t.sectorsSubContractor}
               </p>
+
+              {/* تحليل النشاط التجاري — يحدّد القطاعات/التخصصات تلقائياً من واثق */}
+              {crVerify?.activity && (
+                <div className="rounded-xl p-3 mb-5 border text-xs" style={{ background: '#0F6E5610', borderColor: '#0F6E5633', color: '#0F6E56' }}>
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-semibold leading-relaxed">
+                      {autoDetected > 0
+                        ? (locale === 'en' ? `🔍 Auto-selected ${autoDetected} from your CR activity — review & adjust below.` : locale === 'ur' ? `🔍 آپ کے ریکارڈ سے ${autoDetected} خودکار منتخب — جائزہ لیں۔` : `🔍 حدّدنا ${autoDetected} تلقائياً من نشاط سجلك التجاري — راجِعها وعدّل بالأسفل.`)
+                        : (locale === 'en' ? '🔍 Analyze your CR activity to auto-select your sectors & specialties.' : locale === 'ur' ? '🔍 ریکارڈ کی سرگرمی سے خودکار منتخب کریں۔' : '🔍 حلّل نشاط سجلك التجاري لتحديد قطاعاتك وتخصصاتك تلقائياً.')}
+                    </span>
+                    <button type="button" onClick={autoDetectFromCR} className="px-3 py-1.5 rounded-lg font-bold text-white shrink-0" style={{ background: '#0F6E56' }}>
+                      {locale === 'en' ? '↻ Analyze' : locale === 'ur' ? '↻ تجزیہ' : '↻ تحليل'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* CONTRACTOR — simple multi-select sector cards */}
               {selectedType !== 'supplier' && (
