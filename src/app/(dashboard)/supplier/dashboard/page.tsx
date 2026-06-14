@@ -13,6 +13,7 @@ import { getSubCategoryLabel, getProductLabel, getUnitLabel } from '@/types'
 import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
+import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
 
 const txt = {
@@ -360,15 +361,15 @@ export default function SupplierDashboard() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
-            { label: t.openRfqs, value: openRfqs.length, icon: '📋', bg: '#1B2D5B', go: 'rfqs' },
-            { label: t.pendingOffers, value: pending, icon: '⏳', bg: '#F5831F', go: 'offers' },
-            { label: t.acceptedOffers, value: accepted, icon: '✅', bg: '#0F6E56', go: 'offers' },
-            { label: t.revenue, value: totalRevenue.toLocaleString('en-US'), icon: '💰', bg: '#7c3aed', go: 'offers' },
-          ].map(({ label, value, icon, bg, go }) => (
+            { label: t.openRfqs, value: openRfqs.length, icon: 'orders', tone: 'brand', go: 'rfqs' },
+            { label: t.pendingOffers, value: pending, icon: 'waiting', tone: 'warning', go: 'offers' },
+            { label: t.acceptedOffers, value: accepted, icon: 'completed', tone: 'success', go: 'offers' },
+            { label: t.revenue, value: totalRevenue.toLocaleString('en-US'), icon: 'pricing', tone: 'info', go: 'offers' },
+          ].map(({ label, value, icon, tone, go }) => (
             <button key={label} type="button" onClick={() => { setTab(go); if (go === 'rfqs') setRfqFilter('all'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
               className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${tab === go ? 'border-[#F5831F] ring-1 ring-[#F5831F]/30' : 'border-gray-100'}`}>
               <div className="flex items-start justify-between">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg text-white" style={{ background: bg }}>{icon}</div>
+                <AppIcon name={icon} tone={tone} variant="tone" size={44} />
                 <div className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
               </div>
               <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
@@ -417,7 +418,7 @@ export default function SupplierDashboard() {
                     className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 hover:-translate-y-0.5 transition-all duration-300">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg" style={{ background: '#1B2D5B20' }}>📦</div>
+                        <AppIcon name="orders" tone="brand" variant="tone" size={44} />
                         <div>
                           <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
                           <div className="flex items-center gap-2 mt-1">
