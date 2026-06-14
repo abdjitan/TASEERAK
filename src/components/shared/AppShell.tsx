@@ -4,6 +4,7 @@
 import { useState, useEffect, ReactNode } from 'react'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
+import AiAssistant from '@/components/shared/AiAssistant'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 
@@ -145,6 +146,9 @@ export default function AppShell({
 
         <main className="flex-1 p-4 sm:p-6 lg:p-7">{children}</main>
       </div>
+
+      {/* مساعد تسعيرك الذكي — عائم في كل صفحات لوحة التحكم */}
+      <AiAssistant />
     </div>
   )
 }
