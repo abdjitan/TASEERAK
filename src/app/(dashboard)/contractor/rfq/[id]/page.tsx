@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
-import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
 import { waLink } from '@/lib/wa'
@@ -35,6 +36,7 @@ function offerDistanceKm(offer, ref) {
 
 export default function RFQDetailPage() {
   const { id } = useParams()
+  const router = useRouter()
   const [rfq, setRfq] = useState(null)
   const [offers, setOffers] = useState([])
   const [sortBy, setSortBy] = useState('price_asc') // price_asc | price_desc | delivery | rating
@@ -73,7 +75,7 @@ export default function RFQDetailPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('delete_rfq', { p_rfq_id: id })
     if (error) { alert(error.message); setDeleting(false); return }
-    window.location.href = '/contractor'
+    router.push('/contractor')
   }
 
   // تمديد مهلة التسعير — نضيف الأيام على الأبعد بين (المهلة الحالية، الآن)
@@ -143,7 +145,7 @@ export default function RFQDetailPage() {
     // Atomic: accept + reject others + close RFQ in one transaction (prevents double-accept).
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
     if (error) { alert('تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة وحاول مرة ثانية.'); return }
-    window.location.href = `/contractor/orders/${offerId}`
+    router.push(`/contractor/orders/${offerId}`)
   }
 
   async function rejectOffer(offerId) {
@@ -215,7 +217,7 @@ export default function RFQDetailPage() {
     if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return
     const supabase = createClient()
     await supabase.from('rfqs').update({ status: 'cancelled' }).eq('id', id)
-    window.location.href = '/contractor'
+    router.push('/contractor')
   }
 
   if (loading) return <PageLoader />
@@ -399,12 +401,12 @@ export default function RFQDetailPage() {
 
         {/* Accepted Offer → PO Link */}
         {acceptedOffer && (
-          <a href={`/contractor/orders/${acceptedOffer.id}`}
+          <Link href={`/contractor/orders/${acceptedOffer.id}`}
             className="block bg-green-50 rounded-2xl p-6 border border-green-200 mb-6 hover:shadow transition-shadow text-center">
             <div className="text-3xl mb-2">📄</div>
             <h3 className="font-bold text-green-800 mb-1">تم قبول عرض من {acceptedOffer.supplier?.company_name_ar}</h3>
             <p className="text-sm text-green-600">السعر: {acceptedOffer.total_price?.toLocaleString('en-US')} ر.س — اضغط لعرض أمر الشراء</p>
-          </a>
+          </Link>
         )}
 
         {/* ═══ ترسية بند-بند: أفضل مورد لكل مادة (طلب متعدّد المواد) ═══ */}
@@ -481,7 +483,7 @@ export default function RFQDetailPage() {
                                     {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title="المسافة من موقع التوصيل">📏 {km < 1 ? '<1' : Math.round(km)} كم</span> : null })()}
                                     {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]">⚙️ {b.entry.specification}</span>}
                                     {b.entry.attachment_url && <a href={b.entry.attachment_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-purple-500 hover:underline">📎 كتالوج</a>}
-                                    <a href={`/contractor/rfq/${id}/offer/${b.offer.id}`} className="font-semibold hover:underline" style={{ color: '#F5831F' }}>تفاصيل ←</a>
+                                    <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} className="font-semibold hover:underline" style={{ color: '#F5831F' }}>تفاصيل ←</Link>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
@@ -531,7 +533,7 @@ export default function RFQDetailPage() {
                         <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-white/10 gap-2">
                           <span className="flex items-center gap-2 flex-wrap">{v.name} <span className="text-blue-200 text-xs">({v.count} مادة)</span>
                             {finalized
-                              ? <a href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}>📄 أمر الشراء ←</a>
+                              ? <Link href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}>📄 أمر الشراء ←</Link>
                               : v.phone && <a href={waLink(v.phone, `بخصوص ترسية مواد من منصة تسعيرك`)} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}>💬 تواصل</a>}
                           </span>
                           <span className="font-bold whitespace-nowrap">{v.total.toLocaleString('en-US')} ر.س</span>
@@ -785,10 +787,10 @@ export default function RFQDetailPage() {
                   )}
                 </div>
 
-                <a href={`/contractor/rfq/${id}/offer/${offer.id}`}
+                <Link href={`/contractor/rfq/${id}/offer/${offer.id}`}
                   className="block text-center text-xs font-semibold py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#1B2D5B] hover:text-[#1B2D5B] transition-all mb-2">
                   📄 عرض كل التفاصيل ←
-                </a>
+                </Link>
 
                 {offer.status === 'pending' && rfq.status === 'open' && (
                   <div className="flex gap-2">
@@ -804,10 +806,10 @@ export default function RFQDetailPage() {
                 )}
 
                 {offer.status === 'accepted' && (
-                  <a href={`/contractor/orders/${offer.id}`}
+                  <Link href={`/contractor/orders/${offer.id}`}
                     className="block text-center bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
                     📄 عرض أمر الشراء
-                  </a>
+                  </Link>
                 )}
 
                 {offer.status !== 'pending' && (

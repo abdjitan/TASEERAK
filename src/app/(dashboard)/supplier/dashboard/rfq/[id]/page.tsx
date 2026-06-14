@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
-import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
@@ -16,6 +17,7 @@ import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyl
 
 export default function SupplierRFQPage() {
   const { id } = useParams()
+  const router = useRouter()
   const { locale, dir } = useTranslation()
   const [user, setUser] = useState(null)
   const [rfq, setRfq] = useState(null)
@@ -430,9 +432,9 @@ export default function SupplierRFQPage() {
             {success ? T.successTitle : T.dismissedTitle}
           </h2>
           <p className="text-sm text-gray-500 mb-6">{success ? T.successSub : T.dismissedSub}</p>
-          <a href="/supplier/dashboard" className="block py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#1B2D5B' }}>
+          <Link href="/supplier/dashboard" className="block py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#1B2D5B' }}>
             {T.backDash}
-          </a>
+          </Link>
         </div>
       </div>
     )
@@ -454,7 +456,7 @@ export default function SupplierRFQPage() {
               const supabase = createClient()
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: user?.id })
               if (error || !data) { setError('تعذّر فتح المحادثة'); return }
-              window.location.href = `/messages?c=${data}`
+              router.push(`/messages?c=${data}`)
             }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#1B2D5B' }}>💬 {locale === 'en' ? 'Message contractor' : 'راسل المقاول'}</button>
           </div>
 
@@ -618,11 +620,11 @@ export default function SupplierRFQPage() {
               </div>
             )}
             {existingOffer.status === 'accepted' && (
-              <a href={`/contractor/orders/${existingOffer.id}`}
+              <Link href={`/contractor/orders/${existingOffer.id}`}
                 className="inline-block mt-4 px-5 py-2.5 rounded-xl font-semibold text-white text-sm transition-all hover:shadow"
                 style={{ background: '#0F6E56' }}>
                 📄 أمر الشراء وحماية الصفقة ←
-              </a>
+              </Link>
             )}
           </div>
         ) : (rfq.status !== 'open' || expired) ? (
