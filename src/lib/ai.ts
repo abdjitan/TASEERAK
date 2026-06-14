@@ -7,18 +7,21 @@
 
 function geminiKey() { return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '' }
 function anthropicKey() { return process.env.ANTHROPIC_API_KEY || '' }
+function groqKey() { return process.env.GROQ_API_KEY || '' }
 
-// المزوّد الفعّال: AI_PROVIDER صريح، وإلا أول مفتاح متوفّر (Claude أولاً).
-export function aiProvider(): 'anthropic' | 'gemini' | null {
+// المزوّد الفعّال: AI_PROVIDER صريح، وإلا أول مفتاح متوفّر.
+export function aiProvider(): 'anthropic' | 'gemini' | 'groq' | null {
   const p = (process.env.AI_PROVIDER || '').toLowerCase()
   if (p === 'gemini' || p === 'google') return geminiKey() ? 'gemini' : null
   if (p === 'anthropic' || p === 'claude') return anthropicKey() ? 'anthropic' : null
+  if (p === 'groq') return groqKey() ? 'groq' : null
   if (anthropicKey()) return 'anthropic'
   if (geminiKey()) return 'gemini'
+  if (groqKey()) return 'groq'
   return null
 }
 
-export const AI_ENABLED = !!(anthropicKey() || geminiKey())
+export const AI_ENABLED = !!(anthropicKey() || geminiKey() || groqKey())
 export const DEFAULT_AI_MODEL = process.env.AI_MODEL || 'claude-opus-4-8'
 // نماذج Gemini المجانية للمحاولة بالترتيب (قابلة للتهيئة عبر GEMINI_MODEL كقائمة مفصولة بفواصل)
 const GEMINI_MODEL_FALLBACKS = 'gemini-2.0-flash,gemini-2.5-flash,gemini-1.5-flash'
@@ -55,6 +58,27 @@ async function geminiGenerate(system: string, contents: any[], maxTokens: number
   throw new Error(lastErr || 'Gemini: all models failed')
 }
 
+// ── Groq عبر REST (متوافق OpenAI) — مجاني وسريع ──
+async function groqGenerate(system: string, messages: any[], maxTokens: number, jsonMode: boolean): Promise<string | null> {
+  const model = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+  const body: any = {
+    model,
+    messages: [{ role: 'system', content: system }, ...messages],
+    max_tokens: maxTokens, temperature: 0.3,
+  }
+  if (jsonMode) body.response_format = { type: 'json_object' }
+  const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + groqKey() },
+    body: JSON.stringify(body),
+  })
+  if (!r.ok) { const t = await r.text().catch(() => ''); throw new Error('Groq ' + r.status + ' (' + model + '): ' + t.slice(0, 250)) }
+  const j = await r.json()
+  const text = (j?.choices?.[0]?.message?.content || '').trim()
+  if (!text) throw new Error('Groq empty')
+  return text
+}
+
 // ── Anthropic عبر SDK ──
 async function anthropicMessages(system: string, messages: any[], maxTokens: number, model: string, schema?: any): Promise<string | null> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk')
@@ -71,9 +95,11 @@ export async function aiJson<T = any>(opts: AiJsonOpts): Promise<T | null> {
   if (!prov) return null
   try {
     let text: string | null
+    const schemaHint = `\n\nأعد الإجابة بصيغة JSON صالحة فقط (respond in valid JSON) تطابق هذا المخطط:\n${JSON.stringify(opts.schema)}`
     if (prov === 'gemini') {
-      const schemaHint = `\n\nأعد الإجابة بصيغة JSON صالحة فقط تطابق هذا المخطط:\n${JSON.stringify(opts.schema)}`
       text = await geminiGenerate(opts.system + schemaHint, [{ role: 'user', parts: [{ text: opts.user }] }], opts.maxTokens || 2000, true)
+    } else if (prov === 'groq') {
+      text = await groqGenerate(opts.system + schemaHint, [{ role: 'user', content: opts.user }], opts.maxTokens || 2000, true)
     } else {
       text = await anthropicMessages(opts.system, [{ role: 'user', content: opts.user }], opts.maxTokens || 2000, opts.model || DEFAULT_AI_MODEL, opts.schema)
     }
@@ -96,6 +122,7 @@ export async function aiText(system: string, messages: { role: string; content: 
       const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
       return await geminiGenerate(system, contents, maxTokens, false)
     }
+    if (prov === 'groq') return await groqGenerate(system, messages, maxTokens, false)
     return await anthropicMessages(system, messages, maxTokens, DEFAULT_AI_MODEL)
   } catch (e: any) {
     console.error('aiText error:', e?.message || e)
