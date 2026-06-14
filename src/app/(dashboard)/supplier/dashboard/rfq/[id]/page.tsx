@@ -541,6 +541,25 @@ export default function SupplierRFQPage() {
             </h3>
             <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString('en-US')} ر.س{existingOffer.status === 'rejected' && rfq.status === 'closed' ? (locale === 'en' ? ' — thanks for participating' : ' — شكراً لمشاركتك') : ''}</p>
 
+            {/* المواد التي سعّرتها — كل مادة وسعرها (واضحة للمورد) */}
+            {Array.isArray(existingOffer.item_prices) && existingOffer.item_prices.length > 0 && (
+              <div className="mt-4 text-right border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <div className="bg-gray-50 px-3 py-2 text-xs font-bold text-gray-500 flex justify-between">
+                  <span>🧾 {locale === 'en' ? 'Items you priced' : 'المواد التي سعّرتها'} ({existingOffer.item_prices.length})</span>
+                  <span>{locale === 'en' ? 'Price' : 'السعر'}</span>
+                </div>
+                {existingOffer.item_prices.map((it: any, idx: number) => (
+                  <div key={idx} className="px-3 py-2.5 border-t border-gray-100 flex items-center justify-between gap-3">
+                    <span className="text-sm text-gray-800 font-medium truncate">
+                      {getProductLabel(it.product_name, locale)}
+                      <span className="text-gray-400 text-xs font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {it.unit || ''}{it.delivery_days ? ` · 📦 ${it.delivery_days}${locale === 'en' ? 'd' : 'ي'}` : ''})</span>
+                    </span>
+                    <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#1B2D5B' }}>{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {existingOffer.status === 'pending' && existingOffer.reduction_deadline && new Date(existingOffer.reduction_deadline) > new Date() && (
               <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 text-right">
                 <div className="font-bold text-orange-700 mb-1">📉 المقاول يطلب تخفيض السعر</div>
