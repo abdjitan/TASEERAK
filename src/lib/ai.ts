@@ -20,23 +20,38 @@ export function aiProvider(): 'anthropic' | 'gemini' | null {
 
 export const AI_ENABLED = !!(anthropicKey() || geminiKey())
 export const DEFAULT_AI_MODEL = process.env.AI_MODEL || 'claude-opus-4-8'
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash'
+// نماذج Gemini المجانية للمحاولة بالترتيب (قابلة للتهيئة عبر GEMINI_MODEL كقائمة مفصولة بفواصل)
+const GEMINI_MODEL_FALLBACKS = 'gemini-2.0-flash,gemini-2.5-flash,gemini-1.5-flash'
 
 export interface AiJsonOpts { system: string; user: string; schema: any; model?: string; maxTokens?: number }
 
+// قائمة نماذج Gemini للمحاولة بالترتيب (إن لم يتوفّر الأول 404 نجرّب التالي)
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || GEMINI_MODEL_FALLBACKS).split(',').map(s => s.trim()).filter(Boolean)
+
 // ── Gemini عبر REST (بدون مكتبة) ──
 async function geminiGenerate(system: string, contents: any[], maxTokens: number, jsonMode: boolean): Promise<string | null> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`
-  const body: any = {
-    systemInstruction: { parts: [{ text: system }] },
-    contents,
-    generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3 },
+  let lastErr = ''
+  for (const model of GEMINI_MODELS) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey()}`
+    const body: any = {
+      systemInstruction: { parts: [{ text: system }] },
+      contents,
+      generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3 },
+    }
+    if (jsonMode) body.generationConfig.responseMimeType = 'application/json'
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    if (!r.ok) {
+      const t = await r.text().catch(() => '')
+      lastErr = 'Gemini ' + r.status + ' (' + model + '): ' + t.slice(0, 250)
+      if (r.status === 404 || r.status === 400) continue // النموذج غير متاح — جرّب التالي
+      throw new Error(lastErr)
+    }
+    const j = await r.json()
+    const text = (j?.candidates?.[0]?.content?.parts || []).map((p: any) => p.text || '').join('').trim()
+    if (text) return text
+    lastErr = 'Gemini empty (' + model + '): ' + (j?.candidates?.[0]?.finishReason || j?.promptFeedback?.blockReason || 'no text')
   }
-  if (jsonMode) body.generationConfig.responseMimeType = 'application/json'
-  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-  if (!r.ok) throw new Error('gemini http ' + r.status)
-  const j = await r.json()
-  return (j?.candidates?.[0]?.content?.parts || []).map((p: any) => p.text || '').join('').trim() || null
+  throw new Error(lastErr || 'Gemini: all models failed')
 }
 
 // ── Anthropic عبر SDK ──
@@ -83,7 +98,8 @@ export async function aiText(system: string, messages: { role: string; content: 
     return await anthropicMessages(system, messages, maxTokens, DEFAULT_AI_MODEL)
   } catch (e: any) {
     console.error('aiText error:', e?.message || e)
-    return null
+    // مؤقتاً: نُظهر الخطأ الحقيقي للتشخيص (سيُزال بعد الإصلاح)
+    return '⚠️ تشخيص: ' + (e?.message || 'AI error')
   }
 }
 
