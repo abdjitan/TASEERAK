@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
+import { AppIcon } from '@/components/AppIcon'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 
 const txt = {
@@ -274,15 +275,15 @@ export default function ContractorDashboard() {
         {/* Stats — قابلة للضغط: تفلتر القائمة وتنزّل لها */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
-            { label: t.activeRfqs, value: active.length, icon: '📋', bg: '#1B2D5B', f: 'pending', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${locale === 'en' ? 'this week' : 'هذا الأسبوع'}` : '' },
-            { label: t.totalOffers, value: totalOffers, icon: '💬', bg: '#F5831F', f: 'has_offers', sub: awaitingReply > 0 ? `${awaitingReply} ${locale === 'en' ? 'awaiting you' : 'بانتظار ردك'}` : '' },
-            { label: t.completed, value: closed.length, icon: '✅', bg: '#0F6E56', f: 'closed', sub: '' },
-            { label: t.total, value: rfqs.length, icon: '📊', bg: '#7c3aed', f: 'all', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${locale === 'en' ? 'new' : 'جديد'}` : '' },
-          ].map(({ label, value, icon, bg, f, sub }) => (
+            { label: t.activeRfqs, value: active.length, name: 'active', tone: 'brand', f: 'pending', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${locale === 'en' ? 'this week' : 'هذا الأسبوع'}` : '' },
+            { label: t.totalOffers, value: totalOffers, name: 'offers', tone: 'warning', f: 'has_offers', sub: awaitingReply > 0 ? `${awaitingReply} ${locale === 'en' ? 'awaiting you' : 'بانتظار ردك'}` : '' },
+            { label: t.completed, value: closed.length, name: 'completed', tone: 'success', f: 'closed', sub: '' },
+            { label: t.total, value: rfqs.length, name: 'all', tone: 'info', f: 'all', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${locale === 'en' ? 'new' : 'جديد'}` : '' },
+          ].map(({ label, value, name, tone, f, sub }) => (
             <button key={label} type="button" onClick={() => { setFilter(f); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
               className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${filter === f ? 'border-[#F5831F] ring-1 ring-[#F5831F]/30' : 'border-gray-100'}`}>
               <div className="flex items-start justify-between">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg text-white" style={{ background: bg }}>{icon}</div>
+                <AppIcon name={name} tone={tone} variant="solid" size={44} />
                 <div className="text-3xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
               </div>
               <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
@@ -419,12 +420,13 @@ export default function ContractorDashboard() {
                   )}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-lg ${
-                        rfq.status === 'open' && (rfq.offer_count || 0) > 0 ? 'bg-[#F5831F]/10' :
-                        rfq.status === 'open' ? 'bg-[#1B2D5B]/10' : rfq.status === 'closed' ? 'bg-emerald-50' : 'bg-gray-50'}`}>
-                        {rfq.status === 'open' && (rfq.offer_count || 0) > 0 ? '🔔' :
-                         rfq.status === 'open' ? '📋' : rfq.status === 'closed' ? '✅' : '⏰'}
-                      </div>
+                      {(() => {
+                        const m = rfq.status === 'open' && (rfq.offer_count || 0) > 0 ? { name: 'quoted', tone: 'info' }
+                          : rfq.status === 'open' ? { name: 'waiting', tone: 'warning' }
+                          : rfq.status === 'closed' ? { name: 'completed', tone: 'success' }
+                          : { name: 'clock', tone: 'danger' }
+                        return <AppIcon name={m.name} tone={m.tone} variant="tone" size={44} />
+                      })()}
                       <div>
                         <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfq.title || rfq.product_name}</div>
                         {rfq.title && <div className="text-xs text-gray-400 truncate max-w-[260px]">{rfq.product_name}</div>}
