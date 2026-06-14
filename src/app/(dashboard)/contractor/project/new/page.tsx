@@ -31,6 +31,7 @@ export default function NewProjectPage() {
   // BOQ upload
   const [boqFile, setBoqFile] = useState(null)
   const [parseError, setParseError] = useState('')
+  const [aiUsed, setAiUsed] = useState(false)
   const fileRef = useRef(null)
 
   // Items
@@ -65,6 +66,7 @@ export default function NewProjectPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       if (data.items?.length > 0) {
+        setAiUsed(!!data.ai)
         setItems(data.items.map((item, i) => ({
           ...item,
           id: `item-${i}`,
@@ -324,8 +326,13 @@ export default function NewProjectPage() {
         {items.length > 0 && (
           <div className="space-y-3 mb-5">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-sm" style={{ color: '#1B2D5B' }}>
+              <h2 className="font-bold text-sm flex items-center gap-2" style={{ color: '#1B2D5B' }}>
                 {locale === 'en' ? `Materials (${items.length})` : `المواد (${items.length})`}
+                {aiUsed && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+                    ✨ {locale === 'en' ? 'AI-analyzed' : 'حُلّل بالذكاء الاصطناعي'}
+                  </span>
+                )}
               </h2>
               <div className="flex gap-2 flex-wrap">
                 {Object.entries(bySector).map(([s, count]) => (

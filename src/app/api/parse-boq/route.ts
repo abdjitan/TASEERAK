@@ -109,6 +109,88 @@ function isValidItem(text: string): boolean {
   return !skip.some(s => lower.startsWith(s))
 }
 
+// ───────────────────────────────────────────────────────────────────────
+// طبقة الذكاء الاصطناعي (Claude) — تحسين البنود المستخرَجة بالقواعد:
+// أسماء أنظف، تصنيف قطاع أدق، وحدات ومواصفات. تعمل فقط إذا وُجد المفتاح،
+// وأي خطأ يرجّع البنود الأصلية (لا تُعطّل التحليل أبداً).
+// ───────────────────────────────────────────────────────────────────────
+const AI_SECTORS = ['civil', 'architectural', 'electrical', 'mechanical', 'equipment', 'supply_store']
+
+async function enrichWithAI(items: any[]): Promise<any[] | null> {
+  if (!process.env.ANTHROPIC_API_KEY || items.length === 0) return null
+  try {
+    const { default: Anthropic } = await import('@anthropic-ai/sdk')
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    const batch = items.slice(0, 120) // حدّ معقول للتكلفة/السرعة
+    const payload = batch.map((it, i) => ({ i, desc: it.product_name, unit: it.unit, qty: it.quantity }))
+
+    const system = `أنت مهندس كميات (Quantity Surveyor) خبير في مشاريع البناء والـ MEP في السعودية.
+ستصلك بنود من جدول كميات (BOQ). لكل بند أعِد كائناً يحتوي:
+- i: نفس رقم البند المُدخل.
+- name: اسم مادة مختصر وواضح بالعربية (مع المقاس/المواصفة المهمة إن وُجدت).
+- sector: القطاع الصحيح، واحد فقط من: civil, architectural, electrical, mechanical, equipment, supply_store.
+- unit: وحدة القياس بالعربية (م³، م²، م.ط، طن، كغ، عدد، مقطوعية، طقم...).
+- spec: مواصفة مختصرة (مقاس/درجة/قدرة) أو اتركها فارغة.
+أعِد عنصراً واحداً لكل بند مُدخل بنفس الرقم i دون تجاهل أي بند.`
+
+    const resp = await client.messages.create({
+      model: process.env.BOQ_AI_MODEL || 'claude-opus-4-8',
+      max_tokens: 8000,
+      system,
+      output_config: {
+        format: {
+          type: 'json_schema',
+          schema: {
+            type: 'object',
+            properties: {
+              items: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    i: { type: 'integer' },
+                    name: { type: 'string' },
+                    sector: { type: 'string', enum: AI_SECTORS },
+                    unit: { type: 'string' },
+                    spec: { type: 'string' },
+                  },
+                  required: ['i', 'sector'],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ['items'],
+            additionalProperties: false,
+          },
+        },
+      },
+      messages: [{ role: 'user', content: `بنود الجدول (JSON):\n${JSON.stringify(payload)}` }],
+    })
+
+    const text = (resp.content || []).find((b: any) => b.type === 'text')?.text
+    if (!text) return null
+    const parsed = JSON.parse(text)
+    const byIndex: Record<number, any> = {}
+    for (const r of (parsed.items || [])) byIndex[r.i] = r
+
+    const enriched = batch.map((it, i) => {
+      const r = byIndex[i]
+      if (!r) return it
+      return {
+        ...it,
+        product_name: String(r.name || it.product_name).slice(0, 120),
+        sector: AI_SECTORS.includes(r.sector) ? r.sector : it.sector,
+        unit: r.unit || it.unit,
+        specification: String(r.spec || it.specification || '').slice(0, 80),
+      }
+    })
+    return enriched.concat(items.slice(120)) // البنود الزائدة تبقى بتصنيف القواعد
+  } catch (e: any) {
+    console.error('BOQ AI enrich error:', e?.message || e)
+    return null
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
@@ -195,13 +277,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ترتيب حسب القطاع
-    extractedItems.sort((a, b) => a.sector.localeCompare(b.sector))
+    // طبقة الذكاء الاصطناعي (إن توفّر المفتاح) — تحسين الأسماء والتصنيف والوحدات
+    const aiItems = await enrichWithAI(extractedItems)
+    const finalItems = aiItems || extractedItems
+
+    // ترتيب حسب القطاع (بعد تحسين التصنيف)
+    finalItems.sort((a, b) => a.sector.localeCompare(b.sector))
 
     return NextResponse.json({
-      items: extractedItems.slice(0, 200), // حد أقصى 200 بند
-      total: extractedItems.length,
-      filename: file.name
+      items: finalItems.slice(0, 200), // حد أقصى 200 بند
+      total: finalItems.length,
+      filename: file.name,
+      ai: !!aiItems, // هل استُخدم الذكاء الاصطناعي؟
     })
 
   } catch (err: any) {
