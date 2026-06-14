@@ -19,6 +19,7 @@ export default function RFQDetailPage() {
   const [aiCmp, setAiCmp] = useState(null) // نتيجة تحليل العروض بالذكاء الاصطناعي
   const [cmpLoading, setCmpLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [awardSort, setAwardSort] = useState('cheapest') // cheapest | fastest — ترتيب عروض كل مادة
   const [onlyVerified, setOnlyVerified] = useState(false)
   const [tierFilter, setTierFilter] = useState('') // '' | manufacturer | commercial | local
   const [loading, setLoading] = useState(true)
@@ -348,9 +349,19 @@ export default function RFQDetailPage() {
         {/* ═══ ترسية بند-بند: أفضل مورد لكل مادة (طلب متعدّد المواد) ═══ */}
         {isMulti && (
           <div className="mb-6">
-            <div className="mb-3">
-              <h3 className="text-sm font-bold text-gray-900">🧱 ترسية بند-بند</h3>
-              <p className="text-xs text-gray-400">اختر أفضل مورد لكل مادة — الطلب الواحد يقدر ينقسم على أكثر من مورد.</p>
+            <div className="mb-3 flex items-end justify-between gap-2 flex-wrap">
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">🧱 ترسية بند-بند</h3>
+                <p className="text-xs text-gray-400">اختر أفضل مورد لكل مادة — الطلب الواحد يقدر ينقسم على أكثر من مورد.</p>
+              </div>
+              {activeOffers.length > 0 && (
+                <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 text-xs font-semibold">
+                  {[{ k: 'cheapest', l: '💰 الأرخص' }, { k: 'fastest', l: '⚡ الأسرع' }].map(o => (
+                    <button key={o.k} type="button" onClick={() => setAwardSort(o.k)}
+                      className={`px-3 py-1.5 rounded-lg transition-all ${awardSort === o.k ? 'bg-white shadow-sm text-[#1B2D5B]' : 'text-gray-500'}`}>{o.l}</button>
+                  ))}
+                </div>
+              )}
             </div>
             {activeOffers.length === 0 ? (
               <div className="bg-white rounded-xl p-8 border border-gray-100 text-center">
@@ -365,7 +376,14 @@ export default function RFQDetailPage() {
                     const list = Array.isArray(o.item_prices) ? o.item_prices : []
                     const entry = list.find(ip => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
                     return entry ? { offer: o, entry } : null
-                  }).filter(Boolean).sort((a, b) => (Number(a.entry.total) || 0) - (Number(b.entry.total) || 0))
+                  }).filter(Boolean).sort((a, b) => {
+                    if (awardSort === 'fastest') {
+                      const ad = (a.entry.delivery_days ?? a.offer.delivery_days ?? 99999)
+                      const bd = (b.entry.delivery_days ?? b.offer.delivery_days ?? 99999)
+                      if (ad !== bd) return ad - bd
+                    }
+                    return (Number(a.entry.total) || 0) - (Number(b.entry.total) || 0)
+                  })
                   const award = awards[idx]
                   return (
                     <div key={idx} className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
@@ -386,13 +404,18 @@ export default function RFQDetailPage() {
                               <div key={b.offer.id} className={`px-4 py-2.5 flex items-center justify-between gap-2 ${isAwarded ? 'bg-emerald-50' : ''}`}>
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5">
-                                    {r === 0 && <span title="الأرخص">🥇</span>}
+                                    {r === 0 && <span title={awardSort === 'fastest' ? 'الأسرع' : 'الأرخص'}>🥇</span>}
                                     <span className="font-semibold text-sm text-gray-800 truncate">{b.offer.supplier?.company_name_ar || 'مورد'}</span>
                                     {b.offer.supplier?.verification_status === 'verified' && <span title="موثّق" style={{ color: '#0F6E56' }}>{b.offer.supplier?.cr_verification_source === 'wathq' ? '🛡' : '✓'}</span>}
                                     {b.offer.supplier?.rating_avg > 0 && <span className="text-[10px] text-gray-400">⭐ {b.offer.supplier.rating_avg}</span>}
                                   </div>
-                                  <div className="text-[11px] text-gray-400">
-                                    {Number(b.entry.unit_price) > 0 ? `${Number(b.entry.unit_price).toLocaleString('en-US')} / ${it.unit}` : ''}{b.offer.delivery_days ? ` · 📦 ${b.offer.delivery_days} يوم` : ''}
+                                  <div className="text-[11px] text-gray-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                                    {Number(b.entry.unit_price) > 0 && <span>{Number(b.entry.unit_price).toLocaleString('en-US')} / {b.entry.unit || it.unit}</span>}
+                                    {(b.entry.delivery_days ?? b.offer.delivery_days) ? <span>📦 {b.entry.delivery_days ?? b.offer.delivery_days} يوم</span> : null}
+                                    {b.offer.supplier?.city && <span>📍 {b.offer.supplier.city}</span>}
+                                    {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]">⚙️ {b.entry.specification}</span>}
+                                    {b.entry.attachment_url && <a href={b.entry.attachment_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-purple-500 hover:underline">📎 كتالوج</a>}
+                                    <a href={`/contractor/rfq/${id}/offer/${b.offer.id}`} className="font-semibold hover:underline" style={{ color: '#F5831F' }}>تفاصيل ←</a>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
