@@ -91,6 +91,7 @@ export default function ContractorDashboard() {
   const [filter, setFilter] = useState('all') // all | has_offers | pending | closed
   const [sectorFilter, setSectorFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState('newest') // newest | expiry
 
   useEffect(() => {
     async function init() {
@@ -214,19 +215,41 @@ export default function ContractorDashboard() {
           </div>
         )}
 
-        <div className="mb-6 animate-fade-in flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>
-              {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || (locale === 'en' ? 'Contractor' : 'مقاول')} 👋
-            </h1>
-            <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
-          </div>
-          <a href="/contractor/rfq/new"
-            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-base"
-            style={{ background: 'linear-gradient(135deg,#F5831F,#d96f15)' }}>
-            <span className="text-xl leading-none">+</span> {t.newRfqBtn}
-          </a>
+        <div className="mb-5 animate-fade-in">
+          <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>
+            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || (locale === 'en' ? 'Contractor' : 'مقاول')} 👋
+          </h1>
+          <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
+
+        {/* شريط الإجراءات السريعة */}
+        <div className="grid grid-cols-3 gap-3 mb-5 animate-fade-in">
+          {[
+            { href: '/contractor/rfq/new', icon: '📝', label: t.newRfqBtn, primary: true },
+            { href: '/contractor/project/new', icon: '📋', label: locale === 'en' ? 'Upload BOQ' : 'رفع BOQ' },
+            { href: '/market', icon: '📈', label: locale === 'en' ? 'Price Index' : 'بورصة الأسعار' },
+          ].map(a => (
+            <a key={a.href} href={a.href}
+              className={`rounded-2xl p-4 text-center font-bold transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md ${a.primary ? 'text-white' : 'bg-white border border-gray-100 text-[#1B2D5B]'}`}
+              style={a.primary ? { background: 'linear-gradient(135deg,#F5831F,#d96f15)' } : {}}>
+              <div className="text-2xl mb-1">{a.icon}</div>
+              <div className="text-xs sm:text-sm">{a.label}</div>
+            </a>
+          ))}
+        </div>
+
+        {/* مركز الإجراءات — طلبات وصلها عروض وتحتاج ردّك */}
+        {awaitingReply > 0 && (
+          <button type="button" onClick={() => { setFilter('has_offers'); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+            className="w-full mb-5 rounded-2xl p-4 flex items-center gap-3 text-start animate-fade-in transition-all hover:shadow-md border"
+            style={{ background: 'linear-gradient(135deg,#F5831F12,#1B2D5B08)', borderColor: '#F5831F44' }}>
+            <span className="w-10 h-10 rounded-xl grid place-items-center text-white shrink-0 animate-pulse" style={{ background: '#F5831F' }}>🔔</span>
+            <span className="flex-1 text-sm font-bold" style={{ color: '#1B2D5B' }}>
+              {awaitingReply} {locale === 'en' ? 'request(s) received new offers — compare now' : 'طلبات وصلها عروض جديدة — قارنها الآن'}
+            </span>
+            <span className="font-bold text-sm" style={{ color: '#F5831F' }}>←</span>
+          </button>
+        )}
 
         {/* ويدجت اكتمال الحساب */}
         {compPct < 100 && (
@@ -345,6 +368,11 @@ export default function ContractorDashboard() {
                     <option value="all">{locale === 'en' ? 'All Sectors' : 'كل القطاعات'}</option>
                     {Object.keys(sectors).map(s => <option key={s} value={s}>{sectors[s]}</option>)}
                   </select>
+                  <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                    className="input-field text-xs flex-shrink-0 w-auto py-2">
+                    <option value="newest">{locale === 'en' ? '🆕 Newest' : '🆕 الأحدث'}</option>
+                    <option value="expiry">{locale === 'en' ? '⏰ Closest to expiry' : '⏰ الأقرب انتهاءً'}</option>
+                  </select>
                   <input value={search} onChange={e => setSearch(e.target.value)}
                     className="input-field text-xs flex-1 py-2" placeholder={`🔍 ${locale === 'en' ? 'Search...' : 'ابحث عن طلب...'}`} />
                 </div>
@@ -361,6 +389,13 @@ export default function ContractorDashboard() {
                   if (search && !`${rfq.title || ''} ${rfq.product_name || ''}`.toLowerCase().includes(search.toLowerCase())) return false
                   return true
                 })
+                if (sortBy === 'expiry') {
+                  filtered.sort((a, b) => {
+                    const ax = a.status === 'open' && a.expires_at ? new Date(a.expires_at).getTime() : Infinity
+                    const bx = b.status === 'open' && b.expires_at ? new Date(b.expires_at).getTime() : Infinity
+                    return ax - bx
+                  })
+                }
                 if (filtered.length === 0) return (
                   <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center text-gray-400 text-sm">
                     🔍 {locale === 'en' ? 'No matching requests' : 'لا توجد طلبات مطابقة'}
@@ -409,10 +444,17 @@ export default function ContractorDashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="text-center rounded-xl px-4 py-2 text-white" style={{ background: (rfq.offer_count || 0) > 0 ? '#F5831F' : '#1B2D5B' }}>
-                      <div className="text-xl font-bold">{rfq.offer_count || 0}</div>
-                      <div className="text-[10px] text-white/70">{t.offers}</div>
-                    </div>
+                    {(rfq.offer_count || 0) > 0 ? (
+                      <div className="text-center rounded-xl px-4 py-2 text-white shrink-0" style={{ background: '#F5831F' }}>
+                        <div className="text-xl font-bold">{rfq.offer_count}</div>
+                        <div className="text-[10px] text-white/85">{t.offers}</div>
+                      </div>
+                    ) : (
+                      <div className="text-center rounded-xl px-3 py-2 bg-gray-100 text-gray-400 shrink-0 min-w-[78px]">
+                        <div className="text-base leading-none mb-0.5">⏳</div>
+                        <div className="text-[10px] font-semibold leading-tight">{locale === 'en' ? 'Awaiting offers' : 'بانتظار العروض'}</div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
                     <span>📦 {Array.isArray(rfq.items) && rfq.items.length > 1 ? `${rfq.items.length} ${locale === 'en' ? 'items' : 'أصناف'}` : `${rfq.quantity} ${rfq.unit}`}</span>
@@ -420,6 +462,18 @@ export default function ContractorDashboard() {
                     {rfq.specification && <span>⚙️ {rfq.specification}</span>}
                     <span className="mr-auto" style={{ color: '#F5831F' }}>{t.viewDetails}</span>
                   </div>
+                  {/* عدّاد وقت بصري ينقص حتى انتهاء المهلة */}
+                  {rfq.status === 'open' && rfq.expires_at && rfq.created_at && !isExpired(rfq.expires_at) && (() => {
+                    const total = new Date(rfq.expires_at).getTime() - new Date(rfq.created_at).getTime()
+                    const remain = new Date(rfq.expires_at).getTime() - Date.now()
+                    const pct = total > 0 ? Math.max(2, Math.min(100, (remain / total) * 100)) : 0
+                    const barColor = pct < 15 ? '#dc2626' : pct < 40 ? '#F5831F' : '#0F6E56'
+                    return (
+                      <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: barColor }} />
+                      </div>
+                    )
+                  })()}
                 </a>
                 ))
               })()}
