@@ -115,9 +115,9 @@ const TR = {
 const schema = z.object({
   full_name: z.string().min(3, 'الاسم مطلوب'),
   role: z.enum(['contractor', 'supplier'] as const),
-  company_name_ar: z.string().min(3, 'اسم الشركة مطلوب'),
+  company_name_ar: z.string().optional(), // مطلوب للمورد فقط (يُفرض في زر «التالي»)
   company_name_en: z.string().optional(),
-  commercial_registration: z.string().regex(/^[0-9]{10}$/, 'رقم السجل التجاري يجب أن يكون 10 أرقام بالضبط'),
+  commercial_registration: z.string().optional(), // المورد فقط — يُفرض ويُوثّق في خطوة المورد
   vat_number: z.string().optional(),
   phone: z.string().regex(/^05[0-9]{8}$/, 'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
@@ -333,10 +333,11 @@ export default function RegisterPage() {
       const meta: any = {
         role: data.role,
         full_name: data.full_name || '',
-        company_name_ar: data.company_name_ar,
+        // المقاول قد لا يُدخل اسم شركة — نستخدم اسمه كاسم عرض
+        company_name_ar: (data.company_name_ar || '').trim() || data.full_name || '',
         company_name_en: data.company_name_en || '',
         phone: data.phone || '',
-        commercial_registration: data.commercial_registration,
+        commercial_registration: data.commercial_registration || '',
         vat_number: data.vat_number || '',
         region: data.region,
         city: data.city,
@@ -587,7 +588,9 @@ export default function RegisterPage() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.companyAr} * {crVerify?.verified && <span className="text-emerald-600">🔒</span>}</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">
+                    {t.companyAr}{selectedType === 'supplier' ? ' *' : <span className="text-gray-400 font-normal"> ({locale === 'en' ? 'optional' : locale === 'ur' ? 'اختیاری' : 'اختياري'})</span>} {crVerify?.verified && <span className="text-emerald-600">🔒</span>}
+                  </label>
                   <input {...register('company_name_ar')} readOnly={!!crVerify?.verified}
                     className={`input-field ${crVerify?.verified ? 'bg-emerald-50/60 text-gray-700 cursor-not-allowed' : ''}`} placeholder="شركة الصخر للمقاولات"/>
                   {crVerify?.verified
@@ -595,6 +598,8 @@ export default function RegisterPage() {
                     : errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
                 </div>
 
+                {/* السجل التجاري + الضريبة + التوثيق — للمورد فقط. المقاول تسجيله خفيف. */}
+                {selectedType === 'supplier' && (<>
                 {/* التحقق عبر السجل التجاري (واثق) فقط — لا نجمع رقم الهوية حفاظاً على الخصوصية (PDPL) */}
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{t.crNumber} *</label>
@@ -671,6 +676,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
                 )}
+                </>)}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -720,11 +726,19 @@ export default function RegisterPage() {
                 <button type="button" onClick={() => setStep(1)} className="btn-ghost flex-1">{t.back}</button>
                 <button type="button" onClick={async () => {
                   if (!selectedType) { setFormError(locale === 'en' ? 'Choose account type (contractor/supplier)' : 'اختر نوع الحساب (مقاول/مورد)'); return }
-                  const valid = await trigger(['company_name_ar', 'commercial_registration', 'vat_number', 'region', 'city'])
+                  const isSupplier = selectedType === 'supplier'
+                  // المقاول: تسجيل خفيف — المنطقة/المدينة فقط. المورد: بيانات كاملة + توثيق.
+                  const valid = await trigger(isSupplier ? ['company_name_ar', 'commercial_registration', 'vat_number', 'region', 'city'] : ['region', 'city'])
                   if (!valid) return
-                  if (crDup && !branchConfirmed) {
-                    setFormError(locale === 'en' ? 'This commercial registration is already registered — sign in, or confirm it is a separate branch to continue.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن پہلے سے موجود ہے — سائن اِن کریں یا الگ شاخ کی تصدیق کریں۔' : 'هذا السجل التجاري مسجّل مسبقاً — سجّل الدخول، أو أكّد أنه فرع منفصل للمتابعة.')
-                    return
+                  if (isSupplier) {
+                    const name = String(watch('company_name_ar') || '').trim()
+                    const cr = String(watch('commercial_registration') || '')
+                    if (name.length < 3) { setFormError(locale === 'en' ? 'Company name is required' : locale === 'ur' ? 'کمپنی کا نام درکار ہے' : 'اسم الشركة مطلوب'); return }
+                    if (!/^[0-9]{10}$/.test(cr)) { setFormError(locale === 'en' ? 'CR number must be exactly 10 digits' : locale === 'ur' ? 'CR نمبر 10 ہندسوں کا ہونا چاہیے' : 'رقم السجل التجاري يجب أن يكون 10 أرقام'); return }
+                    if (crDup && !branchConfirmed) {
+                      setFormError(locale === 'en' ? 'This commercial registration is already registered — sign in, or confirm it is a separate branch to continue.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن پہلے سے موجود ہے — سائن اِن کریں یا الگ شاخ کی تصدیق کریں۔' : 'هذا السجل التجاري مسجّل مسبقاً — سجّل الدخول، أو أكّد أنه فرع منفصل للمتابعة.')
+                      return
+                    }
                   }
                   if (phoneDup) {
                     setFormError(locale === 'en' ? 'This phone number is already registered — use a different one.' : locale === 'ur' ? 'یہ فون نمبر پہلے سے رجسٹرڈ ہے — مختلف نمبر استعمال کریں۔' : 'رقم الجوال مسجّل مسبقاً — استخدم رقماً آخر.')
