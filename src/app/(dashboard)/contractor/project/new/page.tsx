@@ -8,7 +8,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, detectSubCategory, getSubCategoryLabel } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, UNIT_OPTIONS, REGIONS, detectSubCategory, getSubCategoryLabel } from '@/types'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
@@ -67,12 +67,11 @@ export default function NewProjectPage() {
       if (!res.ok) throw new Error(data.error)
       if (data.items?.length > 0) {
         setAiUsed(!!data.ai)
-        setItems(data.items.map((item, i) => ({
-          ...item,
-          id: `item-${i}`,
-          selected: true,
-          sub_category: detectSubCategory(item.product_name + ' ' + (item.specification || ''), item.sector),
-        })))
+        setItems(data.items.map((item, i) => {
+          // التخصص يأتي مُصنّفاً من الخادم (من القوائم الرسمية). نتأكد أنه مفتاح صحيح وإلا = غير مصنّف.
+          const sub = (item.sub_category && SUB_CATEGORIES[item.sector]?.[item.sub_category]) ? item.sub_category : null
+          return { ...item, id: `item-${i}`, selected: true, sub_category: sub, needs_classification: !sub }
+        }))
         setStep('items')
       } else {
         setParseError(locale === 'en' ? 'No items found in the BOQ' : 'لم يتم استخراج بنود من الملف')
@@ -82,7 +81,7 @@ export default function NewProjectPage() {
     } finally { setParsing(false) }
   }
 
-  // إضافة بند يدوي
+  // إضافة بند يدوي — يبدأ «غير مصنّف» حتى يختار المقاول التخصص من القوائم
   function addItem() {
     setItems(prev => [...prev, {
       id: `item-${Date.now()}`,
@@ -91,6 +90,8 @@ export default function NewProjectPage() {
       quantity: '',
       unit: 'عدد',
       specification: '',
+      sub_category: null,
+      needs_classification: true,
       selected: true,
     }])
   }
@@ -98,6 +99,23 @@ export default function NewProjectPage() {
   function updateItem(id, field, value) {
     setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item))
   }
+
+  // تغيير القطاع يعيد ضبط التخصص (التخصصات مرتبطة بالقطاع) ويحاول التصنيف تلقائياً
+  function setItemSector(id, sector) {
+    setItems(prev => prev.map(it => {
+      if (it.id !== id) return it
+      const guess = detectSubCategory(`${it.product_name} ${it.specification || ''}`, sector)
+      const sub = guess && SUB_CATEGORIES[sector]?.[guess] ? guess : null
+      return { ...it, sector, sub_category: sub, needs_classification: !sub }
+    }))
+  }
+
+  // اختيار التخصص من القائمة الرسمية — هو ما يوجّه البند للمورد المتخصص
+  function setItemCategory(id, sub) {
+    setItems(prev => prev.map(it => it.id === id ? { ...it, sub_category: sub || null, needs_classification: !sub } : it))
+  }
+
+  const unclassifiedCount = items.filter(i => i.selected && i.product_name && i.needs_classification).length
 
   function removeItem(id) {
     setItems(prev => prev.filter(item => item.id !== id))
@@ -107,6 +125,11 @@ export default function NewProjectPage() {
   async function handleSubmit() {
     if (!user || !title || !region) return
     if (deliveryRequired && !deliveryLocation) return
+    // البنود غير المصنّفة لا تصل للمورد المتخصص بدقّة — نوضّح للمقاول قبل الإرسال
+    if (unclassifiedCount > 0) {
+      const ok = confirm(`فيه ${unclassifiedCount} بند غير مصنّف — سيُرسل لكل موردي القطاع (تطابق أقل دقّة) بدل المورد المتخصص.\n\nاضغط «موافق» للإرسال هكذا، أو «إلغاء» لتختار تصنيفها أولاً.`)
+      if (!ok) return
+    }
     setLoading(true)
     const supabase = createClient()
 
@@ -343,6 +366,19 @@ export default function NewProjectPage() {
               </div>
             </div>
 
+            {/* تنبيه البنود غير المصنّفة — لن تصل للمورد المتخصص بدقّة حتى تُصنّف */}
+            {unclassifiedCount > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
+                <span className="text-lg">⚠️</span>
+                <div className="text-xs text-red-700 leading-relaxed">
+                  <strong>{unclassifiedCount} {locale === 'en' ? 'item(s) are not classified.' : 'بند غير مصنّف.'}</strong>{' '}
+                  {locale === 'en'
+                    ? 'Items without a category from the lists go to all suppliers in the sector instead of the right specialist. Open each one (✏️) and pick its category.'
+                    : 'البنود بدون تصنيف من القوائم تُرسل لكل موردي القطاع بدل المورد المتخصص. افتح كل بند (✏️) واختر تصنيفه الصحيح.'}
+                </div>
+              </div>
+            )}
+
             {/* Toolbar */}
             <div className="flex gap-2">
               <button type="button" onClick={() => setItems(prev => prev.map(i => ({ ...i, selected: true })))}
@@ -381,9 +417,30 @@ export default function NewProjectPage() {
                               onChange={e => updateItem(item.id, 'product_name', e.target.value)}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Material name *' : 'اسم المادة *'} />
                           </div>
+                          {/* التصنيف (التخصص) — يُحدّد المورد المتخصص الذي يستقبل البند. إجباري من القوائم. */}
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-bold text-gray-500 mb-1">
+                              {locale === 'en' ? 'Category (routing) *' : 'التصنيف — يحدّد المورد المتخصص *'}
+                            </label>
+                            <select value={item.sub_category || ''}
+                              onChange={e => setItemCategory(item.id, e.target.value)}
+                              className={`input-field text-sm ${item.needs_classification ? 'border-red-300 bg-red-50' : ''}`}>
+                              <option value="">{locale === 'en' ? '— Pick a category from the list —' : '— اختر التصنيف من القائمة —'}</option>
+                              {Object.entries(SUB_CATEGORIES[item.sector] || {}).map(([k, v]: any) => (
+                                <option key={k} value={k}>{getSubCategoryLabel(item.sector, k, locale)}</option>
+                              ))}
+                            </select>
+                            {item.needs_classification && (
+                              <p className="text-[11px] text-red-500 mt-1">
+                                {locale === 'en' ? 'Unclassified — without a category it goes to all suppliers in the sector (less precise).'
+                                : 'غير مصنّف — بدون تصنيف يُرسل لكل موردي القطاع (تطابق أقل دقّة). اختر التصنيف الصحيح.'}
+                              </p>
+                            )}
+                          </div>
                           <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">{locale === 'en' ? 'Sector' : 'القطاع'}</label>
                             <select value={item.sector}
-                              onChange={e => updateItem(item.id, 'sector', e.target.value)}
+                              onChange={e => setItemSector(item.id, e.target.value)}
                               className="input-field text-sm">
                               {Object.entries(SECTOR_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                             </select>
@@ -450,6 +507,12 @@ export default function NewProjectPage() {
                                 <span className="badge text-[10px] bg-gray-100 text-gray-600">
                                   → {getSubCategoryLabel(item.sector, item.sub_category, locale)}
                                 </span>
+                              )}
+                              {item.needs_classification && (
+                                <button type="button" onClick={() => setEditingIndex(i)}
+                                  className="badge text-[10px] bg-red-100 text-red-600 font-bold hover:bg-red-200">
+                                  ⚠ {locale === 'en' ? 'Unclassified — set category' : 'غير مصنّف — اختر التصنيف'}
+                                </button>
                               )}
                               {item.quantity && <span className="text-xs text-gray-500">📦 {item.quantity} {item.unit}</span>}
                               {item.specification && <span className="text-xs text-gray-400 truncate max-w-[200px]">⚙️ {item.specification}</span>}

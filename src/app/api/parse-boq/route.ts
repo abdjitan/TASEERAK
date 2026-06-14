@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizeText } from '@/lib/normalize'
 import { aiJson, AI_ENABLED } from '@/lib/ai'
+import { SUB_CATEGORIES, detectSubCategory } from '@/types'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -117,6 +118,23 @@ function isValidItem(text: string): boolean {
 // ───────────────────────────────────────────────────────────────────────
 const AI_SECTORS = ['civil', 'architectural', 'electrical', 'mechanical', 'equipment', 'supply_store']
 
+// مرجع التخصصات المسموح بها لكل قطاع (المفتاح = الاسم) — يُمرَّر للنموذج ليختار منها فقط.
+function subCatRef(): string {
+  const lines: string[] = []
+  for (const sector of AI_SECTORS) {
+    const subs = (SUB_CATEGORIES as any)[sector]
+    if (!subs) continue
+    const list = Object.entries(subs).map(([k, v]: any) => `${k} (${v.ar})`).join('، ')
+    lines.push(`• ${sector}: ${list}`)
+  }
+  return lines.join('\n')
+}
+
+// هل المفتاح تخصّص صحيح ضمن القطاع؟
+function validSub(sector: string, sub: string): boolean {
+  return !!(sub && (SUB_CATEGORIES as any)[sector] && (SUB_CATEGORIES as any)[sector][sub])
+}
+
 async function enrichWithAI(items: any[]): Promise<any[] | null> {
   if (!AI_ENABLED || items.length === 0) return null
   try {
@@ -128,8 +146,13 @@ async function enrichWithAI(items: any[]): Promise<any[] | null> {
 - i: نفس رقم البند المُدخل.
 - name: اسم مادة مختصر وواضح بالعربية (مع المقاس/المواصفة المهمة إن وُجدت).
 - sector: القطاع الصحيح، واحد فقط من: civil, architectural, electrical, mechanical, equipment, supply_store.
+- sub_category: مفتاح التخصص الأنسب من القائمة أدناه، **من نفس القطاع الذي اخترته فقط**. هذا المفتاح هو الذي يُوجّه البند للمورد المتخصص، فاختره بدقّة. إن لم يطابق البندَ أيُّ تخصص بدقّة، أعِدها "" (سلسلة فارغة) — لا تخمّن ولا تخترع مفاتيح جديدة.
 - unit: وحدة القياس بالعربية (م³، م²، م.ط، طن، كغ، عدد، مقطوعية، طقم...).
 - spec: مواصفة مختصرة (مقاس/درجة/قدرة) أو اتركها فارغة.
+
+قوائم التخصصات المسموح بها (المفتاح بالإنجليزية = الاسم بالعربية) لكل قطاع — اختر sub_category من مفاتيح القطاع المختار حصراً:
+${subCatRef()}
+
 أعِد عنصراً واحداً لكل بند مُدخل بنفس الرقم i دون تجاهل أي بند.`
 
     const parsed = await aiJson({
@@ -147,6 +170,7 @@ async function enrichWithAI(items: any[]): Promise<any[] | null> {
               properties: {
                 i: { type: 'integer' }, name: { type: 'string' },
                 sector: { type: 'string', enum: AI_SECTORS },
+                sub_category: { type: 'string' },
                 unit: { type: 'string' }, spec: { type: 'string' },
               },
               required: ['i', 'sector'], additionalProperties: false,
@@ -163,10 +187,14 @@ async function enrichWithAI(items: any[]): Promise<any[] | null> {
     const enriched = batch.map((it, i) => {
       const r = byIndex[i]
       if (!r) return it
+      const sector = AI_SECTORS.includes(r.sector) ? r.sector : it.sector
+      // التخصص لا يُقبل إلا إذا كان مفتاحاً حقيقياً ضمن القطاع المختار (وإلا فارغ → يُصنَّف لاحقاً)
+      const sub = validSub(sector, String(r.sub_category || '').trim()) ? String(r.sub_category).trim() : null
       return {
         ...it,
         product_name: String(r.name || it.product_name).slice(0, 120),
-        sector: AI_SECTORS.includes(r.sector) ? r.sector : it.sector,
+        sector,
+        sub_category: sub,
         unit: r.unit || it.unit,
         specification: String(r.spec || it.specification || '').slice(0, 80),
       }
@@ -267,6 +295,16 @@ export async function POST(req: NextRequest) {
     // طبقة الذكاء الاصطناعي (إن توفّر المفتاح) — تحسين الأسماء والتصنيف والوحدات
     const aiItems = await enrichWithAI(extractedItems)
     const finalItems = aiItems || extractedItems
+
+    // توحيد التصنيف لكل بند: لو ما حدّد الذكاء تخصصاً صحيحاً، نحاول بالكلمات المفتاحية.
+    // البند الذي يبقى بلا تخصص من القوائم → needs_classification (يُطلب من المقاول تصنيفه).
+    for (const it of finalItems) {
+      if (!validSub(it.sector, it.sub_category)) {
+        const guess = detectSubCategory(`${it.product_name} ${it.specification || ''}`, it.sector)
+        it.sub_category = validSub(it.sector, guess) ? guess : null
+      }
+      it.needs_classification = !it.sub_category
+    }
 
     // ترتيب حسب القطاع (بعد تحسين التصنيف)
     finalItems.sort((a, b) => a.sector.localeCompare(b.sector))
