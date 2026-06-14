@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
@@ -167,7 +168,7 @@ export default function OrderDetailPage() {
 
         {/* Actions - hidden in print */}
         <div className="flex items-center justify-between mb-6 mt-4 print:hidden">
-          <a href="/contractor" className="text-sm text-gray-500 hover:text-gray-700">← رجوع للوحة التحكم</a>
+          <Link href="/contractor" className="text-sm text-gray-500 hover:text-gray-700">← رجوع للوحة التحكم</Link>
           <button onClick={handlePrint}
             className="bg-[#1B2D5B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0f1d3d] transition-colors">
             🖨️ طباعة أمر الشراء

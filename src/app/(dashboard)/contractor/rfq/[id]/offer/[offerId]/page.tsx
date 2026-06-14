@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
-import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
 import { waLink } from '@/lib/wa'
@@ -13,6 +14,7 @@ import { getNav } from '@/lib/nav'
 
 export default function OfferDetailPage() {
   const { id, offerId } = useParams()
+  const router = useRouter()
   const [rfq, setRfq] = useState(null)
   const [offer, setOffer] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -76,7 +78,7 @@ export default function OfferDetailPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
     if (error) { setActing(false); alert('تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة.'); return }
-    window.location.href = `/contractor/orders/${offerId}`
+    router.push(`/contractor/orders/${offerId}`)
   }
 
   async function rejectOffer() {
@@ -84,14 +86,14 @@ export default function OfferDetailPage() {
     setActing(true)
     const supabase = createClient()
     await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
-    window.location.href = `/contractor/rfq/${id}`
+    router.push(`/contractor/rfq/${id}`)
   }
 
   if (loading) return <PageLoader />
   if (!offer || !rfq) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9] text-center">
       <div><div className="text-5xl mb-3">🔍</div><p className="font-bold" style={{ color: '#1B2D5B' }}>العرض غير موجود</p>
-        <a href={`/contractor/rfq/${id}`} className="text-sm text-[#d96f15] underline mt-2 inline-block">← رجوع للطلب</a></div>
+        <Link href={`/contractor/rfq/${id}`} className="text-sm text-[#d96f15] underline mt-2 inline-block">← رجوع للطلب</Link></div>
     </div>
   )
 
@@ -158,7 +160,7 @@ export default function OfferDetailPage() {
               const supabase = createClient()
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: offer.supplier_id })
               if (error || !data) { alert('تعذّر فتح المحادثة'); return }
-              window.location.href = `/messages?c=${data}`
+              router.push(`/messages?c=${data}`)
             }} className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#1B2D5B' }}>💬 رسالة داخلية</button>
             {wa && <a href={wa} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#25D366' }}>تواصل واتساب</a>}
             {mapsUrl && <a href={mapsUrl} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600">🗺 موقع المورد</a>}
