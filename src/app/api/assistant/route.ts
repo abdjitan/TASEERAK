@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { aiText, AI_ENABLED } from '@/lib/ai'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!AI_ENABLED) {
     return NextResponse.json({ reply: 'المساعد الذكي غير مُفعّل حالياً. يتم تفعيله قريباً 🤖' })
   }
 
@@ -34,19 +35,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'no user message' }, { status: 400 })
   }
 
-  try {
-    const { default: Anthropic } = await import('@anthropic-ai/sdk')
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-    const resp = await client.messages.create({
-      model: process.env.AI_MODEL || 'claude-opus-4-8',
-      max_tokens: 1024,
-      system: SYSTEM,
-      messages: clean,
-    })
-    const reply = ((resp as any).content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n').trim()
-    return NextResponse.json({ reply: reply || 'لم أفهم تماماً — ممكن توضّح أكثر؟' })
-  } catch (e: any) {
-    console.error('assistant error:', e?.message || e)
-    return NextResponse.json({ reply: 'تعذّر الوصول للمساعد حالياً، حاول بعد قليل.' })
-  }
+  const reply = await aiText(SYSTEM, clean, 1024)
+  return NextResponse.json({ reply: reply || 'تعذّر الوصول للمساعد حالياً، حاول بعد قليل.' })
 }

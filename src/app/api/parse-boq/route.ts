@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizeText } from '@/lib/normalize'
+import { aiJson, AI_ENABLED } from '@/lib/ai'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -117,10 +118,8 @@ function isValidItem(text: string): boolean {
 const AI_SECTORS = ['civil', 'architectural', 'electrical', 'mechanical', 'equipment', 'supply_store']
 
 async function enrichWithAI(items: any[]): Promise<any[] | null> {
-  if (!process.env.ANTHROPIC_API_KEY || items.length === 0) return null
+  if (!AI_ENABLED || items.length === 0) return null
   try {
-    const { default: Anthropic } = await import('@anthropic-ai/sdk')
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const batch = items.slice(0, 120) // حدّ معقول للتكلفة/السرعة
     const payload = batch.map((it, i) => ({ i, desc: it.product_name, unit: it.unit, qty: it.quantity }))
 
@@ -133,43 +132,31 @@ async function enrichWithAI(items: any[]): Promise<any[] | null> {
 - spec: مواصفة مختصرة (مقاس/درجة/قدرة) أو اتركها فارغة.
 أعِد عنصراً واحداً لكل بند مُدخل بنفس الرقم i دون تجاهل أي بند.`
 
-    const resp = await client.messages.create({
-      model: process.env.BOQ_AI_MODEL || 'claude-opus-4-8',
-      max_tokens: 8000,
+    const parsed = await aiJson({
+      model: process.env.BOQ_AI_MODEL,
+      maxTokens: 8000,
       system,
-      output_config: {
-        format: {
-          type: 'json_schema',
-          schema: {
-            type: 'object',
-            properties: {
-              items: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    i: { type: 'integer' },
-                    name: { type: 'string' },
-                    sector: { type: 'string', enum: AI_SECTORS },
-                    unit: { type: 'string' },
-                    spec: { type: 'string' },
-                  },
-                  required: ['i', 'sector'],
-                  additionalProperties: false,
-                },
+      user: `بنود الجدول (JSON):\n${JSON.stringify(payload)}`,
+      schema: {
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                i: { type: 'integer' }, name: { type: 'string' },
+                sector: { type: 'string', enum: AI_SECTORS },
+                unit: { type: 'string' }, spec: { type: 'string' },
               },
+              required: ['i', 'sector'], additionalProperties: false,
             },
-            required: ['items'],
-            additionalProperties: false,
           },
         },
+        required: ['items'], additionalProperties: false,
       },
-      messages: [{ role: 'user', content: `بنود الجدول (JSON):\n${JSON.stringify(payload)}` }],
     })
-
-    const text = (resp.content || []).find((b: any) => b.type === 'text')?.text
-    if (!text) return null
-    const parsed = JSON.parse(text)
+    if (!parsed) return null
     const byIndex: Record<number, any> = {}
     for (const r of (parsed.items || [])) byIndex[r.i] = r
 
