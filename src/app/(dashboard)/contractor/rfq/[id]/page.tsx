@@ -6,7 +6,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS } from '@/types'
+import { SECTOR_LABELS, UNIT_OPTIONS } from '@/types'
 import { waLink } from '@/lib/wa'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -50,6 +50,9 @@ export default function RFQDetailPage() {
   const [editing, setEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editSpec, setEditSpec] = useState('')
+  const [editName, setEditName] = useState('')
+  const [editQty, setEditQty] = useState('')
+  const [editUnit, setEditUnit] = useState('')
   const [marketAvg, setMarketAvg] = useState(null) // متوسط السوق
   const [supplierStats, setSupplierStats] = useState({}) // سجل أداء كل مورد
   const [awards, setAwards] = useState({}) // ترسية بند-بند: item_index → صف الترسية
@@ -89,7 +92,9 @@ export default function RFQDetailPage() {
     const { error } = await supabase.rpc('extend_rfq_deadline', { p_rfq_id: id, p_new_expires: next.toISOString() })
     setExtending(false)
     if (error) { alert(error.message || 'تعذّر تمديد المهلة — حاول مرة ثانية.'); return }
-    window.location.reload()
+    // تحديث فوري بدون إعادة تحميل الصفحة
+    setRfq(prev => ({ ...prev, expires_at: next.toISOString() }))
+    setShowExtend(false)
   }
 
   useEffect(() => {
@@ -102,6 +107,9 @@ export default function RFQDetailPage() {
       setRfq(rfqData)
       setEditNotes(rfqData?.notes || '')
       setEditSpec(rfqData?.specification || '')
+      setEditName(rfqData?.product_name || '')
+      setEditQty(rfqData?.quantity ?? '')
+      setEditUnit(rfqData?.unit || '')
 
       const { data: offersData } = await supabase
         .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source)')
@@ -195,19 +203,23 @@ export default function RFQDetailPage() {
 
   async function doSaveEdit() {
     const supabase = createClient()
-    // 1. Update RFQ
-    await supabase.from('rfqs').update({
+    const patch: any = {
       notes: editNotes,
       specification: editSpec,
+      product_name: (editName || '').trim() || rfq.product_name,
+      quantity: parseFloat(String(editQty)) || rfq.quantity,
+      unit: editUnit || rfq.unit,
       offer_count: 0,
-    }).eq('id', id)
+    }
+    // 1. Update RFQ
+    await supabase.from('rfqs').update(patch).eq('id', id)
 
-    // 2. Delete all existing offers for this RFQ
+    // 2. Delete all existing offers for this RFQ (السعر القديم لم يعد صالحاً بعد تغيير التفاصيل)
     if (offers.length > 0) {
       await supabase.from('offers').delete().eq('rfq_id', id)
     }
 
-    setRfq({ ...rfq, notes: editNotes, specification: editSpec, offer_count: 0 })
+    setRfq({ ...rfq, ...patch })
     setOffers([])
     setEditing(false)
     setShowEditWarning(false)
@@ -302,7 +314,13 @@ export default function RFQDetailPage() {
             </div>
             {rfq.status === 'open' && (
               <div className="flex gap-2">
-                <button onClick={() => setEditing(!editing)}
+                <button onClick={() => {
+                    if (!editing) {
+                      setEditName(rfq.product_name || ''); setEditQty(rfq.quantity ?? ''); setEditUnit(rfq.unit || '')
+                      setEditSpec(rfq.specification || ''); setEditNotes(rfq.notes || '')
+                    }
+                    setEditing(!editing)
+                  }}
                   className="text-xs text-[#d96f15] border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-[#F5831F]/5 transition-colors">
                   ✏️ تعديل
                 </button>
@@ -316,6 +334,27 @@ export default function RFQDetailPage() {
 
           {editing ? (
             <div className="space-y-3 bg-[#F5831F]/5 rounded-xl p-4">
+              {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">اسم المادة</label>
+                    <input value={editName} onChange={e => setEditName(e.target.value)} className="input-field" placeholder="اسم المادة" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">الكمية (العدد)</label>
+                      <input type="number" min="0" step="any" value={editQty} onChange={e => setEditQty(e.target.value)} className="input-field" placeholder="الكمية" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">الوحدة</label>
+                      <select value={editUnit} onChange={e => setEditUnit(e.target.value)} className="input-field">
+                        {!UNIT_OPTIONS.includes(editUnit) && editUnit && <option value={editUnit}>{editUnit}</option>}
+                        {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">المواصفات</label>
                 <input value={editSpec} onChange={e => setEditSpec(e.target.value)} className="input-field" placeholder="المواصفات" />
