@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { AppIcon } from '@/components/AppIcon'
 import { rfqDisplayName } from '@/lib/rfqName'
-import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
+import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
 
 const txt = {
   ar: {
@@ -566,10 +566,12 @@ export default function ContractorDashboard() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
+                  <div className="flex items-center gap-x-4 gap-y-1 text-xs text-gray-400 font-medium flex-wrap">
                     <span>📦 {Array.isArray(rfq.items) && rfq.items.length > 1 ? `${rfq.items.length} ${locale === 'en' ? 'items' : 'أصناف'}` : `${rfq.quantity} ${rfq.unit}`}</span>
                     <span>📍 {rfq.region}</span>
-                    {rfq.specification && <span>⚙️ {rfq.specification}</span>}
+                    {rfq.created_at && <span>🗓 {formatDateTime(rfq.created_at)}</span>}
+                    {rfq.expires_at && <span>⏰ {formatDateTime(rfq.expires_at)}</span>}
+                    {rfq.specification && <span className="truncate max-w-[200px]">⚙️ {rfq.specification}</span>}
                     <span className="mr-auto" style={{ color: '#F5831F' }}>{t.viewDetails}</span>
                   </div>
                   {/* عدّاد وقت بصري ينقص حتى انتهاء المهلة */}

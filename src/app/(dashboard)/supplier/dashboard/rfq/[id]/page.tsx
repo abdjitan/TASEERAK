@@ -62,6 +62,19 @@ export default function SupplierRFQPage() {
     window.location.reload()
   }
 
+  // إلغاء/إعادة تسعير العرض خلال نافذة الـ١٥ دقيقة
+  const [cancelling, setCancelling] = useState(false)
+  async function cancelOffer() {
+    if (!existingOffer) return
+    if (!confirm('سيتم إلغاء عرضك الحالي لتتمكن من إعادة تسعيره من جديد. متابعة؟')) return
+    setCancelling(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('cancel_my_offer', { p_offer_id: existingOffer.id })
+    setCancelling(false)
+    if (error) { setError(error.message || 'تعذّر إلغاء العرض — حاول مرة ثانية.'); return }
+    window.location.reload()
+  }
+
   // رد على طلب معلومات إضافية من المقاول
   const [infoReply, setInfoReply] = useState('')
   const [infoReplying, setInfoReplying] = useState(false)
@@ -126,6 +139,11 @@ export default function SupplierRFQPage() {
     return () => clearInterval(t)
   }, [])
   const expired = isExpired(rfq?.expires_at)
+
+  // نافذة تعديل/إلغاء العرض: ١٥ دقيقة من لحظة إرساله، وما دام «قيد المراجعة»
+  const offerEditDeadline = existingOffer?.created_at ? new Date(existingOffer.created_at).getTime() + 15 * 60 * 1000 : 0
+  const canEditOffer = existingOffer?.status === 'pending' && offerEditDeadline > Date.now()
+  const editMinsLeft = canEditOffer ? Math.max(1, Math.ceil((offerEditDeadline - Date.now()) / 60000)) : 0
 
   // حساب سعر الوحدة تلقائياً
   function handleTotalChange(val) {
@@ -557,6 +575,19 @@ export default function SupplierRFQPage() {
                     <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#1B2D5B' }}>{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* نافذة الـ١٥ دقيقة: تعديل/إلغاء العرض بعد إرساله */}
+            {canEditOffer && (
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-right">
+                <div className="text-xs text-gray-600 mb-2 leading-relaxed">
+                  ⏱ <strong>لديك {editMinsLeft} دقيقة</strong> لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتقدر تسعّر من جديد (تضيف مادة نسيتها أو تعدّل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المقاول.
+                </div>
+                <button type="button" onClick={cancelOffer} disabled={cancelling}
+                  className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#b91c1c' }}>
+                  {cancelling ? '...' : '🗑 إلغاء وإعادة التسعير'}
+                </button>
               </div>
             )}
 

@@ -54,6 +54,20 @@ export default function RFQDetailPage() {
     window.location.href = '/contractor'
   }
 
+  // تمديد مهلة التسعير — نضيف الأيام على الأبعد بين (المهلة الحالية، الآن)
+  const [extending, setExtending] = useState(false)
+  const [showExtend, setShowExtend] = useState(false)
+  async function extendDeadline(days: number) {
+    const base = rfq?.expires_at && new Date(rfq.expires_at) > new Date() ? new Date(rfq.expires_at) : new Date()
+    const next = new Date(base.getTime() + days * 24 * 60 * 60 * 1000)
+    setExtending(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('extend_rfq_deadline', { p_rfq_id: id, p_new_expires: next.toISOString() })
+    setExtending(false)
+    if (error) { alert(error.message || 'تعذّر تمديد المهلة — حاول مرة ثانية.'); return }
+    window.location.reload()
+  }
+
   useEffect(() => {
     async function load() {
       const supabase = createClient()
@@ -236,6 +250,27 @@ export default function RFQDetailPage() {
               <div className="text-[11px] text-gray-400 mt-1.5">
                 🗓 {formatDateTime(rfq.created_at)}{rfq.expires_at ? ` · ⏰ ${formatDateTime(rfq.expires_at)}` : ''}
               </div>
+              {rfq.status === 'open' && (
+                <div className="mt-2">
+                  {!showExtend ? (
+                    <button onClick={() => setShowExtend(true)}
+                      className="text-[11px] font-semibold text-[#1B2D5B] border border-blue-200 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">
+                      ⏱ تمديد مهلة التسعير
+                    </button>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 flex-wrap bg-blue-50 border border-blue-200 rounded-lg p-2">
+                      <span className="text-[11px] text-gray-600 font-semibold">مدّد المهلة:</span>
+                      {[1, 3, 7].map(d => (
+                        <button key={d} onClick={() => extendDeadline(d)} disabled={extending}
+                          className="text-[11px] font-bold text-white px-2.5 py-1 rounded-md disabled:opacity-50" style={{ background: '#1B2D5B' }}>
+                          {extending ? '…' : `+${d} ${d === 1 ? 'يوم' : 'أيام'}`}
+                        </button>
+                      ))}
+                      <button onClick={() => setShowExtend(false)} className="text-[11px] text-gray-400 px-1">✕</button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             {rfq.status === 'open' && (
               <div className="flex gap-2">

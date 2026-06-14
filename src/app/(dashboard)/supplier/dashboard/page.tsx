@@ -13,7 +13,7 @@ import { getSubCategoryLabel, getProductLabel, getUnitLabel } from '@/types'
 import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
+import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
 
 const txt = {
   ar: {
@@ -442,7 +442,8 @@ export default function SupplierDashboard() {
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium flex-wrap">
                       <span>📦 {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>
                       <span>📍 {rfq.region}</span>
-                      {rfq.specification && <span>⚙️ {rfq.specification}</span>}
+                      {rfq.created_at && <span>🗓 {formatDateTime(rfq.created_at)}</span>}
+                      {rfq.specification && <span className="truncate max-w-[180px]">⚙️ {rfq.specification}</span>}
                       <span>💬 {rfq.offer_count || 0} {t.offer}</span>
                       {rfq.expires_at && (() => {
                         const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
