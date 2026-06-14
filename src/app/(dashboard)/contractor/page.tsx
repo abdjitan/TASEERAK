@@ -11,6 +11,7 @@ import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { AppIcon } from '@/components/AppIcon'
+import { rfqDisplayName } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 
 const txt = {
@@ -535,8 +536,8 @@ export default function ContractorDashboard() {
                         return <AppIcon name={m.name} tone={m.tone} variant="tone" size={44} />
                       })()}
                       <div>
-                        <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfq.title || rfq.product_name}</div>
-                        {rfq.title && <div className="text-xs text-gray-400 truncate max-w-[260px]">{rfq.product_name}</div>}
+                        <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale)}</div>
+                        <div className="text-xs text-gray-400 truncate max-w-[260px]">{rfq.product_name}</div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                           <span className={`badge text-[10px] ${

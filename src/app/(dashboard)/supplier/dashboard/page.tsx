@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import { getSubCategoryLabel, getProductLabel, getUnitLabel } from '@/types'
+import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
@@ -112,14 +113,15 @@ export default function SupplierDashboard() {
 
       // ✅ مطابقة بند-بند: يظهر الطلب لو يقدر يورّد مادة واحدة على الأقل
       // (قطاعها ضمن قطاعاته + تخصصها ضمن تخصصاته أو بدون تخصص محدد)
-      let rfqs = (rfqsRaw || []).filter(r => {
+      let rfqs = (rfqsRaw || []).map(r => {
         const its = Array.isArray(r.items) && r.items.length ? r.items : [{ sector: r.sector, sub_category: r.sub_category }]
-        return its.some(it => {
+        const myCount = its.filter(it => {
           if (mySectors.length > 0 && !mySectors.includes(it.sector)) return false
           if (mySpecialties.length > 0 && it.sub_category && !mySpecialties.includes(it.sub_category)) return false
           return true
-        })
-      })
+        }).length
+        return { ...r, _myItemCount: myCount } // عدد أصناف هذا المورد فقط (لا الإجمالي)
+      }).filter(r => r._myItemCount > 0)
 
       // ✅ فلترة حسب استهداف المقاول: نوع المورد (مصنع/تجاري/محلي) + الموثّقون فقط
       const myTier = p?.supplier_tier || 'local'
@@ -417,7 +419,7 @@ export default function SupplierDashboard() {
                       <div className="flex items-center gap-3">
                         <div className="w-11 h-11 rounded-xl flex items-center justify-center text-lg" style={{ background: '#1B2D5B20' }}>📦</div>
                         <div>
-                          <div className="font-bold" style={{ color: '#1B2D5B' }}>{getProductLabel(rfq.product_name, locale)}</div>
+                          <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                             {rfq.sub_category && (

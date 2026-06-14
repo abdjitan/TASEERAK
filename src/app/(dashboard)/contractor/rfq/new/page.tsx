@@ -450,10 +450,11 @@ export default function NewRFQPage() {
               {/* اسم التسعيرة (اختياري) */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <label className="block font-bold mb-2" style={{ color: '#1B2D5B' }}>
-                  {locale === 'en' ? 'Request name' : 'اسم التسعيرة'} <span className="text-xs font-normal text-gray-400">({locale === 'en' ? 'optional' : 'اختياري'})</span>
+                  {locale === 'en' ? 'Supply package name' : 'اسم حزمة التوريد'} <span className="text-xs font-normal text-gray-400">({locale === 'en' ? 'optional' : 'اختياري'})</span>
                 </label>
                 <input type="text" value={rfqName} onChange={e => setRfqName(e.target.value)}
-                  className="input-field" placeholder={locale === 'en' ? 'e.g. Tiling package, Ceiling materials…' : 'مثال: تسعيرة بلاط، مواد سقف…'} />
+                  className="input-field" placeholder={locale === 'en' ? 'e.g. Foundation materials — Power Building' : 'مثال: مواد تأسيس العظم — مبنى الطاقة'} />
+                <p className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? 'A clear reference helps suppliers & tracking. Leave empty for an auto name (e.g. RFQ-1045 | Supply package).' : 'مرجع واضح يسهّل التتبّع على الموردين. اتركه فارغاً ليُولّد تلقائياً (مثل: RFQ-1045 | حزمة توريدات).'}</p>
               </div>
 
               {/* Sector */}
