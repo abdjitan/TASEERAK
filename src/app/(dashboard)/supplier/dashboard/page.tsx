@@ -287,9 +287,49 @@ export default function SupplierDashboard() {
         )}
 
         <div className="mb-6 animate-fade-in">
-          <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.welcome}، {companyName} 👋</h1>
+          <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.welcome}، {companyName || profile?.full_name || (locale === 'en' ? 'Supplier' : 'مورد')} 👋</h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
+
+        {/* تقييم المورد (Supplier Score) + اكتمال الملف */}
+        {(() => {
+          const checks = [
+            { ok: profile?.verification_status === 'verified', w: 35, label: locale === 'en' ? 'Verify your CR' : 'فعّل التحقق', href: '/settings' },
+            { ok: hasSpecialties, w: 25, label: locale === 'en' ? 'Add specialties' : 'أضف تخصصاتك', href: '/supplier/specialties' },
+            { ok: !!(profile?.latitude || profile?.national_short_address), w: 20, label: locale === 'en' ? 'Add map location' : 'حدّد موقعك', href: '/location' },
+            { ok: (profile?.rating_avg || 0) > 0, w: 20, label: locale === 'en' ? 'Get your first rating' : 'احصل على أول تقييم', href: '/supplier/specialties' },
+          ]
+          const score = checks.reduce((s, c) => s + (c.ok ? c.w : 0), 0)
+          const missing = checks.filter(c => !c.ok)
+          const col = score >= 70 ? '#0F6E56' : score >= 40 ? '#F5831F' : '#dc2626'
+          return (
+            <div className="mb-6 grid sm:grid-cols-3 gap-4 animate-fade-in">
+              <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center gap-3">
+                <div className="relative w-16 h-16 shrink-0">
+                  <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="#eef1f6" strokeWidth="4" />
+                    <circle cx="18" cy="18" r="15.5" fill="none" stroke={col} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(score * 0.974).toFixed(1)} 97.4`} />
+                  </svg>
+                  <div className="absolute inset-0 grid place-items-center">
+                    <span className="text-lg font-extrabold" style={{ color: '#1B2D5B' }}>{score}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-bold" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Supplier Score' : 'تقييم موردك'}</div>
+                  <div className="text-[11px] text-gray-400">{score}/100 — {score >= 70 ? (locale === 'en' ? 'Excellent' : 'ممتاز') : score >= 40 ? (locale === 'en' ? 'Good' : 'جيد') : (locale === 'en' ? 'Improve it' : 'حسّنه')}</div>
+                </div>
+              </div>
+              {missing.length > 0 && (
+                <div className="sm:col-span-2 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                  <div className="text-xs font-bold mb-2" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Boost your score:' : 'ارفع تقييمك:'}</div>
+                  <div className="flex flex-wrap gap-2">
+                    {missing.map(c => <a key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></a>)}
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* تنبيه: حدد تخصصاتك الدقيقة */}
         {!hasSpecialties && !hasSectors && profile?.verification_status !== 'rejected' && (
