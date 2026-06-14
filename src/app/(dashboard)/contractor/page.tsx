@@ -88,6 +88,7 @@ export default function ContractorDashboard() {
   const [profile, setProfile] = useState(null)
   const [rfqs, setRfqs] = useState([])
   const [projects, setProjects] = useState([])
+  const [activity, setActivity] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // all | has_offers | pending | closed
   const [sectorFilter, setSectorFilter] = useState('all')
@@ -110,6 +111,12 @@ export default function ContractorDashboard() {
           .eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(5)
         setProjects(proj || [])
       } catch { setProjects([]) }
+      // آخر النشاطات (من الإشعارات)
+      try {
+        const { data: notifs } = await supabase.from('notifications').select('*')
+          .eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(6)
+        setActivity(notifs || [])
+      } catch { setActivity([]) }
       setLoading(false)
     }
     init()
@@ -139,6 +146,28 @@ export default function ContractorDashboard() {
   ]
   const compDone = completion.filter(c => c.ok).length
   const compPct = Math.round((compDone / completion.length) * 100)
+
+  function timeAgo(d) {
+    if (!d) return ''
+    const s = Math.floor((now - new Date(d).getTime()) / 1000)
+    if (s < 60) return locale === 'en' ? 'just now' : 'الآن'
+    const m = Math.floor(s / 60); if (m < 60) return locale === 'en' ? `${m}m ago` : `قبل ${m} د`
+    const h = Math.floor(m / 60); if (h < 24) return locale === 'en' ? `${h}h ago` : `قبل ${h} س`
+    const dd = Math.floor(h / 24); return locale === 'en' ? `${dd}d ago` : `قبل ${dd} يوم`
+  }
+  function actMeta(type) {
+    switch (type) {
+      case 'offer': case 'new_offer': return { name: 'offers', tone: 'warning' }
+      case 'offer_accepted': case 'accepted': return { name: 'completed', tone: 'success' }
+      case 'new_message': return { name: 'quoted', tone: 'info' }
+      case 'new_rfq': return { name: 'orders', tone: 'brand' }
+      case 'price_reduction': case 'price_reduced': return { name: 'pricing', tone: 'warning' }
+      default: return { name: 'active', tone: 'neutral' }
+    }
+  }
+  const gameBadge = rfqs.length >= 10 ? { t: locale === 'en' ? 'Pro Contractor' : 'مقاول محترف', e: '🏆' }
+    : rfqs.length >= 3 ? { t: locale === 'en' ? 'Active Contractor' : 'مقاول نشط', e: '⭐' }
+    : { t: locale === 'en' ? 'Getting Started' : 'بداية موفقة', e: '🌱' }
 
   const statusLabel = (status) => {
     if (status === 'open') return t.open
@@ -291,6 +320,53 @@ export default function ContractorDashboard() {
             </button>
           ))}
         </div>
+
+        {/* آخر النشاطات + إنجازاتك */}
+        {(activity.length > 0 || rfqs.length > 0) && (
+          <div className="grid lg:grid-cols-3 gap-4 mb-8 animate-fade-in">
+            <div className="lg:col-span-2 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#1B2D5B' }}>
+                <AppIcon name="active" tone="brand" variant="line" size={20} /> {locale === 'en' ? 'Recent activity' : 'آخر النشاطات'}
+              </h2>
+              {activity.length === 0 ? (
+                <p className="text-xs text-gray-400 py-6 text-center">{locale === 'en' ? 'No activity yet — it will appear here as offers arrive.' : 'لا يوجد نشاط بعد — سيظهر هنا فور وصول العروض.'}</p>
+              ) : (
+                <div className="space-y-3">
+                  {activity.map(a => {
+                    const m = actMeta(a.type)
+                    return (
+                      <div key={a.id} className="flex items-start gap-3">
+                        <AppIcon name={m.name} tone={m.tone} variant="tone" size={36} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold truncate" style={{ color: '#1B2D5B' }}>{a.title}</div>
+                          {a.body && <div className="text-xs text-gray-500 truncate">{a.body}</div>}
+                        </div>
+                        <span className="text-[10px] text-gray-400 whitespace-nowrap shrink-0">{timeAgo(a.created_at)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
+              <h2 className="text-sm font-bold mb-3" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Your progress' : 'إنجازاتك'}</h2>
+              <div className="rounded-xl p-3 mb-3 text-center" style={{ background: 'linear-gradient(135deg,#F5831F12,#1B2D5B08)' }}>
+                <div className="text-3xl">{gameBadge.e}</div>
+                <div className="text-xs font-bold mt-1" style={{ color: '#1B2D5B' }}>{gameBadge.t}</div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="bg-gray-50 rounded-xl p-2.5">
+                  <div className="text-lg font-bold" style={{ color: '#0F6E56' }}>{closed.length}</div>
+                  <div className="text-[10px] text-gray-500">{locale === 'en' ? 'Deals done' : 'صفقات مكتملة'}</div>
+                </div>
+                <div className="bg-gray-50 rounded-xl p-2.5">
+                  <div className="text-lg font-bold" style={{ color: '#F5831F' }}>{rfqsThisWeek}</div>
+                  <div className="text-[10px] text-gray-500">{locale === 'en' ? 'This week' : 'هذا الأسبوع'}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Projects */}
         {projects.length > 0 && (
