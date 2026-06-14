@@ -102,7 +102,7 @@ export default function SupplierRFQPage() {
         })
         setMyItems(filtered)
         setItemForms(filtered.map(() => ({ unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false })))
-        if (filtered.length > 0) setOpenItem(0)
+        setOpenItem(null) // تبقى كل المواد مطويّة — المورد يضغط المادة التي يريد تسعيرها
       }
 
       // auto-calc unit price from quantity
@@ -442,18 +442,18 @@ export default function SupplierRFQPage() {
               <p className="text-[11px] text-gray-400 mb-2">تظهر لك فقط المواد التي تقدر توردها — سعّرها وأرسل عرضك.</p>
               <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-sm">
-                  <thead><tr className="text-xs text-gray-400 bg-[#f4f6f9] border-b border-gray-100">
-                    <th className="text-start py-2 px-3 font-bold">#</th>
-                    <th className="text-start py-2 px-3 font-bold">المادة</th>
-                    <th className="text-start py-2 px-3 font-bold">الكمية</th>
-                    <th className="text-start py-2 px-3 font-bold">المواصفات</th>
+                  <thead><tr className="text-[13px] text-gray-500 bg-[#f4f6f9] border-b border-gray-100">
+                    <th className="text-start py-2.5 px-3 font-bold">#</th>
+                    <th className="text-start py-2.5 px-3 font-bold">المادة</th>
+                    <th className="text-start py-2.5 px-3 font-bold">الكمية</th>
+                    <th className="text-start py-2.5 px-3 font-bold">المواصفات المطلوبة</th>
                   </tr></thead>
                   <tbody>
                     {myItems.map((it: any, i: number) => (
                       <tr key={i} className="border-b border-gray-50 align-top">
                         <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                         <td className="py-2.5 px-3">
-                          <div className="font-semibold text-[#1B2D5B]">{getProductLabel(it.product_name, locale)}</div>
+                          <div className="font-bold text-[15px] text-[#1B2D5B]">{getProductLabel(it.product_name, locale)}</div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
@@ -461,8 +461,8 @@ export default function SupplierRFQPage() {
                             {it.spec_file_url && <a href={it.spec_file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 font-bold text-[#d96f15] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
-                        <td className="py-2.5 px-3 text-xs text-gray-500">{it.specification || '—'}</td>
+                        <td className="py-3 px-3 font-bold text-[15px] text-[#d96f15] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
+                        <td className="py-3 px-3 text-sm text-gray-700 leading-relaxed">{it.specification || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -472,11 +472,11 @@ export default function SupplierRFQPage() {
           )}
 
           <div className="grid grid-cols-2 gap-3 text-sm mt-4">
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => sectors[s] || s).join(' + ') : (sectors[rfq.sector] || rfq.sector)}</strong></div>
-            {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">📍 {T.location}</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => sectors[s] || s).join(' + ') : (sectors[rfq.sector] || rfq.sector)}</strong></div>
+            {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📍 {T.location}</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
             <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
-              <span className="text-gray-400 text-xs">🚚 {T.delivery}</span><br/>
+              <span className="text-gray-500 text-[12px] font-semibold">🚚 {T.delivery}</span><br/>
               {rfq.delivery_required ? (
                 <div className="flex items-center justify-between gap-2 flex-wrap mt-0.5">
                   <strong className="text-amber-800">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
@@ -491,16 +491,16 @@ export default function SupplierRFQPage() {
               ) : <strong className="text-gray-500">{T.notRequired}</strong>}
             </div>
             {!rfq.hide_identity && rfq.contractor && (
-              <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🏢 {T.contractor}</span><br/><strong>{rfq.contractor.company_name_ar}</strong></div>
+              <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏢 {T.contractor}</span><br/><strong>{rfq.contractor.company_name_ar}</strong></div>
             )}
-            {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
-            {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-400 text-xs">📝 {T.notes}</span><br/>{cleanNotes}</div>}
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-400 text-xs">🗓 {locale === 'en' ? 'Posted' : 'تاريخ الطلب'}</span><br/><strong className="text-xs">{formatDateTime(rfq.created_at)}</strong></div>
+            {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
+            {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">📝 {T.notes}</span><br/>{cleanNotes}</div>}
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🗓 {locale === 'en' ? 'Posted' : 'تاريخ الطلب'}</span><br/><strong className="text-sm">{formatDateTime(rfq.created_at)}</strong></div>
             {rfq.expires_at && (
               <div className="rounded-lg p-3" style={{ background: urgencyStyle(deadlineUrgency(rfq.expires_at)).bg, border: `1px solid ${urgencyStyle(deadlineUrgency(rfq.expires_at)).border}` }}>
-                <span className="text-gray-400 text-xs">⏰ {locale === 'en' ? 'Pricing deadline' : 'مهلة التسعير'}</span><br/>
-                <strong className="text-xs" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{formatDateTime(rfq.expires_at)}</strong>
-                <span className="text-[10px] block" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{expired ? '' : `(${formatTimeLeft(rfq.expires_at, locale)})`}</span>
+                <span className="text-gray-500 text-[12px] font-semibold">⏰ {locale === 'en' ? 'Pricing deadline' : 'مهلة التسعير'}</span><br/>
+                <strong className="text-sm" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{formatDateTime(rfq.expires_at)}</strong>
+                <span className="text-xs block font-bold" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{expired ? '' : `(${formatTimeLeft(rfq.expires_at, locale)})`}</span>
               </div>
             )}
           </div>
@@ -615,7 +615,7 @@ export default function SupplierRFQPage() {
                         <div key={i} className={`border rounded-xl overflow-hidden transition-all ${isOpen ? 'border-[#F5831F]/60 shadow-sm' : 'border-gray-200'}`}>
                           {/* رأس البطاقة — اضغط للفتح/الإغلاق */}
                           <button type="button" onClick={() => setOpenItem(isOpen ? null : i)}
-                            className="w-full flex items-center justify-between gap-2 p-3 text-right">
+                            className={`w-full flex items-center justify-between gap-2 p-3.5 text-right transition-colors ${isOpen ? 'bg-[#F5831F]/5' : 'hover:bg-gray-50'}`}>
                             <div className="flex items-center gap-2 min-w-0">
                               <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold ${done ? 'bg-[#0F6E56] text-white' : 'bg-gray-100 text-gray-400'}`}>
                                 {done ? '✓' : i + 1}
@@ -633,6 +633,7 @@ export default function SupplierRFQPage() {
                                   {(+line.toFixed(2)).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}{!done && <span className="text-[10px] font-normal"> · {locale === 'en' ? 'unsaved' : 'غير محفوظ'}</span>}
                                 </span>
                               )}
+                              {!isOpen && line === 0 && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#F5831F]/10 text-[#d96f15] whitespace-nowrap">{locale === 'en' ? '+ Price' : '+ سعّر'}</span>}
                               <span className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
                             </div>
                           </button>
