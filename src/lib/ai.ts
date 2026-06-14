@@ -126,8 +126,9 @@ export async function aiText(system: string, messages: { role: string; content: 
     return await anthropicMessages(system, messages, maxTokens, DEFAULT_AI_MODEL)
   } catch (e: any) {
     console.error('aiText error:', e?.message || e)
-    // مؤقتاً: نُظهر الخطأ الحقيقي للتشخيص (سيُزال بعد الإصلاح)
-    return '⚠️ تشخيص: ' + (e?.message || 'AI error')
+    // للتشخيص عند الحاجة: AI_DEBUG=1 يُظهر الخطأ الحقيقي. وإلا رسالة نظيفة.
+    if (process.env.AI_DEBUG === '1') return '⚠️ تشخيص: ' + (e?.message || 'AI error')
+    return null
   }
 }
 
