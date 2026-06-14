@@ -16,6 +16,8 @@ export default function RFQDetailPage() {
   const [rfq, setRfq] = useState(null)
   const [offers, setOffers] = useState([])
   const [sortBy, setSortBy] = useState('price_asc') // price_asc | price_desc | delivery | rating
+  const [aiCmp, setAiCmp] = useState(null) // نتيجة تحليل العروض بالذكاء الاصطناعي
+  const [cmpLoading, setCmpLoading] = useState(false)
   const [onlyVerified, setOnlyVerified] = useState(false)
   const [tierFilter, setTierFilter] = useState('') // '' | manufacturer | commercial | local
   const [loading, setLoading] = useState(true)
@@ -30,6 +32,15 @@ export default function RFQDetailPage() {
     const supabase = createClient()
     const { data } = await supabase.from('rfq_item_awards').select('*').eq('rfq_id', id)
     const am: any = {}; (data || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
+  }
+
+  async function runCompare() {
+    setCmpLoading(true); setAiCmp(null)
+    try {
+      const res = await fetch('/api/compare-offers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rfqId: id }) })
+      setAiCmp(await res.json())
+    } catch { setAiCmp({ ok: false, message: 'تعذّر التحليل، حاول مرة أخرى' }) }
+    finally { setCmpLoading(false) }
   }
 
   useEffect(() => {
@@ -477,6 +488,36 @@ export default function RFQDetailPage() {
             {(onlyVerified || tierFilter) && <span className="text-[11px] text-gray-400">({displayedOffers.length} من {offers.length})</span>}
           </div>
         )}
+
+        {/* مستشار الذكاء الاصطناعي لمقارنة العروض */}
+        {offers.length > 1 && (
+          <div className="mb-3">
+            {!aiCmp ? (
+              <button type="button" onClick={runCompare} disabled={cmpLoading}
+                className="w-full py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-60 transition-all hover:shadow"
+                style={{ background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+                {cmpLoading ? '⏳ جارٍ تحليل العروض...' : '✨ حلّل العروض ووصِّ لي بالأفضل (ذكاء اصطناعي)'}
+              </button>
+            ) : aiCmp.ai ? (
+              <div className="rounded-xl p-4 border" style={{ background: '#7C3AED0a', borderColor: '#7C3AED33' }}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-bold text-sm" style={{ color: '#7C3AED' }}>✨ توصية الذكاء الاصطناعي</span>
+                  <button onClick={() => setAiCmp(null)} className="text-[11px] text-gray-400 hover:text-gray-600">إخفاء</button>
+                </div>
+                {aiCmp.best_supplier && <div className="text-sm mb-1.5 font-bold text-emerald-700">🏆 الأفضل قيمةً: {aiCmp.best_supplier}</div>}
+                <p className="text-xs text-gray-700 leading-relaxed mb-2 whitespace-pre-line">{aiCmp.summary}</p>
+                {aiCmp.advice && <p className="text-xs font-semibold rounded-lg p-2 bg-white" style={{ color: '#1B2D5B' }}>💡 {aiCmp.advice}</p>}
+                <p className="text-[10px] text-gray-400 mt-2">توصية إرشادية — القرار النهائي لك.</p>
+              </div>
+            ) : (
+              <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center justify-between gap-2">
+                <span>{aiCmp.message || 'التحليل غير متاح حالياً'}</span>
+                <button onClick={() => setAiCmp(null)} className="text-gray-400 shrink-0">✕</button>
+              </div>
+            )}
+          </div>
+        )}
+
         {offers.length === 0 ? (
           <div className="bg-white rounded-xl p-8 border border-gray-100 text-center">
             <div className="text-4xl mb-3">⏳</div>

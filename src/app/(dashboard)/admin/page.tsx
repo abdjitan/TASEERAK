@@ -122,8 +122,24 @@ export default function AdminPanel() {
   const [matSector, setMatSector] = useState('')
   const [matGroup, setMatGroup] = useState('')
   const [matNote, setMatNote] = useState('')
+  const [matAi, setMatAi] = useState(false) // جارٍ اقتراح التصنيف بالذكاء الاصطناعي
+  const [matAiMsg, setMatAiMsg] = useState('')
   function openMatEdit(r) {
-    setMatEdit(r); setMatName(r.name || ''); setMatSector(r.sector || 'civil'); setMatGroup(r.sub_category || ''); setMatNote(r.admin_note || '')
+    setMatEdit(r); setMatName(r.name || ''); setMatSector(r.sector || 'civil'); setMatGroup(r.sub_category || ''); setMatNote(r.admin_note || ''); setMatAiMsg('')
+  }
+
+  // اقتراح القطاع/المجموعة بالذكاء الاصطناعي من اسم المادة ووصفها
+  async function aiSuggestMaterial() {
+    if (!matEdit) return
+    setMatAi(true); setMatAiMsg('')
+    try {
+      const text = [matName, matEdit.description].filter(Boolean).join(' — ')
+      const res = await fetch('/api/match-material', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })
+      const d = await res.json()
+      if (d?.sector) { setMatSector(d.sector); if (d.group) setMatGroup(d.group); if (d.product_name) setMatName(d.product_name) }
+      setMatAiMsg(d?.sub_category_label ? `✓ اقتراح: ${SECTOR_LABELS[d.sector] || d.sector} ← ${d.group_label}${d.source === 'ai' ? '' : ' (كلمات مفتاحية)'}` : 'لم نتمكن من الاقتراح — صنّف يدوياً')
+    } catch { setMatAiMsg('تعذّر الاقتراح، حاول مجدداً') }
+    finally { setMatAi(false) }
   }
 
   async function reviewMaterial(reqId: string, status: 'approved' | 'rejected', edits?: any) {
@@ -1123,7 +1139,15 @@ export default function AdminPanel() {
             <p className="text-xs text-gray-400 mb-4">عدّل القطاع والمجموعة والاسم لتضعها في المكان الصحيح، ثم اعتمدها.</p>
 
             <label className="block text-xs font-bold text-gray-500 mb-1.5">اسم المادة</label>
-            <input value={matName} onChange={e => setMatName(e.target.value)} className="input-field mb-3 text-sm" />
+            <input value={matName} onChange={e => setMatName(e.target.value)} className="input-field mb-2 text-sm" />
+
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <button type="button" onClick={aiSuggestMaterial} disabled={matAi || !matName.trim()}
+                className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+                {matAi ? '⏳ جارٍ...' : '✨ اقترح التصنيف بالذكاء الاصطناعي'}
+              </button>
+              {matAiMsg && <span className="text-[11px] font-semibold text-emerald-700">{matAiMsg}</span>}
+            </div>
 
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
