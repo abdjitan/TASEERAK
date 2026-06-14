@@ -134,6 +134,19 @@ export default function NewRFQPage() {
   const [pickupScope, setPickupScope] = useState<'any' | 'city'>('any') // للاستلام: أي مكان / مدينة محددة
   const [geoMsg, setGeoMsg] = useState('')        // حالة تحديد الموقع الآلي
   const [specification, setSpecification] = useState('')
+  const [specAiLoading, setSpecAiLoading] = useState(false)
+  const [specQuestions, setSpecQuestions] = useState<string[]>([])
+  async function assistSpec() {
+    if (!productName) return
+    setSpecAiLoading(true); setSpecQuestions([])
+    try {
+      const res = await fetch('/api/assist-rfq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product_name: productName, sector, rough: specification }) })
+      const d = await res.json()
+      if (d?.specification) setSpecification(d.specification)
+      if (Array.isArray(d?.questions)) setSpecQuestions(d.questions)
+    } catch {}
+    finally { setSpecAiLoading(false) }
+  }
   const [quantity, setQuantity] = useState('')
   const [unit, setUnit] = useState('')
   const [region, setRegion] = useState('')
@@ -558,9 +571,21 @@ export default function NewRFQPage() {
                   {/* مواصفات إضافية حرّة (مثل تفاصيل الخلطة) */}
                   {productName && (
                     <div className="pt-3 border-t border-gray-100 mb-1">
-                      <p className="text-xs font-bold text-gray-400 mb-1.5">📝 {locale === 'en' ? 'Extra specs (optional)' : 'مواصفات إضافية (اختياري)'}</p>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <p className="text-xs font-bold text-gray-400">📝 {locale === 'en' ? 'Extra specs (optional)' : 'مواصفات إضافية (اختياري)'}</p>
+                        <button type="button" onClick={assistSpec} disabled={specAiLoading}
+                          className="text-[11px] font-bold px-2.5 py-1 rounded-lg text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+                          {specAiLoading ? '⏳…' : (locale === 'en' ? '✨ Help me write specs' : '✨ ساعدني بالمواصفات')}
+                        </button>
+                      </div>
                       <input type="text" value={specification} onChange={e => setSpecification(e.target.value)}
                         className="input-field" placeholder={locale === 'en' ? 'Any extra details for suppliers…' : 'أي تفاصيل إضافية للمورد…'} />
+                      {specQuestions.length > 0 && (
+                        <div className="mt-2 text-[11px] text-gray-500">
+                          <span className="font-bold text-[#7C3AED]">{locale === 'en' ? 'To price better, also specify:' : 'لتسعير أدق، حدّد أيضاً:'}</span>
+                          <ul className="list-disc ps-5 mt-1 space-y-0.5">{specQuestions.map((q, i) => <li key={i}>{q}</li>)}</ul>
+                        </div>
+                      )}
                     </div>
                   )}
 
