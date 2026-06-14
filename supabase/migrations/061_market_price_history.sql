@@ -48,6 +48,9 @@ create trigger trg_snapshot_awarded_price
   after insert on public.rfq_item_awards
   for each row execute function public.snapshot_awarded_price();
 
+-- دالة المُحفِّز ليست RPC — نمنع استدعاءها مباشرةً عبر الـAPI (تعمل ضمن المُحفِّز فقط)
+revoke execute on function public.snapshot_awarded_price() from public, anon, authenticated;
+
 -- اتجاه السعر لكل مادة: متوسط آخر ٣٠ يوم مقابل الـ٣٠ يوم السابقة (من كل العروض غير المرفوضة)
 create or replace function public.get_market_price_trend()
 returns table(product_name text, sector text, unit text,
