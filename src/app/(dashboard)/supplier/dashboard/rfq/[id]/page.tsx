@@ -101,7 +101,7 @@ export default function SupplierRFQPage() {
           return true
         })
         setMyItems(filtered)
-        setItemForms(filtered.map(() => ({ unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false })))
+        setItemForms(filtered.map(() => ({ unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '' })))
         setOpenItem(null) // تبقى كل المواد مطويّة — المورد يضغط المادة التي يريد تسعيرها
       }
 
@@ -195,8 +195,8 @@ export default function SupplierRFQPage() {
     setError('')
     setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: f } : x))
   }
-  // لإتاحة الإرسال: كل مادة لها سعر ومحفوظة
-  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.every((_, i) => itemForms[i]?.saved && parseFloat(itemForms[i]?.line_total) > 0)) : true
+  // لإتاحة الإرسال: يكفي مادة واحدة مسعّرة ومحفوظة — المورد غير ملزم بتسعير كل المواد
+  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.some((_, i) => itemForms[i]?.saved && parseFloat(itemForms[i]?.line_total) > 0)) : true
 
   function addAttribute() {
     setAttributes(prev => [...prev, { key: '', value: '' }])
@@ -267,6 +267,7 @@ export default function SupplierRFQPage() {
       for (let i = 0; i < myItems.length; i++) {
         const it = myItems[i]
         const form = itemForms[i] || {}
+        if (!(parseFloat(form.line_total) > 0)) continue // المورد سعّر بعض المواد فقط — نتجاهل غير المسعّرة
         // رفع كتالوج هذه المادة (إن وُجد) — فحص أمني على الخادم
         let upUrl = null, upName = null
         if (form.file) {
@@ -287,6 +288,7 @@ export default function SupplierRFQPage() {
           product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
           unit: (form.priceUnit && form.priceUnit.trim()) || it.unit, quantity: it.quantity,
           unit_price: up || null, total: +lineTotal.toFixed(2),
+          delivery_days: parseInt(form.delivery_days) || null,
           specification: (form.specs || '').trim() || null,
           attachment_url: upUrl, attachment_name: upName,
         })
@@ -300,7 +302,9 @@ export default function SupplierRFQPage() {
       vat_included: vatIncluded,
       item_prices: itemPricesPayload,
       unit_price: isMultiItem ? null : (unitPrice ? parseFloat(unitPrice) : null),
-      delivery_days: deliveryDays ? parseInt(deliveryDays) : null,
+      delivery_days: isMultiItem
+        ? (itemPricesPayload && itemPricesPayload.length ? (Math.max(0, ...itemPricesPayload.map((e: any) => e.delivery_days || 0)) || null) : null)
+        : (deliveryDays ? parseInt(deliveryDays) : null),
       notes: notes || null,
       attributes: validAttrs.length > 0 ? attrObj : null,
       extra_charges: validExtras.length > 0 ? validExtras : null,
@@ -698,6 +702,15 @@ export default function SupplierRFQPage() {
                                   rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Type, origin, brand, grade…' : 'النوع، المنشأ، العلامة التجارية، الدرجة…'} />
                               </div>
 
+                              {/* مدة التوصيل الخاصة بهذه المادة */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  ⏱ {locale === 'en' ? 'Delivery time for this material (days)' : 'مدة توصيل هذه المادة (أيام)'}
+                                </label>
+                                <input type="number" value={form.delivery_days || ''} onChange={e => setItemField(i, 'delivery_days', e.target.value)}
+                                  className="input-field text-sm" placeholder="3" min="0" />
+                              </div>
+
                               {/* رفع ملف المواصفات */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
@@ -732,10 +745,8 @@ export default function SupplierRFQPage() {
                       )
                     })}
                   </div>
-                  <div className="mt-3">
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
-                    <input type="number" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)}
-                      className="input-field" placeholder="3" min="0" />
+                  <div className="mt-3 text-[11px] text-gray-500 bg-amber-50 border border-amber-200 rounded-xl p-2.5">
+                    💡 {locale === 'en' ? 'Price only the materials you can supply — you are not required to price all of them. Each material has its own delivery time.' : 'سعّر فقط المواد التي تقدر توردها — لست ملزماً بتسعير الكل. ولكل مادة مدة توصيلها الخاصة.'}
                   </div>
                 </div>
               ) : (
