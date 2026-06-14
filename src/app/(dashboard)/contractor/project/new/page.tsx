@@ -34,6 +34,35 @@ export default function NewProjectPage() {
   const [aiUsed, setAiUsed] = useState(false)
   const fileRef = useRef(null)
 
+  // مستند مواصفات المشروع (لمطابقة الرموز مثل DRS-701 واستخراج التفاصيل)
+  const [specsFile, setSpecsFile] = useState(null)
+  const [matchingSpecs, setMatchingSpecs] = useState(false)
+  const [specMsg, setSpecMsg] = useState('')
+  const specsRef = useRef(null)
+
+  // يقرأ المواصفات + البنود ويملأ تفاصيل كل بند من المستند
+  async function matchSpecs() {
+    if (!specsFile) { setSpecMsg('ارفع ملف المواصفات أولاً'); return }
+    const targets = items.filter(i => i.product_name)
+    if (targets.length === 0) { setSpecMsg('أضف بنوداً (أو ارفع BOQ) أولاً'); return }
+    setMatchingSpecs(true); setSpecMsg('')
+    try {
+      const fd = new FormData()
+      fd.append('file', specsFile)
+      fd.append('items', JSON.stringify(targets.map(i => ({ ref: i.id, product_name: i.product_name, sector: i.sector }))))
+      const res = await fetch('/api/match-spec', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!data.ok) { setSpecMsg('⚠️ ' + (data.message || 'تعذّرت مطابقة المواصفات')); return }
+      setItems(prev => prev.map(it => {
+        const s = data.specs?.[it.id]
+        return (s && s.trim()) ? { ...it, specification: s } : it
+      }))
+      setSpecMsg(`✓ تمت مطابقة ${data.matched} من ${data.total} بند من المواصفات`)
+    } catch {
+      setSpecMsg('⚠️ تعذّر الاتصال — حاول ثانية')
+    } finally { setMatchingSpecs(false) }
+  }
+
   // Items
   const [items, setItems] = useState([])
   const [editingIndex, setEditingIndex] = useState(null)
@@ -147,10 +176,22 @@ export default function NewProjectPage() {
         }
       }
 
+      // رفع مستند المواصفات إن وجد (للسجل) — نلحق رابطه بملاحظات المشروع
+      let specUrl = null
+      if (specsFile) {
+        const path = `${user.id}/spec-doc-${Date.now()}.${specsFile.name.split('.').pop()}`
+        const { data } = await supabase.storage.from('licenses').upload(path, specsFile, { upsert: true })
+        if (data) {
+          const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(data.path)
+          specUrl = publicUrl
+        }
+      }
+      const projNotes = [projectNotes, specUrl ? `[مواصفات المشروع: ${specUrl}]` : ''].filter(Boolean).join('\n') || null
+
       // إنشاء Project RFQ
       const { data: project, error: projErr } = await supabase.from('project_rfqs').insert({
         contractor_id: user.id, title, region, city: city || null,
-        notes: projectNotes || null, boq_url: boqUrl, status: 'sent',
+        notes: projNotes, boq_url: boqUrl, status: 'sent',
       }).select().single()
 
       if (projErr) throw new Error(projErr.message)
@@ -332,6 +373,48 @@ export default function NewProjectPage() {
           {parseError && (
             <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">⚠️ {parseError}</div>
           )}
+
+          {/* مستند مواصفات المشروع — يقرأه الذكاء ويطابق رموز البنود (DRS-701...) لاستخراج التفاصيل */}
+          <div className="rounded-xl border border-[#1B2D5B]/15 bg-[#1B2D5B]/[0.03] p-4 mb-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base">📑</span>
+              <h3 className="font-bold text-sm" style={{ color: '#1B2D5B' }}>
+                {locale === 'en' ? 'Project specifications (optional)' : 'مواصفات المشروع (اختياري)'}
+              </h3>
+            </div>
+            <p className="text-[11px] text-gray-500 mb-3">
+              {locale === 'en'
+                ? 'Upload the spec document — the AI reads it with the BOQ, resolves item codes (e.g. DRS-701) and fills each item\'s full details.'
+                : 'ارفع مستند المواصفات — يقرأه الذكاء مع الـBOQ، يربط رموز البنود (مثل DRS-701) ويملأ تفاصيل كل بند الكاملة.'}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              {specsFile ? (
+                <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
+                  <span className="text-base">📄</span>
+                  <span className="text-xs font-semibold truncate max-w-[200px]" style={{ color: '#1B2D5B' }}>{specsFile.name}</span>
+                  <button type="button" onClick={() => { setSpecsFile(null); setSpecMsg('') }} className="text-xs text-red-500 hover:underline">{locale === 'en' ? 'Remove' : 'إزالة'}</button>
+                </div>
+              ) : (
+                <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-[#1B2D5B]/40 transition-all">
+                  <input ref={specsRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg"
+                    onChange={e => { const f = e.target.files?.[0]; if (f) { setSpecsFile(f); setSpecMsg('') } }} />
+                  <span className="text-base">📤</span>
+                  <span className="text-xs text-gray-600">{locale === 'en' ? 'Upload spec (PDF, Excel, image...)' : 'ارفع المواصفات (PDF، Excel، صورة...)'}</span>
+                </label>
+              )}
+              <button type="button" onClick={matchSpecs} disabled={matchingSpecs || !specsFile || items.length === 0}
+                className="text-xs font-bold text-white px-4 py-2 rounded-lg disabled:opacity-40 transition-all hover:shadow"
+                style={{ background: '#1B2D5B' }}>
+                {matchingSpecs ? (locale === 'en' ? '⏳ Reading...' : '⏳ جارٍ القراءة...') : (locale === 'en' ? '🔎 Read & match specs' : '🔎 اقرأ المواصفات وطابقها')}
+              </button>
+            </div>
+            {specMsg && (
+              <div className={`text-xs mt-2 font-semibold ${specMsg.startsWith('✓') ? 'text-emerald-600' : 'text-amber-600'}`}>{specMsg}</div>
+            )}
+            {items.length === 0 && specsFile && (
+              <div className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? 'Add BOQ items first, then match.' : 'ارفع BOQ أو أضف بنوداً أولاً، ثم اضغط المطابقة.'}</div>
+            )}
+          </div>
 
           <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 h-px bg-gray-200" />
