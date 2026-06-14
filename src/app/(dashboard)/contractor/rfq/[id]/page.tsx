@@ -11,6 +11,28 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 
+// مرجع جغرافي «lat,lng» → [lat,lng] أو null
+function parseGeo(s) {
+  if (!s || typeof s !== 'string') return null
+  const m = s.split(',').map(x => parseFloat(x.trim()))
+  if (m.length !== 2 || m.some(n => Number.isNaN(n))) return null
+  return m
+}
+// المسافة بالكيلومترات (هافرسين)
+function haversineKm(a, b) {
+  if (!a || !b) return null
+  const R = 6371, toRad = d => (d * Math.PI) / 180
+  const dLat = toRad(b[0] - a[0]), dLng = toRad(b[1] - a[1])
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s))
+}
+function offerDistanceKm(offer, ref) {
+  if (!ref) return null
+  const lat = offer?.supplier?.latitude, lng = offer?.supplier?.longitude
+  if (lat == null || lng == null) return null
+  return haversineKm(ref, [Number(lat), Number(lng)])
+}
+
 export default function RFQDetailPage() {
   const { id } = useParams()
   const [rfq, setRfq] = useState(null)
@@ -203,6 +225,10 @@ export default function RFQDetailPage() {
   // طلب متعدّد المواد → الترسية تتم بند-بند (أفضل مورد لكل مادة)
   const isMulti = Array.isArray(rfq.items) && rfq.items.length > 1
   const activeOffers = offers.filter(o => o.status !== 'rejected')
+  // مرجع التوصيل لحساب «الأقرب مورد» (إن وُجدت إحداثيات للطلب)
+  const refGeo = parseGeo(rfq?.delivery_geo)
+  // هل يتوفّر مورد واحد على الأقل بإحداثيات؟ نُظهر زر «الأقرب» فقط حينها
+  const canSortNearest = !!refGeo && activeOffers.some(o => o.supplier?.latitude != null && o.supplier?.longitude != null)
 
   // Filtered + sorted offers for display (contractor may receive many).
   const displayedOffers = [...offers]
@@ -391,7 +417,7 @@ export default function RFQDetailPage() {
               </div>
               {activeOffers.length > 0 && (
                 <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 text-xs font-semibold">
-                  {[{ k: 'cheapest', l: '💰 الأرخص' }, { k: 'fastest', l: '⚡ الأسرع' }].map(o => (
+                  {[{ k: 'cheapest', l: '💰 الأرخص' }, { k: 'fastest', l: '⚡ الأسرع' }, ...(canSortNearest ? [{ k: 'nearest', l: '📍 الأقرب' }] : [])].map(o => (
                     <button key={o.k} type="button" onClick={() => setAwardSort(o.k)}
                       className={`px-3 py-1.5 rounded-lg transition-all ${awardSort === o.k ? 'bg-white shadow-sm text-[#1B2D5B]' : 'text-gray-500'}`}>{o.l}</button>
                   ))}
@@ -416,6 +442,10 @@ export default function RFQDetailPage() {
                       const ad = (a.entry.delivery_days ?? a.offer.delivery_days ?? 99999)
                       const bd = (b.entry.delivery_days ?? b.offer.delivery_days ?? 99999)
                       if (ad !== bd) return ad - bd
+                    } else if (awardSort === 'nearest') {
+                      const ad = offerDistanceKm(a.offer, refGeo) ?? 9e9
+                      const bd = offerDistanceKm(b.offer, refGeo) ?? 9e9
+                      if (ad !== bd) return ad - bd
                     }
                     return (Number(a.entry.total) || 0) - (Number(b.entry.total) || 0)
                   })
@@ -439,7 +469,7 @@ export default function RFQDetailPage() {
                               <div key={b.offer.id} className={`px-4 py-2.5 flex items-center justify-between gap-2 ${isAwarded ? 'bg-emerald-50' : ''}`}>
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-1.5">
-                                    {r === 0 && <span title={awardSort === 'fastest' ? 'الأسرع' : 'الأرخص'}>🥇</span>}
+                                    {r === 0 && <span title={awardSort === 'fastest' ? 'الأسرع' : awardSort === 'nearest' ? 'الأقرب' : 'الأرخص'}>🥇</span>}
                                     <span className="font-semibold text-sm text-gray-800 truncate">{b.offer.supplier?.company_name_ar || 'مورد'}</span>
                                     {b.offer.supplier?.verification_status === 'verified' && <span title="موثّق" style={{ color: '#0F6E56' }}>{b.offer.supplier?.cr_verification_source === 'wathq' ? '🛡' : '✓'}</span>}
                                     {b.offer.supplier?.rating_avg > 0 && <span className="text-[10px] text-gray-400">⭐ {b.offer.supplier.rating_avg}</span>}
@@ -448,6 +478,7 @@ export default function RFQDetailPage() {
                                     {Number(b.entry.unit_price) > 0 && <span>{Number(b.entry.unit_price).toLocaleString('en-US')} / {b.entry.unit || it.unit}</span>}
                                     {(b.entry.delivery_days ?? b.offer.delivery_days) ? <span>📦 {b.entry.delivery_days ?? b.offer.delivery_days} يوم</span> : null}
                                     {b.offer.supplier?.city && <span>📍 {b.offer.supplier.city}</span>}
+                                    {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title="المسافة من موقع التوصيل">📏 {km < 1 ? '<1' : Math.round(km)} كم</span> : null })()}
                                     {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]">⚙️ {b.entry.specification}</span>}
                                     {b.entry.attachment_url && <a href={b.entry.attachment_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-purple-500 hover:underline">📎 كتالوج</a>}
                                     <a href={`/contractor/rfq/${id}/offer/${b.offer.id}`} className="font-semibold hover:underline" style={{ color: '#F5831F' }}>تفاصيل ←</a>
