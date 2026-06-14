@@ -494,9 +494,17 @@ export default function SupplierRFQPage() {
                 </div>
               ) : <strong className="text-gray-500">{T.notRequired}</strong>}
             </div>
-            {!rfq.hide_identity && rfq.contractor && (
-              <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏢 {T.contractor}</span><br/><strong>{rfq.contractor.company_name_ar}</strong></div>
-            )}
+            <div className="bg-[#f4f6f9] rounded-lg p-3">
+              <span className="text-gray-500 text-[12px] font-semibold">🏢 {T.contractor}</span><br/>
+              {existingOffer?.status === 'accepted' && rfq.contractor ? (
+                <strong>{rfq.contractor.company_name_ar}</strong>
+              ) : (
+                <>
+                  <strong className="text-gray-600">{locale === 'en' ? 'Contractor' : 'مقاول'} · {rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong>
+                  <div className="text-[10px] text-gray-400 mt-0.5">🔒 {locale === 'en' ? "Contractor identity is revealed once your offer is accepted." : 'تظهر هوية المقاول عند قبول عرضك (إتمام الصفقة).'}</div>
+                </>
+              )}
+            </div>
             {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
             {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">📝 {T.notes}</span><br/>{cleanNotes}</div>}
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🗓 {locale === 'en' ? 'Posted' : 'تاريخ الطلب'}</span><br/><strong className="text-sm">{formatDateTime(rfq.created_at)}</strong></div>

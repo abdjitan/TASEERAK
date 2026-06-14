@@ -18,6 +18,7 @@ export default function RFQDetailPage() {
   const [sortBy, setSortBy] = useState('price_asc') // price_asc | price_desc | delivery | rating
   const [aiCmp, setAiCmp] = useState(null) // نتيجة تحليل العروض بالذكاء الاصطناعي
   const [cmpLoading, setCmpLoading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [onlyVerified, setOnlyVerified] = useState(false)
   const [tierFilter, setTierFilter] = useState('') // '' | manufacturer | commercial | local
   const [loading, setLoading] = useState(true)
@@ -41,6 +42,15 @@ export default function RFQDetailPage() {
       setAiCmp(await res.json())
     } catch { setAiCmp({ ok: false, message: 'تعذّر التحليل، حاول مرة أخرى' }) }
     finally { setCmpLoading(false) }
+  }
+
+  async function deleteRfq() {
+    if (!confirm(locale === 'en' ? 'Delete this request permanently? Its offers will be removed too.' : 'حذف هذا الطلب نهائياً؟ ستُحذف العروض المرتبطة به أيضاً.')) return
+    setDeleting(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('delete_rfq', { p_rfq_id: id })
+    if (error) { alert(error.message); setDeleting(false); return }
+    window.location.href = '/contractor'
   }
 
   useEffect(() => {
@@ -723,6 +733,15 @@ export default function RFQDetailPage() {
           </div>
         )}
         </>)}
+
+        {/* حذف الطلب — متاح للمقاول دائماً (انتهت المهلة أو لقي المواد) */}
+        <div className="mt-8 pt-5 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+          <span className="text-xs text-gray-400">{locale === 'en' ? 'No longer need this request?' : 'ما عدت تحتاج هذا الطلب؟'}</span>
+          <button type="button" onClick={deleteRfq} disabled={deleting}
+            className="text-xs font-bold px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-all disabled:opacity-50">
+            {deleting ? '⏳…' : `🗑 ${locale === 'en' ? 'Delete request' : 'حذف الطلب'}`}
+          </button>
+        </div>
       </div>
     </AppShell>
   )
