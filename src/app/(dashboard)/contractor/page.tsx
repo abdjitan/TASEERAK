@@ -125,6 +125,19 @@ export default function ContractorDashboard() {
   const closed = rfqs.filter(r => r.status === 'closed')
   const totalOffers = rfqs.reduce((s, r) => s + (r.offer_count || 0), 0)
 
+  // أرقام حيّة + اكتمال الحساب
+  const now = Date.now()
+  const rfqsThisWeek = rfqs.filter(r => r.created_at && (now - new Date(r.created_at).getTime()) < 7 * 864e5).length
+  const awaitingReply = rfqs.filter(r => r.status === 'open' && (r.offer_count || 0) > 0).length
+  const completion = [
+    { ok: !!(profile?.region && profile?.city), label: locale === 'en' ? 'Location' : 'الموقع', href: '/settings' },
+    { ok: !!profile?.phone, label: locale === 'en' ? 'Phone' : 'رقم الجوال', href: '/settings' },
+    { ok: !!(profile?.latitude || profile?.national_short_address), label: locale === 'en' ? 'Map pin' : 'الموقع على الخريطة', href: '/location' },
+    { ok: rfqs.length > 0, label: locale === 'en' ? 'First RFQ' : 'أول طلب تسعير', href: '/contractor/rfq/new' },
+  ]
+  const compDone = completion.filter(c => c.ok).length
+  const compPct = Math.round((compDone / completion.length) * 100)
+
   const statusLabel = (status) => {
     if (status === 'open') return t.open
     if (status === 'closed') return t.closed
@@ -201,21 +214,48 @@ export default function ContractorDashboard() {
           </div>
         )}
 
-        <div className="mb-8 animate-fade-in">
-          <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>
-            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en} 👋
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
+        <div className="mb-6 animate-fade-in flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>
+              {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || (locale === 'en' ? 'Contractor' : 'مقاول')} 👋
+            </h1>
+            <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
+          </div>
+          <a href="/contractor/rfq/new"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-white shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all text-base"
+            style={{ background: 'linear-gradient(135deg,#F5831F,#d96f15)' }}>
+            <span className="text-xl leading-none">+</span> {t.newRfqBtn}
+          </a>
         </div>
+
+        {/* ويدجت اكتمال الحساب */}
+        {compPct < 100 && (
+          <div className="mb-6 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold" style={{ color: '#1B2D5B' }}>
+                {locale === 'en' ? `Your account is ${compPct}% complete` : locale === 'ur' ? `آپ کا اکاؤنٹ ${compPct}% مکمل` : `حسابك مكتمل ${compPct}%`}
+              </span>
+              <span className="text-xs text-gray-400">{compDone}/{completion.length}</span>
+            </div>
+            <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-3">
+              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${compPct}%`, background: 'linear-gradient(90deg,#F5831F,#0F6E56)' }} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {completion.filter(c => !c.ok).map(c => (
+                <a key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label}</a>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Stats — قابلة للضغط: تفلتر القائمة وتنزّل لها */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
-            { label: t.activeRfqs, value: active.length, icon: '📋', bg: '#1B2D5B', f: 'pending' },
-            { label: t.totalOffers, value: totalOffers, icon: '💬', bg: '#F5831F', f: 'has_offers' },
-            { label: t.completed, value: closed.length, icon: '✅', bg: '#0F6E56', f: 'closed' },
-            { label: t.total, value: rfqs.length, icon: '📊', bg: '#7c3aed', f: 'all' },
-          ].map(({ label, value, icon, bg, f }) => (
+            { label: t.activeRfqs, value: active.length, icon: '📋', bg: '#1B2D5B', f: 'pending', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${locale === 'en' ? 'this week' : 'هذا الأسبوع'}` : '' },
+            { label: t.totalOffers, value: totalOffers, icon: '💬', bg: '#F5831F', f: 'has_offers', sub: awaitingReply > 0 ? `${awaitingReply} ${locale === 'en' ? 'awaiting you' : 'بانتظار ردك'}` : '' },
+            { label: t.completed, value: closed.length, icon: '✅', bg: '#0F6E56', f: 'closed', sub: '' },
+            { label: t.total, value: rfqs.length, icon: '📊', bg: '#7c3aed', f: 'all', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${locale === 'en' ? 'new' : 'جديد'}` : '' },
+          ].map(({ label, value, icon, bg, f, sub }) => (
             <button key={label} type="button" onClick={() => { setFilter(f); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
               className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${filter === f ? 'border-[#F5831F] ring-1 ring-[#F5831F]/30' : 'border-gray-100'}`}>
               <div className="flex items-start justify-between">
@@ -223,6 +263,7 @@ export default function ContractorDashboard() {
                 <div className="text-3xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
               </div>
               <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
+              {sub && <div className="text-[11px] font-bold mt-0.5" style={{ color: '#0F6E56' }}>↑ {sub}</div>}
             </button>
           ))}
         </div>
