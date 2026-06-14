@@ -91,6 +91,7 @@ export default function ContractorDashboard() {
   const [projects, setProjects] = useState([])
   const [activity, setActivity] = useState([])
   const [marketTop, setMarketTop] = useState([])
+  const [marketTrend, setMarketTrend] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // all | has_offers | pending | closed
   const [sectorFilter, setSectorFilter] = useState('all')
@@ -119,11 +120,17 @@ export default function ContractorDashboard() {
           .eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(6)
         setActivity(notifs || [])
       } catch { setActivity([]) }
-      // نبض السوق (متوسطات الأسعار)
+      // نبض السوق (متوسطات الأسعار) + اتجاه السعر (٣٠ يوم مقابل السابقة)
       try {
         const { data: mp } = await supabase.rpc('get_market_prices')
         setMarketTop((mp || []).sort((a, b) => Number(b.offer_count) - Number(a.offer_count)).slice(0, 3))
       } catch { setMarketTop([]) }
+      try {
+        const { data: tr } = await supabase.rpc('get_market_price_trend')
+        const map: Record<string, any> = {}
+        for (const row of (tr || [])) map[`${row.product_name}|${row.sector}`] = row
+        setMarketTrend(map)
+      } catch { setMarketTrend({}) }
       setLoading(false)
     }
     init()
@@ -294,6 +301,18 @@ export default function ContractorDashboard() {
                   <div className="text-[10px] text-gray-400 mt-0.5">
                     {Math.round(Number(p.min_price)).toLocaleString('en-US')}–{Math.round(Number(p.max_price)).toLocaleString('en-US')} · {p.offer_count} {locale === 'en' ? 'offers' : 'عرض'}
                   </div>
+                  {(() => {
+                    const tr = marketTrend[`${p.product_name}|${p.sector}`]
+                    if (!tr || !(Number(tr.prev_avg) > 0) || !(Number(tr.recent_avg) > 0)) return null
+                    const pct = Math.round(((Number(tr.recent_avg) - Number(tr.prev_avg)) / Number(tr.prev_avg)) * 100)
+                    if (pct === 0) return <div className="text-[10px] mt-1 font-semibold text-gray-400">{locale === 'en' ? '◆ stable vs last month' : '◆ ثابت عن الشهر الماضي'}</div>
+                    const up = pct > 0 // ارتفاع السعر = أحمر (غير مناسب للمشتري)، انخفاض = أخضر
+                    return (
+                      <div className="text-[10px] mt-1 font-bold" style={{ color: up ? '#dc2626' : '#0F6E56' }}>
+                        {up ? '▲' : '▼'} {Math.abs(pct)}% {locale === 'en' ? 'vs last month' : 'عن الشهر الماضي'}
+                      </div>
+                    )
+                  })()}
                 </div>
               ))}
             </div>
