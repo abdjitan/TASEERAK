@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -226,7 +227,7 @@ export default function SupplierDashboard() {
       <div className="max-w-6xl mx-auto">
         {/* Onboarding / liquidity prompts */}
         {pricesCount === 0 && (
-          <a href="/supplier/prices" className="block mb-4 bg-gradient-to-l from-[#F5831F]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
+          <Link href="/supplier/prices" className="block mb-4 bg-gradient-to-l from-[#F5831F]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
             <div className="flex items-center gap-3">
               <span className="text-2xl">📈</span>
               <div className="flex-1">
@@ -234,10 +235,10 @@ export default function SupplierDashboard() {
                 <div className="text-xs text-gray-500">المقاولون يبحثون عن أحدث الأسعار — كن أول من يظهر. اضغط لإضافة أسعارك ←</div>
               </div>
             </div>
-          </a>
+          </Link>
         )}
         {profile && !profile.vat_number && (
-          <a href="/settings" className="block mb-4 bg-[#F5831F]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
+          <Link href="/settings" className="block mb-4 bg-[#F5831F]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
             <div className="flex items-center gap-3">
               <span className="text-2xl">🧾</span>
               <div className="flex-1">
@@ -245,7 +246,7 @@ export default function SupplierDashboard() {
                 <div className="text-xs text-gray-500">يلزم لإصدار فواتير ضريبية (ZATCA) لصفقاتك. اضغط للإضافة ←</div>
               </div>
             </div>
-          </a>
+          </Link>
         )}
         {profile?.verification_status === 'rejected' && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">
@@ -267,9 +268,9 @@ export default function SupplierDashboard() {
                 )}
               </div>
             </div>
-            <a href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
+            <Link href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
               {locale === 'en' ? '📤 Reupload Documents' : locale === 'ur' ? '📤 دستاویزات دوبارہ اپلوڈ کریں' : '📤 إعادة رفع المستندات'}
-            </a>
+            </Link>
           </div>
         )}
 
@@ -326,7 +327,7 @@ export default function SupplierDashboard() {
                 <div className="sm:col-span-2 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="text-xs font-bold mb-2" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Boost your score:' : 'ارفع تقييمك:'}</div>
                   <div className="flex flex-wrap gap-2">
-                    {missing.map(c => <a key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></a>)}
+                    {missing.map(c => <Link key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></Link>)}
                   </div>
                 </div>
               )}
@@ -336,7 +337,7 @@ export default function SupplierDashboard() {
 
         {/* تنبيه: حدد تخصصاتك الدقيقة */}
         {!hasSpecialties && !hasSectors && profile?.verification_status !== 'rejected' && (
-          <a href="/supplier/specialties"
+          <Link href="/supplier/specialties"
             className="block mb-6 bg-gradient-to-l from-[#F5831F]/10 to-[#1B2D5B]/5 border-2 border-[#F5831F]/30 rounded-2xl p-5 hover:shadow-md transition-all animate-fade-in">
             <div className="flex items-center gap-4">
               <div className="text-3xl">🎯</div>
@@ -356,7 +357,7 @@ export default function SupplierDashboard() {
                 {locale === 'en' ? 'Setup →' : 'إعداد ←'}
               </div>
             </div>
-          </a>
+          </Link>
         )}
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
@@ -414,7 +415,7 @@ export default function SupplierDashboard() {
             ) : (
               <div className="space-y-3">
                 {displayedRfqs.map(rfq => (
-                  <a key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`}
+                  <Link key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`}
                     className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 hover:-translate-y-0.5 transition-all duration-300">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -455,7 +456,7 @@ export default function SupplierDashboard() {
                         )
                       })()}
                     </div>
-                  </a>
+                  </Link>
                 ))}
               </div>
             )}

@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, ReactNode } from 'react'
+import Link from 'next/link'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import AiAssistant from '@/components/shared/AiAssistant'
@@ -84,7 +85,7 @@ export default function AppShell({
                 {showSection && (
                   <div className="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-blue-200/45">{n.section}</div>
                 )}
-                <a href={n.href} onClick={() => setOpen(false)}
+                <Link href={n.href} prefetch onClick={() => setOpen(false)}
                   className={`relative flex items-center gap-3 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors ${n.active ? 'bg-white/[0.13] text-white' : 'text-blue-100/70 hover:bg-white/[0.07] hover:text-white'}`}>
                   {n.active && <span className={`absolute ${accentEdge} top-2.5 bottom-2.5 w-1 rounded-full`} style={{ background: '#F5831F' }} />}
                   <span className="w-6 grid place-items-center text-[18px]">{n.icon}</span>
@@ -94,7 +95,7 @@ export default function AppShell({
                       {badge}
                     </span>
                   )}
-                </a>
+                </Link>
               </div>
             )
           })}

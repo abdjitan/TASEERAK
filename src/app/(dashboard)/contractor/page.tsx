@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
@@ -200,8 +201,8 @@ export default function ContractorDashboard() {
   ]
   const headerActions = profile?.verification_status !== 'rejected' ? (
     <>
-      <a href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#1B2D5B' }}>📋 {locale === 'en' ? 'Project' : 'مشروع'}</a>
-      <a href="/contractor/rfq/new" className="btn-orange text-xs px-4 py-2">{t.newRfq}</a>
+      <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#1B2D5B' }}>📋 {locale === 'en' ? 'Project' : 'مشروع'}</Link>
+      <Link href="/contractor/rfq/new" className="btn-orange text-xs px-4 py-2">{t.newRfq}</Link>
     </>
   ) : null
 
@@ -237,9 +238,9 @@ export default function ContractorDashboard() {
                 )}
               </div>
             </div>
-            <a href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
+            <Link href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
               {locale === 'en' ? '📤 Reupload Documents' : locale === 'ur' ? '📤 دستاویزات دوبارہ اپلوڈ کریں' : '📤 إعادة رفع المستندات'}
-            </a>
+            </Link>
           </div>
         )}
 
@@ -273,12 +274,12 @@ export default function ContractorDashboard() {
             { href: '/contractor/project/new', icon: '📋', label: locale === 'en' ? 'Upload BOQ' : 'رفع BOQ' },
             { href: '/market', icon: '📈', label: locale === 'en' ? 'Price Index' : 'بورصة الأسعار' },
           ].map(a => (
-            <a key={a.href} href={a.href}
+            <Link key={a.href} href={a.href}
               className={`rounded-2xl p-4 text-center font-bold transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md ${a.primary ? 'text-white' : 'bg-white border border-gray-100 text-[#1B2D5B]'}`}
               style={a.primary ? { background: 'linear-gradient(135deg,#F5831F,#d96f15)' } : {}}>
               <div className="text-2xl mb-1">{a.icon}</div>
               <div className="text-xs sm:text-sm">{a.label}</div>
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -289,7 +290,7 @@ export default function ContractorDashboard() {
               <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#1B2D5B' }}>
                 <AppIcon name="pricing" tone="warning" variant="line" size={20} /> {locale === 'en' ? 'Market pulse' : 'نبض السوق'}
               </h2>
-              <a href="/market" className="text-xs font-semibold" style={{ color: '#F5831F' }}>{locale === 'en' ? 'Full index →' : 'البورصة كاملة ←'}</a>
+              <Link href="/market" className="text-xs font-semibold" style={{ color: '#F5831F' }}>{locale === 'en' ? 'Full index →' : 'البورصة كاملة ←'}</Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {marketTop.map((p, i) => (
@@ -346,7 +347,7 @@ export default function ContractorDashboard() {
             </div>
             <div className="flex flex-wrap gap-2">
               {completion.filter(c => !c.ok).map(c => (
-                <a key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label}</a>
+                <Link key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label}</Link>
               ))}
             </div>
           </div>
@@ -426,13 +427,13 @@ export default function ContractorDashboard() {
               <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>
                 📋 {locale === 'en' ? 'Project RFQs' : 'مشاريع BOQ'}
               </h2>
-              <a href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#F5831F' }}>
+              <Link href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#F5831F' }}>
                 + {locale === 'en' ? 'New Project' : 'مشروع جديد'}
-              </a>
+              </Link>
             </div>
             <div className="space-y-2 stagger">
               {projects.map(p => (
-                <a key={p.id} href={`/contractor/project/${p.id}`}
+                <Link key={p.id} href={`/contractor/project/${p.id}`}
                   className="flex items-center justify-between bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 transition-all">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white" style={{ background: '#1B2D5B' }}>📋</div>
@@ -444,7 +445,7 @@ export default function ContractorDashboard() {
                   <div className="text-xs font-semibold" style={{ color: '#F5831F' }}>
                     {locale === 'en' ? 'View Results →' : 'النتائج ←'}
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -456,7 +457,7 @@ export default function ContractorDashboard() {
             <div className="text-6xl mb-5 animate-float">📋</div>
             <h2 className="text-xl font-bold mb-3" style={{ color: '#1B2D5B' }}>{t.noRfqs}</h2>
             <p className="text-gray-500 mb-6 text-sm">{t.noRfqsSub}</p>
-            <a href="/contractor/rfq/new" className="inline-block btn-orange px-10 py-4 text-base rounded-2xl">{t.newRfqBtn}</a>
+            <Link href="/contractor/rfq/new" className="inline-block btn-orange px-10 py-4 text-base rounded-2xl">{t.newRfqBtn}</Link>
           </div>
         ) : (
           <div className="animate-fade-in" id="rfq-list" style={{ scrollMarginTop: '70px' }}>
@@ -530,7 +531,7 @@ export default function ContractorDashboard() {
                   </div>
                 )
                 return filtered.map(rfq => (
-                <a key={rfq.id} href={`/contractor/rfq/${rfq.id}`}
+                <Link key={rfq.id} href={`/contractor/rfq/${rfq.id}`}
                   className={`block bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative ${
                     rfq.status === 'open' && (rfq.offer_count || 0) > 0
                       ? 'border-[#F5831F] ring-2 ring-[#F5831F]/20'
@@ -605,7 +606,7 @@ export default function ContractorDashboard() {
                       </div>
                     )
                   })()}
-                </a>
+                </Link>
                 ))
               })()}
             </div>
