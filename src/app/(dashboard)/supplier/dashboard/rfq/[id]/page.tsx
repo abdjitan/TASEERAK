@@ -634,7 +634,7 @@ export default function SupplierRFQPage() {
                               </span>
                               <div className="min-w-0">
                                 <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{getProductLabel(it.product_name, locale)}</div>
-                                <div className="text-[11px] text-gray-400">
+                                <div className="text-xs text-gray-500 font-medium">
                                   {it.sub_category ? getSubCategoryLabel(it.sector, it.sub_category, locale) + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}
                                 </div>
                               </div>
@@ -653,10 +653,13 @@ export default function SupplierRFQPage() {
                           {/* تفاصيل التسعير — تنزل عند الفتح */}
                           {isOpen && (
                             <div className="px-3 pb-3 pt-1 space-y-3 border-t border-gray-100">
-                              {/* مواصفات المقاول المطلوبة (للتذكير) */}
+                              {/* مواصفات المقاول المطلوبة — بارزة وواضحة ليسعّر المورد بدقّة */}
                               {it.specification && (
-                                <div className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-2">
-                                  <span className="font-bold">مواصفات المقاول: </span>{it.specification}
+                                <div className="rounded-xl p-3 border" style={{ background: '#F5831F0a', borderColor: '#F5831F44' }}>
+                                  <div className="text-xs font-bold mb-1.5 flex items-center gap-1.5" style={{ color: '#d96f15' }}>
+                                    📋 {locale === 'en' ? 'Specifications required by the contractor' : 'المواصفات المطلوبة من المقاول'}
+                                  </div>
+                                  <div className="text-sm text-gray-800 leading-relaxed font-medium">{it.specification}</div>
                                 </div>
                               )}
 
