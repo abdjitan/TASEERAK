@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, getProductLabel, detectSubCategory, getGroupedProducts, getProductSpecs, getDefaultUnit } from '@/types'
 import Logo from '@/components/shared/Logo'
@@ -410,7 +411,7 @@ export default function NewRFQPage() {
           <h2 className="text-2xl font-bold mb-3" style={{ color: '#1B2D5B' }}>{t.successTitle}</h2>
           <p className="text-gray-500 mb-8">{t.successSub}</p>
           <div className="flex gap-3">
-            <a href="/contractor" className="flex-1 py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#1B2D5B' }}>{t.dashboard}</a>
+            <Link href="/contractor" className="flex-1 py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#1B2D5B' }}>{t.dashboard}</Link>
             <button onClick={() => { setSuccess(false); setSector(''); setProductName(''); setQuantity(''); setUnit(''); setRegion(''); setCity(''); setNotes(''); setSpecification(''); setItems([]); setGroup(''); setProductSearch(''); setRfqName(''); setDraftTiers([]); setManualEntry(false); setStep(1) }}
               className="flex-1 py-3 rounded-xl font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">
               {t.anotherReq}

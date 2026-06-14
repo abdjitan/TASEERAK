@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -234,11 +235,11 @@ export default function ProjectResultsPage() {
                           <strong style={{ color: '#1B2D5B' }}>{acceptedOffer.supplier?.company_name_ar}</strong>
                           {acceptedOffer.supplier?.phone && <span className="text-xs text-gray-400 mr-2">📞 {acceptedOffer.supplier.phone}</span>}
                         </div>
-                        <a href={`/contractor/orders/${acceptedOffer.id}`}
+                        <Link href={`/contractor/orders/${acceptedOffer.id}`}
                           className="text-xs font-bold text-white px-4 py-2 rounded-lg transition-all hover:shadow"
                           style={{ background: '#0F6E56' }}>
                           📄 {locale === 'en' ? 'View Purchase Order' : 'عرض أمر الشراء'} ←
-                        </a>
+                        </Link>
                       </div>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {acceptedOffer.attachment_url && (

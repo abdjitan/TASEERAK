@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
@@ -429,7 +430,7 @@ export default function AdminPanel() {
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <a href="/admin/discover" className="text-xs px-3 py-2 rounded-xl font-semibold text-white whitespace-nowrap transition-all hover:shadow-md" style={{ background: '#0F6E56' }}>🔎 اكتشاف موردين</a>
+            <Link href="/admin/discover" className="text-xs px-3 py-2 rounded-xl font-semibold text-white whitespace-nowrap transition-all hover:shadow-md" style={{ background: '#0F6E56' }}>🔎 اكتشاف موردين</Link>
             {['pending', 'verified', 'rejected', 'all'].includes(tab) && filtered.length > 0 && (
               <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-all">⬇ تصدير CSV</button>
             )}
@@ -870,7 +871,7 @@ export default function AdminPanel() {
                       {u.company_name_ar?.[0] || '?'}
                     </div>
                     <div>
-                      <a href={`/admin/users/${u.id}`} className="font-bold hover:underline decoration-dotted" style={{ color: '#1B2D5B' }}>{u.company_name_ar}</a>
+                      <Link href={`/admin/users/${u.id}`} className="font-bold hover:underline decoration-dotted" style={{ color: '#1B2D5B' }}>{u.company_name_ar}</Link>
                       {u.company_name_en && <div className="text-xs text-gray-400">{u.company_name_en}</div>}
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className={`badge text-[10px] ${u.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>
@@ -939,9 +940,9 @@ export default function AdminPanel() {
 
                   <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                     {/* Full detail page */}
-                    <a href={`/admin/users/${u.id}`} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition-all hover:shadow" style={{ background: '#1B2D5B' }}>
+                    <Link href={`/admin/users/${u.id}`} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition-all hover:shadow" style={{ background: '#1B2D5B' }}>
                       👁 التفاصيل
-                    </a>
+                    </Link>
                     {/* License Links */}
                     {u.license_url && (
                       <button type="button" onClick={() => openDoc(u.license_url)}

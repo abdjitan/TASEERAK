@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Logo from '@/components/shared/Logo'
@@ -119,7 +120,7 @@ export default function AdminUserDetail() {
   if (loading || !ok) return <PageLoader />
   if (!p) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]" dir="rtl">
-      <div className="text-center"><div className="text-5xl mb-3">🔍</div><div className="font-bold" style={{ color: '#1B2D5B' }}>الحساب غير موجود</div><a href="/admin" className="text-sm text-[#d96f15] hover:underline mt-2 inline-block">← رجوع للوحة</a></div>
+      <div className="text-center"><div className="text-5xl mb-3">🔍</div><div className="font-bold" style={{ color: '#1B2D5B' }}>الحساب غير موجود</div><Link href="/admin" className="text-sm text-[#d96f15] hover:underline mt-2 inline-block">← رجوع للوحة</Link></div>
     </div>
   )
 
