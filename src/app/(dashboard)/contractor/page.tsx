@@ -89,6 +89,7 @@ export default function ContractorDashboard() {
   const [rfqs, setRfqs] = useState([])
   const [projects, setProjects] = useState([])
   const [activity, setActivity] = useState([])
+  const [marketTop, setMarketTop] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // all | has_offers | pending | closed
   const [sectorFilter, setSectorFilter] = useState('all')
@@ -117,6 +118,11 @@ export default function ContractorDashboard() {
           .eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(6)
         setActivity(notifs || [])
       } catch { setActivity([]) }
+      // نبض السوق (متوسطات الأسعار)
+      try {
+        const { data: mp } = await supabase.rpc('get_market_prices')
+        setMarketTop((mp || []).sort((a, b) => Number(b.offer_count) - Number(a.offer_count)).slice(0, 3))
+      } catch { setMarketTop([]) }
       setLoading(false)
     }
     init()
@@ -267,6 +273,31 @@ export default function ContractorDashboard() {
             </a>
           ))}
         </div>
+
+        {/* نبض السوق — متوسطات الأسعار الحالية */}
+        {marketTop.length > 0 && (
+          <div className="mb-5 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#1B2D5B' }}>
+                <AppIcon name="pricing" tone="warning" variant="line" size={20} /> {locale === 'en' ? 'Market pulse' : 'نبض السوق'}
+              </h2>
+              <a href="/market" className="text-xs font-semibold" style={{ color: '#F5831F' }}>{locale === 'en' ? 'Full index →' : 'البورصة كاملة ←'}</a>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {marketTop.map((p, i) => (
+                <div key={i} className="bg-gray-50 rounded-xl p-3">
+                  <div className="text-xs font-bold truncate" style={{ color: '#1B2D5B' }}>{p.product_name}</div>
+                  <div className="text-base font-extrabold mt-1" style={{ color: '#0F6E56' }}>
+                    {Math.round(Number(p.avg_price)).toLocaleString('en-US')} <span className="text-[10px] text-gray-400 font-normal">ر.س/{p.unit || ''}</span>
+                  </div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">
+                    {Math.round(Number(p.min_price)).toLocaleString('en-US')}–{Math.round(Number(p.max_price)).toLocaleString('en-US')} · {p.offer_count} {locale === 'en' ? 'offers' : 'عرض'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* مركز الإجراءات — طلبات وصلها عروض وتحتاج ردّك */}
         {awaitingReply > 0 && (
