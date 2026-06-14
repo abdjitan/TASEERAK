@@ -43,7 +43,8 @@ async function geminiGenerate(system: string, contents: any[], maxTokens: number
     if (!r.ok) {
       const t = await r.text().catch(() => '')
       lastErr = 'Gemini ' + r.status + ' (' + model + '): ' + t.slice(0, 250)
-      if (r.status === 404 || r.status === 400) continue // النموذج غير متاح — جرّب التالي
+      // النموذج غير متاح/محدود الحصّة — جرّب النموذج التالي (الحصّة المجانية تختلف بين النماذج)
+      if (r.status === 404 || r.status === 400 || r.status === 429) continue
       throw new Error(lastErr)
     }
     const j = await r.json()
