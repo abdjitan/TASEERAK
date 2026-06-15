@@ -429,7 +429,8 @@ export default function SupplierDashboard() {
                                 🎯 {getSubCategoryLabel(rfq.sector, rfq.sub_category, locale)}
                               </span>
                             )}
-                            {!rfq.hide_identity && rfq.contractor && (
+                            {/* هوية المقاول مخفية في القائمة — تظهر فقط بعد قبول العرض (خصوصية) */}
+                            {rfq.contractor?.company_name_ar && (
                               <span className="text-[10px] text-gray-400">
                                 🏢 {locale === 'en' && rfq.contractor.company_name_en ? rfq.contractor.company_name_en : rfq.contractor.company_name_ar}
                               </span>

@@ -37,6 +37,7 @@ export default function SupplierRFQPage() {
   const [myItems, setMyItems] = useState<any[]>([])
   // العروض المنافسة (مجهولة الهوية) — لعرض موقع المورد التنافسي
   const [ranking, setRanking] = useState<any[]>([])
+  const [contractorInfo, setContractorInfo] = useState<any>(null)
   const [deliveryDays, setDeliveryDays] = useState('')
   const [notes, setNotes] = useState('')
   const [validity, setValidity] = useState('')
@@ -98,7 +99,7 @@ export default function SupplierRFQPage() {
       setUser(session.user)
 
       const { data: rfqData } = await supabase
-        .from('rfqs').select('*, contractor:profiles_public(company_name_ar, company_name_en)').eq('id', id).single()
+        .from('rfqs').select('*').eq('id', id).single()
       setRfq(rfqData)
 
       // ✅ المورد يرى/يسعّر فقط المواد ضمن تخصصه — لا تظهر له مواد قطاع لا يخدمه
@@ -128,6 +129,10 @@ export default function SupplierRFQPage() {
       // الموقع التنافسي: أسعار العروض الحالية (مجهولة الهوية)
       const { data: rk } = await supabase.rpc('get_rfq_offer_ranking', { p_rfq_id: id })
       setRanking(rk || [])
+
+      // هوية المقاول تُكشف من الخادم فقط بعد قبول العرض (لا تُرسَل قبل ذلك)
+      const { data: cInfo } = await supabase.rpc('get_rfq_contractor', { p_rfq_id: id })
+      setContractorInfo(Array.isArray(cInfo) ? cInfo[0] : cInfo)
 
       setLoading(false)
     }
@@ -516,8 +521,8 @@ export default function SupplierRFQPage() {
             </div>
             <div className="bg-[#f4f6f9] rounded-lg p-3">
               <span className="text-gray-500 text-[12px] font-semibold">🏢 {T.contractor}</span><br/>
-              {existingOffer?.status === 'accepted' && rfq.contractor ? (
-                <strong>{rfq.contractor.company_name_ar}</strong>
+              {contractorInfo?.revealed && contractorInfo?.company_name_ar ? (
+                <strong>{locale === 'en' && contractorInfo.company_name_en ? contractorInfo.company_name_en : contractorInfo.company_name_ar}</strong>
               ) : (
                 <>
                   <strong className="text-gray-600">{locale === 'en' ? 'Contractor' : 'مقاول'} · {rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong>
@@ -985,6 +990,17 @@ export default function SupplierRFQPage() {
         {showPanel && (
           <aside className="lg:col-span-1 lg:sticky lg:top-20">
             {(() => {
+              // فترة التعتيم: في آخر 30 دقيقة تُخفى مراكز المنافسين لمنع القنص بآخر لحظة
+              const blind = (ranking || []).some((r: any) => r.blind)
+              if (blind) {
+                return (
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
+                    <div className="text-3xl mb-2">🕶️</div>
+                    <h3 className="font-extrabold text-base" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Final 30 minutes — ranking hidden' : 'آخر 30 دقيقة — المراكز مخفية'}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{locale === 'en' ? 'Competitor positions are hidden near the deadline to prevent last-second sniping. Submit your best price.' : 'تُخفى مراكز المنافسين قرب انتهاء المهلة لمنع القنص. قدّم أفضل سعر لديك.'}</p>
+                  </div>
+                )
+              }
               const others = (ranking || []).filter((r: any) => !r.is_mine)
               const myT = parseFloat(totalPrice) || 0
               const rank = myT > 0 ? others.filter((o: any) => Number(o.total_price) < myT).length + 1 : null
