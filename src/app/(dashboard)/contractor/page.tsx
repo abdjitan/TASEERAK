@@ -12,7 +12,7 @@ import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { AppIcon } from '@/components/AppIcon'
-import { rfqDisplayName } from '@/lib/rfqName'
+import { rfqDisplayName, arItems } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
 
 const txt = {
@@ -587,7 +587,7 @@ export default function ContractorDashboard() {
                     )}
                   </div>
                   <div className="flex items-center gap-x-4 gap-y-1 text-xs text-gray-400 font-medium flex-wrap">
-                    <span>📦 {Array.isArray(rfq.items) && rfq.items.length > 1 ? `${rfq.items.length} ${locale === 'en' ? 'items' : 'أصناف'}` : `${rfq.quantity} ${rfq.unit}`}</span>
+                    <span>📦 {Array.isArray(rfq.items) && rfq.items.length > 1 ? arItems(rfq.items.length, locale) : `${rfq.quantity} ${rfq.unit}`}</span>
                     <span>📍 {rfq.region}</span>
                     {rfq.created_at && <span>🗓 {formatDateTime(rfq.created_at)}</span>}
                     {rfq.expires_at && <span>⏰ {formatDateTime(rfq.expires_at)}</span>}

@@ -14,7 +14,7 @@ import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
-const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#F5831F', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
+const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 export default function ProjectResultsPage() {
   const { id } = useParams()

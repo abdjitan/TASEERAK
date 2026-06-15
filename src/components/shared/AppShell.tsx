@@ -145,8 +145,27 @@ export default function AppShell({
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-7">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-7 pb-24 lg:pb-7">{children}</main>
       </div>
+
+      {/* ===== Bottom nav (mobile only) — أهم 5 وجهات للوصول السريع بالإبهام ===== */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex backdrop-blur-md border-t" style={{ background: 'rgba(255,255,255,.96)', borderColor: 'var(--line)' }}>
+        {nav.slice(0, 5).map((n) => {
+          const badge = (n.href === '/messages' && unreadMsgs > 0) ? unreadMsgs : n.badge
+          return (
+            <Link key={n.href} href={n.href} prefetch onClick={() => setOpen(false)}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 relative"
+              style={{ color: n.active ? '#1B2D5B' : '#9aa3b2' }}>
+              {n.active && <span className="absolute top-0 inset-x-5 h-0.5 rounded-full" style={{ background: '#F5831F' }} />}
+              <span className="text-[19px] leading-none">{n.icon}</span>
+              <span className="text-[10px] font-bold truncate max-w-[68px]">{n.label}</span>
+              {badge != null && badge !== 0 && (
+                <span className="absolute top-1.5 left-[calc(50%-18px)] min-w-[15px] h-[15px] px-1 grid place-items-center rounded-full text-[8px] font-extrabold text-white" style={{ background: '#F5831F' }}>{badge}</span>
+              )}
+            </Link>
+          )
+        })}
+      </nav>
 
       {/* مساعد تسعيرك الذكي — عائم في كل صفحات لوحة التحكم */}
       <AiAssistant />

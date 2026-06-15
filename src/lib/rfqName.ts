@@ -6,6 +6,15 @@ export function rfqRef(rfq: any): string {
   return rfq?.ref_no ? `RFQ-${rfq.ref_no}` : ''
 }
 
+// عدد المواد بصياغة عربية سليمة (مفرد/مثنى/جمع): 1 مادة واحدة، 2 مادتان، 3-10 مواد، 11+ مادة
+export function arItems(n: number, locale = 'ar'): string {
+  if (locale === 'en') return `${n} item${n === 1 ? '' : 's'}`
+  if (n === 1) return 'مادة واحدة'
+  if (n === 2) return 'مادتان'
+  if (n >= 3 && n <= 10) return `${n} مواد`
+  return `${n} مادة`
+}
+
 // itemCount: عدد الأصناف المراد عرضه (للمورد = أصنافه فقط، لا الإجمالي)
 export function rfqDisplayName(rfq: any, locale: string, itemCount?: number): string {
   const ref = rfqRef(rfq)
@@ -14,7 +23,7 @@ export function rfqDisplayName(rfq: any, locale: string, itemCount?: number): st
   if (rfq?.title && String(rfq.title).trim()) {
     desc = String(rfq.title).trim()
   } else if (n > 1) {
-    const items = locale === 'en' ? `${n} items` : `${n} مواد`
+    const items = arItems(n, locale)
     desc = locale === 'en' ? `Supply package (${items})` : `حزمة توريدات (${items})`
   } else {
     desc = rfq?.product_name || (locale === 'en' ? 'RFQ' : 'طلب تسعير')

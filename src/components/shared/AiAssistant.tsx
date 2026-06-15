@@ -44,15 +44,15 @@ export default function AiAssistant() {
     <>
       {/* الزر العائم */}
       <button onClick={() => setOpen(o => !o)} aria-label={T.title}
-        className="fixed z-[60] w-14 h-14 rounded-full grid place-items-center text-white shadow-xl hover:scale-105 transition-transform"
-        style={{ bottom: 20, ...sideStyle, background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+        className="fixed z-[60] w-14 h-14 rounded-full grid place-items-center text-white shadow-xl hover:scale-105 transition-transform bottom-[84px] lg:bottom-5"
+        style={{ ...sideStyle, background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
         <span className="text-2xl">{open ? '✕' : '✨'}</span>
       </button>
 
       {/* نافذة المحادثة */}
       {open && (
-        <div dir={dir} className="fixed z-[60] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden"
-          style={{ bottom: 86, ...sideStyle, width: 'min(380px, calc(100vw - 32px))', height: 'min(560px, calc(100vh - 130px))' }}>
+        <div dir={dir} className="fixed z-[60] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bottom-[150px] lg:bottom-[86px]"
+          style={{ ...sideStyle, width: 'min(380px, calc(100vw - 32px))', height: 'min(560px, calc(100vh - 210px))' }}>
           {/* رأس */}
           <div className="px-4 py-3 text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
             <span className="text-lg">✨</span>
