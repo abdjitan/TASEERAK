@@ -22,6 +22,59 @@
 
 ---
 
+## ★ Visual overview (mockups + flow diagrams)
+
+> Illustrative wireframes (SVG, no real data/keys) of the four hero screens, plus
+> text-based flow diagrams that convey the idea even when this file is pasted as plain text.
+
+**Contractor dashboard** — live feel: greeting, stat cards, market pulse with ▲▼ trend, action center, RFQ cards.
+![Contractor dashboard](docs/mockups/01-contractor-dashboard.svg)
+
+**BOQ → AI classification & routing** — Excel BOQ parsed, each line mapped to an official category; unclassifiable lines flagged; optional spec doc cross-reference.
+![BOQ classification](docs/mockups/02-boq-classification.svg)
+
+**Supplier per-item pricing** — sees only own-specialty materials; click-to-price accordion; per-item delivery/spec/catalog; partial pricing; hidden contractor identity.
+![Supplier pricing](docs/mockups/03-supplier-pricing.svg)
+
+**Per-item award matrix** — bids sorted cheapest/fastest/nearest, 🥇 best, distance, award each line, finalize → PO + ZATCA invoice.
+![Award matrix](docs/mockups/04-award-matrix.svg)
+
+### Marketplace flow
+```mermaid
+flowchart LR
+  C[Contractor] -->|posts RFQ / uploads BOQ| R[(rfqs · one row per material)]
+  R -->|routed by sector + sub_category| S1[Specialist supplier A]
+  R --> S2[Specialist supplier B]
+  R --> S3[Specialist supplier C]
+  S1 -->|per-item priced offer| O[(offers · item_prices)]
+  S2 --> O
+  S3 --> O
+  O -->|compare cheapest/fastest/nearest| AW{Award each line}
+  AW -->|award_rfq_item ×N| FIN[finalize_rfq_awards]
+  FIN --> PO[Per-supplier Purchase Orders]
+  PO --> INV[ZATCA tax invoice + QR]
+  AW --> SNAP[(market_price_snapshots · price history)]
+```
+
+### BOQ ingestion & classification pipeline
+```mermaid
+flowchart TD
+  X[Excel BOQ] --> P[/api/parse-boq/]
+  P -->|rule-based extract| L[Line items: desc, qty, unit]
+  L -->|AI enrich| AI[Pick sector + sub_category from official lists]
+  AI -->|valid key?| V{In taxonomy?}
+  V -->|yes| OK[Routed to specialist]
+  V -->|no| KW[Keyword fallback detectSubCategory]
+  KW -->|still none| FLAG[needs_classification ⚠ contractor picks from list]
+  SPEC[Spec document PDF/Excel] --> M[/api/match-spec/]
+  M -->|resolve code e.g. DRS-701| D[Fill full item details]
+  OK --> SEND[One rfqs row per material → fan-out]
+  FLAG --> SEND
+  D --> SEND
+```
+
+---
+
 ## 1) The idea & the problem
 
 **Problem.** In Saudi construction, sourcing materials is fragmented and manual:
