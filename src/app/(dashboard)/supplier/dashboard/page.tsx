@@ -23,7 +23,7 @@ const txt = {
     logout: 'خروج', openRfqs: 'طلبات مفتوحة', pendingOffers: 'عروض قيد المراجعة',
     acceptedOffers: 'عروض مقبولة', revenue: 'إجمالي الإيرادات',
     tabRfqs: 'طلبات التسعير', tabOffers: 'عروضي',
-    noRfqs: 'لا توجد طلبات مفتوحة', noRfqsSub: 'سيتم إخطارك عند وصول طلبات جديدة',
+    noRfqs: 'لا توجد طلبات مفتوحة الآن', noRfqsSub: 'تأكّد أن تخصصاتك وموقعك مكتملة ليصلك أول طلب مطابق — عادةً تصل الطلبات خلال ساعات، وسننبّهك فوراً.',
     noOffers: 'لم تقدم أي عروض بعد', noOffersSub: 'تصفح طلبات التسعير وقدم أول عرض',
     submitOffer: 'تقديم عرض →', offerSubmitted: '✓ تم تقديم عرضك — راجِعه', accepted: '✓ مقبول', rejected: '✕ مرفوض', pending: '⏳ قيد المراجعة',
     day: 'يوم', offer: 'عرض', loading: 'جارٍ التحميل...',
@@ -422,7 +422,10 @@ export default function SupplierDashboard() {
                         <AppIcon name="orders" tone="brand" variant="tone" size={44} />
                         <div>
                           <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            {rfq.created_at && (Date.now() - new Date(rfq.created_at).getTime() < 12 * 3600 * 1000) && (
+                              <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}>🟢 {locale === 'en' ? 'New' : 'جديد'}</span>
+                            )}
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                             {rfq.sub_category && (
                               <span className="badge text-[10px] bg-[#F5831F]/10 text-[#F5831F] font-semibold">
