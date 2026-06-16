@@ -8,6 +8,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
 import { waLink } from '@/lib/wa'
+import { approvalLabel } from '@/lib/supplierScore'
 import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -64,7 +65,7 @@ export default function OfferDetailPage() {
       setRfq(rfqData)
       const { data: offerData } = await supabase
         .from('offers')
-        .select('*, supplier:profiles(company_name_ar, company_name_en, phone, rating_avg, city, region, district, supplier_tier, national_short_address, latitude, longitude, verification_status, cr_verification_source)')
+        .select('*, supplier:profiles(company_name_ar, company_name_en, phone, rating_avg, city, region, district, supplier_tier, national_short_address, latitude, longitude, verification_status, cr_verification_source, approvals)')
         .eq('id', offerId).single()
       setOffer(offerData)
       setLoading(false)
@@ -150,6 +151,9 @@ export default function OfferDetailPage() {
                 {s.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}
               </span>
             )}
+            {Array.isArray(s.approvals) && s.approvals.map((a: string) => (
+              <span key={a} className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>🏅 معتمد لدى {approvalLabel(a)}</span>
+            ))}
           </div>
           <Row label="التقييم" value={s.rating_avg > 0 ? `⭐ ${s.rating_avg}` : null} />
           <Row label="الموقع" value={[s.district, s.city, s.region].filter(Boolean).join('، ')} />

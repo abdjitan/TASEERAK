@@ -10,6 +10,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import SupportThread from '@/components/shared/SupportThread'
 import PageLoader from '@/components/shared/PageLoader'
+import { APPROVAL_LABELS } from '@/lib/supplierScore'
 
 const TIER_LABEL = { manufacturer: '🏭 مصنع / مورد رئيسي', commercial: '🏪 مورد تجاري', local: '🏬 مورد محلي' }
 const RFQ_STATUS = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
@@ -248,6 +249,28 @@ export default function AdminUserDetail() {
                 <select value={p.contractor_grade || ''} onChange={e => setField('contractor_grade', e.target.value || null)} className="text-xs border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg px-2 py-1.5">
                   <option value="">-- الدرجة --</option><option value="A">أ — فوق 100M</option><option value="B">ب — 30–100M</option><option value="C">ج — 5–30M</option><option value="D">د — أقل من 5M</option>
                 </select>
+              </div>
+            )}
+            {p.role === 'supplier' && (
+              <div className="py-1.5 border-b border-gray-50">
+                <div className="text-[11px] text-gray-400 mb-1.5">🏅 اعتمادات المورد (تظهر للمقاولين كدليل ثقة)</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(APPROVAL_LABELS).map(([key, label]) => {
+                    const on = Array.isArray(p.approvals) && p.approvals.includes(key)
+                    return (
+                      <button key={key} type="button" disabled={busy === 'approvals'}
+                        onClick={() => {
+                          const cur = Array.isArray(p.approvals) ? p.approvals : []
+                          const next = on ? cur.filter((x: string) => x !== key) : [...cur, key]
+                          setField('approvals', next)
+                        }}
+                        className={`text-[11px] px-2.5 py-1 rounded-full border font-semibold transition-all ${on ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 hover:border-gray-300'}`}
+                        style={on ? { background: '#0F6E56' } : {}}>
+                        {on ? '✓ ' : '+ '}{label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
             {p.role === 'supplier' && <Field label="الحد الأدنى للطلب">{p.min_order_value > 0 ? sar(p.min_order_value) : 'بدون'}</Field>}

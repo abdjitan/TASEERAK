@@ -11,6 +11,7 @@ import { waLink } from '@/lib/wa'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
+import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 
 // مرجع جغرافي «lat,lng» → [lat,lng] أو null
 function parseGeo(s) {
@@ -112,7 +113,7 @@ export default function RFQDetailPage() {
       setEditUnit(rfqData?.unit || '')
 
       const { data: offersData } = await supabase
-        .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source)')
+        .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source, approvals)')
         .eq('rfq_id', id).order('total_price', { ascending: true })
       setOffers(offersData || [])
 
@@ -514,6 +515,10 @@ export default function RFQDetailPage() {
                                     <span className="font-semibold text-sm text-gray-800 truncate">{b.offer.supplier?.company_name_ar || 'مورد'}</span>
                                     {b.offer.supplier?.verification_status === 'verified' && <span title="موثّق" style={{ color: '#0F6E56' }}>{b.offer.supplier?.cr_verification_source === 'wathq' ? '🛡' : '✓'}</span>}
                                     {b.offer.supplier?.rating_avg > 0 && <span className="text-[10px] text-gray-400">⭐ {b.offer.supplier.rating_avg}</span>}
+                                    {(() => { const sc = supplierScore(b.offer.supplier, supplierStats[b.offer.supplier_id]); return <span title="تقييم أداء المورد (0-100): تحقّق + تقييم + سرعة رد + نسبة فوز + خبرة" className="text-[10px] font-bold px-1.5 rounded" style={{ color: scoreColor(sc), background: scoreColor(sc) + '1a' }}>⚡{sc}</span> })()}
+                                    {Array.isArray(b.offer.supplier?.approvals) && b.offer.supplier.approvals.slice(0, 2).map((a: string) => (
+                                      <span key={a} title="اعتماد" className="text-[9px] font-bold px-1.5 rounded-full" style={{ color: '#0F6E56', background: '#0F6E5614' }}>🏅 {approvalLabel(a)}</span>
+                                    ))}
                                   </div>
                                   <div className="text-[11px] text-gray-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                                     {Number(b.entry.unit_price) > 0 && <span>{Number(b.entry.unit_price).toLocaleString('en-US')} / {b.entry.unit || it.unit}</span>}
