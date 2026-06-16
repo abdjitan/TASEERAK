@@ -648,6 +648,74 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'poles', ar: 'عدد الأقطاب', en: 'Poles', options: ['1P','2P','3P','4P'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة'] },
   ] },
+  // ═══ الأبواب والشبابيك والواجهات ═══
+  // الأبواب الخشبية
+  { products: ['أبواب خشب داخلية','أبواب خشب مع إطار معدني'], spec: [
+    { key: 'core', ar: 'النوع', en: 'Type', options: ['مفرّغ (Hollow core)','معبّأ (Solid core)','خشب صلب (Solid wood)','HDF','MDF'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['قشرة طبيعية (Veneer)','ميلامين','CPL/HPL','لاكيه','دهان','PVC'] },
+    { key: 'size', ar: 'المقاس (عرض×ارتفاع)', en: 'Size', options: ['90×210 سم','80×210 سم','100×210 سم','70×210 سم','حسب الطلب'] },
+    { key: 'frame', ar: 'الإطار', en: 'Frame', options: ['إطار خشب','إطار معدني (حلق صاج)','بدون إطار'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد (باب كامل)','الورقة فقط'] },
+  ] },
+  // أبواب الحريد المقاومة للحريق
+  { products: ['أبواب حديد مقاومة حريق 45 دقيقة','أبواب حديد مقاومة حريق 90 دقيقة'], spec: [
+    { key: 'rating', ar: 'مقاومة الحريق', en: 'Fire rating', options: ['45 دقيقة','60 دقيقة','90 دقيقة','120 دقيقة'] },
+    { key: 'leaf', ar: 'عدد الدرف', en: 'Leaves', options: ['مفرد (Single)','مزدوج (Double)'] },
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['90×210 سم','100×210 سم','120×210 سم (مزدوج)','حسب الطلب'] },
+    { key: 'accessories', ar: 'الملحقات', en: 'Accessories', options: ['بدون','ذراع إغلاق (Door closer)','مقبض ذعر (Panic bar)','نافذة رؤية (Vision panel)','الكل'] },
+    { key: 'cert', ar: 'الشهادة', en: 'Certification', options: ['معتمد الدفاع المدني','UL/BS مطابق','حسب المواصفة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  // أبواب ونوافذ الألمنيوم والـUPVC
+  { products: ['أبواب ألمنيوم','نوافذ ألمنيوم زجاج مزدوج','نوافذ UPVC'], spec: [
+    { key: 'system', ar: 'النظام', en: 'System', options: ['ألمنيوم','UPVC','ألمنيوم بكسر حراري (Thermal break)'] },
+    { key: 'opening', ar: 'طريقة الفتح', en: 'Opening', options: ['منزلق (Sliding)','مفصلي (Hinged)','شباك (Casement)','مطوي (Folding)','ثابت (Fixed)','نطّاط (Tilt & Turn)'] },
+    { key: 'glazing', ar: 'الزجاج', en: 'Glazing', options: ['مفرد','مزدوج (Double glazed)','مزدوج بأرجون','سيكوريت مزدوج'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','الفنار','تكنال (Technal)','شنايدر ألمنيوم','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','عدد'] },
+  ] },
+  // أبواب الستانلس
+  { products: ['أبواب ستانلس'], spec: [
+    { key: 'grade', ar: 'درجة الستانلس', en: 'SS Grade', options: ['304','316','316L'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['مصقول (Mirror)','مطفي (Satin)','مفروش (Brushed)'] },
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['90×210 سم','100×210 سم','حسب الطلب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م² (متر مربع)'] },
+  ] },
+  // الأبواب الدوّارة/اللفّافة
+  { products: ['باب دوار Rolling Shutter'], spec: [
+    { key: 'operation', ar: 'التشغيل', en: 'Operation', options: ['يدوي','كهربائي (موتور)','كهربائي + يدوي طوارئ'] },
+    { key: 'material', ar: 'المادة', en: 'Material', options: ['ألمنيوم','حديد مجلفن','شبري (Perforated)','بولي كربونات شفاف'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','عدد'] },
+  ] },
+  // الكلادينج (ACM)
+  { products: ['كلادينج ألمنيوم كومبوزيت ACM'], spec: [
+    { key: 'core', ar: 'نوع القلب', en: 'Core type', options: ['PE (عادي)','FR (مقاوم حريق)','A2 (غير قابل للاشتعال)'] },
+    { key: 'thickness', ar: 'السماكة الكلية', en: 'Panel thickness', options: ['3 مم','4 مم','6 مم'] },
+    { key: 'coating', ar: 'سماكة الألمنيوم', en: 'Aluminium skin', options: ['0.21 مم','0.30 مم','0.40 مم','0.50 مم'] },
+    { key: 'finish', ar: 'الطلاء', en: 'Coating', options: ['PVDF','PE','معدني (Metallic)','خشبي','حجري'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','ألوبوند (Alubond)','رينوبوند (Reynobond)','ألوكوبوند (Alucobond)','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','لوح'] },
+  ] },
+  // الزجاج (الواجهات)
+  { products: ['زجاج عادي','زجاج سيكوريت Tempered','زجاج عازل مزدوج','زجاج رفلكتيف'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['عادي (Float)','سيكوريت (Tempered)','لامينيت (Laminated)','عازل مزدوج (IGU)','رفلكتيف','لو-إي (Low-E)'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['6 مم','8 مم','10 مم','12 مم','مزدوج 6+6','مزدوج 8+8','حسب الطلب'] },
+    { key: 'tint', ar: 'اللون/التظليل', en: 'Tint', options: ['شفاف','برونزي','أزرق','رمادي (دخاني)','أخضر','عاكس'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)'] },
+  ] },
+  // الواجهات الزجاجية (Curtain Wall)
+  { products: ['واجهات زجاجية Curtain Wall'], spec: [
+    { key: 'system', ar: 'النظام', en: 'System', options: ['Stick (تجميع بالموقع)','Unitized (وحدات جاهزة)','Semi-unitized','Spider (شبكي)','Structural Glazing'] },
+    { key: 'glazing', ar: 'الزجاج', en: 'Glazing', options: ['مزدوج عازل (IGU)','لامينيت مقسّى','لو-إي (Low-E)','رفلكتيف'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)'] },
+  ] },
+  // الدرابزين الزجاجي
+  { products: ['درابزين زجاجي بحواجز'], spec: [
+    { key: 'glass', ar: 'الزجاج', en: 'Glass', options: ['لامينيت مقسّى 10+10','لامينيت مقسّى 12+12','سيكوريت 12 مم','حسب الطلب'] },
+    { key: 'fixing', ar: 'طريقة التثبيت', en: 'Fixing', options: ['قاعدة ألمنيوم (U-channel)','سبايدر (Standoff)','قوائم معدنية (Posts)','مشابك ستانلس'] },
+    { key: 'handrail', ar: 'اليد (Handrail)', en: 'Handrail', options: ['بدون','ستانلس','ألمنيوم','خشب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','م² (متر مربع)'] },
+  ] },
 ]
 for (const g of SPEC_GROUPS) { for (const p of g.products) PRODUCT_SPECS[p] = g.spec }
 
