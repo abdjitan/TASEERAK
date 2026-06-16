@@ -282,6 +282,32 @@ export default function ContractorDashboard() {
           ))}
         </div>
 
+        {/* تنبيه سعري — أكبر تغيّر شهري (يخلق قيمة عودة يومية) */}
+        {(() => {
+          let best: { name: string; pct: number } | null = null
+          for (const k of Object.keys(marketTrend)) {
+            const tr = marketTrend[k]
+            if (!(Number(tr.prev_avg) > 0) || !(Number(tr.recent_avg) > 0) || Number(tr.recent_count) < 2) continue
+            const pct = Math.round(((Number(tr.recent_avg) - Number(tr.prev_avg)) / Number(tr.prev_avg)) * 100)
+            if (pct === 0) continue
+            if (!best || Math.abs(pct) > Math.abs(best.pct)) best = { name: tr.product_name, pct }
+          }
+          if (!best) return null
+          const down = best.pct < 0
+          return (
+            <Link href="/market" className="mb-5 rounded-2xl p-3.5 flex items-center gap-3 border animate-fade-in transition-all hover:shadow-md"
+              style={{ background: down ? '#ecfdf5' : '#fef2f2', borderColor: down ? '#a7f3d0' : '#fecaca' }}>
+              <span className="text-xl">{down ? '📉' : '📈'}</span>
+              <span className="flex-1 text-sm font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>
+                {locale === 'en'
+                  ? `${best.name} ${down ? 'down' : 'up'} ${Math.abs(best.pct)}% vs last month`
+                  : `سعر ${best.name} ${down ? 'نزل' : 'ارتفع'} ${Math.abs(best.pct)}% عن الشهر الماضي`}
+              </span>
+              <span className="text-xs font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>←</span>
+            </Link>
+          )
+        })()}
+
         {/* نبض السوق — متوسطات الأسعار الحالية */}
         {marketTop.length > 0 && (
           <div className="mb-5 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in">
