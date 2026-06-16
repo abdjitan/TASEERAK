@@ -169,6 +169,8 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['دهان','دهانات','paint','جوتن','jotun','الجزيرة','أكريليك','acrylic','زيتي','ورق جدران','wallpaper'] },
     grc_facade: { ar: 'GRC وكسوة الواجهات', en: 'GRC & Facade Cladding', ur: 'جی آر سی', icon: '🏛', group: 'paint_facade',
       keywords: ['GRC','GRG','جي آر سي','بروفايل واجهات','رشات خارجية','كسوة','facade','render'] },
+    plaster: { ar: 'لياسة وبياض ومواد التحضير', en: 'Plaster & Render', ur: 'پلستر', icon: '🧱', group: 'paint_facade',
+      keywords: ['لياسة','بياض','plaster','شبك لياسة','زاوية لياسة','مونة','طرطشة','تخشين','بطانة'] },
     // ═══ الأسقف والديكورات الداخلية ═══
     gypsum: { ar: 'جبس بورد وقواطع', en: 'Gypsum Board & Partitions', ur: 'جپسم بورڈ', icon: '⬜', group: 'ceiling_decor',
       keywords: ['جبس بورد','gypsum','بورد','board','partition','قواطع','أوميجا','معجون','جبسوم'] },
@@ -223,7 +225,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     mv_cables: { ar: 'كابلات جهد متوسط MV', en: 'MV Cables', ur: 'MV کیبل', icon: '⚡', group: 'cabling',
       keywords: ['متوسط جهد','medium voltage','MV cable','11kV','33kV'] },
     conduits: { ar: 'مواسير وحوامل كابلات', en: 'Conduits & Trays', ur: 'کنڈوٹ', icon: '🪛', group: 'cabling',
-      keywords: ['أنبوب كهرب','أنابيب كهرب','conduit','مواسير تمديد','flexible','مرنة','سكة كابل','tray','ladder','حوامل'] },
+      keywords: ['أنبوب كهرب','أنابيب كهرب','مواسير كهرب','conduit','كوندويت','EMT','RGS','مواسير تمديد','flexible','مرنة','سكة كابل','tray','ladder','حوامل'] },
     // ═══ اللوحات والمفاتيح ═══
     panels: { ar: 'لوحات توزيع (DB)', en: 'Distribution Boards', ur: 'پینل', icon: '🎛', group: 'panels_switches',
       keywords: ['لوحة','لوحات','panel','MDB','SMDB','SDB','DB','distribution board','busbar','bus bar','هارمونيك','harmonic'] },
@@ -809,6 +811,34 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','مصانع محلية'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','حبة'] },
   ] },
+  // ═══ مواد معمارية/كهربائية مضافة (مراجعة الذكاء) ═══
+  { products: ['غراء وترويبة بلاط'], spec: [
+    { key: 'item', ar: 'الصنف', en: 'Item', options: ['غراء بلاط عادي (C1)','غراء بورسلان عالي الالتصاق (C2)','ترويبة بلاط بورسلان','ترويبة إيبوكسية'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','سافيتو (Saveto)','فيتونيت (Vetonit)','لاتيكريت (Laticrete)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كيس 20 كجم','كيس 25 كجم','جالون (للترويبة)'] },
+  ] },
+  { products: ['حديد أسقف مستعارة'], spec: [
+    { key: 'item', ar: 'القطاع', en: 'Profile Type', options: ['أوميجا (Omega Channel)','سي شانيل (C-Channel)','زاوية جدار (Wall Angle)','قضيب تعليق (Threaded Rod)'] },
+    { key: 'thickness', ar: 'السماكة (مم)', en: 'Thickness (mm)', options: ['0.4 مم','0.5 مم','0.6 مم','0.7 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة (لوح/قضيب)'] },
+  ] },
+  { products: ['خلطة لياسة جاهزة'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['لياسة إسمنتية تقليدية','لياسة معالجة بالألياف','لياسة مقاومة للرطوبة'] },
+    { key: 'packaging', ar: 'التعبئة', en: 'Packaging', options: ['كيس 50 كجم','سائب (Bulk / صومعة)'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','فوسروك','سيكا','مصانع محلية'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كيس','طن'] },
+  ] },
+  { products: ['إكسسوارات لياسة'], spec: [
+    { key: 'item', ar: 'الصنف', en: 'Item', options: ['شبك لياسة حديد (ممدد)','شبك لياسة فايبر','زاوية لياسة حديد مجلفن','زاوية لياسة PVC'] },
+    { key: 'size', ar: 'المقاس/السماكة', en: 'Size/Thickness', options: ['شبك 4.5 بوصة','شبك 6 بوصة','زاوية 2.4 متر','زاوية 3.0 متر'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','شدة (باقة)','لفة'] },
+  ] },
+  { products: ['مواسير كهرباء EMT/PVC'], spec: [
+    { key: 'material', ar: 'المادة', en: 'Material', options: ['PVC (بلاستيك)','EMT (معدن)','RGS (معدن ثقيل)'] },
+    { key: 'diameter', ar: 'القطر', en: 'Diameter', options: ['20 مم','25 مم','32 مم','50 مم'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','نيبرو (Nepro)','الأضواء','بلاستيك الوطني'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة (3 متر)'] },
+  ] },
 ]
 for (const g of SPEC_GROUPS) { for (const p of g.products) PRODUCT_SPECS[p] = g.spec }
 
@@ -1183,6 +1213,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'نظام ري شبكة خارجية', 'مضخة ري',
   ],
   architectural: [
+    // ═══ مواد مضافة (مراجعة الذكاء) ═══
+    'غراء وترويبة بلاط', 'حديد أسقف مستعارة', 'خلطة لياسة جاهزة', 'إكسسوارات لياسة',
     // ═══ الأرضيات (BOQ: 15 FINISHES, FL Series) ═══
     'بلاط بورسلين حجري', 'بلاط بورسلين رمادي', 'بلاط بورسلين رخامي',
     'بلاط بورسلين خشبي', 'بلاط بورسلين خرساني',
@@ -1244,6 +1276,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'سلالم كهربائية Escalator', 'مصاعد Elevator/Lift',
   ],
   electrical: [
+    // ═══ مواد مضافة (مراجعة الذكاء) ═══
+    'مواسير كهرباء EMT/PVC',
     // ═══ الكابلات (BOQ: 30-R ELECTRICAL) ═══
     // كابلات LV أحادية - LSZH (للتوزيع الداخلي)
     'كابل 1Cx6mm² CU/LSZH', 'كابل 1Cx10mm² CU/LSZH', 'كابل 1Cx16mm² CU/LSZH',
