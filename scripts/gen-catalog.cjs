@@ -131,9 +131,51 @@ md.splice(2, 0, ...summary)
 fs.writeFileSync(path.join(root, 'docs', 'CATALOG_REVIEW.md'), md.join('\n'), 'utf8')
 fs.writeFileSync(path.join(root, 'docs', 'catalog.json'), JSON.stringify(jsonOut, null, 2), 'utf8')
 
+// ── ملفات منفصلة لكل قطاع (لتسليمها لذكاء آخر قطاعاً قطاعاً) ──
+const perSectorDir = path.join(root, 'docs', 'catalog')
+fs.mkdirSync(perSectorDir, { recursive: true })
+for (const sector of Object.keys(jsonOut.sectors)) {
+  const sec = jsonOut.sectors[sector]
+  let nGen = 0, nDet = 0
+  for (const gk of Object.keys(sec.groups)) for (const it of sec.groups[gk].items) (it.detailed ? nDet++ : nGen++)
+  const out = []
+  out.push(`# كتالوج تسعيرك — قطاع: ${sec.label}`)
+  out.push('')
+  out.push(`> ملف المواد الفعلي لهذا القطاع في منصّتي (تسعيرك — تسعير وتوريد للمقاولين بالسعودية).`)
+  out.push(`> العدد: ${nDet + nGen} مادة — ✅ مخصّصة: ${nDet} · ⚠️ عامة: ${nGen}`)
+  out.push('')
+  out.push('## المطلوب منك')
+  out.push('1. **لا تقترح** مواد عليها ✅ (لها مواصفات أصلاً) ولا تكرّر مادة مذكورة هنا.')
+  out.push('2. لكل مادة ⚠️ «عام» اكتب حقول مواصفات جاهزة بصيغة الكود (آخر حقل دائماً `unit`).')
+  out.push('3. اقترح فقط المواد **الناقصة تماماً** غير المذكورة في هذه القائمة.')
+  out.push('')
+  out.push('صيغة الإخراج لكل مادة (استخدم الاسم **حرفياً** كما هو هنا):')
+  out.push('```ts')
+  out.push("'اسم المادة كما هو': [")
+  out.push("  { key: 'type', ar: 'النوع', en: 'Type', options: ['...','...'] },")
+  out.push("  { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['...'] },")
+  out.push('],')
+  out.push('```')
+  out.push('')
+  out.push('---')
+  out.push('')
+  for (const gk of Object.keys(sec.groups)) {
+    const g = sec.groups[gk]
+    out.push(`## ${g.label}`)
+    for (const it of g.items) {
+      const mark = it.detailed ? '✅' : '⚠️'
+      const extra = it.detailed ? ` — حقول: ${it.fields.map(f => f.ar).join('، ')}` : ''
+      out.push(`- ${mark} \`${it.name}\` (وحدة: ${it.unit || '—'})${extra}`)
+    }
+    out.push('')
+  }
+  fs.writeFileSync(path.join(perSectorDir, `${sector}.md`), out.join('\n'), 'utf8')
+}
+
 // نظافة
 fs.rmSync(tmp, { recursive: true, force: true })
 
 console.log(`✓ تم التوليد: ${totalProducts} مادة (${totalDetailed} مخصّصة / ${totalGeneric} عامة)`)
 console.log('  docs/CATALOG_REVIEW.md')
 console.log('  docs/catalog.json')
+console.log(`  docs/catalog/<sector>.md  (${Object.keys(jsonOut.sectors).length} ملفات قطاع)`)
