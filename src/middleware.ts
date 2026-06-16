@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Next.js Server-Side Middleware — Route Protection
  *
