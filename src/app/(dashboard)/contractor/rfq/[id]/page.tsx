@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -14,21 +13,21 @@ import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpire
 import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 
 // مرجع جغرافي «lat,lng» → [lat,lng] أو null
-function parseGeo(s) {
+function parseGeo(s: any) {
   if (!s || typeof s !== 'string') return null
-  const m = s.split(',').map(x => parseFloat(x.trim()))
-  if (m.length !== 2 || m.some(n => Number.isNaN(n))) return null
+  const m = s.split(',').map((x: any) => parseFloat(x.trim()))
+  if (m.length !== 2 || m.some((n: any) => Number.isNaN(n))) return null
   return m
 }
 // المسافة بالكيلومترات (هافرسين)
-function haversineKm(a, b) {
+function haversineKm(a: any, b: any) {
   if (!a || !b) return null
-  const R = 6371, toRad = d => (d * Math.PI) / 180
+  const R = 6371, toRad = (d: any) => (d * Math.PI) / 180
   const dLat = toRad(b[0] - a[0]), dLng = toRad(b[1] - a[1])
   const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLng / 2) ** 2
   return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s))
 }
-function offerDistanceKm(offer, ref) {
+function offerDistanceKm(offer: any, ref: any) {
   if (!ref) return null
   const lat = offer?.supplier?.latitude, lng = offer?.supplier?.longitude
   if (lat == null || lng == null) return null
@@ -38,10 +37,10 @@ function offerDistanceKm(offer, ref) {
 export default function RFQDetailPage() {
   const { id } = useParams()
   const router = useRouter()
-  const [rfq, setRfq] = useState(null)
-  const [offers, setOffers] = useState([])
+  const [rfq, setRfq] = useState<any>(null)
+  const [offers, setOffers] = useState<any[]>([])
   const [sortBy, setSortBy] = useState('price_asc') // price_asc | price_desc | delivery | rating
-  const [aiCmp, setAiCmp] = useState(null) // نتيجة تحليل العروض بالذكاء الاصطناعي
+  const [aiCmp, setAiCmp] = useState<any>(null) // نتيجة تحليل العروض بالذكاء الاصطناعي
   const [cmpLoading, setCmpLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [awardSort, setAwardSort] = useState('cheapest') // cheapest | fastest — ترتيب عروض كل مادة
@@ -54,9 +53,9 @@ export default function RFQDetailPage() {
   const [editName, setEditName] = useState('')
   const [editQty, setEditQty] = useState('')
   const [editUnit, setEditUnit] = useState('')
-  const [marketAvg, setMarketAvg] = useState(null) // متوسط السوق
-  const [supplierStats, setSupplierStats] = useState({}) // سجل أداء كل مورد
-  const [awards, setAwards] = useState({}) // ترسية بند-بند: item_index → صف الترسية
+  const [marketAvg, setMarketAvg] = useState<any>(null) // متوسط السوق
+  const [supplierStats, setSupplierStats] = useState<any>({}) // سجل أداء كل مورد
+  const [awards, setAwards] = useState<any>({}) // ترسية بند-بند: item_index → صف الترسية
 
   async function reloadAwards() {
     const supabase = createClient()
@@ -94,7 +93,7 @@ export default function RFQDetailPage() {
     setExtending(false)
     if (error) { alert(error.message || 'تعذّر تمديد المهلة — حاول مرة ثانية.'); return }
     // تحديث فوري بدون إعادة تحميل الصفحة
-    setRfq(prev => ({ ...prev, expires_at: next.toISOString() }))
+    setRfq((prev: any) => ({ ...prev, expires_at: next.toISOString() }))
     setShowExtend(false)
   }
 
@@ -122,7 +121,7 @@ export default function RFQDetailPage() {
       const am: any = {}; (awardRows || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
 
       // سجل أداء الموردين (سرعة الرد، نسبة الترسية، عدد العروض السابقة)
-      const supplierIds = [...new Set((offersData || []).map(o => o.supplier_id).filter(Boolean))]
+      const supplierIds = [...new Set((offersData || []).map((o: any) => o.supplier_id).filter(Boolean))]
       if (supplierIds.length) {
         const { data: stats } = await supabase.rpc('get_supplier_stats', { ids: supplierIds })
         const m: any = {}; (stats || []).forEach((s: any) => { m[s.supplier_id] = s })
@@ -136,11 +135,11 @@ export default function RFQDetailPage() {
           .select('unit_price, rfq:rfqs(product_name, sector)')
           .not('unit_price', 'is', null)
           .not('status', 'eq', 'rejected')
-        const similar = (similarOffers || []).filter(o =>
+        const similar = (similarOffers || []).filter((o: any) =>
           o.rfq?.product_name === rfqData.product_name
         )
         if (similar.length >= 2) {
-          const avg = similar.reduce((s, o) => s + o.unit_price, 0) / similar.length
+          const avg = similar.reduce((s: any, o: any) => s + o.unit_price, 0) / similar.length
           setMarketAvg(Math.round(avg))
         }
       }
@@ -149,7 +148,7 @@ export default function RFQDetailPage() {
     load()
   }, [id])
 
-  async function acceptOffer(offerId) {
+  async function acceptOffer(offerId: any) {
     const supabase = createClient()
     // Atomic: accept + reject others + close RFQ in one transaction (prevents double-accept).
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
@@ -157,15 +156,15 @@ export default function RFQDetailPage() {
     router.push(`/contractor/orders/${offerId}`)
   }
 
-  async function rejectOffer(offerId) {
+  async function rejectOffer(offerId: any) {
     const supabase = createClient()
     await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
     window.location.reload()
   }
 
   // ترسية بند-بند: ترسية مادة على مورد مُحدّد (أرخص أو من اختيار المقاول)
-  const [awarding, setAwarding] = useState(null)
-  async function awardItem(itemIndex, offerId) {
+  const [awarding, setAwarding] = useState<any>(null)
+  async function awardItem(itemIndex: any, offerId: any) {
     setAwarding(`${itemIndex}:${offerId}`)
     const supabase = createClient()
     const { error } = await supabase.rpc('award_rfq_item', { p_rfq_id: id, p_item_index: itemIndex, p_offer_id: offerId })
@@ -173,7 +172,7 @@ export default function RFQDetailPage() {
     if (error) { alert('تعذّرت الترسية — حدّث الصفحة وحاول مجدداً.'); return }
     await reloadAwards()
   }
-  async function unawardItem(itemIndex) {
+  async function unawardItem(itemIndex: any) {
     setAwarding(`${itemIndex}:x`)
     const supabase = createClient()
     await supabase.rpc('unaward_rfq_item', { p_rfq_id: id, p_item_index: itemIndex })
@@ -236,19 +235,19 @@ export default function RFQDetailPage() {
   if (loading) return <PageLoader />
   if (!rfq) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-gray-500">الطلب غير موجود</div></div>
 
-  const acceptedOffer = offers.find(o => o.status === 'accepted')
+  const acceptedOffer = offers.find((o: any) => o.status === 'accepted')
   // طلب متعدّد المواد → الترسية تتم بند-بند (أفضل مورد لكل مادة)
   const isMulti = Array.isArray(rfq.items) && rfq.items.length > 1
-  const activeOffers = offers.filter(o => o.status !== 'rejected')
+  const activeOffers = offers.filter((o: any) => o.status !== 'rejected')
   // مرجع التوصيل لحساب «الأقرب مورد» (إن وُجدت إحداثيات للطلب)
   const refGeo = parseGeo(rfq?.delivery_geo)
   // هل يتوفّر مورد واحد على الأقل بإحداثيات؟ نُظهر زر «الأقرب» فقط حينها
-  const canSortNearest = !!refGeo && activeOffers.some(o => o.supplier?.latitude != null && o.supplier?.longitude != null)
+  const canSortNearest = !!refGeo && activeOffers.some((o: any) => o.supplier?.latitude != null && o.supplier?.longitude != null)
 
   // Filtered + sorted offers for display (contractor may receive many).
   const displayedOffers = [...offers]
-    .filter(o => !onlyVerified || o.supplier?.verification_status === 'verified')
-    .filter(o => !tierFilter || o.supplier?.supplier_tier === tierFilter)
+    .filter((o: any) => !onlyVerified || o.supplier?.verification_status === 'verified')
+    .filter((o: any) => !tierFilter || o.supplier?.supplier_tier === tierFilter)
     .sort((a: any, b: any) => {
       if (sortBy === 'price_desc') return (b.total_price || 0) - (a.total_price || 0)
       if (sortBy === 'delivery') return (a.delivery_days || 99999) - (b.delivery_days || 99999)
@@ -269,8 +268,8 @@ export default function RFQDetailPage() {
               <div className="flex items-center gap-2 mt-1">
                 <span className="bg-blue-100 text-[#d96f15] text-xs px-2 py-0.5 rounded-full font-semibold">
                   {Array.isArray(rfq.sectors) && rfq.sectors.length > 1
-                    ? rfq.sectors.map((s: string) => SECTOR_LABELS[s] || s).join(' + ')
-                    : (SECTOR_LABELS[rfq.sector] || rfq.sector)}
+                    ? rfq.sectors.map((s: string) => (SECTOR_LABELS as any)[s] || s).join(' + ')
+                    : ((SECTOR_LABELS as any)[rfq.sector] || rfq.sector)}
                 </span>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
                   rfq.status === 'open' ? 'bg-green-100 text-green-700' :
@@ -301,7 +300,7 @@ export default function RFQDetailPage() {
                   ) : (
                     <div className="inline-flex items-center gap-1.5 flex-wrap bg-blue-50 border border-blue-200 rounded-lg p-2">
                       <span className="text-[11px] text-gray-600 font-semibold">مدّد المهلة:</span>
-                      {[1, 3, 7].map(d => (
+                      {[1, 3, 7].map((d: any) => (
                         <button key={d} onClick={() => extendDeadline(d)} disabled={extending}
                           className="text-[11px] font-bold text-white px-2.5 py-1 rounded-md disabled:opacity-50" style={{ background: '#1B2D5B' }}>
                           {extending ? '…' : `+${d} ${d === 1 ? 'يوم' : 'أيام'}`}
@@ -339,18 +338,18 @@ export default function RFQDetailPage() {
                 <>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">اسم المادة</label>
-                    <input value={editName} onChange={e => setEditName(e.target.value)} className="input-field" placeholder="اسم المادة" />
+                    <input value={editName} onChange={(e: any) => setEditName(e.target.value)} className="input-field" placeholder="اسم المادة" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">الكمية (العدد)</label>
-                      <input type="number" min="0" step="any" value={editQty} onChange={e => setEditQty(e.target.value)} className="input-field" placeholder="الكمية" />
+                      <input type="number" min="0" step="any" value={editQty} onChange={(e: any) => setEditQty(e.target.value)} className="input-field" placeholder="الكمية" />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">الوحدة</label>
-                      <select value={editUnit} onChange={e => setEditUnit(e.target.value)} className="input-field">
+                      <select value={editUnit} onChange={(e: any) => setEditUnit(e.target.value)} className="input-field">
                         {!UNIT_OPTIONS.includes(editUnit) && editUnit && <option value={editUnit}>{editUnit}</option>}
-                        {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                        {UNIT_OPTIONS.map((u: any) => <option key={u} value={u}>{u}</option>)}
                       </select>
                     </div>
                   </div>
@@ -358,11 +357,11 @@ export default function RFQDetailPage() {
               )}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">المواصفات</label>
-                <input value={editSpec} onChange={e => setEditSpec(e.target.value)} className="input-field" placeholder="المواصفات" />
+                <input value={editSpec} onChange={(e: any) => setEditSpec(e.target.value)} className="input-field" placeholder="المواصفات" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">ملاحظات</label>
-                <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} className="input-field" rows={3} placeholder="ملاحظات" />
+                <textarea value={editNotes} onChange={(e: any) => setEditNotes(e.target.value)} className="input-field" rows={3} placeholder="ملاحظات" />
               </div>
               <div className="flex gap-2">
                 <button onClick={handleEditSave} className="bg-[#1B2D5B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0f1d3d]">حفظ التعديل</button>
@@ -411,7 +410,7 @@ export default function RFQDetailPage() {
                           <td className="py-2.5 px-3">
                             <div className="font-semibold text-[#1B2D5B]">{it.product_name}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{SECTOR_LABELS[it.sector] || it.sector}</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(SECTOR_LABELS as any)[it.sector] || it.sector}</span>
                               {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'}</span>)}
                               {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
                               {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}ي</span>}
@@ -459,7 +458,7 @@ export default function RFQDetailPage() {
               </div>
               {activeOffers.length > 0 && (
                 <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 text-xs font-semibold">
-                  {[{ k: 'cheapest', l: '💰 الأرخص' }, { k: 'fastest', l: '⚡ الأسرع' }, ...(canSortNearest ? [{ k: 'nearest', l: '📍 الأقرب' }] : [])].map(o => (
+                  {[{ k: 'cheapest', l: '💰 الأرخص' }, { k: 'fastest', l: '⚡ الأسرع' }, ...(canSortNearest ? [{ k: 'nearest', l: '📍 الأقرب' }] : [])].map((o: any) => (
                     <button key={o.k} type="button" onClick={() => setAwardSort(o.k)}
                       className={`px-3 py-1.5 rounded-lg transition-all ${awardSort === o.k ? 'bg-white shadow-sm text-[#1B2D5B]' : 'text-gray-500'}`}>{o.l}</button>
                   ))}
@@ -474,12 +473,12 @@ export default function RFQDetailPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {rfq.items.map((it, idx) => {
-                  const bids = activeOffers.map(o => {
+                {rfq.items.map((it: any, idx: any) => {
+                  const bids = activeOffers.map((o: any) => {
                     const list = Array.isArray(o.item_prices) ? o.item_prices : []
-                    const entry = list.find(ip => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
+                    const entry = list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
                     return entry ? { offer: o, entry } : null
-                  }).filter(Boolean).sort((a, b) => {
+                  }).filter(Boolean).sort((a: any, b: any) => {
                     if (awardSort === 'fastest') {
                       const ad = (a.entry.delivery_days ?? a.offer.delivery_days ?? 99999)
                       const bd = (b.entry.delivery_days ?? b.offer.delivery_days ?? 99999)
@@ -505,7 +504,7 @@ export default function RFQDetailPage() {
                         <div className="px-4 py-3 text-xs text-gray-400">لا يوجد مورد سعّر هذه المادة بعد</div>
                       ) : (
                         <div className="divide-y divide-gray-50">
-                          {bids.map((b, r) => {
+                          {bids.map((b: any, r: any) => {
                             const isAwarded = award && award.offer_id === b.offer.id
                             return (
                               <div key={b.offer.id} className={`px-4 py-2.5 flex items-center justify-between gap-2 ${isAwarded ? 'bg-emerald-50' : ''}`}>
@@ -526,7 +525,7 @@ export default function RFQDetailPage() {
                                     {b.offer.supplier?.city && <span>📍 {b.offer.supplier.city}</span>}
                                     {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title="المسافة من موقع التوصيل">📏 {km < 1 ? '<1' : Math.round(km)} كم</span> : null })()}
                                     {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]">⚙️ {b.entry.specification}</span>}
-                                    {b.entry.attachment_url && <a href={b.entry.attachment_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-purple-500 hover:underline">📎 كتالوج</a>}
+                                    {b.entry.attachment_url && <a href={b.entry.attachment_url} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} className="text-purple-500 hover:underline">📎 كتالوج</a>}
                                     <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} className="font-semibold hover:underline" style={{ color: '#F5831F' }}>تفاصيل ←</Link>
                                   </div>
                                 </div>
@@ -557,28 +556,28 @@ export default function RFQDetailPage() {
 
                 {/* ملخص الترسية حسب المورد */}
                 {Object.keys(awards).length > 0 && (() => {
-                  const bySupplier = {}
+                  const bySupplier: Record<string, any> = {}
                   Object.values(awards).forEach((a: any) => {
                     if (!bySupplier[a.supplier_id]) {
-                      const off = offers.find(o => o.id === a.offer_id)
+                      const off = offers.find((o: any) => o.id === a.offer_id)
                       bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: off?.supplier?.phone, offerId: a.offer_id, total: 0, count: 0 }
                     }
                     bySupplier[a.supplier_id].total += Number(a.total) || 0
                     bySupplier[a.supplier_id].count += 1
                   })
                   const list: any[] = Object.values(bySupplier)
-                  const grand = list.reduce((s, v) => s + v.total, 0)
+                  const grand = list.reduce((s: any, v: any) => s + v.total, 0)
                   const awardedCount = Object.keys(awards).length
                   const finalized = rfq.status !== 'open'
                   return (
                     <div className="rounded-xl p-4 text-white mt-2" style={{ background: '#1B2D5B' }}>
                       <h4 className="font-bold text-sm mb-2">📦 ملخص الترسية ({awardedCount}/{rfq.items.length} مادة · {list.length} مورد)</h4>
-                      {list.map((v, i) => (
+                      {list.map((v: any, i: any) => (
                         <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-white/10 gap-2">
                           <span className="flex items-center gap-2 flex-wrap">{v.name} <span className="text-blue-200 text-xs">({v.count} مادة)</span>
                             {finalized
                               ? <Link href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}>📄 أمر الشراء ←</Link>
-                              : v.phone && <a href={waLink(v.phone, `بخصوص ترسية مواد من منصة تسعيرك`)} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}>💬 تواصل</a>}
+                              : v.phone && <a href={waLink(v.phone, `بخصوص ترسية مواد من منصة تسعيرك`) || undefined} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}>💬 تواصل</a>}
                           </span>
                           <span className="font-bold whitespace-nowrap">{v.total.toLocaleString('en-US')} ر.س</span>
                         </div>
@@ -615,13 +614,13 @@ export default function RFQDetailPage() {
         </div>
         {offers.length > 1 && (
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white font-semibold text-gray-700">
+            <select value={sortBy} onChange={(e: any) => setSortBy(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white font-semibold text-gray-700">
               <option value="price_asc">💰 السعر: الأقل أولاً</option>
               <option value="price_desc">💰 السعر: الأعلى أولاً</option>
               <option value="delivery">📦 التوصيل: الأسرع</option>
               <option value="rating">⭐ التقييم: الأعلى</option>
             </select>
-            <select value={tierFilter} onChange={e => setTierFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700">
+            <select value={tierFilter} onChange={(e: any) => setTierFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700">
               <option value="">كل الموردين</option>
               <option value="manufacturer">🏭 مصنع</option>
               <option value="commercial">🏪 تجاري</option>
@@ -671,7 +670,7 @@ export default function RFQDetailPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {displayedOffers.map((offer, i) => (
+            {displayedOffers.map((offer: any, i: any) => (
               <div key={offer.id} className={`bg-white rounded-xl p-5 border shadow-sm transition-all ${
                 offer.status === 'accepted' ? 'border-green-300 bg-green-50' :
                 offer.status === 'rejected' ? 'border-gray-200 opacity-50' : 'border-gray-100 hover:border-blue-200'
@@ -769,7 +768,7 @@ export default function RFQDetailPage() {
                     <div className="bg-gray-50 px-2.5 py-1.5 text-[11px] font-bold text-gray-500 flex justify-between">
                       <span>🧾 تسعير المواد ({offer.item_prices.length})</span><span>السعر</span>
                     </div>
-                    {offer.item_prices.map((it, idx) => (
+                    {offer.item_prices.map((it: any, idx: any) => (
                       <div key={idx} className="px-2.5 py-1.5 border-t border-gray-100 flex items-center justify-between gap-3 text-xs">
                         <span className="text-gray-700 truncate">
                           {it.attachment_url && <span title="يوجد كتالوج">📎 </span>}
@@ -783,12 +782,12 @@ export default function RFQDetailPage() {
 
                 {/* تفصيل الفاتورة: البضاعة + الإضافات */}
                 {offer.extra_charges && offer.extra_charges.length > 0 && (() => {
-                  const exSum = offer.extra_charges.reduce((s, e) => s + (Number(e.amount) || 0), 0)
+                  const exSum = offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0)
                   const goods = (Number(offer.total_price) || 0) - exSum
                   return (
                     <div className="bg-amber-50 border border-amber-100 rounded-lg p-2.5 mb-2 text-xs">
                       <div className="flex justify-between text-gray-600"><span>البضاعة</span><span>{goods.toLocaleString('en-US')} ر.س</span></div>
-                      {offer.extra_charges.map((e, idx) => (
+                      {offer.extra_charges.map((e: any, idx: any) => (
                         <div key={idx} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString('en-US')} ر.س</span></div>
                       ))}
                       <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>الإجمالي</span><span>{Number(offer.total_price).toLocaleString('en-US')} ر.س</span></div>
@@ -801,7 +800,7 @@ export default function RFQDetailPage() {
                 {/* خصائص المنتج */}
                 {offer.attributes && Object.keys(offer.attributes).length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
-                    {Object.entries(offer.attributes).map(([k, v]) => (
+                    {Object.entries(offer.attributes).map(([k, v]: any) => (
                       <span key={k} className="text-[10px] bg-[#F5831F]/5 text-[#d96f15] px-2 py-1 rounded-lg">
                         <strong>{k}:</strong> {v}
                       </span>

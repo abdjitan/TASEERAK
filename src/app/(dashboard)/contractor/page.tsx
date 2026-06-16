@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -84,14 +83,14 @@ const sectorLabels = {
 export default function ContractorDashboard() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
-  const sectors = sectorLabels[locale] || sectorLabels.ar
+  const sectors = (sectorLabels as any)[locale] || sectorLabels.ar
 
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [rfqs, setRfqs] = useState([])
-  const [projects, setProjects] = useState([])
-  const [activity, setActivity] = useState([])
-  const [marketTop, setMarketTop] = useState([])
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  const [rfqs, setRfqs] = useState<any[]>([])
+  const [projects, setProjects] = useState<any[]>([])
+  const [activity, setActivity] = useState<any[]>([])
+  const [marketTop, setMarketTop] = useState<any[]>([])
   const [marketTrend, setMarketTrend] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all') // all | has_offers | pending | closed
@@ -124,7 +123,7 @@ export default function ContractorDashboard() {
       // نبض السوق (متوسطات الأسعار) + اتجاه السعر (٣٠ يوم مقابل السابقة)
       try {
         const { data: mp } = await supabase.rpc('get_market_prices')
-        setMarketTop((mp || []).sort((a, b) => Number(b.offer_count) - Number(a.offer_count)).slice(0, 3))
+        setMarketTop((mp || []).sort((a: any, b: any) => Number(b.offer_count) - Number(a.offer_count)).slice(0, 3))
       } catch { setMarketTop([]) }
       try {
         const { data: tr } = await supabase.rpc('get_market_price_trend')
@@ -145,24 +144,24 @@ export default function ContractorDashboard() {
 
   if (loading) return <PageLoader />
 
-  const active = rfqs.filter(r => r.status === 'open')
-  const closed = rfqs.filter(r => r.status === 'closed')
-  const totalOffers = rfqs.reduce((s, r) => s + (r.offer_count || 0), 0)
+  const active = rfqs.filter((r: any) => r.status === 'open')
+  const closed = rfqs.filter((r: any) => r.status === 'closed')
+  const totalOffers = rfqs.reduce((s: any, r: any) => s + (r.offer_count || 0), 0)
 
   // أرقام حيّة + اكتمال الحساب
   const now = Date.now()
-  const rfqsThisWeek = rfqs.filter(r => r.created_at && (now - new Date(r.created_at).getTime()) < 7 * 864e5).length
-  const awaitingReply = rfqs.filter(r => r.status === 'open' && (r.offer_count || 0) > 0).length
+  const rfqsThisWeek = rfqs.filter((r: any) => r.created_at && (now - new Date(r.created_at).getTime()) < 7 * 864e5).length
+  const awaitingReply = rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) > 0).length
   const completion = [
     { ok: !!(profile?.region && profile?.city), label: locale === 'en' ? 'Location' : 'الموقع', href: '/settings' },
     { ok: !!profile?.phone, label: locale === 'en' ? 'Phone' : 'رقم الجوال', href: '/settings' },
     { ok: !!(profile?.latitude || profile?.national_short_address), label: locale === 'en' ? 'Map pin' : 'الموقع على الخريطة', href: '/location' },
     { ok: rfqs.length > 0, label: locale === 'en' ? 'First RFQ' : 'أول طلب تسعير', href: '/contractor/rfq/new' },
   ]
-  const compDone = completion.filter(c => c.ok).length
+  const compDone = completion.filter((c: any) => c.ok).length
   const compPct = Math.round((compDone / completion.length) * 100)
 
-  function timeAgo(d) {
+  function timeAgo(d: any) {
     if (!d) return ''
     const s = Math.floor((now - new Date(d).getTime()) / 1000)
     if (s < 60) return locale === 'en' ? 'just now' : 'الآن'
@@ -170,7 +169,7 @@ export default function ContractorDashboard() {
     const h = Math.floor(m / 60); if (h < 24) return locale === 'en' ? `${h}h ago` : `قبل ${h} س`
     const dd = Math.floor(h / 24); return locale === 'en' ? `${dd}d ago` : `قبل ${dd} يوم`
   }
-  function actMeta(type) {
+  function actMeta(type: any) {
     switch (type) {
       case 'offer': case 'new_offer': return { name: 'offers', tone: 'warning' }
       case 'offer_accepted': case 'accepted': return { name: 'completed', tone: 'success' }
@@ -184,7 +183,7 @@ export default function ContractorDashboard() {
     : rfqs.length >= 3 ? { t: locale === 'en' ? 'Active Contractor' : 'مقاول نشط', e: '⭐' }
     : { t: locale === 'en' ? 'Getting Started' : 'بداية موفقة', e: '🌱' }
 
-  const statusLabel = (status) => {
+  const statusLabel = (status: any) => {
     if (status === 'open') return t.open
     if (status === 'closed') return t.closed
     if (status === 'cancelled') return t.cancelled
@@ -273,7 +272,7 @@ export default function ContractorDashboard() {
             { href: '/contractor/rfq/new', icon: '📝', label: t.newRfqBtn, primary: true },
             { href: '/contractor/project/new', icon: '📋', label: locale === 'en' ? 'Upload BOQ' : 'رفع BOQ' },
             { href: '/market', icon: '📈', label: locale === 'en' ? 'Price Index' : 'بورصة الأسعار' },
-          ].map(a => (
+          ].map((a: any) => (
             <Link key={a.href} href={a.href}
               className={`rounded-2xl p-4 text-center font-bold transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md ${a.primary ? 'text-white' : 'bg-white border border-gray-100 text-[#1B2D5B]'}`}
               style={a.primary ? { background: 'linear-gradient(135deg,#F5831F,#d96f15)' } : {}}>
@@ -293,7 +292,7 @@ export default function ContractorDashboard() {
               <Link href="/market" className="text-xs font-semibold" style={{ color: '#F5831F' }}>{locale === 'en' ? 'Full index →' : 'البورصة كاملة ←'}</Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {marketTop.map((p, i) => (
+              {marketTop.map((p: any, i: any) => (
                 <div key={i} className="bg-gray-50 rounded-xl p-3">
                   <div className="text-xs font-bold truncate" style={{ color: '#1B2D5B' }}>{p.product_name}</div>
                   <div className="text-base font-extrabold mt-1" style={{ color: '#0F6E56' }}>
@@ -346,7 +345,7 @@ export default function ContractorDashboard() {
               <div className="h-full rounded-full transition-all duration-500" style={{ width: `${compPct}%`, background: 'linear-gradient(90deg,#F5831F,#0F6E56)' }} />
             </div>
             <div className="flex flex-wrap gap-2">
-              {completion.filter(c => !c.ok).map(c => (
+              {completion.filter((c: any) => !c.ok).map((c: any) => (
                 <Link key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label}</Link>
               ))}
             </div>
@@ -384,7 +383,7 @@ export default function ContractorDashboard() {
                 <p className="text-xs text-gray-400 py-6 text-center">{locale === 'en' ? 'No activity yet — it will appear here as offers arrive.' : 'لا يوجد نشاط بعد — سيظهر هنا فور وصول العروض.'}</p>
               ) : (
                 <div className="space-y-3">
-                  {activity.map(a => {
+                  {activity.map((a: any) => {
                     const m = actMeta(a.type)
                     return (
                       <div key={a.id} className="flex items-start gap-3">
@@ -432,7 +431,7 @@ export default function ContractorDashboard() {
               </Link>
             </div>
             <div className="space-y-2 stagger">
-              {projects.map(p => (
+              {projects.map((p: any) => (
                 <Link key={p.id} href={`/contractor/project/${p.id}`}
                   className="flex items-center justify-between bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 transition-all">
                   <div className="flex items-center gap-3">
@@ -475,11 +474,11 @@ export default function ContractorDashboard() {
                     { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: '💬' },
                     { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: '⏳' },
                     { key: 'closed', label: locale === 'en' ? 'Completed' : 'مكتملة', icon: '✅' },
-                  ].map(f => {
+                  ].map((f: any) => {
                     const count = f.key === 'all' ? rfqs.length
-                      : f.key === 'has_offers' ? rfqs.filter(r => r.status === 'open' && (r.offer_count || 0) > 0).length
-                      : f.key === 'pending' ? rfqs.filter(r => r.status === 'open' && (r.offer_count || 0) === 0).length
-                      : rfqs.filter(r => r.status === 'closed').length
+                      : f.key === 'has_offers' ? rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) > 0).length
+                      : f.key === 'pending' ? rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) === 0).length
+                      : rfqs.filter((r: any) => r.status === 'closed').length
                     return (
                       <button key={f.key} onClick={() => setFilter(f.key)}
                         className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
@@ -492,17 +491,17 @@ export default function ContractorDashboard() {
                   })}
                 </div>
                 <div className="flex gap-2">
-                  <select value={sectorFilter} onChange={e => setSectorFilter(e.target.value)}
+                  <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
                     className="input-field text-xs flex-shrink-0 w-auto py-2">
                     <option value="all">{locale === 'en' ? 'All Sectors' : 'كل القطاعات'}</option>
-                    {Object.keys(sectors).map(s => <option key={s} value={s}>{sectors[s]}</option>)}
+                    {Object.keys(sectors).map((s: any) => <option key={s} value={s}>{sectors[s]}</option>)}
                   </select>
-                  <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+                  <select value={sortBy} onChange={(e: any) => setSortBy(e.target.value)}
                     className="input-field text-xs flex-shrink-0 w-auto py-2">
                     <option value="newest">{locale === 'en' ? '🆕 Newest' : '🆕 الأحدث'}</option>
                     <option value="expiry">{locale === 'en' ? '⏰ Closest to expiry' : '⏰ الأقرب انتهاءً'}</option>
                   </select>
-                  <input value={search} onChange={e => setSearch(e.target.value)}
+                  <input value={search} onChange={(e: any) => setSearch(e.target.value)}
                     className="input-field text-xs flex-1 py-2" placeholder={`🔍 ${locale === 'en' ? 'Search...' : 'ابحث عن طلب...'}`} />
                 </div>
               </div>
@@ -510,7 +509,7 @@ export default function ContractorDashboard() {
 
             <div className="space-y-3 stagger">
               {(() => {
-                const filtered = rfqs.filter(rfq => {
+                const filtered = rfqs.filter((rfq: any) => {
                   if (filter === 'has_offers' && !(rfq.status === 'open' && (rfq.offer_count || 0) > 0)) return false
                   if (filter === 'pending' && !(rfq.status === 'open' && (rfq.offer_count || 0) === 0)) return false
                   if (filter === 'closed' && rfq.status !== 'closed') return false
@@ -519,7 +518,7 @@ export default function ContractorDashboard() {
                   return true
                 })
                 if (sortBy === 'expiry') {
-                  filtered.sort((a, b) => {
+                  filtered.sort((a: any, b: any) => {
                     const ax = a.status === 'open' && a.expires_at ? new Date(a.expires_at).getTime() : Infinity
                     const bx = b.status === 'open' && b.expires_at ? new Date(b.expires_at).getTime() : Infinity
                     return ax - bx
@@ -530,7 +529,7 @@ export default function ContractorDashboard() {
                     🔍 {locale === 'en' ? 'No matching requests' : 'لا توجد طلبات مطابقة'}
                   </div>
                 )
-                return filtered.map(rfq => (
+                return filtered.map((rfq: any) => (
                 <Link key={rfq.id} href={`/contractor/rfq/${rfq.id}`}
                   className={`block bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative ${
                     rfq.status === 'open' && (rfq.offer_count || 0) > 0

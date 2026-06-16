@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
@@ -117,8 +116,8 @@ function SectorGlyph({ s }: { s: string }) {
 export default function NewRFQPage() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
-  const sectors = sectorLabels[locale] || sectorLabels.ar
-  const [user, setUser] = useState(null)
+  const sectors = (sectorLabels as any)[locale] || sectorLabels.ar
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -161,7 +160,7 @@ export default function NewRFQPage() {
   const [validityHours, setValidityHours] = useState(48)
   const [customDeadline, setCustomDeadline] = useState('') // datetime-local: وقت محدد لانتهاء التسعير
   const [showCustomDate, setShowCustomDate] = useState(false) // إظهار حقل التاريخ المخصص عند الضغط
-  const [specFile, setSpecFile] = useState(null)
+  const [specFile, setSpecFile] = useState<any>(null)
   const [specFileUrl, setSpecFileUrl] = useState('')
   const [estimatedValue, setEstimatedValue] = useState('')
   // التوفّر والتوريد
@@ -208,36 +207,36 @@ export default function NewRFQPage() {
   }
 
   // التصفّح المتدرّج: القطاع → المجموعة → النوع
-  const groups = useMemo(() => (sector ? getGroupedProducts(sector, dbMaterials) : []), [sector, dbMaterials])
-  const activeGroup = groups.find(g => g.group === group)
+  const groups = useMemo(() => (sector ? getGroupedProducts(sector as any, dbMaterials) : []), [sector, dbMaterials])
+  const activeGroup = groups.find((g: any) => g.group === group)
   const groupLabel = (g: any) => (locale === 'en' ? g.en : locale === 'ur' ? g.ur : g.ar)
   const specFields = getProductSpecs(productName)
   const unitSpec = specFields.find((f: any) => f.key === 'unit') // وحدة الطلب من المواصفات (إن وُجدت)
   const effectiveUnit = unitSpec ? (specs[unitSpec.key] || '') : unit
   // بحث سريع فوق التصنيفات: يفلتر كل مواد القطاع عبر المجموعات
-  const allItems = useMemo(() => groups.flatMap(g => g.items), [groups])
+  const allItems = useMemo(() => groups.flatMap((g: any) => g.items), [groups])
   const q = productSearch.trim().toLowerCase()
   const searchResults = q.length >= 1
-    ? allItems.filter(p => (p + ' ' + getProductLabel(p, 'en')).toLowerCase().includes(q)).slice(0, 60)
+    ? allItems.filter((p: any) => (p + ' ' + getProductLabel(p, 'en')).toLowerCase().includes(q)).slice(0, 60)
     : []
 
   function toggleTier(tier: string) {
-    setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
+    setTargetTiers(prev => prev.includes(tier) ? prev.filter((x: any) => x !== tier) : [...prev, tier])
   }
 
   // يبني المادة الحالية من المسودّة (المادة + المواصفات + الكمية)؛ null لو ناقصة
   function buildDraftItem() {
     const sf = getProductSpecs(productName)
-    const uSpec = sf.find(f => f.key === 'unit')
+    const uSpec = sf.find((f: any) => f.key === 'unit')
     const effUnit = uSpec ? (specs[uSpec.key] || '') : unit // الوحدة من المواصفات إن وُجدت، وإلا من خانة الوحدة
     if (!sector || !productName || !quantity || !effUnit) return null
     // نستثني وحدة الطلب من نص المواصفات (صارت هي الوحدة، مو سطر مواصفة)
-    const specStr = sf.filter(f => f.key !== 'unit').map(f => (specs[f.key] ? `${f.ar}: ${specs[f.key]}` : null)).filter(Boolean).join('، ')
+    const specStr = sf.filter((f: any) => f.key !== 'unit').map((f: any) => (specs[f.key] ? `${f.ar}: ${specs[f.key]}` : null)).filter(Boolean).join('، ')
     const fullItemSpec = [specStr, specification].filter(Boolean).join(' — ')
     return {
       sector,
       product_name: productName,
-      sub_category: detectSubCategory(`${productName} ${specStr}`, sector),
+      sub_category: detectSubCategory(`${productName} ${specStr}`, sector as any),
       specification: fullItemSpec || null,
       quantity: parseFloat(quantity),
       unit: effUnit,
@@ -273,13 +272,13 @@ export default function NewRFQPage() {
     setInStockOnly(it.in_stock || false); setMaxDeliveryDays(it.max_days ? String(it.max_days) : ''); setSpecFile(it.specFileObj || null)
     const known = getGroupedProducts(it.sector).some((g: any) => g.items.includes(it.product_name))
     setSpecification(''); setGroup(''); setProductSearch(''); setManualEntry(!known)
-    setItems(prev => prev.filter((_, idx) => idx !== i))
+    setItems(prev => prev.filter((_: any, idx: any) => idx !== i))
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   function toggleDraftTier(tier: string) {
-    setDraftTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
+    setDraftTiers(prev => prev.includes(tier) ? prev.filter((x: any) => x !== tier) : [...prev, tier])
   }
-  function removeItem(i: number) { setItems(prev => prev.filter((_, idx) => idx !== i)) }
+  function removeItem(i: number) { setItems(prev => prev.filter((_: any, idx: any) => idx !== i)) }
   function geolocate() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) { setGeoMsg(locale === 'en' ? 'Geolocation not supported' : 'المتصفح لا يدعم تحديد الموقع'); return }
     setGeoMsg(locale === 'en' ? 'Locating…' : 'جارٍ تحديد الموقع…')
@@ -329,7 +328,7 @@ export default function NewRFQPage() {
     })
   }, [])
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: any) {
     e.preventDefault()
     // على الخطوة 1: التالي بدل الإرسال (يمنع إرسال مبكر بالضغط على Enter)
     if (step === 1) { goToStep2(); return }
@@ -432,7 +431,7 @@ export default function NewRFQPage() {
 
         {/* مؤشّر الخطوات */}
         <div className="flex items-center gap-3 mb-6 max-w-md">
-          {[{ n: 1, lbl: locale === 'en' ? 'Materials' : 'المواد' }, { n: 2, lbl: locale === 'en' ? 'Request details' : 'تفاصيل الطلب' }].map((st, idx) => (
+          {[{ n: 1, lbl: locale === 'en' ? 'Materials' : 'المواد' }, { n: 2, lbl: locale === 'en' ? 'Request details' : 'تفاصيل الطلب' }].map((st: any, idx: any) => (
             <div key={st.n} className="flex items-center gap-3 flex-1">
               <div className={`flex items-center gap-2 ${step === st.n ? 'text-[#d96f15]' : step > st.n ? 'text-emerald-600' : 'text-gray-400'}`}>
                 <span className={`w-7 h-7 rounded-full grid place-items-center text-xs font-bold shrink-0 ${step === st.n ? 'bg-[#F5831F] text-white' : step > st.n ? 'bg-emerald-500 text-white' : 'bg-gray-200 text-gray-500'}`}>{step > st.n ? '✓' : st.n}</span>
@@ -453,7 +452,7 @@ export default function NewRFQPage() {
                 <label className="block font-bold mb-2" style={{ color: '#1B2D5B' }}>
                   {locale === 'en' ? 'Supply package name' : 'اسم حزمة التوريد'} <span className="text-xs font-normal text-gray-400">({locale === 'en' ? 'optional' : 'اختياري'})</span>
                 </label>
-                <input type="text" value={rfqName} onChange={e => setRfqName(e.target.value)}
+                <input type="text" value={rfqName} onChange={(e: any) => setRfqName(e.target.value)}
                   className="input-field" placeholder={locale === 'en' ? 'e.g. Foundation materials — Power Building' : 'مثال: مواد تأسيس العظم — مبنى الطاقة'} />
                 <p className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? 'A clear reference helps suppliers & tracking. Leave empty for an auto name (e.g. RFQ-1045 | Supply package).' : 'مرجع واضح يسهّل التتبّع على الموردين. اتركه فارغاً ليُولّد تلقائياً (مثل: RFQ-1045 | حزمة توريدات).'}</p>
               </div>
@@ -462,7 +461,7 @@ export default function NewRFQPage() {
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.sector}{items.length > 0 && <span className="text-[11px] font-normal text-gray-400"> · {locale === 'en' ? 'pick a sector for the next material' : 'اختر قطاع المادة التالية'}</span>}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {Object.keys(sectors).map(s => {
+                  {Object.keys(sectors).map((s: any) => {
                     return (
                     <button key={s} type="button" onClick={() => { setSector(s); setGroup(''); setProductName(''); setSpecs({}); setProductSearch('') }}
                       className={`p-3 rounded-2xl border-2 text-center transition-all duration-200 hover:-translate-y-0.5 ${sector === s ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
@@ -484,7 +483,7 @@ export default function NewRFQPage() {
                   {/* بحث سريع فوق التصنيفات */}
                   <div className="relative mb-4">
                     <span className="absolute inset-y-0 start-3 my-auto h-5 w-5 text-gray-400 grid place-items-center">🔍</span>
-                    <input type="text" value={productSearch} onChange={e => setProductSearch(e.target.value)}
+                    <input type="text" value={productSearch} onChange={(e: any) => setProductSearch(e.target.value)}
                       className="input-field ps-10" placeholder={locale === 'en' ? 'Search a material…' : locale === 'ur' ? 'مواد تلاش کریں…' : 'ابحث عن مادة…'} />
                   </div>
 
@@ -493,10 +492,10 @@ export default function NewRFQPage() {
                     <div className="mb-4 animate-fade-in">
                       {searchResults.length ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {searchResults.map(p => {
+                          {searchResults.map((p: any) => {
                             const sel = productName === p
                             return (
-                              <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false); setUnit(getDefaultUnit(p, sector)) }}
+                              <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false); setUnit(getDefaultUnit(p, sector as any)) }}
                                 className={`text-start px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${sel ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
                                 style={sel ? { background: '#0F6E56' } : {}}>
                                 {sel && <span className="me-1">✓</span>}{getProductLabel(p, locale)}
@@ -511,7 +510,7 @@ export default function NewRFQPage() {
                   ) : (
                     /* تصفّح بالأكورديون: مجموعة وحدة تنفتح بالمرة، منتجاتها كشبكة كروت */
                     <div className="space-y-2 mb-1">
-                      {groups.map(g => {
+                      {groups.map((g: any) => {
                         const open = group === g.group
                         return (
                           <div key={g.group} className={`border rounded-xl overflow-hidden transition-all ${open ? 'border-[#F5831F]/60 shadow-sm' : 'border-gray-200'}`}>
@@ -526,10 +525,10 @@ export default function NewRFQPage() {
                             </button>
                             {open && (
                               <div className="p-3 pt-1 border-t border-gray-100 grid grid-cols-2 sm:grid-cols-3 gap-2 animate-fade-in">
-                                {g.items.map(p => {
+                                {g.items.map((p: any) => {
                                   const sel = productName === p
                                   return (
-                                    <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false); setUnit(getDefaultUnit(p, sector)) }}
+                                    <button key={p} type="button" onClick={() => { setProductName(p); setSpecs({}); setManualEntry(false); setUnit(getDefaultUnit(p, sector as any)) }}
                                       className={`text-start px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${sel ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
                                       style={sel ? { background: '#0F6E56' } : {}}>
                                       {sel && <span className="me-1">✓</span>}{getProductLabel(p, locale)}
@@ -557,12 +556,12 @@ export default function NewRFQPage() {
                     <div className="pt-3 border-t border-gray-100 mb-4 animate-fade-in">
                       <p className="text-xs font-bold text-[#d96f15] mb-2">⚙ {locale === 'en' ? 'Details (helps suppliers price precisely)' : locale === 'ur' ? 'تفصیلات' : 'حدّد المواصفات (يساعد الموردين يسعّرون بدقّة)'}</p>
                       <div className="grid grid-cols-2 gap-3">
-                        {specFields.map(f => (
+                        {specFields.map((f: any) => (
                           <div key={f.key}>
                             <label className="block text-xs font-bold text-gray-500 mb-1">{locale === 'en' ? f.en : f.ar}</label>
-                            <select value={specs[f.key] || ''} onChange={e => setSpecs(s => ({ ...s, [f.key]: e.target.value }))} className="input-field">
+                            <select value={specs[f.key] || ''} onChange={(e: any) => setSpecs(s => ({ ...s, [f.key]: e.target.value }))} className="input-field">
                               <option value="">{locale === 'en' ? '— Select —' : '— اختر —'}</option>
-                              {f.options.map(o => <option key={o} value={o}>{o}</option>)}
+                              {f.options.map((o: any) => <option key={o} value={o}>{o}</option>)}
                             </select>
                           </div>
                         ))}
@@ -580,12 +579,12 @@ export default function NewRFQPage() {
                           {specAiLoading ? '⏳…' : (locale === 'en' ? '✨ Help me write specs' : '✨ ساعدني بالمواصفات')}
                         </button>
                       </div>
-                      <input type="text" value={specification} onChange={e => setSpecification(e.target.value)}
+                      <input type="text" value={specification} onChange={(e: any) => setSpecification(e.target.value)}
                         className="input-field" placeholder={locale === 'en' ? 'Any extra details for suppliers…' : 'أي تفاصيل إضافية للمورد…'} />
                       {specQuestions.length > 0 && (
                         <div className="mt-2 text-[11px] text-gray-500">
                           <span className="font-bold text-[#7C3AED]">{locale === 'en' ? 'To price better, also specify:' : 'لتسعير أدق، حدّد أيضاً:'}</span>
-                          <ul className="list-disc ps-5 mt-1 space-y-0.5">{specQuestions.map((q, i) => <li key={i}>{q}</li>)}</ul>
+                          <ul className="list-disc ps-5 mt-1 space-y-0.5">{specQuestions.map((q: any, i: any) => <li key={i}>{q}</li>)}</ul>
                         </div>
                       )}
                     </div>
@@ -601,21 +600,21 @@ export default function NewRFQPage() {
                           <label className="block text-xs font-bold text-gray-500 mb-1.5">
                             {t.qtyLabel} <span className="text-gray-400 font-normal">({specs[unitSpec.key] || (locale === 'en' ? 'choose unit above' : 'اختر وحدة الطلب فوق')})</span>
                           </label>
-                          <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
+                          <input type="number" value={quantity} onChange={(e: any) => setQuantity(e.target.value)}
                             className="input-field" placeholder="50" min="0" step="any" />
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.qtyLabel}</label>
-                            <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)}
+                            <input type="number" value={quantity} onChange={(e: any) => setQuantity(e.target.value)}
                               className="input-field" placeholder="50" min="0" step="any" />
                           </div>
                           <div>
                             <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.unitLabel}</label>
-                            <select value={unit} onChange={e => setUnit(e.target.value)} className="input-field">
+                            <select value={unit} onChange={(e: any) => setUnit(e.target.value)} className="input-field">
                               <option value="">{t.unitDefault}</option>
-                              {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                              {UNIT_OPTIONS.map((u: any) => <option key={u} value={u}>{u}</option>)}
                             </select>
                           </div>
                         </div>
@@ -624,7 +623,7 @@ export default function NewRFQPage() {
                       <div className="mt-3">
                         <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? 'Who should price this? (optional)' : 'مين يسعّر هذه المادة؟ (اختياري)'}</p>
                         <div className="flex flex-wrap gap-2">
-                          {[{ key: 'manufacturer', icon: '🏭', label: t.tierMfg }, { key: 'commercial', icon: '🏪', label: t.tierCom }, { key: 'local', icon: '🏬', label: t.tierLoc }].map(tier => {
+                          {[{ key: 'manufacturer', icon: '🏭', label: t.tierMfg }, { key: 'commercial', icon: '🏪', label: t.tierCom }, { key: 'local', icon: '🏬', label: t.tierLoc }].map((tier: any) => {
                             const on = draftTiers.includes(tier.key)
                             return (
                               <button key={tier.key} type="button" onClick={() => toggleDraftTier(tier.key)}
@@ -646,7 +645,7 @@ export default function NewRFQPage() {
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <label className="block text-[11px] font-bold text-gray-500 mb-1">⏱ {locale === 'en' ? 'Max delivery (days)' : 'أقصى مدة توريد (أيام)'}</label>
-                            <input type="number" value={maxDeliveryDays} onChange={e => setMaxDeliveryDays(e.target.value)} className="input-field" placeholder={locale === 'en' ? 'e.g. 7' : '7'} min="0" />
+                            <input type="number" value={maxDeliveryDays} onChange={(e: any) => setMaxDeliveryDays(e.target.value)} className="input-field" placeholder={locale === 'en' ? 'e.g. 7' : '7'} min="0" />
                           </div>
                           <div>
                             <label className="block text-[11px] font-bold text-gray-500 mb-1">📎 {locale === 'en' ? 'Spec file (optional)' : 'ملف مواصفات (اختياري)'}</label>
@@ -658,7 +657,7 @@ export default function NewRFQPage() {
                             ) : (
                               <label className="input-field flex items-center gap-2 cursor-pointer text-xs text-gray-400">
                                 📎 {locale === 'en' ? 'Attach' : 'إرفاق ملف'}
-                                <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx" onChange={e => setSpecFile(e.target.files?.[0] ?? null)} />
+                                <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx" onChange={(e: any) => setSpecFile(e.target.files?.[0] ?? null)} />
                               </label>
                             )}
                           </div>
@@ -699,7 +698,7 @@ export default function NewRFQPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {items.map((it, i) => (
+                      {items.map((it: any, i: any) => (
                         <tr key={i} className="border-b border-gray-50 align-top">
                           <td className="py-2.5 text-gray-400">{i + 1}</td>
                           <td className="py-2.5">
@@ -762,14 +761,14 @@ export default function NewRFQPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.region} *</label>
-                      <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" required>
+                      <select value={region} onChange={(e: any) => { setRegion(e.target.value); setCity('') }} className="input-field" required>
                         <option value="">{t.regionDefault}</option>
-                        {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                        {REGIONS.map((r: any) => <option key={r} value={r}>{r}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.city} *</label>
-                      <select value={city} onChange={e => setCity(e.target.value)} className="input-field" required disabled={!region}>
+                      <select value={city} onChange={(e: any) => setCity(e.target.value)} className="input-field" required disabled={!region}>
                         <option value="">{region ? (locale === 'en' ? '— Select city —' : '— اختر المدينة —') : '—'}</option>
                         {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
                       </select>
@@ -787,7 +786,7 @@ export default function NewRFQPage() {
                       <label className="text-xs font-bold text-amber-800">🚚 {locale === 'en' ? 'District / address (optional)' : 'الحي / عنوان الموقع (اختياري)'}</label>
                       <button type="button" onClick={geolocate} className="text-[11px] font-bold text-[#1B2D5B] bg-white border border-amber-300 rounded-lg px-2 py-1 hover:bg-amber-100">📍 {locale === 'en' ? 'Auto-locate' : 'تحديد موقعي تلقائياً'}</button>
                     </div>
-                    <input type="text" value={deliveryLocation} onChange={e => setDeliveryLocation(e.target.value)}
+                    <input type="text" value={deliveryLocation} onChange={(e: any) => setDeliveryLocation(e.target.value)}
                       className="input-field"
                       placeholder={locale === 'en' ? 'District / site address / nearest landmark' : locale === 'ur' ? 'علاقہ / سائٹ کا پتہ' : 'الحي / عنوان الموقع / أقرب معلم'} />
                     {geoMsg && <p className="text-[11px] text-amber-700 mt-1">{geoMsg}</p>}
@@ -814,7 +813,7 @@ export default function NewRFQPage() {
                     { label: locale === 'en' ? '50K–200K SAR' : '50,000–200,000', val: '200000' },
                     { label: locale === 'en' ? '200K–1M SAR' : '200,000–1,000,000', val: '1000000' },
                     { label: locale === 'en' ? '> 1M SAR' : 'أكثر من 1,000,000', val: '5000000' },
-                  ].map(opt => (
+                  ].map((opt: any) => (
                     <button key={opt.val} type="button" onClick={() => setEstimatedValue(opt.val)}
                       className={`py-2.5 rounded-xl text-xs font-semibold border transition-all ${
                         estimatedValue === opt.val ? 'text-white border-transparent' : 'border-gray-200 text-gray-600'
@@ -823,14 +822,14 @@ export default function NewRFQPage() {
                     </button>
                   ))}
                 </div>
-                <input type="number" value={estimatedValue} onChange={e => setEstimatedValue(e.target.value)}
+                <input type="number" value={estimatedValue} onChange={(e: any) => setEstimatedValue(e.target.value)}
                   className="input-field" placeholder={locale === 'en' ? 'Or enter exact value...' : 'أو أدخل قيمة محددة...'} min="0" />
               </div>
 
               {/* Notes */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.notes}</h3>
-                <textarea value={notes} onChange={e => setNotes(e.target.value)}
+                <textarea value={notes} onChange={(e: any) => setNotes(e.target.value)}
                   className="input-field" rows={4} placeholder={t.notesHint} />
               </div>
               </>)}
@@ -852,7 +851,7 @@ export default function NewRFQPage() {
                   </div>
                 ) : (
                   <div className="space-y-2.5">
-                    {items.map((it, i) => {
+                    {items.map((it: any, i: any) => {
                       const tierLabel = (tr: string) => tr === 'manufacturer' ? t.tierMfg : tr === 'commercial' ? t.tierCom : t.tierLoc
                       return (
                         <div key={i} className="rounded-xl border border-gray-100 p-3 hover:border-[#F5831F]/40 transition-colors">
@@ -923,11 +922,11 @@ export default function NewRFQPage() {
                     <div className="text-sm font-semibold text-gray-800 mb-1">🗺 {locale === 'en' ? 'Search specific regions (optional)' : locale === 'ur' ? 'مخصوص علاقے (اختیاری)' : 'ابحث في مناطق محددة (اختياري)'}</div>
                     <div className="text-xs text-gray-400 mb-2">{locale === 'en' ? 'Leave empty to reach suppliers in all regions. Matches a supplier if any of its branches is here.' : locale === 'ur' ? 'تمام علاقوں کے لیے خالی چھوڑیں۔' : 'اتركها فارغة للوصول لكل المناطق. يشمل الموردين الذين لهم فرع في المنطقة.'}</div>
                     <div className="flex flex-wrap gap-2">
-                      {REGIONS.map(r => {
+                      {REGIONS.map((r: any) => {
                         const on = targetRegions.includes(r)
                         return (
                           <button key={r} type="button"
-                            onClick={() => setTargetRegions(on ? targetRegions.filter(x => x !== r) : [...targetRegions, r])}
+                            onClick={() => setTargetRegions(on ? targetRegions.filter((x: any) => x !== r) : [...targetRegions, r])}
                             className={`text-xs px-3 py-1.5 rounded-full border transition-all ${on ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
                             style={on ? { background: '#1B2D5B' } : {}}>
                             {on ? '✓ ' : ''}{r}
@@ -989,7 +988,7 @@ export default function NewRFQPage() {
                       <span className="text-lg">🗓</span>
                       <input type="datetime-local" value={customDeadline} dir="ltr"
                         min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
-                        onChange={e => setCustomDeadline(e.target.value)}
+                        onChange={(e: any) => setCustomDeadline(e.target.value)}
                         className="flex-1 bg-transparent outline-none text-sm font-bold text-[#1B2D5B] text-left"
                         style={{ colorScheme: 'light', accentColor: '#F5831F', fontFamily: 'Cairo, sans-serif' }} />
                     </div>
@@ -1044,7 +1043,7 @@ export default function NewRFQPage() {
       {/* مودال: طلب إضافة مادة جديدة (للإدارة) */}
       {matReqOpen && (
         <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" dir={dir} onClick={() => !matReqBusy && setMatReqOpen(false)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" onClick={(e: any) => e.stopPropagation()}>
             {matReqDone ? (
               <div className="text-center py-4">
                 <div className="text-5xl mb-3">✅</div>
@@ -1058,20 +1057,20 @@ export default function NewRFQPage() {
                 <p className="text-xs text-gray-400 mb-4">{locale === 'en' ? 'Reviewed by the admin before it appears — so it reaches the right suppliers.' : 'تُراجَع من الإدارة قبل ظهورها في القائمة، عشان توصل للموردين الصح.'}</p>
 
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Sector' : 'القطاع'}</label>
-                <div className="input-field mb-3 bg-gray-50 text-sm font-semibold" style={{ color: '#1B2D5B' }}>{sectorMeta[sector]?.ar || sector || '—'}</div>
+                <div className="input-field mb-3 bg-gray-50 text-sm font-semibold" style={{ color: '#1B2D5B' }}>{(sectorMeta as any)[sector]?.ar || sector || '—'}</div>
 
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Group' : 'المجموعة'}</label>
-                <select value={matReqGroup} onChange={e => setMatReqGroup(e.target.value)} className="input-field mb-3 text-sm">
+                <select value={matReqGroup} onChange={(e: any) => setMatReqGroup(e.target.value)} className="input-field mb-3 text-sm">
                   <option value="">{locale === 'en' ? '— Select a group —' : '— اختر المجموعة —'}</option>
-                  {groups.map(g => <option key={g.group} value={g.group}>{groupLabel(g)}</option>)}
+                  {groups.map((g: any) => <option key={g.group} value={g.group}>{groupLabel(g)}</option>)}
                 </select>
 
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Material name' : 'اسم المادة'} *</label>
-                <input type="text" value={matReqName} onChange={e => setMatReqName(e.target.value)}
+                <input type="text" value={matReqName} onChange={(e: any) => setMatReqName(e.target.value)}
                   className="input-field mb-3 text-sm" placeholder={locale === 'en' ? 'e.g. Insulated copper pipe 22mm' : 'مثال: ماسورة نحاس معزولة 22مم'} />
 
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Details (optional)' : 'تفاصيل (اختياري)'}</label>
-                <textarea value={matReqDesc} onChange={e => setMatReqDesc(e.target.value)} rows={2}
+                <textarea value={matReqDesc} onChange={(e: any) => setMatReqDesc(e.target.value)} rows={2}
                   className="input-field mb-4 text-sm" placeholder={locale === 'en' ? 'Specs, brand, usage…' : 'المواصفات، العلامة التجارية، الاستخدام…'} />
 
                 <div className="flex gap-2">

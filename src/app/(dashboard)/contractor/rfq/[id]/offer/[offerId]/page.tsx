@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -16,8 +15,8 @@ import { getNav } from '@/lib/nav'
 export default function OfferDetailPage() {
   const { id, offerId } = useParams()
   const router = useRouter()
-  const [rfq, setRfq] = useState(null)
-  const [offer, setOffer] = useState(null)
+  const [rfq, setRfq] = useState<any>(null)
+  const [offer, setOffer] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(false)
   const [reqOpen, setReqOpen] = useState(false)
@@ -100,7 +99,7 @@ export default function OfferDetailPage() {
 
   const s = offer.supplier || {}
   const exList = Array.isArray(offer.extra_charges) ? offer.extra_charges : []
-  const exSum = exList.reduce((a, e) => a + (Number(e.amount) || 0), 0)
+  const exSum = exList.reduce((a: any, e: any) => a + (Number(e.amount) || 0), 0)
   const goods = (Number(offer.total_price) || 0) - exSum
   const ip = Array.isArray(offer.item_prices) ? offer.item_prices : []
   const tierLabel = s.supplier_tier === 'manufacturer' ? '🏭 مصنع / مورد رئيسي' : s.supplier_tier === 'commercial' ? '🏪 مورد تجاري' : '🏬 مورد محلي'
@@ -133,7 +132,7 @@ export default function OfferDetailPage() {
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <h2 className="font-bold text-sm mb-2" style={{ color: '#1B2D5B' }}>📦 تفاصيل الطلب</h2>
           <Row label="المنتج" value={rfq.product_name} />
-          <Row label="القطاع" value={SECTOR_LABELS[rfq.sector] || rfq.sector} />
+          <Row label="القطاع" value={(SECTOR_LABELS as any)[rfq.sector] || rfq.sector} />
           <Row label="الكمية" value={`${rfq.quantity} ${rfq.unit || ''}`} />
           <Row label="المنطقة" value={rfq.region} />
           <Row label="المواصفات" value={rfq.specification} />
@@ -183,7 +182,7 @@ export default function OfferDetailPage() {
               <div className="bg-gray-50 px-3 py-2 text-xs font-bold text-gray-500 flex justify-between">
                 <span>تسعير المواد ({ip.length})</span><span>السعر</span>
               </div>
-              {ip.map((it, i) => (
+              {ip.map((it: any, i: any) => (
                 <div key={i} className="px-3 py-2.5 border-t border-gray-100 text-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -210,14 +209,14 @@ export default function OfferDetailPage() {
 
           <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 my-3 text-sm">
             <div className="flex justify-between text-gray-600"><span>{ip.length > 0 ? 'إجمالي البضاعة' : 'البضاعة'}</span><span>{goods.toLocaleString('en-US')} ر.س</span></div>
-            {exList.map((e, i) => (
+            {exList.map((e: any, i: any) => (
               <div key={i} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString('en-US')} ر.س</span></div>
             ))}
             {(() => {
               const entered = Number(offer.total_price) || 0
               const net = offer.vat_included ? entered / 1.15 : entered
               const vat = net * 0.15
-              const fmt = (n) => (+n.toFixed(2)).toLocaleString('en-US')
+              const fmt = (n: any) => (+n.toFixed(2)).toLocaleString('en-US')
               return (<>
                 <div className="flex justify-between text-gray-600 border-t border-amber-200 mt-1.5 pt-1.5"><span>الصافي (قبل الضريبة)</span><span>{fmt(net)} ر.س</span></div>
                 <div className="flex justify-between text-gray-600"><span>ضريبة القيمة المضافة 15%</span><span>+ {fmt(vat)} ر.س</span></div>
@@ -291,11 +290,11 @@ export default function OfferDetailPage() {
         {/* نموذج طلب تخفيض السعر بمهلة */}
         {reqOpen && (
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !reqBusy && setReqOpen(false)}>
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={(e: any) => e.stopPropagation()}>
               <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>📉 طلب تخفيض إضافي</h3>
               <p className="text-xs text-gray-500 mb-4">نرسل طلباً للمورد لتخفيض سعره، ويرد خلال المهلة اللي تحددها أنت.</p>
               <label className="block text-xs font-bold text-gray-500 mb-1">مهلة الرد</label>
-              <select value={reqHours} onChange={e => setReqHours(Number(e.target.value))} className="input-field mb-3">
+              <select value={reqHours} onChange={(e: any) => setReqHours(Number(e.target.value))} className="input-field mb-3">
                 <option value={6}>٦ ساعات</option>
                 <option value={12}>١٢ ساعة</option>
                 <option value={24}>٢٤ ساعة (يوم)</option>
@@ -303,7 +302,7 @@ export default function OfferDetailPage() {
                 <option value={72}>٣ أيام</option>
               </select>
               <label className="block text-xs font-bold text-gray-500 mb-1">ملاحظة للمورد (اختياري)</label>
-              <textarea value={reqNote} onChange={e => setReqNote(e.target.value)} rows={2} className="input-field mb-3" placeholder="مثال: السعر أعلى من السوق، نطلب تخفيض ٥٪" />
+              <textarea value={reqNote} onChange={(e: any) => setReqNote(e.target.value)} rows={2} className="input-field mb-3" placeholder="مثال: السعر أعلى من السوق، نطلب تخفيض ٥٪" />
               <div className="flex gap-2">
                 <button type="button" disabled={reqBusy} onClick={submitReductionRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#F5831F' }}>{reqBusy ? 'جارٍ الإرسال...' : 'إرسال الطلب'}</button>
                 <button type="button" onClick={() => setReqOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
@@ -315,10 +314,10 @@ export default function OfferDetailPage() {
         {/* نموذج طلب معلومات إضافية */}
         {infoOpen && (
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !infoBusy && setInfoOpen(false)}>
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={(e: any) => e.stopPropagation()}>
               <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>❓ طلب معلومات إضافية</h3>
               <p className="text-xs text-gray-500 mb-3">وش المعلومات اللي تبيها عن المنتج؟ (النوع، المواصفات، المنشأ، الضمان…)</p>
-              <textarea value={infoText} onChange={e => setInfoText(e.target.value)} rows={3} className="input-field mb-3" placeholder="مثال: ما منشأ الحديد؟ هل يطابق مواصفة ASTM؟ هل يوجد شهادة جودة؟" />
+              <textarea value={infoText} onChange={(e: any) => setInfoText(e.target.value)} rows={3} className="input-field mb-3" placeholder="مثال: ما منشأ الحديد؟ هل يطابق مواصفة ASTM؟ هل يوجد شهادة جودة؟" />
               <div className="flex gap-2">
                 <button type="button" disabled={infoBusy} onClick={submitInfoRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoBusy ? 'جارٍ الإرسال...' : 'إرسال للمورد'}</button>
                 <button type="button" onClick={() => setInfoOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>

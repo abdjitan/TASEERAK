@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -8,6 +7,7 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
 import { waLink } from '@/lib/wa'
+// @ts-ignore — qrcode has no bundled types
 import QRCode from 'qrcode'
 
 // ZATCA Phase-1 simplified-invoice QR: base64 of TLV (Tag-Length-Value) fields:
@@ -22,13 +22,13 @@ function zatcaQrPayload(sellerName: string, vatNumber: string, isoTs: string, to
 
 export default function OrderDetailPage() {
   const { id } = useParams() // offer id
-  const [offer, setOffer] = useState(null)
-  const [rfq, setRfq] = useState(null)
-  const [supplier, setSupplier] = useState(null)
-  const [contractor, setContractor] = useState(null)
+  const [offer, setOffer] = useState<any>(null)
+  const [rfq, setRfq] = useState<any>(null)
+  const [supplier, setSupplier] = useState<any>(null)
+  const [contractor, setContractor] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [myId, setMyId] = useState(null)
-  const [existingReview, setExistingReview] = useState(null)
+  const [myId, setMyId] = useState<any>(null)
+  const [existingReview, setExistingReview] = useState<any>(null)
   const [rating, setRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
   const [reviewComment, setReviewComment] = useState('')
@@ -39,7 +39,7 @@ export default function OrderDetailPage() {
   const [showDispute, setShowDispute] = useState(false)
   const [disputeReason, setDisputeReason] = useState('')
   const [qrUrl, setQrUrl] = useState('')
-  const [awards, setAwards] = useState([]) // ترسية بند-بند: مواد هذا المورد فقط (إن وُجدت)
+  const [awards, setAwards] = useState<any[]>([]) // ترسية بند-بند: مواد هذا المورد فقط (إن وُجدت)
 
   // Generate the ZATCA invoice QR once the deal parties are loaded.
   useEffect(() => {
@@ -109,7 +109,7 @@ export default function OrderDetailPage() {
   }
 
   // Update the accepted offer (deal record). RLS lets both parties + admin update.
-  async function patch(fields, label) {
+  async function patch(fields: any, label: any) {
     setBusy(label)
     const supabase = createClient()
     const { error } = await supabase.from('offers').update(fields).eq('id', offer.id)
@@ -237,7 +237,7 @@ export default function OrderDetailPage() {
                 <div className="mb-3">
                   <div className="text-xs font-bold text-gray-400 uppercase mb-2">خصائص المنتج</div>
                   <div className="flex flex-wrap gap-2">
-                    {Object.entries(offer.attributes).map(([k, v]) => (
+                    {Object.entries(offer.attributes).map(([k, v]: any) => (
                       <span key={k} className="text-sm bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
                         <strong className="text-gray-700">{k}:</strong> <span className="text-gray-600">{v}</span>
                       </span>
@@ -268,7 +268,7 @@ export default function OrderDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {ip.length > 0 ? ip.map((it, idx) => (
+                {ip.length > 0 ? ip.map((it: any, idx: any) => (
                   <tr key={idx} className="border-b border-gray-100">
                     <td className="py-4 text-sm text-gray-500">{idx + 1}</td>
                     <td className="py-4">
@@ -278,7 +278,7 @@ export default function OrderDetailPage() {
                         <a href={it.attachment_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#d96f15] hover:underline print:hidden">📎 {it.attachment_name || 'ملف المواصفات'}</a>
                       )}
                     </td>
-                    <td className="py-4 text-sm text-gray-600">{SECTOR_LABELS[it.sector] || it.sector}</td>
+                    <td className="py-4 text-sm text-gray-600">{(SECTOR_LABELS as any)[it.sector] || it.sector}</td>
                     <td className="py-4 text-sm text-gray-600">{it.quantity} {it.unit}</td>
                     <td className="py-4 text-sm text-gray-600">{Number(it.unit_price) > 0 ? `${Number(it.unit_price).toLocaleString('en-US')} ر.س` : '—'}</td>
                     <td className="py-4 font-bold text-gray-900">{Number(it.total).toLocaleString('en-US')} ر.س</td>
@@ -290,7 +290,7 @@ export default function OrderDetailPage() {
                       <div className="font-semibold text-gray-900">{rfq.product_name}</div>
                       {rfq.specification && <div className="text-xs text-gray-400 mt-0.5">{rfq.specification}</div>}
                     </td>
-                    <td className="py-4 text-sm text-gray-600">{SECTOR_LABELS[rfq.sector] || rfq.sector}</td>
+                    <td className="py-4 text-sm text-gray-600">{(SECTOR_LABELS as any)[rfq.sector] || rfq.sector}</td>
                     <td className="py-4 text-sm text-gray-600">{rfq.quantity} {rfq.unit}</td>
                     <td className="py-4 text-sm text-gray-600">{offer.unit_price ? `${offer.unit_price.toLocaleString('en-US')} ر.س` : '—'}</td>
                     <td className="py-4 font-bold text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</td>
@@ -396,7 +396,7 @@ export default function OrderDetailPage() {
             <table className="w-full text-sm mb-4">
               <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">الصنف</th><th className="text-right pb-2">الكمية</th><th className="text-right pb-2">سعر الوحدة</th><th className="text-right pb-2">الإجمالي</th></tr></thead>
               <tbody>
-                {ip.length > 0 ? ip.map((it, idx) => (
+                {ip.length > 0 ? ip.map((it: any, idx: any) => (
                   <tr key={idx} className="border-b border-gray-50">
                     <td className="py-2 font-semibold text-gray-900">{it.product_name}</td>
                     <td className="py-2 text-gray-600">{it.quantity} {it.unit}</td>
@@ -446,7 +446,7 @@ export default function OrderDetailPage() {
                 { k: 'deliver', label: 'تسليم المورد', done: !!offer.supplier_delivered_at, at: offer.supplier_delivered_at },
                 { k: 'receipt', label: 'استلام المقاول', done: !!offer.received_at, at: offer.received_at },
                 { k: 'paid', label: 'الدفع', done: offer.payment_status === 'paid', at: offer.payment_confirmed_at || offer.paid_marked_at },
-              ].map((s, i) => (
+              ].map((s: any, i: any) => (
                 <div key={s.k} className="flex flex-col items-center">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${s.done ? 'text-white' : 'bg-gray-100 text-gray-400'}`} style={s.done ? { background: '#0F6E56' } : {}}>{s.done ? '✓' : i + 1}</div>
                   <div className={`mt-1 ${s.done ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>{s.label}</div>
@@ -514,7 +514,7 @@ export default function OrderDetailPage() {
               ) : (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-3">
                   <label className="block text-xs font-bold text-red-700 mb-1.5">صف المشكلة</label>
-                  <textarea value={disputeReason} onChange={e => setDisputeReason(e.target.value)} className="input-field" rows={2} placeholder="مثال: البضاعة لم تُسلّم / مختلفة عن المواصفات / تأخّر الدفع..." />
+                  <textarea value={disputeReason} onChange={(e: any) => setDisputeReason(e.target.value)} className="input-field" rows={2} placeholder="مثال: البضاعة لم تُسلّم / مختلفة عن المواصفات / تأخّر الدفع..." />
                   <div className="flex gap-2 mt-2">
                     <button onClick={() => { if (!disputeReason) return; patch({ dispute_status: 'open', dispute_reason: disputeReason, dispute_by: myId, dispute_opened_at: now() }, 'dispute'); setShowDispute(false) }} disabled={!disputeReason || busy === 'dispute'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 disabled:opacity-50">إرسال النزاع</button>
                     <button onClick={() => setShowDispute(false)} className="text-xs px-3 py-2 text-gray-500">إلغاء</button>
@@ -532,7 +532,7 @@ export default function OrderDetailPage() {
               <div className="text-center">
                 <div className="text-sm font-bold text-gray-900 mb-2">شكراً لتقييمك ⭐</div>
                 <div className="flex items-center justify-center gap-0.5 text-xl">
-                  {[1, 2, 3, 4, 5].map(n => (
+                  {[1, 2, 3, 4, 5].map((n: any) => (
                     <span key={n} className={n <= existingReview.rating ? 'text-yellow-400' : 'text-gray-200'}>★</span>
                   ))}
                 </div>
@@ -543,7 +543,7 @@ export default function OrderDetailPage() {
                 <h3 className="text-sm font-bold text-gray-900 mb-1">قيّم تعاملك مع {supplier?.company_name_ar || 'المورد'}</h3>
                 <p className="text-xs text-gray-400 mb-3">تقييمك يساعد بقية المقاولين على اختيار الموردين</p>
                 <div className="flex items-center gap-1 mb-3">
-                  {[1, 2, 3, 4, 5].map(n => (
+                  {[1, 2, 3, 4, 5].map((n: any) => (
                     <button key={n} type="button"
                       onClick={() => setRating(n)}
                       onMouseEnter={() => setHoverRating(n)}
@@ -553,7 +553,7 @@ export default function OrderDetailPage() {
                     </button>
                   ))}
                 </div>
-                <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)}
+                <textarea value={reviewComment} onChange={(e: any) => setReviewComment(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl p-3 text-sm mb-3 focus:border-[#0F6E56] outline-none" rows={2}
                   placeholder="تعليق اختياري عن جودة المنتج والتعامل..." />
                 {reviewMsg && <p className="text-xs text-red-500 mb-2">{reviewMsg}</p>}

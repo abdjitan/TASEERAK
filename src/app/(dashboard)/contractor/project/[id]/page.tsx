@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -19,11 +18,11 @@ const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: 
 export default function ProjectResultsPage() {
   const { id } = useParams()
   const { locale, dir } = useTranslation()
-  const [project, setProject] = useState(null)
-  const [items, setItems] = useState([])
+  const [project, setProject] = useState<any>(null)
+  const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [showAllOffers, setShowAllOffers] = useState({})
-  const [selectedOffers, setSelectedOffers] = useState({}) // item_id → offer_id
+  const [showAllOffers, setShowAllOffers] = useState<any>({})
+  const [selectedOffers, setSelectedOffers] = useState<any>({}) // item_id → offer_id
   const [filter, setFilter] = useState('all') // all | has_offers | pending | accepted
   const [sectorFilter, setSectorFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -48,22 +47,22 @@ export default function ProjectResultsPage() {
     load()
   }, [id])
 
-  async function acceptOffer(offerId, rfqId, itemId) {
+  async function acceptOffer(offerId: any, rfqId: any, itemId: any) {
     const supabase = createClient()
     // Atomic: accept + reject the competing offers + close the RFQ in one
     // transaction (same as the single-RFQ flow) — prevents double-accept and
     // leaving rival offers "pending".
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
     if (error) { alert('تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة وحاول مرة ثانية.'); return }
-    setSelectedOffers(prev => ({ ...prev, [itemId]: offerId }))
+    setSelectedOffers((prev: any) => ({ ...prev, [itemId]: offerId }))
     window.location.reload()
   }
 
   const totalItems = items.length
-  const totalOffers = items.reduce((s, i) => s + (i.rfq?.offers?.length || 0), 0)
-  const acceptedItems = items.filter(i => i.rfq?.offers?.some(o => o.status === 'accepted')).length
-  const totalAcceptedCost = items.reduce((s, i) => {
-    const accepted = i.rfq?.offers?.find(o => o.status === 'accepted')
+  const totalOffers = items.reduce((s: any, i: any) => s + (i.rfq?.offers?.length || 0), 0)
+  const acceptedItems = items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
+  const totalAcceptedCost = items.reduce((s: any, i: any) => {
+    const accepted = i.rfq?.offers?.find((o: any) => o.status === 'accepted')
     return s + (accepted?.total_price || 0)
   }, 0)
 
@@ -126,11 +125,11 @@ export default function ProjectResultsPage() {
                 { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: '💬' },
                 { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: '⏳' },
                 { key: 'accepted', label: locale === 'en' ? 'Accepted' : 'تم القبول', icon: '✅' },
-              ].map(f => {
+              ].map((f: any) => {
                 const count = f.key === 'all' ? items.length
-                  : f.key === 'has_offers' ? items.filter(i => (i.rfq?.offers?.length || 0) > 0 && !i.rfq?.offers?.some(o => o.status === 'accepted')).length
-                  : f.key === 'pending' ? items.filter(i => (i.rfq?.offers?.length || 0) === 0).length
-                  : items.filter(i => i.rfq?.offers?.some(o => o.status === 'accepted')).length
+                  : f.key === 'has_offers' ? items.filter((i: any) => (i.rfq?.offers?.length || 0) > 0 && !i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
+                  : f.key === 'pending' ? items.filter((i: any) => (i.rfq?.offers?.length || 0) === 0).length
+                  : items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
                 return (
                   <button key={f.key} onClick={() => setFilter(f.key)}
                     className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
@@ -144,12 +143,12 @@ export default function ProjectResultsPage() {
             </div>
             {/* Sector + Search */}
             <div className="flex gap-2">
-              <select value={sectorFilter} onChange={e => setSectorFilter(e.target.value)}
+              <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
                 className="input-field text-xs flex-shrink-0 w-auto py-2">
                 <option value="all">{locale === 'en' ? 'All Sectors' : 'كل القطاعات'}</option>
-                {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{SECTOR_LABELS[s]}</option>)}
+                {Object.keys(SECTOR_LABELS).map((s: any) => <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>)}
               </select>
-              <input value={search} onChange={e => setSearch(e.target.value)}
+              <input value={search} onChange={(e: any) => setSearch(e.target.value)}
                 className="input-field text-xs flex-1 py-2" placeholder={`🔍 ${locale === 'en' ? 'Search material...' : 'ابحث عن مادة...'}`} />
             </div>
           </div>
@@ -158,9 +157,9 @@ export default function ProjectResultsPage() {
         {/* Items with Offers */}
         <div className="space-y-4 stagger">
           {(() => {
-            const filtered = items.filter(item => {
+            const filtered = items.filter((item: any) => {
               const offers = item.rfq?.offers || []
-              const hasAccepted = offers.some(o => o.status === 'accepted')
+              const hasAccepted = offers.some((o: any) => o.status === 'accepted')
               // status filter
               if (filter === 'has_offers' && (offers.length === 0 || hasAccepted)) return false
               if (filter === 'pending' && offers.length > 0) return false
@@ -177,13 +176,13 @@ export default function ProjectResultsPage() {
                 <p className="text-gray-500">{locale === 'en' ? 'No matching items' : 'لا توجد بنود مطابقة للفلتر'}</p>
               </div>
             )
-            return filtered.map(item => {
+            return filtered.map((item: any) => {
             const offers = item.rfq?.offers || []
-            const sortedOffers = [...offers].sort((a, b) => a.total_price - b.total_price)
+            const sortedOffers = [...offers].sort((a: any, b: any) => a.total_price - b.total_price)
             const top3 = sortedOffers.slice(0, 3)
             const showAll = showAllOffers[item.id]
             const displayOffers = showAll ? sortedOffers : top3
-            const acceptedOffer = offers.find(o => o.status === 'accepted')
+            const acceptedOffer = offers.find((o: any) => o.status === 'accepted')
             const hasOffers = offers.length > 0
 
             return (
@@ -191,18 +190,18 @@ export default function ProjectResultsPage() {
                 acceptedOffer ? 'border-emerald-200' : 'border-gray-100'
               }`}>
                 {/* Item Header */}
-                <div className="p-4 sm:p-5" style={{ background: acceptedOffer ? '#ecfdf5' : SECTOR_COLORS[item.sector] + '08' }}>
+                <div className="p-4 sm:p-5" style={{ background: acceptedOffer ? '#ecfdf5' : (SECTOR_COLORS as any)[item.sector] + '08' }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg text-white flex-shrink-0"
-                        style={{ background: SECTOR_COLORS[item.sector] }}>
-                        {SECTOR_ICONS[item.sector]}
+                        style={{ background: (SECTOR_COLORS as any)[item.sector] }}>
+                        {(SECTOR_ICONS as any)[item.sector]}
                       </div>
                       <div>
                         <div className="font-bold" style={{ color: '#1B2D5B' }}>{item.product_name}</div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <span className="badge text-[10px] text-white" style={{ background: SECTOR_COLORS[item.sector] }}>
-                            {SECTOR_LABELS[item.sector]}
+                          <span className="badge text-[10px] text-white" style={{ background: (SECTOR_COLORS as any)[item.sector] }}>
+                            {(SECTOR_LABELS as any)[item.sector]}
                           </span>
                           {item.quantity && <span className="text-xs text-gray-500">📦 {item.quantity} {item.unit}</span>}
                           {item.specification && <span className="text-xs text-gray-400">⚙️ {item.specification}</span>}
@@ -255,7 +254,7 @@ export default function ProjectResultsPage() {
                             🗺 موقع المورد
                           </a>
                         )}
-                        {acceptedOffer.attributes && Object.entries(acceptedOffer.attributes).map(([k, v]) => (
+                        {acceptedOffer.attributes && Object.entries(acceptedOffer.attributes).map(([k, v]: any) => (
                           <span key={k} className="text-[10px] bg-white text-gray-600 px-2 py-1 rounded-lg border border-gray-100">
                             {k}: {v}
                           </span>
@@ -275,7 +274,7 @@ export default function ProjectResultsPage() {
                     )}
 
                     <div className="space-y-2">
-                      {displayOffers.map((offer, rank) => (
+                      {displayOffers.map((offer: any, rank: any) => (
                         <div key={offer.id} className={`rounded-xl p-3 border transition-all ${
                           offer.status === 'accepted' ? 'border-emerald-300 bg-emerald-50' :
                           rank === 0 && !acceptedOffer ? 'border-[#F5831F]/40 bg-[#F5831F]/5' : 'border-gray-100'
@@ -314,9 +313,9 @@ export default function ProjectResultsPage() {
                                 )}
                                 {offer.extra_charges && offer.extra_charges.length > 0 && (
                                   <div className="text-[10px] text-amber-600"
-                                    title={offer.extra_charges.map(e => `${e.label}: ${Number(e.amount).toLocaleString('en-US')} ر.س`).join('  •  ')}>
+                                    title={offer.extra_charges.map((e: any) => `${e.label}: ${Number(e.amount).toLocaleString('en-US')} ر.س`).join('  •  ')}>
                                     {locale === 'en' ? 'incl. ' : 'شامل '}
-                                    {offer.extra_charges.reduce((s, e) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US')} {locale === 'en' ? 'extras' : 'إضافات'} ⓘ
+                                    {offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US')} {locale === 'en' ? 'extras' : 'إضافات'} ⓘ
                                   </div>
                                 )}
                               </div>
@@ -338,7 +337,7 @@ export default function ProjectResultsPage() {
 
                     {/* Show more/less */}
                     {offers.length > 3 && !acceptedOffer && (
-                      <button onClick={() => setShowAllOffers(prev => ({ ...prev, [item.id]: !showAll }))}
+                      <button onClick={() => setShowAllOffers((prev: any) => ({ ...prev, [item.id]: !showAll }))}
                         className="mt-2 text-xs font-semibold w-full text-center py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
                         {showAll
                           ? (locale === 'en' ? `▲ Show top 3 only` : '▲ عرض أفضل 3 فقط')
@@ -364,8 +363,8 @@ export default function ProjectResultsPage() {
               📊 {locale === 'en' ? 'Project Cost Summary' : 'ملخص تكلفة المشروع'}
             </h3>
             <div className="space-y-2">
-              {items.filter(i => i.rfq?.offers?.some(o => o.status === 'accepted')).map(item => {
-                const acc = item.rfq.offers.find(o => o.status === 'accepted')
+              {items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).map((item: any) => {
+                const acc = item.rfq.offers.find((o: any) => o.status === 'accepted')
                 return (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-gray-600 truncate ml-4">{item.product_name}</span>

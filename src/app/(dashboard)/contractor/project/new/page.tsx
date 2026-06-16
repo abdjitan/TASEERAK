@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
@@ -15,7 +14,7 @@ const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: 
 
 export default function NewProjectPage() {
   const { locale, dir } = useTranslation()
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [parsing, setParsing] = useState(false)
   const [step, setStep] = useState<'setup' | 'items' | 'review'>('setup')
@@ -29,31 +28,31 @@ export default function NewProjectPage() {
   const [deliveryLocation, setDeliveryLocation] = useState('')
 
   // BOQ upload
-  const [boqFile, setBoqFile] = useState(null)
+  const [boqFile, setBoqFile] = useState<any>(null)
   const [parseError, setParseError] = useState('')
   const [aiUsed, setAiUsed] = useState(false)
-  const fileRef = useRef(null)
+  const fileRef = useRef<any>(null)
 
   // مستند مواصفات المشروع (لمطابقة الرموز مثل DRS-701 واستخراج التفاصيل)
-  const [specsFile, setSpecsFile] = useState(null)
+  const [specsFile, setSpecsFile] = useState<any>(null)
   const [matchingSpecs, setMatchingSpecs] = useState(false)
   const [specMsg, setSpecMsg] = useState('')
-  const specsRef = useRef(null)
+  const specsRef = useRef<any>(null)
 
   // يقرأ المواصفات + البنود ويملأ تفاصيل كل بند من المستند
   async function matchSpecs() {
     if (!specsFile) { setSpecMsg('ارفع ملف المواصفات أولاً'); return }
-    const targets = items.filter(i => i.product_name)
+    const targets = items.filter((i: any) => i.product_name)
     if (targets.length === 0) { setSpecMsg('أضف بنوداً (أو ارفع BOQ) أولاً'); return }
     setMatchingSpecs(true); setSpecMsg('')
     try {
       const fd = new FormData()
       fd.append('file', specsFile)
-      fd.append('items', JSON.stringify(targets.map(i => ({ ref: i.id, product_name: i.product_name, sector: i.sector }))))
+      fd.append('items', JSON.stringify(targets.map((i: any) => ({ ref: i.id, product_name: i.product_name, sector: i.sector }))))
       const res = await fetch('/api/match-spec', { method: 'POST', body: fd })
       const data = await res.json()
       if (!data.ok) { setSpecMsg('⚠️ ' + (data.message || 'تعذّرت مطابقة المواصفات')); return }
-      setItems(prev => prev.map(it => {
+      setItems(prev => prev.map((it: any) => {
         const s = data.specs?.[it.id]
         return (s && s.trim()) ? { ...it, specification: s } : it
       }))
@@ -64,15 +63,15 @@ export default function NewProjectPage() {
   }
 
   // Items
-  const [items, setItems] = useState([])
-  const [editingIndex, setEditingIndex] = useState(null)
+  const [items, setItems] = useState<any[]>([])
+  const [editingIndex, setEditingIndex] = useState<any>(null)
 
   // استهداف نوع الموردين + الموثّقون فقط (يطبَّق على كل بنود المشروع)
   const [targetTiers, setTargetTiers] = useState<string[]>([])
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [nearbyOnly, setNearbyOnly] = useState(false)
   function toggleTier(tier: string) {
-    setTargetTiers(prev => prev.includes(tier) ? prev.filter(x => x !== tier) : [...prev, tier])
+    setTargetTiers(prev => prev.includes(tier) ? prev.filter((x: any) => x !== tier) : [...prev, tier])
   }
 
   useEffect(() => {
@@ -96,9 +95,9 @@ export default function NewProjectPage() {
       if (!res.ok) throw new Error(data.error)
       if (data.items?.length > 0) {
         setAiUsed(!!data.ai)
-        setItems(data.items.map((item, i) => {
+        setItems(data.items.map((item: any, i: any) => {
           // التخصص يأتي مُصنّفاً من الخادم (من القوائم الرسمية). نتأكد أنه مفتاح صحيح وإلا = غير مصنّف.
-          const sub = (item.sub_category && SUB_CATEGORIES[item.sector]?.[item.sub_category]) ? item.sub_category : null
+          const sub = (item.sub_category && (SUB_CATEGORIES as any)[item.sector]?.[item.sub_category]) ? item.sub_category : null
           // غير مصنّف لو بلا تخصص، أو لو الذكاء أبلغ ثقة منخفضة (يبقى الاقتراح ظاهراً في القائمة ليؤكّده المقاول)
           return { ...item, id: `item-${i}`, selected: true, sub_category: sub, needs_classification: !sub || !!item.needs_classification || !!item.low_confidence }
         }))
@@ -107,7 +106,7 @@ export default function NewProjectPage() {
         setParseError(locale === 'en' ? 'No items found in the BOQ' : 'لم يتم استخراج بنود من الملف')
       }
     } catch (err) {
-      setParseError(err.message || (locale === 'en' ? 'Failed to parse BOQ' : 'فشل تحليل الملف'))
+      setParseError((err as any).message || (locale === 'en' ? 'Failed to parse BOQ' : 'فشل تحليل الملف'))
     } finally { setParsing(false) }
   }
 
@@ -126,29 +125,29 @@ export default function NewProjectPage() {
     }])
   }
 
-  function updateItem(id, field, value) {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item))
+  function updateItem(id: any, field: any, value: any) {
+    setItems(prev => prev.map((item: any) => item.id === id ? { ...item, [field]: value } : item))
   }
 
   // تغيير القطاع يعيد ضبط التخصص (التخصصات مرتبطة بالقطاع) ويحاول التصنيف تلقائياً
-  function setItemSector(id, sector) {
-    setItems(prev => prev.map(it => {
+  function setItemSector(id: any, sector: any) {
+    setItems(prev => prev.map((it: any) => {
       if (it.id !== id) return it
       const guess = detectSubCategory(`${it.product_name} ${it.specification || ''}`, sector)
-      const sub = guess && SUB_CATEGORIES[sector]?.[guess] ? guess : null
+      const sub = guess && (SUB_CATEGORIES as any)[sector]?.[guess] ? guess : null
       return { ...it, sector, sub_category: sub, needs_classification: !sub }
     }))
   }
 
   // اختيار التخصص من القائمة الرسمية — هو ما يوجّه البند للمورد المتخصص
-  function setItemCategory(id, sub) {
-    setItems(prev => prev.map(it => it.id === id ? { ...it, sub_category: sub || null, needs_classification: !sub } : it))
+  function setItemCategory(id: any, sub: any) {
+    setItems(prev => prev.map((it: any) => it.id === id ? { ...it, sub_category: sub || null, needs_classification: !sub } : it))
   }
 
-  const unclassifiedCount = items.filter(i => i.selected && i.product_name && i.needs_classification).length
+  const unclassifiedCount = items.filter((i: any) => i.selected && i.product_name && i.needs_classification).length
 
-  function removeItem(id) {
-    setItems(prev => prev.filter(item => item.id !== id))
+  function removeItem(id: any) {
+    setItems(prev => prev.filter((item: any) => item.id !== id))
   }
 
   // إرسال المشروع
@@ -157,7 +156,7 @@ export default function NewProjectPage() {
     if (deliveryRequired && !deliveryLocation) return
     // سياسة عدم الإزعاج: البنود غير المصنّفة لا تُرسل إطلاقاً (حتى لا تصل لموردين خارج تخصصهم).
     // نرسل المصنّفة فقط، ونبقي غير المصنّفة لدى المقاول ليصنّفها لاحقاً.
-    const classifiedItems = items.filter(i => i.selected && i.product_name && !i.needs_classification)
+    const classifiedItems = items.filter((i: any) => i.selected && i.product_name && !i.needs_classification)
     if (unclassifiedCount > 0) {
       const ok = confirm(`فيه ${unclassifiedCount} بند غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)
       if (!ok) return
@@ -255,12 +254,12 @@ export default function NewProjectPage() {
 
       window.location.href = `/contractor/project/${project.id}`
     } catch (err) {
-      alert(err.message)
+      alert((err as any).message)
     } finally { setLoading(false) }
   }
 
-  const selectedCount = items.filter(i => i.selected && i.product_name).length
-  const bySector = items.reduce((acc, item) => {
+  const selectedCount = items.filter((i: any) => i.selected && i.product_name).length
+  const bySector = items.reduce((acc: any, item: any) => {
     if (!item.selected) return acc
     acc[item.sector] = (acc[item.sector] || 0) + 1
     return acc
@@ -290,19 +289,19 @@ export default function NewProjectPage() {
               <label className="block text-xs font-bold text-gray-500 mb-1.5">
                 {locale === 'en' ? 'Project Name *' : 'اسم المشروع *'}
               </label>
-              <input value={title} onChange={e => setTitle(e.target.value)}
+              <input value={title} onChange={(e: any) => setTitle(e.target.value)}
                 className="input-field" placeholder={locale === 'en' ? 'e.g. KFSC Energy Centre' : 'مثال: مبنى المركز الطاقوي'} required />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Region *' : 'المنطقة *'}</label>
-              <select value={region} onChange={e => setRegion(e.target.value)} className="input-field" required>
+              <select value={region} onChange={(e: any) => setRegion(e.target.value)} className="input-field" required>
                 <option value="">{locale === 'en' ? 'Select region' : 'اختر المنطقة'}</option>
-                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                {REGIONS.map((r: any) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'City' : 'المدينة'}</label>
-              <input value={city} onChange={e => setCity(e.target.value)}
+              <input value={city} onChange={(e: any) => setCity(e.target.value)}
                 className="input-field" placeholder={locale === 'en' ? 'City name' : 'اسم المدينة'} />
             </div>
             <div className="sm:col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
@@ -315,7 +314,7 @@ export default function NewProjectPage() {
               </div>
               {deliveryRequired && (
                 <div className="mt-2">
-                  <input value={deliveryLocation} onChange={e => setDeliveryLocation(e.target.value)}
+                  <input value={deliveryLocation} onChange={(e: any) => setDeliveryLocation(e.target.value)}
                     className="input-field"
                     placeholder={locale === 'en' ? 'Delivery location: district / site address *' : 'موقع التوصيل: الحي / عنوان الموقع *'} />
                   <p className="text-[11px] text-amber-700 mt-1">
@@ -342,7 +341,7 @@ export default function NewProjectPage() {
             boqFile ? 'border-[#1B2D5B] bg-[#1B2D5B]/5' : 'border-gray-200 hover:border-[#F5831F]/50'
           }`} onClick={() => fileRef.current?.click()}>
             <input ref={fileRef} type="file" className="hidden" accept=".xlsx,.xls"
-              onChange={e => { if (e.target.files?.[0]) handleBOQUpload(e.target.files[0]) }} />
+              onChange={(e: any) => { if (e.target.files?.[0]) handleBOQUpload(e.target.files[0]) }} />
             {parsing ? (
               <div className="text-center">
                 <div className="text-4xl mb-3 animate-pulse">⏳</div>
@@ -358,7 +357,7 @@ export default function NewProjectPage() {
                 <div className="text-4xl mb-2">✅</div>
                 <div className="font-semibold text-sm" style={{ color: '#1B2D5B' }}>{boqFile.name}</div>
                 <div className="text-xs text-gray-400 mt-1">{items.length} {locale === 'en' ? 'items extracted' : 'بند تم استخراجه'}</div>
-                <button type="button" onClick={e => { e.preventDefault(); setBoqFile(null); setItems([]) }}
+                <button type="button" onClick={(e: any) => { e.preventDefault(); setBoqFile(null); setItems([]) }}
                   className="mt-2 text-xs text-red-500 hover:underline">
                   {locale === 'en' ? 'Remove' : 'إزالة الملف'}
                 </button>
@@ -401,7 +400,7 @@ export default function NewProjectPage() {
               ) : (
                 <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-[#1B2D5B]/40 transition-all">
                   <input ref={specsRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg"
-                    onChange={e => { const f = e.target.files?.[0]; if (f) { setSpecsFile(f); setSpecMsg('') } }} />
+                    onChange={(e: any) => { const f = e.target.files?.[0]; if (f) { setSpecsFile(f); setSpecMsg('') } }} />
                   <span className="text-base">📤</span>
                   <span className="text-xs text-gray-600">{locale === 'en' ? 'Upload spec (PDF, Excel, image...)' : 'ارفع المواصفات (PDF، Excel، صورة...)'}</span>
                 </label>
@@ -446,8 +445,8 @@ export default function NewProjectPage() {
               </h2>
               <div className="flex gap-2 flex-wrap">
                 {Object.entries(bySector).map(([s, count]) => (
-                  <span key={s} className="badge text-[10px] text-white" style={{ background: SECTOR_COLORS[s] }}>
-                    {SECTOR_ICONS[s]} {SECTOR_LABELS[s]} ({count})
+                  <span key={s} className="badge text-[10px] text-white" style={{ background: (SECTOR_COLORS as any)[s] }}>
+                    {(SECTOR_ICONS as any)[s]} {(SECTOR_LABELS as any)[s]} ({count})
                   </span>
                 ))}
               </div>
@@ -468,11 +467,11 @@ export default function NewProjectPage() {
 
             {/* Toolbar */}
             <div className="flex gap-2">
-              <button type="button" onClick={() => setItems(prev => prev.map(i => ({ ...i, selected: true })))}
+              <button type="button" onClick={() => setItems(prev => prev.map((i: any) => ({ ...i, selected: true })))}
                 className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
                 {locale === 'en' ? '✓ Select All' : 'تحديد الكل'}
               </button>
-              <button type="button" onClick={() => setItems(prev => prev.map(i => ({ ...i, selected: false })))}
+              <button type="button" onClick={() => setItems(prev => prev.map((i: any) => ({ ...i, selected: false })))}
                 className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
                 {locale === 'en' ? '✗ Deselect All' : 'إلغاء الكل'}
               </button>
@@ -484,14 +483,14 @@ export default function NewProjectPage() {
 
             {/* Items */}
             <div className="space-y-2">
-              {items.map((item, i) => (
+              {items.map((item: any, i: any) => (
                 <div key={item.id} className={`bg-white rounded-xl border transition-all ${
                   item.selected ? 'border-gray-200 shadow-sm' : 'border-gray-100 opacity-50'
                 }`}>
                   <div className="flex items-start gap-3 p-4">
                     {/* Checkbox */}
                     <input type="checkbox" checked={item.selected}
-                      onChange={e => updateItem(item.id, 'selected', e.target.checked)}
+                      onChange={(e: any) => updateItem(item.id, 'selected', e.target.checked)}
                       className="mt-1 w-4 h-4 accent-[#1B2D5B] flex-shrink-0" />
 
                     {/* Content */}
@@ -501,7 +500,7 @@ export default function NewProjectPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="sm:col-span-2">
                             <input value={item.product_name}
-                              onChange={e => updateItem(item.id, 'product_name', e.target.value)}
+                              onChange={(e: any) => updateItem(item.id, 'product_name', e.target.value)}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Material name *' : 'اسم المادة *'} />
                           </div>
                           {/* التصنيف (التخصص) — يُحدّد المورد المتخصص الذي يستقبل البند. إجباري من القوائم. */}
@@ -510,10 +509,10 @@ export default function NewProjectPage() {
                               {locale === 'en' ? 'Category (routing) *' : 'التصنيف — يحدّد المورد المتخصص *'}
                             </label>
                             <select value={item.sub_category || ''}
-                              onChange={e => setItemCategory(item.id, e.target.value)}
+                              onChange={(e: any) => setItemCategory(item.id, e.target.value)}
                               className={`input-field text-sm ${item.needs_classification ? 'border-red-300 bg-red-50' : ''}`}>
                               <option value="">{locale === 'en' ? '— Pick a category from the list —' : '— اختر التصنيف من القائمة —'}</option>
-                              {Object.entries(SUB_CATEGORIES[item.sector] || {}).map(([k, v]: any) => (
+                              {Object.entries((SUB_CATEGORIES as any)[item.sector] || {}).map(([k, v]: any) => (
                                 <option key={k} value={k}>{getSubCategoryLabel(item.sector, k, locale)}</option>
                               ))}
                             </select>
@@ -527,24 +526,24 @@ export default function NewProjectPage() {
                           <div>
                             <label className="block text-xs font-bold text-gray-500 mb-1">{locale === 'en' ? 'Sector' : 'القطاع'}</label>
                             <select value={item.sector}
-                              onChange={e => setItemSector(item.id, e.target.value)}
+                              onChange={(e: any) => setItemSector(item.id, e.target.value)}
                               className="input-field text-sm">
                               {Object.entries(SECTOR_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                             </select>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <input type="number" value={item.quantity}
-                              onChange={e => updateItem(item.id, 'quantity', e.target.value)}
+                              onChange={(e: any) => updateItem(item.id, 'quantity', e.target.value)}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Qty' : 'الكمية'} />
                             <select value={item.unit}
-                              onChange={e => updateItem(item.id, 'unit', e.target.value)}
+                              onChange={(e: any) => updateItem(item.id, 'unit', e.target.value)}
                               className="input-field text-sm">
-                              {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                              {UNIT_OPTIONS.map((u: any) => <option key={u} value={u}>{u}</option>)}
                             </select>
                           </div>
                           <div className="sm:col-span-2">
                             <input value={item.specification || ''}
-                              onChange={e => updateItem(item.id, 'specification', e.target.value)}
+                              onChange={(e: any) => updateItem(item.id, 'specification', e.target.value)}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Specification (optional)' : 'المواصفة (اختياري)'} />
                           </div>
                           {/* رفع ملف مواصفات للبند */}
@@ -564,7 +563,7 @@ export default function NewProjectPage() {
                             ) : (
                               <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg p-2 cursor-pointer hover:border-[#F5831F]/50 transition-all">
                                 <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.dwg,.xlsx,.doc,.docx"
-                                  onChange={e => updateItem(item.id, 'specFile', e.target.files?.[0] ?? null)} />
+                                  onChange={(e: any) => updateItem(item.id, 'specFile', e.target.files?.[0] ?? null)} />
                                 <span className="text-base">📄</span>
                                 <span className="text-xs text-gray-500">
                                   {locale === 'en' ? 'Upload drawing/spec (PDF, DWG, Image...)' : 'ارفع رسمة أو مواصفة (PDF، DWG، صورة...)'}
@@ -587,8 +586,8 @@ export default function NewProjectPage() {
                               {item.product_name || <span className="text-gray-400 italic">{locale === 'en' ? 'Unnamed item' : 'بند بدون اسم'}</span>}
                             </div>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <span className="badge text-white text-[10px]" style={{ background: SECTOR_COLORS[item.sector] }}>
-                                {SECTOR_ICONS[item.sector]} {SECTOR_LABELS[item.sector]}
+                              <span className="badge text-white text-[10px]" style={{ background: (SECTOR_COLORS as any)[item.sector] }}>
+                                {(SECTOR_ICONS as any)[item.sector]} {(SECTOR_LABELS as any)[item.sector]}
                               </span>
                               {item.sub_category && (
                                 <span className="badge text-[10px] bg-gray-100 text-gray-600">
@@ -640,7 +639,7 @@ export default function NewProjectPage() {
                   { key: 'manufacturer', icon: '🏭', label: locale === 'en' ? 'Factory / Major' : locale === 'ur' ? 'فیکٹری / بڑا' : 'مصنع / مورد رئيسي', desc: locale === 'en' ? 'Production or bulk supply' : locale === 'ur' ? 'بڑی سپلائی' : 'إنتاج أو توريد بكميات كبيرة' },
                   { key: 'commercial', icon: '🏪', label: locale === 'en' ? 'Commercial Supplier' : locale === 'ur' ? 'تجارتی سپلائر' : 'مورد تجاري', desc: locale === 'en' ? 'Regular medium-volume supply' : locale === 'ur' ? 'باقاعدہ درمیانی سپلائی' : 'توريد بكميات متوسطة ومنتظمة' },
                   { key: 'local', icon: '🏬', label: locale === 'en' ? 'Local Supplier' : locale === 'ur' ? 'مقامی سپلائر' : 'مورد محلي', desc: locale === 'en' ? 'Small-medium, direct service' : locale === 'ur' ? 'چھوٹی تا درمیانی' : 'بكميات صغيرة إلى متوسطة وخدمة مباشرة' },
-                ].map(tier => {
+                ].map((tier: any) => {
                   const active = targetTiers.includes(tier.key)
                   return (
                     <button key={tier.key} type="button" onClick={() => toggleTier(tier.key)}
@@ -689,7 +688,7 @@ export default function NewProjectPage() {
               <div className="text-left">
                 {Object.entries(bySector).map(([s, count]) => (
                   <div key={s} className="text-xs text-gray-500">
-                    {SECTOR_ICONS[s]} {SECTOR_LABELS[s]}: {count} {locale === 'en' ? 'items' : 'بند'}
+                    {(SECTOR_ICONS as any)[s]} {(SECTOR_LABELS as any)[s]}: {count} {locale === 'en' ? 'items' : 'بند'}
                   </div>
                 ))}
               </div>
