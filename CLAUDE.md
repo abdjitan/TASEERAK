@@ -81,14 +81,13 @@ cross-user operations go through `SECURITY DEFINER` RPCs granted to `authenticat
   `get_rfq_offer_ranking()` (last 30 min). `profiles.approvals[]` = trust badges.
 
 ## Conventions / gotchas
-- `// @ts-nocheck` — **being removed incrementally** (project is `strict: true`).
-  Already type-safe (no nocheck): `src/lib/ai.ts`, **all 14 API routes**, **all
-  shared components**, and pages `forgot-password`/`reset-password`/`location`/
-  `messages`. ~27 heavy pages still carry it (market, login, register, settings,
-  contractor/*, supplier/*, admin/*). Common fixes: type untyped `useState(null)`/
-  `useState([])` as `<any>`, annotate `(e: any)` params, cast Supabase-join arrays
-  and `Record` indexing with `as any`. Gate every change with
-  `node <tsc> --noEmit --skipLibCheck` (build fails on type errors — no ignore).
+- **No `@ts-nocheck`** — fully removed; the whole `src` tree is strict-clean
+  (`strict: true`). **Keep it that way**: new code must pass
+  `node <tsc> --noEmit --skipLibCheck` (the prod build fails on type errors — no
+  ignore flag). The codebase leans on explicit `any` for Supabase rows/joins:
+  type untyped state `useState<any>(null)` / `useState<any[]>([])`, annotate
+  `(e: any)` / callback params, and cast `Record`/dictionary indexing + join
+  arrays with `as any`. Don't reintroduce `@ts-nocheck`.
 - RTL + Arabic primary; always provide ar/en/ur strings via the `L(en,ur,ar)` or `t.*` pattern.
 - Realtime notifications: use the **per-user filtered** subscription pattern, not broad table subscriptions.
 - Supabase joins with ambiguous FKs need disambiguation hints, e.g. `profiles!supplier_id`, `profiles!requested_by`.
