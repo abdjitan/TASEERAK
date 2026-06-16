@@ -64,7 +64,7 @@ export default function OfferDetailPage() {
       setRfq(rfqData)
       const { data: offerData } = await supabase
         .from('offers')
-        .select('*, supplier:profiles(company_name_ar, company_name_en, phone, rating_avg, city, region, district, supplier_tier, national_short_address, latitude, longitude, verification_status, cr_verification_source, approvals)')
+        .select('*, supplier:profiles(company_name_ar, company_name_en, phone, contact_phone, rating_avg, city, region, district, supplier_tier, national_short_address, latitude, longitude, verification_status, cr_verification_source, approvals)')
         .eq('id', offerId).single()
       setOffer(offerData)
       setLoading(false)
@@ -103,9 +103,13 @@ export default function OfferDetailPage() {
   const goods = (Number(offer.total_price) || 0) - exSum
   const ip = Array.isArray(offer.item_prices) ? offer.item_prices : []
   const tierLabel = s.supplier_tier === 'manufacturer' ? '🏭 مصنع / مورد رئيسي' : s.supplier_tier === 'commercial' ? '🏪 مورد تجاري' : '🏬 مورد محلي'
+  // خصوصية المورد: رقم التواصل (والواتساب) لا يظهران إلا بعد قبول العرض (الترسية).
+  // قبلها يتواصل المقاول عبر الدردشة الداخلية فقط. رقم phone للمنصة/الإشعارات لا يظهر.
+  const accepted = offer.status === 'accepted'
+  const contactNum = s.contact_phone || s.phone || ''
   const mapsUrl = (s.latitude && s.longitude) ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}` : null
-  const wa = s.phone ? waLink(s.phone, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» في منصة تسعيرك`) : ''
-  const waReduce = s.phone ? waLink(s.phone, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» بسعر ${offer.total_price?.toLocaleString('en-US')} ر.س في منصة تسعيرك — هل بالإمكان تخفيض السعر؟ نقدّر تعاونكم 🌟`) : ''
+  const wa = (accepted && contactNum) ? waLink(contactNum, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» في منصة تسعيرك`) : ''
+  const waReduce = '' // التفاوض قبل الترسية يتم داخل المنصة (لا واتساب)
   const statusBadge = offer.status === 'accepted' ? { t: '✓ مقبول', c: 'bg-emerald-100 text-emerald-700' }
     : offer.status === 'rejected' ? { t: '✕ مرفوض', c: 'bg-gray-100 text-gray-500' }
     : { t: '⏳ قيد المراجعة', c: 'bg-amber-100 text-amber-700' }
@@ -157,7 +161,9 @@ export default function OfferDetailPage() {
           <Row label="التقييم" value={s.rating_avg > 0 ? `⭐ ${s.rating_avg}` : null} />
           <Row label="الموقع" value={[s.district, s.city, s.region].filter(Boolean).join('، ')} />
           <Row label="العنوان الوطني" value={s.national_short_address} />
-          <Row label="الجوال" value={s.phone} />
+          {accepted
+            ? <Row label="رقم التواصل" value={contactNum} />
+            : <div className="text-[11px] text-gray-400 py-2 border-b border-gray-50 leading-relaxed">🔒 رقم تواصل المورد يظهر بعد الترسية (إتمام الصفقة). تواصل معه الآن عبر الدردشة الداخلية.</div>}
           <div className="flex gap-2 mt-3 flex-wrap">
             <button type="button" onClick={async () => {
               const supabase = createClient()

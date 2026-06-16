@@ -112,7 +112,7 @@ export default function RFQDetailPage() {
       setEditUnit(rfqData?.unit || '')
 
       const { data: offersData } = await supabase
-        .from('offers').select('*, supplier:profiles(company_name_ar, phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source, approvals)')
+        .from('offers').select('*, supplier:profiles(company_name_ar, phone, contact_phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source, approvals)')
         .eq('rfq_id', id).order('total_price', { ascending: true })
       setOffers(offersData || [])
 
@@ -563,7 +563,7 @@ export default function RFQDetailPage() {
                   Object.values(awards).forEach((a: any) => {
                     if (!bySupplier[a.supplier_id]) {
                       const off = offers.find((o: any) => o.id === a.offer_id)
-                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: off?.supplier?.phone, offerId: a.offer_id, total: 0, count: 0 }
+                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: off?.supplier?.contact_phone || off?.supplier?.phone, offerId: a.offer_id, total: 0, count: 0 }
                     }
                     bySupplier[a.supplier_id].total += Number(a.total) || 0
                     bySupplier[a.supplier_id].count += 1

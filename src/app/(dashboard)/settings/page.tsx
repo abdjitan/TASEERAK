@@ -129,6 +129,10 @@ export default function SettingsPage() {
   const [minOrderValue, setMinOrderValue] = useState('')
   const [contractorGrade, setContractorGrade] = useState('')
 
+  // رقم التواصل الرسمي للمورد (يظهر للمقاول بعد الترسية فقط)
+  const [useDiffContact, setUseDiffContact] = useState(false)
+  const [contactPhone, setContactPhone] = useState('')
+
   // Docs
   const [licenseFile, setLicenseFile] = useState<any>(null)
   const [crFile, setCrFile] = useState<any>(null)
@@ -157,6 +161,10 @@ export default function SettingsPage() {
         setSupplierTier(p.supplier_tier || 'local')
         setMinOrderValue(p.min_order_value ? String(p.min_order_value) : '')
         setContractorGrade(p.contractor_grade || '')
+        // رقم تواصل مختلف عن الواتساب فقط إذا كان مُخزّناً ومختلفاً عن رقم الجوال
+        const cp = p.contact_phone || ''
+        if (cp && cp !== (p.phone || '')) { setUseDiffContact(true); setContactPhone(cp) }
+        else { setUseDiffContact(false); setContactPhone('') }
       }
       const { data: reqs } = await supabase.from('profile_change_requests').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false })
       setMyRequests(reqs || [])
@@ -208,6 +216,8 @@ export default function SettingsPage() {
     const updateData: any = { phone, region, city, vat_number: vatNumber || null, district: district || null, preferred_language: prefLang }
     if (profile?.role === 'supplier') {
       updateData.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
+      // إذا اختار رقم مختلف نخزّنه، وإلا نُفرّغه ليُستخدم رقم الجوال تلقائياً بعد الترسية
+      updateData.contact_phone = useDiffContact ? (contactPhone.trim() || null) : null
     }
     const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id)
     setProfileSaving(false)
@@ -415,10 +425,33 @@ export default function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.phone}</label>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.phone}{profile?.role === 'supplier' ? ' (واتساب)' : ''}</label>
                     <input value={phone} onChange={e => setPhone(e.target.value)}
                       className="input-field" placeholder="+966 5X XXX XXXX" />
+                    {profile?.role === 'supplier' && (
+                      <p className="text-[10px] text-gray-400 mt-1">🔒 رقم الواتساب للمنصة والإشعارات فقط — لا يظهر للمقاول.</p>
+                    )}
                   </div>
+
+                  {/* رقم التواصل الرسمي — يظهر للمقاول بعد الترسية فقط (المورد فقط) */}
+                  {profile?.role === 'supplier' && (
+                    <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3.5">
+                      <label className="block text-xs font-bold text-gray-600 mb-2">📞 رقم التواصل الرسمي مع المقاول</label>
+                      <label className="flex items-center gap-2 cursor-pointer mb-2">
+                        <input type="checkbox" checked={!useDiffContact} onChange={e => setUseDiffContact(!e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
+                        <span className="text-xs text-gray-700">نفس رقم الواتساب</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer mb-2">
+                        <input type="checkbox" checked={useDiffContact} onChange={e => setUseDiffContact(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
+                        <span className="text-xs text-gray-700">رقم آخر للتواصل</span>
+                      </label>
+                      {useDiffContact && (
+                        <input value={contactPhone} onChange={e => setContactPhone(e.target.value)}
+                          className="input-field" dir="ltr" placeholder="+966 1X XXX XXXX" />
+                      )}
+                      <p className="text-[10px] text-gray-400 mt-1.5">يظهر هذا الرقم للمقاول <b>بعد الترسية فقط</b>. قبلها يكون التواصل عبر الدردشة الداخلية.</p>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">
