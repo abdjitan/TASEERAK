@@ -72,13 +72,20 @@ Arabic-first, RTL, with English + Urdu i18n.
 `branches`, `project_rfqs`, `project_rfq_items`, `taxonomy`, … RLS is ON everywhere;
 cross-user operations go through `SECURITY DEFINER` RPCs granted to `authenticated` only.
 
-- **`taxonomy` table** (migrations 063/064) — DB source of routing keywords (117 rows,
-  admin-editable via RLS, read via `get_taxonomy()`). **Stage 1+2 done**: `/admin/taxonomy`
-  edits each sub-category's keywords; `src/lib/serverTaxonomy.ts` (`getTaxonomyRows` +
-  `detectSubCategoryDb`, service-role, 5-min cache) feeds the `parse-boq` classifier, so
-  keyword edits re-route BOQ items with **no redeploy** (falls back to TS keywords if DB is
-  down). UI pickers/group labels still read TS `SUB_CATEGORIES` (Stage 3 = move those to DB);
-  keep TS keys and DB `sub_key`s in sync (don't rename keys without a migration).
+- **`taxonomy` table** (migrations 063/064) — the DB source of the routing taxonomy (117
+  seeded rows, admin-editable via RLS, read via `get_taxonomy()`). **Stages 1–3 done**:
+  - `/admin/taxonomy` edits each sub-category's **name + keywords** and **adds new
+    sub-categories** (writes to the table; admin-only).
+  - Server (`src/lib/serverTaxonomy.ts`: `getTaxonomyRows` + `detectSubCategoryDb`,
+    service-role, 5-min cache) feeds the `parse-boq` classifier → keyword edits re-route
+    BOQ items with **no redeploy** (falls back to TS keywords if DB is down).
+  - Client `TaxonomyProvider` (wraps `(dashboard)/layout.tsx`) calls `hydrateTaxonomy()`
+    to merge DB rows into the in-memory `SUB_CATEGORIES` (instant from a localStorage cache,
+    then background refresh) → display-name edits + new sub-categories show in the UI
+    pickers/labels on the next navigation, no redeploy.
+  - The hard-coded TS `SUB_CATEGORIES` is the **fallback/baseline**; keep its keys and the
+    DB `sub_key`s aligned (don't rename keys without a migration). `SECTOR_PRODUCTS`
+    (product lists) is separate and still TS-only.
 - **Privacy**: contractor identity is masked in `profiles_public`; reveal only via
   `get_rfq_contractor()` (owner/admin/accepted-supplier). Bid-sniping blind period in
   `get_rfq_offer_ranking()` (last 30 min). `profiles.approvals[]` = trust badges.
