@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
 import { keywordClassify } from '@/lib/classify'
@@ -67,7 +66,7 @@ export async function POST(req: NextRequest) {
       if (ai) { result = ai; source = 'ai' }
     } catch (e) {
       // AI failed → keep the keyword verdict. Never block on the AI layer.
-      console.error('classify-supplier AI error:', e?.message || e)
+      console.error('classify-supplier AI error:', (e as any)?.message || e)
     }
   }
 
@@ -118,7 +117,7 @@ async function classifyWithClaude(input: {
   const { default: Anthropic } = await import('@anthropic-ai/sdk')
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-  const sectorList = ALLOWED_SECTORS.map(s => `${s} (${SECTOR_LABELS[s] || s})`).join(', ')
+  const sectorList = ALLOWED_SECTORS.map(s => `${s} (${(SECTOR_LABELS as any)[s] || s})`).join(', ')
 
   const facts = [
     `الاسم (عربي): ${input.companyNameAr || '—'}`,
@@ -162,7 +161,7 @@ async function classifyWithClaude(input: {
     messages: [{ role: 'user', content: `بيانات المورد:\n${facts}\n\nصنّف هذا المورد.` }],
   })
 
-  const text = (resp.content || []).find((b: any) => b.type === 'text')?.text
+  const text = ((resp.content || []).find((b: any) => b.type === 'text') as any)?.text
   if (!text) return null
   const j = JSON.parse(text)
 

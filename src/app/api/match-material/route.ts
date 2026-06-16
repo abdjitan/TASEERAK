@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { aiJson, buildTaxonomyRef } from '@/lib/ai'
@@ -50,8 +49,8 @@ ${buildTaxonomyRef(SUB_CATEGORIES, SECTOR_LABELS)}`,
     },
   })
 
-  if (ai && SUB_CATEGORIES[ai.sector]?.[ai.sub_category]) {
-    const group = SUB_CATEGORIES[ai.sector][ai.sub_category].group
+  if (ai && (SUB_CATEGORIES as any)[ai.sector]?.[ai.sub_category]) {
+    const group = (SUB_CATEGORIES as any)[ai.sector][ai.sub_category].group
     return NextResponse.json({
       ok: true, source: 'ai',
       sector: ai.sector,
@@ -70,14 +69,14 @@ ${buildTaxonomyRef(SUB_CATEGORIES, SECTOR_LABELS)}`,
   let subKey: string | null = null
   if (sector) {
     // ابحث عن أول تخصص مكتشف ينتمي لهذا القطاع
-    subKey = det.specialties.find(k => SUB_CATEGORIES[sector]?.[k]) || null
+    subKey = det.specialties.find(k => (SUB_CATEGORIES as any)[sector]?.[k]) || null
   }
   if (!subKey && det.specialties.length) {
     subKey = det.specialties[0]
-    for (const s of SECTORS) if (SUB_CATEGORIES[s]?.[subKey]) { sector = s; break }
+    for (const s of SECTORS) if ((SUB_CATEGORIES as any)[s]?.[subKey]) { sector = s; break }
   }
-  if (sector && subKey && SUB_CATEGORIES[sector]?.[subKey]) {
-    const group = SUB_CATEGORIES[sector][subKey].group
+  if (sector && subKey && (SUB_CATEGORIES as any)[sector]?.[subKey]) {
+    const group = (SUB_CATEGORIES as any)[sector][subKey].group
     return NextResponse.json({
       ok: true, source: 'keyword',
       sector, sub_category: subKey,

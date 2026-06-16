@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizeText } from '@/lib/normalize'
 import { aiJson, AI_ENABLED } from '@/lib/ai'
@@ -131,7 +130,7 @@ function subCatRef(): string {
 }
 
 // هل المفتاح تخصّص صحيح ضمن القطاع؟
-function validSub(sector: string, sub: string): boolean {
+function validSub(sector: string, sub: string | null | undefined): boolean {
   return !!(sub && (SUB_CATEGORIES as any)[sector] && (SUB_CATEGORIES as any)[sector][sub])
 }
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { aiJson } from '@/lib/ai'
@@ -38,20 +37,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, enough: false, message: 'لا يوجد عرضان أو أكثر للمقارنة بعد.' })
   }
 
-  const tierAr = { manufacturer: 'مصنع', commercial: 'تاجر', local: 'محلي' }
+  const tierAr: Record<string, string> = { manufacturer: 'مصنع', commercial: 'تاجر', local: 'محلي' }
   const payload = {
     request: rfq.product_name || 'طلب تسعير',
     items_count: Array.isArray(rfq.items) ? rfq.items.length : 1,
     offers: active.map(o => ({
       offer_id: o.id,
-      supplier: o.supplier?.company_name_ar || 'مورد',
+      supplier: (o.supplier as any)?.company_name_ar || 'مورد',
       total_price_sar: o.total_price,
       delivery_days: o.delivery_days ?? null,
       vat_included: !!o.vat_included,
-      supplier_rating: o.supplier?.rating_avg ?? null,
-      supplier_type: tierAr[o.supplier?.supplier_tier] || o.supplier?.supplier_tier || null,
-      verified: o.supplier?.verification_status === 'verified',
-      city: o.supplier?.city || null,
+      supplier_rating: (o.supplier as any)?.rating_avg ?? null,
+      supplier_type: tierAr[(o.supplier as any)?.supplier_tier] || (o.supplier as any)?.supplier_tier || null,
+      verified: (o.supplier as any)?.verification_status === 'verified',
+      city: (o.supplier as any)?.city || null,
     })),
   }
 
@@ -86,13 +85,13 @@ export async function POST(req: NextRequest) {
 
   // اربط الاسم بأفضل عرض للعرض في الواجهة
   const byId: Record<string, any> = {}
-  for (const o of active) byId[o.id] = o.supplier?.company_name_ar || 'مورد'
+  for (const o of active) byId[o.id] = (o.supplier as any)?.company_name_ar || 'مورد'
   return NextResponse.json({
     ok: true, enough: true, ai: true,
     summary: ai.summary,
     best_offer_id: ai.best_offer_id,
     best_supplier: byId[ai.best_offer_id] || null,
-    ranked: (ai.ranked || []).map(r => ({ ...r, supplier: byId[r.offer_id] || null })),
+    ranked: (ai.ranked || []).map((r: any) => ({ ...r, supplier: byId[r.offer_id] || null })),
     advice: ai.advice || '',
   })
 }
