@@ -391,7 +391,8 @@ export function detectSubCategory(productName: string, sector: Sector): string |
     let score = 0
     for (const kw of sub.keywords) {
       const nkw = normalizeText(kw)
-      if (nkw && norm.includes(nkw)) score++
+      // الحارس .length>0 ضروري: norm.includes('') يُرجع true دائماً
+      if (nkw.length > 0 && norm.includes(nkw)) score++
     }
     if (score > maxScore) { maxScore = score; bestMatch = key }
   }

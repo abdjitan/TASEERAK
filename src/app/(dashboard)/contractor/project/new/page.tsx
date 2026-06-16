@@ -99,7 +99,8 @@ export default function NewProjectPage() {
         setItems(data.items.map((item, i) => {
           // التخصص يأتي مُصنّفاً من الخادم (من القوائم الرسمية). نتأكد أنه مفتاح صحيح وإلا = غير مصنّف.
           const sub = (item.sub_category && SUB_CATEGORIES[item.sector]?.[item.sub_category]) ? item.sub_category : null
-          return { ...item, id: `item-${i}`, selected: true, sub_category: sub, needs_classification: !sub }
+          // غير مصنّف لو بلا تخصص، أو لو الذكاء أبلغ ثقة منخفضة (يبقى الاقتراح ظاهراً في القائمة ليؤكّده المقاول)
+          return { ...item, id: `item-${i}`, selected: true, sub_category: sub, needs_classification: !sub || !!item.needs_classification || !!item.low_confidence }
         }))
         setStep('items')
       } else {
@@ -154,15 +155,18 @@ export default function NewProjectPage() {
   async function handleSubmit() {
     if (!user || !title || !region) return
     if (deliveryRequired && !deliveryLocation) return
-    // البنود غير المصنّفة لا تصل للمورد المتخصص بدقّة — نوضّح للمقاول قبل الإرسال
+    // سياسة عدم الإزعاج: البنود غير المصنّفة لا تُرسل إطلاقاً (حتى لا تصل لموردين خارج تخصصهم).
+    // نرسل المصنّفة فقط، ونبقي غير المصنّفة لدى المقاول ليصنّفها لاحقاً.
+    const classifiedItems = items.filter(i => i.selected && i.product_name && !i.needs_classification)
     if (unclassifiedCount > 0) {
-      const ok = confirm(`فيه ${unclassifiedCount} بند غير مصنّف — سيُرسل لكل موردي القطاع (تطابق أقل دقّة) بدل المورد المتخصص.\n\nاضغط «موافق» للإرسال هكذا، أو «إلغاء» لتختار تصنيفها أولاً.`)
+      const ok = confirm(`فيه ${unclassifiedCount} بند غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)
       if (!ok) return
     }
+    if (classifiedItems.length === 0) { alert('لا توجد بنود مصنّفة للإرسال — اختر تصنيف البنود أولاً.'); return }
     setLoading(true)
     const supabase = createClient()
 
-    const selectedItems = items.filter(i => i.selected && i.product_name)
+    const selectedItems = classifiedItems
 
     try {
       // رفع ملف BOQ إن وجد

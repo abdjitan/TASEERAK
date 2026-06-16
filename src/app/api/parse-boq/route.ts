@@ -149,6 +149,7 @@ async function enrichWithAI(items: any[]): Promise<any[] | null> {
 - sub_category: مفتاح التخصص الأنسب من القائمة أدناه، **من نفس القطاع الذي اخترته فقط**. هذا المفتاح هو الذي يُوجّه البند للمورد المتخصص، فاختره بدقّة. إن لم يطابق البندَ أيُّ تخصص بدقّة، أعِدها "" (سلسلة فارغة) — لا تخمّن ولا تخترع مفاتيح جديدة.
 - unit: وحدة القياس بالعربية (م³، م²، م.ط، طن، كغ، عدد، مقطوعية، طقم...).
 - spec: مواصفة مختصرة (مقاس/درجة/قدرة) أو اتركها فارغة.
+- confidence: مدى ثقتك في صحّة التصنيف (sub_category): "high" أو "medium" أو "low". كن صادقاً — لو البند غامض أو الوصف ناقص اجعلها "low".
 
 قوائم التخصصات المسموح بها (المفتاح بالإنجليزية = الاسم بالعربية) لكل قطاع — اختر sub_category من مفاتيح القطاع المختار حصراً:
 ${subCatRef()}
@@ -156,7 +157,8 @@ ${subCatRef()}
 أعِد عنصراً واحداً لكل بند مُدخل بنفس الرقم i دون تجاهل أي بند.`
 
     const parsed = await aiJson({
-      model: process.env.BOQ_AI_MODEL,
+      // التصنيف لا يحتاج أقوى نموذج — نستخدم الأرخص افتراضياً (يُتجاهل مع Groq/Gemini)
+      model: process.env.BOQ_AI_MODEL || 'claude-haiku-4-5',
       maxTokens: 8000,
       system,
       user: `بنود الجدول (JSON):\n${JSON.stringify(payload)}`,
@@ -171,6 +173,7 @@ ${subCatRef()}
                 i: { type: 'integer' }, name: { type: 'string' },
                 sector: { type: 'string', enum: AI_SECTORS },
                 sub_category: { type: 'string' },
+                confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
                 unit: { type: 'string' }, spec: { type: 'string' },
               },
               required: ['i', 'sector'], additionalProperties: false,
@@ -195,6 +198,8 @@ ${subCatRef()}
         product_name: String(r.name || it.product_name).slice(0, 120),
         sector,
         sub_category: sub,
+        // الثقة المنخفضة تُعرض للمراجعة حتى لو صنّفها الذكاء (الاقتراح يبقى ظاهراً ليؤكّده المقاول)
+        low_confidence: String(r.confidence || '').toLowerCase() === 'low',
         unit: r.unit || it.unit,
         specification: String(r.spec || it.specification || '').slice(0, 80),
       }
@@ -303,7 +308,8 @@ export async function POST(req: NextRequest) {
         const guess = detectSubCategory(`${it.product_name} ${it.specification || ''}`, it.sector)
         it.sub_category = validSub(it.sector, guess) ? guess : null
       }
-      it.needs_classification = !it.sub_category
+      // يُعرض للمراجعة لو بلا تخصص، أو لو ثقة الذكاء منخفضة (المقاول يؤكّد الاقتراح)
+      it.needs_classification = !it.sub_category || !!it.low_confidence
     }
 
     // ترتيب حسب القطاع (بعد تحسين التصنيف)
