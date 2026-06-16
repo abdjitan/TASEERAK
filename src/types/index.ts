@@ -839,6 +839,27 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','نيبرو (Nepro)','الأضواء','بلاستيك الوطني'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة (3 متر)'] },
   ] },
+  // ── مواصفات مطبّقة على مواد عامة موجودة (مراجعة الذكاء) ──
+  { products: ['غشاء عازل للأسطح'], spec: [
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['4 مم','3 مم'] },
+    { key: 'reinforcement', ar: 'نوع التدعيم', en: 'Reinforcement', options: ['بوليستر 180 جم','بوليستر 200 جم','فايبر جلاس'] },
+    { key: 'finish', ar: 'السطح الخارجي', en: 'Surface Finish', options: ['فيلم بولي إيثيلين (ناعم)','مبحص/حصى (Granule) للحماية من الشمس'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','بيتومات (Bitumat)','عوازل (Awan)','ديرمابيت (Dermabit)','إنسومات'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لفة'] },
+  ] },
+  { products: ['محبس عمومي'], spec: [
+    { key: 'material', ar: 'المادة', en: 'Material', options: ['نحاس ثقيل (Brass)','برونز مصبوب','PPR خضراء مدمجة للشبكات'] },
+    { key: 'size', ar: 'مقاس التوصيل', en: 'Size', options: ['1/2 بوصة','3/4 بوصة','1 بوصة','1.5 بوصة','2 بوصة'] },
+    { key: 'connection', ar: 'طريقة الربط', en: 'Connection', options: ['قلاووظ داخلي (Threaded F-F)','لحام حراري (لأنابيب الـ PPR)'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','بجلر (Pegler)','سيم (Cim)','جياكوميني (Giacomini)','التحويل (API)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة'] },
+  ] },
+  { products: ['علب توزيع Junction Box'], spec: [
+    { key: 'material', ar: 'المادة والتركيب', en: 'Material', options: ['بلاستيك حديد مغلف (مقاوم للحريق)','بلاستيك PVC عادي برتقالي','حديد مجلفن ثقيل (لأنظمة الـ EMT)'] },
+    { key: 'size', ar: 'المقاس الدارج', en: 'Size', options: ['7x7 سم (مفرد)','7x14 سم (مزدوج)','10x10 سم (علبة سحب)'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','الفنار','إم كي (MK)','نيبرو (Nepro)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','كرتون (100 حبة)'] },
+  ] },
 ]
 for (const g of SPEC_GROUPS) { for (const p of g.products) PRODUCT_SPECS[p] = g.spec }
 
