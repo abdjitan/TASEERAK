@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -52,8 +51,8 @@ export default function LocationPage() {
   const { locale, dir } = useTranslation()
   const T = txt[locale] || txt.ar
 
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
@@ -66,8 +65,8 @@ export default function LocationPage() {
   const [city, setCity] = useState('')
   const [postalCode, setPostalCode] = useState('')
   const [additionalNo, setAdditionalNo] = useState('')
-  const [lat, setLat] = useState(null)
-  const [lng, setLng] = useState(null)
+  const [lat, setLat] = useState<any>(null)
+  const [lng, setLng] = useState<any>(null)
 
   useEffect(() => {
     async function load() {

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useRef } from 'react'
@@ -46,7 +45,7 @@ export default function ForgotPasswordPage() {
   const [captchaToken, setCaptchaToken] = useState('')
   const captchaRef = useRef<any>(null)
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: any) {
     e.preventDefault()
     setLoading(true); setError('')
     try {

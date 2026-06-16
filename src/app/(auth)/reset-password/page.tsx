@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -67,7 +66,7 @@ export default function ResetPasswordPage() {
     return () => sub?.subscription?.unsubscribe()
   }, [])
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: any) {
     e.preventDefault()
     if (password.length < 8) { setError(t.short); return }
     if (password !== confirm) { setError(t.mismatch); return }

@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useEffect, useRef, useState, Suspense } from 'react'
@@ -9,7 +8,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import PageLoader from '@/components/shared/PageLoader'
 
-function fmtTime(d) {
+function fmtTime(d: any) {
   const dt = new Date(d); const mins = Math.floor((Date.now() - dt.getTime()) / 60000)
   if (mins < 1) return 'الآن'; if (mins < 60) return `قبل ${mins} د`
   const h = Math.floor(mins / 60); if (h < 24) return `قبل ${h} س`
@@ -19,15 +18,15 @@ function fmtTime(d) {
 function Messages() {
   const { locale, dir } = useTranslation()
   const sp = useSearchParams()
-  const [me, setMe] = useState(null)
+  const [me, setMe] = useState<any>(null)
   const [role, setRole] = useState('contractor')
-  const [convos, setConvos] = useState([])
+  const [convos, setConvos] = useState<any[]>([])
   const [activeId, setActiveId] = useState(sp.get('c') || '')
-  const [msgs, setMsgs] = useState([])
+  const [msgs, setMsgs] = useState<any[]>([])
   const [body, setBody] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
-  const endRef = useRef(null)
+  const endRef = useRef<any>(null)
 
   async function loadConvos() {
     const supabase = createClient()
@@ -55,7 +54,7 @@ function Messages() {
   useEffect(() => {
     if (!activeId || !me) return
     const supabase = createClient()
-    let ch
+    let ch: any
     ;(async () => {
       const { data } = await supabase.from('messages').select('*').eq('conversation_id', activeId).order('created_at')
       setMsgs(data || [])
@@ -72,7 +71,7 @@ function Messages() {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs])
 
-  async function send(e) {
+  async function send(e: any) {
     e?.preventDefault()
     const text = body.trim(); if (!text || !activeId) return
     setSending(true); setBody('')
@@ -83,9 +82,9 @@ function Messages() {
     loadConvos()
   }
 
-  const active = convos.find(c => c.id === activeId)
-  const counterpart = (c) => (c?.contractor_id === me ? c?.supplier : c?.contractor)?.company_name_ar || 'مستخدم'
-  const ctx = (c) => c?.rfq?.title || c?.rfq?.product_name || ''
+  const active = convos.find((c: any) => c.id === activeId)
+  const counterpart = (c: any) => (c?.contractor_id === me ? c?.supplier : c?.contractor)?.company_name_ar || 'مستخدم'
+  const ctx = (c: any) => c?.rfq?.title || c?.rfq?.product_name || ''
 
   if (loading) return <PageLoader />
 
