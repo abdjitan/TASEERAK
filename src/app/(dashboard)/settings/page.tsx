@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -102,8 +101,8 @@ export default function SettingsPage() {
   }
   const cv = CRV[locale] || CRV.ar
 
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('profile')
 
@@ -131,11 +130,11 @@ export default function SettingsPage() {
   const [contractorGrade, setContractorGrade] = useState('')
 
   // Docs
-  const [licenseFile, setLicenseFile] = useState(null)
-  const [crFile, setCrFile] = useState(null)
+  const [licenseFile, setLicenseFile] = useState<any>(null)
+  const [crFile, setCrFile] = useState<any>(null)
   const [docsMsg, setDocsMsg] = useState('')
   const [docsSaving, setDocsSaving] = useState(false)
-  const [crCheck, setCrCheck] = useState(null)
+  const [crCheck, setCrCheck] = useState<any>(null)
   const [crChecking, setCrChecking] = useState(false)
 
   useEffect(() => {
@@ -167,13 +166,13 @@ export default function SettingsPage() {
   }, [])
 
   // Locked-field change requests (name / classification)
-  const [myRequests, setMyRequests] = useState([])
-  const [crqModal, setCrqModal] = useState(null) // 'name' | 'classification'
+  const [myRequests, setMyRequests] = useState<any[]>([])
+  const [crqModal, setCrqModal] = useState<any>(null) // 'name' | 'classification'
   const [crqValue, setCrqValue] = useState('')
   const [crqReason, setCrqReason] = useState('')
   const [crqSaving, setCrqSaving] = useState(false)
   const [crqMsg, setCrqMsg] = useState('')
-  const pendingFor = (field) => myRequests.find(r => r.field === field && r.status === 'pending')
+  const pendingFor = (field: any) => myRequests.find((r: any) => r.field === field && r.status === 'pending')
 
   async function submitChangeRequest() {
     if (!crqValue.trim()) { setCrqMsg(locale === 'en' ? 'Enter the new value' : 'اكتب القيمة الجديدة'); return }
@@ -190,7 +189,7 @@ export default function SettingsPage() {
         empty: 'القيمة فارغة.',
         unauthorized: 'سجّل الدخول أولاً.',
       }
-      setCrqMsg(map[data?.error] || 'تعذّر إرسال الطلب. حاول مرة ثانية.')
+      setCrqMsg((map as any)[data?.error] || 'تعذّر إرسال الطلب. حاول مرة ثانية.')
       return
     }
     const { data: reqs } = await supabase.from('profile_change_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
@@ -200,7 +199,7 @@ export default function SettingsPage() {
     setTimeout(() => setProfileMsg(''), 4000)
   }
 
-  async function saveProfile(e) {
+  async function saveProfile(e: any) {
     e.preventDefault()
     setProfileSaving(true); setProfileMsg('')
     const supabase = createClient()
@@ -216,7 +215,7 @@ export default function SettingsPage() {
     setTimeout(() => setProfileMsg(''), 3000)
   }
 
-  async function changePassword(e) {
+  async function changePassword(e: any) {
     e.preventDefault()
     setPassMsg('')
     if (newPass.length < 8) { setPassMsg(t.passMin); return }
@@ -231,7 +230,7 @@ export default function SettingsPage() {
     setTimeout(() => setPassMsg(''), 3000)
   }
 
-  async function uploadDocs(e) {
+  async function uploadDocs(e: any) {
     e.preventDefault()
     if (!licenseFile && !crFile) return
     setDocsSaving(true); setDocsMsg('')
@@ -305,7 +304,7 @@ export default function SettingsPage() {
 
   // open a sensitive doc via a short-lived signed URL (private bucket).
   // legacy values stored as full public URLs still open directly.
-  async function openDoc(val) {
+  async function openDoc(val: any) {
     if (!val) return
     if (typeof val === 'string' && val.startsWith('http')) { window.open(val, '_blank'); return }
     const supabase = createClient()

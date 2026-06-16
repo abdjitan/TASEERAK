@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -14,8 +13,8 @@ import DistrictField from '@/components/shared/DistrictField'
 
 export default function SupplierBranchesPage() {
   const { dir, locale } = useTranslation()
-  const [user, setUser] = useState(null)
-  const [branches, setBranches] = useState([])
+  const [user, setUser] = useState<any>(null)
+  const [branches, setBranches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -41,7 +40,7 @@ export default function SupplierBranchesPage() {
 
   function reset() { setName(''); setRegion(''); setCity(''); setDistrict(''); setPhone(''); setAddress(''); setShowForm(false) }
 
-  async function save(e) {
+  async function save(e: any) {
     e.preventDefault()
     if (!name || !region) return
     setSaving(true)
@@ -53,7 +52,7 @@ export default function SupplierBranchesPage() {
     setSaving(false); reset(); load()
   }
 
-  async function remove(id) {
+  async function remove(id: any) {
     if (!confirm('حذف هذا الفرع؟')) return
     const supabase = createClient()
     await supabase.from('branches').delete().eq('id', id)

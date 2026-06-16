@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -41,14 +40,14 @@ export default function MarketPricePage() {
   const { locale, dir } = useTranslation()
   const T = txt[locale] || txt.ar
 
-  const [priceData, setPriceData] = useState([])
-  const [livePrices, setLivePrices] = useState([])
+  const [priceData, setPriceData] = useState<any[]>([])
+  const [livePrices, setLivePrices] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedSector, setSelectedSector] = useState('all')
   const [search, setSearch] = useState('')
   const [userRole, setUserRole] = useState('')
 
-  function timeAgo(date) {
+  function timeAgo(date: any) {
     const diff = Date.now() - new Date(date).getTime()
     const mins = Math.floor(diff / 60000)
     const ar = locale === 'ar'
@@ -92,7 +91,7 @@ export default function MarketPricePage() {
           max: Number(r.max_price),
           count: Number(r.offer_count),
         }))
-        .sort((a, b) => b.count - a.count)
+        .sort((a: any, b: any) => b.count - a.count)
 
       setPriceData(result)
       setLoading(false)
@@ -149,7 +148,7 @@ export default function MarketPricePage() {
                       <div className="flex items-start justify-between mb-2">
                         <div className="min-w-0 flex-1">
                           <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{p.product_name}</div>
-                          <span className="badge badge-blue text-[10px] mt-1">{SECTOR_LABELS[p.sector] || p.sector}</span>
+                          <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                         </div>
                         {p.supplier?.supplier_tier === 'manufacturer' && <span className="text-base">🏭</span>}
                       </div>
@@ -204,7 +203,7 @@ export default function MarketPricePage() {
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
                   selectedSector === s ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'
                 }`} style={selectedSector === s ? { background: '#1B2D5B' } : {}}>
-                {s === 'all' ? T.all : SECTOR_LABELS[s]}
+                {s === 'all' ? T.all : (SECTOR_LABELS as any)[s]}
               </button>
             ))}
           </div>
@@ -238,7 +237,7 @@ export default function MarketPricePage() {
                     <tr key={i} className={`border-b border-gray-50 hover:bg-[#1B2D5B]/2 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
                       <td className="px-4 py-3 font-semibold text-sm" style={{ color: '#1B2D5B' }}>{p.name}</td>
                       <td className="px-4 py-3">
-                        <span className="badge badge-blue text-[10px]">{SECTOR_LABELS[p.sector] || p.sector}</span>
+                        <span className="badge badge-blue text-[10px]">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500">{p.unit}</td>
                       <td className="px-4 py-3 text-sm text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')} {T.sar}</td>
@@ -265,7 +264,7 @@ export default function MarketPricePage() {
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{p.name}</div>
-                      <span className="badge badge-blue text-[10px] mt-1">{SECTOR_LABELS[p.sector] || p.sector}</span>
+                      <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                     </div>
                     <div className="text-left">
                       <div className="text-lg font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString('en-US')}</div>

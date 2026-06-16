@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
@@ -50,7 +49,7 @@ const txt = {
   },
 }
 
-function timeAgo(date, T) {
+function timeAgo(date: any, T: any) {
   const diff = Date.now() - new Date(date).getTime()
   const mins = Math.floor(diff / 60000)
   if (mins < 1) return T.justNow
@@ -65,8 +64,8 @@ export default function SupplierPricesPage() {
   const { locale, dir } = useTranslation()
   const T = txt[locale] || txt.ar
 
-  const [user, setUser] = useState(null)
-  const [prices, setPrices] = useState([])
+  const [user, setUser] = useState<any>(null)
+  const [prices, setPrices] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -82,7 +81,7 @@ export default function SupplierPricesPage() {
   const [region, setRegion] = useState('')
 
   // تصفّح متدرّج + بحث للسلع (نفس شكل صفحة طلب التسعير)
-  const subGroups = useMemo(() => (sector ? getGroupedSubCategories(sector) : []), [sector])
+  const subGroups = useMemo(() => (sector ? getGroupedSubCategories(sector as any) : []), [sector])
   const activeSubGroup = subGroups.find(g => g.group === pgroup)
   const subLabel = (x: any) => (locale === 'en' ? x.en : locale === 'ur' ? x.ur : x.ar)
   const allSubs = useMemo(() => subGroups.flatMap(g => g.subs), [subGroups])
@@ -102,7 +101,7 @@ export default function SupplierPricesPage() {
     setLoading(false)
   }
 
-  async function handleSave(e) {
+  async function handleSave(e: any) {
     e.preventDefault()
     if (!product || !sector || !unit || !price) return
     setSaving(true)
@@ -116,7 +115,7 @@ export default function SupplierPricesPage() {
     load()
   }
 
-  async function updatePrice(id, oldPrice, newPrice) {
+  async function updatePrice(id: any, oldPrice: any, newPrice: any) {
     if (!newPrice || newPrice === oldPrice) return
     const supabase = createClient()
     await supabase.from('live_prices').update({
@@ -125,7 +124,7 @@ export default function SupplierPricesPage() {
     load()
   }
 
-  async function deletePrice(id) {
+  async function deletePrice(id: any) {
     if (!confirm(T.confirmDelete)) return
     const supabase = createClient()
     await supabase.from('live_prices').delete().eq('id', id)
@@ -166,7 +165,7 @@ export default function SupplierPricesPage() {
                 <label className="block text-xs font-bold text-gray-500 mb-1">{T.sector}</label>
                 <select value={sector} onChange={e => { setSector(e.target.value); setProduct(''); setProductOther(false); setPgroup(''); setPsearch('') }} className="input-field" required>
                   <option value="">{T.selectSector}</option>
-                  {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{SECTOR_LABELS[s]}</option>)}
+                  {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>)}
                 </select>
               </div>
               <div className="sm:col-span-2">
@@ -275,7 +274,7 @@ export default function SupplierPricesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="font-bold" style={{ color: '#1B2D5B' }}>{p.product_name}</div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-400">
-                        <span className="badge badge-blue text-[10px]">{SECTOR_LABELS[p.sector] || p.sector}</span>
+                        <span className="badge badge-blue text-[10px]">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                         {p.region && <span>📍 {p.region}</span>}
                         <span>🕐 {T.lastUpdate}: {timeAgo(p.updated_at, T)}</span>
                       </div>
@@ -294,7 +293,7 @@ export default function SupplierPricesPage() {
                     <input type="number" placeholder={p.price} className="input-field text-sm flex-1 !py-2"
                       onKeyDown={e => { if (e.key === 'Enter') { updatePrice(p.id, p.price, e.currentTarget.value); e.currentTarget.value = '' } }}
                       id={`upd-${p.id}`} step="any" min="0" />
-                    <button onClick={() => { const v = document.getElementById(`upd-${p.id}`).value; updatePrice(p.id, p.price, v) }}
+                    <button onClick={() => { const v = (document.getElementById(`upd-${p.id}`) as any)?.value; updatePrice(p.id, p.price, v) }}
                       className="px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: '#0F6E56' }}>
                       {T.update}
                     </button>

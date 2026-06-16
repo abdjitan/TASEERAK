@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -77,27 +76,27 @@ export default function SpecialtiesPage() {
   const { locale, dir } = useTranslation()
   const T = txt[locale] || txt.ar
 
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
-  const [mySectors, setMySectors] = useState([])
-  const [mySpecialties, setMySpecialties] = useState([])
+  const [mySectors, setMySectors] = useState<any[]>([])
+  const [mySpecialties, setMySpecialties] = useState<any[]>([])
   // suggest-a-material
   const [suggestName, setSuggestName] = useState('')
   const [suggestSector, setSuggestSector] = useState('')
   const [suggestDesc, setSuggestDesc] = useState('')
   const [suggestMsg, setSuggestMsg] = useState('')
   const [suggestSubmitting, setSuggestSubmitting] = useState(false)
-  const [myRequests, setMyRequests] = useState([])
-  const [openSector, setOpenSector] = useState(null) // single-open accordion (Step 2)
+  const [myRequests, setMyRequests] = useState<any[]>([])
+  const [openSector, setOpenSector] = useState<any>(null) // single-open accordion (Step 2)
   // auto-analysis of the CR commercial activity (Wathq)
   const [crActivity, setCrActivity] = useState('')
   const [companyName, setCompanyName] = useState('')
   const [detectMsg, setDetectMsg] = useState('')
 
   // يقرأ نشاط السجل التجاري ويحدّد التخصصات تلقائياً (يضيف فوق المحدد، لا يحذف)
-  function analyzeFromCR(activity, name, silent = false) {
+  function analyzeFromCR(activity: any, name: any, silent = false) {
     const text = [name, activity].filter(Boolean).join(' ')
     const { sectors, specialties } = detectSpecialtiesFromText(text)
     if (!specialties.length) {
@@ -144,11 +143,11 @@ export default function SpecialtiesPage() {
     load()
   }, [])
 
-  function toggleSector(sector) {
+  function toggleSector(sector: any) {
     setMySectors(prev => {
       if (prev.includes(sector)) {
         // إزالة القطاع + تخصصاته الفرعية
-        const subKeys = Object.keys(SUB_CATEGORIES[sector] || {})
+        const subKeys = Object.keys((SUB_CATEGORIES as any)[sector] || {})
         setMySpecialties(s => s.filter(sp => !subKeys.includes(sp)))
         return prev.filter(x => x !== sector)
       }
@@ -157,7 +156,7 @@ export default function SpecialtiesPage() {
     })
   }
 
-  function toggleSpecialty(key) {
+  function toggleSpecialty(key: any) {
     setMySpecialties(prev => prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key])
   }
 
@@ -244,12 +243,12 @@ export default function SpecialtiesPage() {
                 className={`p-4 rounded-xl border-2 text-center transition-all hover:-translate-y-0.5 ${
                   mySectors.includes(s) ? 'border-current' : 'border-gray-200'
                 }`}
-                style={mySectors.includes(s) ? { borderColor: SECTOR_COLORS[s], background: SECTOR_COLORS[s] + '0d' } : {}}>
-                <div className="w-11 h-11 mx-auto mb-2 rounded-xl grid place-items-center shadow-sm" style={{ background: SECTOR_COLORS[s] }}>
+                style={mySectors.includes(s) ? { borderColor: (SECTOR_COLORS as any)[s], background: (SECTOR_COLORS as any)[s] + '0d' } : {}}>
+                <div className="w-11 h-11 mx-auto mb-2 rounded-xl grid place-items-center shadow-sm" style={{ background: (SECTOR_COLORS as any)[s] }}>
                   <CatIcon k={s} className="w-6 h-6 text-white" />
                 </div>
-                <div className="text-sm font-semibold" style={{ color: mySectors.includes(s) ? SECTOR_COLORS[s] : '#374151' }}>
-                  {SECTOR_LABELS[s]}
+                <div className="text-sm font-semibold" style={{ color: mySectors.includes(s) ? (SECTOR_COLORS as any)[s] : '#374151' }}>
+                  {(SECTOR_LABELS as any)[s]}
                 </div>
               </button>
             ))}
@@ -264,20 +263,20 @@ export default function SpecialtiesPage() {
         ) : (
           <div className="space-y-4">
             {mySectors.map(sector => {
-              const subs = SUB_CATEGORIES[sector] || {}
+              const subs = (SUB_CATEGORIES as any)[sector] || {}
               const selectedInSector = Object.keys(subs).filter(k => mySpecialties.includes(k)).length
               // تجميع التخصصات تحت مجموعاتها
               const groups: Record<string, string[]> = {}
-              Object.entries(subs).forEach(([key, sub]) => {
+              Object.entries(subs).forEach(([key, sub]: any) => {
                 if (!groups[sub.group]) groups[sub.group] = []
                 groups[sub.group].push(key)
               })
               return (
                 <div key={sector} className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
                   <button type="button" onClick={() => setOpenSector(openSector === sector ? null : sector)} className="w-full flex items-center justify-between mb-4">
-                    <h3 className="font-bold flex items-center gap-2" style={{ color: SECTOR_COLORS[sector] }}>
-                      <span className="text-xl">{SECTOR_ICONS[sector]}</span>
-                      {SECTOR_LABELS[sector]}
+                    <h3 className="font-bold flex items-center gap-2" style={{ color: (SECTOR_COLORS as any)[sector] }}>
+                      <span className="text-xl">{(SECTOR_ICONS as any)[sector]}</span>
+                      {(SECTOR_LABELS as any)[sector]}
                     </h3>
                     <span className="flex items-center gap-2 text-xs text-gray-400">{selectedInSector} {T.selected} <span className="text-sm">{openSector === sector ? '▲' : '▼'}</span></span>
                   </button>
@@ -287,18 +286,18 @@ export default function SpecialtiesPage() {
                   <div className="space-y-4">
                     {sortGroupKeys(Object.keys(groups)).map((groupKey) => {
                       const keys = groups[groupKey]
-                      const grp = GROUP_LABELS[groupKey]
+                      const grp = (GROUP_LABELS as any)[groupKey]
                       const selectedInGroup = keys.filter(k => mySpecialties.includes(k)).length
                       return (
                         <div key={groupKey} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
                           {/* عنوان المجموعة */}
                           <div className="flex items-center gap-2 mb-2.5">
-                            <span className="w-[18px] h-[18px] grid place-items-center shrink-0" style={{ color: SECTOR_COLORS[sector] }}><CatIcon k={groupKey} className="w-[18px] h-[18px]" /></span>
+                            <span className="w-[18px] h-[18px] grid place-items-center shrink-0" style={{ color: (SECTOR_COLORS as any)[sector] }}><CatIcon k={groupKey} className="w-[18px] h-[18px]" /></span>
                             <span className="text-sm font-bold text-gray-700">
                               {grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey}
                             </span>
                             {selectedInGroup > 0 && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: SECTOR_COLORS[sector] }}>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: (SECTOR_COLORS as any)[sector] }}>
                                 {selectedInGroup}
                               </span>
                             )}
@@ -312,13 +311,13 @@ export default function SpecialtiesPage() {
                                   className={`flex items-center gap-2.5 p-2.5 rounded-lg border-2 text-right transition-all bg-white ${
                                     mySpecialties.includes(key) ? 'border-current' : 'border-gray-200 hover:border-gray-300'
                                   }`}
-                                  style={mySpecialties.includes(key) ? { borderColor: SECTOR_COLORS[sector], background: SECTOR_COLORS[sector] + '0d' } : {}}>
+                                  style={mySpecialties.includes(key) ? { borderColor: (SECTOR_COLORS as any)[sector], background: (SECTOR_COLORS as any)[sector] + '0d' } : {}}>
                                   <span className="text-lg">{sub.icon}</span>
                                   <span className={`text-xs font-semibold flex-1 leading-tight ${mySpecialties.includes(key) ? '' : 'text-gray-700'}`}
-                                    style={mySpecialties.includes(key) ? { color: SECTOR_COLORS[sector] } : {}}>
+                                    style={mySpecialties.includes(key) ? { color: (SECTOR_COLORS as any)[sector] } : {}}>
                                     {locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar}
                                   </span>
-                                  {mySpecialties.includes(key) && <span style={{ color: SECTOR_COLORS[sector] }}>✓</span>}
+                                  {mySpecialties.includes(key) && <span style={{ color: (SECTOR_COLORS as any)[sector] }}>✓</span>}
                                 </button>
                               )
                             })}
@@ -345,7 +344,7 @@ export default function SpecialtiesPage() {
             <select value={suggestSector} onChange={e => setSuggestSector(e.target.value)} className="input-field">
               <option value="">{T.sSectorPh}</option>
               {Object.keys(SECTOR_LABELS).map(s => (
-                <option key={s} value={s}>{SECTOR_ICONS[s]} {SECTOR_LABELS[s]}</option>
+                <option key={s} value={s}>{(SECTOR_ICONS as any)[s]} {(SECTOR_LABELS as any)[s]}</option>
               ))}
             </select>
           </div>

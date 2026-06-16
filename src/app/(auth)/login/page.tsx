@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
@@ -31,7 +30,7 @@ function LoginForm() {
 
   // Reject if a promise doesn't settle in `ms` — converts an invisible hang
   // into a clear, reportable error instead of a spinner that never stops.
-  function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
+  function withTimeout<T>(p: PromiseLike<T>, ms: number, label: string): Promise<T> {
     return Promise.race([
       p,
       new Promise<T>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT:' + label)), ms)),
@@ -83,7 +82,7 @@ function LoginForm() {
     })()
   }, [])
 
-  async function handleLogin(e) {
+  async function handleLogin(e: any) {
     e.preventDefault()
     setLoading(true); setError(''); setStatus(t.s_auth); setProgress(18)
     const supabase = createClient()
