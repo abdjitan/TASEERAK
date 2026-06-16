@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { normalizeText } from '@/lib/normalize'
 import { aiJson, AI_ENABLED } from '@/lib/ai'
 import { SUB_CATEGORIES, detectSubCategory } from '@/types'
+import { getTaxonomyRows, detectSubCategoryDb, type TaxRow } from '@/lib/serverTaxonomy'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -301,10 +302,12 @@ export async function POST(req: NextRequest) {
     const finalItems = aiItems || extractedItems
 
     // توحيد التصنيف لكل بند: لو ما حدّد الذكاء تخصصاً صحيحاً، نحاول بالكلمات المفتاحية.
-    // البند الذي يبقى بلا تخصص من القوائم → needs_classification (يُطلب من المقاول تصنيفه).
+    // نستخدم كلمات قاعدة البيانات أولاً (تشمل إضافات الأدمن بلا نشر) ثم نرجع للكلمات المضمّنة.
+    const taxRows: TaxRow[] = await getTaxonomyRows()
     for (const it of finalItems) {
       if (!validSub(it.sector, it.sub_category)) {
-        const guess = detectSubCategory(`${it.product_name} ${it.specification || ''}`, it.sector)
+        const txt = `${it.product_name} ${it.specification || ''}`
+        const guess = (taxRows.length ? detectSubCategoryDb(txt, it.sector, taxRows) : null) || detectSubCategory(txt, it.sector)
         it.sub_category = validSub(it.sector, guess) ? guess : null
       }
       // يُعرض للمراجعة لو بلا تخصص، أو لو ثقة الذكاء منخفضة (المقاول يؤكّد الاقتراح)

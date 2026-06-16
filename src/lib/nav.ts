@@ -12,6 +12,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
     items = [
       { href: '/admin', icon: '🛡️', label: L('Dashboard', 'ڈیش بورڈ', 'لوحة الإدارة'), section: sec },
       { href: '/admin/discover', icon: '🔍', label: L('Discover suppliers', 'سپلائرز تلاش', 'اكتشاف موردين'), section: sec },
+      { href: '/admin/taxonomy', icon: '🗂️', label: L('Taxonomy', 'درجہ بندی', 'شجرة التصنيفات'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
