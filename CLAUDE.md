@@ -68,11 +68,27 @@ Arabic-first, RTL, with English + Urdu i18n.
 
 ## DB tables (public schema)
 `profiles`, `rfqs`, `offers`, `rfq_item_awards`, `materials`, `material_requests`,
-`conversations`, `messages`, `notifications`, `rate_limits`. RLS is ON everywhere;
+`conversations`, `messages`, `notifications`, `rate_limits`, `market_price_snapshots`,
+`branches`, `project_rfqs`, `project_rfq_items`, `taxonomy`, … RLS is ON everywhere;
 cross-user operations go through `SECURITY DEFINER` RPCs granted to `authenticated` only.
 
+- **`taxonomy` table** (migrations 063/064) — DB mirror of `SUB_CATEGORIES` (117 rows,
+  admin-editable via RLS, read via `get_taxonomy()`). **Stage 1 only**: the app still
+  uses the hard-coded TS taxonomy. Stage 2 = server classifier merges admin DB keywords
+  (no redeploy); Stage 3 = client reads groups/labels from DB. Keep both in sync until then.
+- **Privacy**: contractor identity is masked in `profiles_public`; reveal only via
+  `get_rfq_contractor()` (owner/admin/accepted-supplier). Bid-sniping blind period in
+  `get_rfq_offer_ranking()` (last 30 min). `profiles.approvals[]` = trust badges.
+
 ## Conventions / gotchas
-- `// @ts-nocheck` at top of pages/components.
+- `// @ts-nocheck` — **being removed incrementally** (project is `strict: true`).
+  Already type-safe (no nocheck): `src/lib/ai.ts`, **all 14 API routes**, **all
+  shared components**, and pages `forgot-password`/`reset-password`/`location`/
+  `messages`. ~27 heavy pages still carry it (market, login, register, settings,
+  contractor/*, supplier/*, admin/*). Common fixes: type untyped `useState(null)`/
+  `useState([])` as `<any>`, annotate `(e: any)` params, cast Supabase-join arrays
+  and `Record` indexing with `as any`. Gate every change with
+  `node <tsc> --noEmit --skipLibCheck` (build fails on type errors — no ignore).
 - RTL + Arabic primary; always provide ar/en/ur strings via the `L(en,ur,ar)` or `t.*` pattern.
 - Realtime notifications: use the **per-user filtered** subscription pattern, not broad table subscriptions.
 - Supabase joins with ambiguous FKs need disambiguation hints, e.g. `profiles!supplier_id`, `profiles!requested_by`.
