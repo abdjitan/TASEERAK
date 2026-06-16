@@ -526,11 +526,14 @@ export default function RFQDetailPage() {
                                     {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title="المسافة من موقع التوصيل">📏 {km < 1 ? '<1' : Math.round(km)} كم</span> : null })()}
                                     {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]">⚙️ {b.entry.specification}</span>}
                                     {b.entry.attachment_url && <a href={b.entry.attachment_url} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} className="text-purple-500 hover:underline">📎 كتالوج</a>}
-                                    <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} className="font-semibold hover:underline" style={{ color: '#F5831F' }}>تفاصيل ←</Link>
+                                    <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} title="عرض كل التفاصيل" className="inline-flex items-center gap-1 font-bold text-[11px] px-2.5 py-1 rounded-full transition-all hover:shadow-sm" style={{ color: '#fff', background: '#F5831F' }}>👁 التفاصيل</Link>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
-                                  <span className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{Number(b.entry.total).toLocaleString('en-US')} ر.س</span>
+                                  <div className="text-end leading-tight">
+                                    <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{(b.offer.vat_included ? Number(b.entry.total) : Number(b.entry.total) * 1.15).toLocaleString('en-US', { maximumFractionDigits: 0 })} ر.س</div>
+                                    <div className="text-[9px] text-gray-400">شامل الضريبة</div>
+                                  </div>
                                   {isAwarded ? (
                                     <span className="badge badge-green text-[10px] whitespace-nowrap">مُرسى ✓</span>
                                   ) : rfq.status === 'open' ? (
