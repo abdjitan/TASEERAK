@@ -716,6 +716,99 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'handrail', ar: 'اليد (Handrail)', en: 'Handrail', options: ['بدون','ستانلس','ألمنيوم','خشب'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','م² (متر مربع)'] },
   ] },
+  // ═══ مواد مدنية إضافية (مقترحات مراجَعة من الذكاء — القطاع المدني) ═══
+  { products: ['جير'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['جير مطفأ (Hydrated)','جير حي (Quicklime)','جير زراعي'] },
+    { key: 'packaging', ar: 'التعبئة', en: 'Packaging', options: ['كيس 20 كجم','كيس 25 كجم','سائب (Bulk)'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','مصنع الجير العربي','مصانع محلية أخرى'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كيس','طن'] },
+  ] },
+  { products: ['جبصين'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['جبس تشكيل (عادي/مغربي)','جبس زراعي','جبس بورد (بودرة)'] },
+    { key: 'setting_time', ar: 'سرعة الشك', en: 'Setting Time', options: ['عادي','سريع الشك','بطيء الشك'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','الجبس الأهلية','مدى (Mada)','مصنع محلي'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كيس 25 كجم','كيس 30 كجم','طن'] },
+  ] },
+  { products: ['طوب فارغ'], spec: [
+    { key: 'material', ar: 'المادة', en: 'Material', options: ['أسمنتي مفرغ','بركاني مفرغ (عازل)','أحمر مفرغ'] },
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['20x20x40 سم','15x20x40 سم','10x20x40 سم'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','الخياط','العمودي','مصانع البلوك المحلية'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['ألف حبة','حبة','طبلية'] },
+  ] },
+  { products: ['بلوك AAC خفيف'], spec: [
+    { key: 'density', ar: 'الكثافة', en: 'Density', options: ['400 كجم/م³','500 كجم/م³','600 كجم/م³'] },
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['20x20x60 سم','25x20x60 سم','15x20x60 سم','10x20x60 سم'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','سيبوريكس (Siporex)','مباني (Mabani)','خفيفة (Khafeefah)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر مكعب','ألف حبة','طبلية'] },
+  ] },
+  { products: ['حديد تسليح سلك'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['سلك رباط أسود ملدن','سلك مجلفن'] },
+    { key: 'gauge', ar: 'المقاس (Gauge)', en: 'Gauge', options: ['16 SWG','18 SWG','20 SWG'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','مصانع محلية'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لفة','كجم','طن'] },
+  ] },
+  { products: ['شبكة حديد جاهزة'], spec: [
+    { key: 'thickness', ar: 'سماكة السلك', en: 'Wire Thickness', options: ['5 مم','6 مم','7 مم','8 مم'] },
+    { key: 'mesh_size', ar: 'مقاس الفتحات', en: 'Mesh Size', options: ['15x15 سم','20x20 سم'] },
+    { key: 'sheet_size', ar: 'مقاس الشبكة', en: 'Sheet Size', options: ['2x5 متر','2.4x6 متر'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','سابك','الراجحي','مصنع محلي'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة (شبكة)','طن'] },
+  ] },
+  { products: ['صلب هيكلي IPE'], spec: [
+    { key: 'size', ar: 'المقاس (Profile)', en: 'Profile Size', options: ['IPE 100','IPE 160','IPE 200','IPE 300','IPE 400'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر'] },
+    { key: 'grade', ar: 'درجة الحديد', en: 'Grade', options: ['S275JR','S355JR'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','حديد سابك','الراجحي','مستورد (كوري/صيني)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','حبة (كمرة)'] },
+  ] },
+  { products: ['رمل بناء'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['رمل أبيض (مغسول)','رمل أحمر','رمل سافي'] },
+    { key: 'usage', ar: 'الاستخدام', en: 'Usage', options: ['للياسة','للبناء','للدفان','للخرسانة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر مكعب (م³)','رد (تريلا 24م³)','رد (قلاب 12م³)'] },
+  ] },
+  { products: ['كسارة'], spec: [
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['بحص 3/4 بوصة','بحص 3/8 بوصة','بودرة كسارة (زيرو)','بحص مخلوط'] },
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['حجر جيري','بازلت'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر مكعب (م³)','رد (تريلا 24م³)'] },
+  ] },
+  { products: ['عازل مائي للأساسات Liquid Applied'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['أساس مائي (Water Based)','أساس زيتي (Solvent Based)','مطاطي (Rubberized)'] },
+    { key: 'packaging', ar: 'التعبئة', en: 'Packaging', options: ['برميل 20 لتر','برميل 200 لتر'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','بيتومات (Bitumat)','ديرمابيت (Dermabit)','فوسروك (Fosroc)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['برميل','لتر'] },
+  ] },
+  { products: ['أنابيب خرسانية صرف خارجي'], spec: [
+    { key: 'diameter', ar: 'القطر الداخلي', en: 'Inner Diameter', options: ['300 مم','400 مم','600 مم','800 مم','1000 مم'] },
+    { key: 'class', ar: 'الدرجة (Class)', en: 'Class', options: ['Class 2','Class 3','Class 4'] },
+    { key: 'lining', ar: 'التبطين', en: 'Lining', options: ['مبطنة (HDPE/PVC)','غير مبطنة','مطلية إيبوكسي'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','الأنابيب السعودية','مصنع محلي'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','حبة (أنبوب)'] },
+  ] },
+  { products: ['ألواح بليود (طوبار) Plywood'], spec: [
+    { key: 'origin', ar: 'المنشأ', en: 'Origin', options: ['إندونيسي','ماليزي','صيني','أوروبي'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['18 مم','12 مم','9 مم'] },
+    { key: 'film_face', ar: 'الطبقة الخارجية', en: 'Film Face', options: ['فيلم أسود (Black Film)','فيلم بني (Brown Film)','بدون فيلم (عادي)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لوح','بندل (حزمة)'] },
+  ] },
+  { products: ['مرابيع خشب (طوبار)'], spec: [
+    { key: 'type', ar: 'نوع الخشب', en: 'Wood Type', options: ['خشب أبيض (تزانة/روماني)','خشب سويدي'] },
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['10x10 سم (4x4 بوصة)','5x10 سم (2x4 بوصة)'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['3 متر','4 متر','6 متر'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','متر مكعب (م³)'] },
+  ] },
+  { products: ['زيت فك الطوبار Shutter Oil'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['أساس مائي','أساس معدني (زيتي)'] },
+    { key: 'packaging', ar: 'التعبئة', en: 'Packaging', options: ['برميل 20 لتر','برميل 200 لتر'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','سيكا (Sika)','فوسروك (Fosroc)','بايونير'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['برميل','لتر'] },
+  ] },
+  { products: ['حجر كيرب'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['مائل (Mountable)','قائم (Barrier)','نصف دائري'] },
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['15x30x50 سم','15x25x50 سم','حسب المواصفات (البلدية)'] },
+    { key: 'color', ar: 'اللون', en: 'Color', options: ['رمادي (عادي)','أصفر','أحمر'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','مصانع محلية'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','حبة'] },
+  ] },
 ]
 for (const g of SPEC_GROUPS) { for (const p of g.products) PRODUCT_SPECS[p] = g.spec }
 
