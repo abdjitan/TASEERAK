@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, Suspense } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
@@ -78,13 +79,15 @@ function Messages() {
     const supabase = createClient()
     const { error } = await supabase.rpc('send_message', { p_conversation_id: activeId, p_body: text })
     setSending(false)
-    if (error) { setBody(text); return }
+    if (error) { setBody(text); alert((error as any)?.message || 'تعذّر إرسال الرسالة — حاول مرة ثانية.'); return }
     loadConvos()
   }
 
   const active = convos.find((c: any) => c.id === activeId)
   const counterpart = (c: any) => (c?.contractor_id === me ? c?.supplier : c?.contractor)?.company_name_ar || 'مستخدم'
   const ctx = (c: any) => c?.rfq?.title || c?.rfq?.product_name || ''
+
+  const backHref = role === 'supplier' ? '/supplier/dashboard' : role === 'admin' ? '/admin' : '/contractor'
 
   if (loading) return <PageLoader />
 
@@ -93,7 +96,10 @@ function Messages() {
       <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-4 h-[calc(100vh-130px)]">
         {/* قائمة المحادثات */}
         <aside className={`lg:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-y-auto ${activeId ? 'hidden lg:block' : ''}`}>
-          <div className="p-4 border-b border-gray-100 font-bold text-sm" style={{ color: '#1B2D5B' }}>💬 {locale === 'en' ? 'Conversations' : 'المحادثات'} ({convos.length})</div>
+          <div className="p-4 border-b border-gray-100 font-bold text-sm flex items-center gap-2" style={{ color: '#1B2D5B' }}>
+            <Link href={backHref} title={locale === 'en' ? 'Back' : 'رجوع'} className="w-7 h-7 grid place-items-center rounded-lg hover:bg-gray-100 text-gray-500 shrink-0">{dir === 'rtl' ? '→' : '←'}</Link>
+            <span>💬 {locale === 'en' ? 'Conversations' : 'المحادثات'} ({convos.length})</span>
+          </div>
           {convos.length === 0 ? (
             <div className="p-8 text-center text-sm text-gray-400">{locale === 'en' ? 'No conversations yet' : 'لا توجد محادثات بعد'}</div>
           ) : convos.map(c => (
