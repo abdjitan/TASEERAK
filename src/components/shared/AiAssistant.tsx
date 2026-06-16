@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
@@ -8,10 +7,10 @@ import { useTranslation } from '@/i18n'
 export default function AiAssistant() {
   const { locale, dir } = useTranslation()
   const [open, setOpen] = useState(false)
-  const [msgs, setMsgs] = useState([]) // {role:'user'|'assistant', content}
+  const [msgs, setMsgs] = useState<{ role: string; content: string }[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const endRef = useRef(null)
+  const endRef = useRef<any>(null)
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs, loading, open])
 

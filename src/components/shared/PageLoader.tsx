@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 // Branded page loader — matches the login look (navy scene, floating logo

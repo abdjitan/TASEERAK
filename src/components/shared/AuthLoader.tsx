@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 // Taseerak luxe loading overlay — shown during the login → dashboard transition.
@@ -13,9 +12,9 @@ export default function AuthLoader({ show = false, progress = 0, status = '', lo
 
   useEffect(() => {
     if (!show) return
-    const c = canvasRef.current
+    const c = canvasRef.current!
     if (!c) return
-    const x = c.getContext('2d')
+    const x = c.getContext('2d')!
     if (!x) return
     let W = 0, H = 0, D = 1, nodes: any[] = [], hub: any = { x: 0, y: 0 }, pulses: any[] = [], last = performance.now(), nb = 0.5
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches

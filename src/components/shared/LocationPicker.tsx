@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState } from 'react'
@@ -35,7 +34,7 @@ const txt = {
 }
 
 export default function LocationPicker({ lat, lng, onChange, locale = 'ar' }: LocationPickerProps) {
-  const T = txt[locale] || txt.ar
+  const T = (txt as any)[locale] || txt.ar
   const [detecting, setDetecting] = useState(false)
   const [error, setError] = useState('')
   const [mapLink, setMapLink] = useState('')

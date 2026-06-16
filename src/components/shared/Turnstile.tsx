@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 // A self-contained Cloudflare Turnstile widget (no npm dependency). It loads
