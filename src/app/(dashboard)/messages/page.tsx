@@ -27,7 +27,12 @@ function Messages() {
   const [body, setBody] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [awarded, setAwarded] = useState(true) // افتراضياً نسمح؛ نتحقق عند فتح المحادثة
   const endRef = useRef<any>(null)
+
+  const PREAWARD_MAX = 20
+  const remaining = PREAWARD_MAX - msgs.length
+  const blocked = !awarded && remaining <= 0
 
   async function loadConvos() {
     const supabase = createClient()
@@ -59,6 +64,18 @@ function Messages() {
     ;(async () => {
       const { data } = await supabase.from('messages').select('*').eq('conversation_id', activeId).order('created_at')
       setMsgs(data || [])
+      // هل تمّت الترسية لهذا المورد على هذا الطلب؟ (يرفع حدّ الرسائل)
+      const conv = convos.find((c: any) => c.id === activeId)
+      let aw = false
+      if (conv?.rfq_id && conv?.supplier_id) {
+        const { data: aws } = await supabase.from('rfq_item_awards').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).limit(1)
+        if (aws && aws.length) aw = true
+        else {
+          const { data: ofs } = await supabase.from('offers').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).eq('status', 'accepted').limit(1)
+          if (ofs && ofs.length) aw = true
+        }
+      }
+      setAwarded(aw)
       await supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('conversation_id', activeId).neq('sender_id', me).is('read_at', null)
       ch = supabase.channel(`conv-${activeId}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeId}` }, (payload) => {
@@ -142,9 +159,16 @@ function Messages() {
                 })}
                 <div ref={endRef} />
               </div>
+              {!awarded && (
+                <div className={`px-3 pt-2 text-[10px] ${blocked ? 'text-red-500' : 'text-gray-400'}`}>
+                  {blocked
+                    ? '🔒 بلغت الحد الأقصى للرسائل قبل الترسية. يكتمل التواصل بعد إتمام الصفقة.'
+                    : `التواصل قبل الترسية محدود — متبقٍّ ${remaining} رسالة`}
+                </div>
+              )}
               <form onSubmit={send} className="p-3 border-t border-gray-100 flex gap-2">
-                <input value={body} onChange={e => setBody(e.target.value)} className="input-field flex-1 text-sm" placeholder={locale === 'en' ? 'Type a message…' : 'اكتب رسالة…'} />
-                <button type="submit" disabled={sending || !body.trim()} className="px-5 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#F5831F' }}>
+                <input value={body} onChange={e => setBody(e.target.value)} disabled={blocked} className="input-field flex-1 text-sm disabled:bg-gray-50" placeholder={blocked ? 'انتهى الحد المسموح قبل الترسية' : (locale === 'en' ? 'Type a message…' : 'اكتب رسالة…')} />
+                <button type="submit" disabled={sending || blocked || !body.trim()} className="px-5 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#F5831F' }}>
                   {locale === 'en' ? 'Send' : 'إرسال'}
                 </button>
               </form>
