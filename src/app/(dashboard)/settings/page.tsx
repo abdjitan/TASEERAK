@@ -239,18 +239,25 @@ export default function SettingsPage() {
     let licenseUrl = profile?.license_url
     let crUrl = profile?.cr_url
 
+    // رفع عبر مسار خادمي يفحص المحتوى (magic-byte) قبل التخزين — لا رفع مباشر من المتصفح
+    async function up(file: any, kind: string): Promise<string | null> {
+      const fd = new FormData(); fd.append('file', file); fd.append('kind', kind)
+      const res = await fetch('/api/upload-verification', { method: 'POST', body: fd })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j.ok) { setDocsMsg(j?.message || t.error); return null }
+      return j.path as string
+    }
+
     if (licenseFile) {
-      const ext = licenseFile.name.split('.').pop()
-      const path = `${user.id}/license.${ext}`
-      const { data } = await supabase.storage.from('verification').upload(path, licenseFile, { upsert: true })
-      if (data) licenseUrl = data.path
+      const p = await up(licenseFile, 'license')
+      if (p === null) { setDocsSaving(false); return }
+      licenseUrl = p
     }
 
     if (crFile) {
-      const ext = crFile.name.split('.').pop()
-      const path = `${user.id}/cr.${ext}`
-      const { data } = await supabase.storage.from('verification').upload(path, crFile, { upsert: true })
-      if (data) crUrl = data.path
+      const p = await up(crFile, 'cr')
+      if (p === null) { setDocsSaving(false); return }
+      crUrl = p
     }
 
     const { error } = await supabase.from('profiles').update({

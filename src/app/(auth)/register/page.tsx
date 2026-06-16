@@ -226,14 +226,13 @@ export default function RegisterPage() {
     setAutoDetected(selectedType === 'supplier' ? dSpecs.length : dSectors.length)
   }
 
-  async function uploadFile(file: File, path: string) {
-    // sensitive docs (license / CR) → PRIVATE "verification" bucket.
-    // store the PATH; signed URLs are generated on display.
-    const { data, error } = await supabase.storage
-      .from('verification')
-      .upload(path, file, { upsert: true })
-    if (error) return null
-    return data.path
+  async function uploadFile(file: File, kind: string) {
+    // المستندات الحسّاسة (رخصة / سجل) → عبر مسار خادمي يفحص المحتوى (magic-byte)
+    // ثم يخزّن في الحاوية الخاصّة "verification". لا رفع مباشر من المتصفح.
+    const fd = new FormData(); fd.append('file', file); fd.append('kind', kind)
+    const res = await fetch('/api/upload-verification', { method: 'POST', body: fd })
+    const j = await res.json().catch(() => ({}))
+    return (res.ok && j.ok) ? j.path : null
   }
 
   // Verify the Commercial Registration against the official source (Wathq)
@@ -384,8 +383,8 @@ export default function RegisterPage() {
       // 3. Email confirmation OFF → we have a session. Documents are uploaded
       //    AFTER registration from Settings → Documents. No national-ID is collected.
       let licenseUrl = null, crUrl = null
-      if (licenseFile) licenseUrl = await uploadFile(licenseFile, `${userId}/license.${licenseFile.name.split('.').pop()}`)
-      if (crFile) crUrl = await uploadFile(crFile, `${userId}/cr.${crFile.name.split('.').pop()}`)
+      if (licenseFile) licenseUrl = await uploadFile(licenseFile, 'license')
+      if (crFile) crUrl = await uploadFile(crFile, 'cr')
       if (licenseUrl || crUrl) {
         await supabase.from('profiles').update({ license_url: licenseUrl, cr_url: crUrl }).eq('id', userId)
       }
