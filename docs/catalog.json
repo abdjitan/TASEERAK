@@ -1,0 +1,5939 @@
+{
+  "generatedAt": "2026-06-16T10:25:08.732Z",
+  "sectors": {
+    "civil": {
+      "label": "مدني",
+      "groups": {
+        "concrete": {
+          "label": "الخرسانة والإسمنت",
+          "items": [
+            {
+              "name": "أسمنت",
+              "sub": "أسمنت ومواد رابطة",
+              "unit": "كيس 50 كجم",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "بورتلاند عادي OPC",
+                    "مقاوم للكبريت SRC",
+                    "أسمنت تشطيب Finishing",
+                    "أسمنت أبيض",
+                    "أسمنت بوزولاني"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "كيس 50 كجم",
+                    "طن",
+                    "سائب (Bulk)"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "أسمنت اليمامة",
+                    "أسمنت السعودية",
+                    "أسمنت القصيم",
+                    "أسمنت الجنوب",
+                    "أسمنت ينبع",
+                    "أسمنت العربية"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "خرسانة جاهزة",
+              "sub": "خرسانة جاهزة (Ready-Mix)",
+              "unit": "م³ (متر مكعب)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "strength",
+                  "ar": "قوة الخرسانة",
+                  "en": "Strength",
+                  "options": [
+                    "C-15",
+                    "C-20",
+                    "C-25",
+                    "C-30",
+                    "C-35",
+                    "C-40",
+                    "C-45",
+                    "C-50",
+                    "C-60"
+                  ]
+                },
+                {
+                  "key": "additive",
+                  "ar": "الإضافات",
+                  "en": "Additives",
+                  "options": [
+                    "بدون",
+                    "Fly Ash (رماد متطاير)",
+                    "Microsilica (سيليكا دقيقة)",
+                    "Fly Ash + Microsilica",
+                    "ملدّن (Plasticizer)",
+                    "مؤخّر شك (Retarder)",
+                    "ألياف"
+                  ]
+                },
+                {
+                  "key": "slump",
+                  "ar": "الهبوط (Slump)",
+                  "en": "Slump",
+                  "options": [
+                    "10 سم",
+                    "12 سم",
+                    "15 سم",
+                    "18 سم (مضخة)"
+                  ]
+                },
+                {
+                  "key": "placing",
+                  "ar": "طريقة الصب",
+                  "en": "Placing",
+                  "options": [
+                    "بالمضخة",
+                    "مضخة بوم (Boom)",
+                    "صب مباشر"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م³ (متر مكعب)"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "جير",
+              "sub": "أسمنت ومواد رابطة",
+              "unit": "كيس",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "جبصين",
+              "sub": "أسمنت ومواد رابطة",
+              "unit": "كيس",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "masonry": {
+          "label": "الكتل والطوب والمسبقات",
+          "items": [
+            {
+              "name": "خرسانة مسبقة الصب",
+              "sub": "خرسانة مسبقة الصنع (Precast)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عتبات خرسانية مسبقة الصب",
+              "sub": "خرسانة مسبقة الصنع (Precast)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أعمدة مسبقة الصب",
+              "sub": "خرسانة مسبقة الصنع (Precast)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بلاطات مسبقة الصب",
+              "sub": "خرسانة مسبقة الصنع (Precast)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مدرجات مسبقة الصب",
+              "sub": "خرسانة مسبقة الصنع (Precast)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "طوب أحمر",
+              "sub": "بلوك وآجر (أسود/معزول/سيبوريكس)",
+              "unit": "بالألف حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "مفرّغ",
+                    "مصمت",
+                    "حراري"
+                  ]
+                },
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "قياسي 6×12×25",
+                    "كبير",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "بالألف حبة",
+                    "حبة",
+                    "متر مربع"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "طوب فارغ",
+              "sub": "بلوك وآجر (أسود/معزول/سيبوريكس)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بلوك خرساني",
+              "sub": "بلوك وآجر (أسود/معزول/سيبوريكس)",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "مجوف Hollow",
+                    "معزول Insulated",
+                    "مصمت Solid",
+                    "خفيف AAC"
+                  ]
+                },
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "20×20×40 سم",
+                    "15×20×40 سم",
+                    "10×20×40 سم",
+                    "25×20×40 سم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة",
+                    "متر مربع",
+                    "بالألف حبة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "بلوك AAC خفيف",
+              "sub": "بلوك وآجر (أسود/معزول/سيبوريكس)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بلوك EPS عازل",
+              "sub": "بلوك وآجر (أسود/معزول/سيبوريكس)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مدرجات مسبقة الصب Bleachers",
+              "sub": "خرسانة مسبقة الصنع (Precast)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مقاعد ملعب",
+              "sub": "خرسانة مسبقة الصنع (Precast)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "steel": {
+          "label": "الحديد والإنشاءات المعدنية",
+          "items": [
+            {
+              "name": "حديد تسليح",
+              "sub": "حديد تسليح",
+              "unit": "طن",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "8 مم",
+                    "10 مم",
+                    "12 مم",
+                    "14 مم",
+                    "16 مم",
+                    "18 مم",
+                    "20 مم",
+                    "25 مم",
+                    "32 مم"
+                  ]
+                },
+                {
+                  "key": "length",
+                  "ar": "الطول",
+                  "en": "Length",
+                  "options": [
+                    "12 متر",
+                    "6 متر",
+                    "حسب القص (مقصوص)"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "درجة الحديد",
+                  "en": "Grade",
+                  "options": [
+                    "B500B-W",
+                    "B500C",
+                    "Grade 60 (جراد 60)"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "سابك (SABIC)",
+                    "الراجحي",
+                    "اليمامة",
+                    "حديد عمار",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "طن",
+                    "سيخ"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "حديد تسليح سلك",
+              "sub": "حديد تسليح",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شبكة حديد جاهزة",
+              "sub": "شبك حديد وإكسسوارات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صلب هيكلي HEB",
+              "sub": "حديد تجاري وقطاعات",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صلب هيكلي HEA",
+              "sub": "حديد تجاري وقطاعات",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صلب هيكلي IPE",
+              "sub": "حديد تجاري وقطاعات",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صفائح فولاذية",
+              "sub": "حديد تجاري وقطاعات",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شبك رابيتز",
+              "sub": "شبك حديد وإكسسوارات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سلالم رياضية Raker Beams",
+              "sub": "حديد تجاري وقطاعات",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قطاعات دائرية CHS 273mm",
+              "sub": "حديد تجاري وقطاعات",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قطاعات دائرية CHS 300mm",
+              "sub": "حديد تجاري وقطاعات",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قطاعات مستطيلة RHS",
+              "sub": "حديد تجاري وقطاعات",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "زوايا وقطاعات حديد",
+              "sub": "حديد تجاري وقطاعات",
+              "unit": "طن",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "rawmaterials": {
+          "label": "الركام وأعمال الموقع",
+          "items": [
+            {
+              "name": "رمل بناء",
+              "sub": "رمل وبحص وبودرة",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رمل ناعم",
+              "sub": "رمل وبحص وبودرة",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حصى",
+              "sub": "رمل وبحص وبودرة",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "زلط",
+              "sub": "رمل وبحص وبودرة",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كسارة",
+              "sub": "رمل وبحص وبودرة",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ركام مدمج",
+              "sub": "رمل وبحص وبودرة",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أعمال ترابية وحفر",
+              "sub": "أعمال موقع وحفر وردم",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مواد ردم وتسوية",
+              "sub": "أعمال موقع وحفر وردم",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حجر طبيعي خام",
+              "sub": "رمل وبحص وبودرة",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "تمهيد وتسوية أرض",
+              "sub": "أعمال موقع وحفر وردم",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حصى مرشحة Sub-base",
+              "sub": "رمل وبحص وبودرة",
+              "unit": "م³",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "infrastructure": {
+          "label": "العزل والأساسات والمعالجات",
+          "items": [
+            {
+              "name": "أوتاد خرسانية",
+              "sub": "أوتاد وخوازيق الأساسات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أوتاد حديد مجوف",
+              "sub": "أوتاد وخوازيق الأساسات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عازل مائي للأساسات Liquid Applied",
+              "sub": "عوازل مائية وحرارية للأساسات",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فيلم بولي ايثيلين",
+              "sub": "عوازل مائية وحرارية للأساسات",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عازل مائي Tanking",
+              "sub": "عوازل مائية وحرارية للأساسات",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "غشاء عازل للأسطح",
+              "sub": "عوازل مائية وحرارية للأساسات",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "drainage_grp": {
+          "label": "الصرف والأنابيب الخارجية",
+          "items": [
+            {
+              "name": "أنابيب HDPE SDR11 صرف أمطار 100mm",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب HDPE SDR11 صرف أمطار 150mm",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب HDPE SDR11 صرف أمطار 200mm",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب HDPE SDR11 صرف أمطار 300mm",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب HDPE SDR11 صرف أمطار 400mm",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب خرسانية صرف خارجي",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب خرسانية مسلحة RCP",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب حديد مرن Ductile Iron مياه رئيسية",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "غرف تفتيش خرسانية",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أغطية منهول حديد",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مصارف خطية",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "إسفلت",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "طبقة أسفلتية",
+              "sub": "صرف خارجي وبنية تحتية",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "formwork": {
+          "label": "الطوبار والشدّات الخشبية",
+          "items": [
+            {
+              "name": "ألواح بليود (طوبار) Plywood",
+              "sub": "ألواح بليود وأخشاب الشدّات",
+              "unit": "لوحة",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خشب بناء للشدّات",
+              "sub": "ألواح بليود وأخشاب الشدّات",
+              "unit": "لوحة",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مرابيع خشب (طوبار)",
+              "sub": "مرابيع وعوارض خشبية (H20)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عوارض خشبية H20",
+              "sub": "مرابيع وعوارض خشبية (H20)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "طوبار معدني جاهز",
+              "sub": "طوبار معدني وقمط وزيوت فك",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قمط شدّة أعمدة Column Clamp",
+              "sub": "طوبار معدني وقمط وزيوت فك",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قضبان شد الطوبار Tie Rods",
+              "sub": "طوبار معدني وقمط وزيوت فك",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "زيت فك الطوبار Shutter Oil",
+              "sub": "طوبار معدني وقمط وزيوت فك",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "scaffolding": {
+          "label": "السقالات والدعامات",
+          "items": [
+            {
+              "name": "قائم سقالة Standard",
+              "sub": "قوائم وعوارض ومواسير السقالات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عارضة أفقية سقالة Ledger",
+              "sub": "قوائم وعوارض ومواسير السقالات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "دعامة قطرية سقالة Brace",
+              "sub": "قوائم وعوارض ومواسير السقالات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ماسورة سقالة Tube",
+              "sub": "قوائم وعوارض ومواسير السقالات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "إطار سقالة معدنية Frame",
+              "sub": "قوائم وعوارض ومواسير السقالات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قاعدة ثابتة Base Plate",
+              "sub": "قواعد وجاكات السقالات (بيس/يو جاك)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بيس جاك قابل للتعديل",
+              "sub": "قواعد وجاكات السقالات (بيس/يو جاك)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "يو جاك U-Head",
+              "sub": "قواعد وجاكات السقالات (بيس/يو جاك)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سكرو جاك تعديل",
+              "sub": "قواعد وجاكات السقالات (بيس/يو جاك)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "منصة وقوف معدنية Steel Deck",
+              "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سلم سقالة",
+              "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كوبلر مشبك سقالة Coupler",
+              "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "جاكات تدعيم Acrow Prop",
+              "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "برج تدعيم Shoring Tower",
+              "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "درابزين أمان سقالة Guard Rail",
+              "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "landscape": {
+          "label": "التنسيق والأعمال الخارجية",
+          "items": [
+            {
+              "name": "حجر كيرب",
+              "sub": "إنترلوك وبردورات وتبليط خارجي",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بلاط رصف خارجي",
+              "sub": "إنترلوك وبردورات وتبليط خارجي",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب ري HDPE خارجية",
+              "sub": "شبكات ري ورشاشات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شبكة ري خارجية",
+              "sub": "شبكات ري ورشاشات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رصف بلاط خارجي",
+              "sub": "إنترلوك وبردورات وتبليط خارجي",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رصف حجر طبيعي",
+              "sub": "عشب (طبيعي/صناعي/هجين)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "تشجير وزراعة",
+              "sub": "أحواض زراعة وعناصر تنسيق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "تربة زراعية Topsoil",
+              "sub": "أحواض زراعة وعناصر تنسيق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام ري شبكة خارجية",
+              "sub": "شبكات ري ورشاشات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة ري",
+              "sub": "شبكات ري ورشاشات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        }
+      }
+    },
+    "architectural": {
+      "label": "معماري",
+      "groups": {
+        "floors_walls": {
+          "label": "الأرضيات والحوائط",
+          "items": [
+            {
+              "name": "بلاط بورسلين حجري",
+              "sub": "بلاط وبورسلان وسيراميك",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "60×60",
+                    "80×80",
+                    "120×60",
+                    "30×60",
+                    "30×30",
+                    "100×100",
+                    "120×120",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مطفي Matt",
+                    "لامع Polished",
+                    "نصف لامع",
+                    "محبب Anti-slip",
+                    "مزخرف"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "الدرجة",
+                  "en": "Grade",
+                  "options": [
+                    "أولى",
+                    "ممتازة",
+                    "تجارية"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "8 مم",
+                    "9 مم",
+                    "10 مم",
+                    "12 مم",
+                    "20 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "بلاط بورسلين رمادي",
+              "sub": "بلاط وبورسلان وسيراميك",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "60×60",
+                    "80×80",
+                    "120×60",
+                    "30×60",
+                    "30×30",
+                    "100×100",
+                    "120×120",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مطفي Matt",
+                    "لامع Polished",
+                    "نصف لامع",
+                    "محبب Anti-slip",
+                    "مزخرف"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "الدرجة",
+                  "en": "Grade",
+                  "options": [
+                    "أولى",
+                    "ممتازة",
+                    "تجارية"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "8 مم",
+                    "9 مم",
+                    "10 مم",
+                    "12 مم",
+                    "20 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "بلاط بورسلين رخامي",
+              "sub": "بلاط وبورسلان وسيراميك",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "60×60",
+                    "80×80",
+                    "120×60",
+                    "30×60",
+                    "30×30",
+                    "100×100",
+                    "120×120",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مطفي Matt",
+                    "لامع Polished",
+                    "نصف لامع",
+                    "محبب Anti-slip",
+                    "مزخرف"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "الدرجة",
+                  "en": "Grade",
+                  "options": [
+                    "أولى",
+                    "ممتازة",
+                    "تجارية"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "8 مم",
+                    "9 مم",
+                    "10 مم",
+                    "12 مم",
+                    "20 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "بلاط بورسلين خشبي",
+              "sub": "بلاط وبورسلان وسيراميك",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "60×60",
+                    "80×80",
+                    "120×60",
+                    "30×60",
+                    "30×30",
+                    "100×100",
+                    "120×120",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مطفي Matt",
+                    "لامع Polished",
+                    "نصف لامع",
+                    "محبب Anti-slip",
+                    "مزخرف"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "الدرجة",
+                  "en": "Grade",
+                  "options": [
+                    "أولى",
+                    "ممتازة",
+                    "تجارية"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "8 مم",
+                    "9 مم",
+                    "10 مم",
+                    "12 مم",
+                    "20 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "بلاط بورسلين خرساني",
+              "sub": "بلاط وبورسلان وسيراميك",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "60×60",
+                    "80×80",
+                    "120×60",
+                    "30×60",
+                    "30×30",
+                    "100×100",
+                    "120×120",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مطفي Matt",
+                    "لامع Polished",
+                    "نصف لامع",
+                    "محبب Anti-slip",
+                    "مزخرف"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "الدرجة",
+                  "en": "Grade",
+                  "options": [
+                    "أولى",
+                    "ممتازة",
+                    "تجارية"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "8 مم",
+                    "9 مم",
+                    "10 مم",
+                    "12 مم",
+                    "20 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "بلاط سيراميك",
+              "sub": "بلاط وبورسلان وسيراميك",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "60×60",
+                    "80×80",
+                    "120×60",
+                    "30×60",
+                    "30×30",
+                    "100×100",
+                    "120×120",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مطفي Matt",
+                    "لامع Polished",
+                    "نصف لامع",
+                    "محبب Anti-slip",
+                    "مزخرف"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "الدرجة",
+                  "en": "Grade",
+                  "options": [
+                    "أولى",
+                    "ممتازة",
+                    "تجارية"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "8 مم",
+                    "9 مم",
+                    "10 مم",
+                    "12 مم",
+                    "20 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "بلاط رخام طبيعي",
+              "sub": "بلاط وبورسلان وسيراميك",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 سم",
+                    "3 سم",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مصقول Polished",
+                    "مطفي Honed",
+                    "مفجّر Flamed",
+                    "مضلّع"
+                  ]
+                },
+                {
+                  "key": "origin",
+                  "ar": "المصدر",
+                  "en": "Origin",
+                  "options": [
+                    "سعودي",
+                    "مصري",
+                    "تركي",
+                    "إيطالي",
+                    "صيني",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "حسب القطعة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "جرانيت",
+              "sub": "رخام وجرانيت وحجر",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 سم",
+                    "3 سم",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مصقول Polished",
+                    "مطفي Honed",
+                    "مفجّر Flamed",
+                    "مضلّع"
+                  ]
+                },
+                {
+                  "key": "origin",
+                  "ar": "المصدر",
+                  "en": "Origin",
+                  "options": [
+                    "سعودي",
+                    "مصري",
+                    "تركي",
+                    "إيطالي",
+                    "صيني",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "حسب القطعة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "أرضية إيبوكسي",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أرضية راتنج إيبوكسي مع قرنيص",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سجاد Carpet Tile",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سجاد رول لاصق",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "باركيه خشبي",
+              "sub": "باركيه وفينيل وSPC",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "HDF",
+                    "SPC",
+                    "WPC",
+                    "فينيل لاصق",
+                    "باركيه طبيعي"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "4 مم",
+                    "6 مم",
+                    "8 مم",
+                    "12 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "فينيل",
+              "sub": "باركيه وفينيل وSPC",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "HDF",
+                    "SPC",
+                    "WPC",
+                    "فينيل لاصق",
+                    "باركيه طبيعي"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "4 مم",
+                    "6 مم",
+                    "8 مم",
+                    "12 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "مطاط Entrance Matting",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بلاط سيراميك جدار",
+              "sub": "بلاط وبورسلان وسيراميك",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "60×60",
+                    "80×80",
+                    "120×60",
+                    "30×60",
+                    "30×30",
+                    "100×100",
+                    "120×120",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مطفي Matt",
+                    "لامع Polished",
+                    "نصف لامع",
+                    "محبب Anti-slip",
+                    "مزخرف"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "الدرجة",
+                  "en": "Grade",
+                  "options": [
+                    "أولى",
+                    "ممتازة",
+                    "تجارية"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "8 مم",
+                    "9 مم",
+                    "10 مم",
+                    "12 مم",
+                    "20 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "بلاط بورسلين جدار",
+              "sub": "بلاط وبورسلان وسيراميك",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "60×60",
+                    "80×80",
+                    "120×60",
+                    "30×60",
+                    "30×30",
+                    "100×100",
+                    "120×120",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مطفي Matt",
+                    "لامع Polished",
+                    "نصف لامع",
+                    "محبب Anti-slip",
+                    "مزخرف"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "الدرجة",
+                  "en": "Grade",
+                  "options": [
+                    "أولى",
+                    "ممتازة",
+                    "تجارية"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "8 مم",
+                    "9 مم",
+                    "10 مم",
+                    "12 مم",
+                    "20 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "حجر بازلت",
+              "sub": "رخام وجرانيت وحجر",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 سم",
+                    "3 سم",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مصقول Polished",
+                    "مطفي Honed",
+                    "مفجّر Flamed",
+                    "مضلّع"
+                  ]
+                },
+                {
+                  "key": "origin",
+                  "ar": "المصدر",
+                  "en": "Origin",
+                  "options": [
+                    "سعودي",
+                    "مصري",
+                    "تركي",
+                    "إيطالي",
+                    "صيني",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "حسب القطعة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "حجر صناعي",
+              "sub": "رخام وجرانيت وحجر",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 سم",
+                    "3 سم",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مصقول Polished",
+                    "مطفي Honed",
+                    "مفجّر Flamed",
+                    "مضلّع"
+                  ]
+                },
+                {
+                  "key": "origin",
+                  "ar": "المصدر",
+                  "en": "Origin",
+                  "options": [
+                    "سعودي",
+                    "مصري",
+                    "تركي",
+                    "إيطالي",
+                    "صيني",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "حسب القطعة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "أرفف خشبية",
+              "sub": "باركيه وفينيل وSPC",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أرضية راتنج إيبوكسي High Build",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أرضية تيرازو Terrazzo",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أرضية مطاطية Rubber Flooring",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أرضية مطاطية رياضية Sports Floor",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أرضية أكسس فلور Raised Access Floor",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فرشة مسطحة Screed Heavy Duty",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فرشة مسطحة Self-Levelling",
+              "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فينيل ورقي Vinyl Sheet",
+              "sub": "باركيه وفينيل وSPC",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فينيل مضاد للانزلاق",
+              "sub": "باركيه وفينيل وSPC",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قرنيوص فينيل Vinyl Skirting",
+              "sub": "باركيه وفينيل وSPC",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "ceiling_decor": {
+          "label": "الأسقف والديكورات الداخلية",
+          "items": [
+            {
+              "name": "جبس بورد حوائط",
+              "sub": "جبس بورد وقواطع",
+              "unit": "لوح",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "عادي",
+                    "مقاوم رطوبة MR",
+                    "مقاوم حريق FR",
+                    "مزدوج"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "9 مم",
+                    "12.5 مم",
+                    "15 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "لوح",
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "جبس بورد مقاوم رطوبة MR",
+              "sub": "جبس بورد وقواطع",
+              "unit": "لوح",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "عادي",
+                    "مقاوم رطوبة MR",
+                    "مقاوم حريق FR",
+                    "مزدوج"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "9 مم",
+                    "12.5 مم",
+                    "15 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "لوح",
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "جبس بورد مقاوم حريق FR",
+              "sub": "جبس بورد وقواطع",
+              "unit": "لوح",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "عادي",
+                    "مقاوم رطوبة MR",
+                    "مقاوم حريق FR",
+                    "مزدوج"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "9 مم",
+                    "12.5 مم",
+                    "15 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "لوح",
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "جبس بورد مزدوج",
+              "sub": "جبس بورد وقواطع",
+              "unit": "لوح",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "عادي",
+                    "مقاوم رطوبة MR",
+                    "مقاوم حريق FR",
+                    "مزدوج"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "9 مم",
+                    "12.5 مم",
+                    "15 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "لوح",
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "أسقف مستعارة جبس",
+              "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أسقف مستعارة معدنية",
+              "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أسقف كالسيوم سيليكات",
+              "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بلاطات أسقف صوتية 600×600",
+              "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أسقف صوتية مبطنة",
+              "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أسقف مكشوفة مطلية",
+              "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قواطع حمامات HPL",
+              "sub": "جبس بورد وقواطع",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لواح صوتية PET Panels",
+              "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "doors_windows": {
+          "label": "الأبواب والشبابيك والواجهات",
+          "items": [
+            {
+              "name": "كلادينج ألمنيوم كومبوزيت ACM",
+              "sub": "ألمنيوم وشبابيك",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أبواب خشب داخلية",
+              "sub": "أبواب خشبية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أبواب خشب مع إطار معدني",
+              "sub": "أبواب خشبية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أبواب حديد مقاومة حريق 45 دقيقة",
+              "sub": "أبواب حديد وحريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أبواب حديد مقاومة حريق 90 دقيقة",
+              "sub": "أبواب حديد وحريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أبواب ألمنيوم",
+              "sub": "ألمنيوم وشبابيك",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أبواب ستانلس",
+              "sub": "أبواب حديد وحريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "باب دوار Rolling Shutter",
+              "sub": "أبواب أوتوماتيكية وكراجات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نوافذ ألمنيوم زجاج مزدوج",
+              "sub": "ألمنيوم وشبابيك",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نوافذ UPVC",
+              "sub": "ألمنيوم وشبابيك",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "paint_facade": {
+          "label": "الدهانات والديكورات الخارجية",
+          "items": [
+            {
+              "name": "دهان أكريليك",
+              "sub": "دهانات (جوتن/الجزيرة)",
+              "unit": "جالون 18 لتر",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "usage",
+                  "ar": "الاستخدام",
+                  "en": "Usage",
+                  "options": [
+                    "داخلي",
+                    "خارجي",
+                    "معدن",
+                    "خشب",
+                    "أساس Primer"
+                  ]
+                },
+                {
+                  "key": "sheen",
+                  "ar": "اللمعان",
+                  "en": "Sheen",
+                  "options": [
+                    "مطفي Matt",
+                    "نصف لامع",
+                    "لامع",
+                    "حريري Silk"
+                  ]
+                },
+                {
+                  "key": "base",
+                  "ar": "الأساس",
+                  "en": "Base",
+                  "options": [
+                    "مائي Water-based",
+                    "زيتي Oil-based",
+                    "أكريليك",
+                    "إيبوكسي"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "جالون 18 لتر",
+                    "بستلة",
+                    "لتر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة",
+                    "جوتن Jotun",
+                    "الجزيرة",
+                    "ناشيونال",
+                    "سايبس"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "دهان زيتي",
+              "sub": "دهانات (جوتن/الجزيرة)",
+              "unit": "جالون 18 لتر",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "usage",
+                  "ar": "الاستخدام",
+                  "en": "Usage",
+                  "options": [
+                    "داخلي",
+                    "خارجي",
+                    "معدن",
+                    "خشب",
+                    "أساس Primer"
+                  ]
+                },
+                {
+                  "key": "sheen",
+                  "ar": "اللمعان",
+                  "en": "Sheen",
+                  "options": [
+                    "مطفي Matt",
+                    "نصف لامع",
+                    "لامع",
+                    "حريري Silk"
+                  ]
+                },
+                {
+                  "key": "base",
+                  "ar": "الأساس",
+                  "en": "Base",
+                  "options": [
+                    "مائي Water-based",
+                    "زيتي Oil-based",
+                    "أكريليك",
+                    "إيبوكسي"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "جالون 18 لتر",
+                    "بستلة",
+                    "لتر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة",
+                    "جوتن Jotun",
+                    "الجزيرة",
+                    "ناشيونال",
+                    "سايبس"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "دهان مضاد للرطوبة",
+              "sub": "دهانات (جوتن/الجزيرة)",
+              "unit": "جالون 18 لتر",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "usage",
+                  "ar": "الاستخدام",
+                  "en": "Usage",
+                  "options": [
+                    "داخلي",
+                    "خارجي",
+                    "معدن",
+                    "خشب",
+                    "أساس Primer"
+                  ]
+                },
+                {
+                  "key": "sheen",
+                  "ar": "اللمعان",
+                  "en": "Sheen",
+                  "options": [
+                    "مطفي Matt",
+                    "نصف لامع",
+                    "لامع",
+                    "حريري Silk"
+                  ]
+                },
+                {
+                  "key": "base",
+                  "ar": "الأساس",
+                  "en": "Base",
+                  "options": [
+                    "مائي Water-based",
+                    "زيتي Oil-based",
+                    "أكريليك",
+                    "إيبوكسي"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "جالون 18 لتر",
+                    "بستلة",
+                    "لتر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة",
+                    "جوتن Jotun",
+                    "الجزيرة",
+                    "ناشيونال",
+                    "سايبس"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "لواح GRC خارجية",
+              "sub": "GRC وكسوة الواجهات",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عازل مائي سيماني Cementitious Render",
+              "sub": "GRC وكسوة الواجهات",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "facade_systems": {
+          "label": "الواجهات المتطورة",
+          "items": [
+            {
+              "name": "زجاج عادي",
+              "sub": "واجهات ستائرية وزجاجية (Curtain Wall)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "زجاج سيكوريت Tempered",
+              "sub": "واجهات ستائرية وزجاجية (Curtain Wall)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "زجاج عازل مزدوج",
+              "sub": "واجهات ستائرية وزجاجية (Curtain Wall)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "زجاج رفلكتيف",
+              "sub": "واجهات ستائرية وزجاجية (Curtain Wall)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "واجهات زجاجية Curtain Wall",
+              "sub": "واجهات ستائرية وزجاجية (Curtain Wall)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "درابزين زجاجي بحواجز",
+              "sub": "واجهات ستائرية وزجاجية (Curtain Wall)",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "arch_metalwork": {
+          "label": "الأعمال المعدنية والمصاعد",
+          "items": [
+            {
+              "name": "درابزين ستانلس",
+              "sub": "درابزين وسلالم ومشربيات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سلالم حديد",
+              "sub": "درابزين وسلالم ومشربيات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مشربيات",
+              "sub": "درابزين وسلالم ومشربيات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سلالم كهربائية Escalator",
+              "sub": "مصاعد وسلالم كهربائية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مصاعد Elevator/Lift",
+              "sub": "مصاعد وسلالم كهربائية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "joinery": {
+          "label": "النجارة والأثاث الثابت",
+          "items": [
+            {
+              "name": "كاونتر استقبال خشبي",
+              "sub": "نجارة وكاونترات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خزائن حائط ثابتة",
+              "sub": "أثاث ثابت وخزائن",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أثاث ثابت خشبي Built-in",
+              "sub": "أثاث ثابت وخزائن",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كبائن دورات مياه Toilet Cubicles",
+              "sub": "قواطع حمامات وكبائن",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "acoustic": {
+          "label": "العزل الصوتي",
+          "items": [
+            {
+              "name": "لواح خشب صوتية Acoustic",
+              "sub": "ألواح وأسقف صوتية",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مواد عازلة صوتية Acoustic",
+              "sub": "ألواح وأسقف صوتية",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لواح خشبية صوتية Acoustic Timber",
+              "sub": "ألواح وأسقف صوتية",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أسقف صوتية Acoustic Baffle",
+              "sub": "ألواح وأسقف صوتية",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أسقف جبس مطلي Acoustic Plaster",
+              "sub": "ألواح وأسقف صوتية",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "building_insulation": {
+          "label": "العزل الحراري والمائي",
+          "items": [
+            {
+              "name": "عازل XPS للأسطح",
+              "sub": "عوازل حرارية ومائية",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "صوف صخري Rockwool",
+                    "صوف زجاجي",
+                    "XPS",
+                    "EPS",
+                    "فوم بولي يوريثان",
+                    "فويل"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "25 مم",
+                    "40 مم",
+                    "50 مم",
+                    "75 مم",
+                    "100 مم"
+                  ]
+                },
+                {
+                  "key": "density",
+                  "ar": "الكثافة",
+                  "en": "Density",
+                  "options": [
+                    "حسب المواصفة",
+                    "40 kg/m³",
+                    "60 kg/m³",
+                    "80 kg/m³",
+                    "100 kg/m³"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "م³ (متر مكعب)",
+                    "لفة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "صوف صخري Rock Wool",
+              "sub": "عوازل حرارية ومائية",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "صوف صخري Rockwool",
+                    "صوف زجاجي",
+                    "XPS",
+                    "EPS",
+                    "فوم بولي يوريثان",
+                    "فويل"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "25 مم",
+                    "40 مم",
+                    "50 مم",
+                    "75 مم",
+                    "100 مم"
+                  ]
+                },
+                {
+                  "key": "density",
+                  "ar": "الكثافة",
+                  "en": "Density",
+                  "options": [
+                    "حسب المواصفة",
+                    "40 kg/m³",
+                    "60 kg/m³",
+                    "80 kg/m³",
+                    "100 kg/m³"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "م³ (متر مكعب)",
+                    "لفة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "فوم عازل حراري",
+              "sub": "عوازل حرارية ومائية",
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "صوف صخري Rockwool",
+                    "صوف زجاجي",
+                    "XPS",
+                    "EPS",
+                    "فوم بولي يوريثان",
+                    "فويل"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "25 مم",
+                    "40 مم",
+                    "50 مم",
+                    "75 مم",
+                    "100 مم"
+                  ]
+                },
+                {
+                  "key": "density",
+                  "ar": "الكثافة",
+                  "en": "Density",
+                  "options": [
+                    "حسب المواصفة",
+                    "40 kg/m³",
+                    "60 kg/m³",
+                    "80 kg/m³",
+                    "100 kg/m³"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "م³ (متر مكعب)",
+                    "لفة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "عازل رطوبة للأسطح والجدران",
+              "sub": "عوازل حرارية ومائية",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عازل حراري مجاري هواء",
+              "sub": "عوازل حرارية ومائية",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "_other": {
+          "label": "متنوّع",
+          "items": [
+            {
+              "name": "لوحات إرشادية Signage",
+              "sub": "",
+              "unit": "",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        }
+      }
+    },
+    "electrical": {
+      "label": "كهرباء",
+      "groups": {
+        "cabling": {
+          "label": "التمديدات والكابلات",
+          "items": [
+            {
+              "name": "كابل 1Cx6mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx10mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx16mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx25mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx35mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx50mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx70mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx95mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx120mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx150mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx185mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 1Cx240mm² CU/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 3Cx6mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 3Cx10mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 3Cx16mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx10mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx16mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx25mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx35mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx50mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx70mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx95mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx120mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx185mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx240mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل 4Cx300mm² CU/XLPE/SWA/LSZH",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل MICA مقاوم للحريق 2Cx6mm²",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل MICA مقاوم للحريق 2Cx16mm²",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل إنذار حريق MICA",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل ألياف بصرية",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة متوسط جهد MV Switchgear",
+              "sub": "كابلات جهد متوسط MV",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محول كهربائي 11kV/400V",
+              "sub": "كابلات جهد متوسط MV",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب كهربائية PVC",
+              "sub": "مواسير وحوامل كابلات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب كهربائية معدنية",
+              "sub": "مواسير وحوامل كابلات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سكة كابل Ladder 100×75",
+              "sub": "مواسير وحوامل كابلات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سكة كابل Ladder 150×75",
+              "sub": "مواسير وحوامل كابلات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سكة كابل Ladder 200×75",
+              "sub": "مواسير وحوامل كابلات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سكة كابل Ladder 300×75",
+              "sub": "مواسير وحوامل كابلات",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صينية كابل Tray 100×100",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صينية كابل Tray 300×75",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صينية كابل Tray 600×100",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سلك تأريض",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شريط نحاس تأريض",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام WiFi Wireless Access Point",
+              "sub": "كابلات وأسلاك (الفنار/بحرة)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة محطة 11kV Switchgear",
+              "sub": "كابلات جهد متوسط MV",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "panels_switches": {
+          "label": "اللوحات والمفاتيح",
+          "items": [
+            {
+              "name": "Bus Bar 1000A 4P",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "Bus Bar 1600A 4P",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "Bus Bar 2500A 4P",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة رئيسية MDB",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة فرعية SMDB",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة إضاءة LDB",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة طاقة PP",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة تحكم محركات MCC",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة UPS",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة ATS نقل تلقائي",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قاطع MCB 1P",
+              "sub": "قواطع كهربائية",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "amp",
+                  "ar": "الأمبير",
+                  "en": "Rating (A)",
+                  "options": [
+                    "6A",
+                    "10A",
+                    "16A",
+                    "20A",
+                    "25A",
+                    "32A",
+                    "40A",
+                    "63A",
+                    "80A",
+                    "100A",
+                    "125A"
+                  ]
+                },
+                {
+                  "key": "poles",
+                  "ar": "عدد الأقطاب",
+                  "en": "Poles",
+                  "options": [
+                    "1P",
+                    "2P",
+                    "3P",
+                    "4P"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "قاطع MCB 3P",
+              "sub": "قواطع كهربائية",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "amp",
+                  "ar": "الأمبير",
+                  "en": "Rating (A)",
+                  "options": [
+                    "6A",
+                    "10A",
+                    "16A",
+                    "20A",
+                    "25A",
+                    "32A",
+                    "40A",
+                    "63A",
+                    "80A",
+                    "100A",
+                    "125A"
+                  ]
+                },
+                {
+                  "key": "poles",
+                  "ar": "عدد الأقطاب",
+                  "en": "Poles",
+                  "options": [
+                    "1P",
+                    "2P",
+                    "3P",
+                    "4P"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "قاطع تفاضلي RCCB",
+              "sub": "قواطع كهربائية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قاطع MCCB",
+              "sub": "قواطع كهربائية",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "amp",
+                  "ar": "الأمبير",
+                  "en": "Rating (A)",
+                  "options": [
+                    "6A",
+                    "10A",
+                    "16A",
+                    "20A",
+                    "25A",
+                    "32A",
+                    "40A",
+                    "63A",
+                    "80A",
+                    "100A",
+                    "125A"
+                  ]
+                },
+                {
+                  "key": "poles",
+                  "ar": "عدد الأقطاب",
+                  "en": "Poles",
+                  "options": [
+                    "1P",
+                    "2P",
+                    "3P",
+                    "4P"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "قاطع هوائي ACB",
+              "sub": "قواطع كهربائية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محول كهربائي HV/LV",
+              "sub": "محولات ومولدات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مولد كهرباء ديزل",
+              "sub": "محولات ومولدات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "UPS بلا انقطاع",
+              "sub": "محولات ومولدات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مكثفات تحسين معامل القدرة",
+              "sub": "محولات ومولدات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محطة توليد طارئة Generator Hookup Panel",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "علب توزيع Junction Box",
+              "sub": "مفاتيح وأفياش وعلب",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مفاتيح وبرازيز Switches & Sockets 13A",
+              "sub": "مفاتيح وأفياش وعلب",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مقبس طابق Floor Box",
+              "sub": "مفاتيح وأفياش وعلب",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محطة تحويل HV Substation",
+              "sub": "محولات ومولدات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مولد طارئ 400V Hook-up Panel",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ATS نقل تلقائي 1000A",
+              "sub": "محولات ومولدات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ATS نقل تلقائي 500A",
+              "sub": "محولات ومولدات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مرشح هارمونيك Active Harmonic Filter",
+              "sub": "لوحات توزيع (DB)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "lighting": {
+          "label": "أنظمة الإنارة",
+          "items": [
+            {
+              "name": "كشاف LED بانل 600×600",
+              "sub": "إنارة خارجية وأعمدة",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "3W",
+                    "5W",
+                    "7W",
+                    "9W",
+                    "12W",
+                    "18W",
+                    "24W",
+                    "36W",
+                    "50W",
+                    "100W",
+                    "150W",
+                    "200W"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "لون الإضاءة",
+                  "en": "Color temp",
+                  "options": [
+                    "أبيض بارد 6500K",
+                    "أبيض طبيعي 4000K",
+                    "أصفر دافئ 3000K"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "كشاف LED بانل 300×1200",
+              "sub": "إنارة خارجية وأعمدة",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "3W",
+                    "5W",
+                    "7W",
+                    "9W",
+                    "12W",
+                    "18W",
+                    "24W",
+                    "36W",
+                    "50W",
+                    "100W",
+                    "150W",
+                    "200W"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "لون الإضاءة",
+                  "en": "Color temp",
+                  "options": [
+                    "أبيض بارد 6500K",
+                    "أبيض طبيعي 4000K",
+                    "أصفر دافئ 3000K"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "كشاف LED Downlight",
+              "sub": "إنارة داخلية (داون لايت/ليد)",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "3W",
+                    "5W",
+                    "7W",
+                    "9W",
+                    "12W",
+                    "18W",
+                    "24W",
+                    "36W",
+                    "50W",
+                    "100W",
+                    "150W",
+                    "200W"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "لون الإضاءة",
+                  "en": "Color temp",
+                  "options": [
+                    "أبيض بارد 6500K",
+                    "أبيض طبيعي 4000K",
+                    "أصفر دافئ 3000K"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "كشاف LED سطحي",
+              "sub": "إنارة خارجية وأعمدة",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "3W",
+                    "5W",
+                    "7W",
+                    "9W",
+                    "12W",
+                    "18W",
+                    "24W",
+                    "36W",
+                    "50W",
+                    "100W",
+                    "150W",
+                    "200W"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "لون الإضاءة",
+                  "en": "Color temp",
+                  "options": [
+                    "أبيض بارد 6500K",
+                    "أبيض طبيعي 4000K",
+                    "أصفر دافئ 3000K"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "كشاف LED متدلي",
+              "sub": "إنارة خارجية وأعمدة",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "3W",
+                    "5W",
+                    "7W",
+                    "9W",
+                    "12W",
+                    "18W",
+                    "24W",
+                    "36W",
+                    "50W",
+                    "100W",
+                    "150W",
+                    "200W"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "لون الإضاءة",
+                  "en": "Color temp",
+                  "options": [
+                    "أبيض بارد 6500K",
+                    "أبيض طبيعي 4000K",
+                    "أصفر دافئ 3000K"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "كشاف LED فلود خارجي",
+              "sub": "إنارة خارجية وأعمدة",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "3W",
+                    "5W",
+                    "7W",
+                    "9W",
+                    "12W",
+                    "18W",
+                    "24W",
+                    "36W",
+                    "50W",
+                    "100W",
+                    "150W",
+                    "200W"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "لون الإضاءة",
+                  "en": "Color temp",
+                  "options": [
+                    "أبيض بارد 6500K",
+                    "أبيض طبيعي 4000K",
+                    "أصفر دافئ 3000K"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "كشاف LED صناعي High Bay",
+              "sub": "إنارة خارجية وأعمدة",
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "3W",
+                    "5W",
+                    "7W",
+                    "9W",
+                    "12W",
+                    "18W",
+                    "24W",
+                    "36W",
+                    "50W",
+                    "100W",
+                    "150W",
+                    "200W"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "لون الإضاءة",
+                  "en": "Color temp",
+                  "options": [
+                    "أبيض بارد 6500K",
+                    "أبيض طبيعي 4000K",
+                    "أصفر دافئ 3000K"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة",
+                    "كرتون"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "إضاءة طوارئ Emergency",
+              "sub": "إنارة داخلية (داون لايت/ليد)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "إضاءة مخرج طوارئ Exit Sign",
+              "sub": "إنارة داخلية (داون لايت/ليد)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "إضاءة شريطية LED",
+              "sub": "إنارة داخلية (داون لايت/ليد)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام تحكم إضاءة DALI",
+              "sub": "إنارة داخلية (داون لايت/ليد)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أقطاب تأريض Earth Rod",
+              "sub": "تأريض وحماية برق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حماية برق Lightning Protection",
+              "sub": "تأريض وحماية برق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام DALI تحكم إضاءة",
+              "sub": "إنارة داخلية (داون لايت/ليد)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "تحكم إضاءة واجهات",
+              "sub": "إنارة خارجية وأعمدة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كشاف ملعب Sports Light S1",
+              "sub": "إنارة خارجية وأعمدة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كشاف ملعب Sports Light S2",
+              "sub": "إنارة خارجية وأعمدة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "low_current": {
+          "label": "أنظمة التيار الخفيف",
+          "items": [
+            {
+              "name": "كابل بيانات CAT6",
+              "sub": "شبكات بيانات وسنترالات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام إنذار حريق FA",
+              "sub": "إنذار حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام مراقبة CCTV",
+              "sub": "كاميرات مراقبة CCTV",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام تحكم دخول ACS",
+              "sub": "أنظمة دخول وتحكم بالمبنى",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام بيانات Data Network CAT6",
+              "sub": "شبكات بيانات وسنترالات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام صوت وإعلام PA System",
+              "sub": "أنظمة صوتيات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظام BMS تحكم مبنى",
+              "sub": "أنظمة دخول وتحكم بالمبنى",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كاميرا CCTV",
+              "sub": "كاميرات مراقبة CCTV",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نقطة بيانات Data Outlet",
+              "sub": "شبكات بيانات وسنترالات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شاشة إعلانية LED Display",
+              "sub": "شاشات LED ولوحات نتائج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حساس حركة PIR",
+              "sub": "أنظمة دخول وتحكم بالمبنى",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شاشة LED إعلانية LED Screen 55\"",
+              "sub": "شاشات LED ولوحات نتائج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بوابة تحكم دخول Speed Gate Turnstile",
+              "sub": "أنظمة دخول وتحكم بالمبنى",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حاجز وقوف سيارات Barrier",
+              "sub": "أنظمة دخول وتحكم بالمبنى",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كاميرا PTZ متحركة",
+              "sub": "كاميرات مراقبة CCTV",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        }
+      }
+    },
+    "mechanical": {
+      "label": "ميكانيك",
+      "groups": {
+        "plumbing": {
+          "label": "السباكة والتغذية والصرف",
+          "items": [
+            {
+              "name": "أنابيب PPR PN20",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "20 مم",
+                    "25 مم",
+                    "32 مم",
+                    "40 مم",
+                    "50 مم",
+                    "63 مم",
+                    "75 مم",
+                    "90 مم",
+                    "110 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "ماسورة 4م",
+                    "ماسورة 6م"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "أنابيب PPR PN25",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "20 مم",
+                    "25 مم",
+                    "32 مم",
+                    "40 مم",
+                    "50 مم",
+                    "63 مم",
+                    "75 مم",
+                    "90 مم",
+                    "110 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "ماسورة 4م",
+                    "ماسورة 6م"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "أنابيب نحاس مياه باردة",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "20 مم",
+                    "25 مم",
+                    "32 مم",
+                    "40 مم",
+                    "50 مم",
+                    "63 مم",
+                    "75 مم",
+                    "90 مم",
+                    "110 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "ماسورة 4م",
+                    "ماسورة 6م"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "أنابيب نحاس مياه حارة",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "20 مم",
+                    "25 مم",
+                    "32 مم",
+                    "40 مم",
+                    "50 مم",
+                    "63 مم",
+                    "75 مم",
+                    "90 مم",
+                    "110 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "ماسورة 4م",
+                    "ماسورة 6م"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "أنابيب CPVC مياه حارة",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "20 مم",
+                    "25 مم",
+                    "32 مم",
+                    "40 مم",
+                    "50 مم",
+                    "63 مم",
+                    "75 مم",
+                    "90 مم",
+                    "110 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "ماسورة 4م",
+                    "ماسورة 6م"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "أنابيب PEX",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "20 مم",
+                    "25 مم",
+                    "32 مم",
+                    "40 مم",
+                    "50 مم",
+                    "63 مم",
+                    "75 مم",
+                    "90 مم",
+                    "110 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "ماسورة 4م",
+                    "ماسورة 6م"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "أنابيب HDPE PN16 مياه شرب",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب HDPE PN10 مياه شرب",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب فولاذية مياه مبردة Schedule 40",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة Chilled Water",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب حديد مجلفن GI",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب معزولة مسبقاً Pre-Insulated (تبريد منطقي)",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب GRP فايبرجلاس",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب uPVC صرف صحي داخلي",
+              "sub": "مواسير صرف (PVC/UPVC)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب uPVC صرف صحي 50mm",
+              "sub": "مواسير صرف (PVC/UPVC)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب uPVC صرف صحي 75mm",
+              "sub": "مواسير صرف (PVC/UPVC)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب uPVC صرف صحي 100mm",
+              "sub": "مواسير صرف (PVC/UPVC)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب uPVC صرف صحي 150mm",
+              "sub": "مواسير صرف (PVC/UPVC)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب uPVC صرف صحي 200mm",
+              "sub": "مواسير صرف (PVC/UPVC)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب HDPE صرف صحي داخلي",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب حديد زهر Cast Iron صرف صامت",
+              "sub": "مواسير صرف (PVC/UPVC)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات كرة نحاس",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات كرة ستانلس",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات بوابة",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات فراشة flanged",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات فحص",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات تخفيض ضغط PRV",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات PICV تحكم ضغط",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات موتورية 2-Port",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات موتورية 3-Port",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمامات تصريف",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة ضغط Booster Pump",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة إطفاء حريق Fire Pump",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة jockey حريق",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة sump صرف",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة تداول مياه ساخنة",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة مياه ري",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة تغذية كيماوي Dosing",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خزان مياه فايبر جلاس",
+              "sub": "خزانات وسخانات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خزان ضغط Expansion Vessel",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سخانات مياه كهربائية",
+              "sub": "خزانات وسخانات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مرشحات مياه",
+              "sub": "خزانات وسخانات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنظمة RO تحلية",
+              "sub": "معالجة وتنقية المياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "معالجة مياه كيماوي",
+              "sub": "معالجة وتنقية المياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمام تحكم منطقة Zone Control Valve",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مصرف سقف Roof Drain 100mm",
+              "sub": "مواسير صرف (PVC/UPVC)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فصال دهون Grease Interceptor",
+              "sub": "مواسير صرف (PVC/UPVC)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حوض ترسيب مياه أمطار",
+              "sub": "صرف مياه الأمطار",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب CPVC 65mm",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب CPVC 80mm",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب CPVC 100mm",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب CPVC 110mm",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب CPVC 150mm",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عداد مياه 100mm",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خزان مياه GRP 20م³",
+              "sub": "خزانات وسخانات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خزان مياه GRP 434م³",
+              "sub": "خزانات وسخانات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وعاء تمدد Expansion Vessel",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة Sch40 DN65",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة Sch40 DN80",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة Sch40 DN100",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة Sch40 DN125",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة Sch40 DN150",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة Sch40 DN200",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة Sch40 DN250",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة Sch40 DN300",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب مياه مبردة مدفونة Pre-insulated",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خزان وقود ديزل تحت أرضي",
+              "sub": "خزانات وسخانات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خزان وقود ديزل يومي",
+              "sub": "خزانات وسخانات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة نقل وقود",
+              "sub": "مضخات مياه",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خطوط تغذية وقود",
+              "sub": "أنابيب تغذية (PPR)",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "plumbing_supplies": {
+          "label": "لوازم وإكسسوارات السباكة",
+          "items": [
+            {
+              "name": "فلانشات",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وصلات أنابيب",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عوازل اهتزاز Flex",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مواسير تمدد Expansion Joint",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خراطيم مرنة",
+              "sub": "خراطيم مرنة ووصلات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حوامل وتعليقات أنابيب",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مرحاض WC مع خزان",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مرحاض WC ذوي احتياجات خاصة",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مغسلة Wash Basin",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حوض مطبخ",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مجلى Kitchen Sink",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حوض استحمام",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "دش Shower",
+              "sub": "دشات وإكسسوارات حمام",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مبولة Urinal",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صنبور مياه",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خلاط مياه Mixer",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مصرف أرضي Floor Drain 100x100",
+              "sub": "سيفونات ومصافي",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خلاط مغسلة",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خلاط مطبخ",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خلاط دش",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صنبور حديقة",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محبس زاوية",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محبس عمومي",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وصلة كوع PVC",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وصلة تي PVC",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كوبلن نحاس",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوازم نحاسية",
+              "sub": "لوازم نحاسية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سيفون كرسي",
+              "sub": "سيفونات ومصافي",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سيفون مغسلة",
+              "sub": "خلاطات وأدوات صحية",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مصفاة أرضية",
+              "sub": "سيفونات ومصافي",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خرطوم سخان مرن",
+              "sub": "خراطيم مرنة ووصلات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خرطوم شطاف",
+              "sub": "خراطيم مرنة ووصلات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وصلة مرنة",
+              "sub": "خراطيم مرنة ووصلات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شريط تفلون",
+              "sub": "تفلون وعوازل وحشوات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "معجون سباكة",
+              "sub": "تفلون وعوازل وحشوات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "جلدة محبس",
+              "sub": "محابس ووصلات وحوامل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حشوة عزل",
+              "sub": "تفلون وعوازل وحشوات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رأس دش",
+              "sub": "دشات وإكسسوارات حمام",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "دش مطري",
+              "sub": "دشات وإكسسوارات حمام",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عوامة خزان",
+              "sub": "عوامات وطفايات سيفون",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "طفاية سيفون كرسي",
+              "sub": "عوامات وطفايات سيفون",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "إكسسوار حمام (حامل مناديل)",
+              "sub": "دشات وإكسسوارات حمام",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "معلاق منشفة",
+              "sub": "دشات وإكسسوارات حمام",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "hvac": {
+          "label": "التكييف والتهوية",
+          "items": [
+            {
+              "name": "مضخات مياه مركزية",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وحدة مناولة هواء AHU",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وحدة مناولة هواء AHU مع عجلة حرارية",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وحدة FCU سقفية",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وحدة FCU كاسيت",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مبرد مياه Chiller",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "برج تبريد Cooling Tower",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وحدات مكيف VRF خارجية",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وحدات مكيف VRF داخلية",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مجمد حرارة Heat Exchanger",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مكثف هواء Condenser",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مراوح هواء محورية Axial Fan",
+              "sub": "مراوح تهوية وشفط",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مراوح هواء طرد مركزي",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مراوح استخلاص هواء WC",
+              "sub": "مراوح تهوية وشفط",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مجاري هواء جلفنايز 0.7mm",
+              "sub": "مجاري هواء ومخارج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مجاري هواء جلفنايز 0.8mm",
+              "sub": "مجاري هواء ومخارج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مجاري هواء جلفنايز 1.0mm",
+              "sub": "مجاري هواء ومخارج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مجاري هواء جلفنايز 1.2mm",
+              "sub": "مجاري هواء ومخارج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عوازل مجاري هواء فايبر جلاس",
+              "sub": "مجاري هواء ومخارج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فتحات هواء",
+              "sub": "مجاري هواء ومخارج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "موزعات هواء",
+              "sub": "مجاري هواء ومخارج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "موازنات هواء Balancing Damper",
+              "sub": "خانقات هواء (حريق/دخان/VCD)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "موازنات حريق Fire Damper",
+              "sub": "خانقات هواء (حريق/دخان/VCD)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ستائر هواء",
+              "sub": "مجاري هواء ومخارج",
+              "unit": "م²",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سخانات مياه مركزية",
+              "sub": "مكيفات (سبليت/مركزي/تشيلر)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "firefighting": {
+          "label": "مكافحة الحريق",
+          "items": [
+            {
+              "name": "أنابيب فولاذية sprinkler 25mm",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب فولاذية sprinkler 32mm",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب فولاذية sprinkler 40mm",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب فولاذية sprinkler 50mm",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب فولاذية sprinkler 65mm",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب فولاذية sprinkler 80mm",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب فولاذية sprinkler 100mm",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب فولاذية sprinkler 150mm",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أنابيب فولاذية sprinkler 200mm",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رؤوس رش مياه Sprinkler",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خزانات إطفاء حريق",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بكرة خرطوم حريق Hose Reel",
+              "sub": "صناديق حريق وخراطيم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "هيدرنت حريق Fire Hydrant",
+              "sub": "وصلات دفاع مدني وهيدرنت",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوحة تحكم حريق",
+              "sub": "مواسير ورشاشات حريق",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "mech_insulation": {
+          "label": "العزل الحراري الميكانيكي",
+          "items": [
+            {
+              "name": "عازل أنابيب مياه مبردة Fibreglass 1/2\"",
+              "sub": "عزل أنابيب المياه المثلجة",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عازل أنابيب مياه مبردة Fibreglass 1\"",
+              "sub": "عزل أنابيب المياه المثلجة",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "_other": {
+          "label": "متنوّع",
+          "items": [
+            {
+              "name": "وحدة تصفية وقود",
+              "sub": "",
+              "unit": "",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        }
+      }
+    },
+    "equipment": {
+      "label": "آليات ومعدات",
+      "groups": {
+        "heavy_equipment": {
+          "label": "آليات ثقيلة (حفر/رفع/نقل)",
+          "items": [
+            {
+              "name": "حفارة (بوكلين)",
+              "sub": "حفارات وشيولات وبلدوزرات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شيول لودر",
+              "sub": "حفارات وشيولات وبلدوزرات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بلدوزر",
+              "sub": "حفارات وشيولات وبلدوزرات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "جريدر",
+              "sub": "حفارات وشيولات وبلدوزرات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رافعة برجية",
+              "sub": "رافعات وكرينات وونشات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كرين متحرك",
+              "sub": "رافعات وكرينات وونشات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رافعة شوكية",
+              "sub": "رافعات وكرينات وونشات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ونش رفع",
+              "sub": "رافعات وكرينات وونشات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شاحنة قلاب",
+              "sub": "شاحنات ومعدات نقل",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صهريج مياه",
+              "sub": "شاحنات ومعدات نقل",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مقطورة نقل",
+              "sub": "شاحنات ومعدات نقل",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لوري نقل",
+              "sub": "شاحنات ومعدات نقل",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "منصة رفع مقصية",
+              "sub": "رافعات وكرينات وونشات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رافعة بوم",
+              "sub": "رافعات وكرينات وونشات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "concrete_machinery": {
+          "label": "معدات خرسانة وصب",
+          "items": [
+            {
+              "name": "خلاطة خرسانة",
+              "sub": "خلاطات ومضخات خرسانة",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة خرسانة",
+              "sub": "خلاطات ومضخات خرسانة",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "هزاز خرسانة",
+              "sub": "خلاطات ومضخات خرسانة",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محطة خلط",
+              "sub": "خلاطات ومضخات خرسانة",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "light_equipment": {
+          "label": "معدات خفيفة (مولدات/دكاكات)",
+          "items": [
+            {
+              "name": "دكاكة (كومباكتور)",
+              "sub": "معدات دك ورص",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رصاصة دك",
+              "sub": "معدات دك ورص",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "هراس أسطواني",
+              "sub": "معدات دك ورص",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مولد كهرباء ديزل",
+              "sub": "مولدات وكمبروسرات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كمبروسر هواء",
+              "sub": "مولدات وكمبروسرات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ضاغط هواء",
+              "sub": "مولدات وكمبروسرات",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "طرمبة غطاسة",
+              "sub": "طرمبات ومضخات نزح",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مضخة نزح مياه",
+              "sub": "طرمبات ومضخات نزح",
+              "unit": "يوم",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "access_equipment": {
+          "label": "سقالات ومنصات رفع",
+          "items": [
+            {
+              "name": "سقالات معدنية",
+              "sub": "سقالات ومنصات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سلالم ألمنيوم",
+              "sub": "سقالات ومنصات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "جاكات تدعيم",
+              "sub": "سقالات ومنصات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        }
+      }
+    },
+    "supply_store": {
+      "label": "محل توريد",
+      "groups": {
+        "store_plumbing": {
+          "label": "أدوات سباكة بسيطة",
+          "items": [
+            {
+              "name": "خلاط مغسلة",
+              "sub": "خلاطات وصنابير",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خلاط مطبخ",
+              "sub": "خلاطات وصنابير",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خلاط دش",
+              "sub": "خلاطات وصنابير",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صنبور حديقة",
+              "sub": "خلاطات وصنابير",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محبس زاوية",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محبس عمومي",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كوع PVC",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "تي PVC",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كوبلن",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سيفون كرسي",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سيفون مغسلة",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مصفاة أرضية",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خرطوم سخان",
+              "sub": "خراطيم وتفلون ولوازم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خرطوم شطاف",
+              "sub": "خراطيم وتفلون ولوازم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "وصلة مرنة",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شريط تفلون",
+              "sub": "خراطيم وتفلون ولوازم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "معجون سباكة",
+              "sub": "خراطيم وتفلون ولوازم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "جلدة محبس",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رأس دش",
+              "sub": "خراطيم وتفلون ولوازم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "عوامة خزان",
+              "sub": "خراطيم وتفلون ولوازم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "طفاية سيفون",
+              "sub": "محابس ووصلات سباكة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "store_electrical": {
+          "label": "أدوات كهرباء بسيطة",
+          "items": [
+            {
+              "name": "سلك كهرباء 2.5مم",
+              "sub": "أسلاك وكابلات بسيطة",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سلك كهرباء 4مم",
+              "sub": "أسلاك وكابلات بسيطة",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كابل تمديد",
+              "sub": "أسلاك وكابلات بسيطة",
+              "unit": "م.ط",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مفتاح إنارة",
+              "sub": "مفاتيح وأفياش وعلب",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بريزة",
+              "sub": "مفاتيح وأفياش وعلب",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "علبة كهرباء",
+              "sub": "مفاتيح وأفياش وعلب",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قاطع MCB صغير",
+              "sub": "إكسسوارات كهرباء",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لمبة LED",
+              "sub": "لمبات وإنارة بسيطة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لمبة سبوت",
+              "sub": "لمبات وإنارة بسيطة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كشاف صغير",
+              "sub": "لمبات وإنارة بسيطة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "أباجورة",
+              "sub": "مفاتيح وأفياش وعلب",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فيش كهرباء",
+              "sub": "إكسسوارات كهرباء",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "محول صغير",
+              "sub": "إكسسوارات كهرباء",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شريط لحام كهرب",
+              "sub": "إكسسوارات كهرباء",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مفتاح ربط",
+              "sub": "مفاتيح وأفياش وعلب",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فيشر",
+              "sub": "إكسسوارات كهرباء",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فوم عازل",
+              "sub": "إكسسوارات كهرباء",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "store_tools": {
+          "label": "عُدد يدوية وكهربائية",
+          "items": [
+            {
+              "name": "مفك عادي",
+              "sub": "عُدد يدوية (مفكات/زراديات)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مفك صليبة",
+              "sub": "عُدد يدوية (مفكات/زراديات)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "طقم مفكات",
+              "sub": "عُدد يدوية (مفكات/زراديات)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "زرادية",
+              "sub": "عُدد يدوية (مفكات/زراديات)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كماشة",
+              "sub": "عُدد يدوية (مفكات/زراديات)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مطرقة",
+              "sub": "عُدد يدوية (مفكات/زراديات)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "متر قياس",
+              "sub": "عُدد يدوية (مفكات/زراديات)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ميزان ماء",
+              "sub": "عُدد يدوية (مفكات/زراديات)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "دريل كهربائي",
+              "sub": "عُدد كهربائية (دريل/صاروخ)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "دريل شحن",
+              "sub": "عُدد كهربائية (دريل/صاروخ)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صاروخ تجليخ",
+              "sub": "عُدد كهربائية (دريل/صاروخ)",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ريشة دريل حديد",
+              "sub": "ريش ولقم وأقراص",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ريشة همر",
+              "sub": "ريش ولقم وأقراص",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قرص قص",
+              "sub": "ريش ولقم وأقراص",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قرص تجليخ",
+              "sub": "ريش ولقم وأقراص",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "ورق صنفرة",
+              "sub": "ريش ولقم وأقراص",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "store_fasteners": {
+          "label": "مسامير وبراغي ومثبتات",
+          "items": [
+            {
+              "name": "مسامير حديد",
+              "sub": "مسامير وبراغي وصواميل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "براغي",
+              "sub": "مسامير وبراغي وصواميل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صواميل",
+              "sub": "مسامير وبراغي وصواميل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رول بلت",
+              "sub": "مسامير وبراغي وصواميل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "خوابير تثبيت",
+              "sub": "مسامير وبراغي وصواميل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "مسامير صاج",
+              "sub": "مسامير وبراغي وصواميل",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "store_paint": {
+          "label": "دهانات ولواصق",
+          "items": [
+            {
+              "name": "دهان داخلي",
+              "sub": "دهانات وفرش ورولات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "فرشاة دهان",
+              "sub": "دهانات وفرش ورولات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "رولة دهان",
+              "sub": "دهانات وفرش ورولات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "تنر",
+              "sub": "دهانات وفرش ورولات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سيليكون",
+              "sub": "سيليكون ولواصق وفوم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "لاصق قوي",
+              "sub": "سيليكون ولواصق وفوم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "صمغ",
+              "sub": "سيليكون ولواصق وفوم",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        },
+        "store_safety": {
+          "label": "سلامة ومستهلكات",
+          "items": [
+            {
+              "name": "خوذة سلامة",
+              "sub": "معدات سلامة وقفازات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "قفازات عمل",
+              "sub": "معدات سلامة وقفازات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "نظارة واقية",
+              "sub": "معدات سلامة وقفازات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حذاء سلامة",
+              "sub": "معدات سلامة وقفازات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "سترة عاكسة",
+              "sub": "معدات سلامة وقفازات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "كمامة غبار",
+              "sub": "معدات سلامة وقفازات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حزام أمان",
+              "sub": "معدات سلامة وقفازات",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "شريط لاصق",
+              "sub": "مستهلكات ولوازم متنوعة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "حبل",
+              "sub": "مستهلكات ولوازم متنوعة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            },
+            {
+              "name": "بطارية",
+              "sub": "مستهلكات ولوازم متنوعة",
+              "unit": "عدد",
+              "detailed": false,
+              "fields": []
+            }
+          ]
+        }
+      }
+    }
+  }
+}
