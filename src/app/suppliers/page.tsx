@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/server'
 import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
@@ -27,9 +27,13 @@ function rankBadge(i: number) {
 }
 
 export default async function SuppliersLeaderboard() {
-  const supabase = createServiceClient()
-  const { data } = await supabase.rpc('get_supplier_leaderboard')
-  const rows: any[] = Array.isArray(data) ? data : []
+  // جلب غير قاتل: حالة فارغة بدل كسر البناء إذا تعذّر الاتصال
+  let rows: any[] = []
+  try {
+    const supabase = createPublicClient()
+    const { data } = await supabase.rpc('get_supplier_leaderboard')
+    rows = Array.isArray(data) ? data : []
+  } catch { rows = [] }
 
   // احسب درجة كل مورد ثم رتّب تنازلياً
   const ranked = rows.map((r: any) => {

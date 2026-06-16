@@ -47,6 +47,18 @@ export function createServiceClient() {
   )
 }
 
+// Public anon client (no cookies) — for public SSR/ISR pages that call
+// anon-granted RPCs (e.g. /prices, /suppliers). Uses only NEXT_PUBLIC_* vars,
+// so it never needs the service-role key at build time. No cookies → the page
+// can be statically prerendered / ISR-cached.
+export function createPublicClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  )
+}
+
 // Admin client (bypasses RLS) — use only in trusted server-side code
 export function createAdminSupabaseClient() {
   const cookieStore = cookies()

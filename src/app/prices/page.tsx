@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { createServiceClient } from '@/lib/supabase/server'
+import { createPublicClient } from '@/lib/supabase/server'
 import { SECTOR_LABELS } from '@/types'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
@@ -24,9 +24,13 @@ function fmtDate(d: any) {
 }
 
 export default async function PricesPage() {
-  const supabase = createServiceClient()
-  const { data } = await supabase.rpc('get_public_price_index')
-  const rows: any[] = Array.isArray(data) ? data : []
+  // جلب غير قاتل: إذا تعذّر الاتصال وقت البناء نعرض حالة فارغة بدل كسر البناء
+  let rows: any[] = []
+  try {
+    const supabase = createPublicClient()
+    const { data } = await supabase.rpc('get_public_price_index')
+    rows = Array.isArray(data) ? data : []
+  } catch { rows = [] }
 
   // جمّع حسب القطاع
   const bySector: Record<string, any[]> = {}

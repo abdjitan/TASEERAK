@@ -27,7 +27,8 @@ Arabic-first, RTL, with English + Urdu i18n.
 - **Secrets**: `buildora/.env.local` (gitignored — Supabase URL/keys). Also stored in Vercel env vars + Supabase dashboard, so recoverable. NEVER commit secrets or paste them in chat.
 
 ## Local toolchain (Windows)
-- Node: `C:\Users\jamal\node\node-v20.14.0-win-x64\node.exe`
+- **Working copy (canonical):** `C:\Users\jamal\dev\TASEERAK` — moved here **off OneDrive** (2026-06-16). ⚠️ Do NOT work from the old OneDrive path (`...\OneDrive - Saudi Binladin Group\...\buildora`): OneDrive Files-On-Demand dehydrates the hidden `.git` into cloud placeholders → git breaks with "not a git repository" and `next build` hangs. The repo root is this folder (contains `.git`, `src`, `package.json`).
+- Node: `C:\Users\jamal\node\node-v20.14.0-win-x64\node.exe` (not on PATH — child `node` calls in npm postinstall need `PATH` to include the node dir).
 - tsc: `buildora/node_modules/typescript/bin/tsc`
 - **Type-check**: from `buildora/` run `node <tsc> --noEmit --skipLibCheck`
 - Dev: `npm run dev` · Build: `npm run build`
