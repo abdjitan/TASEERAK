@@ -399,6 +399,30 @@ export function detectSubCategory(productName: string, sector: Sector): string |
   return bestMatch
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// Stage 3: «ترطيب» شجرة التخصصات في الذاكرة من قاعدة البيانات.
+// يُحدّث SUB_CATEGORIES (الأسماء/الأيقونة/المجموعة/الكلمات) لكل صف، ويضيف أي
+// تخصص جديد أضافه الأدمن — فتظهر تعديلات الأدمن في قوائم الواجهة دون نشر.
+// يُستدعى من TaxonomyProvider على المتصفح (يطفّر كائناً مفرداً على مستوى الموديول).
+export function hydrateTaxonomy(rows: any[]): void {
+  if (!Array.isArray(rows)) return
+  for (const r of rows) {
+    if (!r || !r.sector || !r.sub_key) continue
+    if (r.is_active === false) continue
+    const sec = r.sector as Sector
+    if (!SUB_CATEGORIES[sec]) (SUB_CATEGORIES as any)[sec] = {}
+    const ex = SUB_CATEGORIES[sec][r.sub_key] || { ar: '', en: '', ur: '', icon: '📦', group: '_other', keywords: [] }
+    SUB_CATEGORIES[sec][r.sub_key] = {
+      ar: r.name_ar ?? ex.ar,
+      en: r.name_en ?? ex.en,
+      ur: r.name_ur ?? ex.ur,
+      icon: r.icon ?? ex.icon,
+      group: r.grp ?? ex.group,
+      keywords: Array.isArray(r.keywords) ? r.keywords : ex.keywords,
+    }
+  }
+}
+
 // وحدة القياس الافتراضية لكل تخصص فرعي — تُملأ تلقائياً عند اختيار المادة
 const SUB_UNITS: Record<string, string> = {
   // مدني
