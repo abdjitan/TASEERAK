@@ -144,7 +144,21 @@ export default function NewProjectPage() {
     setItems(prev => prev.map((it: any) => it.id === id ? { ...it, sub_category: sub || null, needs_classification: !sub } : it))
   }
 
-  const unclassifiedCount = items.filter((i: any) => i.selected && i.product_name && i.needs_classification).length
+  // تصنيف جماعي — يطبّق تصنيفاً على كل البنود غير المصنّفة في قطاع مختار دفعة واحدة
+  const [bulkSector, setBulkSector] = useState('')
+  const [bulkSub, setBulkSub] = useState('')
+  const unclassifiedItems = items.filter((i: any) => i.selected && i.product_name && i.needs_classification)
+  const unclassifiedCount = unclassifiedItems.length
+  const unclassifiedBySector: Record<string, number> = {}
+  for (const it of unclassifiedItems) unclassifiedBySector[it.sector] = (unclassifiedBySector[it.sector] || 0) + 1
+  const unclassifiedSectors = Object.keys(unclassifiedBySector)
+  function bulkApplyCategory() {
+    if (!bulkSector || !bulkSub) return
+    setItems(prev => prev.map((it: any) =>
+      (it.selected && it.product_name && it.needs_classification && it.sector === bulkSector)
+        ? { ...it, sub_category: bulkSub, needs_classification: false } : it))
+    setBulkSub('')
+  }
 
   function removeItem(id: any) {
     setItems(prev => prev.filter((item: any) => item.id !== id))
@@ -459,8 +473,39 @@ export default function NewProjectPage() {
                 <div className="text-xs text-red-700 leading-relaxed">
                   <strong>{unclassifiedCount} {locale === 'en' ? 'item(s) are not classified.' : 'بند غير مصنّف.'}</strong>{' '}
                   {locale === 'en'
-                    ? 'Items without a category from the lists go to all suppliers in the sector instead of the right specialist. Open each one (✏️) and pick its category.'
-                    : 'البنود بدون تصنيف من القوائم تُرسل لكل موردي القطاع بدل المورد المتخصص. افتح كل بند (✏️) واختر تصنيفه الصحيح.'}
+                    ? 'Items without a category from the lists go to all suppliers in the sector instead of the right specialist. Open each one (✏️) and pick its category — or classify them in bulk below.'
+                    : 'البنود بدون تصنيف من القوائم تُرسل لكل موردي القطاع بدل المورد المتخصص. افتح كل بند (✏️) واختر تصنيفه — أو صنّفها جماعياً بالأسفل.'}
+                </div>
+              </div>
+            )}
+
+            {/* تصنيف جماعي: طبّق تصنيفاً على كل غير المصنّف في قطاع واحد بضغطة */}
+            {unclassifiedCount > 0 && (
+              <div className="bg-white border border-gray-200 rounded-xl p-3">
+                <div className="text-xs font-bold text-gray-600 mb-2">⚡ {locale === 'en' ? 'Bulk classify the unclassified' : 'تصنيف جماعي لغير المصنّف'}</div>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="min-w-[150px]">
+                    <label className="block text-[10px] text-gray-400 mb-0.5">{locale === 'en' ? 'Sector' : 'القطاع'}</label>
+                    <select value={bulkSector} onChange={e => { setBulkSector(e.target.value); setBulkSub('') }} className="input-field text-sm py-1.5">
+                      <option value="">{locale === 'en' ? '— pick —' : '— اختر —'}</option>
+                      {unclassifiedSectors.map((s: string) => (
+                        <option key={s} value={s}>{(SECTOR_LABELS as any)[s] || s} ({unclassifiedBySector[s]})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="min-w-[180px] flex-1">
+                    <label className="block text-[10px] text-gray-400 mb-0.5">{locale === 'en' ? 'Category' : 'التصنيف'}</label>
+                    <select value={bulkSub} onChange={e => setBulkSub(e.target.value)} disabled={!bulkSector} className="input-field text-sm py-1.5 disabled:opacity-50">
+                      <option value="">{locale === 'en' ? 'Pick a category' : 'اختر التصنيف'}</option>
+                      {bulkSector && Object.entries((SUB_CATEGORIES as any)[bulkSector] || {}).map(([k, v]: any) => (
+                        <option key={k} value={k}>{getSubCategoryLabel(bulkSector as any, k, locale)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button type="button" onClick={bulkApplyCategory} disabled={!bulkSector || !bulkSub}
+                    className="text-xs font-bold text-white px-4 py-2 rounded-lg disabled:opacity-40" style={{ background: '#1B2D5B' }}>
+                    {locale === 'en' ? 'Apply to all' : 'طبّق على الكل'}
+                  </button>
                 </div>
               </div>
             )}
