@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -62,13 +61,13 @@ const sectorLabels = {
 export default function SupplierDashboard() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
-  const sectors = sectorLabels[locale] || sectorLabels.ar
+  const sectors = (sectorLabels as any)[locale] || sectorLabels.ar
 
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [pricesCount, setPricesCount] = useState(null)
-  const [openRfqs, setOpenRfqs] = useState([])
-  const [myOffers, setMyOffers] = useState([])
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+  const [pricesCount, setPricesCount] = useState<any>(null)
+  const [openRfqs, setOpenRfqs] = useState<any[]>([])
+  const [myOffers, setMyOffers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('rfqs')
   const [rfqFilter, setRfqFilter] = useState('all') // all | expiring
@@ -85,12 +84,12 @@ export default function SupplierDashboard() {
 
       // جلب قطاعات المورد المتخصص فيها
       const { data: sectorRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
-      const mySectors = (sectorRows || []).map(r => r.sector)
+      const mySectors = (sectorRows || []).map((r: any) => r.sector)
       setHasSectors(mySectors.length > 0)
 
       // جلب التخصصات الفرعية للمورد
       const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
-      const mySpecialties = (specRows || []).map(r => r.specialty)
+      const mySpecialties = (specRows || []).map((r: any) => r.specialty)
       setHasSpecialties(mySpecialties.length > 0)
 
       // فلترة الطلبات حسب تصنيف المورد
@@ -115,40 +114,40 @@ export default function SupplierDashboard() {
 
       // ✅ مطابقة بند-بند: يظهر الطلب لو يقدر يورّد مادة واحدة على الأقل
       // (قطاعها ضمن قطاعاته + تخصصها ضمن تخصصاته أو بدون تخصص محدد)
-      let rfqs = (rfqsRaw || []).map(r => {
+      let rfqs = (rfqsRaw || []).map((r: any) => {
         const its = Array.isArray(r.items) && r.items.length ? r.items : [{ sector: r.sector, sub_category: r.sub_category }]
-        const myCount = its.filter(it => {
+        const myCount = its.filter((it: any) => {
           if (mySectors.length > 0 && !mySectors.includes(it.sector)) return false
           if (mySpecialties.length > 0 && it.sub_category && !mySpecialties.includes(it.sub_category)) return false
           return true
         }).length
         return { ...r, _myItemCount: myCount } // عدد أصناف هذا المورد فقط (لا الإجمالي)
-      }).filter(r => r._myItemCount > 0)
+      }).filter((r: any) => r._myItemCount > 0)
 
       // ✅ فلترة حسب استهداف المقاول: نوع المورد (مصنع/تجاري/محلي) + الموثّقون فقط
       const myTier = p?.supplier_tier || 'local'
       const isVerified = p?.verification_status === 'verified'
       // الفروع: المورد يخدم منطقته الرئيسية + كل مناطق فروعه
       const { data: myBranches } = await supabase.from('branches').select('region').eq('supplier_id', session.user.id)
-      const servedRegions = [p?.region, ...(myBranches || []).map(b => b.region)].filter(Boolean)
-      rfqs = rfqs.filter(r => {
+      const servedRegions = [p?.region, ...(myBranches || []).map((b: any) => b.region)].filter(Boolean)
+      rfqs = rfqs.filter((r: any) => {
         if (r.verified_only && !isVerified) return false
         if (Array.isArray(r.target_tiers) && r.target_tiers.length > 0 && !r.target_tiers.includes(myTier)) return false
         if (r.nearby_only && servedRegions.length > 0 && !servedRegions.includes(r.region)) return false
         // المقاول حدّد مناطق معيّنة — أظهر الطلب فقط لو أخدم إحداها
-        if (Array.isArray(r.target_regions) && r.target_regions.length > 0 && !r.target_regions.some(reg => servedRegions.includes(reg))) return false
+        if (Array.isArray(r.target_regions) && r.target_regions.length > 0 && !r.target_regions.some((reg: any) => servedRegions.includes(reg))) return false
         return true
       })
 
       // استبعاد الطلبات المتجاهلة + المنتهية مهلتها (ما عاد يقدر يسعّرها)
       const { data: dismissals } = await supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', session.user.id)
-      const dismissedIds = new Set((dismissals || []).map(d => d.rfq_id))
-      const visibleRfqs = (rfqs || []).filter(r => !dismissedIds.has(r.id) && !isExpired(r.expires_at))
+      const dismissedIds = new Set((dismissals || []).map((d: any) => d.rfq_id))
+      const visibleRfqs = (rfqs || []).filter((r: any) => !dismissedIds.has(r.id) && !isExpired(r.expires_at))
 
       setOpenRfqs(visibleRfqs)
 
       // إنذار: طلبات تنتهي مهلتها قريباً (خلال 12 ساعة) — حثّ المورد على التسعير
-      const expiringSoon = visibleRfqs.filter(r => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
+      const expiringSoon = visibleRfqs.filter((r: any) => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
       if (expiringSoon.length > 0) {
         toast(`⏰ ${expiringSoon.length} ${expiringSoon.length === 1 ? 'طلب تنتهي مهلته' : 'طلبات تنتهي مهلتها'} قريباً — سارِع بالتسعير`, { duration: 7000 })
       }
@@ -198,11 +197,11 @@ export default function SupplierDashboard() {
   if (loading) return <PageLoader />
 
   const offeredRfqIds = new Set(myOffers.map((o: any) => o.rfq_id)) // RFQs the supplier already bid on
-  const accepted = myOffers.filter(o => o.status === 'accepted').length
-  const pending = myOffers.filter(o => o.status === 'pending').length
-  const totalRevenue = myOffers.filter(o => o.status === 'accepted').reduce((s, o) => s + (o.total_price || 0), 0)
+  const accepted = myOffers.filter((o: any) => o.status === 'accepted').length
+  const pending = myOffers.filter((o: any) => o.status === 'pending').length
+  const totalRevenue = myOffers.filter((o: any) => o.status === 'accepted').reduce((s: any, o: any) => s + (o.total_price || 0), 0)
 
-  const offerStatusLabel = (status) => {
+  const offerStatusLabel = (status: any) => {
     if (status === 'accepted') return t.accepted
     if (status === 'rejected') return t.rejected
     return t.pending
@@ -303,8 +302,8 @@ export default function SupplierDashboard() {
             { ok: !!(profile?.latitude || profile?.national_short_address), w: 20, label: locale === 'en' ? 'Add map location' : 'حدّد موقعك', href: '/location' },
             { ok: (profile?.rating_avg || 0) > 0, w: 20, label: locale === 'en' ? 'Get your first rating' : 'احصل على أول تقييم', href: '/supplier/specialties' },
           ]
-          const score = checks.reduce((s, c) => s + (c.ok ? c.w : 0), 0)
-          const missing = checks.filter(c => !c.ok)
+          const score = checks.reduce((s: any, c: any) => s + (c.ok ? c.w : 0), 0)
+          const missing = checks.filter((c: any) => !c.ok)
           const col = score >= 70 ? '#0F6E56' : score >= 40 ? '#F5831F' : '#dc2626'
           return (
             <div className="mb-6 grid sm:grid-cols-3 gap-4 animate-fade-in">
@@ -327,7 +326,7 @@ export default function SupplierDashboard() {
                 <div className="sm:col-span-2 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="text-xs font-bold mb-2" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Boost your score:' : 'ارفع تقييمك:'}</div>
                   <div className="flex flex-wrap gap-2">
-                    {missing.map(c => <Link key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></Link>)}
+                    {missing.map((c: any) => <Link key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></Link>)}
                   </div>
                 </div>
               )}
@@ -379,7 +378,7 @@ export default function SupplierDashboard() {
         </div>
 
         <div className="flex gap-2 mb-6" id="sup-list" style={{ scrollMarginTop: '70px' }}>
-          {[{ key: 'rfqs', label: `${t.tabRfqs} (${openRfqs.length})` }, { key: 'offers', label: `${t.tabOffers} (${myOffers.length})` }].map(tab_ => (
+          {[{ key: 'rfqs', label: `${t.tabRfqs} (${openRfqs.length})` }, { key: 'offers', label: `${t.tabOffers} (${myOffers.length})` }].map((tab_: any) => (
             <button key={tab_.key} onClick={() => setTab(tab_.key)}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === tab_.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
               style={tab === tab_.key ? { background: '#1B2D5B' } : {}}>
@@ -389,7 +388,7 @@ export default function SupplierDashboard() {
         </div>
 
         {tab === 'rfqs' && (() => {
-          const expiringList = openRfqs.filter(r => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
+          const expiringList = openRfqs.filter((r: any) => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
           const displayedRfqs = rfqFilter === 'expiring' ? expiringList : openRfqs
           return (
           <div className="stagger">
@@ -398,7 +397,7 @@ export default function SupplierDashboard() {
               {[
                 { key: 'all', label: locale === 'en' ? `All (${openRfqs.length})` : `الكل (${openRfqs.length})`, icon: '📋' },
                 { key: 'expiring', label: locale === 'en' ? `Ending soon (${expiringList.length})` : `تنتهي قريباً (${expiringList.length})`, icon: '⏰' },
-              ].map(f => (
+              ].map((f: any) => (
                 <button key={f.key} onClick={() => setRfqFilter(f.key)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${rfqFilter === f.key ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
                   style={rfqFilter === f.key ? { background: f.key === 'expiring' ? '#d97706' : '#1B2D5B' } : {}}>
@@ -414,7 +413,7 @@ export default function SupplierDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {displayedRfqs.map(rfq => (
+                {displayedRfqs.map((rfq: any) => (
                   <Link key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`}
                     className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 hover:-translate-y-0.5 transition-all duration-300">
                     <div className="flex items-center justify-between mb-3">
@@ -477,7 +476,7 @@ export default function SupplierDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {myOffers.map(offer => (
+                {myOffers.map((offer: any) => (
                   <div key={offer.id} className={`bg-white rounded-2xl p-5 border shadow-sm transition-all ${
                     offer.status === 'accepted' ? 'border-emerald-200 bg-emerald-50/50' :
                     offer.status === 'rejected' ? 'border-gray-200 opacity-50' : 'border-gray-100'

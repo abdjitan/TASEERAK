@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -10,31 +9,31 @@ import AppShell from '@/components/shared/AppShell'
 import { SECTOR_LABELS, getGroupedSubCategories } from '@/types'
 
 export default function AdminPanel() {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('pending')
-  const [users, setUsers] = useState([])
+  const [users, setUsers] = useState<any[]>([])
   const [stats, setStats] = useState({ total: 0, contractors: 0, suppliers: 0, pending: 0, verified: 0 })
   const [actionLoading, setActionLoading] = useState('')
   const [msg, setMsg] = useState('')
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('') // '' | 'contractor' | 'supplier'
-  const [rejectModal, setRejectModal] = useState(null) // { id, name }
+  const [rejectModal, setRejectModal] = useState<any>(null) // { id, name }
   const [rejectReason, setRejectReason] = useState('')
-  const [materialReqs, setMaterialReqs] = useState([])
+  const [materialReqs, setMaterialReqs] = useState<any[]>([])
   // Requests/offers overview + auth emails
-  const [rfqs, setRfqs] = useState([])
-  const [offers, setOffers] = useState([])
-  const [projects, setProjects] = useState([])
-  const [projectItems, setProjectItems] = useState([])
-  const [emails, setEmails] = useState({}) // { [userId]: { email, phone, last_sign_in_at, ... } }
-  const [support, setSupport] = useState([]) // all support_messages (admin reads all)
-  const [objections, setObjections] = useState([]) // cr_objections (fake-account reports)
-  const [changeReqs, setChangeReqs] = useState([]) // profile_change_requests (name/classification)
-  const [expandedRfq, setExpandedRfq] = useState(null)
-  const [expandedProject, setExpandedProject] = useState(null)
+  const [rfqs, setRfqs] = useState<any[]>([])
+  const [offers, setOffers] = useState<any[]>([])
+  const [projects, setProjects] = useState<any[]>([])
+  const [projectItems, setProjectItems] = useState<any[]>([])
+  const [emails, setEmails] = useState<any>({}) // { [userId]: { email, phone, last_sign_in_at, ... } }
+  const [support, setSupport] = useState<any[]>([]) // all support_messages (admin reads all)
+  const [objections, setObjections] = useState<any[]>([]) // cr_objections (fake-account reports)
+  const [changeReqs, setChangeReqs] = useState<any[]>([]) // profile_change_requests (name/classification)
+  const [expandedRfq, setExpandedRfq] = useState<any>(null)
+  const [expandedProject, setExpandedProject] = useState<any>(null)
   // Admin password change
-  const [pwModal, setPwModal] = useState(null) // { id, name, email }
+  const [pwModal, setPwModal] = useState<any>(null) // { id, name, email }
   const [pwValue, setPwValue] = useState('')
   const [pwConfirm, setPwConfirm] = useState('')
   const [pwMsg, setPwMsg] = useState('')
@@ -96,10 +95,10 @@ export default function AdminPanel() {
     const u = allUsers || []
     setStats({
       total: u.length,
-      contractors: u.filter(x => x.role === 'contractor').length,
-      suppliers: u.filter(x => x.role === 'supplier').length,
-      pending: u.filter(x => x.verification_status === 'pending').length,
-      verified: u.filter(x => x.verification_status === 'verified').length,
+      contractors: u.filter((x: any) => x.role === 'contractor').length,
+      suppliers: u.filter((x: any) => x.role === 'supplier').length,
+      pending: u.filter((x: any) => x.verification_status === 'pending').length,
+      verified: u.filter((x: any) => x.verification_status === 'verified').length,
     })
   }
 
@@ -118,14 +117,14 @@ export default function AdminPanel() {
   }
 
   // مودال مراجعة/تعديل طلب المادة قبل الاعتماد
-  const [matEdit, setMatEdit] = useState(null) // الطلب الجاري مراجعته
+  const [matEdit, setMatEdit] = useState<any>(null) // الطلب الجاري مراجعته
   const [matName, setMatName] = useState('')
   const [matSector, setMatSector] = useState('')
   const [matGroup, setMatGroup] = useState('')
   const [matNote, setMatNote] = useState('')
   const [matAi, setMatAi] = useState(false) // جارٍ اقتراح التصنيف بالذكاء الاصطناعي
   const [matAiMsg, setMatAiMsg] = useState('')
-  function openMatEdit(r) {
+  function openMatEdit(r: any) {
     setMatEdit(r); setMatName(r.name || ''); setMatSector(r.sector || 'civil'); setMatGroup(r.sub_category || ''); setMatNote(r.admin_note || ''); setMatAiMsg('')
   }
 
@@ -138,7 +137,7 @@ export default function AdminPanel() {
       const res = await fetch('/api/match-material', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })
       const d = await res.json()
       if (d?.sector) { setMatSector(d.sector); if (d.group) setMatGroup(d.group); if (d.product_name) setMatName(d.product_name) }
-      setMatAiMsg(d?.sub_category_label ? `✓ اقتراح: ${SECTOR_LABELS[d.sector] || d.sector} ← ${d.group_label}${d.source === 'ai' ? '' : ' (كلمات مفتاحية)'}` : 'لم نتمكن من الاقتراح — صنّف يدوياً')
+      setMatAiMsg(d?.sub_category_label ? `✓ اقتراح: ${(SECTOR_LABELS as any)[d.sector] || d.sector} ← ${d.group_label}${d.source === 'ai' ? '' : ' (كلمات مفتاحية)'}` : 'لم نتمكن من الاقتراح — صنّف يدوياً')
     } catch { setMatAiMsg('تعذّر الاقتراح، حاول مجدداً') }
     finally { setMatAi(false) }
   }
@@ -209,9 +208,9 @@ export default function AdminPanel() {
   }
 
   // Display helpers
-  const TIER_LABEL = { manufacturer: '🏭 مصنع/رئيسي', commercial: '🏪 تجاري', local: '🏬 محلي' }
-  const RFQ_STATUS = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
-  const OFFER_STATUS = { pending: '⏳ بانتظار', submitted: '📨 مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
+  const TIER_LABEL: Record<string, string> = { manufacturer: '🏭 مصنع/رئيسي', commercial: '🏪 تجاري', local: '🏬 محلي' }
+  const RFQ_STATUS: Record<string, string> = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
+  const OFFER_STATUS: Record<string, string> = { pending: '⏳ بانتظار', submitted: '📨 مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
   const sar = (n: any) => (n || n === 0) ? Number(n).toLocaleString('en-US') + ' ر.س' : '—'
   const dt = (d: any) => d ? new Date(d).toLocaleDateString('ar-SA') : '—'
 
@@ -238,7 +237,7 @@ export default function AdminPanel() {
     }))
     const headers = Object.keys(rows[0] || { الاسم: '' })
     const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
-    const csv = [headers.map(esc).join(','), ...rows.map((r: any) => headers.map(h => esc(r[h])).join(','))].join('\r\n')
+    const csv = [headers.map(esc).join(','), ...rows.map((r: any) => headers.map((h: any) => esc(r[h])).join(','))].join('\r\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -335,13 +334,13 @@ export default function AdminPanel() {
   // ── Analytics (computed from already-loaded data) ──
   const dayKey = (d: any) => new Date(d).toISOString().slice(0, 10)
   const _today = new Date()
-  const last30days = [...Array(30)].map((_, i) => { const d = new Date(_today); d.setDate(d.getDate() - (29 - i)); return dayKey(d) })
+  const last30days = [...Array(30)].map((_: any, i: any) => { const d = new Date(_today); d.setDate(d.getDate() - (29 - i)); return dayKey(d) })
   const signupsByDay: any = {}
   users.forEach((u: any) => { if (u.created_at) { const k = dayKey(u.created_at); signupsByDay[k] = (signupsByDay[k] || 0) + 1 } })
-  const signupSeries = last30days.map(k => ({ day: k, n: signupsByDay[k] || 0 }))
-  const maxSignup = Math.max(1, ...signupSeries.map(s => s.n))
-  const newLast7 = signupSeries.slice(-7).reduce((s, x) => s + x.n, 0)
-  const newLast30 = signupSeries.reduce((s, x) => s + x.n, 0)
+  const signupSeries = last30days.map((k: any) => ({ day: k, n: signupsByDay[k] || 0 }))
+  const maxSignup = Math.max(1, ...signupSeries.map((s: any) => s.n))
+  const newLast7 = signupSeries.slice(-7).reduce((s: any, x: any) => s + x.n, 0)
+  const newLast30 = signupSeries.reduce((s: any, x: any) => s + x.n, 0)
   const countBy = (arr: any[], key: string) => { const m: any = {}; arr.forEach((x: any) => { const v = x[key]; if (v) m[v] = (m[v] || 0) + 1 }); return Object.entries(m).sort((a: any, b: any) => b[1] - a[1]) }
   const topRegions = countBy(users, 'region').slice(0, 6)
   const topSectors = countBy(rfqs, 'sector').slice(0, 6)
@@ -356,7 +355,7 @@ export default function AdminPanel() {
   const filteredRfqs = rfqs.filter(rfqSearch)
   const filteredProjects = projects.filter((p: any) => !search || p.title?.includes(search) || nameOf(p.contractor_id)?.includes(search))
 
-  const filtered = users.filter(u => {
+  const filtered = users.filter((u: any) => {
     const matchSearch = !search || u.company_name_ar?.includes(search) || u.phone?.includes(search) || emails[u.id]?.email?.includes(search)
     const matchRole = !roleFilter || u.role === roleFilter
     if (!matchSearch || !matchRole) return false
@@ -420,8 +419,8 @@ export default function AdminPanel() {
               { key: 'disputes', label: `⚠ النزاعات${disputes.length ? ' (' + disputes.length + ')' : ''}` },
               { key: 'objections', label: `🚩 بلاغات حسابات وهمية${openObjections.length ? ' (' + openObjections.length + ')' : ''}` },
               { key: 'changereqs', label: `📝 طلبات التعديل${openChangeReqs.length ? ' (' + openChangeReqs.length + ')' : ''}` },
-              { key: 'materials', label: `📦 طلبات المواد (${materialReqs.filter(r => r.status === 'pending').length})` },
-            ].map(t => (
+              { key: 'materials', label: `📦 طلبات المواد (${materialReqs.filter((r: any) => r.status === 'pending').length})` },
+            ].map((t: any) => (
               <button key={t.key} onClick={() => { setTab(t.key); setRoleFilter('') }}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === t.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
                 style={tab === t.key ? { background: '#1B2D5B' } : {}}>
@@ -434,7 +433,7 @@ export default function AdminPanel() {
             {['pending', 'verified', 'rejected', 'all'].includes(tab) && filtered.length > 0 && (
               <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-all">⬇ تصدير CSV</button>
             )}
-            <input value={search} onChange={e => setSearch(e.target.value)}
+            <input value={search} onChange={(e: any) => setSearch(e.target.value)}
               className="input-field max-w-xs text-sm" placeholder="🔍 بحث بالاسم أو الجوال" />
           </div>
         </div>
@@ -812,7 +811,7 @@ export default function AdminPanel() {
             </div>
           ) : (
             <div className="space-y-3 stagger">
-              {materialReqs.map(r => (
+              {materialReqs.map((r: any) => (
                 <div key={r.id} className={`bg-white rounded-2xl p-5 border shadow-sm ${
                   r.status === 'pending' ? 'border-amber-200' : r.status === 'approved' ? 'border-emerald-200' : 'border-red-200'
                 }`}>
@@ -859,7 +858,7 @@ export default function AdminPanel() {
           </div>
         ) : (
           <div className="space-y-3 stagger">
-            {filtered.map(u => (
+            {filtered.map((u: any) => (
               <div key={u.id} className={`bg-white rounded-2xl p-5 border shadow-sm transition-all ${
                 u.verification_status === 'pending' ? 'border-amber-200' :
                 u.verification_status === 'verified' ? 'border-emerald-200' : 'border-red-200'
@@ -1055,7 +1054,7 @@ export default function AdminPanel() {
                 'بيانات السجل التجاري غير مطابقة',
                 'السجل التجاري لا يشمل النشاط المطلوب',
                 'صور المستندات غير مقروءة',
-              ].map(reason => (
+              ].map((reason: any) => (
                 <button key={reason} type="button"
                   onClick={() => setRejectReason(reason)}
                   className={`w-full text-right px-4 py-3 rounded-xl border text-sm transition-all ${
@@ -1070,7 +1069,7 @@ export default function AdminPanel() {
 
             <div className="mb-5">
               <label className="block text-xs font-bold text-gray-500 mb-1.5">أو اكتب سبب مخصص</label>
-              <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)}
+              <textarea value={rejectReason} onChange={(e: any) => setRejectReason(e.target.value)}
                 className="input-field" rows={3}
                 placeholder="أدخل سبب الرفض..." />
             </div>
@@ -1106,12 +1105,12 @@ export default function AdminPanel() {
             <div className="space-y-3 mb-4">
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">كلمة المرور الجديدة</label>
-                <input type="text" value={pwValue} onChange={e => setPwValue(e.target.value)}
+                <input type="text" value={pwValue} onChange={(e: any) => setPwValue(e.target.value)}
                   className="input-field font-mono" placeholder="8 أحرف على الأقل" dir="ltr" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">تأكيد كلمة المرور</label>
-                <input type="text" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)}
+                <input type="text" value={pwConfirm} onChange={(e: any) => setPwConfirm(e.target.value)}
                   className="input-field font-mono" placeholder="أعد كتابتها" dir="ltr" />
               </div>
             </div>
@@ -1135,12 +1134,12 @@ export default function AdminPanel() {
       {/* مراجعة/تعديل طلب مادة قبل الاعتماد */}
       {matEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" dir="rtl" onClick={() => actionLoading !== matEdit.id && setMatEdit(null)}>
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e: any) => e.stopPropagation()}>
             <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>✎ مراجعة المادة المقترحة</h3>
             <p className="text-xs text-gray-400 mb-4">عدّل القطاع والمجموعة والاسم لتضعها في المكان الصحيح، ثم اعتمدها.</p>
 
             <label className="block text-xs font-bold text-gray-500 mb-1.5">اسم المادة</label>
-            <input value={matName} onChange={e => setMatName(e.target.value)} className="input-field mb-2 text-sm" />
+            <input value={matName} onChange={(e: any) => setMatName(e.target.value)} className="input-field mb-2 text-sm" />
 
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <button type="button" onClick={aiSuggestMaterial} disabled={matAi || !matName.trim()}
@@ -1153,15 +1152,15 @@ export default function AdminPanel() {
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">القطاع</label>
-                <select value={matSector} onChange={e => { setMatSector(e.target.value); setMatGroup('') }} className="input-field text-sm">
-                  {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{SECTOR_LABELS[s]}</option>)}
+                <select value={matSector} onChange={(e: any) => { setMatSector(e.target.value); setMatGroup('') }} className="input-field text-sm">
+                  {Object.keys(SECTOR_LABELS).map((s: any) => <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">المجموعة</label>
-                <select value={matGroup} onChange={e => setMatGroup(e.target.value)} className="input-field text-sm">
+                <select value={matGroup} onChange={(e: any) => setMatGroup(e.target.value)} className="input-field text-sm">
                   <option value="">— اختر —</option>
-                  {getGroupedSubCategories(matSector).map(g => <option key={g.group} value={g.group}>{g.ar}</option>)}
+                  {getGroupedSubCategories(matSector as any).map((g: any) => <option key={g.group} value={g.group}>{g.ar}</option>)}
                 </select>
               </div>
             </div>
@@ -1173,7 +1172,7 @@ export default function AdminPanel() {
             )}
 
             <label className="block text-xs font-bold text-gray-500 mb-1.5">ملاحظة الإدارة (اختياري — تظهر لك)</label>
-            <textarea value={matNote} onChange={e => setMatNote(e.target.value)} rows={2} className="input-field mb-4 text-sm" placeholder="مثال: نقلتها لمجموعة الخرسانة، أو سبب الرفض…" />
+            <textarea value={matNote} onChange={(e: any) => setMatNote(e.target.value)} rows={2} className="input-field mb-4 text-sm" placeholder="مثال: نقلتها لمجموعة الخرسانة، أو سبب الرفض…" />
 
             <div className="flex gap-2">
               <button type="button" disabled={actionLoading === matEdit.id || !matName.trim() || !matGroup}

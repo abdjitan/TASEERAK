@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -43,13 +42,13 @@ export default function DiscoverSuppliersPage() {
   const [city, setCity] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0])
   const [customQuery, setCustomQuery] = useState('')
-  const [results, setResults] = useState([])
+  const [results, setResults] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [nextToken, setNextToken] = useState(null)
+  const [nextToken, setNextToken] = useState<any>(null)
   const [lastQuery, setLastQuery] = useState('')
-  const [emailBusy, setEmailBusy] = useState({})
-  const [invited, setInvited] = useState({})
+  const [emailBusy, setEmailBusy] = useState<any>({})
+  const [invited, setInvited] = useState<any>({})
   const [origin, setOrigin] = useState('')
 
   useEffect(() => {
@@ -97,32 +96,32 @@ export default function DiscoverSuppliersPage() {
     setLoading(false)
   }
 
-  async function findEmail(row) {
+  async function findEmail(row: any) {
     if (!row.website) return
-    setEmailBusy(b => ({ ...b, [row.id]: true }))
+    setEmailBusy((b: any) => ({ ...b, [row.id]: true }))
     try {
       const res = await fetch('/api/discover-suppliers/email', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ website: row.website }),
       })
       const data = await res.json()
-      setResults(rs => rs.map(r => r.id === row.id ? { ...r, email: data.email || '—' } : r))
+      setResults(rs => rs.map((r: any) => r.id === row.id ? { ...r, email: data.email || '—' } : r))
     } catch {
-      setResults(rs => rs.map(r => r.id === row.id ? { ...r, email: '—' } : r))
+      setResults(rs => rs.map((r: any) => r.id === row.id ? { ...r, email: '—' } : r))
     }
-    setEmailBusy(b => ({ ...b, [row.id]: false }))
+    setEmailBusy((b: any) => ({ ...b, [row.id]: false }))
   }
 
-  function inviteText(row) {
+  function inviteText(row: any) {
     return `السلام عليكم${row.name ? '، ' + row.name : ''} 👋\n\nندعوكم للانضمام إلى منصة «تسعيرك» — منصة سعودية تجمع موردي مواد البناء بالمقاولين، تتيح لكم استقبال طلبات تسعير من مقاولين جاهزين للشراء في منطقتكم، مجاناً.\n\nالتسجيل من هنا:\n${origin}/register\n\nنتشرف بانضمامكم 🌟`
   }
 
   function exportCSV() {
     if (results.length === 0) return
     const header = ['الاسم', 'النوع', 'الجوال', 'الإيميل', 'الموقع الإلكتروني', 'العنوان', 'التقييم', 'عدد المراجعات', 'رابط الخريطة']
-    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
-    const rows = results.map(r => [r.name, r.type, r.phone, (r.email && r.email !== '—') ? r.email : '', r.website, r.address, r.rating ?? '', r.reviews ?? '', r.mapsUrl])
-    const csv = '﻿' + [header, ...rows].map(r => r.map(esc).join(',')).join('\r\n')
+    const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const rows = results.map((r: any) => [r.name, r.type, r.phone, (r.email && r.email !== '—') ? r.email : '', r.website, r.address, r.rating ?? '', r.reviews ?? '', r.mapsUrl])
+    const csv = '﻿' + [header, ...rows].map((r: any) => r.map(esc).join(',')).join('\r\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -155,27 +154,27 @@ export default function DiscoverSuppliersPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">المنطقة</label>
-              <select value={region} onChange={e => { setRegion(e.target.value); setCity((CITIES_BY_REGION[e.target.value] || [])[0]?.ar || '') }} className="input-field">
-                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+              <select value={region} onChange={(e: any) => { setRegion(e.target.value); setCity((CITIES_BY_REGION[e.target.value] || [])[0]?.ar || '') }} className="input-field">
+                {REGIONS.map((r: any) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">المدينة</label>
-              <select value={city} onChange={e => setCity(e.target.value)} className="input-field">
+              <select value={city} onChange={(e: any) => setCity(e.target.value)} className="input-field">
                 <option value="">— كل المدن —</option>
-                {cities.map(c => <option key={c.ar} value={c.ar}>{c.ar}</option>)}
+                {cities.map((c: any) => <option key={c.ar} value={c.ar}>{c.ar}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">نوع المواد</label>
-              <select value={category} onChange={e => { setCategory(e.target.value); setCustomQuery('') }} className="input-field">
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              <select value={category} onChange={(e: any) => { setCategory(e.target.value); setCustomQuery('') }} className="input-field">
+                {CATEGORIES.map((c: any) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
           </div>
           <div className="mt-3">
             <label className="block text-xs font-bold text-gray-500 mb-1">أو بحث حر (اختياري)</label>
-            <input value={customQuery} onChange={e => setCustomQuery(e.target.value)} className="input-field" placeholder="مثال: مصنع بلاط، مورد عوازل، تاجر جملة دهانات…" />
+            <input value={customQuery} onChange={(e: any) => setCustomQuery(e.target.value)} className="input-field" placeholder="مثال: مصنع بلاط، مورد عوازل، تاجر جملة دهانات…" />
           </div>
           <button onClick={() => search(true)} disabled={loading}
             className="w-full mt-4 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg" style={{ background: '#1B2D5B' }}>
@@ -194,7 +193,7 @@ export default function DiscoverSuppliersPage() {
 
         {/* Result cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-          {results.map(row => {
+          {results.map((row: any) => {
             const wa = waLink(row.phone, inviteText(row))
             return (
               <div key={row.id} className={`bg-white rounded-2xl p-4 border shadow-sm ${invited[row.id] ? 'border-emerald-300' : 'border-gray-100'}`}>
@@ -228,7 +227,7 @@ export default function DiscoverSuppliersPage() {
 
                 <div className="mt-3 flex items-center gap-2 flex-wrap">
                   {wa
-                    ? <a href={wa} target="_blank" rel="noreferrer" onClick={() => setInvited(s => ({ ...s, [row.id]: true }))}
+                    ? <a href={wa} target="_blank" rel="noreferrer" onClick={() => setInvited((s: any) => ({ ...s, [row.id]: true }))}
                         className="flex-1 text-center py-2 rounded-xl font-bold text-white text-xs" style={{ background: '#25D366' }}>💬 دعوة واتساب</a>
                     : <span className="flex-1 text-center py-2 rounded-xl text-xs text-gray-400 border border-gray-200">لا يوجد رقم للدعوة</span>}
                   {row.mapsUrl && <a href={row.mapsUrl} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-xl text-xs border border-gray-200 text-gray-600">🗺 الخريطة</a>}

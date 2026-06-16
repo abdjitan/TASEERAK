@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -12,9 +11,9 @@ import SupportThread from '@/components/shared/SupportThread'
 import PageLoader from '@/components/shared/PageLoader'
 import { APPROVAL_LABELS } from '@/lib/supplierScore'
 
-const TIER_LABEL = { manufacturer: '🏭 مصنع / مورد رئيسي', commercial: '🏪 مورد تجاري', local: '🏬 مورد محلي' }
-const RFQ_STATUS = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
-const OFFER_STATUS = { pending: '⏳ بانتظار', submitted: '📨 مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
+const TIER_LABEL: Record<string, string> = { manufacturer: '🏭 مصنع / مورد رئيسي', commercial: '🏪 مورد تجاري', local: '🏬 مورد محلي' }
+const RFQ_STATUS: Record<string, string> = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
+const OFFER_STATUS: Record<string, string> = { pending: '⏳ بانتظار', submitted: '📨 مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
 
 export default function AdminUserDetail() {
   const params = useParams()
@@ -181,7 +180,7 @@ export default function AdminUserDetail() {
           {rejecting && (
             <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-200">
               <label className="block text-xs font-bold text-red-700 mb-1.5">سبب الرفض (يُرسل للمستخدم)</label>
-              <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)} className="input-field" rows={2} placeholder="اكتب السبب..." />
+              <textarea value={rejectReason} onChange={(e: any) => setRejectReason(e.target.value)} className="input-field" rows={2} placeholder="اكتب السبب..." />
               <button onClick={() => setStatus('rejected', rejectReason)} disabled={!rejectReason || busy === 'rejected'} className="mt-2 text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 disabled:opacity-50">تأكيد الرفض</button>
             </div>
           )}
@@ -191,8 +190,8 @@ export default function AdminUserDetail() {
             <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
               <div className="text-xs text-amber-700 mb-2">⚠️ تعيين كلمة مرور جديدة لهذا الحساب — أبلغ صاحبه بها.</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input type="text" value={pw} onChange={e => setPw(e.target.value)} className="input-field font-mono" placeholder="كلمة المرور الجديدة" dir="ltr" />
-                <input type="text" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} className="input-field font-mono" placeholder="تأكيد" dir="ltr" />
+                <input type="text" value={pw} onChange={(e: any) => setPw(e.target.value)} className="input-field font-mono" placeholder="كلمة المرور الجديدة" dir="ltr" />
+                <input type="text" value={pwConfirm} onChange={(e: any) => setPwConfirm(e.target.value)} className="input-field font-mono" placeholder="تأكيد" dir="ltr" />
               </div>
               {pwMsg && <div className="text-xs text-red-600 mt-2">{pwMsg}</div>}
               <button onClick={changePassword} disabled={busy === 'pw'} className="mt-2 text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#1B2D5B' }}>{busy === 'pw' ? '...' : 'تعيين'}</button>
@@ -238,7 +237,7 @@ export default function AdminUserDetail() {
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
                 <div className="text-[11px] text-gray-400 mb-1">فئة المورد</div>
-                <select value={p.supplier_tier || 'local'} onChange={e => setField('supplier_tier', e.target.value)} className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5">
+                <select value={p.supplier_tier || 'local'} onChange={(e: any) => setField('supplier_tier', e.target.value)} className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5">
                   <option value="manufacturer">🏭 مصنع / رئيسي</option><option value="commercial">🏪 تجاري</option><option value="local">🏬 محلي</option>
                 </select>
               </div>
@@ -246,7 +245,7 @@ export default function AdminUserDetail() {
             {p.role === 'contractor' && (
               <div className="py-1.5 border-b border-gray-50">
                 <div className="text-[11px] text-gray-400 mb-1">درجة المقاول</div>
-                <select value={p.contractor_grade || ''} onChange={e => setField('contractor_grade', e.target.value || null)} className="text-xs border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg px-2 py-1.5">
+                <select value={p.contractor_grade || ''} onChange={(e: any) => setField('contractor_grade', e.target.value || null)} className="text-xs border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg px-2 py-1.5">
                   <option value="">-- الدرجة --</option><option value="A">أ — فوق 100M</option><option value="B">ب — 30–100M</option><option value="C">ج — 5–30M</option><option value="D">د — أقل من 5M</option>
                 </select>
               </div>
@@ -309,7 +308,7 @@ export default function AdminUserDetail() {
             <Section title={`النشاط — طلبات التسعير (${rfqs.length}) والمشاريع (${projects.length})`} icon="📋">
               {rfqs.length === 0 && projects.length === 0 ? <div className="text-sm text-gray-400 py-2">لا يوجد نشاط بعد</div> : (
                 <div className="space-y-2">
-                  {rfqs.map(r => (
+                  {rfqs.map((r: any) => (
                     <div key={r.id} className="flex items-center justify-between gap-2 text-xs bg-[#f4f6f9] rounded-lg p-2.5 flex-wrap">
                       <span className="font-semibold" style={{ color: '#1B2D5B' }}>{r.product_name}</span>
                       <span className="text-gray-500">{r.quantity} {r.unit}</span>
@@ -318,7 +317,7 @@ export default function AdminUserDetail() {
                       <span className="text-gray-400">{dt(r.created_at)}</span>
                     </div>
                   ))}
-                  {projects.map(pr => (
+                  {projects.map((pr: any) => (
                     <div key={pr.id} className="flex items-center justify-between gap-2 text-xs bg-[#F5831F]/5 rounded-lg p-2.5 flex-wrap">
                       <span className="font-semibold" style={{ color: '#1B2D5B' }}>🏗 {pr.title}</span>
                       <span className="badge text-[10px] badge-gray">{RFQ_STATUS[pr.status] || pr.status}</span>
@@ -332,7 +331,7 @@ export default function AdminUserDetail() {
             <Section title={`النشاط — العروض المقدّمة (${myOffers.length})`} icon="📨">
               {myOffers.length === 0 ? <div className="text-sm text-gray-400 py-2">لا توجد عروض بعد</div> : (
                 <div className="space-y-2">
-                  {myOffers.map(o => (
+                  {myOffers.map((o: any) => (
                     <div key={o.id} className="flex items-center justify-between gap-2 text-xs bg-[#f4f6f9] rounded-lg p-2.5 flex-wrap">
                       <span className="font-semibold" style={{ color: '#1B2D5B' }}>{o.rfqs?.product_name || 'طلب'}</span>
                       <span className="text-emerald-700 font-bold">{sar(o.total_price)}</span>

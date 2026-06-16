@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useState, useRef } from 'react'
@@ -137,7 +136,7 @@ export default function RegisterPage() {
     electrical: { en: 'Electrical', ur: 'برقی' }, mechanical: { en: 'Mechanical', ur: 'مکینیکل' },
     equipment: { en: 'Machinery', ur: 'مشینری' }, supply_store: { en: 'Supply Store', ur: 'سپلائی اسٹور' },
   }
-  const sl = (s) => locale === 'ar' ? SECTOR_LABELS[s] : (SECTOR_TR[s]?.[locale] || SECTOR_LABELS[s])
+  const sl = (s: any) => locale === 'ar' ? (SECTOR_LABELS as any)[s] : ((SECTOR_TR as any)[s]?.[locale] || (SECTOR_LABELS as any)[s])
   // CR verification (Wathq) labels
   const CRV = {
     ar: { verifyBtn: 'تحقق من السجل التجاري', checking: 'جارٍ التحقق...', invalid: 'أدخل رقم السجل (10 أرقام) أولاً', needId: 'أدخل رقم هوية صاحب/مفوّض السجل (10 أرقام)', error: 'تعذّر التحقق، حاول لاحقاً', idLabel: 'رقم هوية صاحب/مفوّض السجل', ownerOk: '✓ رقم هويتك مُدرج ضمن ملّاك/مدراء السجل — توثيق مؤكّد', ownerNo: '⚠ رقم هويتك غير مُدرج في هذا السجل — سيُحوَّل لمراجعة الإدارة', idDoc: 'صورة الهوية الوطنية / الإقامة', idHint: 'لإثبات أنك صاحب السجل — تُراجَع بسرّية' },
@@ -186,12 +185,12 @@ export default function RegisterPage() {
   function addExtraMaterial(sector: string) {
     const v = extraMaterialInput.trim()
     if (!v || !sector) return
-    setExtraMaterials(prev => prev.some(m => m.name === v && m.sector === sector) ? prev : [...prev, { sector, name: v }])
+    setExtraMaterials(prev => prev.some((m: any) => m.name === v && m.sector === sector) ? prev : [...prev, { sector, name: v }])
     setExtraMaterialInput('')
   }
 
   function toggleSpecialty(key: string) {
-    setSpecialties(prev => prev.includes(key) ? prev.filter(s => s !== key) : [...prev, key])
+    setSpecialties(prev => prev.includes(key) ? prev.filter((s: any) => s !== key) : [...prev, key])
   }
   const router = useRouter()
   const supabase = createClient()
@@ -207,7 +206,7 @@ export default function RegisterPage() {
   function toggleSector(sector: Sector) {
     const current = sectors || []
     const updated = current.includes(sector)
-      ? current.filter(s => s !== sector)
+      ? current.filter((s: any) => s !== sector)
       : [...current, sector]
     setValue('sectors', updated)
   }
@@ -349,7 +348,7 @@ export default function RegisterPage() {
         meta.supplier_tier = supplierTier
         if (minOrderValue) meta.min_order_value = String(minOrderValue)
         if (specialties.length > 0) meta.specialties = specialties
-        if (extraMaterials.length > 0) meta.extra_materials = extraMaterials.map(m => m.name)
+        if (extraMaterials.length > 0) meta.extra_materials = extraMaterials.map((m: any) => m.name)
       }
       if (data.role === 'contractor' && contractorGrade) meta.contractor_grade = contractorGrade
       if (crVerify?.mode === 'wathq' && crVerify?.verified) {
@@ -471,7 +470,7 @@ export default function RegisterPage() {
         <div className="max-w-3xl mx-auto px-4 py-6">
           {/* Stepper — step 1 active */}
           <div className="flex items-center justify-center gap-2 py-4 mb-4">
-            {[1, 2, 3].map(s => (
+            {[1, 2, 3].map((s: any) => (
               <div key={s} className="flex items-center gap-2">
                 <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${s === 1 ? 'bg-[#F5831F] text-white ring-4 ring-[#F5831F]/20' : 'bg-white border-2 border-gray-200 text-gray-400'}`}>{s}</div>
                 {s < 3 && <div className="w-10 h-1 rounded-full bg-gray-200" />}
@@ -496,7 +495,7 @@ export default function RegisterPage() {
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
                   <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel"
                     inputMode="numeric" maxLength={10} dir="ltr"
-                    onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(null) }} />
+                    onInput={(e: any) => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(null) }} />
                   {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                 </div>
               </div>
@@ -550,7 +549,7 @@ export default function RegisterPage() {
       <div className="max-w-3xl mx-auto px-4 py-6">
         {/* Steps indicator */}
         <div className="flex items-center justify-center gap-2 py-6 mb-2">
-          {[1,2,3].map(s => (
+          {[1,2,3].map((s: any) => (
             <div key={s} className="flex items-center gap-2">
               <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
                 s < step ? 'bg-[#F5831F] text-white' :
@@ -605,7 +604,7 @@ export default function RegisterPage() {
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{t.crNumber} *</label>
                   <input {...register('commercial_registration')} className="input-field" placeholder="7001234567"
                     inputMode="numeric" maxLength={10} dir="ltr"
-                    onInput={e => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
+                    onInput={(e: any) => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (crVerify) setCrVerify(null); if (v.length === 10) checkCrDup(v); else { setCrDup(null); setBranchConfirmed(false) } }} />
                   {errors.commercial_registration && <p className="text-red-500 text-xs mt-1">{errors.commercial_registration.message}</p>}
                   <p className="text-[10px] text-gray-400 mt-1">{locale === 'en' ? 'Unified CR number (starts with 700) — on your CR certificate. Verified officially via Wathq; no national ID is collected.' : locale === 'ur' ? 'متحدہ رجسٹریشن نمبر (700 سے شروع)۔ واثق کے ذریعے تصدیق؛ قومی شناختی نمبر نہیں لیا جاتا۔' : 'الرقم الموحّد للسجل (يبدأ بـ 700) — تجده في شهادة السجل. يُوثّق رسمياً عبر واثق دون جمع رقم الهوية.'}</p>
                 </div>
@@ -646,7 +645,7 @@ export default function RegisterPage() {
                       <div>• {locale === 'en' ? 'Have an account?' : locale === 'ur' ? 'اکاؤنٹ ہے؟' : 'لديك حساب؟'} <a href="/login" className="font-bold underline" style={{ color: '#0F6E56' }}>{locale === 'en' ? 'Sign in' : locale === 'ur' ? 'سائن ان' : 'سجّل الدخول'}</a></div>
                       <div>• {locale === 'en' ? 'To add a branch to the same account: sign in, then "Branches".' : locale === 'ur' ? 'اسی اکاؤنٹ میں شاخ شامل کرنے کے لیے: سائن اِن کریں، پھر «شاخیں»۔' : 'لإضافة فرع لنفس الحساب: سجّل الدخول ثم صفحة «فروعي».'}</div>
                       <label className="flex items-start gap-2 mt-1.5 cursor-pointer">
-                        <input type="checkbox" checked={branchConfirmed} onChange={e => setBranchConfirmed(e.target.checked)} className="mt-0.5" />
+                        <input type="checkbox" checked={branchConfirmed} onChange={(e: any) => setBranchConfirmed(e.target.checked)} className="mt-0.5" />
                         <span>{locale === 'en' ? 'Or: this is a separate branch of the same company — continue with a separate account.' : locale === 'ur' ? 'یا: یہ اسی کمپنی کی الگ شاخ ہے — الگ اکاؤنٹ کے ساتھ جاری رکھیں۔' : 'أو: هذا فرع منفصل لنفس الشركة وأرغب بحساب مستقل — متابعة التسجيل.'}</span>
                       </label>
 
@@ -661,9 +660,9 @@ export default function RegisterPage() {
                         ) : (
                           <div className="space-y-2">
                             <div className="font-semibold text-red-700">🚩 {locale === 'en' ? 'Report a fraudulent account' : locale === 'ur' ? 'جعلی اکاؤنٹ کی اطلاع' : 'الإبلاغ عن حساب وهمي'}</div>
-                            <input value={objName} onChange={e => setObjName(e.target.value)} className="input-field text-xs" placeholder={locale === 'en' ? 'Your name' : locale === 'ur' ? 'آپ کا نام' : 'اسمك'} />
-                            <input value={objPhone} onChange={e => setObjPhone(e.target.value)} className="input-field text-xs" dir="ltr" placeholder={locale === 'en' ? 'Your phone (05XXXXXXXX)' : '05XXXXXXXX'} />
-                            <textarea value={objReason} onChange={e => setObjReason(e.target.value)} rows={2} className="input-field text-xs" placeholder={locale === 'en' ? 'Why is this account fraudulent?' : locale === 'ur' ? 'یہ اکاؤنٹ جعلی کیوں ہے؟' : 'لماذا هذا الحساب وهمي؟'} />
+                            <input value={objName} onChange={(e: any) => setObjName(e.target.value)} className="input-field text-xs" placeholder={locale === 'en' ? 'Your name' : locale === 'ur' ? 'آپ کا نام' : 'اسمك'} />
+                            <input value={objPhone} onChange={(e: any) => setObjPhone(e.target.value)} className="input-field text-xs" dir="ltr" placeholder={locale === 'en' ? 'Your phone (05XXXXXXXX)' : '05XXXXXXXX'} />
+                            <textarea value={objReason} onChange={(e: any) => setObjReason(e.target.value)} rows={2} className="input-field text-xs" placeholder={locale === 'en' ? 'Why is this account fraudulent?' : locale === 'ur' ? 'یہ اکاؤنٹ جعلی کیوں ہے؟' : 'لماذا هذا الحساب وهمي؟'} />
                             <div className="flex gap-2">
                               <button type="button" disabled={objSending} onClick={submitObjection} className="px-3 py-1.5 rounded-lg font-semibold text-white text-xs disabled:opacity-50" style={{ background: '#DC2626' }}>
                                 {objSending ? '...' : (locale === 'en' ? 'Send report' : locale === 'ur' ? 'رپورٹ بھیجیں' : 'إرسال البلاغ')}
@@ -682,9 +681,9 @@ export default function RegisterPage() {
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{t.region} *</label>
                     <select {...register('region')} className="input-field"
-                      onChange={e => { setValue('region', e.target.value); setValue('city', '') }}>
+                      onChange={(e: any) => { setValue('region', e.target.value); setValue('city', '') }}>
                       <option value="">{t.selectRegion}</option>
-                      {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
+                      {REGIONS.map((r: any) => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
                     </select>
                     {errors.region && <p className="text-red-500 text-xs mt-1">{errors.region.message}</p>}
                   </div>
@@ -692,7 +691,7 @@ export default function RegisterPage() {
                     <label className="block text-xs font-semibold text-gray-600 mb-1">{t.city} *</label>
                     <select {...register('city')} className="input-field" disabled={!watch('region')}>
                       <option value="">{watch('region') ? t.selectRegion : '—'}</option>
-                      {(CITIES_BY_REGION[watch('region')] || []).map(c => (
+                      {(CITIES_BY_REGION[watch('region')] || []).map((c: any) => (
                         <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>
                       ))}
                     </select>
@@ -710,7 +709,7 @@ export default function RegisterPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'Notification language (email/WhatsApp)' : locale === 'ur' ? 'اطلاعات کی زبان' : 'لغة الإشعارات (بريد/واتساب)'}</label>
                   <div className="grid grid-cols-3 gap-2">
-                    {[{ k: 'ar', l: 'العربية' }, { k: 'en', l: 'English' }, { k: 'ur', l: 'اردو' }].map(o => (
+                    {[{ k: 'ar', l: 'العربية' }, { k: 'en', l: 'English' }, { k: 'ur', l: 'اردو' }].map((o: any) => (
                       <button key={o.k} type="button" onClick={() => setPrefLang(o.k as any)}
                         className={`py-2 rounded-xl border-2 text-sm font-semibold transition-all ${prefLang === o.k ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'border-gray-200 text-gray-600'}`}>
                         {o.l}
@@ -780,7 +779,7 @@ export default function RegisterPage() {
               {/* CONTRACTOR — simple multi-select sector cards */}
               {selectedType !== 'supplier' && (
                 <div className="grid grid-cols-2 gap-3 mb-5">
-                  {(Object.keys(SECTOR_LABELS) as Sector[]).map(sector => (
+                  {(Object.keys(SECTOR_LABELS) as Sector[]).map((sector: any) => (
                     <button key={sector} type="button" onClick={() => toggleSector(sector)}
                       className={`p-4 rounded-xl border-2 transition-all ${sectors?.includes(sector) ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-[#F5831F]/40'}`}
                       style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}>
@@ -793,14 +792,14 @@ export default function RegisterPage() {
               {/* SUPPLIER — accordion: one sector open at a time, with its specialties + materials */}
               {selectedType === 'supplier' && (
                 <div className="space-y-2 mb-5">
-                  {(Object.keys(SECTOR_LABELS) as Sector[]).map(sector => {
+                  {(Object.keys(SECTOR_LABELS) as Sector[]).map((sector: any) => {
                     const selected = sectors?.includes(sector)
                     const isOpen = openSector === sector
-                    const subs = SUB_CATEGORIES[sector] || {}
+                    const subs = (SUB_CATEGORIES as any)[sector] || {}
                     const subKeys = Object.keys(subs)
-                    const selCount = specialties.filter(s => subKeys.includes(s)).length
-                    const color = SECTOR_COLORS[sector]
-                    const sectorMats = extraMaterials.filter(m => m.sector === sector)
+                    const selCount = specialties.filter((s: any) => subKeys.includes(s)).length
+                    const color = (SECTOR_COLORS as any)[sector]
+                    const sectorMats = extraMaterials.filter((m: any) => m.sector === sector)
                     const groups: Record<string, string[]> = {}
                     Object.entries(subs).forEach(([key, sub]: any) => { (groups[sub.group] = groups[sub.group] || []).push(key) })
                     return (
@@ -813,7 +812,7 @@ export default function RegisterPage() {
                           </div>
                           <div className="flex items-center gap-2">
                             {selected && (
-                              <button type="button" onClick={(e) => { e.stopPropagation(); setSpecialties(prev => prev.filter(s => !subKeys.includes(s))); setExtraMaterials(prev => prev.filter(m => m.sector !== sector)); toggleSector(sector); if (isOpen) setOpenSector(null) }}
+                              <button type="button" onClick={(e) => { e.stopPropagation(); setSpecialties(prev => prev.filter((s: any) => !subKeys.includes(s))); setExtraMaterials(prev => prev.filter((m: any) => m.sector !== sector)); toggleSector(sector); if (isOpen) setOpenSector(null) }}
                                 className="text-[11px] text-red-400 hover:text-red-600">إزالة</button>
                             )}
                             <span className="text-gray-400 text-xs">{isOpen ? '▲' : '▼'}</span>
@@ -822,11 +821,11 @@ export default function RegisterPage() {
 
                         {isOpen && (
                           <div className="p-3 border-t border-gray-100 bg-white">
-                            {sortGroupKeys(Object.keys(groups)).map((groupKey) => {
+                            {sortGroupKeys(Object.keys(groups)).map((groupKey: any) => {
                               const keys = groups[groupKey]
-                              const grp = GROUP_LABELS[groupKey]
+                              const grp = (GROUP_LABELS as any)[groupKey]
                               const grpLabel = grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey
-                              const selInGroup = keys.filter(k => specialties.includes(k)).length
+                              const selInGroup = keys.filter((k: any) => specialties.includes(k)).length
                               return (
                                 <div key={groupKey} className="mb-3 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                                   <div className="flex items-center gap-2 mb-2.5">
@@ -835,7 +834,7 @@ export default function RegisterPage() {
                                     {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: color }}>{selInGroup}</span>}
                                   </div>
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {keys.map(key => {
+                                    {keys.map((key: any) => {
                                       const sub = subs[key]
                                       const active = specialties.includes(key)
                                       const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
@@ -858,17 +857,17 @@ export default function RegisterPage() {
                             <div className="mt-3 pt-3 border-t border-gray-100">
                               <div className="text-[11px] font-bold text-gray-600 mb-1.5">{t.addMatTitle}</div>
                               <div className="flex gap-2">
-                                <input type="text" value={extraMaterialInput} onChange={e => setExtraMaterialInput(e.target.value)}
-                                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
+                                <input type="text" value={extraMaterialInput} onChange={(e: any) => setExtraMaterialInput(e.target.value)}
+                                  onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
                                   className="input-field flex-1" placeholder={t.addMatPh} />
                                 <button type="button" onClick={() => addExtraMaterial(sector)} className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#1B2D5B' }}>{t.addMatBtn}</button>
                               </div>
                               {sectorMats.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-2">
-                                  {sectorMats.map(m => (
+                                  {sectorMats.map((m: any) => (
                                     <span key={m.name} className="inline-flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-2.5 py-1.5">
                                       {m.name}
-                                      <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => !(x.name === m.name && x.sector === sector)))} className="text-amber-500 hover:text-amber-800 font-bold leading-none">×</button>
+                                      <button type="button" onClick={() => setExtraMaterials(prev => prev.filter((x: any) => !(x.name === m.name && x.sector === sector)))} className="text-amber-500 hover:text-amber-800 font-bold leading-none">×</button>
                                     </span>
                                   ))}
                                 </div>
@@ -896,7 +895,7 @@ export default function RegisterPage() {
                       { key: 'manufacturer', svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 21h18" /><path d="M3 21V11l4 2.5V11l4 2.5V11l4 2.5V8l4 2.5V21" /><path d="M7 7V4l2 1.6L11 4v3" /><path d="M6.5 17h.01M10.5 17h.01M14.5 17h.01M18 17h.01" /></svg>, label: t.manufacturer, desc: t.manufacturerD },
                       { key: 'commercial', svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M2 8.5 12 4l10 4.5" /><path d="M4 10v10h16V10" /><rect x="9" y="13" width="6" height="7" /><path d="M7 10.5h.01M17 10.5h.01" /></svg>, label: t.commercial, desc: t.commercialD },
                       { key: 'local', svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M4 9h16l-1-4H5L4 9z" /><path d="M5 9v11h14V9" /><path d="M9 20v-5a3 3 0 0 1 6 0v5" /></svg>, label: t.local, desc: t.localD },
-                    ].map(tier => (
+                    ].map((tier: any) => (
                       <button key={tier.key} type="button"
                         onClick={() => setSupplierTier(tier.key as any)}
                         className={`p-3 rounded-xl border-2 text-center transition-all ${
@@ -910,7 +909,7 @@ export default function RegisterPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1">{t.minOrder}</label>
-                    <input type="number" value={minOrderValue} onChange={e => setMinOrderValue(e.target.value)}
+                    <input type="number" value={minOrderValue} onChange={(e: any) => setMinOrderValue(e.target.value)}
                       className="input-field" placeholder={t.minOrderPh} min="0" />
                   </div>
                 </div>
@@ -927,7 +926,7 @@ export default function RegisterPage() {
                       { grade: 'B', label: locale === 'ar' ? 'ب' : 'B', desc: '30–100M', color: '#1B2D5B' },
                       { grade: 'C', label: locale === 'ar' ? 'ج' : 'C', desc: '5–30M', color: '#0F6E56' },
                       { grade: 'D', label: locale === 'ar' ? 'د' : 'D', desc: '< 5M', color: '#888780' },
-                    ].map(g => (
+                    ].map((g: any) => (
                       <button key={g.grade} type="button"
                         onClick={() => setContractorGrade(g.grade as any)}
                         className={`p-3 rounded-xl border-2 text-center transition-all ${
@@ -949,7 +948,7 @@ export default function RegisterPage() {
               )}
 
               <label className="flex items-start gap-2 mb-4 cursor-pointer">
-                <input type="checkbox" checked={agreedToTerms} onChange={e => setAgreedToTerms(e.target.checked)}
+                <input type="checkbox" checked={agreedToTerms} onChange={(e: any) => setAgreedToTerms(e.target.checked)}
                   className="mt-0.5 w-4 h-4 accent-[#1B2D5B] flex-shrink-0" />
                 <span className="text-xs text-gray-600 leading-relaxed">
                   {locale === 'en' ? 'I agree to the ' : locale === 'ur' ? 'میں متفق ہوں ' : 'أوافق على '}

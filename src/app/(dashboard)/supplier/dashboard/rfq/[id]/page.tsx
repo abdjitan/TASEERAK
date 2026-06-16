@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -19,9 +18,9 @@ export default function SupplierRFQPage() {
   const { id } = useParams()
   const router = useRouter()
   const { locale, dir } = useTranslation()
-  const [user, setUser] = useState(null)
-  const [rfq, setRfq] = useState(null)
-  const [existingOffer, setExistingOffer] = useState(null)
+  const [user, setUser] = useState<any>(null)
+  const [rfq, setRfq] = useState<any>(null)
+  const [existingOffer, setExistingOffer] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -46,7 +45,7 @@ export default function SupplierRFQPage() {
   const [attributes, setAttributes] = useState([{ key: '', value: '' }])
 
   // ملف مرفق (كتالوج/بيانات منتج)
-  const [attachFile, setAttachFile] = useState(null)
+  const [attachFile, setAttachFile] = useState<any>(null)
 
   // dismiss modal
   const [showDismiss, setShowDismiss] = useState(false)
@@ -107,8 +106,8 @@ export default function SupplierRFQPage() {
         const { data: p2 } = await supabase.from('profiles').select('supplier_tier').eq('id', session.user.id).single()
         const { data: secRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
         const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
-        const mySectors = (secRows || []).map(r => r.sector)
-        const mySpecialties = (specRows || []).map(r => r.specialty)
+        const mySectors = (secRows || []).map((r: any) => r.sector)
+        const mySpecialties = (specRows || []).map((r: any) => r.specialty)
         const myTier = p2?.supplier_tier || 'local'
         const filtered = rfqData.items.filter((it: any) => {
           if (mySectors.length > 0 && !mySectors.includes(it.sector)) return false
@@ -153,7 +152,7 @@ export default function SupplierRFQPage() {
   const editMinsLeft = canEditOffer ? Math.max(1, Math.ceil((offerEditDeadline - Date.now()) / 60000)) : 0
 
   // حساب سعر الوحدة تلقائياً
-  function handleTotalChange(val) {
+  function handleTotalChange(val: any) {
     setTotalPrice(val)
     if (rfq?.quantity && val) {
       setUnitPrice((parseFloat(val) / rfq.quantity).toFixed(2))
@@ -165,18 +164,18 @@ export default function SupplierRFQPage() {
   const rfqIsMulti = Array.isArray(rfq?.items) && rfq.items.length > 0
   const isMultiItem = rfqIsMulti
   // الإجمالي = مجموع سعر كل مادة (line_total) — المورد حر يدخله مباشرة أو يحسبه من سعر الوحدة
-  function recomputeGoods(forms) {
+  function recomputeGoods(forms: any) {
     const sum = (myItems || []).reduce((s, it, idx) => s + (parseFloat(forms[idx]?.line_total) || 0), 0)
     setTotalPrice(sum ? String(+sum.toFixed(2)) : '')
   }
   // الوحدة التي يسعّر بها المورد تطابق الوحدة المطلوبة؟ (إن لم يحدّد وحدة خاصة)
-  function sameUnit(f, i) { return !f?.priceUnit || f.priceUnit === (myItems[i]?.unit || '') }
+  function sameUnit(f: any, i: any) { return !f?.priceUnit || f.priceUnit === (myItems[i]?.unit || '') }
   // أي تعديل على السعر يلغي حالة "محفوظ" حتى يحفظ المورد من جديد.
   // الربط التلقائي (سعر الوحدة × الكمية = الإجمالي) يعمل فقط عند التسعير بالوحدة المطلوبة؛
   // لو اختار المورد وحدة خاصة، يبقى الإجمالي وسعر الوحدة مستقلّين.
-  function setItemUnit(i, val) {
+  function setItemUnit(i: any, val: any) {
     setItemForms(prev => {
-      const next = prev.map((f, idx) => {
+      const next = prev.map((f: any, idx: any) => {
         if (idx !== i) return f
         const q = myItems[i]?.quantity || 0
         const lt = (sameUnit(f, i) && val !== '') ? (q > 0 ? String(+((parseFloat(val) || 0) * q).toFixed(2)) : f.line_total) : f.line_total
@@ -186,12 +185,12 @@ export default function SupplierRFQPage() {
       return next
     })
   }
-  function setItemPriceUnit(i, val) {
-    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, priceUnit: val, saved: false } : f))
+  function setItemPriceUnit(i: any, val: any) {
+    setItemForms(prev => prev.map((f: any, idx: any) => idx === i ? { ...f, priceUnit: val, saved: false } : f))
   }
-  function setItemTotal(i, val) {
+  function setItemTotal(i: any, val: any) {
     setItemForms(prev => {
-      const next = prev.map((f, idx) => {
+      const next = prev.map((f: any, idx: any) => {
         if (idx !== i) return f
         const q = myItems[i]?.quantity || 0
         const up = (sameUnit(f, i) && val !== '') ? (q > 0 ? String(+((parseFloat(val) || 0) / q).toFixed(4)) : f.unit_price) : f.unit_price
@@ -201,46 +200,46 @@ export default function SupplierRFQPage() {
       return next
     })
   }
-  function setItemField(i, field, val) {
-    setItemForms(prev => prev.map((f, idx) => idx === i ? { ...f, [field]: val } : f))
+  function setItemField(i: any, field: any, val: any) {
+    setItemForms(prev => prev.map((f: any, idx: any) => idx === i ? { ...f, [field]: val } : f))
   }
   // حفظ المادة: لازم سعر، ثم يُقفل البطاقة وينتقل للمادة التالية غير المحفوظة
-  function saveItem(i) {
+  function saveItem(i: any) {
     const f = itemForms[i] || {}
     if (!(parseFloat(f.line_total) > 0)) { setError(`أدخل سعر «${myItems[i]?.product_name}» قبل الحفظ`); return }
     setError('')
-    setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, saved: true } : x))
-    const nextIdx = myItems.findIndex((_, idx) => idx !== i && !(itemForms[idx]?.saved) && idx > i)
+    setItemForms(prev => prev.map((x: any, idx: any) => idx === i ? { ...x, saved: true } : x))
+    const nextIdx = myItems.findIndex((_: any, idx: any) => idx !== i && !(itemForms[idx]?.saved) && idx > i)
     setOpenItem(nextIdx >= 0 ? nextIdx : null)
   }
-  async function setItemFile(i, f) {
-    if (!f) { setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: null } : x)); return }
+  async function setItemFile(i: any, f: any) {
+    if (!f) { setItemForms(prev => prev.map((x: any, idx: any) => idx === i ? { ...x, file: null } : x)); return }
     const v = await validateUploadFile(f)
-    if (!v.ok) { setError(v.error); return }
+    if (!v.ok) { setError(v.error || ''); return }
     setError('')
-    setItemForms(prev => prev.map((x, idx) => idx === i ? { ...x, file: f } : x))
+    setItemForms(prev => prev.map((x: any, idx: any) => idx === i ? { ...x, file: f } : x))
   }
   // لإتاحة الإرسال: يكفي مادة واحدة مسعّرة ومحفوظة — المورد غير ملزم بتسعير كل المواد
-  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.some((_, i) => itemForms[i]?.saved && parseFloat(itemForms[i]?.line_total) > 0)) : true
+  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.some((_: any, i: any) => itemForms[i]?.saved && parseFloat(itemForms[i]?.line_total) > 0)) : true
 
   function addAttribute() {
     setAttributes(prev => [...prev, { key: '', value: '' }])
   }
-  function updateAttribute(i, field, val) {
-    setAttributes(prev => prev.map((a, idx) => idx === i ? { ...a, [field]: val } : a))
+  function updateAttribute(i: any, field: any, val: any) {
+    setAttributes(prev => prev.map((a: any, idx: any) => idx === i ? { ...a, [field]: val } : a))
   }
-  function removeAttribute(i) {
-    setAttributes(prev => prev.filter((_, idx) => idx !== i))
+  function removeAttribute(i: any) {
+    setAttributes(prev => prev.filter((_: any, idx: any) => idx !== i))
   }
 
   // إضافات الفاتورة (توصيل/تركيب/رسوم) — label + amount
   const [extras, setExtras] = useState([{ label: '', amount: '' }])
   const [vatIncluded, setVatIncluded] = useState(false) // هل السعر المُدخل يشمل ضريبة القيمة المضافة 15%؟
   function addExtra() { setExtras(prev => [...prev, { label: '', amount: '' }]) }
-  function updateExtra(i, field, val) { setExtras(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: val } : e)) }
-  function removeExtra(i) { setExtras(prev => prev.filter((_, idx) => idx !== i)) }
+  function updateExtra(i: any, field: any, val: any) { setExtras(prev => prev.map((e: any, idx: any) => idx === i ? { ...e, [field]: val } : e)) }
+  function removeExtra(i: any) { setExtras(prev => prev.filter((_: any, idx: any) => idx !== i)) }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: any) {
     e.preventDefault()
     if (!user) return
     if (isExpired(rfq?.expires_at)) {
@@ -254,8 +253,8 @@ export default function SupplierRFQPage() {
     setSubmitting(true)
     setError('')
 
-    const validAttrs = attributes.filter(a => a.key && a.value)
-    const attrObj = validAttrs.reduce((acc, a) => { acc[a.key] = a.value; return acc }, {})
+    const validAttrs = attributes.filter((a: any) => a.key && a.value)
+    const attrObj = validAttrs.reduce((acc: any, a: any) => { acc[a.key] = a.value; return acc }, {})
 
     const supabase = createClient()
 
@@ -263,7 +262,7 @@ export default function SupplierRFQPage() {
     let attachUrl = null, attachName = null
     if (attachFile) {
       const safe = await validateUploadFile(attachFile) // fast client pre-check (UX only)
-      if (!safe.ok) { setError(safe.error); setSubmitting(false); return }
+      if (!safe.ok) { setError(safe.error || ''); setSubmitting(false); return }
       // Authoritative server-side validation + upload (the magic-byte check here
       // can't be bypassed from the browser).
       const fd = new FormData(); fd.append('file', attachFile)
@@ -280,10 +279,10 @@ export default function SupplierRFQPage() {
 
     // إضافات الفاتورة → total النهائي = سعر البضاعة + الإضافات
     const validExtras = extras
-      .filter(e => e.label && e.amount)
-      .map(e => ({ label: e.label, amount: parseFloat(e.amount) || 0 }))
+      .filter((e: any) => e.label && e.amount)
+      .map((e: any) => ({ label: e.label, amount: parseFloat(e.amount) || 0 }))
     const goods = parseFloat(totalPrice) || 0
-    const finalTotal = goods + validExtras.reduce((s, e) => s + e.amount, 0)
+    const finalTotal = goods + validExtras.reduce((s: any, e: any) => s + e.amount, 0)
 
     // تسعير بند-بند: لكل مادة سعرها + خصائصها + كتالوجها الخاص
     let itemPricesPayload = null
@@ -484,7 +483,7 @@ export default function SupplierRFQPage() {
                         <td className="py-2.5 px-3">
                           <div className="font-bold text-[15px] text-[#1B2D5B]">{getProductLabel(it.product_name, locale)}</div>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(sectors as any)[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
                             {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}ي</span>}
                             {it.spec_file_url && <a href={it.spec_file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
@@ -501,7 +500,7 @@ export default function SupplierRFQPage() {
           )}
 
           <div className="grid grid-cols-2 gap-3 text-sm mt-4">
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => sectors[s] || s).join(' + ') : (sectors[rfq.sector] || rfq.sector)}</strong></div>
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => (sectors as any)[s] || s).join(' + ') : ((sectors as any)[rfq.sector] || rfq.sector)}</strong></div>
             {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📍 {T.location}</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
             <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
@@ -562,7 +561,7 @@ export default function SupplierRFQPage() {
             <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>
               {existingOffer.status === 'rejected' && rfq.status === 'closed'
                 ? (locale === 'en' ? 'Pricing closed — another offer was accepted' : locale === 'ur' ? 'پرائسنگ بند — دوسری پیشکش قبول ہوگئی' : 'انتهى التسعير — تم اعتماد عرض آخر')
-                : (T.alreadyTitle[existingOffer.status] || T.alreadyTitle.pending)}
+                : ((T.alreadyTitle as any)[existingOffer.status] || T.alreadyTitle.pending)}
             </h3>
             <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString('en-US')} ر.س{existingOffer.status === 'rejected' && rfq.status === 'closed' ? (locale === 'en' ? ' — thanks for participating' : ' — شكراً لمشاركتك') : ''}</p>
 
@@ -604,7 +603,7 @@ export default function SupplierRFQPage() {
                 {existingOffer.reduction_note && <div className="text-xs text-gray-600 mb-1">«{existingOffer.reduction_note}»</div>}
                 <div className="text-[11px] text-gray-500 mb-3">المهلة للرد: {new Date(existingOffer.reduction_deadline).toLocaleString('ar-SA')}</div>
                 <div className="flex gap-2">
-                  <input type="number" value={newPrice} onChange={e => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={`أقل من ${existingOffer.total_price?.toLocaleString('en-US')} ر.س`} min="0" step="any" />
+                  <input type="number" value={newPrice} onChange={(e: any) => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={`أقل من ${existingOffer.total_price?.toLocaleString('en-US')} ر.س`} min="0" step="any" />
                   <button type="button" onClick={submitReduction} disabled={reducing} className="px-4 rounded-xl font-semibold text-white text-sm disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>{reducing ? '...' : 'إرسال السعر الجديد'}</button>
                 </div>
               </div>
@@ -618,7 +617,7 @@ export default function SupplierRFQPage() {
                   <div className="text-sm bg-emerald-50 rounded-lg p-2.5"><span className="text-emerald-600 text-[11px]">ردّك:</span><div>{existingOffer.info_response}</div></div>
                 ) : existingOffer.status === 'pending' ? (
                   <div>
-                    <textarea value={infoReply} onChange={e => setInfoReply(e.target.value)} rows={2} className="input-field mb-2" placeholder="اكتب ردّك للمقاول عن المنتج..." />
+                    <textarea value={infoReply} onChange={(e: any) => setInfoReply(e.target.value)} rows={2} className="input-field mb-2" placeholder="اكتب ردّك للمقاول عن المنتج..." />
                     <button type="button" onClick={submitInfoResponse} disabled={infoReplying} className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoReplying ? '...' : 'إرسال الرد'}</button>
                   </div>
                 ) : null}
@@ -675,7 +674,7 @@ export default function SupplierRFQPage() {
                     {locale === 'en' ? 'Tap a material to enter its unit price, specs and its own catalog.' : 'اضغط على كل مادة لإدخال سعرها وخصائصها وكتالوجها الخاص.'}
                   </p>
                   <div className="space-y-2">
-                    {myItems.map((it, i) => {
+                    {myItems.map((it: any, i: any) => {
                       const form = itemForms[i] || {}
                       const line = parseFloat(form.line_total) || 0
                       const isOpen = openItem === i
@@ -725,7 +724,7 @@ export default function SupplierRFQPage() {
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
                                   💰 {locale === 'en' ? `Total price for this material (for ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)})` : `السعر الإجمالي للمادة (لـ ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit})`} *
                                 </label>
-                                <input type="number" value={form.line_total || ''} onChange={e => setItemTotal(i, e.target.value)}
+                                <input type="number" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
                                   className="input-field text-sm font-bold" placeholder={locale === 'en' ? 'e.g. 5200' : 'مثال: 5200'} min="0" step="any" />
                                 <button type="button" onClick={() => setItemField(i, 'priceDetails', !form.priceDetails)}
                                   className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
@@ -739,16 +738,16 @@ export default function SupplierRFQPage() {
                                       {/* وحدة المورد — يقدر يغيّرها لو يبي يسعّر بوحدة خاصة */}
                                       <div className="col-span-2">
                                         <label className="block text-[11px] font-bold text-gray-400 mb-1">{locale === 'en' ? 'Unit' : 'الوحدة'}</label>
-                                        <input type="text" value={form.priceUnit ?? it.unit} onChange={e => setItemPriceUnit(i, e.target.value)}
+                                        <input type="text" value={form.priceUnit ?? it.unit} onChange={(e: any) => setItemPriceUnit(i, e.target.value)}
                                           className="input-field text-sm" placeholder={it.unit} list={`units-${i}`} />
                                         <datalist id={`units-${i}`}>
-                                          {[it.unit, 'طن', 'سيخ', 'م³', 'م²', 'متر طولي', 'كيس', 'قطعة', 'لتر', 'لفة', 'صندوق'].filter((u, k, a) => u && a.indexOf(u) === k).map(u => <option key={u} value={u} />)}
+                                          {[it.unit, 'طن', 'سيخ', 'م³', 'م²', 'متر طولي', 'كيس', 'قطعة', 'لتر', 'لفة', 'صندوق'].filter((u, k, a) => u && a.indexOf(u) === k).map((u: any) => <option key={u} value={u} />)}
                                         </datalist>
                                       </div>
                                       {/* سعر الوحدة */}
                                       <div className="col-span-3">
                                         <label className="block text-[11px] font-bold text-gray-400 mb-1">{locale === 'en' ? 'Unit price' : 'سعر الوحدة'}</label>
-                                        <input type="number" value={form.unit_price || ''} onChange={e => setItemUnit(i, e.target.value)}
+                                        <input type="number" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
                                           className="input-field text-sm" placeholder={(locale === 'en' ? 'Price / ' : 'السعر / ') + (form.priceUnit || it.unit)} min="0" step="any" />
                                       </div>
                                     </div>
@@ -766,7 +765,7 @@ export default function SupplierRFQPage() {
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
                                   📝 {locale === 'en' ? 'Material specifications' : 'مواصفات المادة'}
                                 </label>
-                                <textarea value={form.specs || ''} onChange={e => setItemField(i, 'specs', e.target.value)}
+                                <textarea value={form.specs || ''} onChange={(e: any) => setItemField(i, 'specs', e.target.value)}
                                   rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Type, origin, brand, grade…' : 'النوع، المنشأ، العلامة التجارية، الدرجة…'} />
                               </div>
 
@@ -775,7 +774,7 @@ export default function SupplierRFQPage() {
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
                                   ⏱ {locale === 'en' ? 'Delivery time for this material (days)' : 'مدة توصيل هذه المادة (أيام)'}
                                 </label>
-                                <input type="number" value={form.delivery_days || ''} onChange={e => setItemField(i, 'delivery_days', e.target.value)}
+                                <input type="number" value={form.delivery_days || ''} onChange={(e: any) => setItemField(i, 'delivery_days', e.target.value)}
                                   className="input-field text-sm" placeholder="3" min="0" />
                               </div>
 
@@ -793,7 +792,7 @@ export default function SupplierRFQPage() {
                                 ) : (
                                   <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-3 cursor-pointer hover:border-[#F5831F]/50 transition-all">
                                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
-                                      onChange={e => setItemFile(i, e.target.files?.[0] ?? null)} />
+                                      onChange={(e: any) => setItemFile(i, e.target.files?.[0] ?? null)} />
                                     <span className="text-xl">📤</span>
                                     <span className="text-xs text-gray-500">{locale === 'en' ? 'Attach catalog / datasheet' : 'إرفاق كتالوج / بيانات المنتج'}</span>
                                   </label>
@@ -821,19 +820,19 @@ export default function SupplierRFQPage() {
                 <>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Goods Price (SAR)' : locale === 'ur' ? 'سامان کی قیمت (ریال)' : 'سعر البضاعة (ر.س)'} *</label>
-                    <input type="number" value={totalPrice} onChange={e => handleTotalChange(e.target.value)}
+                    <input type="number" value={totalPrice} onChange={(e: any) => handleTotalChange(e.target.value)}
                       className="input-field" placeholder="0.00" required min="0" step="any" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.unitPrice}</label>
-                      <input type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)}
+                      <input type="number" value={unitPrice} onChange={(e: any) => setUnitPrice(e.target.value)}
                         className="input-field bg-gray-50" placeholder="تلقائي" min="0" step="any" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
-                      <input type="number" value={deliveryDays} onChange={e => setDeliveryDays(e.target.value)}
+                      <input type="number" value={deliveryDays} onChange={(e: any) => setDeliveryDays(e.target.value)}
                         className="input-field" placeholder="3" min="0" />
                     </div>
                   </div>
@@ -851,11 +850,11 @@ export default function SupplierRFQPage() {
                     : (locale === 'en' ? 'Optional charges added on top of the goods price.' : locale === 'ur' ? 'سامان کی قیمت کے علاوہ اختیاری چارجز۔' : 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
                 </p>
                 <div className="space-y-2">
-                  {extras.map((ex, i) => (
+                  {extras.map((ex: any, i: any) => (
                     <div key={i} className="flex gap-2">
-                      <input value={ex.label} onChange={e => updateExtra(i, 'label', e.target.value)}
+                      <input value={ex.label} onChange={(e: any) => updateExtra(i, 'label', e.target.value)}
                         className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Item (e.g. Delivery)' : locale === 'ur' ? 'آئٹم (مثلاً ڈیلیوری)' : 'البند (مثال: توصيل)'} />
-                      <input type="number" value={ex.amount} onChange={e => updateExtra(i, 'amount', e.target.value)}
+                      <input type="number" value={ex.amount} onChange={(e: any) => updateExtra(i, 'amount', e.target.value)}
                         className="input-field text-sm w-28" placeholder={locale === 'en' ? 'Amount' : locale === 'ur' ? 'رقم' : 'المبلغ'} min="0" step="any" />
                       {extras.length > 1 && (
                         <button type="button" onClick={() => removeExtra(i)}
@@ -872,12 +871,12 @@ export default function SupplierRFQPage() {
               {/* ضريبة القيمة المضافة 15% — خيار: هل السعر يشملها؟ + تفصيل الإجمالي */}
               {(() => {
                 const goods = parseFloat(totalPrice) || 0
-                const exSum = extras.reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+                const exSum = extras.reduce((s: any, e: any) => s + (parseFloat(e.amount) || 0), 0)
                 const entered = goods + exSum
                 const net = vatIncluded ? entered / 1.15 : entered
                 const vat = net * 0.15
                 const gross = net + vat
-                const fmt = (n) => (+n.toFixed(2)).toLocaleString('en-US')
+                const fmt = (n: any) => (+n.toFixed(2)).toLocaleString('en-US')
                 return (
                   <div className="border-t border-gray-100 pt-4">
                     {/* خيار شمول الضريبة */}
@@ -918,11 +917,11 @@ export default function SupplierRFQPage() {
                 <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>{T.attributes}</label>
                 <p className="text-xs text-gray-400 mb-3">{T.attrHint}</p>
                 <div className="space-y-2">
-                  {attributes.map((attr, i) => (
+                  {attributes.map((attr: any, i: any) => (
                     <div key={i} className="flex gap-2">
-                      <input value={attr.key} onChange={e => updateAttribute(i, 'key', e.target.value)}
+                      <input value={attr.key} onChange={(e: any) => updateAttribute(i, 'key', e.target.value)}
                         className="input-field text-sm flex-1" placeholder={T.attrKey} />
-                      <input value={attr.value} onChange={e => updateAttribute(i, 'value', e.target.value)}
+                      <input value={attr.value} onChange={(e: any) => updateAttribute(i, 'value', e.target.value)}
                         className="input-field text-sm flex-1" placeholder={T.attrValue} />
                       {attributes.length > 1 && (
                         <button type="button" onClick={() => removeAttribute(i)}
@@ -955,7 +954,7 @@ export default function SupplierRFQPage() {
                         const f = e.target.files?.[0] ?? null
                         if (!f) { setAttachFile(null); return }
                         const v = await validateUploadFile(f)
-                        if (!v.ok) { setError(v.error); e.currentTarget.value = ''; setAttachFile(null); return }
+                        if (!v.ok) { setError(v.error || ''); e.currentTarget.value = ''; setAttachFile(null); return }
                         setError(''); setAttachFile(f)
                       }} />
                     <span className="text-2xl">📤</span>
@@ -967,7 +966,7 @@ export default function SupplierRFQPage() {
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.offerNotes}</label>
-                <textarea value={notes} onChange={e => setNotes(e.target.value)}
+                <textarea value={notes} onChange={(e: any) => setNotes(e.target.value)}
                   className="input-field" rows={3} placeholder="..." />
               </div>
             </div>
@@ -1063,7 +1062,7 @@ export default function SupplierRFQPage() {
             <div className="text-4xl text-center mb-3">🚫</div>
             <h3 className="text-lg font-bold text-center mb-1" style={{ color: '#1B2D5B' }}>{T.dismissTitle}</h3>
             <p className="text-sm text-gray-500 text-center mb-4">{T.dismissSub}</p>
-            <textarea value={dismissReason} onChange={e => setDismissReason(e.target.value)}
+            <textarea value={dismissReason} onChange={(e: any) => setDismissReason(e.target.value)}
               className="input-field mb-4" rows={2} placeholder={T.dismissReason} />
             <div className="flex gap-3">
               <button onClick={handleDismiss}
