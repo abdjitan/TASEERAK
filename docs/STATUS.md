@@ -59,17 +59,20 @@
 
 | الملاحظة | المصدر | الحالة/السبب |
 |---|---|---|
-| magic-byte لملفات الرخص عند التسجيل | Base44 | **قيد التنفيذ الآن** |
-| rate limiting على `/verify-cr` و`cr_exists`/`phone_exists` | Base44/ChatGPT | **قيد التنفيذ الآن** |
-| فلتر صريح لقناة الرسائل (Realtime) | ChatGPT/Base44 | RLS يحمي الصفوف؛ تحسين الفلترة قيد النظر |
-| Triage Queue إداري | Gemini/Base44 | عُمل «منع الإزعاج» بدلها؛ الطابور لاحقاً |
-| Reverse Auction · Delivery Guarantee Badge | ChatGPT/Base44 | لم تُعمل (ميزات منطق أكبر) |
-| Supplier Leaderboard · مؤشرات أسعار · Price Alerts | ChatGPT | نبض السوق+الاتجاه موجود؛ الباقي لاحقاً |
-| Bulk-edit BOQ · كشف تدريجي للمصفوفة بالجوال | Gemini/Base44 | تحسينات UX لاحقاً |
-| اقتباس المواصفات (صفحة/فقرة + اعتماد) | Gemini | لاحقاً |
-| حلقة تغذية راجعة للـTaxonomy | Base44 | لاحقاً |
-| Onboarding تدريجي · تكبير الخطوط · حصر مساعد الذكاء | Base44/ChatGPT | جزئي/لاحقاً |
-| تقليل البنفسجي أكثر | ChatGPT/Gemini | صُلّحت الكهرباء؛ البنفسجي باقٍ في «المعماري» + المساعد |
+| magic-byte لملفات الرخص عند التسجيل | Base44 | ✅ **عُمل** (`/api/upload-verification`) |
+| rate limiting على `/verify-cr` و`/upload-attachment` | Base44/ChatGPT | ✅ موجود ومؤكَّد (IP/user bucket) |
+| Bulk-edit لتصنيف BOQ | Gemini/Base44 | ✅ **عُمل** (تصنيف جماعي بالقطاع) |
+| Price Alerts (تنبيه سعري) | ChatGPT | ✅ **عُمل** (بانر أكبر تغيّر شهري) |
+| `cr_exists`/`phone_exists` rate limit | Base44 | ⏸️ boolean فقط (مخاطرة منخفضة) — لم يُضَف |
+| فلتر صريح لقناة الرسائل (Realtime) | ChatGPT/Base44 | ⏸️ RLS يحمي الصفوف؛ تحسين فلترة لاحقاً |
+| Triage Queue إداري | Gemini/Base44 | ⏸️ عُمل «منع الإزعاج» بدلها؛ الطابور لاحقاً |
+| Reverse Auction · Delivery Guarantee Badge | ChatGPT/Base44 | ⏸️ ميزات منطق أكبر |
+| Supplier Leaderboard · مؤشرات أسعار كاملة | ChatGPT | ⏸️ نبض السوق+الاتجاه+تنبيه موجود؛ الباقي لاحقاً |
+| كشف تدريجي للمصفوفة بالجوال | Gemini/Base44 | ⏸️ تحسين UX لاحقاً |
+| اقتباس المواصفات (صفحة/فقرة + اعتماد) | Gemini | ⏸️ لاحقاً |
+| حلقة تغذية راجعة للـTaxonomy | Base44 | ⏸️ لاحقاً |
+| Onboarding تدريجي · تكبير الخطوط · حصر مساعد الذكاء | Base44/ChatGPT | ⏸️ جزئي/لاحقاً |
+| تقليل البنفسجي أكثر | ChatGPT/Gemini | ⏸️ صُلّحت الكهرباء؛ البنفسجي باقٍ في «المعماري» + المساعد |
 
 > الثغرات «الحرجة» القديمة في تقارير Base44 (تزوير واثق، تسريب الهوية، Enumeration،
 > Accept Race، RLS) كانت مُصلَحة أصلاً قبل هذه الجلسة — أُكِّدت ولم تحتج عملاً جديداً.
