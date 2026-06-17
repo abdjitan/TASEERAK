@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-17T08:15:26.053Z",
+  "generatedAt": "2026-06-17T10:15:48.301Z",
   "sectors": {
     "civil": {
       "label": "مدني",
@@ -10055,99 +10055,561 @@
               "name": "حفارة (بوكلين)",
               "sub": "حفارات وشيولات وبلدوزرات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "شيول لودر",
               "sub": "حفارات وشيولات وبلدوزرات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "بلدوزر",
               "sub": "حفارات وشيولات وبلدوزرات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "جريدر",
               "sub": "حفارات وشيولات وبلدوزرات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "رافعة برجية",
               "sub": "رافعات وكرينات وونشات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "كرين متحرك",
               "sub": "رافعات وكرينات وونشات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "رافعة شوكية",
               "sub": "رافعات وكرينات وونشات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "ونش رفع",
               "sub": "رافعات وكرينات وونشات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "شاحنة قلاب",
               "sub": "شاحنات ومعدات نقل",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "صهريج مياه",
               "sub": "شاحنات ومعدات نقل",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "مقطورة نقل",
               "sub": "شاحنات ومعدات نقل",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "لوري نقل",
               "sub": "شاحنات ومعدات نقل",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "منصة رفع مقصية",
               "sub": "رافعات وكرينات وونشات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             },
             {
               "name": "رافعة بوم",
               "sub": "رافعات وكرينات وونشات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "الحجم/الحمولة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "ثقيل"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بسائق/مشغّل",
+                    "بدون مشغّل (إيجار فقط)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر",
+                    "بالساعة"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -10158,29 +10620,153 @@
               "name": "خلاطة خرسانة",
               "sub": "خلاطات ومضخات خرسانة",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بمشغّل",
+                    "بدون مشغّل"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             },
             {
               "name": "مضخة خرسانة",
               "sub": "خلاطات ومضخات خرسانة",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بمشغّل",
+                    "بدون مشغّل"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             },
             {
               "name": "هزاز خرسانة",
               "sub": "خلاطات ومضخات خرسانة",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بمشغّل",
+                    "بدون مشغّل"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             },
             {
               "name": "محطة خلط",
               "sub": "خلاطات ومضخات خرسانة",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب الحاجة",
+                    "صغير",
+                    "متوسط",
+                    "كبير"
+                  ]
+                },
+                {
+                  "key": "operator",
+                  "ar": "التشغيل",
+                  "en": "Operator",
+                  "options": [
+                    "بمشغّل",
+                    "بدون مشغّل"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -10191,22 +10777,88 @@
               "name": "دكاكة (كومباكتور)",
               "sub": "معدات دك ورص",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "الحجم",
+                  "en": "Size",
+                  "options": [
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "حسب الحاجة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             },
             {
               "name": "رصاصة دك",
               "sub": "معدات دك ورص",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "الحجم",
+                  "en": "Size",
+                  "options": [
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "حسب الحاجة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             },
             {
               "name": "هراس أسطواني",
               "sub": "معدات دك ورص",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "الحجم",
+                  "en": "Size",
+                  "options": [
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "حسب الحاجة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             },
             {
               "name": "مولد كهرباء ديزل",
@@ -10258,29 +10910,117 @@
               "name": "كمبروسر هواء",
               "sub": "مولدات وكمبروسرات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "الحجم",
+                  "en": "Size",
+                  "options": [
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "حسب الحاجة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             },
             {
               "name": "ضاغط هواء",
               "sub": "مولدات وكمبروسرات",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "الحجم",
+                  "en": "Size",
+                  "options": [
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "حسب الحاجة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             },
             {
               "name": "طرمبة غطاسة",
               "sub": "طرمبات ومضخات نزح",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "الحجم",
+                  "en": "Size",
+                  "options": [
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "حسب الحاجة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             },
             {
               "name": "مضخة نزح مياه",
               "sub": "طرمبات ومضخات نزح",
               "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "الحجم",
+                  "en": "Size",
+                  "options": [
+                    "صغير",
+                    "متوسط",
+                    "كبير",
+                    "حسب الحاجة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "مدة الإيجار",
+                  "en": "Rental period",
+                  "options": [
+                    "يوم",
+                    "أسبوع",
+                    "شهر"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -10291,22 +11031,94 @@
               "name": "سقالات معدنية",
               "sub": "سقالات ومنصات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "سقالة إطار (Frame)",
+                    "سقالة H",
+                    "سلم ألمنيوم",
+                    "جاك تدعيم (Prop)",
+                    "برج متحرك"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "م² (متر مربع)",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "سلالم ألمنيوم",
               "sub": "سقالات ومنصات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "سقالة إطار (Frame)",
+                    "سقالة H",
+                    "سلم ألمنيوم",
+                    "جاك تدعيم (Prop)",
+                    "برج متحرك"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "م² (متر مربع)",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "جاكات تدعيم",
               "sub": "سقالات ومنصات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "سقالة إطار (Frame)",
+                    "سقالة H",
+                    "سلم ألمنيوم",
+                    "جاك تدعيم (Prop)",
+                    "برج متحرك"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "م² (متر مربع)",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             }
           ]
         }
@@ -10871,22 +11683,154 @@
               "name": "دريل كهربائي",
               "sub": "عُدد كهربائية (دريل/صاروخ)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "دريل كهربائي",
+                    "دريل شحن (بطارية)",
+                    "صاروخ تجليخ",
+                    "هيلتي/همر"
+                  ]
+                },
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "18 فولت",
+                    "21 فولت",
+                    "750 واط",
+                    "1200 واط",
+                    "حسب الموديل"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بوش (Bosch)",
+                    "ماكيتا (Makita)",
+                    "ديوالت (DeWalt)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "دريل شحن",
               "sub": "عُدد كهربائية (دريل/صاروخ)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "دريل كهربائي",
+                    "دريل شحن (بطارية)",
+                    "صاروخ تجليخ",
+                    "هيلتي/همر"
+                  ]
+                },
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "18 فولت",
+                    "21 فولت",
+                    "750 واط",
+                    "1200 واط",
+                    "حسب الموديل"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بوش (Bosch)",
+                    "ماكيتا (Makita)",
+                    "ديوالت (DeWalt)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "صاروخ تجليخ",
               "sub": "عُدد كهربائية (دريل/صاروخ)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "دريل كهربائي",
+                    "دريل شحن (بطارية)",
+                    "صاروخ تجليخ",
+                    "هيلتي/همر"
+                  ]
+                },
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "18 فولت",
+                    "21 فولت",
+                    "750 واط",
+                    "1200 واط",
+                    "حسب الموديل"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بوش (Bosch)",
+                    "ماكيتا (Makita)",
+                    "ديوالت (DeWalt)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "ريشة دريل حديد",
@@ -10931,44 +11875,266 @@
             {
               "name": "مسامير حديد",
               "sub": "مسامير وبراغي وصواميل",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "كيلو",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1 بوصة",
+                    "2 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "M6",
+                    "M8",
+                    "M10",
+                    "M12",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "حديد عادي",
+                    "مجلفن",
+                    "ستانلس"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "كيلو",
+                    "علبة",
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "براغي",
               "sub": "مسامير وبراغي وصواميل",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "كيلو",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1 بوصة",
+                    "2 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "M6",
+                    "M8",
+                    "M10",
+                    "M12",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "حديد عادي",
+                    "مجلفن",
+                    "ستانلس"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "كيلو",
+                    "علبة",
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "صواميل",
               "sub": "مسامير وبراغي وصواميل",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "كيلو",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1 بوصة",
+                    "2 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "M6",
+                    "M8",
+                    "M10",
+                    "M12",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "حديد عادي",
+                    "مجلفن",
+                    "ستانلس"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "كيلو",
+                    "علبة",
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "رول بلت",
               "sub": "مسامير وبراغي وصواميل",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "كيلو",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1 بوصة",
+                    "2 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "M6",
+                    "M8",
+                    "M10",
+                    "M12",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "حديد عادي",
+                    "مجلفن",
+                    "ستانلس"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "كيلو",
+                    "علبة",
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "خوابير تثبيت",
               "sub": "مسامير وبراغي وصواميل",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "كيلو",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1 بوصة",
+                    "2 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "M6",
+                    "M8",
+                    "M10",
+                    "M12",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "حديد عادي",
+                    "مجلفن",
+                    "ستانلس"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "كيلو",
+                    "علبة",
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "مسامير صاج",
               "sub": "مسامير وبراغي وصواميل",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "كيلو",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1 بوصة",
+                    "2 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "M6",
+                    "M8",
+                    "M10",
+                    "M12",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "حديد عادي",
+                    "مجلفن",
+                    "ستانلس"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "كيلو",
+                    "علبة",
+                    "حبة"
+                  ]
+                }
+              ]
             }
           ]
         },
