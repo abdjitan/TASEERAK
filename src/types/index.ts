@@ -860,6 +860,65 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','الفنار','إم كي (MK)','نيبرو (Nepro)'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','كرتون (100 حبة)'] },
   ] },
+  // ═══ القطاع الميكانيكي — مواصفات مشتركة بالعناقيد ═══
+  // الأنابيب العامة (غير محددة المقاس بالاسم)
+  { products: ['أنابيب HDPE PN16 مياه شرب','أنابيب HDPE PN10 مياه شرب','أنابيب فولاذية مياه مبردة Schedule 40','أنابيب مياه مبردة Chilled Water','أنابيب حديد مجلفن GI','أنابيب معزولة مسبقاً Pre-Insulated (تبريد منطقي)','أنابيب GRP فايبرجلاس','أنابيب uPVC صرف صحي داخلي','أنابيب HDPE صرف صحي داخلي','أنابيب حديد زهر Cast Iron صرف صامت'], spec: [
+    { key: 'diameter', ar: 'القطر', en: 'Diameter', options: ['DN20','DN25','DN32','DN40','DN50','DN65','DN80','DN100','DN125','DN150','DN200','DN250','DN300','حسب التصميم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','حبة 6 متر','حسب القص'] },
+  ] },
+  // الصمامات (النوع في الاسم — نضيف المقاس والربط والعلامة)
+  { products: ['صمامات كرة نحاس','صمامات كرة ستانلس','صمامات بوابة','صمامات فراشة flanged','صمامات فحص','صمامات تخفيض ضغط PRV','صمامات تصريف','صمام تحكم منطقة Zone Control Valve'], spec: [
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['1/2 بوصة','3/4 بوصة','1 بوصة','1.5 بوصة','2 بوصة','2.5 بوصة','3 بوصة','4 بوصة','6 بوصة','حسب التصميم'] },
+    { key: 'connection', ar: 'طريقة الربط', en: 'Connection', options: ['قلاووظ (Threaded)','فلنجة (Flanged)','لحام (Welded)','PPR'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','بجلر (Pegler)','سيم (Cim)','كيتز (Kitz)','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  // المضخات (النوع في الاسم — نضيف القدرة والعلامة)
+  { products: ['مضخة ضغط Booster Pump','مضخة إطفاء حريق Fire Pump','مضخة jockey حريق','مضخة sump صرف','مضخة تداول مياه ساخنة','مضخة مياه ري','مضخات مياه مركزية'], spec: [
+    { key: 'power', ar: 'القدرة', en: 'Power', options: ['0.5 حصان','1 حصان','1.5 حصان','2 حصان','3 حصان','5 حصان','7.5 حصان','10 حصان','حسب التصميم'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','جراندفوس (Grundfos)','بيدرولو (Pedrollo)','ويلو (Wilo)','KSB','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  // الأطقم الصحية
+  { products: ['مرحاض WC مع خزان','مرحاض WC ذوي احتياجات خاصة','مغسلة Wash Basin','حوض مطبخ','مجلى Kitchen Sink','حوض استحمام','مبولة Urinal'], spec: [
+    { key: 'mounting', ar: 'التركيب', en: 'Mounting', options: ['أرضي (Floor-mounted)','معلّق (Wall-hung)','مدمج (Counter)','حسب الطلب'] },
+    { key: 'material', ar: 'المادة', en: 'Material', options: ['سيراميك/بورسلان','ستانلس ستيل','أكريليك','حسب الطلب'] },
+    { key: 'color', ar: 'اللون', en: 'Color', options: ['أبيض','بيج','رمادي','أسود مطفي','حسب الطلب'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','الحمراني (HSC)','سعودي سيراميك','RAK','Geberit','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','طقم كامل'] },
+  ] },
+  // الخلاطات والصنابير ورؤوس الدش
+  { products: ['صنبور مياه','خلاط مياه Mixer','خلاط مغسلة','خلاط مطبخ','خلاط دش','صنبور حديقة','رأس دش','دش مطري'], spec: [
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['كروم (Chrome)','أبيض','ذهبي','أسود مطفي','نحاسي'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','جروهي (Grohe)','هانزجروهي (Hansgrohe)','الحمراني','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  // وحدات التكييف الكبيرة
+  { products: ['وحدة مناولة هواء AHU','وحدة مناولة هواء AHU مع عجلة حرارية','وحدة FCU سقفية','وحدة FCU كاسيت','مبرد مياه Chiller','برج تبريد Cooling Tower','وحدات مكيف VRF خارجية','وحدات مكيف VRF داخلية'], spec: [
+    { key: 'capacity', ar: 'السعة', en: 'Capacity', options: ['حسب التصميم','1.5 طن','2 طن','3 طن','5 طن','10 طن','20 طن','50 طن','100 طن فأكثر'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','كاريير (Carrier)','يورك (York)','تراين (Trane)','دايكن (Daikin)','زامل','SKM','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  // المراوح
+  { products: ['مراوح هواء محورية Axial Fan','مراوح هواء طرد مركزي','مراوح استخلاص هواء WC'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['محوري (Axial)','طرد مركزي (Centrifugal)','شفط (Exhaust)','إن-لاين (Inline)'] },
+    { key: 'airflow', ar: 'التدفّق', en: 'Airflow', options: ['حسب التصميم','منخفض','متوسط','عالي'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  // مخارج وموزعات الهواء
+  { products: ['فتحات هواء','موزعات هواء','ستائر هواء'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['شبك هواء (Grille)','موزع هواء (Diffuser)','فتحة خطية (Linear)','شفط (Return/Exhaust)','ستارة هواء (Air Curtain)'] },
+    { key: 'material', ar: 'المادة', en: 'Material', options: ['ألمنيوم','حديد مدهون','ستانلس'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م² (متر مربع)'] },
+  ] },
+  // سخانات المياه
+  { products: ['سخانات مياه كهربائية','سخانات مياه مركزية'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['كهربائي','مركزي','شمسي','فوري (Instant)'] },
+    { key: 'capacity', ar: 'السعة', en: 'Capacity', options: ['30 لتر','50 لتر','80 لتر','100 لتر','مركزي (حسب التصميم)'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','أريستون (Ariston)','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
 ]
 for (const g of SPEC_GROUPS) { for (const p of g.products) PRODUCT_SPECS[p] = g.spec }
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-16T15:10:21.980Z",
+  "generatedAt": "2026-06-17T08:13:04.116Z",
   "sectors": {
     "civil": {
       "label": "مدني",
@@ -5808,58 +5808,314 @@
             {
               "name": "أنابيب HDPE PN16 مياه شرب",
               "sub": "أنابيب تغذية (PPR)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب HDPE PN10 مياه شرب",
               "sub": "أنابيب تغذية (PPR)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب فولاذية مياه مبردة Schedule 40",
               "sub": "أنابيب تغذية (PPR)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب مياه مبردة Chilled Water",
               "sub": "أنابيب تغذية (PPR)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب حديد مجلفن GI",
               "sub": "أنابيب تغذية (PPR)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب معزولة مسبقاً Pre-Insulated (تبريد منطقي)",
               "sub": "أنابيب تغذية (PPR)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب GRP فايبرجلاس",
               "sub": "أنابيب تغذية (PPR)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب uPVC صرف صحي داخلي",
               "sub": "مواسير صرف (PVC/UPVC)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب uPVC صرف صحي 50mm",
@@ -5899,58 +6155,416 @@
             {
               "name": "أنابيب HDPE صرف صحي داخلي",
               "sub": "أنابيب تغذية (PPR)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب حديد زهر Cast Iron صرف صامت",
               "sub": "مواسير صرف (PVC/UPVC)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "DN20",
+                    "DN25",
+                    "DN32",
+                    "DN40",
+                    "DN50",
+                    "DN65",
+                    "DN80",
+                    "DN100",
+                    "DN125",
+                    "DN150",
+                    "DN200",
+                    "DN250",
+                    "DN300",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة 6 متر",
+                    "حسب القص"
+                  ]
+                }
+              ]
             },
             {
               "name": "صمامات كرة نحاس",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1/2 بوصة",
+                    "3/4 بوصة",
+                    "1 بوصة",
+                    "1.5 بوصة",
+                    "2 بوصة",
+                    "2.5 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "6 بوصة",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "connection",
+                  "ar": "طريقة الربط",
+                  "en": "Connection",
+                  "options": [
+                    "قلاووظ (Threaded)",
+                    "فلنجة (Flanged)",
+                    "لحام (Welded)",
+                    "PPR"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بجلر (Pegler)",
+                    "سيم (Cim)",
+                    "كيتز (Kitz)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "صمامات كرة ستانلس",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1/2 بوصة",
+                    "3/4 بوصة",
+                    "1 بوصة",
+                    "1.5 بوصة",
+                    "2 بوصة",
+                    "2.5 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "6 بوصة",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "connection",
+                  "ar": "طريقة الربط",
+                  "en": "Connection",
+                  "options": [
+                    "قلاووظ (Threaded)",
+                    "فلنجة (Flanged)",
+                    "لحام (Welded)",
+                    "PPR"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بجلر (Pegler)",
+                    "سيم (Cim)",
+                    "كيتز (Kitz)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "صمامات بوابة",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1/2 بوصة",
+                    "3/4 بوصة",
+                    "1 بوصة",
+                    "1.5 بوصة",
+                    "2 بوصة",
+                    "2.5 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "6 بوصة",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "connection",
+                  "ar": "طريقة الربط",
+                  "en": "Connection",
+                  "options": [
+                    "قلاووظ (Threaded)",
+                    "فلنجة (Flanged)",
+                    "لحام (Welded)",
+                    "PPR"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بجلر (Pegler)",
+                    "سيم (Cim)",
+                    "كيتز (Kitz)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "صمامات فراشة flanged",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1/2 بوصة",
+                    "3/4 بوصة",
+                    "1 بوصة",
+                    "1.5 بوصة",
+                    "2 بوصة",
+                    "2.5 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "6 بوصة",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "connection",
+                  "ar": "طريقة الربط",
+                  "en": "Connection",
+                  "options": [
+                    "قلاووظ (Threaded)",
+                    "فلنجة (Flanged)",
+                    "لحام (Welded)",
+                    "PPR"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بجلر (Pegler)",
+                    "سيم (Cim)",
+                    "كيتز (Kitz)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "صمامات فحص",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1/2 بوصة",
+                    "3/4 بوصة",
+                    "1 بوصة",
+                    "1.5 بوصة",
+                    "2 بوصة",
+                    "2.5 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "6 بوصة",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "connection",
+                  "ar": "طريقة الربط",
+                  "en": "Connection",
+                  "options": [
+                    "قلاووظ (Threaded)",
+                    "فلنجة (Flanged)",
+                    "لحام (Welded)",
+                    "PPR"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بجلر (Pegler)",
+                    "سيم (Cim)",
+                    "كيتز (Kitz)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "صمامات تخفيض ضغط PRV",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1/2 بوصة",
+                    "3/4 بوصة",
+                    "1 بوصة",
+                    "1.5 بوصة",
+                    "2 بوصة",
+                    "2.5 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "6 بوصة",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "connection",
+                  "ar": "طريقة الربط",
+                  "en": "Connection",
+                  "options": [
+                    "قلاووظ (Threaded)",
+                    "فلنجة (Flanged)",
+                    "لحام (Welded)",
+                    "PPR"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بجلر (Pegler)",
+                    "سيم (Cim)",
+                    "كيتز (Kitz)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "صمامات PICV تحكم ضغط",
@@ -5977,50 +6591,327 @@
               "name": "صمامات تصريف",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1/2 بوصة",
+                    "3/4 بوصة",
+                    "1 بوصة",
+                    "1.5 بوصة",
+                    "2 بوصة",
+                    "2.5 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "6 بوصة",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "connection",
+                  "ar": "طريقة الربط",
+                  "en": "Connection",
+                  "options": [
+                    "قلاووظ (Threaded)",
+                    "فلنجة (Flanged)",
+                    "لحام (Welded)",
+                    "PPR"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بجلر (Pegler)",
+                    "سيم (Cim)",
+                    "كيتز (Kitz)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مضخة ضغط Booster Pump",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "0.5 حصان",
+                    "1 حصان",
+                    "1.5 حصان",
+                    "2 حصان",
+                    "3 حصان",
+                    "5 حصان",
+                    "7.5 حصان",
+                    "10 حصان",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جراندفوس (Grundfos)",
+                    "بيدرولو (Pedrollo)",
+                    "ويلو (Wilo)",
+                    "KSB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مضخة إطفاء حريق Fire Pump",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "0.5 حصان",
+                    "1 حصان",
+                    "1.5 حصان",
+                    "2 حصان",
+                    "3 حصان",
+                    "5 حصان",
+                    "7.5 حصان",
+                    "10 حصان",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جراندفوس (Grundfos)",
+                    "بيدرولو (Pedrollo)",
+                    "ويلو (Wilo)",
+                    "KSB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مضخة jockey حريق",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "0.5 حصان",
+                    "1 حصان",
+                    "1.5 حصان",
+                    "2 حصان",
+                    "3 حصان",
+                    "5 حصان",
+                    "7.5 حصان",
+                    "10 حصان",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جراندفوس (Grundfos)",
+                    "بيدرولو (Pedrollo)",
+                    "ويلو (Wilo)",
+                    "KSB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مضخة sump صرف",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "0.5 حصان",
+                    "1 حصان",
+                    "1.5 حصان",
+                    "2 حصان",
+                    "3 حصان",
+                    "5 حصان",
+                    "7.5 حصان",
+                    "10 حصان",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جراندفوس (Grundfos)",
+                    "بيدرولو (Pedrollo)",
+                    "ويلو (Wilo)",
+                    "KSB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مضخة تداول مياه ساخنة",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "0.5 حصان",
+                    "1 حصان",
+                    "1.5 حصان",
+                    "2 حصان",
+                    "3 حصان",
+                    "5 حصان",
+                    "7.5 حصان",
+                    "10 حصان",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جراندفوس (Grundfos)",
+                    "بيدرولو (Pedrollo)",
+                    "ويلو (Wilo)",
+                    "KSB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مضخة مياه ري",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "0.5 حصان",
+                    "1 حصان",
+                    "1.5 حصان",
+                    "2 حصان",
+                    "3 حصان",
+                    "5 حصان",
+                    "7.5 حصان",
+                    "10 حصان",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جراندفوس (Grundfos)",
+                    "بيدرولو (Pedrollo)",
+                    "ويلو (Wilo)",
+                    "KSB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مضخة تغذية كيماوي Dosing",
@@ -6047,8 +6938,50 @@
               "name": "سخانات مياه كهربائية",
               "sub": "خزانات وسخانات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "كهربائي",
+                    "مركزي",
+                    "شمسي",
+                    "فوري (Instant)"
+                  ]
+                },
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "30 لتر",
+                    "50 لتر",
+                    "80 لتر",
+                    "100 لتر",
+                    "مركزي (حسب التصميم)"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "أريستون (Ariston)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مرشحات مياه",
@@ -6075,8 +7008,57 @@
               "name": "صمام تحكم منطقة Zone Control Valve",
               "sub": "مضخات مياه",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "1/2 بوصة",
+                    "3/4 بوصة",
+                    "1 بوصة",
+                    "1.5 بوصة",
+                    "2 بوصة",
+                    "2.5 بوصة",
+                    "3 بوصة",
+                    "4 بوصة",
+                    "6 بوصة",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "connection",
+                  "ar": "طريقة الربط",
+                  "en": "Connection",
+                  "options": [
+                    "قلاووظ (Threaded)",
+                    "فلنجة (Flanged)",
+                    "لحام (Welded)",
+                    "PPR"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "بجلر (Pegler)",
+                    "سيم (Cim)",
+                    "كيتز (Kitz)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مصرف سقف Roof Drain 100mm",
@@ -6304,43 +7286,385 @@
               "name": "مرحاض WC مع خزان",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "mounting",
+                  "ar": "التركيب",
+                  "en": "Mounting",
+                  "options": [
+                    "أرضي (Floor-mounted)",
+                    "معلّق (Wall-hung)",
+                    "مدمج (Counter)",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "سيراميك/بورسلان",
+                    "ستانلس ستيل",
+                    "أكريليك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "اللون",
+                  "en": "Color",
+                  "options": [
+                    "أبيض",
+                    "بيج",
+                    "رمادي",
+                    "أسود مطفي",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "الحمراني (HSC)",
+                    "سعودي سيراميك",
+                    "RAK",
+                    "Geberit",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طقم كامل"
+                  ]
+                }
+              ]
             },
             {
               "name": "مرحاض WC ذوي احتياجات خاصة",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "mounting",
+                  "ar": "التركيب",
+                  "en": "Mounting",
+                  "options": [
+                    "أرضي (Floor-mounted)",
+                    "معلّق (Wall-hung)",
+                    "مدمج (Counter)",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "سيراميك/بورسلان",
+                    "ستانلس ستيل",
+                    "أكريليك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "اللون",
+                  "en": "Color",
+                  "options": [
+                    "أبيض",
+                    "بيج",
+                    "رمادي",
+                    "أسود مطفي",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "الحمراني (HSC)",
+                    "سعودي سيراميك",
+                    "RAK",
+                    "Geberit",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طقم كامل"
+                  ]
+                }
+              ]
             },
             {
               "name": "مغسلة Wash Basin",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "mounting",
+                  "ar": "التركيب",
+                  "en": "Mounting",
+                  "options": [
+                    "أرضي (Floor-mounted)",
+                    "معلّق (Wall-hung)",
+                    "مدمج (Counter)",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "سيراميك/بورسلان",
+                    "ستانلس ستيل",
+                    "أكريليك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "اللون",
+                  "en": "Color",
+                  "options": [
+                    "أبيض",
+                    "بيج",
+                    "رمادي",
+                    "أسود مطفي",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "الحمراني (HSC)",
+                    "سعودي سيراميك",
+                    "RAK",
+                    "Geberit",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طقم كامل"
+                  ]
+                }
+              ]
             },
             {
               "name": "حوض مطبخ",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "mounting",
+                  "ar": "التركيب",
+                  "en": "Mounting",
+                  "options": [
+                    "أرضي (Floor-mounted)",
+                    "معلّق (Wall-hung)",
+                    "مدمج (Counter)",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "سيراميك/بورسلان",
+                    "ستانلس ستيل",
+                    "أكريليك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "اللون",
+                  "en": "Color",
+                  "options": [
+                    "أبيض",
+                    "بيج",
+                    "رمادي",
+                    "أسود مطفي",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "الحمراني (HSC)",
+                    "سعودي سيراميك",
+                    "RAK",
+                    "Geberit",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طقم كامل"
+                  ]
+                }
+              ]
             },
             {
               "name": "مجلى Kitchen Sink",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "mounting",
+                  "ar": "التركيب",
+                  "en": "Mounting",
+                  "options": [
+                    "أرضي (Floor-mounted)",
+                    "معلّق (Wall-hung)",
+                    "مدمج (Counter)",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "سيراميك/بورسلان",
+                    "ستانلس ستيل",
+                    "أكريليك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "اللون",
+                  "en": "Color",
+                  "options": [
+                    "أبيض",
+                    "بيج",
+                    "رمادي",
+                    "أسود مطفي",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "الحمراني (HSC)",
+                    "سعودي سيراميك",
+                    "RAK",
+                    "Geberit",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طقم كامل"
+                  ]
+                }
+              ]
             },
             {
               "name": "حوض استحمام",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "mounting",
+                  "ar": "التركيب",
+                  "en": "Mounting",
+                  "options": [
+                    "أرضي (Floor-mounted)",
+                    "معلّق (Wall-hung)",
+                    "مدمج (Counter)",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "سيراميك/بورسلان",
+                    "ستانلس ستيل",
+                    "أكريليك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "اللون",
+                  "en": "Color",
+                  "options": [
+                    "أبيض",
+                    "بيج",
+                    "رمادي",
+                    "أسود مطفي",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "الحمراني (HSC)",
+                    "سعودي سيراميك",
+                    "RAK",
+                    "Geberit",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طقم كامل"
+                  ]
+                }
+              ]
             },
             {
               "name": "دش Shower",
@@ -6353,22 +7677,145 @@
               "name": "مبولة Urinal",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "mounting",
+                  "ar": "التركيب",
+                  "en": "Mounting",
+                  "options": [
+                    "أرضي (Floor-mounted)",
+                    "معلّق (Wall-hung)",
+                    "مدمج (Counter)",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "سيراميك/بورسلان",
+                    "ستانلس ستيل",
+                    "أكريليك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "color",
+                  "ar": "اللون",
+                  "en": "Color",
+                  "options": [
+                    "أبيض",
+                    "بيج",
+                    "رمادي",
+                    "أسود مطفي",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "الحمراني (HSC)",
+                    "سعودي سيراميك",
+                    "RAK",
+                    "Geberit",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طقم كامل"
+                  ]
+                }
+              ]
             },
             {
               "name": "صنبور مياه",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "خلاط مياه Mixer",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مصرف أرضي Floor Drain 100x100",
@@ -6381,29 +7828,161 @@
               "name": "خلاط مغسلة",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "خلاط مطبخ",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "خلاط دش",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "صنبور حديقة",
               "sub": "خلاطات وأدوات صحية",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "محبس زاوية",
@@ -6573,15 +8152,81 @@
               "name": "رأس دش",
               "sub": "دشات وإكسسوارات حمام",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "دش مطري",
               "sub": "دشات وإكسسوارات حمام",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "عوامة خزان",
@@ -6620,64 +8265,422 @@
               "name": "مضخات مياه مركزية",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "power",
+                  "ar": "القدرة",
+                  "en": "Power",
+                  "options": [
+                    "0.5 حصان",
+                    "1 حصان",
+                    "1.5 حصان",
+                    "2 حصان",
+                    "3 حصان",
+                    "5 حصان",
+                    "7.5 حصان",
+                    "10 حصان",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جراندفوس (Grundfos)",
+                    "بيدرولو (Pedrollo)",
+                    "ويلو (Wilo)",
+                    "KSB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "وحدة مناولة هواء AHU",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "1.5 طن",
+                    "2 طن",
+                    "3 طن",
+                    "5 طن",
+                    "10 طن",
+                    "20 طن",
+                    "50 طن",
+                    "100 طن فأكثر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاريير (Carrier)",
+                    "يورك (York)",
+                    "تراين (Trane)",
+                    "دايكن (Daikin)",
+                    "زامل",
+                    "SKM",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "وحدة مناولة هواء AHU مع عجلة حرارية",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "1.5 طن",
+                    "2 طن",
+                    "3 طن",
+                    "5 طن",
+                    "10 طن",
+                    "20 طن",
+                    "50 طن",
+                    "100 طن فأكثر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاريير (Carrier)",
+                    "يورك (York)",
+                    "تراين (Trane)",
+                    "دايكن (Daikin)",
+                    "زامل",
+                    "SKM",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "وحدة FCU سقفية",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "1.5 طن",
+                    "2 طن",
+                    "3 طن",
+                    "5 طن",
+                    "10 طن",
+                    "20 طن",
+                    "50 طن",
+                    "100 طن فأكثر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاريير (Carrier)",
+                    "يورك (York)",
+                    "تراين (Trane)",
+                    "دايكن (Daikin)",
+                    "زامل",
+                    "SKM",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "وحدة FCU كاسيت",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "1.5 طن",
+                    "2 طن",
+                    "3 طن",
+                    "5 طن",
+                    "10 طن",
+                    "20 طن",
+                    "50 طن",
+                    "100 طن فأكثر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاريير (Carrier)",
+                    "يورك (York)",
+                    "تراين (Trane)",
+                    "دايكن (Daikin)",
+                    "زامل",
+                    "SKM",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مبرد مياه Chiller",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "1.5 طن",
+                    "2 طن",
+                    "3 طن",
+                    "5 طن",
+                    "10 طن",
+                    "20 طن",
+                    "50 طن",
+                    "100 طن فأكثر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاريير (Carrier)",
+                    "يورك (York)",
+                    "تراين (Trane)",
+                    "دايكن (Daikin)",
+                    "زامل",
+                    "SKM",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "برج تبريد Cooling Tower",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "1.5 طن",
+                    "2 طن",
+                    "3 طن",
+                    "5 طن",
+                    "10 طن",
+                    "20 طن",
+                    "50 طن",
+                    "100 طن فأكثر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاريير (Carrier)",
+                    "يورك (York)",
+                    "تراين (Trane)",
+                    "دايكن (Daikin)",
+                    "زامل",
+                    "SKM",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "وحدات مكيف VRF خارجية",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "1.5 طن",
+                    "2 طن",
+                    "3 طن",
+                    "5 طن",
+                    "10 طن",
+                    "20 طن",
+                    "50 طن",
+                    "100 طن فأكثر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاريير (Carrier)",
+                    "يورك (York)",
+                    "تراين (Trane)",
+                    "دايكن (Daikin)",
+                    "زامل",
+                    "SKM",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "وحدات مكيف VRF داخلية",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "1.5 طن",
+                    "2 طن",
+                    "3 طن",
+                    "5 طن",
+                    "10 طن",
+                    "20 طن",
+                    "50 طن",
+                    "100 طن فأكثر"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاريير (Carrier)",
+                    "يورك (York)",
+                    "تراين (Trane)",
+                    "دايكن (Daikin)",
+                    "زامل",
+                    "SKM",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مجمد حرارة Heat Exchanger",
@@ -6697,22 +8700,142 @@
               "name": "مراوح هواء محورية Axial Fan",
               "sub": "مراوح تهوية وشفط",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "محوري (Axial)",
+                    "طرد مركزي (Centrifugal)",
+                    "شفط (Exhaust)",
+                    "إن-لاين (Inline)"
+                  ]
+                },
+                {
+                  "key": "airflow",
+                  "ar": "التدفّق",
+                  "en": "Airflow",
+                  "options": [
+                    "حسب التصميم",
+                    "منخفض",
+                    "متوسط",
+                    "عالي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مراوح هواء طرد مركزي",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "محوري (Axial)",
+                    "طرد مركزي (Centrifugal)",
+                    "شفط (Exhaust)",
+                    "إن-لاين (Inline)"
+                  ]
+                },
+                {
+                  "key": "airflow",
+                  "ar": "التدفّق",
+                  "en": "Airflow",
+                  "options": [
+                    "حسب التصميم",
+                    "منخفض",
+                    "متوسط",
+                    "عالي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مراوح استخلاص هواء WC",
               "sub": "مراوح تهوية وشفط",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "محوري (Axial)",
+                    "طرد مركزي (Centrifugal)",
+                    "شفط (Exhaust)",
+                    "إن-لاين (Inline)"
+                  ]
+                },
+                {
+                  "key": "airflow",
+                  "ar": "التدفّق",
+                  "en": "Airflow",
+                  "options": [
+                    "حسب التصميم",
+                    "منخفض",
+                    "متوسط",
+                    "عالي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مجاري هواء جلفنايز 0.7mm",
@@ -6752,16 +8875,80 @@
             {
               "name": "فتحات هواء",
               "sub": "مجاري هواء ومخارج",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "عدد",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "شبك هواء (Grille)",
+                    "موزع هواء (Diffuser)",
+                    "فتحة خطية (Linear)",
+                    "شفط (Return/Exhaust)",
+                    "ستارة هواء (Air Curtain)"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "ألمنيوم",
+                    "حديد مدهون",
+                    "ستانلس"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "موزعات هواء",
               "sub": "مجاري هواء ومخارج",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "عدد",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "شبك هواء (Grille)",
+                    "موزع هواء (Diffuser)",
+                    "فتحة خطية (Linear)",
+                    "شفط (Return/Exhaust)",
+                    "ستارة هواء (Air Curtain)"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "ألمنيوم",
+                    "حديد مدهون",
+                    "ستانلس"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "موازنات هواء Balancing Damper",
@@ -6780,16 +8967,90 @@
             {
               "name": "ستائر هواء",
               "sub": "مجاري هواء ومخارج",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "عدد",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "شبك هواء (Grille)",
+                    "موزع هواء (Diffuser)",
+                    "فتحة خطية (Linear)",
+                    "شفط (Return/Exhaust)",
+                    "ستارة هواء (Air Curtain)"
+                  ]
+                },
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "ألمنيوم",
+                    "حديد مدهون",
+                    "ستانلس"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "سخانات مياه مركزية",
               "sub": "مكيفات (سبليت/مركزي/تشيلر)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "كهربائي",
+                    "مركزي",
+                    "شمسي",
+                    "فوري (Instant)"
+                  ]
+                },
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "30 لتر",
+                    "50 لتر",
+                    "80 لتر",
+                    "100 لتر",
+                    "مركزي (حسب التصميم)"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "أريستون (Ariston)",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -7167,29 +9428,161 @@
               "name": "خلاط مغسلة",
               "sub": "خلاطات وصنابير",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "خلاط مطبخ",
               "sub": "خلاطات وصنابير",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "خلاط دش",
               "sub": "خلاطات وصنابير",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "صنبور حديقة",
               "sub": "خلاطات وصنابير",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "محبس زاوية",
@@ -7345,8 +9738,41 @@
               "name": "رأس دش",
               "sub": "خراطيم وتفلون ولوازم",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم (Chrome)",
+                    "أبيض",
+                    "ذهبي",
+                    "أسود مطفي",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "جروهي (Grohe)",
+                    "هانزجروهي (Hansgrohe)",
+                    "الحمراني",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "عوامة خزان",
