@@ -126,6 +126,7 @@ export default function NewRFQPage() {
   const [productName, setProductName] = useState('')
   const [productSearch, setProductSearch] = useState('')
   const [specs, setSpecs] = useState<Record<string, string>>({})
+  const [otherKeys, setOtherKeys] = useState<Record<string, boolean>>({}) // الحقول التي اختار فيها المقاول «أخرى»
   const [items, setItems] = useState<any[]>([]) // المواد المضافة للطلب (يسمح بقطاعات مختلفة)
   const [rfqName, setRfqName] = useState('')      // اسم التسعيرة (اختياري)
   const [draftTiers, setDraftTiers] = useState<string[]>([]) // نوع المورد لهذه المادة
@@ -213,6 +214,7 @@ export default function NewRFQPage() {
   const specFields = getProductSpecs(productName)
   const unitSpec = specFields.find((f: any) => f.key === 'unit') // وحدة الطلب من المواصفات (إن وُجدت)
   const effectiveUnit = unitSpec ? (specs[unitSpec.key] || '') : unit
+  useEffect(() => { setOtherKeys({}) }, [productName]) // صفّر وضع «أخرى» عند تغيير المنتج
   // بحث سريع فوق التصنيفات: يفلتر كل مواد القطاع عبر المجموعات
   const allItems = useMemo(() => groups.flatMap((g: any) => g.items), [groups])
   const q = productSearch.trim().toLowerCase()
@@ -556,15 +558,31 @@ export default function NewRFQPage() {
                     <div className="pt-3 border-t border-gray-100 mb-4 animate-fade-in">
                       <p className="text-xs font-bold text-[#d96f15] mb-2">⚙ {locale === 'en' ? 'Details (helps suppliers price precisely)' : locale === 'ur' ? 'تفصیلات' : 'حدّد المواصفات (يساعد الموردين يسعّرون بدقّة)'}</p>
                       <div className="grid grid-cols-2 gap-3">
-                        {specFields.map((f: any) => (
-                          <div key={f.key}>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">{locale === 'en' ? f.en : f.ar}</label>
-                            <select value={specs[f.key] || ''} onChange={(e: any) => setSpecs(s => ({ ...s, [f.key]: e.target.value }))} className="input-field">
-                              <option value="">{locale === 'en' ? '— Select —' : '— اختر —'}</option>
-                              {f.options.map((o: any) => <option key={o} value={o}>{o}</option>)}
-                            </select>
-                          </div>
-                        ))}
+                        {specFields.map((f: any) => {
+                          const val = specs[f.key] || ''
+                          const isCustom = !!val && !f.options.includes(val) // قيمة كتبها المقاول يدوياً
+                          const showOther = isCustom || otherKeys[f.key]
+                          return (
+                            <div key={f.key}>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">{locale === 'en' ? f.en : f.ar}</label>
+                              <select value={showOther ? '__other__' : val} className="input-field"
+                                onChange={(e: any) => {
+                                  if (e.target.value === '__other__') { setOtherKeys(o => ({ ...o, [f.key]: true })); setSpecs(s => ({ ...s, [f.key]: '' })) }
+                                  else { setOtherKeys(o => ({ ...o, [f.key]: false })); setSpecs(s => ({ ...s, [f.key]: e.target.value })) }
+                                }}>
+                                <option value="">{locale === 'en' ? '— Select —' : '— اختر —'}</option>
+                                {f.options.map((o: any) => <option key={o} value={o}>{o}</option>)}
+                                <option value="__other__">{locale === 'en' ? 'Other (specify)' : 'أخرى (غير مذكور)'}</option>
+                              </select>
+                              {showOther && (
+                                <input type="text" value={isCustom ? val : ''} autoFocus
+                                  onChange={(e: any) => setSpecs(s => ({ ...s, [f.key]: e.target.value }))}
+                                  placeholder={locale === 'en' ? 'Type a value…' : 'اكتب القيمة…'}
+                                  className="input-field mt-1.5 text-sm" />
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )}

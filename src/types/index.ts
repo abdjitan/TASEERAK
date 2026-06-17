@@ -1029,10 +1029,39 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['عادي','مصقول','مكشوف الركام','حسب الطلب'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م³ (متر مكعب)','متر طولي'] },
   ] },
-  { products: ['صلب هيكلي HEB','صلب هيكلي HEA','قطاعات مستطيلة RHS','زوايا وقطاعات حديد'], spec: [
-    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235','S275','S355','حسب المواصفة'] },
+  // HEB/HEA: المقاس بالتسمية القياسية (HEA 200…)
+  { products: ['صلب هيكلي HEB','صلب هيكلي HEA'], spec: [
+    { key: 'section', ar: 'المقاس (المقطع)', en: 'Section', options: ['100','120','140','160','180','200','220','240','260','280','300','320','340','360','400','450','500','550','600','650','700','800','900','1000'] },
+    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235JR','S275JR','S355JR','حسب المواصفة'] },
     { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر','حسب القص'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','عود','متر طولي'] },
+  ] },
+  { products: ['قطاعات مستطيلة RHS'], spec: [
+    { key: 'size', ar: 'المقاس (مم)', en: 'Size', options: ['40×40','50×50','60×40','80×40','80×80','100×50','100×100','120×60','150×100','200×100','حسب المخطط'] },
+    { key: 'thickness', ar: 'سماكة الجدار', en: 'Wall thickness', options: ['2 مم','2.5 مم','3 مم','4 مم','5 مم','6 مم'] },
+    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235JR','S275JR','S355JR'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر','حسب القص'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','عود','متر طولي'] },
+  ] },
+  { products: ['زوايا وقطاعات حديد'], spec: [
+    { key: 'size', ar: 'مقاس الزاوية (مم)', en: 'Angle Size', options: ['30×30','40×40','50×50','60×60','70×70','75×75','80×80','100×100','حسب المخطط'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['3 مم','4 مم','5 مم','6 مم','8 مم','10 مم'] },
+    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235JR','S275JR','S355JR'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر','حسب القص'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','عود','متر طولي'] },
+  ] },
+  // القطاعات الدائرية CHS (القطر بالاسم — نضيف سماكة الجدار)
+  { products: ['قطاعات دائرية CHS 273mm','قطاعات دائرية CHS 300mm'], spec: [
+    { key: 'thickness', ar: 'سماكة الجدار', en: 'Wall thickness', options: ['5 مم','6 مم','8 مم','10 مم','12 مم','حسب المخطط'] },
+    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235JR','S275JR','S355JR'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر','حسب القص'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','عود','متر طولي'] },
+  ] },
+  // شبك الرابيتز (اللياسة)
+  { products: ['شبك رابيتز'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['رابيتز مضلّع','رابيتز مسطّح','شبك ممدّد (Expanded)','شبك لحام'] },
+    { key: 'weight', ar: 'الوزن', en: 'Weight', options: ['حسب المواصفة','رقيق','متوسط','ثقيل'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لفة','م² (متر مربع)','عدد'] },
   ] },
   { products: ['صفائح فولاذية'], spec: [
     { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['3 مم','5 مم','6 مم','8 مم','10 مم','12 مم','15 مم','20 مم','حسب الطلب'] },
