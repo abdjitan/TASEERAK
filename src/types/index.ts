@@ -178,13 +178,13 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['أسقف مستعارة','false ceiling','ألومنيوم','شرائح','بلاطات','ممرات','ceiling tile','صوتية','كالسيوم','calcium silicate','أسقف مكشوفة','مكشوفة'] },
     // ═══ الأبواب والشبابيك والواجهات ═══
     aluminum: { ar: 'ألمنيوم وشبابيك', en: 'Aluminum & Windows', ur: 'ایلومینیم', icon: '🪟', group: 'doors_windows',
-      keywords: ['ألمنيوم','aluminum','شبابيك','نوافذ','window','UPVC'] },
+      keywords: ['ألمنيوم','aluminum','aluminium','شبابيك','نوافذ','window','glazed door','sliding door','UPVC'] },
     wood_doors: { ar: 'أبواب خشبية', en: 'Wooden Doors', ur: 'لکڑی دروازے', icon: '🚪', group: 'doors_windows',
-      keywords: ['أبواب خشب','wooden door','كبس','حشو','سنديان','خشبية'] },
+      keywords: ['أبواب خشب','wooden door','wood door','timber door','timber','internal door','interior door','flush door','door leaf','كبس','حشو','سنديان','خشبية'] },
     fire_doors: { ar: 'أبواب حديد وحريق', en: 'Steel & Fire-Rated Doors', ur: 'فائر دروازے', icon: '🔥', group: 'doors_windows',
-      keywords: ['أبواب حديد','fire door','مقاومة حريق','fire rated','طوارئ','حديدية','أبواب ستانلس','stainless door'] },
+      keywords: ['أبواب حديد','fire door','fire-rated','fire rated','external door','metal door','steel door','exit door','مقاومة حريق','طوارئ','حديدية','أبواب ستانلس','stainless door'] },
     auto_doors: { ar: 'أبواب أوتوماتيكية وكراجات', en: 'Automatic & Garage Doors', ur: 'آٹومیٹک دروازے', icon: '🚗', group: 'doors_windows',
-      keywords: ['أوتوماتيك','automatic','كراج','garage','rolling','شتر','أتوماتيكية'] },
+      keywords: ['أوتوماتيك','automatic','كراج','garage','rolling shutter','roller shutter','overhead door','sectional door','rolling','شتر','أتوماتيكية'] },
     // ═══ الواجهات المتطورة (Facade) ═══
     curtain_wall: { ar: 'واجهات ستائرية وزجاجية (Curtain Wall)', en: 'Curtain Wall & Glazing', ur: 'کرٹن وال', icon: '🏢', group: 'facade_systems',
       keywords: ['curtain wall','واجهة ستائرية','واجهة زجاجية','structural glazing','spider','مشدات زجاج','زجاج','glass','سيكوريت','tempered','glazed facade'] },
@@ -652,16 +652,19 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   // ═══ الأبواب والشبابيك والواجهات ═══
   // الأبواب الخشبية
   { products: ['أبواب خشب داخلية','أبواب خشب مع إطار معدني'], spec: [
-    { key: 'core', ar: 'النوع', en: 'Type', options: ['مفرّغ (Hollow core)','معبّأ (Solid core)','خشب صلب (Solid wood)','HDF','MDF'] },
+    { key: 'core', ar: 'المادة/النوع', en: 'Material', options: ['خشب صلب (Solid wood)','HDF','MDF','معبّأ (Solid core)','مفرّغ (Hollow core)'] },
     { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['قشرة طبيعية (Veneer)','ميلامين','CPL/HPL','لاكيه','دهان','PVC'] },
-    { key: 'size', ar: 'المقاس (عرض×ارتفاع)', en: 'Size', options: ['90×210 سم','80×210 سم','100×210 سم','70×210 سم','حسب الطلب'] },
+    { key: 'fire_rating', ar: 'مقاومة الحريق', en: 'Fire rating', options: ['غير مقاوم (N/A)','20 دقيقة','30 دقيقة','45 دقيقة','60 دقيقة','90 دقيقة'] },
+    { key: 'size', ar: 'مقاس الباب (عرض×ارتفاع)', en: 'Door size', options: ['90×210 سم','80×210 سم','100×210 سم','70×210 سم','حسب الطلب'] },
+    { key: 'opening', ar: 'مقاس الفتحة الإنشائي (للإطار)', en: 'Structural opening', options: ['910×2110 مم','810×2110 مم','1010×2110 مم','710×2110 مم','حسب المخطط'] },
     { key: 'frame', ar: 'الإطار', en: 'Frame', options: ['إطار خشب','إطار معدني (حلق صاج)','بدون إطار'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد (باب كامل)','الورقة فقط'] },
   ] },
   // أبواب الحريد المقاومة للحريق
   { products: ['أبواب حديد مقاومة حريق 45 دقيقة','أبواب حديد مقاومة حريق 90 دقيقة'], spec: [
     { key: 'leaf', ar: 'عدد الدرف', en: 'Leaves', options: ['مفرد (Single)','مزدوج (Double)'] },
-    { key: 'size', ar: 'المقاس', en: 'Size', options: ['90×210 سم','100×210 سم','120×210 سم (مزدوج)','حسب الطلب'] },
+    { key: 'size', ar: 'مقاس الباب', en: 'Door size', options: ['90×210 سم','100×210 سم','120×210 سم (مزدوج)','حسب الطلب'] },
+    { key: 'opening', ar: 'مقاس الفتحة الإنشائي (للإطار)', en: 'Structural opening', options: ['1010×2110 مم','910×2110 مم','2200×1010 مم','حسب المخطط'] },
     { key: 'accessories', ar: 'الملحقات', en: 'Accessories', options: ['بدون','ذراع إغلاق (Door closer)','مقبض ذعر (Panic bar)','نافذة رؤية (Vision panel)','الكل'] },
     { key: 'cert', ar: 'الشهادة', en: 'Certification', options: ['معتمد الدفاع المدني','UL/BS مطابق','حسب المواصفة'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },

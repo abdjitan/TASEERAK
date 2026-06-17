@@ -7,7 +7,28 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, SUB_CATEGORIES, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel } from '@/types'
+
+// تجميع بنود الـ BOQ حسب المجموعة (مثل قوائم التسعير) — يحتفظ بالفهرس الأصلي لكل بند
+function getGroupedItems(items: any[], locale: string) {
+  const groups: Record<string, any> = {}
+  items.forEach((item: any, i: number) => {
+    const sub = item.sub_category
+    const gkey = (sub && (SUB_CATEGORIES as any)[item.sector]?.[sub]?.group) || '_unclassified'
+    if (!groups[gkey]) {
+      const gl = gkey === '_unclassified' ? null : (GROUP_LABELS as any)[gkey]
+      groups[gkey] = {
+        key: gkey,
+        label: gkey === '_unclassified' ? (locale === 'en' ? 'Unclassified' : 'غير مصنّف') : (gl ? (locale === 'en' ? gl.en : gl.ar) : gkey),
+        icon: gkey === '_unclassified' ? '⚠️' : (gl?.icon || '📦'),
+        defaultOpen: gkey === '_unclassified',
+        entries: [],
+      }
+    }
+    groups[gkey].entries.push({ item, i })
+  })
+  return Object.keys(groups).sort((a, b) => (a === '_unclassified' ? -1 : b === '_unclassified' ? 1 : 0)).map(k => groups[k])
+}
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
@@ -27,6 +48,8 @@ export default function NewProjectPage() {
   const [deliveryRequired, setDeliveryRequired] = useState(true)
   const [deliveryLocation, setDeliveryLocation] = useState('')
   const [geoMsg, setGeoMsg] = useState('')
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const toggleGroup = (k: string) => setOpenGroups(o => ({ ...o, [k]: !(o[k] ?? (k === '_unclassified')) }))
   // تحديد الموقع تلقائياً → يملأ المنطقة والمدينة وعنوان التوصيل
   function geolocate() {
     if (typeof navigator === 'undefined' || !navigator.geolocation) { setGeoMsg(locale === 'en' ? 'Geolocation not supported' : 'المتصفح لا يدعم تحديد الموقع'); return }
@@ -574,9 +597,23 @@ export default function NewProjectPage() {
               </button>
             </div>
 
-            {/* Items */}
-            <div className="space-y-2">
-              {items.map((item: any, i: any) => (
+            {/* Items — grouped by category (accordion, like the pricing lists) */}
+            <div className="space-y-3">
+              {getGroupedItems(items, locale).map((g: any) => {
+                const open = openGroups[g.key] ?? g.defaultOpen
+                return (
+                  <div key={g.key} className="border border-gray-100 rounded-xl bg-white overflow-hidden shadow-sm">
+                    <button type="button" onClick={() => toggleGroup(g.key)}
+                      className={`w-full flex items-center justify-between px-4 py-3 ${g.key === '_unclassified' ? 'bg-red-50' : 'bg-gray-50'}`}>
+                      <span className="font-bold text-sm flex items-center gap-2" style={{ color: g.key === '_unclassified' ? '#dc2626' : '#1B2D5B' }}>
+                        <span>{g.icon}</span> {g.label}
+                        <span className="badge text-[10px] bg-white border border-gray-200 text-gray-600">{g.entries.length}</span>
+                      </span>
+                      <span className="text-gray-400 text-xs">{open ? '▲' : '▼'}</span>
+                    </button>
+                    {open && (
+                      <div className="p-2 space-y-2 border-t border-gray-100">
+                        {g.entries.map(({ item, i }: any) => (
                 <div key={item.id} className={`bg-white rounded-xl border transition-all ${
                   item.selected ? 'border-gray-200 shadow-sm' : 'border-gray-100 opacity-50'
                 }`}>
@@ -709,7 +746,12 @@ export default function NewProjectPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
