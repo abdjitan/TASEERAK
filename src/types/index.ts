@@ -618,19 +618,16 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   { products: ['دهان أكريليك','دهان زيتي','دهان مضاد للرطوبة'], spec: [
     { key: 'usage', ar: 'الاستخدام', en: 'Usage', options: ['داخلي','خارجي','معدن','خشب','أساس Primer'] },
     { key: 'sheen', ar: 'اللمعان', en: 'Sheen', options: ['مطفي Matt','نصف لامع','لامع','حريري Silk'] },
-    { key: 'base', ar: 'الأساس', en: 'Base', options: ['مائي Water-based','زيتي Oil-based','أكريليك','إيبوكسي'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['جالون 18 لتر','بستلة','لتر'] },
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة','جوتن Jotun','الجزيرة','ناشيونال','سايبس'] },
   ] },
   // الجبس بورد
   { products: ['جبس بورد حوائط','جبس بورد مقاوم رطوبة MR','جبس بورد مقاوم حريق FR','جبس بورد مزدوج'], spec: [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['عادي','مقاوم رطوبة MR','مقاوم حريق FR','مزدوج'] },
     { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['9 مم','12.5 مم','15 مم'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لوح','م² (متر مربع)'] },
   ] },
   // العزل (صوف/فوم/XPS)
   { products: ['عازل XPS للأسطح','صوف صخري Rock Wool','فوم عازل حراري'], spec: [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['صوف صخري Rockwool','صوف زجاجي','XPS','EPS','فوم بولي يوريثان','فويل'] },
     { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['25 مم','40 مم','50 مم','75 مم','100 مم'] },
     { key: 'density', ar: 'الكثافة', en: 'Density', options: ['حسب المواصفة','40 kg/m³','60 kg/m³','80 kg/m³','100 kg/m³'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','م³ (متر مكعب)','لفة'] },
@@ -663,7 +660,6 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   ] },
   // أبواب الحريد المقاومة للحريق
   { products: ['أبواب حديد مقاومة حريق 45 دقيقة','أبواب حديد مقاومة حريق 90 دقيقة'], spec: [
-    { key: 'rating', ar: 'مقاومة الحريق', en: 'Fire rating', options: ['45 دقيقة','60 دقيقة','90 دقيقة','120 دقيقة'] },
     { key: 'leaf', ar: 'عدد الدرف', en: 'Leaves', options: ['مفرد (Single)','مزدوج (Double)'] },
     { key: 'size', ar: 'المقاس', en: 'Size', options: ['90×210 سم','100×210 سم','120×210 سم (مزدوج)','حسب الطلب'] },
     { key: 'accessories', ar: 'الملحقات', en: 'Accessories', options: ['بدون','ذراع إغلاق (Door closer)','مقبض ذعر (Panic bar)','نافذة رؤية (Vision panel)','الكل'] },
@@ -672,7 +668,7 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   ] },
   // أبواب ونوافذ الألمنيوم والـUPVC
   { products: ['أبواب ألمنيوم','نوافذ ألمنيوم زجاج مزدوج','نوافذ UPVC'], spec: [
-    { key: 'system', ar: 'النظام', en: 'System', options: ['ألمنيوم','UPVC','ألمنيوم بكسر حراري (Thermal break)'] },
+    { key: 'thermal', ar: 'كسر حراري', en: 'Thermal break', options: ['بدون','بكسر حراري (Thermal break)'] },
     { key: 'opening', ar: 'طريقة الفتح', en: 'Opening', options: ['منزلق (Sliding)','مفصلي (Hinged)','شباك (Casement)','مطوي (Folding)','ثابت (Fixed)','نطّاط (Tilt & Turn)'] },
     { key: 'glazing', ar: 'الزجاج', en: 'Glazing', options: ['مفرد','مزدوج (Double glazed)','مزدوج بأرجون','سيكوريت مزدوج'] },
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','الفنار','تكنال (Technal)','شنايدر ألمنيوم','مستورد'] },
@@ -922,7 +918,6 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   ] },
   // المراوح
   { products: ['مراوح هواء محورية Axial Fan','مراوح هواء طرد مركزي','مراوح استخلاص هواء WC'], spec: [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['محوري (Axial)','طرد مركزي (Centrifugal)','شفط (Exhaust)','إن-لاين (Inline)'] },
     { key: 'airflow', ar: 'التدفّق', en: 'Airflow', options: ['حسب التصميم','منخفض','متوسط','عالي'] },
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','مستورد'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
@@ -935,7 +930,6 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   ] },
   // سخانات المياه
   { products: ['سخانات مياه كهربائية','سخانات مياه مركزية'], spec: [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['كهربائي','مركزي','شمسي','فوري (Instant)'] },
     { key: 'capacity', ar: 'السعة', en: 'Capacity', options: ['30 لتر','50 لتر','80 لتر','100 لتر','مركزي (حسب التصميم)'] },
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','أريستون (Ariston)','مستورد'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
@@ -968,7 +962,6 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   ] },
   // التأريض
   { products: ['سلك تأريض','شريط نحاس تأريض','أقطاب تأريض Earth Rod'], spec: [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['سلك نحاس مكشوف','شريط نحاس (Tape)','قطب أرضي (Earth Rod)','نحاس مغلف'] },
     { key: 'size', ar: 'المقاس', en: 'Size', options: ['16 مم²','25 مم²','35 مم²','50 مم²','70 مم²','25×3 مم (شريط)','قطب 1.2 متر','قطب 1.5 متر'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','حبة'] },
   ] },
@@ -1021,7 +1014,6 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   ] },
   // ═══ محل التوريد — عُدد ومثبتات ═══
   { products: ['دريل كهربائي','دريل شحن','صاروخ تجليخ'], spec: [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['دريل كهربائي','دريل شحن (بطارية)','صاروخ تجليخ','هيلتي/همر'] },
     { key: 'power', ar: 'القدرة', en: 'Power', options: ['18 فولت','21 فولت','750 واط','1200 واط','حسب الموديل'] },
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','بوش (Bosch)','ماكيتا (Makita)','ديوالت (DeWalt)','مستورد'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
@@ -1066,12 +1058,10 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   ] },
   // ═══ معماري — أرضيات وأسقف ومعادن ونجارة وصوتيات ═══
   { products: ['أرضية إيبوكسي','أرضية راتنج إيبوكسي مع قرنيص','سجاد Carpet Tile','سجاد رول لاصق','مطاط Entrance Matting','أرضية راتنج إيبوكسي High Build','أرضية تيرازو Terrazzo','أرضية مطاطية Rubber Flooring','أرضية مطاطية رياضية Sports Floor','أرضية أكسس فلور Raised Access Floor','فرشة مسطحة Screed Heavy Duty','فرشة مسطحة Self-Levelling','فينيل ورقي Vinyl Sheet','فينيل مضاد للانزلاق','قرنيوص فينيل Vinyl Skirting'], spec: [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['إيبوكسي','راتنج','سجاد بلاطات','سجاد رول','مطاط','تيرازو','فينيل','فرشة لياسة','أكسس فلور'] },
     { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['2 مم','3 مم','4 مم','6 مم','حسب التصميم'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','متر طولي (للقرنيص)'] },
   ] },
   { products: ['أسقف مستعارة جبس','أسقف مستعارة معدنية','أسقف كالسيوم سيليكات','بلاطات أسقف صوتية 600×600','أسقف صوتية مبطنة','أسقف مكشوفة مطلية','لواح صوتية PET Panels'], spec: [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['جبس مستعار','معدني (ألمنيوم)','كالسيوم سيليكات','صوتي','مكشوف مطلي','PET'] },
     { key: 'tile_size', ar: 'مقاس البلاطة', en: 'Tile Size', options: ['60×60 سم','60×120 سم','شرائح','حسب الطلب'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)'] },
   ] },
