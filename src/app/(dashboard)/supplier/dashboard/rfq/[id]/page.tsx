@@ -502,7 +502,7 @@ export default function SupplierRFQPage() {
           <div className="grid grid-cols-2 gap-3 text-sm mt-4">
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => (sectors as any)[s] || s).join(' + ') : ((sectors as any)[rfq.sector] || rfq.sector)}</strong></div>
             {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📍 {T.location}</span><br/><strong>{rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong></div>
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📍 {T.location}</span><br/><strong>{rfq.city || rfq.region}</strong></div>
             <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
               <span className="text-gray-500 text-[12px] font-semibold">🚚 {T.delivery}</span><br/>
               {rfq.delivery_required ? (
@@ -524,7 +524,7 @@ export default function SupplierRFQPage() {
                 <strong>{locale === 'en' && contractorInfo.company_name_en ? contractorInfo.company_name_en : contractorInfo.company_name_ar}</strong>
               ) : (
                 <>
-                  <strong className="text-gray-600">{locale === 'en' ? 'Contractor' : 'مقاول'} · {rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</strong>
+                  <strong className="text-gray-600">{locale === 'en' ? 'Contractor' : 'مقاول'} · {rfq.city || rfq.region}</strong>
                   <div className="text-[10px] text-gray-400 mt-0.5">🔒 {locale === 'en' ? "Contractor identity is revealed once your offer is accepted." : 'تظهر هوية المقاول عند قبول عرضك (إتمام الصفقة).'}</div>
                 </>
               )}

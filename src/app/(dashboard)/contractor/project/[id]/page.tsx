@@ -80,7 +80,7 @@ export default function ProjectResultsPage() {
                 <h1 className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{project?.title}</h1>
               </div>
               <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span>📍 {project?.region}{project?.city ? ` - ${project.city}` : ''}</span>
+                <span>📍 {project?.city || project?.region}</span>
                 <span>📅 {new Date(project?.created_at).toLocaleDateString('ar-SA')}</span>
               </div>
               {project?.boq_url && (

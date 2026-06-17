@@ -202,7 +202,7 @@ export default function OrderDetailPage() {
                 <div className="text-sm text-gray-500 mt-1">سجل تجاري: {contractor.commercial_registration}</div>
               )}
               {contractor?.phone && <div className="text-sm text-gray-500">جوال: {contractor.phone}</div>}
-              {contractor?.region && <div className="text-sm text-gray-500">{contractor.region}{contractor.city ? ` - ${contractor.city}` : ''}</div>}
+              {(contractor?.city || contractor?.region) && <div className="text-sm text-gray-500">{contractor.city || contractor.region}</div>}
             </div>
             <div>
               <div className="text-xs font-bold text-gray-400 uppercase mb-2">البائع (المورد)</div>
@@ -211,7 +211,7 @@ export default function OrderDetailPage() {
                 <div className="text-sm text-gray-500 mt-1">سجل تجاري: {supplier.commercial_registration}</div>
               )}
               {supplier?.phone && <div className="text-sm text-gray-500">جوال: {supplier.phone}</div>}
-              {supplier?.region && <div className="text-sm text-gray-500">{supplier.region}{supplier.city ? ` - ${supplier.city}` : ''}</div>}
+              {(supplier?.city || supplier?.region) && <div className="text-sm text-gray-500">{supplier.city || supplier.region}</div>}
               {supplier?.national_short_address && (
                 <div className="text-sm text-gray-500 font-mono" dir="ltr">🏛 {supplier.national_short_address}</div>
               )}
@@ -340,7 +340,7 @@ export default function OrderDetailPage() {
               )}
               <div className="flex items-center gap-2">
                 <span>📍</span>
-                <span>موقع التسليم: {rfq.region}{rfq.city ? ` - ${rfq.city}` : ''}</span>
+                <span>موقع التسليم: {rfq.city || rfq.region}</span>
               </div>
             </div>
             {offer.notes && (

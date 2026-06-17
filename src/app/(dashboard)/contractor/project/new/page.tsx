@@ -7,7 +7,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, SUB_CATEGORIES, UNIT_OPTIONS, REGIONS, detectSubCategory, getSubCategoryLabel } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel } from '@/types'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
@@ -26,6 +26,45 @@ export default function NewProjectPage() {
   const [projectNotes, setProjectNotes] = useState('')
   const [deliveryRequired, setDeliveryRequired] = useState(true)
   const [deliveryLocation, setDeliveryLocation] = useState('')
+  const [geoMsg, setGeoMsg] = useState('')
+  // تحديد الموقع تلقائياً → يملأ المنطقة والمدينة وعنوان التوصيل
+  function geolocate() {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) { setGeoMsg(locale === 'en' ? 'Geolocation not supported' : 'المتصفح لا يدعم تحديد الموقع'); return }
+    setGeoMsg(locale === 'en' ? 'Locating…' : 'جارٍ تحديد الموقع…')
+    navigator.geolocation.getCurrentPosition(
+      async (pos: any) => {
+        const { latitude, longitude } = pos.coords
+        const link = `https://maps.google.com/?q=${latitude},${longitude}`
+        setGeoMsg(locale === 'en' ? 'Reading city…' : 'جارٍ قراءة المدينة…')
+        try {
+          const r = await fetch(`/api/reverse-geocode?lat=${latitude}&lng=${longitude}`)
+          const d = await r.json()
+          if (d.ok) {
+            const geoR = String(d.region || '').replace('منطقة', '').trim()
+            const matchedRegion = REGIONS.find((rr: string) => geoR.includes(rr) || rr.includes(geoR) || String(d.region || '').includes(rr))
+            let cityName = ''
+            if (matchedRegion) {
+              const cities = CITIES_BY_REGION[matchedRegion] || []
+              const geoCity = String(d.city || '').replace(/^(محافظة|بلدية)\s*/, '').trim()
+              const mc = cities.find((c: any) => c.ar === geoCity || (geoCity && (geoCity.includes(c.ar) || c.ar.includes(geoCity))))
+                || cities.find((c: any) => c.ar === matchedRegion) || cities[0]
+              setRegion(matchedRegion); setCity(mc ? mc.ar : '')
+              cityName = mc ? mc.ar : matchedRegion
+            } else { cityName = d.city || d.region || '' }
+            setDeliveryRequired(true)
+            setDeliveryLocation(d.formatted || link)
+            setGeoMsg(`${locale === 'en' ? 'Location set ✓' : 'تم تحديد موقعك ✓'}${cityName ? ` — ${cityName}` : ''}`)
+            return
+          }
+        } catch {}
+        setDeliveryRequired(true)
+        setDeliveryLocation(link)
+        setGeoMsg(locale === 'en' ? 'Location pin saved ✓' : 'تم حفظ موقعك ✓')
+      },
+      () => setGeoMsg(locale === 'en' ? 'Location access denied' : 'تم رفض الوصول للموقع — فعّله من إعدادات المتصفح'),
+      { enableHighAccuracy: true, timeout: 10000 },
+    )
+  }
 
   // BOQ upload
   const [boqFile, setBoqFile] = useState<any>(null)
@@ -304,19 +343,28 @@ export default function NewProjectPage() {
                 {locale === 'en' ? 'Project Name *' : 'اسم المشروع *'}
               </label>
               <input value={title} onChange={(e: any) => setTitle(e.target.value)}
-                className="input-field" placeholder={locale === 'en' ? 'e.g. KFSC Energy Centre' : 'مثال: مبنى المركز الطاقوي'} required />
+                className="input-field" placeholder={locale === 'en' ? 'e.g. Building A — Residential Project' : 'مثال: مبنى A — مشروع سكني'} required />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Region *' : 'المنطقة *'}</label>
-              <select value={region} onChange={(e: any) => setRegion(e.target.value)} className="input-field" required>
+              <select value={region} onChange={(e: any) => { setRegion(e.target.value); setCity('') }} className="input-field" required>
                 <option value="">{locale === 'en' ? 'Select region' : 'اختر المنطقة'}</option>
                 {REGIONS.map((r: any) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'City' : 'المدينة'}</label>
-              <input value={city} onChange={(e: any) => setCity(e.target.value)}
-                className="input-field" placeholder={locale === 'en' ? 'City name' : 'اسم المدينة'} />
+              <select value={city} onChange={(e: any) => setCity(e.target.value)} className="input-field" disabled={!region}>
+                <option value="">{!region ? (locale === 'en' ? 'Select region first' : 'اختر المنطقة أولاً') : (locale === 'en' ? 'Select city' : 'اختر المدينة')}</option>
+                {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
+              </select>
+            </div>
+            <div className="sm:col-span-2 -mt-1">
+              <button type="button" onClick={geolocate}
+                className="text-xs font-bold px-3 py-2 rounded-xl border border-[#0F6E56] text-[#0F6E56] hover:bg-[#0F6E56]/5 transition-colors">
+                📍 {locale === 'en' ? 'Auto-detect my location' : 'حدّد موقعي تلقائياً'}
+              </button>
+              {geoMsg && <span className="text-[11px] text-gray-500 ms-2">{geoMsg}</span>}
             </div>
             <div className="sm:col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
               <div className="flex items-center justify-between">
