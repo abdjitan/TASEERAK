@@ -919,6 +919,66 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','أريستون (Ariston)','مستورد'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
   ] },
+  // ═══ القطاع الكهربائي — مواصفات مشتركة بالعناقيد ═══
+  // لوحات التوزيع
+  { products: ['لوحة رئيسية MDB','لوحة فرعية SMDB','لوحة إضاءة LDB','لوحة طاقة PP','لوحة تحكم محركات MCC'], spec: [
+    { key: 'enclosure', ar: 'التركيب', en: 'Enclosure', options: ['داخلي (Flush)','خارجي (Surface)','قائمة حرة (Free-standing)'] },
+    { key: 'rating', ar: 'السعة (أمبير)', en: 'Rating', options: ['حسب التصميم','100A','250A','400A','630A','800A','1250A','1600A','2500A'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','شنايدر (Schneider)','ABB','سيمنس (Siemens)','الفنار','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لوحة'] },
+  ] },
+  // القواطع الكبيرة
+  { products: ['قاطع تفاضلي RCCB','قاطع هوائي ACB'], spec: [
+    { key: 'ampere', ar: 'شدة التيار', en: 'Ampere', options: ['حسب التصميم','25A','40A','63A','100A','250A','400A','630A','800A','1600A','2500A','4000A'] },
+    { key: 'poles', ar: 'عدد الأقطاب', en: 'Poles', options: ['1P','2P','3P','4P'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','شنايدر (Schneider)','ABB','سيمنس (Siemens)','الفنار'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة'] },
+  ] },
+  // المواسير الكهربائية
+  { products: ['أنابيب كهربائية PVC','أنابيب كهربائية معدنية'], spec: [
+    { key: 'diameter', ar: 'القطر', en: 'Diameter', options: ['20 مم','25 مم','32 مم','40 مم','50 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة (3 متر)','لفة'] },
+  ] },
+  // المولدات والمحولات والـUPS
+  { products: ['مولد كهرباء ديزل','محول كهربائي HV/LV','محول كهربائي 11kV/400V','UPS بلا انقطاع','لوحة UPS'], spec: [
+    { key: 'capacity', ar: 'السعة', en: 'Capacity', options: ['حسب التصميم','10 kVA','30 kVA','100 kVA','250 kVA','500 kVA','1000 kVA','1500 kVA','2000 kVA'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','كاتربيلر (CAT)','بيركنز (Perkins)','كمنز (Cummins)','شنايدر','ABB','مستورد'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  // التأريض
+  { products: ['سلك تأريض','شريط نحاس تأريض','أقطاب تأريض Earth Rod'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['سلك نحاس مكشوف','شريط نحاس (Tape)','قطب أرضي (Earth Rod)','نحاس مغلف'] },
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['16 مم²','25 مم²','35 مم²','50 مم²','70 مم²','25×3 مم (شريط)','قطب 1.2 متر','قطب 1.5 متر'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','حبة'] },
+  ] },
+  // ═══ مكافحة الحريق ═══
+  { products: ['رؤوس رش مياه Sprinkler'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['متدلي (Pendent)','قائم (Upright)','جانبي (Sidewall)','مخفي (Concealed)'] },
+    { key: 'temp', ar: 'درجة التفعيل', en: 'Temp Rating', options: ['57°C (برتقالي)','68°C (أحمر)','93°C (أخضر)'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['كروم','أبيض','نحاسي'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  { products: ['بكرة خرطوم حريق Hose Reel'], spec: [
+    { key: 'length', ar: 'طول الخرطوم', en: 'Hose Length', options: ['20 متر','30 متر','حسب الطلب'] },
+    { key: 'diameter', ar: 'القطر', en: 'Diameter', options: ['3/4 بوصة','1 بوصة'] },
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['ثابتة (Fixed)','متأرجحة (Swinging)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  { products: ['هيدرنت حريق Fire Hydrant'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['عمودي (Pillar)','تحت أرضي (Underground)'] },
+    { key: 'outlets', ar: 'عدد المخارج', en: 'Outlets', options: ['مخرج واحد','مخرجان','ثلاثة مخارج'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  { products: ['لوحة تحكم حريق'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['تقليدي (Conventional)','معنون (Addressable)'] },
+    { key: 'zones', ar: 'عدد الزونات', en: 'Zones', options: ['حسب التصميم','4 زون','8 زون','16 زون','عنونة كاملة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
+  { products: ['خزانات إطفاء حريق'], spec: [
+    { key: 'material', ar: 'المادة', en: 'Material', options: ['GRP فايبرجلاس','حديد ملحوم','خرساني'] },
+    { key: 'capacity', ar: 'السعة', en: 'Capacity', options: ['حسب التصميم','حسب NFPA','50 م³','100 م³','200 م³'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },
+  ] },
 ]
 for (const g of SPEC_GROUPS) { for (const p of g.products) PRODUCT_SPECS[p] = g.spec }
 

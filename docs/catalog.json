@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-17T08:13:04.116Z",
+  "generatedAt": "2026-06-17T08:15:26.053Z",
   "sectors": {
     "civil": {
       "label": "مدني",
@@ -4633,23 +4633,106 @@
             {
               "name": "محول كهربائي 11kV/400V",
               "sub": "كابلات جهد متوسط MV",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "عدد",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "10 kVA",
+                    "30 kVA",
+                    "100 kVA",
+                    "250 kVA",
+                    "500 kVA",
+                    "1000 kVA",
+                    "1500 kVA",
+                    "2000 kVA"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاتربيلر (CAT)",
+                    "بيركنز (Perkins)",
+                    "كمنز (Cummins)",
+                    "شنايدر",
+                    "ABB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب كهربائية PVC",
               "sub": "مواسير وحوامل كابلات",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "حبة (3 متر)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "20 مم",
+                    "25 مم",
+                    "32 مم",
+                    "40 مم",
+                    "50 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة (3 متر)",
+                    "لفة"
+                  ]
+                }
+              ]
             },
             {
               "name": "أنابيب كهربائية معدنية",
               "sub": "مواسير وحوامل كابلات",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "حبة (3 متر)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "20 مم",
+                    "25 مم",
+                    "32 مم",
+                    "40 مم",
+                    "50 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة (3 متر)",
+                    "لفة"
+                  ]
+                }
+              ]
             },
             {
               "name": "سكة كابل Ladder 100×75",
@@ -4703,16 +4786,88 @@
             {
               "name": "سلك تأريض",
               "sub": "كابلات وأسلاك (الفنار/بحرة)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "سلك نحاس مكشوف",
+                    "شريط نحاس (Tape)",
+                    "قطب أرضي (Earth Rod)",
+                    "نحاس مغلف"
+                  ]
+                },
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "16 مم²",
+                    "25 مم²",
+                    "35 مم²",
+                    "50 مم²",
+                    "70 مم²",
+                    "25×3 مم (شريط)",
+                    "قطب 1.2 متر",
+                    "قطب 1.5 متر"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "شريط نحاس تأريض",
               "sub": "كابلات وأسلاك (الفنار/بحرة)",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "سلك نحاس مكشوف",
+                    "شريط نحاس (Tape)",
+                    "قطب أرضي (Earth Rod)",
+                    "نحاس مغلف"
+                  ]
+                },
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "16 مم²",
+                    "25 مم²",
+                    "35 مم²",
+                    "50 مم²",
+                    "70 مم²",
+                    "25×3 مم (شريط)",
+                    "قطب 1.2 متر",
+                    "قطب 1.5 متر"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "نظام WiFi Wireless Access Point",
@@ -4757,44 +4912,323 @@
             {
               "name": "لوحة رئيسية MDB",
               "sub": "لوحات توزيع (DB)",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "لوحة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "enclosure",
+                  "ar": "التركيب",
+                  "en": "Enclosure",
+                  "options": [
+                    "داخلي (Flush)",
+                    "خارجي (Surface)",
+                    "قائمة حرة (Free-standing)"
+                  ]
+                },
+                {
+                  "key": "rating",
+                  "ar": "السعة (أمبير)",
+                  "en": "Rating",
+                  "options": [
+                    "حسب التصميم",
+                    "100A",
+                    "250A",
+                    "400A",
+                    "630A",
+                    "800A",
+                    "1250A",
+                    "1600A",
+                    "2500A"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "شنايدر (Schneider)",
+                    "ABB",
+                    "سيمنس (Siemens)",
+                    "الفنار",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "لوحة"
+                  ]
+                }
+              ]
             },
             {
               "name": "لوحة فرعية SMDB",
               "sub": "لوحات توزيع (DB)",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "لوحة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "enclosure",
+                  "ar": "التركيب",
+                  "en": "Enclosure",
+                  "options": [
+                    "داخلي (Flush)",
+                    "خارجي (Surface)",
+                    "قائمة حرة (Free-standing)"
+                  ]
+                },
+                {
+                  "key": "rating",
+                  "ar": "السعة (أمبير)",
+                  "en": "Rating",
+                  "options": [
+                    "حسب التصميم",
+                    "100A",
+                    "250A",
+                    "400A",
+                    "630A",
+                    "800A",
+                    "1250A",
+                    "1600A",
+                    "2500A"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "شنايدر (Schneider)",
+                    "ABB",
+                    "سيمنس (Siemens)",
+                    "الفنار",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "لوحة"
+                  ]
+                }
+              ]
             },
             {
               "name": "لوحة إضاءة LDB",
               "sub": "لوحات توزيع (DB)",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "لوحة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "enclosure",
+                  "ar": "التركيب",
+                  "en": "Enclosure",
+                  "options": [
+                    "داخلي (Flush)",
+                    "خارجي (Surface)",
+                    "قائمة حرة (Free-standing)"
+                  ]
+                },
+                {
+                  "key": "rating",
+                  "ar": "السعة (أمبير)",
+                  "en": "Rating",
+                  "options": [
+                    "حسب التصميم",
+                    "100A",
+                    "250A",
+                    "400A",
+                    "630A",
+                    "800A",
+                    "1250A",
+                    "1600A",
+                    "2500A"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "شنايدر (Schneider)",
+                    "ABB",
+                    "سيمنس (Siemens)",
+                    "الفنار",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "لوحة"
+                  ]
+                }
+              ]
             },
             {
               "name": "لوحة طاقة PP",
               "sub": "لوحات توزيع (DB)",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "لوحة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "enclosure",
+                  "ar": "التركيب",
+                  "en": "Enclosure",
+                  "options": [
+                    "داخلي (Flush)",
+                    "خارجي (Surface)",
+                    "قائمة حرة (Free-standing)"
+                  ]
+                },
+                {
+                  "key": "rating",
+                  "ar": "السعة (أمبير)",
+                  "en": "Rating",
+                  "options": [
+                    "حسب التصميم",
+                    "100A",
+                    "250A",
+                    "400A",
+                    "630A",
+                    "800A",
+                    "1250A",
+                    "1600A",
+                    "2500A"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "شنايدر (Schneider)",
+                    "ABB",
+                    "سيمنس (Siemens)",
+                    "الفنار",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "لوحة"
+                  ]
+                }
+              ]
             },
             {
               "name": "لوحة تحكم محركات MCC",
               "sub": "لوحات توزيع (DB)",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "لوحة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "enclosure",
+                  "ar": "التركيب",
+                  "en": "Enclosure",
+                  "options": [
+                    "داخلي (Flush)",
+                    "خارجي (Surface)",
+                    "قائمة حرة (Free-standing)"
+                  ]
+                },
+                {
+                  "key": "rating",
+                  "ar": "السعة (أمبير)",
+                  "en": "Rating",
+                  "options": [
+                    "حسب التصميم",
+                    "100A",
+                    "250A",
+                    "400A",
+                    "630A",
+                    "800A",
+                    "1250A",
+                    "1600A",
+                    "2500A"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "شنايدر (Schneider)",
+                    "ABB",
+                    "سيمنس (Siemens)",
+                    "الفنار",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "لوحة"
+                  ]
+                }
+              ]
             },
             {
               "name": "لوحة UPS",
               "sub": "لوحات توزيع (DB)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "10 kVA",
+                    "30 kVA",
+                    "100 kVA",
+                    "250 kVA",
+                    "500 kVA",
+                    "1000 kVA",
+                    "1500 kVA",
+                    "2000 kVA"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاتربيلر (CAT)",
+                    "بيركنز (Perkins)",
+                    "كمنز (Cummins)",
+                    "شنايدر",
+                    "ABB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "لوحة ATS نقل تلقائي",
@@ -4896,9 +5330,60 @@
             {
               "name": "قاطع تفاضلي RCCB",
               "sub": "قواطع كهربائية",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "ampere",
+                  "ar": "شدة التيار",
+                  "en": "Ampere",
+                  "options": [
+                    "حسب التصميم",
+                    "25A",
+                    "40A",
+                    "63A",
+                    "100A",
+                    "250A",
+                    "400A",
+                    "630A",
+                    "800A",
+                    "1600A",
+                    "2500A",
+                    "4000A"
+                  ]
+                },
+                {
+                  "key": "poles",
+                  "ar": "عدد الأقطاب",
+                  "en": "Poles",
+                  "options": [
+                    "1P",
+                    "2P",
+                    "3P",
+                    "4P"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "شنايدر (Schneider)",
+                    "ABB",
+                    "سيمنس (Siemens)",
+                    "الفنار"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "قاطع MCCB",
@@ -4948,30 +5433,198 @@
             {
               "name": "قاطع هوائي ACB",
               "sub": "قواطع كهربائية",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "حبة",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "ampere",
+                  "ar": "شدة التيار",
+                  "en": "Ampere",
+                  "options": [
+                    "حسب التصميم",
+                    "25A",
+                    "40A",
+                    "63A",
+                    "100A",
+                    "250A",
+                    "400A",
+                    "630A",
+                    "800A",
+                    "1600A",
+                    "2500A",
+                    "4000A"
+                  ]
+                },
+                {
+                  "key": "poles",
+                  "ar": "عدد الأقطاب",
+                  "en": "Poles",
+                  "options": [
+                    "1P",
+                    "2P",
+                    "3P",
+                    "4P"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "شنايدر (Schneider)",
+                    "ABB",
+                    "سيمنس (Siemens)",
+                    "الفنار"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "محول كهربائي HV/LV",
               "sub": "محولات ومولدات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "10 kVA",
+                    "30 kVA",
+                    "100 kVA",
+                    "250 kVA",
+                    "500 kVA",
+                    "1000 kVA",
+                    "1500 kVA",
+                    "2000 kVA"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاتربيلر (CAT)",
+                    "بيركنز (Perkins)",
+                    "كمنز (Cummins)",
+                    "شنايدر",
+                    "ABB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مولد كهرباء ديزل",
               "sub": "محولات ومولدات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "10 kVA",
+                    "30 kVA",
+                    "100 kVA",
+                    "250 kVA",
+                    "500 kVA",
+                    "1000 kVA",
+                    "1500 kVA",
+                    "2000 kVA"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاتربيلر (CAT)",
+                    "بيركنز (Perkins)",
+                    "كمنز (Cummins)",
+                    "شنايدر",
+                    "ABB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "UPS بلا انقطاع",
               "sub": "محولات ومولدات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "10 kVA",
+                    "30 kVA",
+                    "100 kVA",
+                    "250 kVA",
+                    "500 kVA",
+                    "1000 kVA",
+                    "1500 kVA",
+                    "2000 kVA"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاتربيلر (CAT)",
+                    "بيركنز (Perkins)",
+                    "كمنز (Cummins)",
+                    "شنايدر",
+                    "ABB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مكثفات تحسين معامل القدرة",
@@ -5442,9 +6095,45 @@
             {
               "name": "أقطاب تأريض Earth Rod",
               "sub": "تأريض وحماية برق",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "سلك نحاس مكشوف",
+                    "شريط نحاس (Tape)",
+                    "قطب أرضي (Earth Rod)",
+                    "نحاس مغلف"
+                  ]
+                },
+                {
+                  "key": "size",
+                  "ar": "المقاس",
+                  "en": "Size",
+                  "options": [
+                    "16 مم²",
+                    "25 مم²",
+                    "35 مم²",
+                    "50 مم²",
+                    "70 مم²",
+                    "25×3 مم (شريط)",
+                    "قطب 1.2 متر",
+                    "قطب 1.5 متر"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "حبة"
+                  ]
+                }
+              ]
             },
             {
               "name": "حماية برق Lightning Protection",
@@ -9124,36 +9813,202 @@
               "name": "رؤوس رش مياه Sprinkler",
               "sub": "مواسير ورشاشات حريق",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "متدلي (Pendent)",
+                    "قائم (Upright)",
+                    "جانبي (Sidewall)",
+                    "مخفي (Concealed)"
+                  ]
+                },
+                {
+                  "key": "temp",
+                  "ar": "درجة التفعيل",
+                  "en": "Temp Rating",
+                  "options": [
+                    "57°C (برتقالي)",
+                    "68°C (أحمر)",
+                    "93°C (أخضر)"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "كروم",
+                    "أبيض",
+                    "نحاسي"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "خزانات إطفاء حريق",
               "sub": "مواسير ورشاشات حريق",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "GRP فايبرجلاس",
+                    "حديد ملحوم",
+                    "خرساني"
+                  ]
+                },
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "حسب NFPA",
+                    "50 م³",
+                    "100 م³",
+                    "200 م³"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "بكرة خرطوم حريق Hose Reel",
               "sub": "صناديق حريق وخراطيم",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "length",
+                  "ar": "طول الخرطوم",
+                  "en": "Hose Length",
+                  "options": [
+                    "20 متر",
+                    "30 متر",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "diameter",
+                  "ar": "القطر",
+                  "en": "Diameter",
+                  "options": [
+                    "3/4 بوصة",
+                    "1 بوصة"
+                  ]
+                },
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "ثابتة (Fixed)",
+                    "متأرجحة (Swinging)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "هيدرنت حريق Fire Hydrant",
               "sub": "وصلات دفاع مدني وهيدرنت",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "عمودي (Pillar)",
+                    "تحت أرضي (Underground)"
+                  ]
+                },
+                {
+                  "key": "outlets",
+                  "ar": "عدد المخارج",
+                  "en": "Outlets",
+                  "options": [
+                    "مخرج واحد",
+                    "مخرجان",
+                    "ثلاثة مخارج"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "لوحة تحكم حريق",
               "sub": "مواسير ورشاشات حريق",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "تقليدي (Conventional)",
+                    "معنون (Addressable)"
+                  ]
+                },
+                {
+                  "key": "zones",
+                  "ar": "عدد الزونات",
+                  "en": "Zones",
+                  "options": [
+                    "حسب التصميم",
+                    "4 زون",
+                    "8 زون",
+                    "16 زون",
+                    "عنونة كاملة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -9356,9 +10211,48 @@
             {
               "name": "مولد كهرباء ديزل",
               "sub": "مولدات وكمبروسرات",
-              "unit": "يوم",
-              "detailed": false,
-              "fields": []
+              "unit": "عدد",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "capacity",
+                  "ar": "السعة",
+                  "en": "Capacity",
+                  "options": [
+                    "حسب التصميم",
+                    "10 kVA",
+                    "30 kVA",
+                    "100 kVA",
+                    "250 kVA",
+                    "500 kVA",
+                    "1000 kVA",
+                    "1500 kVA",
+                    "2000 kVA"
+                  ]
+                },
+                {
+                  "key": "brand",
+                  "ar": "العلامة (اختياري)",
+                  "en": "Brand (optional)",
+                  "options": [
+                    "أي علامة معتمدة",
+                    "كاتربيلر (CAT)",
+                    "بيركنز (Perkins)",
+                    "كمنز (Cummins)",
+                    "شنايدر",
+                    "ABB",
+                    "مستورد"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "كمبروسر هواء",
