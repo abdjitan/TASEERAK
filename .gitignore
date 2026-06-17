@@ -12,3 +12,9 @@ tsconfig.tsbuildinfo
 data_backup/
 scratch_*
 *backup*.zip
+
+# temp dirs from catalog scripts
+.dt/
+.catalog-tmp/
+build.log
+npm-install.log
