@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-17T10:15:48.301Z",
+  "generatedAt": "2026-06-17T10:19:45.203Z",
   "sectors": {
     "civil": {
       "label": "مدني",
@@ -223,36 +223,211 @@
               "name": "خرسانة مسبقة الصب",
               "sub": "خرسانة مسبقة الصنع (Precast)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "strength",
+                  "ar": "قوة الخرسانة",
+                  "en": "Strength",
+                  "options": [
+                    "C30",
+                    "C35",
+                    "C40",
+                    "C45",
+                    "C50",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "عادي",
+                    "مصقول",
+                    "مكشوف الركام",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م³ (متر مكعب)",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "عتبات خرسانية مسبقة الصب",
               "sub": "خرسانة مسبقة الصنع (Precast)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "strength",
+                  "ar": "قوة الخرسانة",
+                  "en": "Strength",
+                  "options": [
+                    "C30",
+                    "C35",
+                    "C40",
+                    "C45",
+                    "C50",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "عادي",
+                    "مصقول",
+                    "مكشوف الركام",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م³ (متر مكعب)",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "أعمدة مسبقة الصب",
               "sub": "خرسانة مسبقة الصنع (Precast)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "strength",
+                  "ar": "قوة الخرسانة",
+                  "en": "Strength",
+                  "options": [
+                    "C30",
+                    "C35",
+                    "C40",
+                    "C45",
+                    "C50",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "عادي",
+                    "مصقول",
+                    "مكشوف الركام",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م³ (متر مكعب)",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "بلاطات مسبقة الصب",
               "sub": "خرسانة مسبقة الصنع (Precast)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "strength",
+                  "ar": "قوة الخرسانة",
+                  "en": "Strength",
+                  "options": [
+                    "C30",
+                    "C35",
+                    "C40",
+                    "C45",
+                    "C50",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "عادي",
+                    "مصقول",
+                    "مكشوف الركام",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م³ (متر مكعب)",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "مدرجات مسبقة الصب",
               "sub": "خرسانة مسبقة الصنع (Precast)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "strength",
+                  "ar": "قوة الخرسانة",
+                  "en": "Strength",
+                  "options": [
+                    "C30",
+                    "C35",
+                    "C40",
+                    "C45",
+                    "C50",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "عادي",
+                    "مصقول",
+                    "مكشوف الركام",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م³ (متر مكعب)",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "طوب أحمر",
@@ -442,15 +617,85 @@
               "name": "مدرجات مسبقة الصب Bleachers",
               "sub": "خرسانة مسبقة الصنع (Precast)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "strength",
+                  "ar": "قوة الخرسانة",
+                  "en": "Strength",
+                  "options": [
+                    "C30",
+                    "C35",
+                    "C40",
+                    "C45",
+                    "C50",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "عادي",
+                    "مصقول",
+                    "مكشوف الركام",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م³ (متر مكعب)",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "مقاعد ملعب",
               "sub": "خرسانة مسبقة الصنع (Precast)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "strength",
+                  "ar": "قوة الخرسانة",
+                  "en": "Strength",
+                  "options": [
+                    "C30",
+                    "C35",
+                    "C40",
+                    "C45",
+                    "C50",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "عادي",
+                    "مصقول",
+                    "مكشوف الركام",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م³ (متر مكعب)",
+                    "متر طولي"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -630,15 +875,79 @@
               "name": "صلب هيكلي HEB",
               "sub": "حديد تجاري وقطاعات",
               "unit": "طن",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "درجة الصلب",
+                  "en": "Grade",
+                  "options": [
+                    "S235",
+                    "S275",
+                    "S355",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "length",
+                  "ar": "الطول",
+                  "en": "Length",
+                  "options": [
+                    "6 متر",
+                    "12 متر",
+                    "حسب القص"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "طن",
+                    "عود",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "صلب هيكلي HEA",
               "sub": "حديد تجاري وقطاعات",
               "unit": "طن",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "درجة الصلب",
+                  "en": "Grade",
+                  "options": [
+                    "S235",
+                    "S275",
+                    "S355",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "length",
+                  "ar": "الطول",
+                  "en": "Length",
+                  "options": [
+                    "6 متر",
+                    "12 متر",
+                    "حسب القص"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "طن",
+                    "عود",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "صلب هيكلي IPE",
@@ -702,8 +1011,45 @@
               "name": "صفائح فولاذية",
               "sub": "حديد تجاري وقطاعات",
               "unit": "طن",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "3 مم",
+                    "5 مم",
+                    "6 مم",
+                    "8 مم",
+                    "10 مم",
+                    "12 مم",
+                    "15 مم",
+                    "20 مم",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "grade",
+                  "ar": "درجة الصلب",
+                  "en": "Grade",
+                  "options": [
+                    "S235",
+                    "S275",
+                    "S355"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "طن",
+                    "لوح",
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "شبك رابيتز",
@@ -715,9 +1061,44 @@
             {
               "name": "سلالم رياضية Raker Beams",
               "sub": "حديد تجاري وقطاعات",
-              "unit": "طن",
-              "detailed": false,
-              "fields": []
+              "unit": "عدد",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "strength",
+                  "ar": "قوة الخرسانة",
+                  "en": "Strength",
+                  "options": [
+                    "C30",
+                    "C35",
+                    "C40",
+                    "C45",
+                    "C50",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "عادي",
+                    "مصقول",
+                    "مكشوف الركام",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م³ (متر مكعب)",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "قطاعات دائرية CHS 273mm",
@@ -737,15 +1118,79 @@
               "name": "قطاعات مستطيلة RHS",
               "sub": "حديد تجاري وقطاعات",
               "unit": "طن",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "درجة الصلب",
+                  "en": "Grade",
+                  "options": [
+                    "S235",
+                    "S275",
+                    "S355",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "length",
+                  "ar": "الطول",
+                  "en": "Length",
+                  "options": [
+                    "6 متر",
+                    "12 متر",
+                    "حسب القص"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "طن",
+                    "عود",
+                    "متر طولي"
+                  ]
+                }
+              ]
             },
             {
               "name": "زوايا وقطاعات حديد",
               "sub": "حديد تجاري وقطاعات",
               "unit": "طن",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "درجة الصلب",
+                  "en": "Grade",
+                  "options": [
+                    "S235",
+                    "S275",
+                    "S355",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "length",
+                  "ar": "الطول",
+                  "en": "Length",
+                  "options": [
+                    "6 متر",
+                    "12 متر",
+                    "حسب القص"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "طن",
+                    "عود",
+                    "متر طولي"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -794,23 +1239,98 @@
             {
               "name": "رمل ناعم",
               "sub": "رمل وبحص وبودرة",
-              "unit": "م³",
-              "detailed": false,
-              "fields": []
+              "unit": "م³ (متر مكعب)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "التدرّج/المقاس",
+                  "en": "Grade/Size",
+                  "options": [
+                    "ناعم",
+                    "خشن",
+                    "مقاس 3/4",
+                    "مقاس 3/8",
+                    "مخلوط",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م³ (متر مكعب)",
+                    "رد (لوري 24م³)",
+                    "رد (قلاب 12م³)",
+                    "طن"
+                  ]
+                }
+              ]
             },
             {
               "name": "حصى",
               "sub": "رمل وبحص وبودرة",
-              "unit": "م³",
-              "detailed": false,
-              "fields": []
+              "unit": "م³ (متر مكعب)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "التدرّج/المقاس",
+                  "en": "Grade/Size",
+                  "options": [
+                    "ناعم",
+                    "خشن",
+                    "مقاس 3/4",
+                    "مقاس 3/8",
+                    "مخلوط",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م³ (متر مكعب)",
+                    "رد (لوري 24م³)",
+                    "رد (قلاب 12م³)",
+                    "طن"
+                  ]
+                }
+              ]
             },
             {
               "name": "زلط",
               "sub": "رمل وبحص وبودرة",
-              "unit": "م³",
-              "detailed": false,
-              "fields": []
+              "unit": "م³ (متر مكعب)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "التدرّج/المقاس",
+                  "en": "Grade/Size",
+                  "options": [
+                    "ناعم",
+                    "خشن",
+                    "مقاس 3/4",
+                    "مقاس 3/8",
+                    "مخلوط",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م³ (متر مكعب)",
+                    "رد (لوري 24م³)",
+                    "رد (قلاب 12م³)",
+                    "طن"
+                  ]
+                }
+              ]
             },
             {
               "name": "كسارة",
@@ -852,9 +1372,34 @@
             {
               "name": "ركام مدمج",
               "sub": "رمل وبحص وبودرة",
-              "unit": "م³",
-              "detailed": false,
-              "fields": []
+              "unit": "م³ (متر مكعب)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "التدرّج/المقاس",
+                  "en": "Grade/Size",
+                  "options": [
+                    "ناعم",
+                    "خشن",
+                    "مقاس 3/4",
+                    "مقاس 3/8",
+                    "مخلوط",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م³ (متر مكعب)",
+                    "رد (لوري 24م³)",
+                    "رد (قلاب 12م³)",
+                    "طن"
+                  ]
+                }
+              ]
             },
             {
               "name": "أعمال ترابية وحفر",
@@ -873,9 +1418,34 @@
             {
               "name": "حجر طبيعي خام",
               "sub": "رمل وبحص وبودرة",
-              "unit": "م³",
-              "detailed": false,
-              "fields": []
+              "unit": "م³ (متر مكعب)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "التدرّج/المقاس",
+                  "en": "Grade/Size",
+                  "options": [
+                    "ناعم",
+                    "خشن",
+                    "مقاس 3/4",
+                    "مقاس 3/8",
+                    "مخلوط",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م³ (متر مكعب)",
+                    "رد (لوري 24م³)",
+                    "رد (قلاب 12م³)",
+                    "طن"
+                  ]
+                }
+              ]
             },
             {
               "name": "تمهيد وتسوية أرض",
@@ -887,9 +1457,34 @@
             {
               "name": "حصى مرشحة Sub-base",
               "sub": "رمل وبحص وبودرة",
-              "unit": "م³",
-              "detailed": false,
-              "fields": []
+              "unit": "م³ (متر مكعب)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "grade",
+                  "ar": "التدرّج/المقاس",
+                  "en": "Grade/Size",
+                  "options": [
+                    "ناعم",
+                    "خشن",
+                    "مقاس 3/4",
+                    "مقاس 3/8",
+                    "مخلوط",
+                    "حسب المواصفة"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م³ (متر مكعب)",
+                    "رد (لوري 24م³)",
+                    "رد (قلاب 12م³)",
+                    "طن"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -1231,9 +1826,32 @@
             {
               "name": "خشب بناء للشدّات",
               "sub": "ألواح بليود وأخشاب الشدّات",
-              "unit": "لوحة",
-              "detailed": false,
-              "fields": []
+              "unit": "عدد",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "خشب",
+                    "معدني",
+                    "بلاستيك",
+                    "إكسسوار تثبيت"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م² (متر مربع)",
+                    "طن",
+                    "حسب الطلب"
+                  ]
+                }
+              ]
             },
             {
               "name": "مرابيع خشب (طوبار)",
@@ -1284,29 +1902,121 @@
               "name": "عوارض خشبية H20",
               "sub": "مرابيع وعوارض خشبية (H20)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "خشب",
+                    "معدني",
+                    "بلاستيك",
+                    "إكسسوار تثبيت"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م² (متر مربع)",
+                    "طن",
+                    "حسب الطلب"
+                  ]
+                }
+              ]
             },
             {
               "name": "طوبار معدني جاهز",
               "sub": "طوبار معدني وقمط وزيوت فك",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "خشب",
+                    "معدني",
+                    "بلاستيك",
+                    "إكسسوار تثبيت"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م² (متر مربع)",
+                    "طن",
+                    "حسب الطلب"
+                  ]
+                }
+              ]
             },
             {
               "name": "قمط شدّة أعمدة Column Clamp",
               "sub": "طوبار معدني وقمط وزيوت فك",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "خشب",
+                    "معدني",
+                    "بلاستيك",
+                    "إكسسوار تثبيت"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م² (متر مربع)",
+                    "طن",
+                    "حسب الطلب"
+                  ]
+                }
+              ]
             },
             {
               "name": "قضبان شد الطوبار Tie Rods",
               "sub": "طوبار معدني وقمط وزيوت فك",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "خشب",
+                    "معدني",
+                    "بلاستيك",
+                    "إكسسوار تثبيت"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "م² (متر مربع)",
+                    "طن",
+                    "حسب الطلب"
+                  ]
+                }
+              ]
             },
             {
               "name": "زيت فك الطوبار Shutter Oil",
@@ -1363,106 +2073,406 @@
               "name": "قائم سقالة Standard",
               "sub": "قوائم وعوارض ومواسير السقالات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "عارضة أفقية سقالة Ledger",
               "sub": "قوائم وعوارض ومواسير السقالات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "دعامة قطرية سقالة Brace",
               "sub": "قوائم وعوارض ومواسير السقالات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "ماسورة سقالة Tube",
               "sub": "قوائم وعوارض ومواسير السقالات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "إطار سقالة معدنية Frame",
               "sub": "قوائم وعوارض ومواسير السقالات",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "قاعدة ثابتة Base Plate",
               "sub": "قواعد وجاكات السقالات (بيس/يو جاك)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "بيس جاك قابل للتعديل",
               "sub": "قواعد وجاكات السقالات (بيس/يو جاك)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "يو جاك U-Head",
               "sub": "قواعد وجاكات السقالات (بيس/يو جاك)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "سكرو جاك تعديل",
               "sub": "قواعد وجاكات السقالات (بيس/يو جاك)",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "منصة وقوف معدنية Steel Deck",
               "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "سلم سقالة",
               "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "كوبلر مشبك سقالة Coupler",
               "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "جاكات تدعيم Acrow Prop",
               "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "برج تدعيم Shoring Tower",
               "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             },
             {
               "name": "درابزين أمان سقالة Guard Rail",
               "sub": "دعامات وأبراج التدعيم ومنصات الوقوف",
               "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "condition",
+                  "ar": "الحالة",
+                  "en": "Condition",
+                  "options": [
+                    "جديد",
+                    "مستعمل (نظيف)"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "عدد",
+                    "طن",
+                    "يوم (إيجار)"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -2139,30 +3149,182 @@
             {
               "name": "أرضية إيبوكسي",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "أرضية راتنج إيبوكسي مع قرنيص",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "سجاد Carpet Tile",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "سجاد رول لاصق",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "باركيه خشبي",
@@ -2247,9 +3409,47 @@
             {
               "name": "مطاط Entrance Matting",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "بلاط سيراميك جدار",
@@ -2488,79 +3688,494 @@
             {
               "name": "أرفف خشبية",
               "sub": "باركيه وفينيل وSPC",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "MDF",
+                    "خشب طبيعي",
+                    "HPL",
+                    "كوريان (Solid Surface)",
+                    "قشرة",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "دهان",
+                    "قشرة",
+                    "لاكيه",
+                    "ميلامين"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "أرضية راتنج إيبوكسي High Build",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "أرضية تيرازو Terrazzo",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "أرضية مطاطية Rubber Flooring",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "أرضية مطاطية رياضية Sports Floor",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "أرضية أكسس فلور Raised Access Floor",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "فرشة مسطحة Screed Heavy Duty",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "فرشة مسطحة Self-Levelling",
               "sub": "أرضيات خاصة (إيبوكسي/تيرازو)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "فينيل ورقي Vinyl Sheet",
               "sub": "باركيه وفينيل وSPC",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "فينيل مضاد للانزلاق",
               "sub": "باركيه وفينيل وSPC",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             },
             {
               "name": "قرنيوص فينيل Vinyl Skirting",
               "sub": "باركيه وفينيل وSPC",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "إيبوكسي",
+                    "راتنج",
+                    "سجاد بلاطات",
+                    "سجاد رول",
+                    "مطاط",
+                    "تيرازو",
+                    "فينيل",
+                    "فرشة لياسة",
+                    "أكسس فلور"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "2 مم",
+                    "3 مم",
+                    "4 مم",
+                    "6 مم",
+                    "حسب التصميم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "متر طولي (للقرنيص)"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -2760,58 +4375,324 @@
             {
               "name": "أسقف مستعارة جبس",
               "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "جبس مستعار",
+                    "معدني (ألمنيوم)",
+                    "كالسيوم سيليكات",
+                    "صوتي",
+                    "مكشوف مطلي",
+                    "PET"
+                  ]
+                },
+                {
+                  "key": "tile_size",
+                  "ar": "مقاس البلاطة",
+                  "en": "Tile Size",
+                  "options": [
+                    "60×60 سم",
+                    "60×120 سم",
+                    "شرائح",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "أسقف مستعارة معدنية",
               "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "جبس مستعار",
+                    "معدني (ألمنيوم)",
+                    "كالسيوم سيليكات",
+                    "صوتي",
+                    "مكشوف مطلي",
+                    "PET"
+                  ]
+                },
+                {
+                  "key": "tile_size",
+                  "ar": "مقاس البلاطة",
+                  "en": "Tile Size",
+                  "options": [
+                    "60×60 سم",
+                    "60×120 سم",
+                    "شرائح",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "أسقف كالسيوم سيليكات",
               "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "جبس مستعار",
+                    "معدني (ألمنيوم)",
+                    "كالسيوم سيليكات",
+                    "صوتي",
+                    "مكشوف مطلي",
+                    "PET"
+                  ]
+                },
+                {
+                  "key": "tile_size",
+                  "ar": "مقاس البلاطة",
+                  "en": "Tile Size",
+                  "options": [
+                    "60×60 سم",
+                    "60×120 سم",
+                    "شرائح",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "بلاطات أسقف صوتية 600×600",
               "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "جبس مستعار",
+                    "معدني (ألمنيوم)",
+                    "كالسيوم سيليكات",
+                    "صوتي",
+                    "مكشوف مطلي",
+                    "PET"
+                  ]
+                },
+                {
+                  "key": "tile_size",
+                  "ar": "مقاس البلاطة",
+                  "en": "Tile Size",
+                  "options": [
+                    "60×60 سم",
+                    "60×120 سم",
+                    "شرائح",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "أسقف صوتية مبطنة",
               "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "جبس مستعار",
+                    "معدني (ألمنيوم)",
+                    "كالسيوم سيليكات",
+                    "صوتي",
+                    "مكشوف مطلي",
+                    "PET"
+                  ]
+                },
+                {
+                  "key": "tile_size",
+                  "ar": "مقاس البلاطة",
+                  "en": "Tile Size",
+                  "options": [
+                    "60×60 سم",
+                    "60×120 سم",
+                    "شرائح",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "أسقف مكشوفة مطلية",
               "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "جبس مستعار",
+                    "معدني (ألمنيوم)",
+                    "كالسيوم سيليكات",
+                    "صوتي",
+                    "مكشوف مطلي",
+                    "PET"
+                  ]
+                },
+                {
+                  "key": "tile_size",
+                  "ar": "مقاس البلاطة",
+                  "en": "Tile Size",
+                  "options": [
+                    "60×60 سم",
+                    "60×120 سم",
+                    "شرائح",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             },
             {
               "name": "قواطع حمامات HPL",
               "sub": "جبس بورد وقواطع",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "MDF",
+                    "خشب طبيعي",
+                    "HPL",
+                    "كوريان (Solid Surface)",
+                    "قشرة",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "دهان",
+                    "قشرة",
+                    "لاكيه",
+                    "ميلامين"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "لواح صوتية PET Panels",
               "sub": "أسقف مستعارة (ألومنيوم/بلاطات)",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "جبس مستعار",
+                    "معدني (ألمنيوم)",
+                    "كالسيوم سيليكات",
+                    "صوتي",
+                    "مكشوف مطلي",
+                    "PET"
+                  ]
+                },
+                {
+                  "key": "tile_size",
+                  "ar": "مقاس البلاطة",
+                  "en": "Tile Size",
+                  "options": [
+                    "60×60 سم",
+                    "60×120 سم",
+                    "شرائح",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -4061,23 +5942,125 @@
             {
               "name": "درابزين ستانلس",
               "sub": "درابزين وسلالم ومشربيات",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "ستانلس 304",
+                    "ستانلس 316",
+                    "حديد مدهون",
+                    "حديد مجلفن",
+                    "ألمنيوم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مصقول",
+                    "مطفي",
+                    "دهان إلكتروستاتيك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "سلالم حديد",
               "sub": "درابزين وسلالم ومشربيات",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "ستانلس 304",
+                    "ستانلس 316",
+                    "حديد مدهون",
+                    "حديد مجلفن",
+                    "ألمنيوم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مصقول",
+                    "مطفي",
+                    "دهان إلكتروستاتيك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مشربيات",
               "sub": "درابزين وسلالم ومشربيات",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "ستانلس 304",
+                    "ستانلس 316",
+                    "حديد مدهون",
+                    "حديد مجلفن",
+                    "ألمنيوم"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "مصقول",
+                    "مطفي",
+                    "دهان إلكتروستاتيك",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "سلالم كهربائية Escalator",
@@ -4101,30 +6084,170 @@
             {
               "name": "كاونتر استقبال خشبي",
               "sub": "نجارة وكاونترات",
-              "unit": "م.ط",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "MDF",
+                    "خشب طبيعي",
+                    "HPL",
+                    "كوريان (Solid Surface)",
+                    "قشرة",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "دهان",
+                    "قشرة",
+                    "لاكيه",
+                    "ميلامين"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "خزائن حائط ثابتة",
               "sub": "أثاث ثابت وخزائن",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "MDF",
+                    "خشب طبيعي",
+                    "HPL",
+                    "كوريان (Solid Surface)",
+                    "قشرة",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "دهان",
+                    "قشرة",
+                    "لاكيه",
+                    "ميلامين"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "أثاث ثابت خشبي Built-in",
               "sub": "أثاث ثابت وخزائن",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "MDF",
+                    "خشب طبيعي",
+                    "HPL",
+                    "كوريان (Solid Surface)",
+                    "قشرة",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "دهان",
+                    "قشرة",
+                    "لاكيه",
+                    "ميلامين"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "كبائن دورات مياه Toilet Cubicles",
               "sub": "قواطع حمامات وكبائن",
-              "unit": "عدد",
-              "detailed": false,
-              "fields": []
+              "unit": "متر طولي",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "material",
+                  "ar": "المادة",
+                  "en": "Material",
+                  "options": [
+                    "MDF",
+                    "خشب طبيعي",
+                    "HPL",
+                    "كوريان (Solid Surface)",
+                    "قشرة",
+                    "حسب الطلب"
+                  ]
+                },
+                {
+                  "key": "finish",
+                  "ar": "التشطيب",
+                  "en": "Finish",
+                  "options": [
+                    "دهان",
+                    "قشرة",
+                    "لاكيه",
+                    "ميلامين"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "متر طولي",
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -4134,30 +6257,162 @@
             {
               "name": "لواح خشب صوتية Acoustic",
               "sub": "ألواح وأسقف صوتية",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "لواح خشبية مثقبة",
+                    "صوف صخري صوتي",
+                    "رغوة صوتية",
+                    "بافل معلّق"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "9 مم",
+                    "12 مم",
+                    "18 مم",
+                    "25 مم",
+                    "50 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "مواد عازلة صوتية Acoustic",
               "sub": "ألواح وأسقف صوتية",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "لواح خشبية مثقبة",
+                    "صوف صخري صوتي",
+                    "رغوة صوتية",
+                    "بافل معلّق"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "9 مم",
+                    "12 مم",
+                    "18 مم",
+                    "25 مم",
+                    "50 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "لواح خشبية صوتية Acoustic Timber",
               "sub": "ألواح وأسقف صوتية",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "لواح خشبية مثقبة",
+                    "صوف صخري صوتي",
+                    "رغوة صوتية",
+                    "بافل معلّق"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "9 مم",
+                    "12 مم",
+                    "18 مم",
+                    "25 مم",
+                    "50 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             },
             {
               "name": "أسقف صوتية Acoustic Baffle",
               "sub": "ألواح وأسقف صوتية",
-              "unit": "م²",
-              "detailed": false,
-              "fields": []
+              "unit": "م² (متر مربع)",
+              "detailed": true,
+              "fields": [
+                {
+                  "key": "type",
+                  "ar": "النوع",
+                  "en": "Type",
+                  "options": [
+                    "لواح خشبية مثقبة",
+                    "صوف صخري صوتي",
+                    "رغوة صوتية",
+                    "بافل معلّق"
+                  ]
+                },
+                {
+                  "key": "thickness",
+                  "ar": "السماكة",
+                  "en": "Thickness",
+                  "options": [
+                    "9 مم",
+                    "12 مم",
+                    "18 مم",
+                    "25 مم",
+                    "50 مم"
+                  ]
+                },
+                {
+                  "key": "unit",
+                  "ar": "وحدة الطلب",
+                  "en": "Order unit",
+                  "options": [
+                    "م² (متر مربع)",
+                    "عدد"
+                  ]
+                }
+              ]
             }
           ]
         },

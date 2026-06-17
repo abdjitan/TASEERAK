@@ -1010,6 +1010,60 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'material', ar: 'المادة', en: 'Material', options: ['حديد عادي','مجلفن','ستانلس'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كيلو','علبة','حبة'] },
   ] },
+  // ═══ مدني — مسبقات وقطاعات وركام وطوبار وسقالات ═══
+  { products: ['خرسانة مسبقة الصب','عتبات خرسانية مسبقة الصب','أعمدة مسبقة الصب','بلاطات مسبقة الصب','مدرجات مسبقة الصب','مدرجات مسبقة الصب Bleachers','مقاعد ملعب','سلالم رياضية Raker Beams'], spec: [
+    { key: 'strength', ar: 'قوة الخرسانة', en: 'Strength', options: ['C30','C35','C40','C45','C50','حسب التصميم'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['عادي','مصقول','مكشوف الركام','حسب الطلب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م³ (متر مكعب)','متر طولي'] },
+  ] },
+  { products: ['صلب هيكلي HEB','صلب هيكلي HEA','قطاعات مستطيلة RHS','زوايا وقطاعات حديد'], spec: [
+    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235','S275','S355','حسب المواصفة'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر','حسب القص'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','عود','متر طولي'] },
+  ] },
+  { products: ['صفائح فولاذية'], spec: [
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['3 مم','5 مم','6 مم','8 مم','10 مم','12 مم','15 مم','20 مم','حسب الطلب'] },
+    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235','S275','S355'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','لوح','م² (متر مربع)'] },
+  ] },
+  { products: ['رمل ناعم','حصى','زلط','ركام مدمج','حصى مرشحة Sub-base','حجر طبيعي خام'], spec: [
+    { key: 'grade', ar: 'التدرّج/المقاس', en: 'Grade/Size', options: ['ناعم','خشن','مقاس 3/4','مقاس 3/8','مخلوط','حسب المواصفة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م³ (متر مكعب)','رد (لوري 24م³)','رد (قلاب 12م³)','طن'] },
+  ] },
+  { products: ['خشب بناء للشدّات','عوارض خشبية H20','طوبار معدني جاهز','قمط شدّة أعمدة Column Clamp','قضبان شد الطوبار Tie Rods'], spec: [
+    { key: 'material', ar: 'النوع', en: 'Type', options: ['خشب','معدني','بلاستيك','إكسسوار تثبيت'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م² (متر مربع)','طن','حسب الطلب'] },
+  ] },
+  { products: ['قائم سقالة Standard','عارضة أفقية سقالة Ledger','دعامة قطرية سقالة Brace','ماسورة سقالة Tube','إطار سقالة معدنية Frame','قاعدة ثابتة Base Plate','بيس جاك قابل للتعديل','يو جاك U-Head','سكرو جاك تعديل','منصة وقوف معدنية Steel Deck','سلم سقالة','كوبلر مشبك سقالة Coupler','جاكات تدعيم Acrow Prop','برج تدعيم Shoring Tower','درابزين أمان سقالة Guard Rail'], spec: [
+    { key: 'condition', ar: 'الحالة', en: 'Condition', options: ['جديد','مستعمل (نظيف)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','طن','يوم (إيجار)'] },
+  ] },
+  // ═══ معماري — أرضيات وأسقف ومعادن ونجارة وصوتيات ═══
+  { products: ['أرضية إيبوكسي','أرضية راتنج إيبوكسي مع قرنيص','سجاد Carpet Tile','سجاد رول لاصق','مطاط Entrance Matting','أرضية راتنج إيبوكسي High Build','أرضية تيرازو Terrazzo','أرضية مطاطية Rubber Flooring','أرضية مطاطية رياضية Sports Floor','أرضية أكسس فلور Raised Access Floor','فرشة مسطحة Screed Heavy Duty','فرشة مسطحة Self-Levelling','فينيل ورقي Vinyl Sheet','فينيل مضاد للانزلاق','قرنيوص فينيل Vinyl Skirting'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['إيبوكسي','راتنج','سجاد بلاطات','سجاد رول','مطاط','تيرازو','فينيل','فرشة لياسة','أكسس فلور'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['2 مم','3 مم','4 مم','6 مم','حسب التصميم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','متر طولي (للقرنيص)'] },
+  ] },
+  { products: ['أسقف مستعارة جبس','أسقف مستعارة معدنية','أسقف كالسيوم سيليكات','بلاطات أسقف صوتية 600×600','أسقف صوتية مبطنة','أسقف مكشوفة مطلية','لواح صوتية PET Panels'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['جبس مستعار','معدني (ألمنيوم)','كالسيوم سيليكات','صوتي','مكشوف مطلي','PET'] },
+    { key: 'tile_size', ar: 'مقاس البلاطة', en: 'Tile Size', options: ['60×60 سم','60×120 سم','شرائح','حسب الطلب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)'] },
+  ] },
+  { products: ['درابزين ستانلس','سلالم حديد','مشربيات'], spec: [
+    { key: 'material', ar: 'المادة', en: 'Material', options: ['ستانلس 304','ستانلس 316','حديد مدهون','حديد مجلفن','ألمنيوم'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['مصقول','مطفي','دهان إلكتروستاتيك','حسب الطلب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','م² (متر مربع)','عدد'] },
+  ] },
+  { products: ['كاونتر استقبال خشبي','خزائن حائط ثابتة','أثاث ثابت خشبي Built-in','كبائن دورات مياه Toilet Cubicles','قواطع حمامات HPL','أرفف خشبية'], spec: [
+    { key: 'material', ar: 'المادة', en: 'Material', options: ['MDF','خشب طبيعي','HPL','كوريان (Solid Surface)','قشرة','حسب الطلب'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['دهان','قشرة','لاكيه','ميلامين'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','م² (متر مربع)','عدد'] },
+  ] },
+  { products: ['لواح خشب صوتية Acoustic','مواد عازلة صوتية Acoustic','لواح خشبية صوتية Acoustic Timber','أسقف صوتية Acoustic Baffle'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['لواح خشبية مثقبة','صوف صخري صوتي','رغوة صوتية','بافل معلّق'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['9 مم','12 مم','18 مم','25 مم','50 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)','عدد'] },
+  ] },
 ]
 for (const g of SPEC_GROUPS) { for (const p of g.products) PRODUCT_SPECS[p] = g.spec }
 
