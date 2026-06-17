@@ -63,7 +63,7 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   paint_facade: { ar: 'الدهانات والديكورات الخارجية', en: 'Paints & Facades', ur: 'پینٹ', icon: '🎨' },
   ceiling_decor: { ar: 'الأسقف والديكورات الداخلية', en: 'Ceilings & Interior Decor', ur: 'چھتیں', icon: '⬜' },
   doors_windows: { ar: 'الأبواب والشبابيك والواجهات', en: 'Doors, Windows & Facades', ur: 'دروازے', icon: '🚪' },
-  facade_systems: { ar: 'الواجهات المتطورة', en: 'Facade Systems', ur: 'فیسڈ سسٹم', icon: '🏢' },
+  facade_systems: { ar: 'الواجهات', en: 'Facades', ur: 'فیسڈ', icon: '🏢' },
   joinery: { ar: 'النجارة والأثاث الثابت', en: 'Joinery & Millwork', ur: 'جوائنری', icon: '🪑' },
   acoustic: { ar: 'العزل الصوتي', en: 'Acoustic Systems', ur: 'صوتی نظام', icon: '🔊' },
   building_insulation: { ar: 'العزل الحراري والمائي', en: 'Thermal & Moisture Insulation', ur: 'انسولیشن', icon: '🧊' },
@@ -190,6 +190,8 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['curtain wall','واجهة ستائرية','واجهة زجاجية','structural glazing','spider','مشدات زجاج','زجاج','glass','سيكوريت','tempered','glazed facade'] },
     rainscreen: { ar: 'كسوة واجهات (Rainscreen/ألمنيوم)', en: 'Aluminium Cladding & Rainscreen', ur: 'رین اسکرین', icon: '🔲', group: 'facade_systems',
       keywords: ['rainscreen','cladding','كسوة','ألمنيوم واجهات','aluminium panel','كومبوزيت','ACP','معدن مثقب'] },
+    stone_facade: { ar: 'كسوة واجهات حجرية', en: 'Stone Cladding', ur: 'پتھر کلیڈنگ', icon: '🪨', group: 'facade_systems',
+      keywords: ['واجهات حجر','واجهة حجر','كسوة حجر','حجر واجهات','حجر للواجهات','stone cladding','stone facade'] },
     louvers: { ar: 'مظلات وكاسرات شمس', en: 'Louvers & Shading', ur: 'لوور', icon: '🪟', group: 'facade_systems',
       keywords: ['louver','مظلة','كاسر شمس','shading','بريز سوليه','brise soleil','مشربية معدنية'] },
     // ═══ النجارة والأثاث الثابت (Joinery) ═══
@@ -439,7 +441,7 @@ const SUB_UNITS: Record<string, string> = {
   tiles: 'م²', marble: 'م²', wood_floor: 'م²', tile_adhesive: 'كيس', special_floor: 'م²',
   paint: 'جالون', grc_facade: 'م²', gypsum: 'م²', false_ceiling: 'م²',
   aluminum: 'م²', wood_doors: 'عدد', fire_doors: 'عدد', auto_doors: 'عدد',
-  curtain_wall: 'م²', rainscreen: 'م²', louvers: 'م²',
+  curtain_wall: 'م²', rainscreen: 'م²', stone_facade: 'م²', louvers: 'م²',
   millwork: 'م.ط', fitted_furniture: 'عدد', cubicles: 'عدد',
   acoustic_panels: 'م²', acoustic_timber: 'م²', thermal_insulation: 'م²',
   metal_features: 'م.ط', vertical_transport: 'عدد', sanitary_ware: 'عدد', bath_accessories: 'عدد',
@@ -720,6 +722,14 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   { products: ['واجهات زجاجية Curtain Wall'], spec: [
     { key: 'system', ar: 'النظام', en: 'System', options: ['Stick (تجميع بالموقع)','Unitized (وحدات جاهزة)','Semi-unitized','Spider (شبكي)','Structural Glazing'] },
     { key: 'glazing', ar: 'الزجاج', en: 'Glazing', options: ['مزدوج عازل (IGU)','لامينيت مقسّى','لو-إي (Low-E)','رفلكتيف'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)'] },
+  ] },
+  // كسوة الواجهات الحجرية
+  { products: ['واجهات حجر'], spec: [
+    { key: 'stone', ar: 'نوع الحجر', en: 'Stone', options: ['جرانيت','رخام','حجر رملي (Sandstone)','حجر جيري (Limestone)','بازلت','ترافنتين','حسب الطلب'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['2 سم','3 سم','4 سم','حسب التصميم'] },
+    { key: 'fixing', ar: 'طريقة التثبيت', en: 'Fixing', options: ['تثبيت ميكانيكي (نظام كلادينج)','مدادات ومسامير ستانلس','لاصق (Adhesive)','حسب التصميم'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['مصقول (Polished)','مطفي (Honed)','مفجّر (Flamed)','طبيعي خام'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م² (متر مربع)'] },
   ] },
   // الدرابزين الزجاجي
@@ -1487,7 +1497,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ الزجاج والواجهات ═══
     'زجاج عادي', 'زجاج سيكوريت Tempered',
     'زجاج عازل مزدوج', 'زجاج رفلكتيف',
-    'واجهات زجاجية Curtain Wall', 'حجر بازلت', 'حجر صناعي',
+    'واجهات زجاجية Curtain Wall', 'واجهات حجر', 'حجر بازلت', 'حجر صناعي',
     // ═══ الإكسسوارات (BOQ: 16-K ACCESSORIES) ═══
     'درابزين ستانلس', 'درابزين زجاجي بحواجز',
     'سلالم حديد', 'مشربيات',
