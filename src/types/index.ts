@@ -576,7 +576,7 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
     { key: 'strength', ar: 'قوة الخرسانة', en: 'Strength', options: ['C-15','C-20','C-25','C-30','C-35','C-40','C-45','C-50','C-60'] },
     { key: 'additive', ar: 'الإضافات', en: 'Additives', options: ['بدون','Fly Ash (رماد متطاير)','Microsilica (سيليكا دقيقة)','Fly Ash + Microsilica','ملدّن (Plasticizer)','مؤخّر شك (Retarder)','ألياف'] },
     { key: 'slump', ar: 'الهبوط (Slump)', en: 'Slump', options: ['10 سم','12 سم','15 سم','18 سم (مضخة)'] },
-    { key: 'placing', ar: 'طريقة الصب', en: 'Placing', options: ['بالمضخة','مضخة بوم (Boom)','صب مباشر'] },
+    { key: 'placing', ar: 'طريقة الصب', en: 'Placing', options: ['بدون مضخة (تفريغ مباشر من الخلاطة)','بمضخة عادية (خط أرضي)','بمضخة ذراع (Boom — مضخة بذراع طويل للأدوار العالية)','حسب الموقع'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م³ (متر مكعب)'] },
   ],
   'بلوك خرساني': [

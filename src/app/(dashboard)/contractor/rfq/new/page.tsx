@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, getProductLabel, detectSubCategory, getGroupedProducts, getProductSpecs, getDefaultUnit } from '@/types'
@@ -215,6 +215,11 @@ export default function NewRFQPage() {
   const unitSpec = specFields.find((f: any) => f.key === 'unit') // وحدة الطلب من المواصفات (إن وُجدت)
   const effectiveUnit = unitSpec ? (specs[unitSpec.key] || '') : unit
   useEffect(() => { setOtherKeys({}) }, [productName]) // صفّر وضع «أخرى» عند تغيير المنتج
+  const detailsRef = useRef<any>(null)
+  // عند اختيار منتج: نزّل الصفحة تلقائياً إلى خيارات المواصفات/التسعير
+  useEffect(() => {
+    if (productName) setTimeout(() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)
+  }, [productName])
   // بحث سريع فوق التصنيفات: يفلتر كل مواد القطاع عبر المجموعات
   const allItems = useMemo(() => groups.flatMap((g: any) => g.items), [groups])
   const q = productSearch.trim().toLowerCase()
@@ -552,6 +557,9 @@ export default function NewRFQPage() {
                         className="text-xs font-bold text-[#d96f15] hover:underline">➕ {locale === 'en' ? "Didn't find it? Request a new material (admin approval)" : 'ما لقيت المادة؟ اطلب إضافتها (باعتماد الإدارة)'}</button>
                     </div>
                   )}
+
+                  {/* مرساة التمرير التلقائي — تظهر بمجرد اختيار منتج */}
+                  {productName && <div ref={detailsRef} className="scroll-mt-24" />}
 
                   {/* مواصفات المنتج المنظّمة (لو المنتج له مواصفات معرّفة) */}
                   {specFields.length > 0 && (
