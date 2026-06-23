@@ -114,7 +114,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['شبكة حديد','mesh','fabric','رابيتز','شبك لياسة','زوايا حماية'] },
     // ═══ البنية التحتية والتدعيم ═══
     waterproofing: { ar: 'عوازل مائية وحرارية للأساسات', en: 'Foundation Waterproofing', ur: 'واٹر پروفنگ', icon: '🛡', group: 'infrastructure',
-      keywords: ['عازل','عزل','waterproof','bitumen','membrane','رطوبة','أساسات','tanking','خيش','فيلم','بولي','polyethylene','dpm'] },
+      keywords: ['عازل','عزل','عزل مائي','waterproof','bitumen','بيتومين','بيتوميني','membrane','غشاء','رطوبة','أساسات','tanking','tank','بطانة','سيماني','سائل','primer','protection','خيش','فيلم','بولي','polyethylene','dpm'] },
     piling: { ar: 'أوتاد وخوازيق الأساسات', en: 'Piling & Foundations', ur: 'پائلنگ', icon: '🛠', group: 'infrastructure',
       keywords: ['أوتاد','اوتاد','pile','piling','خازوق','وتد خرساني'] },
     construction_chemicals: { ar: 'مواد كيميائية للبناء', en: 'Construction Chemicals', ur: 'کیمیکل', icon: '🧪', group: 'infrastructure',
