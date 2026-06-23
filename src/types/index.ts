@@ -1034,6 +1034,39 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م³ (متر مكعب)','متر طولي'] },
   ] },
   // ═══ سقالات كب لوك (Cuplock) — منتج واحد: النوع ثم المقاس، يُضاف بنداً بنداً ═══
+  // ═══ العزل المائي (Waterproofing) — منتجات منظّمة بأنواعها ═══
+  { products: ['عزل مائي سائل (Liquid Membrane)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['بولي يوريثان PU','إيبوكسي Epoxy','بولي يوريا Polyurea','أكريليك Acrylic','سيماني مرن Cementitious','بيتوميني سائل Liquid Bitumen'] },
+    { key: 'components', ar: 'المكوّنات', en: 'Components', options: ['أحادي 1-Component','ثنائي 2-Component','هجين Hybrid'] },
+    { key: 'application', ar: 'مكان التطبيق', en: 'Application', options: ['أسطح Roof','أساسات Foundation','مناطق رطبة Wet area','خزانات Tank','بلكونات Balcony','حسب الموقع'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كجم','لتر','م²','صفيحة'] },
+  ] },
+  { products: ['عزل مائي سيماني (Cementitious)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['بوليمر معدّل 2-مكوّن Polymer-Modified','صلب 1-مكوّن Rigid','كرستالي Crystalline','مقوّى بالألياف Fiber-Reinforced','سيماني-إيبوكسي Cementitious-Epoxy'] },
+    { key: 'application', ar: 'مكان التطبيق', en: 'Application', options: ['أساسات Foundation','بدروم Basement','خزانات/مسابح Tank/Pool','مناطق رطبة Wet area','حسب الموقع'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كجم','كيس','م²'] },
+  ] },
+  { products: ['غشاء بيتوميني لفائف (Bituminous Membrane)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['APP','SBS'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['3 مم','4 مم','5 مم'] },
+    { key: 'reinforcement', ar: 'التسليح', en: 'Reinforcement', options: ['بوليستر 180غ Polyester','فايبرجلاس Fiberglass'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['ناعم Plain','مبحص معدني Mineral'] },
+    { key: 'brand', ar: 'الماركة (اختياري)', en: 'Brand (optional)', options: ['أي ماركة معتمدة','عوازل Awazel','Sika','Bauder','Index','حسب المواصفة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م²','لفة Roll'] },
+  ] },
+  { products: ['بطانة خزانات سائلة (Tank Lining)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['إيبوكسي Epoxy','بولي يوريثان PU','بولي يوريا Polyurea','فينيل إستر Vinyl Ester'] },
+    { key: 'use', ar: 'الاستخدام', en: 'Use', options: ['مياه شرب Potable','مياه عادية','كيميائي Chemical','صرف Wastewater'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كجم','لتر','م²'] },
+  ] },
+  { products: ['بيتومين أولي (Primer)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['مذيب Solvent-based','مائي Water-based'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لتر','جالون','برميل'] },
+  ] },
+  { products: ['لوح حماية بيتوميني (Protection Board)'], spec: [
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['3 مم','4 مم','6 مم'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م²','لوح'] },
+  ] },
   // ═══ سقالات رينج لوك (Ringlock / Doka) — مكوّنات من كتالوج Doka ═══
   { products: ['سقالة رينج لوك (Ringlock)'], spec: [
     { key: 'component', ar: 'النوع / البند', en: 'Component', options: ['قائم Standard','عارضة Ledger','عارضة جملونية Truss Ledger','دعامة قطرية Diagonal Brace','جاك قاعدة Base Jack','جاك قاعدة دوّار Swivel Base Jack','طوق قاعدة Base Collar','جاك رأس U-Head','رأس تدعيم رباعي Four-Way Head','لوح فولاذي Steel Deck','لوح وصول Access Deck','سلّم Stairway','درجات سلّم فولاذية Stair Treads','وحدة درج ألمنيوم Aluminium Stair Unit','كمر شبكي Lattice Girder','كرسي/كونسول Console Bracket','درابزين/حاجز Guardrail','لوح حماية Toeboard','بوابة أمان Swing Gate','ماسورة تثبيت Anchor Tube','كرسي ربط جداري Wall Tie','حذاء تثبيت Anchoring Shoe','مثبّت سريع Express Anchor','برغي عين Eye Bolt','مسمار قفل Toggle Pin','منصة زاوية 45° Corner Platform','قائم معلّق Hanging Standard','عروة رفع Lifting Lug'] },
@@ -1448,6 +1481,12 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'أنابيب ري HDPE خارجية': { en: 'HDPE Irrigation Pipes', ur: 'ایچ ڈی پی ای آبپاشی پائپ' },
   'شبكة ري خارجية': { en: 'External Irrigation Network', ur: 'آبپاشی نیٹ ورک' },
   'عازل مائي للأساسات Liquid Applied': { en: 'Liquid-Applied Foundation Waterproofing', ur: 'فاؤنڈیشن واٹر پروفنگ' },
+  'عزل مائي سائل (Liquid Membrane)': { en: 'Liquid Waterproofing Membrane', ur: 'لیکویڈ واٹر پروف میمبرین' },
+  'عزل مائي سيماني (Cementitious)': { en: 'Cementitious Waterproofing', ur: 'سیمنٹیشس واٹر پروفنگ' },
+  'غشاء بيتوميني لفائف (Bituminous Membrane)': { en: 'Bituminous Membrane Roll', ur: 'بٹومینس میمبرین رول' },
+  'بطانة خزانات سائلة (Tank Lining)': { en: 'Liquid Tank Lining', ur: 'ٹینک لائننگ' },
+  'بيتومين أولي (Primer)': { en: 'Bituminous Primer', ur: 'بٹومین پرائمر' },
+  'لوح حماية بيتوميني (Protection Board)': { en: 'Bituminous Protection Board', ur: 'پروٹیکشن بورڈ' },
   'عازل مائي Tanking': { en: 'Tanking Waterproofing', ur: 'ٹینکنگ واٹر پروفنگ' },
   'غشاء عازل للأسطح': { en: 'Roof Waterproofing Membrane', ur: 'چھت واٹر پروف میمبرین' },
   'مدرجات مسبقة الصب Bleachers': { en: 'Precast Bleachers', ur: 'پری کاسٹ بلیچرز' },
@@ -1550,8 +1589,10 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'أنابيب ري HDPE خارجية', 'شبكة ري خارجية',
     // ═══ عزل الأساسات والتشطيب الخارجي ═══
     'شبك رابيتز', 'جير', 'جبصين', 'حجر خام للردم والحواجز',
-    'عازل مائي للأساسات Liquid Applied', 'فيلم بولي ايثيلين',
-    'عازل مائي Tanking', 'غشاء عازل للأسطح',
+    'عزل مائي سائل (Liquid Membrane)', 'عزل مائي سيماني (Cementitious)',
+    'غشاء بيتوميني لفائف (Bituminous Membrane)', 'بطانة خزانات سائلة (Tank Lining)',
+    'بيتومين أولي (Primer)', 'لوح حماية بيتوميني (Protection Board)',
+    'فيلم بولي ايثيلين',
     // ═══ الأعمال الخاصة - BOQ 2 Stadium ═══
     'سلالم رياضية Raker Beams',
     // ═══ الصلب الهيكلي الدائري - BOQ 2 ═══
