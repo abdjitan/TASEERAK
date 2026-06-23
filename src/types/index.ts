@@ -777,7 +777,7 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة (شبكة)','طن'] },
   ] },
   { products: ['صلب هيكلي IPE'], spec: [
-    { key: 'size', ar: 'المقاس (Profile)', en: 'Profile Size', options: ['IPE 100','IPE 160','IPE 200','IPE 300','IPE 400'] },
+    { key: 'size', ar: 'المقاس (Profile)', en: 'Profile Size', options: ['IPE 80','IPE 100','IPE 120','IPE 140','IPE 160','IPE 180','IPE 200','IPE 220','IPE 240','IPE 270','IPE 300','IPE 330','IPE 360','IPE 400','IPE 450','IPE 500','IPE 550','IPE 600'] },
     { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر'] },
     { key: 'grade', ar: 'درجة الحديد', en: 'Grade', options: ['S275JR','S355JR'] },
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','حديد سابك','الراجحي','مستورد (كوري/صيني)'] },
@@ -1081,6 +1081,14 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','طن','متر طولي'] },
   ] },
   // HEB/HEA: المقاس بالتسمية القياسية (HEA 200…)
+  // ═══ القنوات الفولاذية (Channels: UPN / UPE / U-Channel) ═══
+  { products: ['قطاعات قنوات U/UPN/UPE (Channels)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['UPN (جناح مدبّب Taper)','UPE (جناح متوازي Parallel)','U-Channel (JIS)'] },
+    { key: 'size', ar: 'المقاس (مم)', en: 'Size (mm)', options: ['80','100','120','140','160','180','200','220','240','260','280','300','320','350','380','400'] },
+    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235JR','S275JR','S355JR','حسب المواصفة'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر','حسب القص'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','عود (قضيب)','حبة','متر طولي'] },
+  ] },
   { products: ['صلب هيكلي HEB','صلب هيكلي HEA'], spec: [
     { key: 'section', ar: 'المقاس (المقطع)', en: 'Section', options: ['100','120','140','160','180','200','220','240','260','280','300','320','340','360','400','450','500','550','600','650','700','800','900','1000'] },
     { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235JR','S275JR','S355JR','حسب المواصفة'] },
@@ -1281,6 +1289,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'صلب هيكلي HEB':      { en: 'HEB Structural Steel',     ur: 'HEB اسٹیل' },
   'صلب هيكلي HEA':      { en: 'HEA Structural Steel',     ur: 'HEA اسٹیل' },
   'صلب هيكلي IPE':      { en: 'IPE Structural Steel',     ur: 'IPE اسٹیل' },
+  'قطاعات قنوات U/UPN/UPE (Channels)': { en: 'Steel Channels (UPN/UPE/U)', ur: 'اسٹیل چینل' },
   'صفائح فولاذية':      { en: 'Steel Plates',             ur: 'اسٹیل پلیٹ' },
   'أوتاد حديد مجوف':    { en: 'Hollow Steel Piles',        ur: 'کھوکھلے اسٹیل پائل' },
   'عتبات جسور خرسانية': { en: 'Precast Concrete Beams',   ur: 'پری کاسٹ بیم' },
@@ -1979,6 +1988,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'جاكات تدعيم Acrow Prop', 'برج تدعيم Shoring Tower',
     // ═══ الهيكل المعدني (BOQ: E METAL WORK) ═══
     'صلب هيكلي HEB', 'صلب هيكلي HEA', 'صلب هيكلي IPE',
+    'قطاعات قنوات U/UPN/UPE (Channels)',
     'صفائح فولاذية', 'أوتاد خرسانية', 'أوتاد حديد مجوف',
     // ═══ الصرف الخارجي - CIVIL فقط (BOQ: Storm Drainage) ═══
     // ✅ هادي أنابيب صرف الأمطار الخارجية المدفونة = مدني
