@@ -52,7 +52,7 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   concrete: { ar: 'الخرسانة والإسمنت', en: 'Concrete & Cement', ur: 'کنکریٹ اور سیمنٹ', icon: '🏭' },
   masonry: { ar: 'الكتل والطوب والمسبقات', en: 'Blocks, Bricks & Precast', ur: 'بلاک اور اینٹیں', icon: '🧱' },
   steel: { ar: 'الحديد والإنشاءات المعدنية', en: 'Steel & Metalwork', ur: 'اسٹیل', icon: '🔩' },
-  rawmaterials: { ar: 'الركام وأعمال الموقع', en: 'Aggregates & Site Works', ur: 'خام مواد', icon: '⛰' },
+  rawmaterials: { ar: 'مواد الدفان والركام', en: 'Backfill & Aggregate', ur: 'بھرائی اور ایگریگیٹ', icon: '⛰' },
   infrastructure: { ar: 'العزل والأساسات والمعالجات', en: 'Insulation, Foundations & Treatments', ur: 'انسولیشن اور بنیادیں', icon: '🛡' },
   drainage_grp: { ar: 'الصرف والأنابيب الخارجية', en: 'Drainage & External Pipes', ur: 'نکاسی اور پائپ', icon: '🚧' },
   formwork: { ar: 'الطوبار والشدّات الخشبية', en: 'Formwork & Shuttering', ur: 'فارم ورک', icon: '🪵' },
