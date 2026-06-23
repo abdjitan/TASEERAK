@@ -1035,6 +1035,13 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م³ (متر مكعب)','متر طولي'] },
   ] },
   // ═══ سقالات كب لوك (Cuplock) — منتج واحد: النوع ثم المقاس، يُضاف بنداً بنداً ═══
+  // ═══ سقالات رينج لوك (Ringlock / Doka) — مكوّنات من كتالوج Doka ═══
+  { products: ['سقالة رينج لوك (Ringlock)'], spec: [
+    { key: 'component', ar: 'النوع / البند', en: 'Component', options: ['قائم Standard','عارضة Ledger','عارضة جملونية Truss Ledger','دعامة قطرية Diagonal Brace','جاك قاعدة Base Jack','جاك قاعدة دوّار Swivel Base Jack','طوق قاعدة Base Collar','جاك رأس U-Head','رأس تدعيم رباعي Four-Way Head','لوح فولاذي Steel Deck','لوح وصول Access Deck','سلّم Stairway','درجات سلّم فولاذية Stair Treads','وحدة درج ألمنيوم Aluminium Stair Unit','كمر شبكي Lattice Girder','كرسي/كونسول Console Bracket','درابزين/حاجز Guardrail','لوح حماية Toeboard','بوابة أمان Swing Gate','ماسورة تثبيت Anchor Tube','كرسي ربط جداري Wall Tie','حذاء تثبيت Anchoring Shoe','مثبّت سريع Express Anchor','برغي عين Eye Bolt','مسمار قفل Toggle Pin','منصة زاوية 45° Corner Platform','قائم معلّق Hanging Standard','عروة رفع Lifting Lug'] },
+    { key: 'size', ar: 'المقاس / الطول', en: 'Size / Length', options: ['قائم 0.5م','قائم 1.0م','قائم 1.5م','قائم 2.0م','قائم 2.5م','قائم 3.0م','قائم 4.0م','عارضة 0.39م','عارضة 0.73م','عارضة 1.04م','عارضة 1.09م','عارضة 1.40م','عارضة 1.57م','عارضة 2.07م','عارضة 2.57م','عارضة 3.07م','عرض لوح 0.19م','عرض لوح 0.32م','حسب الطلب'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['مجلفن غمس ساخن Hot-dip','مدهون Painted'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','طن','متر طولي'] },
+  ] },
   { products: ['سقالة كب لوك (Cuplock)'], spec: [
     { key: 'component', ar: 'النوع / البند', en: 'Component', options: ['قائم Standard','عارضة طولية Ledger','عارضة عرضية Transom','دعامة قطرية Face Brace','وصلة قائم Spigot Pin','جاك قاعدة Base Jack','جاك قاعدة دوّار Swivel Base','جاك رأس U-Head','جاك شوكة Fork U-Head','جاك يونيفرسال Universal','قاعدة Base Plate','كمر ألمنيوم Single Web','كمر ألمنيوم Double Web','كمر شبكي Lattice','كمر سلّم Ladder Beam','كمر H20','كوبلر مفرد Single','كوبلر مزدوج Double','كوبلر دوّار Swivel','كوبلر جسر Girder','كوبلر ضغط Pressed','مشبك يونيفرسال Clamp','مشبك لوح Toe-Board','ألواح فولاذية Steel Planks','ألواح خشبية Wooden Planks','هيكل H-Frame','إطار كابولي Cantilever','وحدة درج Staircase','سلّم فولاذي Steel Ladder','عجلات Castor','دعامة دفع Push-Pull Prop','ماسورة مجلفنة Galvanized Pipe','قضيب شد Tie Rod','صامولة جناح Wing Nut','لوح Waller Plate'] },
     { key: 'size', ar: 'المقاس / الطول', en: 'Size / Length', options: ['0.5 م','1.0 م','1.5 م','2.0 م','2.5 م','3.0 م','0.6 م','0.9 م','1.2 م','1.8 م','2.4 م','حسب الطلب'] },
@@ -1408,6 +1415,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'قمط شدّة أعمدة Column Clamp': { en: 'Column Clamps', ur: 'کالم کلیمپ' },
   'قضبان شد الطوبار Tie Rods': { en: 'Formwork Tie Rods', ur: 'ٹائی راڈ' },
   'زيت فك الطوبار Shutter Oil': { en: 'Shutter Release Oil', ur: 'شٹر آئل' },
+  'سقالة رينج لوك (Ringlock)': { en: 'Ringlock Scaffold', ur: 'رنگ لاک سکیفولڈ' },
   'سقالة كب لوك (Cuplock)': { en: 'Cuplock Scaffold', ur: 'کپلاک سکیفولڈ' },
   'قائم سقالة Standard': { en: 'Scaffold Standard', ur: 'سکیفولڈ اسٹینڈرڈ' },
   'عارضة أفقية سقالة Ledger': { en: 'Scaffold Ledger', ur: 'سکیفولڈ لیجر' },
@@ -1520,6 +1528,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'قضبان شد الطوبار Tie Rods', 'زيت فك الطوبار Shutter Oil',
     // ═══ السقالات والدعامات (Scaffolding & Shoring) ═══
     'سقالة كب لوك (Cuplock)',
+    'سقالة رينج لوك (Ringlock)',
     'قائم سقالة Standard', 'عارضة أفقية سقالة Ledger',
     'دعامة قطرية سقالة Brace', 'ماسورة سقالة Tube', 'إطار سقالة معدنية Frame',
     'قاعدة ثابتة Base Plate', 'بيس جاك قابل للتعديل', 'يو جاك U-Head', 'سكرو جاك تعديل',
