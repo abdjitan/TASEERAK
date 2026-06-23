@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, getProductLabel, detectSubCategory, getGroupedProducts, getProductSpecs, getDefaultUnit } from '@/types'
+import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, getProductLabel, getOptionLabel, detectSubCategory, getGroupedProducts, getProductSpecs, getDefaultUnit } from '@/types'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
@@ -579,7 +579,7 @@ export default function NewRFQPage() {
                                   else { setOtherKeys(o => ({ ...o, [f.key]: false })); setSpecs(s => ({ ...s, [f.key]: e.target.value })) }
                                 }}>
                                 <option value="">{locale === 'en' ? '— Select —' : '— اختر —'}</option>
-                                {f.options.map((o: any) => <option key={o} value={o}>{o}</option>)}
+                                {f.options.map((o: any) => <option key={o} value={o}>{getOptionLabel(o, locale)}</option>)}
                                 <option value="__other__">{locale === 'en' ? 'Other (specify)' : 'أخرى (غير مذكور)'}</option>
                               </select>
                               {showOther && (

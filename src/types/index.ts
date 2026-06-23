@@ -580,7 +580,7 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م³ (متر مكعب)'] },
   ],
   'بلوك': [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['خرساني مجوف Hollow','خرساني مصمت Solid','خفيف AAC','معزول EPS','أسمنتي مفرّغ'] },
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['خرساني مجوف Hollow','خرساني مصمت Solid','خفيف AAC','معزول EPS','أسمنتي مفرّغ Cement-Hollow'] },
     { key: 'size', ar: 'المقاس', en: 'Size', options: ['20×20×40 سم','15×20×40 سم','10×20×40 سم','25×20×40 سم'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','متر مربع','بالألف حبة'] },
   ],
@@ -1889,6 +1889,18 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'فوم عازل': { en: 'Insulation Foam', ur: 'انسولیشن فوم' },
   'لاصق قوي': { en: 'Strong Adhesive', ur: 'مضبوط چپکنے والا' },
   'صمغ': { en: 'Glue', ur: 'گوند' },
+}
+
+// Localize a spec-option label: in non-Arabic locales show the English part of a
+// bilingual option ('خرساني مجوف Hollow' -> 'Hollow', 'سادة (Smooth)' -> 'Smooth').
+// Falls back to the original string when no Latin segment is present.
+export function getOptionLabel(opt: string, locale: string): string {
+  if (!opt || locale === 'ar') return opt
+  const paren = opt.match(/\(([A-Za-z][^)]*)\)/)
+  if (paren) return paren[1].trim()
+  const trail = opt.match(/[A-Za-z][A-Za-z0-9 .\-\/×"'%]*$/)
+  if (trail && trail[0].trim().length >= 2) return trail[0].trim()
+  return opt
 }
 
 // Helper to get translated product name
