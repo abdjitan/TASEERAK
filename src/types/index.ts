@@ -51,7 +51,6 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   // مدني
   concrete: { ar: 'الخرسانة والإسمنت', en: 'Concrete & Cement', ur: 'کنکریٹ اور سیمنٹ', icon: '🏭' },
   masonry: { ar: 'الطوب والبلوك', en: 'Blocks & Bricks', ur: 'بلاک اور اینٹیں', icon: '🧱' },
-  precast_grp: { ar: 'الخرسانة سابقة الصب', en: 'Precast Concrete', ur: 'پری کاسٹ کنکریٹ', icon: '🏗' },
   steel: { ar: 'الحديد والإنشاءات المعدنية', en: 'Steel & Metalwork', ur: 'اسٹیل', icon: '🔩' },
   rawmaterials: { ar: 'مواد الدفان والركام', en: 'Backfill & Aggregate', ur: 'بھرائی اور ایگریگیٹ', icon: '⛰' },
   infrastructure: { ar: 'العزل والأساسات والمعالجات', en: 'Insulation, Foundations & Treatments', ur: 'انسولیشن اور بنیادیں', icon: '🛡' },
@@ -102,7 +101,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['خرسانة جاهزة','ready mix','readymix','concrete','C25','C30','C35','C40','blinding'] },
     blocks: { ar: 'بلوك وآجر (أسود/معزول/سيبوريكس)', en: 'Blocks & Bricks', ur: 'بلاک', icon: '🧱', group: 'masonry',
       keywords: ['طوب','بلوك','block','brick','aac','سيبوريكس','معزول','مدماك','خفيف','siporex'] },
-    precast: { ar: 'خرسانة مسبقة الصنع (Precast)', en: 'Precast Concrete', ur: 'پری کاسٹ', icon: '🏗', group: 'precast_grp',
+    precast: { ar: 'خرسانة مسبقة الصنع (Precast)', en: 'Precast Concrete', ur: 'پری کاسٹ', icon: '🏗', group: 'concrete',
       keywords: ['مسبق الصنع','precast','مسبقة','بلاطات مسبقة','أعمدة مسبقة','عتبات مسبقة','مدرجات','مقاعد','seating','bleacher'] },
     cement: { ar: 'أسمنت ومواد رابطة', en: 'Cement & Binders', ur: 'سیمنٹ', icon: '🪨', group: 'concrete',
       keywords: ['أسمنت','اسمنت','cement','جير','lime','جبص','جبصين','gypsum'] },
@@ -502,7 +501,7 @@ export interface ProductGroup { group: string; ar: string; en: string; ur: strin
 const GROUP_ORDER: Record<string, number> = {}
 ;[
   // مدني — بتسلسل البناء
-  'concrete', 'masonry', 'precast_grp', 'steel', 'rawmaterials', 'infrastructure', 'drainage_grp', 'formwork', 'scaffolding', 'landscape',
+  'concrete', 'masonry', 'steel', 'rawmaterials', 'infrastructure', 'drainage_grp', 'formwork', 'scaffolding', 'landscape',
   // معماري — من الإنشاء للتشطيب
   'floors_walls', 'ceiling_decor', 'doors_windows', 'paint_facade', 'facade_systems', 'arch_metalwork', 'joinery', 'sanitary_finish', 'acoustic', 'building_insulation',
   // ميكانيك
@@ -1031,7 +1030,7 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   { products: ['خرسانة مسبقة الصب','سلالم رياضية Raker Beams'], spec: [
     { key: 'element', ar: 'العنصر', en: 'Element', options: ['عتبات','أعمدة','بلاطات (Hollow Core)','كمرات/جسور','مدرجات','جدران (Panels)','درج','مقاطع خاصة'] },
     { key: 'strength', ar: 'قوة الخرسانة', en: 'Strength', options: ['C30','C35','C40','C45','C50','حسب التصميم'] },
-    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['عادي','مصقول','مكشوف الركام','حسب الطلب'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['سادة (Smooth)','مكشوف الواجهة (Fair-face)','حسب الطلب'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م³ (متر مكعب)','متر طولي'] },
   ] },
   // ═══ سقالات كب لوك (Cuplock) — منتج واحد: النوع ثم المقاس، يُضاف بنداً بنداً ═══
@@ -1529,11 +1528,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ السقالات والدعامات (Scaffolding & Shoring) ═══
     'سقالة كب لوك (Cuplock)',
     'سقالة رينج لوك (Ringlock)',
-    'قائم سقالة Standard', 'عارضة أفقية سقالة Ledger',
-    'دعامة قطرية سقالة Brace', 'ماسورة سقالة Tube', 'إطار سقالة معدنية Frame',
-    'قاعدة ثابتة Base Plate', 'بيس جاك قابل للتعديل', 'يو جاك U-Head', 'سكرو جاك تعديل',
-    'منصة وقوف معدنية Steel Deck', 'سلم سقالة', 'كوبلر مشبك سقالة Coupler',
-    'جاكات تدعيم Acrow Prop', 'برج تدعيم Shoring Tower', 'درابزين أمان سقالة Guard Rail',
+    'ماسورة سقالة Tube', 'إطار سقالة معدنية Frame',
+    'جاكات تدعيم Acrow Prop', 'برج تدعيم Shoring Tower',
     // ═══ الهيكل المعدني (BOQ: E METAL WORK) ═══
     'صلب هيكلي HEB', 'صلب هيكلي HEA', 'صلب هيكلي IPE',
     'صفائح فولاذية', 'أوتاد خرسانية', 'أوتاد حديد مجوف',
