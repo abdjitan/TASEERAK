@@ -50,7 +50,8 @@ export interface SubCategory {
 export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; icon: string }> = {
   // مدني
   concrete: { ar: 'الخرسانة والإسمنت', en: 'Concrete & Cement', ur: 'کنکریٹ اور سیمنٹ', icon: '🏭' },
-  masonry: { ar: 'الكتل والطوب والمسبقات', en: 'Blocks, Bricks & Precast', ur: 'بلاک اور اینٹیں', icon: '🧱' },
+  masonry: { ar: 'الطوب والبلوك', en: 'Blocks & Bricks', ur: 'بلاک اور اینٹیں', icon: '🧱' },
+  precast_grp: { ar: 'الخرسانة سابقة الصب', en: 'Precast Concrete', ur: 'پری کاسٹ کنکریٹ', icon: '🏗' },
   steel: { ar: 'الحديد والإنشاءات المعدنية', en: 'Steel & Metalwork', ur: 'اسٹیل', icon: '🔩' },
   rawmaterials: { ar: 'مواد الدفان والركام', en: 'Backfill & Aggregate', ur: 'بھرائی اور ایگریگیٹ', icon: '⛰' },
   infrastructure: { ar: 'العزل والأساسات والمعالجات', en: 'Insulation, Foundations & Treatments', ur: 'انسولیشن اور بنیادیں', icon: '🛡' },
@@ -101,7 +102,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['خرسانة جاهزة','ready mix','readymix','concrete','C25','C30','C35','C40','blinding'] },
     blocks: { ar: 'بلوك وآجر (أسود/معزول/سيبوريكس)', en: 'Blocks & Bricks', ur: 'بلاک', icon: '🧱', group: 'masonry',
       keywords: ['طوب','بلوك','block','brick','aac','سيبوريكس','معزول','مدماك','خفيف','siporex'] },
-    precast: { ar: 'خرسانة مسبقة الصنع (Precast)', en: 'Precast Concrete', ur: 'پری کاسٹ', icon: '🏗', group: 'masonry',
+    precast: { ar: 'خرسانة مسبقة الصنع (Precast)', en: 'Precast Concrete', ur: 'پری کاسٹ', icon: '🏗', group: 'precast_grp',
       keywords: ['مسبق الصنع','precast','مسبقة','بلاطات مسبقة','أعمدة مسبقة','عتبات مسبقة','مدرجات','مقاعد','seating','bleacher'] },
     cement: { ar: 'أسمنت ومواد رابطة', en: 'Cement & Binders', ur: 'سیمنٹ', icon: '🪨', group: 'concrete',
       keywords: ['أسمنت','اسمنت','cement','جير','lime','جبص','جبصين','gypsum'] },
@@ -501,7 +502,7 @@ export interface ProductGroup { group: string; ar: string; en: string; ur: strin
 const GROUP_ORDER: Record<string, number> = {}
 ;[
   // مدني — بتسلسل البناء
-  'concrete', 'masonry', 'steel', 'rawmaterials', 'infrastructure', 'drainage_grp', 'formwork', 'scaffolding', 'landscape',
+  'concrete', 'masonry', 'precast_grp', 'steel', 'rawmaterials', 'infrastructure', 'drainage_grp', 'formwork', 'scaffolding', 'landscape',
   // معماري — من الإنشاء للتشطيب
   'floors_walls', 'ceiling_decor', 'doors_windows', 'paint_facade', 'facade_systems', 'arch_metalwork', 'joinery', 'sanitary_finish', 'acoustic', 'building_insulation',
   // ميكانيك
@@ -579,8 +580,8 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
     { key: 'placing', ar: 'طريقة الصب', en: 'Placing', options: ['بدون مضخة (تفريغ مباشر من الخلاطة)','بمضخة عادية (خط أرضي)','بمضخة ذراع (Boom — مضخة بذراع طويل للأدوار العالية)','حسب الموقع'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م³ (متر مكعب)'] },
   ],
-  'بلوك خرساني': [
-    { key: 'type', ar: 'النوع', en: 'Type', options: ['مجوف Hollow','معزول Insulated','مصمت Solid','خفيف AAC'] },
+  'بلوك': [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['خرساني مجوف Hollow','خرساني مصمت Solid','خفيف AAC','معزول EPS','أسمنتي مفرّغ'] },
     { key: 'size', ar: 'المقاس', en: 'Size', options: ['20×20×40 سم','15×20×40 سم','10×20×40 سم','25×20×40 سم'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','متر مربع','بالألف حبة'] },
   ],
@@ -1027,7 +1028,8 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كيلو','علبة','حبة'] },
   ] },
   // ═══ مدني — مسبقات وقطاعات وركام وطوبار وسقالات ═══
-  { products: ['خرسانة مسبقة الصب','عتبات خرسانية مسبقة الصب','أعمدة مسبقة الصب','بلاطات مسبقة الصب','مدرجات مسبقة الصب','مدرجات مسبقة الصب Bleachers','مقاعد ملعب','سلالم رياضية Raker Beams'], spec: [
+  { products: ['خرسانة مسبقة الصب','سلالم رياضية Raker Beams'], spec: [
+    { key: 'element', ar: 'العنصر', en: 'Element', options: ['عتبات','أعمدة','بلاطات (Hollow Core)','كمرات/جسور','مدرجات','جدران (Panels)','درج','مقاطع خاصة'] },
     { key: 'strength', ar: 'قوة الخرسانة', en: 'Strength', options: ['C30','C35','C40','C45','C50','حسب التصميم'] },
     { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['عادي','مصقول','مكشوف الركام','حسب الطلب'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م³ (متر مكعب)','متر طولي'] },
@@ -1498,12 +1500,11 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ الخرسانة (BOQ: C2 POURED CONCRETE, C5 PRECAST) ═══
     'حديد تسليح', 'حديد تسليح سلك', 'شبكة حديد جاهزة', 'أسمنت',
     'خرسانة جاهزة',
-    'خرسانة مسبقة الصب', 'عتبات خرسانية مسبقة الصب', 'أعمدة مسبقة الصب',
-    'بلاطات مسبقة الصب', 'مدرجات مسبقة الصب',
+    'خرسانة مسبقة الصب',
     // ═══ الركام والرمل ═══
     'رمل بناء', 'رمل ناعم', 'حصى', 'زلط', 'كسارة', 'ركام مدمج',
     // ═══ المباني (BOQ: D MASONRY) ═══
-    'طوب أحمر', 'طوب فارغ', 'بلوك خرساني', 'بلوك AAC خفيف', 'بلوك EPS عازل',
+    'بلوك', 'طوب أحمر', 'طوب فارغ',
     // ═══ الطوبار والشدّات الخشبية (Formwork) ═══
     'ألواح بليود (طوبار) Plywood', 'خشب بناء للشدّات',
     'مرابيع خشب (طوبار)', 'عوارض خشبية H20',
@@ -1538,7 +1539,6 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'عازل مائي للأساسات Liquid Applied', 'فيلم بولي ايثيلين',
     'عازل مائي Tanking', 'غشاء عازل للأسطح',
     // ═══ الأعمال الخاصة - BOQ 2 Stadium ═══
-    'مدرجات مسبقة الصب Bleachers', 'مقاعد ملعب',
     'سلالم رياضية Raker Beams',
     // ═══ الصلب الهيكلي الدائري - BOQ 2 ═══
     'قطاعات دائرية CHS 273mm', 'قطاعات دائرية CHS 300mm',
