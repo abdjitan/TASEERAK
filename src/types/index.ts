@@ -1034,6 +1034,13 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['عادي','مصقول','مكشوف الركام','حسب الطلب'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','م³ (متر مكعب)','متر طولي'] },
   ] },
+  // ═══ سقالات كب لوك (Cuplock) — منتج واحد: النوع ثم المقاس، يُضاف بنداً بنداً ═══
+  { products: ['سقالة كب لوك (Cuplock)'], spec: [
+    { key: 'component', ar: 'النوع / البند', en: 'Component', options: ['قائم Standard','عارضة طولية Ledger','عارضة عرضية Transom','دعامة قطرية Face Brace','وصلة قائم Spigot Pin','جاك قاعدة Base Jack','جاك قاعدة دوّار Swivel Base','جاك رأس U-Head','جاك شوكة Fork U-Head','جاك يونيفرسال Universal','قاعدة Base Plate','كمر ألمنيوم Single Web','كمر ألمنيوم Double Web','كمر شبكي Lattice','كمر سلّم Ladder Beam','كمر H20','كوبلر مفرد Single','كوبلر مزدوج Double','كوبلر دوّار Swivel','كوبلر جسر Girder','كوبلر ضغط Pressed','مشبك يونيفرسال Clamp','مشبك لوح Toe-Board','ألواح فولاذية Steel Planks','ألواح خشبية Wooden Planks','هيكل H-Frame','إطار كابولي Cantilever','وحدة درج Staircase','سلّم فولاذي Steel Ladder','عجلات Castor','دعامة دفع Push-Pull Prop','ماسورة مجلفنة Galvanized Pipe','قضيب شد Tie Rod','صامولة جناح Wing Nut','لوح Waller Plate'] },
+    { key: 'size', ar: 'المقاس / الطول', en: 'Size / Length', options: ['0.5 م','1.0 م','1.5 م','2.0 م','2.5 م','3.0 م','0.6 م','0.9 م','1.2 م','1.8 م','2.4 م','حسب الطلب'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['مجلفن Galvanized','مدهون Painted'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','طن','متر طولي'] },
+  ] },
   // HEB/HEA: المقاس بالتسمية القياسية (HEA 200…)
   { products: ['صلب هيكلي HEB','صلب هيكلي HEA'], spec: [
     { key: 'section', ar: 'المقاس (المقطع)', en: 'Section', options: ['100','120','140','160','180','200','220','240','260','280','300','320','340','360','400','450','500','550','600','650','700','800','900','1000'] },
@@ -1401,6 +1408,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'قمط شدّة أعمدة Column Clamp': { en: 'Column Clamps', ur: 'کالم کلیمپ' },
   'قضبان شد الطوبار Tie Rods': { en: 'Formwork Tie Rods', ur: 'ٹائی راڈ' },
   'زيت فك الطوبار Shutter Oil': { en: 'Shutter Release Oil', ur: 'شٹر آئل' },
+  'سقالة كب لوك (Cuplock)': { en: 'Cuplock Scaffold', ur: 'کپلاک سکیفولڈ' },
   'قائم سقالة Standard': { en: 'Scaffold Standard', ur: 'سکیفولڈ اسٹینڈرڈ' },
   'عارضة أفقية سقالة Ledger': { en: 'Scaffold Ledger', ur: 'سکیفولڈ لیجر' },
   'دعامة قطرية سقالة Brace': { en: 'Scaffold Brace', ur: 'سکیفولڈ بریس' },
@@ -1511,6 +1519,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'طوبار معدني جاهز', 'قمط شدّة أعمدة Column Clamp',
     'قضبان شد الطوبار Tie Rods', 'زيت فك الطوبار Shutter Oil',
     // ═══ السقالات والدعامات (Scaffolding & Shoring) ═══
+    'سقالة كب لوك (Cuplock)',
     'قائم سقالة Standard', 'عارضة أفقية سقالة Ledger',
     'دعامة قطرية سقالة Brace', 'ماسورة سقالة Tube', 'إطار سقالة معدنية Frame',
     'قاعدة ثابتة Base Plate', 'بيس جاك قابل للتعديل', 'يو جاك U-Head', 'سكرو جاك تعديل',
