@@ -5,7 +5,7 @@ import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
 
-export const revalidate = 600 // إعادة توليد كل 10 دقائق (SEO + كفاءة)
+export const dynamic = 'force-dynamic' // عرض وقت الطلب — يتفادى إنشاء عميل Supabase وقت البناء (build-safe)
 
 export const metadata: Metadata = {
   title: 'أفضل موردي مواد البناء في السعودية | تسعيرك',

@@ -5,7 +5,7 @@ import { SECTOR_LABELS } from '@/types'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
 
-export const revalidate = 600 // إعادة توليد كل 10 دقائق
+export const dynamic = 'force-dynamic' // عرض وقت الطلب — يتفادى إنشاء عميل Supabase وقت البناء (build-safe)
 
 export const metadata: Metadata = {
   title: 'أسعار مواد البناء في السعودية اليوم | تسعيرك',
