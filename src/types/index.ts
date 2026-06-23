@@ -1102,10 +1102,20 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','عود (قضيب)','حبة','متر طولي'] },
   ] },
   // القطاعات الدائرية CHS (القطر بالاسم — نضيف سماكة الجدار)
-  { products: ['قطاعات دائرية CHS 273mm','قطاعات دائرية CHS 300mm'], spec: [
-    { key: 'thickness', ar: 'سماكة الجدار', en: 'Wall thickness', options: ['5 مم','6 مم','8 مم','10 مم','12 مم','حسب المخطط'] },
-    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235JR','S275JR','S355JR'] },
+  // ═══ CHS — قطاعات دائرية مجوّفة (الجدول الكامل: قطر خارجي + سماكة) ═══
+  { products: ['قطاعات دائرية CHS (Circular Hollow Section)'], spec: [
+    { key: 'od', ar: 'القطر الخارجي (مم)', en: 'Outside Diameter (mm)', options: ['21.3','26.9','33.7','42.4','48.3','60.3','76.1','88.9','114.3','139.7','168.3','193.7','219.1','244.5','273.0','323.9','355.6','406.4','457.0','508.0'] },
+    { key: 'thickness', ar: 'السماكة (مم)', en: 'Thickness (mm)', options: ['2.0','2.5','3.0','3.2','3.6','4.0','5.0','6.0','6.3','8.0','10.0','12.5','16.0','20.0','25.0','32.0','40.0'] },
+    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235JR','S275JR','S355JR','حسب المواصفة'] },
     { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر','حسب القص'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','عود (قضيب)','حبة','متر طولي'] },
+  ] },
+  // ═══ SHS — أنبوب/قطاع فولاذي مربع (مقاس + سماكة) ═══
+  { products: ['قطاع مربع SHS (Steel Square Tube)'], spec: [
+    { key: 'size', ar: 'المقاس (مربع، مم)', en: 'Size (square, mm)', options: ['12×12','16×16','19×19','20×20','25×25','30×30','38×38','40×40','50×50','60×60','70×70','80×80','100×100','120×120'] },
+    { key: 'thickness', ar: 'السماكة (مم)', en: 'Thickness (mm)', options: ['1.0','1.1','1.15','1.2','1.4','1.45','1.5','1.8','2.0','2.8','3.0','4.0','5.0'] },
+    { key: 'grade', ar: 'درجة الصلب', en: 'Grade', options: ['S235JR','S275JR','S355JR','حسب المواصفة'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر (6000مم)','حسب القص'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['طن','عود (قضيب)','حبة','متر طولي'] },
   ] },
   // شبك الرابيتز (اللياسة)
@@ -1493,6 +1503,8 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'مقاعد ملعب': { en: 'Stadium Seating', ur: 'اسٹیڈیم سیٹنگ' },
   'سلالم رياضية Raker Beams': { en: 'Raker Beams', ur: 'ریکر بیم' },
   'قطاعات دائرية CHS 273mm': { en: 'Circular Hollow Section CHS 273mm', ur: 'سی ایچ ایس 273mm' },
+  'قطاعات دائرية CHS (Circular Hollow Section)': { en: 'Circular Hollow Section (CHS)', ur: 'سرکلر ہالو سیکشن' },
+  'قطاع مربع SHS (Steel Square Tube)': { en: 'Steel Square Tube (SHS)', ur: 'اسٹیل اسکوائر ٹیوب' },
   'قطاعات دائرية CHS 300mm': { en: 'Circular Hollow Section CHS 300mm', ur: 'سی ایچ ایس 300mm' },
   'قطاعات مستطيلة RHS': { en: 'Rectangular Hollow Section (RHS)', ur: 'آر ایچ ایس سیکشن' },
   'زوايا وقطاعات حديد': { en: 'Steel Angles & Sections', ur: 'اسٹیل اینگل اور سیکشن' },
@@ -1992,7 +2004,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ الأعمال الخاصة - BOQ 2 Stadium ═══
     'سلالم رياضية Raker Beams',
     // ═══ الصلب الهيكلي الدائري - BOQ 2 ═══
-    'قطاعات دائرية CHS 273mm', 'قطاعات دائرية CHS 300mm',
+    'قطاعات دائرية CHS (Circular Hollow Section)',
+    'قطاع مربع SHS (Steel Square Tube)',
     'قطاعات مستطيلة RHS', 'زوايا وقطاعات حديد',
     // ═══ أعمال موقع خارجية إضافية ═══
     'تمهيد وتسوية أرض', 'حصى مرشحة Sub-base',
