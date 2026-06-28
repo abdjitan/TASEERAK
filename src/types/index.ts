@@ -807,9 +807,11 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','حبة (أنبوب)'] },
   ] },
   { products: ['ألواح بليود (طوبار) Plywood'], spec: [
-    { key: 'origin', ar: 'المنشأ', en: 'Origin', options: ['إندونيسي','ماليزي','صيني','أوروبي'] },
-    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['18 مم','12 مم','9 مم'] },
+    { key: 'origin', ar: 'المنشأ', en: 'Origin', options: ['إندونيسي','ماليزي','صيني','روسي Russian','أوروبي','حسب الطلب'] },
+    { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['9 مم','12 مم','15 مم','18 مم','21 مم'] },
+    { key: 'sheet', ar: 'مقاس اللوح', en: 'Sheet size', options: ['1220×2440 مم','حسب الطلب'] },
     { key: 'film_face', ar: 'الطبقة الخارجية', en: 'Film Face', options: ['فيلم أسود (Black Film)','فيلم بني (Brown Film)','بدون فيلم (عادي)'] },
+    { key: 'brand', ar: 'الماركة (اختياري)', en: 'Brand (optional)', options: ['أي ماركة معتمدة','Madarplex','Tigercore','SVEZA','Korindo','Marineplex','حسب المواصفة'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لوح','بندل (حزمة)'] },
   ] },
   { products: ['مرابيع خشب (طوبار)'], spec: [
