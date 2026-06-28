@@ -806,6 +806,14 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','الأنابيب السعودية','مصنع محلي'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','حبة (أنبوب)'] },
   ] },
+  // ═══ خشب البناء (Construction Timber) — مواصفات من مدار ═══
+  { products: ['خشب بناء (Construction Timber)'], spec: [
+    { key: 'origin', ar: 'المنشأ', en: 'Origin', options: ['سويدي Swedish','نمساوي/تزانة Spruce','ألماني German','روماني Romanian','كندي Canadian','شيلي Chilean','حسب الطلب'] },
+    { key: 'thickness', ar: 'السماكة (مم)', en: 'Thickness (mm)', options: ['18','22','25','32','35','38','40','45','48','68','72','92','95','145'] },
+    { key: 'length', ar: 'الطول (م)', en: 'Length (m)', options: ['3.0','3.3','3.6','3.9','4.2','4.5','4.8','5.1','5.4','حسب القص'] },
+    { key: 'drying', ar: 'التجفيف', en: 'Drying', options: ['مجفّف فرن K/D','مجفّف هواء A/D'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م³','عود','حبة','بندل'] },
+  ] },
   { products: ['ألواح بليود (طوبار) Plywood'], spec: [
     { key: 'origin', ar: 'المنشأ', en: 'Origin', options: ['إندونيسي','ماليزي','صيني','روسي Russian','أوروبي','حسب الطلب'] },
     { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['9 مم','12 مم','15 مم','18 مم','21 مم'] },
@@ -1462,6 +1470,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'بلوك AAC خفيف': { en: 'Lightweight AAC Block', ur: 'ہلکا اے اے سی بلاک' },
   'ألواح بليود (طوبار) Plywood': { en: 'Plywood Formwork Boards', ur: 'پلائی ووڈ فارم ورک' },
   'خشب بناء للشدّات': { en: 'Formwork Timber', ur: 'فارم ورک لکڑی' },
+  'خشب بناء (Construction Timber)': { en: 'Construction Timber', ur: 'تعمیراتی لکڑی' },
   'مرابيع خشب (طوبار)': { en: 'Timber Battens (Formwork)', ur: 'لکڑی کے بیٹن' },
   'عوارض خشبية H20': { en: 'H20 Timber Beams', ur: 'H20 لکڑی بیم' },
   'طوبار معدني جاهز': { en: 'Steel Formwork System', ur: 'دھاتی فارم ورک' },
@@ -1980,6 +1989,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'بلوك', 'طوب أحمر', 'طوب فارغ',
     // ═══ الطوبار والشدّات الخشبية (Formwork) ═══
     'ألواح بليود (طوبار) Plywood', 'خشب بناء للشدّات',
+    'خشب بناء (Construction Timber)',
     'مرابيع خشب (طوبار)', 'عوارض خشبية H20',
     'طوبار معدني جاهز', 'قمط شدّة أعمدة Column Clamp',
     'قضبان شد الطوبار Tie Rods', 'زيت فك الطوبار Shutter Oil',
