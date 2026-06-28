@@ -196,7 +196,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['louver','مظلة','كاسر شمس','shading','بريز سوليه','brise soleil','مشربية معدنية'] },
     // ═══ النجارة والأثاث الثابت (Joinery) ═══
     millwork: { ar: 'نجارة وكاونترات', en: 'Joinery & Counters', ur: 'جوائنری', icon: '🪵', group: 'joinery',
-      keywords: ['نجارة','joinery','millwork','كاونتر','counter','reception','مكتب استقبال','بار','bar counter','خشب مفصل'] },
+      keywords: ['نجارة','joinery','millwork','كاونتر','counter','reception','مكتب استقبال','بار','bar counter','خشب مفصل','MDF','mdf','خشب مضغوط','OSB','بلوك بورد','chipboard','blockboard','لوح خشبي'] },
     fitted_furniture: { ar: 'أثاث ثابت وخزائن', en: 'Fitted Furniture & Wardrobes', ur: 'فکسڈ فرنیچر', icon: '🪑', group: 'joinery',
       keywords: ['خزائن','wardrobe','أثاث ثابت','fitted','بانكيت','banquette','vanity','solid surface','corian'] },
     cubicles: { ar: 'قواطع حمامات وكبائن', en: 'Toilet Cubicles & Partitions', ur: 'کیوبیکل', icon: '🚪', group: 'joinery',
@@ -1178,6 +1178,13 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['مصقول','مطفي','دهان إلكتروستاتيك','حسب الطلب'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','م² (متر مربع)','عدد'] },
   ] },
+  // ═══ ألواح MDF / خشب مضغوط / OSB (من مدار) ═══
+  { products: ['ألواح MDF وخشب مضغوط (Wood Boards)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['MDF عادي','MDF مقاوم رطوبة MR','MDF مقاوم حريق FR','MDF مقشّر Veneered','خشب مضغوط Chipboard','OSB','بلوك بورد Blockboard'] },
+    { key: 'thickness', ar: 'السماكة (مم)', en: 'Thickness (mm)', options: ['3','6','9','12','16','18','25'] },
+    { key: 'sheet', ar: 'مقاس اللوح', en: 'Sheet size', options: ['1220×2440 مم','2100×2800 مم','4×8 قدم','حسب الطلب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لوح','م²'] },
+  ] },
   { products: ['كاونتر استقبال خشبي','خزائن حائط ثابتة','أثاث ثابت خشبي Built-in','كبائن دورات مياه Toilet Cubicles','قواطع حمامات HPL','أرفف خشبية'], spec: [
     { key: 'material', ar: 'المادة', en: 'Material', options: ['MDF','خشب طبيعي','HPL','كوريان (Solid Surface)','قشرة','حسب الطلب'] },
     { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['دهان','قشرة','لاكيه','ميلامين'] },
@@ -1585,6 +1592,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'كاونتر استقبال خشبي': { en: 'Wooden Reception Counter', ur: 'ریسپشن کاؤنٹر' },
   'خزائن حائط ثابتة': { en: 'Fixed Wall Cabinets', ur: 'دیواری الماری' },
   'أثاث ثابت خشبي Built-in': { en: 'Built-in Wooden Furniture', ur: 'بلٹ ان فرنیچر' },
+  'ألواح MDF وخشب مضغوط (Wood Boards)': { en: 'MDF / Chipboard / OSB Boards', ur: 'ایم ڈی ایف بورڈ' },
   'قواطع حمامات HPL': { en: 'HPL Toilet Partitions', ur: 'ایچ پی ایل پارٹیشن' },
   'كبائن دورات مياه Toilet Cubicles': { en: 'Toilet Cubicles', ur: 'ٹوائلٹ کیوبیکل' },
   'أرضية راتنج إيبوكسي High Build': { en: 'High-Build Epoxy Floor', ur: 'ہائی بلڈ ایپوکسی فرش' },
@@ -2077,6 +2085,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'أرفف خشبية', 'لوحات إرشادية Signage',
     // ═══ النجارة والأثاث الثابت (Joinery) ═══
     'كاونتر استقبال خشبي', 'خزائن حائط ثابتة', 'أثاث ثابت خشبي Built-in',
+    'ألواح MDF وخشب مضغوط (Wood Boards)',
     'قواطع حمامات HPL', 'كبائن دورات مياه Toilet Cubicles',
     // ═══ أرضيات إضافية من BOQ 2 ═══
     'أرضية راتنج إيبوكسي High Build',
