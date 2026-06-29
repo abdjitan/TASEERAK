@@ -844,7 +844,7 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   // ═══ مواد معمارية/كهربائية مضافة (مراجعة الذكاء) ═══
   { products: ['غراء وترويبة بلاط'], spec: [
     { key: 'item', ar: 'الصنف', en: 'Item', options: ['غراء بلاط عادي (C1)','غراء بورسلان عالي الالتصاق (C2)','ترويبة بلاط بورسلان','ترويبة إيبوكسية'] },
-    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','سافيتو (Saveto)','فيتونيت (Vetonit)','لاتيكريت (Laticrete)'] },
+    { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','سافيتو (Saveto)','الجزيرة (Jazeera)','فيتونيت (Vetonit)','مابي (Mapei)','لاتيكريت (Laticrete)'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['كيس 20 كجم','كيس 25 كجم','جالون (للترويبة)'] },
   ] },
   { products: ['حديد أسقف مستعارة'], spec: [
@@ -1072,6 +1072,12 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
   { products: ['بيتومين أولي (Primer)'], spec: [
     { key: 'type', ar: 'النوع', en: 'Type', options: ['مذيب Solvent-based','مائي Water-based'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لتر','جالون','برميل'] },
+  ] },
+  // ═══ المواد اللاصقة والكيماويات (Adhesives & Sealants) — من مدار ═══
+  { products: ['مواد لاصقة وكيماويات (Adhesives & Sealants)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['سيليكون Silicone','بولي يوريثان PU','أكريليك Acrylic','لاصق تماس Contact','غراء خشب Wood Glue','فوم تمدد Expanding Foam','إيبوكسي Epoxy','مادة ربط Bonding Agent','جراوت إنشائي Grout'] },
+    { key: 'brand', ar: 'الماركة (اختياري)', en: 'Brand (optional)', options: ['أي ماركة معتمدة','Dunlop','Asmaco','Saveto','Bostik','Sika','حسب المواصفة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['أنبوب (خرطوش)','علبة','كيلو','لتر'] },
   ] },
   { products: ['لوح حماية بيتوميني (Protection Board)'], spec: [
     { key: 'thickness', ar: 'السماكة', en: 'Thickness', options: ['3 مم','4 مم','6 مم'] },
@@ -1524,6 +1530,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'بطانة خزانات سائلة (Tank Lining)': { en: 'Liquid Tank Lining', ur: 'ٹینک لائننگ' },
   'بيتومين أولي (Primer)': { en: 'Bituminous Primer', ur: 'بٹومین پرائمر' },
   'لوح حماية بيتوميني (Protection Board)': { en: 'Bituminous Protection Board', ur: 'پروٹیکشن بورڈ' },
+  'مواد لاصقة وكيماويات (Adhesives & Sealants)': { en: 'Adhesives & Sealants', ur: 'چپکنے والے اور سیلنٹ' },
   'عازل مائي Tanking': { en: 'Tanking Waterproofing', ur: 'ٹینکنگ واٹر پروفنگ' },
   'غشاء عازل للأسطح': { en: 'Roof Waterproofing Membrane', ur: 'چھت واٹر پروف میمبرین' },
   'مدرجات مسبقة الصب Bleachers': { en: 'Precast Bleachers', ur: 'پری کاسٹ بلیچرز' },
@@ -2030,6 +2037,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'عزل مائي سائل (Liquid Membrane)', 'عزل مائي سيماني (Cementitious)',
     'غشاء بيتوميني لفائف (Bituminous Membrane)', 'بطانة خزانات سائلة (Tank Lining)',
     'بيتومين أولي (Primer)', 'لوح حماية بيتوميني (Protection Board)',
+    'مواد لاصقة وكيماويات (Adhesives & Sealants)',
     'فيلم بولي ايثيلين',
     // ═══ الأعمال الخاصة - BOQ 2 Stadium ═══
     'سلالم رياضية Raker Beams',
