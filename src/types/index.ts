@@ -799,6 +799,13 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','بيتومات (Bitumat)','ديرمابيت (Dermabit)','فوسروك (Fosroc)'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['برميل','لتر'] },
   ] },
+  // ═══ أنابيب HDPE صرف الأمطار — منتج واحد + خيار المقاس ═══
+  { products: ['أنابيب HDPE صرف أمطار (SDR11)'], spec: [
+    { key: 'diameter', ar: 'القطر (mm)', en: 'Diameter (mm)', options: ['100','150','200','250','300','400','500','600','حسب المخطط'] },
+    { key: 'sdr', ar: 'الفئة (SDR/PN)', en: 'Class (SDR/PN)', options: ['SDR11 (PN16)','SDR17 (PN10)','SDR26 (PN6)','حسب المواصفة'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['6 متر','12 متر','لفة Coil','حسب الطلب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','عدد (ماسورة)','لفة'] },
+  ] },
   { products: ['أنابيب خرسانية صرف خارجي'], spec: [
     { key: 'diameter', ar: 'القطر الداخلي', en: 'Inner Diameter', options: ['300 مم','400 مم','600 مم','800 مم','1000 مم'] },
     { key: 'class', ar: 'الدرجة (Class)', en: 'Class', options: ['Class 2','Class 3','Class 4'] },
@@ -1507,6 +1514,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'جاكات تدعيم Acrow Prop': { en: 'Acrow Props', ur: 'ایکرو پراپ' },
   'برج تدعيم Shoring Tower': { en: 'Shoring Tower', ur: 'شورنگ ٹاور' },
   'درابزين أمان سقالة Guard Rail': { en: 'Scaffold Guard Rail', ur: 'گارڈ ریل' },
+  'أنابيب HDPE صرف أمطار (SDR11)': { en: 'HDPE SDR11 Stormwater Pipe', ur: 'ایچ ڈی پی ای اسٹارم پائپ' },
   'أنابيب HDPE SDR11 صرف أمطار 100mm': { en: 'HDPE SDR11 Stormwater Pipe 100mm', ur: 'ایچ ڈی پی ای اسٹارم پائپ 100mm' },
   'أنابيب HDPE SDR11 صرف أمطار 150mm': { en: 'HDPE SDR11 Stormwater Pipe 150mm', ur: 'ایچ ڈی پی ای اسٹارم پائپ 150mm' },
   'أنابيب HDPE SDR11 صرف أمطار 200mm': { en: 'HDPE SDR11 Stormwater Pipe 200mm', ur: 'ایچ ڈی پی ای اسٹارم پائپ 200mm' },
@@ -2020,11 +2028,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ الصرف الخارجي - CIVIL فقط (BOQ: Storm Drainage) ═══
     // ✅ هادي أنابيب صرف الأمطار الخارجية المدفونة = مدني
     // ❌ أنابيب الصرف الصحي الداخلية = ميكانيك (شوف قسم mechanical)
-    'أنابيب HDPE SDR11 صرف أمطار 100mm',
-    'أنابيب HDPE SDR11 صرف أمطار 150mm',
-    'أنابيب HDPE SDR11 صرف أمطار 200mm',
-    'أنابيب HDPE SDR11 صرف أمطار 300mm',
-    'أنابيب HDPE SDR11 صرف أمطار 400mm',
+    'أنابيب HDPE صرف أمطار (SDR11)',
     'أنابيب خرسانية صرف خارجي', 'أنابيب خرسانية مسلحة RCP',
     'أنابيب حديد مرن Ductile Iron مياه رئيسية',
     'غرف تفتيش خرسانية', 'أغطية منهول حديد', 'مصارف خطية',
