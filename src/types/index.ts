@@ -799,6 +799,28 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','بيتومات (Bitumat)','ديرمابيت (Dermabit)','فوسروك (Fosroc)'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['برميل','لتر'] },
   ] },
+  // ═══ مواسير الميكانيك — منتج لكل نوع + خيار المقاس ═══
+  { products: ['أنابيب uPVC صرف صحي'], spec: [
+    { key: 'diameter', ar: 'القطر (mm)', en: 'Diameter (mm)', options: ['50','75','110','160','200','250','315','حسب المخطط'] },
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['صرف صحي Soil','تهوية Vent','مطر Rain'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','عدد (ماسورة 6م)'] },
+  ] },
+  { products: ['أنابيب CPVC'], spec: [
+    { key: 'diameter', ar: 'القطر (mm)', en: 'Diameter (mm)', options: ['20','25','32','40','50','65','80','100','110','150','حسب المخطط'] },
+    { key: 'use', ar: 'الاستخدام', en: 'Use', options: ['مياه حارة Hot','مياه باردة Cold','حريق Fire'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','عدد (ماسورة)'] },
+  ] },
+  { products: ['أنابيب فولاذية لمكافحة الحريق Sprinkler'], spec: [
+    { key: 'diameter', ar: 'القطر (mm)', en: 'Diameter (mm)', options: ['25','32','40','50','65','80','100','125','150','200','حسب المخطط'] },
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['أسود Black','مجلفن GI'] },
+    { key: 'schedule', ar: 'السماكة (Schedule)', en: 'Schedule', options: ['Sch10','Sch40','حسب المواصفة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','عدد (ماسورة 6م)','طن'] },
+  ] },
+  { products: ['أنابيب مياه مبردة فولاذية Sch40'], spec: [
+    { key: 'diameter', ar: 'القطر (DN)', en: 'Diameter (DN)', options: ['DN65','DN80','DN100','DN125','DN150','DN200','DN250','DN300','حسب المخطط'] },
+    { key: 'schedule', ar: 'السماكة (Schedule)', en: 'Schedule', options: ['Sch40','Sch80','حسب المواصفة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','عدد (ماسورة 6م)','طن'] },
+  ] },
   // ═══ أنابيب HDPE صرف الأمطار — منتج واحد + خيار المقاس ═══
   { products: ['أنابيب HDPE صرف أمطار (SDR11)'], spec: [
     { key: 'diameter', ar: 'القطر (mm)', en: 'Diameter (mm)', options: ['100','150','200','250','300','400','500','600','حسب المخطط'] },
@@ -1734,6 +1756,10 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'أنابيب معزولة مسبقاً Pre-Insulated (تبريد منطقي)': { en: 'Pre-Insulated Pipe (District Cooling)', ur: 'پری انسولیٹڈ پائپ' },
   'أنابيب GRP فايبرجلاس': { en: 'GRP Fiberglass Pipe', ur: 'جی آر پی پائپ' },
   'أنابيب uPVC صرف صحي داخلي': { en: 'uPVC Internal Drainage Pipe', ur: 'یو پی وی سی ڈرینج پائپ' },
+  'أنابيب uPVC صرف صحي': { en: 'uPVC Sanitary Drainage Pipe', ur: 'یو پی وی سی ڈرینج پائپ' },
+  'أنابيب CPVC': { en: 'CPVC Pipe', ur: 'سی پی وی سی پائپ' },
+  'أنابيب فولاذية لمكافحة الحريق Sprinkler': { en: 'Steel Sprinkler / Fire-Fighting Pipe', ur: 'فائر اسپرنکلر پائپ' },
+  'أنابيب مياه مبردة فولاذية Sch40': { en: 'Steel Chilled Water Pipe Sch40', ur: 'چلڈ واٹر پائپ Sch40' },
   'أنابيب uPVC صرف صحي 50mm': { en: 'uPVC Drainage Pipe 50mm', ur: 'یو پی وی سی ڈرینج 50mm' },
   'أنابيب uPVC صرف صحي 75mm': { en: 'uPVC Drainage Pipe 75mm', ur: 'یو پی وی سی ڈرینج 75mm' },
   'أنابيب uPVC صرف صحي 100mm': { en: 'uPVC Drainage Pipe 100mm', ur: 'یو پی وی سی ڈرینج 100mm' },
@@ -2209,17 +2235,11 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'أنابيب GRP فايبرجلاس',
     // ═══ أنابيب الصرف الصحي الداخلي (BOQ: Q SANITARY) ═══
     // ✅ الصرف الداخلي = ميكانيك (عكس الصرف الخارجي الذي = مدني)
-    'أنابيب uPVC صرف صحي داخلي', 'أنابيب uPVC صرف صحي 50mm',
-    'أنابيب uPVC صرف صحي 75mm', 'أنابيب uPVC صرف صحي 100mm',
-    'أنابيب uPVC صرف صحي 150mm', 'أنابيب uPVC صرف صحي 200mm',
+    'أنابيب uPVC صرف صحي',
     'أنابيب HDPE صرف صحي داخلي',
     'أنابيب حديد زهر Cast Iron صرف صامت',
     // ═══ أنابيب إطفاء الحريق (BOQ: Q FIRE PROTECTION) ═══
-    'أنابيب فولاذية sprinkler 25mm', 'أنابيب فولاذية sprinkler 32mm',
-    'أنابيب فولاذية sprinkler 40mm', 'أنابيب فولاذية sprinkler 50mm',
-    'أنابيب فولاذية sprinkler 65mm', 'أنابيب فولاذية sprinkler 80mm',
-    'أنابيب فولاذية sprinkler 100mm', 'أنابيب فولاذية sprinkler 150mm',
-    'أنابيب فولاذية sprinkler 200mm',
+    'أنابيب فولاذية لمكافحة الحريق Sprinkler',
     // ═══ الصمامات (BOQ: Valves) ═══
     'صمامات كرة نحاس', 'صمامات كرة ستانلس', 'صمامات بوابة',
     'صمامات فراشة flanged', 'صمامات فحص', 'صمامات تخفيض ضغط PRV',
@@ -2278,16 +2298,12 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'فصال دهون Grease Interceptor',
     'حوض ترسيب مياه أمطار',
     // ═══ أنابيب CPVC بأقطار محددة (BOQ: Cold Water) ═══
-    'أنابيب CPVC 65mm', 'أنابيب CPVC 80mm',
-    'أنابيب CPVC 100mm', 'أنابيب CPVC 110mm', 'أنابيب CPVC 150mm',
+    'أنابيب CPVC',
     // ═══ عدادات مياه وخزانات ═══
     'عداد مياه 100mm', 'خزان مياه GRP 20م³',
     'خزان مياه GRP 434م³', 'وعاء تمدد Expansion Vessel',
     // ═══ أنابيب مياه مبردة بأقطار محددة (BOQ: 23) ═══
-    'أنابيب مياه مبردة Sch40 DN65', 'أنابيب مياه مبردة Sch40 DN80',
-    'أنابيب مياه مبردة Sch40 DN100', 'أنابيب مياه مبردة Sch40 DN125',
-    'أنابيب مياه مبردة Sch40 DN150', 'أنابيب مياه مبردة Sch40 DN200',
-    'أنابيب مياه مبردة Sch40 DN250', 'أنابيب مياه مبردة Sch40 DN300',
+    'أنابيب مياه مبردة فولاذية Sch40',
     'أنابيب مياه مبردة مدفونة Pre-insulated',
     'عازل أنابيب مياه مبردة Fibreglass 1/2"',
     'عازل أنابيب مياه مبردة Fibreglass 1"',
