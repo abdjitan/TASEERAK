@@ -474,7 +474,10 @@ export default function OrderDetailPage() {
                   <div className="text-xs text-gray-400">{offer.received_at ? `✓ موثّق — أكّد المقاول الاستلام ${new Date(offer.received_at).toLocaleString('ar-SA')}` : 'بانتظار تأكيد المقاول لاستلام البضاعة'}</div>
                 </div>
                 {!offer.received_at && isContractor && (
-                  <button onClick={() => { if (confirm('تأكيد استلام البضاعة؟ سيُسجّل محضر موثّق بالتاريخ.')) patch({ received_at: now(), received_by: myId }, 'receipt') }} disabled={busy === 'receipt'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ أؤكّد الاستلام</button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => { setDisputeReason('البضاعة لم تُسلَّم أو لم تتطابق مع المطلوب'); setShowDispute(true) }} className="text-xs px-3 py-2 rounded-xl font-semibold border border-red-300 text-red-600 hover:bg-red-50 whitespace-nowrap">✕ لم يتم الاستلام</button>
+                    <button onClick={() => { if (confirm('⚠ هل استلمت البضاعة فعلياً ومطابقة للمطلوب؟\n\nسيُسجَّل محضر استلام موثّق بالتاريخ. تنبيه: تأكيد الاستلام دون استلام فعلي يُخفّض تقييمك ويُعرّضك للمساءلة.')) patch({ received_at: now(), received_by: myId }, 'receipt') }} disabled={busy === 'receipt'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ أؤكّد الاستلام</button>
+                  </div>
                 )}
               </div>
 
