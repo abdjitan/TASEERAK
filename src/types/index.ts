@@ -1764,7 +1764,6 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'أنابيب uPVC صرف صحي داخلي': { en: 'uPVC Internal Drainage Pipe', ur: 'یو پی وی سی ڈرینج پائپ' },
   'أنابيب uPVC صرف صحي': { en: 'uPVC Sanitary Drainage Pipe', ur: 'یو پی وی سی ڈرینج پائپ' },
   'أنابيب PPR تغذية': { en: 'PPR Water Supply Pipe', ur: 'پی پی آر پائپ' },
-  'أنابيب CPVC': { en: 'CPVC Pipe', ur: 'سی پی وی سی پائپ' },
   'أنابيب فولاذية لمكافحة الحريق Sprinkler': { en: 'Steel Sprinkler / Fire-Fighting Pipe', ur: 'فائر اسپرنکلر پائپ' },
   'أنابيب مياه مبردة فولاذية Sch40': { en: 'Steel Chilled Water Pipe Sch40', ur: 'چلڈ واٹر پائپ Sch40' },
   'أنابيب uPVC صرف صحي 50mm': { en: 'uPVC Drainage Pipe 50mm', ur: 'یو پی وی سی ڈرینج 50mm' },
