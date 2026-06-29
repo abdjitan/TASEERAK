@@ -26,6 +26,12 @@ export default function SupplierRFQPage() {
   const [success, setSuccess] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [error, setError] = useState('')
+  // تقييم المورّد للمقاول (متبادل)
+  const [cRating, setCRating] = useState(0)
+  const [cComment, setCComment] = useState('')
+  const [cBusy, setCBusy] = useState(false)
+  const [cDone, setCDone] = useState(false)
+  const [cMsg, setCMsg] = useState('')
 
   const [totalPrice, setTotalPrice] = useState('')
   const [unitPrice, setUnitPrice] = useState('')
@@ -123,7 +129,13 @@ export default function SupplierRFQPage() {
       // auto-calc unit price from quantity
       const { data: offerData } = await supabase
         .from('offers').select('*').eq('rfq_id', id).eq('supplier_id', session.user.id).single()
-      if (offerData) setExistingOffer(offerData)
+      if (offerData) {
+        setExistingOffer(offerData)
+        if (offerData.status === 'accepted') {
+          const { data: rev } = await supabase.from('reviews').select('id').eq('reviewer_id', offerData.supplier_id).eq('offer_id', offerData.id).limit(1)
+          if (rev && rev.length) setCDone(true)
+        }
+      }
 
       // الموقع التنافسي: أسعار العروض الحالية (مجهولة الهوية)
       const { data: rk } = await supabase.rpc('get_rfq_offer_ranking', { p_rfq_id: id })
@@ -581,6 +593,35 @@ export default function SupplierRFQPage() {
                     <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#1B2D5B' }}>{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* تقييم المورّد للمقاول (متبادل) — بعد قبول الصفقة */}
+            {existingOffer.status === 'accepted' && (
+              <div className="mt-4 border-t border-emerald-200 pt-4 text-right">
+                {cDone ? (
+                  <div className="text-sm font-bold" style={{ color: '#0F6E56' }}>⭐ {locale === 'en' ? 'Thanks for rating the contractor' : 'شكراً لتقييمك المقاول'}</div>
+                ) : (
+                  <div>
+                    <div className="text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Rate the contractor' : 'قيّم المقاول'} ⭐</div>
+                    <div className="flex gap-1 mb-2">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button key={n} type="button" onClick={() => setCRating(n)} className={`text-2xl leading-none ${n <= cRating ? 'text-yellow-400' : 'text-gray-300'}`}>★</button>
+                      ))}
+                    </div>
+                    <textarea value={cComment} onChange={(e: any) => setCComment(e.target.value)} rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Optional comment about the contractor…' : 'تعليق اختياري عن المقاول…'} />
+                    {cMsg && <div className="text-xs text-red-600 mt-1">{cMsg}</div>}
+                    <button type="button" disabled={!cRating || cBusy} onClick={async () => {
+                      if (!cRating) return
+                      setCBusy(true); setCMsg('')
+                      const supabase = createClient()
+                      const { error: e } = await supabase.rpc('submit_contractor_review', { p_offer_id: existingOffer.id, p_rating: cRating, p_comment: cComment || null })
+                      setCBusy(false)
+                      if (e) { const dup = (e.message || '').includes('Already'); setCMsg(dup ? (locale === 'en' ? 'Already rated' : 'سبق تقييمك') : (locale === 'en' ? 'Error, try again' : 'حدث خطأ، حاول مجدداً')); if (dup) setCDone(true); return }
+                      setCDone(true)
+                    }} className="mt-2 px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>{cBusy ? '...' : (locale === 'en' ? 'Submit rating' : 'إرسال التقييم')}</button>
+                  </div>
+                )}
               </div>
             )}
 
