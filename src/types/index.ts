@@ -276,7 +276,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     water_supply: { ar: 'أنابيب تغذية (PPR)', en: 'Water Supply Pipes (PPR)', ur: 'پانی سپلائی', icon: '🚰', group: 'plumbing',
       keywords: ['PPR','تغذية','مياه باردة','مياه حارة','CPVC','PEX','نحاس مياه','مياه مبردة','chilled water','GI','مجلفن','galvanized','GRP','فايبرجلاس','معزولة مسبقا','pre-insulated','pre insulated','HDPE','مياه شرب','عداد مياه','water meter'] },
     drainage_pipes: { ar: 'مواسير صرف (PVC/UPVC)', en: 'Drainage Pipes (PVC)', ur: 'نکاسی پائپ', icon: '🚽', group: 'plumbing',
-      keywords: ['صرف صحي','uPVC','PVC','sanitary','soil','waste','قسامات','أكواع','مصرف','حديد زهر','cast iron','زهر','فصال دهون','grease','interceptor'] },
+      keywords: ['صرف صحي','uPVC','PVC','sanitary','soil','waste','قسامات','أكواع','مصرف','حديد زهر','cast iron','زهر','فصال دهون','grease','interceptor','صرف خارجي','صرف أمطار','أمطار','stormwater','RCP','خرساني','ductile','حديد مرن','مياه رئيسية','منهول','manhole','غرف تفتيش','مصارف خطية'] },
     silent_drainage: { ar: 'صرف صامت (أكوستيك)', en: 'Silent / Acoustic Drainage', ur: 'سائلنٹ ڈرینج', icon: '🔇', group: 'plumbing',
       keywords: ['صرف صامت','silent','acoustic drainage','أكوستيك','db20','geberit silent','poloplast','صرف هادئ'] },
     storm_drainage: { ar: 'صرف مياه الأمطار', en: 'Storm Water Drainage', ur: 'بارش نکاسی', icon: '🌧', group: 'plumbing',
@@ -800,6 +800,12 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['برميل','لتر'] },
   ] },
   // ═══ مواسير الميكانيك — منتج لكل نوع + خيار المقاس ═══
+  { products: ['أنابيب PPR تغذية'], spec: [
+    { key: 'diameter', ar: 'القطر (mm)', en: 'Diameter (mm)', options: ['20','25','32','40','50','63','75','90','110','125','160','حسب المخطط'] },
+    { key: 'pn', ar: 'الفئة (PN)', en: 'Class (PN)', options: ['PN16','PN20','PN25','حسب المواصفة'] },
+    { key: 'use', ar: 'الاستخدام', en: 'Use', options: ['مياه باردة Cold','مياه حارة Hot','مقوّى بالألياف Fiber'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['متر طولي','عدد (ماسورة 4م)'] },
+  ] },
   { products: ['أنابيب uPVC صرف صحي'], spec: [
     { key: 'diameter', ar: 'القطر (mm)', en: 'Diameter (mm)', options: ['50','75','110','160','200','250','315','حسب المخطط'] },
     { key: 'type', ar: 'النوع', en: 'Type', options: ['صرف صحي Soil','تهوية Vent','مطر Rain'] },
@@ -1757,6 +1763,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'أنابيب GRP فايبرجلاس': { en: 'GRP Fiberglass Pipe', ur: 'جی آر پی پائپ' },
   'أنابيب uPVC صرف صحي داخلي': { en: 'uPVC Internal Drainage Pipe', ur: 'یو پی وی سی ڈرینج پائپ' },
   'أنابيب uPVC صرف صحي': { en: 'uPVC Sanitary Drainage Pipe', ur: 'یو پی وی سی ڈرینج پائپ' },
+  'أنابيب PPR تغذية': { en: 'PPR Water Supply Pipe', ur: 'پی پی آر پائپ' },
   'أنابيب CPVC': { en: 'CPVC Pipe', ur: 'سی پی وی سی پائپ' },
   'أنابيب فولاذية لمكافحة الحريق Sprinkler': { en: 'Steel Sprinkler / Fire-Fighting Pipe', ur: 'فائر اسپرنکلر پائپ' },
   'أنابيب مياه مبردة فولاذية Sch40': { en: 'Steel Chilled Water Pipe Sch40', ur: 'چلڈ واٹر پائپ Sch40' },
@@ -2052,12 +2059,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'قطاعات قنوات U/UPN/UPE (Channels)',
     'صفائح فولاذية', 'أوتاد خرسانية', 'أوتاد حديد مجوف',
     // ═══ الصرف الخارجي - CIVIL فقط (BOQ: Storm Drainage) ═══
-    // ✅ هادي أنابيب صرف الأمطار الخارجية المدفونة = مدني
-    // ❌ أنابيب الصرف الصحي الداخلية = ميكانيك (شوف قسم mechanical)
-    'أنابيب HDPE صرف أمطار (SDR11)',
-    'أنابيب خرسانية صرف خارجي', 'أنابيب خرسانية مسلحة RCP',
-    'أنابيب حديد مرن Ductile Iron مياه رئيسية',
-    'غرف تفتيش خرسانية', 'أغطية منهول حديد', 'مصارف خطية',
+    // الصرف الخارجي والأنابيب نُقلت لقسم الميكانيك (السباكة والصرف)
     // ═══ الأعمال الخارجية (BOQ: B SITE WORK) ═══
     'أعمال ترابية وحفر', 'مواد ردم وتسوية', 'إسفلت',
     'حجر كيرب', 'بلاط رصف خارجي',
@@ -2236,6 +2238,12 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ أنابيب الصرف الصحي الداخلي (BOQ: Q SANITARY) ═══
     // ✅ الصرف الداخلي = ميكانيك (عكس الصرف الخارجي الذي = مدني)
     'أنابيب uPVC صرف صحي',
+    'أنابيب PPR تغذية',
+    // ═══ الصرف الخارجي والأنابيب (نُقلت من المدني) ═══
+    'أنابيب HDPE صرف أمطار (SDR11)',
+    'أنابيب خرسانية صرف خارجي', 'أنابيب خرسانية مسلحة RCP',
+    'أنابيب حديد مرن Ductile Iron مياه رئيسية',
+    'غرف تفتيش خرسانية', 'أغطية منهول حديد', 'مصارف خطية',
     'أنابيب HDPE صرف صحي داخلي',
     'أنابيب حديد زهر Cast Iron صرف صامت',
     // ═══ أنابيب إطفاء الحريق (BOQ: Q FIRE PROTECTION) ═══
