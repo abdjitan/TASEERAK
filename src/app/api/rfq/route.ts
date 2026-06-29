@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       city: body.city,
       delivery_required: body.delivery_required ?? true,
       vat_invoice_required: body.vat_invoice_required ?? true,
-      hide_identity: body.hide_identity ?? false,
+      hide_identity: body.hide_identity ?? true,
       notes: body.notes,
       expires_at: expiresAt.toISOString(),
     })

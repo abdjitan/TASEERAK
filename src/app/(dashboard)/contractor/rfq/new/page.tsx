@@ -156,7 +156,7 @@ export default function NewRFQPage() {
   const [deliveryLocation, setDeliveryLocation] = useState('')
   const [deliveryGeo, setDeliveryGeo] = useState('') // إحداثيات دقيقة "lat,lng" من التحديد الآلي
   const [vatRequired, setVatRequired] = useState(true)
-  const [hideIdentity, setHideIdentity] = useState(false)
+  const [hideIdentity, setHideIdentity] = useState(true) // افتراضياً مخفي — المقاول يُلغي الإخفاء لإظهار اسمه للموردين
   const [notes, setNotes] = useState('')
   const [validityHours, setValidityHours] = useState(48)
   const [customDeadline, setCustomDeadline] = useState('') // datetime-local: وقت محدد لانتهاء التسعير

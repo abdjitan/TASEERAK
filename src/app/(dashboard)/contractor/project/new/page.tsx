@@ -306,7 +306,7 @@ export default function NewProjectPage() {
           delivery_required: deliveryRequired,
           delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
           vat_invoice_required: true,
-          hide_identity: false,
+          hide_identity: true,
           target_tiers: targetTiers.length > 0 ? targetTiers : null,
           verified_only: verifiedOnly,
           nearby_only: nearbyOnly,
