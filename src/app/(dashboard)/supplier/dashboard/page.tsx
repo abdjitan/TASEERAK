@@ -477,7 +477,7 @@ export default function SupplierDashboard() {
             ) : (
               <div className="space-y-3">
                 {myOffers.map((offer: any) => (
-                  <div key={offer.id} className={`bg-white rounded-2xl p-5 border shadow-sm transition-all ${
+                  <Link key={offer.id} href={`/supplier/dashboard/rfq/${offer.rfq_id}`} className={`block bg-white rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md hover:border-[#F5831F]/40 ${
                     offer.status === 'accepted' ? 'border-emerald-200 bg-emerald-50/50' :
                     offer.status === 'rejected' ? 'border-gray-200 opacity-50' : 'border-gray-100'
                   }`}>
@@ -504,7 +504,12 @@ export default function SupplierDashboard() {
                       {offer.delivery_days && <span>📦 {offer.delivery_days} {t.day}</span>}
                       {offer.rfq?.region && <span>📍 {offer.rfq.region}</span>}
                     </div>
-                  </div>
+                    <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#F5831F' }}>
+                      {offer.status === 'accepted'
+                        ? (locale === 'en' ? 'View deal & invoice →' : locale === 'ur' ? 'ڈیل دیکھیں →' : 'افتح الصفقة والفاتورة ←')
+                        : (locale === 'en' ? 'View / edit offer →' : locale === 'ur' ? 'پیشکش دیکھیں →' : 'افتح العرض والتفاصيل ←')}
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}
