@@ -164,10 +164,10 @@ export default function OrderDetailPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 print:bg-white print:p-0" dir="rtl">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-3xl mx-auto flex flex-col gap-6">
 
         {/* Actions - hidden in print */}
-        <div className="flex items-center justify-between mb-6 mt-4 print:hidden">
+        <div className="flex items-center justify-between mt-4 print:hidden">
           <Link href="/contractor" className="text-sm text-gray-500 hover:text-gray-700">← رجوع للوحة التحكم</Link>
           <button onClick={handlePrint}
             className="bg-[#1B2D5B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0f1d3d] transition-colors">
@@ -176,7 +176,7 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Purchase Order Document */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden print:shadow-none print:border-none print:rounded-none">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-2 print:shadow-none print:border-none print:rounded-none">
 
           {/* Header */}
           <div className="bg-gradient-to-l from-blue-600 to-blue-800 text-white p-8 print:bg-blue-800">
@@ -363,7 +363,7 @@ export default function OrderDetailPage() {
         </div>
 
         {/* 🧾 فاتورة ضريبية متوافقة مع ZATCA */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mt-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-3">
           <div className="p-6 border-b border-gray-100 flex items-start justify-between flex-wrap gap-4">
             <div>
               <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>فاتورة ضريبية</h2>
@@ -425,7 +425,7 @@ export default function OrderDetailPage() {
 
         {/* 🛡 حماية الصفقة — محضر استلام + تأكيد دفع + نزاع (للطرفين) */}
         {offer.status === 'accepted' && (isContractor || isSupplier) && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-6 print:hidden" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 order-1 print:hidden" dir="rtl">
             <h3 className="text-base font-bold mb-1" style={{ color: '#1B2D5B' }}>🛡 حماية الصفقة</h3>
             <p className="text-xs text-gray-400 mb-3">توثّق المنصة مراحل الصفقة كدليل يحمي الطرفين — ولا تحتفظ بأي مبالغ.</p>
             {(() => {
@@ -530,7 +530,7 @@ export default function OrderDetailPage() {
 
         {/* تقييم المورد — للمقاول فقط بعد القبول */}
         {offer.status === 'accepted' && myId && rfq.contractor_id === myId && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mt-6 print:hidden" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 order-4 print:hidden" dir="rtl">
             {existingReview ? (
               <div className="text-center">
                 <div className="text-sm font-bold text-gray-900 mb-2">شكراً لتقييمك ⭐</div>
