@@ -10,6 +10,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
+import DealProtection from '@/components/shared/DealProtection'
 import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel, getUnitLabel } from '@/types'
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
@@ -596,6 +597,20 @@ export default function SupplierRFQPage() {
               </div>
             )}
 
+            {/* 🛡 حماية الصفقة — إدارة الصفقة وتتبّعها (المورّد) */}
+            {existingOffer.status === 'accepted' && (
+              <div className="mt-4">
+                <DealProtection
+                  offer={existingOffer}
+                  isContractor={false}
+                  isSupplier={true}
+                  otherParty={contractorInfo}
+                  poNumber={`PO-${existingOffer.id.slice(0, 8).toUpperCase()}`}
+                  myId={user?.id}
+                />
+              </div>
+            )}
+
             {/* تقييم المورّد للمقاول (متبادل) — بعد قبول الصفقة */}
             {existingOffer.status === 'accepted' && (
               <div className="mt-4 border-t border-emerald-200 pt-4 text-right">
@@ -668,7 +683,7 @@ export default function SupplierRFQPage() {
               <Link href={`/contractor/orders/${existingOffer.id}`}
                 className="inline-block mt-4 px-5 py-2.5 rounded-xl font-semibold text-white text-sm transition-all hover:shadow"
                 style={{ background: '#0F6E56' }}>
-                📄 أمر الشراء وحماية الصفقة ←
+                📄 أمر الشراء / الفاتورة الضريبية ←
               </Link>
             )}
           </div>

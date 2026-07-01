@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS } from '@/types'
-import { waLink } from '@/lib/wa'
 // @ts-ignore — qrcode has no bundled types
 import QRCode from 'qrcode'
 
@@ -34,10 +33,6 @@ export default function OrderDetailPage() {
   const [reviewComment, setReviewComment] = useState('')
   const [reviewMsg, setReviewMsg] = useState('')
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
-  // Deal protection
-  const [busy, setBusy] = useState('')
-  const [showDispute, setShowDispute] = useState(false)
-  const [disputeReason, setDisputeReason] = useState('')
   const [qrUrl, setQrUrl] = useState('')
   const [awards, setAwards] = useState<any[]>([]) // ترسية بند-بند: مواد هذا المورد فقط (إن وُجدت)
 
@@ -108,16 +103,6 @@ export default function OrderDetailPage() {
     window.print()
   }
 
-  // Update the accepted offer (deal record). RLS lets both parties + admin update.
-  async function patch(fields: any, label: any) {
-    setBusy(label)
-    const supabase = createClient()
-    const { error } = await supabase.from('offers').update(fields).eq('id', offer.id)
-    if (!error) setOffer({ ...offer, ...fields })
-    setBusy('')
-  }
-  const now = () => new Date().toISOString()
-
   async function submitReview() {
     if (!rating || !myId || !supplier) return
     setReviewSubmitting(true); setReviewMsg('')
@@ -144,8 +129,6 @@ export default function OrderDetailPage() {
 
   const poNumber = `PO-${offer.id.slice(0, 8).toUpperCase()}`
   const date = new Date(offer.accepted_at || offer.created_at).toLocaleDateString('ar-SA')
-  const isContractor = rfq?.contractor_id === myId
-  const isSupplier = offer?.supplier_id === myId
   // المواد المسعّرة بند-بند. عند الترسية بند-بند نعرض فقط مواد هذا المورد المُرساة عليه،
   // وإلا كل بنود العرض (طلب متعدّد المواد) — تُعرض كأسطر في أمر الشراء والفاتورة.
   const hasAwards = Array.isArray(awards) && awards.length > 0
@@ -422,111 +405,6 @@ export default function OrderDetailPage() {
             )}
           </div>
         </div>
-
-        {/* 🛡 حماية الصفقة — محضر استلام + تأكيد دفع + نزاع (للطرفين) */}
-        {offer.status === 'accepted' && (isContractor || isSupplier) && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 order-1 print:hidden" dir="rtl">
-            <h3 className="text-base font-bold mb-1" style={{ color: '#1B2D5B' }}>🛡 حماية الصفقة</h3>
-            <p className="text-xs text-gray-400 mb-3">توثّق المنصة مراحل الصفقة كدليل يحمي الطرفين — ولا تحتفظ بأي مبالغ.</p>
-            {(() => {
-              const other = isContractor ? supplier : contractor
-              const w = waLink(other?.phone, `بخصوص أمر الشراء ${poNumber} في منصة تسعيرك`)
-              return w ? (
-                <a href={w} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-xs mb-4 px-3 py-1.5 rounded-full font-semibold text-white" style={{ background: '#25D366' }}>
-                  💬 تواصل مع {isContractor ? 'المورد' : 'المقاول'} عبر واتساب
-                </a>
-              ) : null
-            })()}
-
-            {/* Tracker */}
-            <div className="grid grid-cols-4 gap-2 mb-5 text-center text-[11px]">
-              {[
-                { k: 'accept', label: 'قبول العرض', done: true, at: offer.accepted_at },
-                { k: 'deliver', label: 'تسليم المورد', done: !!offer.supplier_delivered_at, at: offer.supplier_delivered_at },
-                { k: 'receipt', label: 'استلام المقاول', done: !!offer.received_at, at: offer.received_at },
-                { k: 'paid', label: 'الدفع', done: offer.payment_status === 'paid', at: offer.payment_confirmed_at || offer.paid_marked_at },
-              ].map((s: any, i: any) => (
-                <div key={s.k} className="flex flex-col items-center">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${s.done ? 'text-white' : 'bg-gray-100 text-gray-400'}`} style={s.done ? { background: '#0F6E56' } : {}}>{s.done ? '✓' : i + 1}</div>
-                  <div className={`mt-1 ${s.done ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>{s.label}</div>
-                  {s.at && <div className="text-[9px] text-gray-400">{new Date(s.at).toLocaleDateString('ar-SA')}</div>}
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              {/* Delivery */}
-              <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-xl p-3">
-                <div className="text-sm">
-                  <div className="font-semibold text-gray-700">تسليم البضاعة</div>
-                  <div className="text-xs text-gray-400">{offer.supplier_delivered_at ? `✓ أكّد المورد التسليم — ${new Date(offer.supplier_delivered_at).toLocaleString('ar-SA')}` : 'بانتظار تأكيد المورد'}</div>
-                </div>
-                {!offer.supplier_delivered_at && isSupplier && (
-                  <button onClick={() => patch({ supplier_delivered_at: now() }, 'deliver')} disabled={busy === 'deliver'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#1B2D5B' }}>✓ أكّدت التسليم</button>
-                )}
-              </div>
-
-              {/* Receipt = محضر استلام */}
-              <div className="flex items-center justify-between gap-3 rounded-xl p-3" style={{ background: offer.received_at ? '#E1F5EE' : '#f9fafb' }}>
-                <div className="text-sm">
-                  <div className="font-semibold text-gray-700">محضر الاستلام</div>
-                  <div className="text-xs text-gray-400">{offer.received_at ? `✓ موثّق — أكّد المقاول الاستلام ${new Date(offer.received_at).toLocaleString('ar-SA')}` : 'بانتظار تأكيد المقاول لاستلام البضاعة'}</div>
-                </div>
-                {!offer.received_at && isContractor && (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={() => { setDisputeReason('البضاعة لم تُسلَّم أو لم تتطابق مع المطلوب'); setShowDispute(true) }} className="text-xs px-3 py-2 rounded-xl font-semibold border border-red-300 text-red-600 hover:bg-red-50 whitespace-nowrap">✕ لم يتم الاستلام</button>
-                    <button onClick={() => { if (confirm('⚠ هل استلمت البضاعة فعلياً ومطابقة للمطلوب؟\n\nسيُسجَّل محضر استلام موثّق بالتاريخ. تنبيه: تأكيد الاستلام دون استلام فعلي يُخفّض تقييمك ويُعرّضك للمساءلة.')) patch({ received_at: now(), received_by: myId }, 'receipt') }} disabled={busy === 'receipt'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ أؤكّد الاستلام</button>
-                  </div>
-                )}
-              </div>
-
-              {/* Payment */}
-              <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-xl p-3">
-                <div className="text-sm">
-                  <div className="font-semibold text-gray-700">الدفع</div>
-                  <div className="text-xs text-gray-400">
-                    {offer.payment_status === 'paid'
-                      ? (offer.payment_confirmed_at ? `✓ أكّد المورد استلام الدفعة — ${new Date(offer.payment_confirmed_at).toLocaleString('ar-SA')}` : 'أكّد المقاول الدفع — بانتظار تأكيد المورد')
-                      : 'لم تُؤكَّد الدفعة بعد'}
-                  </div>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  {offer.payment_status !== 'paid' && isContractor && (
-                    <button onClick={() => patch({ payment_status: 'paid', paid_marked_at: now() }, 'paid')} disabled={busy === 'paid'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#1B2D5B' }}>✓ أكّدت الدفع</button>
-                  )}
-                  {offer.payment_status === 'paid' && !offer.payment_confirmed_at && isSupplier && (
-                    <button onClick={() => patch({ payment_confirmed_at: now() }, 'paycfm')} disabled={busy === 'paycfm'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ أكّدت استلام الدفعة</button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Dispute */}
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              {offer.dispute_status === 'open' ? (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm">
-                  <div className="font-bold text-red-700">⚠ نزاع مفتوح</div>
-                  <div className="text-xs text-red-600 mt-1">{offer.dispute_reason}</div>
-                  <div className="text-[11px] text-gray-500 mt-1">فريق المنصة سيتواصل مع الطرفين للوساطة.</div>
-                </div>
-              ) : offer.dispute_status === 'resolved' ? (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-700">✓ تم حل النزاع{offer.dispute_resolution ? `: ${offer.dispute_resolution}` : ''}</div>
-              ) : !showDispute ? (
-                <button onClick={() => setShowDispute(true)} className="text-xs text-red-600 hover:underline">⚠ واجهت مشكلة؟ افتح نزاعاً</button>
-              ) : (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-                  <label className="block text-xs font-bold text-red-700 mb-1.5">صف المشكلة</label>
-                  <textarea value={disputeReason} onChange={(e: any) => setDisputeReason(e.target.value)} className="input-field" rows={2} placeholder="مثال: البضاعة لم تُسلّم / مختلفة عن المواصفات / تأخّر الدفع..." />
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={() => { if (!disputeReason) return; patch({ dispute_status: 'open', dispute_reason: disputeReason, dispute_by: myId, dispute_opened_at: now() }, 'dispute'); setShowDispute(false) }} disabled={!disputeReason || busy === 'dispute'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 disabled:opacity-50">إرسال النزاع</button>
-                    <button onClick={() => setShowDispute(false)} className="text-xs px-3 py-2 text-gray-500">إلغاء</button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* تقييم المورد — للمقاول فقط بعد القبول */}
         {offer.status === 'accepted' && myId && rfq.contractor_id === myId && (

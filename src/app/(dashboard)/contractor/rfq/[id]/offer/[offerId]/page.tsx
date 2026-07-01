@@ -11,7 +11,7 @@ import { approvalLabel } from '@/lib/supplierScore'
 import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { dealStage } from '@/lib/dealStage'
+import DealProtection from '@/components/shared/DealProtection'
 
 export default function OfferDetailPage() {
   const { id, offerId } = useParams()
@@ -19,6 +19,7 @@ export default function OfferDetailPage() {
   const [rfq, setRfq] = useState<any>(null)
   const [offer, setOffer] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [myId, setMyId] = useState<any>(null)
   const [acting, setActing] = useState(false)
   const [reqOpen, setReqOpen] = useState(false)
   const [reqHours, setReqHours] = useState(24)
@@ -61,6 +62,7 @@ export default function OfferDetailPage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
+      setMyId(session.user.id)
       const { data: rfqData } = await supabase.from('rfqs').select('*').eq('id', id).single()
       setRfq(rfqData)
       const { data: offerData } = await supabase
@@ -133,40 +135,24 @@ export default function OfferDetailPage() {
           <span className={`badge text-[11px] mr-auto ${statusBadge.c}`}>{statusBadge.t}</span>
         </div>
 
-        {/* 🛡 حالة الصفقة والتتبّع — وين صارت الطلبية (بعد القبول) */}
-        {accepted && (() => {
-          const st = dealStage(offer)
-          const steps = [
-            { k: 'accepted', lbl: 'قبول العرض', at: offer.accepted_at, done: st.step >= 1 },
-            { k: 'delivered', lbl: 'تسليم المورد', at: offer.supplier_delivered_at, done: st.step >= 2 },
-            { k: 'received', lbl: 'استلام المقاول', at: offer.received_at, done: st.step >= 3 },
-            { k: 'paid', lbl: 'الدفع', at: offer.payment_confirmed_at || offer.paid_marked_at, done: st.step >= 4 },
-          ]
-          return (
-            <div className="bg-white rounded-2xl p-5 border shadow-sm" style={{ borderColor: `${st.tone}33` }}>
-              <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-                <h2 className="font-bold text-sm" style={{ color: '#1B2D5B' }}>🛡 حالة الصفقة</h2>
-                <span className="badge text-[11px] font-bold" style={{ background: `${st.tone}14`, color: st.tone }}>{st.emoji} {st.label}</span>
-              </div>
-              {st.key !== 'disputed' ? (
-                <div className="grid grid-cols-4 gap-2 text-center text-[11px]">
-                  {steps.map((sp: any, i: number) => (
-                    <div key={sp.k} className="flex flex-col items-center">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold" style={{ background: sp.done ? '#0F6E56' : '#eef0f3', color: sp.done ? '#fff' : '#9ca3af' }}>{sp.done ? '✓' : i + 1}</div>
-                      <div className={`mt-1 ${sp.done ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>{sp.lbl}</div>
-                      {sp.at && <div className="text-[9px] text-gray-400">{new Date(sp.at).toLocaleDateString('ar-SA')}</div>}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-2.5">⚠ {offer.dispute_reason || 'نزاع مفتوح — فريق المنصة يتواصل مع الطرفين.'}</div>
-              )}
-              <Link href={`/contractor/orders/${offer.id}`} className="mt-4 block text-center text-sm font-semibold py-2.5 rounded-xl text-white transition-all hover:shadow" style={{ background: '#0F6E56' }}>
-                📄 إدارة الصفقة وأمر الشراء ←
-              </Link>
-            </div>
-          )
-        })()}
+        {/* 🛡 حماية الصفقة — إدارة الصفقة وتتبّعها (بعد القبول) */}
+        {accepted && (
+          <DealProtection
+            offer={offer}
+            isContractor={rfq?.contractor_id === myId}
+            isSupplier={false}
+            otherParty={s}
+            poNumber={`PO-${offer.id.slice(0, 8).toUpperCase()}`}
+            myId={myId}
+          />
+        )}
+        {accepted && (
+          <Link href={`/contractor/orders/${offer.id}`}
+            className="block text-center text-sm font-semibold py-2.5 rounded-xl border-2 transition-all hover:shadow-sm"
+            style={{ borderColor: '#0F6E56', color: '#0F6E56' }}>
+            📄 أمر الشراء / الفاتورة الضريبية ←
+          </Link>
+        )}
 
         {/* الطلب */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
