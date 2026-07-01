@@ -85,6 +85,7 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   light_equipment: { ar: 'معدات خفيفة (مولدات/دكاكات)', en: 'Light Equipment', ur: 'ہلکی مشینری', icon: '⚙️' },
   concrete_machinery: { ar: 'معدات خرسانة وصب', en: 'Concrete Equipment', ur: 'کنکریٹ مشین', icon: '🏭' },
   access_equipment: { ar: 'سقالات ومنصات رفع', en: 'Scaffolding & Access', ur: 'سکیفولڈنگ', icon: '🪜' },
+  workshop_equip: { ar: 'معدات ورشة ولحام', en: 'Workshop & Welding', ur: 'ورکشاپ اور ویلڈنگ', icon: '🔥' },
   // محل توريد (Supply Store — متعدد للمحلات الصغيرة)
   store_plumbing: { ar: 'أدوات سباكة بسيطة', en: 'Plumbing Supplies', ur: 'پلمبنگ', icon: '🚿' },
   store_electrical: { ar: 'أدوات كهرباء بسيطة', en: 'Electrical Supplies', ur: 'الیکٹریکل', icon: '💡' },
@@ -92,6 +93,7 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   store_fasteners: { ar: 'مسامير وبراغي ومثبتات', en: 'Fasteners & Fixings', ur: 'پیچ', icon: '🔩' },
   store_safety: { ar: 'سلامة ومستهلكات', en: 'Safety & Consumables', ur: 'حفاظتی سامان', icon: '🦺' },
   store_paint: { ar: 'دهانات ولواصق', en: 'Paint & Adhesives', ur: 'پینٹ', icon: '🎨' },
+  store_hardware: { ar: 'خردوات: مفصلات وأقفال ومقابض', en: 'Hardware: Hinges, Locks & Handles', ur: 'ہارڈ ویئر', icon: '🔐' },
 }
 
 export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
@@ -151,6 +153,8 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['إنترلوك','interlock','بردورة','كيرب','kerb','curb','تبليط','paving','بلاط خارجي','حجر صناعي','رصف','tactile'] },
     planters: { ar: 'أحواض زراعة وعناصر تنسيق', en: 'Planters & Landscape Elements', ur: 'پلانٹر', icon: '🪴', group: 'landscape',
       keywords: ['حوض زراعة','planter','تربة','soil','مشتل','plant','شجر','tree','نباتات','pergola','مظلة حديقة','تشجير','زراعة','زرع'] },
+    fencing: { ar: 'تسييج وشِباك وبوابات', en: 'Fencing, Mesh & Gates', ur: 'باڑ', icon: '🚧', group: 'landscape',
+      keywords: ['تسييج','سياج','شبك تسييج','شبك مربعات','جبيونات','بوابة سياج','سلك ربط','أعمدة تسييج','شبك تمدد','تشيلنك','fence','fencing','gabion'] },
   },
   architectural: {
     // ═══ الأرضيات والحوائط ═══
@@ -176,6 +180,8 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['جبس بورد','gypsum','بورد','board','partition','قواطع','أوميجا','معجون','جبسوم'] },
     false_ceiling: { ar: 'أسقف مستعارة (ألومنيوم/بلاطات)', en: 'False Ceilings', ur: 'جھوٹی چھت', icon: '🔳', group: 'ceiling_decor',
       keywords: ['أسقف مستعارة','false ceiling','ألومنيوم','شرائح','بلاطات','ممرات','ceiling tile','صوتية','كالسيوم','calcium silicate','أسقف مكشوفة','مكشوفة'] },
+    drywall_metal: { ar: 'قوائم ومسارات وإكسسوارات جبس', en: 'Drywall Studs & Accessories', ur: 'ڈرائی وال', icon: '📏', group: 'ceiling_decor',
+      keywords: ['قائم معدني','مسار معدني','قوائم','ستود','stud','track','U-Channel','كورنر بيد','زاوية ركن','شريط تسليح','عازل تحت القوائم','وصلة تعشيق'] },
     // ═══ الأبواب والشبابيك والواجهات ═══
     aluminum: { ar: 'ألمنيوم وشبابيك', en: 'Aluminum & Windows', ur: 'ایلومینیم', icon: '🪟', group: 'doors_windows',
       keywords: ['ألمنيوم','aluminum','aluminium','شبابيك','نوافذ','window','glazed door','sliding door','UPVC'] },
@@ -342,6 +348,11 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ سقالات ومنصات رفع ═══
     scaffolding_equip: { ar: 'سقالات ومنصات', en: 'Scaffolding & Platforms', ur: 'سکیفولڈنگ', icon: '🪜', group: 'access_equipment',
       keywords: ['سقالة','سقالات','scaffold','منصة رفع','platform','سلالم','ladder','رافعة مقصية','scissor lift','بوم','جاكات','تدعيم','props','shoring','دعامات'] },
+    // ═══ معدات ورشة ولحام ═══
+    welding_cutting: { ar: 'ماكينات ولوازم لحام وقص', en: 'Welding & Cutting Machines', ur: 'ویلڈنگ', icon: '🔥', group: 'workshop_equip',
+      keywords: ['لحام','welding','إلكترود','سلك لحام','بلازما','plasma','قناع لحام','منظم غاز','عربة أسطوانات','آرك','تيج','ميغ','MIG','TIG'] },
+    pressure_wash: { ar: 'غسالات ضغط عالي', en: 'High-Pressure Washers', ur: 'پریشر واشر', icon: '💦', group: 'workshop_equip',
+      keywords: ['غسالة ضغط','ضغط عالي','pressure washer','كارشر','بخاخ ضغط'] },
   },
   supply_store: {
     // ═══ أدوات سباكة بسيطة ═══
@@ -380,6 +391,15 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['دهان','paint','فرشاة','brush','رولة','roller','بوية','صبغ','تنر','thinner'] },
     store_adhesives: { ar: 'سيليكون ولواصق وفوم', en: 'Silicone, Glue & Foam', ur: 'سیلیکون', icon: '🧴', group: 'store_paint',
       keywords: ['سيليكون','silicone','فوم','foam','لاصق','adhesive','glue','سيلانت','sealant','صمغ'] },
+    // ═══ خردوات: مفصلات وأقفال ومقابض ═══
+    store_hinges: { ar: 'مفصلات ومجاري أدراج', en: 'Hinges & Drawer Slides', ur: 'قبضے', icon: '🔗', group: 'store_hardware',
+      keywords: ['مفصلة','مفصلات','hinge','مجرى درج','مجاري أدراج','كابح صدمة','سوفت كلوز','soft close'] },
+    store_locks: { ar: 'أقفال وأسطوانات', en: 'Locks & Cylinders', ur: 'تالے', icon: '🔒', group: 'store_hardware',
+      keywords: ['كالون','قفل','أقفال','سلندر','أسطوانة قفل','مزلاج','سقاطة','ترباس','بادلوك','ماغلوك','ضبة كهربائية','مخرج طوارئ','lock','cylinder','padlock'] },
+    store_handles: { ar: 'مقابض ويد سحب', en: 'Handles & Knobs', ur: 'ہینڈل', icon: '🚪', group: 'store_hardware',
+      keywords: ['مقبض','مقابض','مسكة','اكبح','روزيتة','دفاية باب','يد سحب','بزلة','handle','knob'] },
+    store_closers: { ar: 'مغلقات ومثبتات أبواب', en: 'Door Closers & Stops', ur: 'ڈور کلوزر', icon: '🚪', group: 'store_hardware',
+      keywords: ['كباس باب','مغلق باب','فلور سبرنج','حامل باب','مصد باب','ستوبر','منظم أولوية','مثبت باب','ماسك','door closer'] },
   },
 }
 
@@ -509,9 +529,9 @@ const GROUP_ORDER: Record<string, number> = {}
   // كهرباء
   'cabling', 'panels_switches', 'lighting', 'low_current',
   // آليات ومعدات
-  'heavy_equipment', 'concrete_machinery', 'light_equipment', 'access_equipment',
+  'heavy_equipment', 'concrete_machinery', 'light_equipment', 'access_equipment', 'workshop_equip',
   // محل توريد
-  'store_plumbing', 'store_electrical', 'store_tools', 'store_fasteners', 'store_paint', 'store_safety',
+  'store_plumbing', 'store_electrical', 'store_tools', 'store_fasteners', 'store_hardware', 'store_paint', 'store_safety',
 ].forEach((g, i) => { GROUP_ORDER[g] = i })
 function groupRank(g: string): number { return g === '_other' ? 9999 : (GROUP_ORDER[g] ?? 900) }
 
