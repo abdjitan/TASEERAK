@@ -593,6 +593,59 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
 
 // ===== مكتبة موسّعة: مواصفات تفصيلية لمزيد من المواد (تُضاف بالحلقات لكفاءة) =====
 const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
+  // ═══ خردوات إضافية (دفعة 2 - تدقيق Madar) ═══
+  { products: ['براغي جبس بورد (دراي وول)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['خشن للخشب (Coarse)', 'ناعم للمعدن (Fine)', 'نقطة بريمة (Self-Drill)'] },
+    { key: 'size', ar: 'المقاس', en: 'Size', options: ['25 مم', '32 مم', '35 مم', '45 مم', '55 مم', '75 مم'] },
+    { key: 'pack', ar: 'التعبئة', en: 'Pack', options: ['علبة 1000 حبة', 'كرتون', 'بالكيلو'] },
+  ] },
+  { products: ['مخرج طوارئ (بار دفع)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['بار ضغط أفقي (Touch Bar)', 'بار دفع (Push Bar)', 'لبابين (Double Door)'] },
+    { key: 'size', ar: 'العرض', en: 'Size', options: ['باب 900 مم', 'باب 1000 مم', 'قابل للقص'] },
+    { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['فضي (Silver)', 'أسود (Black)', 'ستانلس (Stainless)'] },
+  ] },
+  { products: ['قفل مغناطيسي كهربائي (ماغلوك)'], spec: [
+    { key: 'force', ar: 'قوة الإمساك', en: 'Force', options: ['180 كجم', '280 كجم', '350 كجم', '500 كجم'] },
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['سطحي (Surface)', 'مدفون (Embedded)', 'لبابين (Double)'] },
+    { key: 'voltage', ar: 'الجهد', en: 'Voltage', options: ['12 فولت', '24 فولت', '12/24 فولت'] },
+  ] },
+  { products: ['ضبة كهربائية (إلكتريك سترايك)'], spec: [
+    { key: 'mode', ar: 'وضع التشغيل', en: 'Mode', options: ['يفتح بالتيار (Fail-Secure)', 'يقفل بالتيار (Fail-Safe)'] },
+    { key: 'voltage', ar: 'الجهد', en: 'Voltage', options: ['12 فولت DC', '24 فولت DC', '12/24'] },
+  ] },
+  { products: ['قفازات لحام جلد'], spec: [
+    { key: 'material', ar: 'الخامة', en: 'Material', options: ['جلد بقر مشقوق (Cow Split)', 'جلد كامل (Full Leather)'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['قصير (Short)', 'طويل 35 سم (Long)'] },
+  ] },
+  { products: ['كابح صدمة أدراج/أبواب (سوفت كلوز)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['مكبس أدراج (Drawer)', 'مكبس خزائن (Cabinet)', 'محول مفصلة (Hinge Adapter)'] },
+  ] },
+  { products: ['منظم غاز لحام (ريجيليتر)'], spec: [
+    { key: 'gas', ar: 'نوع الغاز', en: 'Gas', options: ['أرجون (Argon)', 'ثاني أكسيد الكربون (CO2)', 'أكسجين (Oxygen)', 'أسيتيلين (Acetylene)', 'أرجون/CO2'] },
+    { key: 'stage', ar: 'المراحل', en: 'Stage', options: ['مرحلة واحدة (Single Stage)', 'مرحلتين (Two Stage)'] },
+    { key: 'gauge', ar: 'العدّاد', en: 'Gauge', options: ['عداد تدفق (Flowmeter)', 'عداد ضغط (Pressure)'] },
+  ] },
+  { products: ['عربة أسطوانات غاز'], spec: [
+    { key: 'capacity', ar: 'السعة', en: 'Capacity', options: ['أسطوانة واحدة', 'أسطوانتين'] },
+  ] },
+  { products: ['زاوية ركن معدنية للجبس (كورنر بيد)'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['زاوية معدنية (Metal Angle)', 'ورقية بشريط (Paper-Faced)', 'مرنة (Flexible)'] },
+    { key: 'length', ar: 'الطول', en: 'Length', options: ['2.5 متر', '3 متر'] },
+  ] },
+  { products: ['شريط تسليح فواصل الجبس'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['شبك فايبر لاصق (Fiberglass Mesh)', 'ورقي (Paper Tape)'] },
+    { key: 'width', ar: 'العرض', en: 'Width', options: ['48 مم', '50 مم'] },
+    { key: 'roll', ar: 'طول اللفة', en: 'Roll', options: ['20 متر', '45 متر', '90 متر'] },
+  ] },
+  { products: ['بوابة سياج جاهزة'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['مفصلية (Hinged)', 'منزلقة (Sliding)', 'مشاة (Pedestrian)'] },
+    { key: 'width', ar: 'العرض', en: 'Width', options: ['1 متر', '3 متر', '4 متر', '6 متر', 'حسب الطلب'] },
+  ] },
+  { products: ['سلك ربط وأربطة تثبيت الشبك'], spec: [
+    { key: 'type', ar: 'النوع', en: 'Type', options: ['سلك ربط مجلفن (Galvanized Tie Wire)', 'أربطة ألمنيوم (Aluminum Ties)', 'مشابك تثبيت (Clips)'] },
+    { key: 'gauge', ar: 'السماكة', en: 'Gauge', options: ['1.5 مم', '2.0 مم', '2.5 مم'] },
+  ] },
+
   // ═══ خردوات ومواد إضافية (بحث Madar) ═══
   { products: ['مفصلة فراشة'], spec: [
     { key: 'size', ar: 'المقاس', en: 'Size', options: ['2 إنش (2")', '2.5 إنش (2.5")', '3 إنش (3")', '4 إنش (4")', '5 إنش (5")', '6 إنش (6")'] },
@@ -1742,6 +1795,20 @@ export const SECTOR_COLORS: Record<Sector, string> = {
 
 // Product translations — keys are Arabic (stored in DB), values are EN/UR display names
 export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
+  // ═══ خردوات إضافية (دفعة 2 - تدقيق Madar) ═══
+  'براغي جبس بورد (دراي وول)': { en: 'Drywall Screws', ur: 'ڈرائی وال اسکرو' },
+  'مخرج طوارئ (بار دفع)': { en: 'Panic Bar / Push Exit Device', ur: 'پینک بار' },
+  'قفل مغناطيسي كهربائي (ماغلوك)': { en: 'Electromagnetic Lock (Maglock)', ur: 'میگ لاک' },
+  'ضبة كهربائية (إلكتريك سترايك)': { en: 'Electric Strike', ur: 'الیکٹرک اسٹرائیک' },
+  'قفازات لحام جلد': { en: 'Welding Gloves (Leather)', ur: 'ویلڈنگ دستانے' },
+  'كابح صدمة أدراج/أبواب (سوفت كلوز)': { en: 'Soft-Close Damper', ur: 'سافٹ کلوز ڈیمپر' },
+  'منظم غاز لحام (ريجيليتر)': { en: 'Welding Gas Regulator', ur: 'گیس ریگولیٹر' },
+  'عربة أسطوانات غاز': { en: 'Gas Cylinder Trolley', ur: 'گیس سلنڈر ٹرالی' },
+  'زاوية ركن معدنية للجبس (كورنر بيد)': { en: 'Metal Corner Bead', ur: 'کارنر بیڈ' },
+  'شريط تسليح فواصل الجبس': { en: 'Drywall Joint Tape', ur: 'جوائنٹ ٹیپ' },
+  'بوابة سياج جاهزة': { en: 'Ready Fence Gate', ur: 'باڑ گیٹ' },
+  'سلك ربط وأربطة تثبيت الشبك': { en: 'Tie Wire & Fence Clips', ur: 'ٹائی وائر' },
+
   // ═══ خردوات ومواد إضافية (بحث Madar) ═══
   'مفصلة فراشة': { en: 'Butt Hinge', ur: 'بٹ ہنج (پتلی قبضہ)' },
   'مفصلة أوتوماتيك (زنبرك)': { en: 'Spring Hinge (Self-Closing)', ur: 'اسپرنگ ہنج (خودکار بند ہونے والا)' },
@@ -2652,6 +2719,9 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'شبك سداسي (شبك دجاج/تربة)',
     'مشبك أرضي (جريتنج) ملحوم',
     'كباس باب سياج ومفصلات',
+    // ═══ خردوات إضافية (دفعة 2 - تدقيق Madar) ═══
+    'بوابة سياج جاهزة',
+    'سلك ربط وأربطة تثبيت الشبك',
   ],
   architectural: [
     // ═══ مواد مضافة (مراجعة الذكاء) ═══
@@ -2727,6 +2797,9 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'معلاق سقف قابل للضبط (Ceiling Hanger)',
     'وصلة تعشيق قوائم (Stud Connector / Splice)',
     'شريط عازل تحت القوائم (Acoustic Isolation Strip)',
+    // ═══ خردوات إضافية (دفعة 2 - تدقيق Madar) ═══
+    'زاوية ركن معدنية للجبس (كورنر بيد)',
+    'شريط تسليح فواصل الجبس',
   ],
   electrical: [
     // ═══ مواد مضافة (مراجعة الذكاء) ═══
@@ -2936,6 +3009,9 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'لانس (بندقية) رش مع فوهة قابلة للتعديل',
     'فرشاة تنظيف أسطح دوّارة للغسالة',
     'خزان فوم (رغوة) صابون للغسالة ضغط عالي',
+    // ═══ خردوات إضافية (دفعة 2 - تدقيق Madar) ═══
+    'منظم غاز لحام (ريجيليتر)',
+    'عربة أسطوانات غاز',
   ],
   supply_store: [
     // ═══ سباكة بسيطة ═══
@@ -3008,6 +3084,13 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'دفاية باب (لوحة حماية)',
     'مقبض باب رئيسي فخم (شنطة)',
     'مسكة باب حديد سحب (كوع)',
+    // ═══ خردوات إضافية (دفعة 2 - تدقيق Madar) ═══
+    'براغي جبس بورد (دراي وول)',
+    'مخرج طوارئ (بار دفع)',
+    'قفل مغناطيسي كهربائي (ماغلوك)',
+    'ضبة كهربائية (إلكتريك سترايك)',
+    'قفازات لحام جلد',
+    'كابح صدمة أدراج/أبواب (سوفت كلوز)',
   ],
 }
 
