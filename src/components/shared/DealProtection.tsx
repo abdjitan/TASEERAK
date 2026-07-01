@@ -44,10 +44,25 @@ export default function DealProtection({
 
   const w = waLink(otherParty?.contact_phone || otherParty?.phone, `بخصوص أمر الشراء ${poNumber} في منصة تسعيرك`)
 
+  // تنبيه بصري فوري إذا تأخّرت مرحلة عن موعدها (يكمّل إشعارات الجرس التلقائية كل ساعة)
+  const dd = Math.max(Number(offer.delivery_days) || 3, 1)
+  const deliverOverdue = !offer.supplier_delivered_at && offer.accepted_at && (new Date(offer.accepted_at).getTime() + dd * 86400000 < Date.now())
+  const receiptOverdue = !!offer.supplier_delivered_at && !offer.received_at && (new Date(offer.supplier_delivered_at).getTime() + 48 * 3600000 < Date.now())
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6" dir="rtl">
       <h3 className="text-base font-bold mb-1" style={{ color: '#1B2D5B' }}>🛡 حماية الصفقة</h3>
       <p className="text-xs text-gray-400 mb-3">توثّق المنصة مراحل الصفقة كدليل يحمي الطرفين — ولا تحتفظ بأي مبالغ.</p>
+      {deliverOverdue && (
+        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-2 leading-relaxed">
+          ⏰ {isSupplier ? 'تأخّرت عن موعد التوصيل المتّفق عليه — يرجى تأكيد التسليم أو التواصل مع المقاول.' : 'المورد تأخّر عن موعد التوصيل المتّفق عليه — تابع معه أو افتح نزاعاً أدناه.'}
+        </div>
+      )}
+      {receiptOverdue && (
+        <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold px-3 py-2 leading-relaxed">
+          ⏰ {isContractor ? 'مضى أكثر من 48 ساعة على تأكيد التوصيل — يرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.' : 'بانتظار تأكيد المقاول لاستلام البضاعة.'}
+        </div>
+      )}
       {w && (
         <a href={w} target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs mb-4 px-3 py-1.5 rounded-full font-semibold text-white" style={{ background: '#25D366' }}>
