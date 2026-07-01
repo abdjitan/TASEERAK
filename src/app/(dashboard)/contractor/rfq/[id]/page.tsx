@@ -11,6 +11,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
+import { dealStage } from '@/lib/dealStage'
 
 // مرجع جغرافي «lat,lng» → [lat,lng] أو null
 function parseGeo(s: any) {
@@ -851,6 +852,29 @@ export default function RFQDetailPage() {
                   </div>
                 )}
 
+                {/* مؤشّر مرحلة الصفقة — وين صارت الطلبية (قبول → تسليم → استلام → دفع) */}
+                {offer.status === 'accepted' && (() => {
+                  const st = dealStage(offer)
+                  return (
+                    <div className="rounded-xl border p-2.5 mb-2" style={{ borderColor: `${st.tone}33`, background: `${st.tone}0d` }}>
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <span className="text-sm">{st.emoji}</span>
+                        <span className="text-[11px] font-bold leading-tight" style={{ color: st.tone }}>{st.label}</span>
+                      </div>
+                      {st.key !== 'disputed' && (
+                        <div className="flex items-end gap-1">
+                          {['قبول', 'تسليم', 'استلام', 'دفع'].map((lbl: string, i: number) => (
+                            <div key={lbl} className="flex-1 flex flex-col items-center gap-1">
+                              <div className="w-full h-1.5 rounded-full transition-all" style={{ background: i < st.step ? st.tone : '#e5e7eb' }} />
+                              <span className="text-[9px]" style={{ color: i < st.step ? st.tone : '#9ca3af' }}>{lbl}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+
                 {offer.status === 'accepted' && (
                   <Link href={`/contractor/orders/${offer.id}`}
                     className="block text-center bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
@@ -858,12 +882,8 @@ export default function RFQDetailPage() {
                   </Link>
                 )}
 
-                {offer.status !== 'pending' && (
-                  <div className={`text-center text-xs font-semibold py-1 ${
-                    offer.status === 'accepted' ? 'text-green-600' : 'text-red-500'
-                  }`}>
-                    {offer.status === 'accepted' ? '✓ تم القبول' : '✕ مرفوض'}
-                  </div>
+                {offer.status === 'rejected' && (
+                  <div className="text-center text-xs font-semibold py-1 text-red-500">✕ مرفوض</div>
                 )}
               </div>
             ))}
