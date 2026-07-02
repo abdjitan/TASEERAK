@@ -128,6 +128,8 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ الكسارات والمواد الأولية وأعمال الموقع ═══
     aggregates: { ar: 'رمل وبحص وبودرة', en: 'Sand, Gravel & Powder', ur: 'ریت اور بجری', icon: '⛰', group: 'rawmaterials',
       keywords: ['رمل','بطحاء','حصى','بحص','زلط','ركام','كسارة','sand','gravel','aggregate','بودرة','crusher','حجر طبيعي خام','حجر خام'] },
+    roadbase: { ar: 'طبقات الأساس والإحلال (Sub-base/Base)', en: 'Road Base & Fill Layers', ur: 'روڈ بیس', icon: '🛣', group: 'rawmaterials',
+      keywords: ['طبقة أساس','base course','تحت الأساس','sub-base','subbase','إحلال','ردم إنشائي','مصنّف','A-1-a','A-1-b','CBR','حصى مرشحة','ركام مدمج'] },
     earthworks: { ar: 'أعمال موقع وحفر وردم', en: 'Earthworks & Site Prep', ur: 'مٹی کا کام', icon: '🚧', group: 'rawmaterials',
       keywords: ['حفر','ردم','تسوية','تمهيد','ترابية','أعمال موقع','excavation','backfill','grading','earthwork'] },
     // ═══ الطوبار والشدّات الخشبية (Formwork) ═══
@@ -621,6 +623,23 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
 
 // ===== مكتبة موسّعة: مواصفات تفصيلية لمزيد من المواد (تُضاف بالحلقات لكفاءة) =====
 const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
+  // ═══ طبقات الردم والأساس (AASHTO / MOT) ═══
+  { products: ['طبقة أساس حصوية (Base Course)', 'طبقة تحت الأساس (Sub-base)', 'ردم إنشائي مصنّف (Structural Fill)', 'ردم عام / إحلال (General Backfill)'], spec: [
+    { key: 'classification', ar: 'التصنيف (AASHTO M145)', en: 'AASHTO Classification', options: ['A-1-a (حجر مكسر ممتاز)', 'A-1-b (رمل خشن وحصى)', 'A-2-4 (حصى غريني)', 'A-2-5', 'A-2-6', 'A-3 (رمل ناعم)', 'حسب المواصفات'] },
+    { key: 'moc_class', ar: 'الفئة (وزارة النقل MOT)', en: 'MOT Class', options: ['Class A (فئة أ)', 'Class B (فئة ب)', 'Class C (فئة ج)', 'Class D (فئة د)', 'حسب المواصفات'] },
+    { key: 'material', ar: 'نوع المادة', en: 'Material Type', options: ['حجر مكسر 100% (Crushed)', 'خليط حصى ورمل', 'حصى وديان (Wadi Gravel)', 'رمل', 'حسب المواصفات'] },
+    { key: 'cbr', ar: 'نسبة التحمل CBR', en: 'CBR Value', options: ['≥ 80% (طبقة أساس)', '≥ 50% (Sub-base A)', '≥ 30% (Sub-base B)', '≥ 20% (فئة C/D)', 'حسب التصميم'] },
+    { key: 'pi', ar: 'مؤشر اللدونة PI', en: 'Plasticity Index', options: ['غير لدن (NP)', '≤ 6', '≤ 10', 'حسب المواصفات'] },
+    { key: 'll', ar: 'حد السيولة LL', en: 'Liquid Limit', options: ['≤ 25', '≤ 40', 'حسب المواصفات'] },
+    { key: 'passing200', ar: 'المار من منخل #200', en: 'Passing #200 Sieve', options: ['≤ 15% (A-1-a)', '≤ 25% (A-1-b)', '≤ 35% (A-2)', 'حسب التدرّج'] },
+    { key: 'abrasion', ar: 'تآكل لوس أنجلوس', en: 'LA Abrasion Loss', options: ['≤ 45%', '≤ 50%', 'حسب المواصفات'] },
+    { key: 'sulfates', ar: 'الكبريتات (SO3) والأملاح', en: 'Sulfates & Salts', options: ['كبريتات ≤ 5% وأملاح ≤ 10%', 'خالٍ من الأملاح الضارة', 'حسب المواصفات'] },
+    { key: 'compaction', ar: 'نسبة الدمك المطلوبة', en: 'Compaction (MDD)', options: ['95% MDD', '98% MDD', '100% MDD (بروكتور معدّل)', 'حسب المواصفات'] },
+    { key: 'layer', ar: 'سماكة الطبقة المفروشة', en: 'Layer Thickness', options: ['15 سم', '20 سم', 'حسب التصميم'] },
+    { key: 'source', ar: 'المصدر', en: 'Source', options: ['كسارة معتمدة', 'وديان', 'بحري', 'حسب الطلب'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م³ (متر مكعب)', 'طن', 'م² (مع السماكة)'] },
+  ] },
+
   // ═══ سقالات وشدّات (طلب مع تصميم) ═══
   { products: ['طلب سقالة كاملة (توريد + تصميم)'], spec: [
     { key: 'type', ar: 'نوع السقالة', en: 'Type', options: ['كب لوك (Cuplock)', 'رينج لوك (Ringlock)', 'إطار معدني (Frame)', 'برج تدعيم (Shoring Tower)', 'حسب التصميم / غير محدد (Per Design)'] },
@@ -2117,6 +2136,12 @@ export const SECTOR_COLORS: Record<Sector, string> = {
 
 // Product translations — keys are Arabic (stored in DB), values are EN/UR display names
 export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
+  // ═══ طبقات الردم والأساس ═══
+  'طبقة أساس حصوية (Base Course)': { en: 'Base Course (Crushed Aggregate)', ur: 'بیس کورس (کرشڈ)' },
+  'طبقة تحت الأساس (Sub-base)': { en: 'Sub-base Course', ur: 'سب بیس کورس' },
+  'ردم إنشائي مصنّف (Structural Fill)': { en: 'Classified Structural Fill', ur: 'ساختی بھرائی' },
+  'ردم عام / إحلال (General Backfill)': { en: 'General Backfill / Replacement', ur: 'عام بھرائی / تبدیلی' },
+
   // ═══ سقالات وشدّات (طلب مع تصميم) ═══
   'طلب سقالة كاملة (توريد + تصميم)': { en: 'Complete Scaffolding (Supply + Design)', ur: 'مکمل اسکیفولڈنگ (سپلائی + ڈیزائن)' },
   'شدّات وطوبار أسقف (سلابات)': { en: 'Slab Formwork & Shoring', ur: 'سلیب فارم ورک اور شورنگ' },
@@ -3109,6 +3134,11 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ سقالات وشدّات (طلب مع تصميم) ═══
     'طلب سقالة كاملة (توريد + تصميم)',
     'شدّات وطوبار أسقف (سلابات)',
+    // ═══ طبقات الردم والأساس (AASHTO / MOT) ═══
+    'طبقة أساس حصوية (Base Course)',
+    'طبقة تحت الأساس (Sub-base)',
+    'ردم إنشائي مصنّف (Structural Fill)',
+    'ردم عام / إحلال (General Backfill)',
   ],
   architectural: [
     // ═══ مواد مضافة (مراجعة الذكاء) ═══
