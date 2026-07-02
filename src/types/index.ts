@@ -158,7 +158,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     planters: { ar: 'أحواض زراعة وعناصر تنسيق', en: 'Planters & Landscape Elements', ur: 'پلانٹر', icon: '🪴', group: 'landscape',
       keywords: ['حوض زراعة','planter','تربة','soil','مشتل','plant','شجر','tree','نباتات','pergola','مظلة حديقة','تشجير','زراعة','زرع'] },
     fencing: { ar: 'تسييج وشِباك وبوابات', en: 'Fencing, Mesh & Gates', ur: 'باڑ', icon: '🚧', group: 'landscape',
-      keywords: ['تسييج','سياج','شبك تسييج','شبك مربعات','جبيونات','بوابة سياج','سلك ربط','أعمدة تسييج','شبك تمدد','تشيلنك','fence','fencing','gabion'] },
+      keywords: ['تسييج','سياج','شبك تسييج','شبك مربعات','جبيونات','بوابة سياج','سلك ربط','أعمدة تسييج','شبك تمدد','تشيلنك','fence','fencing','gabion', 'سلك شائك', 'شبوك', 'شائك', 'كونسيرتينا', 'حلاقي', 'razor', 'barbed'] },
   },
   architectural: {
     // ═══ الأرضيات والحوائط ═══
@@ -185,7 +185,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     false_ceiling: { ar: 'أسقف مستعارة (ألومنيوم/بلاطات)', en: 'False Ceilings', ur: 'جھوٹی چھت', icon: '🔳', group: 'ceiling_decor',
       keywords: ['أسقف مستعارة','false ceiling','ألومنيوم','شرائح','بلاطات','ممرات','ceiling tile','صوتية','كالسيوم','calcium silicate','أسقف مكشوفة','مكشوفة'] },
     drywall_metal: { ar: 'قوائم ومسارات وإكسسوارات جبس', en: 'Drywall Studs & Accessories', ur: 'ڈرائی وال', icon: '📏', group: 'ceiling_decor',
-      keywords: ['قائم معدني','مسار معدني','قوائم','ستود','stud','track','U-Channel','كورنر بيد','زاوية ركن','شريط تسليح','عازل تحت القوائم','وصلة تعشيق'] },
+      keywords: ['قائم معدني','مسار معدني','قوائم','ستود','stud','track','U-Channel','كورنر بيد','زاوية ركن','شريط تسليح','عازل تحت القوائم','وصلة تعشيق', 'أوميغا', 'furring', 'سقف معلق', 'زاوية جدار', 'معلاق سقف', 'ceiling hanger', 'زاوية حماية', 'هانجر'] },
     // ═══ الأبواب والشبابيك والواجهات ═══
     aluminum: { ar: 'ألمنيوم وشبابيك', en: 'Aluminum & Windows', ur: 'ایلومینیم', icon: '🪟', group: 'doors_windows',
       keywords: ['ألمنيوم','aluminum','aluminium','شبابيك','نوافذ','window','glazed door','sliding door','UPVC'] },
@@ -226,7 +226,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['عازل حراري','XPS','EPS عازل','صوف صخري','rock wool','rockwool','فوم عازل','عازل رطوبة','عازل مائي','waterproofing membrane','polystyrene','بولي ستايرين','عزل أسطح'] },
     // ═══ الأعمال المعدنية والمصاعد ═══
     metal_features: { ar: 'درابزين وسلالم ومشربيات', en: 'Balustrades, Stairs & Screens', ur: 'دھاتی کام', icon: '🛗', group: 'arch_metalwork',
-      keywords: ['درابزين','handrail','balustrade','سلالم حديد','سلالم ستانلس','درج معدني','staircase','مشربية','مشربيات','screen معماري','railing','بلكونة','سلم حلزوني'] },
+      keywords: ['درابزين','handrail','balustrade','سلالم حديد','سلالم ستانلس','درج معدني','staircase','مشربية','مشربيات','screen معماري','railing','بلكونة','سلم حلزوني', 'لوحات إرشادية', 'signage', 'لافتة', 'إرشادية'] },
     vertical_transport: { ar: 'مصاعد وسلالم كهربائية', en: 'Elevators & Escalators', ur: 'لفٹ', icon: '🛗', group: 'arch_metalwork',
       keywords: ['مصعد','مصاعد','elevator','lift','سلالم كهربائية','سلم كهربائي','escalator','dumbwaiter','ممشى متحرك','travelator'] },
   },
@@ -300,7 +300,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     pumps: { ar: 'مضخات مياه', en: 'Water Pumps', ur: 'پمپ', icon: '⚙️', group: 'plumbing',
       keywords: ['مضخة','pump','رفع','تدوير','ضغط','booster','صمام','valve','وعاء تمدد','expansion vessel'] },
     tanks_heaters: { ar: 'خزانات وسخانات مياه', en: 'Tanks & Water Heaters', ur: 'ٹینک', icon: '🪣', group: 'plumbing',
-      keywords: ['خزان','tank','GRP','فايبرجلاس','بولي','سخان','heater','RO','تحلية','مرشح'] },
+      keywords: ['خزان','tank','GRP','فايبرجلاس','بولي','سخان','heater','RO','تحلية','مرشح', 'تصفية وقود', 'وحدة وقود'] },
     // ═══ لوازم وإكسسوارات السباكة (محلات صغيرة) ═══
     faucets_mixers: { ar: 'خلاطات وأدوات صحية', en: 'Faucets & Sanitary Fixtures', ur: 'نل', icon: '🚿', group: 'plumbing_supplies',
       keywords: ['خلاط','صنبور','حنفية','مخلط','faucet','mixer','tap','بطارية مغسلة','خلاط مطبخ','مغسلة','حوض','مجلى','مبولة','wash basin','sink','urinal','كرسي حمام','مرحاض','WC'] },
@@ -360,7 +360,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     welding_cutting: { ar: 'ماكينات ولوازم لحام وقص', en: 'Welding & Cutting Machines', ur: 'ویلڈنگ', icon: '🔥', group: 'workshop_equip',
       keywords: ['لحام','welding','إلكترود','سلك لحام','بلازما','plasma','قناع لحام','منظم غاز','عربة أسطوانات','آرك','تيج','ميغ','MIG','TIG'] },
     pressure_wash: { ar: 'غسالات ضغط عالي', en: 'High-Pressure Washers', ur: 'پریشر واشر', icon: '💦', group: 'workshop_equip',
-      keywords: ['غسالة ضغط','ضغط عالي','pressure washer','كارشر','بخاخ ضغط'] },
+      keywords: ['غسالة ضغط','ضغط عالي','pressure washer','كارشر','بخاخ ضغط', 'لانس', 'بندقية رش', 'فوهة رش', 'فرشاة تنظيف', 'أسطح دوارة', 'غسالة'] },
   },
   supply_store: {
     // ═══ أدوات سباكة بسيطة ═══
@@ -380,14 +380,14 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     store_elec_access: { ar: 'إكسسوارات كهرباء', en: 'Electrical Accessories', ur: 'الیکٹریکل لوازم', icon: '⚡', group: 'store_electrical',
       keywords: ['قاطع صغير','MCB','فيش','plug','شريط لحام','كماشة كهرب','عازل','تيب','محول صغير','شاحن'] },
     store_elec_consumables: { ar: 'مستهلكات كهرباء (شرائط/تايات/جلاند)', en: 'Electrical Consumables', ur: 'الیکٹریکل سامان', icon: '🔌', group: 'store_electrical',
-      keywords: ['شريط عزل','تيب لحام','أربطة كابلات','تايات','cable tie','جلبة كابل','جلاند','gland','واغو','wago','كلامة','هيت شرنك','heat shrink','كم حراري','علبة توزيع','junction box','كوبلن مواسير كهرباء','كوندويت','شمع تزليق'] },
+      keywords: ['شريط عزل','تيب لحام','أربطة كابلات','تايات','cable tie','جلبة كابل','جلاند','gland','واغو','wago','كلامة','هيت شرنك','heat shrink','كم حراري','علبة توزيع','junction box','كوبلن مواسير كهرباء','كوندويت','شمع تزليق', 'شريط تلوين', 'ترميز الكابلات', 'ترميز كابلات'] },
     // ═══ عُدد يدوية وكهربائية ═══
     store_hand_tools: { ar: 'عُدد يدوية (مفكات/زراديات)', en: 'Hand Tools', ur: 'ہاتھ کے اوزار', icon: '🔧', group: 'store_tools',
       keywords: ['مفك','مفكات','زرادية','كماشة','مفتاح','wrench','screwdriver','plier','مطرقة','شاكوش','متر','ميزان'] },
     store_power_tools: { ar: 'عُدد كهربائية (دريل/صاروخ)', en: 'Power Tools', ur: 'بجلی اوزار', icon: '🪚', group: 'store_tools',
       keywords: ['دريل','drill','صاروخ','grinder','منشار كهرب','جلاخة','مثقاب','شحن'] },
     store_bits: { ar: 'ريش ولقم وأقراص', en: 'Bits & Discs', ur: 'بٹ', icon: '🪛', group: 'store_tools',
-      keywords: ['ريشة','ريش','لقمة','drill bit','همر','SDS','قرص قص','قرص','تجليخ','grinding','disc','شفرة','blade','صنفرة'] },
+      keywords: ['ريشة','ريش','لقمة','drill bit','همر','SDS','قرص قص','قرص','تجليخ','grinding','disc','شفرة','blade','صنفرة', 'حجر شحذ', 'شحذ'] },
     // ═══ مسامير وبراغي ومثبتات ═══
     store_fasteners: { ar: 'مسامير وبراغي وصواميل', en: 'Screws, Bolts & Nuts', ur: 'پیچ', icon: '🔩', group: 'store_fasteners',
       keywords: ['مسمار','مسامير','برغي','screw','bolt','nail','صامولة','صواميل','nut','مثبت','رول بلت','خابور','خوابير','anchor','براغي','فيشر'] },
@@ -1432,7 +1432,7 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'twist', ar: 'عدد الجدائل', en: 'Twist', options: ['مزدوج (2 سلك)', 'مفرد (1 سلك)'] },
     { key: 'coilWeight', ar: 'وزن اللفة', en: 'CoilWeight', options: ['10 كجم', '20 كجم', '25 كجم'] },
   ] },
-  { products: ['شبك شفرات حلاقة (كونسيرتينا)'], spec: [
+  { products: ['أسلاك كونسيرتينا (شائكة حلاقية)'], spec: [
     { key: 'type', ar: 'النوع', en: 'Type', options: ['حلزوني كونسيرتينا (Concertina)', 'مسطح شفرات (Flat Wrap)', 'مزدوج ضفيرة (Double Coil)'] },
     { key: 'coating', ar: 'الخامة', en: 'Coating', options: ['مجلفن (Galvanized)', 'ستانلس (Stainless)'] },
     { key: 'coilDiameter', ar: 'قطر اللفة', en: 'CoilDiameter', options: ['450 ملم', '600 ملم', '700 ملم', '980 ملم'] },
@@ -2291,7 +2291,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'شبك تمدد إكسباندد (حديد ممدد)': { en: 'Expanded Metal Mesh', ur: 'ایکسپینڈڈ میٹل جالی' },
   'سياج موقع مؤقت (حواجز موقع متنقلة)': { en: 'Temporary Site Fence Panel', ur: 'عارضی سائٹ باڑ پینل' },
   'سلك شائك (شبوك)': { en: 'Barbed Wire', ur: 'خاردار تار' },
-  'شبك شفرات حلاقة (كونسيرتينا)': { en: 'Razor / Concertina Wire', ur: 'ریزر / کنسرٹینا تار' },
+  'أسلاك كونسيرتينا (شائكة حلاقية)': { en: 'Razor / Concertina Wire', ur: 'ریزر / کنسرٹینا تار' },
   'شبك سداسي (شبك دجاج/تربة)': { en: 'Hexagonal Wire Netting (Chicken Wire)', ur: 'ہیکساگونل تار جالی (مرغی جالی)' },
   'مشبك أرضي (جريتنج) ملحوم': { en: 'Steel Welded Bar Grating', ur: 'سٹیل ویلڈڈ بار گریٹنگ' },
   'كباس باب سياج ومفصلات': { en: 'Fence Gate Latch & Hinges Kit', ur: 'باڑ گیٹ کنڈی اور قبضے' },
@@ -3114,7 +3114,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'شبك تمدد إكسباندد (حديد ممدد)',
     'سياج موقع مؤقت (حواجز موقع متنقلة)',
     'سلك شائك (شبوك)',
-    'شبك شفرات حلاقة (كونسيرتينا)',
+    'أسلاك كونسيرتينا (شائكة حلاقية)',
     'شبك سداسي (شبك دجاج/تربة)',
     'مشبك أرضي (جريتنج) ملحوم',
     'كباس باب سياج ومفصلات',
