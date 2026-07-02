@@ -124,7 +124,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     construction_chemicals: { ar: 'مواد كيميائية للبناء', en: 'Construction Chemicals', ur: 'کیمیکل', icon: '🧪', group: 'infrastructure',
       keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي'] },
     drainage: { ar: 'صرف خارجي وبنية تحتية', en: 'External Drainage', ur: 'نکاسی', icon: '🚧', group: 'drainage_grp',
-      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','إسفلت','asphalt','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف'] },
+      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف'] },
     // ═══ الكسارات والمواد الأولية وأعمال الموقع ═══
     aggregates: { ar: 'رمل وبحص وبودرة', en: 'Sand, Gravel & Powder', ur: 'ریت اور بجری', icon: '⛰', group: 'rawmaterials',
       keywords: ['رمل','بطحاء','حصى','بحص','زلط','ركام','كسارة','sand','gravel','aggregate','بودرة','crusher','حجر طبيعي خام','حجر خام'] },
@@ -152,7 +152,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     fountains: { ar: 'نوافير وبرك مائية', en: 'Fountains & Water Features', ur: 'فوارے', icon: '⛲', group: 'landscape',
       keywords: ['نافورة','fountain','بركة','pool','water feature','شلال','waterfall','مسطح مائي'] },
     hardscape: { ar: 'إنترلوك وبردورات وتبليط خارجي', en: 'Interlock, Kerbs & Paving', ur: 'پیونگ', icon: '🧱', group: 'landscape',
-      keywords: ['إنترلوك','interlock','بردورة','كيرب','kerb','curb','تبليط','paving','بلاط خارجي','حجر صناعي','رصف','tactile'] },
+      keywords: ['إنترلوك','interlock','بردورة','كيرب','kerb','curb','تبليط','paving','بلاط خارجي','حجر صناعي','رصف','tactile','إسفلت','asphalt','أسفلتية','طبقة أسفلتية'] },
     planters: { ar: 'أحواض زراعة وعناصر تنسيق', en: 'Planters & Landscape Elements', ur: 'پلانٹر', icon: '🪴', group: 'landscape',
       keywords: ['حوض زراعة','planter','تربة','soil','مشتل','plant','شجر','tree','نباتات','pergola','مظلة حديقة','تشجير','زراعة','زرع'] },
     fencing: { ar: 'تسييج وشِباك وبوابات', en: 'Fencing, Mesh & Gates', ur: 'باڑ', icon: '🚧', group: 'landscape',
@@ -621,6 +621,26 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
 
 // ===== مكتبة موسّعة: مواصفات تفصيلية لمزيد من المواد (تُضاف بالحلقات لكفاءة) =====
 const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
+  // ═══ سقالات وشدّات (طلب مع تصميم) ═══
+  { products: ['طلب سقالة كاملة (توريد + تصميم)'], spec: [
+    { key: 'type', ar: 'نوع السقالة', en: 'Type', options: ['كب لوك (Cuplock)', 'رينج لوك (Ringlock)', 'إطار معدني (Frame)', 'برج تدعيم (Shoring Tower)', 'حسب التصميم / غير محدد (Per Design)'] },
+    { key: 'height', ar: 'الارتفاع المطلوب', en: 'Height', options: ['حتى 3 م', '3-6 م', '6-9 م', '9-12 م', '12-18 م', '18-25 م', 'أكثر من 25 م', 'حسب المخطط المرفق'] },
+    { key: 'length', ar: 'الطول / المحيط', en: 'Length', options: ['حتى 10 م', '10-25 م', '25-50 م', '50-100 م', 'أكثر من 100 م', 'حسب المخطط المرفق'] },
+    { key: 'width', ar: 'العرض / العمق', en: 'Width', options: ['حتى 1 م', '1-2 م', '2-3 م', 'أكثر من 3 م', 'حسب المخطط المرفق'] },
+    { key: 'scope', ar: 'نطاق العمل', en: 'Scope', options: ['توريد فقط', 'توريد + تركيب', 'توريد + تصميم + تركيب', 'تأجير'] },
+    { key: 'duration', ar: 'مدة الاستخدام', en: 'Duration', options: ['أسبوع', 'أسبوعين', 'شهر', '2-3 أشهر', 'حسب المشروع'] },
+    { key: 'docs', ar: 'المخططات والمستندات', en: 'Docs', options: ['سأرفق مخطط/أبعاد (استخدم رفع ملف المواصفات)', 'بحاجة زيارة موقع للقياس', 'التفاصيل بالمواصفات الحرّة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Unit', options: ['مشروع (مقطوعية)', 'م² واجهة', 'طن', 'حسب العرض'] },
+  ] },
+  { products: ['شدّات وطوبار أسقف (سلابات)'], spec: [
+    { key: 'system', ar: 'النظام', en: 'System', options: ['طوبار تقليدي (خشب + قوائم)', 'طوبار ألمنيوم (Aluminum)', 'طاولات طيران (Table Form)', 'دعائم + عوارض (Prop + Beam)', 'حسب التصميم'] },
+    { key: 'slab_height', ar: 'ارتفاع السقف', en: 'Slab Height', options: ['حتى 3 م', '3-4 م', '4-5 م', '5-6 م', 'أكثر من 6 م', 'حسب المخطط'] },
+    { key: 'slab_thickness', ar: 'سماكة البلاطة', en: 'Slab Thickness', options: ['حتى 20 سم', '20-30 سم', '30-40 سم', 'أكثر من 40 سم', 'حسب المخطط'] },
+    { key: 'area', ar: 'المساحة التقريبية', en: 'Area', options: ['حتى 100 م²', '100-300 م²', '300-1000 م²', 'أكثر من 1000 م²', 'حسب المخطط المرفق'] },
+    { key: 'scope', ar: 'نطاق العمل', en: 'Scope', options: ['توريد فقط', 'توريد + تركيب', 'تأجير'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Unit', options: ['م² (متر مربع)', 'مشروع (مقطوعية)', 'حسب العرض'] },
+  ] },
+
   // ═══ إضافات Madar (دفعة 3) ═══
   { products: ['شريط عزل كهربائي (تيب لحام)'], spec: [
     { key: 'brand', ar: 'الماركة', en: 'Brand', options: ['ثري إم تمفلكس ١٥٠٠ (3M Temflex 1500)', 'ثري إم سكوتش سوبر ٣٣+ (3M Scotch Super 33+)', 'نيتو (Nitto)', 'تجاري (Generic)'] },
@@ -2097,6 +2117,10 @@ export const SECTOR_COLORS: Record<Sector, string> = {
 
 // Product translations — keys are Arabic (stored in DB), values are EN/UR display names
 export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
+  // ═══ سقالات وشدّات (طلب مع تصميم) ═══
+  'طلب سقالة كاملة (توريد + تصميم)': { en: 'Complete Scaffolding (Supply + Design)', ur: 'مکمل اسکیفولڈنگ (سپلائی + ڈیزائن)' },
+  'شدّات وطوبار أسقف (سلابات)': { en: 'Slab Formwork & Shoring', ur: 'سلیب فارم ورک اور شورنگ' },
+
   // ═══ إضافات Madar (دفعة 3) ═══
   'شريط عزل كهربائي (تيب لحام)': { en: 'PVC Electrical Insulation Tape', ur: 'بجلی کی انسولیشن ٹیپ' },
   'شريط تلوين وترميز الكابلات': { en: 'Color-Coding Electrical Tape', ur: 'کیبل کلر کوڈنگ ٹیپ' },
@@ -3082,6 +3106,9 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'صاج مضلع (شكمة / تير دروب)',
     'صاج مجلفن (GI جلفنة ساخنة)',
     'بيم حديد أي بيم (IPE جسور)',
+    // ═══ سقالات وشدّات (طلب مع تصميم) ═══
+    'طلب سقالة كاملة (توريد + تصميم)',
+    'شدّات وطوبار أسقف (سلابات)',
   ],
   architectural: [
     // ═══ مواد مضافة (مراجعة الذكاء) ═══
