@@ -13,6 +13,7 @@ import AppShell from '@/components/shared/AppShell'
 import { AppIcon } from '@/components/AppIcon'
 import { rfqDisplayName, arItems } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
+import { dealStage } from '@/lib/dealStage'
 
 const txt = {
   ar: {
@@ -88,6 +89,7 @@ export default function ContractorDashboard() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [rfqs, setRfqs] = useState<any[]>([])
+  const [deals, setDeals] = useState<Record<string, any>>({})
   const [projects, setProjects] = useState<any[]>([])
   const [activity, setActivity] = useState<any[]>([])
   const [marketTop, setMarketTop] = useState<any[]>([])
@@ -108,6 +110,15 @@ export default function ContractorDashboard() {
       setProfile(p)
       const { data: r } = await supabase.from('rfqs').select('*').eq('contractor_id', session.user.id).order('created_at', { ascending: false })
       setRfqs(r || [])
+      try {
+        const closedIds = (r || []).filter((x: any) => x.status === 'closed').map((x: any) => x.id)
+        if (closedIds.length) {
+          const { data: acc } = await supabase.from('offers').select('rfq_id, accepted_at, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status').in('rfq_id', closedIds).eq('status', 'accepted')
+          const m: Record<string, any> = {}
+          for (const o of (acc || [])) m[o.rfq_id] = o
+          setDeals(m)
+        }
+      } catch {}
       // جلب المشاريع
       try {
         const { data: proj } = await supabase.from('project_rfqs').select('*')
@@ -599,7 +610,11 @@ export default function ContractorDashboard() {
                         </div>
                       </div>
                     </div>
-                    {(rfq.offer_count || 0) > 0 ? (
+                    {rfq.status === 'closed' && deals[rfq.id] ? (() => {
+                      const st = dealStage(deals[rfq.id])
+                      const lbl = st.key === 'disputed' ? 'نزاع' : st.done ? '✓ مكتملة' : st.step >= 3 ? 'بانتظار الدفع' : st.step >= 2 ? 'تم التوصيل' : 'جاري التوصيل'
+                      return (<div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}><div className="text-lg leading-none">{st.emoji}</div><div className="text-[10px] font-bold leading-tight mt-0.5">{lbl}</div></div>)
+                    })() : (rfq.offer_count || 0) > 0 ? (
                       <div className="text-center rounded-xl px-4 py-2 text-white shrink-0" style={{ background: '#F5831F' }}>
                         <div className="text-xl font-bold">{rfq.offer_count}</div>
                         <div className="text-[10px] text-white/85">{t.offers}</div>
