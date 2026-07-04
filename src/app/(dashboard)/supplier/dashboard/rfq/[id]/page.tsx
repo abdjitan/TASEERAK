@@ -124,7 +124,15 @@ export default function SupplierRFQPage() {
           return true
         })
         setMyItems(filtered)
-        setItemForms(filtered.map(() => ({ unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '' })))
+        // تعبئة تلقائية من أسعار المورّد المحفوظة (صفحة «أسعاري»)
+        const { data: myPrices } = await supabase.from('live_prices').select('product_name, price').eq('supplier_id', session.user.id)
+        const priceMap: Record<string, number> = {}
+        for (const pr of (myPrices || [])) if (priceMap[pr.product_name] == null) priceMap[pr.product_name] = Number(pr.price)
+        setItemForms(filtered.map((it: any) => {
+          const sp = priceMap[it.product_name]
+          if (sp > 0) { const q = Number(it.quantity) || 0; return { unit_price: String(sp), line_total: q > 0 ? String(+(sp * q).toFixed(2)) : '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '', autofilled: true } }
+          return { unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '' }
+        }))
         setOpenItem(null) // تبقى كل المواد مطويّة — المورد يضغط المادة التي يريد تسعيرها
       }
 
