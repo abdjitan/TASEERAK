@@ -86,6 +86,8 @@ export default function SpecialtiesPage() {
   const [suggestName, setSuggestName] = useState('')
   const [suggestSector, setSuggestSector] = useState('')
   const [suggestDesc, setSuggestDesc] = useState('')
+  const [suggestGroup, setSuggestGroup] = useState('')
+  const [suggestFile, setSuggestFile] = useState<any>(null)
   const [suggestMsg, setSuggestMsg] = useState('')
   const [suggestSubmitting, setSuggestSubmitting] = useState(false)
   const [myRequests, setMyRequests] = useState<any[]>([])
@@ -185,16 +187,27 @@ export default function SpecialtiesPage() {
     if (!suggestName.trim() || !user) return
     setSuggestSubmitting(true); setSuggestMsg('')
     const supabase = createClient()
+    let spec_file_url = null
+    if (suggestFile) {
+      try {
+        const ext = suggestFile.name.split('.').pop()
+        const path = `material-requests/${user.id}/${Date.now()}.${ext}`
+        const { data: up } = await supabase.storage.from('licenses').upload(path, suggestFile, { upsert: true })
+        if (up) { const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path); spec_file_url = publicUrl }
+      } catch {}
+    }
     const { data, error } = await supabase.from('material_requests').insert({
       supplier_id: user.id,
       name: suggestName.trim(),
       sector: suggestSector || null,
+      sub_category: (suggestGroup && suggestGroup !== '__other__') ? suggestGroup : null,
       description: suggestDesc.trim() || null,
+      spec_file_url,
     }).select().single()
     setSuggestSubmitting(false)
     if (error) { setSuggestMsg('حدث خطأ، حاول مرة أخرى'); return }
     setMyRequests(prev => [data, ...prev])
-    setSuggestName(''); setSuggestSector(''); setSuggestDesc('')
+    setSuggestName(''); setSuggestSector(''); setSuggestDesc(''); setSuggestGroup(''); setSuggestFile(null)
     setSuggestMsg(T.sSent)
     setTimeout(() => setSuggestMsg(''), 4000)
   }
@@ -348,8 +361,22 @@ export default function SpecialtiesPage() {
               ))}
             </select>
           </div>
+          {suggestSector && (() => {
+            const gks = sortGroupKeys([...new Set(Object.values((SUB_CATEGORIES as any)[suggestSector] || {}).map((x: any) => x.group))] as string[])
+            return (
+              <select value={suggestGroup} onChange={e => setSuggestGroup(e.target.value)} className="input-field mt-3">
+                <option value="">{locale === 'en' ? 'Which group / list fits it?' : 'أي مجموعة/قائمة تناسبها؟'}</option>
+                {gks.map((g: string) => <option key={g} value={g}>{(GROUP_LABELS as any)[g]?.ar || g}</option>)}
+                <option value="__other__">{locale === 'en' ? 'Not listed — I will describe below' : 'غير مذكورة — أوضّح بالوصف'}</option>
+              </select>
+            )
+          })()}
           <textarea value={suggestDesc} onChange={e => setSuggestDesc(e.target.value)}
             className="input-field mt-3" rows={2} placeholder={T.sDescPh} />
+          <label className="block mt-3">
+            <span className="text-xs font-bold text-gray-500">{locale === 'en' ? 'Attach product details (photo / spec / PDF)' : 'أرفق تفاصيل المنتج (صورة / مواصفة / PDF)'}</span>
+            <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={e => setSuggestFile((e.target as any).files?.[0] || null)} className="input-field mt-1 text-sm" />
+          </label>
 
           {suggestMsg && <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mt-3">{suggestMsg}</div>}
 

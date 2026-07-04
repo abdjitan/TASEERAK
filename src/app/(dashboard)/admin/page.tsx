@@ -827,6 +827,7 @@ export default function AdminPanel() {
                         </span>
                       </div>
                       {r.description && <p className="text-sm text-gray-500 mt-1">📝 {r.description}</p>}
+                      {r.spec_file_url && <a href={r.spec_file_url} target="_blank" rel="noreferrer" className="text-xs text-[#d96f15] underline mt-0.5 inline-block">📎 مرفق تفاصيل المنتج ←</a>}
                       {r.admin_note && <p className="text-xs text-[#0F6E56] bg-emerald-50 rounded-lg px-2 py-1 mt-1 inline-block">ملاحظة الإدارة: {r.admin_note}</p>}
                       <div className="text-[11px] text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
