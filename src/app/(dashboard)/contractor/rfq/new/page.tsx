@@ -729,7 +729,7 @@ export default function NewRFQPage() {
                         <tr key={i} className="border-b border-gray-50 align-top">
                           <td className="py-2.5 text-gray-400">{i + 1}</td>
                           <td className="py-2.5">
-                            <div className="font-bold text-[#1B2D5B]">{getProductLabel(it.product_name, locale)}</div>
+                            <div className="font-bold text-[#1B2D5B] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => { e.currentTarget.style.display = 'none' }} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span>{getProductLabel(it.product_name, locale)}</span></div>
                             <div className="flex flex-wrap gap-1 mt-1">
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
                               {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'}</span>)}

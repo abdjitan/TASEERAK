@@ -11,6 +11,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import DealProtection from '@/components/shared/DealProtection'
+import { productImageUrl } from '@/lib/productImage'
 import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel, getUnitLabel } from '@/types'
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
@@ -494,7 +495,7 @@ export default function SupplierRFQPage() {
                       <tr key={i} className="border-b border-gray-50 align-top">
                         <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                         <td className="py-2.5 px-3">
-                          <div className="font-bold text-[15px] text-[#1B2D5B]">{getProductLabel(it.product_name, locale)}</div>
+                          <div className="font-bold text-[15px] text-[#1B2D5B] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => { e.currentTarget.style.display = 'none' }} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span>{getProductLabel(it.product_name, locale)}</span></div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(sectors as any)[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
