@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { keywordClassify } from '@/lib/classify'
 import { SECTOR_LABELS } from '@/types'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
 
-// Auto-verify only when we are confident the classification is consistent.
-const AUTO_VERIFY_MIN_CONFIDENCE = 80
 const ALLOWED_SECTORS = ['civil', 'architectural', 'electrical', 'mechanical', 'equipment', 'supply_store']
 
 // POST /api/classify-supplier  { supplierId? }
@@ -85,20 +83,12 @@ export async function POST(req: NextRequest) {
   // Verification fields are locked against client/authenticated writes, so we
   // set them from the TRUSTED SERVER only (service role → admin_set_verification).
   // This keeps verification automatic/AI-driven without reopening the spoof hole.
-  let autoVerified = false
-  if (result.verdict === 'match' && result.confidence >= AUTO_VERIFY_MIN_CONFIDENCE && profile.verification_status === 'pending') {
-    try {
-      const svc = createServiceClient()
-      await svc.rpc('admin_set_verification', {
-        p_user_id: targetId,
-        p_source: source === 'ai' ? 'ai_match' : 'auto_match',
-        p_official_name: profile.cr_official_name || null,
-        p_cr_status: null,
-        p_activity: profile.cr_activity || null,
-      })
-      autoVerified = true
-    } catch (e: any) { console.error('auto-verify failed:', e?.message || e) }
-  }
+  // 🔒 SECURITY (C1): AI classification is ADVISORY ONLY — it NEVER grants "verified" status.
+  // The classifier reads the supplier's SELF-PROVIDED company name / activity (not a trusted
+  // document), so auto-verifying on it would let anyone self-verify by naming their company
+  // convincingly. Real verification requires Wathq (verify-identity) or explicit admin approval.
+  // The classification stored above is kept purely as a hint for the admin to review.
+  const autoVerified = false
 
   return NextResponse.json({ ok: true, ...result, source, autoVerified })
 }
