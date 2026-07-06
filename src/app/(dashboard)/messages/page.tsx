@@ -60,12 +60,15 @@ function Messages() {
   useEffect(() => {
     if (!activeId || !me) return
     const supabase = createClient()
+    let cancelled = false
     let ch: any
     ;(async () => {
+      // Fetch the conversation directly — do NOT read the possibly-stale `convos` closure,
+      // which made an awarded chat wrongly show the "20-message limit" lock (B9).
+      const { data: conv } = await supabase.from('conversations').select('rfq_id, supplier_id').eq('id', activeId).single()
       const { data } = await supabase.from('messages').select('*').eq('conversation_id', activeId).order('created_at')
+      if (cancelled) return // guard against out-of-order resolution → no cross-conversation bleed
       setMsgs(data || [])
-      // هل تمّت الترسية لهذا المورد على هذا الطلب؟ (يرفع حدّ الرسائل)
-      const conv = convos.find((c: any) => c.id === activeId)
       let aw = false
       if (conv?.rfq_id && conv?.supplier_id) {
         const { data: aws } = await supabase.from('rfq_item_awards').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).limit(1)
@@ -75,8 +78,10 @@ function Messages() {
           if (ofs && ofs.length) aw = true
         }
       }
+      if (cancelled) return
       setAwarded(aw)
       await supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('conversation_id', activeId).neq('sender_id', me).is('read_at', null)
+      if (cancelled) return // don't open a channel for a conversation we already switched away from
       ch = supabase.channel(`conv-${activeId}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeId}` }, (payload) => {
           setMsgs(prev => prev.some(m => m.id === payload.new.id) ? prev : [...prev, payload.new])
@@ -84,7 +89,7 @@ function Messages() {
         })
         .subscribe()
     })()
-    return () => { if (ch) supabase.removeChannel(ch) }
+    return () => { cancelled = true; if (ch) supabase.removeChannel(ch) }
   }, [activeId, me])
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs])

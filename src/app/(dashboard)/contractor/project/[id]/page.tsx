@@ -5,6 +5,7 @@ import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { offerComparable } from '@/lib/vat'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -178,7 +179,7 @@ export default function ProjectResultsPage() {
             )
             return filtered.map((item: any) => {
             const offers = item.rfq?.offers || []
-            const sortedOffers = [...offers].sort((a: any, b: any) => a.total_price - b.total_price)
+            const sortedOffers = [...offers].sort((a: any, b: any) => offerComparable(a) - offerComparable(b))
             const top3 = sortedOffers.slice(0, 3)
             const showAll = showAllOffers[item.id]
             const displayOffers = showAll ? sortedOffers : top3

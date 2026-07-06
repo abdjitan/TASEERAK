@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, UNIT_OPTIONS } from '@/types'
 import { waLink } from '@/lib/wa'
+import { offerComparable, lineComparable } from '@/lib/vat'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
@@ -250,10 +251,10 @@ export default function RFQDetailPage() {
     .filter((o: any) => !onlyVerified || o.supplier?.verification_status === 'verified')
     .filter((o: any) => !tierFilter || o.supplier?.supplier_tier === tierFilter)
     .sort((a: any, b: any) => {
-      if (sortBy === 'price_desc') return (b.total_price || 0) - (a.total_price || 0)
+      if (sortBy === 'price_desc') return offerComparable(b) - offerComparable(a)
       if (sortBy === 'delivery') return (a.delivery_days || 99999) - (b.delivery_days || 99999)
       if (sortBy === 'rating') return (b.supplier?.rating_avg || 0) - (a.supplier?.rating_avg || 0)
-      return (a.total_price || 0) - (b.total_price || 0) // price_asc (default)
+      return offerComparable(a) - offerComparable(b) // price_asc (default) — VAT-inclusive basis (B4)
     })
 
   return (
@@ -490,7 +491,7 @@ export default function RFQDetailPage() {
                       const bd = offerDistanceKm(b.offer, refGeo) ?? 9e9
                       if (ad !== bd) return ad - bd
                     }
-                    return (Number(a.entry.total) || 0) - (Number(b.entry.total) || 0)
+                    return lineComparable(a.entry.total, a.offer) - lineComparable(b.entry.total, b.offer)
                   })
                   const award = awards[idx]
                   return (
