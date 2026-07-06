@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
+import { fileHref } from '@/lib/fileHref'
 import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { SECTOR_LABELS, getGroupedSubCategories } from '@/types'
@@ -214,13 +215,11 @@ export default function AdminPanel() {
   const sar = (n: any) => (n || n === 0) ? Number(n).toLocaleString('en-US') + ' ر.س' : '—'
   const dt = (d: any) => d ? new Date(d).toLocaleDateString('ar-SA') : '—'
 
-  // BOQ/shared files live in the public "licenses" bucket
-  async function openBoq(val: string) {
+  // BOQ/shared files live in the now-private "licenses" bucket — open via the auth-gated
+  // /api/file proxy, which signs a short-lived URL (handles both full URLs and bare paths) (H9).
+  function openBoq(val: string) {
     if (!val) return
-    if (val.startsWith('http')) { window.open(val, '_blank'); return }
-    const supabase = createClient()
-    const { data } = await supabase.storage.from('licenses').createSignedUrl(val, 3600)
-    window.open(data?.signedUrl || val, '_blank')
+    window.open(fileHref(val), '_blank')
   }
 
   // Export the currently-filtered users to a CSV file (Excel-friendly, UTF-8 BOM)
@@ -827,7 +826,7 @@ export default function AdminPanel() {
                         </span>
                       </div>
                       {r.description && <p className="text-sm text-gray-500 mt-1">📝 {r.description}</p>}
-                      {r.spec_file_url && <a href={r.spec_file_url} target="_blank" rel="noreferrer" className="text-xs text-[#d96f15] underline mt-0.5 inline-block">📎 مرفق تفاصيل المنتج ←</a>}
+                      {r.spec_file_url && <a href={fileHref(r.spec_file_url)} target="_blank" rel="noreferrer" className="text-xs text-[#d96f15] underline mt-0.5 inline-block">📎 مرفق تفاصيل المنتج ←</a>}
                       {r.admin_note && <p className="text-xs text-[#0F6E56] bg-emerald-50 rounded-lg px-2 py-1 mt-1 inline-block">ملاحظة الإدارة: {r.admin_note}</p>}
                       <div className="text-[11px] text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}

@@ -5,6 +5,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { fileHref } from '@/lib/fileHref'
 import { SECTOR_LABELS } from '@/types'
 // @ts-ignore — qrcode has no bundled types
 import QRCode from 'qrcode'
@@ -233,7 +234,7 @@ export default function OrderDetailPage() {
                 </div>
               )}
               {offer?.attachment_url && (
-                <a href={offer.attachment_url} target="_blank" rel="noopener noreferrer"
+                <a href={fileHref(offer.attachment_url)} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm font-semibold text-[#d96f15] hover:underline print:hidden">
                   📎 {offer.attachment_name || 'كتالوج المنتج'} ←
                 </a>
@@ -262,7 +263,7 @@ export default function OrderDetailPage() {
                       <div className="font-semibold text-gray-900">{it.product_name}</div>
                       {(it.specification || it.notes) && <div className="text-xs text-gray-400 mt-0.5">{it.specification || it.notes}</div>}
                       {it.attachment_url && (
-                        <a href={it.attachment_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#d96f15] hover:underline print:hidden">📎 {it.attachment_name || 'ملف المواصفات'}</a>
+                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#d96f15] hover:underline print:hidden">📎 {it.attachment_name || 'ملف المواصفات'}</a>
                       )}
                     </td>
                     <td className="py-4 text-sm text-gray-600">{it.sector ? ((SECTOR_LABELS as any)[it.sector] || it.sector) : '—'}</td>

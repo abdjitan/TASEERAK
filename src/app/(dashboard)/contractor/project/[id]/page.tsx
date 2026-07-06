@@ -6,6 +6,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { offerComparable } from '@/lib/vat'
+import { fileHref } from '@/lib/fileHref'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -85,7 +86,7 @@ export default function ProjectResultsPage() {
                 <span>📅 {new Date(project?.created_at).toLocaleDateString('ar-SA')}</span>
               </div>
               {project?.boq_url && (
-                <a href={project.boq_url} target="_blank" rel="noopener noreferrer"
+                <a href={fileHref(project.boq_url)} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 mt-2 text-xs text-[#d96f15] hover:underline">
                   📊 {locale === 'en' ? 'View Original BOQ' : 'عرض BOQ الأصلي'}
                 </a>
@@ -243,7 +244,7 @@ export default function ProjectResultsPage() {
                       </div>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {acceptedOffer.attachment_url && (
-                          <a href={acceptedOffer.attachment_url} target="_blank" rel="noopener noreferrer"
+                          <a href={fileHref(acceptedOffer.attachment_url)} target="_blank" rel="noopener noreferrer"
                             className="text-[10px] bg-white text-[#1B2D5B] px-2 py-1 rounded-lg font-semibold border border-gray-200">
                             📎 {acceptedOffer.attachment_name || 'كتالوج'}
                           </a>

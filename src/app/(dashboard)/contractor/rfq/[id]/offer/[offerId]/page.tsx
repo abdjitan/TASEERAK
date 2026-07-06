@@ -5,6 +5,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { fileHref } from '@/lib/fileHref'
 import { SECTOR_LABELS } from '@/types'
 import { waLink } from '@/lib/wa'
 import { approvalLabel } from '@/lib/supplierScore'
@@ -226,7 +227,7 @@ export default function OfferDetailPage() {
                   {/* مواصفات المادة من المورد */}
                   {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5">📝 {it.specification || it.notes}</p>}
                   {it.attachment_url && (
-                    <a href={it.attachment_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#d96f15] underline mt-1.5">
+                    <a href={fileHref(it.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#d96f15] underline mt-1.5">
                       📎 {it.attachment_name || 'ملف المواصفات'}
                     </a>
                   )}
@@ -262,7 +263,7 @@ export default function OfferDetailPage() {
           )}
           {offer.notes && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-2">📝 {offer.notes}</p>}
           {offer.attachment_url && (
-            <a href={offer.attachment_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-[#d96f15] underline mt-1">
+            <a href={fileHref(offer.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-[#d96f15] underline mt-1">
               📎 {offer.attachment_name || 'مرفق العرض'}
             </a>
           )}

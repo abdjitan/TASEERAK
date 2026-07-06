@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, UNIT_OPTIONS } from '@/types'
 import { waLink } from '@/lib/wa'
 import { offerComparable, lineComparable } from '@/lib/vat'
+import { fileHref } from '@/lib/fileHref'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
@@ -417,7 +418,7 @@ export default function RFQDetailPage() {
                               {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'}</span>)}
                               {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
                               {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}ي</span>}
-                              {it.spec_file_url && <a href={it.spec_file_url} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
+                              {it.spec_file_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
                             </div>
                           </td>
                           <td className="py-2.5 px-3 font-bold text-[#d96f15] whitespace-nowrap">{it.quantity} {it.unit}</td>
@@ -528,7 +529,7 @@ export default function RFQDetailPage() {
                                     {b.offer.supplier?.city && <span>📍 {b.offer.supplier.city}</span>}
                                     {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title="المسافة من موقع التوصيل">📏 {km < 1 ? '<1' : Math.round(km)} كم</span> : null })()}
                                     {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]">⚙️ {b.entry.specification}</span>}
-                                    {b.entry.attachment_url && <a href={b.entry.attachment_url} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} className="text-purple-500 hover:underline">📎 كتالوج</a>}
+                                    {b.entry.attachment_url && <a href={fileHref(b.entry.attachment_url)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} className="text-purple-500 hover:underline">📎 كتالوج</a>}
                                     <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} title="عرض كل التفاصيل" className="inline-flex items-center gap-1 font-bold text-[11px] px-2.5 py-1 rounded-full transition-all hover:shadow-sm" style={{ color: '#fff', background: '#F5831F' }}>👁 التفاصيل</Link>
                                   </div>
                                 </div>
@@ -817,7 +818,7 @@ export default function RFQDetailPage() {
                 {/* الملف المرفق + الموقع */}
                 <div className="flex items-center gap-2 flex-wrap mb-3">
                   {offer.attachment_url && (
-                    <a href={offer.attachment_url} target="_blank" rel="noopener noreferrer"
+                    <a href={fileHref(offer.attachment_url)} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-[10px] bg-[#1B2D5B]/10 text-[#1B2D5B] px-2 py-1 rounded-lg font-semibold hover:bg-[#1B2D5B]/20 transition-all">
                       📎 {offer.attachment_name || 'كتالوج'}
                     </a>
