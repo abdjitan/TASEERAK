@@ -1014,7 +1014,7 @@ export default function NewRFQPage() {
                     <div className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 px-3 py-2.5">
                       <span className="text-lg">🗓</span>
                       <input type="datetime-local" value={customDeadline} dir="ltr"
-                        min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16)}
+                        min={(() => { const d = new Date(Date.now() + 60 * 60 * 1000); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16) })()}
                         onChange={(e: any) => setCustomDeadline(e.target.value)}
                         className="flex-1 bg-transparent outline-none text-sm font-bold text-[#1B2D5B] text-left"
                         style={{ colorScheme: 'light', accentColor: '#F5831F', fontFamily: 'Cairo, sans-serif' }} />

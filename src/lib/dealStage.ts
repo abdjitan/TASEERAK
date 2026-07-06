@@ -19,7 +19,7 @@ export function dealStage(offer: any): DealStage {
 
   const paid = offer?.payment_status === 'paid'
 
-  if (paid && offer?.payment_confirmed_at)
+  if (paid && offer?.payment_confirmed_at && offer?.supplier_delivered_at && offer?.received_at)
     return { step: 4, key: 'paid', label: 'تمّت الصفقة — مدفوعة وموثّقة', emoji: '✅', done: true, tone: '#0F6E56' }
 
   if (offer?.received_at) {

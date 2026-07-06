@@ -277,6 +277,7 @@ export default function NewProjectPage() {
 
       // إنشاء RFQ لكل بند وربطه بالمشروع
       const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+      const failed: string[] = []
       for (const item of selectedItems) {
         // رفع ملف مواصفات البند إن وجد
         let itemSpecUrl = null
@@ -294,13 +295,16 @@ export default function NewProjectPage() {
           ? `مشروع: ${title}\n[مواصفات مرفقة: ${itemSpecUrl}]`
           : `مشروع: ${title}`
 
-        const { data: rfq } = await supabase.from('rfqs').insert({
+        const qn = Number(item.quantity)
+        const quantity = Number.isFinite(qn) && qn > 0 ? qn : 1
+
+        const { data: rfq, error: rfqErr } = await supabase.from('rfqs').insert({
           contractor_id: user.id,
           sector: item.sector,
           sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector),
           product_name: item.product_name,
           specification: item.specification || null,
-          quantity: parseFloat(item.quantity) || 1,
+          quantity,
           unit: item.unit || 'عدد',
           region, city: city || null,
           delivery_required: deliveryRequired,
@@ -314,20 +318,22 @@ export default function NewProjectPage() {
           expires_at: expiresAt,
         }).select().single()
 
-        if (rfq) {
-          await supabase.from('project_rfq_items').insert({
-            project_rfq_id: project.id,
-            rfq_id: rfq.id,
-            product_name: item.product_name,
-            sector: item.sector,
-            quantity: parseFloat(item.quantity) || 1,
-            unit: item.unit,
-            specification: item.specification || null,
-            status: 'sent',
-          })
-        }
+        if (rfqErr || !rfq) { failed.push(item.product_name); continue }
+
+        const { error: linkErr } = await supabase.from('project_rfq_items').insert({
+          project_rfq_id: project.id,
+          rfq_id: rfq.id,
+          product_name: item.product_name,
+          sector: item.sector,
+          quantity,
+          unit: item.unit,
+          specification: item.specification || null,
+          status: 'sent',
+        })
+        if (linkErr) failed.push(item.product_name)
       }
 
+      if (failed.length) alert(`تعذّر إرسال ${failed.length} بند: ${failed.join('، ')}. حاول مجدداً لهذه البنود.`)
       window.location.href = `/contractor/project/${project.id}`
     } catch (err) {
       alert((err as any).message)

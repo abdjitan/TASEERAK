@@ -166,19 +166,14 @@ export default function SpecialtiesPage() {
     setSaving(true); setMsg('')
     const supabase = createClient()
 
-    // حفظ القطاعات
-    await supabase.from('profile_sectors').delete().eq('profile_id', user.id)
-    if (mySectors.length > 0) {
-      await supabase.from('profile_sectors').insert(mySectors.map(s => ({ profile_id: user.id, sector: s })))
-    }
-
-    // حفظ التخصصات الفرعية
-    await supabase.from('profile_specialties').delete().eq('profile_id', user.id)
-    if (mySpecialties.length > 0) {
-      await supabase.from('profile_specialties').insert(mySpecialties.map(s => ({ profile_id: user.id, specialty: s })))
-    }
-
+    // حفظ ذرّي: حذف + إضافة داخل معاملة واحدة على الخادم — لو فشلت الإضافة يتراجع الحذف
+    // فلا تُمسح تخصصات المورّد بصمت (B12).
+    const { error } = await supabase.rpc('save_supplier_specialties', {
+      p_sectors: mySectors,
+      p_specialties: mySpecialties,
+    })
     setSaving(false)
+    if (error) { setMsg('تعذّر الحفظ، حاول مرة أخرى'); return }
     setMsg(T.saved)
     setTimeout(() => { window.location.href = '/supplier/dashboard' }, 1200)
   }

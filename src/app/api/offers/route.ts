@@ -38,13 +38,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'انتهت صلاحية هذا الطلب' }, { status: 400 })
   }
 
+  // Validate price before insert so both the DB write and the notification use a real
+  // number (B14: total_price.toLocaleString() was called on unvalidated request input).
+  const totalPrice = Number(body.total_price)
+  if (!Number.isFinite(totalPrice) || totalPrice <= 0) {
+    return NextResponse.json({ error: 'سعر غير صالح' }, { status: 400 })
+  }
+  const unitPrice = Number(body.unit_price)
+
   const { data, error } = await supabase
     .from('offers')
     .insert({
       rfq_id: body.rfq_id,
       supplier_id: user.id,
-      total_price: body.total_price,
-      unit_price: body.unit_price,
+      total_price: totalPrice,
+      unit_price: Number.isFinite(unitPrice) ? unitPrice : null,
       delivery_days: body.delivery_days,
       notes: body.notes,
     })
@@ -61,13 +69,15 @@ export async function POST(request: NextRequest) {
   // Create notification for contractor — service role (trusted server write). The client
   // INSERT policy only allows self-notifications, so cross-user notifications must come
   // from the server to prevent notification-spoofing/phishing (H5).
-  await createServiceClient().from('notifications').insert({
-    user_id: rfq.contractor_id,
-    type: 'rfq_offer',
-    title: 'عرض سعر جديد',
-    body: `وصلك عرض جديد بسعر SAR ${body.total_price.toLocaleString('en-US')}`,
-    data: { rfq_id: body.rfq_id, offer_id: data.id },
-  })
+  try {
+    await createServiceClient().from('notifications').insert({
+      user_id: rfq.contractor_id,
+      type: 'rfq_offer',
+      title: 'عرض سعر جديد',
+      body: `وصلك عرض جديد بسعر SAR ${totalPrice.toLocaleString('en-US')}`,
+      data: { rfq_id: body.rfq_id, offer_id: data.id },
+    })
+  } catch (e) { console.error('offer notification failed:', e) }
 
   return NextResponse.json({ data }, { status: 201 })
 }
@@ -80,6 +90,9 @@ export async function PATCH(request: NextRequest) {
 
   const body = await request.json()
   const { offer_id, action, po_number } = body
+  if (action !== 'accept' && action !== 'reject') {
+    return NextResponse.json({ error: 'إجراء غير صالح' }, { status: 400 })
+  }
 
   // Verify the contractor owns the RFQ
   const { data: offer } = await supabase

@@ -103,10 +103,14 @@ export async function middleware(request: NextRequest) {
     return res
   }
 
+  // Match a protected/auth prefix on a path-segment boundary so "/supplier" does
+  // NOT also match the public "/suppliers" leaderboard page (B16).
+  const matches = (p: string) => pathname === p || pathname.startsWith(p + '/')
+
   // ── Rule 1: Already logged in → skip login/register, go to the DASHBOARD ──
   // (not the marketing landing) so a post-login cookie-refresh race can't bounce
   // the user back to "/" and look like the login "failed".
-  if (user && AUTH_PAGES.some((p) => pathname.startsWith(p))) {
+  if (user && AUTH_PAGES.some(matches)) {
     let home = '/contractor'
     try {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
@@ -116,7 +120,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Rule 2: Not logged in → can't access protected pages ─────────────────
-  if (!user && PROTECTED.some((p) => pathname.startsWith(p))) {
+  if (!user && PROTECTED.some(matches)) {
     const loginUrl = new URL('/login', request.url)
     // Remember where they were going so we can redirect back after login
     loginUrl.searchParams.set('next', pathname)
@@ -126,7 +130,7 @@ export async function middleware(request: NextRequest) {
   // ── Rule 3: Admin routes → verify role in database ───────────────────────
   // This DB query only runs for /admin/* routes, so it doesn't slow down
   // regular pages.
-  if (user && ADMIN_ONLY.some((p) => pathname.startsWith(p))) {
+  if (user && ADMIN_ONLY.some(matches)) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
