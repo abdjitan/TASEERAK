@@ -479,7 +479,7 @@ export default function RFQDetailPage() {
                 {rfq.items.map((it: any, idx: any) => {
                   const bids = activeOffers.map((o: any) => {
                     const list = Array.isArray(o.item_prices) ? o.item_prices : []
-                    const entry = list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
+                    const entry = list.find((ip: any) => ip.item_index === idx) || list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
                     return entry ? { offer: o, entry } : null
                   }).filter(Boolean).sort((a: any, b: any) => {
                     if (awardSort === 'fastest') {

@@ -119,7 +119,7 @@ export default function SupplierRFQPage() {
         const mySectors = (secRows || []).map((r: any) => r.sector)
         const mySpecialties = (specRows || []).map((r: any) => r.specialty)
         const myTier = p2?.supplier_tier || 'local'
-        const filtered = rfqData.items.filter((it: any) => {
+        const filtered = (rfqData.items as any[]).map((it: any, i: number) => ({ ...it, item_index: i })).filter((it: any) => {
           if (mySectors.length > 0 && !mySectors.includes(it.sector)) return false
           if (mySpecialties.length > 0 && it.sub_category && !mySpecialties.includes(it.sub_category)) return false
           if (Array.isArray(it.supplier_tiers) && it.supplier_tiers.length > 0 && !it.supplier_tiers.includes(myTier)) return false
@@ -336,7 +336,7 @@ export default function SupplierRFQPage() {
         const up = parseFloat(form.unit_price) || 0
         const lineTotal = parseFloat(form.line_total) || (up * (it.quantity || 0))
         itemPricesPayload.push({
-          product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
+          item_index: it.item_index, product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
           unit: (form.priceUnit && form.priceUnit.trim()) || it.unit, quantity: it.quantity,
           unit_price: up || null, total: +lineTotal.toFixed(2),
           delivery_days: parseInt(form.delivery_days) || null,
