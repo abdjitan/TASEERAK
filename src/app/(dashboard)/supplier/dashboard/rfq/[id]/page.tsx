@@ -42,8 +42,8 @@ export default function SupplierRFQPage() {
   const [openItem, setOpenItem] = useState<number | null>(null) // البطاقة المفتوحة (أكورديون)
   // المواد التي تخصّ هذا المورد فقط (ضمن قطاعاته/تخصصاته) — هي وحدها التي يسعّرها ويراها
   const [myItems, setMyItems] = useState<any[]>([])
-  // العروض المنافسة (مجهولة الهوية) — لعرض موقع المورد التنافسي
-  const [ranking, setRanking] = useState<any[]>([])
+  // (H2) أسعار المنافسين لم تعُد تُعرض للمورّد — يبقى فارغاً واللوحة معطّلة
+  const [ranking] = useState<any[]>([])
   const [contractorInfo, setContractorInfo] = useState<any>(null)
   const [deliveryDays, setDeliveryDays] = useState('')
   const [notes, setNotes] = useState('')
@@ -146,10 +146,6 @@ export default function SupplierRFQPage() {
           if (rev && rev.length) setCDone(true)
         }
       }
-
-      // الموقع التنافسي: أسعار العروض الحالية (مجهولة الهوية)
-      const { data: rk } = await supabase.rpc('get_rfq_offer_ranking', { p_rfq_id: id })
-      setRanking(rk || [])
 
       // هوية المقاول تُكشف من الخادم فقط بعد قبول العرض (لا تُرسَل قبل ذلك)
       const { data: cInfo } = await supabase.rpc('get_rfq_contractor', { p_rfq_id: id })
@@ -468,7 +464,7 @@ export default function SupplierRFQPage() {
 
   return (
     <AppShell title={locale === 'en' ? 'Submit Offer' : locale === 'ur' ? 'پیشکش' : 'تقديم عرض'} nav={getNav('supplier', locale, '/supplier/dashboard')} dir={dir}>
-      {(() => { const showPanel = rfq.status === 'open' && !expired; return (
+      {(() => { const showPanel = false /* (H2) competitive-position panel removed — suppliers no longer see competitor prices */; return (
       <div className={`max-w-6xl mx-auto grid gap-5 items-start ${showPanel ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
         <div className={`min-w-0 ${showPanel ? 'lg:col-span-2' : ''}`}>
         {/* RFQ Details */}
