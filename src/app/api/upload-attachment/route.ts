@@ -11,11 +11,11 @@ const ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'xlsx', 'xls', 'doc', 
 const MAX_SIZE = 15 * 1024 * 1024
 
 function magicOk(ext: string, bytes: Uint8Array): boolean {
-  const h = Array.from(bytes.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('')
+  const h = Array.from(bytes.slice(0, 12)).map(b => b.toString(16).padStart(2, '0')).join('')
   if (ext === 'pdf') return h.startsWith('25504446')                 // %PDF
   if (ext === 'jpg' || ext === 'jpeg') return h.startsWith('ffd8ff')
   if (ext === 'png') return h.startsWith('89504e47')
-  if (ext === 'webp') return h.startsWith('52494646')                // RIFF
+  if (ext === 'webp') return h.startsWith('52494646') && h.slice(16, 24) === '57454250'                // RIFF
   if (ext === 'xlsx' || ext === 'docx') return h.startsWith('504b03') || h.startsWith('504b05') || h.startsWith('504b07') // ZIP
   if (ext === 'xls' || ext === 'doc') return h.startsWith('d0cf11e0') // OLE2
   return false

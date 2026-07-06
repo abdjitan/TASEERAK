@@ -55,12 +55,15 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     const supabase = createClient()
-    // The recovery link establishes a session (detectSessionInUrl). Confirm it.
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || session) { setReady(true); setChecking(false) }
+    // SEC-14: only a genuine password-recovery flow may set a new password without the current
+    // one. A normal logged-in session landing on /reset-password directly (e.g. a hijacked
+    // session) must NOT be allowed to reset — otherwise it becomes a permanent account takeover.
+    const isRecovery = typeof window !== 'undefined' && window.location.hash.includes('type=recovery')
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') { setReady(true); setChecking(false) }
     })
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true)
+      if (isRecovery && data.session) setReady(true)
       setChecking(false)
     })
     return () => sub?.subscription?.unsubscribe()

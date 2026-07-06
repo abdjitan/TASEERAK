@@ -235,7 +235,9 @@ export default function AdminPanel() {
       'تاريخ التسجيل': u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : '',
     }))
     const headers = Object.keys(rows[0] || { الاسم: '' })
-    const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    // SEC-15: neutralize spreadsheet formula injection (a company name like =HYPERLINK(...) would
+    // otherwise execute when the admin opens the CSV in Excel) by prefixing risky leading chars.
+    const esc = (v: any) => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"` }
     const csv = [headers.map(esc).join(','), ...rows.map((r: any) => headers.map((h: any) => esc(r[h])).join(','))].join('\r\n')
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
     const a = document.createElement('a')
