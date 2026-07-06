@@ -44,10 +44,13 @@ function LoginForm() {
     return '/contractor'
   }
 
-  // Safe redirect: only allow same-origin paths (guard against open-redirect)
+  // Safe redirect: only allow same-origin absolute paths (guard against open-redirect).
+  // Require a single leading "/" and reject any backslash (char 92) or control char (<32),
+  // since browsers normalize a leading backslash to "/" and strip control chars.
   function safeRedirect(path: string | null, fallback: string) {
-    if (path && path.startsWith('/') && !path.startsWith('//')) return path
-    return fallback
+    if (!path || path[0] !== '/' || path[1] === '/') return fallback
+    for (let i = 0; i < path.length; i++) { const c = path.charCodeAt(i); if (c === 92 || c < 32) return fallback }
+    return path
   }
 
   useEffect(() => {
