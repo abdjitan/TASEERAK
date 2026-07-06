@@ -105,8 +105,10 @@ export default function SupplierRFQPage() {
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
 
-      const { data: rfqData } = await supabase
-        .from('rfqs').select('*').eq('id', id).single()
+      // Precise delivery location is stripped for non-awarded suppliers server-side (H1);
+      // region/city stay visible for pricing. Returns null if this supplier may not see the RFQ.
+      const { data: rfqData } = await supabase.rpc('get_rfq_for_viewer', { p_rfq_id: id })
+      if (!rfqData) { setRfq(null); setLoading(false); return }
       setRfq(rfqData)
 
       // ✅ المورد يرى/يسعّر فقط المواد ضمن تخصصه — لا تظهر له مواد قطاع لا يخدمه
