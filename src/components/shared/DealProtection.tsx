@@ -16,7 +16,6 @@ export default function DealProtection({
   isSupplier,
   otherParty,
   poNumber,
-  myId,
 }: {
   offer: any
   isContractor: boolean
@@ -30,13 +29,15 @@ export default function DealProtection({
   const [showDispute, setShowDispute] = useState(false)
   const [disputeReason, setDisputeReason] = useState('')
 
-  const now = () => new Date().toISOString()
-  // تحديث سجل الصفقة (العرض المقبول). RLS يسمح للطرفين + الأدمن بالتحديث.
-  async function patch(fields: any, label: string) {
+  // 🔒 كل انتقال في حالة الصفقة يمرّ عبر دالة خادمية موثوقة (RPC) — لا تحديث مباشر.
+  // الخادم يتحقق من الدور والحالة الحالية ويختم الوقت بنفسه، فلا يستطيع أي طرف
+  // تزوير حالة الصفقة (تسليم/استلام/دفع/نزاع) بالكتابة المباشرة على الجدول.
+  async function callRpc(fn: string, params: Record<string, any>, label: string) {
     setBusy(label)
     const supabase = createClient()
-    const { error } = await supabase.from('offers').update(fields).eq('id', offer.id)
-    if (!error) setOffer({ ...offer, ...fields })
+    const { data, error } = await supabase.rpc(fn, params)
+    if (error) { alert('تعذّر إتمام العملية: ' + (error.message || 'خطأ غير متوقع')); setBusy(''); return }
+    if (data) setOffer({ ...offer, ...(data as any) })
     setBusy('')
   }
 
@@ -94,7 +95,7 @@ export default function DealProtection({
             <div className="text-xs text-gray-400">{offer.supplier_delivered_at ? `✓ أكّد المورد التسليم — ${new Date(offer.supplier_delivered_at).toLocaleString('ar-SA')}` : 'بانتظار تأكيد المورد'}</div>
           </div>
           {!offer.supplier_delivered_at && isSupplier && (
-            <button onClick={() => patch({ supplier_delivered_at: now() }, 'deliver')} disabled={busy === 'deliver'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#1B2D5B' }}>✓ أكّدت التسليم</button>
+            <button onClick={() => callRpc('confirm_delivery', { p_offer_id: offer.id }, 'deliver')} disabled={busy === 'deliver'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#1B2D5B' }}>✓ أكّدت التسليم</button>
           )}
         </div>
 
@@ -107,7 +108,7 @@ export default function DealProtection({
           {!offer.received_at && isContractor && (
             <div className="flex items-center gap-2 shrink-0">
               <button onClick={() => { setDisputeReason('البضاعة لم تُسلَّم أو لم تتطابق مع المطلوب'); setShowDispute(true) }} className="text-xs px-3 py-2 rounded-xl font-semibold border border-red-300 text-red-600 hover:bg-red-50 whitespace-nowrap">✕ لم يتم الاستلام</button>
-              <button onClick={() => { if (confirm('⚠ هل استلمت البضاعة فعلياً ومطابقة للمطلوب؟\n\nسيُسجَّل محضر استلام موثّق بالتاريخ. تنبيه: تأكيد الاستلام دون استلام فعلي يُخفّض تقييمك ويُعرّضك للمساءلة.')) patch({ received_at: now(), received_by: myId }, 'receipt') }} disabled={busy === 'receipt'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ أؤكّد الاستلام</button>
+              <button onClick={() => { if (confirm('⚠ هل استلمت البضاعة فعلياً ومطابقة للمطلوب؟\n\nسيُسجَّل محضر استلام موثّق بالتاريخ. تنبيه: تأكيد الاستلام دون استلام فعلي يُخفّض تقييمك ويُعرّضك للمساءلة.')) callRpc('confirm_receipt', { p_offer_id: offer.id }, 'receipt') }} disabled={busy === 'receipt'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ أؤكّد الاستلام</button>
             </div>
           )}
         </div>
@@ -124,10 +125,10 @@ export default function DealProtection({
           </div>
           <div className="flex gap-2 flex-shrink-0">
             {offer.payment_status !== 'paid' && isContractor && (
-              <button onClick={() => patch({ payment_status: 'paid', paid_marked_at: now() }, 'paid')} disabled={busy === 'paid'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#1B2D5B' }}>✓ أكّدت الدفع</button>
+              <button onClick={() => callRpc('mark_paid', { p_offer_id: offer.id }, 'paid')} disabled={busy === 'paid'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#1B2D5B' }}>✓ أكّدت الدفع</button>
             )}
             {offer.payment_status === 'paid' && !offer.payment_confirmed_at && isSupplier && (
-              <button onClick={() => patch({ payment_confirmed_at: now() }, 'paycfm')} disabled={busy === 'paycfm'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ أكّدت استلام الدفعة</button>
+              <button onClick={() => callRpc('confirm_payment', { p_offer_id: offer.id }, 'paycfm')} disabled={busy === 'paycfm'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ أكّدت استلام الدفعة</button>
             )}
           </div>
         </div>
@@ -150,7 +151,7 @@ export default function DealProtection({
             <label className="block text-xs font-bold text-red-700 mb-1.5">صف المشكلة</label>
             <textarea value={disputeReason} onChange={(e: any) => setDisputeReason(e.target.value)} className="input-field" rows={2} placeholder="مثال: البضاعة لم تُسلّم / مختلفة عن المواصفات / تأخّر الدفع..." />
             <div className="flex gap-2 mt-2">
-              <button onClick={() => { if (!disputeReason) return; patch({ dispute_status: 'open', dispute_reason: disputeReason, dispute_by: myId, dispute_opened_at: now() }, 'dispute'); setShowDispute(false) }} disabled={!disputeReason || busy === 'dispute'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 disabled:opacity-50">إرسال النزاع</button>
+              <button onClick={() => { if (!disputeReason) return; callRpc('open_dispute', { p_offer_id: offer.id, p_reason: disputeReason }, 'dispute'); setShowDispute(false) }} disabled={!disputeReason || busy === 'dispute'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 disabled:opacity-50">إرسال النزاع</button>
               <button onClick={() => setShowDispute(false)} className="text-xs px-3 py-2 text-gray-500">إلغاء</button>
             </div>
           </div>
