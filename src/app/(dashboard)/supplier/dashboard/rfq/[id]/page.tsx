@@ -125,11 +125,18 @@ export default function SupplierRFQPage() {
         })
         setMyItems(filtered)
         // تعبئة تلقائية من أسعار المورّد المحفوظة (صفحة «أسعاري»)
-        const { data: myPrices } = await supabase.from('live_prices').select('product_name, price').eq('supplier_id', session.user.id)
+        // key on product_name + unit so a per-ton saved price never fills a per-bar field (B5);
+        // skip saved prices tied to a different region (region-agnostic saved prices still apply).
+        const { data: myPrices } = await supabase.from('live_prices').select('product_name, price, unit, region').eq('supplier_id', session.user.id)
+        const rfqRegion = rfqData?.region || null
         const priceMap: Record<string, number> = {}
-        for (const pr of (myPrices || [])) if (priceMap[pr.product_name] == null) priceMap[pr.product_name] = Number(pr.price)
+        for (const pr of (myPrices || [])) {
+          if (rfqRegion && pr.region && pr.region !== rfqRegion) continue
+          const key = `${pr.product_name}__${pr.unit || ''}`
+          if (priceMap[key] == null) priceMap[key] = Number(pr.price)
+        }
         setItemForms(filtered.map((it: any) => {
-          const sp = priceMap[it.product_name]
+          const sp = priceMap[`${it.product_name}__${it.unit || ''}`]
           if (sp > 0) { const q = Number(it.quantity) || 0; return { unit_price: String(sp), line_total: q > 0 ? String(+(sp * q).toFixed(2)) : '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '', autofilled: true } }
           return { unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '' }
         }))

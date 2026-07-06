@@ -270,16 +270,19 @@ export default function SettingsPage() {
       crUrl = p
     }
 
+    // license_url/cr_url aren't locked and persist directly; verification_status IS locked,
+    // so reset it to 'pending' via a trusted RPC — otherwise a rejected supplier's re-upload
+    // never re-enters admin review (the client write was silently reverted) (B7).
     const { error } = await supabase.from('profiles').update({
       license_url: licenseUrl,
       cr_url: crUrl,
-      verification_status: 'pending',
     }).eq('id', user.id)
+    if (!error) await supabase.rpc('request_reverification')
 
     setDocsSaving(false)
     if (error) { setDocsMsg(t.error); return }
     setDocsMsg(t.uploaded)
-    setProfile({ ...profile, license_url: licenseUrl, cr_url: crUrl, verification_status: 'pending' })
+    setProfile({ ...profile, license_url: licenseUrl, cr_url: crUrl, verification_status: profile?.verification_status === 'verified' ? 'verified' : 'pending' })
     setLicenseFile(null); setCrFile(null)
     setTimeout(() => setDocsMsg(''), 4000)
   }
@@ -297,22 +300,11 @@ export default function SettingsPage() {
       })
       const j = await res.json()
       setCrCheck(j)
-      if (j?.mode === 'wathq' && j?.verified) {
-        const supabase = createClient()
-        const upd = {
-          cr_verification_source: 'wathq',
-          cr_verified_at: new Date().toISOString(),
-          cr_official_name: j.name || null,
-          cr_activity: j.activity || null,
-          cr_status: j.status || null,
-          cr_expiry_date: j.expiryDate || null,
-          cr_issue_date: j.issueDate || null,
-          cr_data: j.raw || null,
-          verification_status: 'verified',
-        }
-        await supabase.from('profiles').update(upd).eq('id', user.id)
-        setProfile({ ...profile, ...upd })
-      }
+      // NOTE (B7/security): account verification is NOT granted from here. verification_status
+      // and cr_* are locked against client writes (the old update was silently reverted), and a
+      // CR being active is not sufficient on its own — full verification requires the two-factor
+      // owner match via /api/verify-identity (which persists server-side) or admin approval.
+      // This flow only shows the official CR status to the user.
     } catch {
       setCrCheck({ ok: false, message: t.error })
     }

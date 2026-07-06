@@ -114,8 +114,9 @@ export default function ContractorDashboard() {
         const closedIds = (r || []).filter((x: any) => x.status === 'closed').map((x: any) => x.id)
         if (closedIds.length) {
           const { data: acc } = await supabase.from('offers').select('rfq_id, accepted_at, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status').in('rfq_id', closedIds).eq('status', 'accepted')
-          const m: Record<string, any> = {}
-          for (const o of (acc || [])) m[o.rfq_id] = o
+          // keep ALL accepted offers per RFQ (per-item awards → multiple suppliers), not one arbitrary (B11)
+          const m: Record<string, any[]> = {}
+          for (const o of (acc || [])) (m[o.rfq_id] ||= []).push(o)
           setDeals(m)
         }
       } catch {}
@@ -610,10 +611,15 @@ export default function ContractorDashboard() {
                         </div>
                       </div>
                     </div>
-                    {rfq.status === 'closed' && deals[rfq.id] ? (() => {
-                      const st = dealStage(deals[rfq.id])
-                      const lbl = st.key === 'disputed' ? 'نزاع' : st.done ? '✓ مكتملة' : st.step >= 3 ? 'بانتظار الدفع' : st.step >= 2 ? 'تم التوصيل' : 'جاري التوصيل'
-                      return (<div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}><div className="text-lg leading-none">{st.emoji}</div><div className="text-[10px] font-bold leading-tight mt-0.5">{lbl}</div></div>)
+                    {rfq.status === 'closed' && deals[rfq.id]?.length ? (() => {
+                      // roll up all awarded suppliers: an open dispute wins, else the least-advanced stage; "done" only if ALL are done
+                      const stages = deals[rfq.id].map((o: any) => dealStage(o))
+                      const disputed = stages.find((s: any) => s.key === 'disputed')
+                      const allDone = stages.every((s: any) => s.done)
+                      const st = disputed || (allDone ? stages[0] : stages.slice().sort((a: any, b: any) => a.step - b.step)[0])
+                      const n = deals[rfq.id].length
+                      const lbl = st.key === 'disputed' ? 'نزاع' : allDone ? '✓ مكتملة' : st.step >= 3 ? 'بانتظار الدفع' : st.step >= 2 ? 'تم التوصيل' : 'جاري التوصيل'
+                      return (<div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}><div className="text-lg leading-none">{st.emoji}</div><div className="text-[10px] font-bold leading-tight mt-0.5">{lbl}{n > 1 ? ` (${n})` : ''}</div></div>)
                     })() : (rfq.offer_count || 0) > 0 ? (
                       <div className="text-center rounded-xl px-4 py-2 text-white shrink-0" style={{ background: '#F5831F' }}>
                         <div className="text-xl font-bold">{rfq.offer_count}</div>
