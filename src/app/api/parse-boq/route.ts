@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizeText } from '@/lib/normalize'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { aiJson, AI_ENABLED } from '@/lib/ai'
 import { SUB_CATEGORIES, detectSubCategory } from '@/types'
 import { getTaxonomyRows, detectSubCategoryDb, type TaxRow } from '@/lib/serverTaxonomy'
@@ -213,6 +214,10 @@ ${subCatRef()}
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth required — this route burns paid AI tokens (H7: no anonymous access).
+    const { data: { user } } = await createServerSupabaseClient().auth.getUser()
+    if (!user) return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
+
     const formData = await req.formData()
     const file = formData.get('file') as File
 

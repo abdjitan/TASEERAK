@@ -7,6 +7,7 @@
 // ============================================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { aiJson } from '@/lib/ai'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -83,6 +84,10 @@ async function geminiMatchDoc(base64: string, mime: string, itemsJson: string): 
 
 export async function POST(req: NextRequest) {
   try {
+    // Auth required — this route burns paid AI tokens (H7: no anonymous access).
+    const { data: { user } } = await createServerSupabaseClient().auth.getUser()
+    if (!user) return NextResponse.json({ ok: false, message: 'يجب تسجيل الدخول' }, { status: 401 })
+
     const formData = await req.formData()
     const file = formData.get('file') as File
     const itemsRaw = String(formData.get('items') || '[]')
