@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
 
 // GET /api/subcontractors — browse subcontractors
 export async function GET(request: NextRequest) {
@@ -103,7 +103,8 @@ export async function POST(request: NextRequest) {
       body: `طلب ${body.specialty} في ${body.region}`,
       data: { sub_request_id: data.id },
     }))
-    await supabase.from('notifications').insert(notifications)
+    // service role — trusted server fan-out; client INSERT policy is self-only (H5)
+    await createServiceClient().from('notifications').insert(notifications)
   }
 
   return NextResponse.json({ data }, { status: 201 })

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
 
 // POST /api/offers — submit an offer
 export async function POST(request: NextRequest) {
@@ -58,8 +58,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Create notification for contractor
-  await supabase.from('notifications').insert({
+  // Create notification for contractor — service role (trusted server write). The client
+  // INSERT policy only allows self-notifications, so cross-user notifications must come
+  // from the server to prevent notification-spoofing/phishing (H5).
+  await createServiceClient().from('notifications').insert({
     user_id: rfq.contractor_id,
     type: 'rfq_offer',
     title: 'عرض سعر جديد',
@@ -110,8 +112,8 @@ export async function PATCH(request: NextRequest) {
       .update({ status: 'closed' })
       .eq('id', (offer.rfq as any).id)
 
-    // Notify the winning supplier
-    await supabase.from('notifications').insert({
+    // Notify the winning supplier — service role (trusted server write, see H5 above)
+    await createServiceClient().from('notifications').insert({
       user_id: offer.supplier_id,
       type: 'offer_accepted',
       title: 'تم قبول عرضك! 🎉',
@@ -122,7 +124,7 @@ export async function PATCH(request: NextRequest) {
   } else if (action === 'reject') {
     await supabase.from('offers').update({ status: 'rejected' }).eq('id', offer_id)
 
-    await supabase.from('notifications').insert({
+    await createServiceClient().from('notifications').insert({
       user_id: offer.supplier_id,
       type: 'offer_rejected',
       title: 'لم يتم قبول عرضك',
