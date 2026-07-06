@@ -47,7 +47,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
               <div className="p-8 text-center text-sm text-gray-400">لا توجد إشعارات</div>
             ) : notifications.map((n: any) => (
               <button key={n.id}
-                onClick={() => { markAsRead(n.id); const url = n.data?.url; setOpen(false); if (url) router.push(url) }}
+                onClick={() => { markAsRead(n.id); const url = n.data?.url; setOpen(false); if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') && !url.includes('\\')) router.push(url) }}
                 className={`w-full text-right px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-all ${n.is_read ? '' : 'bg-[#F5831F]/10'}`}>
                 <div className="flex items-start gap-2">
                   {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}

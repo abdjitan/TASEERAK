@@ -214,9 +214,12 @@ ${subCatRef()}
 
 export async function POST(req: NextRequest) {
   try {
-    // Auth required — this route burns paid AI tokens (H7: no anonymous access).
-    const { data: { user } } = await createServerSupabaseClient().auth.getUser()
+    // Auth + rate-limit — this route burns paid AI tokens (H7/SEC-05).
+    const supabase = createServerSupabaseClient()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
+    const { data: allowed } = await supabase.rpc('check_rate_limit', { p_bucket: 'parse-boq:' + user.id, p_max: 20, p_window_seconds: 3600 })
+    if (allowed === false) return NextResponse.json({ error: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })
 
     const formData = await req.formData()
     const file = formData.get('file') as File
