@@ -128,20 +128,24 @@ export default function OrderDetailPage() {
   )
 
   const poNumber = `PO-${offer.id.slice(0, 8).toUpperCase()}`
-  const date = new Date(offer.accepted_at || offer.created_at).toLocaleDateString('ar-SA')
+  // Gregorian calendar pinned to KSA time so the printed date matches the QR (B3)
+  const date = new Date(offer.accepted_at || offer.created_at).toLocaleDateString('ar-SA-u-ca-gregory', { timeZone: 'Asia/Riyadh' })
   // المواد المسعّرة بند-بند. عند الترسية بند-بند نعرض فقط مواد هذا المورد المُرساة عليه،
   // وإلا كل بنود العرض (طلب متعدّد المواد) — تُعرض كأسطر في أمر الشراء والفاتورة.
   const hasAwards = Array.isArray(awards) && awards.length > 0
-  const ip = hasAwards
+  const ipRaw = hasAwards
     ? awards.map((a: any) => ({ product_name: a.item_key, sector: rfq?.items?.[a.item_index]?.sector, quantity: a.quantity, unit: a.unit, unit_price: a.unit_price, total: a.total, specification: rfq?.items?.[a.item_index]?.specification }))
     : (Array.isArray(offer.item_prices) ? offer.item_prices : [])
   const _ex = Array.isArray(offer.extra_charges) ? offer.extra_charges : []
-  const _exSum = _ex.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0)
-  // إجمالي هذا الأمر = (مجموع المواد المُرساة + الإضافات) عند الترسية بند-بند، وإلا إجمالي العرض
-  const dealTotal = hasAwards ? (awards.reduce((s: number, a: any) => s + (Number(a.total) || 0), 0) + _exSum) : (Number(offer.total_price) || 0)
-  // الضريبة 15% — إن كان سعر المورد يشمل الضريبة نستخرجها، وإلا نضيفها فوقه
   const vatIncl = !!offer.vat_included
-  const dealNet = vatIncl ? dealTotal / 1.15 : dealTotal
+  const toNet = (n: any) => (vatIncl ? (Number(n) || 0) / 1.15 : (Number(n) || 0))
+  // ZATCA: every displayed line is ex-VAT so the amount column sums to the pre-VAT subtotal, and
+  // extra charges (delivery/installation/fees) show as their own line items — not hidden in the total (B1).
+  const rows: any[] = (ipRaw.length > 0
+    ? ipRaw.map((it: any) => ({ product_name: it.product_name, sector: it.sector, specification: it.specification, notes: it.notes, attachment_url: it.attachment_url, attachment_name: it.attachment_name, quantity: it.quantity, unit: it.unit, unitNet: Number(it.unit_price) > 0 ? toNet(it.unit_price) : null, net: toNet(it.total) }))
+    : [{ product_name: rfq.product_name, sector: rfq.sector, specification: rfq.specification, quantity: rfq.quantity, unit: rfq.unit, unitNet: offer.unit_price ? toNet(offer.unit_price) : null, net: toNet(offer.total_price) }])
+  for (const e of _ex) rows.push({ product_name: e.label || 'رسوم إضافية', sector: null, quantity: '', unit: '', unitNet: null, net: toNet(e.amount), isExtra: true })
+  const dealNet = rows.reduce((s: number, r: any) => s + (Number(r.net) || 0), 0)
   const dealVat = dealNet * 0.15
   const dealGross = dealNet + dealVat
 
@@ -247,11 +251,11 @@ export default function OrderDetailPage() {
                   <th className="text-right text-xs font-bold text-gray-500 pb-3">القطاع</th>
                   <th className="text-right text-xs font-bold text-gray-500 pb-3">الكمية</th>
                   <th className="text-right text-xs font-bold text-gray-500 pb-3">سعر الوحدة</th>
-                  <th className="text-right text-xs font-bold text-gray-500 pb-3">الإجمالي</th>
+                  <th className="text-right text-xs font-bold text-gray-500 pb-3">الإجمالي (قبل الضريبة)</th>
                 </tr>
               </thead>
               <tbody>
-                {ip.length > 0 ? ip.map((it: any, idx: any) => (
+                {rows.map((it: any, idx: any) => (
                   <tr key={idx} className="border-b border-gray-100">
                     <td className="py-4 text-sm text-gray-500">{idx + 1}</td>
                     <td className="py-4">
@@ -261,24 +265,12 @@ export default function OrderDetailPage() {
                         <a href={it.attachment_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#d96f15] hover:underline print:hidden">📎 {it.attachment_name || 'ملف المواصفات'}</a>
                       )}
                     </td>
-                    <td className="py-4 text-sm text-gray-600">{(SECTOR_LABELS as any)[it.sector] || it.sector}</td>
+                    <td className="py-4 text-sm text-gray-600">{it.sector ? ((SECTOR_LABELS as any)[it.sector] || it.sector) : '—'}</td>
                     <td className="py-4 text-sm text-gray-600">{it.quantity} {it.unit}</td>
-                    <td className="py-4 text-sm text-gray-600">{Number(it.unit_price) > 0 ? `${Number(it.unit_price).toLocaleString('en-US')} ر.س` : '—'}</td>
-                    <td className="py-4 font-bold text-gray-900">{Number(it.total).toLocaleString('en-US')} ر.س</td>
+                    <td className="py-4 text-sm text-gray-600">{Number(it.unitNet) > 0 ? `${Number(it.unitNet).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س` : '—'}</td>
+                    <td className="py-4 font-bold text-gray-900">{Number(it.net).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</td>
                   </tr>
-                )) : (
-                  <tr className="border-b border-gray-100">
-                    <td className="py-4 text-sm text-gray-500">1</td>
-                    <td className="py-4">
-                      <div className="font-semibold text-gray-900">{rfq.product_name}</div>
-                      {rfq.specification && <div className="text-xs text-gray-400 mt-0.5">{rfq.specification}</div>}
-                    </td>
-                    <td className="py-4 text-sm text-gray-600">{(SECTOR_LABELS as any)[rfq.sector] || rfq.sector}</td>
-                    <td className="py-4 text-sm text-gray-600">{rfq.quantity} {rfq.unit}</td>
-                    <td className="py-4 text-sm text-gray-600">{offer.unit_price ? `${offer.unit_price.toLocaleString('en-US')} ر.س` : '—'}</td>
-                    <td className="py-4 font-bold text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</td>
-                  </tr>
-                )}
+                ))}
               </tbody>
             </table>
           </div>
@@ -351,8 +343,8 @@ export default function OrderDetailPage() {
             <div>
               <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>فاتورة ضريبية</h2>
               <p className="text-xs text-gray-400">Tax Invoice · متوافقة مع هيئة الزكاة والضريبة (ZATCA)</p>
-              <div className="text-xs text-gray-500 mt-2">رقم الفاتورة: <span className="font-mono" dir="ltr">INV-{offer.id.slice(0, 8).toUpperCase()}</span></div>
-              <div className="text-xs text-gray-500">التاريخ: {new Date(offer.accepted_at || offer.created_at).toLocaleString('ar-SA')}</div>
+              <div className="text-xs text-gray-500 mt-2">رقم الفاتورة: <span className="font-mono" dir="ltr">{offer.invoice_number || `INV-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>
+              <div className="text-xs text-gray-500">التاريخ: {new Date(offer.accepted_at || offer.created_at).toLocaleString('ar-SA-u-ca-gregory', { timeZone: 'Asia/Riyadh' })}</div>
             </div>
             {qrUrl && (
               <div className="text-center">
@@ -377,18 +369,16 @@ export default function OrderDetailPage() {
           </div>
           <div className="p-6">
             <table className="w-full text-sm mb-4">
-              <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">الصنف</th><th className="text-right pb-2">الكمية</th><th className="text-right pb-2">سعر الوحدة</th><th className="text-right pb-2">الإجمالي</th></tr></thead>
+              <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">الصنف</th><th className="text-right pb-2">الكمية</th><th className="text-right pb-2">سعر الوحدة</th><th className="text-right pb-2">الإجمالي (قبل الضريبة)</th></tr></thead>
               <tbody>
-                {ip.length > 0 ? ip.map((it: any, idx: any) => (
+                {rows.map((it: any, idx: any) => (
                   <tr key={idx} className="border-b border-gray-50">
                     <td className="py-2 font-semibold text-gray-900">{it.product_name}</td>
                     <td className="py-2 text-gray-600">{it.quantity} {it.unit}</td>
-                    <td className="py-2 text-gray-600">{Number(it.unit_price) > 0 ? Number(it.unit_price).toLocaleString('en-US') : '—'}</td>
-                    <td className="py-2 font-bold text-gray-900">{Number(it.total).toLocaleString('en-US')} ر.س</td>
+                    <td className="py-2 text-gray-600">{Number(it.unitNet) > 0 ? Number(it.unitNet).toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
+                    <td className="py-2 font-bold text-gray-900">{Number(it.net).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</td>
                   </tr>
-                )) : (
-                  <tr><td className="py-2 font-semibold text-gray-900">{rfq.product_name}</td><td className="py-2 text-gray-600">{rfq.quantity} {rfq.unit}</td><td className="py-2 text-gray-600">{offer.unit_price ? offer.unit_price.toLocaleString('en-US') : '—'}</td><td className="py-2 font-bold text-gray-900">{offer.total_price?.toLocaleString('en-US')} ر.س</td></tr>
-                )}
+                ))}
               </tbody>
             </table>
             <div className="flex justify-end">
