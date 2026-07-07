@@ -99,6 +99,7 @@ export default function SupplierDashboard() {
         .select('*, contractor:profiles_public(company_name_ar, company_name_en, contractor_grade)')
         .eq('status', 'open')
         .order('created_at', { ascending: false })
+        .limit(150) // bound the feed (region/sector already filtered server-side); newest first
 
       // ✅ فلترة بالقطاع — يشمل أي قطاع من مواد الطلب (طلبات متعددة القطاعات)
       if (mySectors.length > 0) {

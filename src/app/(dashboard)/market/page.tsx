@@ -73,6 +73,7 @@ export default function MarketPricePage() {
         .from('live_prices')
         .select('*, supplier:profiles_public(company_name_ar, supplier_tier)')
         .order('updated_at', { ascending: false })
+        .limit(500) // bound the live-price board (aggregate averages come from get_market_prices)
       setLivePrices(live || [])
 
       // متوسط الأسعار عبر دالة آمنة (SECURITY DEFINER) ترجّع المتوسطات فقط

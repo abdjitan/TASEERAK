@@ -146,6 +146,8 @@ export default function RFQDetailPage() {
           .select('unit_price, rfq:rfqs(product_name, sector)')
           .not('unit_price', 'is', null)
           .not('status', 'eq', 'rejected')
+          .order('created_at', { ascending: false })
+          .limit(500) // bound: recent offers only (market avg for this product is filtered client-side)
         const similar = (similarOffers || []).filter((o: any) =>
           o.rfq?.product_name === rfqData.product_name
         )

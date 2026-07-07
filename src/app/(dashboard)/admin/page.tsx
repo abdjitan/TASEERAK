@@ -58,32 +58,37 @@ export default function AdminPanel() {
 
   async function loadData(supabase?: any) {
     const client = supabase || createClient()
-    const { data: allUsers } = await client.from('profiles').select('*').order('created_at', { ascending: false })
+    // Bound the admin download so it doesn't pull the whole market to the browser (phase-0).
+    // Analytics/queues run over the most-recent LIM rows; a fully paginated per-queue admin
+    // redesign is a later roadmap item. Totals below come from exact count() queries so the
+    // headline stats stay accurate regardless of this cap.
+    const LIM = 2000
+    const { data: allUsers } = await client.from('profiles').select('*').order('created_at', { ascending: false }).limit(LIM)
     setUsers(allUsers || [])
     const { data: mreqs } = await client.from('material_requests')
       .select('*, supplier:profiles!supplier_id(company_name_ar), requester:profiles!requested_by(company_name_ar, role)')
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: false }).limit(LIM)
     setMaterialReqs(mreqs || [])
 
     // Requests / offers overview (admin can read all via RLS is_admin())
     const [{ data: rfqData }, { data: offerData }, { data: projData }, { data: pItems }] = await Promise.all([
-      client.from('rfqs').select('*').order('created_at', { ascending: false }),
-      client.from('offers').select('*').order('created_at', { ascending: false }),
-      client.from('project_rfqs').select('*').order('created_at', { ascending: false }),
-      client.from('project_rfq_items').select('*'),
+      client.from('rfqs').select('*').order('created_at', { ascending: false }).limit(LIM),
+      client.from('offers').select('*').order('created_at', { ascending: false }).limit(LIM),
+      client.from('project_rfqs').select('*').order('created_at', { ascending: false }).limit(LIM),
+      client.from('project_rfq_items').select('*').limit(LIM),
     ])
     setRfqs(rfqData || [])
     setOffers(offerData || [])
     setProjects(projData || [])
     setProjectItems(pItems || [])
 
-    const { data: supp } = await client.from('support_messages').select('*').order('created_at', { ascending: false })
+    const [{ data: supp }, { data: objs }, { data: pcr }] = await Promise.all([
+      client.from('support_messages').select('*').order('created_at', { ascending: false }).limit(LIM),
+      client.from('cr_objections').select('*').order('created_at', { ascending: false }).limit(LIM),
+      client.from('profile_change_requests').select('*').order('created_at', { ascending: false }).limit(LIM),
+    ])
     setSupport(supp || [])
-
-    const { data: objs } = await client.from('cr_objections').select('*').order('created_at', { ascending: false })
     setObjections(objs || [])
-
-    const { data: pcr } = await client.from('profile_change_requests').select('*').order('created_at', { ascending: false })
     setChangeReqs(pcr || [])
 
     // Auth emails via the privileged edge function (non-blocking — cards still
@@ -93,13 +98,15 @@ export default function AdminPanel() {
       if (ed?.emails) setEmails(ed.emails)
     } catch {}
 
-    const u = allUsers || []
+    // Accurate headline totals via exact count() (head:true → no rows transferred).
+    const p = () => client.from('profiles').select('*', { count: 'exact', head: true })
+    const [ct, cc, cs, cp, cv] = await Promise.all([
+      p(), p().eq('role', 'contractor'), p().eq('role', 'supplier'),
+      p().eq('verification_status', 'pending'), p().eq('verification_status', 'verified'),
+    ])
     setStats({
-      total: u.length,
-      contractors: u.filter((x: any) => x.role === 'contractor').length,
-      suppliers: u.filter((x: any) => x.role === 'supplier').length,
-      pending: u.filter((x: any) => x.verification_status === 'pending').length,
-      verified: u.filter((x: any) => x.verification_status === 'verified').length,
+      total: ct.count || 0, contractors: cc.count || 0, suppliers: cs.count || 0,
+      pending: cp.count || 0, verified: cv.count || 0,
     })
   }
 

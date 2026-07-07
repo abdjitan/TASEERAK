@@ -108,7 +108,7 @@ export default function ContractorDashboard() {
       setUser(session.user)
       const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       setProfile(p)
-      const { data: r } = await supabase.from('rfqs').select('*').eq('contractor_id', session.user.id).order('created_at', { ascending: false })
+      const { data: r } = await supabase.from('rfqs').select('*').eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(200)
       setRfqs(r || [])
       try {
         const closedIds = (r || []).filter((x: any) => x.status === 'closed').map((x: any) => x.id)
