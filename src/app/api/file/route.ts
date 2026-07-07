@@ -23,6 +23,12 @@ export async function GET(req: NextRequest) {
   path = decodeURIComponent(path.split('?')[0]).replace(/^\/+/, '')
   if (!path || path.includes('..')) return NextResponse.json({ error: 'bad_path' }, { status: 400 })
 
+  // IDOR guard: only sign when the caller owns this file or is a legitimate party/viewer
+  // of the record referencing it (offer party, RFQ contractor/eligible supplier, project
+  // owner, or admin). Without this, any logged-in user could read every tenant's files.
+  const { data: allowed } = await supabase.rpc('can_access_shared_file', { p_path: path })
+  if (allowed !== true) return NextResponse.json({ error: 'forbidden' }, { status: 403 })
+
   const admin = createAdminSupabaseClient()
   const { data, error } = await admin.storage.from('licenses').createSignedUrl(path, 300)
   if (error || !data?.signedUrl) return NextResponse.json({ error: 'not_found' }, { status: 404 })

@@ -59,6 +59,7 @@ export default function RFQDetailPage() {
   const [marketAvg, setMarketAvg] = useState<any>(null) // متوسط السوق
   const [supplierStats, setSupplierStats] = useState<any>({}) // سجل أداء كل مورد
   const [awards, setAwards] = useState<any>({}) // ترسية بند-بند: item_index → صف الترسية
+  const [awardedContacts, setAwardedContacts] = useState<any>({}) // supplier_id → رقم تواصل (يُكشف بعد الترسية فقط)
 
   async function reloadAwards() {
     const supabase = createClient()
@@ -115,13 +116,20 @@ export default function RFQDetailPage() {
       setEditUnit(rfqData?.unit || '')
 
       const { data: offersData } = await supabase
-        .from('offers').select('*, supplier:profiles(company_name_ar, phone, contact_phone, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source, approvals)')
+        .from('offers').select('*, supplier:profiles_public(company_name_ar, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source, approvals)')
         .eq('rfq_id', id).order('total_price', { ascending: true })
       setOffers(offersData || [])
 
       // ترسية بند-بند (إن وُجدت)
       const { data: awardRows } = await supabase.from('rfq_item_awards').select('*').eq('rfq_id', id)
       const am: any = {}; (awardRows || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
+
+      // أرقام تواصل الموردين المُرسى عليهم — RLS يسمح بقراءة الملف الكامل بعد الترسية فقط
+      const awardedIds = [...new Set((awardRows || []).map((a: any) => a.supplier_id).filter(Boolean))]
+      if (awardedIds.length) {
+        const { data: contacts } = await supabase.from('profiles').select('id, phone, contact_phone').in('id', awardedIds)
+        const cm: any = {}; (contacts || []).forEach((c: any) => { cm[c.id] = c.contact_phone || c.phone }); setAwardedContacts(cm)
+      }
 
       // سجل أداء الموردين (سرعة الرد، نسبة الترسية، عدد العروض السابقة)
       const supplierIds = [...new Set((offersData || []).map((o: any) => o.supplier_id).filter(Boolean))]
@@ -567,7 +575,7 @@ export default function RFQDetailPage() {
                   Object.values(awards).forEach((a: any) => {
                     if (!bySupplier[a.supplier_id]) {
                       const off = offers.find((o: any) => o.id === a.offer_id)
-                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: off?.supplier?.contact_phone || off?.supplier?.phone, offerId: a.offer_id, total: 0, count: 0 }
+                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: awardedContacts[a.supplier_id], offerId: a.offer_id, total: 0, count: 0 }
                     }
                     bySupplier[a.supplier_id].total += Number(a.total) || 0
                     bySupplier[a.supplier_id].count += 1
@@ -711,7 +719,6 @@ export default function RFQDetailPage() {
                       <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
                         {offer.supplier?.rating_avg > 0 && <span>⭐ {offer.supplier.rating_avg}</span>}
                         {offer.supplier?.region && <span>📍 {offer.supplier.region}</span>}
-                        {offer.supplier?.phone && <span>📞 {offer.supplier.phone}</span>}
                       </div>
                       {/* بطاقة أداء المورد — سرعة الرد، نسبة الترسية، الخبرة */}
                       {(() => {
@@ -729,24 +736,8 @@ export default function RFQDetailPage() {
                           </div>
                         )
                       })()}
-                      {offer.supplier?.phone && (() => {
-                        const w = waLink(offer.supplier.phone, `السلام عليكم، بخصوص عرضكم في منصة تسعيرك على «${rfq.product_name}»`)
-                        return w ? (
-                          <a href={w} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] mt-1.5 px-2.5 py-1 rounded-full font-semibold text-white" style={{ background: '#25D366' }}>
-                            💬 تواصل واتساب
-                          </a>
-                        ) : null
-                      })()}
-                      {offer.supplier?.phone && offer.status === 'pending' && (() => {
-                        const w = waLink(offer.supplier.phone, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» بسعر ${offer.total_price?.toLocaleString('en-US')} ر.س في منصة تسعيرك — هل بالإمكان تخفيض السعر؟ نقدّر تعاونكم 🌟`)
-                        return w ? (
-                          <a href={w} target="_blank" rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] mt-1.5 mr-1.5 px-2.5 py-1 rounded-full font-semibold border" style={{ borderColor: '#F5831F', color: '#F5831F' }}>
-                            📉 اطلب تخفيض السعر
-                          </a>
-                        ) : null
-                      })()}
+                      {/* 🔒 رقم التواصل/واتساب لا يظهر قبل الترسية — التواصل والتفاوض قبلها
+                          عبر الدردشة الداخلية وطلب التخفيض داخل المنصة (منع الالتفاف). */}
                     </div>
                   </div>
                   <div className="text-left">

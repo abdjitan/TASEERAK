@@ -28,6 +28,7 @@ export default function ProjectResultsPage() {
   const [filter, setFilter] = useState('all') // all | has_offers | pending | accepted
   const [sectorFilter, setSectorFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [contactsById, setContactsById] = useState<any>({}) // أرقام الموردين المقبولين فقط
 
   useEffect(() => {
     async function load() {
@@ -39,11 +40,19 @@ export default function ProjectResultsPage() {
       setProject(proj)
 
       const { data: projItems } = await supabase
-        .from('project_rfq_items').select('*, rfq:rfqs(*, offers(*, supplier:profiles(company_name_ar, phone, rating_avg, supplier_tier, latitude, longitude, verification_status, cr_verification_source)))')
+        .from('project_rfq_items').select('*, rfq:rfqs(*, offers(*, supplier:profiles_public(company_name_ar, rating_avg, supplier_tier, latitude, longitude, verification_status, cr_verification_source)))')
         .eq('project_rfq_id', id)
         .order('sector')
 
       setItems(projItems || [])
+
+      // أرقام تواصل الموردين المقبولين فقط (RLS يسمح بعد القبول) — لا أرقام قبل الترسية
+      const acceptedIds = [...new Set((projItems || []).flatMap((it: any) =>
+        (it.rfq?.offers || []).filter((o: any) => o.status === 'accepted').map((o: any) => o.supplier_id)).filter(Boolean))]
+      if (acceptedIds.length) {
+        const { data: contacts } = await supabase.from('profiles').select('id, phone, contact_phone').in('id', acceptedIds)
+        const cm: any = {}; (contacts || []).forEach((c: any) => { cm[c.id] = c.contact_phone || c.phone }); setContactsById(cm)
+      }
       setLoading(false)
     }
     load()
@@ -234,7 +243,7 @@ export default function ProjectResultsPage() {
                         <div className="text-sm">
                           <span className="text-gray-500">{locale === 'en' ? 'Supplier: ' : 'المورد: '}</span>
                           <strong style={{ color: '#1B2D5B' }}>{acceptedOffer.supplier?.company_name_ar}</strong>
-                          {acceptedOffer.supplier?.phone && <span className="text-xs text-gray-400 mr-2">📞 {acceptedOffer.supplier.phone}</span>}
+                          {contactsById[acceptedOffer.supplier_id] && <span className="text-xs text-gray-400 mr-2">📞 {contactsById[acceptedOffer.supplier_id]}</span>}
                         </div>
                         <Link href={`/contractor/orders/${acceptedOffer.id}`}
                           className="text-xs font-bold text-white px-4 py-2 rounded-lg transition-all hover:shadow"
@@ -301,7 +310,7 @@ export default function ProjectResultsPage() {
                                   )}
                                   {offer.supplier?.rating_avg > 0 && <span>⭐ {offer.supplier.rating_avg}</span>}
                                   {offer.delivery_days && <span>📦 {offer.delivery_days} {locale === 'en' ? 'days' : 'يوم'}</span>}
-                                  {offer.supplier?.phone && <span>📞 {offer.supplier.phone}</span>}
+                                  {/* 🔒 الرقم لا يظهر قبل القبول */}
                                 </div>
                               </div>
                             </div>

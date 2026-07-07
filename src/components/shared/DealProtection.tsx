@@ -82,7 +82,7 @@ export default function DealProtection({
           <div key={s.k} className="flex flex-col items-center">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${s.done ? 'text-white' : 'bg-gray-100 text-gray-400'}`} style={s.done ? { background: '#0F6E56' } : {}}>{s.done ? '✓' : i + 1}</div>
             <div className={`mt-1 ${s.done ? 'text-gray-700 font-semibold' : 'text-gray-400'}`}>{s.label}</div>
-            {s.at && <div className="text-[9px] text-gray-400">{new Date(s.at).toLocaleDateString('ar-SA')}</div>}
+            {s.at && <div className="text-[9px] text-gray-400">{new Date(s.at).toLocaleDateString('ar-SA-u-ca-gregory')}</div>}
           </div>
         ))}
       </div>
@@ -92,7 +92,7 @@ export default function DealProtection({
         <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-xl p-3">
           <div className="text-sm">
             <div className="font-semibold text-gray-700">تسليم البضاعة</div>
-            <div className="text-xs text-gray-400">{offer.supplier_delivered_at ? `✓ أكّد المورد التسليم — ${new Date(offer.supplier_delivered_at).toLocaleString('ar-SA')}` : 'بانتظار تأكيد المورد'}</div>
+            <div className="text-xs text-gray-400">{offer.supplier_delivered_at ? `✓ أكّد المورد التسليم — ${new Date(offer.supplier_delivered_at).toLocaleString('ar-SA-u-ca-gregory')}` : 'بانتظار تأكيد المورد'}</div>
           </div>
           {!offer.supplier_delivered_at && isSupplier && (
             <button onClick={() => callRpc('confirm_delivery', { p_offer_id: offer.id }, 'deliver')} disabled={busy === 'deliver'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#1B2D5B' }}>✓ أكّدت التسليم</button>
@@ -103,7 +103,7 @@ export default function DealProtection({
         <div className="flex items-center justify-between gap-3 rounded-xl p-3" style={{ background: offer.received_at ? '#E1F5EE' : '#f9fafb' }}>
           <div className="text-sm">
             <div className="font-semibold text-gray-700">محضر الاستلام</div>
-            <div className="text-xs text-gray-400">{offer.received_at ? `✓ موثّق — أكّد المقاول الاستلام ${new Date(offer.received_at).toLocaleString('ar-SA')}` : 'بانتظار تأكيد المقاول لاستلام البضاعة'}</div>
+            <div className="text-xs text-gray-400">{offer.received_at ? `✓ موثّق — أكّد المقاول الاستلام ${new Date(offer.received_at).toLocaleString('ar-SA-u-ca-gregory')}` : 'بانتظار تأكيد المقاول لاستلام البضاعة'}</div>
           </div>
           {!offer.received_at && isContractor && (
             <div className="flex items-center gap-2 shrink-0">
@@ -119,7 +119,7 @@ export default function DealProtection({
             <div className="font-semibold text-gray-700">الدفع</div>
             <div className="text-xs text-gray-400">
               {offer.payment_status === 'paid'
-                ? (offer.payment_confirmed_at ? `✓ أكّد المورد استلام الدفعة — ${new Date(offer.payment_confirmed_at).toLocaleString('ar-SA')}` : 'أكّد المقاول الدفع — بانتظار تأكيد المورد')
+                ? (offer.payment_confirmed_at ? `✓ أكّد المورد استلام الدفعة — ${new Date(offer.payment_confirmed_at).toLocaleString('ar-SA-u-ca-gregory')}` : 'أكّد المقاول الدفع — بانتظار تأكيد المورد')
                 : 'لم تُؤكَّد الدفعة بعد'}
             </div>
           </div>

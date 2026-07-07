@@ -127,6 +127,15 @@ export async function middleware(request: NextRequest) {
     return redirectTo(loginUrl)
   }
 
+  // ── Rule 2.5: role separation — a supplier can't browse contractor pages and
+  // vice-versa (previously client-side only). Admin may view both.
+  if (user && (matches('/contractor') || matches('/supplier'))) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    const role = profile?.role
+    if (role === 'supplier' && matches('/contractor')) return redirectTo(new URL('/supplier/dashboard', request.url))
+    if (role === 'contractor' && matches('/supplier')) return redirectTo(new URL('/contractor', request.url))
+  }
+
   // ── Rule 3: Admin routes → verify role in database ───────────────────────
   // This DB query only runs for /admin/* routes, so it doesn't slow down
   // regular pages.

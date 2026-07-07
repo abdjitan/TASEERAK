@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   const { data: offers } = await supabase
     .from('offers')
-    .select('id, total_price, delivery_days, vat_included, item_prices, status, supplier:profiles(company_name_ar, rating_avg, supplier_tier, city, verification_status)')
+    .select('id, total_price, delivery_days, vat_included, item_prices, status, supplier:profiles_public(company_name_ar, rating_avg, supplier_tier, city, verification_status)')
     .eq('rfq_id', rfqId)
     .neq('status', 'rejected')
     .order('total_price', { ascending: true })

@@ -38,7 +38,7 @@ function Messages() {
     const supabase = createClient()
     const { data } = await supabase
       .from('conversations')
-      .select('*, contractor:profiles!contractor_id(company_name_ar), supplier:profiles!supplier_id(company_name_ar), rfq:rfqs(product_name, title)')
+      .select('*, contractor:profiles_public!contractor_id(company_name_ar), supplier:profiles_public!supplier_id(company_name_ar), rfq:rfqs(product_name, title)')
       .order('last_message_at', { ascending: false })
     setConvos(data || [])
   }
