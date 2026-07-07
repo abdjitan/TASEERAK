@@ -91,6 +91,7 @@ export default function ContractorDashboard() {
   const [rfqs, setRfqs] = useState<any[]>([])
   const [deals, setDeals] = useState<Record<string, any>>({})
   const [projects, setProjects] = useState<any[]>([])
+  const [drafts, setDrafts] = useState<any[]>([])
   const [activity, setActivity] = useState<any[]>([])
   const [marketTop, setMarketTop] = useState<any[]>([])
   const [marketTrend, setMarketTrend] = useState<Record<string, any>>({})
@@ -110,6 +111,8 @@ export default function ContractorDashboard() {
       setProfile(p)
       const { data: r } = await supabase.from('rfqs').select('*').eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(200)
       setRfqs(r || [])
+      const { data: dr } = await supabase.from('rfq_drafts').select('id, title, updated_at, data').order('updated_at', { ascending: false }).limit(50)
+      setDrafts(dr || [])
       try {
         const closedIds = (r || []).filter((x: any) => x.status === 'closed').map((x: any) => x.id)
         if (closedIds.length) {
@@ -483,6 +486,27 @@ export default function ContractorDashboard() {
                     {locale === 'en' ? 'View Results →' : 'النتائج ←'}
                   </div>
                 </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Drafts — saved, not yet published (invisible to suppliers) */}
+        {drafts.length > 0 && (
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6 animate-slide-up">
+            <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#1B2D5B' }}>📝 {locale === 'en' ? 'Drafts' : 'مسودّات'} <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{drafts.length}</span></h2>
+            <div className="space-y-2">
+              {drafts.map((d: any) => (
+                <div key={d.id} className="flex items-center justify-between gap-2 border border-gray-100 rounded-xl px-3 py-2.5 hover:border-[#F5831F]/40 transition-colors">
+                  <div className="min-w-0">
+                    <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{d.title || (locale === 'en' ? 'Untitled draft' : 'مسودة بلا اسم')}</div>
+                    <div className="text-[11px] text-gray-400">{(d.data?.items?.length || 0)} {locale === 'en' ? 'items' : 'مادة'} · {new Date(d.updated_at).toLocaleDateString('ar-SA-u-ca-gregory')}</div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link href={`/contractor/rfq/new?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: '#F5831F' }}>{locale === 'en' ? 'Continue' : 'إكمال'} ←</Link>
+                    <button onClick={async () => { if (!confirm(locale === 'en' ? 'Delete this draft?' : 'حذف المسودة؟')) return; await createClient().from('rfq_drafts').delete().eq('id', d.id); setDrafts(drafts.filter((x: any) => x.id !== d.id)) }} className="text-sm text-red-400 hover:text-red-600 px-1">🗑</button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

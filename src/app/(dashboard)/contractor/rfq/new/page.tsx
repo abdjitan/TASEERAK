@@ -173,6 +173,8 @@ export default function NewRFQPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [nearbyOnly, setNearbyOnly] = useState(false)
   const [targetRegions, setTargetRegions] = useState<string[]>([])
+  const [draftId, setDraftId] = useState<string | null>(null) // مسودة قيد الاستئناف (null = طلب جديد)
+  const [savingDraft, setSavingDraft] = useState(false)
 
   // مواد معتمدة من الأدمن (طلبات إضافة وافق عليها) تُدمج مع المضمّنة
   const [dbMaterials, setDbMaterials] = useState<any[]>([])
@@ -336,6 +338,47 @@ export default function NewRFQPage() {
     })
   }, [])
 
+  // استئناف مسودة عند فتح الرابط بـ ?draft=<id>
+  useEffect(() => {
+    if (!user) return
+    const did = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('draft') : null
+    if (!did) return
+    const supabase = createClient()
+    supabase.from('rfq_drafts').select('*').eq('id', did).single().then(({ data }: any) => {
+      const d = data?.data; if (!d) return
+      setDraftId(data.id)
+      if (Array.isArray(d.items)) setItems(d.items)
+      setRfqName(d.rfqName || ''); setRegion(d.region || ''); setCity(d.city || '')
+      setDeliveryRequired(d.deliveryRequired ?? true); setPickupScope(d.pickupScope || 'any')
+      setDeliveryLocation(d.deliveryLocation || ''); setDeliveryGeo(d.deliveryGeo || '')
+      setVatRequired(d.vatRequired ?? true); setHideIdentity(d.hideIdentity ?? true)
+      setNearbyOnly(!!d.nearbyOnly); setTargetRegions(Array.isArray(d.targetRegions) ? d.targetRegions : []); setVerifiedOnly(!!d.verifiedOnly)
+      setEstimatedValue(d.estimatedValue || ''); setNotes(d.notes || '')
+      setValidityHours(d.validityHours || 48); setCustomDeadline(d.customDeadline || ''); setShowCustomDate(!!d.showCustomDate)
+      setStep(2)
+    })
+  }, [user])
+
+  // حفظ الطلب الحالي كمسودة (بلا نشر) — لا يظهر للموردين ولا يُحتسب ضمن الحد اليومي
+  async function saveDraft() {
+    if (!user) return
+    const d0 = buildDraftItem()
+    const finalItems = d0 ? [...items, d0] : [...items]
+    if (finalItems.length === 0) { setError(locale === 'en' ? 'Add at least one material first' : 'أضف مادة واحدة على الأقل قبل الحفظ'); return }
+    setSavingDraft(true); setError('')
+    const supabase = createClient()
+    const data = {
+      items: finalItems.map(({ specFileObj, ...rest }: any) => rest), // الملفات غير المرفوعة لا تُحفظ
+      rfqName, region, city, deliveryRequired, pickupScope, deliveryLocation, deliveryGeo,
+      vatRequired, hideIdentity, nearbyOnly, targetRegions, verifiedOnly, estimatedValue, notes,
+      validityHours, customDeadline, showCustomDate,
+    }
+    const title = rfqName || finalItems[0]?.product_name || (locale === 'en' ? 'Draft request' : 'مسودة طلب')
+    if (draftId) await supabase.from('rfq_drafts').update({ title, data, updated_at: new Date().toISOString() }).eq('id', draftId)
+    else await supabase.from('rfq_drafts').insert({ contractor_id: user.id, title, data })
+    window.location.href = '/contractor'
+  }
+
   async function handleSubmit(e: any) {
     e.preventDefault()
     // على الخطوة 1: التالي بدل الإرسال (يمنع إرسال مبكر بالضغط على Enter)
@@ -407,6 +450,7 @@ export default function NewRFQPage() {
         : `${locale === 'en' ? 'Error' : 'خطأ'}: ${raw}`
       setError(friendly); setLoading(false); return
     }
+    if (draftId) { try { await supabase.from('rfq_drafts').delete().eq('id', draftId) } catch {} } // نُشر → احذف المسودة
     setSuccess(true); setLoading(false)
   }
 
@@ -1051,6 +1095,10 @@ export default function NewRFQPage() {
                 <button type="button" onClick={() => setStep(1)}
                   className="px-5 py-4 rounded-xl font-bold border-2 border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
                   ↩ {locale === 'en' ? 'Back' : 'رجوع'}
+                </button>
+                <button type="button" onClick={saveDraft} disabled={savingDraft || loading}
+                  className="px-4 py-4 rounded-xl font-bold border-2 border-[#1B2D5B] text-[#1B2D5B] hover:bg-[#1B2D5B]/5 transition-all text-sm whitespace-nowrap disabled:opacity-50">
+                  💾 {savingDraft ? '...' : (locale === 'en' ? 'Save draft' : 'حفظ كمسودة')}
                 </button>
                 <button type="submit" disabled={loading || (items.length === 0 && !buildDraftItem()) || ((deliveryRequired || pickupScope === 'city') && (!region || !city))}
                   className="flex-1 py-4 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg active:scale-[0.98]"
