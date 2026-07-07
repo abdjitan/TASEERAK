@@ -48,6 +48,7 @@ export default function SupplierRFQPage() {
   const [contractorInfo, setContractorInfo] = useState<any>(null)
   const [deliveryDays, setDeliveryDays] = useState('')
   const [notes, setNotes] = useState('')
+  const [priceValidity, setPriceValidity] = useState('3') // مدة صلاحية سعر العرض (بالأيام)
   const [validity, setValidity] = useState('')
 
   // خصائص المنتج (key-value)
@@ -351,6 +352,7 @@ export default function SupplierRFQPage() {
       rfq_id: id,
       supplier_id: user.id,
       total_price: finalTotal,
+      price_valid_until: new Date(Date.now() + (parseInt(priceValidity) || 3) * 86400000).toISOString(),
       vat_included: vatIncluded,
       item_prices: itemPricesPayload,
       unit_price: isMultiItem ? null : (unitPrice ? parseFloat(unitPrice) : null),
@@ -1034,6 +1036,18 @@ export default function SupplierRFQPage() {
                 )}
               </div>
               )}
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {locale === 'en' ? 'Price valid for' : 'مدة صلاحية السعر'}</label>
+                <div className="flex flex-wrap gap-2">
+                  {[{ v: '1', l: locale === 'en' ? '24h' : '٢٤ ساعة' }, { v: '3', l: locale === 'en' ? '3 days' : '٣ أيام' }, { v: '7', l: locale === 'en' ? '1 week' : 'أسبوع' }, { v: '30', l: locale === 'en' ? '1 month' : 'شهر' }].map((o) => (
+                    <button type="button" key={o.v} onClick={() => setPriceValidity(o.v)}
+                      className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${priceValidity === o.v ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#F5831F]/40'}`}
+                      style={priceValidity === o.v ? { background: '#F5831F' } : {}}>{o.l}</button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? 'Your price is guaranteed until it expires — ideal for volatile materials (e.g. steel).' : 'سعرك مضمون حتى انتهاء المدة — مناسب للمواد المتغيّرة السعر (كالحديد).'}</p>
+              </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.offerNotes}</label>

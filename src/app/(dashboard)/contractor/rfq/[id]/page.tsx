@@ -721,6 +721,9 @@ export default function RFQDetailPage() {
                       <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
                         {offer.supplier?.rating_avg > 0 && <span>⭐ {offer.supplier.rating_avg}</span>}
                         {offer.supplier?.region && <span>📍 {offer.supplier.region}</span>}
+                        {offer.price_valid_until && (new Date(offer.price_valid_until) < new Date()
+                          ? <span className="text-red-500 font-semibold">⏱ انتهت صلاحية السعر — أكّد مع المورّد</span>
+                          : <span className="text-emerald-600">⏱ السعر صالح حتى {new Date(offer.price_valid_until).toLocaleDateString('ar-SA-u-ca-gregory')}</span>)}
                       </div>
                       {/* بطاقة أداء المورد — سرعة الرد، نسبة الترسية، الخبرة */}
                       {(() => {

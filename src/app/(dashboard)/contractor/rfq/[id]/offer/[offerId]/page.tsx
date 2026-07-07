@@ -143,6 +143,12 @@ export default function OfferDetailPage() {
           <span className={`badge text-[11px] mr-auto ${statusBadge.c}`}>{statusBadge.t}</span>
         </div>
 
+        {offer.status === 'pending' && offer.price_valid_until && (
+          new Date(offer.price_valid_until) < new Date()
+            ? <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-2.5 font-semibold">⏱ انتهت صلاحية سعر هذا العرض — يُنصح بتأكيد السعر مع المورّد قبل القبول.</div>
+            : <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-2.5">⏱ سعر هذا العرض مضمون حتى {new Date(offer.price_valid_until).toLocaleDateString('ar-SA-u-ca-gregory')}.</div>
+        )}
+
         {/* 🛡 حماية الصفقة — إدارة الصفقة وتتبّعها (بعد القبول) */}
         {accepted && (
           <DealProtection
