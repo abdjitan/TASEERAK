@@ -77,7 +77,7 @@ export default async function SuppliersLeaderboard() {
               const rb = rankBadge(i)
               const rating = Number(r.rating_avg) || 0
               return (
-                <div key={r.supplier_id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
+                <Link key={r.supplier_id} href={`/suppliers/${r.supplier_id}`} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:border-[#F5831F]/40 transition-colors">
                   {/* الترتيب */}
                   <div className="w-10 h-10 shrink-0 grid place-items-center rounded-xl font-extrabold text-lg" style={{ color: rb.c, background: `${rb.c}14` }}>{rb.e}</div>
 
@@ -108,7 +108,7 @@ export default async function SuppliersLeaderboard() {
                     <div className="w-14 h-14 grid place-items-center rounded-full font-extrabold text-lg text-white" style={{ background: scoreColor(r.score) }}>{r.score}</div>
                     <div className="text-[9px] text-gray-400 mt-1">من ١٠٠</div>
                   </div>
-                </div>
+                </Link>
               )
             })}
           </div>
