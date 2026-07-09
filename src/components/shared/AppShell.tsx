@@ -147,9 +147,9 @@ export default function AppShell({
         <main className="flex-1 p-4 sm:p-6 lg:p-7 pb-24 lg:pb-7">{children}</main>
       </div>
 
-      {/* ===== Bottom nav (mobile only) — أهم 5 وجهات للوصول السريع بالإبهام ===== */}
+      {/* ===== Bottom nav (mobile only) — 4 وجهات سريعة + «المزيد» يفتح القائمة الكاملة ===== */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex backdrop-blur-md border-t" style={{ background: 'rgba(255,255,255,.96)', borderColor: 'var(--line)' }}>
-        {nav.slice(0, 5).map((n) => {
+        {nav.slice(0, 4).map((n) => {
           const badge = (n.href === '/messages' && unreadMsgs > 0) ? unreadMsgs : n.badge
           return (
             <Link key={n.href} href={n.href} prefetch onClick={() => setOpen(false)}
@@ -164,6 +164,13 @@ export default function AppShell({
             </Link>
           )
         })}
+        {/* «المزيد» يفتح القائمة الجانبية كاملة — يضمن الوصول لكل الوجهات (الإعدادات إلخ) على الجوّال */}
+        <button onClick={() => setOpen(true)}
+          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2"
+          style={{ color: '#9aa3b2' }} aria-label={locale === 'en' ? 'More' : 'المزيد'}>
+          <span className="text-[19px] leading-none">☰</span>
+          <span className="text-[10px] font-bold">{locale === 'en' ? 'More' : locale === 'ur' ? 'مزید' : 'المزيد'}</span>
+        </button>
       </nav>
 
       {/* مساعد تسعيرك الذكي — عائم في كل صفحات لوحة التحكم */}

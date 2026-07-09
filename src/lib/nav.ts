@@ -20,6 +20,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
     const sec = L('Supplier', 'سپلائر', 'المورّد')
     items = [
       { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec },
+      { href: '/supplier/deals', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec },
       { href: '/supplier/specialties', icon: '🎯', label: L('Specialties', 'مہارتیں', 'تخصصاتي'), section: sec },
       { href: '/supplier/prices', icon: '📈', label: L('Live Prices', 'لائیو قیمتیں', 'أسعاري'), section: sec },
       { href: '/supplier/branches', icon: '🏢', label: L('Branches', 'شاخیں', 'فروع الشركة'), section: sec },
@@ -32,6 +33,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
     const sec = L('Contractor', 'ٹھیکیدار', 'المقاول')
     items = [
       { href: '/contractor', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec },
+      { href: '/contractor/orders', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec },
       { href: '/contractor/rfq/new', icon: '📝', label: L('New RFQ', 'نئی درخواست', 'طلب تسعير'), section: sec },
       { href: '/contractor/project/new', icon: '📋', label: L('Project (BOQ)', 'پراجیکٹ BOQ', 'مشروع BOQ'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools },

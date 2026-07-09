@@ -60,6 +60,10 @@ export default function NotificationBell({ userId }: { userId?: string }) {
               </button>
             ))}
           </div>
+          <button onClick={() => { setOpen(false); router.push('/notifications') }}
+            className="w-full text-center text-xs font-bold text-[#d96f15] py-2.5 border-t border-gray-100 hover:bg-gray-50">
+            عرض كل الإشعارات ←
+          </button>
         </div>
       )}
     </div>
