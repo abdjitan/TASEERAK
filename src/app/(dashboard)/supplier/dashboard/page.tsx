@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n'
 import { getSubCategoryLabel, getProductLabel, getUnitLabel } from '@/types'
 import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
+import { isSubscribed } from '@/lib/plans'
 import { getNav } from '@/lib/nav'
 import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
@@ -244,6 +245,17 @@ export default function SupplierDashboard() {
               <div className="flex-1">
                 <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>أضف رقمك الضريبي</div>
                 <div className="text-xs text-gray-500">يلزم لإصدار فواتير ضريبية (ZATCA) لصفقاتك. اضغط للإضافة ←</div>
+              </div>
+            </div>
+          </Link>
+        )}
+        {profile && !isSubscribed(profile) && (
+          <Link href="/supplier/subscription" className="block mb-4 rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#1B2D5B,#2a4a8a)' }}>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⭐</span>
+              <div className="flex-1">
+                <div className="font-bold text-sm text-white">{locale === 'en' ? 'Upgrade to Professional' : 'رقِّ لباقة احترافية'}</div>
+                <div className="text-xs text-blue-100">{locale === 'en' ? 'Unlimited offers + priority visibility + full price index. Tap for plans →' : 'عروض غير محدودة + أولوية ظهور + وصول كامل لمؤشّر الأسعار ←'}</div>
               </div>
             </div>
           </Link>

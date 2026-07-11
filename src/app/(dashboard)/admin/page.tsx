@@ -1022,6 +1022,24 @@ export default function AdminPanel() {
                       </select>
                     )}
 
+                    {/* Subscription plan — manual activation (until a payment gateway is wired) */}
+                    {u.role === 'supplier' && (
+                      <select
+                        value={u.subscription_plan || 'free'}
+                        onChange={async (e) => {
+                          const months = e.target.value === 'free' ? 0 : Number(prompt('عدد أشهر الاشتراك؟', '1') || '1')
+                          const supabase = createClient()
+                          await supabase.rpc('admin_set_subscription', { p_user_id: u.id, p_plan: e.target.value, p_months: months })
+                          await loadData()
+                        }}
+                        title={u.subscription_expires_at ? `حتى ${new Date(u.subscription_expires_at).toLocaleDateString('ar-SA-u-ca-gregory')}` : ''}
+                        className="text-xs border border-amber-200 text-amber-700 bg-amber-50 rounded-lg px-2 py-1.5 cursor-pointer">
+                        <option value="free">⭐ مجاني</option>
+                        <option value="professional">⭐ احترافي</option>
+                        <option value="premium">⭐ بريميوم</option>
+                      </select>
+                    )}
+
                     {/* Contractor Grade Selector */}
                     {u.role === 'contractor' && u.verification_status === 'verified' && (
                       <select
