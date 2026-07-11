@@ -45,3 +45,9 @@ export function isSubscribed(profile: any): boolean {
 export function planLabel(key: string): string {
   return PLAN_BY_KEY[key]?.name || 'مبتدئ'
 }
+
+// فترة الإطلاق المجانية: مفعّلة إن كان التاريخ فارغاً (بلا نهاية مُعلنة) أو في المستقبل.
+export function isLaunchFree(launchFreeUntil: any): boolean {
+  if (!launchFreeUntil) return true
+  return new Date(launchFreeUntil) > new Date()
+}

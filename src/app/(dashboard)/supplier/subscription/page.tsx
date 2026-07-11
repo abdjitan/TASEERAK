@@ -6,7 +6,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
-import { PLANS, isSubscribed, planLabel } from '@/lib/plans'
+import { PLANS, isSubscribed, planLabel, isLaunchFree } from '@/lib/plans'
 
 // باقات اشتراك المورّد + حالته. التفعيل حالياً يدويّ عبر الإدارة (تحويل بنكي → الأدمن يفعّل)
 // إلى أن تُربَط بوّابة الدفع (مدى/Apple Pay). زر «اشترك» يرسل طلباً للإدارة عبر الدعم.
@@ -14,6 +14,7 @@ export default function SubscriptionPage() {
   const { locale, dir } = useTranslation()
   const [uid, setUid] = useState('')
   const [profile, setProfile] = useState<any>(null)
+  const [launchUntil, setLaunchUntil] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [requesting, setRequesting] = useState('')
   const [sent, setSent] = useState('')
@@ -26,6 +27,8 @@ export default function SubscriptionPage() {
       setUid(session.user.id)
       const { data } = await supabase.from('profiles').select('subscription_plan, subscription_expires_at').eq('id', session.user.id).single()
       setProfile(data)
+      const { data: cfg } = await supabase.from('app_config').select('launch_free_until').maybeSingle()
+      setLaunchUntil(cfg?.launch_free_until || null)
       setLoading(false)
     }
     load()
@@ -43,10 +46,17 @@ export default function SubscriptionPage() {
 
   const current = profile?.subscription_plan || 'free'
   const active = isSubscribed(profile)
+  const launchFree = isLaunchFree(launchUntil)
 
   return (
     <AppShell title={locale === 'en' ? 'Subscription & Plans' : 'الاشتراك والباقات'} nav={getNav('supplier', locale, '/supplier/subscription')} dir={dir}>
       <div className="max-w-4xl mx-auto">
+        {launchFree && (
+          <div className="rounded-2xl p-5 mb-6 text-white" style={{ background: 'linear-gradient(120deg,#0F6E56,#1B2D5B)' }}>
+            <div className="text-lg font-extrabold">🎉 {locale === 'en' ? 'Free launch period' : 'فترة إطلاق مجانية'}</div>
+            <div className="text-sm text-emerald-50 mt-1">{locale === 'en' ? 'All features are open to you for free — no fees' : 'كل الميزات مفتوحة لك مجاناً بدون أي رسوم'}{launchUntil ? (locale === 'en' ? ` until ${new Date(launchUntil).toLocaleDateString('en-GB')}` : ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')}`) : ''}. {locale === 'en' ? 'The plans below show future pricing.' : 'الباقات أدناه توضّح الأسعار المستقبلية بعد فترة الإطلاق.'}</div>
+          </div>
+        )}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-xs text-gray-400">{locale === 'en' ? 'Your current plan' : 'باقتك الحالية'}</div>
@@ -71,6 +81,8 @@ export default function SubscriptionPage() {
                   <div className="text-center text-sm font-bold text-emerald-600 py-2.5">✓ {locale === 'en' ? 'Your plan' : 'باقتك الحالية'}</div>
                 ) : p.key === 'free' ? (
                   <div className="text-center text-xs text-gray-400 py-2.5">{locale === 'en' ? 'Default' : 'الباقة الافتراضية'}</div>
+                ) : launchFree ? (
+                  <div className="text-center text-sm font-bold text-emerald-600 py-2.5">✓ {locale === 'en' ? 'Free now' : 'مجاني الآن'}</div>
                 ) : sent === p.key ? (
                   <div className="text-center text-sm font-bold text-emerald-600 py-2.5">✓ {locale === 'en' ? 'Request sent' : 'أُرسل طلبك'}</div>
                 ) : (
@@ -85,9 +97,9 @@ export default function SubscriptionPage() {
         </div>
 
         <div className="mt-6 bg-[#1B2D5B]/5 rounded-2xl p-4 text-sm text-gray-600 text-center leading-relaxed">
-          💳 {locale === 'en'
-            ? 'To subscribe now: request the plan and our team activates it after payment (bank transfer). Online payment (mada / Apple Pay) is coming soon.'
-            : 'للاشتراك الآن: اطلب الباقة ويفعّلها فريقنا بعد الدفع (تحويل بنكي). الدفع الإلكتروني (مدى / Apple Pay) قيد الإضافة قريباً.'}
+          {launchFree
+            ? (locale === 'en' ? '🎉 Everything is free during the launch period — the prices above apply later, and we\'ll notify you before any fees start.' : '🎉 كل الباقات مجانية بالكامل خلال فترة الإطلاق — الأسعار أعلاه تُطبَّق لاحقاً، وسنُعلمك قبل بدء أي رسوم.')
+            : (locale === 'en' ? '💳 To subscribe now: request the plan and our team activates it after payment (bank transfer). Online payment (mada / Apple Pay) is coming soon.' : '💳 للاشتراك الآن: اطلب الباقة ويفعّلها فريقنا بعد الدفع (تحويل بنكي). الدفع الإلكتروني (مدى / Apple Pay) قيد الإضافة قريباً.')}
         </div>
       </div>
     </AppShell>

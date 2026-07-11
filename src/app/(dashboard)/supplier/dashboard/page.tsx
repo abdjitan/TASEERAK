@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n'
 import { getSubCategoryLabel, getProductLabel, getUnitLabel } from '@/types'
 import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
-import { isSubscribed } from '@/lib/plans'
+import { isSubscribed, isLaunchFree } from '@/lib/plans'
 import { getNav } from '@/lib/nav'
 import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
@@ -66,6 +66,7 @@ export default function SupplierDashboard() {
 
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const [launchUntil, setLaunchUntil] = useState<any>(null)
   const [pricesCount, setPricesCount] = useState<any>(null)
   const [openRfqs, setOpenRfqs] = useState<any[]>([])
   const [myOffers, setMyOffers] = useState<any[]>([])
@@ -82,6 +83,8 @@ export default function SupplierDashboard() {
       setUser(session.user)
       const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       setProfile(p)
+      const { data: cfg } = await supabase.from('app_config').select('launch_free_until').maybeSingle()
+      setLaunchUntil(cfg?.launch_free_until || null)
 
       // جلب قطاعات المورد المتخصص فيها
       const { data: sectorRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
@@ -249,7 +252,17 @@ export default function SupplierDashboard() {
             </div>
           </Link>
         )}
-        {profile && !isSubscribed(profile) && (
+        {profile && !isSubscribed(profile) && (isLaunchFree(launchUntil) ? (
+          <Link href="/supplier/subscription" className="block mb-4 rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0F6E56,#1B2D5B)' }}>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🎉</span>
+              <div className="flex-1">
+                <div className="font-bold text-sm text-white">{locale === 'en' ? 'Free launch period — all features open' : 'فترة إطلاق مجانية — كل الميزات مفتوحة'}</div>
+                <div className="text-xs text-emerald-50">{locale === 'en' ? 'Enjoy everything free now. See the future plans →' : 'استمتع بكل شي مجاناً الآن. اطّلع على باقات المستقبل ←'}</div>
+              </div>
+            </div>
+          </Link>
+        ) : (
           <Link href="/supplier/subscription" className="block mb-4 rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#1B2D5B,#2a4a8a)' }}>
             <div className="flex items-center gap-3">
               <span className="text-2xl">⭐</span>
@@ -259,7 +272,7 @@ export default function SupplierDashboard() {
               </div>
             </div>
           </Link>
-        )}
+        ))}
         {profile?.verification_status === 'rejected' && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">
             <div className="flex items-start gap-3 mb-3">

@@ -14,6 +14,7 @@ export default function AdminPanel() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('pending')
+  const [launchUntil, setLaunchUntil] = useState<any>(null)
   const [users, setUsers] = useState<any[]>([])
   const [stats, setStats] = useState({ total: 0, contractors: 0, suppliers: 0, pending: 0, verified: 0 })
   const [actionLoading, setActionLoading] = useState('')
@@ -59,6 +60,8 @@ export default function AdminPanel() {
 
   async function loadData(supabase?: any) {
     const client = supabase || createClient()
+    const { data: cfg } = await client.from('app_config').select('launch_free_until').maybeSingle()
+    setLaunchUntil(cfg?.launch_free_until || null)
     // Bound the admin download so it doesn't pull the whole market to the browser (phase-0).
     // Analytics/queues run over the most-recent LIM rows; a fully paginated per-queue admin
     // redesign is a later roadmap item. Totals below come from exact count() queries so the
@@ -623,6 +626,28 @@ export default function AdminPanel() {
           )
         ) : tab === 'analytics' ? (
           <div className="space-y-6">
+            {/* وضع الإطلاق المجاني — التحكّم ببدء تحصيل رسوم الاشتراك */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <div className="font-bold text-sm mb-1" style={{ color: '#1B2D5B' }}>🎉 فترة الإطلاق المجانية</div>
+              <div className="text-xs text-gray-500 mb-3">
+                {(!launchUntil || new Date(launchUntil) > new Date())
+                  ? `مفعّلة الآن — كل الميزات مجانية للموردين${launchUntil ? ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')}` : ' (بلا تاريخ نهاية معلن)'}.`
+                  : `انتهت في ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')} — الباقات المدفوعة سارية.`}
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input type="date" defaultValue={launchUntil ? new Date(launchUntil).toISOString().slice(0, 10) : ''}
+                  onChange={async (e: any) => {
+                    const s = createClient()
+                    await s.from('app_config').update({ launch_free_until: e.target.value ? new Date(e.target.value + 'T23:59:59').toISOString() : null, updated_at: new Date().toISOString() }).eq('id', true)
+                    await loadData()
+                  }}
+                  className="input-field max-w-[180px] text-sm" title="تاريخ نهاية فترة الإطلاق المجانية" />
+                <button onClick={async () => { const s = createClient(); await s.from('app_config').update({ launch_free_until: null, updated_at: new Date().toISOString() }).eq('id', true); await loadData() }}
+                  className="text-xs px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">مجاني بلا تاريخ نهاية</button>
+                <button onClick={async () => { if (!confirm('إنهاء فترة الإطلاق المجانية الآن وتفعيل الباقات المدفوعة؟')) return; const s = createClient(); await s.from('app_config').update({ launch_free_until: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', true); await loadData() }}
+                  className="text-xs px-3 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">إنهاء الآن</button>
+              </div>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'تسجيلات آخر 7 أيام', value: newLast7, icon: '🆕', bg: '#0F6E56' },
