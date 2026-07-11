@@ -113,10 +113,13 @@ export async function POST(req: NextRequest) {
     const isText = ['xlsx', 'xls', 'csv', 'txt', 'md', 'tsv'].includes(ext)
 
     let result: any = null
+    let specTruncated = false
 
     if (isText) {
       // مسار النص — يعمل مع أي مزوّد (Groq/Gemini/Claude)
-      const docText = (await extractText(buffer, ext)).slice(0, 60000)
+      const rawText = await extractText(buffer, ext)
+      const docText = rawText.slice(0, 60000)
+      specTruncated = rawText.length > 60000 // اقتطاع المواصفات الكبيرة — نُبلّغ الواجهة
       if (!docText.trim()) return NextResponse.json({ ok: false, message: 'تعذّر استخراج نص من ملف المواصفات' }, { status: 422 })
       result = await aiJson({
         system: SYSTEM,
@@ -125,12 +128,13 @@ export async function POST(req: NextRequest) {
         maxTokens: 8000,
       })
       if (!result) return NextResponse.json({ ok: false, message: 'تعذّر تحليل المواصفات — تأكد أن مزوّد الذكاء مفعّل (AI_PROVIDER) وحاول ثانية.' }, { status: 502 })
-    } else if (ext === 'pdf' || ext === 'doc' || ext === 'docx' || ['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+    } else if (ext === 'pdf' || ['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
       // مسار المستند — يحتاج مزوّداً يقرأ المستندات. Gemini مجاني ويدعم PDF/الصور.
+      // (Word .doc/.docx غير مدعوم مباشرةً — يسقط أدناه لرسالة تحويل واضحة، بلا وعد كاذب.)
       if (!geminiKey()) {
         return NextResponse.json({
           ok: false, needsGemini: true,
-          message: 'صيغة PDF/Word تحتاج مفتاح Gemini (مجاني) لقراءة المستند. أضِف GEMINI_API_KEY في الإعدادات، أو ارفع المواصفات بصيغة Excel أو نص.',
+          message: 'صيغة PDF/الصور تحتاج مفتاح Gemini (مجاني) لقراءة المستند. أضِف GEMINI_API_KEY في الإعدادات، أو ارفع المواصفات بصيغة Excel أو نص.',
         }, { status: 422 })
       }
       const mime = ext === 'pdf' ? 'application/pdf'
@@ -146,14 +150,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, message: 'صيغة غير مدعومة. المدعوم: PDF, صورة, Excel, CSV, نص.' }, { status: 415 })
     }
 
-    // ترتيب النتائج حسب ref
+    // تحقّق من شكل مخرجات النموذج (مسار Gemini/Groq قد يعيد شكلاً مختلفاً بلا فرض schema)
+    if (!result || !Array.isArray(result.items)) {
+      return NextResponse.json({ ok: false, message: 'أعاد النموذج تنسيقاً غير متوقّع — حاول ثانية.' }, { status: 502 })
+    }
+    // إعادة ربط ref الذي يعيده النموذج بـ ref الإدخال الأصلي: النموذج كثيراً ما يوحّد الشرطات/الحالة
+    // (كما يأمره الـ prompt للمطابقة) فيختلف عن id الأصلي؛ والعميل يبحث بـ id الأصلي حرفياً — فبدون
+    // إعادة الربط تُسقَط المواصفة المطابَقة صامتاً بينما يزداد عدّاد matched. (كان r.ref مفتاحاً مباشرة.)
+    const nk = (s: string) => s.replace(/[\s._-]/g, '').toUpperCase()
+    const inputByNorm = new Map(batch.map((b: any) => [nk(b.ref), b.ref]))
     const byRef: Record<string, string> = {}
     let matched = 0
-    for (const r of (result.items || [])) {
+    for (const r of result.items) {
       const spec = String(r.spec || '').trim().slice(0, 400)
-      if (r.ref) { byRef[r.ref] = spec; if (spec) matched++ }
+      const rawRef = String(r.ref || '')
+      const inRef = inputByNorm.get(nk(rawRef)) || rawRef
+      if (inRef) { byRef[inRef] = spec; if (spec) matched++ }
     }
-    return NextResponse.json({ ok: true, specs: byRef, matched, total: batch.length })
+    return NextResponse.json({ ok: true, specs: byRef, matched, total: batch.length, submittedTotal: items.length, truncated: specTruncated })
   } catch (err: any) {
     console.error('match-spec error:', err?.message || err)
     return NextResponse.json({ ok: false, message: err?.message || 'فشل مطابقة المواصفات' }, { status: 500 })

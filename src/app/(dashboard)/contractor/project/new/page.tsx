@@ -113,12 +113,22 @@ export default function NewProjectPage() {
       fd.append('items', JSON.stringify(targets.map((i: any) => ({ ref: i.id, product_name: i.product_name, sector: i.sector }))))
       const res = await fetch('/api/match-spec', { method: 'POST', body: fd })
       const data = await res.json()
-      if (!data.ok) { setSpecMsg('⚠️ ' + (data.message || 'تعذّرت مطابقة المواصفات')); return }
+      if (!data.ok) { setSpecMsg((data.needsGemini ? 'ملف PDF/صورة يحتاج تفعيل Gemini من الإدارة أو حوّله لـExcel/نص — ' : '⚠️ ') + (data.message || 'تعذّرت مطابقة المواصفات')); return }
+      let filled = 0, diff = 0
       setItems(prev => prev.map((it: any) => {
         const s = data.specs?.[it.id]
-        return (s && s.trim()) ? { ...it, specification: s } : it
+        if (!s || !s.trim()) return it
+        const doc = s.trim()
+        // لا نكتب فوق مواصفة موجودة — نُبقيها للمقارنة (specFromDoc). البند الفارغ يُعبَّأ مباشرة.
+        if (!(it.specification || '').trim()) { filled++; return { ...it, specification: doc, specFromDoc: doc } }
+        if ((it.specification || '').trim() !== doc) { diff++; return { ...it, specFromDoc: doc } }
+        return { ...it, specFromDoc: doc }
       }))
-      setSpecMsg(`✓ تمت مطابقة ${data.matched} من ${data.total} بند من المواصفات`)
+      const parts = [`✓ طوبق ${data.matched} من ${data.total} بند`]
+      if (filled) parts.push(`عُبّئ ${filled}`)
+      if (diff) parts.push(`${diff} تختلف عن BOQ — راجعها`)
+      if (data.truncated) parts.push('⚠ المواصفات كبيرة واقتُطعت، قسّم الملف')
+      setSpecMsg(parts.join(' · '))
     } catch {
       setSpecMsg('⚠️ تعذّر الاتصال — حاول ثانية')
     } finally { setMatchingSpecs(false) }
@@ -681,6 +691,14 @@ export default function NewProjectPage() {
                             <input value={item.specification || ''}
                               onChange={(e: any) => updateItem(item.id, 'specification', e.target.value)}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Specification (optional)' : 'المواصفة (اختياري)'} />
+                            {item.specFromDoc && (item.specFromDoc !== (item.specification || '')) && (
+                              <div className="mt-1.5 text-[11px] bg-[#F5831F]/5 border border-[#F5831F]/30 rounded-lg p-2 flex items-start gap-2">
+                                <span className="text-[#d96f15] font-bold shrink-0">📄 {locale === 'en' ? 'Spec doc:' : 'من الوثيقة:'}</span>
+                                <span className="text-gray-600 flex-1 min-w-0">{item.specFromDoc}</span>
+                                <button type="button" onClick={() => updateItem(item.id, 'specification', item.specFromDoc)}
+                                  className="text-[#0F6E56] font-bold shrink-0 hover:underline">{locale === 'en' ? 'Use' : 'استبدل'}</button>
+                              </div>
+                            )}
                           </div>
                           {/* رفع ملف مواصفات للبند */}
                           <div className="sm:col-span-2">

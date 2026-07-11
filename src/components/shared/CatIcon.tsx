@@ -44,10 +44,10 @@ const MAP: Record<string, string> = {
   // كهرباء
   cabling: 'zap', panels_switches: 'grid', lighting: 'bulb', low_current: 'camera',
   // آليات
-  heavy_equipment: 'truck', light_equipment: 'cog', concrete_machinery: 'cog', access_equipment: 'ladder',
+  heavy_equipment: 'truck', light_equipment: 'cog', concrete_machinery: 'cog', access_equipment: 'ladder', workshop_equip: 'flame',
   // محل توريد
   store_plumbing: 'droplet', store_electrical: 'zap', store_tools: 'wrench',
-  store_fasteners: 'cog', store_safety: 'shield', store_paint: 'paint',
+  store_fasteners: 'cog', store_safety: 'shield', store_paint: 'paint', store_hardware: 'door',
   // قطاعات
   civil: 'building', architectural: 'layers', electrical: 'zap', mechanical: 'cog',
   equip: 'truck', equipment: 'truck', supply_store: 'box',

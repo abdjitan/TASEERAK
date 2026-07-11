@@ -212,6 +212,21 @@ ${subCatRef()}
   }
 }
 
+// Robust numeric parsing for a BOQ quantity cell: native numbers, comma/space thousands,
+// European decimals (1.234,56), a trailing unit, or a range (takes the first number).
+// Returns null when the cell has no number (blank / lump-sum / "provisional").
+function parseQty(raw: any): number | null {
+  if (raw == null || raw === '') return null
+  if (typeof raw === 'number') return isFinite(raw) ? raw : null
+  let s = String(raw).replace(/ /g, ' ').trim()
+  if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.') // European
+  else s = s.replace(/,/g, '')
+  s = s.replace(/\s+/g, '')
+  const m = s.match(/-?\d+(\.\d+)?/)
+  const n = m ? parseFloat(m[0]) : NaN
+  return isNaN(n) ? null : n
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Auth + rate-limit — this route burns paid AI tokens (H7/SEC-05).
@@ -243,60 +258,76 @@ export async function POST(req: NextRequest) {
 
     // قراءة كل الشيتات
     for (const sheetName of wb.SheetNames) {
-      // تخطي شيتات الـ collection والـ summary
-      if (/collection|summary|index|tender|_xlnm/i.test(sheetName)) continue
+      // نتخطّى أوراق الملخّص/الفهرس فقط — لا نتخطّى «tender» (كثيراً ما تكون ورقة البنود «Tender BOQ»)
+      if (/collection|summary|^\s*index\s*$|_xlnm/i.test(sheetName)) continue
 
       const ws = wb.Sheets[sheetName]
-      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
+      const rows: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true })
 
-      // البحث عن أعمدة الكمية والوحدة والوصف
-      let descCol = -1, qtyCol = -1, unitCol = -1
-
-      // محاولة تحديد الأعمدة من أول 10 صفوف
-      for (let r = 0; r < Math.min(10, rows.length); r++) {
-        const row = rows[r].map(c => String(c).toLowerCase().trim())
+      // ── كشف صف العناوين + الأعمدة (مطابقة تحتوائية عربي/إنجليزي، حتى ٢٠ صفاً) ──
+      let descCol = -1, qtyCol = -1, unitCol = -1, headerRow = -1
+      const norm = (c: any) => String(c ?? '').toLowerCase().replace(/\s+/g, ' ').trim()
+      for (let r = 0; r < Math.min(20, rows.length); r++) {
+        const row = (rows[r] || []).map(norm)
+        let d = -1, q = -1, u = -1
         for (let c = 0; c < row.length; c++) {
-          if (/^(description|item|desc|detail|work|item description)$/i.test(row[c])) descCol = c
-          if (/^(qty|quantity|quant|amount|no\.)$/i.test(row[c])) qtyCol = c
-          if (/^(unit|uom|u\.?o\.?m)$/i.test(row[c])) unitCol = c
+          const cell = row[c]
+          if (d < 0 && /descriptio|particular|item.*desc|desc.*item|\bdetail|\bwork\b|بيان|الوصف|وصف/.test(cell)) d = c
+          if (q < 0 && /^q'?ty\b|quantit|\bqnty\b|^qty\b|الكمية|كمية/.test(cell)) q = c
+          if (u < 0 && /^unit\b|^uom$|u\.?o\.?m|u\/m|الوحدة|وحدة/.test(cell)) u = c
         }
-        if (descCol >= 0) break
+        if (d >= 0) { descCol = d; qtyCol = q; unitCol = u; headerRow = r; break }
       }
 
-      // إذا ما لقينا الأعمدة، نحاول نحدس
-      if (descCol < 0) descCol = 1 // عادةً الوصف في العمود الثاني
+      // بدء مسح البنود بعد صف العناوين المكتشف (لا رقم ثابت)
+      const dataStart = headerRow >= 0 ? headerRow + 1 : 1
+      if (descCol < 0) descCol = 1 // آخر ملاذ: الوصف عادةً بالعمود الثاني
+
+      // ── استنتاج عمود الكمية/الوحدة من البيانات لو لم يُكتَشف عنوانهما (لا إزاحات جامدة) ──
+      if (qtyCol < 0 || unitCol < 0) {
+        const win = rows.slice(dataStart, dataStart + 40)
+        const width = win.reduce((m, r) => Math.max(m, (r || []).length), 0)
+        let bestNum = -1, bestNumScore = 0, bestUnit = -1, bestUnitScore = 0
+        for (let c = 0; c < width; c++) {
+          if (c === descCol) continue
+          let numScore = 0, unitScore = 0
+          for (const r of win) {
+            const v = r?.[c]; if (v === '' || v == null) continue
+            const q = parseQty(v); if (q != null && q > 0) numScore++
+            if (UNIT_PATTERNS.some(p => p.pattern.test(String(v)))) unitScore++
+          }
+          if (numScore > bestNumScore) { bestNumScore = numScore; bestNum = c }
+          if (unitScore > bestUnitScore) { bestUnitScore = unitScore; bestUnit = c }
+        }
+        if (qtyCol < 0 && bestNum >= 0) qtyCol = bestNum
+        if (unitCol < 0 && bestUnit >= 0) unitCol = bestUnit
+      }
       if (qtyCol < 0) qtyCol = descCol + 2
       if (unitCol < 0) unitCol = descCol + 1
 
-      for (let r = 5; r < rows.length; r++) {
+      for (let r = dataStart; r < rows.length; r++) {
         const row = rows[r]
         if (!row || row.length === 0) continue
 
-        const desc = String(row[descCol] || '').trim()
-        const qtyRaw = row[qtyCol]
-        const unitRaw = String(row[unitCol] || '').trim()
-
+        const desc = String(row[descCol] ?? '').trim()
         if (!desc || !isValidItem(desc)) continue
 
-        const qty = parseFloat(String(qtyRaw).replace(/,/g, ''))
-        if (isNaN(qty) || qty <= 0) continue // لازم يكون في كمية
+        const qty = parseQty(row[qtyCol]) // قد تكون null (فارغة/مقطوعية) — نُبقيها بدل حذفها
+        const unitRaw = String(row[unitCol] ?? '').trim()
+        const unit = UNIT_PATTERNS.some(u => u.pattern.test(unitRaw)) ? extractUnit(unitRaw) : (unitRaw || extractUnit(desc))
 
-        const key = `${desc.slice(0, 50)}`
+        const key = `${normalizeText(desc)}|${unit}|${qty ?? ''}` // مفتاح كامل — لا يبتلع المقاسات المختلفة
         if (seen.has(key)) continue
         seen.add(key)
 
-        const unit = UNIT_PATTERNS.some(u => u.pattern.test(unitRaw))
-          ? extractUnit(unitRaw)
-          : unitRaw || extractUnit(desc)
-
-        // استخراج المواصفات من الوصف
-        const specMatch = desc.match(/;\s*([^;]+mm[^;]*)/i) ||
-                          desc.match(/;\s*(\d+[\s\w]+(?:mm|dia|kv|kw|amp)[\w\s]*)/i)
-        const specification = specMatch ? specMatch[1].trim().slice(0, 80) : ''
+        // مواصفة من الوصف — inline بلا اشتراط فاصلة منقوطة
+        const sm = desc.match(/(\d+(?:\.\d+)?\s?(?:mm|cm|m²|m2|m³|m3|kv|kw|amp|bar|dia|ø|class|grade)[^,;]*)/i)
+        const specification = sm ? sm[1].trim().slice(0, 80) : ''
 
         extractedItems.push({
           product_name: cleanDescription(desc),
           quantity: qty,
+          needs_quantity: qty == null || qty <= 0,
           unit,
           sector: detectSector(desc),
           specification,
@@ -322,12 +353,16 @@ export async function POST(req: NextRequest) {
       it.needs_classification = !it.sub_category || !!it.low_confidence
     }
 
-    // ترتيب حسب القطاع (بعد تحسين التصنيف)
-    finalItems.sort((a, b) => a.sector.localeCompare(b.sector))
+    // حد أقصى للبنود — يُطبَّق قبل الفرز حتى لا يُقتطع قطاع بعينه (كان يُطبَّق بعد الفرز فيقصّ الميكانيكا/المستودع)
+    const CAP = 500
+    const truncated = finalItems.length > CAP
+    const capped = finalItems.slice(0, CAP)
+    capped.sort((a, b) => a.sector.localeCompare(b.sector))
 
     return NextResponse.json({
-      items: finalItems.slice(0, 200), // حد أقصى 200 بند
+      items: capped,
       total: finalItems.length,
+      truncated, // تجاوز الحد؟ (لتنبيه الواجهة)
       filename: file.name,
       ai: !!aiItems, // هل استُخدم الذكاء الاصطناعي؟
     })
