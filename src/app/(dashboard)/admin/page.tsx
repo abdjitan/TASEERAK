@@ -5,6 +5,7 @@ import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { fileHref } from '@/lib/fileHref'
+import { dealStage } from '@/lib/dealStage'
 import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { SECTOR_LABELS, getGroupedSubCategories } from '@/types'
@@ -354,7 +355,8 @@ export default function AdminPanel() {
   const topSectors = countBy(rfqs, 'sector').slice(0, 6)
   const tierBreakdown = countBy(users.filter((u: any) => u.role === 'supplier'), 'supplier_tier')
   const offersPerRfq = rfqs.length ? (offers.length / rfqs.length).toFixed(1) : '0'
-  const acceptedOffers = offers.filter((o: any) => o.status === 'accepted').length
+  const dealsList = offers.filter((o: any) => o.status === 'accepted')
+  const acceptedOffers = dealsList.length
   const TIERLBL: any = { manufacturer: '🏭 مصنع/رئيسي', commercial: '🏪 تجاري', local: '🏬 محلي' }
 
   const rfqSearch = (r: any) => !search
@@ -424,6 +426,7 @@ export default function AdminPanel() {
               { key: 'all', label: `الكل (${stats.total})` },
               { key: 'rfqs', label: `📋 طلبات التسعير (${rfqs.length + projects.length})` },
               { key: 'messages', label: `💬 الرسائل${totalUnread ? ' (' + totalUnread + ')' : ''}` },
+              { key: 'deals', label: `📦 الصفقات (${acceptedOffers})` },
               { key: 'disputes', label: `⚠ النزاعات${disputes.length ? ' (' + disputes.length + ')' : ''}` },
               { key: 'objections', label: `🚩 بلاغات حسابات وهمية${openObjections.length ? ' (' + openObjections.length + ')' : ''}` },
               { key: 'changereqs', label: `📝 طلبات التعديل${openChangeReqs.length ? ' (' + openChangeReqs.length + ')' : ''}` },
@@ -457,8 +460,32 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {/* Disputes */}
-        {tab === 'disputes' ? (
+        {/* Deals oversight — كل الصفقات المُرساة بمراحلها (إشراف الأدمن) */}
+        {tab === 'deals' ? (
+          dealsList.length === 0 ? (
+            <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center"><div className="text-5xl mb-3">📦</div><p className="text-gray-500">لا صفقات مُرساة بعد.</p></div>
+          ) : (
+            <div className="space-y-2">
+              {dealsList.map((o: any) => {
+                const st = dealStage(o)
+                const rfq = rfqById[o.rfq_id]
+                const sup = profileById[o.supplier_id]
+                return (
+                  <div key={o.id} className="flex items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{rfq?.title || rfq?.product_name || 'صفقة'}</div>
+                      <div className="text-xs text-gray-400 mt-0.5 truncate">🏭 {sup?.company_name_ar || '—'} · {Number(o.total_price || 0).toLocaleString('en-US')} ر.س{o.invoice_number ? ` · ${o.invoice_number}` : ''}</div>
+                    </div>
+                    <div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}>
+                      <div className="text-lg leading-none">{st.emoji}</div>
+                      <div className="text-[10px] font-bold leading-tight mt-0.5">{st.label.split('—')[0].trim()}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        ) : tab === 'disputes' ? (
           disputes.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
               <div className="text-5xl mb-4">🕊️</div>

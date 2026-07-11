@@ -15,7 +15,8 @@ export default function SupplierDealsPage() {
   const { locale, dir } = useTranslation()
   const [deals, setDeals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'active' | 'done'>('all')
+  const [filter, setFilter] = useState<'all' | 'active' | 'done' | 'disputed'>('all')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -38,19 +39,27 @@ export default function SupplierDealsPage() {
   if (loading) return <PageLoader />
 
   const shown = deals.filter((d: any) => {
-    if (filter === 'all') return true
     const st = dealStage(d)
-    return filter === 'done' ? st.done : !st.done
+    if (filter === 'done' && !st.done) return false
+    if (filter === 'active' && (st.done || st.key === 'disputed')) return false
+    if (filter === 'disputed' && st.key !== 'disputed') return false
+    if (search.trim()) {
+      const hay = `${d.rfq?.title || ''} ${d.rfq?.product_name || ''} ${d.rfq?.contractor?.company_name_ar || ''} ${d.invoice_number || ''}`.toLowerCase()
+      if (!hay.includes(search.trim().toLowerCase())) return false
+    }
+    return true
   })
 
   return (
     <AppShell title={locale === 'en' ? 'My Deals' : 'صفقاتي'} nav={getNav('supplier', locale, '/supplier/deals')} dir={dir}>
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-2 mb-5">
-          {[{ k: 'all', l: locale === 'en' ? 'All' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : 'مكتملة' }].map((f: any) => (
+        <input value={search} onChange={(e: any) => setSearch(e.target.value)}
+          className="input-field mb-3" placeholder={locale === 'en' ? '🔍 Search deals (product, contractor, invoice №)…' : '🔍 ابحث في الصفقات (منتج، مقاول، رقم فاتورة)…'} />
+        <div className="flex items-center gap-2 mb-5 flex-wrap">
+          {[{ k: 'all', l: locale === 'en' ? 'All' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Disputed' : 'نزاعات' }].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)}
               className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${filter === f.k ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-              style={filter === f.k ? { background: '#0F6E56' } : {}}>{f.l}</button>
+              style={filter === f.k ? { background: f.k === 'disputed' ? '#DC2626' : '#0F6E56' } : {}}>{f.l}</button>
           ))}
           <span className="text-xs text-gray-400 ms-auto">{shown.length} {locale === 'en' ? 'deals' : 'صفقة'}</span>
         </div>
