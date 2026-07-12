@@ -25,6 +25,7 @@ const PROTECTED = [
   '/admin',
   '/location',
   '/market',
+  '/onboarding',
 ]
 
 /** Only users with role = 'admin' can access these */

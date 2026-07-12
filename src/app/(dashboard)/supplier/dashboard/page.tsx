@@ -229,6 +229,16 @@ export default function SupplierDashboard() {
       dir={dir}
     >
       <div className="max-w-6xl mx-auto">
+        {/* أكمل ملفك — يظهر بعد التسجيل المبسّط حتى تُعبّأ القطاعات/التخصصات/الموقع */}
+        {profile && !profile.region && (
+          <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 text-white hover:shadow-lg transition-shadow" style={{ background: 'linear-gradient(120deg,#F5831F,#d96f15)' }}>
+            <div>
+              <div className="font-extrabold text-sm">👋 {locale === 'en' ? 'Complete your profile' : locale === 'ur' ? 'اپنی پروفائل مکمل کریں' : 'أكمل ملفك'}</div>
+              <div className="text-[12px] text-orange-50 mt-0.5">{locale === 'en' ? 'Add your sectors, specialties and location to appear to contractors and receive matching requests.' : locale === 'ur' ? 'ٹھیکیداروں کو نظر آنے کے لیے اپنے شعبے، مہارتیں اور مقام شامل کریں۔' : 'أضف قطاعاتك وتخصصاتك وموقعك لتظهر للمقاولين وتصلك الطلبات المطابقة.'}</div>
+            </div>
+            <span className="shrink-0 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5">{locale === 'en' ? 'Complete →' : 'أكمل ←'}</span>
+          </Link>
+        )}
         {/* Onboarding / liquidity prompts */}
         {pricesCount === 0 && (
           <Link href="/supplier/prices" className="block mb-4 bg-gradient-to-l from-[#F5831F]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">

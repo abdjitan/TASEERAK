@@ -61,9 +61,11 @@ function LoginForm() {
       // infinite login <-> dashboard redirect loop.
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data: p } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+        const { data: p } = await supabase.from('profiles').select('role, region').eq('id', user.id).single()
         const next = searchParams.get('next')
-        window.location.href = safeRedirect(next, roleHome(p?.role))
+        // مستخدم جديد لم يُكمل ملفه (لا منطقة) → «أكمل ملفك»
+        const fallback = (p?.role !== 'admin' && !p?.region) ? '/onboarding' : roleHome(p?.role)
+        window.location.href = safeRedirect(next, fallback)
         return
       }
       // No valid server-side session. SELF-HEAL: wipe any stale/corrupt auth
@@ -105,18 +107,22 @@ function LoginForm() {
       // STEP 2/3 — read role (don't block login if it stalls; fall back gracefully)
       setStatus(t.s_role); setProgress(62)
       let role = 'contractor'
+      let region: string | null = null
       try {
         const { data: p } = await withTimeout(
-          supabase.from('profiles').select('role').eq('id', data.session.user.id).single(),
+          supabase.from('profiles').select('role, region').eq('id', data.session.user.id).single(),
           12000, 'profile'
         )
         if (p?.role) role = p.role
+        region = p?.region || null
       } catch (e2) { console.error('[login] role read failed:', e2) }
 
       // STEP 3/3 — hard redirect (full reload so middleware sees the cookie)
       setStatus(t.s_go); setProgress(100)
       const next = searchParams.get('next')
-      window.location.href = safeRedirect(next, roleHome(role))
+      // مستخدم جديد لم يُكمل ملفه (لا منطقة) → «أكمل ملفك»
+      const fallback = (role !== 'admin' && !region) ? '/onboarding' : roleHome(role)
+      window.location.href = safeRedirect(next, fallback)
     } catch (e) {
       console.error('[login] failed:', e)
       const msg = (e && (e as any).message) || ''

@@ -231,6 +231,16 @@ export default function ContractorDashboard() {
       dir={dir}
     >
       <div className="max-w-6xl mx-auto">
+        {/* أكمل ملفك — يظهر بعد التسجيل المبسّط حتى تُعبّأ البيانات */}
+        {!profile?.region && (
+          <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 text-white hover:shadow-lg transition-shadow" style={{ background: 'linear-gradient(120deg,#F5831F,#d96f15)' }}>
+            <div>
+              <div className="font-extrabold text-sm">👋 {locale === 'en' ? 'Complete your profile' : locale === 'ur' ? 'اپنی پروفائل مکمل کریں' : 'أكمل ملفك'}</div>
+              <div className="text-[12px] text-orange-50 mt-0.5">{locale === 'en' ? 'Add your location and sectors to get the best offers.' : locale === 'ur' ? 'بہترین آفرز کے لیے اپنا مقام اور شعبے شامل کریں۔' : 'أضف موقعك وقطاعاتك لتصلك أفضل العروض.'}</div>
+            </div>
+            <span className="shrink-0 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5">{locale === 'en' ? 'Complete →' : 'أكمل ←'}</span>
+          </Link>
+        )}
         {/* Verification Status Banner */}
         {profile?.verification_status === 'rejected' && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">
