@@ -6,6 +6,12 @@ import '@/styles/globals.css'
 export const metadata: Metadata = {
   title: 'تسعيرك | Taseerak — منصة التسعير والتوريد للمقاولين',
   description: 'منصة ذكية تربط المقاولين بالموردين في جميع قطاعات البناء والإنشاء',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'تسعيرك' },
+}
+
+export const viewport = {
+  themeColor: '#1B2D5B',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

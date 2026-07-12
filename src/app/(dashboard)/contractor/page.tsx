@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
+import EnablePush from '@/components/shared/EnablePush'
 import { AppIcon } from '@/components/AppIcon'
 import { rfqDisplayName, arItems } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
@@ -241,6 +242,7 @@ export default function ContractorDashboard() {
             <span className="shrink-0 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5">{locale === 'en' ? 'Complete →' : 'أكمل ←'}</span>
           </Link>
         )}
+        <EnablePush variant="nudge" />
         {/* Verification Status Banner */}
         {profile?.verification_status === 'rejected' && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">

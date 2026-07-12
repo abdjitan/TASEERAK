@@ -10,6 +10,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import SupportThread from '@/components/shared/SupportThread'
 import DistrictField from '@/components/shared/DistrictField'
+import EnablePush from '@/components/shared/EnablePush'
 import { REGIONS } from '@/types'
 
 const txt = {
@@ -483,6 +484,11 @@ export default function SettingsPage() {
                         <option value="ur">اردو</option>
                       </select>
                     </div>
+                  </div>
+
+                  {/* إشعارات المتصفح (Web Push) */}
+                  <div className="border-t border-gray-100 pt-5">
+                    <EnablePush variant="card" />
                   </div>
 
                   {/* Supplier Tier — locked */}

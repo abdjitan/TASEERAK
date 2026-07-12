@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import EnablePush from '@/components/shared/EnablePush'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
@@ -239,6 +240,7 @@ export default function SupplierDashboard() {
             <span className="shrink-0 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5">{locale === 'en' ? 'Complete →' : 'أكمل ←'}</span>
           </Link>
         )}
+        <EnablePush variant="nudge" />
         {/* Onboarding / liquidity prompts */}
         {pricesCount === 0 && (
           <Link href="/supplier/prices" className="block mb-4 bg-gradient-to-l from-[#F5831F]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">

@@ -1,0 +1,16 @@
+{
+  "name": "تسعيرك — تسعير مواد البناء",
+  "short_name": "تسعيرك",
+  "description": "منصة تسعير وشراء مواد البناء في السعودية — اطلب عروض أسعار من موردين موثّقين.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1B2D5B",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
