@@ -397,7 +397,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {/* تقييم المورد — للمقاول فقط بعد القبول */}
+        {/* تقييم المورد — للمقاول فقط بعد تأكيد الاستلام (لا يكفي القبول) */}
         {offer.status === 'accepted' && myId && rfq.contractor_id === myId && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 order-4 print:hidden" dir="rtl">
             {existingReview ? (
@@ -410,7 +410,7 @@ export default function OrderDetailPage() {
                 </div>
                 {existingReview.comment && <p className="text-xs text-gray-500 mt-2">{existingReview.comment}</p>}
               </div>
-            ) : (
+            ) : offer.received_at ? (
               <div>
                 <h3 className="text-sm font-bold text-gray-900 mb-1">قيّم تعاملك مع {supplier?.company_name_ar || 'المورد'}</h3>
                 <p className="text-xs text-gray-400 mb-3">تقييمك يساعد بقية المقاولين على اختيار الموردين</p>
@@ -434,6 +434,12 @@ export default function OrderDetailPage() {
                   style={{ background: '#0F6E56' }}>
                   {reviewSubmitting ? 'جارٍ الإرسال...' : 'إرسال التقييم'}
                 </button>
+              </div>
+            ) : (
+              <div className="text-center py-2">
+                <div className="text-2xl mb-1">📦</div>
+                <div className="text-sm font-bold text-gray-700 mb-1">قيّم المورد بعد الاستلام</div>
+                <p className="text-xs text-gray-400">يفتح التقييم بمجرد تأكيد استلام البضاعة (محضر الاستلام) — ليعكس التقييمُ التسليمَ الفعلي.</p>
               </div>
             )}
           </div>

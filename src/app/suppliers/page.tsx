@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createPublicClient } from '@/lib/supabase/server'
-import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
+import { supplierScore } from '@/lib/supplierScore'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
+import SuppliersDirectory from './SuppliersDirectory'
 
 export const dynamic = 'force-dynamic' // عرض وقت الطلب — يتفادى إنشاء عميل Supabase وقت البناء (build-safe)
 
@@ -11,19 +12,6 @@ export const metadata: Metadata = {
   title: 'أفضل موردي مواد البناء في السعودية | تسعيرك',
   description: 'لوحة شرف الموردين على منصة تسعيرك — موردون موثّقون لمواد البناء مرتّبون حسب التقييم والموثوقية والصفقات المنجزة في جميع مناطق المملكة.',
   alternates: { canonical: '/suppliers' },
-}
-
-const TIERS: Record<string, string> = {
-  manufacturer: '🏭 مصنع / مورد رئيسي',
-  commercial: '🏪 مورد تجاري',
-  local: '🏬 مورد محلي',
-}
-
-function rankBadge(i: number) {
-  if (i === 0) return { e: '🥇', c: '#D4AF37' }
-  if (i === 1) return { e: '🥈', c: '#9CA3AF' }
-  if (i === 2) return { e: '🥉', c: '#CD7F32' }
-  return { e: `${i + 1}`, c: '#1B2D5B' }
 }
 
 export default async function SuppliersLeaderboard() {
@@ -72,46 +60,7 @@ export default async function SuppliersLeaderboard() {
             <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#F5831F' }}>سجّل كمورّد</Link>
           </div>
         ) : (
-          <div className="space-y-3">
-            {ranked.map((r: any, i: number) => {
-              const rb = rankBadge(i)
-              const rating = Number(r.rating_avg) || 0
-              return (
-                <Link key={r.supplier_id} href={`/suppliers/${r.supplier_id}`} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:border-[#F5831F]/40 transition-colors">
-                  {/* الترتيب */}
-                  <div className="w-10 h-10 shrink-0 grid place-items-center rounded-xl font-extrabold text-lg" style={{ color: rb.c, background: `${rb.c}14` }}>{rb.e}</div>
-
-                  {/* المعلومات */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{r.company_name_ar || 'مورد'}</span>
-                      {r.verification_status === 'verified' && <span className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>✓ موثّق</span>}
-                    </div>
-                    <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
-                      <span>{TIERS[r.supplier_tier] || '🏬 مورد'}</span>
-                      {r.region && <span>📍 {r.region}</span>}
-                      {rating > 0 && <span>⭐ {rating.toFixed(1)}</span>}
-                      <span>📦 {r.total_offers} عرض</span>
-                      <span>🤝 {r.won_deals} صفقة</span>
-                    </div>
-                    {Array.isArray(r.approvals) && r.approvals.length > 0 && (
-                      <div className="flex gap-1 mt-1.5 flex-wrap">
-                        {r.approvals.slice(0, 4).map((a: string) => (
-                          <span key={a} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#1B2D5B0d', color: '#1B2D5B' }}>🏅 {approvalLabel(a)}</span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* الدرجة */}
-                  <div className="shrink-0 text-center">
-                    <div className="w-14 h-14 grid place-items-center rounded-full font-extrabold text-lg text-white" style={{ background: scoreColor(r.score) }}>{r.score}</div>
-                    <div className="text-[9px] text-gray-400 mt-1">من ١٠٠</div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
+          <SuppliersDirectory suppliers={ranked} />
         )}
 
         <p className="text-center text-[11px] text-gray-400 mt-8 leading-relaxed">

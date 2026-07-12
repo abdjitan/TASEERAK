@@ -89,6 +89,25 @@ export default async function SupplierProfilePage({ params }: { params: { id: st
             </div>
           )}
 
+          {Array.isArray(s.recent_reviews) && s.recent_reviews.length > 0 && (
+            <div className="mt-6 pt-5 border-t border-gray-100">
+              <div className="text-xs font-bold text-gray-400 mb-3">💬 آراء المقاولين</div>
+              <div className="space-y-3">
+                {s.recent_reviews.map((rv: any, i: number) => (
+                  <div key={i} className="rounded-xl bg-[#f7f8fa] p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-0.5 text-sm" aria-label={`${rv.rating} من 5`}>
+                        {[1, 2, 3, 4, 5].map((n) => <span key={n} className={n <= rv.rating ? 'text-yellow-400' : 'text-gray-200'}>★</span>)}
+                      </div>
+                      {rv.created_at && <span className="text-[10px] text-gray-400">{new Date(rv.created_at).toLocaleDateString('ar-SA-u-ca-gregory')}</span>}
+                    </div>
+                    {rv.comment && <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">{rv.comment}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 pt-5 border-t border-gray-100 text-center">
             <p className="text-sm text-gray-500 mb-3">اطلب تسعيرة ينافس عليها {s.company_name_ar || 'هذا المورد'} وغيره من أفضل الموردين.</p>
             <Link href="/register" className="inline-block px-6 py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#F5831F' }}>اطلب تسعيرة مجاناً</Link>
