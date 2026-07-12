@@ -31,7 +31,8 @@ function Messages() {
   const endRef = useRef<any>(null)
 
   const PREAWARD_MAX = 20
-  const remaining = PREAWARD_MAX - msgs.length
+  // الرسائل الفاشلة لا تُحتسب ضمن الحد (لم تُرسَل فعلاً)
+  const remaining = PREAWARD_MAX - msgs.filter((m: any) => m._status !== 'failed').length
   const blocked = !awarded && remaining <= 0
 
   async function loadConvos() {
@@ -84,7 +85,15 @@ function Messages() {
       if (cancelled) return // don't open a channel for a conversation we already switched away from
       ch = supabase.channel(`conv-${activeId}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeId}` }, (payload) => {
-          setMsgs(prev => prev.some(m => m.id === payload.new.id) ? prev : [...prev, payload.new])
+          setMsgs(prev => {
+            if (prev.some(m => m.id === payload.new.id)) return prev
+            // استبدل الرسالة المتفائلة المؤقتة بنفس المحتوى بالصف الحقيقي (منع التكرار)
+            if (payload.new.sender_id === me) {
+              const i = prev.findIndex((m: any) => typeof m.id === 'string' && m.id.startsWith('temp-') && m.body === payload.new.body && m._status !== 'failed')
+              if (i !== -1) { const c = [...prev]; c[i] = payload.new; return c }
+            }
+            return [...prev, payload.new]
+          })
           if (payload.new.sender_id !== me) supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id)
         })
         .subscribe()
@@ -97,13 +106,31 @@ function Messages() {
   async function send(e: any) {
     e?.preventDefault()
     const text = body.trim(); if (!text || !activeId) return
-    setSending(true); setBody('')
+    setBody('')
+    await deliver(text)
+  }
+
+  // إرسال متفائل: تظهر الرسالة فوراً (⏳ pending)، ثم تُثبَّت عند النجاح، أو تصير (⚠ failed)
+  // مع زر إعادة إرسال — بلا فقدان للنص ولا نافذة alert.
+  async function deliver(text: string, tempId?: string) {
+    const id = tempId || `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    const convoId = activeId
+    setMsgs(prev => tempId
+      ? prev.map((m: any) => m.id === id ? { ...m, _status: 'pending' } : m)
+      : [...prev, { id, conversation_id: convoId, sender_id: me, body: text, created_at: new Date().toISOString(), _status: 'pending' }])
+    setSending(true)
     const supabase = createClient()
-    const { error } = await supabase.rpc('send_message', { p_conversation_id: activeId, p_body: text })
+    const { error } = await supabase.rpc('send_message', { p_conversation_id: convoId, p_body: text })
     setSending(false)
-    if (error) { setBody(text); alert((error as any)?.message || 'تعذّر إرسال الرسالة — حاول مرة ثانية.'); return }
+    if (error) {
+      setMsgs(prev => prev.map((m: any) => m.id === id ? { ...m, _status: 'failed' } : m))
+      return
+    }
+    setMsgs(prev => prev.map((m: any) => m.id === id ? { ...m, _status: 'sent' } : m))
     loadConvos()
   }
+
+  function retry(m: any) { deliver(m.body, m.id) }
 
   const active = convos.find((c: any) => c.id === activeId)
   const counterpart = (c: any) => (c?.contractor_id === me ? c?.supplier : c?.contractor)?.company_name_ar || 'مستخدم'
@@ -155,9 +182,14 @@ function Messages() {
                   const mine = m.sender_id === me
                   return (
                     <div key={m.id} className={`flex ${mine ? 'justify-start' : 'justify-end'}`}>
-                      <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white' : 'bg-white border border-gray-100 text-gray-800'}`} style={mine ? { background: '#0F6E56' } : {}}>
+                      <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white' : 'bg-white border border-gray-100 text-gray-800'}`} style={mine ? { background: m._status === 'failed' ? '#b91c1c' : '#0F6E56' } : {}}>
                         <div className="whitespace-pre-wrap break-words">{m.body}</div>
-                        <div className={`text-[9px] mt-1 ${mine ? 'text-white/70' : 'text-gray-400'}`}>{fmtTime(m.created_at)}</div>
+                        <div className={`text-[9px] mt-1 ${mine ? 'text-white/80' : 'text-gray-400'}`}>
+                          {m._status === 'pending' ? '⏳ جارٍ الإرسال…'
+                            : m._status === 'failed'
+                              ? <button type="button" onClick={() => retry(m)} className="underline font-semibold text-white">⚠ فشل الإرسال — إعادة المحاولة ↻</button>
+                              : <>{fmtTime(m.created_at)}{mine ? ' ✓' : ''}</>}
+                        </div>
                       </div>
                     </div>
                   )
