@@ -359,6 +359,34 @@ export default function NewRFQPage() {
     })
   }, [user])
 
+  // إعادة الطلب: ?from=<rfqId> — يعبّئ النموذج من طلب سابق كـ«طلب جديد» (ليس مسودة).
+  // يعتمد أن rfqs.items بنفس شكل عناصر النموذج؛ للطلبات القديمة أحادية المادة نُعيد بناء عنصر واحد.
+  useEffect(() => {
+    if (!user) return
+    const fromId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('from') : null
+    if (!fromId) return
+    const supabase = createClient()
+    supabase.from('rfqs').select('*').eq('id', fromId).eq('contractor_id', user.id).single().then(({ data: r }: any) => {
+      if (!r) return
+      let its: any[] = Array.isArray(r.items) && r.items.length ? r.items : []
+      if (its.length === 0 && r.product_name) {
+        its = [{ sector: r.sector, product_name: r.product_name, sub_category: r.sub_category || null, specification: r.specification || null, quantity: Number(r.quantity) || 0, unit: r.unit || '', supplier_tiers: (Array.isArray(r.target_tiers) && r.target_tiers.length ? r.target_tiers : null), specsObj: {} }]
+      }
+      // إسقاط مراجع ملفات المواصفات القديمة (الطلب الجديد يُعيد الرفع عند الحاجة)
+      its = its.map(({ specFileObj, spec_file_url, spec_file_name, ...rest }: any) => rest)
+      setItems(its)
+      setRfqName(r.title || '')
+      setRegion(r.region && r.region !== 'كل المناطق' ? r.region : ''); setCity(r.city || '')
+      setDeliveryRequired(r.delivery_required ?? true)
+      setDeliveryLocation(r.delivery_location || ''); setDeliveryGeo(r.delivery_geo || '')
+      setVatRequired(r.vat_invoice_required ?? true); setHideIdentity(r.hide_identity ?? true)
+      setNearbyOnly(!!r.nearby_only); setTargetRegions(Array.isArray(r.target_regions) ? r.target_regions : []); setVerifiedOnly(!!r.verified_only)
+      if (r.estimated_value) setEstimatedValue(String(r.estimated_value))
+      setNotes(r.notes || '')
+      setStep(2)
+    })
+  }, [user])
+
   // حفظ الطلب الحالي كمسودة (بلا نشر) — لا يظهر للموردين ولا يُحتسب ضمن الحد اليومي
   async function saveDraft() {
     if (!user) return

@@ -157,10 +157,18 @@ export default function OrderDetailPage() {
         {/* Actions - hidden in print */}
         <div className="flex items-center justify-between mt-4 print:hidden">
           <Link href="/contractor" className="text-sm text-gray-500 hover:text-gray-700">← رجوع للوحة التحكم</Link>
-          <button onClick={handlePrint}
-            className="bg-[#1B2D5B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0f1d3d] transition-colors">
-            🖨️ طباعة أمر الشراء
-          </button>
+          <div className="flex items-center gap-2">
+            {offer?.rfq_id && (
+              <Link href={`/contractor/rfq/new?from=${offer.rfq_id}`}
+                className="border border-[#1B2D5B] text-[#1B2D5B] px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#1B2D5B]/5 transition-colors">
+                🔁 أعد الطلب
+              </Link>
+            )}
+            <button onClick={handlePrint}
+              className="bg-[#1B2D5B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0f1d3d] transition-colors">
+              🖨️ طباعة أمر الشراء
+            </button>
+          </div>
         </div>
 
         {/* Purchase Order Document */}
