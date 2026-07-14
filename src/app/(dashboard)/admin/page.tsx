@@ -259,16 +259,13 @@ export default function AdminPanel() {
   }
 
   async function resolveDispute(offerId: string) {
-    const resolution = prompt('ملخص حل النزاع (يظهر للطرفين):')
+    const resolution = prompt('ملخص حل النزاع (يظهر للطرفين ويصلهما إشعار):')
     if (resolution === null) return
     setActionLoading('disp-' + offerId)
     const supabase = createClient()
-    await supabase.from('offers').update({
-      dispute_status: 'resolved',
-      dispute_resolution: resolution || 'تم الحل بالتوافق',
-      dispute_resolved_at: new Date().toISOString(),
-    }).eq('id', offerId)
-    setMsg('✓ تم حل النزاع')
+    // عبر RPC خاصّ بالإدارة: يوثّق الحل ويُشعِر الطرفين (إشعار داخلي + web-push).
+    const { error } = await supabase.rpc('admin_resolve_dispute', { p_offer_id: offerId, p_resolution: resolution || '' })
+    setMsg(error ? ('تعذّر حل النزاع: ' + (error.message || 'خطأ')) : '✓ تم حل النزاع وإشعار الطرفين')
     setTimeout(() => setMsg(''), 3000)
     await loadData()
     setActionLoading('')
