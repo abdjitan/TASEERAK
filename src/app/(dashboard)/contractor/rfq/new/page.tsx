@@ -281,7 +281,8 @@ export default function NewRFQPage() {
     setQuantity(String(it.quantity)); setUnit(it.unit || ''); setDraftTiers(it.supplier_tiers || [])
     setInStockOnly(it.in_stock || false); setMaxDeliveryDays(it.max_days ? String(it.max_days) : ''); setSpecFile(it.specFileObj || null)
     const known = getGroupedProducts(it.sector).some((g: any) => g.items.includes(it.product_name))
-    setSpecification(''); setGroup(''); setProductSearch(''); setManualEntry(!known)
+    // احفظ المواصفة الحرّة عند التعديل (كانت تُمسح → فقدان بيانات، خصوصاً عند إعادة الطلب)
+    setSpecification(it.specification || ''); setGroup(''); setProductSearch(''); setManualEntry(!known)
     setItems(prev => prev.filter((_: any, idx: any) => idx !== i))
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }

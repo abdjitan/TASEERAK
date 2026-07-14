@@ -115,8 +115,7 @@ export async function middleware(request: NextRequest) {
     let home = '/contractor'
     try {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      const role = profile?.role || (user.user_metadata as any)?.role
-      home = role === 'admin' ? '/admin' : role === 'supplier' ? '/supplier/dashboard' : '/contractor'
+      home = profile?.role === 'admin' ? '/admin' : profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
     } catch {}
     return redirectTo(new URL(home, request.url))
   }
@@ -133,8 +132,7 @@ export async function middleware(request: NextRequest) {
   // vice-versa (previously client-side only). Admin may view both.
   if (user && (matches('/contractor') || matches('/supplier'))) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    // احتياطي من JWT: قراءة الملف قد تُرجع null بُعيد التسجيل مباشرة — لا نترك مورّداً على صفحة مقاول
-    const role = profile?.role || (user.user_metadata as any)?.role
+    const role = profile?.role
     if (role === 'supplier' && matches('/contractor')) return redirectTo(new URL('/supplier/dashboard', request.url))
     if (role === 'contractor' && matches('/supplier')) return redirectTo(new URL('/contractor', request.url))
   }
