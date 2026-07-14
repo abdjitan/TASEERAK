@@ -230,19 +230,22 @@ export default function SupplierDashboard() {
       dir={dir}
     >
       <div className="max-w-6xl mx-auto">
-        {/* أكمل ملفك — يظهر بعد التسجيل المبسّط حتى تُعبّأ القطاعات/التخصصات/الموقع */}
+        {/* بوابة إكمال الملف — بارزة؛ بدونها لا تصل أي طلبات. باقي التنبيهات مخفيّة حتى الإكمال (لتفادي التشتيت). */}
         {profile && !profile.region && (
-          <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 text-white hover:shadow-lg transition-shadow" style={{ background: 'linear-gradient(120deg,#F5831F,#d96f15)' }}>
-            <div>
-              <div className="font-extrabold text-sm">👋 {locale === 'en' ? 'Complete your profile' : locale === 'ur' ? 'اپنی پروفائل مکمل کریں' : 'أكمل ملفك'}</div>
-              <div className="text-[12px] text-orange-50 mt-0.5">{locale === 'en' ? 'Add your sectors, specialties and location to appear to contractors and receive matching requests.' : locale === 'ur' ? 'ٹھیکیداروں کو نظر آنے کے لیے اپنے شعبے، مہارتیں اور مقام شامل کریں۔' : 'أضف قطاعاتك وتخصصاتك وموقعك لتظهر للمقاولين وتصلك الطلبات المطابقة.'}</div>
+          <Link href="/onboarding" className="block rounded-2xl p-5 mb-4 border-2 hover:shadow-lg transition-all" style={{ borderColor: '#F5831F', background: 'linear-gradient(120deg,#fff7ed,#ffffff)' }}>
+            <div className="flex items-start gap-3">
+              <span className="text-3xl shrink-0">🔒</span>
+              <div className="flex-1">
+                <div className="font-extrabold text-sm" style={{ color: '#d96f15' }}>⚠️ {locale === 'en' ? 'Complete your profile to receive requests' : locale === 'ur' ? 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں' : 'أكمل ملفك لاستلام الطلبات'}</div>
+                <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{locale === 'en' ? "Without your location, sectors and specialties you won't appear to contractors and won't receive any matching requests. One minute is enough." : locale === 'ur' ? 'اپنے مقام، شعبوں اور مہارتوں کے بغیر آپ ٹھیکیداروں کو نظر نہیں آئیں گے اور کوئی مماثل درخواست موصول نہیں ہوگی۔' : 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمقاولين، ولن تصلك أي طلبات مطابقة. دقيقة واحدة تكفي.'}</div>
+                <span className="inline-block mt-2.5 text-sm font-bold text-white px-4 py-2 rounded-xl" style={{ background: '#F5831F' }}>{locale === 'en' ? 'Complete now →' : locale === 'ur' ? 'ابھی مکمل کریں ←' : 'أكمل ملفك الآن ←'}</span>
+              </div>
             </div>
-            <span className="shrink-0 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5">{locale === 'en' ? 'Complete →' : 'أكمل ←'}</span>
           </Link>
         )}
         <EnablePush variant="nudge" />
-        {/* Onboarding / liquidity prompts */}
-        {pricesCount === 0 && (
+        {/* تنبيهات ثانوية (أسعار/ضريبة/اشتراك) — بعد إكمال الملف فقط */}
+        {profile && profile.region && pricesCount === 0 && (
           <Link href="/supplier/prices" className="block mb-4 bg-gradient-to-l from-[#F5831F]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
             <div className="flex items-center gap-3">
               <span className="text-2xl">📈</span>
@@ -253,7 +256,7 @@ export default function SupplierDashboard() {
             </div>
           </Link>
         )}
-        {profile && !profile.vat_number && (
+        {profile && profile.region && !profile.vat_number && (
           <Link href="/settings" className="block mb-4 bg-[#F5831F]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
             <div className="flex items-center gap-3">
               <span className="text-2xl">🧾</span>
@@ -264,7 +267,7 @@ export default function SupplierDashboard() {
             </div>
           </Link>
         )}
-        {profile && !isSubscribed(profile) && (isLaunchFree(launchUntil) ? (
+        {profile && profile.region && !isSubscribed(profile) && (isLaunchFree(launchUntil) ? (
           <Link href="/supplier/subscription" className="block mb-4 rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0F6E56,#1B2D5B)' }}>
             <div className="flex items-center gap-3">
               <span className="text-2xl">🎉</span>
