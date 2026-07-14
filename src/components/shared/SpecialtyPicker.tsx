@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, sortGroupKeys, hydrateTaxonomy } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, SECTOR_PRODUCTS, sortGroupKeys, detectSubCategory, hydrateTaxonomy } from '@/types'
 import CatIcon from './CatIcon'
 import { productImageUrl } from '@/lib/productImage'
 
@@ -37,7 +37,7 @@ export default function SpecialtyPicker({
   renderSectorExtra?: (sector: string) => React.ReactNode
   removeLabel?: string
 }) {
-  const [, setReady] = useState(0)
+  const [ver, setReady] = useState(0)
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -48,6 +48,19 @@ export default function SpecialtyPicker({
     })()
     return () => { cancelled = true }
   }, [])
+
+  // صورة لكل تخصص: أول منتج حقيقي (له صورة كتالوج) يُصنّف لهذا التخصص — ربط تلقائي بلا جدول يدوي.
+  const repProduct = useMemo(() => {
+    const m: Record<string, Record<string, string>> = {}
+    for (const sector of Object.keys(SECTOR_LABELS)) {
+      m[sector] = {}
+      for (const p of ((SECTOR_PRODUCTS as any)[sector] || [])) {
+        const sk = detectSubCategory(p, sector as any)
+        if (sk && !m[sector][sk]) m[sector][sk] = p
+      }
+    }
+    return m
+  }, [ver])
 
   const sl = (s: string) => locale === 'ar' ? (SECTOR_LABELS as any)[s] : (SECTOR_TR[s]?.[locale] || (SECTOR_LABELS as any)[s])
   const rm = removeLabel || (locale === 'en' ? 'Remove' : locale === 'ur' ? 'ہٹائیں' : 'إزالة')
@@ -103,7 +116,7 @@ export default function SpecialtyPicker({
                             <button key={key} type="button" onClick={() => onToggleSpecialty(key)}
                               className={`flex flex-col items-center gap-1.5 text-center px-2 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${active ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
                               style={active ? { background: color } : {}}>
-                              <img src={productImageUrl(productNameForImage(sub.ar))} alt="" loading="lazy"
+                              <img src={productImageUrl(repProduct[sector]?.[key] || productNameForImage(sub.ar))} alt="" loading="lazy"
                                 onError={(e: any) => { e.currentTarget.style.display = 'none'; const s = e.currentTarget.nextElementSibling as HTMLElement | null; if (s) s.style.display = 'block' }}
                                 className="w-full object-contain rounded-lg bg-white" style={{ height: 54 }} />
                               <span className="text-3xl leading-none" style={{ display: 'none' }}>{sub.icon}</span>
