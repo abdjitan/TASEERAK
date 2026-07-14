@@ -11,6 +11,7 @@ import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, sortGroupKeys } from '@/types'
 import { detectSpecialtiesFromText } from '@/lib/classify'
 import CatIcon from '@/components/shared/CatIcon'
+import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
@@ -242,102 +243,20 @@ export default function SpecialtiesPage() {
           </div>
         )}
 
-        {/* Step 1: Sectors */}
+        {/* اختيار القطاعات + التخصصات — منتقي موحّد مع «أكمل ملفك» (نفس التصنيفات والأيقونات) */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
           <h2 className="font-bold mb-4 text-sm" style={{ color: '#1B2D5B' }}>{T.selectSectors}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {Object.keys(SECTOR_LABELS).map(s => (
-              <button key={s} onClick={() => toggleSector(s)}
-                className={`p-4 rounded-xl border-2 text-center transition-all hover:-translate-y-0.5 ${
-                  mySectors.includes(s) ? 'border-current' : 'border-gray-200'
-                }`}
-                style={mySectors.includes(s) ? { borderColor: (SECTOR_COLORS as any)[s], background: (SECTOR_COLORS as any)[s] + '0d' } : {}}>
-                <div className="w-11 h-11 mx-auto mb-2 rounded-xl grid place-items-center shadow-sm" style={{ background: (SECTOR_COLORS as any)[s] }}>
-                  <CatIcon k={s} className="w-6 h-6 text-white" />
-                </div>
-                <div className="text-sm font-semibold" style={{ color: mySectors.includes(s) ? (SECTOR_COLORS as any)[s] : '#374151' }}>
-                  {(SECTOR_LABELS as any)[s]}
-                </div>
-              </button>
-            ))}
-          </div>
+          <SpecialtyPicker
+            sectors={mySectors} specialties={mySpecialties}
+            openSector={openSector} onOpenSector={setOpenSector}
+            onToggleSector={toggleSector} onToggleSpecialty={toggleSpecialty}
+            locale={locale} dir={dir}
+          />
         </div>
 
-        {/* Step 2: Sub-categories per selected sector */}
-        {mySectors.length === 0 ? (
-          <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center text-gray-400 text-sm">
+        {mySectors.length === 0 && (
+          <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center text-gray-400 text-sm">
             {T.noSectors}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {mySectors.map(sector => {
-              const subs = (SUB_CATEGORIES as any)[sector] || {}
-              const selectedInSector = Object.keys(subs).filter(k => mySpecialties.includes(k)).length
-              // تجميع التخصصات تحت مجموعاتها
-              const groups: Record<string, string[]> = {}
-              Object.entries(subs).forEach(([key, sub]: any) => {
-                if (!groups[sub.group]) groups[sub.group] = []
-                groups[sub.group].push(key)
-              })
-              return (
-                <div key={sector} className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
-                  <button type="button" onClick={() => setOpenSector(openSector === sector ? null : sector)} className="w-full flex items-center justify-between mb-4">
-                    <h3 className="font-bold flex items-center gap-2" style={{ color: (SECTOR_COLORS as any)[sector] }}>
-                      <span className="text-xl">{(SECTOR_ICONS as any)[sector]}</span>
-                      {(SECTOR_LABELS as any)[sector]}
-                    </h3>
-                    <span className="flex items-center gap-2 text-xs text-gray-400">{selectedInSector} {T.selected} <span className="text-sm">{openSector === sector ? '▲' : '▼'}</span></span>
-                  </button>
-
-                  {/* المجموعات — تظهر فقط للقطاع المفتوح (واحد في المرة) */}
-                  {openSector === sector && (
-                  <div className="space-y-4">
-                    {sortGroupKeys(Object.keys(groups)).map((groupKey) => {
-                      const keys = groups[groupKey]
-                      const grp = (GROUP_LABELS as any)[groupKey]
-                      const selectedInGroup = keys.filter(k => mySpecialties.includes(k)).length
-                      return (
-                        <div key={groupKey} className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
-                          {/* عنوان المجموعة */}
-                          <div className="flex items-center gap-2 mb-2.5">
-                            <span className="w-[18px] h-[18px] grid place-items-center shrink-0" style={{ color: (SECTOR_COLORS as any)[sector] }}><CatIcon k={groupKey} className="w-[18px] h-[18px]" /></span>
-                            <span className="text-sm font-bold text-gray-700">
-                              {grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey}
-                            </span>
-                            {selectedInGroup > 0 && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: (SECTOR_COLORS as any)[sector] }}>
-                                {selectedInGroup}
-                              </span>
-                            )}
-                          </div>
-                          {/* التخصصات الدقيقة (المستوى الثالث) */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {keys.map(key => {
-                              const sub = subs[key]
-                              return (
-                                <button key={key} onClick={() => toggleSpecialty(key)}
-                                  className={`flex items-center gap-2.5 p-2.5 rounded-lg border-2 text-right transition-all bg-white ${
-                                    mySpecialties.includes(key) ? 'border-current' : 'border-gray-200 hover:border-gray-300'
-                                  }`}
-                                  style={mySpecialties.includes(key) ? { borderColor: (SECTOR_COLORS as any)[sector], background: (SECTOR_COLORS as any)[sector] + '0d' } : {}}>
-                                  <span className="text-lg">{sub.icon}</span>
-                                  <span className={`text-xs font-semibold flex-1 leading-tight ${mySpecialties.includes(key) ? '' : 'text-gray-700'}`}
-                                    style={mySpecialties.includes(key) ? { color: (SECTOR_COLORS as any)[sector] } : {}}>
-                                    {locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar}
-                                  </span>
-                                  {mySpecialties.includes(key) && <span style={{ color: (SECTOR_COLORS as any)[sector] }}>✓</span>}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  )}
-                </div>
-              )
-            })}
           </div>
         )}
 

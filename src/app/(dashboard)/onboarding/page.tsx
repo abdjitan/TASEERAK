@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import PageLoader from '@/components/shared/PageLoader'
 import DistrictField from '@/components/shared/DistrictField'
-import CatIcon from '@/components/shared/CatIcon'
+import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, getRegionLabel, CITIES_BY_REGION, sortGroupKeys, type Sector } from '@/types'
 
@@ -111,7 +111,14 @@ export default function OnboardingPage() {
     })()
   }, [])
 
-  function toggleSector(s: string) { setSectors(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]) }
+  function toggleSector(s: string) {
+    if (sectors.includes(s)) {
+      const subKeys = Object.keys((SUB_CATEGORIES as any)[s] || {})
+      setSpecialties(prev => prev.filter(x => !subKeys.includes(x)))
+      setExtraMaterials(prev => prev.filter(m => m.sector !== s))
+      setSectors(prev => prev.filter(x => x !== s))
+    } else setSectors(prev => [...prev, s])
+  }
   function toggleSpecialty(k: string) { setSpecialties(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k]) }
   function addExtraMaterial(sector: string) {
     const v = extraMaterialInput.trim()
@@ -220,90 +227,37 @@ export default function OnboardingPage() {
 
           {/* المورّد: أكورديون قطاع → تخصصاته + مواد إضافية */}
           {role === 'supplier' && (
-            <div className="space-y-2 mt-4">
-              {(Object.keys(SECTOR_LABELS) as string[]).map((sector: any) => {
-                const selected = sectors.includes(sector)
-                const isOpen = openSector === sector
-                const subs = (SUB_CATEGORIES as any)[sector] || {}
-                const subKeys = Object.keys(subs)
-                const selCount = specialties.filter(s => subKeys.includes(s)).length
-                const color = SECTOR_COLORS[sector]
-                const sectorMats = extraMaterials.filter(m => m.sector === sector)
-                const groups: Record<string, string[]> = {}
-                Object.entries(subs).forEach(([key, sub]: any) => { (groups[sub.group] = groups[sub.group] || []).push(key) })
-                return (
-                  <div key={sector} className={`rounded-xl border-2 overflow-hidden transition-all ${selected ? 'border-[#F5831F]' : 'border-gray-200'}`}>
-                    <div onClick={() => { if (!selected) toggleSector(sector); setOpenSector(isOpen ? null : sector) }}
-                      className={`w-full flex items-center justify-between p-3.5 cursor-pointer ${selected ? 'bg-[#F5831F]/5' : 'hover:bg-gray-50'}`}>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm" style={{ color: selected ? color : '#374151' }}>{sl(sector)}</span>
-                        {selCount > 0 && <span className="text-[10px] font-bold text-white rounded-full px-2 py-0.5" style={{ background: color }}>{selCount}</span>}
+            <div className="mt-4">
+              <SpecialtyPicker
+                sectors={sectors} specialties={specialties}
+                openSector={openSector} onOpenSector={setOpenSector}
+                onToggleSector={toggleSector} onToggleSpecialty={toggleSpecialty}
+                locale={locale} dir={dir} removeLabel={t.remove}
+                renderSectorExtra={(sector) => {
+                  const sectorMats = extraMaterials.filter(m => m.sector === sector)
+                  return (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="text-[11px] font-bold text-gray-600 mb-1.5">{t.addMatTitle}</div>
+                      <div className="flex gap-2">
+                        <input type="text" value={extraMaterialInput} onChange={(e: any) => setExtraMaterialInput(e.target.value)}
+                          onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
+                          className="input-field flex-1" placeholder={t.addMatPh} />
+                        <button type="button" onClick={() => addExtraMaterial(sector)} className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#1B2D5B' }}>{t.addMatBtn}</button>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {selected && (
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setSpecialties(prev => prev.filter(s => !subKeys.includes(s))); setExtraMaterials(prev => prev.filter(m => m.sector !== sector)); toggleSector(sector); if (isOpen) setOpenSector(null) }}
-                            className="text-[11px] text-red-400 hover:text-red-600">{t.remove}</button>
-                        )}
-                        <span className="text-gray-400 text-xs">{isOpen ? '▲' : '▼'}</span>
-                      </div>
-                    </div>
-                    {isOpen && (
-                      <div className="p-3 border-t border-gray-100 bg-white">
-                        {sortGroupKeys(Object.keys(groups)).map((groupKey: any) => {
-                          const keys = groups[groupKey]
-                          const grp = (GROUP_LABELS as any)[groupKey]
-                          const grpLabel = grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey
-                          const selInGroup = keys.filter((k: any) => specialties.includes(k)).length
-                          return (
-                            <div key={groupKey} className="mb-3 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                              <div className="flex items-center gap-2 mb-2.5">
-                                <span className="w-[18px] h-[18px] grid place-items-center shrink-0" style={{ color }}><CatIcon k={groupKey} className="w-[18px] h-[18px]" /></span>
-                                <span className="text-sm font-bold text-gray-700">{grpLabel}</span>
-                                {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: color }}>{selInGroup}</span>}
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {keys.map((key: any) => {
-                                  const sub = subs[key]
-                                  const active = specialties.includes(key)
-                                  const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
-                                  return (
-                                    <button key={key} type="button" onClick={() => toggleSpecialty(key)}
-                                      className={`flex items-center gap-2.5 p-2.5 rounded-lg border-2 transition-all bg-white ${active ? 'border-current' : 'border-gray-200 hover:border-gray-300'}`}
-                                      style={{ textAlign: dir === 'rtl' ? 'right' : 'left', ...(active ? { borderColor: color, background: color + '0d' } : {}) }}>
-                                      <span className="text-lg">{sub.icon}</span>
-                                      <span className="text-xs font-semibold flex-1 leading-tight" style={active ? { color } : { color: '#374151' }}>{subLabel}</span>
-                                      {active && <span style={{ color }}>✓</span>}
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          )
-                        })}
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <div className="text-[11px] font-bold text-gray-600 mb-1.5">{t.addMatTitle}</div>
-                          <div className="flex gap-2">
-                            <input type="text" value={extraMaterialInput} onChange={(e: any) => setExtraMaterialInput(e.target.value)}
-                              onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
-                              className="input-field flex-1" placeholder={t.addMatPh} />
-                            <button type="button" onClick={() => addExtraMaterial(sector)} className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#1B2D5B' }}>{t.addMatBtn}</button>
-                          </div>
-                          {sectorMats.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {sectorMats.map((m: any) => (
-                                <span key={m.name} className="inline-flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-2.5 py-1.5">
-                                  {m.name}
-                                  <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => !(x.name === m.name && x.sector === sector)))} className="text-amber-500 hover:text-amber-800 font-bold leading-none">×</button>
-                                </span>
-                              ))}
-                            </div>
-                          )}
+                      {sectorMats.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {sectorMats.map((m: any) => (
+                            <span key={m.name} className="inline-flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                              {m.name}
+                              <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => !(x.name === m.name && x.sector === sector)))} className="text-amber-500 hover:text-amber-800 font-bold leading-none">×</button>
+                            </span>
+                          ))}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+                      )}
+                    </div>
+                  )
+                }}
+              />
             </div>
           )}
         </div>

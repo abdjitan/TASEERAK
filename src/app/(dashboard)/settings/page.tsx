@@ -215,6 +215,10 @@ export default function SettingsPage() {
     // Note: name (company_name_*) and classification (supplier_tier / contractor_grade)
     // are LOCKED — they change only via an approved request, enforced by a DB trigger.
     const updateData: any = { phone, region, city, vat_number: vatNumber || null, district: district || null, preferred_language: prefLang }
+    // اسم الشركة قابل للتعديل حتى التوثيق (المُشغّل يقفله بعده)
+    if (!(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') && companyAr.trim()) {
+      updateData.company_name_ar = companyAr.trim()
+    }
     if (profile?.role === 'supplier') {
       updateData.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
       // إذا اختار رقم مختلف نخزّنه، وإلا نُفرّغه ليُستخدم رقم الجوال تلقائياً بعد الترسية
@@ -401,8 +405,12 @@ export default function SettingsPage() {
                 <form onSubmit={saveProfile} className="space-y-5">
                   <div className={companyEn ? 'grid grid-cols-2 gap-4' : ''}>
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} 🔒</label>
-                      <div className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? '🔒' : ''}</label>
+                      {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? (
+                        <div className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
+                      ) : (
+                        <input value={companyAr} onChange={e => setCompanyAr(e.target.value)} className="input-field" placeholder={locale === 'en' ? 'Company / business name' : 'اسم الشركة أو النشاط'} />
+                      )}
                     </div>
                     {companyEn && (
                       <div>
@@ -412,9 +420,13 @@ export default function SettingsPage() {
                     )}
                   </div>
                   <div className="-mt-3">
-                    {pendingFor('name')
-                      ? <p className="text-[11px] text-amber-600">⏳ طلب تغيير الاسم قيد مراجعة الإدارة (إلى «{pendingFor('name').new_value}»).</p>
-                      : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#1B2D5B' }}>🔒 الاسم ثابت لارتباطه بالسجل التجاري — اطلب تعديله</button>}
+                    {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? (
+                      pendingFor('name')
+                        ? <p className="text-[11px] text-amber-600">⏳ طلب تغيير الاسم قيد مراجعة الإدارة (إلى «{pendingFor('name').new_value}»).</p>
+                        : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#1B2D5B' }}>🔒 الاسم ثابت لارتباطه بالسجل التجاري — اطلب تعديله</button>
+                    ) : (
+                      <p className="text-[11px] text-gray-400">✏️ {locale === 'en' ? 'You can edit your company name until your account is verified.' : 'يمكنك تعديل اسم الشركة حتى يتم توثيق حسابك، ثم يُقفل.'}</p>
+                    )}
                   </div>
 
                   <div>
