@@ -18,7 +18,9 @@ function LoginForm() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
   const searchParams = useSearchParams()
+  const [mode, setMode] = useState<'email' | 'phone'>('email')
   const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -93,6 +95,26 @@ function LoginForm() {
     setLoading(true); setError(''); setStatus(t.s_auth); setProgress(18)
     const supabase = createClient()
     try {
+      // تسجيل الدخول بالجوال: مسار خادمي يحوّل الرقم→الحساب ويضبط الجلسة (البريد لا يُكشف).
+      if (mode === 'phone') {
+        if (!/^05[0-9]{8}$/.test(phone)) { setError(t.error); setLoading(false); setStatus(''); setProgress(0); return }
+        const res = await withTimeout(fetch('/api/auth/phone-login', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, password, captchaToken: captchaToken || undefined }),
+        }), 15000, 'signin')
+        const j = await res.json().catch(() => ({}))
+        if (!res.ok || !j?.ok) {
+          captchaRef.current?.reset(); setCaptchaToken('')
+          setError(j?.error === 'captcha' ? t.captchaErr : t.error)
+          setLoading(false); setStatus(''); setProgress(0); return
+        }
+        setStatus(t.s_go); setProgress(100)
+        const role = j.role || 'contractor'
+        const next = searchParams.get('next')
+        const fallback = (role !== 'admin' && !j.region) ? '/onboarding' : roleHome(role)
+        window.location.href = safeRedirect(next, fallback)
+        return
+      }
       // STEP 1/3 — authenticate (with a hard 15s ceiling so it can never hang)
       const { data, error: err } = await withTimeout(
         supabase.auth.signInWithPassword({ email, password, options: { captchaToken: captchaToken || undefined } }), 15000, 'signin'
@@ -184,10 +206,32 @@ function LoginForm() {
             {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in">⚠️ {error}</div>}
 
             <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.email}</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="name@company.com" autoComplete="username" required disabled={loading} />
+              {/* اختيار طريقة الدخول */}
+              <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-gray-100">
+                {[
+                  { k: 'email', label: locale === 'en' ? '📧 Email' : locale === 'ur' ? '📧 ای میل' : '📧 البريد' },
+                  { k: 'phone', label: locale === 'en' ? '📱 Phone' : locale === 'ur' ? '📱 فون' : '📱 الجوال' },
+                ].map(o => (
+                  <button key={o.k} type="button" onClick={() => { setMode(o.k as any); setError('') }}
+                    className={`py-2 rounded-lg text-sm font-bold transition-all ${mode === o.k ? 'bg-white text-navy shadow-sm' : 'text-gray-500'}`}>
+                    {o.label}
+                  </button>
+                ))}
               </div>
+              {mode === 'email' ? (
+                <div>
+                  <label className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.email}</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="name@company.com" autoComplete="username" required disabled={loading} />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-[13px] font-bold text-ink-2 mb-1.5">{locale === 'en' ? 'Phone (WhatsApp)' : locale === 'ur' ? 'فون (واٹس ایپ)' : 'رقم الجوال (واتساب)'}</label>
+                  <input type="tel" inputMode="numeric" dir="ltr" maxLength={10} value={phone}
+                    onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                    className="input-field" placeholder="05XXXXXXXX" autoComplete="tel" required disabled={loading} />
+                  <p className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? '🔑 OTP login is coming soon.' : locale === 'ur' ? '🔑 OTP لاگ اِن جلد آ رہا ہے۔' : '🔑 تسجيل الدخول برمز OTP قريباً.'}</p>
+                </div>
+              )}
               <div>
                 <label className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.password}</label>
                 <div className="relative">
