@@ -62,9 +62,10 @@ function LoginForm() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: p } = await supabase.from('profiles').select('role, region').eq('id', user.id).single()
+        const role = p?.role || (user.user_metadata as any)?.role
         const next = searchParams.get('next')
         // مستخدم جديد لم يُكمل ملفه (لا منطقة) → «أكمل ملفك»
-        const fallback = (p?.role !== 'admin' && !p?.region) ? '/onboarding' : roleHome(p?.role)
+        const fallback = (role !== 'admin' && !p?.region) ? '/onboarding' : roleHome(role)
         window.location.href = safeRedirect(next, fallback)
         return
       }
@@ -106,7 +107,7 @@ function LoginForm() {
 
       // STEP 2/3 — read role (don't block login if it stalls; fall back gracefully)
       setStatus(t.s_role); setProgress(62)
-      let role = 'contractor'
+      let role = (data.session.user.user_metadata as any)?.role || 'contractor'
       let region: string | null = null
       try {
         const { data: p } = await withTimeout(

@@ -90,9 +90,12 @@ export default function OnboardingPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUid(session.user.id)
+      // الدور المرجعي من JWT (user_metadata) — دائم الوجود ولا يعتمد على قراءة قد تتأخّر
+      // بعد التسجيل مباشرة. نستخدم قراءة الملف للتفاصيل فقط، والميتاداتا احتياطياً للدور.
+      const metaRole = (session.user.user_metadata as any)?.role
       const { data: p } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade').eq('id', session.user.id).single()
+      setRole(((p?.role || metaRole) === 'supplier') ? 'supplier' : 'contractor')
       if (p) {
-        setRole(p.role === 'supplier' ? 'supplier' : 'contractor')
         setRegion(p.region || ''); setCity(p.city || ''); setDistrict(p.district || '')
         if (p.supplier_tier) setSupplierTier(p.supplier_tier)
         if (p.min_order_value) setMinOrderValue(String(p.min_order_value))
