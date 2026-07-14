@@ -16,6 +16,12 @@ const SECTOR_TR: Record<string, any> = {
   equipment: { en: 'Machinery', ur: 'مشینری' }, supply_store: { en: 'Supply Store', ur: 'سپلائی اسٹور' },
 }
 
+// اسم منتج مرشّح لصورة الكتالوج: نجرّد الوصف بين الأقواس ونأخذ أول جزء قبل «/».
+// (صور الكتالوج مولّدة على أسماء المنتجات، والتخصص فئة أوسع — لذا هذه أفضل محاولة، وإلا الإيموجي.)
+function productNameForImage(arName: string): string {
+  return String(arName || '').replace(/\s*\(.*?\)\s*/g, ' ').split('/')[0].trim()
+}
+
 export default function SpecialtyPicker({
   sectors, specialties, openSector, onOpenSector, onToggleSector, onToggleSpecialty,
   locale, dir, renderSectorExtra, removeLabel,
@@ -87,22 +93,21 @@ export default function SpecialtyPicker({
                         <span className="text-sm font-bold text-gray-700">{grpLabel}</span>
                         {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: color }}>{selInGroup}</span>}
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {keys.map((key: any) => {
                           const sub = subs[key]
                           const active = specialties.includes(key)
                           const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
+                          // بطاقة عمودية بصورة المنتج بالأعلى (نفس نمط صفحة المقاول)؛ الإيموجي احتياطي.
                           return (
                             <button key={key} type="button" onClick={() => onToggleSpecialty(key)}
-                              className={`flex items-center gap-2.5 p-2.5 rounded-lg border-2 transition-all bg-white ${active ? 'border-current' : 'border-gray-200 hover:border-gray-300'}`}
-                              style={{ textAlign: dir === 'rtl' ? 'right' : 'left', ...(active ? { borderColor: color, background: color + '0d' } : {}) }}>
-                              {/* صورة المنتج (نفس صور صفحة إنشاء الطلب)؛ ترجع للإيموجي إن تعذّرت */}
-                              <img src={productImageUrl(key)} alt="" loading="lazy"
-                                onError={(e: any) => { e.currentTarget.style.display = 'none'; const s = e.currentTarget.nextElementSibling; if (s) s.style.display = 'inline' }}
-                                className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" />
-                              <span className="text-lg" style={{ display: 'none' }}>{sub.icon}</span>
-                              <span className="text-xs font-semibold flex-1 leading-tight" style={active ? { color } : { color: '#374151' }}>{subLabel}</span>
-                              {active && <span style={{ color }}>✓</span>}
+                              className={`flex flex-col items-center gap-1.5 text-center px-2 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${active ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
+                              style={active ? { background: color } : {}}>
+                              <img src={productImageUrl(productNameForImage(sub.ar))} alt="" loading="lazy"
+                                onError={(e: any) => { e.currentTarget.style.display = 'none'; const s = e.currentTarget.nextElementSibling as HTMLElement | null; if (s) s.style.display = 'block' }}
+                                className="w-full object-contain rounded-lg bg-white" style={{ height: 54 }} />
+                              <span className="text-3xl leading-none" style={{ display: 'none' }}>{sub.icon}</span>
+                              <span className="leading-tight flex items-center gap-1 justify-center">{active && <span>✓</span>}{subLabel}</span>
                             </button>
                           )
                         })}

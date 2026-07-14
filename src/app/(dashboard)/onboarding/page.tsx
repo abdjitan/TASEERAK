@@ -175,7 +175,7 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-extrabold text-navy">{t.title}</h1>
           <p className="text-ink-2 mt-2 text-sm">{role === 'supplier' ? t.subS : t.subC}</p>
