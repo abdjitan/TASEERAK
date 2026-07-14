@@ -12,3 +12,10 @@ export function productImageUrl(name: string): string {
   if (!base || !name) return ''
   return `${base}/storage/v1/object/public/product-images/catalog/${productSlug(name)}.png`
 }
+
+// صورة مخصّصة لتخصص المورّد (بمفتاح التخصص) — مولّدة ومرفوعة على product-images/specialty/.
+export function specialtyImageUrl(subKey: string): string {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  if (!base || !subKey) return ''
+  return `${base}/storage/v1/object/public/product-images/specialty/${subKey}.png`
+}

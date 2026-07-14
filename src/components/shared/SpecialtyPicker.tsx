@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, SECTOR_PRODUCTS, sortGroupKeys, detectSubCategory, hydrateTaxonomy } from '@/types'
 import CatIcon from './CatIcon'
-import { productImageUrl } from '@/lib/productImage'
+import { productImageUrl, specialtyImageUrl } from '@/lib/productImage'
 
 // منتقي القطاعات/التخصصات الموحّد — يُستخدم في «أكمل ملفك» وصفحة «تخصصاتي» معاً حتى تكون
 // التجربة والأيقونات واحدة. يُرطّب التصنيفات من قاعدة البيانات (get_taxonomy) ويُعيد الرسم،
@@ -116,8 +116,14 @@ export default function SpecialtyPicker({
                             <button key={key} type="button" onClick={() => onToggleSpecialty(key)}
                               className={`flex flex-col items-center gap-1.5 text-center px-2 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${active ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
                               style={active ? { background: color } : {}}>
-                              <img src={productImageUrl(repProduct[sector]?.[key] || productNameForImage(sub.ar))} alt="" loading="lazy"
-                                onError={(e: any) => { e.currentTarget.style.display = 'none'; const s = e.currentTarget.nextElementSibling as HTMLElement | null; if (s) s.style.display = 'block' }}
+                              {/* صورة التخصص المخصّصة أولاً، ثم صورة منتج ممثّل، ثم الإيموجي */}
+                              <img src={specialtyImageUrl(key)} alt="" loading="lazy"
+                                data-fb={productImageUrl(repProduct[sector]?.[key] || productNameForImage(sub.ar))}
+                                onError={(e: any) => {
+                                  const el = e.currentTarget
+                                  if (!el.dataset.triedFb) { el.dataset.triedFb = '1'; const fb = el.getAttribute('data-fb'); if (fb) { el.src = fb; return } }
+                                  el.style.display = 'none'; const s = el.nextElementSibling as HTMLElement | null; if (s) s.style.display = 'block'
+                                }}
                                 className="w-full object-contain rounded-lg bg-white" style={{ height: 54 }} />
                               <span className="text-3xl leading-none" style={{ display: 'none' }}>{sub.icon}</span>
                               <span className="leading-tight flex items-center gap-1 justify-center">{active && <span>✓</span>}{subLabel}</span>
