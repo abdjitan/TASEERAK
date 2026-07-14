@@ -102,7 +102,11 @@ export default function SpecialtyPicker({
                   return (
                     <div key={groupKey} className="mb-3 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
                       <div className="flex items-center gap-2 mb-2.5">
-                        <span className="w-[18px] h-[18px] grid place-items-center shrink-0" style={{ color }}><CatIcon k={groupKey} className="w-[18px] h-[18px]" /></span>
+                        {/* أيقونة المجموعة = صورة مصغّرة لأول تخصص فيها (متناسقة مع البطاقات، بدل SVG القديم) */}
+                        <img src={specialtyImageUrl(keys[0])} alt="" loading="lazy"
+                          data-fb={productImageUrl(repProduct[sector]?.[keys[0]] || productNameForImage((subs[keys[0]] || {}).ar || ''))}
+                          onError={(e: any) => { const el = e.currentTarget; if (!el.dataset.triedFb) { el.dataset.triedFb = '1'; const fb = el.getAttribute('data-fb'); if (fb) { el.src = fb; return } } el.style.display = 'none' }}
+                          className="w-7 h-7 object-contain rounded-md bg-white border border-gray-100 shrink-0" />
                         <span className="text-sm font-bold text-gray-700">{grpLabel}</span>
                         {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: color }}>{selInGroup}</span>}
                       </div>
