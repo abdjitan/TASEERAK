@@ -19,3 +19,10 @@ export function specialtyImageUrl(subKey: string): string {
   if (!base || !subKey) return ''
   return `${base}/storage/v1/object/public/product-images/specialty/${subKey}.png`
 }
+
+// أيقونة مميّزة لمجموعة تصنيفية — مولّدة على product-images/group/.
+export function groupImageUrl(groupKey: string): string {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  if (!base || !groupKey) return ''
+  return `${base}/storage/v1/object/public/product-images/group/${groupKey}.png`
+}

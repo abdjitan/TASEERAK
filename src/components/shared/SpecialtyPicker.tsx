@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, SECTOR_PRODUCTS, sortGroupKeys, detectSubCategory, hydrateTaxonomy } from '@/types'
 import CatIcon from './CatIcon'
-import { productImageUrl, specialtyImageUrl } from '@/lib/productImage'
+import { productImageUrl, specialtyImageUrl, groupImageUrl } from '@/lib/productImage'
 
 // منتقي القطاعات/التخصصات الموحّد — يُستخدم في «أكمل ملفك» وصفحة «تخصصاتي» معاً حتى تكون
 // التجربة والأيقونات واحدة. يُرطّب التصنيفات من قاعدة البيانات (get_taxonomy) ويُعيد الرسم،
@@ -101,8 +101,11 @@ export default function SpecialtyPicker({
                   const selInGroup = keys.filter((k: any) => specialties.includes(k)).length
                   return (
                     <div key={groupKey} className="mb-3 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                      {/* ترويسة المجموعة: شريط لوني + العنوان فقط — بلا أيقونة مكرّرة */}
-                      <div className="flex items-center gap-2 mb-2.5 ps-2 border-s-4 rounded-sm" style={{ borderColor: color }}>
+                      {/* ترويسة المجموعة: أيقونة مميّزة مولّدة للمجموعة (بلا صورة مكرّرة) */}
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <img src={groupImageUrl(groupKey)} alt="" loading="lazy"
+                          onError={(e: any) => { e.currentTarget.style.display = 'none' }}
+                          className="w-7 h-7 object-contain rounded-md bg-white border border-gray-100 shrink-0" />
                         <span className="text-sm font-bold text-gray-700">{grpLabel}</span>
                         {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: color }}>{selInGroup}</span>}
                       </div>
