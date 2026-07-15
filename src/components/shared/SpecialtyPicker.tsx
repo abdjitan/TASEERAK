@@ -77,10 +77,14 @@ export default function SpecialtyPicker({
         const groups: Record<string, string[]> = {}
         Object.entries(subs).forEach(([key, sub]: any) => { (groups[sub.group] = groups[sub.group] || []).push(key) })
         return (
-          <div key={sector} className={`rounded-xl border-2 overflow-hidden transition-all ${selected ? 'border-[#F5831F]' : 'border-gray-200'}`}>
+          <div key={sector}
+            className={`rounded-xl border overflow-hidden transition-all bg-white ${selected ? 'border-line shadow-md2' : 'border-gray-200 hover:border-[#cfd7e6]'}`}
+            style={selected ? { borderInlineStartWidth: 4, borderInlineStartStyle: 'solid', borderInlineStartColor: color } : {}}>
             <div onClick={() => { if (!selected) onToggleSector(sector); onOpenSector(isOpen ? null : sector) }}
-              className={`w-full flex items-center justify-between p-3.5 cursor-pointer ${selected ? 'bg-[#F5831F]/5' : 'hover:bg-gray-50'}`}>
+              className={`w-full flex items-center justify-between p-3.5 min-h-[48px] cursor-pointer transition-colors ${selected ? '' : 'hover:bg-gray-50'}`}
+              style={selected ? { background: color + '0F' } : {}}>
               <div className="flex items-center gap-2">
+                {selected && <span className="w-5 h-5 grid place-items-center rounded-full text-white text-[11px] shrink-0" style={{ background: color }}>✓</span>}
                 <span className="font-semibold text-sm" style={{ color: selected ? color : '#374151' }}>{sl(sector)}</span>
                 {selCount > 0 && <span className="text-[10px] font-bold text-white rounded-full px-2 py-0.5" style={{ background: color }}>{selCount}</span>}
               </div>

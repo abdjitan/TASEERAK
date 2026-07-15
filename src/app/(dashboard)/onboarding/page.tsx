@@ -18,6 +18,8 @@ const SECTOR_TR: Record<string, any> = {
   electrical: { en: 'Electrical', ur: 'برقی' }, mechanical: { en: 'Mechanical', ur: 'مکینیکل' },
   equipment: { en: 'Machinery', ur: 'مشینری' }, supply_store: { en: 'Supply Store', ur: 'سپلائی اسٹور' },
 }
+// نفس ألوان المنتقي (SpecialtyPicker) — لإبراز القطاع المحدّد بلونه الخاص بهدوء بدل البرتقالي الصاخب.
+const SECTOR_COLORS: Record<string, string> = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 const TR = {
   ar: {
@@ -183,7 +185,27 @@ export default function OnboardingPage() {
   const cardCls = 'bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100'
 
   return (
-    <div className="min-h-screen bg-canvas" dir={dir}>
+    <div className="min-h-screen relative isolate" dir={dir}
+      style={{
+        backgroundColor: '#f5f7fb',
+        backgroundImage:
+          'radial-gradient(1100px 520px at 100% -8%, rgba(27,45,91,0.07), rgba(27,45,91,0) 60%),' +
+          'radial-gradient(900px 480px at -6% 108%, rgba(245,131,31,0.05), rgba(245,131,31,0) 55%),' +
+          'linear-gradient(180deg, #eef2f8 0%, #f5f7fb 34%, #f5f7fb 100%)',
+        backgroundAttachment: 'fixed',
+      }}>
+      {/* طبقة زخرفية خفيفة: شبكة + نقاط كحلية باهتة تعطي إحساساً «مرتّباً» — CSS خالص بلا أصول */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(27,45,91,0.035) 1px, transparent 1px),' +
+            'linear-gradient(90deg, rgba(27,45,91,0.035) 1px, transparent 1px),' +
+            'radial-gradient(rgba(27,45,91,0.05) 1px, transparent 1.5px)',
+          backgroundSize: '38px 38px, 38px 38px, 38px 38px',
+          backgroundPosition: '0 0, 0 0, 19px 19px',
+          WebkitMaskImage: 'linear-gradient(180deg, transparent 0, #000 120px, #000 76%, transparent 100%)',
+          maskImage: 'linear-gradient(180deg, transparent 0, #000 120px, #000 76%, transparent 100%)',
+        }} />
       <header className="bg-white/90 backdrop-blur border-b border-line sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href={roleHome} className="flex items-center gap-2">
@@ -205,7 +227,7 @@ export default function OnboardingPage() {
 
         <div className="lg:flex lg:gap-6 lg:items-start">
           {/* ═══ العمود الرئيسي ═══ */}
-          <div className="flex-1 min-w-0 space-y-4">
+          <div className="flex-1 min-w-0 space-y-4 pb-28 lg:pb-0">
             {/* الموقع (مطلوب) */}
             <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#1B2D5B' }}>
               <div className="flex items-center justify-between mb-3">
@@ -246,13 +268,17 @@ export default function OnboardingPage() {
 
               {role !== 'supplier' && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-                  {(Object.keys(SECTOR_LABELS) as string[]).map((sector: any) => (
-                    <button key={sector} type="button" onClick={() => toggleSector(sector)}
-                      className={`p-4 rounded-xl border-2 transition-all ${sectors.includes(sector) ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-[#F5831F]/40'}`}
-                      style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}>
-                      <div className="font-semibold text-sm text-navy">{sl(sector)}</div>
-                    </button>
-                  ))}
+                  {(Object.keys(SECTOR_LABELS) as string[]).map((sector: any) => {
+                    const c = SECTOR_COLORS[sector]; const on = sectors.includes(sector)
+                    return (
+                      <button key={sector} type="button" onClick={() => toggleSector(sector)}
+                        className={`relative p-4 rounded-xl border transition-all bg-white ${on ? 'border-line shadow-md2' : 'border-gray-200 hover:border-[#cfd7e6]'}`}
+                        style={{ textAlign: dir === 'rtl' ? 'right' : 'left', ...(on ? { borderInlineStartWidth: 4, borderInlineStartStyle: 'solid', borderInlineStartColor: c, background: c + '0F' } : {}) }}>
+                        <div className="font-semibold text-sm text-navy">{sl(sector)}</div>
+                        {on && <span className="absolute top-2 w-4 h-4 grid place-items-center rounded-full text-white text-[9px]" style={{ background: c, insetInlineEnd: '0.5rem' }}>✓</span>}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
 
@@ -303,8 +329,8 @@ export default function OnboardingPage() {
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   {[{ key: 'manufacturer', label: t.manufacturer }, { key: 'commercial', label: t.commercial }, { key: 'local', label: t.local }].map((tier: any) => (
                     <button key={tier.key} type="button" onClick={() => setSupplierTier(tier.key)}
-                      className={`p-3 rounded-xl border-2 text-center transition-all ${supplierTier === tier.key ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <div className={`text-xs font-bold ${supplierTier === tier.key ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</div>
+                      className={`p-3 rounded-xl border text-center transition-all ${supplierTier === tier.key ? 'border-navy bg-navy/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                      <div className={`text-xs font-bold ${supplierTier === tier.key ? 'text-navy' : 'text-gray-700'}`}>{tier.label}</div>
                     </button>
                   ))}
                 </div>
@@ -349,12 +375,6 @@ export default function OnboardingPage() {
             )}
 
             {err && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{err}</div>}
-
-            {/* أزرار الموبايل (السايدبار مخفي على الشاشات الصغيرة) */}
-            <div className="lg:hidden flex gap-3 pt-2">
-              <a href={roleHome} className="btn-ghost flex-1 text-center">{t.later}</a>
-              <div className="flex-1"><SaveBtn /></div>
-            </div>
           </div>
 
           {/* ═══ السايدبار: التقدّم + الحفظ (ديسكتوب) ═══ */}
@@ -394,6 +414,31 @@ export default function OnboardingPage() {
               <a href={roleHome} className="block text-center text-xs text-blue-200 hover:text-white mt-2.5">{t.later}</a>
             </div>
           </aside>
+        </div>
+      </div>
+
+      {/* ═══ شريط الحفظ الثابت — موبايل/تابلت فقط (الديسكتوب لديه سايدبار لاصق) ═══ */}
+      <div className="lg:hidden fixed inset-x-0 bottom-0 z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="bg-white/95 backdrop-blur border-t border-line" style={{ boxShadow: '0 -8px 24px -12px rgba(15,27,52,.18)' }}>
+          {/* شريط تقدّم رفيع */}
+          <div className="h-1 w-full bg-canvas-2">
+            <div className="h-full transition-all duration-300" style={{ width: pct + '%', background: pct === 100 ? '#22c55e' : '#F5831F' }} />
+          </div>
+          <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center gap-3">
+            {/* النسبة + عدّاد الخطوات */}
+            <div className="shrink-0 leading-tight">
+              <div className="text-[15px] font-extrabold text-navy">{pct}%</div>
+              <div className="text-[10px] text-ink-3">{steps.filter(s => s.done).length}/{steps.length} · {t.progress}</div>
+            </div>
+            {/* لاحقاً (ثانوي) */}
+            <a href={roleHome} className="shrink-0 text-xs font-semibold text-ink-2 px-3 py-2 rounded-xl border border-line hover:border-navy hover:text-navy transition-colors">{t.later}</a>
+            {/* حفظ — الزر الأساسي الوحيد ذو البرتقالي القوي على الموبايل */}
+            <button type="button" onClick={save} disabled={saving || !canSave}
+              className="flex-1 py-3 rounded-xl font-bold text-sm transition-all disabled:cursor-not-allowed"
+              style={{ background: canSave ? '#F5831F' : '#cbd2e0', color: canSave ? '#fff' : '#7c8496', boxShadow: canSave ? '0 12px 30px -8px rgba(245,131,31,.5)' : 'none' }}>
+              {saving ? t.saving : t.save}
+            </button>
+          </div>
         </div>
       </div>
     </div>
