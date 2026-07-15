@@ -7,13 +7,12 @@ import PageLoader from '@/components/shared/PageLoader'
 import DistrictField from '@/components/shared/DistrictField'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
-import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, getRegionLabel, CITIES_BY_REGION, sortGroupKeys, type Sector } from '@/types'
+import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGION } from '@/types'
 
-// ── أكمل ملفك (Progressive profiling) ─────────────────────────────────────
-// تُعبّأ هنا البيانات التي نُقلت خارج التسجيل: الموقع + القطاعات + (للمقاول: الدرجة)
+// ── إعداد ملفك التجاري (Progressive profiling) ────────────────────────────
+// تُعبّأ هنا البيانات المنقولة خارج التسجيل: الموقع + القطاعات + (للمقاول: الدرجة)
 // + (للمورّد: التخصصات + التصنيف + الحد الأدنى). التوثيق (السجل/المستندات) في الإعدادات.
 // كل الجداول يديرها المستخدم لنفسه عبر RLS (profile_id = auth.uid()).
-const SECTOR_COLORS: Record<string, string> = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 const SECTOR_TR: Record<string, any> = {
   civil: { en: 'Civil', ur: 'سول' }, architectural: { en: 'Architectural', ur: 'تعمیراتی' },
   electrical: { en: 'Electrical', ur: 'برقی' }, mechanical: { en: 'Mechanical', ur: 'مکینیکل' },
@@ -22,43 +21,55 @@ const SECTOR_TR: Record<string, any> = {
 
 const TR = {
   ar: {
-    title: 'أكمل ملفك', subC: 'أضف موقعك ومجالات عملك لتصلك أفضل العروض', subS: 'أضف موقعك وتخصصاتك لتظهر للمقاولين وتصلك الطلبات المطابقة',
+    title: 'إعداد ملفك التجاري', subC: 'أضف موقعك ومجالات عملك لتصلك أفضل العروض', subS: 'أضف موقعك وتخصصاتك لتظهر للمقاولين وتصلك الطلبات المطابقة',
     location: 'الموقع', region: 'المنطقة', selectRegion: '-- اختر --', city: 'المدينة', district: 'الحي',
-    sectorsC: 'القطاعات التي تعمل فيها', sectorsS: 'اختر قطاعاتك ثم حدّد المواد التي توردها بالضبط',
-    classTitle: 'تصنيف شركتك', classHint: 'يساعد المقاولين على إيجادك حسب حجم طلباتهم',
+    sectorsTitleC: 'قطاعات عملك', sectorsHintC: 'اختر القطاعات التي تعمل فيها',
+    sectorsTitleS: 'تخصصاتك والمواد', sectorsHintS: 'اختر قطاعاتك ثم حدّد ما توردّه بالضبط',
+    classTitle: 'تصنيف شركتك', classHint: 'مصنع = مورّد رئيسي للمشاريع الكبرى · تجاري = وسيط ومستودع · محلي = موزّع صغير. اختر الأنسب لعملك.',
     manufacturer: 'مصنع / مورد رئيسي', commercial: 'مورد تجاري', local: 'مورد محلي',
-    minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000 — اتركه فارغاً لاستقبال كل الطلبات',
-    gradeTitle: 'درجة تصنيف شركتك', gradeSub: 'وزارة الشؤون البلدية — اختياري',
-    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'التوثيق (السجل التجاري + المستندات) يفتح لك استقبال الطلبات وتقديم العروض المسعّرة.', verifyCta: 'انتقل للتوثيق ←',
-    addMatTitle: 'تبيع مادة غير موجودة بالقائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
+    minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات — أو حدّده ليُفلتر الطلبات حسب قدرتك التوريدية.',
+    gradeTitle: 'درجة تصنيف شركتك', gradeSub: 'من رخصتك (وزارة الشؤون البلدية) — يستخدمها الموردون لفلترة الطلبات حسب حجم المشروع. اختياري.',
+    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'يتطلب استقبال الطلبات وتقديم العروض المسعّرة توثيق سجلك التجاري ومستنداتك.', verifyCta: 'أكمل التوثيق ←',
+    addMatTitle: 'لا تجد مادة توردّها بالقائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
     save: 'حفظ ومتابعة ←', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
     needLoc: 'اختر المنطقة والمدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك ✓',
+    progress: 'اكتمال ملفك', stepLocation: 'الموقع', stepSectors: 'القطاعات', stepSpecialties: 'التخصصات', stepVerify: 'التوثيق (لاحقاً)',
+    warn: 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمقاولين ولن تصلك أي طلبات مطابقة.',
+    company: 'ملف الشركة', required: 'مطلوب', optional: 'اختياري',
   },
   en: {
-    title: 'Complete your profile', subC: 'Add your location and work areas to get the best offers', subS: 'Add your location and specialties to appear to contractors and receive matching requests',
+    title: 'Set up your business profile', subC: 'Add your location and work areas to get the best offers', subS: 'Add your location and specialties to appear to contractors and receive matching requests',
     location: 'Location', region: 'Region', selectRegion: '-- Select --', city: 'City', district: 'District',
-    sectorsC: 'Sectors you work in', sectorsS: 'Select your sectors then pick exactly what you supply',
-    classTitle: 'Company classification', classHint: 'Helps contractors find you by order size',
+    sectorsTitleC: 'Your sectors', sectorsHintC: 'Select the sectors you work in',
+    sectorsTitleS: 'Specialties & materials', sectorsHintS: 'Select your sectors then pick exactly what you supply',
+    classTitle: 'Company classification', classHint: 'Factory = major project supplier · Commercial = wholesaler/warehouse · Local = small distributor. Pick what fits.',
     manufacturer: 'Factory / Major Supplier', commercial: 'Commercial Supplier', local: 'Local Supplier',
-    minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000 — leave empty for all requests',
-    gradeTitle: 'Company grade', gradeSub: 'Ministry of Municipal Affairs — optional',
-    verifyTitle: 'Verify your business', verifyBody: 'Verification (CR + documents) unlocks receiving requests and submitting priced offers.', verifyCta: 'Go to verification →',
-    addMatTitle: 'Selling a material not in the list?', addMatPh: 'Material name...', addMatBtn: 'Add', remove: 'Remove',
+    minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
+    gradeTitle: 'Company grade', gradeSub: 'From your license (Ministry of Municipal Affairs) — suppliers use it to filter by project size. Optional.',
+    verifyTitle: 'Verify your business', verifyBody: 'Receiving requests and submitting priced offers requires verifying your CR and documents.', verifyCta: 'Complete verification →',
+    addMatTitle: "Can't find a material you supply?", addMatPh: 'Material name...', addMatBtn: 'Add', remove: 'Remove',
     save: 'Save & continue →', saving: 'Saving...', later: 'Later', selected: 'selected',
     needLoc: 'Select region and city', needSector: 'Select at least one sector', saved: 'Profile saved ✓',
+    progress: 'Profile completion', stepLocation: 'Location', stepSectors: 'Sectors', stepSpecialties: 'Specialties', stepVerify: 'Verification (later)',
+    warn: "Without your location, sectors and specialties you won't appear to contractors and won't receive any matching requests.",
+    company: 'Company profile', required: 'Required', optional: 'Optional',
   },
   ur: {
-    title: 'اپنی پروفائل مکمل کریں', subC: 'بہترین آفرز کے لیے اپنا مقام اور کام کے شعبے شامل کریں', subS: 'ٹھیکیداروں کو نظر آنے کے لیے اپنا مقام اور مہارتیں شامل کریں',
+    title: 'اپنی کاروباری پروفائل ترتیب دیں', subC: 'بہترین آفرز کے لیے اپنا مقام اور کام کے شعبے شامل کریں', subS: 'ٹھیکیداروں کو نظر آنے اور مماثل درخواستیں وصول کرنے کے لیے مقام اور مہارتیں شامل کریں',
     location: 'مقام', region: 'علاقہ', selectRegion: '-- منتخب کریں --', city: 'شہر', district: 'علاقہ',
-    sectorsC: 'وہ شعبے جہاں آپ کام کرتے ہیں', sectorsS: 'اپنے شعبے منتخب کریں پھر بالکل وہی چنیں جو فراہم کرتے ہیں',
-    classTitle: 'کمپنی کی درجہ بندی', classHint: 'ٹھیکیداروں کو آرڈر سائز کے مطابق تلاش میں مدد',
+    sectorsTitleC: 'آپ کے شعبے', sectorsHintC: 'وہ شعبے منتخب کریں جہاں آپ کام کرتے ہیں',
+    sectorsTitleS: 'مہارتیں اور مواد', sectorsHintS: 'اپنے شعبے منتخب کریں پھر بالکل وہی چنیں جو فراہم کرتے ہیں',
+    classTitle: 'کمپنی کی درجہ بندی', classHint: 'فیکٹری = بڑا سپلائر · تجارتی = ہول سیلر · مقامی = چھوٹا ڈسٹری بیوٹر۔ مناسب منتخب کریں۔',
     manufacturer: 'فیکٹری / بڑا سپلائر', commercial: 'تجارتی سپلائر', local: 'مقامی سپلائر',
-    minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000',
-    gradeTitle: 'کمپنی کا درجہ', gradeSub: 'وزارت بلدیات — اختیاری',
-    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'تصدیق (CR + دستاویزات) درخواستیں وصول کرنے اور قیمت والی آفرز دینے کو کھولتی ہے۔', verifyCta: 'تصدیق پر جائیں →',
+    minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
+    gradeTitle: 'کمپنی کا درجہ', gradeSub: 'آپ کے لائسنس سے — سپلائرز پروجیکٹ سائز کے مطابق فلٹر کرتے ہیں۔ اختیاری۔',
+    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'درخواستیں وصول کرنے اور قیمت والی آفرز دینے کے لیے CR اور دستاویزات کی تصدیق ضروری ہے۔', verifyCta: 'تصدیق مکمل کریں →',
     addMatTitle: 'فہرست میں کوئی مواد نہیں؟', addMatPh: 'مواد کا نام...', addMatBtn: 'شامل کریں', remove: 'ہٹائیں',
     save: 'محفوظ کریں اور جاری رکھیں →', saving: 'محفوظ ہو رہا ہے...', later: 'بعد میں', selected: 'منتخب',
     needLoc: 'علاقہ اور شہر منتخب کریں', needSector: 'کم از کم ایک شعبہ منتخب کریں', saved: 'پروفائل محفوظ ✓',
+    progress: 'پروفائل تکمیل', stepLocation: 'مقام', stepSectors: 'شعبے', stepSpecialties: 'مہارتیں', stepVerify: 'تصدیق (بعد میں)',
+    warn: 'مقام، شعبوں اور مہارتوں کے بغیر آپ ٹھیکیداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔',
+    company: 'کمپنی پروفائل', required: 'ضروری', optional: 'اختیاری',
   },
 }
 
@@ -90,8 +101,6 @@ export default function OnboardingPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUid(session.user.id)
-      // الدور المرجعي من JWT (user_metadata) — دائم الوجود ولا يعتمد على قراءة قد تتأخّر
-      // بعد التسجيل مباشرة. نستخدم قراءة الملف للتفاصيل فقط، والميتاداتا احتياطياً للدور.
       const metaRole = (session.user.user_metadata as any)?.role
       const { data: p } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade').eq('id', session.user.id).single()
       setRole(((p?.role || metaRole) === 'supplier') ? 'supplier' : 'contractor')
@@ -137,15 +146,11 @@ export default function OnboardingPage() {
       if (role === 'supplier') { update.supplier_tier = supplierTier; update.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0 }
       if (role === 'contractor') update.contractor_grade = contractorGrade || null
       await supabase.from('profiles').update(update).eq('id', uid)
-
-      // مزامنة القطاعات: احذف الحالي ثم أدرِج المختار (RLS: profile_id = auth.uid())
       await supabase.from('profile_sectors').delete().eq('profile_id', uid)
       if (sectors.length) await supabase.from('profile_sectors').insert(sectors.map(s => ({ profile_id: uid, sector: s })))
-
       if (role === 'supplier') {
         await supabase.from('profile_specialties').delete().eq('profile_id', uid)
         if (specialties.length) await supabase.from('profile_specialties').insert(specialties.map(k => ({ profile_id: uid, specialty: k })))
-        // مواد غير مدرجة → للمراجعة الإدارية
         for (const m of extraMaterials) {
           try { await supabase.from('material_requests').insert({ supplier_id: uid, name: m.name }) } catch {}
         }
@@ -160,10 +165,27 @@ export default function OnboardingPage() {
   if (loading) return <PageLoader />
   const roleHome = role === 'supplier' ? '/supplier/dashboard' : '/contractor'
 
+  // ── التقدّم ──
+  const steps = role === 'supplier'
+    ? [{ label: t.stepLocation, done: !!(region && city) }, { label: t.stepSectors, done: sectors.length > 0 }, { label: t.stepSpecialties, done: specialties.length > 0 }]
+    : [{ label: t.stepLocation, done: !!(region && city) }, { label: t.stepSectors, done: sectors.length > 0 }]
+  const pct = Math.round((steps.filter(s => s.done).length / steps.length) * 100)
+  const canSave = !!(region && city) && sectors.length > 0
+  const ringC = 2 * Math.PI * 24
+
+  const SaveBtn = ({ full }: { full?: boolean }) => (
+    <button type="button" onClick={save} disabled={saving || !canSave}
+      className={`${full ? 'w-full' : 'w-full'} py-3 rounded-xl font-bold text-white text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
+      style={{ background: canSave ? '#F5831F' : '#9ca3af' }}>
+      {saving ? t.saving : t.save}
+    </button>
+  )
+  const cardCls = 'bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100'
+
   return (
     <div className="min-h-screen bg-canvas" dir={dir}>
       <header className="bg-white/90 backdrop-blur border-b border-line sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href={roleHome} className="flex items-center gap-2">
             <span className="w-9 h-9 rounded-xl bg-white border border-line grid place-items-center"><img src="/logo.png" alt="تسعيرك" className="w-7 h-7 object-contain" /></span>
             <span className="font-extrabold text-navy text-lg">تسعير<span className="text-orange">ك</span></span>
@@ -175,148 +197,203 @@ export default function OnboardingPage() {
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="text-center mb-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 lg:py-8">
+        <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-navy">{t.title}</h1>
-          <p className="text-ink-2 mt-2 text-sm">{role === 'supplier' ? t.subS : t.subC}</p>
+          <p className="text-ink-2 mt-1.5 text-sm">{role === 'supplier' ? t.subS : t.subC}</p>
         </div>
 
-        {/* ── الموقع ── */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-4">
-          <h2 className="text-sm font-bold text-navy mb-3">📍 {t.location}</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">{t.region} *</label>
-              <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field">
-                <option value="">{t.selectRegion}</option>
-                {REGIONS.map((r: any) => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">{t.city} *</label>
-              <select value={city} onChange={e => setCity(e.target.value)} className="input-field" disabled={!region}>
-                <option value="">{region ? t.selectRegion : '—'}</option>
-                {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
-              </select>
-            </div>
-          </div>
-          {city && (
-            <div className="mt-3">
-              <label className="block text-xs font-semibold text-gray-600 mb-1">{t.district}</label>
-              <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
-            </div>
-          )}
-        </div>
-
-        {/* ── القطاعات / التخصصات ── */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-4">
-          <h2 className="text-sm font-bold text-navy mb-1">🧩 {role === 'supplier' ? t.sectorsS : t.sectorsC}</h2>
-
-          {/* المقاول: بطاقات قطاعات بسيطة */}
-          {role !== 'supplier' && (
-            <div className="grid grid-cols-2 gap-3 mt-4">
-              {(Object.keys(SECTOR_LABELS) as string[]).map((sector: any) => (
-                <button key={sector} type="button" onClick={() => toggleSector(sector)}
-                  className={`p-4 rounded-xl border-2 transition-all ${sectors.includes(sector) ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-[#F5831F]/40'}`}
-                  style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}>
-                  <div className="font-semibold text-sm text-navy">{sl(sector)}</div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* المورّد: أكورديون قطاع → تخصصاته + مواد إضافية */}
-          {role === 'supplier' && (
-            <div className="mt-4">
-              <SpecialtyPicker
-                sectors={sectors} specialties={specialties}
-                openSector={openSector} onOpenSector={setOpenSector}
-                onToggleSector={toggleSector} onToggleSpecialty={toggleSpecialty}
-                locale={locale} dir={dir} removeLabel={t.remove}
-                renderSectorExtra={(sector) => {
-                  const sectorMats = extraMaterials.filter(m => m.sector === sector)
-                  return (
-                    <div className="mt-3 pt-3 border-t border-gray-100">
-                      <div className="text-[11px] font-bold text-gray-600 mb-1.5">{t.addMatTitle}</div>
-                      <div className="flex gap-2">
-                        <input type="text" value={extraMaterialInput} onChange={(e: any) => setExtraMaterialInput(e.target.value)}
-                          onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
-                          className="input-field flex-1" placeholder={t.addMatPh} />
-                        <button type="button" onClick={() => addExtraMaterial(sector)} className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#1B2D5B' }}>{t.addMatBtn}</button>
-                      </div>
-                      {sectorMats.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {sectorMats.map((m: any) => (
-                            <span key={m.name} className="inline-flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-2.5 py-1.5">
-                              {m.name}
-                              <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => !(x.name === m.name && x.sector === sector)))} className="text-amber-500 hover:text-amber-800 font-bold leading-none">×</button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )
-                }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* ── تصنيف المورّد ── */}
-        {role === 'supplier' && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-4">
-            <h2 className="text-sm font-bold text-navy mb-1">🏭 {t.classTitle}</h2>
-            <p className="text-xs text-gray-500 mb-3">{t.classHint}</p>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {[{ key: 'manufacturer', label: t.manufacturer }, { key: 'commercial', label: t.commercial }, { key: 'local', label: t.local }].map((tier: any) => (
-                <button key={tier.key} type="button" onClick={() => setSupplierTier(tier.key)}
-                  className={`p-3 rounded-xl border-2 text-center transition-all ${supplierTier === tier.key ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <div className={`text-xs font-bold ${supplierTier === tier.key ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</div>
-                </button>
-              ))}
-            </div>
-            <label className="block text-xs font-bold text-gray-500 mb-1">{t.minOrder}</label>
-            <input type="number" value={minOrderValue} onChange={(e: any) => setMinOrderValue(e.target.value)} className="input-field" placeholder={t.minOrderPh} min="0" />
-          </div>
-        )}
-
-        {/* ── درجة المقاول ── */}
-        {role === 'contractor' && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-4">
-            <h2 className="text-sm font-bold text-navy mb-1">🏅 {t.gradeTitle}</h2>
-            <p className="text-xs text-gray-500 mb-3">{t.gradeSub}</p>
-            <div className="grid grid-cols-4 gap-2">
-              {[{ grade: 'A', label: locale === 'ar' ? 'أ' : 'A', desc: '> 100M', color: '#F5831F' }, { grade: 'B', label: locale === 'ar' ? 'ب' : 'B', desc: '30–100M', color: '#1B2D5B' }, { grade: 'C', label: locale === 'ar' ? 'ج' : 'C', desc: '5–30M', color: '#0F6E56' }, { grade: 'D', label: locale === 'ar' ? 'د' : 'D', desc: '< 5M', color: '#888780' }].map((g: any) => (
-                <button key={g.grade} type="button" onClick={() => setContractorGrade(contractorGrade === g.grade ? '' : g.grade)}
-                  className={`p-3 rounded-xl border-2 text-center transition-all ${contractorGrade === g.grade ? 'border-current' : 'border-gray-200 hover:border-gray-300'}`}
-                  style={contractorGrade === g.grade ? { borderColor: g.color, background: g.color + '10' } : {}}>
-                  <div className="text-xl font-black mb-0.5" style={{ color: g.color }}>{g.label}</div>
-                  <div className="text-[10px] text-gray-500">{g.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── التوثيق (للمورّد) — الرابط للإعدادات ── */}
-        {role === 'supplier' && (
-          <div className="rounded-2xl p-5 mb-4 border-2 border-dashed" style={{ borderColor: '#F5831F55', background: '#F5831F08' }}>
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">🛡️</span>
-              <div className="flex-1">
-                <div className="font-bold text-navy text-sm">{t.verifyTitle}</div>
-                <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t.verifyBody}</p>
-                <a href="/settings" className="inline-block mt-2 text-xs font-bold text-orange-dark hover:underline">{t.verifyCta}</a>
+        <div className="lg:flex lg:gap-6 lg:items-start">
+          {/* ═══ العمود الرئيسي ═══ */}
+          <div className="flex-1 min-w-0 space-y-4">
+            {/* الموقع (مطلوب) */}
+            <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#1B2D5B' }}>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-navy">📍 {t.location}</h2>
+                <span className="text-[10px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.region} *</label>
+                  <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field">
+                    <option value="">{t.selectRegion}</option>
+                    {REGIONS.map((r: any) => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.city} *</label>
+                  <select value={city} onChange={e => setCity(e.target.value)} className="input-field" disabled={!region}>
+                    <option value="">{region ? t.selectRegion : '—'}</option>
+                    {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
+                  </select>
+                </div>
+              </div>
+              {city && (
+                <div className="mt-3">
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.district}</label>
+                  <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
+                </div>
+              )}
+            </div>
+
+            {/* القطاعات / التخصصات (مطلوب) */}
+            <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#1B2D5B' }}>
+              <div className="flex items-center justify-between mb-0.5">
+                <h2 className="text-sm font-bold text-navy">🧩 {role === 'supplier' ? t.sectorsTitleS : t.sectorsTitleC}</h2>
+                <span className="text-[10px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
+              </div>
+              <p className="text-xs text-gray-500 mb-1">{role === 'supplier' ? t.sectorsHintS : t.sectorsHintC}</p>
+
+              {role !== 'supplier' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+                  {(Object.keys(SECTOR_LABELS) as string[]).map((sector: any) => (
+                    <button key={sector} type="button" onClick={() => toggleSector(sector)}
+                      className={`p-4 rounded-xl border-2 transition-all ${sectors.includes(sector) ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-[#F5831F]/40'}`}
+                      style={{ textAlign: dir === 'rtl' ? 'right' : 'left' }}>
+                      <div className="font-semibold text-sm text-navy">{sl(sector)}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {role === 'supplier' && (
+                <div className="mt-4">
+                  <SpecialtyPicker
+                    sectors={sectors} specialties={specialties}
+                    openSector={openSector} onOpenSector={setOpenSector}
+                    onToggleSector={toggleSector} onToggleSpecialty={toggleSpecialty}
+                    locale={locale} dir={dir} removeLabel={t.remove}
+                    renderSectorExtra={(sector) => {
+                      const sectorMats = extraMaterials.filter(m => m.sector === sector)
+                      return (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="text-[11px] font-bold text-gray-600 mb-1.5">{t.addMatTitle}</div>
+                          <div className="flex gap-2">
+                            <input type="text" value={extraMaterialInput} onChange={(e: any) => setExtraMaterialInput(e.target.value)}
+                              onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
+                              className="input-field flex-1" placeholder={t.addMatPh} />
+                            <button type="button" onClick={() => addExtraMaterial(sector)} className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#1B2D5B' }}>{t.addMatBtn}</button>
+                          </div>
+                          {sectorMats.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {sectorMats.map((m: any) => (
+                                <span key={m.name} className="inline-flex items-center gap-1.5 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                                  {m.name}
+                                  <button type="button" onClick={() => setExtraMaterials(prev => prev.filter(x => !(x.name === m.name && x.sector === sector)))} className="text-amber-500 hover:text-amber-800 font-bold leading-none">×</button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* ملف الشركة: التصنيف/الدرجة (اختياري) */}
+            {role === 'supplier' && (
+              <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-sm font-bold text-navy">🏭 {t.classTitle}</h2>
+                  <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{t.optional}</span>
+                </div>
+                <p className="text-xs text-gray-500 mb-3 leading-relaxed">{t.classHint}</p>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  {[{ key: 'manufacturer', label: t.manufacturer }, { key: 'commercial', label: t.commercial }, { key: 'local', label: t.local }].map((tier: any) => (
+                    <button key={tier.key} type="button" onClick={() => setSupplierTier(tier.key)}
+                      className={`p-3 rounded-xl border-2 text-center transition-all ${supplierTier === tier.key ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                      <div className={`text-xs font-bold ${supplierTier === tier.key ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</div>
+                    </button>
+                  ))}
+                </div>
+                <label className="block text-xs font-bold text-gray-500 mb-1">{t.minOrder}</label>
+                <input type="number" value={minOrderValue} onChange={(e: any) => setMinOrderValue(e.target.value)} className="input-field" placeholder={t.minOrderPh} min="0" />
+                <p className="text-[10px] text-gray-400 mt-1">{t.minOrderHint}</p>
+              </div>
+            )}
+
+            {role === 'contractor' && (
+              <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-sm font-bold text-navy">🏅 {t.gradeTitle}</h2>
+                  <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{t.optional}</span>
+                </div>
+                <p className="text-xs text-gray-500 mb-3 leading-relaxed">{t.gradeSub}</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {[{ grade: 'A', label: locale === 'ar' ? 'أ' : 'A', desc: '> 100M', color: '#F5831F' }, { grade: 'B', label: locale === 'ar' ? 'ب' : 'B', desc: '30–100M', color: '#1B2D5B' }, { grade: 'C', label: locale === 'ar' ? 'ج' : 'C', desc: '5–30M', color: '#0F6E56' }, { grade: 'D', label: locale === 'ar' ? 'د' : 'D', desc: '< 5M', color: '#888780' }].map((g: any) => (
+                    <button key={g.grade} type="button" onClick={() => setContractorGrade(contractorGrade === g.grade ? '' : g.grade)}
+                      className={`p-3 rounded-xl border-2 text-center transition-all ${contractorGrade === g.grade ? 'border-current' : 'border-gray-200 hover:border-gray-300'}`}
+                      style={contractorGrade === g.grade ? { borderColor: g.color, background: g.color + '10' } : {}}>
+                      <div className="text-xl font-black mb-0.5" style={{ color: g.color }}>{g.label}</div>
+                      <div className="text-[10px] text-gray-500">{g.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* التوثيق (للمورّد) — بوابة إيراد، بارزة */}
+            {role === 'supplier' && (
+              <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#F5831F', background: '#fff7ed', border: '1px solid #F5831F33' }}>
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl shrink-0">🛡️</span>
+                  <div className="flex-1">
+                    <div className="font-bold text-navy text-sm">{t.verifyTitle}</div>
+                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t.verifyBody}</p>
+                    <a href="/settings" className="inline-block mt-2 text-xs font-bold text-white px-3 py-1.5 rounded-lg" style={{ background: '#F5831F' }}>{t.verifyCta}</a>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {err && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{err}</div>}
+
+            {/* أزرار الموبايل (السايدبار مخفي على الشاشات الصغيرة) */}
+            <div className="lg:hidden flex gap-3 pt-2">
+              <a href={roleHome} className="btn-ghost flex-1 text-center">{t.later}</a>
+              <div className="flex-1"><SaveBtn /></div>
             </div>
           </div>
-        )}
 
-        {err && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 mb-4">{err}</div>}
+          {/* ═══ السايدبار: التقدّم + الحفظ (ديسكتوب) ═══ */}
+          <aside className="hidden lg:block w-80 shrink-0">
+            <div className="sticky top-24 rounded-2xl p-5 text-white shadow-lg" style={{ background: 'linear-gradient(160deg,#1B2D5B,#0f1d3d)' }}>
+              <div className="flex items-center gap-4 mb-4">
+                <svg width="60" height="60" viewBox="0 0 56 56" className="shrink-0">
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="6" />
+                  <circle cx="28" cy="28" r="24" fill="none" stroke={pct === 100 ? '#22c55e' : '#F5831F'} strokeWidth="6" strokeLinecap="round"
+                    strokeDasharray={ringC} strokeDashoffset={ringC * (1 - pct / 100)} transform="rotate(-90 28 28)" style={{ transition: 'stroke-dashoffset .4s' }} />
+                  <text x="28" y="33" textAnchor="middle" className="fill-white font-extrabold" style={{ fontSize: 15 }}>{pct}%</text>
+                </svg>
+                <div>
+                  <div className="text-sm font-extrabold">{t.progress}</div>
+                  <div className="text-[11px] text-blue-100 mt-0.5">{steps.filter(s => s.done).length}/{steps.length}</div>
+                </div>
+              </div>
 
-        <div className="flex gap-3">
-          <a href={roleHome} className="btn-ghost flex-1 text-center">{t.later}</a>
-          <button type="button" onClick={save} disabled={saving} className="btn-orange flex-1 disabled:opacity-50">{saving ? t.saving : t.save}</button>
+              <div className="space-y-2 mb-3">
+                {steps.map((s, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <span className={`w-5 h-5 grid place-items-center rounded-full text-[11px] shrink-0 ${s.done ? 'bg-emerald-500' : 'bg-white/15'}`}>{s.done ? '✓' : ''}</span>
+                    <span className={s.done ? 'text-white' : 'text-blue-200'}>{s.label}</span>
+                  </div>
+                ))}
+                {role === 'supplier' && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="w-5 h-5 grid place-items-center rounded-full text-[11px] shrink-0 bg-white/15">🛡</span>
+                    <span className="text-blue-200">{t.stepVerify}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="text-[11px] text-blue-50 bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed">⚠️ {t.warn}</div>
+
+              <SaveBtn full />
+              <a href={roleHome} className="block text-center text-xs text-blue-200 hover:text-white mt-2.5">{t.later}</a>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
