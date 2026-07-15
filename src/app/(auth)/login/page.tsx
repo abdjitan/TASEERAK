@@ -189,7 +189,10 @@ function LoginForm() {
       {/* ===== Form panel ===== */}
       <div className="flex-1 flex flex-col" style={{ background: 'var(--bg)' }}>
         <div className="flex items-center justify-between p-5">
-          <a href="/" className="text-sm font-semibold text-ink-2 hover:text-navy transition-colors">⌂ {t.home}</a>
+          <a href="/" className="flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-navy transition-colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10v10h5v-6h4v6h5V10" /></svg>
+            {t.home}
+          </a>
           <LanguageSwitcher variant="minimal" />
         </div>
 
@@ -203,17 +206,20 @@ function LoginForm() {
             <h1 className="text-[26px] font-extrabold text-navy mb-1">{t.welcome}</h1>
             <p className="text-ink-2 text-sm mb-6">{t.sub}</p>
 
-            {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in">⚠️ {error}</div>}
+            {error && <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg><span>{error}</span></div>}
 
             <form onSubmit={handleLogin} className="space-y-4">
               {/* اختيار طريقة الدخول */}
               <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-gray-100">
                 {[
-                  { k: 'email', label: locale === 'en' ? '📧 Email' : locale === 'ur' ? '📧 ای میل' : '📧 البريد' },
-                  { k: 'phone', label: locale === 'en' ? '📱 Phone' : locale === 'ur' ? '📱 فون' : '📱 الجوال' },
+                  { k: 'email', label: locale === 'en' ? 'Email' : locale === 'ur' ? 'ای میل' : 'البريد',
+                    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m3.5 7.5 8.5 5.5 8.5-5.5" /></svg> },
+                  { k: 'phone', label: locale === 'en' ? 'Phone' : locale === 'ur' ? 'فون' : 'الجوال',
+                    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]"><rect x="6.5" y="2" width="11" height="20" rx="2.5" /><path d="M11 18.5h2" /></svg> },
                 ].map(o => (
                   <button key={o.k} type="button" onClick={() => { setMode(o.k as any); setError('') }}
-                    className={`py-2 rounded-lg text-sm font-bold transition-all ${mode === o.k ? 'bg-white text-navy shadow-sm' : 'text-gray-500'}`}>
+                    className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${mode === o.k ? 'bg-white text-navy shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                    <span className={mode === o.k ? 'text-orange' : ''}>{o.icon}</span>
                     {o.label}
                   </button>
                 ))}
@@ -229,7 +235,7 @@ function LoginForm() {
                   <input type="tel" inputMode="numeric" dir="ltr" maxLength={10} value={phone}
                     onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
                     className="input-field" placeholder="05XXXXXXXX" autoComplete="tel" required disabled={loading} />
-                  <p className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? '🔑 OTP login is coming soon.' : locale === 'ur' ? '🔑 OTP لاگ اِن جلد آ رہا ہے۔' : '🔑 تسجيل الدخول برمز OTP قريباً.'}</p>
+                  <p className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 shrink-0"><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>{locale === 'en' ? 'OTP login is coming soon.' : locale === 'ur' ? 'OTP لاگ اِن جلد آ رہا ہے۔' : 'تسجيل الدخول برمز OTP قريباً.'}</p>
                 </div>
               )}
               <div>
