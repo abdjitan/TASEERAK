@@ -38,6 +38,9 @@ export default function SpecialtyPicker({
   removeLabel?: string
 }) {
   const [ver, setReady] = useState(0)
+  // طيّ الفئات داخل القطاع: تفتح مغلقة، والمستخدم يفتح الفئة التي يريدها فقط.
+  const [openGroups, setOpenGroups] = useState<Set<string>>(new Set())
+  const toggleGroup = (id: string) => setOpenGroups(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -97,47 +100,55 @@ export default function SpecialtyPicker({
               </div>
             </div>
             {isOpen && (
-              <div className="p-3 border-t border-gray-100 bg-white">
+              <div className="p-3 border-t border-gray-100 bg-white space-y-2">
                 {sortGroupKeys(Object.keys(groups)).map((groupKey: any) => {
                   const keys = groups[groupKey]
                   const grp = (GROUP_LABELS as any)[groupKey]
                   const grpLabel = grp ? (locale === 'en' ? grp.en : locale === 'ur' ? grp.ur : grp.ar) : groupKey
                   const selInGroup = keys.filter((k: any) => specialties.includes(k)).length
+                  const gid = `${sector}:${groupKey}`
+                  const gOpen = openGroups.has(gid)
                   return (
-                    <div key={groupKey} className="mb-3 bg-gray-50/50 rounded-xl p-3 border border-gray-100">
-                      {/* ترويسة المجموعة: أيقونة مميّزة مولّدة للمجموعة (بلا صورة مكرّرة) */}
-                      <div className="flex items-center gap-2 mb-2.5">
-                        <img src={groupImageUrl(groupKey)} alt="" loading="lazy"
-                          onError={(e: any) => { e.currentTarget.style.display = 'none' }}
-                          className="w-7 h-7 object-contain rounded-md bg-white border border-gray-100 shrink-0" />
-                        <span className="text-sm font-bold text-gray-700">{grpLabel}</span>
-                        {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white" style={{ background: color }}>{selInGroup}</span>}
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {keys.map((key: any) => {
-                          const sub = subs[key]
-                          const active = specialties.includes(key)
-                          const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
-                          // بطاقة عمودية بصورة المنتج بالأعلى (نفس نمط صفحة المقاول)؛ الإيموجي احتياطي.
-                          return (
-                            <button key={key} type="button" onClick={() => onToggleSpecialty(key)}
-                              className={`flex flex-col items-center gap-1.5 text-center px-2 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${active ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
-                              style={active ? { background: color } : {}}>
-                              {/* صورة التخصص المخصّصة أولاً، ثم صورة منتج ممثّل، ثم الإيموجي */}
-                              <img src={specialtyImageUrl(key)} alt="" loading="lazy"
-                                data-fb={productImageUrl(repProduct[sector]?.[key] || productNameForImage(sub.ar))}
-                                onError={(e: any) => {
-                                  const el = e.currentTarget
-                                  if (!el.dataset.triedFb) { el.dataset.triedFb = '1'; const fb = el.getAttribute('data-fb'); if (fb) { el.src = fb; return } }
-                                  el.style.display = 'none'; const s = el.nextElementSibling as HTMLElement | null; if (s) s.style.display = 'block'
-                                }}
-                                className="w-full object-contain rounded-lg bg-white" style={{ height: 54 }} />
-                              <span className="text-3xl leading-none" style={{ display: 'none' }}>{sub.icon}</span>
-                              <span className="leading-tight flex items-center gap-1 justify-center">{active && <span>✓</span>}{subLabel}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
+                    <div key={groupKey} className="rounded-xl border border-gray-100 overflow-hidden bg-gray-50/40">
+                      {/* ترويسة الفئة قابلة للطي — لا تُفتح كل الفئات دفعةً واحدة */}
+                      <button type="button" onClick={() => toggleGroup(gid)}
+                        className={`w-full flex items-center justify-between gap-2 p-2.5 min-h-[44px] transition-colors ${gOpen ? 'bg-white' : 'hover:bg-white/70'}`}>
+                        <span className="flex items-center gap-2 min-w-0">
+                          <img src={groupImageUrl(groupKey)} alt="" loading="lazy"
+                            onError={(e: any) => { e.currentTarget.style.display = 'none' }}
+                            className="w-7 h-7 object-contain rounded-md bg-white border border-gray-100 shrink-0" />
+                          <span className="text-sm font-bold text-gray-700 truncate">{grpLabel}</span>
+                          {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white shrink-0" style={{ background: color }}>{selInGroup}</span>}
+                        </span>
+                        <span className="text-gray-400 text-xs shrink-0">{gOpen ? '▲' : '▼'}</span>
+                      </button>
+                      {gOpen && (
+                        <div className="p-2.5 pt-1 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {keys.map((key: any) => {
+                            const sub = subs[key]
+                            const active = specialties.includes(key)
+                            const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
+                            // بطاقة عمودية بصورة المنتج بالأعلى (نفس نمط صفحة المقاول)؛ الإيموجي احتياطي.
+                            return (
+                              <button key={key} type="button" onClick={() => onToggleSpecialty(key)}
+                                className={`flex flex-col items-center gap-1.5 text-center px-2 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${active ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#F5831F]/50 bg-white'}`}
+                                style={active ? { background: color } : {}}>
+                                {/* صورة التخصص المخصّصة أولاً، ثم صورة منتج ممثّل، ثم الإيموجي */}
+                                <img src={specialtyImageUrl(key)} alt="" loading="lazy"
+                                  data-fb={productImageUrl(repProduct[sector]?.[key] || productNameForImage(sub.ar))}
+                                  onError={(e: any) => {
+                                    const el = e.currentTarget
+                                    if (!el.dataset.triedFb) { el.dataset.triedFb = '1'; const fb = el.getAttribute('data-fb'); if (fb) { el.src = fb; return } }
+                                    el.style.display = 'none'; const s = el.nextElementSibling as HTMLElement | null; if (s) s.style.display = 'block'
+                                  }}
+                                  className="w-full object-contain rounded-lg bg-white" style={{ height: 54 }} />
+                                <span className="text-3xl leading-none" style={{ display: 'none' }}>{sub.icon}</span>
+                                <span className="leading-tight flex items-center gap-1 justify-center">{active && <span>✓</span>}{subLabel}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
