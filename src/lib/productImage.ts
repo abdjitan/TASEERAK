@@ -1,5 +1,7 @@
-// رابط صورة المنتج المولّدة (مخزّنة على Supabase Storage/product-images/catalog).
-// الـslug = تجزئة djb2 على اسم المنتج — يطابق تماماً سكربت التوليد، فلا نحتاج جدول ربط.
+// روابط صور المنتجات/التخصصات/المجموعات (Supabase Storage/product-images).
+// الصور الأصلية 1024px (~1.2MB)، لكن نطلبها مصغّرة عبر خدمة تحويل الصور في Supabase
+// (render/image) بعرض مناسب لحجم العرض — تحميل أسرع بكثير، والمتصفح يستلم WebP تلقائياً.
+// الـslug = تجزئة djb2 على اسم المنتج — يطابق سكربت التوليد، فلا نحتاج جدول ربط.
 
 export function productSlug(name: string): string {
   let h = 5381
@@ -7,22 +9,26 @@ export function productSlug(name: string): string {
   return h.toString(16)
 }
 
+// نسخة مصغّرة (width ≈ ضعف حجم العرض لدقة الشاشات العالية) + جودة 70.
+function thumb(path: string, width: number): string {
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  if (!base || !path) return ''
+  return `${base}/storage/v1/render/image/public/product-images/${path}?width=${width}&quality=70`
+}
+
 export function productImageUrl(name: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  if (!base || !name) return ''
-  return `${base}/storage/v1/object/public/product-images/catalog/${productSlug(name)}.png`
+  if (!name) return ''
+  return thumb(`catalog/${productSlug(name)}.png`, 200)
 }
 
-// صورة مخصّصة لتخصص المورّد (بمفتاح التخصص) — مولّدة ومرفوعة على product-images/specialty/.
+// صورة مخصّصة لتخصص المورّد (بمفتاح التخصص) — على product-images/specialty/.
 export function specialtyImageUrl(subKey: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  if (!base || !subKey) return ''
-  return `${base}/storage/v1/object/public/product-images/specialty/${subKey}.png`
+  if (!subKey) return ''
+  return thumb(`specialty/${subKey}.png`, 200)
 }
 
-// أيقونة مميّزة لمجموعة تصنيفية — مولّدة على product-images/group/.
+// أيقونة مميّزة لمجموعة تصنيفية — على product-images/group/.
 export function groupImageUrl(groupKey: string): string {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  if (!base || !groupKey) return ''
-  return `${base}/storage/v1/object/public/product-images/group/${groupKey}.png`
+  if (!groupKey) return ''
+  return thumb(`group/${groupKey}.png`, 110)
 }
