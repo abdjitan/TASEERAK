@@ -9,11 +9,14 @@ export function productSlug(name: string): string {
   return h.toString(16)
 }
 
-// نسخة مصغّرة (width ≈ ضعف حجم العرض لدقة الشاشات العالية) + جودة 70.
-function thumb(path: string, width: number): string {
+// نسخة مصغّرة (size ≈ ضعف حجم العرض لدقة الشاشات العالية) + جودة 70.
+// مهم: خدمة التحويل في Supabase لا تحافظ على النسبة إذا مرّرنا width فقط — ترجّع
+// width×1024 (شريحة مشوّهة). صورنا كلها مربّعة (1024×1024)، فنطلب مربّعاً
+// (width=height) مع resize=contain لإبقاء الصورة كاملة بلا قصّ ولا تشويه.
+function thumb(path: string, size: number): string {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   if (!base || !path) return ''
-  return `${base}/storage/v1/render/image/public/product-images/${path}?width=${width}&quality=70`
+  return `${base}/storage/v1/render/image/public/product-images/${path}?width=${size}&height=${size}&resize=contain&quality=70`
 }
 
 export function productImageUrl(name: string): string {
