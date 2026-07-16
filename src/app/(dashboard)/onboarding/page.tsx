@@ -31,7 +31,7 @@ const TR = {
     manufacturer: 'مصنع / مورد رئيسي', commercial: 'مورد تجاري', local: 'مورد محلي',
     minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات — أو حدّده ليُفلتر الطلبات حسب قدرتك التوريدية.',
     gradeTitle: 'درجة تصنيف شركتك', gradeSub: 'من رخصتك (وزارة الشؤون البلدية) — يستخدمها الموردون لفلترة الطلبات حسب حجم المشروع. اختياري.',
-    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'يتطلب استقبال الطلبات وتقديم العروض المسعّرة توثيق سجلك التجاري ومستنداتك.', verifyCta: 'أكمل التوثيق ←',
+    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'يتطلب استقبال الطلبات وتقديم العروض المسعّرة توثيق سجلك التجاري ومستنداتك.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وقطاعاتك وتخصصاتك أعلاه لتُفتح خطوة التوثيق.',
     addMatTitle: 'لا تجد مادة توردّها بالقائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
     save: 'حفظ ومتابعة ←', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
     needLoc: 'اختر المنطقة والمدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك ✓',
@@ -48,7 +48,7 @@ const TR = {
     manufacturer: 'Factory / Major Supplier', commercial: 'Commercial Supplier', local: 'Local Supplier',
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
     gradeTitle: 'Company grade', gradeSub: 'From your license (Ministry of Municipal Affairs) — suppliers use it to filter by project size. Optional.',
-    verifyTitle: 'Verify your business', verifyBody: 'Receiving requests and submitting priced offers requires verifying your CR and documents.', verifyCta: 'Complete verification →',
+    verifyTitle: 'Verify your business', verifyBody: 'Receiving requests and submitting priced offers requires verifying your CR and documents.', verifyCta: 'Save & start verification →', verifyLocked: 'Complete your location, sectors and specialties above to unlock verification.',
     addMatTitle: "Can't find a material you supply?", addMatPh: 'Material name...', addMatBtn: 'Add', remove: 'Remove',
     save: 'Save & continue →', saving: 'Saving...', later: 'Later', selected: 'selected',
     needLoc: 'Select region and city', needSector: 'Select at least one sector', saved: 'Profile saved ✓',
@@ -65,7 +65,7 @@ const TR = {
     manufacturer: 'فیکٹری / بڑا سپلائر', commercial: 'تجارتی سپلائر', local: 'مقامی سپلائر',
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
     gradeTitle: 'کمپنی کا درجہ', gradeSub: 'آپ کے لائسنس سے — سپلائرز پروجیکٹ سائز کے مطابق فلٹر کرتے ہیں۔ اختیاری۔',
-    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'درخواستیں وصول کرنے اور قیمت والی آفرز دینے کے لیے CR اور دستاویزات کی تصدیق ضروری ہے۔', verifyCta: 'تصدیق مکمل کریں →',
+    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'درخواستیں وصول کرنے اور قیمت والی آفرز دینے کے لیے CR اور دستاویزات کی تصدیق ضروری ہے۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں →', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام، شعبے اور مہارتیں مکمل کریں۔',
     addMatTitle: 'فہرست میں کوئی مواد نہیں؟', addMatPh: 'مواد کا نام...', addMatBtn: 'شامل کریں', remove: 'ہٹائیں',
     save: 'محفوظ کریں اور جاری رکھیں →', saving: 'محفوظ ہو رہا ہے...', later: 'بعد میں', selected: 'منتخب',
     needLoc: 'علاقہ اور شہر منتخب کریں', needSector: 'کم از کم ایک شعبہ منتخب کریں', saved: 'پروفائل محفوظ ✓',
@@ -138,7 +138,7 @@ export default function OnboardingPage() {
     setExtraMaterialInput('')
   }
 
-  async function save() {
+  async function save(dest?: string) {
     setErr('')
     if (!region || !city) { setErr(t.needLoc); return }
     if (sectors.length === 0) { setErr(t.needSector); return }
@@ -158,7 +158,7 @@ export default function OnboardingPage() {
         }
         try { await fetch('/api/classify-supplier', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }) } catch {}
       }
-      window.location.href = role === 'supplier' ? '/supplier/dashboard' : '/contractor'
+      window.location.href = typeof dest === 'string' ? dest : (role === 'supplier' ? '/supplier/dashboard' : '/contractor')
     } catch (e: any) {
       setErr(e?.message || 'حدث خطأ أثناء الحفظ'); setSaving(false)
     }
@@ -173,10 +173,12 @@ export default function OnboardingPage() {
     : [{ label: t.stepLocation, done: !!(region && city) }, { label: t.stepSectors, done: sectors.length > 0 }]
   const pct = Math.round((steps.filter(s => s.done).length / steps.length) * 100)
   const canSave = !!(region && city) && sectors.length > 0
+  // اكتمال كل المطلوب أعلاه (يفتح خطوة التوثيق للمورّد)
+  const profileComplete = canSave && (role !== 'supplier' || specialties.length > 0)
   const ringC = 2 * Math.PI * 24
 
   const SaveBtn = ({ full }: { full?: boolean }) => (
-    <button type="button" onClick={save} disabled={saving || !canSave}
+    <button type="button" onClick={() => save()} disabled={saving || !canSave}
       className={`${full ? 'w-full' : 'w-full'} py-3 rounded-xl font-bold text-white text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
       style={{ background: canSave ? '#F5831F' : '#9ca3af' }}>
       {saving ? t.saving : t.save}
@@ -360,18 +362,36 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* التوثيق (للمورّد) — بوابة إيراد، بارزة */}
+            {/* التوثيق (للمورّد) — بوابة إيراد: مقفلة حتى يكتمل الملف أعلاه، ثم تحفظ وتنقل لتبويب المستندات */}
             {role === 'supplier' && (
-              <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#F5831F', background: '#fff7ed', border: '1px solid #F5831F33' }}>
-                <div className="flex items-start gap-3">
-                  <span className="text-2xl shrink-0">🛡️</span>
-                  <div className="flex-1">
-                    <div className="font-bold text-navy text-sm">{t.verifyTitle}</div>
-                    <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t.verifyBody}</p>
-                    <a href="/settings" className="inline-block mt-2 text-xs font-bold text-white px-3 py-1.5 rounded-lg" style={{ background: '#F5831F' }}>{t.verifyCta}</a>
+              profileComplete ? (
+                <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#F5831F', background: '#fff7ed', border: '1px solid #F5831F33' }}>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl shrink-0">🛡️</span>
+                    <div className="flex-1">
+                      <div className="font-bold text-navy text-sm">{t.verifyTitle}</div>
+                      <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t.verifyBody}</p>
+                      <button type="button" onClick={() => save('/settings?tab=docs')} disabled={saving}
+                        className="inline-block mt-2 text-xs font-bold text-white px-3 py-1.5 rounded-lg disabled:opacity-60" style={{ background: '#F5831F' }}>
+                        {saving ? t.saving : t.verifyCta}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-2xl p-5 border border-dashed" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#cbd2e0', background: '#f8fafc', borderColor: '#e4e9f2' }}>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl shrink-0 opacity-50 grayscale">🛡️</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-1.5 font-bold text-gray-500 text-sm">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0"><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+                        {t.verifyTitle}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1 leading-relaxed">{t.verifyLocked}</p>
+                    </div>
+                  </div>
+                </div>
+              )
             )}
 
             {err && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{err}</div>}
@@ -433,7 +453,7 @@ export default function OnboardingPage() {
             {/* لاحقاً (ثانوي) */}
             <a href={roleHome} className="shrink-0 text-xs font-semibold text-ink-2 px-3 py-2 rounded-xl border border-line hover:border-navy hover:text-navy transition-colors">{t.later}</a>
             {/* حفظ — الزر الأساسي الوحيد ذو البرتقالي القوي على الموبايل */}
-            <button type="button" onClick={save} disabled={saving || !canSave}
+            <button type="button" onClick={() => save()} disabled={saving || !canSave}
               className="flex-1 py-3 rounded-xl font-bold text-sm transition-all disabled:cursor-not-allowed"
               style={{ background: canSave ? '#F5831F' : '#cbd2e0', color: canSave ? '#fff' : '#7c8496', boxShadow: canSave ? '0 12px 30px -8px rgba(245,131,31,.5)' : 'none' }}>
               {saving ? t.saving : t.save}

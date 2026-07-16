@@ -106,6 +106,11 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('profile')
+  // فتح تبويب محدّد عبر ?tab= (مثلاً من «أكمل التوثيق» في «أكمل ملفك» → ?tab=docs)
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('tab')
+    if (p && ['profile', 'docs', 'password', 'language'].includes(p)) setTab(p)
+  }, [])
 
   // Profile fields
   const [companyAr, setCompanyAr] = useState('')
