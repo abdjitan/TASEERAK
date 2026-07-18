@@ -470,7 +470,7 @@ export default function SettingsPage() {
                     <input value={vatNumber} onChange={e => setVatNumber(e.target.value)}
                       className="input-field font-mono" dir="ltr" placeholder="3XXXXXXXXXXXXX3" maxLength={15} />
                     <p className="text-[10px] text-gray-400 mt-1">
-                      {locale === 'en' ? 'Required to issue ZATCA tax invoices.' : locale === 'ur' ? 'ٹیکس انوائس کے لیے ضروری۔' : 'يلزم لإصدار الفواتير الضريبية المتوافقة مع هيئة الزكاة والضريبة.'}
+                      {locale === 'en' ? 'Required to issue ZATCA tax invoices.' : locale === 'ur' ? 'ٹیکس انوائس کے لیے ضروری۔' : 'يلزم لإصدار الفواتير الضريبية وفق هيئة الزكاة والضريبة.'}
                     </p>
                   </div>
 

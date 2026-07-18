@@ -22,6 +22,7 @@ export default function SupplierRFQPage() {
   const router = useRouter()
   const { locale, dir } = useTranslation()
   const [user, setUser] = useState<any>(null)
+  const [verified, setVerified] = useState(true) // تفاؤلي؛ يُضبط من الملف. القفل الحقيقي على مستوى القاعدة (RLS)
   const [rfq, setRfq] = useState<any>(null)
   const [existingOffer, setExistingOffer] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -106,6 +107,9 @@ export default function SupplierRFQPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
+      // حالة التوثيق: تقديم العروض المسعّرة للموردين الموثّقين فقط (مفروض بـRLS)
+      const { data: vprof } = await supabase.from('profiles').select('verification_status, cr_verification_source').eq('id', session.user.id).single()
+      if (vprof) setVerified(vprof.verification_status === 'verified' || vprof.cr_verification_source === 'wathq')
 
       // Precise delivery location is stripped for non-awarded suppliers server-side (H1);
       // region/city stay visible for pricing. Returns null if this supplier may not see the RFQ.
@@ -385,6 +389,7 @@ export default function SupplierRFQPage() {
       location: 'الموقع', contractor: 'المقاول', spec: 'المواصفات', notes: 'ملاحظات',
       delivery: 'التوصيل', vat: 'فاتورة ضريبية', required: 'مطلوب', notRequired: 'غير مطلوب',
       submitOffer: 'تقديم عرض سعر', totalPrice: 'السعر الإجمالي (ر.س)', unitPrice: 'سعر الوحدة (ر.س)',
+      verifyFirst: 'وثّق حسابك لتقديم عرض', verifyFirstSub: 'تقديم العروض المسعّرة متاح للموردين الموثّقين فقط. أكمل توثيق سجلك التجاري ومستنداتك ثم عُد لتسعير هذا الطلب.', verifyFirstCta: 'أكمل التوثيق ←',
       deliveryDays: 'مدة التوصيل (أيام)', attributes: 'خصائص المنتج المعروض',
       attrHint: 'أضف خصائص مثل: العلامة التجارية، بلد المنشأ، الضمان...',
       attrKey: 'الخاصية', attrValue: 'القيمة', addAttr: '+ إضافة خاصية',
@@ -406,6 +411,7 @@ export default function SupplierRFQPage() {
       location: 'Location', contractor: 'Contractor', spec: 'Specification', notes: 'Notes',
       delivery: 'Delivery', vat: 'Tax Invoice', required: 'Required', notRequired: 'Not Required',
       submitOffer: 'Submit Price Offer', totalPrice: 'Total Price (SAR)', unitPrice: 'Unit Price (SAR)',
+      verifyFirst: 'Verify your account to submit an offer', verifyFirstSub: 'Submitting priced offers is available to verified suppliers only. Complete your CR and document verification, then come back to price this request.', verifyFirstCta: 'Complete verification →',
       deliveryDays: 'Delivery Time (days)', attributes: 'Product Attributes',
       attrHint: 'Add attributes like: Brand, Country of origin, Warranty...',
       attrKey: 'Attribute', attrValue: 'Value', addAttr: '+ Add Attribute',
@@ -427,6 +433,7 @@ export default function SupplierRFQPage() {
       location: 'مقام', contractor: 'ٹھیکیدار', spec: 'تفصیلات', notes: 'نوٹس',
       delivery: 'ڈیلیوری', vat: 'ٹیکس رسید', required: 'ضروری', notRequired: 'غیر ضروری',
       submitOffer: 'قیمت پیش کریں', totalPrice: 'کل قیمت (ریال)', unitPrice: 'فی یونٹ قیمت (ریال)',
+      verifyFirst: 'پیشکش دینے کے لیے اکاؤنٹ کی تصدیق کریں', verifyFirstSub: 'قیمت والی پیشکشیں صرف تصدیق شدہ سپلائرز کے لیے ہیں۔ اپنے CR اور دستاویزات کی تصدیق مکمل کریں، پھر واپس آ کر قیمت دیں۔', verifyFirstCta: 'تصدیق مکمل کریں →',
       deliveryDays: 'ڈیلیوری وقت (دن)', attributes: 'پروڈکٹ کی خصوصیات',
       attrHint: 'خصوصیات شامل کریں: برانڈ، ملک، وارنٹی...',
       attrKey: 'خصوصیت', attrValue: 'قیمت', addAttr: '+ خصوصیت شامل کریں',
@@ -710,6 +717,13 @@ export default function SupplierRFQPage() {
             <h3 className="font-bold" style={{ color: '#1B2D5B' }}>{expired ? (locale === 'en' ? 'Pricing window closed' : 'انتهت مهلة التسعير') : T.closed}</h3>
             <p className="text-sm text-gray-500">{expired ? (locale === 'en' ? 'The deadline passed — offers are no longer accepted.' : 'انتهى الوقت المحدد لاستقبال العروض على هذا الطلب.') : T.closedSub}</p>
             {rfq.expires_at && <p className="text-xs text-gray-400 mt-2">📅 {formatDateTime(rfq.expires_at)}</p>}
+          </div>
+        ) : !verified ? (
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-center">
+            <div className="text-4xl mb-2">🛡️</div>
+            <h3 className="font-bold" style={{ color: '#1B2D5B' }}>{T.verifyFirst}</h3>
+            <p className="text-sm text-gray-500 mt-1 leading-relaxed">{T.verifyFirstSub}</p>
+            <Link href="/settings?tab=docs" className="inline-block mt-4 px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#F5831F' }}>{T.verifyFirstCta}</Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">

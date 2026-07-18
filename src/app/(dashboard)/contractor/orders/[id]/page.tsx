@@ -346,12 +346,12 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {/* 🧾 فاتورة ضريبية متوافقة مع ZATCA */}
+        {/* 🧾 فاتورة ضريبية مبسّطة مع رمز QR — صيغة المرحلة الأولى (ZATCA). المرحلة الثانية (Fatoora: XML/CSID/تخليص) غير مطبّقة. */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-3">
           <div className="p-6 border-b border-gray-100 flex items-start justify-between flex-wrap gap-4">
             <div>
               <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>فاتورة ضريبية</h2>
-              <p className="text-xs text-gray-400">Tax Invoice · متوافقة مع هيئة الزكاة والضريبة (ZATCA)</p>
+              <p className="text-xs text-gray-400">فاتورة ضريبية مبسّطة · رمز QR بصيغة المرحلة الأولى (ZATCA)</p>
               <div className="text-xs text-gray-500 mt-2">رقم الفاتورة: <span className="font-mono" dir="ltr">{offer.invoice_number || `INV-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>
               <div className="text-xs text-gray-500">التاريخ: {new Date(offer.accepted_at || offer.created_at).toLocaleString('ar-SA-u-ca-gregory', { timeZone: 'Asia/Riyadh' })}</div>
             </div>
