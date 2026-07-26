@@ -6,27 +6,27 @@ export function getNav(role: string | undefined, locale: string, active: string)
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const secTools = L('Tools', 'اوزار', 'الأدوات')
   const secAccount = L('Account', 'اکاؤنٹ', 'الحساب')
-  let items: { href: string; icon: string; label: string; section?: string }[]
+  let items: { href: string; icon: string; label: string; section?: string; mobile?: number }[]
   if (role === 'admin') {
     const sec = L('Admin', 'ایڈمن', 'الإدارة')
     items = [
-      { href: '/admin', icon: '🛡️', label: L('Dashboard', 'ڈیش بورڈ', 'لوحة الإدارة'), section: sec },
-      { href: '/admin/discover', icon: '🔍', label: L('Discover suppliers', 'سپلائرز تلاش', 'اكتشاف موردين'), section: sec },
-      { href: '/admin/taxonomy', icon: '🗂️', label: L('Taxonomy', 'درجہ بندی', 'شجرة التصنيفات'), section: sec },
-      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools },
+      { href: '/admin', icon: '🛡️', label: L('Dashboard', 'ڈیش بورڈ', 'لوحة الإدارة'), section: sec, mobile: 1 },
+      { href: '/admin/discover', icon: '🔍', label: L('Discover suppliers', 'سپلائرز تلاش', 'اكتشاف موردين'), section: sec, mobile: 2 },
+      { href: '/admin/taxonomy', icon: '🗂️', label: L('Taxonomy', 'درجہ بندی', 'شجرة التصنيفات'), section: sec, mobile: 3 },
+      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
   } else if (role === 'supplier') {
     const sec = L('Supplier', 'سپلائر', 'المورّد')
     items = [
-      { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec },
-      { href: '/supplier/deals', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec },
+      { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
+      { href: '/supplier/deals', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec, mobile: 2 },
       { href: '/supplier/specialties', icon: '🎯', label: L('Specialties', 'مہارتیں', 'تخصصاتي'), section: sec },
-      { href: '/supplier/prices', icon: '📈', label: L('Live Prices', 'لائیو قیمتیں', 'أسعاري'), section: sec },
+      { href: '/supplier/prices', icon: '📈', label: L('Live Prices', 'لائیو قیمتیں', 'أسعاري'), section: sec, mobile: 3 },
       { href: '/supplier/analytics', icon: '🏆', label: L('Performance', 'کارکردگی', 'أدائي'), section: sec },
       { href: '/supplier/branches', icon: '🏢', label: L('Branches', 'شاخیں', 'فروع الشركة'), section: sec },
       { href: '/supplier/subscription', icon: '⭐', label: L('Subscription', 'سبسکرپشن', 'الاشتراك'), section: sec },
-      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools },
+      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📊', label: L('Price Index', 'انڈیکس', 'البورصة'), section: secTools },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
@@ -34,11 +34,11 @@ export function getNav(role: string | undefined, locale: string, active: string)
   } else {
     const sec = L('Contractor', 'ٹھیکیدار', 'المقاول')
     items = [
-      { href: '/contractor', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec },
-      { href: '/contractor/orders', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec },
-      { href: '/contractor/rfq/new', icon: '📝', label: L('New RFQ', 'نئی درخواست', 'طلب تسعير'), section: sec },
+      { href: '/contractor', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
+      { href: '/contractor/orders', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec, mobile: 2 },
+      { href: '/contractor/rfq/new', icon: '📝', label: L('New RFQ', 'نئی درخواست', 'طلب تسعير'), section: sec, mobile: 3 },
       { href: '/contractor/project/new', icon: '📋', label: L('Project (BOQ)', 'پراجیکٹ BOQ', 'مشروع BOQ'), section: sec },
-      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools },
+      { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },

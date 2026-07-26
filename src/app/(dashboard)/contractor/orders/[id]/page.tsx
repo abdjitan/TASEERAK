@@ -175,7 +175,7 @@ export default function OrderDetailPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-2 print:shadow-none print:border-none print:rounded-none">
 
           {/* Header */}
-          <div className="bg-gradient-to-l from-blue-600 to-blue-800 text-white p-8 print:bg-blue-800">
+          <div className="bg-gradient-to-l from-blue-600 to-blue-800 text-white p-4 sm:p-8 print:bg-blue-800">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold">أمر شراء</h1>
@@ -190,7 +190,7 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Parties */}
-          <div className="grid grid-cols-2 gap-6 p-8 border-b border-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 sm:p-8 border-b border-gray-100">
             <div>
               <div className="text-xs font-bold text-gray-400 uppercase mb-2">المشتري (المقاول)</div>
               <div className="font-bold text-gray-900">{contractor?.company_name_ar || '—'}</div>
@@ -250,9 +250,9 @@ export default function OrderDetailPage() {
             </div>
           )}
 
-          {/* Items Table */}
-          <div className="p-8 border-b border-gray-100">
-            <table className="w-full">
+          {/* Items Table — قابلة للتمرير أفقياً على الجوال بدل سحب الصفحة كلها */}
+          <div className="p-4 sm:p-8 border-b border-gray-100 overflow-x-auto">
+            <table className="w-full min-w-[560px]">
               <thead>
                 <tr className="border-b-2 border-gray-200">
                   <th className="text-right text-xs font-bold text-gray-500 pb-3 w-8">#</th>
@@ -285,7 +285,7 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Totals */}
-          <div className="p-8 border-b border-gray-100">
+          <div className="p-4 sm:p-8 border-b border-gray-100">
             <div className="flex justify-end">
               <div className="w-64 space-y-2">
                 <div className="flex justify-between text-sm">
@@ -305,9 +305,9 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Terms */}
-          <div className="p-8 border-b border-gray-100">
+          <div className="p-4 sm:p-8 border-b border-gray-100">
             <h3 className="text-sm font-bold text-gray-900 mb-3">شروط التوريد</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-2">
                 <span>{rfq.delivery_required ? '✅' : '❌'}</span>
                 <span>التوصيل {rfq.delivery_required ? 'مشمول' : 'غير مشمول'}</span>
@@ -335,7 +335,7 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Status Badge */}
-          <div className="p-8 text-center">
+          <div className="p-4 sm:p-8 text-center">
             <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-6 py-3 rounded-xl">
               <span className="text-xl">✅</span>
               <div>
@@ -362,7 +362,7 @@ export default function OrderDetailPage() {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-6 p-6 border-b border-gray-100 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 sm:p-6 border-b border-gray-100 text-sm">
             <div>
               <div className="text-xs font-bold text-gray-400 mb-1">البائع (المورد)</div>
               <div className="font-bold text-gray-900">{supplier?.company_name_ar || '—'}</div>
@@ -376,8 +376,8 @@ export default function OrderDetailPage() {
               {contractor?.commercial_registration && <div className="text-gray-500">سجل تجاري: {contractor.commercial_registration}</div>}
             </div>
           </div>
-          <div className="p-6">
-            <table className="w-full text-sm mb-4">
+          <div className="p-4 sm:p-6 overflow-x-auto">
+            <table className="w-full min-w-[480px] text-sm mb-4">
               <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">الصنف</th><th className="text-right pb-2">الكمية</th><th className="text-right pb-2">سعر الوحدة</th><th className="text-right pb-2">الإجمالي (قبل الضريبة)</th></tr></thead>
               <tbody>
                 {rows.map((it: any, idx: any) => (

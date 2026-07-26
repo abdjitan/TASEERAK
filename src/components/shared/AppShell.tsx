@@ -8,7 +8,8 @@ import AiAssistant from '@/components/shared/AiAssistant'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 
-export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string }
+// mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
+export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number }
 
 // Shared dashboard shell — navy gradient sidebar (272px) + frosted topbar +
 // off-canvas drawer on mobile. Pages pass their own nav items + header actions.
@@ -144,12 +145,17 @@ export default function AppShell({
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-7 pb-24 lg:pb-7">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-7 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-7">{children}</main>
       </div>
 
-      {/* ===== Bottom nav (mobile only) — 4 وجهات سريعة + «المزيد» يفتح القائمة الكاملة ===== */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex backdrop-blur-md border-t" style={{ background: 'rgba(255,255,255,.96)', borderColor: 'var(--line)' }}>
-        {nav.slice(0, 4).map((n) => {
+      {/* ===== Bottom nav (mobile only) — 4 وجهات مُنسّقة (رتبة mobile) + «المزيد» يفتح القائمة الكاملة ===== */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex backdrop-blur-md border-t"
+        style={{ background: 'rgba(255,255,255,.96)', borderColor: 'var(--line)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {(() => {
+          // وجهات الشريط: المُرتّبة بـmobile أولاً (منسّقة لكل دور)، وإلا أول ٤ عناصر كاحتياط
+          const curated = nav.filter((n) => n.mobile != null).sort((a, b) => (a.mobile! - b.mobile!)).slice(0, 4)
+          return curated.length > 0 ? curated : nav.slice(0, 4)
+        })().map((n) => {
           const badge = (n.href === '/messages' && unreadMsgs > 0) ? unreadMsgs : n.badge
           return (
             <Link key={n.href} href={n.href} prefetch onClick={() => setOpen(false)}

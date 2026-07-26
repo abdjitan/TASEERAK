@@ -516,7 +516,7 @@ export default function ContractorDashboard() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Link href={`/contractor/rfq/new?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: '#F5831F' }}>{locale === 'en' ? 'Continue' : 'إكمال'} ←</Link>
-                    <button onClick={async () => { if (!confirm(locale === 'en' ? 'Delete this draft?' : 'حذف المسودة؟')) return; await createClient().from('rfq_drafts').delete().eq('id', d.id); setDrafts(drafts.filter((x: any) => x.id !== d.id)) }} className="text-sm text-red-400 hover:text-red-600 px-1">🗑</button>
+                    <button onClick={async () => { if (!confirm(locale === 'en' ? 'Delete this draft?' : 'حذف المسودة؟')) return; await createClient().from('rfq_drafts').delete().eq('id', d.id); setDrafts(drafts.filter((x: any) => x.id !== d.id)) }} className="text-sm text-red-400 hover:text-red-600 w-9 h-9 grid place-items-center rounded-lg">🗑</button>
                   </div>
                 </div>
               ))}
@@ -564,7 +564,8 @@ export default function ContractorDashboard() {
                     )
                   })}
                 </div>
-                <div className="flex gap-2">
+                {/* على الجوال: البحث بسطر كامل تحت الفلاتر حتى لا تسحقه القوائم الطويلة */}
+                <div className="flex flex-wrap gap-2">
                   <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
                     className="input-field text-xs flex-shrink-0 w-auto py-2">
                     <option value="all">{locale === 'en' ? 'All Sectors' : 'كل القطاعات'}</option>
@@ -576,7 +577,7 @@ export default function ContractorDashboard() {
                     <option value="expiry">{locale === 'en' ? '⏰ Closest to expiry' : '⏰ الأقرب انتهاءً'}</option>
                   </select>
                   <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-                    className="input-field text-xs flex-1 py-2" placeholder={`🔍 ${locale === 'en' ? 'Search...' : 'ابحث عن طلب...'}`} />
+                    className="input-field text-xs flex-1 min-w-[160px] py-2" placeholder={`🔍 ${locale === 'en' ? 'Search...' : 'ابحث عن طلب...'}`} />
                 </div>
               </div>
             </div>
@@ -620,7 +621,7 @@ export default function ContractorDashboard() {
                     </div>
                   )}
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {(() => {
                         const m = rfq.status === 'open' && (rfq.offer_count || 0) > 0 ? { name: 'quoted', tone: 'info' }
                           : rfq.status === 'open' ? { name: 'waiting', tone: 'warning' }
@@ -628,8 +629,8 @@ export default function ContractorDashboard() {
                           : { name: 'clock', tone: 'danger' }
                         return <AppIcon name={m.name} tone={m.tone} variant="tone" size={44} />
                       })()}
-                      <div>
-                        <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale)}</div>
+                      <div className="min-w-0">
+                        <div className="font-bold truncate" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale)}</div>
                         <div className="text-xs text-gray-400 truncate max-w-[260px]">{rfq.product_name}</div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>

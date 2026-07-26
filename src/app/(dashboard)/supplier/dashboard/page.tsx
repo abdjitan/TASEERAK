@@ -409,9 +409,9 @@ export default function SupplierDashboard() {
           ].map(({ label, value, icon, tone, go }) => (
             <button key={label} type="button" onClick={() => { setTab(go); if (go === 'rfqs') setRfqFilter('all'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
               className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${tab === go ? 'border-[#F5831F] ring-1 ring-[#F5831F]/30' : 'border-gray-100'}`}>
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-2 min-w-0">
                 <AppIcon name={icon} tone={tone} variant="tone" size={44} />
-                <div className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
+                <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" style={{ color: '#1B2D5B' }}>{value}</div>
               </div>
               <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
             </button>
@@ -458,10 +458,10 @@ export default function SupplierDashboard() {
                   <Link key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`}
                     className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 hover:-translate-y-0.5 transition-all duration-300">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <AppIcon name="orders" tone="brand" variant="tone" size={44} />
-                        <div>
-                          <div className="font-bold" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
+                        <div className="min-w-0">
+                          <div className="font-bold truncate" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {rfq.created_at && (Date.now() - new Date(rfq.created_at).getTime() < 12 * 3600 * 1000) && (
                               <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}>🟢 {locale === 'en' ? 'New' : 'جديد'}</span>

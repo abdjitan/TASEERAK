@@ -1,6 +1,70 @@
-/* تسعيرك — Service Worker for web-push notifications */
+/* تسعيرك — Service Worker: web-push notifications + app-shell offline cache */
+const CACHE_VERSION = 'taseerak-v1'
+const STATIC_CACHE = CACHE_VERSION + '-static'
+const PAGE_CACHE = CACHE_VERSION + '-pages'
+
 self.addEventListener('install', () => self.skipWaiting())
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()))
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      // نظّف كاشات الإصدارات السابقة عند النشر الجديد
+      const keys = await caches.keys()
+      await Promise.all(keys.filter((k) => !k.startsWith(CACHE_VERSION)).map((k) => caches.delete(k)))
+      await self.clients.claim()
+    })()
+  )
+})
+
+// إستراتيجية الجلب:
+//  - أصول Next الثابتة (مُجزّأة المحتوى) والأيقونات: cache-first (لا تتغيّر بلا اسم جديد)
+//  - تنقّلات الصفحات: network-first مع احتياطي من الكاش (يفتح التطبيق المثبّت بلا نت)
+//  - أي شيء آخر (API/Supabase): تمرير مباشر بلا كاش — بيانات حيّة دائماً
+self.addEventListener('fetch', (event) => {
+  const req = event.request
+  if (req.method !== 'GET') return
+  const url = new URL(req.url)
+  if (url.origin !== self.location.origin) return // لا نلمس Supabase/خدمات خارجية
+
+  const isStatic =
+    url.pathname.startsWith('/_next/static/') ||
+    url.pathname.startsWith('/icons/') ||
+    url.pathname === '/logo.png' ||
+    url.pathname === '/manifest.webmanifest' ||
+    url.pathname === '/apple-touch-icon.png'
+
+  if (isStatic) {
+    event.respondWith(
+      caches.open(STATIC_CACHE).then(async (cache) => {
+        const hit = await cache.match(req)
+        if (hit) return hit
+        const res = await fetch(req)
+        if (res.ok) cache.put(req, res.clone())
+        return res
+      })
+    )
+    return
+  }
+
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(PAGE_CACHE)
+        try {
+          const res = await fetch(req)
+          if (res.ok) cache.put(req, res.clone())
+          return res
+        } catch {
+          const hit = await cache.match(req)
+          if (hit) return hit
+          // احتياطي أخير: أي صفحة محفوظة (أفضل من خطأ المتصفح الأبيض)
+          const any = await cache.match('/')
+          return any || Response.error()
+        }
+      })()
+    )
+  }
+})
 
 self.addEventListener('push', (event) => {
   let data = {}
@@ -8,8 +72,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'تسعيرك'
   const options = {
     body: data.body || '',
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
     dir: 'rtl',
     lang: 'ar',
     tag: data.tag || 'taseerak',

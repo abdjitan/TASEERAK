@@ -536,7 +536,7 @@ export default function SupplierRFQPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3 text-sm mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-4">
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => (sectors as any)[s] || s).join(' + ') : ((sectors as any)[rfq.sector] || rfq.sector)}</strong></div>
             {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📍 {T.location}</span><br/><strong>{rfq.city || rfq.region}</strong></div>
@@ -942,10 +942,10 @@ export default function SupplierRFQPage() {
                       <input value={ex.label} onChange={(e: any) => updateExtra(i, 'label', e.target.value)}
                         className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Item (e.g. Delivery)' : locale === 'ur' ? 'آئٹم (مثلاً ڈیلیوری)' : 'البند (مثال: توصيل)'} />
                       <input type="number" value={ex.amount} onChange={(e: any) => updateExtra(i, 'amount', e.target.value)}
-                        className="input-field text-sm w-28" placeholder={locale === 'en' ? 'Amount' : locale === 'ur' ? 'رقم' : 'المبلغ'} min="0" step="any" />
+                        className="input-field text-sm w-24" placeholder={locale === 'en' ? 'Amount' : locale === 'ur' ? 'رقم' : 'المبلغ'} min="0" step="any" />
                       {extras.length > 1 && (
                         <button type="button" onClick={() => removeExtra(i)}
-                          className="px-3 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">×</button>
+                          className="w-10 min-h-[40px] grid place-items-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 shrink-0">×</button>
                       )}
                     </div>
                   ))}
@@ -1012,7 +1012,7 @@ export default function SupplierRFQPage() {
                         className="input-field text-sm flex-1" placeholder={T.attrValue} />
                       {attributes.length > 1 && (
                         <button type="button" onClick={() => removeAttribute(i)}
-                          className="px-3 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">×</button>
+                          className="w-10 min-h-[40px] grid place-items-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 shrink-0">×</button>
                       )}
                     </div>
                   ))}

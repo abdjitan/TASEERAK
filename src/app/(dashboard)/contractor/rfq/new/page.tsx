@@ -971,8 +971,8 @@ export default function NewRFQPage() {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1 shrink-0">
-                              <button type="button" onClick={() => editItem(i)} title={locale === 'en' ? 'Edit' : 'تعديل'} className="w-7 h-7 grid place-items-center rounded-lg text-[#1B2D5B] hover:bg-gray-100 text-sm">✎</button>
-                              <button type="button" onClick={() => removeItem(i)} title={locale === 'en' ? 'Delete' : 'حذف'} className="w-7 h-7 grid place-items-center rounded-lg text-red-400 hover:bg-red-50 text-sm">🗑</button>
+                              <button type="button" onClick={() => editItem(i)} title={locale === 'en' ? 'Edit' : 'تعديل'} className="w-9 h-9 grid place-items-center rounded-lg text-[#1B2D5B] hover:bg-gray-100 text-sm">✎</button>
+                              <button type="button" onClick={() => removeItem(i)} title={locale === 'en' ? 'Delete' : 'حذف'} className="w-9 h-9 grid place-items-center rounded-lg text-red-400 hover:bg-red-50 text-sm">🗑</button>
                             </div>
                           </div>
                         </div>
