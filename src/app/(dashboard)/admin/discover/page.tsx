@@ -50,6 +50,8 @@ export default function DiscoverSuppliersPage() {
   const [emailBusy, setEmailBusy] = useState<any>({})
   const [invited, setInvited] = useState<any>({})
   const [origin, setOrigin] = useState('')
+  const [saveBusy, setSaveBusy] = useState(false)
+  const [savedMsg, setSavedMsg] = useState('')
 
   useEffect(() => {
     async function init() {
@@ -129,6 +131,20 @@ export default function DiscoverSuppliersPage() {
     a.click()
   }
 
+  async function saveToDirectory() {
+    if (results.length === 0) return
+    setSaveBusy(true); setSavedMsg('')
+    try {
+      const res = await fetch('/api/discover-suppliers/save', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ places: results, region, city, category: (customQuery.trim() || category) }),
+      })
+      const data = await res.json()
+      setSavedMsg(res.ok ? `✓ حُفظ ${data.saved ?? results.length} مورّد في الدليل` : (data?.message || 'تعذّر الحفظ'))
+    } catch { setSavedMsg('تعذّر الحفظ — حاول مجدداً') }
+    setSaveBusy(false)
+  }
+
   if (!ready) return <PageLoader />
 
   const cities = CITIES_BY_REGION[region] || []
@@ -187,7 +203,11 @@ export default function DiscoverSuppliersPage() {
         {results.length > 0 && (
           <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
             <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>النتائج ({results.length})</h2>
-            <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold">⬇ تصدير إكسل (CSV)</button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {savedMsg && <span className="text-[11px] font-semibold text-emerald-700">{savedMsg}</span>}
+              <button onClick={saveToDirectory} disabled={saveBusy} className="text-xs px-3 py-2 rounded-xl font-bold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>{saveBusy ? 'جارٍ الحفظ…' : '＋ أضِف للدليل (قابل للمطالبة)'}</button>
+              <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold">⬇ تصدير إكسل (CSV)</button>
+            </div>
           </div>
         )}
 
