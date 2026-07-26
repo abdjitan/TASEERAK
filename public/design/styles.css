@@ -173,7 +173,7 @@ ul { list-style: none; }
    HERO
    ============================================================ */
 .hero {
-  position: relative; min-height: 100vh; display: flex; align-items: center;
+  position: relative; min-height: 100vh; min-height: 100svh; display: flex; align-items: center;
   background: linear-gradient(160deg, var(--navy-deep) 0%, var(--navy) 48%, #16264f 100%);
   overflow: hidden; padding: 130px 0 90px;
 }
@@ -485,7 +485,9 @@ ul { list-style: none; }
 @media (max-width: 860px) {
   .nav-links { display: none; }
   .menu-toggle { display: flex; }
-  .nav-actions .btn-ghost, .nav-actions .lang { display: none; }
+  /* نُبقي زر الدخول ظاهراً على الجوال (كان مخفياً فيضيع مسار الدخول)؛ اللغات متاحة في الفوتر */
+  .nav-actions .lang { display: none; }
+  .nav-actions .btn-ghost { padding: 8px 14px; font-size: 13px; }
   .mobile-open .nav-links {
     display: flex; flex-direction: column; position: absolute; top: 100%; inset-inline: 12px;
     background: #fff; border-radius: var(--r-md); padding: 14px; box-shadow: var(--sh-lg); gap: 4px; margin-top: 8px;

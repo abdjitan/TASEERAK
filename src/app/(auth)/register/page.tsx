@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -97,6 +97,14 @@ export default function RegisterPage() {
   const { register, handleSubmit, watch, setValue, trigger, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema), mode: 'onChange',
   })
+
+  // اختيار مسبق للدور من الرابط (?role=contractor|supplier) — لروابط الدعوة/الهبوط الموجّهة
+  useEffect(() => {
+    try {
+      const r = new URLSearchParams(window.location.search).get('role')
+      if (r === 'contractor' || r === 'supplier') { setSelectedType(r); setValue('role', r, { shouldValidate: true }) }
+    } catch {}
+  }, [])
 
   // فحص التكرار قبل الإنشاء — الجوال والبريد فريدان (خصوصية: نُرجع boolean فقط بلا اسم)
   async function checkPhoneDup(phone: string) {
