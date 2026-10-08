@@ -19,3 +19,6 @@ scratch_*
 build.log
 npm-install.log
 .mcp.json
+
+.vercel
+supabase/.temp
