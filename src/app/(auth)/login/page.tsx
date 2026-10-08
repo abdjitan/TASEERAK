@@ -7,6 +7,8 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
+import PhoneOtpForm from '@/components/auth/PhoneOtpForm'
+import { PHONE_OTP_ENABLED } from '@/lib/features'
 
 const txt = {
   ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساب جديد', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد للمقاولين', s_auth:'الخطوة 1/3: جارٍ التحقق من بياناتك…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'الخطوة 3/3: تم الدخول ✓ جارٍ التحويل…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، يتنافس عليه أفضل الموردين.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'موردون موثّقون ومصنّفون', l2:'قارن العروض بالأسعار ومتوسط السوق', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.' },
@@ -17,10 +19,10 @@ const txt = {
 function LoginForm() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const searchParams = useSearchParams()
-  const [mode, setMode] = useState<'email' | 'phone'>('email')
+  const [mode, setMode] = useState<'email' | 'phone'>(PHONE_OTP_ENABLED && searchParams.get('m') !== 'email' ? 'phone' : 'email')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -55,6 +57,20 @@ function LoginForm() {
     return path
   }
 
+  // Where a signed-in user goes: pick a role first (phone signups), then complete the profile.
+  async function routeSignedIn(userId: string, metaRole?: string) {
+    const supabase = createClient()
+    let p: any = null
+    try {
+      const r: any = await withTimeout(supabase.from('profiles').select('role, region, role_chosen_at').eq('id', userId).single(), 12000, 'profile')
+      p = r?.data
+    } catch (e2) { console.error('[login] role read failed:', e2) }
+    const role = p?.role || metaRole || 'contractor'
+    if (role !== 'admin' && p && !p.role_chosen_at) { window.location.href = '/welcome'; return }
+    const fallback = (role !== 'admin' && p && !p.region) ? '/onboarding' : roleHome(role)
+    window.location.href = safeRedirect(searchParams.get('next'), fallback)
+  }
+
   useEffect(() => {
     const supabase = createClient()
     ;(async () => {
@@ -62,15 +78,7 @@ function LoginForm() {
       // and server always agree — otherwise a stale local cookie causes an
       // infinite login <-> dashboard redirect loop.
       const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: p } = await supabase.from('profiles').select('role, region').eq('id', user.id).single()
-        const role = p?.role || (user.user_metadata as any)?.role
-        const next = searchParams.get('next')
-        // مستخدم جديد لم يُكمل ملفه (لا منطقة) → «أكمل ملفك»
-        const fallback = (role !== 'admin' && !p?.region) ? '/onboarding' : roleHome(role)
-        window.location.href = safeRedirect(next, fallback)
-        return
-      }
+      if (user) { await routeSignedIn(user.id, (user.user_metadata as any)?.role); return }
       // No valid server-side session. SELF-HEAL: wipe any stale/corrupt auth
       // artifacts left behind by older versions of the app.
       try { await supabase.auth.signOut({ scope: 'local' }) } catch {}
@@ -95,26 +103,6 @@ function LoginForm() {
     setLoading(true); setError(''); setStatus(t.s_auth); setProgress(18)
     const supabase = createClient()
     try {
-      // تسجيل الدخول بالجوال: مسار خادمي يحوّل الرقم→الحساب ويضبط الجلسة (البريد لا يُكشف).
-      if (mode === 'phone') {
-        if (!/^05[0-9]{8}$/.test(phone)) { setError(t.error); setLoading(false); setStatus(''); setProgress(0); return }
-        const res = await withTimeout(fetch('/api/auth/phone-login', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone, password, captchaToken: captchaToken || undefined }),
-        }), 15000, 'signin')
-        const j = await res.json().catch(() => ({}))
-        if (!res.ok || !j?.ok) {
-          captchaRef.current?.reset(); setCaptchaToken('')
-          setError(j?.error === 'captcha' ? t.captchaErr : t.error)
-          setLoading(false); setStatus(''); setProgress(0); return
-        }
-        setStatus(t.s_go); setProgress(100)
-        const role = j.role || 'contractor'
-        const next = searchParams.get('next')
-        const fallback = (role !== 'admin' && !j.region) ? '/onboarding' : roleHome(role)
-        window.location.href = safeRedirect(next, fallback)
-        return
-      }
       // STEP 1/3 — authenticate (with a hard 15s ceiling so it can never hang)
       const { data, error: err } = await withTimeout(
         supabase.auth.signInWithPassword({ email, password, options: { captchaToken: captchaToken || undefined } }), 15000, 'signin'
@@ -127,25 +115,9 @@ function LoginForm() {
       }
       if (!data?.session) { setError(t.error); setLoading(false); setStatus(''); setProgress(0); return }
 
-      // STEP 2/3 — read role (don't block login if it stalls; fall back gracefully)
-      setStatus(t.s_role); setProgress(62)
-      let role = (data.session.user.user_metadata as any)?.role || 'contractor'
-      let region: string | null = null
-      try {
-        const { data: p } = await withTimeout(
-          supabase.from('profiles').select('role, region').eq('id', data.session.user.id).single(),
-          12000, 'profile'
-        )
-        if (p?.role) role = p.role
-        region = p?.region || null
-      } catch (e2) { console.error('[login] role read failed:', e2) }
-
-      // STEP 3/3 — hard redirect (full reload so middleware sees the cookie)
+      // STEP 2/3 + 3/3: read the profile, then hard redirect (full reload so middleware sees the cookie)
       setStatus(t.s_go); setProgress(100)
-      const next = searchParams.get('next')
-      // مستخدم جديد لم يُكمل ملفه (لا منطقة) → «أكمل ملفك»
-      const fallback = (role !== 'admin' && !region) ? '/onboarding' : roleHome(role)
-      window.location.href = safeRedirect(next, fallback)
+      await routeSignedIn(data.session.user.id, (data.session.user.user_metadata as any)?.role)
     } catch (e) {
       console.error('[login] failed:', e)
       const msg = (e && (e as any).message) || ''
@@ -203,79 +175,65 @@ function LoginForm() {
               <span className="text-2xl font-extrabold text-navy">تسعير<span className="text-orange">ك</span></span>
             </div>
 
-            <h1 className="text-[26px] font-extrabold text-navy mb-1">{t.welcome}</h1>
-            <p className="text-ink-2 text-sm mb-6">{t.sub}</p>
+            <h1 className="text-[26px] font-extrabold text-navy mb-1">{mode === 'phone' ? L('Sign in or create an account', 'سائن اِن کریں یا اکاؤنٹ بنائیں', 'ادخل أو أنشئ حسابك') : t.welcome}</h1>
+            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('Just your mobile number. No password.', 'صرف آپ کا موبائل نمبر۔ کوئی پاسورڈ نہیں۔', 'برقم جوالك فقط، بدون كلمة مرور.') : t.sub}</p>
 
-            {error && <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg><span>{error}</span></div>}
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              {/* اختيار طريقة الدخول */}
-              <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-gray-100">
-                {[
-                  { k: 'email', label: locale === 'en' ? 'Email' : locale === 'ur' ? 'ای میل' : 'البريد',
-                    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m3.5 7.5 8.5 5.5 8.5-5.5" /></svg> },
-                  { k: 'phone', label: locale === 'en' ? 'Phone' : locale === 'ur' ? 'فون' : 'الجوال',
-                    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px]"><rect x="6.5" y="2" width="11" height="20" rx="2.5" /><path d="M11 18.5h2" /></svg> },
-                ].map(o => (
-                  <button key={o.k} type="button" onClick={() => { setMode(o.k as any); setError('') }}
-                    className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-all ${mode === o.k ? 'bg-white text-navy shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                    <span className={mode === o.k ? 'text-orange' : ''}>{o.icon}</span>
-                    {o.label}
+            {mode === 'phone' ? (
+              <PhoneOtpForm onSignedIn={async () => {
+                const { data: { user } } = await createClient().auth.getUser()
+                if (user) await routeSignedIn(user.id)
+              }} />
+            ) : (
+              <>
+                {error && <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg><span>{error}</span></div>}
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div>
+                    <label htmlFor="login-email" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.email}</label>
+                    <input id="login-email" type="email" inputMode="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="name@company.com" autoComplete="username" required disabled={loading} />
+                  </div>
+                  <div>
+                    <label htmlFor="login-password" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.password}</label>
+                    <div className="relative">
+                      <input id="login-password" type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="input-field pe-11" placeholder="••••••••" autoComplete="current-password" required disabled={loading} />
+                      <button type="button" onClick={() => setShowPass(s => !s)} aria-label="إظهار كلمة المرور"
+                        className="absolute inset-y-0 end-3 my-auto h-5 w-5 text-ink-3 hover:text-orange-dark transition-colors">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <a href="/forgot-password" className="text-[13px] font-bold text-orange-dark hover:underline">{t.forgot}</a>
+                  </div>
+                  <div className="flex justify-center">
+                    <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
+                  </div>
+                  <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">
+                    {loading ? (
+                      <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{status || t.logging}</span>
+                    ) : (
+                      <>{t.login}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] rtl:rotate-180"><path d="M5 12h14M13 6l6 6-6 6" /></svg></>
+                    )}
                   </button>
-                ))}
-              </div>
-              {mode === 'email' ? (
-                <div>
-                  <label className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.email}</label>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="name@company.com" autoComplete="username" required disabled={loading} />
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-[13px] font-bold text-ink-2 mb-1.5">{locale === 'en' ? 'Phone (WhatsApp)' : locale === 'ur' ? 'فون (واٹس ایپ)' : 'رقم الجوال (واتساب)'}</label>
-                  <input type="tel" inputMode="numeric" dir="ltr" maxLength={10} value={phone}
-                    onChange={e => setPhone(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
-                    className="input-field" placeholder="05XXXXXXXX" autoComplete="tel" required disabled={loading} />
-                  <p className="flex items-center gap-1.5 text-[11px] text-gray-400 mt-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5 shrink-0"><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>{locale === 'en' ? 'OTP login is coming soon.' : locale === 'ur' ? 'OTP لاگ اِن جلد آ رہا ہے۔' : 'تسجيل الدخول برمز OTP قريباً.'}</p>
-                </div>
-              )}
-              <div>
-                <label className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.password}</label>
-                <div className="relative">
-                  <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="input-field pe-11" placeholder="••••••••" autoComplete="current-password" required disabled={loading} />
-                  <button type="button" onClick={() => setShowPass(s => !s)} aria-label="إظهار كلمة المرور"
-                    className="absolute inset-y-0 end-3 my-auto h-5 w-5 text-ink-3 hover:text-orange-dark transition-colors">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 text-sm text-ink-2 cursor-pointer select-none">
-                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded accent-[#F5831F]" /> {t.remember}
-                </label>
-                <a href="/forgot-password" className="text-[13px] font-bold text-orange-dark hover:underline">{t.forgot}</a>
-              </div>
-
-              <div className="flex justify-center">
-                <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
-              </div>
-
-              <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2"><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>{t.logging}</span>
-                ) : (
-                  <>{t.login}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] rtl:rotate-180"><path d="M5 12h14M13 6l6 6-6 6" /></svg></>
-                )}
-              </button>
-            </form>
+                </form>
+              </>
+            )}
 
             <div className="my-6 flex items-center gap-3 text-ink-3 text-xs">
               <span className="h-px flex-1" style={{ background: 'var(--line)' }} />{t.or}<span className="h-px flex-1" style={{ background: 'var(--line)' }} />
             </div>
 
-            <p className="text-center text-sm text-ink-2">
-              {t.noAccount} <a href="/register" className="font-extrabold text-orange-dark hover:underline">{t.register}</a>
-            </p>
+            {mode === 'phone' ? (
+              <button type="button" onClick={() => { setMode('email'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
+                {L('Sign in with email', 'ای میل سے سائن اِن کریں', 'الدخول بالبريد الإلكتروني')}
+              </button>
+            ) : (
+              <div className="space-y-3 text-center">
+                {PHONE_OTP_ENABLED && <button type="button" onClick={() => { setMode('phone'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
+                  {L('Use my mobile number (WhatsApp)', 'موبائل نمبر استعمال کریں (واٹس ایپ)', 'استخدم رقم جوالي (واتساب)')}
+                </button>}
+                <p className="text-sm text-ink-2">{t.noAccount} <a href={PHONE_OTP_ENABLED ? '/register?email=1' : '/register'} className="font-extrabold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
+              </div>
+            )}
           </div>
         </div>
       </div>

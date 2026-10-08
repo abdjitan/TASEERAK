@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
+import { PHONE_OTP_ENABLED } from '@/lib/features'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
 // نجمع الحد الأدنى فقط: الدور + الاسم + اسم الشركة + الجوال + البريد + كلمة المرور.
@@ -101,6 +102,8 @@ export default function RegisterPage() {
   // اختيار مسبق للدور من الرابط (?role=contractor|supplier) — لروابط الدعوة/الهبوط الموجّهة
   useEffect(() => {
     try {
+      // Phone + WhatsApp OTP is the main way in; this email form stays for ?email=1.
+      if (PHONE_OTP_ENABLED && new URLSearchParams(window.location.search).get('email') !== '1') { window.location.replace('/login'); return }
       const r = new URLSearchParams(window.location.search).get('role')
       if (r === 'contractor' || r === 'supplier') { setSelectedType(r); setValue('role', r, { shouldValidate: true }) }
     } catch {}

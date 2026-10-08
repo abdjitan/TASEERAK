@@ -107,9 +107,10 @@ export default function SupplierRFQPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
-      // حالة التوثيق: تقديم العروض المسعّرة للموردين الموثّقين فقط (مفروض بـRLS)
-      const { data: vprof } = await supabase.from('profiles').select('verification_status, cr_verification_source').eq('id', session.user.id).single()
-      if (vprof) setVerified(vprof.verification_status === 'verified' || vprof.cr_verification_source === 'wathq')
+      // Who may quote: CR-verified suppliers OR providers with a WhatsApp-verified phone.
+      // Same rule as the offers INSERT policy (can_submit_quote, migration 117).
+      const { data: canQuote } = await supabase.rpc('can_submit_quote')
+      setVerified(canQuote === true)
 
       // Precise delivery location is stripped for non-awarded suppliers server-side (H1);
       // region/city stay visible for pricing. Returns null if this supplier may not see the RFQ.

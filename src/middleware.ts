@@ -26,6 +26,9 @@ const PROTECTED = [
   '/location',
   '/market',
   '/onboarding',
+  '/welcome',
+  '/messages',
+  '/notifications',
 ]
 
 /** Only users with role = 'admin' can access these */
@@ -114,8 +117,8 @@ export async function middleware(request: NextRequest) {
   if (user && AUTH_PAGES.some(matches)) {
     let home = '/contractor'
     try {
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      home = profile?.role === 'admin' ? '/admin' : profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
+      const { data: profile } = await supabase.from('profiles').select('role, role_chosen_at').eq('id', user.id).single()
+      home = profile?.role === 'admin' ? '/admin' : !profile?.role_chosen_at ? '/welcome' : profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
     } catch {}
     return redirectTo(new URL(home, request.url))
   }
@@ -126,6 +129,12 @@ export async function middleware(request: NextRequest) {
     // Remember where they were going so we can redirect back after login
     loginUrl.searchParams.set('next', pathname)
     return redirectTo(loginUrl)
+  }
+
+  // ── Rule 2.2: phone signups pick what they want to do before anything else ──
+  if (user && PROTECTED.some(matches) && !matches('/welcome') && !ADMIN_ONLY.some(matches)) {
+    const { data: profile } = await supabase.from('profiles').select('role, role_chosen_at').eq('id', user.id).single()
+    if (profile && profile.role !== 'admin' && !profile.role_chosen_at) return redirectTo(new URL('/welcome', request.url))
   }
 
   // ── Rule 2.5: role separation — a supplier can't browse contractor pages and
