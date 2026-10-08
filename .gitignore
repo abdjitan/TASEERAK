@@ -18,3 +18,4 @@ scratch_*
 .catalog-tmp/
 build.log
 npm-install.log
+.mcp.json
