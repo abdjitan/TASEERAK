@@ -220,6 +220,10 @@ export default function NewRFQPage() {
   const unitSpec = specFields.find((f: any) => f.key === 'unit') // وحدة الطلب من المواصفات (إن وُجدت)
   const effectiveUnit = unitSpec ? (specs[unitSpec.key] || '') : unit
   useEffect(() => { setOtherKeys({}) }, [productName]) // صفّر وضع «أخرى» عند تغيير المنتج
+  // اختر وحدة الطلب الافتراضية تلقائياً (أول وحدة بمواصفات المادة) بدل «— اختر —»
+  useEffect(() => {
+    if (unitSpec && unitSpec.options?.length && !specs[unitSpec.key]) setSpecs((s: any) => ({ ...s, [unitSpec.key]: unitSpec.options[0] }))
+  }, [productName]) // eslint-disable-line react-hooks/exhaustive-deps
   const detailsRef = useRef<any>(null)
   // عند اختيار منتج: نزّل الصفحة تلقائياً إلى خيارات المواصفات/التسعير
   useEffect(() => {
@@ -660,6 +664,20 @@ export default function NewRFQPage() {
 
                   {/* مرساة التمرير التلقائي — تظهر بمجرد اختيار منتج */}
                   {productName && <div ref={detailsRef} className="scroll-mt-24" />}
+
+                  {/* المادة المختارة: واضحة فوق المواصفات (خصوصاً لما تنختار من البحث والأكورديون مسكّر) */}
+                  {productName && !manualEntry && (
+                    <div className="flex items-center gap-3 p-3 mb-4 rounded-xl border-2 animate-fade-in" style={{ borderColor: '#0F6E56', background: 'rgba(15,110,86,0.06)' }}>
+                      <img src={productImageUrl(productName)} alt="" onError={(e: any) => { e.currentTarget.style.display = 'none' }} className="w-14 h-14 object-contain rounded-lg bg-white shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[11px] font-bold" style={{ color: '#0F6E56' }}>✓ {locale === 'en' ? 'Selected material' : locale === 'ur' ? 'منتخب مواد' : 'المادة المختارة'}</div>
+                        <div className="font-extrabold text-gray-800 truncate">{getProductLabel(productName, locale)}</div>
+                        <div className="text-[11px] text-gray-500">{sectors[sector] || ''}</div>
+                      </div>
+                      <button type="button" onClick={() => { setProductName(''); setSpecs({}); setUnit('') }}
+                        className="text-xs font-bold text-[#d96f15] hover:underline shrink-0">{locale === 'en' ? 'Change' : locale === 'ur' ? 'تبدیل' : 'تغيير'}</button>
+                    </div>
+                  )}
 
                   {/* مواصفات المنتج المنظّمة (لو المنتج له مواصفات معرّفة) */}
                   {specFields.length > 0 && (
