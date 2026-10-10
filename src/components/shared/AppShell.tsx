@@ -30,6 +30,10 @@ export default function AppShell({
 }) {
   const { locale } = useTranslation()
   const [open, setOpen] = useState(false)
+  async function defaultSignOut() {
+    try { await createClient().auth.signOut() } catch {}
+    window.location.href = '/login'
+  }
   // عدد الرسائل غير المقروءة — شارة على «الرسائل» في القائمة
   const [unreadMsgs, setUnreadMsgs] = useState(0)
   useEffect(() => {
@@ -140,7 +144,10 @@ export default function AppShell({
               {actions}
               <LanguageSwitcher variant="minimal" />
               {userId && <NotificationBell userId={userId} />}
-              {onSignOut && <button onClick={onSignOut} className="text-xs px-2 py-1 rounded transition-colors" style={{ color: '#8089a0' }}>خروج</button>}
+              {/* Log out is on EVERY dashboard page: pages that don't pass onSignOut get the default. */}
+              <button type="button" onClick={onSignOut || defaultSignOut} className="text-xs px-2 py-1 rounded transition-colors hover:text-red-600" style={{ color: '#8089a0' }}>
+                {locale === 'en' ? 'Log out' : locale === 'ur' ? 'لاگ آؤٹ' : 'خروج'}
+              </button>
             </div>
           </div>
         </header>
