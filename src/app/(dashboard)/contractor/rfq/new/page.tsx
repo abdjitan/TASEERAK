@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { searchProducts } from '@/lib/productSearch'
 import { SECTOR_LABELS, SECTOR_PRODUCTS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, getProductLabel, getOptionLabel, detectSubCategory, getGroupedProducts, getProductSpecs, getDefaultUnit } from '@/types'
 import { productImageUrl } from '@/lib/productImage'
 import Logo from '@/components/shared/Logo'
@@ -126,6 +127,7 @@ export default function NewRFQPage() {
   const [group, setGroup] = useState('')
   const [productName, setProductName] = useState('')
   const [productSearch, setProductSearch] = useState('')
+  const [globalSearch, setGlobalSearch] = useState('') // بحث في كل الأقسام قبل اختيار القطاع
   const [specs, setSpecs] = useState<Record<string, string>>({})
   const [otherKeys, setOtherKeys] = useState<Record<string, boolean>>({}) // الحقول التي اختار فيها المقاول «أخرى»
   const [items, setItems] = useState<any[]>([]) // المواد المضافة للطلب (يسمح بقطاعات مختلفة)
@@ -223,12 +225,17 @@ export default function NewRFQPage() {
   useEffect(() => {
     if (productName) setTimeout(() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120)
   }, [productName])
-  // بحث سريع فوق التصنيفات: يفلتر كل مواد القطاع عبر المجموعات
-  const allItems = useMemo(() => groups.flatMap((g: any) => g.items), [groups])
-  const q = productSearch.trim().toLowerCase()
-  const searchResults = q.length >= 1
-    ? allItems.filter((p: any) => (p + ' ' + getProductLabel(p, 'en')).toLowerCase().includes(q)).slice(0, 60)
-    : []
+  // بحث ذكي داخل القطاع: بداية الكلمة، أخطاء إملائية، مرادفات السوق (بلك=بلوك، سيخ=حديد تسليح…)
+  const q = productSearch.trim()
+  const searchResults = useMemo(() => (q.length >= 1 && sector
+    ? searchProducts(q, { sector: sector as any, limit: 60, extra: dbMaterials.map((m: any) => ({ name: m.name, sector: sector as any })) }).map(h => h.name)
+    : []), [q, sector, dbMaterials])
+  // بحث شامل في كل الأقسام: يختار القطاع والمادة بضغطة
+  const globalHits = useMemo(() => (globalSearch.trim() ? searchProducts(globalSearch, { limit: 12 }) : []), [globalSearch])
+  function pickGlobalHit(h: any) {
+    setSector(h.sector); setGroup(''); setSpecs({}); setManualEntry(false)
+    setProductName(h.name); setUnit(getDefaultUnit(h.name, h.sector)); setGlobalSearch(''); setProductSearch('')
+  }
 
   function toggleTier(tier: string) {
     setTargetTiers(prev => prev.includes(tier) ? prev.filter((x: any) => x !== tier) : [...prev, tier])
@@ -540,6 +547,25 @@ export default function NewRFQPage() {
 
               {/* Sector */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                {/* بحث شامل: اكتب أي جزء من اسم المادة، حتى لو فيه خطأ إملائي */}
+                <div className="relative mb-5">
+                  <span className="absolute inset-y-0 start-3 my-auto h-5 w-5 text-gray-400 grid place-items-center" aria-hidden="true">🔍</span>
+                  <input id="rfq-global-search" type="search" value={globalSearch} onChange={(e: any) => setGlobalSearch(e.target.value)} autoComplete="off"
+                    className="input-field ps-10 text-base" placeholder={locale === 'en' ? 'Search any material… e.g. block, rebar, PPR pipe' : locale === 'ur' ? 'کوئی بھی مواد تلاش کریں…' : 'ابحث عن أي مادة… مثل: بلوك، حديد، مواسير'} />
+                  {globalSearch.trim() && (
+                    <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-auto">
+                      {globalHits.length ? globalHits.map((h: any) => (
+                        <button key={h.sector + h.name} type="button" onClick={() => pickGlobalHit(h)}
+                          className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-start hover:bg-[#F5831F]/5 border-b border-gray-50 last:border-0">
+                          <span className="text-sm font-semibold text-gray-800 min-w-0 truncate">{getProductLabel(h.name, locale)}</span>
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 text-white" style={{ background: sectorMeta[h.sector]?.color || '#1B2D5B' }}>{sectors[h.sector]}</span>
+                        </button>
+                      )) : (
+                        <p className="px-3 py-3 text-sm text-gray-400">{locale === 'en' ? 'No match. Pick a sector below and type the material manually.' : 'ما في نتيجة. اختر القطاع بالأسفل واكتب اسم المادة يدوياً.'}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <h3 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>{t.sector}{items.length > 0 && <span className="text-[11px] font-normal text-gray-400"> · {locale === 'en' ? 'pick a sector for the next material' : 'اختر قطاع المادة التالية'}</span>}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {Object.keys(sectors).map((s: any) => {
