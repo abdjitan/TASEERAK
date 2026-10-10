@@ -41,7 +41,6 @@ function pick(obj: any, paths: string[]): any {
   }
   return undefined
 }
-function safeJson(t: string): any { try { return JSON.parse(t) } catch { return (t || '').slice(0, 300) } }
 
 // Gather the FULL commercial-activity text (Wathq returns many activities).
 // Handles the various shapes the fullinfo payload may use (array of objects,
@@ -126,7 +125,8 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json().catch(() => ({}))
     const cr = String(body?.cr || '').trim()
-    const nationalId = String(body?.nationalId || '').trim()
+    // Owner/manager matching confirms a person<->company link (PDPL): signed-in users only.
+    const nationalId = user ? String(body?.nationalId || '').trim() : ''
 
     // 1) format check (Saudi CR = exactly 10 digits)
     if (!/^\d{10}$/.test(cr)) {
@@ -190,7 +190,6 @@ export async function POST(req: NextRequest) {
           : looksOldCr ? 'يبدو أنك أدخلت رقم السجل القديم — الرجاء إدخال الرقم الوطني الموحّد للمنشأة (يبدأ بـ 700) الموجود في شهادة السجل التجاري.'
           : res.status === 404 ? 'لم يتم العثور على سجل تجاري بهذا الرقم في واثق'
           : 'تعذّر التحقق من واثق حالياً، حاول لاحقاً أو ارفع صورة السجل.',
-        raw: safeJson(txt),
       })
     }
 

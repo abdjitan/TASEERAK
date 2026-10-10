@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
+import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
+  if (await overHourlyLimit(supabase, 'verify-identity', user.id, 10)) return NextResponse.json({ ok: false, error: 'rate_limited', message: RATE_LIMITED_AR }, { status: 429 })
 
   const body = await req.json().catch(() => ({}))
   const cr = String(body?.cr || '').trim()
@@ -38,7 +40,9 @@ export async function POST(req: NextRequest) {
 
   // Only verify against the CR the user actually registered with (anti-tamper).
   const { data: prof } = await supabase.from('profiles').select('commercial_registration, verification_status').eq('id', user.id).single()
-  if (!prof || (prof.commercial_registration && prof.commercial_registration !== cr)) {
+  // The CR must already be on the profile (saved at onboarding/settings): an empty CR must not
+  // let a caller bind their account to any company whose owner ID they happen to know.
+  if (!prof || !prof.commercial_registration || prof.commercial_registration !== cr) {
     return NextResponse.json({ ok: false, error: 'cr_mismatch' }, { status: 400 })
   }
   if (prof.verification_status === 'verified') return NextResponse.json({ ok: true, verified: true, already: true })

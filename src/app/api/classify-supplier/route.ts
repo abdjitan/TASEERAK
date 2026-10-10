@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { keywordClassify } from '@/lib/classify'
 import { SECTOR_LABELS } from '@/types'
 
@@ -15,6 +16,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (await overHourlyLimit(supabase, 'classify-supplier', user.id, 20)) return NextResponse.json({ error: RATE_LIMITED_AR }, { status: 429 })
 
   let body: any = {}
   try { body = await req.json() } catch {}

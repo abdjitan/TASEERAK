@@ -7,6 +7,7 @@
 // ============================================================================
 import { NextRequest, NextResponse } from 'next/server'
 import { aiJson } from '@/lib/ai'
+import { checkParsableUpload, SAFE_XLSX_READ } from '@/lib/serverUpload'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
@@ -46,7 +47,7 @@ const SCHEMA = {
 async function extractText(buffer: Buffer, ext: string): Promise<string> {
   if (ext === 'xlsx' || ext === 'xls') {
     const XLSX = await import('xlsx')
-    const wb = XLSX.read(buffer, { type: 'buffer' })
+    const wb = XLSX.read(buffer, SAFE_XLSX_READ)
     const parts: string[] = []
     for (const name of wb.SheetNames) {
       const csv = XLSX.utils.sheet_to_csv(wb.Sheets[name])
@@ -110,6 +111,8 @@ export async function POST(req: NextRequest) {
 
     const ext = (file.name.split('.').pop() || '').toLowerCase()
     const buffer = Buffer.from(await file.arrayBuffer())
+    const uploadErr = checkParsableUpload(file, buffer, ext)
+    if (uploadErr) return NextResponse.json({ ok: false, message: uploadErr }, { status: 400 })
     const isText = ['xlsx', 'xls', 'csv', 'txt', 'md', 'tsv'].includes(ext)
 
     let result: any = null

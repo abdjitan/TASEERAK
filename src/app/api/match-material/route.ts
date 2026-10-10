@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiJson, buildTaxonomyRef } from '@/lib/ai'
 import { SECTOR_LABELS, SUB_CATEGORIES, getSubCategoryLabel, GROUP_LABELS } from '@/types'
 import { detectSpecialtiesFromText } from '@/lib/classify'
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (await overHourlyLimit(supabase, 'match-material', user.id, 200)) return NextResponse.json({ error: RATE_LIMITED_AR }, { status: 429 })
 
   let body: any = {}
   try { body = await req.json() } catch {}

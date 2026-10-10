@@ -7,6 +7,7 @@ import { REGIONS, CITIES_BY_REGION } from '@/types'
 import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
+import { safeHttpUrl } from '@/lib/safeUrl'
 
 // Common building-material categories to search for. The admin can also type a
 // free query. Keep the wedge narrow at launch: 1 city + a few of these.
@@ -250,8 +251,8 @@ export default function DiscoverSuppliersPage() {
                     ? <a href={wa} target="_blank" rel="noreferrer" onClick={() => setInvited((s: any) => ({ ...s, [row.id]: true }))}
                         className="flex-1 text-center py-2 rounded-xl font-bold text-white text-xs" style={{ background: '#25D366' }}>💬 دعوة واتساب</a>
                     : <span className="flex-1 text-center py-2 rounded-xl text-xs text-gray-400 border border-gray-200">لا يوجد رقم للدعوة</span>}
-                  {row.mapsUrl && <a href={row.mapsUrl} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-xl text-xs border border-gray-200 text-gray-600">🗺 الخريطة</a>}
-                  {row.website && <a href={row.website} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-xl text-xs border border-gray-200 text-gray-600">🌐 الموقع</a>}
+                  {safeHttpUrl(row.mapsUrl) && <a href={safeHttpUrl(row.mapsUrl)} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-xl text-xs border border-gray-200 text-gray-600">🗺 الخريطة</a>}
+                  {safeHttpUrl(row.website) && <a href={safeHttpUrl(row.website)} target="_blank" rel="noreferrer" className="px-3 py-2 rounded-xl text-xs border border-gray-200 text-gray-600">🌐 الموقع</a>}
                 </div>
               </div>
             )

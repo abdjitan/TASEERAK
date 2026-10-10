@@ -34,14 +34,15 @@ const GEMINI_MODELS = (process.env.GEMINI_MODEL || GEMINI_MODEL_FALLBACKS).split
 async function geminiGenerate(system: string, contents: any[], maxTokens: number, jsonMode: boolean): Promise<string | null> {
   let lastErr = ''
   for (const model of GEMINI_MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey()}`
+    // Key goes in a header, not the query string (URLs end up in proxy / error logs).
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`
     const body: any = {
       systemInstruction: { parts: [{ text: system }] },
       contents,
       generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3 },
     }
     if (jsonMode) body.generationConfig.responseMimeType = 'application/json'
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey() }, body: JSON.stringify(body) })
     if (!r.ok) {
       const t = await r.text().catch(() => '')
       lastErr = 'Gemini ' + r.status + ' (' + model + '): ' + t.slice(0, 250)

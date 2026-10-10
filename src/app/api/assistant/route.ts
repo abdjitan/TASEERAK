@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiText, AI_ENABLED } from '@/lib/ai'
 
 export const runtime = 'nodejs'
@@ -19,6 +20,7 @@ export async function POST(req: NextRequest) {
   const supabase = createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (await overHourlyLimit(supabase, 'assistant', user.id, 60)) return NextResponse.json({ error: RATE_LIMITED_AR }, { status: 429 })
 
   if (!AI_ENABLED) {
     return NextResponse.json({ reply: 'المساعد الذكي غير مُفعّل حالياً. يتم تفعيله قريباً 🤖' })

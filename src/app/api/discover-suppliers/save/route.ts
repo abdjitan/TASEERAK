@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     const { error, count } = await supabase
       .from('discovered_suppliers')
       .upsert(withId, { onConflict: 'place_id', ignoreDuplicates: false, count: 'exact' })
-    if (error) return NextResponse.json({ error: 'db', message: error.message }, { status: 500 })
+    if (error) { console.error('[discover-suppliers/save]', error.message); return NextResponse.json({ error: 'db' }, { status: 500 }) }
     saved += count ?? withId.length
   }
   if (withoutId.length) {

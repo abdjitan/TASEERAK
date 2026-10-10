@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import dns from 'node:dns/promises'
+import net from 'node:net'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -10,42 +12,70 @@ export const maxDuration = 30
 const EMAIL_RE = /[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g
 const JUNK = /(sentry|example\.com|email\.com|domain\.com|yourdomain|wixpress|\.wix|godaddy|cloudflare|@2x|@3x)/i
 
-// SSRF guard (H8): only fetch public http(s) hosts. Blocks localhost, private/
-// reserved IPv4 ranges, IPv6 loopback/link-local/ULA, and the cloud metadata IP
-// (169.254.169.254) so a crafted "website" can't make the server hit internal targets.
-function isSafeRemoteUrl(raw: string): boolean {
+// SSRF guard (H8, hardened 2026-10-10): only fetch public http(s) hosts. The hostname is
+// resolved and EVERY resolved address must be public (blocks 127.0.0.1.nip.io-style names,
+// IPv6 incl. v4-mapped, CGNAT 100.64/10, metadata 169.254.169.254). Redirects are followed
+// manually and each hop is re-checked. (Residual DNS-rebinding window between lookup and
+// fetch is accepted: admin-only route.)
+function isPrivateIp(ip: string): boolean {
+  if (net.isIPv4(ip)) {
+    const [a, b] = ip.split('.').map(Number)
+    return a === 0 || a === 10 || a === 127 || (a === 100 && b >= 64 && b <= 127) || (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 198 && (b === 18 || b === 19)) || a >= 224
+  }
+  const v = ip.toLowerCase()
+  if (v.startsWith('::ffff:')) {
+    const rest = v.slice(7)
+    if (net.isIPv4(rest)) return isPrivateIp(rest)
+    const m = rest.match(/^([0-9a-f]{1,4}):([0-9a-f]{1,4})$/) // ::ffff:7f00:1 == 127.0.0.1
+    if (!m) return true
+    const hi = parseInt(m[1], 16), lo = parseInt(m[2], 16)
+    return isPrivateIp([hi >> 8, hi & 255, lo >> 8, lo & 255].join('.'))
+  }
+  return v === '::' || v === '::1' || v.startsWith('fe8') || v.startsWith('fe9') || v.startsWith('fea') || v.startsWith('feb') ||
+    v.startsWith('fc') || v.startsWith('fd') || v.startsWith('ff')
+}
+
+async function isSafeRemoteUrl(raw: string): Promise<boolean> {
   let u: URL
   try { u = new URL(raw) } catch { return false }
   if (u.protocol !== 'http:' && u.protocol !== 'https:') return false
-  const host = u.hostname.toLowerCase()
-  if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) return false
-  if (host === '::1' || host.startsWith('fe80:') || host.startsWith('fc') || host.startsWith('fd')) return false
-  const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
-  if (m) {
-    const a = Number(m[1]), b = Number(m[2])
-    if (a === 0 || a === 10 || a === 127) return false
-    if (a === 172 && b >= 16 && b <= 31) return false
-    if (a === 192 && b === 168) return false
-    if (a === 169 && b === 254) return false
-    if (a >= 224) return false
-  }
-  return true
+  if (u.username || u.password) return false
+  const host = u.hostname.replace(/^\[|\]$/g, '').toLowerCase()
+  if (!host || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) return false
+  if (net.isIP(host)) return !isPrivateIp(host)
+  try {
+    const addrs = await dns.lookup(host, { all: true })
+    return addrs.length > 0 && addrs.every((x) => !isPrivateIp(x.address))
+  } catch { return false }
 }
 
 async function grab(url: string): Promise<string> {
   try {
     const c = new AbortController()
     const t = setTimeout(() => c.abort(), 6000)
-    const res = await fetch(url, {
-      signal: c.signal,
-      redirect: 'follow',
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TaseerakBot/1.0)' },
-    })
+    let current = url
+    for (let hop = 0; hop < 4; hop++) {
+      if (!(await isSafeRemoteUrl(current))) { clearTimeout(t); return '' }
+      const res = await fetch(current, {
+        signal: c.signal,
+        redirect: 'manual',
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TaseerakBot/1.0)' },
+      })
+      if (res.status >= 300 && res.status < 400) {
+        const loc = res.headers.get('location')
+        if (!loc) { clearTimeout(t); return '' }
+        current = new URL(loc, current).toString()
+        continue
+      }
+      clearTimeout(t)
+      if (!res.ok) return ''
+      const ct = res.headers.get('content-type') || ''
+      if (!ct.includes('text') && !ct.includes('html')) return ''
+      return (await res.text()).slice(0, 500000)
+    }
     clearTimeout(t)
-    if (!res.ok) return ''
-    const ct = res.headers.get('content-type') || ''
-    if (!ct.includes('text') && !ct.includes('html')) return ''
-    return (await res.text()).slice(0, 500000)
+    return ''
   } catch { return '' }
 }
 
@@ -84,7 +114,6 @@ export async function POST(req: NextRequest) {
   ]))
 
   for (const u of urls) {
-    if (!isSafeRemoteUrl(u)) continue
     const email = pickEmail(await grab(u))
     if (email) return NextResponse.json({ email })
   }

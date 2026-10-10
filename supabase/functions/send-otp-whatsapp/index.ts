@@ -39,6 +39,16 @@ Deno.serve(async (req) => {
   const template = Deno.env.get('WHATSAPP_OTP_TEMPLATE')
   if (!token || !phoneId || !template) return fail(500, 'whatsapp not configured')
 
+  // Per-number throttle: stops WhatsApp cost-pumping / spamming one number (service role is
+  // allowed any bucket in check_rate_limit).
+  try {
+    const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } })
+    const { data: allowed } = await db.rpc('check_rate_limit', { p_bucket: 'otp:' + phone, p_max: 5, p_window_seconds: 3600 })
+    if (allowed === false) return fail(429, 'طلبت رموزاً كثيرة لهذا الرقم. حاول بعد ساعة.')
+  } catch (e) {
+    console.error('otp rate limit check failed', String(e))
+  }
+
   const lang = await pickLanguage(phone, data?.user?.id)
   const order = [...new Set([lang, 'ar', 'en'])]
 

@@ -85,7 +85,9 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
-  const target = (event.notification.data && event.notification.data.url) || '/'
+  // Only same-origin paths: a url like "//evil.com" or "https://..." opens the app home instead.
+  const raw = (event.notification.data && event.notification.data.url) || '/'
+  const target = (typeof raw === 'string' && raw[0] === '/' && raw[1] !== '/' && raw[1] !== '\\') ? raw : '/'
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((wins) => {
       for (const w of wins) {

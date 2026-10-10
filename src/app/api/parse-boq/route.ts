@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { aiJson, AI_ENABLED } from '@/lib/ai'
 import { SUB_CATEGORIES, detectSubCategory } from '@/types'
 import { getTaxonomyRows, detectSubCategoryDb, type TaxRow } from '@/lib/serverTaxonomy'
+import { checkParsableUpload, SAFE_XLSX_READ } from '@/lib/serverUpload'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -248,10 +249,12 @@ export async function POST(req: NextRequest) {
 
     // قراءة الملف كـ Buffer
     const buffer = Buffer.from(await file.arrayBuffer())
+    const uploadErr = checkParsableUpload(file, buffer, ext || '')
+    if (uploadErr) return NextResponse.json({ error: uploadErr }, { status: 400 })
 
     // استخدام xlsx library
     const XLSX = await import('xlsx')
-    const wb = XLSX.read(buffer, { type: 'buffer' })
+    const wb = XLSX.read(buffer, SAFE_XLSX_READ)
 
     const extractedItems: any[] = []
     const seen = new Set<string>()

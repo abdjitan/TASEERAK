@@ -24,7 +24,9 @@ Deno.serve(async (req) => {
     const { data: n } = await supabase.from('notifications').select('*').eq('id', notification_id).single()
     if (!n || !n.user_id) return json({ ok: true, skip: 'no-notification' }, 200)
 
-    const url: string = (n.data && typeof n.data.url === 'string') ? n.data.url : '/'
+    // Same-origin path only: an url like "@evil.com/x" or "//evil.com" must not become a link.
+    const rawUrl = (n.data && typeof n.data.url === 'string') ? n.data.url : '/'
+    const url: string = /^\/(?![\/\\])[^\s"'<>]*$/.test(rawUrl) ? rawUrl : '/'
     let sent = 0, removed = 0, emailed = false
 
     // ── Web push ──

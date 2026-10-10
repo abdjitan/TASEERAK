@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { overHourlyLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
@@ -37,6 +39,11 @@ async function viaNominatim(lat: string, lng: string) {
 }
 
 export async function GET(req: NextRequest) {
+  // Spends the Google Maps key: signed-in users only, throttled per user.
+  const supabase = createServerSupabaseClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
+  if (await overHourlyLimit(supabase, 'geo', user.id, 60)) return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 })
   const lat = req.nextUrl.searchParams.get('lat')
   const lng = req.nextUrl.searchParams.get('lng')
   if (!lat || !lng || !/^-?\d+(\.\d+)?$/.test(lat) || !/^-?\d+(\.\d+)?$/.test(lng)) {

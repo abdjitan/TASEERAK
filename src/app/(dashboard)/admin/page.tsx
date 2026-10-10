@@ -9,6 +9,7 @@ import { dealStage } from '@/lib/dealStage'
 import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { SECTOR_LABELS, getGroupedSubCategories } from '@/types'
+import { safeHttpUrl } from '@/lib/safeUrl'
 
 export default function AdminPanel() {
   const [user, setUser] = useState<any>(null)
@@ -600,7 +601,7 @@ export default function AdminPanel() {
                           <span className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">{newL}</span>
                         </div>
                         {r.reason && <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-600">📝 {r.reason}</div>}
-                        {r.document_url && <a href={r.document_url} target="_blank" rel="noreferrer" className="text-xs underline text-[#d96f15] mt-1 inline-block">📎 مستند مرفق</a>}
+                        {safeHttpUrl(r.document_url) && <a href={safeHttpUrl(r.document_url)} target="_blank" rel="noreferrer" className="text-xs underline text-[#d96f15] mt-1 inline-block">📎 مستند مرفق</a>}
                         <div className="text-[11px] text-gray-400 mt-1.5">📅 {dt(r.created_at)}{r.admin_note ? ` · ملاحظة الإدارة: ${r.admin_note}` : ''}</div>
                       </div>
                       {r.status === 'pending' && (

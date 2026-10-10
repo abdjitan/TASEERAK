@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase/server'
+import { mimeForExt } from '@/lib/serverUpload'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
   const admin = createAdminSupabaseClient()
   const path = `${user.id}/offer-${Date.now()}.${ext}`
   const { data: up, error: upErr } = await admin.storage.from('licenses')
-    .upload(path, buf, { upsert: true, contentType: file.type || 'application/octet-stream' })
+    .upload(path, buf, { upsert: true, contentType: mimeForExt(ext) })
   if (upErr || !up) return NextResponse.json({ ok: false, error: 'upload_failed', message: 'تعذّر رفع الملف' }, { status: 502 })
   const { data: { publicUrl } } = admin.storage.from('licenses').getPublicUrl(up.path)
   return NextResponse.json({ ok: true, url: publicUrl, name: file.name })
