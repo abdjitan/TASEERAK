@@ -69,6 +69,8 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
     if (!p) { setError(t.badPhone); return }
     setLoading(true)
     const supabase = createClient()
+    // The WhatsApp code is sent in the language the site is open in (read by the auth hook).
+    await supabase.rpc('set_otp_language', { p_phone: p, p_lang: locale })
     const { error: err } = await supabase.auth.signInWithOtp({
       phone: p,
       options: { captchaToken: captchaToken || undefined },
