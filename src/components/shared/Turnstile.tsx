@@ -4,7 +4,7 @@
 // the Cloudflare script once, renders the widget explicitly, and reports the
 // token via onToken. Tokens are single-use, so callers must call .reset()
 // (exposed through the ref) after every auth attempt to get a fresh one.
-import { useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react'
 
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
 let scriptPromise: Promise<void> | null = null
@@ -31,6 +31,7 @@ const Turnstile = forwardRef(function Turnstile(
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
+  const [errCode, setErrCode] = useState('') // shown under the widget so a failure can be diagnosed
 
   useImperativeHandle(ref, () => ({
     reset() {
@@ -55,7 +56,11 @@ const Turnstile = forwardRef(function Turnstile(
           callback: (token: string) => onToken && onToken(token),
           'expired-callback': () => onToken && onToken(''),
           'timeout-callback': () => onToken && onToken(''),
-          'error-callback': () => { onToken && onToken(''); onError && onError() },
+          'error-callback': (code: string) => {
+            setErrCode(String(code || 'unknown'))
+            try { console.warn('[turnstile] error', code) } catch {}
+            onToken && onToken(''); onError && onError()
+          },
         })
       })
       .catch(() => { onError && onError() })
@@ -70,7 +75,12 @@ const Turnstile = forwardRef(function Turnstile(
     }
   }, [siteKey])
 
-  return <div ref={containerRef} dir={dir} style={{ minHeight: 65 }} />
+  return (
+    <div>
+      <div ref={containerRef} dir={dir} style={{ minHeight: 65 }} />
+      {errCode && <p dir="ltr" style={{ fontSize: 11, color: '#9AA4BF', textAlign: 'center', marginTop: 4 }}>Turnstile error: {errCode}</p>}
+    </div>
+  )
 })
 
 export default Turnstile
