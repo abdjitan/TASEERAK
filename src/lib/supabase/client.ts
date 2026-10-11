@@ -10,7 +10,13 @@ export function createClient() {
   if (_client) return _client
   _client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      // Never let the browser's HTTP cache answer a data request. Some PostgREST errors (e.g. a
+      // 300 "ambiguous embed") are heuristically cacheable, and a cached error kept a page
+      // broken for users even after the schema was fixed.
+      global: { fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, { ...init, cache: 'no-store' }) },
+    }
   )
   return _client
 }
