@@ -27,7 +27,14 @@ export default function CatalogPicker({ locale, onPick, onClose }: {
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [added, setAdded] = useState<string[]>([])
 
-  const hits = useMemo(() => (q.trim() ? searchProducts(q, { limit: 30 }) : []), [q])
+  // Exact/prefix/synonym matches score >= ~10; loose typo matches (بلك → بلدوزر) ~6. Show only
+  // the confident ones unless that leaves almost nothing.
+  const hits = useMemo(() => {
+    if (!q.trim()) return []
+    const all = searchProducts(q, { limit: 40 })
+    const good = all.filter(h => h.score >= 7)
+    return good.length >= 3 ? good.slice(0, 30) : all.slice(0, 8)
+  }, [q])
   const groups = useMemo(() => getGroupedProducts(sector), [sector])
 
   function pick(name: string, s: Sector) {
