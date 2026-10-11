@@ -25,17 +25,16 @@ export function suggestCatalog(name: string, sector?: Sector | null, details?: s
   if (core.length < 2) return { exact: null, suggestion: null }
   const numsOf = (s: string): string[] => toLatinDigits(s).match(/\d+(?:\.\d+)?/g) || []
   const nums = numsOf(`${name} ${details || ''}`)
-  const pick = (hits: ReturnType<typeof searchProducts>) => {
-    const close = hits.filter(h => h.score >= (hits[0]?.score ?? 0) - 1)
-    return (nums.length ? close.find(h => numsOf(h.name).some(n => nums.includes(n))) : undefined) || hits[0]
-  }
+  const sizedIn = (hits: ReturnType<typeof searchProducts>) => nums.length
+    ? hits.find(h => h.score >= hits[0].score * 0.7 && sharesNameWord(core, h.name) && numsOf(h.name).some(n => nums.includes(n)))
+    : undefined
   const inSector = sector ? searchProducts(core, { sector, limit: 8 }) : []
   const global = searchProducts(core, { limit: 12 })
-  const a = inSector.length ? pick(inSector) : undefined
-  const b = pick(global)
-  // Prefer the buyer's sector, unless only the other sector has the written size.
-  const sized = (h?: { name: string }) => !!h && nums.length > 0 && numsOf(h.name).some(n => nums.includes(n))
-  const hit = a && (sized(a) || !sized(b)) ? a : b
+  // A brand/adjective after the noun ("سلك الفنار") can outweigh the noun, so the size is also
+  // looked up on the head noun alone (Arabic puts it first).
+  const head = core.split(' ')[0]
+  const headHits = nums.length && head !== core && head.length >= 2 ? searchProducts(head, { limit: 12 }) : []
+  const hit = sizedIn(inSector) || sizedIn(global) || sizedIn(headHits) || inSector[0] || global[0]
   if (!hit || hit.score < 9 || !sharesNameWord(core, hit.name)) return { exact: null, suggestion: null }
   const same = normalizeText(coreName(hit.name)).replace(/\s+/g, '') === normalizeText(core).replace(/\s+/g, '')
   return same ? { exact: hit.name, suggestion: null } : { exact: null, suggestion: { name: hit.name, sector: hit.sector } }
