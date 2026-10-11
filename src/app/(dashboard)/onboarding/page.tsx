@@ -12,6 +12,7 @@ import SellerKindPicker from '@/components/shared/SellerKindPicker'
 import { rememberedSignupKind, SIGNUP_KIND_KEY } from '@/lib/sellers'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGION } from '@/types'
+import { CONTRACTOR_FEATURES } from '@/lib/features'
 
 // ── إعداد ملفك التجاري (Progressive profiling) ────────────────────────────
 // تُعبّأ هنا البيانات المنقولة خارج التسجيل: الموقع + القطاعات + (للمقاول: الدرجة)
@@ -375,7 +376,7 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {role === 'contractor' && (
+            {CONTRACTOR_FEATURES && role === 'contractor' && (
               <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-sm font-bold text-navy">🏅 {t.gradeTitle}</h2>

@@ -13,6 +13,7 @@ import DistrictField from '@/components/shared/DistrictField'
 import EnablePush from '@/components/shared/EnablePush'
 import SellerKindPicker from '@/components/shared/SellerKindPicker'
 import { REGIONS } from '@/types'
+import { CONTRACTOR_FEATURES } from '@/lib/features'
 
 const txt = {
   ar: {
@@ -526,8 +527,8 @@ export default function SettingsPage() {
                     </div>
                   )}
 
-                  {/* Contractor Grade — locked */}
-                  {profile?.role === 'contractor' && (
+                  {/* Contractor Grade — locked (hidden until contractor features return) */}
+                  {CONTRACTOR_FEATURES && profile?.role === 'contractor' && (
                     <div className="border-t border-gray-100 pt-5">
                       <label className="block text-xs font-bold text-gray-500 mb-2">درجة تصنيف شركتك (للمقاولين) — وزارة الشؤون البلدية 🔒</label>
                       <div className="mb-1">

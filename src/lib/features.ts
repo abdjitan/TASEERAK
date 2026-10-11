@@ -2,3 +2,7 @@
 // NEXT_PUBLIC_PHONE_OTP=1 → phone + WhatsApp OTP is the main way in (needs the Supabase
 // phone provider + send-otp-whatsapp hook configured first).
 export const PHONE_OTP_ENABLED = process.env.NEXT_PUBLIC_PHONE_OTP === '1'
+
+// Contractor grade (municipal classification A–D) and subcontracting: hidden while every buyer is
+// simply «مشتري». Turn on when the "request contractors" option is added.
+export const CONTRACTOR_FEATURES = false
