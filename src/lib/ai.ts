@@ -89,78 +89,100 @@ async function anthropicMessages(system: string, messages: any[], maxTokens: num
   return (resp.content || []).filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n').trim() || null
 }
 
-// طلب واحد بمخرجات JSON مُنظّمة. يُرجع الكائن المُحلَّل أو null.
-export async function aiJson<T = any>(opts: AiJsonOpts): Promise<T | null> {
-  const prov = aiProvider()
-  if (!prov) return null
-  try {
-    let text: string | null
-    const schemaHint = `\n\nأعد الإجابة بصيغة JSON صالحة فقط (respond in valid JSON) تطابق هذا المخطط:\n${JSON.stringify(opts.schema)}`
-    if (prov === 'gemini') {
-      text = await geminiGenerate(opts.system + schemaHint, [{ role: 'user', parts: [{ text: opts.user }] }], opts.maxTokens || 2000, true)
-    } else if (prov === 'groq') {
-      text = await groqGenerate(opts.system + schemaHint, [{ role: 'user', content: opts.user }], opts.maxTokens || 2000, true)
-    } else {
-      text = await anthropicMessages(opts.system, [{ role: 'user', content: opts.user }], opts.maxTokens || 2000, opts.model || DEFAULT_AI_MODEL, opts.schema)
-    }
-    if (!text) return null
-    // نظّف أي أسوار ```json``` إن وُجدت
-    const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
-    return JSON.parse(clean) as T
-  } catch (e: any) {
-    console.error('aiJson error:', e?.message || e)
-    return null
+// Providers to try, in order: the configured AI_PROVIDER first, then every other provider that
+// has a key. One dead provider (e.g. a retired Groq model) must not take every AI feature down.
+function providerChain(opts: { vision?: boolean } = {}): ('anthropic' | 'gemini' | 'groq')[] {
+  const all: ('anthropic' | 'gemini' | 'groq')[] = []
+  const first = aiProvider()
+  if (first) all.push(first)
+  for (const p of ['anthropic', 'gemini', 'groq'] as const) {
+    const has = p === 'anthropic' ? !!anthropicKey() : p === 'gemini' ? !!geminiKey() : !!groqKey()
+    if (has && !all.includes(p)) all.push(p)
   }
+  return opts.vision ? all.filter(p => p !== 'groq') : all // Groq has no vision here
 }
 
-// قراءة صورة + طلب JSON مُنظّم (تعرّف على مادة من صورة). Anthropic أو Gemini؛ Groq لا يدعم الصور → null.
+function parseJsonText<T>(text: string | null): T | null {
+  if (!text) return null
+  const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
+  return JSON.parse(clean) as T
+}
+
+// طلب واحد بمخرجات JSON مُنظّمة. يُرجع الكائن المُحلَّل أو null.
+export async function aiJson<T = any>(opts: AiJsonOpts): Promise<T | null> {
+  const schemaHint = `\n\nأعد الإجابة بصيغة JSON صالحة فقط (respond in valid JSON) تطابق هذا المخطط:\n${JSON.stringify(opts.schema)}`
+  for (const prov of providerChain()) {
+    try {
+      let text: string | null
+      if (prov === 'gemini') {
+        text = await geminiGenerate(opts.system + schemaHint, [{ role: 'user', parts: [{ text: opts.user }] }], opts.maxTokens || 2000, true)
+      } else if (prov === 'groq') {
+        text = await groqGenerate(opts.system + schemaHint, [{ role: 'user', content: opts.user }], opts.maxTokens || 2000, true)
+      } else {
+        text = await anthropicMessages(opts.system, [{ role: 'user', content: opts.user }], opts.maxTokens || 2000, opts.model || DEFAULT_AI_MODEL, opts.schema)
+      }
+      const out = parseJsonText<T>(text)
+      if (out) return out
+    } catch (e: any) {
+      console.error(`aiJson error (${prov}):`, e?.message || e)
+    }
+  }
+  return null
+}
+
+// قراءة صورة + طلب JSON مُنظّم (تعرّف على مادة من صورة). Anthropic أو Gemini.
 // المخرج اقتراح فقط: المستدعي يعرضه للمستخدم ليؤكّده، ولا يُعامَل كحقيقة.
 export async function aiVisionJson<T = any>(opts: AiJsonOpts & { image: { base64: string; mime: string } }): Promise<T | null> {
-  const prov = aiProvider()
-  if (!prov || prov === 'groq') return null
-  try {
-    let text: string | null
-    if (prov === 'gemini') {
-      const schemaHint = `\n\nأعد الإجابة بصيغة JSON صالحة فقط (respond in valid JSON) تطابق هذا المخطط:\n${JSON.stringify(opts.schema)}`
-      text = await geminiGenerate(opts.system + schemaHint, [{
-        role: 'user',
-        parts: [{ inline_data: { mime_type: opts.image.mime, data: opts.image.base64 } }, { text: opts.user }],
-      }], opts.maxTokens || 1500, true)
-    } else {
-      text = await anthropicMessages(opts.system, [{
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: opts.image.mime, data: opts.image.base64 } },
-          { type: 'text', text: opts.user },
-        ],
-      }], opts.maxTokens || 1500, opts.model || DEFAULT_AI_MODEL, opts.schema)
+  for (const prov of providerChain({ vision: true })) {
+    try {
+      let text: string | null
+      if (prov === 'gemini') {
+        const schemaHint = `\n\nأعد الإجابة بصيغة JSON صالحة فقط (respond in valid JSON) تطابق هذا المخطط:\n${JSON.stringify(opts.schema)}`
+        text = await geminiGenerate(opts.system + schemaHint, [{
+          role: 'user',
+          parts: [{ inline_data: { mime_type: opts.image.mime, data: opts.image.base64 } }, { text: opts.user }],
+        }], opts.maxTokens || 1500, true)
+      } else {
+        text = await anthropicMessages(opts.system, [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: opts.image.mime, data: opts.image.base64 } },
+            { type: 'text', text: opts.user },
+          ],
+        }], opts.maxTokens || 1500, opts.model || DEFAULT_AI_MODEL, opts.schema)
+      }
+      const out = parseJsonText<T>(text)
+      if (out) return out
+    } catch (e: any) {
+      console.error(`aiVisionJson error (${prov}):`, e?.message || e)
     }
-    if (!text) return null
-    const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
-    return JSON.parse(clean) as T
-  } catch (e: any) {
-    console.error('aiVisionJson error:', e?.message || e)
-    return null
   }
+  return null
 }
+
+/** True when at least one provider that can read images is configured. */
+export const AI_VISION_ENABLED = !!(anthropicKey() || geminiKey())
 
 // محادثة نصّية (للمساعد الذكي). messages: [{role:'user'|'assistant', content}]
 export async function aiText(system: string, messages: { role: string; content: string }[], maxTokens = 1024): Promise<string | null> {
-  const prov = aiProvider()
-  if (!prov) return null
-  try {
-    if (prov === 'gemini') {
-      const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
-      return await geminiGenerate(system, contents, maxTokens, false)
+  let lastErr = ''
+  for (const prov of providerChain()) {
+    try {
+      let out: string | null
+      if (prov === 'gemini') {
+        const contents = messages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
+        out = await geminiGenerate(system, contents, maxTokens, false)
+      } else if (prov === 'groq') out = await groqGenerate(system, messages, maxTokens, false)
+      else out = await anthropicMessages(system, messages, maxTokens, DEFAULT_AI_MODEL)
+      if (out) return out
+    } catch (e: any) {
+      lastErr = e?.message || 'AI error'
+      console.error(`aiText error (${prov}):`, lastErr)
     }
-    if (prov === 'groq') return await groqGenerate(system, messages, maxTokens, false)
-    return await anthropicMessages(system, messages, maxTokens, DEFAULT_AI_MODEL)
-  } catch (e: any) {
-    console.error('aiText error:', e?.message || e)
-    // للتشخيص عند الحاجة: AI_DEBUG=1 يُظهر الخطأ الحقيقي. وإلا رسالة نظيفة.
-    if (process.env.AI_DEBUG === '1') return '⚠️ تشخيص: ' + (e?.message || 'AI error')
-    return null
   }
+  // للتشخيص عند الحاجة: AI_DEBUG=1 يُظهر الخطأ الحقيقي. وإلا رسالة نظيفة.
+  if (process.env.AI_DEBUG === '1' && lastErr) return '⚠️ تشخيص: ' + lastErr
+  return null
 }
 
 // مرجع مُدمج لشجرة المواد (قطاع → مفاتيح التخصصات + الأسماء) لإرشاد النموذج.

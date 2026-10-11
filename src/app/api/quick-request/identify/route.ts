@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
-import { aiVisionJson, aiProvider } from '@/lib/ai'
+import { aiVisionJson, AI_VISION_ENABLED } from '@/lib/ai'
 import { suggestCatalog } from '@/lib/catalogSuggest'
 import type { Sector } from '@/types'
 
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const mime = imageMime(buf)
   if (!mime) return NextResponse.json({ error: 'bad_type' }, { status: 400 })
 
-  if (!aiProvider() || aiProvider() === 'groq') return NextResponse.json({ suggestion: null, ai: false })
+  if (!AI_VISION_ENABLED) return NextResponse.json({ suggestion: null, ai: false })
 
   const r = await aiVisionJson<any>({
     system: SYSTEM,
