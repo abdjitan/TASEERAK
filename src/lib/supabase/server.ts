@@ -59,35 +59,14 @@ export function createPublicClient() {
   )
 }
 
-// Admin client (bypasses RLS) — use only in trusted server-side code
+// Admin client (bypasses RLS) — use only in trusted server-side code, AFTER checking the caller.
+// It must NOT read the request cookies: with cookies @supabase/ssr sends the signed-in user's JWT,
+// so every call ran with the user's permissions instead of the service role (uploads to the
+// private "licenses" bucket and signed URLs in /api/file failed).
 export function createAdminSupabaseClient() {
-  const cookieStore = cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      // Both cookie interfaces (version-resilient).
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        },
-        set(name: string, value: string, options: any) {
-          try { cookieStore.set({ name, value, ...options }) } catch {}
-        },
-        remove(name: string, options: any) {
-          try { cookieStore.set({ name, value: '', ...options }) } catch {}
-        },
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {}
-        },
-      },
-    }
-  )
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY
+  if (!key) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set')
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
 }
