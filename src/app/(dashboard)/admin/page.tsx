@@ -238,7 +238,7 @@ export default function AdminPanel() {
   function exportCSV() {
     const rows = filtered.map((u: any) => ({
       الاسم: u.company_name_ar || '', 'الاسم (EN)': u.company_name_en || '',
-      النوع: u.role === 'contractor' ? 'مقاول' : 'مورد',
+      النوع: u.role === 'contractor' ? 'مشترٍ' : 'مورد',
       البريد: emails[u.id]?.email || '', الجوال: u.phone || '',
       المنطقة: u.region || '', المدينة: u.city || '',
       'السجل التجاري': u.commercial_registration || '', 'الرقم الضريبي': u.vat_number || '',
@@ -392,7 +392,7 @@ export default function AdminPanel() {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 stagger">
           {[
             { label: 'إجمالي المستخدمين', value: stats.total, icon: '👥', bg: '#1B2D5B', go: () => { setTab('all'); setRoleFilter('') } },
-            { label: 'مقاولون', value: stats.contractors, icon: '👷', bg: '#2a4a8a', go: () => { setTab('all'); setRoleFilter('contractor') } },
+            { label: 'مشترون', value: stats.contractors, icon: '👷', bg: '#2a4a8a', go: () => { setTab('all'); setRoleFilter('contractor') } },
             { label: 'موردون', value: stats.suppliers, icon: '🏪', bg: '#7c3aed', go: () => { setTab('all'); setRoleFilter('supplier') } },
             { label: 'قيد المراجعة', value: stats.pending, icon: '⏳', bg: '#F5831F', go: () => { setTab('pending'); setRoleFilter('') } },
             { label: 'موثقون', value: stats.verified, icon: '✅', bg: '#0F6E56', go: () => { setTab('verified'); setRoleFilter('') } },
@@ -454,7 +454,7 @@ export default function AdminPanel() {
           <div className="mb-4 flex items-center gap-2">
             <span className="text-xs text-gray-500">عرض:</span>
             <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-[#1B2D5B] text-white">
-              {roleFilter === 'contractor' ? '👷 المقاولون فقط' : '🏪 الموردون فقط'} ({filtered.length})
+              {roleFilter === 'contractor' ? '🛒 المشترون فقط' : '🏪 الموردون فقط'} ({filtered.length})
               <button onClick={() => setRoleFilter('')} className="hover:text-orange-300">✕</button>
             </span>
           </div>
@@ -490,7 +490,7 @@ export default function AdminPanel() {
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
               <div className="text-5xl mb-4">🕊️</div>
               <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد نزاعات مفتوحة</h3>
-              <p className="text-sm text-gray-400 mt-1">تظهر هنا النزاعات بين المقاولين والموردين للوساطة</p>
+              <p className="text-sm text-gray-400 mt-1">تظهر هنا النزاعات بين المشترين والموردين للوساطة</p>
             </div>
           ) : (
             <div className="space-y-3 stagger">
@@ -505,7 +505,7 @@ export default function AdminPanel() {
                           <span className="font-bold" style={{ color: '#1B2D5B' }}>{r?.product_name || 'طلب'}</span>
                         </div>
                         <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
-                          <span>🏢 المقاول: <b>{nameOf(r?.contractor_id)}</b></span>
+                          <span>🏢 المشتري: <b>{nameOf(r?.contractor_id)}</b></span>
                           <span>🏪 المورد: <b>{nameOf(o.supplier_id)}</b></span>
                           <span>💰 القيمة: {sar(o.total_price)}</span>
                           <span>📅 فُتح: {dt(o.dispute_opened_at)}</span>
@@ -706,7 +706,7 @@ export default function AdminPanel() {
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
               <div className="text-5xl mb-4">💬</div>
               <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد رسائل</h3>
-              <p className="text-sm text-gray-400 mt-1">تظهر هنا رسائل المقاولين والموردين</p>
+              <p className="text-sm text-gray-400 mt-1">تظهر هنا رسائل المشترين والموردين</p>
             </div>
           ) : (
             <div className="space-y-3 stagger">
@@ -757,7 +757,7 @@ export default function AdminPanel() {
                               <span className="badge text-[10px] bg-orange-100 text-orange-700">{rOffers.length} عرض</span>
                             </div>
                             <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1">
-                              <span>🏢 المقاول: <b>{nameOf(r.contractor_id)}</b>{r.hide_identity ? ' (هوية مخفية)' : ''}</span>
+                              <span>🏢 المشتري: <b>{nameOf(r.contractor_id)}</b>{r.hide_identity ? ' (هوية مخفية)' : ''}</span>
                               <span>📦 الكمية: {r.quantity} {r.unit}</span>
                               <span>💰 تقديري: {sar(r.estimated_value)}</span>
                               <span>📍 {r.region || '—'}{r.city ? ' / ' + r.city : ''}</span>
@@ -888,7 +888,7 @@ export default function AdminPanel() {
                       {r.admin_note && <p className="text-xs text-[#0F6E56] bg-emerald-50 rounded-lg px-2 py-1 mt-1 inline-block">ملاحظة الإدارة: {r.admin_note}</p>}
                       <div className="text-[11px] text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
-                        {r.requester?.role && ` (${r.requester.role === 'contractor' ? 'مقاول' : r.requester.role === 'supplier' ? 'مورد' : r.requester.role})`}
+                        {r.requester?.role && ` (${r.requester.role === 'contractor' ? 'مشترٍ' : r.requester.role === 'supplier' ? 'مورد' : r.requester.role})`}
                         {r.sub_category && ` · مجموعة: ${r.sub_category}`} · {new Date(r.created_at).toLocaleDateString('ar-SA')}
                       </div>
                     </div>
@@ -932,7 +932,7 @@ export default function AdminPanel() {
                       {u.company_name_en && <div className="text-xs text-gray-400">{u.company_name_en}</div>}
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className={`badge text-[10px] ${u.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>
-                          {u.role === 'contractor' ? '👷 مقاول' : '🏪 مورد'}
+                          {u.role === 'contractor' ? '🛒 مشترٍ' : '🏪 مورد'}
                         </span>
                         {u.role === 'contractor' && u.contractor_grade && (
                           <span className="badge text-[10px] bg-indigo-100 text-indigo-700">درجة {u.contractor_grade}</span>

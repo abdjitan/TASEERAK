@@ -155,7 +155,7 @@ export default function AdminUserDetail() {
                 <div className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{p.company_name_ar || '—'}</div>
                 {p.company_name_en && <div className="text-sm text-gray-400">{p.company_name_en}</div>}
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <span className={`badge text-[10px] ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? '👷 مقاول' : p.role === 'supplier' ? '🏪 مورد' : p.role}</span>
+                  <span className={`badge text-[10px] ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? '🛒 مشترٍ' : p.role === 'supplier' ? '🏪 مورد' : p.role}</span>
                   <span className={`badge text-[10px] ${isVerified ? 'badge-green' : p.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'}`}>
                     {isVerified ? '✓ موثق' : p.verification_status === 'rejected' ? '✕ مرفوض' : '⏳ قيد المراجعة'}
                   </span>
@@ -233,7 +233,7 @@ export default function AdminUserDetail() {
           </Section>
 
           <Section title="التصنيف" icon="🏷">
-            <Field label="نوع الحساب">{p.role === 'contractor' ? 'مقاول' : 'مورد'}</Field>
+            <Field label="نوع الحساب">{p.role === 'contractor' ? 'مشترٍ' : 'مورد'}</Field>
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
                 <div className="text-[11px] text-gray-400 mb-1">نوع الحساب · الفئة: <b className="text-purple-700">{tierLabel(p.supplier_tier, 'ar')}</b> <span className="text-gray-300">(تلقائية)</span></div>
@@ -246,7 +246,7 @@ export default function AdminUserDetail() {
             )}
             {p.role === 'contractor' && (
               <div className="py-1.5 border-b border-gray-50">
-                <div className="text-[11px] text-gray-400 mb-1">درجة المقاول</div>
+                <div className="text-[11px] text-gray-400 mb-1">درجة التصنيف (للمقاولين)</div>
                 <select value={p.contractor_grade || ''} onChange={(e: any) => setField('contractor_grade', e.target.value || null)} className="text-xs border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg px-2 py-1.5">
                   <option value="">-- الدرجة --</option><option value="A">أ — فوق 100M</option><option value="B">ب — 30–100M</option><option value="C">ج — 5–30M</option><option value="D">د — أقل من 5M</option>
                 </select>
@@ -254,7 +254,7 @@ export default function AdminUserDetail() {
             )}
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
-                <div className="text-[11px] text-gray-400 mb-1.5">🏅 اعتمادات المورد (تظهر للمقاولين كدليل ثقة)</div>
+                <div className="text-[11px] text-gray-400 mb-1.5">🏅 اعتمادات المورد (تظهر للمشترين كدليل ثقة)</div>
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(APPROVAL_LABELS).map(([key, label]) => {
                     const on = Array.isArray(p.approvals) && p.approvals.includes(key)

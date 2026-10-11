@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { waLink } from '@/lib/wa'
+import { fileHref } from '@/lib/fileHref'
 
 // 🛡 حماية الصفقة — محضر استلام + تأكيد دفع + نزاع (للطرفين).
-// مكوّن مشترك يُعرض في صفحة تفاصيل الصفقة لكلٍّ من المقاول والمورّد (كلٌّ يرى أزراره).
-// أمر الشراء (orders/[id]) صار فاتورة ضريبية فقط — إدارة الصفقة تتم من هنا.
+// مكوّن مشترك يُعرض في صفحة تفاصيل الصفقة لكلٍّ من المشتري والمورد (كلٌّ يرى أزراره).
+// الفاتورة الرسمية يصدرها المورد ويرفعها هنا؛ أمر الشراء في المنصة مستند غير رسمي.
 
 type Party = { company_name_ar?: string; company_name_en?: string; phone?: string; contact_phone?: string } | null
 
@@ -28,6 +29,21 @@ export default function DealProtection({
   const [busy, setBusy] = useState('')
   const [showDispute, setShowDispute] = useState(false)
   const [disputeReason, setDisputeReason] = useState('')
+  const [invErr, setInvErr] = useState('')
+
+  // المورد يرفع فاتورته الرسمية (من عنده، أو من المحل الذي اشترى منه) فتُرفق بالصفقة للمشتري.
+  async function uploadInvoice(file: File | null | undefined) {
+    if (!file) return
+    setInvErr(''); setBusy('invoice')
+    const fd = new FormData(); fd.append('file', file)
+    const res = await fetch('/api/upload-attachment', { method: 'POST', body: fd })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok || !j.ok) { setInvErr(j?.message || 'تعذّر رفع الملف. حاول مرة أخرى.'); setBusy(''); return }
+    const { data, error } = await createClient().rpc('attach_supplier_invoice', { p_offer_id: offer.id, p_url: j.url, p_name: j.name || file.name })
+    if (error) setInvErr(error.message || 'تعذّر إرفاق الفاتورة.')
+    else if (data) setOffer({ ...offer, ...(data as any) })
+    setBusy('')
+  }
 
   // 🔒 كل انتقال في حالة الصفقة يمرّ عبر دالة خادمية موثوقة (RPC) — لا تحديث مباشر.
   // الخادم يتحقق من الدور والحالة الحالية ويختم الوقت بنفسه، فلا يستطيع أي طرف
@@ -56,18 +72,18 @@ export default function DealProtection({
       <p className="text-xs text-gray-400 mb-3">توثّق المنصة مراحل الصفقة كدليل يحمي الطرفين — ولا تحتفظ بأي مبالغ.</p>
       {deliverOverdue && (
         <div className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-2 leading-relaxed">
-          ⏰ {isSupplier ? 'تأخّرت عن موعد التوصيل المتّفق عليه — يرجى تأكيد التسليم أو التواصل مع المقاول.' : 'المورد تأخّر عن موعد التوصيل المتّفق عليه — تابع معه أو افتح نزاعاً أدناه.'}
+          ⏰ {isSupplier ? 'تأخّرت عن موعد التوصيل المتّفق عليه — يرجى تأكيد التسليم أو التواصل مع المشتري.' : 'المورد تأخّر عن موعد التوصيل المتّفق عليه — تابع معه أو افتح نزاعاً أدناه.'}
         </div>
       )}
       {receiptOverdue && (
         <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold px-3 py-2 leading-relaxed">
-          ⏰ {isContractor ? 'مضى أكثر من 48 ساعة على تأكيد التوصيل — يرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.' : 'بانتظار تأكيد المقاول لاستلام البضاعة.'}
+          ⏰ {isContractor ? 'مضى أكثر من 48 ساعة على تأكيد التوصيل — يرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.' : 'بانتظار تأكيد المشتري لاستلام البضاعة.'}
         </div>
       )}
       {w && (
         <a href={w} target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs mb-4 px-3 py-1.5 rounded-full font-semibold text-white" style={{ background: '#25D366' }}>
-          💬 تواصل مع {isContractor ? 'المورد' : 'المقاول'} عبر واتساب
+          💬 تواصل مع {isContractor ? 'المورد' : 'المشتري'} عبر واتساب
         </a>
       )}
 
@@ -76,7 +92,7 @@ export default function DealProtection({
         {[
           { k: 'accept', label: 'قبول العرض', done: true, at: offer.accepted_at },
           { k: 'deliver', label: 'تسليم المورد', done: !!offer.supplier_delivered_at, at: offer.supplier_delivered_at },
-          { k: 'receipt', label: 'استلام المقاول', done: !!offer.received_at, at: offer.received_at },
+          { k: 'receipt', label: 'استلام المشتري', done: !!offer.received_at, at: offer.received_at },
           { k: 'paid', label: 'الدفع', done: offer.payment_status === 'paid', at: offer.payment_confirmed_at || offer.paid_marked_at },
         ].map((s: any, i: number) => (
           <div key={s.k} className="flex flex-col items-center">
@@ -103,7 +119,7 @@ export default function DealProtection({
         <div className="flex items-center justify-between gap-3 rounded-xl p-3" style={{ background: offer.received_at ? '#E1F5EE' : '#f9fafb' }}>
           <div className="text-sm">
             <div className="font-semibold text-gray-700">محضر الاستلام</div>
-            <div className="text-xs text-gray-400">{offer.received_at ? `✓ موثّق — أكّد المقاول الاستلام ${new Date(offer.received_at).toLocaleString('ar-SA-u-ca-gregory')}` : 'بانتظار تأكيد المقاول لاستلام البضاعة'}</div>
+            <div className="text-xs text-gray-400">{offer.received_at ? `✓ موثّق — أكّد المشتري الاستلام ${new Date(offer.received_at).toLocaleString('ar-SA-u-ca-gregory')}` : 'بانتظار تأكيد المشتري لاستلام البضاعة'}</div>
           </div>
           {!offer.received_at && isContractor && (
             <div className="flex items-center gap-2 shrink-0">
@@ -113,13 +129,42 @@ export default function DealProtection({
           )}
         </div>
 
+        {/* Official invoice: issued by the seller, attached to the deal */}
+        <div className="rounded-xl p-3" style={{ background: offer.supplier_invoice_url ? '#E1F5EE' : '#f9fafb' }}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm min-w-0">
+              <div className="font-semibold text-gray-700">🧾 الفاتورة الرسمية</div>
+              <div className="text-xs text-gray-400">
+                {offer.supplier_invoice_url
+                  ? `✓ أرفقها المورد — ${new Date(offer.supplier_invoice_at).toLocaleString('ar-SA-u-ca-gregory')}`
+                  : isSupplier
+                    ? 'ارفع فاتورتك الرسمية (أو فاتورة المحل الذي اشتريت منه) عند التوصيل.'
+                    : 'يُرفقها المورد عند التوصيل.'}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {offer.supplier_invoice_url && (
+                <a href={fileHref(offer.supplier_invoice_url)} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold border border-gray-200 bg-white text-gray-700 whitespace-nowrap">📄 عرض الفاتورة</a>
+              )}
+              {isSupplier && (
+                <label className={`text-xs px-4 py-2 rounded-xl font-semibold text-white whitespace-nowrap cursor-pointer ${busy === 'invoice' ? 'opacity-50 pointer-events-none' : ''}`} style={{ background: '#1B2D5B' }}>
+                  {busy === 'invoice' ? 'جارٍ الرفع…' : offer.supplier_invoice_url ? 'استبدال' : '⬆ رفع الفاتورة'}
+                  <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden"
+                    onChange={(e: any) => { uploadInvoice(e.target.files?.[0]); e.target.value = '' }} />
+                </label>
+              )}
+            </div>
+          </div>
+          {invErr && <p className="text-xs text-red-600 mt-2" role="alert">{invErr}</p>}
+        </div>
+
         {/* Payment */}
         <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-xl p-3">
           <div className="text-sm">
             <div className="font-semibold text-gray-700">الدفع</div>
             <div className="text-xs text-gray-400">
               {offer.payment_status === 'paid'
-                ? (offer.payment_confirmed_at ? `✓ أكّد المورد استلام الدفعة — ${new Date(offer.payment_confirmed_at).toLocaleString('ar-SA-u-ca-gregory')}` : 'أكّد المقاول الدفع — بانتظار تأكيد المورد')
+                ? (offer.payment_confirmed_at ? `✓ أكّد المورد استلام الدفعة — ${new Date(offer.payment_confirmed_at).toLocaleString('ar-SA-u-ca-gregory')}` : 'أكّد المشتري الدفع — بانتظار تأكيد المورد')
                 : 'لم تُؤكَّد الدفعة بعد'}
             </div>
           </div>

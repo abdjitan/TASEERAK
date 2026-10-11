@@ -69,13 +69,13 @@ export default function SupplierBranchesPage() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#1B2D5B' }}>🏢</div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>فروع الشركة</h1>
-              <p className="text-gray-500 text-xs sm:text-sm">أضف فروعك في المناطق المختلفة — تظهر شركتك لمقاولي كل منطقة فيها فرع.</p>
+              <p className="text-gray-500 text-xs sm:text-sm">أضف فروعك في المناطق المختلفة — تظهر شركتك للمشترين في كل منطقة فيها فرع.</p>
             </div>
           </div>
         </div>
 
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-700">
-          💡 مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المقاولين في جميع هذه المناطق.
+          💡 مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المشترين في جميع هذه المناطق.
         </div>
 
         {!showForm && (

@@ -20,7 +20,7 @@ const txt = {
     street: 'اسم الشارع', district: 'الحي', region: 'المنطقة', city: 'المدينة',
     postalCode: 'الرمز البريدي', additionalNo: 'الرقم الإضافي', selectRegion: 'اختر المنطقة',
     locationSection: 'تحديد الموقع على الخريطة', loading: 'جارٍ التحميل...',
-    verifyNote: '✅ توثيق الموقع يزيد من ثقة المقاولين بك ويرفع ترتيبك في نتائج البحث',
+    verifyNote: '✅ توثيق الموقع يزيد من ثقة المشترين بك ويرفع ترتيبك في نتائج البحث',
     optional: 'اختياري',
   },
   en: {
@@ -31,7 +31,7 @@ const txt = {
     street: 'Street Name', district: 'District', region: 'Region', city: 'City',
     postalCode: 'Postal Code', additionalNo: 'Additional Number', selectRegion: 'Select region',
     locationSection: 'Pin Location on Map', loading: 'Loading...',
-    verifyNote: '✅ Verifying your location increases contractors\' trust and boosts your ranking',
+    verifyNote: '✅ Verifying your location increases buyers\' trust and boosts your ranking',
     optional: 'optional',
   },
   ur: {
@@ -42,7 +42,7 @@ const txt = {
     street: 'گلی کا نام', district: 'ضلع', region: 'علاقہ', city: 'شہر',
     postalCode: 'پوسٹل کوڈ', additionalNo: 'اضافی نمبر', selectRegion: 'علاقہ منتخب کریں',
     locationSection: 'نقشے پر مقام', loading: 'لوڈ ہو رہا ہے...',
-    verifyNote: '✅ مقام کی تصدیق ٹھیکیداروں کا اعتماد بڑھاتی ہے',
+    verifyNote: '✅ مقام کی تصدیق خریداروں کا اعتماد بڑھاتی ہے',
     optional: 'اختیاری',
   },
 }

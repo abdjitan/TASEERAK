@@ -134,7 +134,7 @@ function Messages() {
 
   const active = convos.find((c: any) => c.id === activeId)
   // The contractor's name is masked (profiles_public) for suppliers, so say "مقاول" rather than a blank.
-  const counterpart = (c: any) => c?.contractor_id === me ? (c?.supplier?.company_name_ar || 'مورد') : (c?.contractor?.company_name_ar || 'مقاول')
+  const counterpart = (c: any) => c?.contractor_id === me ? (c?.supplier?.company_name_ar || 'مورد') : (c?.contractor?.company_name_ar || 'مشترٍ')
   const ctx = (c: any) => c?.rfq?.title || c?.rfq?.product_name || ''
 
   const backHref = role === 'supplier' ? '/supplier/dashboard' : role === 'admin' ? '/admin' : '/contractor'

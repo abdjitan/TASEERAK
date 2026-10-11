@@ -110,6 +110,20 @@ export function availabilityLabel(k: string | null | undefined, locale: Locale):
   return a ? a.icon + ' ' + pick(a, locale) : ''
 }
 
+// ── Warranty (optional, per material) ─────────────────────────────────────────────────────────
+// Stored as Arabic text on each priced line (item_prices[].warranty); '' = not stated.
+export const WARRANTY_OPTIONS: { v: string; ar: string; en: string; ur: string }[] = [
+  { v: '', ar: 'غير محدد', en: 'Not specified', ur: 'غیر متعین' },
+  { v: 'بدون ضمان', ar: 'بدون ضمان', en: 'No warranty', ur: 'کوئی وارنٹی نہیں' },
+  { v: 'ضمان الوكيل', ar: 'ضمان الوكيل', en: "Manufacturer's warranty", ur: 'مینوفیکچرر وارنٹی' },
+  { v: '3 أشهر', ar: '3 أشهر', en: '3 months', ur: '3 ماہ' },
+  { v: '6 أشهر', ar: '6 أشهر', en: '6 months', ur: '6 ماہ' },
+  { v: 'سنة', ar: 'سنة', en: '1 year', ur: '1 سال' },
+  { v: 'سنتان', ar: 'سنتان', en: '2 years', ur: '2 سال' },
+  { v: '5 سنوات', ar: '5 سنوات', en: '5 years', ur: '5 سال' },
+  { v: '10 سنوات', ar: '10 سنوات', en: '10 years', ur: '10 سال' },
+]
+
 // ── Verification state (only what was actually checked) ────────────────────────────────────────
 export type VerifyLevel = 'business_verified' | 'business_submitted' | 'phone_verified' | 'none'
 export function verifyLevel(p: any): VerifyLevel {

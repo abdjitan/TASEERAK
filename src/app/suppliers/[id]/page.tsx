@@ -87,7 +87,7 @@ export default async function SupplierProfilePage({ params }: { params: { id: st
 
           {Array.isArray(s.recent_reviews) && s.recent_reviews.length > 0 && (
             <div className="mt-6 pt-5 border-t border-gray-100">
-              <div className="text-xs font-bold text-gray-400 mb-3">💬 آراء المقاولين</div>
+              <div className="text-xs font-bold text-gray-400 mb-3">💬 آراء المشترين</div>
               <div className="space-y-3">
                 {s.recent_reviews.map((rv: any, i: number) => (
                   <div key={i} className="rounded-xl bg-[#f7f8fa] p-3">

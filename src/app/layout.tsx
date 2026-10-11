@@ -5,8 +5,8 @@ import PwaBoot from '@/components/shared/PwaBoot'
 import '@/styles/globals.css'
 
 export const metadata: Metadata = {
-  title: 'تسعيرك | Taseerak — منصة التسعير والتوريد للمقاولين',
-  description: 'منصة ذكية تربط المقاولين بالموردين في جميع قطاعات البناء والإنشاء',
+  title: 'تسعيرك | Taseerak — منصة التسعير والتوريد لمواد البناء',
+  description: 'منصة ذكية تربط المشترين بالموردين في جميع قطاعات البناء والإنشاء',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'تسعيرك' },
   // أيقونة شاشة iOS الرئيسية (بلا شفافية) — src/app/icon.png يولّد favicon تلقائياً

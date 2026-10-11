@@ -56,7 +56,7 @@ export default function SupplierDealsPage() {
     <AppShell title={locale === 'en' ? 'My Deals' : 'صفقاتي'} nav={getNav('supplier', locale, '/supplier/deals')} dir={dir}>
       <div className="max-w-4xl mx-auto">
         <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-          className="input-field mb-3" placeholder={locale === 'en' ? '🔍 Search deals (product, contractor, invoice №)…' : '🔍 ابحث في الصفقات (منتج، مقاول، رقم فاتورة)…'} />
+          className="input-field mb-3" placeholder={locale === 'en' ? '🔍 Search deals (product, buyer, invoice №)…' : '🔍 ابحث في الصفقات (منتج، مشترٍ، رقم فاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">
           {[{ k: 'all', l: locale === 'en' ? 'All' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Disputed' : 'نزاعات' }].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)}

@@ -29,7 +29,7 @@ const txt = {
     langTitle: 'اختر لغة العرض', langSaved: '✓ تم حفظ اللغة',
     loading: 'جارٍ التحميل...',
     email: 'البريد الإلكتروني', emailNote: 'لا يمكن تغيير البريد الإلكتروني',
-    role: 'نوع الحساب', contractor: 'مقاول', supplier: 'مورد',
+    role: 'نوع الحساب', contractor: 'مشترٍ', supplier: 'مورد',
     verStatus: 'حالة التحقق', pending: 'قيد المراجعة', verified: 'موثق', rejected: 'مرفوض',
     docsTitle: 'المستندات الرسمية', docsSub: 'ارفع مستنداتك لإتمام عملية التحقق',
     licenseLabel: 'رخصة العمل', crLabel: 'السجل التجاري',
@@ -52,7 +52,7 @@ const txt = {
     langTitle: 'Choose Display Language', langSaved: '✓ Language saved',
     loading: 'Loading...',
     email: 'Email Address', emailNote: 'Email cannot be changed',
-    role: 'Account Type', contractor: 'Contractor', supplier: 'Supplier',
+    role: 'Account Type', contractor: 'Buyer', supplier: 'Supplier',
     verStatus: 'Verification Status', pending: 'Pending', verified: 'Verified', rejected: 'Rejected',
     docsTitle: 'Official Documents', docsSub: 'Upload your documents to complete verification',
     licenseLabel: 'Business License', crLabel: 'Commercial Registration',
@@ -75,7 +75,7 @@ const txt = {
     langTitle: 'ڈسپلے زبان منتخب کریں', langSaved: '✓ زبان محفوظ ہو گئی',
     loading: 'لوڈ ہو رہا ہے...',
     email: 'ای میل ایڈریس', emailNote: 'ای میل تبدیل نہیں کی جا سکتی',
-    role: 'اکاؤنٹ کی قسم', contractor: 'ٹھیکیدار', supplier: 'سپلائر',
+    role: 'اکاؤنٹ کی قسم', contractor: 'خریدار', supplier: 'سپلائر',
     verStatus: 'تصدیق کی حیثیت', pending: 'زیر التواء', verified: 'تصدیق شدہ', rejected: 'مسترد',
     docsTitle: 'سرکاری دستاویزات', docsSub: 'تصدیق مکمل کرنے کے لیے دستاویزات اپلوڈ کریں',
     licenseLabel: 'کاروباری لائسنس', crLabel: 'تجارتی رجسٹریشن',
@@ -441,14 +441,14 @@ export default function SettingsPage() {
                     <input value={phone} onChange={e => setPhone(e.target.value)}
                       className="input-field" placeholder="+966 5X XXX XXXX" />
                     {profile?.role === 'supplier' && (
-                      <p className="text-[10px] text-gray-400 mt-1">🔒 رقم الواتساب للمنصة والإشعارات فقط — لا يظهر للمقاول.</p>
+                      <p className="text-[10px] text-gray-400 mt-1">🔒 رقم الواتساب للمنصة والإشعارات فقط — لا يظهر للمشتري.</p>
                     )}
                   </div>
 
                   {/* رقم التواصل الرسمي — يظهر للمقاول بعد الترسية فقط (المورد فقط) */}
                   {profile?.role === 'supplier' && (
                     <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3.5">
-                      <label className="block text-xs font-bold text-gray-600 mb-2">📞 رقم التواصل الرسمي مع المقاول</label>
+                      <label className="block text-xs font-bold text-gray-600 mb-2">📞 رقم التواصل الرسمي مع المشتري</label>
                       <label className="flex items-center gap-2 cursor-pointer mb-2">
                         <input type="checkbox" checked={!useDiffContact} onChange={e => setUseDiffContact(!e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
                         <span className="text-xs text-gray-700">نفس رقم الواتساب</span>
@@ -461,7 +461,7 @@ export default function SettingsPage() {
                         <input value={contactPhone} onChange={e => setContactPhone(e.target.value)}
                           className="input-field" dir="ltr" placeholder="+966 1X XXX XXXX" />
                       )}
-                      <p className="text-[10px] text-gray-400 mt-1.5">يظهر هذا الرقم للمقاول <b>بعد الترسية فقط</b>. قبلها يكون التواصل عبر الدردشة الداخلية.</p>
+                      <p className="text-[10px] text-gray-400 mt-1.5">يظهر هذا الرقم للمشتري <b>بعد الترسية فقط</b>. قبلها يكون التواصل عبر الدردشة الداخلية.</p>
                     </div>
                   )}
 
@@ -529,7 +529,7 @@ export default function SettingsPage() {
                   {/* Contractor Grade — locked */}
                   {profile?.role === 'contractor' && (
                     <div className="border-t border-gray-100 pt-5">
-                      <label className="block text-xs font-bold text-gray-500 mb-2">درجة تصنيف شركتك — وزارة الشؤون البلدية 🔒</label>
+                      <label className="block text-xs font-bold text-gray-500 mb-2">درجة تصنيف شركتك (للمقاولين) — وزارة الشؤون البلدية 🔒</label>
                       <div className="mb-1">
                         <span className="inline-block px-5 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm font-black text-gray-700">
                           {contractorGrade ? `درجة ${({ A: 'أ', B: 'ب', C: 'ج', D: 'د' })[contractorGrade] || contractorGrade}` : '— غير محدّدة —'}

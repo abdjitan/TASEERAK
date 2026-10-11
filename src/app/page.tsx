@@ -4,8 +4,8 @@ import type { Metadata } from 'next'
 import LandingBoot from '@/components/LandingBoot'
 
 export const metadata: Metadata = {
-  title: 'تسعيرك | Taseerak — منصة التسعير والتوريد للمقاولين',
-  description: 'اطلب تسعيرة واحدة، يتنافس عليها أفضل الموردين. منصة التسعير والتوريد للمقاولين في السعودية.',
+  title: 'تسعيرك | Taseerak — منصة التسعير والتوريد لمواد البناء',
+  description: 'اطلب تسعيرة واحدة، يتنافس عليها أفضل الموردين. منصة التسعير والتوريد لمواد البناء في السعودية.',
 }
 
 // The marketing landing is the high-fidelity design (hero canvas, live-offer card,

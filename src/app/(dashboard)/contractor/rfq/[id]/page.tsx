@@ -176,7 +176,7 @@ export default function RFQDetailPage() {
     window.location.reload()
   }
 
-  // ترسية بند-بند: ترسية مادة على مورد مُحدّد (أرخص أو من اختيار المقاول)
+  // ترسية بند-بند: ترسية مادة على مورد مُحدّد (أرخص أو من اختيار المشتري)
   const [awarding, setAwarding] = useState<any>(null)
   async function awardItem(itemIndex: any, offerId: any) {
     setAwarding(`${itemIndex}:${offerId}`)
@@ -556,6 +556,7 @@ export default function RFQDetailPage() {
                                     {b.offer.supplier?.city && <span>📍 {b.offer.supplier.city}</span>}
                                     {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title="المسافة من موقع التوصيل">📏 {km < 1 ? '<1' : Math.round(km)} كم</span> : null })()}
                                     {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]">⚙️ {b.entry.specification}</span>}
+                                    {b.entry.warranty && <span className="text-[#0F6E56] font-semibold">🛡 {b.entry.warranty}</span>}
                                     {b.entry.attachment_url && <a href={fileHref(b.entry.attachment_url)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} className="text-purple-500 hover:underline">📎 كتالوج</a>}
                                     <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} title="عرض كل التفاصيل" className="inline-flex items-center gap-1 font-bold text-[11px] px-2.5 py-1 rounded-full transition-all hover:shadow-sm" style={{ color: '#fff', background: '#F5831F' }}>👁 التفاصيل</Link>
                                   </div>
@@ -922,7 +923,7 @@ export default function RFQDetailPage() {
         )}
         </>)}
 
-        {/* حذف الطلب — متاح للمقاول دائماً (انتهت المهلة أو لقي المواد) */}
+        {/* حذف الطلب — متاح للمشتري دائماً (انتهت المهلة أو لقي المواد) */}
         <div className="mt-8 pt-5 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <span className="text-xs text-gray-400">ما عدت تحتاج هذا الطلب؟</span>
           <button type="button" onClick={deleteRfq} disabled={deleting}

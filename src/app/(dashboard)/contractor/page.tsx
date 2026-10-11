@@ -195,8 +195,8 @@ export default function ContractorDashboard() {
       default: return { name: 'active', tone: 'neutral' }
     }
   }
-  const gameBadge = rfqs.length >= 10 ? { t: locale === 'en' ? 'Pro Contractor' : 'مقاول محترف', e: '🏆' }
-    : rfqs.length >= 3 ? { t: locale === 'en' ? 'Active Contractor' : 'مقاول نشط', e: '⭐' }
+  const gameBadge = rfqs.length >= 10 ? { t: locale === 'en' ? 'Pro Buyer' : 'مشترٍ محترف', e: '🏆' }
+    : rfqs.length >= 3 ? { t: locale === 'en' ? 'Active Buyer' : 'مشترٍ نشط', e: '⭐' }
     : { t: locale === 'en' ? 'Getting Started' : 'بداية موفقة', e: '🌱' }
 
   const statusLabel = (status: any) => {
@@ -223,7 +223,7 @@ export default function ContractorDashboard() {
 
   return (
     <AppShell
-      title={locale === 'en' ? 'Contractor Dashboard' : locale === 'ur' ? 'ٹھیکیدار ڈیش بورڈ' : 'لوحة المقاول'}
+      title={locale === 'en' ? 'Buyer Dashboard' : locale === 'ur' ? 'خریدار ڈیش بورڈ' : 'لوحة المشتري'}
       company={profile?.company_name_ar || profile?.company_name_en}
       userId={user?.id}
       nav={nav}
@@ -288,7 +288,7 @@ export default function ContractorDashboard() {
 
         <div className="mb-5 animate-fade-in">
           <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>
-            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || (locale === 'en' ? 'Contractor' : 'مقاول')} 👋
+            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || (locale === 'en' ? 'Buyer' : 'مشترٍ')} 👋
           </h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>

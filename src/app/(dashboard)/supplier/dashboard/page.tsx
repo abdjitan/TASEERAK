@@ -249,7 +249,7 @@ export default function SupplierDashboard() {
               <span className="text-3xl shrink-0">🔒</span>
               <div className="flex-1">
                 <div className="font-extrabold text-sm" style={{ color: '#d96f15' }}>⚠️ {locale === 'en' ? 'Complete your profile to receive requests' : locale === 'ur' ? 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں' : 'أكمل ملفك لاستلام الطلبات'}</div>
-                <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{locale === 'en' ? "Without your location, sectors and specialties you won't appear to contractors and won't receive any matching requests. One minute is enough." : locale === 'ur' ? 'اپنے مقام، شعبوں اور مہارتوں کے بغیر آپ ٹھیکیداروں کو نظر نہیں آئیں گے اور کوئی مماثل درخواست موصول نہیں ہوگی۔' : 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمقاولين، ولن تصلك أي طلبات مطابقة. دقيقة واحدة تكفي.'}</div>
+                <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{locale === 'en' ? "Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests. One minute is enough." : locale === 'ur' ? 'اپنے مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی مماثل درخواست موصول نہیں ہوگی۔' : 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين، ولن تصلك أي طلبات مطابقة. دقيقة واحدة تكفي.'}</div>
                 <span className="inline-block mt-2.5 text-sm font-bold text-white px-4 py-2 rounded-xl" style={{ background: '#F5831F' }}>{locale === 'en' ? 'Complete now →' : locale === 'ur' ? 'ابھی مکمل کریں ←' : 'أكمل ملفك الآن ←'}</span>
               </div>
             </div>
@@ -263,7 +263,7 @@ export default function SupplierDashboard() {
               <span className="text-2xl">📈</span>
               <div className="flex-1">
                 <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>انشر أسعارك في بورصة الأسعار</div>
-                <div className="text-xs text-gray-500">المقاولون يبحثون عن أحدث الأسعار — كن أول من يظهر. اضغط لإضافة أسعارك ←</div>
+                <div className="text-xs text-gray-500">المشترون يبحثون عن أحدث الأسعار — كن أول من يظهر. اضغط لإضافة أسعارك ←</div>
               </div>
             </div>
           </Link>

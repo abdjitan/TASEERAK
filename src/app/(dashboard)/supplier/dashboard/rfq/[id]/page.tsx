@@ -16,7 +16,7 @@ import { productImageUrl } from '@/lib/productImage'
 import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel, getUnitLabel } from '@/types'
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
-import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf } from '@/lib/sellers'
+import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf, WARRANTY_OPTIONS } from '@/lib/sellers'
 
 export default function SupplierRFQPage() {
   const { id } = useParams()
@@ -32,7 +32,7 @@ export default function SupplierRFQPage() {
   const [success, setSuccess] = useState(false)
   const [dismissed, setDismissed] = useState(false)
   const [error, setError] = useState('')
-  // تقييم المورّد للمقاول (متبادل)
+  // تقييم المورّد للمشتري (متبادل)
   const [cRating, setCRating] = useState(0)
   const [cComment, setCComment] = useState('')
   const [cBusy, setCBusy] = useState(false)
@@ -56,6 +56,7 @@ export default function SupplierRFQPage() {
   const [sourceType, setSourceType] = useState('')
   const [availability, setAvailability] = useState('now')
   const [isIndependent, setIsIndependent] = useState(false)
+  const [singleWarranty, setSingleWarranty] = useState('') // الضمان لطلب المادة الواحدة (يُحفظ ضمن الخصائص)
   const [validity, setValidity] = useState('')
 
   // خصائص المنتج (key-value)
@@ -68,7 +69,7 @@ export default function SupplierRFQPage() {
   const [showDismiss, setShowDismiss] = useState(false)
   const [dismissReason, setDismissReason] = useState('')
 
-  // رد على طلب تخفيض السعر من المقاول
+  // رد على طلب تخفيض السعر من المشتري
   const [newPrice, setNewPrice] = useState('')
   const [reducing, setReducing] = useState(false)
   async function submitReduction() {
@@ -94,7 +95,7 @@ export default function SupplierRFQPage() {
     window.location.reload()
   }
 
-  // رد على طلب معلومات إضافية من المقاول
+  // رد على طلب معلومات إضافية من المشتري
   const [infoReply, setInfoReply] = useState('')
   const [infoReplying, setInfoReplying] = useState(false)
   async function submitInfoResponse() {
@@ -179,7 +180,7 @@ export default function SupplierRFQPage() {
         }
       }
 
-      // هوية المقاول تُكشف من الخادم فقط بعد قبول العرض (لا تُرسَل قبل ذلك)
+      // هوية المشتري تُكشف من الخادم فقط بعد قبول العرض (لا تُرسَل قبل ذلك)
       const { data: cInfo } = await supabase.rpc('get_rfq_contractor', { p_rfq_id: id })
       setContractorInfo(Array.isArray(cInfo) ? cInfo[0] : cInfo)
 
@@ -306,6 +307,7 @@ export default function SupplierRFQPage() {
 
     const validAttrs = attributes.filter((a: any) => a.key && a.value)
     const attrObj = validAttrs.reduce((acc: any, a: any) => { acc[a.key] = a.value; return acc }, {})
+    if (!isMultiItem && singleWarranty.trim()) attrObj['الضمان'] = singleWarranty.trim()
 
     const supabase = createClient()
 
@@ -364,6 +366,7 @@ export default function SupplierRFQPage() {
           unit: (form.priceUnit && form.priceUnit.trim()) || it.unit, quantity: it.quantity,
           unit_price: up || null, total: +lineTotal.toFixed(2),
           delivery_days: parseInt(form.delivery_days) || null,
+          warranty: (form.warranty || '').trim() || null,
           specification: (form.specs || '').trim() || null,
           attachment_url: upUrl, attachment_name: upName,
         })
@@ -388,7 +391,7 @@ export default function SupplierRFQPage() {
         ? (itemPricesPayload && itemPricesPayload.length ? (Math.max(0, ...itemPricesPayload.map((e: any) => e.delivery_days || 0)) || null) : null)
         : (deliveryDays ? parseInt(deliveryDays) : null),
       notes: notes || null,
-      attributes: validAttrs.length > 0 ? attrObj : null,
+      attributes: Object.keys(attrObj).length > 0 ? attrObj : null,
       extra_charges: validExtras.length > 0 ? validExtras : null,
       attachment_url: attachUrl,
       attachment_name: attachName,
@@ -415,14 +418,14 @@ export default function SupplierRFQPage() {
   const T = {
     ar: {
       back: '← رجوع', details: 'تفاصيل الطلب', sector: 'القطاع', qty: 'الكمية',
-      location: 'الموقع', contractor: 'المقاول', spec: 'المواصفات', notes: 'ملاحظات',
+      location: 'الموقع', contractor: 'المشتري', spec: 'المواصفات', notes: 'ملاحظات',
       delivery: 'التوصيل', vat: 'فاتورة ضريبية', required: 'مطلوب', notRequired: 'غير مطلوب',
       submitOffer: 'تقديم عرض سعر', totalPrice: 'السعر الإجمالي (ر.س)', unitPrice: 'سعر الوحدة (ر.س)',
       verifyFirst: 'أكمل ملفك لتقديم العروض', verifyFirstSub: 'حدّد موقعك وتخصصاتك وأكّد بريدك الإلكتروني، ثم عُد لتسعير هذا الطلب. التوثيق اختياري، ويمنح عروضك شارة «موثّق».', verifyFirstCta: 'أكمل ملفك ←',
       deliveryDays: 'مدة التوصيل (أيام)', attributes: 'خصائص المنتج المعروض',
       attrHint: 'أضف خصائص مثل: العلامة التجارية، بلد المنشأ، الضمان...',
       attrKey: 'الخاصية', attrValue: 'القيمة', addAttr: '+ إضافة خاصية',
-      attachTitle: 'إرفاق ملف (كتالوج / بيانات منتج)', attachHint: 'PDF، صورة، Excel — يصل للمقاول مع عرضك',
+      attachTitle: 'إرفاق ملف (كتالوج / بيانات منتج)', attachHint: 'PDF، صورة، Excel — يصل للمشتري مع عرضك',
       attachBtn: 'اضغط لرفع كتالوج أو ملف المنتج', removeAttach: 'إزالة',
       offerNotes: 'ملاحظات إضافية', send: 'إرسال العرض ←', sending: 'جارٍ الإرسال...',
       dismiss: 'تجاهل الطلب', dismissTitle: 'تجاهل هذا الطلب؟',
@@ -437,14 +440,14 @@ export default function SupplierRFQPage() {
     },
     en: {
       back: '← Back', details: 'Request Details', sector: 'Sector', qty: 'Quantity',
-      location: 'Location', contractor: 'Contractor', spec: 'Specification', notes: 'Notes',
+      location: 'Location', contractor: 'Buyer', spec: 'Specification', notes: 'Notes',
       delivery: 'Delivery', vat: 'Tax Invoice', required: 'Required', notRequired: 'Not Required',
       submitOffer: 'Submit Price Offer', totalPrice: 'Total Price (SAR)', unitPrice: 'Unit Price (SAR)',
       verifyFirst: 'Complete your profile to submit offers', verifyFirstSub: 'Set your location and specialties and confirm your email, then come back to price this request. Verification is optional and adds a «Verified» badge to your offers.', verifyFirstCta: 'Complete your profile →',
       deliveryDays: 'Delivery Time (days)', attributes: 'Product Attributes',
       attrHint: 'Add attributes like: Brand, Country of origin, Warranty...',
       attrKey: 'Attribute', attrValue: 'Value', addAttr: '+ Add Attribute',
-      attachTitle: 'Attach File (catalog / product data)', attachHint: 'PDF, image, Excel — sent to contractor with your offer',
+      attachTitle: 'Attach File (catalog / product data)', attachHint: 'PDF, image, Excel — sent to the buyer with your offer',
       attachBtn: 'Click to upload catalog or product file', removeAttach: 'Remove',
       offerNotes: 'Additional Notes', send: 'Send Offer →', sending: 'Sending...',
       dismiss: 'Dismiss Request', dismissTitle: 'Dismiss this request?',
@@ -459,7 +462,7 @@ export default function SupplierRFQPage() {
     },
     ur: {
       back: '← واپس', details: 'درخواست کی تفصیلات', sector: 'شعبہ', qty: 'مقدار',
-      location: 'مقام', contractor: 'ٹھیکیدار', spec: 'تفصیلات', notes: 'نوٹس',
+      location: 'مقام', contractor: 'خریدار', spec: 'تفصیلات', notes: 'نوٹس',
       delivery: 'ڈیلیوری', vat: 'ٹیکس رسید', required: 'ضروری', notRequired: 'غیر ضروری',
       submitOffer: 'قیمت پیش کریں', totalPrice: 'کل قیمت (ریال)', unitPrice: 'فی یونٹ قیمت (ریال)',
       verifyFirst: 'پیشکش دینے کے لیے پروفائل مکمل کریں', verifyFirstSub: 'اپنا مقام اور مہارتیں منتخب کریں اور ای میل کی تصدیق کریں، پھر واپس آ کر قیمت دیں۔ تصدیق اختیاری ہے۔', verifyFirstCta: 'پروفائل مکمل کریں →',
@@ -518,7 +521,7 @@ export default function SupplierRFQPage() {
         {/* RFQ Details */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 mb-5">
           <div className="flex items-start justify-between gap-2">
-            {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المقاول للطلب */}
+            {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المشتري للطلب */}
             <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>
               {rfqIsMulti ? (locale === 'en' ? 'Price request' : locale === 'ur' ? 'قیمت کی درخواست' : 'طلب تسعير مواد') : rfq.product_name}
             </h2>
@@ -527,7 +530,7 @@ export default function SupplierRFQPage() {
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: user?.id })
               if (error || !data) { setError('تعذّر فتح المحادثة'); return }
               router.push(`/messages?c=${data}`)
-            }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#1B2D5B' }}>💬 {locale === 'en' ? 'Message contractor' : 'راسل المقاول'}</button>
+            }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#1B2D5B' }}>💬 {locale === 'en' ? 'Message buyer' : 'راسل المشتري'}</button>
           </div>
 
           {rfqIsMulti && myItems.length > 0 && (
@@ -597,8 +600,8 @@ export default function SupplierRFQPage() {
                 <strong>{locale === 'en' && contractorInfo.company_name_en ? contractorInfo.company_name_en : contractorInfo.company_name_ar}</strong>
               ) : (
                 <>
-                  <strong className="text-gray-600">{locale === 'en' ? 'Contractor' : 'مقاول'} · {rfq.city || rfq.region}</strong>
-                  <div className="text-[10px] text-gray-400 mt-0.5">🔒 {locale === 'en' ? "Contractor identity is revealed once your offer is accepted." : 'تظهر هوية المقاول عند قبول عرضك (إتمام الصفقة).'}</div>
+                  <strong className="text-gray-600">{locale === 'en' ? 'Buyer' : 'مشترٍ'} · {rfq.city || rfq.region}</strong>
+                  <div className="text-[10px] text-gray-400 mt-0.5">🔒 {locale === 'en' ? "Buyer identity is revealed once your offer is accepted." : 'تظهر هوية المشتري عند قبول عرضك (إتمام الصفقة).'}</div>
                 </>
               )}
             </div>
@@ -671,20 +674,20 @@ export default function SupplierRFQPage() {
               </div>
             )}
 
-            {/* تقييم المورّد للمقاول (متبادل) — بعد قبول الصفقة */}
+            {/* تقييم المورّد للمشتري (متبادل) — بعد قبول الصفقة */}
             {existingOffer.status === 'accepted' && (
               <div className="mt-4 border-t border-emerald-200 pt-4 text-right">
                 {cDone ? (
-                  <div className="text-sm font-bold" style={{ color: '#0F6E56' }}>⭐ {locale === 'en' ? 'Thanks for rating the contractor' : 'شكراً لتقييمك المقاول'}</div>
+                  <div className="text-sm font-bold" style={{ color: '#0F6E56' }}>⭐ {locale === 'en' ? 'Thanks for rating the buyer' : 'شكراً لتقييمك المشتري'}</div>
                 ) : (
                   <div>
-                    <div className="text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Rate the contractor' : 'قيّم المقاول'} ⭐</div>
+                    <div className="text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Rate the buyer' : 'قيّم المشتري'} ⭐</div>
                     <div className="flex gap-1 mb-2">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button key={n} type="button" onClick={() => setCRating(n)} className={`text-2xl leading-none ${n <= cRating ? 'text-yellow-400' : 'text-gray-300'}`}>★</button>
                       ))}
                     </div>
-                    <textarea value={cComment} onChange={(e: any) => setCComment(e.target.value)} rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Optional comment about the contractor…' : 'تعليق اختياري عن المقاول…'} />
+                    <textarea value={cComment} onChange={(e: any) => setCComment(e.target.value)} rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Optional comment about the contractor…' : 'تعليق اختياري عن المشتري…'} />
                     {cMsg && <div className="text-xs text-red-600 mt-1">{cMsg}</div>}
                     <button type="button" disabled={!cRating || cBusy} onClick={async () => {
                       if (!cRating) return
@@ -704,7 +707,7 @@ export default function SupplierRFQPage() {
             {canEditOffer && (
               <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-right">
                 <div className="text-xs text-gray-600 mb-2 leading-relaxed">
-                  ⏱ <strong>لديك {editMinsLeft} دقيقة</strong> لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتقدر تسعّر من جديد (تضيف مادة نسيتها أو تعدّل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المقاول.
+                  ⏱ <strong>لديك {editMinsLeft} دقيقة</strong> لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتقدر تسعّر من جديد (تضيف مادة نسيتها أو تعدّل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.
                 </div>
                 <button type="button" onClick={cancelOffer} disabled={cancelling}
                   className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#b91c1c' }}>
@@ -715,7 +718,7 @@ export default function SupplierRFQPage() {
 
             {existingOffer.status === 'pending' && existingOffer.reduction_deadline && new Date(existingOffer.reduction_deadline) > new Date() && (
               <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 text-right">
-                <div className="font-bold text-orange-700 mb-1">📉 المقاول يطلب تخفيض السعر</div>
+                <div className="font-bold text-orange-700 mb-1">📉 المشتري يطلب تخفيض السعر</div>
                 {existingOffer.reduction_note && <div className="text-xs text-gray-600 mb-1">«{existingOffer.reduction_note}»</div>}
                 <div className="text-[11px] text-gray-500 mb-3">المهلة للرد: {new Date(existingOffer.reduction_deadline).toLocaleString('ar-SA')}</div>
                 <div className="flex gap-2">
@@ -727,13 +730,13 @@ export default function SupplierRFQPage() {
 
             {existingOffer.info_request && (
               <div className="mt-4 bg-[#F5831F]/5 border border-blue-200 rounded-xl p-4 text-right">
-                <div className="font-bold text-[#d96f15] mb-1">❓ المقاول يطلب معلومات إضافية</div>
+                <div className="font-bold text-[#d96f15] mb-1">❓ المشتري يطلب معلومات إضافية</div>
                 <div className="text-sm text-gray-700 bg-white rounded-lg p-2.5 mb-2">{existingOffer.info_request}</div>
                 {existingOffer.info_response ? (
                   <div className="text-sm bg-emerald-50 rounded-lg p-2.5"><span className="text-emerald-600 text-[11px]">ردّك:</span><div>{existingOffer.info_response}</div></div>
                 ) : existingOffer.status === 'pending' ? (
                   <div>
-                    <textarea value={infoReply} onChange={(e: any) => setInfoReply(e.target.value)} rows={2} className="input-field mb-2" placeholder="اكتب ردّك للمقاول عن المنتج..." />
+                    <textarea value={infoReply} onChange={(e: any) => setInfoReply(e.target.value)} rows={2} className="input-field mb-2" placeholder="اكتب ردّك للمشتري عن المنتج..." />
                     <button type="button" onClick={submitInfoResponse} disabled={infoReplying} className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoReplying ? '...' : 'إرسال الرد'}</button>
                   </div>
                 ) : null}
@@ -832,11 +835,11 @@ export default function SupplierRFQPage() {
                           {/* تفاصيل التسعير — تنزل عند الفتح */}
                           {isOpen && (
                             <div className="px-3 pb-3 pt-1 space-y-3 border-t border-gray-100">
-                              {/* مواصفات المقاول المطلوبة — بارزة وواضحة ليسعّر المورد بدقّة */}
+                              {/* مواصفات المشتري المطلوبة — بارزة وواضحة ليسعّر المورد بدقّة */}
                               {it.specification && (
                                 <div className="rounded-xl p-3 border" style={{ background: '#F5831F0a', borderColor: '#F5831F44' }}>
                                   <div className="text-xs font-bold mb-1.5 flex items-center gap-1.5" style={{ color: '#d96f15' }}>
-                                    📋 {locale === 'en' ? 'Specifications required by the contractor' : 'المواصفات المطلوبة من المقاول'}
+                                    📋 {locale === 'en' ? 'Specifications required by the buyer' : 'المواصفات المطلوبة من المشتري'}
                                   </div>
                                   <div className="text-sm text-gray-800 leading-relaxed font-medium">{it.specification}</div>
                                 </div>
@@ -899,6 +902,22 @@ export default function SupplierRFQPage() {
                                 </label>
                                 <input type="number" value={form.delivery_days || ''} onChange={(e: any) => setItemField(i, 'delivery_days', e.target.value)}
                                   className="input-field text-sm" placeholder="3" min="0" />
+                              </div>
+
+                              {/* الضمان (اختياري، حسب الصنف) */}
+                              <div>
+                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
+                                  🛡 {locale === 'en' ? 'Warranty (optional)' : locale === 'ur' ? 'وارنٹی (اختیاری)' : 'الضمان (اختياري)'}
+                                </label>
+                                <select value={WARRANTY_OPTIONS.some(o => o.v === (form.warranty || '')) ? (form.warranty || '') : '__other'}
+                                  onChange={(e: any) => setItemField(i, 'warranty', e.target.value === '__other' ? ' ' : e.target.value)} className="input-field text-sm">
+                                  {WARRANTY_OPTIONS.map(o => <option key={o.v} value={o.v}>{locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}</option>)}
+                                  <option value="__other">{locale === 'en' ? 'Other…' : locale === 'ur' ? 'دیگر…' : 'أخرى…'}</option>
+                                </select>
+                                {!WARRANTY_OPTIONS.some(o => o.v === (form.warranty || '')) && (
+                                  <input value={(form.warranty || '').trimStart()} onChange={(e: any) => setItemField(i, 'warranty', e.target.value || ' ')}
+                                    className="input-field text-sm mt-1.5" maxLength={80} placeholder={locale === 'en' ? 'e.g. 18 months on the motor' : 'مثال: 18 شهراً على المحرك'} />
+                                )}
                               </div>
 
                               {/* رفع ملف المواصفات */}
@@ -969,7 +988,7 @@ export default function SupplierRFQPage() {
                 </label>
                 <p className="text-xs text-gray-400 mb-3">
                   {rfq.delivery_required
-                    ? (locale === 'en' ? 'Contractor requested delivery — add the shipping cost here.' : locale === 'ur' ? 'ٹھیکیدار نے ڈیلیوری طلب کی — شپنگ لاگت یہاں شامل کریں۔' : 'المقاول طلب التوصيل — أضف تكلفة الشحن هنا.')
+                    ? (locale === 'en' ? 'The buyer requested delivery — add the shipping cost here.' : locale === 'ur' ? 'خریدار نے ڈیلیوری طلب کی — شپنگ لاگت یہاں شامل کریں۔' : 'المشتري طلب التوصيل — أضف تكلفة الشحن هنا.')
                     : (locale === 'en' ? 'Optional charges added on top of the goods price.' : locale === 'ur' ? 'سامان کی قیمت کے علاوہ اختیاری چارجز۔' : 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
                 </p>
                 <div className="space-y-2">
@@ -1035,6 +1054,14 @@ export default function SupplierRFQPage() {
               })()}
 
               {/* خصائص المنتج — للطلب أحادي المادة فقط (متعدد المواد: الخصائص لكل مادة بداخل بطاقتها) */}
+              {!isMultiItem && (
+              <div>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">🛡 {locale === 'en' ? 'Warranty (optional)' : locale === 'ur' ? 'وارنٹی (اختیاری)' : 'الضمان (اختياري)'}</label>
+                <select value={singleWarranty} onChange={(e: any) => setSingleWarranty(e.target.value)} className="input-field text-sm">
+                  {WARRANTY_OPTIONS.map(o => <option key={o.v} value={o.v}>{locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}</option>)}
+                </select>
+              </div>
+              )}
               {!isMultiItem && (
               <div className="border-t border-gray-100 pt-4">
                 <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>{T.attributes}</label>

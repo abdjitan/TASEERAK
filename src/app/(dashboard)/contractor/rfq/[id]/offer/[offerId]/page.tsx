@@ -116,7 +116,7 @@ export default function OfferDetailPage() {
   const ip = Array.isArray(offer.item_prices) ? offer.item_prices : []
   const tierText = tierLabel(s.supplier_tier, 'ar')
   // خصوصية المورد: رقم التواصل (والواتساب) لا يظهران إلا بعد قبول العرض (الترسية).
-  // قبلها يتواصل المقاول عبر الدردشة الداخلية فقط. رقم phone للمنصة/الإشعارات لا يظهر.
+  // قبلها يتواصل المشتري عبر الدردشة الداخلية فقط. رقم phone للمنصة/الإشعارات لا يظهر.
   const accepted = offer.status === 'accepted'
   const contactNum = s.contact_phone || s.phone || ''
   const mapsUrl = (s.latitude && s.longitude) ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}` : null
@@ -249,6 +249,7 @@ export default function OfferDetailPage() {
                   </div>
                   {/* مواصفات المادة من المورد */}
                   {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5">📝 {it.specification || it.notes}</p>}
+                  {it.warranty && <p className="text-[11px] font-semibold text-[#0F6E56] mt-1">🛡 الضمان: {it.warranty}</p>}
                   {it.attachment_url && (
                     <a href={fileHref(it.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#d96f15] underline mt-1.5">
                       📎 {it.attachment_name || 'ملف المواصفات'}

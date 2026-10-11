@@ -33,7 +33,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
   } else {
-    const sec = L('Contractor', 'ٹھیکیدار', 'المقاول')
+    const sec = L('Buyer', 'خریدار', 'المشتري')
     items = [
       { href: '/contractor', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
       { href: '/contractor/orders', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec, mobile: 2 },

@@ -6,7 +6,7 @@ export default function PublicFooter() {
       <div className="max-w-4xl mx-auto px-4 py-8 text-center">
         <div className="font-extrabold text-sm mb-2" style={{ color: '#1B2D5B' }}>تسعيرك — Taseerak</div>
         <p className="text-[11px] text-gray-400 mb-4 max-w-md mx-auto leading-relaxed">
-          منصة التسعير والتوريد للمقاولين في السعودية — اطلب تسعيرة واحدة يتنافس عليها أفضل الموردين.
+          منصة التسعير والتوريد لمواد البناء في السعودية — اطلب تسعيرة واحدة يتنافس عليها أفضل الموردين.
         </p>
         <div className="flex items-center justify-center gap-3 text-[11px] text-gray-500 flex-wrap">
           <Link href="/prices" className="hover:text-[#1B2D5B]">أسعار المواد</Link>

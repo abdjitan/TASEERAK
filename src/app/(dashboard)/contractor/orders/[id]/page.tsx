@@ -7,19 +7,6 @@ import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { fileHref } from '@/lib/fileHref'
 import { SECTOR_LABELS } from '@/types'
-// @ts-ignore — qrcode has no bundled types
-import QRCode from 'qrcode'
-
-// ZATCA Phase-1 simplified-invoice QR: base64 of TLV (Tag-Length-Value) fields:
-// 1=seller name, 2=VAT number, 3=timestamp (ISO), 4=total w/ VAT, 5=VAT total.
-function zatcaQrPayload(sellerName: string, vatNumber: string, isoTs: string, totalWithVat: string, vatTotal: string) {
-  const enc = new TextEncoder()
-  const tlv = (tag: number, val: string) => { const v = enc.encode(val); return [tag, v.length, ...Array.from(v)] }
-  const bytes = [...tlv(1, sellerName), ...tlv(2, vatNumber), ...tlv(3, isoTs), ...tlv(4, totalWithVat), ...tlv(5, vatTotal)]
-  let bin = ''; for (const b of bytes) bin += String.fromCharCode(b)
-  return btoa(bin)
-}
-
 export default function OrderDetailPage() {
   const { id } = useParams() // offer id
   const [offer, setOffer] = useState<any>(null)
@@ -34,27 +21,7 @@ export default function OrderDetailPage() {
   const [reviewComment, setReviewComment] = useState('')
   const [reviewMsg, setReviewMsg] = useState('')
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
-  const [qrUrl, setQrUrl] = useState('')
   const [awards, setAwards] = useState<any[]>([]) // ترسية بند-بند: مواد هذا المورد فقط (إن وُجدت)
-
-  // Generate the ZATCA invoice QR once the deal parties are loaded.
-  useEffect(() => {
-    if (!offer || !supplier) return
-    const exSum = (Array.isArray(offer.extra_charges) ? offer.extra_charges : []).reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0)
-    const entered = (Array.isArray(awards) && awards.length > 0)
-      ? awards.reduce((s: number, a: any) => s + (Number(a.total) || 0), 0) + exSum
-      : (Number(offer.total_price) || 0)
-    const base = offer.vat_included ? entered / 1.15 : entered // net (pre-VAT) — QR adds VAT back
-    const iso = new Date(offer.accepted_at || offer.created_at).toISOString()
-    const payload = zatcaQrPayload(
-      supplier.company_name_ar || 'Supplier',
-      supplier.vat_number || '0',
-      iso,
-      (base * 1.15).toFixed(2),
-      (base * 0.15).toFixed(2),
-    )
-    QRCode.toDataURL(payload, { margin: 1, width: 160 }).then(setQrUrl).catch(() => {})
-  }, [offer, supplier, awards])
 
   useEffect(() => {
     async function load() {
@@ -135,7 +102,7 @@ export default function OrderDetailPage() {
   // وإلا كل بنود العرض (طلب متعدّد المواد) — تُعرض كأسطر في أمر الشراء والفاتورة.
   const hasAwards = Array.isArray(awards) && awards.length > 0
   const ipRaw = hasAwards
-    ? awards.map((a: any) => ({ product_name: a.item_key, sector: rfq?.items?.[a.item_index]?.sector, quantity: a.quantity, unit: a.unit, unit_price: a.unit_price, total: a.total, specification: rfq?.items?.[a.item_index]?.specification }))
+    ? awards.map((a: any) => ({ product_name: a.item_key, sector: rfq?.items?.[a.item_index]?.sector, quantity: a.quantity, unit: a.unit, unit_price: a.unit_price, total: a.total, specification: rfq?.items?.[a.item_index]?.specification, warranty: (Array.isArray(offer.item_prices) ? offer.item_prices : []).find((e: any) => e.item_index === a.item_index)?.warranty }))
     : (Array.isArray(offer.item_prices) ? offer.item_prices : [])
   const _ex = Array.isArray(offer.extra_charges) ? offer.extra_charges : []
   const vatIncl = !!offer.vat_included
@@ -143,7 +110,7 @@ export default function OrderDetailPage() {
   // ZATCA: every displayed line is ex-VAT so the amount column sums to the pre-VAT subtotal, and
   // extra charges (delivery/installation/fees) show as their own line items — not hidden in the total (B1).
   const rows: any[] = (ipRaw.length > 0
-    ? ipRaw.map((it: any) => ({ product_name: it.product_name, sector: it.sector, specification: it.specification, notes: it.notes, attachment_url: it.attachment_url, attachment_name: it.attachment_name, quantity: it.quantity, unit: it.unit, unitNet: Number(it.unit_price) > 0 ? toNet(it.unit_price) : null, net: toNet(it.total) }))
+    ? ipRaw.map((it: any) => ({ product_name: it.product_name, warranty: it.warranty || null, sector: it.sector, specification: it.specification, notes: it.notes, attachment_url: it.attachment_url, attachment_name: it.attachment_name, quantity: it.quantity, unit: it.unit, unitNet: Number(it.unit_price) > 0 ? toNet(it.unit_price) : null, net: toNet(it.total) }))
     : [{ product_name: rfq.product_name, sector: rfq.sector, specification: rfq.specification, quantity: rfq.quantity, unit: rfq.unit, unitNet: offer.unit_price ? toNet(offer.unit_price) : null, net: toNet(offer.total_price) }])
   for (const e of _ex) rows.push({ product_name: e.label || 'رسوم إضافية', sector: null, quantity: '', unit: '', unitNet: null, net: toNet(e.amount), isExtra: true })
   const dealNet = rows.reduce((s: number, r: any) => s + (Number(r.net) || 0), 0)
@@ -192,7 +159,7 @@ export default function OrderDetailPage() {
           {/* Parties */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 sm:p-8 border-b border-gray-100">
             <div>
-              <div className="text-xs font-bold text-gray-400 uppercase mb-2">المشتري (المقاول)</div>
+              <div className="text-xs font-bold text-gray-400 uppercase mb-2">المشتري</div>
               <div className="font-bold text-gray-900">{contractor?.company_name_ar || '—'}</div>
               {contractor?.commercial_registration && (
                 <div className="text-sm text-gray-500 mt-1">سجل تجاري: {contractor.commercial_registration}</div>
@@ -346,33 +313,26 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {/* 🧾 فاتورة ضريبية مبسّطة مع رمز QR — صيغة المرحلة الأولى (ZATCA). المرحلة الثانية (Fatoora: XML/CSID/تخليص) غير مطبّقة. */}
+        {/* 🧾 بيان الصفقة: مستند صوري غير رسمي لمبلغ الصفقة. الفاتورة الرسمية يصدرها المورد
+            (من عنده، أو من المحل الذي اشترى منه) ويرفعها في صفحة الصفقة، وتظهر هنا للمشتري. */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-3">
-          <div className="p-6 border-b border-gray-100 flex items-start justify-between flex-wrap gap-4">
-            <div>
-              <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>فاتورة ضريبية</h2>
-              <p className="text-xs text-gray-400">فاتورة ضريبية مبسّطة · رمز QR بصيغة المرحلة الأولى (ZATCA)</p>
-              <div className="text-xs text-gray-500 mt-2">رقم الفاتورة: <span className="font-mono" dir="ltr">{offer.invoice_number || `INV-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>
-              <div className="text-xs text-gray-500">التاريخ: {new Date(offer.accepted_at || offer.created_at).toLocaleString('ar-SA-u-ca-gregory', { timeZone: 'Asia/Riyadh' })}</div>
-            </div>
-            {qrUrl && (
-              <div className="text-center">
-                <img src={qrUrl} alt="ZATCA QR" className="w-28 h-28" />
-                <div className="text-[9px] text-gray-400 mt-1">رمز التحقق الضريبي</div>
-              </div>
-            )}
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>بيان الصفقة</h2>
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed">مستند غير رسمي يوضّح مبلغ الصفقة، وليس فاتورة ضريبية. الفاتورة الرسمية يصدرها المورد وتُرفق أدناه.</p>
+            <div className="text-xs text-gray-500 mt-2">رقم البيان: <span className="font-mono" dir="ltr">{offer.invoice_number || `ST-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>
+            <div className="text-xs text-gray-500">التاريخ: {new Date(offer.accepted_at || offer.created_at).toLocaleString('ar-SA-u-ca-gregory', { timeZone: 'Asia/Riyadh' })}</div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 sm:p-6 border-b border-gray-100 text-sm">
             <div>
-              <div className="text-xs font-bold text-gray-400 mb-1">البائع (المورد)</div>
+              <div className="text-xs font-bold text-gray-400 mb-1">المورد</div>
               <div className="font-bold text-gray-900">{supplier?.company_name_ar || '—'}</div>
-              <div className="text-gray-500">الرقم الضريبي: {supplier?.vat_number || '— غير مُسجّل'}</div>
+              {supplier?.vat_number && <div className="text-gray-500">الرقم الضريبي: {supplier.vat_number}</div>}
               {supplier?.commercial_registration && <div className="text-gray-500">سجل تجاري: {supplier.commercial_registration}</div>}
             </div>
             <div>
-              <div className="text-xs font-bold text-gray-400 mb-1">المشتري (المقاول)</div>
+              <div className="text-xs font-bold text-gray-400 mb-1">المشتري</div>
               <div className="font-bold text-gray-900">{contractor?.company_name_ar || '—'}</div>
-              <div className="text-gray-500">الرقم الضريبي: {contractor?.vat_number || '—'}</div>
+              {contractor?.vat_number && <div className="text-gray-500">الرقم الضريبي: {contractor.vat_number}</div>}
               {contractor?.commercial_registration && <div className="text-gray-500">سجل تجاري: {contractor.commercial_registration}</div>}
             </div>
           </div>
@@ -382,7 +342,7 @@ export default function OrderDetailPage() {
               <tbody>
                 {rows.map((it: any, idx: any) => (
                   <tr key={idx} className="border-b border-gray-50">
-                    <td className="py-2 font-semibold text-gray-900">{it.product_name}</td>
+                    <td className="py-2 font-semibold text-gray-900">{it.product_name}{it.warranty ? <span className="block text-[11px] font-normal text-gray-500">🛡 الضمان: {it.warranty}</span> : null}</td>
                     <td className="py-2 text-gray-600">{it.quantity} {it.unit}</td>
                     <td className="py-2 text-gray-600">{Number(it.unitNet) > 0 ? Number(it.unitNet).toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
                     <td className="py-2 font-bold text-gray-900">{Number(it.net).toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</td>
@@ -397,15 +357,24 @@ export default function OrderDetailPage() {
                 <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>الإجمالي شامل الضريبة</span><span style={{ color: '#0F6E56' }}>{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} ر.س</span></div>
               </div>
             </div>
-            {!supplier?.vat_number && (
-              <div className="mt-3 text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-2 print:hidden">
-                ⚠ المورد لم يسجّل رقمه الضريبي بعد — يلزم لإصدار فاتورة ضريبية رسمية. (يضيفه من الإعدادات)
+          </div>
+          {/* الفاتورة الرسمية من المورد */}
+          <div className="px-4 sm:px-6 pb-6">
+            {offer.supplier_invoice_url ? (
+              <a href={fileHref(offer.supplier_invoice_url)} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm hover:shadow-sm">
+                <span className="font-bold text-emerald-800">📄 الفاتورة الرسمية من المورد</span>
+                <span className="text-xs text-emerald-700">{new Date(offer.supplier_invoice_at).toLocaleDateString('ar-SA-u-ca-gregory')} · تنزيل ←</span>
+              </a>
+            ) : (
+              <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-3 text-xs text-gray-500 leading-relaxed">
+                🧾 لم يرفق المورد فاتورته الرسمية بعد. يرفقها عادةً عند التوصيل، وستظهر هنا.
               </div>
             )}
           </div>
         </div>
 
-        {/* تقييم المورد — للمقاول فقط بعد تأكيد الاستلام (لا يكفي القبول) */}
+        {/* تقييم المورد — للمشتري فقط بعد تأكيد الاستلام (لا يكفي القبول) */}
         {offer.status === 'accepted' && myId && rfq.contractor_id === myId && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 order-4 print:hidden" dir="rtl">
             {existingReview ? (
@@ -421,7 +390,7 @@ export default function OrderDetailPage() {
             ) : offer.received_at ? (
               <div>
                 <h3 className="text-sm font-bold text-gray-900 mb-1">قيّم تعاملك مع {supplier?.company_name_ar || 'المورد'}</h3>
-                <p className="text-xs text-gray-400 mb-3">تقييمك يساعد بقية المقاولين على اختيار الموردين</p>
+                <p className="text-xs text-gray-400 mb-3">تقييمك يساعد بقية المشترين على اختيار الموردين</p>
                 <div className="flex items-center gap-1 mb-3">
                   {[1, 2, 3, 4, 5].map((n: any) => (
                     <button key={n} type="button"
