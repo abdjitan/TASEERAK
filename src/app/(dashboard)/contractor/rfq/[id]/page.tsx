@@ -537,6 +537,19 @@ export default function RFQDetailPage() {
                                       <span key={a} title="اعتماد" className="text-[9px] font-bold px-1.5 rounded-full" style={{ color: '#0F6E56', background: '#0F6E5614' }}>🏅 {approvalLabel(a)}</span>
                                     ))}
                                   </div>
+                                  {/* who is selling and where the price comes from — a sourced price is never shown as direct */}
+                                  <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                    {b.offer.supplier?.supplier_tier && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{tierLabel(b.offer.supplier.supplier_tier, 'ar')}</span>}
+                                    {b.offer.supplier && b.offer.supplier.verification_status !== 'verified' && b.offer.supplier.cr_verification_source !== 'wathq' && (
+                                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">غير موثّق بعد</span>
+                                    )}
+                                    {b.offer.source_type && (
+                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isDirectSource(b.offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                                        {isDirectSource(b.offer.source_type) ? '✓ مباشر من البائع' : sourceLabel(b.offer.source_type, 'ar')}
+                                      </span>
+                                    )}
+                                    {b.offer.availability && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-50 text-gray-600">{availabilityLabel(b.offer.availability, 'ar')}</span>}
+                                  </div>
                                   <div className="text-[11px] text-gray-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                                     {Number(b.entry.unit_price) > 0 && <span>{Number(b.entry.unit_price).toLocaleString('en-US')} / {b.entry.unit || it.unit}</span>}
                                     {(b.entry.delivery_days ?? b.offer.delivery_days) ? <span>📦 {b.entry.delivery_days ?? b.offer.delivery_days} يوم</span> : null}
