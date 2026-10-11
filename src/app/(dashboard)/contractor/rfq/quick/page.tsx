@@ -22,6 +22,7 @@ type Line = {
   unit: string
   details: string
   photoId?: string
+  original?: string // what the buyer wrote, when it differs from the Arabic name suppliers see
   suggestion?: { name: string; sector: string } | null
 }
 type Photo = {
@@ -141,6 +142,7 @@ export default function QuickRequestPage() {
         key: uid(), product_name: it.product_name, sector: it.sector,
         quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details: it.details || '',
         suggestion: it.suggestion || null,
+        original: it.input_name && it.input_name !== it.product_name ? it.input_name : undefined,
       }))
       setLines(prev => [...prev, ...add])
       setText('')
@@ -324,6 +326,9 @@ export default function QuickRequestPage() {
                     <div className="flex-1 min-w-0 space-y-1">
                       <input value={l.product_name} onChange={e => updateLine(l.key, { product_name: e.target.value })} aria-label={L('Item name', 'نام', 'اسم المادة')}
                         className="input-field font-semibold" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'عم نتعرّف عالصورة…') : L('Item name', 'نام', 'اسم المادة')} />
+                      {locale !== 'ar' && l.original && !ph && (
+                        <p className="text-[11px] font-semibold text-gray-700" dir="auto">= {l.original}</p>
+                      )}
                       {ph && ph.status === 'done' && (
                         <p className="text-[11px] text-gray-500">🤖 {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'مش متأكد') : ''}
                           {locale !== 'ar' && ph.localName && <span className="block font-semibold text-gray-700" dir="auto">= {ph.localName}</span>}

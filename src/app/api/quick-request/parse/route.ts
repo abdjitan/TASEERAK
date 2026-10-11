@@ -14,6 +14,8 @@ export const maxDuration = 30
 
 const SECTORS: Sector[] = ['civil', 'architectural', 'electrical', 'mechanical', 'equipment', 'supply_store']
 const MAX_TEXT = 3000
+// Same order-units as the quick page's unit picker.
+const UNITS_AR = ['حبة', 'كيس', 'طن', 'م³', 'م²', 'متر', 'م.ط', 'لفة', 'كرتون', 'سطل', 'لوح', 'جالون', 'لتر', 'كغ', 'طقم', 'نقلة', 'يوم', 'ساعة']
 
 const SCHEMA = {
   type: 'object',
@@ -23,13 +25,14 @@ const SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          name: { type: 'string', description: 'material name as the user wrote it, cleaned up (Arabic if the user wrote Arabic)' },
+          name: { type: 'string', description: 'material name exactly as the user wrote it, cleaned up, in the user language' },
+          name_ar: { type: 'string', description: 'the common Saudi Arabic trade name of the same item (translate if the user wrote Urdu/English; same as name if already Arabic)' },
           quantity: { type: ['number', 'null'] },
-          unit: { type: ['string', 'null'], description: 'unit as written, e.g. كيس، حبة، طن، م³، م²، متر، لفة، نقلة، يوم، ساعة' },
-          details: { type: ['string', 'null'], description: 'sizes/grades/brands the user actually wrote (e.g. "20 سم", "قطر 12"), else null' },
+          unit: { type: ['string', 'null'], description: `unit in Arabic, one of: ${UNITS_AR.join('، ')} (بوری/bag→كيس، roll/رول→لفة، piece/عدد→حبة، ton/ٹن→طن). null if not written` },
+          details: { type: ['string', 'null'], description: 'sizes/grades/brands the user actually wrote, in Arabic (keep numbers and brand names), e.g. "20 سم", "قطر 12", else null' },
           sector: { type: 'string', enum: SECTORS },
         },
-        required: ['name', 'quantity', 'unit', 'details', 'sector'],
+        required: ['name', 'name_ar', 'quantity', 'unit', 'details', 'sector'],
         additionalProperties: false,
       },
     },
@@ -109,14 +112,17 @@ export async function POST(req: NextRequest) {
   const raw = (ai?.items?.length ? ai.items : fallbackParse(text)).slice(0, 40)
 
   const items = raw.map((it: any) => {
-    const name = String(it.name || '').slice(0, 140).trim()
+    // Suppliers read Arabic, so the line carries the Arabic trade name; the buyer's own words
+    // (Urdu/English) come back as input_name so the page can show them next to it.
+    const original = String(it.name || '').slice(0, 140).trim()
+    const name = String(it.name_ar || it.name || '').slice(0, 140).trim()
     const sector: Sector | null = SECTORS.includes(it.sector) ? it.sector : null
-    // The buyer's own wording stays; a catalog match is only applied when it is the same item
-    // spelled differently, otherwise offered as a suggestion.
+    // A catalog match is only applied when it is the same item spelled differently, otherwise
+    // offered as a suggestion.
     const m = suggestCatalog(name, sector, it.details ? String(it.details) : null)
     const q = typeof it.quantity === 'number' && isFinite(it.quantity) && it.quantity > 0 ? it.quantity : null
     return {
-      input_name: name,
+      input_name: original || name,
       product_name: m.exact || name,
       in_catalog: !!m.exact,
       suggestion: m.suggestion,
