@@ -174,6 +174,9 @@ if (OLD && fs.existsSync(OLD)) {
 // Suppliers surfaced by scripts/probe-coverage.mjs (generic words in dense zones).
 const PROBE = path.join(OUT, 'probe-new.json')
 if (fs.existsSync(PROBE)) for (const r of JSON.parse(fs.readFileSync(PROBE, 'utf8'))) rows.push(r)
+// New places from the free ID sweep + paid details (scripts/sweep-ids.mjs → fetch-details.mjs).
+const DETAILS = path.join(OUT, 'details-new.json')
+if (fs.existsSync(DETAILS)) for (const r of JSON.parse(fs.readFileSync(DETAILS, 'utf8'))) rows.push(r)
 
 // Dedup: place_id → CID → phone. Merge "found_by" so we keep everything a shop was found for.
 const byKey = new Map(), byPhone = new Map(), out = []
