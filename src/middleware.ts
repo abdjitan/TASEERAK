@@ -142,7 +142,10 @@ export async function middleware(request: NextRequest) {
   if (user && (matches('/contractor') || matches('/supplier'))) {
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
     const role = profile?.role
-    if (role === 'supplier' && matches('/contractor')) return redirectTo(new URL('/supplier/dashboard', request.url))
+    // The purchase order / deal statement is shared by both parties of the deal (data is
+    // still scoped by RLS: a supplier only loads its own offers).
+    const sharedDealPage = request.nextUrl.pathname.startsWith('/contractor/orders/')
+    if (role === 'supplier' && matches('/contractor') && !sharedDealPage) return redirectTo(new URL('/supplier/dashboard', request.url))
     if (role === 'contractor' && matches('/supplier')) return redirectTo(new URL('/contractor', request.url))
   }
 

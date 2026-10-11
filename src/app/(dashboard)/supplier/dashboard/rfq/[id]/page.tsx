@@ -752,7 +752,7 @@ export default function SupplierRFQPage() {
               <Link href={`/contractor/orders/${existingOffer.id}`}
                 className="inline-block mt-4 px-5 py-2.5 rounded-xl font-semibold text-white text-sm transition-all hover:shadow"
                 style={{ background: '#0F6E56' }}>
-                📄 {L('Purchase order / tax invoice', 'پرچیز آرڈر / ٹیکس انوائس', 'أمر الشراء / الفاتورة الضريبية')} ←
+                📄 {L('Purchase order / deal statement', 'پرچیز آرڈر / ڈیل کا بیان', 'أمر الشراء / بيان الصفقة')} ←
               </Link>
             )}
           </div>

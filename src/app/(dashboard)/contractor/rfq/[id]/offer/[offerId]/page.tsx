@@ -176,7 +176,7 @@ export default function OfferDetailPage() {
           <Link href={`/contractor/orders/${offer.id}`}
             className="block text-center text-sm font-semibold py-2.5 rounded-xl border-2 transition-all hover:shadow-sm"
             style={{ borderColor: '#0F6E56', color: '#0F6E56' }}>
-            📄 {L('Purchase order / tax invoice', 'پرچیز آرڈر / ٹیکس انوائس', 'أمر الشراء / الفاتورة الضريبية')} ←
+            📄 {L('Purchase order / deal statement', 'پرچیز آرڈر / ڈیل کا بیان', 'أمر الشراء / بيان الصفقة')} ←
           </Link>
         )}
 
