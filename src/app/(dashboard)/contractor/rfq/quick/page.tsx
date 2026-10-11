@@ -6,7 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory } from '@/types'
+import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, type Sector } from '@/types'
+import CatalogPicker from '@/components/shared/CatalogPicker'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 
 // Quick request: for anyone, no engineering terms. Write, dictate or photograph what you need;
@@ -58,6 +59,7 @@ export default function QuickRequestPage() {
   const [done, setDone] = useState(false)
   const recRef = useRef<any>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [showCatalog, setShowCatalog] = useState(false)
   const [restored, setRestored] = useState(false)
 
   useEffect(() => {
@@ -255,7 +257,7 @@ export default function QuickRequestPage() {
 
   if (done) {
     return (
-      <AppShell title={L('Quick request', 'فوری درخواست', 'طلب سريع')} nav={getNav('contractor', locale, '/contractor/rfq/new')} dir={dir}>
+      <AppShell title={L('Price request', 'قیمت کی درخواست', 'طلب تسعير')} nav={getNav('contractor', locale, '/contractor/rfq/quick')} dir={dir}>
         <div className="max-w-lg mx-auto bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
           <div className="text-5xl mb-4">✅</div>
           <h2 className="text-2xl font-extrabold text-navy mb-2">{L('Request sent', 'درخواست بھیج دی گئی', 'تم إرسال طلبك')}</h2>
@@ -270,13 +272,11 @@ export default function QuickRequestPage() {
   }
 
   return (
-    <AppShell title={L('Quick request', 'فوری درخواست', 'طلب سريع')} nav={getNav('contractor', locale, '/contractor/rfq/new')} dir={dir}>
+    <AppShell title={L('Price request', 'قیمت کی درخواست', 'طلب تسعير')} nav={getNav('contractor', locale, '/contractor/rfq/quick')} dir={dir}>
       <div className="max-w-3xl mx-auto space-y-5 pb-28">
         <div>
           <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, or take a photo. We will organise it into a list.', 'لکھیں، بولیں یا تصویر لیں۔', 'اكتبها، أو تحدّث بها، أو صوّرها، وسنرتّبها لك في قائمة.')}
-            {' '}<Link href="/contractor/rfq/new" className="font-bold text-[#d96f15] hover:underline">{L('Detailed request for engineers →', 'تفصیلی درخواست →', 'طلب تفصيلي للمهندسين ←')}</Link>
-          </p>
+          <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, photograph it or pick it from the catalog. We will organise it into a list.', 'لکھیں، بولیں، تصویر لیں یا فہرست سے منتخب کریں۔', 'اكتبها، أو تحدّث بها، أو صوّرها، أو اخترها من القائمة، وسنرتّبها لك في قائمة.')}</p>
         </div>
 
         {/* Input: text + mic + photo */}
@@ -297,6 +297,9 @@ export default function QuickRequestPage() {
             )}
             <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
               📷 {L('Add a photo', 'تصویر شامل کریں', 'صوّر المادة')}
+            </button>
+            <button type="button" onClick={() => setShowCatalog(true)} className="px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
+              🔍 {L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden"
               onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
@@ -414,6 +417,12 @@ export default function QuickRequestPage() {
             </button>
           </div>
         </div>
+      )}
+      {showCatalog && (
+        <CatalogPicker locale={locale} onClose={() => setShowCatalog(false)}
+          onPick={({ name, sector }: { name: string; sector: Sector }) => setLines(prev => [...prev, {
+            key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '',
+          }])} />
       )}
     </AppShell>
   )

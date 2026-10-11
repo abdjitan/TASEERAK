@@ -172,7 +172,7 @@ export default function ContractorDashboard() {
     { ok: !!(profile?.region && profile?.city), label: locale === 'en' ? 'Location' : 'الموقع', href: '/settings' },
     { ok: !!profile?.phone, label: locale === 'en' ? 'Phone' : 'رقم الجوال', href: '/settings' },
     { ok: !!(profile?.latitude || profile?.national_short_address), label: locale === 'en' ? 'Map pin' : 'الموقع على الخريطة', href: '/location' },
-    { ok: rfqs.length > 0, label: locale === 'en' ? 'First RFQ' : 'أول طلب تسعير', href: '/contractor/rfq/new' },
+    { ok: rfqs.length > 0, label: locale === 'en' ? 'First RFQ' : 'أول طلب تسعير', href: '/contractor/rfq/quick' },
   ]
   const compDone = completion.filter((c: any) => c.ok).length
   const compPct = Math.round((compDone / completion.length) * 100)
@@ -208,7 +208,7 @@ export default function ContractorDashboard() {
 
   const nav = [
     { href: '/contractor', label: locale === 'en' ? 'Dashboard' : locale === 'ur' ? 'ڈیش بورڈ' : 'الرئيسية', icon: '🏠', active: true },
-    { href: '/contractor/rfq/new', label: locale === 'en' ? 'New RFQ' : locale === 'ur' ? 'نئی درخواست' : 'طلب تسعير', icon: '📝' },
+    { href: '/contractor/rfq/quick', label: locale === 'en' ? 'New RFQ' : locale === 'ur' ? 'نئی درخواست' : 'طلب تسعير', icon: '📝' },
     { href: '/contractor/project/new', label: locale === 'en' ? 'Project (BOQ)' : locale === 'ur' ? 'پراجیکٹ BOQ' : 'مشروع BOQ', icon: '📋' },
     { href: '/market', label: locale === 'en' ? 'Price Index' : locale === 'ur' ? 'بورس' : 'بورصة الأسعار', icon: '📈' },
     { href: '/location', label: locale === 'en' ? 'Location' : locale === 'ur' ? 'مقام' : 'الموقع', icon: '📍' },
@@ -217,7 +217,7 @@ export default function ContractorDashboard() {
   const headerActions = profile?.verification_status !== 'rejected' ? (
     <>
       <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#1B2D5B' }}>📋 {locale === 'en' ? 'Project' : 'مشروع'}</Link>
-      <Link href="/contractor/rfq/new" className="btn-orange text-xs px-4 py-2">{t.newRfq}</Link>
+      <Link href="/contractor/rfq/quick" className="btn-orange text-xs px-4 py-2">{t.newRfq}</Link>
     </>
   ) : null
 
@@ -294,11 +294,10 @@ export default function ContractorDashboard() {
         </div>
 
         {/* شريط الإجراءات السريعة */}
-        <div className="grid grid-cols-3 gap-3 mb-5 animate-fade-in">
+        <div className="grid grid-cols-2 gap-3 mb-5 animate-fade-in">
           {[
-            { href: '/contractor/rfq/quick', icon: '⚡', label: locale === 'en' ? 'Quick request (write, say or photo)' : locale === 'ur' ? 'فوری درخواست' : 'طلب سريع (اكتب، أو تحدّث، أو صوّر)', primary: true },
-            { href: '/contractor/rfq/new', icon: '📝', label: locale === 'en' ? 'Detailed request' : locale === 'ur' ? 'تفصیلی درخواست' : 'طلب تفصيلي' },
-            { href: '/contractor/project/new', icon: '📋', label: locale === 'en' ? 'Upload a quantities sheet' : 'رفع جدول كميات' },
+            { href: '/contractor/rfq/quick', icon: '⚡', label: locale === 'en' ? 'Price request (write, say, photo or pick from the catalog)' : locale === 'ur' ? 'قیمت کی درخواست (لکھیں، بولیں، تصویر یا فہرست)' : 'طلب تسعير (اكتب، أو تحدّث، أو صوّر، أو اختر من القائمة)', primary: true },
+            { href: '/contractor/project/new', icon: '📋', label: locale === 'en' ? 'Upload a quantities sheet' : locale === 'ur' ? 'مقدار کی شیٹ اپ لوڈ کریں' : 'رفع جدول كميات' },
           ].map((a: any) => (
             <Link key={a.href} href={a.href}
               className={`rounded-2xl p-4 text-center font-bold transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md ${a.primary ? 'text-white' : 'bg-white border border-gray-100 text-[#1B2D5B]'}`}
@@ -530,7 +529,7 @@ export default function ContractorDashboard() {
             <div className="text-6xl mb-5 animate-float">📋</div>
             <h2 className="text-xl font-bold mb-3" style={{ color: '#1B2D5B' }}>{t.noRfqs}</h2>
             <p className="text-gray-500 mb-6 text-sm">{t.noRfqsSub}</p>
-            <Link href="/contractor/rfq/new" className="inline-block btn-orange px-10 py-4 text-base rounded-2xl">{t.newRfqBtn}</Link>
+            <Link href="/contractor/rfq/quick" className="inline-block btn-orange px-10 py-4 text-base rounded-2xl">{t.newRfqBtn}</Link>
           </div>
         ) : (
           <div className="animate-fade-in" id="rfq-list" style={{ scrollMarginTop: '70px' }}>
