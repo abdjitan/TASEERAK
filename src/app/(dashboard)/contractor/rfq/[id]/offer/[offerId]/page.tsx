@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { fileHref } from '@/lib/fileHref'
-import { SECTOR_LABELS } from '@/types'
+import { SECTOR_LABELS, getProductLabel, getUnitLabel } from '@/types'
+import { useTranslation } from '@/i18n'
 import { waLink } from '@/lib/wa'
 import { approvalLabel } from '@/lib/supplierScore'
 import Logo from '@/components/shared/Logo'
@@ -15,9 +16,18 @@ import { getNav } from '@/lib/nav'
 import DealProtection from '@/components/shared/DealProtection'
 import { tierLabel, sourceLabel, availabilityLabel, isDirectSource } from '@/lib/sellers'
 
+const SECTOR_I18N: Record<string, Record<string, string>> = {
+  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
+  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'سپلائی اسٹور' },
+}
+
 export default function OfferDetailPage() {
   const { id, offerId } = useParams()
   const router = useRouter()
+  const { locale, dir } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory'
+  const SAR = L('SAR', 'SAR', 'ر.س')
   const [rfq, setRfq] = useState<any>(null)
   const [offer, setOffer] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -34,12 +44,12 @@ export default function OfferDetailPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('request_price_reduction', { p_offer_id: offerId, p_hours: Number(reqHours), p_note: reqNote.trim() || null })
     setReqBusy(false)
-    if (error) { alert('تعذّر إرسال الطلب — حاول مرة ثانية.'); return }
+    if (error) { alert(L('Could not send the request — please try again.', 'درخواست نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال الطلب — حاول مرة ثانية.')); return }
     setReqOpen(false); setReqDone(true)
   }
 
   async function cancelReduction() {
-    if (!confirm('إلغاء طلب التخفيض والعودة للسعر الأصلي؟')) return
+    if (!confirm(L('Cancel the reduction request and go back to the original price?', 'کمی کی درخواست منسوخ کر کے اصل قیمت پر واپس جائیں؟', 'إلغاء طلب التخفيض والعودة للسعر الأصلي؟'))) return
     setActing(true)
     const supabase = createClient()
     await supabase.from('offers').update({ reduction_deadline: null, reduction_note: null }).eq('id', offerId)
@@ -55,7 +65,7 @@ export default function OfferDetailPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('request_offer_info', { p_offer_id: offerId, p_question: infoText.trim() })
     setInfoBusy(false)
-    if (error) { alert('تعذّر إرسال الطلب — حاول مرة ثانية.'); return }
+    if (error) { alert(L('Could not send the request — please try again.', 'درخواست نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال الطلب — حاول مرة ثانية.')); return }
     setInfoOpen(false); window.location.reload()
   }
 
@@ -85,16 +95,16 @@ export default function OfferDetailPage() {
   }, [id, offerId])
 
   async function acceptOffer() {
-    if (!confirm('تأكيد قبول هذا العرض؟ سيتم رفض باقي العروض وإغلاق الطلب.')) return
+    if (!confirm(L('Accept this offer? All other offers will be rejected and the request will close.', 'یہ آفر قبول کریں؟ باقی تمام آفرز رد ہو جائیں گی اور درخواست بند ہو جائے گی۔', 'تأكيد قبول هذا العرض؟ سيتم رفض باقي العروض وإغلاق الطلب.'))) return
     setActing(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
-    if (error) { setActing(false); alert('تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة.'); return }
+    if (error) { setActing(false); alert(L('Could not accept the offer — it may already be accepted. Refresh the page.', 'آفر قبول نہیں ہو سکی — شاید پہلے ہی قبول ہو چکی ہے۔ صفحہ ریفریش کریں۔', 'تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة.')); return }
     router.push(`/contractor/orders/${offerId}`)
   }
 
   async function rejectOffer() {
-    if (!confirm('رفض هذا العرض؟')) return
+    if (!confirm(L('Reject this offer?', 'یہ آفر رد کریں؟', 'رفض هذا العرض؟'))) return
     setActing(true)
     const supabase = createClient()
     await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
@@ -104,8 +114,8 @@ export default function OfferDetailPage() {
   if (loading) return <PageLoader />
   if (!offer || !rfq) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9] text-center">
-      <div><div className="text-5xl mb-3">🔍</div><p className="font-bold" style={{ color: '#1B2D5B' }}>العرض غير موجود</p>
-        <Link href={`/contractor/rfq/${id}`} className="text-sm text-[#d96f15] underline mt-2 inline-block">← رجوع للطلب</Link></div>
+      <div><div className="text-5xl mb-3">🔍</div><p className="font-bold" style={{ color: '#1B2D5B' }}>{L('Offer not found', 'آفر نہیں ملی', 'العرض غير موجود')}</p>
+        <Link href={`/contractor/rfq/${id}`} className="text-sm text-[#d96f15] underline mt-2 inline-block">← {L('Back to request', 'درخواست پر واپس', 'رجوع للطلب')}</Link></div>
     </div>
   )
 
@@ -114,17 +124,17 @@ export default function OfferDetailPage() {
   const exSum = exList.reduce((a: any, e: any) => a + (Number(e.amount) || 0), 0)
   const goods = (Number(offer.total_price) || 0) - exSum
   const ip = Array.isArray(offer.item_prices) ? offer.item_prices : []
-  const tierText = tierLabel(s.supplier_tier, 'ar')
+  const tierText = tierLabel(s.supplier_tier, locale)
   // خصوصية المورد: رقم التواصل (والواتساب) لا يظهران إلا بعد قبول العرض (الترسية).
   // قبلها يتواصل المشتري عبر الدردشة الداخلية فقط. رقم phone للمنصة/الإشعارات لا يظهر.
   const accepted = offer.status === 'accepted'
   const contactNum = s.contact_phone || s.phone || ''
   const mapsUrl = (s.latitude && s.longitude) ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}` : null
-  const wa = (accepted && contactNum) ? waLink(contactNum, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» في منصة تسعيرك`) : ''
+  const wa = (accepted && contactNum) ? waLink(contactNum, L(`Hello, regarding your offer on «${rfq.product_name}» on Taseerak`, `السلام علیکم، تسعیرک پر «${rfq.product_name}» کے لیے آپ کی آفر کے بارے میں`, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» في منصة تسعيرك`)) : ''
   const waReduce = '' // التفاوض قبل الترسية يتم داخل المنصة (لا واتساب)
-  const statusBadge = offer.status === 'accepted' ? { t: '✓ مقبول', c: 'bg-emerald-100 text-emerald-700' }
-    : offer.status === 'rejected' ? { t: '✕ مرفوض', c: 'bg-gray-100 text-gray-500' }
-    : { t: '⏳ قيد المراجعة', c: 'bg-amber-100 text-amber-700' }
+  const statusBadge = offer.status === 'accepted' ? { t: `✓ ${L('Accepted', 'قبول شدہ', 'مقبول')}`, c: 'bg-emerald-100 text-emerald-700' }
+    : offer.status === 'rejected' ? { t: `✕ ${L('Rejected', 'رد شدہ', 'مرفوض')}`, c: 'bg-gray-100 text-gray-500' }
+    : { t: `⏳ ${L('Under review', 'زیرِ غور', 'قيد المراجعة')}`, c: 'bg-amber-100 text-amber-700' }
 
   const Row = ({ label, value }: any) => value ? (
     <div className="flex justify-between gap-3 py-2 border-b border-gray-50 text-sm">
@@ -133,21 +143,21 @@ export default function OfferDetailPage() {
   ) : null
 
   return (
-    <AppShell title="تفاصيل العرض" nav={getNav('contractor', 'ar', '/contractor')} dir="rtl">
+    <AppShell title={L('Offer details', 'آفر کی تفصیل', 'تفاصيل العرض')} nav={getNav('contractor', locale, '/contractor')} dir={dir}>
       <div className="max-w-3xl mx-auto space-y-5">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ background: '#1B2D5B' }}>📋</div>
           <div>
-            <h1 className="text-xl font-bold" style={{ color: '#1B2D5B' }}>تفاصيل العرض</h1>
-            <p className="text-gray-500 text-sm">{rfq.product_name}</p>
+            <h1 className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{L('Offer details', 'آفر کی تفصیل', 'تفاصيل العرض')}</h1>
+            <p className="text-gray-500 text-sm">{getProductLabel(rfq.product_name, locale)}</p>
           </div>
           <span className={`badge text-[11px] mr-auto ${statusBadge.c}`}>{statusBadge.t}</span>
         </div>
 
         {offer.status === 'pending' && offer.price_valid_until && (
           new Date(offer.price_valid_until) < new Date()
-            ? <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-2.5 font-semibold">⏱ انتهت صلاحية سعر هذا العرض — يُنصح بتأكيد السعر مع المورّد قبل القبول.</div>
-            : <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-2.5">⏱ سعر هذا العرض مضمون حتى {new Date(offer.price_valid_until).toLocaleDateString('ar-SA-u-ca-gregory')}.</div>
+            ? <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-2.5 font-semibold">⏱ {L('This offer price has expired — confirm the price with the supplier before accepting.', 'اس آفر کی قیمت کی مدت ختم ہو گئی — قبول کرنے سے پہلے سپلائر سے قیمت کنفرم کریں۔', 'انتهت صلاحية سعر هذا العرض — يُنصح بتأكيد السعر مع المورّد قبل القبول.')}</div>
+            : <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-2.5">⏱ {L('This offer price is guaranteed until', 'اس آفر کی قیمت اس تاریخ تک پکی ہے:', 'سعر هذا العرض مضمون حتى')} {new Date(offer.price_valid_until).toLocaleDateString(dloc)}.</div>
         )}
 
         {/* 🛡 حماية الصفقة — إدارة الصفقة وتتبّعها (بعد القبول) */}
@@ -165,94 +175,94 @@ export default function OfferDetailPage() {
           <Link href={`/contractor/orders/${offer.id}`}
             className="block text-center text-sm font-semibold py-2.5 rounded-xl border-2 transition-all hover:shadow-sm"
             style={{ borderColor: '#0F6E56', color: '#0F6E56' }}>
-            📄 أمر الشراء / الفاتورة الضريبية ←
+            📄 {L('Purchase order / tax invoice', 'پرچیز آرڈر / ٹیکس انوائس', 'أمر الشراء / الفاتورة الضريبية')} ←
           </Link>
         )}
 
         {/* الطلب */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <h2 className="font-bold text-sm mb-2" style={{ color: '#1B2D5B' }}>📦 تفاصيل الطلب</h2>
-          <Row label="المنتج" value={rfq.product_name} />
-          <Row label="القطاع" value={(SECTOR_LABELS as any)[rfq.sector] || rfq.sector} />
-          <Row label="الكمية" value={`${rfq.quantity} ${rfq.unit || ''}`} />
-          <Row label="المنطقة" value={rfq.region} />
-          <Row label="المواصفات" value={rfq.specification} />
-          <Row label="ملاحظات الطلب" value={rfq.notes} />
+          <h2 className="font-bold text-sm mb-2" style={{ color: '#1B2D5B' }}>📦 {L('Request details', 'درخواست کی تفصیل', 'تفاصيل الطلب')}</h2>
+          <Row label={L('Product', 'پروڈکٹ', 'المنتج')} value={getProductLabel(rfq.product_name, locale)} />
+          <Row label={L('Sector', 'شعبہ', 'القطاع')} value={(locale !== 'ar' && SECTOR_I18N[locale]?.[rfq.sector]) || (SECTOR_LABELS as any)[rfq.sector] || rfq.sector} />
+          <Row label={L('Quantity', 'مقدار', 'الكمية')} value={`${rfq.quantity} ${getUnitLabel(rfq.unit, locale)}`} />
+          <Row label={L('Region', 'علاقہ', 'المنطقة')} value={rfq.region} />
+          <Row label={L('Specifications', 'اسپیسیفکیشن', 'المواصفات')} value={rfq.specification} />
+          <Row label={L('Request notes', 'درخواست کے نوٹس', 'ملاحظات الطلب')} value={rfq.notes} />
         </div>
 
         {/* المورد */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <h2 className="font-bold text-sm mb-3" style={{ color: '#1B2D5B' }}>🏪 المورد</h2>
+          <h2 className="font-bold text-sm mb-3" style={{ color: '#1B2D5B' }}>🏪 {L('Supplier', 'سپلائر', 'المورد')}</h2>
           <div className="flex items-center gap-2 flex-wrap mb-2">
-            <span className="font-bold text-gray-900">{s.company_name_ar || 'مورد'}</span>
+            <span className="font-bold text-gray-900">{s.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</span>
             {s.supplier_tier && <span className="badge text-[10px] bg-[#F5831F]/5 text-[#d96f15]">{tierText}</span>}
             {s.verification_status === 'verified' && (
               <span className="badge text-[10px]" style={s.cr_verification_source === 'wathq' ? { background: '#0F6E56', color: '#fff' } : { background: '#E1F5EE', color: '#0F6E56' }}>
-                {s.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}
+                {s.cr_verification_source === 'wathq' ? `🛡 ${L('Verified via Wathq', 'واثق کے ذریعے تصدیق شدہ', 'موثّق عبر واثق')}` : `✓ ${L('Verified', 'تصدیق شدہ', 'موثّق')}`}
               </span>
             )}
             {s.verification_status !== 'verified' && s.cr_verification_source !== 'wathq' && (
-              <span className="badge text-[10px] bg-gray-100 text-gray-500">غير موثّق بعد</span>
+              <span className="badge text-[10px] bg-gray-100 text-gray-500">{L('Not verified yet', 'ابھی تصدیق نہیں ہوئی', 'غير موثّق بعد')}</span>
             )}
             {offer.source_type && (
               <span className={`badge text-[10px] ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                {isDirectSource(offer.source_type) ? '✓ سعر مباشر من البائع' : sourceLabel(offer.source_type, 'ar')}
+                {isDirectSource(offer.source_type) ? `✓ ${L('Direct price from the seller', 'بیچنے والے سے براہ راست قیمت', 'سعر مباشر من البائع')}` : sourceLabel(offer.source_type, locale)}
               </span>
             )}
-            {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600">{availabilityLabel(offer.availability, 'ar')}</span>}
+            {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600">{availabilityLabel(offer.availability, locale)}</span>}
             {Array.isArray(s.approvals) && s.approvals.map((a: string) => (
-              <span key={a} className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>🏅 معتمد لدى {approvalLabel(a)}</span>
+              <span key={a} className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>🏅 {L('Approved by', 'منظور شدہ:', 'معتمد لدى')} {approvalLabel(a)}</span>
             ))}
           </div>
-          <Row label="التقييم" value={s.rating_avg > 0 ? `⭐ ${s.rating_avg}` : null} />
-          <Row label="الموقع" value={[s.district, s.city, s.region].filter(Boolean).join('، ')} />
-          <Row label="العنوان الوطني" value={s.national_short_address} />
+          <Row label={L('Rating', 'ریٹنگ', 'التقييم')} value={s.rating_avg > 0 ? `⭐ ${s.rating_avg}` : null} />
+          <Row label={L('Location', 'مقام', 'الموقع')} value={[s.district, s.city, s.region].filter(Boolean).join(L(', ', '، ', '، '))} />
+          <Row label={L('National address', 'نیشنل ایڈریس', 'العنوان الوطني')} value={s.national_short_address} />
           {accepted
-            ? <Row label="رقم التواصل" value={contactNum} />
-            : <div className="text-[11px] text-gray-400 py-2 border-b border-gray-50 leading-relaxed">🔒 رقم تواصل المورد يظهر بعد الترسية (إتمام الصفقة). تواصل معه الآن عبر الدردشة الداخلية.</div>}
+            ? <Row label={L('Contact number', 'رابطہ نمبر', 'رقم التواصل')} value={contactNum} />
+            : <div className="text-[11px] text-gray-400 py-2 border-b border-gray-50 leading-relaxed">🔒 {L('The supplier contact number appears after award (deal done). For now, contact them through the in-app chat.', 'سپلائر کا رابطہ نمبر ایوارڈ (ڈیل مکمل ہونے) کے بعد نظر آئے گا۔ ابھی اندرونی چیٹ سے رابطہ کریں۔', 'رقم تواصل المورد يظهر بعد الترسية (إتمام الصفقة). تواصل معه الآن عبر الدردشة الداخلية.')}</div>}
           <div className="flex gap-2 mt-3 flex-wrap">
             <button type="button" onClick={async () => {
               const supabase = createClient()
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: offer.supplier_id })
-              if (error || !data) { alert('تعذّر فتح المحادثة'); return }
+              if (error || !data) { alert(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }
               router.push(`/messages?c=${data}`)
-            }} className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#1B2D5B' }}>💬 رسالة داخلية</button>
-            {wa && <a href={wa} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#25D366' }}>تواصل واتساب</a>}
-            {mapsUrl && <a href={mapsUrl} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600">🗺 موقع المورد</a>}
+            }} className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#1B2D5B' }}>💬 {L('In-app message', 'اندرونی پیغام', 'رسالة داخلية')}</button>
+            {wa && <a href={wa} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#25D366' }}>{L('WhatsApp', 'واٹس ایپ', 'تواصل واتساب')}</a>}
+            {mapsUrl && <a href={mapsUrl} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600">🗺 {L('Supplier location', 'سپلائر کا مقام', 'موقع المورد')}</a>}
           </div>
         </div>
 
         {/* العرض */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <h2 className="font-bold text-sm mb-3" style={{ color: '#1B2D5B' }}>💰 تفاصيل العرض</h2>
-          <Row label="سعر الوحدة" value={offer.unit_price ? `${offer.unit_price.toLocaleString('en-US')} ر.س` : null} />
-          <Row label="مدة التوصيل" value={offer.delivery_days ? `${offer.delivery_days} يوم` : null} />
+          <h2 className="font-bold text-sm mb-3" style={{ color: '#1B2D5B' }}>💰 {L('Offer details', 'آفر کی تفصیل', 'تفاصيل العرض')}</h2>
+          <Row label={L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')} value={offer.unit_price ? `${offer.unit_price.toLocaleString('en-US')} ${SAR}` : null} />
+          <Row label={L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')} value={offer.delivery_days ? `${offer.delivery_days} ${L('days', 'دن', 'يوم')}` : null} />
 
           {/* تسعير بند-بند: كل مادة بسعرها */}
           {ip.length > 0 && (
             <div className="border border-gray-200 rounded-xl overflow-hidden mb-3">
               <div className="bg-gray-50 px-3 py-2 text-xs font-bold text-gray-500 flex justify-between">
-                <span>تسعير المواد ({ip.length})</span><span>السعر</span>
+                <span>{L('Item pricing', 'آئٹمز کی قیمتیں', 'تسعير المواد')} ({ip.length})</span><span>{L('Price', 'قیمت', 'السعر')}</span>
               </div>
               {ip.map((it: any, i: any) => (
                 <div key={i} className="px-3 py-2.5 border-t border-gray-100 text-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="font-semibold text-gray-800 truncate">{it.product_name}</div>
+                      <div className="font-semibold text-gray-800 truncate">{getProductLabel(it.product_name, locale)}</div>
                       <div className="text-[11px] text-gray-400">
                         {Number(it.unit_price) > 0
-                          ? `${Number(it.unit_price).toLocaleString('en-US')} ر.س × ${(Number(it.quantity) || 0).toLocaleString('en-US')} ${it.unit || ''}`
-                          : `${(Number(it.quantity) || 0).toLocaleString('en-US')} ${it.unit || ''}`}
+                          ? `${Number(it.unit_price).toLocaleString('en-US')} ${SAR} × ${(Number(it.quantity) || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}`
+                          : `${(Number(it.quantity) || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}`}
                       </div>
                     </div>
-                    <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</div>
+                    <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</div>
                   </div>
                   {/* مواصفات المادة من المورد */}
                   {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5">📝 {it.specification || it.notes}</p>}
-                  {it.warranty && <p className="text-[11px] font-semibold text-[#0F6E56] mt-1">🛡 الضمان: {it.warranty}</p>}
+                  {it.warranty && <p className="text-[11px] font-semibold text-[#0F6E56] mt-1">🛡 {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</p>}
                   {it.attachment_url && (
                     <a href={fileHref(it.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#d96f15] underline mt-1.5">
-                      📎 {it.attachment_name || 'ملف المواصفات'}
+                      📎 {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}
                     </a>
                   )}
                 </div>
@@ -261,9 +271,9 @@ export default function OfferDetailPage() {
           )}
 
           <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 my-3 text-sm">
-            <div className="flex justify-between text-gray-600"><span>{ip.length > 0 ? 'إجمالي البضاعة' : 'البضاعة'}</span><span>{goods.toLocaleString('en-US')} ر.س</span></div>
+            <div className="flex justify-between text-gray-600"><span>{ip.length > 0 ? L('Goods total', 'مال کا کل', 'إجمالي البضاعة') : L('Goods', 'مال', 'البضاعة')}</span><span>{goods.toLocaleString('en-US')} {SAR}</span></div>
             {exList.map((e: any, i: any) => (
-              <div key={i} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString('en-US')} ر.س</span></div>
+              <div key={i} className="flex justify-between text-amber-700"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString('en-US')} {SAR}</span></div>
             ))}
             {(() => {
               const entered = Number(offer.total_price) || 0
@@ -271,9 +281,9 @@ export default function OfferDetailPage() {
               const vat = net * 0.15
               const fmt = (n: any) => (+n.toFixed(2)).toLocaleString('en-US')
               return (<>
-                <div className="flex justify-between text-gray-600 border-t border-amber-200 mt-1.5 pt-1.5"><span>الصافي (قبل الضريبة)</span><span>{fmt(net)} ر.س</span></div>
-                <div className="flex justify-between text-gray-600"><span>ضريبة القيمة المضافة 15%</span><span>+ {fmt(vat)} ر.س</span></div>
-                <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>الإجمالي شامل الضريبة</span><span>{fmt(net + vat)} ر.س</span></div>
+                <div className="flex justify-between text-gray-600 border-t border-amber-200 mt-1.5 pt-1.5"><span>{L('Net (before VAT)', 'خالص (ٹیکس سے پہلے)', 'الصافي (قبل الضريبة)')}</span><span>{fmt(net)} {SAR}</span></div>
+                <div className="flex justify-between text-gray-600"><span>{L('VAT 15%', 'ویٹ (VAT) 15%', 'ضريبة القيمة المضافة 15%')}</span><span>+ {fmt(vat)} {SAR}</span></div>
+                <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span><span>{fmt(net + vat)} {SAR}</span></div>
               </>)
             })()}
           </div>
@@ -288,7 +298,7 @@ export default function OfferDetailPage() {
           {offer.notes && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-2">📝 {offer.notes}</p>}
           {offer.attachment_url && (
             <a href={fileHref(offer.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-[#d96f15] underline mt-1">
-              📎 {offer.attachment_name || 'مرفق العرض'}
+              📎 {offer.attachment_name || L('Offer attachment', 'آفر کی فائل', 'مرفق العرض')}
             </a>
           )}
         </div>
@@ -296,20 +306,20 @@ export default function OfferDetailPage() {
         {/* معلومات إضافية عن المنتج */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-bold text-sm" style={{ color: '#1B2D5B' }}>❓ معلومات إضافية عن المنتج</h2>
+            <h2 className="font-bold text-sm" style={{ color: '#1B2D5B' }}>❓ {L('More product information', 'پروڈکٹ کے بارے میں مزید معلومات', 'معلومات إضافية عن المنتج')}</h2>
             {offer.status === 'pending' && !offer.info_request && (
-              <button type="button" onClick={() => setInfoOpen(true)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 font-semibold">اطلب معلومات</button>
+              <button type="button" onClick={() => setInfoOpen(true)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 font-semibold">{L('Ask for info', 'معلومات مانگیں', 'اطلب معلومات')}</button>
             )}
           </div>
           {offer.info_request ? (
             <div className="space-y-2">
-              <div className="bg-gray-50 rounded-lg p-2.5 text-sm"><span className="text-gray-400 text-[11px]">سؤالك:</span><div>{offer.info_request}</div></div>
+              <div className="bg-gray-50 rounded-lg p-2.5 text-sm"><span className="text-gray-400 text-[11px]">{L('Your question:', 'آپ کا سوال:', 'سؤالك:')}</span><div>{offer.info_request}</div></div>
               {offer.info_response
-                ? <div className="bg-emerald-50 rounded-lg p-2.5 text-sm"><span className="text-emerald-600 text-[11px]">رد المورد:</span><div>{offer.info_response}</div></div>
-                : <div className="text-xs text-amber-600">⏳ بانتظار رد المورد...</div>}
+                ? <div className="bg-emerald-50 rounded-lg p-2.5 text-sm"><span className="text-emerald-600 text-[11px]">{L('Supplier reply:', 'سپلائر کا جواب:', 'رد المورد:')}</span><div>{offer.info_response}</div></div>
+                : <div className="text-xs text-amber-600">⏳ {L('Waiting for the supplier reply...', 'سپلائر کے جواب کا انتظار ہے...', 'بانتظار رد المورد...')}</div>}
             </div>
           ) : (
-            <p className="text-xs text-gray-400">اطلب من المورد تفاصيل إضافية عن المنتج (النوع، المواصفات، المنشأ، الضمان...).</p>
+            <p className="text-xs text-gray-400">{L('Ask the supplier for more product details (type, specs, origin, warranty...).', 'سپلائر سے پروڈکٹ کی مزید تفصیل مانگیں (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی...)۔', 'اطلب من المورد تفاصيل إضافية عن المنتج (النوع، المواصفات، المنشأ، الضمان...).')}</p>
           )}
         </div>
 
@@ -319,23 +329,23 @@ export default function OfferDetailPage() {
             {(reqDone || offer.reduction_deadline) ? (
               <>
                 <div className="text-center text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-2">
-                  ✓ تم إرسال طلب التخفيض — بانتظار رد المورد{offer.reduction_deadline ? ` (المهلة: ${new Date(offer.reduction_deadline).toLocaleString('ar-SA')})` : ''}
+                  ✓ {L('Reduction request sent — waiting for the supplier reply', 'کمی کی درخواست بھیج دی گئی — سپلائر کے جواب کا انتظار ہے', 'تم إرسال طلب التخفيض — بانتظار رد المورد')}{offer.reduction_deadline ? ` (${L('Deadline:', 'آخری وقت:', 'المهلة:')} ${new Date(offer.reduction_deadline).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA')})` : ''}
                 </div>
                 <button type="button" onClick={cancelReduction} disabled={acting} className="block w-full text-center text-xs mb-3 px-4 py-2 rounded-xl font-semibold border border-gray-300 text-gray-600 disabled:opacity-50">
-                  ✕ إلغاء طلب التخفيض
+                  ✕ {L('Cancel reduction request', 'کمی کی درخواست منسوخ کریں', 'إلغاء طلب التخفيض')}
                 </button>
               </>
             ) : (
               <>
                 <button type="button" onClick={() => setReqOpen(true)} className="block w-full text-center text-sm mb-2 px-4 py-2.5 rounded-xl font-semibold border" style={{ borderColor: '#F5831F', color: '#F5831F' }}>
-                  📉 اطلب تخفيض إضافي (بمهلة محددة)
+                  📉 {L('Ask for a further discount (with a deadline)', 'مزید رعایت مانگیں (مقررہ وقت کے ساتھ)', 'اطلب تخفيض إضافي (بمهلة محددة)')}
                 </button>
-                {waReduce && <a href={waReduce} target="_blank" rel="noreferrer" className="block text-center text-[11px] text-gray-400 underline mb-3">أو راسله عبر واتساب</a>}
+                {waReduce && <a href={waReduce} target="_blank" rel="noreferrer" className="block text-center text-[11px] text-gray-400 underline mb-3">{L('or message them on WhatsApp', 'یا واٹس ایپ پر پیغام بھیجیں', 'أو راسله عبر واتساب')}</a>}
               </>
             )}
             <div className="flex gap-2">
-              <button onClick={acceptOffer} disabled={acting} className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>✓ {(reqDone || offer.reduction_deadline) ? 'قبول السعر الأصلي' : 'قبول العرض'}</button>
-              <button onClick={rejectOffer} disabled={acting} className="px-6 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600">✕ رفض</button>
+              <button onClick={acceptOffer} disabled={acting} className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>✓ {(reqDone || offer.reduction_deadline) ? L('Accept original price', 'اصل قیمت قبول کریں', 'قبول السعر الأصلي') : L('Accept offer', 'آفر قبول کریں', 'قبول العرض')}</button>
+              <button onClick={rejectOffer} disabled={acting} className="px-6 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600">✕ {L('Reject', 'رد کریں', 'رفض')}</button>
             </div>
           </div>
         )}
@@ -343,22 +353,22 @@ export default function OfferDetailPage() {
         {/* نموذج طلب تخفيض السعر بمهلة */}
         {reqOpen && (
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !reqBusy && setReqOpen(false)}>
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={(e: any) => e.stopPropagation()}>
-              <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>📉 طلب تخفيض إضافي</h3>
-              <p className="text-xs text-gray-500 mb-4">نرسل طلباً للمورد لتخفيض سعره، ويرد خلال المهلة التي تحددها أنت.</p>
-              <label className="block text-xs font-bold text-gray-500 mb-1">مهلة الرد</label>
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir={dir} onClick={(e: any) => e.stopPropagation()}>
+              <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>📉 {L('Further discount request', 'مزید رعایت کی درخواست', 'طلب تخفيض إضافي')}</h3>
+              <p className="text-xs text-gray-500 mb-4">{L('We send the supplier a request to lower the price; they reply within the deadline you set.', 'ہم سپلائر کو قیمت کم کرنے کی درخواست بھیجیں گے، وہ آپ کے دیے گئے وقت میں جواب دے گا۔', 'نرسل طلباً للمورد لتخفيض سعره، ويرد خلال المهلة التي تحددها أنت.')}</p>
+              <label className="block text-xs font-bold text-gray-500 mb-1">{L('Reply deadline', 'جواب کی مہلت', 'مهلة الرد')}</label>
               <select value={reqHours} onChange={(e: any) => setReqHours(Number(e.target.value))} className="input-field mb-3">
-                <option value={6}>٦ ساعات</option>
-                <option value={12}>١٢ ساعة</option>
-                <option value={24}>٢٤ ساعة (يوم)</option>
-                <option value={48}>٤٨ ساعة (يومين)</option>
-                <option value={72}>٣ أيام</option>
+                <option value={6}>{L('6 hours', '6 گھنٹے', '٦ ساعات')}</option>
+                <option value={12}>{L('12 hours', '12 گھنٹے', '١٢ ساعة')}</option>
+                <option value={24}>{L('24 hours (1 day)', '24 گھنٹے (1 دن)', '٢٤ ساعة (يوم)')}</option>
+                <option value={48}>{L('48 hours (2 days)', '48 گھنٹے (2 دن)', '٤٨ ساعة (يومين)')}</option>
+                <option value={72}>{L('3 days', '3 دن', '٣ أيام')}</option>
               </select>
-              <label className="block text-xs font-bold text-gray-500 mb-1">ملاحظة للمورد (اختياري)</label>
-              <textarea value={reqNote} onChange={(e: any) => setReqNote(e.target.value)} rows={2} className="input-field mb-3" placeholder="مثال: السعر أعلى من السوق، نطلب تخفيض ٥٪" />
+              <label className="block text-xs font-bold text-gray-500 mb-1">{L('Note to the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظة للمورد (اختياري)')}</label>
+              <textarea value={reqNote} onChange={(e: any) => setReqNote(e.target.value)} rows={2} className="input-field mb-3" placeholder={L('e.g. The price is above market; we ask for a 5% discount', 'مثال: قیمت مارکیٹ سے زیادہ ہے، 5٪ رعایت چاہیے', 'مثال: السعر أعلى من السوق، نطلب تخفيض ٥٪')} />
               <div className="flex gap-2">
-                <button type="button" disabled={reqBusy} onClick={submitReductionRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#F5831F' }}>{reqBusy ? 'جارٍ الإرسال...' : 'إرسال الطلب'}</button>
-                <button type="button" onClick={() => setReqOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
+                <button type="button" disabled={reqBusy} onClick={submitReductionRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#F5831F' }}>{reqBusy ? L('Sending...', 'بھیجا جا رہا ہے...', 'جارٍ الإرسال...') : L('Send request', 'درخواست بھیجیں', 'إرسال الطلب')}</button>
+                <button type="button" onClick={() => setReqOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
               </div>
             </div>
           </div>
@@ -367,13 +377,13 @@ export default function OfferDetailPage() {
         {/* نموذج طلب معلومات إضافية */}
         {infoOpen && (
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !infoBusy && setInfoOpen(false)}>
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={(e: any) => e.stopPropagation()}>
-              <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>❓ طلب معلومات إضافية</h3>
-              <p className="text-xs text-gray-500 mb-3">ما المعلومات التي تريدها عن المنتج؟ (النوع، المواصفات، المنشأ، الضمان…)</p>
-              <textarea value={infoText} onChange={(e: any) => setInfoText(e.target.value)} rows={3} className="input-field mb-3" placeholder="مثال: ما منشأ الحديد؟ هل يطابق مواصفة ASTM؟ هل يوجد شهادة جودة؟" />
+            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir={dir} onClick={(e: any) => e.stopPropagation()}>
+              <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>❓ {L('Request more information', 'مزید معلومات کی درخواست', 'طلب معلومات إضافية')}</h3>
+              <p className="text-xs text-gray-500 mb-3">{L('What do you want to know about the product? (type, specs, origin, warranty…)', 'پروڈکٹ کے بارے میں کیا معلومات چاہیے؟ (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی…)', 'ما المعلومات التي تريدها عن المنتج؟ (النوع، المواصفات، المنشأ، الضمان…)')}</p>
+              <textarea value={infoText} onChange={(e: any) => setInfoText(e.target.value)} rows={3} className="input-field mb-3" placeholder={L('e.g. Where is the steel from? Does it meet ASTM? Is there a quality certificate?', 'مثال: سریا کہاں کا بنا ہے؟ کیا یہ ASTM کے مطابق ہے؟ کیا کوالٹی سرٹیفکیٹ ہے؟', 'مثال: ما منشأ الحديد؟ هل يطابق مواصفة ASTM؟ هل يوجد شهادة جودة؟')} />
               <div className="flex gap-2">
-                <button type="button" disabled={infoBusy} onClick={submitInfoRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoBusy ? 'جارٍ الإرسال...' : 'إرسال للمورد'}</button>
-                <button type="button" onClick={() => setInfoOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
+                <button type="button" disabled={infoBusy} onClick={submitInfoRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoBusy ? L('Sending...', 'بھیجا جا رہا ہے...', 'جارٍ الإرسال...') : L('Send to supplier', 'سپلائر کو بھیجیں', 'إرسال للمورد')}</button>
+                <button type="button" onClick={() => setInfoOpen(false)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
               </div>
             </div>
           </div>

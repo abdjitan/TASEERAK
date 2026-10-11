@@ -22,6 +22,8 @@ export default function SupplierRFQPage() {
   const { id } = useParams()
   const router = useRouter()
   const { locale, dir } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  const SAR = L('SAR', 'SAR', 'ر.س')
   const [user, setUser] = useState<any>(null)
   const [actingId, setActingId] = useState('') // الشركة لعضو الفريق، وإلا المستخدم نفسه
   const [verified, setVerified] = useState(true) // تفاؤلي؛ يُضبط من الملف. القفل الحقيقي على مستوى القاعدة (RLS)
@@ -78,7 +80,7 @@ export default function SupplierRFQPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('submit_price_reduction', { p_offer_id: existingOffer.id, p_new_total: Number(newPrice) })
     setReducing(false)
-    if (error) { setError('تعذّر إرسال السعر الجديد — حاول مرة ثانية.'); return }
+    if (error) { setError(L('Could not send the new price — please try again.', 'نئی قیمت نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال السعر الجديد — حاول مرة ثانية.')); return }
     window.location.reload()
   }
 
@@ -86,12 +88,12 @@ export default function SupplierRFQPage() {
   const [cancelling, setCancelling] = useState(false)
   async function cancelOffer() {
     if (!existingOffer) return
-    if (!confirm('سيتم إلغاء عرضك الحالي لتتمكن من إعادة تسعيره من جديد. متابعة؟')) return
+    if (!confirm(L('Your current offer will be cancelled so you can price it again. Continue?', 'آپ کی موجودہ آفر منسوخ ہو جائے گی تاکہ آپ دوبارہ قیمت دے سکیں۔ جاری رکھیں؟', 'سيتم إلغاء عرضك الحالي لتتمكن من إعادة تسعيره من جديد. متابعة؟'))) return
     setCancelling(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('cancel_my_offer', { p_offer_id: existingOffer.id })
     setCancelling(false)
-    if (error) { setError(error.message || 'تعذّر إلغاء العرض — حاول مرة ثانية.'); return }
+    if (error) { setError(error.message || L('Could not cancel the offer — please try again.', 'آفر منسوخ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر إلغاء العرض — حاول مرة ثانية.')); return }
     window.location.reload()
   }
 
@@ -104,7 +106,7 @@ export default function SupplierRFQPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('respond_offer_info', { p_offer_id: existingOffer.id, p_answer: infoReply.trim() })
     setInfoReplying(false)
-    if (error) { setError('تعذّر إرسال الرد — حاول مرة ثانية.'); return }
+    if (error) { setError(L('Could not send the reply — please try again.', 'جواب نہیں بھیجا جا سکا — دوبارہ کوشش کریں۔', 'تعذّر إرسال الرد — حاول مرة ثانية.')); return }
     window.location.reload()
   }
 
@@ -257,7 +259,7 @@ export default function SupplierRFQPage() {
   // حفظ المادة: لازم سعر، ثم يُقفل البطاقة وينتقل للمادة التالية غير المحفوظة
   function saveItem(i: any) {
     const f = itemForms[i] || {}
-    if (!(parseFloat(f.line_total) > 0)) { setError(`أدخل سعر «${myItems[i]?.product_name}» قبل الحفظ`); return }
+    if (!(parseFloat(f.line_total) > 0)) { setError(L(`Enter the price of «${getProductLabel(myItems[i]?.product_name, locale)}» before saving`, `محفوظ کرنے سے پہلے «${getProductLabel(myItems[i]?.product_name, locale)}» کی قیمت درج کریں`, `أدخل سعر «${myItems[i]?.product_name}» قبل الحفظ`)); return }
     setError('')
     setItemForms(prev => prev.map((x: any, idx: any) => idx === i ? { ...x, saved: true } : x))
     const nextIdx = myItems.findIndex((_: any, idx: any) => idx !== i && !(itemForms[idx]?.saved) && idx > i)
@@ -295,11 +297,11 @@ export default function SupplierRFQPage() {
     e.preventDefault()
     if (!user) return
     if (isExpired(rfq?.expires_at)) {
-      setError('انتهت مهلة التسعير لهذا الطلب — لم يعد بالإمكان إرسال عرض.')
+      setError(L('The pricing deadline for this request has passed — offers can no longer be sent.', 'اس درخواست کی قیمت دینے کی مہلت ختم ہو گئی — اب آفر نہیں بھیجی جا سکتی۔', 'انتهت مهلة التسعير لهذا الطلب — لم يعد بالإمكان إرسال عرض.'))
       return
     }
     if (isMultiItem && !allItemsPriced) {
-      setError('أدخل سعر مادة واحدة على الأقل قبل إرسال العرض.')
+      setError(L('Enter a price for at least one material before sending the offer.', 'آفر بھیجنے سے پہلے کم از کم ایک مال کی قیمت درج کریں۔', 'أدخل سعر مادة واحدة على الأقل قبل إرسال العرض.'))
       return
     }
     setSubmitting(true)
@@ -322,7 +324,7 @@ export default function SupplierRFQPage() {
       const res = await fetch('/api/upload-attachment', { method: 'POST', body: fd })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j.ok) {
-        setError(j?.message || 'تعذّر رفع الملف المرفق — حاول مجدداً، أو أزل المرفق وأرسل العرض بدونه.')
+        setError(j?.message || L('Could not upload the attachment — try again, or remove it and send the offer without it.', 'منسلک فائل اپ لوڈ نہیں ہو سکی — دوبارہ کوشش کریں، یا فائل ہٹا کر آفر بغیر اس کے بھیجیں۔', 'تعذّر رفع الملف المرفق — حاول مجدداً، أو أزل المرفق وأرسل العرض بدونه.'))
         setSubmitting(false)
         return
       }
@@ -349,12 +351,12 @@ export default function SupplierRFQPage() {
         let upUrl = null, upName = null
         if (form.file) {
           const safe = await validateUploadFile(form.file)
-          if (!safe.ok) { setError(`كتالوج «${it.product_name}»: ${safe.error}`); setSubmitting(false); return }
+          if (!safe.ok) { setError(`${L('Catalog', 'کیٹلاگ', 'كتالوج')} «${locale === 'ar' ? it.product_name : getProductLabel(it.product_name, locale)}»: ${safe.error}`); setSubmitting(false); return }
           const ifd = new FormData(); ifd.append('file', form.file)
           const ires = await fetch('/api/upload-attachment', { method: 'POST', body: ifd })
           const ij = await ires.json().catch(() => ({}))
           if (!ires.ok || !ij.ok) {
-            setError(`تعذّر رفع كتالوج «${it.product_name}» — أزله أو حاول مجدداً.`)
+            setError(L(`Could not upload the catalog for «${getProductLabel(it.product_name, locale)}» — remove it or try again.`, `«${getProductLabel(it.product_name, locale)}» کا کیٹلاگ اپ لوڈ نہیں ہو سکا — اسے ہٹائیں یا دوبارہ کوشش کریں۔`, `تعذّر رفع كتالوج «${it.product_name}» — أزله أو حاول مجدداً.`))
             setSubmitting(false); return
           }
           upUrl = ij.url; upName = ij.name
@@ -374,7 +376,7 @@ export default function SupplierRFQPage() {
     }
 
     if (!sourceType) {
-      setError(locale === 'en' ? 'Choose where this price comes from.' : locale === 'ur' ? 'قیمت کا ذریعہ منتخب کریں۔' : 'حدّد مصدر السعر قبل الإرسال.')
+      setError(L('Choose where this price comes from.', 'قیمت کا ذریعہ منتخب کریں۔', 'حدّد مصدر السعر قبل الإرسال.'))
       setSubmitting(false); return
     }
     const { error: insertError } = await supabase.from('offers').insert({
@@ -400,7 +402,7 @@ export default function SupplierRFQPage() {
     if (insertError) {
       setError((insertError.message || '').includes('offer_rate_limited')
         ? (locale === 'en' ? 'Too many offers in the last hour. Verify your account to remove the limit, or try again later.' : locale === 'ur' ? 'ایک گھنٹے میں بہت زیادہ پیشکشیں۔ بعد میں کوشش کریں۔' : 'تجاوزت عدد العروض المسموح في الساعة. وثّق حسابك لإزالة الحد، أو حاول لاحقاً.')
-        : `خطأ: ${insertError.message}`)
+        : `${L('Error:', 'خرابی:', 'خطأ:')} ${insertError.message}`)
       setSubmitting(false); return
     }
     setSuccess(true); setSubmitting(false)
@@ -464,7 +466,7 @@ export default function SupplierRFQPage() {
       back: '← واپس', details: 'درخواست کی تفصیلات', sector: 'شعبہ', qty: 'مقدار',
       location: 'مقام', contractor: 'خریدار', spec: 'تفصیلات', notes: 'نوٹس',
       delivery: 'ڈیلیوری', vat: 'ٹیکس رسید', required: 'ضروری', notRequired: 'غیر ضروری',
-      submitOffer: 'قیمت پیش کریں', totalPrice: 'کل قیمت (ریال)', unitPrice: 'فی یونٹ قیمت (ریال)',
+      submitOffer: 'قیمت پیش کریں', totalPrice: 'کل قیمت (SAR)', unitPrice: 'فی یونٹ قیمت (SAR)',
       verifyFirst: 'پیشکش دینے کے لیے پروفائل مکمل کریں', verifyFirstSub: 'اپنا مقام اور مہارتیں منتخب کریں اور ای میل کی تصدیق کریں، پھر واپس آ کر قیمت دیں۔ تصدیق اختیاری ہے۔', verifyFirstCta: 'پروفائل مکمل کریں →',
       deliveryDays: 'ڈیلیوری وقت (دن)', attributes: 'پروڈکٹ کی خصوصیات',
       attrHint: 'خصوصیات شامل کریں: برانڈ، ملک، وارنٹی...',
@@ -484,7 +486,7 @@ export default function SupplierRFQPage() {
     },
   }[locale] || {}
 
-  const sectors = { ar: SECTOR_LABELS, en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical' }, ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل' } }[locale] || SECTOR_LABELS
+  const sectors = { ar: SECTOR_LABELS, en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' }, ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'سپلائی اسٹور' } }[locale] || SECTOR_LABELS
 
   // استخراج رابط الملف من الـ notes
   const specFileMatch = rfq?.notes?.match(/\[مواصفات مرفقة: ([^\]]+)\]/)
@@ -493,7 +495,7 @@ export default function SupplierRFQPage() {
 
   if (loading) return <PageLoader />
 
-  if (!rfq) return <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]"><div className="text-gray-500">الطلب غير موجود</div></div>
+  if (!rfq) return <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]"><div className="text-gray-500">{L('Request not found', 'درخواست نہیں ملی', 'الطلب غير موجود')}</div></div>
 
   // Success / Dismissed states
   if (success || dismissed) {
@@ -514,7 +516,7 @@ export default function SupplierRFQPage() {
   }
 
   return (
-    <AppShell title={locale === 'en' ? 'Submit Offer' : locale === 'ur' ? 'پیشکش' : 'تقديم عرض'} nav={getNav('supplier', locale, '/supplier/dashboard')} dir={dir}>
+    <AppShell title={L('Submit Offer', 'پیشکش', 'تقديم عرض')} nav={getNav('supplier', locale, '/supplier/dashboard')} dir={dir}>
       {(() => { const showPanel = false /* (H2) competitive-position panel removed — suppliers no longer see competitor prices */; return (
       <div className={`max-w-6xl mx-auto grid gap-5 items-start ${showPanel ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
         <div className={`min-w-0 ${showPanel ? 'lg:col-span-2' : ''}`}>
@@ -523,27 +525,27 @@ export default function SupplierRFQPage() {
           <div className="flex items-start justify-between gap-2">
             {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المشتري للطلب */}
             <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>
-              {rfqIsMulti ? (locale === 'en' ? 'Price request' : locale === 'ur' ? 'قیمت کی درخواست' : 'طلب تسعير مواد') : rfq.product_name}
+              {rfqIsMulti ? L('Price request', 'قیمت کی درخواست', 'طلب تسعير مواد') : getProductLabel(rfq.product_name, locale)}
             </h2>
             <button type="button" onClick={async () => {
               const supabase = createClient()
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: user?.id })
-              if (error || !data) { setError('تعذّر فتح المحادثة'); return }
+              if (error || !data) { setError(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }
               router.push(`/messages?c=${data}`)
-            }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#1B2D5B' }}>💬 {locale === 'en' ? 'Message buyer' : 'راسل المشتري'}</button>
+            }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#1B2D5B' }}>💬 {L('Message buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>
           </div>
 
           {rfqIsMulti && myItems.length > 0 && (
             <div className="my-4">
-              <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 المواد ضمن تخصصك ({myItems.length})</h3>
-              <p className="text-[11px] text-gray-400 mb-2">تظهر لك فقط المواد التي تقدر توردها — سعّرها وأرسل عرضك.</p>
+              <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 {L('Materials in your specialty', 'آپ کی مہارت کا مال', 'المواد ضمن تخصصك')} ({myItems.length})</h3>
+              <p className="text-[11px] text-gray-400 mb-2">{L('You only see the materials you can supply — price them and send your offer.', 'آپ کو صرف وہ مال دکھایا جاتا ہے جو آپ سپلائی کر سکتے ہیں — قیمت لگائیں اور آفر بھیجیں۔', 'تظهر لك فقط المواد التي تقدر توردها — سعّرها وأرسل عرضك.')}</p>
               <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-sm">
                   <thead><tr className="text-[13px] text-gray-500 bg-[#f4f6f9] border-b border-gray-100">
                     <th className="text-start py-2.5 px-3 font-bold">#</th>
-                    <th className="text-start py-2.5 px-3 font-bold">المادة</th>
-                    <th className="text-start py-2.5 px-3 font-bold">الكمية</th>
-                    <th className="text-start py-2.5 px-3 font-bold">المواصفات المطلوبة</th>
+                    <th className="text-start py-2.5 px-3 font-bold">{L('Material', 'مال', 'المادة')}</th>
+                    <th className="text-start py-2.5 px-3 font-bold">{L('Quantity', 'مقدار', 'الكمية')}</th>
+                    <th className="text-start py-2.5 px-3 font-bold">{L('Required specs', 'مطلوبہ اسپیسیفکیشن', 'المواصفات المطلوبة')}</th>
                   </tr></thead>
                   <tbody>
                     {myItems.map((it: any, i: number) => (
@@ -553,15 +555,15 @@ export default function SupplierRFQPage() {
                           <div className="font-bold text-[15px] text-[#1B2D5B] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => { e.currentTarget.style.display = 'none' }} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span>{getProductLabel(it.product_name, locale)}</span></div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(sectors as any)[it.sector] || it.sector}</span>
-                            {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
-                            {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}ي</span>}
-                            {it.spec_file_url && !it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
+                            {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
+                            {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{L('d', ' دن', 'ي')}</span>}
+                            {it.spec_file_url && !it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 {L('File', 'فائل', 'ملف')}</a>}
                           </div>
                           {/* صورة المادة من الطلب السريع: المورد يشوف نفس الشي اللي بدّو ياه الزبون */}
                           {it.photo_url && (
-                            <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 group" title="صورة المادة من الزبون">
-                              <img src={fileHref(it.photo_url)} alt="صورة المادة" loading="lazy" className="w-24 h-24 object-cover rounded-lg border border-gray-200 group-hover:border-[#F5831F]" />
-                              <span className="text-[11px] font-bold text-[#d96f15]">📷 صورة من المشتري<br /><span className="font-normal text-gray-500">سعّر المادة نفسها</span></span>
+                            <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 group" title={L('Material photo from the buyer', 'خریدار کی طرف سے مال کی تصویر', 'صورة المادة من الزبون')}>
+                              <img src={fileHref(it.photo_url)} alt={L('Material photo', 'مال کی تصویر', 'صورة المادة')} loading="lazy" className="w-24 h-24 object-cover rounded-lg border border-gray-200 group-hover:border-[#F5831F]" />
+                              <span className="text-[11px] font-bold text-[#d96f15]">📷 {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
                             </a>
                           )}
                         </td>
@@ -577,7 +579,7 @@ export default function SupplierRFQPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-4">
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => (sectors as any)[s] || s).join(' + ') : ((sectors as any)[rfq.sector] || rfq.sector)}</strong></div>
-            {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📦 {T.qty}</span><br/><strong>{rfq.quantity} {rfq.unit}</strong></div>}
+            {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📦 {T.qty}</span><br/><strong>{rfq.quantity} {getUnitLabel(rfq.unit, locale)}</strong></div>}
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📍 {T.location}</span><br/><strong>{rfq.city || rfq.region}</strong></div>
             <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
               <span className="text-gray-500 text-[12px] font-semibold">🚚 {T.delivery}</span><br/>
@@ -588,7 +590,7 @@ export default function SupplierRFQPage() {
                     <a href={rfq.delivery_geo ? `https://www.google.com/maps?q=${rfq.delivery_geo}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rfq.delivery_location)}`}
                       target="_blank" rel="noopener noreferrer"
                       className="text-xs font-bold text-white rounded-lg px-3 py-1.5 hover:opacity-90 whitespace-nowrap shrink-0" style={{ background: '#1B2D5B' }}>
-                      📍 {locale === 'en' ? 'Open in Maps' : 'افتح في الخرائط'}
+                      📍 {L('Open in Maps', 'نقشے میں کھولیں', 'افتح في الخرائط')}
                     </a>
                   )}
                 </div>
@@ -600,17 +602,17 @@ export default function SupplierRFQPage() {
                 <strong>{locale === 'en' && contractorInfo.company_name_en ? contractorInfo.company_name_en : contractorInfo.company_name_ar}</strong>
               ) : (
                 <>
-                  <strong className="text-gray-600">{locale === 'en' ? 'Buyer' : 'مشترٍ'} · {rfq.city || rfq.region}</strong>
-                  <div className="text-[10px] text-gray-400 mt-0.5">🔒 {locale === 'en' ? "Buyer identity is revealed once your offer is accepted." : 'تظهر هوية المشتري عند قبول عرضك (إتمام الصفقة).'}</div>
+                  <strong className="text-gray-600">{L('Buyer', 'خریدار', 'مشترٍ')} · {rfq.city || rfq.region}</strong>
+                  <div className="text-[10px] text-gray-400 mt-0.5">🔒 {L('Buyer identity is revealed once your offer is accepted.', 'آپ کی آفر قبول ہونے پر خریدار کی شناخت ظاہر ہو گی۔', 'تظهر هوية المشتري عند قبول عرضك (إتمام الصفقة).')}</div>
                 </>
               )}
             </div>
             {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
             {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">📝 {T.notes}</span><br/>{cleanNotes}</div>}
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🗓 {locale === 'en' ? 'Posted' : 'تاريخ الطلب'}</span><br/><strong className="text-sm">{formatDateTime(rfq.created_at)}</strong></div>
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🗓 {L('Posted', 'درخواست کی تاریخ', 'تاريخ الطلب')}</span><br/><strong className="text-sm">{formatDateTime(rfq.created_at)}</strong></div>
             {rfq.expires_at && (
               <div className="rounded-lg p-3" style={{ background: urgencyStyle(deadlineUrgency(rfq.expires_at)).bg, border: `1px solid ${urgencyStyle(deadlineUrgency(rfq.expires_at)).border}` }}>
-                <span className="text-gray-500 text-[12px] font-semibold">⏰ {locale === 'en' ? 'Pricing deadline' : 'مهلة التسعير'}</span><br/>
+                <span className="text-gray-500 text-[12px] font-semibold">⏰ {L('Pricing deadline', 'قیمت دینے کی آخری تاریخ', 'مهلة التسعير')}</span><br/>
                 <strong className="text-sm" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{formatDateTime(rfq.expires_at)}</strong>
                 <span className="text-xs block font-bold" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{expired ? '' : `(${formatTimeLeft(rfq.expires_at, locale)})`}</span>
               </div>
@@ -636,25 +638,25 @@ export default function SupplierRFQPage() {
             <div className="text-4xl mb-2">{existingOffer.status === 'accepted' ? '✅' : (existingOffer.status === 'rejected' && rfq.status === 'closed') ? '🔒' : existingOffer.status === 'rejected' ? '❌' : '⏳'}</div>
             <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>
               {existingOffer.status === 'rejected' && rfq.status === 'closed'
-                ? (locale === 'en' ? 'Pricing closed — another offer was accepted' : locale === 'ur' ? 'پرائسنگ بند — دوسری پیشکش قبول ہوگئی' : 'انتهى التسعير — تم اعتماد عرض آخر')
+                ? L('Pricing closed — another offer was accepted', 'پرائسنگ بند — دوسری پیشکش قبول ہوگئی', 'انتهى التسعير — تم اعتماد عرض آخر')
                 : ((T.alreadyTitle as any)[existingOffer.status] || T.alreadyTitle.pending)}
             </h3>
-            <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString('en-US')} ر.س{existingOffer.status === 'rejected' && rfq.status === 'closed' ? (locale === 'en' ? ' — thanks for participating' : ' — شكراً لمشاركتك') : ''}</p>
+            <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString('en-US')} {SAR}{existingOffer.status === 'rejected' && rfq.status === 'closed' ? ` — ${L('thanks for participating', 'شرکت کا شکریہ', 'شكراً لمشاركتك')}` : ''}</p>
 
             {/* المواد التي سعّرتها — كل مادة وسعرها (واضحة للمورد) */}
             {Array.isArray(existingOffer.item_prices) && existingOffer.item_prices.length > 0 && (
               <div className="mt-4 text-right border border-gray-200 rounded-xl overflow-hidden bg-white">
                 <div className="bg-gray-50 px-3 py-2 text-xs font-bold text-gray-500 flex justify-between">
-                  <span>🧾 {locale === 'en' ? 'Items you priced' : 'المواد التي سعّرتها'} ({existingOffer.item_prices.length})</span>
-                  <span>{locale === 'en' ? 'Price' : 'السعر'}</span>
+                  <span>🧾 {L('Items you priced', 'جن چیزوں کی آپ نے قیمت دی', 'المواد التي سعّرتها')} ({existingOffer.item_prices.length})</span>
+                  <span>{L('Price', 'قیمت', 'السعر')}</span>
                 </div>
                 {existingOffer.item_prices.map((it: any, idx: number) => (
                   <div key={idx} className="px-3 py-2.5 border-t border-gray-100 flex items-center justify-between gap-3">
                     <span className="text-sm text-gray-800 font-medium truncate">
                       {getProductLabel(it.product_name, locale)}
-                      <span className="text-gray-400 text-xs font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {it.unit || ''}{it.delivery_days ? ` · 📦 ${it.delivery_days}${locale === 'en' ? 'd' : 'ي'}` : ''})</span>
+                      <span className="text-gray-400 text-xs font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}{it.delivery_days ? ` · 📦 ${it.delivery_days}${L('d', ' دن', 'ي')}` : ''})</span>
                     </span>
-                    <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#1B2D5B' }}>{(Number(it.total) || 0).toLocaleString('en-US')} ر.س</span>
+                    <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#1B2D5B' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
                   </div>
                 ))}
               </div>
@@ -678,16 +680,16 @@ export default function SupplierRFQPage() {
             {existingOffer.status === 'accepted' && (
               <div className="mt-4 border-t border-emerald-200 pt-4 text-right">
                 {cDone ? (
-                  <div className="text-sm font-bold" style={{ color: '#0F6E56' }}>⭐ {locale === 'en' ? 'Thanks for rating the buyer' : 'شكراً لتقييمك المشتري'}</div>
+                  <div className="text-sm font-bold" style={{ color: '#0F6E56' }}>⭐ {L('Thanks for rating the buyer', 'خریدار کی ریٹنگ دینے کا شکریہ', 'شكراً لتقييمك المشتري')}</div>
                 ) : (
                   <div>
-                    <div className="text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Rate the buyer' : 'قيّم المشتري'} ⭐</div>
+                    <div className="text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>{L('Rate the buyer', 'خریدار کی ریٹنگ دیں', 'قيّم المشتري')} ⭐</div>
                     <div className="flex gap-1 mb-2">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button key={n} type="button" onClick={() => setCRating(n)} className={`text-2xl leading-none ${n <= cRating ? 'text-yellow-400' : 'text-gray-300'}`}>★</button>
                       ))}
                     </div>
-                    <textarea value={cComment} onChange={(e: any) => setCComment(e.target.value)} rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Optional comment about the contractor…' : 'تعليق اختياري عن المشتري…'} />
+                    <textarea value={cComment} onChange={(e: any) => setCComment(e.target.value)} rows={2} className="input-field text-sm" placeholder={L('Optional comment about the buyer…', 'خریدار کے بارے میں اختیاری تبصرہ…', 'تعليق اختياري عن المشتري…')} />
                     {cMsg && <div className="text-xs text-red-600 mt-1">{cMsg}</div>}
                     <button type="button" disabled={!cRating || cBusy} onClick={async () => {
                       if (!cRating) return
@@ -695,9 +697,9 @@ export default function SupplierRFQPage() {
                       const supabase = createClient()
                       const { error: e } = await supabase.rpc('submit_contractor_review', { p_offer_id: existingOffer.id, p_rating: cRating, p_comment: cComment || null })
                       setCBusy(false)
-                      if (e) { const dup = (e.message || '').includes('Already'); setCMsg(dup ? (locale === 'en' ? 'Already rated' : 'سبق تقييمك') : (locale === 'en' ? 'Error, try again' : 'حدث خطأ، حاول مجدداً')); if (dup) setCDone(true); return }
+                      if (e) { const dup = (e.message || '').includes('Already'); setCMsg(dup ? L('Already rated', 'آپ پہلے ہی ریٹنگ دے چکے ہیں', 'سبق تقييمك') : L('Error, try again', 'خرابی ہوئی، دوبارہ کوشش کریں', 'حدث خطأ، حاول مجدداً')); if (dup) setCDone(true); return }
                       setCDone(true)
-                    }} className="mt-2 px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>{cBusy ? '...' : (locale === 'en' ? 'Submit rating' : 'إرسال التقييم')}</button>
+                    }} className="mt-2 px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>{cBusy ? '...' : L('Submit rating', 'ریٹنگ بھیجیں', 'إرسال التقييم')}</button>
                   </div>
                 )}
               </div>
@@ -707,37 +709,37 @@ export default function SupplierRFQPage() {
             {canEditOffer && (
               <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-right">
                 <div className="text-xs text-gray-600 mb-2 leading-relaxed">
-                  ⏱ <strong>لديك {editMinsLeft} دقيقة</strong> لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتقدر تسعّر من جديد (تضيف مادة نسيتها أو تعدّل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.
+                  ⏱ <strong>{L(`You have ${editMinsLeft} minutes`, `آپ کے پاس ${editMinsLeft} منٹ ہیں`, `لديك ${editMinsLeft} دقيقة`)}</strong> {L('to edit or cancel your offer. Cancelling deletes the current offer so you can price again (add a material you missed or change prices). After that, the offer stays fixed until the buyer decides.', 'اپنی آفر میں ترمیم یا منسوخی کے لیے۔ منسوخ کرنے سے موجودہ آفر حذف ہو جائے گی اور آپ دوبارہ قیمت دے سکیں گے (بھولا ہوا مال شامل کریں یا قیمتیں بدلیں)۔ وقت ختم ہونے کے بعد آفر خریدار کے فیصلے تک ویسی ہی رہے گی۔', 'لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتقدر تسعّر من جديد (تضيف مادة نسيتها أو تعدّل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.')}
                 </div>
                 <button type="button" onClick={cancelOffer} disabled={cancelling}
                   className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#b91c1c' }}>
-                  {cancelling ? '...' : '🗑 إلغاء وإعادة التسعير'}
+                  {cancelling ? '...' : `🗑 ${L('Cancel and re-price', 'منسوخ کر کے دوبارہ قیمت دیں', 'إلغاء وإعادة التسعير')}`}
                 </button>
               </div>
             )}
 
             {existingOffer.status === 'pending' && existingOffer.reduction_deadline && new Date(existingOffer.reduction_deadline) > new Date() && (
               <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 text-right">
-                <div className="font-bold text-orange-700 mb-1">📉 المشتري يطلب تخفيض السعر</div>
+                <div className="font-bold text-orange-700 mb-1">📉 {L('The buyer is asking for a lower price', 'خریدار قیمت کم کرنے کی درخواست کر رہا ہے', 'المشتري يطلب تخفيض السعر')}</div>
                 {existingOffer.reduction_note && <div className="text-xs text-gray-600 mb-1">«{existingOffer.reduction_note}»</div>}
-                <div className="text-[11px] text-gray-500 mb-3">المهلة للرد: {new Date(existingOffer.reduction_deadline).toLocaleString('ar-SA')}</div>
+                <div className="text-[11px] text-gray-500 mb-3">{L('Reply by:', 'جواب کی آخری مہلت:', 'المهلة للرد:')} {new Date(existingOffer.reduction_deadline).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA')}</div>
                 <div className="flex gap-2">
-                  <input type="number" value={newPrice} onChange={(e: any) => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={`أقل من ${existingOffer.total_price?.toLocaleString('en-US')} ر.س`} min="0" step="any" />
-                  <button type="button" onClick={submitReduction} disabled={reducing} className="px-4 rounded-xl font-semibold text-white text-sm disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>{reducing ? '...' : 'إرسال السعر الجديد'}</button>
+                  <input type="number" value={newPrice} onChange={(e: any) => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={L(`Less than ${existingOffer.total_price?.toLocaleString('en-US')} SAR`, `${existingOffer.total_price?.toLocaleString('en-US')} SAR سے کم`, `أقل من ${existingOffer.total_price?.toLocaleString('en-US')} ر.س`)} min="0" step="any" />
+                  <button type="button" onClick={submitReduction} disabled={reducing} className="px-4 rounded-xl font-semibold text-white text-sm disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>{reducing ? '...' : L('Send new price', 'نئی قیمت بھیجیں', 'إرسال السعر الجديد')}</button>
                 </div>
               </div>
             )}
 
             {existingOffer.info_request && (
               <div className="mt-4 bg-[#F5831F]/5 border border-blue-200 rounded-xl p-4 text-right">
-                <div className="font-bold text-[#d96f15] mb-1">❓ المشتري يطلب معلومات إضافية</div>
+                <div className="font-bold text-[#d96f15] mb-1">❓ {L('The buyer is asking for more information', 'خریدار مزید معلومات مانگ رہا ہے', 'المشتري يطلب معلومات إضافية')}</div>
                 <div className="text-sm text-gray-700 bg-white rounded-lg p-2.5 mb-2">{existingOffer.info_request}</div>
                 {existingOffer.info_response ? (
-                  <div className="text-sm bg-emerald-50 rounded-lg p-2.5"><span className="text-emerald-600 text-[11px]">ردّك:</span><div>{existingOffer.info_response}</div></div>
+                  <div className="text-sm bg-emerald-50 rounded-lg p-2.5"><span className="text-emerald-600 text-[11px]">{L('Your reply:', 'آپ کا جواب:', 'ردّك:')}</span><div>{existingOffer.info_response}</div></div>
                 ) : existingOffer.status === 'pending' ? (
                   <div>
-                    <textarea value={infoReply} onChange={(e: any) => setInfoReply(e.target.value)} rows={2} className="input-field mb-2" placeholder="اكتب ردّك للمشتري عن المنتج..." />
-                    <button type="button" onClick={submitInfoResponse} disabled={infoReplying} className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoReplying ? '...' : 'إرسال الرد'}</button>
+                    <textarea value={infoReply} onChange={(e: any) => setInfoReply(e.target.value)} rows={2} className="input-field mb-2" placeholder={L('Write your reply to the buyer about the product...', 'پروڈکٹ کے بارے میں خریدار کو اپنا جواب لکھیں...', 'اكتب ردّك للمشتري عن المنتج...')} />
+                    <button type="button" onClick={submitInfoResponse} disabled={infoReplying} className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoReplying ? '...' : L('Send reply', 'جواب بھیجیں', 'إرسال الرد')}</button>
                   </div>
                 ) : null}
               </div>
@@ -746,15 +748,15 @@ export default function SupplierRFQPage() {
               <Link href={`/contractor/orders/${existingOffer.id}`}
                 className="inline-block mt-4 px-5 py-2.5 rounded-xl font-semibold text-white text-sm transition-all hover:shadow"
                 style={{ background: '#0F6E56' }}>
-                📄 أمر الشراء / الفاتورة الضريبية ←
+                📄 {L('Purchase order / tax invoice', 'پرچیز آرڈر / ٹیکس انوائس', 'أمر الشراء / الفاتورة الضريبية')} ←
               </Link>
             )}
           </div>
         ) : (rfq.status !== 'open' || expired) ? (
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-center">
             <div className="text-4xl mb-2">{expired ? '⏰' : '🔒'}</div>
-            <h3 className="font-bold" style={{ color: '#1B2D5B' }}>{expired ? (locale === 'en' ? 'Pricing window closed' : 'انتهت مهلة التسعير') : T.closed}</h3>
-            <p className="text-sm text-gray-500">{expired ? (locale === 'en' ? 'The deadline passed — offers are no longer accepted.' : 'انتهى الوقت المحدد لاستقبال العروض على هذا الطلب.') : T.closedSub}</p>
+            <h3 className="font-bold" style={{ color: '#1B2D5B' }}>{expired ? L('Pricing window closed', 'قیمت دینے کی مہلت ختم', 'انتهت مهلة التسعير') : T.closed}</h3>
+            <p className="text-sm text-gray-500">{expired ? L('The deadline passed — offers are no longer accepted.', 'مقررہ وقت ختم ہو گیا — اب آفرز قبول نہیں کی جاتیں۔', 'انتهى الوقت المحدد لاستقبال العروض على هذا الطلب.') : T.closedSub}</p>
             {rfq.expires_at && <p className="text-xs text-gray-400 mt-2">📅 {formatDateTime(rfq.expires_at)}</p>}
           </div>
         ) : !verified ? (
@@ -775,7 +777,7 @@ export default function SupplierRFQPage() {
               return (
                 <div className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 mb-4 text-sm" style={{ background: st.bg, border: `1px solid ${st.border}` }}>
                   <span className="font-semibold" style={{ color: st.fg }}>
-                    {u === 'critical' ? '🔴' : u === 'soon' ? '🟠' : '⏰'} {locale === 'en' ? 'Time left to price' : 'الوقت المتبقّي للتسعير'}
+                    {u === 'critical' ? '🔴' : u === 'soon' ? '🟠' : '⏰'} {L('Time left to price', 'قیمت دینے کا باقی وقت', 'الوقت المتبقّي للتسعير')}
                   </span>
                   <span className="font-extrabold" style={{ color: st.fg }}>{formatTimeLeft(rfq.expires_at, locale)}</span>
                 </div>
@@ -788,16 +790,16 @@ export default function SupplierRFQPage() {
               {isMultiItem && myItems.length === 0 ? (
                 <div className="text-center py-6">
                   <div className="text-4xl mb-2">🚫</div>
-                  <p className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'No materials match your specialties' : 'لا توجد مواد ضمن تخصصك في هذا الطلب'}</p>
-                  <p className="text-xs text-gray-400 mt-1">{locale === 'en' ? 'This request has no items in your sectors.' : 'مواد هذا الطلب خارج قطاعاتك — لا يلزمك تسعيرها.'}</p>
+                  <p className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{L('No materials match your specialties', 'اس درخواست میں آپ کی مہارت کا کوئی مال نہیں', 'لا توجد مواد ضمن تخصصك في هذا الطلب')}</p>
+                  <p className="text-xs text-gray-400 mt-1">{L('This request has no items in your sectors.', 'اس درخواست کا مال آپ کے شعبوں سے باہر ہے — آپ کو قیمت دینے کی ضرورت نہیں۔', 'مواد هذا الطلب خارج قطاعاتك — لا يلزمك تسعيرها.')}</p>
                 </div>
               ) : isMultiItem ? (
                 <div>
                   <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
-                    {locale === 'en' ? 'Price each material' : locale === 'ur' ? 'ہر مواد کی قیمت' : 'سعّر كل مادة على حدة'} *
+                    {L('Price each material', 'ہر مواد کی قیمت', 'سعّر كل مادة على حدة')} *
                   </label>
                   <p className="text-xs text-gray-400 mb-3">
-                    {locale === 'en' ? 'Tap a material to enter its unit price, specs and its own catalog.' : 'اضغط على كل مادة لإدخال سعرها وخصائصها وكتالوجها الخاص.'}
+                    {L('Tap a material to enter its unit price, specs and its own catalog.', 'ہر مال پر دبائیں اور اس کی قیمت، خصوصیات اور کیٹلاگ درج کریں۔', 'اضغط على كل مادة لإدخال سعرها وخصائصها وكتالوجها الخاص.')}
                   </p>
                   <div className="space-y-2">
                     {myItems.map((it: any, i: any) => {
@@ -824,10 +826,10 @@ export default function SupplierRFQPage() {
                             <div className="flex items-center gap-2 shrink-0">
                               {line > 0 && (
                                 <span className="text-sm font-extrabold whitespace-nowrap" style={{ color: done ? '#0F6E56' : '#d96f15' }}>
-                                  {(+line.toFixed(2)).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}{!done && <span className="text-[10px] font-normal"> · {locale === 'en' ? 'unsaved' : 'غير محفوظ'}</span>}
+                                  {(+line.toFixed(2)).toLocaleString('en-US')} {SAR}{!done && <span className="text-[10px] font-normal"> · {L('unsaved', 'محفوظ نہیں', 'غير محفوظ')}</span>}
                                 </span>
                               )}
-                              {!isOpen && line === 0 && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#F5831F]/10 text-[#d96f15] whitespace-nowrap">{locale === 'en' ? '+ Price' : '+ سعّر'}</span>}
+                              {!isOpen && line === 0 && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#F5831F]/10 text-[#d96f15] whitespace-nowrap">{L('+ Price', '+ قیمت', '+ سعّر')}</span>}
                               <span className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
                             </div>
                           </button>
@@ -839,7 +841,7 @@ export default function SupplierRFQPage() {
                               {it.specification && (
                                 <div className="rounded-xl p-3 border" style={{ background: '#F5831F0a', borderColor: '#F5831F44' }}>
                                   <div className="text-xs font-bold mb-1.5 flex items-center gap-1.5" style={{ color: '#d96f15' }}>
-                                    📋 {locale === 'en' ? 'Specifications required by the buyer' : 'المواصفات المطلوبة من المشتري'}
+                                    📋 {L('Specifications required by the buyer', 'خریدار کی مطلوبہ اسپیسیفکیشن', 'المواصفات المطلوبة من المشتري')}
                                   </div>
                                   <div className="text-sm text-gray-800 leading-relaxed font-medium">{it.specification}</div>
                                 </div>
@@ -848,22 +850,22 @@ export default function SupplierRFQPage() {
                               {/* السعر الإجمالي للمادة هو الأساس — وتفاصيل سعر الوحدة اختيارية */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  💰 {locale === 'en' ? `Total price for this material (for ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)})` : `السعر الإجمالي للمادة (لـ ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit})`} *
+                                  💰 {L(`Total price for this material (for ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)})`, `اس مال کی کل قیمت (${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)} کے لیے)`, `السعر الإجمالي للمادة (لـ ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit})`)} *
                                 </label>
                                 <input type="number" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
-                                  className="input-field text-sm font-bold" placeholder={locale === 'en' ? 'e.g. 5200' : 'مثال: 5200'} min="0" step="any" />
+                                  className="input-field text-sm font-bold" placeholder={L('e.g. 5200', 'مثال: 5200', 'مثال: 5200')} min="0" step="any" />
                                 <button type="button" onClick={() => setItemField(i, 'priceDetails', !form.priceDetails)}
                                   className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
                                   {form.priceDetails
-                                    ? (locale === 'en' ? '− Hide price details' : '− إخفاء تفاصيل السعر')
-                                    : (locale === 'en' ? '+ Add price details (unit price)' : '+ إضافة تفاصيل السعر (سعر الوحدة)')}
+                                    ? L('− Hide price details', '− قیمت کی تفصیل چھپائیں', '− إخفاء تفاصيل السعر')
+                                    : L('+ Add price details (unit price)', '+ قیمت کی تفصیل شامل کریں (فی یونٹ قیمت)', '+ إضافة تفاصيل السعر (سعر الوحدة)')}
                                 </button>
                                 {form.priceDetails && (
                                   <div className="mt-2">
                                     <div className="grid grid-cols-5 gap-2">
                                       {/* وحدة المورد — يقدر يغيّرها لو يبي يسعّر بوحدة خاصة */}
                                       <div className="col-span-2">
-                                        <label className="block text-[11px] font-bold text-gray-400 mb-1">{locale === 'en' ? 'Unit' : 'الوحدة'}</label>
+                                        <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Unit', 'یونٹ', 'الوحدة')}</label>
                                         <input type="text" value={form.priceUnit ?? it.unit} onChange={(e: any) => setItemPriceUnit(i, e.target.value)}
                                           className="input-field text-sm" placeholder={it.unit} list={`units-${i}`} />
                                         <datalist id={`units-${i}`}>
@@ -872,15 +874,15 @@ export default function SupplierRFQPage() {
                                       </div>
                                       {/* سعر الوحدة */}
                                       <div className="col-span-3">
-                                        <label className="block text-[11px] font-bold text-gray-400 mb-1">{locale === 'en' ? 'Unit price' : 'سعر الوحدة'}</label>
+                                        <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</label>
                                         <input type="number" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
-                                          className="input-field text-sm" placeholder={(locale === 'en' ? 'Price / ' : 'السعر / ') + (form.priceUnit || it.unit)} min="0" step="any" />
+                                          className="input-field text-sm" placeholder={L('Price / ', 'قیمت / ', 'السعر / ') + (form.priceUnit || it.unit)} min="0" step="any" />
                                       </div>
                                     </div>
                                     <p className="text-[10px] text-gray-400 mt-1.5">
                                       {sameUnit(form, i)
-                                        ? (locale === 'en' ? `Total auto-calculates (unit price × ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}).` : `الإجمالي يُحسب تلقائياً (سعر الوحدة × ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit}).`)
-                                        : (locale === 'en' ? 'Custom unit — enter the material total above manually.' : 'وحدة خاصة — أدخل إجمالي المادة بالأعلى يدوياً.')}
+                                        ? L(`Total auto-calculates (unit price × ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}).`, `کل رقم خود بخود بنے گی (فی یونٹ قیمت × ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)})۔`, `الإجمالي يُحسب تلقائياً (سعر الوحدة × ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit}).`)
+                                        : L('Custom unit — enter the material total above manually.', 'الگ یونٹ — اوپر اس مال کی کل رقم خود درج کریں۔', 'وحدة خاصة — أدخل إجمالي المادة بالأعلى يدوياً.')}
                                     </p>
                                   </div>
                                 )}
@@ -889,16 +891,16 @@ export default function SupplierRFQPage() {
                               {/* مواصفات المادة (نص حر) */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  📝 {locale === 'en' ? 'Material specifications' : 'مواصفات المادة'}
+                                  📝 {L('Material specifications', 'مال کی اسپیسیفکیشن', 'مواصفات المادة')}
                                 </label>
                                 <textarea value={form.specs || ''} onChange={(e: any) => setItemField(i, 'specs', e.target.value)}
-                                  rows={2} className="input-field text-sm" placeholder={locale === 'en' ? 'Type, origin, brand, grade…' : 'النوع، المنشأ، العلامة التجارية، الدرجة…'} />
+                                  rows={2} className="input-field text-sm" placeholder={L('Type, origin, brand, grade…', 'قسم، کہاں کا بنا ہے، برانڈ، گریڈ…', 'النوع، المنشأ، العلامة التجارية، الدرجة…')} />
                               </div>
 
                               {/* مدة التوصيل الخاصة بهذه المادة */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  ⏱ {locale === 'en' ? 'Delivery time for this material (days)' : 'مدة توصيل هذه المادة (أيام)'}
+                                  ⏱ {L('Delivery time for this material (days)', 'اس مال کی ڈیلیوری کا وقت (دن)', 'مدة توصيل هذه المادة (أيام)')}
                                 </label>
                                 <input type="number" value={form.delivery_days || ''} onChange={(e: any) => setItemField(i, 'delivery_days', e.target.value)}
                                   className="input-field text-sm" placeholder="3" min="0" />
@@ -907,36 +909,36 @@ export default function SupplierRFQPage() {
                               {/* الضمان (اختياري، حسب الصنف) */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  🛡 {locale === 'en' ? 'Warranty (optional)' : locale === 'ur' ? 'وارنٹی (اختیاری)' : 'الضمان (اختياري)'}
+                                  🛡 {L('Warranty (optional)', 'وارنٹی (اختیاری)', 'الضمان (اختياري)')}
                                 </label>
                                 <select value={WARRANTY_OPTIONS.some(o => o.v === (form.warranty || '')) ? (form.warranty || '') : '__other'}
                                   onChange={(e: any) => setItemField(i, 'warranty', e.target.value === '__other' ? ' ' : e.target.value)} className="input-field text-sm">
                                   {WARRANTY_OPTIONS.map(o => <option key={o.v} value={o.v}>{locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}</option>)}
-                                  <option value="__other">{locale === 'en' ? 'Other…' : locale === 'ur' ? 'دیگر…' : 'أخرى…'}</option>
+                                  <option value="__other">{L('Other…', 'دیگر…', 'أخرى…')}</option>
                                 </select>
                                 {!WARRANTY_OPTIONS.some(o => o.v === (form.warranty || '')) && (
                                   <input value={(form.warranty || '').trimStart()} onChange={(e: any) => setItemField(i, 'warranty', e.target.value || ' ')}
-                                    className="input-field text-sm mt-1.5" maxLength={80} placeholder={locale === 'en' ? 'e.g. 18 months on the motor' : 'مثال: 18 شهراً على المحرك'} />
+                                    className="input-field text-sm mt-1.5" maxLength={80} placeholder={L('e.g. 18 months on the motor', 'مثال: موٹر پر 18 مہینے', 'مثال: 18 شهراً على المحرك')} />
                                 )}
                               </div>
 
                               {/* رفع ملف المواصفات */}
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  📎 {locale === 'en' ? 'Upload spec / datasheet file' : 'رفع ملف المواصفات'}
+                                  📎 {L('Upload spec / datasheet file', 'اسپیسیفکیشن فائل اپ لوڈ کریں', 'رفع ملف المواصفات')}
                                 </label>
                                 {form.file ? (
                                   <div className="flex items-center gap-3 bg-[#1B2D5B]/5 rounded-xl p-2.5 border border-[#1B2D5B]/20">
                                     <span className="text-xl">📄</span>
                                     <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#1B2D5B' }}>{form.file.name}</span>
-                                    <button type="button" onClick={() => setItemFile(i, null)} className="text-xs text-red-500 hover:underline">{locale === 'en' ? 'Remove' : 'إزالة'}</button>
+                                    <button type="button" onClick={() => setItemFile(i, null)} className="text-xs text-red-500 hover:underline">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                                   </div>
                                 ) : (
                                   <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-3 cursor-pointer hover:border-[#F5831F]/50 transition-all">
                                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
                                       onChange={(e: any) => setItemFile(i, e.target.files?.[0] ?? null)} />
                                     <span className="text-xl">📤</span>
-                                    <span className="text-xs text-gray-500">{locale === 'en' ? 'Attach catalog / datasheet' : 'إرفاق كتالوج / بيانات المنتج'}</span>
+                                    <span className="text-xs text-gray-500">{L('Attach catalog / datasheet', 'کیٹلاگ / پروڈکٹ کی معلومات منسلک کریں', 'إرفاق كتالوج / بيانات المنتج')}</span>
                                   </label>
                                 )}
                               </div>
@@ -946,7 +948,7 @@ export default function SupplierRFQPage() {
                                 className="w-full py-2.5 rounded-xl font-bold text-white text-sm transition-all hover:shadow disabled:opacity-40"
                                 disabled={!(parseFloat(form.line_total) > 0)}
                                 style={{ background: '#0F6E56' }}>
-                                ✓ {locale === 'en' ? 'Save material' : 'حفظ المادة'}
+                                ✓ {L('Save material', 'مال محفوظ کریں', 'حفظ المادة')}
                               </button>
                             </div>
                           )}
@@ -955,13 +957,13 @@ export default function SupplierRFQPage() {
                     })}
                   </div>
                   <div className="mt-3 text-[11px] text-gray-500 bg-amber-50 border border-amber-200 rounded-xl p-2.5">
-                    💡 {locale === 'en' ? 'Price only the materials you can supply — you are not required to price all of them. Each material has its own delivery time.' : 'سعّر فقط المواد التي تقدر توردها — لست ملزماً بتسعير الكل. ولكل مادة مدة توصيلها الخاصة.'}
+                    💡 {L('Price only the materials you can supply — you are not required to price all of them. Each material has its own delivery time.', 'صرف وہ مال کی قیمت دیں جو آپ سپلائی کر سکتے ہیں — سب کی قیمت دینا ضروری نہیں۔ ہر مال کی ڈیلیوری کا اپنا وقت ہے۔', 'سعّر فقط المواد التي تقدر توردها — لست ملزماً بتسعير الكل. ولكل مادة مدة توصيلها الخاصة.')}
                   </div>
                 </div>
               ) : (
                 <>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Goods Price (SAR)' : locale === 'ur' ? 'سامان کی قیمت (ریال)' : 'سعر البضاعة (ر.س)'} *</label>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{L('Goods Price (SAR)', 'سامان کی قیمت (SAR)', 'سعر البضاعة (ر.س)')} *</label>
                     <input type="number" value={totalPrice} onChange={(e: any) => handleTotalChange(e.target.value)}
                       className="input-field" placeholder="0.00" required min="0" step="any" />
                   </div>
@@ -970,7 +972,7 @@ export default function SupplierRFQPage() {
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.unitPrice}</label>
                       <input type="number" value={unitPrice} onChange={(e: any) => setUnitPrice(e.target.value)}
-                        className="input-field bg-gray-50" placeholder="تلقائي" min="0" step="any" />
+                        className="input-field bg-gray-50" placeholder={L('Auto', 'خودکار', 'تلقائي')} min="0" step="any" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
@@ -984,20 +986,20 @@ export default function SupplierRFQPage() {
               {/* إضافات الفاتورة (توصيل/تركيب/رسوم) */}
               <div className="border-t border-gray-100 pt-4">
                 <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
-                  🧾 {locale === 'en' ? 'Invoice extras (delivery / installation / fees)' : locale === 'ur' ? 'انوائس اضافی (ڈیلیوری/تنصیب/فیس)' : 'إضافات الفاتورة (توصيل / تركيب / رسوم)'}
+                  🧾 {L('Invoice extras (delivery / installation / fees)', 'انوائس اضافی (ڈیلیوری/تنصیب/فیس)', 'إضافات الفاتورة (توصيل / تركيب / رسوم)')}
                 </label>
                 <p className="text-xs text-gray-400 mb-3">
                   {rfq.delivery_required
-                    ? (locale === 'en' ? 'The buyer requested delivery — add the shipping cost here.' : locale === 'ur' ? 'خریدار نے ڈیلیوری طلب کی — شپنگ لاگت یہاں شامل کریں۔' : 'المشتري طلب التوصيل — أضف تكلفة الشحن هنا.')
-                    : (locale === 'en' ? 'Optional charges added on top of the goods price.' : locale === 'ur' ? 'سامان کی قیمت کے علاوہ اختیاری چارجز۔' : 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
+                    ? L('The buyer requested delivery — add the shipping cost here.', 'خریدار نے ڈیلیوری طلب کی — شپنگ لاگت یہاں شامل کریں۔', 'المشتري طلب التوصيل — أضف تكلفة الشحن هنا.')
+                    : L('Optional charges added on top of the goods price.', 'سامان کی قیمت کے علاوہ اختیاری چارجز۔', 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
                 </p>
                 <div className="space-y-2">
                   {extras.map((ex: any, i: any) => (
                     <div key={i} className="flex gap-2">
                       <input value={ex.label} onChange={(e: any) => updateExtra(i, 'label', e.target.value)}
-                        className="input-field text-sm flex-1" placeholder={locale === 'en' ? 'Item (e.g. Delivery)' : locale === 'ur' ? 'آئٹم (مثلاً ڈیلیوری)' : 'البند (مثال: توصيل)'} />
+                        className="input-field text-sm flex-1" placeholder={L('Item (e.g. Delivery)', 'آئٹم (مثلاً ڈیلیوری)', 'البند (مثال: توصيل)')} />
                       <input type="number" value={ex.amount} onChange={(e: any) => updateExtra(i, 'amount', e.target.value)}
-                        className="input-field text-sm w-24" placeholder={locale === 'en' ? 'Amount' : locale === 'ur' ? 'رقم' : 'المبلغ'} min="0" step="any" />
+                        className="input-field text-sm w-24" placeholder={L('Amount', 'رقم', 'المبلغ')} min="0" step="any" />
                       {extras.length > 1 && (
                         <button type="button" onClick={() => removeExtra(i)}
                           className="w-10 min-h-[40px] grid place-items-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 shrink-0">×</button>
@@ -1006,7 +1008,7 @@ export default function SupplierRFQPage() {
                   ))}
                 </div>
                 <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
-                  + {locale === 'en' ? 'Add item' : locale === 'ur' ? 'شامل کریں' : 'إضافة بند'}
+                  + {L('Add item', 'شامل کریں', 'إضافة بند')}
                 </button>
               </div>
 
@@ -1024,8 +1026,8 @@ export default function SupplierRFQPage() {
                     {/* خيار شمول الضريبة */}
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <div>
-                        <div className="text-sm font-bold" style={{ color: '#1B2D5B' }}>🧾 {locale === 'en' ? 'Price includes 15% VAT?' : 'هل السعر يشمل ضريبة القيمة المضافة (15%)؟'}</div>
-                        <div className="text-[11px] text-gray-400">{vatIncluded ? (locale === 'en' ? 'Yes — VAT will be extracted from your price.' : 'نعم — تُستخرج الضريبة من سعرك.') : (locale === 'en' ? 'No — VAT is added on top.' : 'لا — تُضاف الضريبة فوق سعرك.')}</div>
+                        <div className="text-sm font-bold" style={{ color: '#1B2D5B' }}>🧾 {L('Price includes 15% VAT?', 'کیا قیمت میں 15% ویٹ (VAT) شامل ہے؟', 'هل السعر يشمل ضريبة القيمة المضافة (15%)؟')}</div>
+                        <div className="text-[11px] text-gray-400">{vatIncluded ? L('Yes — VAT will be extracted from your price.', 'ہاں — ٹیکس آپ کی قیمت میں سے نکالا جائے گا۔', 'نعم — تُستخرج الضريبة من سعرك.') : L('No — VAT is added on top.', 'نہیں — ٹیکس آپ کی قیمت کے اوپر لگے گا۔', 'لا — تُضاف الضريبة فوق سعرك.')}</div>
                       </div>
                       <button type="button" onClick={() => setVatIncluded(v => !v)}
                         className="w-12 h-7 rounded-full transition-all flex items-center px-1 shrink-0" style={{ background: vatIncluded ? '#0F6E56' : '#d1d5db', justifyContent: vatIncluded ? 'flex-end' : 'flex-start' }}>
@@ -1036,16 +1038,16 @@ export default function SupplierRFQPage() {
                     {entered > 0 && (
                       <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm space-y-1.5">
                         <div className="flex items-center justify-between text-gray-600">
-                          <span>{locale === 'en' ? 'Net (before VAT)' : 'الصافي (قبل الضريبة)'}</span>
-                          <span className="font-semibold">{fmt(net)} {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                          <span>{L('Net (before VAT)', 'خالص (ٹیکس سے پہلے)', 'الصافي (قبل الضريبة)')}</span>
+                          <span className="font-semibold">{fmt(net)} {SAR}</span>
                         </div>
                         <div className="flex items-center justify-between text-gray-600">
-                          <span>{locale === 'en' ? 'VAT 15%' : 'ضريبة القيمة المضافة 15%'}</span>
-                          <span className="font-semibold">+ {fmt(vat)} {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                          <span>{L('VAT 15%', 'ویٹ (VAT) 15%', 'ضريبة القيمة المضافة 15%')}</span>
+                          <span className="font-semibold">+ {fmt(vat)} {SAR}</span>
                         </div>
                         <div className="flex items-center justify-between border-t border-[#0F6E56]/20 pt-1.5">
-                          <span className="font-bold" style={{ color: '#0F6E56' }}>{locale === 'en' ? 'Grand Total (incl. VAT)' : 'الإجمالي شامل الضريبة'}</span>
-                          <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>{fmt(gross)} {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                          <span className="font-bold" style={{ color: '#0F6E56' }}>{L('Grand Total (incl. VAT)', 'کل رقم (ٹیکس سمیت)', 'الإجمالي شامل الضريبة')}</span>
+                          <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>{fmt(gross)} {SAR}</span>
                         </div>
                       </div>
                     )}
@@ -1056,7 +1058,7 @@ export default function SupplierRFQPage() {
               {/* خصائص المنتج — للطلب أحادي المادة فقط (متعدد المواد: الخصائص لكل مادة بداخل بطاقتها) */}
               {!isMultiItem && (
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">🛡 {locale === 'en' ? 'Warranty (optional)' : locale === 'ur' ? 'وارنٹی (اختیاری)' : 'الضمان (اختياري)'}</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">🛡 {L('Warranty (optional)', 'وارنٹی (اختیاری)', 'الضمان (اختياري)')}</label>
                 <select value={singleWarranty} onChange={(e: any) => setSingleWarranty(e.target.value)} className="input-field text-sm">
                   {WARRANTY_OPTIONS.map(o => <option key={o.v} value={o.v}>{locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}</option>)}
                 </select>
@@ -1118,7 +1120,7 @@ export default function SupplierRFQPage() {
               <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1.5">
-                    {locale === 'en' ? 'Where does this price come from?' : locale === 'ur' ? 'یہ قیمت کہاں سے ہے؟' : 'من أين هذا السعر؟'}
+                    {L('Where does this price come from?', 'یہ قیمت کہاں سے ہے؟', 'من أين هذا السعر؟')}
                     {isIndependent && <span className="text-red-500"> *</span>}
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -1130,10 +1132,10 @@ export default function SupplierRFQPage() {
                       </button>
                     ))}
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? 'The buyer sees this. A price you collected from someone else is shown as such, never as a direct quote.' : locale === 'ur' ? 'خریدار یہ دیکھتا ہے۔' : 'يظهر هذا للمشتري. السعر الذي تنقله من جهة أخرى يُعرض كذلك، ولا يُعرض كعرض مباشر.'}</p>
+                  <p className="text-[11px] text-gray-400 mt-1">{L('The buyer sees this. A price you collected from someone else is shown as such, never as a direct quote.', 'خریدار یہ دیکھتا ہے۔ جو قیمت آپ کسی اور سے لے کر دیتے ہیں وہ اسی طرح دکھائی جاتی ہے، براہ راست آفر کے طور پر نہیں۔', 'يظهر هذا للمشتري. السعر الذي تنقله من جهة أخرى يُعرض كذلك، ولا يُعرض كعرض مباشر.')}</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1.5">{locale === 'en' ? 'Availability' : locale === 'ur' ? 'دستیابی' : 'التوفّر'}</label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5">{L('Availability', 'دستیابی', 'التوفّر')}</label>
                   <div className="flex flex-wrap gap-2">
                     {AVAILABILITY.map(o => (
                       <button type="button" key={o.k} onClick={() => setAvailability(o.k)} aria-pressed={availability === o.k}
@@ -1147,15 +1149,15 @@ export default function SupplierRFQPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {locale === 'en' ? 'Price valid for' : 'مدة صلاحية السعر'}</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {L('Price valid for', 'قیمت کتنی دیر کے لیے درست ہے', 'مدة صلاحية السعر')}</label>
                 <div className="flex flex-wrap gap-2">
-                  {[{ v: '1', l: locale === 'en' ? '24h' : '٢٤ ساعة' }, { v: '3', l: locale === 'en' ? '3 days' : '٣ أيام' }, { v: '7', l: locale === 'en' ? '1 week' : 'أسبوع' }, { v: '30', l: locale === 'en' ? '1 month' : 'شهر' }].map((o) => (
+                  {[{ v: '1', l: L('24h', '24 گھنٹے', '٢٤ ساعة') }, { v: '3', l: L('3 days', '3 دن', '٣ أيام') }, { v: '7', l: L('1 week', '1 ہفتہ', 'أسبوع') }, { v: '30', l: L('1 month', '1 مہینہ', 'شهر') }].map((o) => (
                     <button type="button" key={o.v} onClick={() => setPriceValidity(o.v)}
                       className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${priceValidity === o.v ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#F5831F]/40'}`}
                       style={priceValidity === o.v ? { background: '#F5831F' } : {}}>{o.l}</button>
                   ))}
                 </div>
-                <p className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? 'Your price is guaranteed until it expires — ideal for volatile materials (e.g. steel).' : 'سعرك مضمون حتى انتهاء المدة — مناسب للمواد المتغيّرة السعر (كالحديد).'}</p>
+                <p className="text-[11px] text-gray-400 mt-1">{L('Your price is guaranteed until it expires — ideal for volatile materials (e.g. steel).', 'آپ کی قیمت مدت ختم ہونے تک پکی رہے گی — ان چیزوں کے لیے اچھا ہے جن کی قیمت بدلتی رہتی ہے (جیسے سریا)۔', 'سعرك مضمون حتى انتهاء المدة — مناسب للمواد المتغيّرة السعر (كالحديد).')}</p>
               </div>
 
               <div>
@@ -1189,8 +1191,8 @@ export default function SupplierRFQPage() {
                 return (
                   <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
                     <div className="text-3xl mb-2">🕶️</div>
-                    <h3 className="font-extrabold text-base" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Final 30 minutes — ranking hidden' : 'آخر 30 دقيقة — المراكز مخفية'}</h3>
-                    <p className="text-xs text-gray-500 mt-1">{locale === 'en' ? 'Competitor positions are hidden near the deadline to prevent last-second sniping. Submit your best price.' : 'تُخفى مراكز المنافسين قرب انتهاء المهلة لمنع القنص. قدّم أفضل سعر لديك.'}</p>
+                    <h3 className="font-extrabold text-base" style={{ color: '#1B2D5B' }}>{L('Final 30 minutes — ranking hidden', 'آخری 30 منٹ — پوزیشنیں چھپی ہوئی ہیں', 'آخر 30 دقيقة — المراكز مخفية')}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{L('Competitor positions are hidden near the deadline to prevent last-second sniping. Submit your best price.', 'آخری لمحے کی چالاکی روکنے کے لیے مہلت کے قریب مقابلہ کرنے والوں کی پوزیشنیں چھپا دی جاتی ہیں۔ اپنی بہترین قیمت دیں۔', 'تُخفى مراكز المنافسين قرب انتهاء المهلة لمنع القنص. قدّم أفضل سعر لديك.')}</p>
                   </div>
                 )
               }
@@ -1206,32 +1208,32 @@ export default function SupplierRFQPage() {
               const isTop = rank === 1
               return (
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <h3 className="font-extrabold text-base" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Your competitive position' : locale === 'ur' ? 'آپ کی پوزیشن' : 'موقعك التنافسي'}</h3>
-                  <p className="text-[11px] text-gray-400 mb-4">{locale === 'en' ? 'Live — updates as you change your price' : 'حيّ — يتحدّث مع تغيير سعرك'}</p>
+                  <h3 className="font-extrabold text-base" style={{ color: '#1B2D5B' }}>{L('Your competitive position', 'آپ کی پوزیشن', 'موقعك التنافسي')}</h3>
+                  <p className="text-[11px] text-gray-400 mb-4">{L('Live — updates as you change your price', 'لائیو — قیمت بدلنے کے ساتھ اپڈیٹ ہوتا ہے', 'حيّ — يتحدّث مع تغيير سعرك')}</p>
 
                   <div className="rounded-2xl p-4 text-center mb-4" style={{ background: isTop ? '#ecfdf5' : '#f4f6f9', border: `1px solid ${isTop ? '#a7f3d0' : '#eceff4'}` }}>
-                    <div className="text-[11px] text-gray-400">{locale === 'en' ? 'Projected rank' : 'ترتيبك المتوقع'}</div>
+                    <div className="text-[11px] text-gray-400">{L('Projected rank', 'متوقع پوزیشن', 'ترتيبك المتوقع')}</div>
                     <div className="text-4xl font-black leading-tight" style={{ color: isTop ? '#0F6E56' : '#1B2D5B' }}>{rank ? `#${rank}` : '—'}</div>
                     <div className="text-[11px] font-semibold" style={{ color: isTop ? '#0F6E56' : '#8089a0' }}>
-                      {rank == null ? (totalCount > 0 ? (locale === 'en' ? `${totalCount} offers so far` : `${totalCount} عروض حتى الآن`) : (locale === 'en' ? 'Be the first to price' : 'كن أول من يسعّر'))
-                        : isTop ? (locale === 'en' ? `Cheapest of ${totalCount}` : `الأوفر بين ${totalCount} عروض`)
-                        : (locale === 'en' ? `Among ${totalCount} offers` : `من بين ${totalCount} عروض`)}
+                      {rank == null ? (totalCount > 0 ? L(`${totalCount} offers so far`, `اب تک ${totalCount} آفرز`, `${totalCount} عروض حتى الآن`) : L('Be the first to price', 'سب سے پہلے قیمت دیں', 'كن أول من يسعّر'))
+                        : isTop ? L(`Cheapest of ${totalCount}`, `${totalCount} آفرز میں سب سے سستی`, `الأوفر بين ${totalCount} عروض`)
+                        : L(`Among ${totalCount} offers`, `${totalCount} آفرز میں سے`, `من بين ${totalCount} عروض`)}
                     </div>
                   </div>
 
-                  {savePct > 0 && <div className="text-center text-xs font-bold mb-3" style={{ color: '#0F6E56' }}>📉 {locale === 'en' ? `${savePct}% below average offer` : `أوفر بـ ${savePct}% من متوسط العروض`}</div>}
+                  {savePct > 0 && <div className="text-center text-xs font-bold mb-3" style={{ color: '#0F6E56' }}>📉 {L(`${savePct}% below average offer`, `اوسط آفر سے ${savePct}% سستی`, `أوفر بـ ${savePct}% من متوسط العروض`)}</div>}
 
                   {list.length > 0 && (
                     <>
-                      <div className="text-[11px] font-bold text-gray-400 mb-2">{locale === 'en' ? 'Current offers (anonymous)' : 'العروض الحالية (مجهولة الهوية)'}</div>
+                      <div className="text-[11px] font-bold text-gray-400 mb-2">{L('Current offers (anonymous)', 'موجودہ آفرز (نام ظاہر نہیں)', 'العروض الحالية (مجهولة الهوية)')}</div>
                       <div className="space-y-1.5">
                         {list.slice(0, 6).map((r: any, i: number) => (
                           <div key={i} className="flex items-center justify-between rounded-xl px-3 py-2 text-sm" style={r.mine ? { background: '#F5831F12', border: '1px solid #F5831F55' } : { background: '#f7f8fa' }}>
                             <span className="flex items-center gap-2">
                               <span className="w-5 h-5 grid place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: r.mine ? '#0F6E56' : '#c3c9d4' }}>{i + 1}</span>
-                              <span style={r.mine ? { color: '#d96f15', fontWeight: 700 } : { color: '#8089a0' }}>{r.mine ? (locale === 'en' ? 'Your offer' : 'عرضك') : (locale === 'en' ? 'Anonymous' : 'مورد مجهول')}</span>
+                              <span style={r.mine ? { color: '#d96f15', fontWeight: 700 } : { color: '#8089a0' }}>{r.mine ? L('Your offer', 'آپ کی آفر', 'عرضك') : L('Anonymous', 'نامعلوم سپلائر', 'مورد مجهول')}</span>
                             </span>
-                            <span className="font-bold" style={{ color: '#1B2D5B' }}>{r.total.toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}</span>
+                            <span className="font-bold" style={{ color: '#1B2D5B' }}>{r.total.toLocaleString('en-US')} {SAR}</span>
                           </div>
                         ))}
                       </div>
@@ -1239,7 +1241,7 @@ export default function SupplierRFQPage() {
                   )}
 
                   <div className="mt-4 flex items-start gap-2 text-[11px] text-gray-400 bg-gray-50 rounded-xl p-2.5">
-                    <span>🛈</span><span>{locale === 'en' ? 'Smart matching shows the request to the right suppliers for its size.' : 'التصنيف الذكي يضمن وصول الطلب للموردين المناسبين لحجمه.'}</span>
+                    <span>🛈</span><span>{L('Smart matching shows the request to the right suppliers for its size.', 'سمارٹ درجہ بندی درخواست کو اس کے سائز کے مطابق صحیح سپلائرز تک پہنچاتی ہے۔', 'التصنيف الذكي يضمن وصول الطلب للموردين المناسبين لحجمه.')}</span>
                   </div>
                 </div>
               )
