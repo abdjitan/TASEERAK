@@ -1,19 +1,14 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { SECTOR_LABELS, getGroupedProducts, getProductLabel, type Sector } from '@/types'
+import { getProductLabel, type Sector } from '@/types'
+import { BROWSE_SECTIONS, getSectionGroups, type BrowseSection } from '@/lib/browseCategories'
 import { searchProducts } from '@/lib/productSearch'
 import { productImageUrl } from '@/lib/productImage'
 
 // Pick materials from the catalog inside the request page (the 4th way to add a line, next to
-// writing, speaking and a photo). Search across everything, or browse a sector by group.
-// Stays open so several materials can be added; each pick calls onPick.
-
-const SECTOR_TR: Record<string, { en: string; ur: string }> = {
-  civil: { en: 'Civil', ur: 'سول' }, architectural: { en: 'Architectural', ur: 'تعمیراتی' },
-  electrical: { en: 'Electrical', ur: 'برقی' }, mechanical: { en: 'Mechanical', ur: 'مکینیکل' },
-  equipment: { en: 'Machinery', ur: 'مشینری' }, supply_store: { en: 'Supply store', ur: 'سپلائی اسٹور' },
-}
+// writing, speaking and a photo). Search across everything, or browse the 8 user-facing sections
+// (src/lib/browseCategories.ts) by group. Stays open so several materials can be added.
 
 export default function CatalogPicker({ locale, onPick, onClose }: {
   locale: string
@@ -21,9 +16,8 @@ export default function CatalogPicker({ locale, onPick, onClose }: {
   onClose: () => void
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const sl = (s: string) => (locale === 'ar' ? (SECTOR_LABELS as any)[s] : (SECTOR_TR[s] as any)?.[locale] || (SECTOR_LABELS as any)[s])
   const [q, setQ] = useState('')
-  const [sector, setSector] = useState<Sector>('civil')
+  const [section, setSection] = useState<BrowseSection | null>(null)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [added, setAdded] = useState<string[]>([])
 
@@ -35,7 +29,8 @@ export default function CatalogPicker({ locale, onPick, onClose }: {
     const good = all.filter(h => h.score >= 7)
     return good.length >= 3 ? good.slice(0, 30) : all.slice(0, 8)
   }, [q])
-  const groups = useMemo(() => getGroupedProducts(sector), [sector])
+  const groups = useMemo(() => (section ? getSectionGroups(section) : []), [section])
+  const pickT = (o: any) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
 
   function pick(name: string, s: Sector) {
     onPick({ name, sector: s })
@@ -72,15 +67,10 @@ export default function CatalogPicker({ locale, onPick, onClose }: {
           </div>
           <input value={q} onChange={e => setQ(e.target.value)} autoFocus className="input-field"
             placeholder={L('Search any material… e.g. block, cable, pipe', 'کوئی بھی سامان تلاش کریں…', 'ابحث عن أي مادة… مثل: بلك، سلك، ماسورة')} />
-          {!q.trim() && (
-            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-              {(Object.keys(SECTOR_LABELS) as Sector[]).map(s => (
-                <button key={s} type="button" onClick={() => { setSector(s); setOpenGroup(null) }}
-                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border ${sector === s ? 'bg-navy text-white border-navy' : 'bg-white text-gray-600 border-gray-200'}`}>
-                  {sl(s)}
-                </button>
-              ))}
-            </div>
+          {!q.trim() && section && (
+            <button type="button" onClick={() => { setSection(null); setOpenGroup(null) }} className="text-xs font-bold text-[#d96f15]">
+              {L('← All sections', '← تمام حصے', '→ كل الأقسام')}
+            </button>
           )}
         </div>
 
@@ -98,25 +88,39 @@ export default function CatalogPicker({ locale, onPick, onClose }: {
               </div>
             )
           ) : (
+            !section ? (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {BROWSE_SECTIONS.map(b => (
+                  <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
+                    className="text-start rounded-2xl border border-gray-200 bg-white p-3 hover:border-[#F5831F]/60 hover:shadow-sm transition-all">
+                    <div className="text-2xl">{b.icon}</div>
+                    <div className="font-bold text-sm text-navy mt-1 leading-snug">{pickT(b)}</div>
+                    <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{pickT(b.hint)}</div>
+                  </button>
+                ))}
+              </div>
+            ) : (
             <div className="space-y-2">
+              <div className="font-extrabold text-navy">{BROWSE_SECTIONS.find(b => b.key === section)?.icon} {pickT(BROWSE_SECTIONS.find(b => b.key === section))}</div>
               {groups.map(g => {
                 const open = openGroup === g.group
                 return (
                   <div key={g.group} className="rounded-xl border border-gray-100">
                     <button type="button" onClick={() => setOpenGroup(open ? null : g.group)}
                       className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-bold text-navy">
-                      <span>{g.icon} {locale === 'en' ? g.en : locale === 'ur' ? g.ur : g.ar} <span className="text-gray-400 font-normal">({g.items.length})</span></span>
+                      <span>{g.icon} {pickT(g)} <span className="text-gray-400 font-normal">({g.items.length})</span></span>
                       <span className="text-gray-400">{open ? '▴' : '▾'}</span>
                     </button>
                     {open && (
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 p-2 pt-0">
-                        {g.items.map(name => <Tile key={name} name={name} s={sector} />)}
+                        {g.items.map(it => <Tile key={`${it.sector}:${it.name}`} name={it.name} s={it.sector} />)}
                       </div>
                     )}
                   </div>
                 )
               })}
             </div>
+            )
           )}
         </div>
       </div>
