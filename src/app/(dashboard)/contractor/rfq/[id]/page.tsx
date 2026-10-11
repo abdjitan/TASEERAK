@@ -594,13 +594,19 @@ export default function RFQDetailPage() {
                   Object.values(awards).forEach((a: any) => {
                     if (!bySupplier[a.supplier_id]) {
                       const off = offers.find((o: any) => o.id === a.offer_id)
-                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: awardedContacts[a.supplier_id], offerId: a.offer_id, total: 0, count: 0 }
+                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || 'مورد', phone: awardedContacts[a.supplier_id], offerId: a.offer_id, vatIncluded: !!off?.vat_included, net: 0, gross: 0, count: 0 }
                     }
-                    bySupplier[a.supplier_id].total += Number(a.total) || 0
-                    bySupplier[a.supplier_id].count += 1
+                    // Same basis as the cards above: amounts shown VAT-inclusive (15%).
+                    const line = Number(a.total) || 0
+                    const v = bySupplier[a.supplier_id]
+                    v.net += v.vatIncluded ? line / 1.15 : line
+                    v.gross += v.vatIncluded ? line : line * 1.15
+                    v.count += 1
                   })
                   const list: any[] = Object.values(bySupplier)
-                  const grand = list.reduce((s: any, v: any) => s + v.total, 0)
+                  const grand = list.reduce((s: any, v: any) => s + v.gross, 0)
+                  const grandNet = list.reduce((s: any, v: any) => s + v.net, 0)
+                  const money = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 })
                   const awardedCount = Object.keys(awards).length
                   const finalized = rfq.status !== 'open'
                   return (
@@ -613,12 +619,13 @@ export default function RFQDetailPage() {
                               ? <Link href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}>📄 أمر الشراء ←</Link>
                               : v.phone && <a href={waLink(v.phone, `بخصوص ترسية مواد من منصة تسعيرك`) || undefined} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}>💬 تواصل</a>}
                           </span>
-                          <span className="font-bold whitespace-nowrap">{v.total.toLocaleString('en-US')} ر.س</span>
+                          <span className="font-bold whitespace-nowrap">{money(v.gross)} ر.س</span>
                         </div>
                       ))}
                       <div className="flex items-center justify-between font-extrabold mt-2 pt-1">
-                        <span>الإجمالي</span><span style={{ color: '#F5831F' }}>{grand.toLocaleString('en-US')} ر.س</span>
+                        <span>الإجمالي شامل الضريبة</span><span style={{ color: '#F5831F' }}>{money(grand)} ر.س</span>
                       </div>
+                      <div className="text-[11px] text-blue-200 text-end">قبل الضريبة {money(grandNet)} ر.س · الضريبة 15% {money(grand - grandNet)} ر.س</div>
                       {finalized ? (
                         <p className="text-[11px] text-emerald-300 mt-3">✓ تمت الترسية — افتح أمر الشراء لكل مورد لمتابعة التسليم والدفع وحماية الصفقة.</p>
                       ) : (
