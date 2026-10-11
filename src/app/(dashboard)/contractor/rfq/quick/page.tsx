@@ -72,8 +72,9 @@ export default function QuickRequestPage() {
       // Bring back what the buyer had entered before leaving the page.
       const d = loadLocalDraft<any>('quick:' + user.id)
       if (d) {
-        if (Array.isArray(d.lines)) setLines(d.lines)
-        if (typeof d.text === 'string') setText(d.text)
+        // Never overwrite what the buyer already typed while the draft was loading.
+        if (Array.isArray(d.lines) && d.lines.length) setLines(prev => [...d.lines, ...prev])
+        if (typeof d.text === 'string' && d.text) setText(t => t || d.text)
         if (d.region) { setRegion(d.region); setCity(d.city || '') }
         if (d.hours) setHours(d.hours)
         if (typeof d.notes === 'string') setNotes(d.notes)
