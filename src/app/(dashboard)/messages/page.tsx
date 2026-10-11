@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import PageLoader from '@/components/shared/PageLoader'
+import { rfqDisplayName } from '@/lib/rfqName'
 
 function fmtTime(d: any, locale: string = 'ar') {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -41,7 +42,7 @@ function Messages() {
     const supabase = createClient()
     const { data } = await supabase
       .from('conversations')
-      .select('*, contractor:profiles_public!contractor_id(company_name_ar), supplier:profiles_public!supplier_id(company_name_ar), rfq:rfqs(product_name, title)')
+      .select('*, contractor:profiles_public!contractor_id(company_name_ar), supplier:profiles_public!supplier_id(company_name_ar), rfq:rfqs(product_name, title, ref_no, items)')
       .order('last_message_at', { ascending: false })
     setConvos(data || [])
   }
@@ -137,7 +138,7 @@ function Messages() {
   const active = convos.find((c: any) => c.id === activeId)
   // The contractor's name is masked (profiles_public) for suppliers, so say "مشترٍ" rather than a blank.
   const counterpart = (c: any) => c?.contractor_id === me ? (c?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد')) : (c?.contractor?.company_name_ar || L('Buyer', 'خریدار', 'مشترٍ'))
-  const ctx = (c: any) => c?.rfq?.title || c?.rfq?.product_name || ''
+  const ctx = (c: any) => (c?.rfq ? rfqDisplayName(c.rfq, locale) : '')
 
   const backHref = role === 'supplier' ? '/supplier/dashboard' : role === 'admin' ? '/admin' : '/contractor'
 

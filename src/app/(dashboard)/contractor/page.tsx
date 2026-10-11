@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import EnablePush from '@/components/shared/EnablePush'
 import { AppIcon } from '@/components/AppIcon'
-import { rfqDisplayName, arItems } from '@/lib/rfqName'
+import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
 import { dealStage } from '@/lib/dealStage'
 
@@ -631,7 +631,7 @@ export default function ContractorDashboard() {
                       })()}
                       <div className="min-w-0">
                         <div className="font-bold truncate" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale)}</div>
-                        <div className="text-xs text-gray-400 truncate max-w-[260px]">{rfq.product_name}</div>
+                        <div className="text-xs text-gray-400 truncate max-w-[260px]">{rfqDate(rfq, locale)}</div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                           <span className={`badge text-[10px] ${

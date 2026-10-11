@@ -164,7 +164,7 @@ export default function SupplierDashboard() {
         toast(`⏰ ${expiringSoon.length} ${expiringSoon.length === 1 ? 'طلب تنتهي مهلته' : 'طلبات تنتهي مهلتها'} قريباً — سارِع بالتسعير`, { duration: 7000 })
       }
 
-      const { data: offers } = await supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status)').eq('supplier_id', actId).order('created_at', { ascending: false })
+      const { data: offers } = await supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status, ref_no, items, created_at)').eq('supplier_id', actId).order('created_at', { ascending: false })
       setMyOffers(offers || [])
       const { count: lpCount } = await supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', actId)
       setPricesCount(lpCount ?? 0)
@@ -540,7 +540,7 @@ export default function SupplierDashboard() {
                           offer.status === 'accepted' ? 'bg-emerald-100' : offer.status === 'rejected' ? 'bg-red-50' : 'bg-amber-50'
                         }`}>{offer.status === 'accepted' ? '✅' : offer.status === 'rejected' ? '❌' : '⏳'}</div>
                         <div>
-                          <span className="font-bold" style={{ color: '#1B2D5B' }}>{offer.rfq?.product_name || '—'}</span>
+                          <span className="font-bold" style={{ color: '#1B2D5B' }}>{offer.rfq ? rfqDisplayName(offer.rfq, locale) : '—'}</span>
                           {offer.rfq?.sector && (
                             <span className="badge badge-blue text-[10px] mx-2">{sectors[offer.rfq.sector] || offer.rfq.sector}</span>
                           )}

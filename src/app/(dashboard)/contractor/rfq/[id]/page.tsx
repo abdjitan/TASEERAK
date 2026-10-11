@@ -16,6 +16,7 @@ import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpire
 import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 import { dealStage } from '@/lib/dealStage'
 import { TIERS, tierLabel, normTier, sourceLabel, availabilityLabel, isDirectSource } from '@/lib/sellers'
+import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -301,8 +302,8 @@ export default function RFQDetailPage() {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{rfq.title || getProductLabel(rfq.product_name, locale)}</h2>
-              {rfq.title && <div className="text-xs text-gray-400">{getProductLabel(rfq.product_name, locale)}</div>}
+              <div className="text-xs font-bold text-[#d96f15] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
+              <h2 className="text-xl font-bold text-gray-900">{rfqDesc(rfq, locale)}</h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="bg-blue-100 text-[#d96f15] text-xs px-2 py-0.5 rounded-full font-semibold">
                   {Array.isArray(rfq.sectors) && rfq.sectors.length > 1

@@ -8,6 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { fileHref } from '@/lib/fileHref'
 import { SECTOR_LABELS, getProductLabel, getUnitLabel } from '@/types'
 import { useTranslation } from '@/i18n'
+import { rfqRef } from '@/lib/rfqName'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -162,6 +163,7 @@ export default function OrderDetailPage() {
                 <div className="text-sm text-blue-200">{L('Order no.', 'آرڈر نمبر', 'رقم الأمر')}</div>
                 <div className="text-xl font-bold font-mono">{poNumber}</div>
                 <div className="text-sm text-blue-200 mt-1">{L('Date:', 'تاریخ:', 'التاريخ:')} {date}</div>
+                {rfqRef(rfq) && <div className="text-sm text-blue-200 mt-1">{L('Request:', 'درخواست:', 'الطلب:')} <span className="font-mono" dir="ltr">{rfqRef(rfq)}</span></div>}
               </div>
             </div>
           </div>

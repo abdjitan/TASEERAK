@@ -8,6 +8,7 @@ import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import { dealStage } from '@/lib/dealStage'
+import { rfqDisplayName } from '@/lib/rfqName'
 
 // «صفقاتي» للمورّد — الصفقات المُرساة عليه (عروضه المقبولة) مع مرحلتها، وترتبط بصفحة إدارة
 // الصفقة (حماية الصفقة: تسليم/استلام/دفع). الهوية تُكشف بعد الترسية فقط.
@@ -27,7 +28,7 @@ export default function SupplierDealsPage() {
       const actId: string = (actRaw as any) || session.user.id
       const { data } = await supabase
         .from('offers')
-        .select('*, rfq:rfqs(id, product_name, title, contractor:profiles!contractor_id(company_name_ar))')
+        .select('*, rfq:rfqs(id, product_name, title, ref_no, items, contractor:profiles!contractor_id(company_name_ar))')
         .eq('supplier_id', actId)
         .eq('status', 'accepted')
         .order('accepted_at', { ascending: false })
@@ -80,7 +81,7 @@ export default function SupplierDealsPage() {
                 <Link key={d.id} href={`/supplier/dashboard/rfq/${d.rfq?.id}`}
                   className="flex items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:border-[#0F6E56]/40 transition-colors">
                   <div className="min-w-0">
-                    <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{d.rfq?.title || d.rfq?.product_name || (locale === 'en' ? 'Deal' : 'صفقة')}</div>
+                    <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{d.rfq ? rfqDisplayName({ ...d.rfq, title: null }, locale) : (locale === 'en' ? 'Deal' : 'صفقة')}</div>
                     <div className="text-xs text-gray-400 mt-0.5 truncate">👤 {d.rfq?.contractor?.company_name_ar || '—'} · {Number(d.total_price || 0).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}</div>
                     {d.invoice_number && <div className="text-[11px] text-gray-400 font-mono mt-0.5" dir="ltr">{d.invoice_number}</div>}
                   </div>

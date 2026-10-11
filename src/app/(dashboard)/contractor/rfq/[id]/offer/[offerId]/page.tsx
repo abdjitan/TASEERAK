@@ -15,6 +15,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import DealProtection from '@/components/shared/DealProtection'
 import { tierLabel, sourceLabel, availabilityLabel, isDirectSource } from '@/lib/sellers'
+import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -149,7 +150,7 @@ export default function OfferDetailPage() {
           <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ background: '#1B2D5B' }}>📋</div>
           <div>
             <h1 className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{L('Offer details', 'آفر کی تفصیل', 'تفاصيل العرض')}</h1>
-            <p className="text-gray-500 text-sm">{getProductLabel(rfq.product_name, locale)}</p>
+            <p className="text-gray-500 text-sm"><span className="font-mono font-bold text-[#d96f15]" dir="auto">{rfqRefLine(rfq, locale)}</span> · {rfqDesc(rfq, locale)}</p>
           </div>
           <span className={`badge text-[11px] mr-auto ${statusBadge.c}`}>{statusBadge.t}</span>
         </div>

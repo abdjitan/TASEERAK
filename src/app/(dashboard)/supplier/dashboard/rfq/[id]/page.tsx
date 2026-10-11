@@ -17,6 +17,7 @@ import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel, getUnitLabel } fro
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf, WARRANTY_OPTIONS } from '@/lib/sellers'
+import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 
 export default function SupplierRFQPage() {
   const { id } = useParams()
@@ -524,9 +525,12 @@ export default function SupplierRFQPage() {
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 mb-5">
           <div className="flex items-start justify-between gap-2">
             {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المشتري للطلب */}
-            <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>
-              {rfqIsMulti ? L('Price request', 'قیمت کی درخواست', 'طلب تسعير مواد') : getProductLabel(rfq.product_name, locale)}
-            </h2>
+            <div>
+              <div className="text-xs font-bold text-[#d96f15] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
+              <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>
+                {rfqDesc({ ...rfq, title: null }, locale, rfqIsMulti ? (myItems.length || undefined) : 1)}
+              </h2>
+            </div>
             <button type="button" onClick={async () => {
               const supabase = createClient()
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: user?.id })
