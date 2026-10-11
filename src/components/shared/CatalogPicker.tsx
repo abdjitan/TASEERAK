@@ -10,16 +10,18 @@ import { productImageUrl } from '@/lib/productImage'
 // writing, speaking and a photo). Search across everything, or browse the 8 user-facing sections
 // (src/lib/browseCategories.ts) by group. Stays open so several materials can be added.
 
-export default function CatalogPicker({ locale, onPick, onClose }: {
+export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove }: {
   locale: string
   onPick: (item: { name: string; sector: Sector }) => void
   onClose: () => void
+  picked?: { key: string; name: string }[]   // the request's current lines, shown beside the catalog
+  onRemove?: (key: string) => void
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [q, setQ] = useState('')
   const [section, setSection] = useState<BrowseSection | null>(null)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
-  const [added, setAdded] = useState<string[]>([])
+  const [showPicked, setShowPicked] = useState(false) // mobile: expand the picked strip
 
   // Exact/prefix/synonym matches score >= ~10; loose typo matches (بلك → بلدوزر) ~6. Show only
   // the confident ones unless that leaves almost nothing.
@@ -34,9 +36,8 @@ export default function CatalogPicker({ locale, onPick, onClose }: {
 
   function pick(name: string, s: Sector) {
     onPick({ name, sector: s })
-    setAdded(prev => [...prev, `${s}:${name}`])
   }
-  const isAdded = (name: string, s: string) => added.includes(`${s}:${name}`)
+  const isAdded = (name: string, _s: string) => picked.some(p => p.name === name)
 
   const Tile = ({ name, s }: { name: string; s: Sector }) => {
     const on = isAdded(name, s)
@@ -56,13 +57,13 @@ export default function CatalogPicker({ locale, onPick, onClose }: {
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-3xl max-h-[92vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
+      <div className="bg-white w-full sm:max-w-5xl max-h-[92vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}>
         <div className="p-4 border-b border-gray-100 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-extrabold text-navy">🔍 {L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}</h2>
             <button type="button" onClick={onClose} className="text-sm font-bold px-4 py-1.5 rounded-xl text-white" style={{ background: '#1B2D5B' }}>
-              {added.length ? L(`Done (${added.length})`, `مکمل (${added.length})`, `تم (${added.length})`) : L('Close', 'بند کریں', 'إغلاق')}
+              {picked.length ? L(`Done (${picked.length})`, `مکمل (${picked.length})`, `تم (${picked.length})`) : L('Close', 'بند کریں', 'إغلاق')}
             </button>
           </div>
           <input value={q} onChange={e => setQ(e.target.value)} autoFocus className="input-field"
@@ -74,6 +75,7 @@ export default function CatalogPicker({ locale, onPick, onClose }: {
           )}
         </div>
 
+        <div className="flex-1 min-h-0 flex">
         <div className="flex-1 overflow-y-auto p-4">
           {q.trim() ? (
             hits.length === 0 ? (
@@ -123,6 +125,40 @@ export default function CatalogPicker({ locale, onPick, onClose }: {
             )
           )}
         </div>
+        {/* what is already in the request, beside the catalog on desktop */}
+        <aside className="hidden sm:flex w-60 shrink-0 border-s border-gray-100 bg-gray-50/60 flex-col">
+          <div className="px-3 py-2.5 text-xs font-bold text-navy border-b border-gray-100">🧾 {L('Your list', 'آپ کی فہرست', 'قائمتك')} ({picked.length})</div>
+          <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
+            {picked.length === 0 && <p className="text-[11px] text-gray-400 p-2">{L('Tap a material to add it.', 'شامل کرنے کے لیے ٹیپ کریں۔', 'اضغط على أي مادة لإضافتها.')}</p>}
+            {picked.map(p => (
+              <div key={p.key} className="flex items-center gap-2 bg-white rounded-lg border border-gray-100 p-1.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={productImageUrl(p.name)} alt="" className="w-9 h-9 rounded object-contain bg-gray-50 shrink-0" onError={(e: any) => { e.currentTarget.style.visibility = 'hidden' }} />
+                <span className="flex-1 min-w-0 text-[11px] font-semibold text-gray-700 leading-snug line-clamp-2" dir="auto">{p.name ? getProductLabel(p.name, locale) : '…'}</span>
+                {onRemove && <button type="button" onClick={() => onRemove(p.key)} className="text-gray-400 hover:text-red-500 px-1" aria-label={L('Remove', 'ہٹائیں', 'احذف')}>×</button>}
+              </div>
+            ))}
+          </div>
+        </aside>
+        </div>
+        {/* mobile: a strip at the bottom with what was picked */}
+        {picked.length > 0 && (
+          <div className="sm:hidden border-t border-gray-100 bg-gray-50">
+            <button type="button" onClick={() => setShowPicked(v => !v)} className="w-full px-4 py-2.5 text-xs font-bold text-navy flex justify-between">
+              <span>🧾 {L('Your list', 'آپ کی فہرست', 'قائمتك')} ({picked.length})</span><span>{showPicked ? '▾' : '▴'}</span>
+            </button>
+            {showPicked && (
+              <div className="max-h-40 overflow-y-auto px-3 pb-3 space-y-1">
+                {picked.map(p => (
+                  <div key={p.key} className="flex items-center justify-between gap-2 text-xs bg-white rounded-lg px-2 py-1.5">
+                    <span className="truncate" dir="auto">{p.name ? getProductLabel(p.name, locale) : '…'}</span>
+                    {onRemove && <button type="button" onClick={() => onRemove(p.key)} className="text-gray-400 hover:text-red-500">×</button>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, type Sector } from '@/types'
 import CatalogPicker from '@/components/shared/CatalogPicker'
+import { productImageUrl } from '@/lib/productImage'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 
 // Quick request: for anyone, no engineering terms. Write, dictate or photograph what you need;
@@ -273,7 +274,9 @@ export default function QuickRequestPage() {
 
   return (
     <AppShell title={L('Price request', 'قیمت کی درخواست', 'طلب تسعير')} nav={getNav('contractor', locale, '/contractor/rfq/quick')} dir={dir}>
-      <div className="max-w-3xl mx-auto space-y-5 pb-28">
+      <div className="max-w-6xl mx-auto pb-28 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-6 lg:items-start">
+        {/* A: how to add (first column on desktop, first on mobile) */}
+        <div className="space-y-5 lg:col-start-1 lg:row-start-1">
         <div>
           <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
           <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, photograph it or pick it from the catalog. We will organise it into a list.', 'لکھیں، بولیں، تصویر لیں یا فہرست سے منتخب کریں۔', 'اكتبها، أو تحدّث بها، أو صوّرها، أو اخترها من القائمة، وسنرتّبها لك في قائمة.')}</p>
@@ -307,9 +310,16 @@ export default function QuickRequestPage() {
         </div>
 
         {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3" role="alert">{error}</div>}
+        </div>
 
-        {/* Review list */}
-        {lines.length > 0 && (
+        {/* B: the list, beside the add methods on desktop (sticky), under them on mobile */}
+        <div className="lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-4 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        {lines.length === 0 ? (
+          <div className="hidden lg:block bg-white rounded-2xl p-6 border border-dashed border-gray-200 text-center text-sm text-gray-400">
+            <div className="text-3xl mb-2">🧾</div>
+            {L('Your list is empty. Add materials by writing, speaking, a photo or from the catalog.', 'آپ کی فہرست خالی ہے۔', 'قائمتك فارغة. أضف موادك بالكتابة أو الصوت أو الصورة أو من القائمة.')}
+          </div>
+        ) : (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-navy">{L('Your list', 'آپ کی فہرست', 'قائمتك')} <span className="text-gray-400 font-normal">({lines.length})</span></h2>
@@ -326,7 +336,9 @@ export default function QuickRequestPage() {
               return (
                 <div key={l.key} className="rounded-xl border border-gray-200 p-3 space-y-2">
                   <div className="flex gap-3 items-start">
-                    {ph && <img src={ph.url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0 border border-gray-100" />}
+                    {ph ? <img src={ph.url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0 border border-gray-100" />
+                      : l.product_name ? <img src={productImageUrl(l.product_name)} alt="" loading="lazy" className="w-16 h-16 rounded-lg object-contain shrink-0 border border-gray-100 bg-gray-50"
+                          onError={(e: any) => { e.currentTarget.style.display = 'none' }} /> : null}
                     <div className="flex-1 min-w-0 space-y-1">
                       <input value={l.product_name} onChange={e => updateLine(l.key, { product_name: e.target.value })} aria-label={L('Item name', 'نام', 'اسم المادة')}
                         className="input-field font-semibold" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'جارٍ التعرّف على الصورة…') : L('Item name', 'نام', 'اسم المادة')} />
@@ -372,10 +384,11 @@ export default function QuickRequestPage() {
             })}
           </div>
         )}
+        </div>
 
-        {/* Where + advanced */}
+        {/* C: delivery + options (under the add methods on desktop) */}
         {lines.length > 0 && (
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3 lg:col-start-1 lg:row-start-2">
             <h2 className="font-bold text-navy">📍 {L('Delivery to', 'ڈیلیوری', 'التوصيل لـ')}</h2>
             <div className="grid grid-cols-2 gap-2">
               <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" aria-label={L('Region', 'علاقہ', 'المنطقة')}>
@@ -409,7 +422,7 @@ export default function QuickRequestPage() {
 
       {lines.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-200 px-4 pt-3 z-30" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
-          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
             <span className="text-sm text-gray-500">{lines.length} {L('items', 'اشیاء', 'مواد')}</span>
             <button type="button" onClick={send} disabled={sending || photos.some(p => p.status === 'identifying')}
               className="btn-orange px-6 py-3 rounded-xl font-extrabold disabled:opacity-50">
@@ -420,6 +433,8 @@ export default function QuickRequestPage() {
       )}
       {showCatalog && (
         <CatalogPicker locale={locale} onClose={() => setShowCatalog(false)}
+          picked={lines.map(l => ({ key: l.key, name: l.product_name }))}
+          onRemove={(key: string) => removeLine(key)}
           onPick={({ name, sector }: { name: string; sector: Sector }) => setLines(prev => [...prev, {
             key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '',
           }])} />
