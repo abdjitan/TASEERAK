@@ -101,6 +101,13 @@ cross-user operations go through `SECURITY DEFINER` RPCs granted to `authenticat
   `get_rfq_contractor()` (owner/admin/accepted-supplier). Bid-sniping blind period in
   `get_rfq_offer_ranking()` (last 30 min). `profiles.approvals[]` = trust badges.
 
+## Regression test (run before deploying DB changes)
+- `supabase/tests/e2e_deal_flow.sql`: the whole deal (request → message → offer → team member
+  offer → award → delivery → seller invoice → receipt → payment) plus security checks, run as the
+  real test accounts inside one transaction that is always rolled back. Paste it into the SQL
+  editor / MCP `execute_sql`; the error text is the report: `E2E: 27 passed, 0 failed`.
+  Add a check whenever a bug is fixed in the deal flow.
+
 ## Conventions / gotchas
 - **No `@ts-nocheck`** — fully removed; the whole `src` tree is strict-clean
   (`strict: true`). **Keep it that way**: new code must pass
