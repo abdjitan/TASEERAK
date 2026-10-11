@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import PageLoader from '@/components/shared/PageLoader'
 import DistrictField from '@/components/shared/DistrictField'
+import LocationPicker from '@/components/shared/LocationPicker'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGION } from '@/types'
@@ -88,6 +89,8 @@ export default function OnboardingPage() {
   const [region, setRegion] = useState('')
   const [city, setCity] = useState('')
   const [district, setDistrict] = useState('')
+  const [lat, setLat] = useState<number | null>(null)
+  const [lng, setLng] = useState<number | null>(null)
   const [sectors, setSectors] = useState<string[]>([])
   const [specialties, setSpecialties] = useState<string[]>([])
   const [openSector, setOpenSector] = useState<string | null>(null)
@@ -104,10 +107,11 @@ export default function OnboardingPage() {
       if (!session) { window.location.href = '/login'; return }
       setUid(session.user.id)
       const metaRole = (session.user.user_metadata as any)?.role
-      const { data: p } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade').eq('id', session.user.id).single()
+      const { data: p } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude').eq('id', session.user.id).single()
       setRole(((p?.role || metaRole) === 'supplier') ? 'supplier' : 'contractor')
       if (p) {
         setRegion(p.region || ''); setCity(p.city || ''); setDistrict(p.district || '')
+        setLat(p.latitude ?? null); setLng(p.longitude ?? null)
         if (p.supplier_tier) setSupplierTier(p.supplier_tier)
         if (p.min_order_value) setMinOrderValue(String(p.min_order_value))
         if (p.contractor_grade) setContractorGrade(p.contractor_grade)
@@ -145,6 +149,7 @@ export default function OnboardingPage() {
     setSaving(true)
     try {
       const update: any = { region, city, district: district || null, preferred_language: locale }
+      if (lat != null && lng != null) { update.latitude = lat; update.longitude = lng }
       if (role === 'supplier') { update.supplier_tier = supplierTier; update.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0 }
       if (role === 'contractor') update.contractor_grade = contractorGrade || null
       await supabase.from('profiles').update(update).eq('id', uid)
@@ -258,6 +263,14 @@ export default function OnboardingPage() {
                   <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
                 </div>
               )}
+              {/* موقعك على الخريطة (اختياري): المقاول بيشوف الأقرب، والمورد بتوصله طلبات منطقته */}
+              <div className="mt-4">
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  📍 {locale === 'en' ? 'Your location on the map' : locale === 'ur' ? 'نقشے پر آپ کا مقام' : 'موقعك على الخريطة'}
+                  <span className="font-normal text-gray-400"> ({locale === 'en' ? 'optional, recommended' : locale === 'ur' ? 'اختیاری' : 'اختياري، وننصح فيه'})</span>
+                </label>
+                <LocationPicker lat={lat} lng={lng} locale={locale} onChange={(a: number, b: number) => { setLat(a); setLng(b) }} />
+              </div>
             </div>
 
             {/* القطاعات / التخصصات (مطلوب) */}
