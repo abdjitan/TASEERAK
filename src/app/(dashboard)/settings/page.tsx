@@ -11,6 +11,7 @@ import { getNav } from '@/lib/nav'
 import SupportThread from '@/components/shared/SupportThread'
 import DistrictField from '@/components/shared/DistrictField'
 import EnablePush from '@/components/shared/EnablePush'
+import SellerKindPicker from '@/components/shared/SellerKindPicker'
 import { REGIONS } from '@/types'
 
 const txt = {
@@ -131,7 +132,7 @@ export default function SettingsPage() {
   const [passSaving, setPassSaving] = useState(false)
 
   // Classification
-  const [supplierTier, setSupplierTier] = useState('local')
+  const [supplierTier, setSupplierTier] = useState('shop')
   const [minOrderValue, setMinOrderValue] = useState('')
   const [contractorGrade, setContractorGrade] = useState('')
 
@@ -164,7 +165,7 @@ export default function SettingsPage() {
         setVatNumber(p.vat_number || '')
         setDistrict(p.district || '')
         setPrefLang(p.preferred_language || 'ar')
-        setSupplierTier(p.supplier_tier || 'local')
+        setSupplierTier(p.supplier_tier || 'shop')
         setMinOrderValue(p.min_order_value ? String(p.min_order_value) : '')
         setContractorGrade(p.contractor_grade || '')
         // رقم تواصل مختلف عن الواتساب فقط إذا كان مُخزّناً ومختلفاً عن رقم الجوال
@@ -509,22 +510,19 @@ export default function SettingsPage() {
                     <EnablePush variant="card" />
                   </div>
 
-                  {/* Supplier Tier — locked */}
+                  {/* Seller kind + company activity (the buyer-facing tier is derived from it) */}
                   {profile?.role === 'supplier' && (
                     <div className="border-t border-gray-100 pt-5">
-                      <label className="block text-xs font-bold text-gray-500 mb-2">تصنيف شركتك 🔒</label>
-                      <div className="mb-1">
-                        <span className="inline-block px-4 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm font-semibold text-gray-700">
-                          {supplierTier === 'manufacturer' ? '🏭 مصنع / مورد رئيسي' : supplierTier === 'commercial' ? '🏪 مورد تجاري' : '🏬 مورد محلي'}
-                        </span>
-                      </div>
-                      {pendingFor('classification')
-                        ? <p className="text-[11px] text-amber-600 mb-3">⏳ طلب تغيير التصنيف قيد مراجعة الإدارة.</p>
-                        : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(supplierTier || 'local'); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline mb-3 inline-block" style={{ color: '#1B2D5B' }}>🔒 التصنيف ثابت — اطلب تعديله</button>}
-                      <label className="block text-xs font-bold text-gray-500 mb-1 mt-2">الحد الأدنى لقيمة الطلب (ر.س)</label>
-                      <input type="number" value={minOrderValue} onChange={e => setMinOrderValue(e.target.value)}
-                        className="input-field" placeholder="0 = بدون حد أدنى" min="0" />
-                      <p className="text-[10px] text-gray-400 mt-1">التصنيف يُعتمد من الإدارة — لتعديله قدّم طلباً.</p>
+                      <label className="block text-xs font-bold text-gray-500 mb-2">{locale === 'en' ? 'Account type' : locale === 'ur' ? 'اکاؤنٹ کی قسم' : 'نوع الحساب'}</label>
+                      <SellerKindPicker providerType={profile?.provider_type} supplierTier={supplierTier} locale={locale}
+                        onChange={(pt: string, tr: string | null) => { setProfile({ ...profile, provider_type: pt, supplier_tier: tr }); setSupplierTier(tr || 'shop') }} />
+                      {!['individual', 'price_agent', 'broker'].includes(profile?.provider_type) && (
+                        <>
+                          <label className="block text-xs font-bold text-gray-500 mb-1 mt-4">الحد الأدنى لقيمة الطلب (ر.س)</label>
+                          <input type="number" value={minOrderValue} onChange={e => setMinOrderValue(e.target.value)}
+                            className="input-field" placeholder="0 = بدون حد أدنى" min="0" />
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -569,15 +567,6 @@ export default function SettingsPage() {
                         <>
                           <label className="block text-xs font-bold text-gray-500 mb-1">الاسم الجديد</label>
                           <input value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3" />
-                        </>
-                      ) : profile?.role === 'supplier' ? (
-                        <>
-                          <label className="block text-xs font-bold text-gray-500 mb-1">التصنيف الجديد</label>
-                          <select value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3">
-                            <option value="manufacturer">🏭 مصنع / مورد رئيسي</option>
-                            <option value="commercial">🏪 مورد تجاري</option>
-                            <option value="local">🏬 مورد محلي</option>
-                          </select>
                         </>
                       ) : (
                         <>
@@ -652,7 +641,7 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-500 mb-4">{t.docsSub}</p>
                 {/* التوثيق اختياري: يوضّح فايدته وفي خيار «لاحقاً» */}
                 <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6" style={{ background: 'rgba(15,110,86,0.06)', border: '1px solid rgba(15,110,86,0.2)' }}>
-                  <p className="text-sm text-gray-700 leading-relaxed flex-1 min-w-[220px]">🛡 {locale === 'en' ? 'Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.' : locale === 'ur' ? 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔' : 'التوثيق اختياري. بعد ما تتوثّق، اللي بيطلب السعر بيشوف شارة «موثّق» جنب عرضك، وهاد بيخلّي محلك عالي الموثوقية وبيزيد فرصك تكسب الطلبات.'}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed flex-1 min-w-[220px]">🛡 {locale === 'en' ? 'Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.' : locale === 'ur' ? 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔' : 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، وتظهر ضمن «شركات ومصانع معتمدة»، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.'}</p>
                   <a href={profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'} className="text-sm font-bold px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#1B2D5B' }}>{locale === 'en' ? 'Later' : locale === 'ur' ? 'بعد میں' : 'لاحقاً'}</a>
                 </div>
 

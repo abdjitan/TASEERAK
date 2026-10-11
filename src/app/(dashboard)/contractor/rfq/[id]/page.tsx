@@ -14,6 +14,7 @@ import { getNav } from '@/lib/nav'
 import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 import { dealStage } from '@/lib/dealStage'
+import { TIERS, tierLabel, normTier, sourceLabel, availabilityLabel, isDirectSource } from '@/lib/sellers'
 
 // مرجع جغرافي «lat,lng» → [lat,lng] أو null
 function parseGeo(s: any) {
@@ -48,7 +49,7 @@ export default function RFQDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [awardSort, setAwardSort] = useState('cheapest') // cheapest | fastest — ترتيب عروض كل مادة
   const [onlyVerified, setOnlyVerified] = useState(false)
-  const [tierFilter, setTierFilter] = useState('') // '' | manufacturer | commercial | local
+  const [tierFilter, setTierFilter] = useState('') // '' | company | shop | independent
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
@@ -260,7 +261,7 @@ export default function RFQDetailPage() {
   // Filtered + sorted offers for display (contractor may receive many).
   const displayedOffers = [...offers]
     .filter((o: any) => !onlyVerified || o.supplier?.verification_status === 'verified')
-    .filter((o: any) => !tierFilter || o.supplier?.supplier_tier === tierFilter)
+    .filter((o: any) => !tierFilter || normTier(o.supplier?.supplier_tier) === tierFilter)
     .sort((a: any, b: any) => {
       if (sortBy === 'price_desc') return offerComparable(b) - offerComparable(a)
       if (sortBy === 'delivery') return (a.delivery_days || 99999) - (b.delivery_days || 99999)
@@ -428,7 +429,7 @@ export default function RFQDetailPage() {
                             <div className="font-semibold text-[#1B2D5B]">{it.product_name}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(SECTOR_LABELS as any)[it.sector] || it.sector}</span>
-                              {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'}</span>)}
+                              {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tierLabel(tr, 'ar')}</span>)}
                               {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
                               {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}ي</span>}
                               {it.spec_file_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
@@ -642,9 +643,7 @@ export default function RFQDetailPage() {
             </select>
             <select value={tierFilter} onChange={(e: any) => setTierFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700">
               <option value="">كل الموردين</option>
-              <option value="manufacturer">🏭 مصنع</option>
-              <option value="commercial">🏪 تجاري</option>
-              <option value="local">🏬 محلي</option>
+              {TIERS.map(tr => <option key={tr} value={tr}>{tierLabel(tr, 'ar')}</option>)}
             </select>
             <button type="button" onClick={() => setOnlyVerified(v => !v)}
               className={`text-xs px-3 py-1.5 rounded-lg border font-semibold transition-all ${onlyVerified ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
@@ -705,13 +704,20 @@ export default function RFQDetailPage() {
                         <span className="font-bold text-gray-900">{offer.supplier?.company_name_ar || 'مورد'}</span>
                         {offer.supplier?.supplier_tier && (
                           <span className={`badge text-[10px] ${
-                            offer.supplier.supplier_tier === 'manufacturer' ? 'bg-purple-100 text-purple-700' :
-                            offer.supplier.supplier_tier === 'commercial' ? 'bg-blue-100 text-[#d96f15]' : 'bg-gray-100 text-gray-600'
+                            normTier(offer.supplier.supplier_tier) === 'company' ? 'bg-purple-100 text-purple-700' :
+                            normTier(offer.supplier.supplier_tier) === 'shop' ? 'bg-blue-100 text-[#d96f15]' : 'bg-gray-100 text-gray-600'
                           }`}>
-                            {offer.supplier.supplier_tier === 'manufacturer' ? '🏭 مصنع' :
-                             offer.supplier.supplier_tier === 'commercial' ? '🏪 تجاري' : '🏬 محلي'}
+                            {tierLabel(offer.supplier.supplier_tier, 'ar')}
                           </span>
                         )}
+                        {/* Where the price comes from: a sourced quote is never shown as a direct one */}
+                        {offer.source_type && (
+                          <span className={`badge text-[10px] ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
+                            title={isDirectSource(offer.source_type) ? 'سعر مباشر من البائع' : 'سعر منقول من مصدر آخر وليس من مخزون البائع'}>
+                            {isDirectSource(offer.source_type) ? '✓ مباشر من البائع' : sourceLabel(offer.source_type, 'ar')}
+                          </span>
+                        )}
+                        {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600">{availabilityLabel(offer.availability, 'ar')}</span>}
                         {offer.supplier?.verification_status === 'verified' && (
                           <span className="badge text-[10px] inline-flex items-center gap-0.5"
                             style={offer.supplier?.cr_verification_source === 'wathq'

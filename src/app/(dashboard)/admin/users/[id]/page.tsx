@@ -10,8 +10,8 @@ import { getNav } from '@/lib/nav'
 import SupportThread from '@/components/shared/SupportThread'
 import PageLoader from '@/components/shared/PageLoader'
 import { APPROVAL_LABELS } from '@/lib/supplierScore'
+import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 
-const TIER_LABEL: Record<string, string> = { manufacturer: '🏭 مصنع / مورد رئيسي', commercial: '🏪 مورد تجاري', local: '🏬 مورد محلي' }
 const RFQ_STATUS: Record<string, string> = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
 const OFFER_STATUS: Record<string, string> = { pending: '⏳ بانتظار', submitted: '📨 مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
 
@@ -236,9 +236,11 @@ export default function AdminUserDetail() {
             <Field label="نوع الحساب">{p.role === 'contractor' ? 'مقاول' : 'مورد'}</Field>
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
-                <div className="text-[11px] text-gray-400 mb-1">فئة المورد</div>
-                <select value={p.supplier_tier || 'local'} onChange={(e: any) => setField('supplier_tier', e.target.value)} className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5">
-                  <option value="manufacturer">🏭 مصنع / رئيسي</option><option value="commercial">🏪 تجاري</option><option value="local">🏬 محلي</option>
+                <div className="text-[11px] text-gray-400 mb-1">نوع الحساب · الفئة: <b className="text-purple-700">{tierLabel(p.supplier_tier, 'ar')}</b> <span className="text-gray-300">(تلقائية)</span></div>
+                <select value={p.provider_type || 'company'} onChange={(e: any) => setField('provider_type', e.target.value)} className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5">
+                  <option value="individual">🧑‍💼 بائع مستقل / وسيط</option>
+                  <option value="company">🏢 شركة (النشاط غير محدد)</option>
+                  {COMPANY_ACTIVITIES.map(a => <option key={a.k} value={a.k}>{a.icon} {a.ar}</option>)}
                 </select>
               </div>
             )}

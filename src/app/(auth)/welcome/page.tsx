@@ -4,19 +4,12 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import { SELLER_KINDS, rememberedSignupKind, type SellerKind } from '@/lib/sellers'
 
-// After the first WhatsApp OTP: one question, "What do you want to do?", plus a name.
-// Everything else (location, categories, CR) is asked later, when it is needed.
-type Intent = 'buyer' | 'provider' | 'agent'
-
-const PROVIDER_TYPES = [
-  { k: 'retail_shop', ar: 'محل مواد بناء', en: 'Retail shop', ur: 'دکان' },
-  { k: 'distributor', ar: 'موزّع', en: 'Distributor', ur: 'ڈسٹری بیوٹر' },
-  { k: 'trading_company', ar: 'شركة تجارية', en: 'Trading company', ur: 'تجارتی کمپنی' },
-  { k: 'manufacturer', ar: 'مصنع', en: 'Manufacturer', ur: 'فیکٹری' },
-  { k: 'dealer', ar: 'تاجر', en: 'Dealer', ur: 'ڈیلر' },
-  { k: 'individual', ar: 'فرد عنده بضاعة', en: 'Individual seller', ur: 'انفرادی فروخت کنندہ' },
-]
+// After the first WhatsApp OTP: "Do you need prices or provide them?", and for a provider
+// "independent or company?", plus a name. Everything else (location, categories, company
+// activity, CR) is asked later, when it is needed.
+type Intent = 'buyer' | 'provider'
 
 export default function WelcomePage() {
   const { locale, dir } = useTranslation()
@@ -24,7 +17,7 @@ export default function WelcomePage() {
   const [ready, setReady] = useState(false)
   const [name, setName] = useState('')
   const [intent, setIntent] = useState<Intent | null>(null)
-  const [ptype, setPtype] = useState('retail_shop')
+  const [kind, setKind] = useState<SellerKind>('company')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -36,6 +29,8 @@ export default function WelcomePage() {
       const { data: p } = await supabase.from('profiles').select('role, role_chosen_at, full_name').eq('id', user.id).single()
       if (p?.role_chosen_at || p?.role === 'admin') { window.location.href = '/onboarding'; return }
       if (p?.full_name) setName(p.full_name)
+      const k = new URLSearchParams(window.location.search).get('kind') || rememberedSignupKind()
+      if (k === 'company' || k === 'independent') { setIntent('provider'); setKind(k) }
       setReady(true)
     })()
   }, [])
@@ -43,21 +38,15 @@ export default function WelcomePage() {
   const CARDS: { k: Intent; title: string; sub: string; icon: JSX.Element }[] = [
     {
       k: 'buyer',
-      title: L('I need a price', 'مجھے قیمت چاہیے', 'أحتاج سعر'),
-      sub: L('Contractor, company, shop or owner: request prices and compare quotes.', 'قیمتیں منگوائیں اور موازنہ کریں۔', 'مقاول، شركة، محل، أو صاحب مشروع: اطلب أسعار وقارن العروض.'),
+      title: L('I need prices', 'مجھے قیمتیں چاہییں', 'أبحث عن أسعار'),
+      sub: L('Contractor, company, shop or owner: request prices and compare quotes.', 'قیمتیں منگوائیں اور موازنہ کریں۔', 'مقاول أو صاحب مشروع أو شركة: اطلب أسعار المواد وقارن العروض.'),
       icon: <path d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />,
     },
     {
       k: 'provider',
-      title: L('I sell materials / provide prices', 'میں سامان بیچتا ہوں / قیمت دیتا ہوں', 'أبيع مواد أو أقدّم أسعار'),
-      sub: L('Shop, distributor, factory or individual: receive requests near you and quote.', 'قریبی درخواستیں وصول کریں اور قیمت دیں۔', 'محل، موزّع، مصنع، أو فرد: تصلك الطلبات القريبة منك وتسعّرها.'),
+      title: L('I provide material prices', 'میں سامان کی قیمتیں دیتا ہوں', 'أقدّم أسعار المواد'),
+      sub: L('Company, shop, factory or independent seller: receive requests near you and quote.', 'قریبی درخواستیں وصول کریں اور قیمت دیں۔', 'شركة أو محل أو مصنع أو بائع مستقل: تصلك الطلبات القريبة منك وتسعّرها.'),
       icon: <path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6" />,
-    },
-    {
-      k: 'agent',
-      title: L('I am a price agent', 'میں پرائس ایجنٹ ہوں', 'أنا وكيل أسعار'),
-      sub: L('You know shops and suppliers: collect their prices and submit a market quote.', 'دکانوں سے قیمتیں جمع کریں اور مارکیٹ کوٹ دیں۔', 'تعرف محلات وموردين: اجمع أسعارهم وقدّم عرض سعر من السوق.'),
-      icon: <path d="M16 11a4 4 0 1 0-8 0M12 3v4M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1M17 8l3-3M7 8 4 5" />,
     },
   ]
 
@@ -68,7 +57,7 @@ export default function WelcomePage() {
     setSaving(true)
     const supabase = createClient()
     const { error: err } = await supabase.rpc('choose_my_role', {
-      p_intent: intent, p_full_name: name.trim(), p_provider_type: intent === 'provider' ? ptype : null,
+      p_intent: intent, p_full_name: name.trim(), p_provider_type: intent === 'provider' ? (kind === 'independent' ? 'individual' : 'company') : null,
     })
     if (err && !/already_chosen/.test(err.message || '')) {
       setSaving(false)
@@ -89,8 +78,8 @@ export default function WelcomePage() {
       <div className="flex-1 flex justify-center px-4 pb-12">
         <div className="w-full max-w-[460px] space-y-6 animate-slide-up">
           <div>
-            <h1 className="text-[26px] font-extrabold text-navy">{L('Welcome to Taseerak', 'تسعیرک میں خوش آمدید', 'أهلاً فيك بتسعيرك')}</h1>
-            <p className="text-ink-2 text-sm mt-1">{L('Two quick answers and you are in.', 'دو جواب اور آپ اندر ہیں۔', 'جوابين سريعين وبتبلّش.')}</p>
+            <h1 className="text-[26px] font-extrabold text-navy">{L('Welcome to Taseerak', 'تسعیرک میں خوش آمدید', 'أهلاً بك في تسعيرك')}</h1>
+            <p className="text-ink-2 text-sm mt-1">{L('Two quick answers and you are in.', 'دو جواب اور آپ اندر ہیں۔', 'إجابتان سريعتان وتبدأ.')}</p>
           </div>
 
           {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3" role="alert">{error}</div>}
@@ -102,7 +91,7 @@ export default function WelcomePage() {
           </div>
 
           <div className="space-y-3">
-            <p className="text-[13px] font-bold text-ink-2">{L('What do you want to do?', 'آپ کیا کرنا چاہتے ہیں؟', 'شو بدك تعمل؟')}</p>
+            <p className="text-[13px] font-bold text-ink-2">{L('What do you want to do?', 'آپ کیا کرنا چاہتے ہیں؟', 'ماذا تريد أن تفعل؟')}</p>
             {CARDS.map((c) => {
               const on = intent === c.k
               return (
@@ -123,15 +112,20 @@ export default function WelcomePage() {
 
           {intent === 'provider' && (
             <div className="space-y-2">
-              <p className="text-[13px] font-bold text-ink-2">{L('Which describes you?', 'آپ کون ہیں؟', 'شو بتوصف حالك؟')}</p>
-              <div className="flex flex-wrap gap-2">
-                {PROVIDER_TYPES.map((p) => (
-                  <button key={p.k} type="button" onClick={() => setPtype(p.k)} aria-pressed={ptype === p.k}
-                    className={`px-3.5 py-2 rounded-full text-sm font-bold border transition-all ${ptype === p.k ? 'bg-navy text-white border-navy' : 'bg-white text-ink-2'}`}
-                    style={ptype === p.k ? undefined : { borderColor: 'var(--line)' }}>
-                    {(p as any)[locale] || p.ar}
-                  </button>
-                ))}
+              <p className="text-[13px] font-bold text-ink-2">{L('How do you work?', 'آپ کیسے کام کرتے ہیں؟', 'كيف تعمل؟')}</p>
+              <div className="grid grid-cols-2 gap-2">
+                {(['company', 'independent'] as SellerKind[]).map((k) => {
+                  const on = kind === k
+                  const info = SELLER_KINDS[k]
+                  return (
+                    <button key={k} type="button" onClick={() => setKind(k)} aria-pressed={on}
+                      className={`text-start p-3 rounded-xl border-2 transition-all ${on ? 'border-navy bg-navy/5' : 'bg-white'}`}
+                      style={on ? undefined : { borderColor: 'var(--line)' }}>
+                      <span className="block font-bold text-sm text-navy">{info.icon} {L(info.en, info.ur, info.ar)}</span>
+                      <span className="block text-[11px] text-ink-2 mt-0.5 leading-relaxed">{L(info.sub.en, info.sub.ur, info.sub.ar)}</span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}

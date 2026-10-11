@@ -8,6 +8,8 @@ import DistrictField from '@/components/shared/DistrictField'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
+import SellerKindPicker from '@/components/shared/SellerKindPicker'
+import { rememberedSignupKind, SIGNUP_KIND_KEY } from '@/lib/sellers'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGION } from '@/types'
 
@@ -29,11 +31,10 @@ const TR = {
     location: 'الموقع', region: 'المنطقة', selectRegion: '-- اختر --', city: 'المدينة', district: 'الحي',
     sectorsTitleC: 'قطاعات عملك', sectorsHintC: 'اختر القطاعات التي تعمل فيها',
     sectorsTitleS: 'تخصصاتك والمواد', sectorsHintS: 'اختر قطاعاتك ثم حدّد ما توردّه بالضبط',
-    classTitle: 'تصنيف شركتك', classHint: 'مصنع = مورّد رئيسي للمشاريع الكبرى · تجاري = وسيط ومستودع · محلي = موزّع صغير. اختر الأنسب لعملك.',
-    manufacturer: 'مصنع / مورد رئيسي', commercial: 'مورد تجاري', local: 'مورد محلي',
+    classTitle: 'نوع الحساب', classHint: 'هل تمثّل شركة أو محلاً، أم تعمل بشكل مستقل؟ يمكنك تغييره لاحقاً من الإعدادات.',
     minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات — أو حدّده ليُفلتر الطلبات حسب قدرتك التوريدية.',
     gradeTitle: 'درجة تصنيف شركتك', gradeSub: 'من رخصتك (وزارة الشؤون البلدية) — يستخدمها الموردون لفلترة الطلبات حسب حجم المشروع. اختياري.',
-    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'التوثيق اختياري: بيطلّع شارة «موثّق» على عروضك للي بيطلب السعر، فبيخلّي محلك عالي الموثوقية ويرفع فرصك تكسب الطلبات.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وقطاعاتك وتخصصاتك أعلاه لتُفتح خطوة التوثيق.',
+    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'التوثيق اختياري: يضيف شارة «موثّق» إلى عروضك لدى طالبي الأسعار، ويضعك ضمن «شركات ومصانع معتمدة»، فترتفع موثوقيتك وفرصك في الفوز بالطلبات.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وقطاعاتك وتخصصاتك أعلاه لتُفتح خطوة التوثيق.',
     addMatTitle: 'لا تجد مادة توردّها بالقائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
     save: 'حفظ ومتابعة ←', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
     needLoc: 'اختر المنطقة والمدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك ✓',
@@ -46,8 +47,7 @@ const TR = {
     location: 'Location', region: 'Region', selectRegion: '-- Select --', city: 'City', district: 'District',
     sectorsTitleC: 'Your sectors', sectorsHintC: 'Select the sectors you work in',
     sectorsTitleS: 'Specialties & materials', sectorsHintS: 'Select your sectors then pick exactly what you supply',
-    classTitle: 'Company classification', classHint: 'Factory = major project supplier · Commercial = wholesaler/warehouse · Local = small distributor. Pick what fits.',
-    manufacturer: 'Factory / Major Supplier', commercial: 'Commercial Supplier', local: 'Local Supplier',
+    classTitle: 'Account type', classHint: 'Do you represent a company or shop, or work independently? You can change it later in settings.',
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
     gradeTitle: 'Company grade', gradeSub: 'From your license (Ministry of Municipal Affairs) — suppliers use it to filter by project size. Optional.',
     verifyTitle: 'Verify your business', verifyBody: 'Optional: verification adds a «Verified» badge to your quotes for buyers, making your shop highly trusted and raising your chance of winning requests.', verifyCta: 'Save & start verification →', verifyLocked: 'Complete your location, sectors and specialties above to unlock verification.',
@@ -63,8 +63,7 @@ const TR = {
     location: 'مقام', region: 'علاقہ', selectRegion: '-- منتخب کریں --', city: 'شہر', district: 'علاقہ',
     sectorsTitleC: 'آپ کے شعبے', sectorsHintC: 'وہ شعبے منتخب کریں جہاں آپ کام کرتے ہیں',
     sectorsTitleS: 'مہارتیں اور مواد', sectorsHintS: 'اپنے شعبے منتخب کریں پھر بالکل وہی چنیں جو فراہم کرتے ہیں',
-    classTitle: 'کمپنی کی درجہ بندی', classHint: 'فیکٹری = بڑا سپلائر · تجارتی = ہول سیلر · مقامی = چھوٹا ڈسٹری بیوٹر۔ مناسب منتخب کریں۔',
-    manufacturer: 'فیکٹری / بڑا سپلائر', commercial: 'تجارتی سپلائر', local: 'مقامی سپلائر',
+    classTitle: 'اکاؤنٹ کی قسم', classHint: 'کیا آپ کمپنی یا دکان کی نمائندگی کرتے ہیں یا آزادانہ کام کرتے ہیں؟ بعد میں ترتیبات میں بدل سکتے ہیں۔',
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
     gradeTitle: 'کمپنی کا درجہ', gradeSub: 'آپ کے لائسنس سے — سپلائرز پروجیکٹ سائز کے مطابق فلٹر کرتے ہیں۔ اختیاری۔',
     verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'اختیاری: تصدیق آپ کی آفرز پر «تصدیق شدہ» بیج دکھاتی ہے، جس سے خریداروں کا اعتماد بڑھتا ہے۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں →', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام، شعبے اور مہارتیں مکمل کریں۔',
@@ -95,7 +94,7 @@ export default function OnboardingPage() {
   const [sectors, setSectors] = useState<string[]>([])
   const [specialties, setSpecialties] = useState<string[]>([])
   const [openSector, setOpenSector] = useState<string | null>(null)
-  const [supplierTier, setSupplierTier] = useState<'manufacturer' | 'commercial' | 'local'>('local')
+  const [supplierTier, setSupplierTier] = useState<string | null>(null)
   const [providerType, setProviderType] = useState('')
   // فرد / وكيل أسعار / سمسار: ما عنده محل ولا سجل — ثقته من التقييمات، فما نسأله تصنيف ولا توثيق
   const isIndividual = ['individual', 'price_agent', 'broker'].includes(providerType)
@@ -118,6 +117,13 @@ export default function OnboardingPage() {
         setLat(p.latitude ?? null); setLng(p.longitude ?? null)
         if (p.supplier_tier) setSupplierTier(p.supplier_tier)
         setProviderType(p.provider_type || '')
+        // Invitation links (/join/company, /join/seller) pass the kind at signup: apply it once.
+        const metaKind = (session.user.user_metadata as any)?.seller_kind || rememberedSignupKind()
+        try { localStorage.removeItem(SIGNUP_KIND_KEY) } catch {}
+        if (p.role === 'supplier' && !p.provider_type && (metaKind === 'company' || metaKind === 'independent')) {
+          const { data: np } = await supabase.rpc('set_seller_kind', { p_kind: metaKind, p_activity: null })
+          if (np) setProviderType(String(np))
+        }
         if (p.min_order_value) setMinOrderValue(String(p.min_order_value))
         if (p.contractor_grade) setContractorGrade(p.contractor_grade)
       }
@@ -155,7 +161,7 @@ export default function OnboardingPage() {
     try {
       const update: any = { region, city, district: district || null, preferred_language: locale }
       if (lat != null && lng != null) { update.latitude = lat; update.longitude = lng }
-      if (role === 'supplier') { if (!isIndividual) update.supplier_tier = supplierTier; update.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0 }
+      if (role === 'supplier') update.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
       if (role === 'contractor') update.contractor_grade = contractorGrade || null
       await supabase.from('profiles').update(update).eq('id', uid)
       await supabase.from('profile_sectors').delete().eq('profile_id', uid)
@@ -272,7 +278,7 @@ export default function OnboardingPage() {
               <div className="mt-4">
                 <label className="block text-xs font-semibold text-gray-600 mb-1">
                   📍 {locale === 'en' ? 'Your location on the map' : locale === 'ur' ? 'نقشے پر آپ کا مقام' : 'موقعك على الخريطة'}
-                  <span className="font-normal text-gray-400"> ({locale === 'en' ? 'optional, recommended' : locale === 'ur' ? 'اختیاری' : 'اختياري، وننصح فيه'})</span>
+                  <span className="font-normal text-gray-400"> ({locale === 'en' ? 'optional, recommended' : locale === 'ur' ? 'اختیاری' : 'اختياري، ويُنصح به'})</span>
                 </label>
                 <LocationPicker lat={lat} lng={lng} locale={locale} onChange={(a: number, b: number) => { setLat(a); setLng(b) }} />
               </div>
@@ -306,8 +312,8 @@ export default function OnboardingPage() {
                 <div className="mt-4 space-y-4">
                   {/* الطريقة السريعة: باقات جاهزة حسب نوع النشاط */}
                   <div>
-                    <p className="text-sm font-bold text-navy mb-0.5">{locale === 'en' ? 'What do you sell? Pick one or more' : locale === 'ur' ? 'آپ کیا بیچتے ہیں؟ ایک یا زیادہ منتخب کریں' : 'شو بتبيع؟ اختار وحدة أو أكتر'}</p>
-                    <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects everything that kind of business sells. You can fine-tune below.' : locale === 'ur' ? 'ایک کلک میں سب منتخب، نیچے تبدیل کر سکتے ہیں۔' : 'ضغطة وحدة بتختار كل شي بيبيعه هالنوع من المحلات، وبتقدر تعدّل تحت.'}</p>
+                    <p className="text-sm font-bold text-navy mb-0.5">{locale === 'en' ? 'What do you sell? Pick one or more' : locale === 'ur' ? 'آپ کیا بیچتے ہیں؟ ایک یا زیادہ منتخب کریں' : 'ماذا تبيع؟ اختر نوعاً أو أكثر'}</p>
+                    <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects everything that kind of business sells. You can fine-tune below.' : locale === 'ur' ? 'ایک کلک میں سب منتخب، نیچے تبدیل کر سکتے ہیں۔' : 'بضغطة واحدة تُختار كل المواد التي يبيعها هذا النوع من المحلات، ويمكنك التعديل في الأسفل.'}</p>
                     <SupplierPackPicker sectors={sectors} specialties={specialties} locale={locale}
                       onChange={(n: any) => { setSectors(n.sectors); setSpecialties(n.specialties) }} />
                   </div>
@@ -350,25 +356,22 @@ export default function OnboardingPage() {
               )}
             </div>
 
-            {/* ملف الشركة: التصنيف/الدرجة (اختياري) — مش للفرد/الوكيل */}
-            {role === 'supplier' && !isIndividual && (
+            {/* نوع الحساب: مستقل أو شركة (+ النشاط). الفئة الظاهرة للمشترين تُحسب تلقائياً */}
+            {role === 'supplier' && (
               <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-bold text-navy">🏭 {t.classTitle}</h2>
-                  <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{t.optional}</span>
+                  <h2 className="text-sm font-bold text-navy">🏢 {t.classTitle}</h2>
                 </div>
                 <p className="text-xs text-gray-500 mb-3 leading-relaxed">{t.classHint}</p>
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  {[{ key: 'manufacturer', label: t.manufacturer }, { key: 'commercial', label: t.commercial }, { key: 'local', label: t.local }].map((tier: any) => (
-                    <button key={tier.key} type="button" onClick={() => setSupplierTier(tier.key)}
-                      className={`p-3 rounded-xl border text-center transition-all ${supplierTier === tier.key ? 'border-navy bg-navy/5' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <div className={`text-xs font-bold ${supplierTier === tier.key ? 'text-navy' : 'text-gray-700'}`}>{tier.label}</div>
-                    </button>
-                  ))}
-                </div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">{t.minOrder}</label>
-                <input type="number" value={minOrderValue} onChange={(e: any) => setMinOrderValue(e.target.value)} className="input-field" placeholder={t.minOrderPh} min="0" />
-                <p className="text-[10px] text-gray-400 mt-1">{t.minOrderHint}</p>
+                <SellerKindPicker providerType={providerType || null} supplierTier={supplierTier} locale={locale}
+                  onChange={(pt: string, tr: string | null) => { setProviderType(pt); setSupplierTier(tr) }} />
+                {!isIndividual && (
+                  <>
+                    <label className="block text-xs font-bold text-gray-500 mb-1 mt-4">{t.minOrder}</label>
+                    <input type="number" value={minOrderValue} onChange={(e: any) => setMinOrderValue(e.target.value)} className="input-field" placeholder={t.minOrderPh} min="0" />
+                    <p className="text-[10px] text-gray-400 mt-1">{t.minOrderHint}</p>
+                  </>
+                )}
               </div>
             )}
 
@@ -395,8 +398,8 @@ export default function OnboardingPage() {
             {/* التوثيق (للمورّد) — بوابة إيراد: مقفلة حتى يكتمل الملف أعلاه، ثم تحفظ وتنقل لتبويب المستندات */}
             {role === 'supplier' && isIndividual && (
               <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56', background: 'rgba(15,110,86,0.06)', border: '1px solid rgba(15,110,86,0.2)' }}>
-                <div className="text-sm font-bold text-navy mb-1">⭐ {locale === 'en' ? 'Your trust comes from ratings' : locale === 'ur' ? 'آپ کا اعتماد ریٹنگ سے بنتا ہے' : 'ثقتك بتنبني من التقييمات'}</div>
-                <p className="text-xs text-gray-600 leading-relaxed">{locale === 'en' ? 'As an individual or price agent you do not need a shop or a commercial registration. After every deal the buyer rates your price accuracy and service, and those ratings show next to your quotes.' : locale === 'ur' ? 'انفرادی یا پرائس ایجنٹ کے طور پر آپ کو دکان یا کمرشل رجسٹریشن کی ضرورت نہیں۔ ہر ڈیل کے بعد خریدار آپ کو ریٹ کرتا ہے۔' : 'كفرد أو وكيل أسعار ما بتحتاج محل ولا سجل تجاري. بعد كل صفقة، اللي طلب السعر بيقيّم دقة سعرك وخدمتك، وهالتقييمات بتظهر جنب عروضك.'}</p>
+                <div className="text-sm font-bold text-navy mb-1">⭐ {locale === 'en' ? 'Your trust comes from ratings' : locale === 'ur' ? 'آپ کا اعتماد ریٹنگ سے بنتا ہے' : 'تُبنى ثقتك من التقييمات'}</div>
+                <p className="text-xs text-gray-600 leading-relaxed">{locale === 'en' ? 'As an individual or price agent you do not need a shop or a commercial registration. After every deal the buyer rates your price accuracy and service, and those ratings show next to your quotes.' : locale === 'ur' ? 'انفرادی یا پرائس ایجنٹ کے طور پر آپ کو دکان یا کمرشل رجسٹریشن کی ضرورت نہیں۔ ہر ڈیل کے بعد خریدار آپ کو ریٹ کرتا ہے۔' : 'بصفتك بائعاً مستقلاً أو وسيطاً لا تحتاج إلى محل أو سجل تجاري. بعد كل صفقة يقيّم المشتري دقة سعرك وخدمتك، وتظهر هذه التقييمات بجانب عروضك.'}</p>
               </div>
             )}
             {role === 'supplier' && !isIndividual && (

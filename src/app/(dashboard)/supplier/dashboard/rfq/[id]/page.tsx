@@ -16,6 +16,7 @@ import { productImageUrl } from '@/lib/productImage'
 import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel, getUnitLabel } from '@/types'
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
+import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf } from '@/lib/sellers'
 
 export default function SupplierRFQPage() {
   const { id } = useParams()
@@ -50,6 +51,10 @@ export default function SupplierRFQPage() {
   const [deliveryDays, setDeliveryDays] = useState('')
   const [notes, setNotes] = useState('')
   const [priceValidity, setPriceValidity] = useState('3') // مدة صلاحية سعر العرض (بالأيام)
+  // من أين السعر؟ (مخزوني / مصنع أو مورد / محل / وسيط) والتوفّر — يظهران للمشتري بوضوح
+  const [sourceType, setSourceType] = useState('')
+  const [availability, setAvailability] = useState('now')
+  const [isIndependent, setIsIndependent] = useState(false)
   const [validity, setValidity] = useState('')
 
   // خصائص المنتج (key-value)
@@ -111,6 +116,12 @@ export default function SupplierRFQPage() {
       // Same rule as the offers INSERT policy (can_submit_quote, migration 117).
       const { data: canQuote } = await supabase.rpc('can_submit_quote')
       setVerified(canQuote === true)
+      // A company quotes from its own stock by default; an independent seller must say where the
+      // price comes from.
+      const { data: me } = await supabase.from('profiles').select('provider_type').eq('id', session.user.id).single()
+      const indep = sellerKindOf(me?.provider_type) === 'independent'
+      setIsIndependent(indep)
+      if (!indep) setSourceType('own_stock')
 
       // Precise delivery location is stripped for non-awarded suppliers server-side (H1);
       // region/city stay visible for pricing. Returns null if this supplier may not see the RFQ.
@@ -125,11 +136,11 @@ export default function SupplierRFQPage() {
         const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
         const mySectors = (secRows || []).map((r: any) => r.sector)
         const mySpecialties = (specRows || []).map((r: any) => r.specialty)
-        const myTier = p2?.supplier_tier || 'local'
+        const myTier = p2?.supplier_tier || 'shop'
         const filtered = (rfqData.items as any[]).map((it: any, i: number) => ({ ...it, item_index: i })).filter((it: any) => {
           if (mySectors.length > 0 && !mySectors.includes(it.sector)) return false
           if (mySpecialties.length > 0 && it.sub_category && !mySpecialties.includes(it.sub_category)) return false
-          if (Array.isArray(it.supplier_tiers) && it.supplier_tiers.length > 0 && !it.supplier_tiers.includes(myTier)) return false
+          if (!tierAllowed(it.supplier_tiers, myTier)) return false
           return true
         })
         setMyItems(filtered)
@@ -353,8 +364,14 @@ export default function SupplierRFQPage() {
       }
     }
 
+    if (!sourceType) {
+      setError(locale === 'en' ? 'Choose where this price comes from.' : locale === 'ur' ? 'قیمت کا ذریعہ منتخب کریں۔' : 'حدّد مصدر السعر قبل الإرسال.')
+      setSubmitting(false); return
+    }
     const { error: insertError } = await supabase.from('offers').insert({
       rfq_id: id,
+      source_type: sourceType,
+      availability: availability || null,
       supplier_id: user.id,
       total_price: finalTotal,
       price_valid_until: new Date(Date.now() + (parseInt(priceValidity) || 3) * 86400000).toISOString(),
@@ -530,7 +547,7 @@ export default function SupplierRFQPage() {
                           {it.photo_url && (
                             <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 group" title="صورة المادة من الزبون">
                               <img src={fileHref(it.photo_url)} alt="صورة المادة" loading="lazy" className="w-24 h-24 object-cover rounded-lg border border-gray-200 group-hover:border-[#F5831F]" />
-                              <span className="text-[11px] font-bold text-[#d96f15]">📷 صورة من الزبون<br /><span className="font-normal text-gray-500">سعّر نفس الشي</span></span>
+                              <span className="text-[11px] font-bold text-[#d96f15]">📷 صورة من المشتري<br /><span className="font-normal text-gray-500">سعّر المادة نفسها</span></span>
                             </a>
                           )}
                         </td>
@@ -1058,6 +1075,38 @@ export default function SupplierRFQPage() {
                 )}
               </div>
               )}
+
+              {/* مصدر السعر + التوفّر: يظهران للمشتري، والعرض المنقول لا يُعرض كعرض مباشر */}
+              <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5">
+                    {locale === 'en' ? 'Where does this price come from?' : locale === 'ur' ? 'یہ قیمت کہاں سے ہے؟' : 'من أين هذا السعر؟'}
+                    {isIndependent && <span className="text-red-500"> *</span>}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {SOURCE_TYPES.map(o => (
+                      <button type="button" key={o.k} onClick={() => setSourceType(o.k)} aria-pressed={sourceType === o.k}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${sourceType === o.k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-[#1B2D5B]/40'}`}
+                        style={sourceType === o.k ? { background: '#1B2D5B' } : {}}>
+                        {o.icon} {locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? 'The buyer sees this. A price you collected from someone else is shown as such, never as a direct quote.' : locale === 'ur' ? 'خریدار یہ دیکھتا ہے۔' : 'يظهر هذا للمشتري. السعر الذي تنقله من جهة أخرى يُعرض كذلك، ولا يُعرض كعرض مباشر.'}</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5">{locale === 'en' ? 'Availability' : locale === 'ur' ? 'دستیابی' : 'التوفّر'}</label>
+                  <div className="flex flex-wrap gap-2">
+                    {AVAILABILITY.map(o => (
+                      <button type="button" key={o.k} onClick={() => setAvailability(o.k)} aria-pressed={availability === o.k}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${availability === o.k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-[#0F6E56]/40'}`}
+                        style={availability === o.k ? { background: '#0F6E56' } : {}}>
+                        {o.icon} {locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {locale === 'en' ? 'Price valid for' : 'مدة صلاحية السعر'}</label>

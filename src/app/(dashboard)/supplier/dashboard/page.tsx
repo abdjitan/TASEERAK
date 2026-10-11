@@ -17,6 +17,7 @@ import { isSubscribed, isLaunchFree } from '@/lib/plans'
 import { getNav } from '@/lib/nav'
 import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
+import { tierLabel, tierAllowed } from '@/lib/sellers'
 
 const txt = {
   ar: {
@@ -130,15 +131,15 @@ export default function SupplierDashboard() {
         return { ...r, _myItemCount: myCount } // عدد أصناف هذا المورد فقط (لا الإجمالي)
       }).filter((r: any) => r._myItemCount > 0)
 
-      // ✅ فلترة حسب استهداف المقاول: نوع المورد (مصنع/تجاري/محلي) + الموثّقون فقط
-      const myTier = p?.supplier_tier || 'local'
+      // ✅ فلترة حسب استهداف المقاول: فئة المورد (شركة معتمدة/محل/مستقل) + الموثّقون فقط
+      const myTier = p?.supplier_tier || 'shop'
       const isVerified = p?.verification_status === 'verified'
       // الفروع: المورد يخدم منطقته الرئيسية + كل مناطق فروعه
       const { data: myBranches } = await supabase.from('branches').select('region').eq('supplier_id', session.user.id)
       const servedRegions = [p?.region, ...(myBranches || []).map((b: any) => b.region)].filter(Boolean)
       rfqs = rfqs.filter((r: any) => {
         if (r.verified_only && !isVerified) return false
-        if (Array.isArray(r.target_tiers) && r.target_tiers.length > 0 && !r.target_tiers.includes(myTier)) return false
+        if (!tierAllowed(r.target_tiers, myTier)) return false
         if (r.nearby_only && servedRegions.length > 0 && !servedRegions.includes(r.region)) return false
         // المقاول حدّد مناطق معيّنة — أظهر الطلب فقط لو أخدم إحداها
         if (Array.isArray(r.target_regions) && r.target_regions.length > 0 && !r.target_regions.some((reg: any) => servedRegions.includes(reg))) return false
@@ -222,7 +223,7 @@ export default function SupplierDashboard() {
     <AppShell
       title={locale === 'en' ? 'Supplier Dashboard' : locale === 'ur' ? 'سپلائر ڈیش بورڈ' : 'لوحة المورّد'}
       company={companyName}
-      companyMeta={profile?.supplier_tier === 'manufacturer' ? (locale === 'en' ? 'Manufacturer' : 'مصنع') : profile?.supplier_tier === 'commercial' ? (locale === 'en' ? 'Trader' : 'تاجر') : (locale === 'en' ? 'Local' : 'مورد محلي')}
+      companyMeta={tierLabel(profile?.supplier_tier, locale, false)}
       companyVerified={profile?.verification_status === 'verified'}
       userId={user?.id}
       nav={nav}

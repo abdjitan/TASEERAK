@@ -10,6 +10,7 @@ import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { SECTOR_LABELS, getGroupedSubCategories } from '@/types'
 import { safeHttpUrl } from '@/lib/safeUrl'
+import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 
 export default function AdminPanel() {
   const [user, setUser] = useState<any>(null)
@@ -221,7 +222,6 @@ export default function AdminPanel() {
   }
 
   // Display helpers
-  const TIER_LABEL: Record<string, string> = { manufacturer: '🏭 مصنع/رئيسي', commercial: '🏪 تجاري', local: '🏬 محلي' }
   const RFQ_STATUS: Record<string, string> = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
   const OFFER_STATUS: Record<string, string> = { pending: '⏳ بانتظار', submitted: '📨 مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
   const sar = (n: any) => (n || n === 0) ? Number(n).toLocaleString('en-US') + ' ر.س' : '—'
@@ -339,7 +339,7 @@ export default function AdminPanel() {
   const disputes = offers.filter((o: any) => o.dispute_status === 'open')
   const openObjections = objections.filter((o: any) => o.status === 'open')
   const openChangeReqs = changeReqs.filter((r: any) => r.status === 'pending')
-  const crLabel = (v: string) => (({ manufacturer: 'مصنع/مورد رئيسي', commercial: 'مورد تجاري', local: 'مورد محلي', A: 'درجة أ', B: 'درجة ب', C: 'درجة ج', D: 'درجة د' } as any)[v] || v || '—')
+  const crLabel = (v: string) => ((['company', 'shop', 'independent', 'manufacturer', 'commercial', 'local'].includes(v) ? { [v]: tierLabel(v, 'ar', false) } : {}) as any)[v] || (({ A: 'درجة أ', B: 'درجة ب', C: 'درجة ج', D: 'درجة د' } as any)[v] || v || '—')
 
   // ── Analytics (computed from already-loaded data) ──
   const dayKey = (d: any) => new Date(d).toISOString().slice(0, 10)
@@ -358,7 +358,6 @@ export default function AdminPanel() {
   const offersPerRfq = rfqs.length ? (offers.length / rfqs.length).toFixed(1) : '0'
   const dealsList = offers.filter((o: any) => o.status === 'accepted')
   const acceptedOffers = dealsList.length
-  const TIERLBL: any = { manufacturer: '🏭 مصنع/رئيسي', commercial: '🏪 تجاري', local: '🏬 محلي' }
 
   const rfqSearch = (r: any) => !search
     || r.product_name?.includes(search) || r.sector?.includes(search)
@@ -697,7 +696,7 @@ export default function AdminPanel() {
               <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
                 <h3 className="text-sm font-bold mb-3" style={{ color: '#1B2D5B' }}>🏭 فئات الموردين</h3>
                 {tierBreakdown.length === 0 ? <div className="text-xs text-gray-400">—</div> : tierBreakdown.map(([k, v]: any) => (
-                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{TIERLBL[k] || k}</span><span className="font-bold" style={{ color: '#1B2D5B' }}>{v}</span></div>
+                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{tierLabel(k, 'ar')}</span><span className="font-bold" style={{ color: '#1B2D5B' }}>{v}</span></div>
                 ))}
               </div>
             </div>
@@ -767,7 +766,7 @@ export default function AdminPanel() {
                             </div>
                             {(r.target_tiers?.length || r.verified_only || r.nearby_only) && (
                               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
-                                {(r.target_tiers || []).map((t: string) => <span key={t} className="badge text-[10px] bg-purple-100 text-purple-700">{TIER_LABEL[t] || t}</span>)}
+                                {(r.target_tiers || []).map((t: string) => <span key={t} className="badge text-[10px] bg-purple-100 text-purple-700">{tierLabel(t, 'ar')}</span>)}
                                 {r.verified_only && <span className="badge text-[10px] bg-emerald-100 text-emerald-700">موثقون فقط</span>}
                                 {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-[#d96f15]">القريبون فقط</span>}
                               </div>
@@ -940,7 +939,7 @@ export default function AdminPanel() {
                         )}
                         {u.role === 'supplier' && u.supplier_tier && (
                           <span className="badge text-[10px] bg-purple-100 text-purple-700">
-                            {u.supplier_tier === 'manufacturer' ? '🏭 مصنع' : u.supplier_tier === 'commercial' ? '🏪 تجاري' : '🏬 محلي'}
+                            {tierLabel(u.supplier_tier, 'ar')}
                           </span>
                         )}
                         {u.role === 'supplier' && u.auto_classification && (
@@ -1029,19 +1028,20 @@ export default function AdminPanel() {
                       </button>
                     )}
 
-                    {/* Supplier Tier Selector */}
-                    {u.role === 'supplier' && u.verification_status === 'verified' && (
+                    {/* Seller kind / company activity (the tier is derived from it + verification) */}
+                    {u.role === 'supplier' && (
                       <select
-                        value={u.supplier_tier || 'local'}
+                        value={u.provider_type || 'company'}
                         onChange={async (e) => {
                           const supabase = createClient()
-                          await supabase.from('profiles').update({ supplier_tier: e.target.value }).eq('id', u.id)
+                          await supabase.from('profiles').update({ provider_type: e.target.value }).eq('id', u.id)
                           await loadData()
                         }}
+                        title="نوع الحساب (الفئة تُحسب تلقائياً من النوع والتوثيق)"
                         className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5 cursor-pointer">
-                        <option value="manufacturer">🏭 مصنع / مورد رئيسي</option>
-                        <option value="commercial">🏪 مورد تجاري</option>
-                        <option value="local">🏬 مورد محلي</option>
+                        <option value="individual">🧑‍💼 بائع مستقل / وسيط</option>
+                        <option value="company">🏢 شركة (النشاط غير محدد)</option>
+                        {COMPANY_ACTIVITIES.map(a => <option key={a.k} value={a.k}>{a.icon} {a.ar}</option>)}
                       </select>
                     )}
 

@@ -5,14 +5,10 @@ import { createPublicClient } from '@/lib/supabase/server'
 import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
+import { tierLabel } from '@/lib/sellers'
 
 export const dynamic = 'force-dynamic'
 
-const TIERS: Record<string, string> = {
-  manufacturer: '🏭 مصنع / مورد رئيسي',
-  commercial: '🏪 مورد تجاري',
-  local: '🏬 مورد محلي',
-}
 
 async function getSupplier(id: string) {
   try {
@@ -28,7 +24,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const name = s.company_name_ar || 'مورد'
   return {
     title: `${name} — مورد مواد بناء${s.region ? ' في ' + s.region : ''} | تسعيرك`,
-    description: `${name}: مورد ${TIERS[s.supplier_tier] || ''} لمواد البناء${s.region ? ' في ' + s.region : ''} على منصة تسعيرك${s.verification_status === 'verified' ? '، موثّق عبر واثق' : ''}. اطلب تسعيرة الآن.`,
+    description: `${name}: مورد ${s.supplier_tier ? tierLabel(s.supplier_tier, 'ar', false) : ''} لمواد البناء${s.region ? ' في ' + s.region : ''} على منصة تسعيرك${s.verification_status === 'verified' ? '، موثّق عبر واثق' : ''}. اطلب تسعيرة الآن.`,
     alternates: { canonical: `/suppliers/${params.id}` },
   }
 }
@@ -56,7 +52,7 @@ export default async function SupplierProfilePage({ params }: { params: { id: st
                 {s.verification_status === 'verified' && <span className="badge text-[11px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>{s.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}</span>}
               </div>
               <div className="text-sm text-gray-500 mt-1 flex items-center gap-3 flex-wrap">
-                <span>{TIERS[s.supplier_tier] || '🏬 مورد'}</span>
+                <span>{s.supplier_tier ? tierLabel(s.supplier_tier, 'ar') : '🏬 مورد'}</span>
                 {s.region && <span>📍 {s.region}{s.city ? ` · ${s.city}` : ''}</span>}
               </div>
             </div>

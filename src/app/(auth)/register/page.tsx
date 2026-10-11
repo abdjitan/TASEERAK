@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import { PHONE_OTP_ENABLED } from '@/lib/features'
+import { SELLER_KINDS, rememberedSignupKind } from '@/lib/sellers'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
 // نجمع الحد الأدنى فقط: الدور + الاسم + اسم الشركة + الجوال + البريد + كلمة المرور.
@@ -29,8 +30,8 @@ type FormData = z.infer<typeof schema>
 const TR = {
   ar: {
     title: 'أنشئ حسابك', sub: 'دقيقة واحدة للبدء — تُكمل بياناتك بعد الدخول',
-    supplier: 'مورد', supplierDesc: 'أعرض منتجاتي وأستقبل طلبات',
-    contractor: 'مقاول', contractorDesc: 'أبحث عن موردين وأطلب تسعيرات',
+    supplier: 'أقدّم أسعار المواد', supplierDesc: 'شركة أو محل أو مصنع أو بائع مستقل',
+    contractor: 'أبحث عن أسعار', contractorDesc: 'مقاول أو صاحب مشروع: اطلب الأسعار وقارن العروض',
     accountType: 'نوع الحساب', fullName: 'الاسم الكامل',
     company: 'اسم الشركة أو النشاط', companyHint: 'إن كنت فرداً اكتب اسمك',
     phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف على الأقل',
@@ -46,8 +47,8 @@ const TR = {
   },
   en: {
     title: 'Create your account', sub: 'One minute to start — finish your details after signing in',
-    supplier: 'Supplier', supplierDesc: 'List products & receive requests',
-    contractor: 'Contractor', contractorDesc: 'Find suppliers & request quotes',
+    supplier: 'I provide prices', supplierDesc: 'Company, shop, factory or independent seller',
+    contractor: 'I need prices', contractorDesc: 'Contractor or project owner: request and compare quotes',
     accountType: 'Account type', fullName: 'Full name',
     company: 'Company or business name', companyHint: 'If you are an individual, use your name',
     phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: 'At least 8 characters',
@@ -63,8 +64,8 @@ const TR = {
   },
   ur: {
     title: 'اپنا اکاؤنٹ بنائیں', sub: 'شروع کرنے کے لیے ایک منٹ — تفصیلات سائن اِن کے بعد مکمل کریں',
-    supplier: 'سپلائر', supplierDesc: 'مصنوعات دکھائیں اور درخواستیں وصول کریں',
-    contractor: 'ٹھیکیدار', contractorDesc: 'سپلائرز تلاش کریں اور قیمتیں طلب کریں',
+    supplier: 'میں قیمتیں دیتا ہوں', supplierDesc: 'کمپنی، دکان، فیکٹری یا آزاد فروخت کنندہ',
+    contractor: 'مجھے قیمتیں چاہییں', contractorDesc: 'قیمتیں منگوائیں اور موازنہ کریں',
     accountType: 'اکاؤنٹ کی قسم', fullName: 'پورا نام',
     company: 'کمپنی یا کاروبار کا نام', companyHint: 'انفرادی ہیں تو اپنا نام لکھیں',
     phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: 'کم از کم 8 حروف',
@@ -86,6 +87,7 @@ export default function RegisterPage() {
   const supabase = createClient()
 
   const [selectedType, setSelectedType] = useState<'contractor' | 'supplier' | null>(null)
+  const [sellerKind, setSellerKind] = useState<'company' | 'independent'>('company')
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
@@ -106,6 +108,8 @@ export default function RegisterPage() {
       if (PHONE_OTP_ENABLED && new URLSearchParams(window.location.search).get('email') !== '1') { window.location.replace('/login'); return }
       const r = new URLSearchParams(window.location.search).get('role')
       if (r === 'contractor' || r === 'supplier') { setSelectedType(r); setValue('role', r, { shouldValidate: true }) }
+      const k = new URLSearchParams(window.location.search).get('kind') || rememberedSignupKind()
+      if (k === 'company' || k === 'independent') { setSellerKind(k); setSelectedType('supplier'); setValue('role', 'supplier', { shouldValidate: true }) }
     } catch {}
   }, [])
 
@@ -135,6 +139,7 @@ export default function RegisterPage() {
         company_name_ar: data.company_name_ar.trim() || data.full_name.trim(),
         phone: data.phone,
         preferred_language: locale,
+        ...(data.role === 'supplier' ? { seller_kind: sellerKind } : {}),
       }
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email, password: data.password,
@@ -211,6 +216,21 @@ export default function RegisterPage() {
                   </button>
                 ))}
               </div>
+              {selectedType === 'supplier' && (
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  {(['company', 'independent'] as const).map(k => {
+                    const on = sellerKind === k
+                    const info = SELLER_KINDS[k]
+                    return (
+                      <button key={k} type="button" onClick={() => setSellerKind(k)} aria-pressed={on}
+                        className={`p-3 rounded-xl border-2 text-start transition-all ${on ? 'border-navy bg-navy/5' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                        <div className="font-bold text-navy text-xs">{info.icon} {locale === 'en' ? info.en : locale === 'ur' ? info.ur : info.ar}</div>
+                        <div className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{locale === 'en' ? info.sub.en : locale === 'ur' ? info.sub.ur : info.sub.ar}</div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

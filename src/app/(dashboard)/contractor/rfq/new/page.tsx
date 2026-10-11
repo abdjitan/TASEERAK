@@ -12,6 +12,7 @@ import AppShell from '@/components/shared/AppShell'
 import CatIcon from '@/components/shared/CatIcon'
 import { getNav } from '@/lib/nav'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft } from '@/lib/localDraft'
+import { TIERS, tierLabel, tierHint, normTier } from '@/lib/sellers'
 import { useTranslation } from '@/i18n'
 
 const txt = {
@@ -36,9 +37,6 @@ const txt = {
     successTitle: 'تم إرسال طلب التسعير', successSub: 'سيتم إخطار الموردين في قطاعك فوراً',
     dashboard: 'لوحة التحكم', anotherReq: 'طلب آخر', na: '—',
     targetTitle: 'لمن تريد إرسال الطلب؟', targetSub: 'اختر نوع الموردين — اتركه فارغاً للجميع',
-    tierMfg: 'مصنع / مورد رئيسي', tierMfgD: 'إنتاج أو توريد بكميات كبيرة للمشاريع',
-    tierCom: 'مورد تجاري', tierComD: 'توريد بكميات متوسطة ومنتظمة',
-    tierLoc: 'مورد محلي', tierLocD: 'بكميات صغيرة إلى متوسطة وخدمة مباشرة',
     verifiedTitle: 'الموثّقون فقط', verifiedSub: 'استقبل عروضاً من الموردين الموثّقين فقط ✓',
   },
   en: {
@@ -62,9 +60,6 @@ const txt = {
     successTitle: 'RFQ Sent Successfully', successSub: 'Suppliers in your sector will be notified immediately',
     dashboard: 'Dashboard', anotherReq: 'Another Request', na: '—',
     targetTitle: 'Who should receive this?', targetSub: 'Pick supplier types — leave empty for all',
-    tierMfg: 'Factory / Major', tierMfgD: 'Production or bulk supply for projects',
-    tierCom: 'Commercial Supplier', tierComD: 'Regular medium-volume supply',
-    tierLoc: 'Local Supplier', tierLocD: 'Small to medium quantities, direct service',
     verifiedTitle: 'Verified only', verifiedSub: 'Receive offers from verified suppliers only ✓',
   },
   ur: {
@@ -88,9 +83,6 @@ const txt = {
     successTitle: 'درخواست کامیابی سے بھیجی گئی', successSub: 'سپلائرز کو فوری طور پر مطلع کیا جائے گا',
     dashboard: 'ڈیش بورڈ', anotherReq: 'دوسری درخواست', na: '—',
     targetTitle: 'یہ کس کو بھیجیں؟', targetSub: 'سپلائر کی قسم منتخب کریں — سب کے لیے خالی چھوڑیں',
-    tierMfg: 'فیکٹری / بڑا', tierMfgD: 'پروجیکٹس کے لیے بڑی سپلائی',
-    tierCom: 'تجارتی سپلائر', tierComD: 'باقاعدہ درمیانی سپلائی',
-    tierLoc: 'مقامی سپلائر', tierLocD: 'چھوٹی تا درمیانی مقدار، براہ راست خدمت',
     verifiedTitle: 'صرف تصدیق شدہ', verifiedSub: 'صرف تصدیق شدہ سپلائرز سے آفرز ✓',
   },
 }
@@ -299,7 +291,10 @@ export default function NewRFQPage() {
     if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   function toggleDraftTier(tier: string) {
-    setDraftTiers(prev => prev.includes(tier) ? prev.filter((x: any) => x !== tier) : [...prev, tier])
+    setDraftTiers(prev => {
+      const cur = Array.from(new Set(prev.map(normTier))) as string[]
+      return cur.includes(tier) ? cur.filter(x => x !== tier) : [...cur, tier]
+    })
   }
   function removeItem(i: number) { setItems(prev => prev.filter((_: any, idx: any) => idx !== i)) }
   function geolocate() {
@@ -496,6 +491,8 @@ export default function NewRFQPage() {
         } catch {}
       }
       const { specFileObj, ...rest } = it
+      // Old drafts may carry manufacturer/commercial/local; the DB matches company/shop/independent.
+      if (Array.isArray(rest.supplier_tiers)) rest.supplier_tiers = Array.from(new Set(rest.supplier_tiers.map(normTier)))
       serializableItems.push({ ...rest, spec_file_url })
     }
 
@@ -568,11 +565,11 @@ export default function NewRFQPage() {
           <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.title}</h1>
           <p className="text-gray-500 mt-1 text-sm">{t.sub}</p>
           <Link href="/contractor/rfq/quick" className="mt-3 inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl border-2 hover:bg-[#F5831F]/5" style={{ borderColor: '#F5831F', color: '#d96f15' }}>
-            ⚡ {locale === 'en' ? 'In a hurry? Quick request: write, say or photograph it' : locale === 'ur' ? 'جلدی ہے؟ فوری درخواست' : 'مستعجل؟ طلب سريع: اكتب، احكي، أو صوّر'}
+            ⚡ {locale === 'en' ? 'In a hurry? Quick request: write, say or photograph it' : locale === 'ur' ? 'جلدی ہے؟ فوری درخواست' : 'مستعجل؟ طلب سريع: اكتب، أو تحدّث، أو صوّر'}
           </Link>
           {localRestored && (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm rounded-xl px-4 py-2.5 border" style={{ background: '#0F6E5610', borderColor: '#0F6E5640', color: '#0F6E56' }}>
-              <span>💾 {locale === 'en' ? 'We kept what you entered last time.' : locale === 'ur' ? 'پچھلی بار کا درج کیا ہوا محفوظ ہے۔' : 'رجّعنا اللي كنت مدخّله آخر مرة.'}</span>
+              <span>💾 {locale === 'en' ? 'We kept what you entered last time.' : locale === 'ur' ? 'پچھلی بار کا درج کیا ہوا محفوظ ہے۔' : 'استعدنا ما أدخلته في المرة السابقة.'}</span>
               <button type="button" onClick={() => { if (window.confirm(locale === 'en' ? 'Clear it and start a new request?' : locale === 'ur' ? 'صاف کر کے نئی درخواست شروع کریں؟' : 'تمسحه وتبدأ طلب جديد؟')) startOverLocal() }} className="font-bold text-gray-500 hover:text-red-500 text-xs">
                 {locale === 'en' ? 'Start over' : locale === 'ur' ? 'نئے سرے سے' : 'ابدأ من جديد'}
               </button>
@@ -624,7 +621,7 @@ export default function NewRFQPage() {
                           <span className="text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 text-white" style={{ background: sectorMeta[h.sector]?.color || '#1B2D5B' }}>{sectors[h.sector]}</span>
                         </button>
                       )) : (
-                        <p className="px-3 py-3 text-sm text-gray-400">{locale === 'en' ? 'No match. Pick a sector below and type the material manually.' : 'ما في نتيجة. اختر القطاع بالأسفل واكتب اسم المادة يدوياً.'}</p>
+                        <p className="px-3 py-3 text-sm text-gray-400">{locale === 'en' ? 'No match. Pick a sector below and type the material manually.' : 'لا توجد نتائج. اختر القطاع بالأسفل واكتب اسم المادة يدوياً.'}</p>
                       )}
                     </div>
                   )}
@@ -824,14 +821,14 @@ export default function NewRFQPage() {
                       )}
                       {/* نوع المورد لهذه المادة (اختياري) */}
                       <div className="mt-3">
-                        <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? 'Who should price this? (optional)' : 'مين يسعّر هذه المادة؟ (اختياري)'}</p>
+                        <p className="text-xs font-bold text-gray-400 mb-2">{locale === 'en' ? 'Who should price this? (optional, everyone if none is chosen)' : locale === 'ur' ? 'یہ قیمت کون دے؟ (اختیاری)' : 'من يسعّر هذه المادة؟ (اختياري، الجميع إن لم تختر)'}</p>
                         <div className="flex flex-wrap gap-2">
-                          {[{ key: 'manufacturer', icon: '🏭', label: t.tierMfg }, { key: 'commercial', icon: '🏪', label: t.tierCom }, { key: 'local', icon: '🏬', label: t.tierLoc }].map((tier: any) => {
-                            const on = draftTiers.includes(tier.key)
+                          {TIERS.map((tier) => {
+                            const on = draftTiers.map(normTier).includes(tier)
                             return (
-                              <button key={tier.key} type="button" onClick={() => toggleDraftTier(tier.key)}
+                              <button key={tier} type="button" onClick={() => toggleDraftTier(tier)} title={tierHint(tier, locale)}
                                 className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${on ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                                {on ? '✓ ' : ''}{tier.icon} {tier.label}
+                                {on ? '✓ ' : ''}{tierLabel(tier, locale)}
                               </button>
                             )
                           })}
@@ -908,7 +905,7 @@ export default function NewRFQPage() {
                             <div className="font-bold text-[#1B2D5B] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => { e.currentTarget.style.display = 'none' }} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span>{getProductLabel(it.product_name, locale)}</span></div>
                             <div className="flex flex-wrap gap-1 mt-1">
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
-                              {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'}</span>)}
+                              {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700" title={tierLabel(tr, locale, false)}>{tierLabel(tr, locale).split(' ')[0]}</span>)}
                               {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡</span>}
                               {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱{it.max_days}</span>}
                               {(it.specFileObj || it.spec_file_url) && <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600">📎</span>}
@@ -1055,7 +1052,6 @@ export default function NewRFQPage() {
                 ) : (
                   <div className="space-y-2.5">
                     {items.map((it: any, i: any) => {
-                      const tierLabel = (tr: string) => tr === 'manufacturer' ? t.tierMfg : tr === 'commercial' ? t.tierCom : t.tierLoc
                       return (
                         <div key={i} className="rounded-xl border border-gray-100 p-3 hover:border-[#F5831F]/40 transition-colors">
                           <div className="flex items-start justify-between gap-2">
@@ -1066,7 +1062,7 @@ export default function NewRFQPage() {
                               <div className="flex flex-wrap gap-1 mt-1.5">
                                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{sectors[it.sector] || it.sector}</span>
                                 {(it.supplier_tiers || []).map((tr: string) => (
-                                  <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tr === 'manufacturer' ? '🏭' : tr === 'commercial' ? '🏪' : '🏬'} {tierLabel(tr)}</span>
+                                  <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tierLabel(tr, locale)}</span>
                                 ))}
                                 {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ {locale === 'en' ? 'in stock' : 'توفّر فوري'}</span>}
                                 {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{locale === 'en' ? 'd' : 'ي'}</span>}
@@ -1097,7 +1093,7 @@ export default function NewRFQPage() {
               {/* Target supplier types + verified-only */}
               <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
                 <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Supplier filters' : 'تصفية الموردين'}</h3>
-                <p className="text-xs text-gray-400 mb-4">{locale === 'en' ? 'Supplier type is chosen per material above. These apply to the whole request.' : 'نوع المورد يُحدّد لكل مادة بالأعلى. هذي الخيارات تنطبق على الطلب كامل.'}</p>
+                <p className="text-xs text-gray-400 mb-4">{locale === 'en' ? 'Supplier type is chosen per material above. These apply to the whole request.' : 'نوع المورد يُحدّد لكل مادة بالأعلى. هذه الخيارات تنطبق على الطلب بالكامل.'}</p>
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="text-sm font-semibold text-gray-800">{t.verifiedTitle}</div>
@@ -1255,13 +1251,13 @@ export default function NewRFQPage() {
               <div className="text-center py-4">
                 <div className="text-5xl mb-3">✅</div>
                 <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Request sent' : 'تم إرسال طلبك'}</h3>
-                <p className="text-sm text-gray-500 mb-5">{locale === 'en' ? 'The admin will review it and add it to the catalog — then you can request it.' : 'راح تراجعها الإدارة وتضيفها للقائمة بعد الاعتماد، وبعدها تقدر تطلبها.'}</p>
+                <p className="text-sm text-gray-500 mb-5">{locale === 'en' ? 'The admin will review it and add it to the catalog — then you can request it.' : 'ستراجعها الإدارة وتضيفها إلى القائمة بعد الاعتماد، ثم يمكنك طلبها.'}</p>
                 <button type="button" onClick={() => setMatReqOpen(false)} className="px-6 py-2.5 rounded-xl font-semibold text-white text-sm" style={{ background: '#1B2D5B' }}>{locale === 'en' ? 'Done' : 'تمام'}</button>
               </div>
             ) : (
               <>
                 <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>➕ {locale === 'en' ? 'Request a new material' : 'طلب إضافة مادة جديدة'}</h3>
-                <p className="text-xs text-gray-400 mb-4">{locale === 'en' ? 'Reviewed by the admin before it appears — so it reaches the right suppliers.' : 'تُراجَع من الإدارة قبل ظهورها في القائمة، عشان توصل للموردين الصح.'}</p>
+                <p className="text-xs text-gray-400 mb-4">{locale === 'en' ? 'Reviewed by the admin before it appears — so it reaches the right suppliers.' : 'تُراجَع من الإدارة قبل ظهورها في القائمة، لتصل إلى الموردين المناسبين.'}</p>
 
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Sector' : 'القطاع'}</label>
                 <div className="input-field mb-3 bg-gray-50 text-sm font-semibold" style={{ color: '#1B2D5B' }}>{(sectorMeta as any)[sector]?.ar || sector || '—'}</div>

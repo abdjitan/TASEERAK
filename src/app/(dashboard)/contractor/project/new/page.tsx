@@ -7,6 +7,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
+import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel } from '@/types'
 
 // تجميع بنود الـ BOQ حسب المجموعة (مثل قوائم التسعير) — يحتفظ بالفهرس الأصلي لكل بند
@@ -244,7 +245,7 @@ export default function NewProjectPage() {
     // نرسل المصنّفة فقط، ونبقي غير المصنّفة لدى المقاول ليصنّفها لاحقاً.
     const classifiedItems = items.filter((i: any) => i.selected && i.product_name && !i.needs_classification)
     if (unclassifiedCount > 0) {
-      const ok = confirm(`فيه ${unclassifiedCount} بند غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)
+      const ok = confirm(`يوجد ${unclassifiedCount} بند غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)
       if (!ok) return
     }
     if (classifiedItems.length === 0) { alert('لا توجد بنود مصنّفة للإرسال — اختر تصنيف البنود أولاً.'); return }
@@ -794,12 +795,8 @@ export default function NewProjectPage() {
                 : 'اختر نوع الموردين — اتركه فارغاً للجميع'}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-                {[
-                  { key: 'manufacturer', icon: '🏭', label: locale === 'en' ? 'Factory / Major' : locale === 'ur' ? 'فیکٹری / بڑا' : 'مصنع / مورد رئيسي', desc: locale === 'en' ? 'Production or bulk supply' : locale === 'ur' ? 'بڑی سپلائی' : 'إنتاج أو توريد بكميات كبيرة' },
-                  { key: 'commercial', icon: '🏪', label: locale === 'en' ? 'Commercial Supplier' : locale === 'ur' ? 'تجارتی سپلائر' : 'مورد تجاري', desc: locale === 'en' ? 'Regular medium-volume supply' : locale === 'ur' ? 'باقاعدہ درمیانی سپلائی' : 'توريد بكميات متوسطة ومنتظمة' },
-                  { key: 'local', icon: '🏬', label: locale === 'en' ? 'Local Supplier' : locale === 'ur' ? 'مقامی سپلائر' : 'مورد محلي', desc: locale === 'en' ? 'Small-medium, direct service' : locale === 'ur' ? 'چھوٹی تا درمیانی' : 'بكميات صغيرة إلى متوسطة وخدمة مباشرة' },
-                ].map((tier: any) => {
-                  const active = targetTiers.includes(tier.key)
+                {TIERS.map(k => ({ key: k, icon: TIER_INFO[k].icon, label: tierLabel(k, locale, false), desc: tierHint(k, locale) })).map((tier: any) => {
+                  const active = targetTiers.map(normTier).includes(tier.key)
                   return (
                     <button key={tier.key} type="button" onClick={() => toggleTier(tier.key)}
                       className={`p-3 rounded-xl border-2 text-start transition-all ${active ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, enough: false, message: 'لا يوجد عرضان أو أكثر للمقارنة بعد.' })
   }
 
-  const tierAr: Record<string, string> = { manufacturer: 'مصنع', commercial: 'تاجر', local: 'محلي' }
+  const tierAr: Record<string, string> = { company: 'شركة معتمدة', shop: 'محل أو مؤسسة', independent: 'بائع مستقل', manufacturer: 'شركة معتمدة', commercial: 'شركة معتمدة', local: 'محل أو مؤسسة' }
   // Supplier names are supplier-controlled text: never put them in the prompt (prompt injection,
   // OWASP LLM01). The model sees neutral labels; names are mapped back server-side below.
   const labelOf = (i: number) => 'مورد ' + String.fromCharCode(65 + (i % 26)) + (i >= 26 ? Math.floor(i / 26) : '')

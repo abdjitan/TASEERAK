@@ -246,8 +246,8 @@ export default function SpecialtiesPage() {
 
         {/* اختيار القطاعات + التخصصات — منتقي موحّد مع «أكمل ملفك» (نفس التصنيفات والأيقونات) */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
-          <p className="text-sm font-bold mb-0.5" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Quick pick: what do you sell?' : locale === 'ur' ? 'فوری انتخاب: آپ کیا بیچتے ہیں؟' : 'اختيار سريع: شو بتبيع؟'}</p>
-          <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects a whole kind of business.' : locale === 'ur' ? 'ایک کلک میں پورا کاروبار۔' : 'ضغطة وحدة بتختار كل مواد هالنوع من المحلات.'}</p>
+          <p className="text-sm font-bold mb-0.5" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Quick pick: what do you sell?' : locale === 'ur' ? 'فوری انتخاب: آپ کیا بیچتے ہیں؟' : 'اختيار سريع: ماذا تبيع؟'}</p>
+          <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects a whole kind of business.' : locale === 'ur' ? 'ایک کلک میں پورا کاروبار۔' : 'بضغطة واحدة تختار جميع مواد هذا النوع من المحلات.'}</p>
           <div className="mb-6"><SupplierPackPicker sectors={mySectors} specialties={mySpecialties} locale={locale} onChange={(n: any) => { setMySectors(n.sectors); setMySpecialties(n.specialties) }} /></div>
           <h2 className="font-bold mb-4 text-sm" style={{ color: '#1B2D5B' }}>{T.selectSectors}</h2>
           <SpecialtyPicker

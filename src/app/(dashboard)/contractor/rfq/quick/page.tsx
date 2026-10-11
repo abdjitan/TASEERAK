@@ -138,7 +138,7 @@ export default function QuickRequestPage() {
     try {
       const r = await fetch('/api/quick-request/parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })
       const j = await r.json()
-      if (!r.ok) { setError(j?.error || L('Could not read the list. Try again.', 'فہرست نہیں پڑھ سکے۔', 'ما قدرنا نقرأ القائمة. جرّب كمان مرة.')); return }
+      if (!r.ok) { setError(j?.error || L('Could not read the list. Try again.', 'فہرست نہیں پڑھ سکے۔', 'تعذّرت قراءة القائمة. حاول مرة أخرى.')); return }
       const add: Line[] = (j.items || []).map((it: any) => ({
         key: uid(), product_name: it.product_name, sector: it.sector,
         quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details: it.details || '',
@@ -148,7 +148,7 @@ export default function QuickRequestPage() {
       setLines(prev => [...prev, ...add])
       setText('')
     } catch {
-      setError(L('Network error. Try again.', 'نیٹ ورک خرابی۔', 'مشكلة بالاتصال. جرّب كمان مرة.'))
+      setError(L('Network error. Try again.', 'نیٹ ورک خرابی۔', 'حدثت مشكلة في الاتصال. حاول مرة أخرى.'))
     } finally { setParsing(false) }
   }
 
@@ -158,7 +158,7 @@ export default function QuickRequestPage() {
     if (!files) return
     for (const file of Array.from(files).slice(0, 6)) {
       if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 6 * 1024 * 1024) {
-        setError(L('Photos must be JPG/PNG/WEBP under 6 MB.', 'تصویر JPG/PNG/WEBP اور 6MB سے کم ہو۔', 'الصورة لازم تكون JPG أو PNG أو WEBP وأقل من ٦ ميغا.'))
+        setError(L('Photos must be JPG/PNG/WEBP under 6 MB.', 'تصویر JPG/PNG/WEBP اور 6MB سے کم ہو۔', 'يجب أن تكون الصورة بصيغة JPG أو PNG أو WEBP وأقل من ٦ ميغابايت.'))
         continue
       }
       const id = uid()
@@ -193,10 +193,10 @@ export default function QuickRequestPage() {
 
   async function send() {
     setError('')
-    if (!lines.length) { setError(L('Add at least one item.', 'کم از کم ایک چیز شامل کریں۔', 'ضيف مادة وحدة عالأقل.')); return }
+    if (!lines.length) { setError(L('Add at least one item.', 'کم از کم ایک چیز شامل کریں۔', 'أضف مادة واحدة على الأقل.')); return }
     const bad = lines.find(l => !l.product_name.trim() || !(parseFloat(l.quantity) > 0) || !l.unit)
-    if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر بدو اسم وكمية ووحدة.')); return }
-    if (!region) { setError(L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختار منطقتك.')); return }
+    if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر يحتاج إلى اسم وكمية ووحدة.')); return }
+    if (!region) { setError(L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختر منطقتك.')); return }
     setSending(true)
     const supabase = createClient()
     try {
@@ -238,8 +238,8 @@ export default function QuickRequestPage() {
       })
       if (insErr) {
         setError((insErr.message || '').includes('rfq_daily_limit')
-          ? L('Daily request limit reached. Try again later.', 'روزانہ حد پوری ہو گئی۔', 'وصلت الحد اليومي للطلبات. جرّب بعدين.')
-          : L('Could not send. Try again.', 'نہیں بھیج سکے۔', 'ما قدرنا نبعت الطلب. جرّب كمان مرة.'))
+          ? L('Daily request limit reached. Try again later.', 'روزانہ حد پوری ہو گئی۔', 'وصلت إلى الحد اليومي للطلبات. حاول لاحقاً.')
+          : L('Could not send. Try again.', 'نہیں بھیج سکے۔', 'تعذّر إرسال الطلب. حاول مرة أخرى.'))
         return
       }
       deleteDraftBlobs(photos.map(p => p.id))
@@ -258,8 +258,8 @@ export default function QuickRequestPage() {
       <AppShell title={L('Quick request', 'فوری درخواست', 'طلب سريع')} nav={getNav('contractor', locale, '/contractor/rfq/new')} dir={dir}>
         <div className="max-w-lg mx-auto bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
           <div className="text-5xl mb-4">✅</div>
-          <h2 className="text-2xl font-extrabold text-navy mb-2">{L('Request sent', 'درخواست بھیج دی گئی', 'انبعت طلبك')}</h2>
-          <p className="text-gray-500 mb-6">{L('Suppliers near you will send their prices. We will notify you as quotes arrive.', 'قریبی سپلائرز قیمتیں بھیجیں گے۔', 'الموردين القريبين منك رح يبعتوا أسعارهم، وبنبلّغك أول ما يوصل عرض.')}</p>
+          <h2 className="text-2xl font-extrabold text-navy mb-2">{L('Request sent', 'درخواست بھیج دی گئی', 'تم إرسال طلبك')}</h2>
+          <p className="text-gray-500 mb-6">{L('Suppliers near you will send their prices. We will notify you as quotes arrive.', 'قریبی سپلائرز قیمتیں بھیجیں گے۔', 'سيرسل الموردون القريبون منك أسعارهم، وسنُبلغك فور وصول أي عرض.')}</p>
           <div className="flex gap-3">
             <Link href="/contractor" className="flex-1 py-3 rounded-xl font-bold text-white" style={{ background: '#1B2D5B' }}>{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
             <button type="button" onClick={() => { setDone(false); setLines([]); setPhotos([]); setNotes('') }} className="flex-1 py-3 rounded-xl font-bold border border-gray-200 text-gray-700">{L('New request', 'نئی درخواست', 'طلب جديد')}</button>
@@ -273,8 +273,8 @@ export default function QuickRequestPage() {
     <AppShell title={L('Quick request', 'فوری درخواست', 'طلب سريع')} nav={getNav('contractor', locale, '/contractor/rfq/new')} dir={dir}>
       <div className="max-w-3xl mx-auto space-y-5 pb-28">
         <div>
-          <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'شو بدك؟')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, or take a photo. We will organise it into a list.', 'لکھیں، بولیں یا تصویر لیں۔', 'اكتبها، أو احكيها، أو صوّرها. وإحنا منرتّبها لك بقائمة.')}
+          <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, or take a photo. We will organise it into a list.', 'لکھیں، بولیں یا تصویر لیں۔', 'اكتبها، أو تحدّث بها، أو صوّرها، وسنرتّبها لك في قائمة.')}
             {' '}<Link href="/contractor/rfq/new" className="font-bold text-[#d96f15] hover:underline">{L('Detailed request for engineers →', 'تفصیلی درخواست →', 'طلب تفصيلي للمهندسين ←')}</Link>
           </p>
         </div>
@@ -287,12 +287,12 @@ export default function QuickRequestPage() {
             placeholder={L('e.g. 10 bags cement, 500 hollow blocks 20cm, 2 tons rebar 12mm', 'مثلاً: 10 بوری سیمنٹ، 500 بلاک', 'مثلاً: ١٠ أكياس أسمنت، ٥٠٠ بلك ٢٠، ٢ طن حديد ١٢')} />
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={parseText} disabled={!text.trim() || parsing} className="btn-orange px-5 py-2.5 rounded-xl font-bold disabled:opacity-50">
-              {parsing ? L('Reading…', 'پڑھ رہے ہیں…', 'عم نقرأ…') : L('Organise my list', 'فہرست ترتیب دیں', 'رتّب قائمتي')}
+              {parsing ? L('Reading…', 'پڑھ رہے ہیں…', 'جارٍ القراءة…') : L('Organise my list', 'فہرست ترتیب دیں', 'رتّب قائمتي')}
             </button>
             {canListen && (
               <button type="button" onClick={toggleMic} aria-pressed={listening}
                 className={`px-4 py-2.5 rounded-xl font-bold border transition-all ${listening ? 'bg-red-50 border-red-300 text-red-600 animate-pulse' : 'bg-white border-gray-200 text-gray-700'}`}>
-                {listening ? '⏺ ' + L('Listening… tap to stop', 'سن رہے ہیں…', 'عم اسمعك… اضغط لتوقف') : '🎤 ' + L('Say it', 'بولیں', 'احكيها')}
+                {listening ? '⏺ ' + L('Listening… tap to stop', 'سن رہے ہیں…', 'جارٍ الاستماع… اضغط للإيقاف') : '🎤 ' + L('Say it', 'بولیں', 'تحدّث')}
               </button>
             )}
             <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
@@ -313,8 +313,8 @@ export default function QuickRequestPage() {
               <span className="text-xs text-gray-400">{L('Check each line before sending', 'بھیجنے سے پہلے چیک کریں', 'راجع كل سطر قبل الإرسال')}</span>
             </div>
             <div className="flex items-center justify-between text-[11px] text-gray-400">
-              <span>💾 {L('Saved on this device, you can leave and come back', 'اس ڈیوائس پر محفوظ ہے، واپس آ سکتے ہیں', 'محفوظة على جهازك، بتقدر تطلع وترجع')}</span>
-              <button type="button" onClick={() => { if (window.confirm(L('Clear the whole list?', 'پوری فہرست صاف کریں؟', 'تمسح القائمة كلها؟'))) startOver() }} className="font-bold text-gray-500 hover:text-red-500">
+              <span>💾 {L('Saved on this device, you can leave and come back', 'اس ڈیوائس پر محفوظ ہے، واپس آ سکتے ہیں', 'محفوظة على جهازك، يمكنك المغادرة والعودة لاحقاً')}</span>
+              <button type="button" onClick={() => { if (window.confirm(L('Clear the whole list?', 'پوری فہرست صاف کریں؟', 'هل تريد مسح القائمة بالكامل؟'))) startOver() }} className="font-bold text-gray-500 hover:text-red-500">
                 {L('Start over', 'نئے سرے سے', 'ابدأ من جديد')}
               </button>
             </div>
@@ -326,17 +326,17 @@ export default function QuickRequestPage() {
                     {ph && <img src={ph.url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0 border border-gray-100" />}
                     <div className="flex-1 min-w-0 space-y-1">
                       <input value={l.product_name} onChange={e => updateLine(l.key, { product_name: e.target.value })} aria-label={L('Item name', 'نام', 'اسم المادة')}
-                        className="input-field font-semibold" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'عم نتعرّف عالصورة…') : L('Item name', 'نام', 'اسم المادة')} />
+                        className="input-field font-semibold" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'جارٍ التعرّف على الصورة…') : L('Item name', 'نام', 'اسم المادة')} />
                       {locale !== 'ar' && l.original && !ph && (
                         <p className="text-[11px] font-semibold text-gray-700" dir="auto">= {l.original}</p>
                       )}
                       {ph && ph.status === 'done' && (
-                        <p className="text-[11px] text-gray-500">🤖 {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'مش متأكد') : ''}
+                        <p className="text-[11px] text-gray-500">🤖 {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'غير متأكد') : ''}
                           {locale !== 'ar' && ph.localName && <span className="block font-semibold text-gray-700" dir="auto">= {ph.localName}</span>}
                         </p>
                       )}
                       {ph && ph.status === 'failed' && (
-                        <p className="text-[11px] text-gray-500">{L('Could not recognise it. Write the name, or just send the photo to suppliers.', 'پہچان نہیں سکے۔', 'ما عرفناها. اكتب اسمها، أو ابعت الصورة للموردين وهنّي بيعرفوها.')}</p>
+                        <p className="text-[11px] text-gray-500">{L('Could not recognise it. Write the name, or just send the photo to suppliers.', 'پہچان نہیں سکے۔', 'تعذّر التعرّف عليها. اكتب اسمها، أو أرسل الصورة للموردين ليتعرّفوا عليها.')}</p>
                       )}
                       {l.suggestion && l.suggestion.name !== l.product_name && (
                         <button type="button" onClick={() => updateLine(l.key, { product_name: l.suggestion!.name, sector: l.suggestion!.sector, suggestion: null })}
@@ -361,7 +361,7 @@ export default function QuickRequestPage() {
                   {ph && (
                     <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
                       <input type="checkbox" checked={ph.share} onChange={e => setPhotos(prev => prev.map(p => p.id === ph.id ? { ...p, share: e.target.checked } : p))} className="w-4 h-4 accent-[#0F6E56]" />
-                      {L('Send this photo to suppliers so they quote the same item', 'یہ تصویر سپلائرز کو بھیجیں', 'ابعت الصورة للموردين ليسعّروا نفس الشي')}
+                      {L('Send this photo to suppliers so they quote the same item', 'یہ تصویر سپلائرز کو بھیجیں', 'أرسل الصورة للموردين ليسعّروا المادة نفسها')}
                     </label>
                   )}
                 </div>
@@ -388,7 +388,7 @@ export default function QuickRequestPage() {
               <summary className="cursor-pointer text-xs font-bold text-[#d96f15] select-none">{L('More options (optional)', 'مزید اختیارات', 'خيارات إضافية (اختياري)')}</summary>
               <div className="mt-3 space-y-3">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Suppliers can send prices for', 'قیمت بھیجنے کا وقت', 'الموردين بيقدروا يبعتوا أسعار خلال')}</label>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Suppliers can send prices for', 'قیمت بھیجنے کا وقت', 'يمكن للموردين إرسال الأسعار خلال')}</label>
                   <select value={hours} onChange={e => setHours(parseInt(e.target.value))} className="input-field">
                     {[6, 24, 48, 72, 168].map(h => <option key={h} value={h}>{h < 24 ? `${h} ${L('hours', 'گھنٹے', 'ساعات')}` : `${h / 24} ${L('day(s)', 'دن', h === 24 ? 'يوم' : 'أيام')}`}</option>)}
                   </select>
@@ -396,7 +396,7 @@ export default function QuickRequestPage() {
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-sm" placeholder={L('Notes for suppliers (optional)', 'نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={hideIdentity} onChange={e => setHideIdentity(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
-                  {L('Hide my name until I choose a supplier', 'سپلائر چننے تک نام چھپائیں', 'اخفي اسمي لين اختار مورد')}
+                  {L('Hide my name until I choose a supplier', 'سپلائر چننے تک نام چھپائیں', 'إخفاء اسمي حتى أختار المورد')}
                 </label>
               </div>
             </details>
@@ -410,7 +410,7 @@ export default function QuickRequestPage() {
             <span className="text-sm text-gray-500">{lines.length} {L('items', 'اشیاء', 'مواد')}</span>
             <button type="button" onClick={send} disabled={sending || photos.some(p => p.status === 'identifying')}
               className="btn-orange px-6 py-3 rounded-xl font-extrabold disabled:opacity-50">
-              {sending ? L('Sending…', 'بھیج رہے ہیں…', 'عم نبعت…') : ready ? L('Send for prices', 'قیمت منگوائیں', 'ابعت لطلب الأسعار') : L('Complete the lines', 'لائنیں مکمل کریں', 'كمّل الأسطر')}
+              {sending ? L('Sending…', 'بھیج رہے ہیں…', 'جارٍ الإرسال…') : ready ? L('Send for prices', 'قیمت منگوائیں', 'أرسل طلب التسعير') : L('Complete the lines', 'لائنیں مکمل کریں', 'أكمل البيانات')}
             </button>
           </div>
         </div>

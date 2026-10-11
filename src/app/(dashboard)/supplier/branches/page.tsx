@@ -75,7 +75,7 @@ export default function SupplierBranchesPage() {
         </div>
 
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-700">
-          💡 مثال: لو عندك فروع في الرياض وجدة والدمام، أضف الثلاثة — وراح توصلك طلبات التسعير من المقاولين في كل هذي المناطق.
+          💡 مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المقاولين في جميع هذه المناطق.
         </div>
 
         {!showForm && (

@@ -13,6 +13,7 @@ import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import DealProtection from '@/components/shared/DealProtection'
+import { tierLabel, sourceLabel, availabilityLabel, isDirectSource } from '@/lib/sellers'
 
 export default function OfferDetailPage() {
   const { id, offerId } = useParams()
@@ -113,7 +114,7 @@ export default function OfferDetailPage() {
   const exSum = exList.reduce((a: any, e: any) => a + (Number(e.amount) || 0), 0)
   const goods = (Number(offer.total_price) || 0) - exSum
   const ip = Array.isArray(offer.item_prices) ? offer.item_prices : []
-  const tierLabel = s.supplier_tier === 'manufacturer' ? '🏭 مصنع / مورد رئيسي' : s.supplier_tier === 'commercial' ? '🏪 مورد تجاري' : '🏬 مورد محلي'
+  const tierText = tierLabel(s.supplier_tier, 'ar')
   // خصوصية المورد: رقم التواصل (والواتساب) لا يظهران إلا بعد قبول العرض (الترسية).
   // قبلها يتواصل المقاول عبر الدردشة الداخلية فقط. رقم phone للمنصة/الإشعارات لا يظهر.
   const accepted = offer.status === 'accepted'
@@ -184,12 +185,18 @@ export default function OfferDetailPage() {
           <h2 className="font-bold text-sm mb-3" style={{ color: '#1B2D5B' }}>🏪 المورد</h2>
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="font-bold text-gray-900">{s.company_name_ar || 'مورد'}</span>
-            {s.supplier_tier && <span className="badge text-[10px] bg-[#F5831F]/5 text-[#d96f15]">{tierLabel}</span>}
+            {s.supplier_tier && <span className="badge text-[10px] bg-[#F5831F]/5 text-[#d96f15]">{tierText}</span>}
             {s.verification_status === 'verified' && (
               <span className="badge text-[10px]" style={s.cr_verification_source === 'wathq' ? { background: '#0F6E56', color: '#fff' } : { background: '#E1F5EE', color: '#0F6E56' }}>
                 {s.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}
               </span>
             )}
+            {offer.source_type && (
+              <span className={`badge text-[10px] ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                {isDirectSource(offer.source_type) ? '✓ سعر مباشر من البائع' : sourceLabel(offer.source_type, 'ar')}
+              </span>
+            )}
+            {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600">{availabilityLabel(offer.availability, 'ar')}</span>}
             {Array.isArray(s.approvals) && s.approvals.map((a: string) => (
               <span key={a} className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>🏅 معتمد لدى {approvalLabel(a)}</span>
             ))}
@@ -334,7 +341,7 @@ export default function OfferDetailPage() {
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !reqBusy && setReqOpen(false)}>
             <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={(e: any) => e.stopPropagation()}>
               <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>📉 طلب تخفيض إضافي</h3>
-              <p className="text-xs text-gray-500 mb-4">نرسل طلباً للمورد لتخفيض سعره، ويرد خلال المهلة اللي تحددها أنت.</p>
+              <p className="text-xs text-gray-500 mb-4">نرسل طلباً للمورد لتخفيض سعره، ويرد خلال المهلة التي تحددها أنت.</p>
               <label className="block text-xs font-bold text-gray-500 mb-1">مهلة الرد</label>
               <select value={reqHours} onChange={(e: any) => setReqHours(Number(e.target.value))} className="input-field mb-3">
                 <option value={6}>٦ ساعات</option>
@@ -358,7 +365,7 @@ export default function OfferDetailPage() {
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !infoBusy && setInfoOpen(false)}>
             <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir="rtl" onClick={(e: any) => e.stopPropagation()}>
               <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>❓ طلب معلومات إضافية</h3>
-              <p className="text-xs text-gray-500 mb-3">وش المعلومات اللي تبيها عن المنتج؟ (النوع، المواصفات، المنشأ، الضمان…)</p>
+              <p className="text-xs text-gray-500 mb-3">ما المعلومات التي تريدها عن المنتج؟ (النوع، المواصفات، المنشأ، الضمان…)</p>
               <textarea value={infoText} onChange={(e: any) => setInfoText(e.target.value)} rows={3} className="input-field mb-3" placeholder="مثال: ما منشأ الحديد؟ هل يطابق مواصفة ASTM؟ هل يوجد شهادة جودة؟" />
               <div className="flex gap-2">
                 <button type="button" disabled={infoBusy} onClick={submitInfoRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoBusy ? 'جارٍ الإرسال...' : 'إرسال للمورد'}</button>

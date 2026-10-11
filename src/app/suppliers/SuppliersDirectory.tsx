@@ -4,14 +4,10 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { scoreColor, approvalLabel } from '@/lib/supplierScore'
 import { SECTOR_LABELS } from '@/types'
+import { TIERS, tierLabel, normTier } from '@/lib/sellers'
 
 // دليل الموردين مع بحث وفلاتر (منطقة/قطاع/نوع/موثّق) — يستقبل القائمة مُرتّبة
 // ومحسوبة الدرجة من صفحة الخادم ويُصفّيها في المتصفح (قائمة محدودة).
-const TIERS: Record<string, string> = {
-  manufacturer: '🏭 مصنع / مورد رئيسي',
-  commercial: '🏪 مورد تجاري',
-  local: '🏬 مورد محلي',
-}
 
 function rankBadge(i: number) {
   if (i === 0) return { e: '🥇', c: '#D4AF37' }
@@ -37,7 +33,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
       (needle === '' || (s.company_name_ar || '').includes(needle)) &&
       (region === '' || s.region === region) &&
       (sector === '' || (Array.isArray(s.sectors) && s.sectors.includes(sector))) &&
-      (tier === '' || s.supplier_tier === tier) &&
+      (tier === '' || (s.supplier_tier && normTier(s.supplier_tier) === tier)) &&
       (!verifiedOnly || s.verification_status === 'verified')
     )
   }, [suppliers, q, region, sector, tier, verifiedOnly])
@@ -62,9 +58,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
           </select>
           <select value={tier} onChange={(e: any) => setTier(e.target.value)} className={selectCls}>
             <option value="">كل الأنواع</option>
-            <option value="manufacturer">مصنع / رئيسي</option>
-            <option value="commercial">تجاري</option>
-            <option value="local">محلي</option>
+            {TIERS.map(t => <option key={t} value={t}>{tierLabel(t, 'ar', false)}</option>)}
           </select>
           <button type="button" onClick={() => setVerifiedOnly((v) => !v)}
             className={`rounded-xl px-2 py-2 text-sm font-semibold border transition-colors ${verifiedOnly ? 'bg-[#0F6E56] text-white border-[#0F6E56]' : 'bg-white text-gray-600 border-gray-200 hover:border-[#0F6E56]/40'}`}>
@@ -99,7 +93,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                     {r.verification_status === 'verified' && <span className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>✓ موثّق</span>}
                   </div>
                   <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
-                    <span>{TIERS[r.supplier_tier] || '🏬 مورد'}</span>
+                    <span>{r.supplier_tier ? tierLabel(r.supplier_tier, 'ar') : '🏬 مورد'}</span>
                     {r.region && <span>📍 {r.region}</span>}
                     {rating > 0 && <span>⭐ {rating.toFixed(1)}</span>}
                     <span>📦 {r.total_offers} عرض</span>
