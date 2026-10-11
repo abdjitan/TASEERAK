@@ -726,6 +726,9 @@ export default function RFQDetailPage() {
                             {offer.supplier?.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}
                           </span>
                         )}
+                        {offer.supplier && offer.supplier.verification_status !== 'verified' && offer.supplier.cr_verification_source !== 'wathq' && (
+                          <span className="badge text-[10px] bg-gray-100 text-gray-500" title="لم يوثّق البائع سجله التجاري بعد؛ اعتمد على تقييماته ومصدر السعر">غير موثّق بعد</span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-xs text-gray-400 mt-0.5">
                         {offer.supplier?.rating_avg > 0 && <span>⭐ {offer.supplier.rating_avg}</span>}

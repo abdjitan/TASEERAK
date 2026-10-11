@@ -285,7 +285,7 @@ export default function SupplierDashboard() {
               <span className="text-2xl">🎉</span>
               <div className="flex-1">
                 <div className="font-bold text-sm text-white">{locale === 'en' ? 'Free launch period — all features open' : 'فترة إطلاق مجانية — كل الميزات مفتوحة'}</div>
-                <div className="text-xs text-emerald-50">{locale === 'en' ? 'Enjoy everything free now. See the future plans →' : 'استمتع بكل شي مجاناً الآن. اطّلع على باقات المستقبل ←'}</div>
+                <div className="text-xs text-emerald-50">{locale === 'en' ? 'Enjoy everything free now. See the future plans →' : 'استمتع بجميع الميزات مجاناً الآن. اطّلع على الباقات القادمة ←'}</div>
               </div>
             </div>
           </Link>

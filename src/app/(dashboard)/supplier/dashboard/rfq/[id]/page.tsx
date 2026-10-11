@@ -393,7 +393,12 @@ export default function SupplierRFQPage() {
       attachment_name: attachName,
     })
 
-    if (insertError) { setError(`خطأ: ${insertError.message}`); setSubmitting(false); return }
+    if (insertError) {
+      setError((insertError.message || '').includes('offer_rate_limited')
+        ? (locale === 'en' ? 'Too many offers in the last hour. Verify your account to remove the limit, or try again later.' : locale === 'ur' ? 'ایک گھنٹے میں بہت زیادہ پیشکشیں۔ بعد میں کوشش کریں۔' : 'تجاوزت عدد العروض المسموح في الساعة. وثّق حسابك لإزالة الحد، أو حاول لاحقاً.')
+        : `خطأ: ${insertError.message}`)
+      setSubmitting(false); return
+    }
     setSuccess(true); setSubmitting(false)
   }
 
@@ -412,7 +417,7 @@ export default function SupplierRFQPage() {
       location: 'الموقع', contractor: 'المقاول', spec: 'المواصفات', notes: 'ملاحظات',
       delivery: 'التوصيل', vat: 'فاتورة ضريبية', required: 'مطلوب', notRequired: 'غير مطلوب',
       submitOffer: 'تقديم عرض سعر', totalPrice: 'السعر الإجمالي (ر.س)', unitPrice: 'سعر الوحدة (ر.س)',
-      verifyFirst: 'وثّق حسابك لتقديم عرض', verifyFirstSub: 'تقديم العروض المسعّرة متاح للموردين الموثّقين فقط. أكمل توثيق سجلك التجاري ومستنداتك ثم عُد لتسعير هذا الطلب.', verifyFirstCta: 'أكمل التوثيق ←',
+      verifyFirst: 'أكمل ملفك لتقديم العروض', verifyFirstSub: 'حدّد موقعك وتخصصاتك وأكّد بريدك الإلكتروني، ثم عُد لتسعير هذا الطلب. التوثيق اختياري، ويمنح عروضك شارة «موثّق».', verifyFirstCta: 'أكمل ملفك ←',
       deliveryDays: 'مدة التوصيل (أيام)', attributes: 'خصائص المنتج المعروض',
       attrHint: 'أضف خصائص مثل: العلامة التجارية، بلد المنشأ، الضمان...',
       attrKey: 'الخاصية', attrValue: 'القيمة', addAttr: '+ إضافة خاصية',
@@ -434,7 +439,7 @@ export default function SupplierRFQPage() {
       location: 'Location', contractor: 'Contractor', spec: 'Specification', notes: 'Notes',
       delivery: 'Delivery', vat: 'Tax Invoice', required: 'Required', notRequired: 'Not Required',
       submitOffer: 'Submit Price Offer', totalPrice: 'Total Price (SAR)', unitPrice: 'Unit Price (SAR)',
-      verifyFirst: 'Verify your account to submit an offer', verifyFirstSub: 'Submitting priced offers is available to verified suppliers only. Complete your CR and document verification, then come back to price this request.', verifyFirstCta: 'Complete verification →',
+      verifyFirst: 'Complete your profile to submit offers', verifyFirstSub: 'Set your location and specialties and confirm your email, then come back to price this request. Verification is optional and adds a «Verified» badge to your offers.', verifyFirstCta: 'Complete your profile →',
       deliveryDays: 'Delivery Time (days)', attributes: 'Product Attributes',
       attrHint: 'Add attributes like: Brand, Country of origin, Warranty...',
       attrKey: 'Attribute', attrValue: 'Value', addAttr: '+ Add Attribute',
@@ -456,7 +461,7 @@ export default function SupplierRFQPage() {
       location: 'مقام', contractor: 'ٹھیکیدار', spec: 'تفصیلات', notes: 'نوٹس',
       delivery: 'ڈیلیوری', vat: 'ٹیکس رسید', required: 'ضروری', notRequired: 'غیر ضروری',
       submitOffer: 'قیمت پیش کریں', totalPrice: 'کل قیمت (ریال)', unitPrice: 'فی یونٹ قیمت (ریال)',
-      verifyFirst: 'پیشکش دینے کے لیے اکاؤنٹ کی تصدیق کریں', verifyFirstSub: 'قیمت والی پیشکشیں صرف تصدیق شدہ سپلائرز کے لیے ہیں۔ اپنے CR اور دستاویزات کی تصدیق مکمل کریں، پھر واپس آ کر قیمت دیں۔', verifyFirstCta: 'تصدیق مکمل کریں →',
+      verifyFirst: 'پیشکش دینے کے لیے پروفائل مکمل کریں', verifyFirstSub: 'اپنا مقام اور مہارتیں منتخب کریں اور ای میل کی تصدیق کریں، پھر واپس آ کر قیمت دیں۔ تصدیق اختیاری ہے۔', verifyFirstCta: 'پروفائل مکمل کریں →',
       deliveryDays: 'ڈیلیوری وقت (دن)', attributes: 'پروڈکٹ کی خصوصیات',
       attrHint: 'خصوصیات شامل کریں: برانڈ، ملک، وارنٹی...',
       attrKey: 'خصوصیت', attrValue: 'قیمت', addAttr: '+ خصوصیت شامل کریں',
@@ -753,7 +758,7 @@ export default function SupplierRFQPage() {
             <div className="text-4xl mb-2">🛡️</div>
             <h3 className="font-bold" style={{ color: '#1B2D5B' }}>{T.verifyFirst}</h3>
             <p className="text-sm text-gray-500 mt-1 leading-relaxed">{T.verifyFirstSub}</p>
-            <Link href="/settings?tab=docs" className="inline-block mt-4 px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#F5831F' }}>{T.verifyFirstCta}</Link>
+            <Link href="/onboarding" className="inline-block mt-4 px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#F5831F' }}>{T.verifyFirstCta}</Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">

@@ -191,6 +191,9 @@ export default function OfferDetailPage() {
                 {s.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}
               </span>
             )}
+            {s.verification_status !== 'verified' && s.cr_verification_source !== 'wathq' && (
+              <span className="badge text-[10px] bg-gray-100 text-gray-500">غير موثّق بعد</span>
+            )}
             {offer.source_type && (
               <span className={`badge text-[10px] ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                 {isDirectSource(offer.source_type) ? '✓ سعر مباشر من البائع' : sourceLabel(offer.source_type, 'ar')}
