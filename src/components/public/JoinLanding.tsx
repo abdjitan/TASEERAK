@@ -23,7 +23,7 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
 
   const points = company
     ? [
-        [L('Requests from buyers near you', 'قریبی خریداروں کی درخواستیں', 'طلبات من مقاولين وأصحاب مشاريع قريبين منك'), L('Only the materials you sell reach you.', 'صرف آپ کا سامان۔', 'لا تصلك إلا طلبات المواد التي تبيعها.')],
+        [L('Requests from buyers near you', 'قریبی خریداروں کی درخواستیں', 'طلبات من مشترين قريبين منك'), L('Only the materials you sell reach you.', 'صرف آپ کا سامان۔', 'لا تصلك إلا طلبات المواد التي تبيعها.')],
         [L('Quote from your phone in a minute', 'ایک منٹ میں قیمت', 'سعّر من جوالك خلال دقيقة'), L('Per item, with VAT and delivery.', 'ہر آئٹم کی قیمت۔', 'سعر لكل مادة، مع الضريبة والتوصيل.')],
         [L('Verified badge', 'تصدیقی بیج', 'شارة «شركات ومصانع معتمدة»'), L('Verify your CR and buyers see you among verified companies.', 'سی آر کی تصدیق کریں۔', 'وثّق سجلك التجاري لتظهر للمشترين ضمن الشركات المعتمدة.')],
         [L('Your team', 'آپ کی ٹیم', 'فريق مبيعاتك'), L('Add your sales staff so they quote on behalf of the company.', 'اپنے ملازمین شامل کریں۔', 'أضف موظفي المبيعات ليقدّموا العروض باسم الشركة.')],

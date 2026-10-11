@@ -31,7 +31,7 @@ const TR = {
   ar: {
     title: 'أنشئ حسابك', sub: 'دقيقة واحدة للبدء — تُكمل بياناتك بعد الدخول',
     supplier: 'أقدّم أسعار المواد', supplierDesc: 'شركة أو محل أو مصنع أو بائع مستقل',
-    contractor: 'أبحث عن أسعار', contractorDesc: 'مقاول أو صاحب مشروع: اطلب الأسعار وقارن العروض',
+    contractor: 'أبحث عن أسعار', contractorDesc: 'اطلب أسعار المواد من الموردين وقارن العروض',
     accountType: 'نوع الحساب', fullName: 'الاسم الكامل',
     company: 'اسم الشركة أو النشاط', companyHint: 'إن كنت فرداً اكتب اسمك',
     phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف على الأقل',
@@ -48,7 +48,7 @@ const TR = {
   en: {
     title: 'Create your account', sub: 'One minute to start — finish your details after signing in',
     supplier: 'I provide prices', supplierDesc: 'Company, shop, factory or independent seller',
-    contractor: 'I need prices', contractorDesc: 'Contractor or project owner: request and compare quotes',
+    contractor: 'I need prices', contractorDesc: 'Request material prices from suppliers and compare quotes',
     accountType: 'Account type', fullName: 'Full name',
     company: 'Company or business name', companyHint: 'If you are an individual, use your name',
     phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: 'At least 8 characters',

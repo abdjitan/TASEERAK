@@ -39,7 +39,7 @@ export default function WelcomePage() {
     {
       k: 'buyer',
       title: L('I need prices', 'مجھے قیمتیں چاہییں', 'أبحث عن أسعار'),
-      sub: L('Contractor, company, shop or owner: request prices and compare quotes.', 'قیمتیں منگوائیں اور موازنہ کریں۔', 'مقاول أو صاحب مشروع أو شركة: اطلب أسعار المواد وقارن العروض.'),
+      sub: L('Request material prices from nearby suppliers and compare quotes.', 'قریبی سپلائرز سے قیمتیں منگوائیں اور موازنہ کریں۔', 'اطلب أسعار المواد من الموردين القريبين وقارن العروض.'),
       icon: <path d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />,
     },
     {
