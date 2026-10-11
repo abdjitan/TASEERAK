@@ -11,6 +11,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import CatIcon from '@/components/shared/CatIcon'
 import { getNav } from '@/lib/nav'
+import { loadLocalDraft, saveLocalDraft, clearLocalDraft } from '@/lib/localDraft'
 import { useTranslation } from '@/i18n'
 
 const txt = {
@@ -399,6 +400,51 @@ export default function NewRFQPage() {
     })
   }, [user])
 
+  // حفظ تلقائي على الجهاز: لو طلع المقاول لصفحة تانية ورجع، بيلاقي المواد اللي دخّلها.
+  // (المسودة بقاعدة البيانات عبر «حفظ كمسودة» منفصلة؛ هاد للحماية من الضياع بس)
+  const [localReady, setLocalReady] = useState(false)
+  const [localRestored, setLocalRestored] = useState(false)
+  useEffect(() => {
+    if (!user) return
+    const qs = new URLSearchParams(window.location.search)
+    const d = (qs.get('draft') || qs.get('from')) ? null : loadLocalDraft<any>('rfqnew:' + user.id)
+    if (d && ((Array.isArray(d.items) && d.items.length) || d.productName)) {
+      if (Array.isArray(d.items)) setItems(d.items)
+      setRfqName(d.rfqName || ''); setSector(d.sector || ''); setGroup(d.group || '')
+      setProductName(d.productName || ''); setSpecs(d.specs || {}); setQuantity(d.quantity || ''); setUnit(d.unit || '')
+      setSpecification(d.specification || ''); setDraftTiers(Array.isArray(d.draftTiers) ? d.draftTiers : []); setManualEntry(!!d.manualEntry)
+      setRegion(d.region || ''); setCity(d.city || '')
+      setDeliveryRequired(d.deliveryRequired ?? true); setPickupScope(d.pickupScope || 'any')
+      setDeliveryLocation(d.deliveryLocation || ''); setDeliveryGeo(d.deliveryGeo || '')
+      setVatRequired(d.vatRequired ?? true); setHideIdentity(d.hideIdentity ?? true)
+      setNearbyOnly(!!d.nearbyOnly); setTargetRegions(Array.isArray(d.targetRegions) ? d.targetRegions : []); setVerifiedOnly(!!d.verifiedOnly)
+      setTargetTiers(Array.isArray(d.targetTiers) ? d.targetTiers : []); setInStockOnly(!!d.inStockOnly); setMaxDeliveryDays(d.maxDeliveryDays || '')
+      setEstimatedValue(d.estimatedValue || ''); setNotes(d.notes || '')
+      setValidityHours(d.validityHours || 48); setCustomDeadline(d.customDeadline || ''); setShowCustomDate(!!d.showCustomDate)
+      setStep(d.step === 2 ? 2 : 1)
+      setLocalRestored(true)
+    }
+    setLocalReady(true)
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!localReady || !user || success) return
+    const tm = setTimeout(() => saveLocalDraft('rfqnew:' + user.id, {
+      items: items.map(({ specFileObj, ...rest }: any) => rest), // الملفات المختارة ما بتنحفظ
+      rfqName, sector, group, productName, specs, quantity, unit, specification, draftTiers, manualEntry, step,
+      region, city, deliveryRequired, pickupScope, deliveryLocation, deliveryGeo, vatRequired, hideIdentity,
+      nearbyOnly, targetRegions, verifiedOnly, targetTiers, inStockOnly, maxDeliveryDays, estimatedValue, notes,
+      validityHours, customDeadline, showCustomDate,
+    }), 400)
+    return () => clearTimeout(tm)
+  }, [localReady, user, success, items, rfqName, sector, group, productName, specs, quantity, unit, specification, draftTiers, manualEntry, step,
+      region, city, deliveryRequired, pickupScope, deliveryLocation, deliveryGeo, vatRequired, hideIdentity,
+      nearbyOnly, targetRegions, verifiedOnly, targetTiers, inStockOnly, maxDeliveryDays, estimatedValue, notes,
+      validityHours, customDeadline, showCustomDate])
+  function startOverLocal() {
+    if (user) clearLocalDraft('rfqnew:' + user.id)
+    window.location.href = '/contractor/rfq/new'
+  }
+
   // حفظ الطلب الحالي كمسودة (بلا نشر) — لا يظهر للموردين ولا يُحتسب ضمن الحد اليومي
   async function saveDraft() {
     if (!user) return
@@ -416,6 +462,7 @@ export default function NewRFQPage() {
     const title = rfqName || finalItems[0]?.product_name || (locale === 'en' ? 'Draft request' : 'مسودة طلب')
     if (draftId) await supabase.from('rfq_drafts').update({ title, data, updated_at: new Date().toISOString() }).eq('id', draftId)
     else await supabase.from('rfq_drafts').insert({ contractor_id: user.id, title, data })
+    clearLocalDraft('rfqnew:' + user.id)
     window.location.href = '/contractor'
   }
 
@@ -491,6 +538,7 @@ export default function NewRFQPage() {
       setError(friendly); setLoading(false); return
     }
     if (draftId) { try { await supabase.from('rfq_drafts').delete().eq('id', draftId) } catch {} } // نُشر → احذف المسودة
+    clearLocalDraft('rfqnew:' + user.id)
     setSuccess(true); setLoading(false)
   }
 
@@ -522,6 +570,14 @@ export default function NewRFQPage() {
           <Link href="/contractor/rfq/quick" className="mt-3 inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl border-2 hover:bg-[#F5831F]/5" style={{ borderColor: '#F5831F', color: '#d96f15' }}>
             ⚡ {locale === 'en' ? 'In a hurry? Quick request: write, say or photograph it' : locale === 'ur' ? 'جلدی ہے؟ فوری درخواست' : 'مستعجل؟ طلب سريع: اكتب، احكي، أو صوّر'}
           </Link>
+          {localRestored && (
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm rounded-xl px-4 py-2.5 border" style={{ background: '#0F6E5610', borderColor: '#0F6E5640', color: '#0F6E56' }}>
+              <span>💾 {locale === 'en' ? 'We kept what you entered last time.' : locale === 'ur' ? 'پچھلی بار کا درج کیا ہوا محفوظ ہے۔' : 'رجّعنا اللي كنت مدخّله آخر مرة.'}</span>
+              <button type="button" onClick={() => { if (window.confirm(locale === 'en' ? 'Clear it and start a new request?' : locale === 'ur' ? 'صاف کر کے نئی درخواست شروع کریں؟' : 'تمسحه وتبدأ طلب جديد؟')) startOverLocal() }} className="font-bold text-gray-500 hover:text-red-500 text-xs">
+                {locale === 'en' ? 'Start over' : locale === 'ur' ? 'نئے سرے سے' : 'ابدأ من جديد'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* مؤشّر الخطوات */}

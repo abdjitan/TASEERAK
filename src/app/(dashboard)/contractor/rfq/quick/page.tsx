@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory } from '@/types'
+import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 
 // Quick request: for anyone, no engineering terms. Write, dictate or photograph what you need;
 // we turn it into lines you can fix, then send. Detailed specs stay on /contractor/rfq/new.
@@ -30,6 +31,7 @@ type Photo = {
   status: 'identifying' | 'done' | 'failed'
   share: boolean
   confidence?: string
+  localName?: string // the AI's name in the buyer's language (the line itself keeps the Arabic trade name)
 }
 
 let seq = 0
@@ -55,6 +57,7 @@ export default function QuickRequestPage() {
   const [done, setDone] = useState(false)
   const recRef = useRef<any>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const [restored, setRestored] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -65,9 +68,46 @@ export default function QuickRequestPage() {
       const { data: p } = await supabase.from('profiles').select('region, city').eq('id', user.id).single()
       if (p?.region) setRegion(p.region)
       if (p?.city) setCity(p.city)
+      // Bring back what the buyer had entered before leaving the page.
+      const d = loadLocalDraft<any>('quick:' + user.id)
+      if (d) {
+        if (Array.isArray(d.lines)) setLines(d.lines)
+        if (typeof d.text === 'string') setText(d.text)
+        if (d.region) { setRegion(d.region); setCity(d.city || '') }
+        if (d.hours) setHours(d.hours)
+        if (typeof d.notes === 'string') setNotes(d.notes)
+        if (typeof d.hideIdentity === 'boolean') setHideIdentity(d.hideIdentity)
+        const back: Photo[] = []
+        for (const m of Array.isArray(d.photos) ? d.photos : []) {
+          const blob = await getDraftBlob(m.id)
+          if (!blob) continue
+          const file = new File([blob], m.name || 'photo', { type: m.type || blob.type })
+          back.push({ id: m.id, file, url: URL.createObjectURL(file), status: m.status, share: m.share !== false, confidence: m.confidence, localName: m.localName })
+        }
+        setPhotos(back)
+        // A photo still being recognised when the buyer left: recognise it again.
+        for (const ph of back) if (ph.status === 'identifying') identify(ph.id, ph.file)
+      }
+      setRestored(true)
     })()
     setCanListen(typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition))
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-save on this device so going to another page never loses the list.
+  useEffect(() => {
+    if (!restored || !userId || done) return
+    const t = setTimeout(() => saveLocalDraft('quick:' + userId, {
+      text, lines, region, city, hours, notes, hideIdentity,
+      photos: photos.map(p => ({ id: p.id, name: p.file.name, type: p.file.type, status: p.status, share: p.share, confidence: p.confidence, localName: p.localName })),
+    }), 300)
+    return () => clearTimeout(t)
+  }, [restored, userId, done, text, lines, region, city, hours, notes, hideIdentity, photos])
+
+  function startOver() {
+    deleteDraftBlobs(photos.map(p => p.id))
+    if (userId) clearLocalDraft('quick:' + userId)
+    setLines([]); setPhotos([]); setText(''); setNotes(''); setError('')
+  }
 
   // 🎤 Speech to text (browser built-in). The transcript is appended to the text box.
   function toggleMic() {
@@ -120,25 +160,30 @@ export default function QuickRequestPage() {
       }
       const id = uid()
       const url = URL.createObjectURL(file)
+      putDraftBlob(id, file)
       setPhotos(prev => [...prev, { id, file, url, status: 'identifying', share: true }])
       setLines(prev => [...prev, { key: uid(), product_name: '', sector: 'supply_store', quantity: '', unit: 'حبة', details: '', photoId: id }])
-      const fd = new FormData(); fd.append('image', file)
-      fetch('/api/quick-request/identify', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(j => {
-          const s = j?.suggestion
-          setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence } : p))
-          if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', suggestion: s.catalog_suggestion || null } : l))
-        })
-        .catch(() => setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'failed' } : p)))
+      identify(id, file)
     }
+  }
+
+  function identify(id: string, file: File) {
+    const fd = new FormData(); fd.append('image', file); fd.append('locale', locale)
+    fetch('/api/quick-request/identify', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(j => {
+        const s = j?.suggestion
+        setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence, localName: s?.local_name || undefined } : p))
+        if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', suggestion: s.catalog_suggestion || null } : l))
+      })
+      .catch(() => setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'failed' } : p)))
   }
 
   function updateLine(key: string, patch: Partial<Line>) { setLines(prev => prev.map(l => l.key === key ? { ...l, ...patch } : l)) }
   function removeLine(key: string) {
     const l = lines.find(x => x.key === key)
     setLines(prev => prev.filter(x => x.key !== key))
-    if (l?.photoId) setPhotos(prev => prev.filter(p => p.id !== l.photoId))
+    if (l?.photoId) { deleteDraftBlobs([l.photoId]); setPhotos(prev => prev.filter(p => p.id !== l.photoId)) }
   }
 
   const ready = lines.length > 0 && lines.every(l => l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) && !!region
@@ -194,6 +239,8 @@ export default function QuickRequestPage() {
           : L('Could not send. Try again.', 'نہیں بھیج سکے۔', 'ما قدرنا نبعت الطلب. جرّب كمان مرة.'))
         return
       }
+      deleteDraftBlobs(photos.map(p => p.id))
+      clearLocalDraft('quick:' + userId)
       setDone(true)
     } finally { setSending(false) }
   }
@@ -262,6 +309,12 @@ export default function QuickRequestPage() {
               <h2 className="font-bold text-navy">{L('Your list', 'آپ کی فہرست', 'قائمتك')} <span className="text-gray-400 font-normal">({lines.length})</span></h2>
               <span className="text-xs text-gray-400">{L('Check each line before sending', 'بھیجنے سے پہلے چیک کریں', 'راجع كل سطر قبل الإرسال')}</span>
             </div>
+            <div className="flex items-center justify-between text-[11px] text-gray-400">
+              <span>💾 {L('Saved on this device, you can leave and come back', 'اس ڈیوائس پر محفوظ ہے، واپس آ سکتے ہیں', 'محفوظة على جهازك، بتقدر تطلع وترجع')}</span>
+              <button type="button" onClick={() => { if (window.confirm(L('Clear the whole list?', 'پوری فہرست صاف کریں؟', 'تمسح القائمة كلها؟'))) startOver() }} className="font-bold text-gray-500 hover:text-red-500">
+                {L('Start over', 'نئے سرے سے', 'ابدأ من جديد')}
+              </button>
+            </div>
             {lines.map(l => {
               const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
               return (
@@ -272,7 +325,9 @@ export default function QuickRequestPage() {
                       <input value={l.product_name} onChange={e => updateLine(l.key, { product_name: e.target.value })} aria-label={L('Item name', 'نام', 'اسم المادة')}
                         className="input-field font-semibold" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'عم نتعرّف عالصورة…') : L('Item name', 'نام', 'اسم المادة')} />
                       {ph && ph.status === 'done' && (
-                        <p className="text-[11px] text-gray-500">🤖 {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'مش متأكد') : ''}</p>
+                        <p className="text-[11px] text-gray-500">🤖 {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'مش متأكد') : ''}
+                          {locale !== 'ar' && ph.localName && <span className="block font-semibold text-gray-700" dir="auto">= {ph.localName}</span>}
+                        </p>
                       )}
                       {ph && ph.status === 'failed' && (
                         <p className="text-[11px] text-gray-500">{L('Could not recognise it. Write the name, or just send the photo to suppliers.', 'پہچان نہیں سکے۔', 'ما عرفناها. اكتب اسمها، أو ابعت الصورة للموردين وهنّي بيعرفوها.')}</p>
