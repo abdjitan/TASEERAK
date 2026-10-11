@@ -36,7 +36,10 @@ export async function POST(req: NextRequest) {
       address: r.address,
       rating: num(r.rating),
       reviews: num(r.reviews),
+      lat: num(r.lat),
+      lng: num(r.lng),
       city: r.city,
+      district: r.district || null,
       query: r.query,
     }, { source })
     if (!row) { reasons[reason || 'empty'] = (reasons[reason || 'empty'] || 0) + 1; continue }

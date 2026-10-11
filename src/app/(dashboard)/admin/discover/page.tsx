@@ -25,10 +25,12 @@ const RELEVANCE_FILTERS: [string, string][] = [
   ['supplier', 'موردين'], ['review', 'بحاجة مراجعة'], ['contractor', 'مقاولين'], ['excluded', 'مستبعد'],
 ]
 
-// Old survey Excel headers → import fields.
+// Excel headers → import fields: old survey exports and scripts/discover-city.mjs output.
 const IMPORT_HEADERS: Record<string, string> = {
-  'اسم المحل': 'name', 'النوع': 'type', 'الجوال': 'phone', 'الموقع الإلكتروني': 'website', 'العنوان': 'address',
-  'التقييم': 'rating', 'عدد المراجعات': 'reviews', 'المدينة': 'city', 'الصنف المبحوث': 'query', 'رابط الخريطة': 'maps_url',
+  'اسم المحل': 'name', 'الاسم': 'name', 'النوع': 'type', 'نوع Google': 'type', 'الجوال': 'phone',
+  'الموقع الإلكتروني': 'website', 'العنوان': 'address', 'التقييم': 'rating', 'عدد المراجعات': 'reviews', 'المراجعات': 'reviews',
+  'المدينة': 'city', 'الصنف المبحوث': 'query', 'لقيناه بالبحث عن': 'query', 'رابط الخريطة': 'maps_url',
+  'الحي': 'district', 'place_id': 'place_id', 'lat': 'lat', 'lng': 'lng',
 }
 
 export default function DiscoverSuppliersPage() {
@@ -237,7 +239,7 @@ export default function DiscoverSuppliersPage() {
       const raw: any[] = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' })
       const mapped = raw.map((r: any) => {
         const o: any = {}
-        for (const [h, k] of Object.entries(IMPORT_HEADERS)) if (r[h] !== undefined) o[k] = String(r[h] ?? '').trim()
+        for (const [h, k] of Object.entries(IMPORT_HEADERS)) if (r[h] !== undefined && !o[k]) o[k] = String(r[h] ?? '').trim()
         return o
       }).filter((o: any) => o.name)
       for (let i = 0; i < mapped.length; i += 500) {
