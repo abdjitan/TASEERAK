@@ -270,7 +270,8 @@ export default function SupplierRFQPage() {
     setItemForms(prev => prev.map((x: any, idx: any) => idx === i ? { ...x, file: f } : x))
   }
   // لإتاحة الإرسال: يكفي مادة واحدة مسعّرة ومحفوظة — المورد غير ملزم بتسعير كل المواد
-  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.some((_: any, i: any) => itemForms[i]?.saved && parseFloat(itemForms[i]?.line_total) > 0)) : true
+  // A priced line counts even if «حفظ المادة» was not pressed: the price is already entered.
+  const allItemsPriced = isMultiItem ? (myItems.length > 0 && myItems.some((_: any, i: any) => parseFloat(itemForms[i]?.line_total) > 0)) : true
 
   function addAttribute() {
     setAttributes(prev => [...prev, { key: '', value: '' }])
@@ -297,7 +298,7 @@ export default function SupplierRFQPage() {
       return
     }
     if (isMultiItem && !allItemsPriced) {
-      setError('فيه مواد لسا ما حفظتها — افتح كل مادة، أدخل سعرها، واضغط «حفظ».')
+      setError('أدخل سعر مادة واحدة على الأقل قبل إرسال العرض.')
       return
     }
     setSubmitting(true)
