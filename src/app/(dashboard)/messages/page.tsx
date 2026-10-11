@@ -133,7 +133,8 @@ function Messages() {
   function retry(m: any) { deliver(m.body, m.id) }
 
   const active = convos.find((c: any) => c.id === activeId)
-  const counterpart = (c: any) => (c?.contractor_id === me ? c?.supplier : c?.contractor)?.company_name_ar || 'مستخدم'
+  // The contractor's name is masked (profiles_public) for suppliers, so say "مقاول" rather than a blank.
+  const counterpart = (c: any) => c?.contractor_id === me ? (c?.supplier?.company_name_ar || 'مورد') : (c?.contractor?.company_name_ar || 'مقاول')
   const ctx = (c: any) => c?.rfq?.title || c?.rfq?.product_name || ''
 
   const backHref = role === 'supplier' ? '/supplier/dashboard' : role === 'admin' ? '/admin' : '/contractor'
