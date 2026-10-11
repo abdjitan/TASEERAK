@@ -112,7 +112,13 @@ async function searchRect(term, pack, rect, depth = 0) {
 }
 
 // Each term starts city-wide; only saturated rectangles get split (sparse trades cost 1–3 calls).
-const START = [BBOX]
+// --focus: also search every term inside each priority (dense trade) zone, which surfaces shops
+// that the city-wide ranking cuts off. The city-wide part replays from cache for free.
+const FOCUS = args.includes('--focus')
+const START = [BBOX, ...(FOCUS ? D.DISCOVERY_CITIES[CITY].zones.filter(z => z.priority).map(z => {
+  const h = z.radiusKm / 111
+  return { s: +(z.lat - h).toFixed(4), w: +(z.lng - h).toFixed(4), n: +(z.lat + h).toFixed(4), e: +(z.lng + h).toFixed(4) }
+}) : [])]
 
 const t0 = Date.now()
 let ti = 0
@@ -164,6 +170,10 @@ if (OLD && fs.existsSync(OLD)) {
     }
   }
 }
+
+// Suppliers surfaced by scripts/probe-coverage.mjs (generic words in dense zones).
+const PROBE = path.join(OUT, 'probe-new.json')
+if (fs.existsSync(PROBE)) for (const r of JSON.parse(fs.readFileSync(PROBE, 'utf8'))) rows.push(r)
 
 // Dedup: place_id → CID → phone. Merge "found_by" so we keep everything a shop was found for.
 const byKey = new Map(), byPhone = new Map(), out = []
