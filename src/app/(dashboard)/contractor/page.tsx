@@ -296,9 +296,9 @@ export default function ContractorDashboard() {
         {/* شريط الإجراءات السريعة */}
         <div className="grid grid-cols-3 gap-3 mb-5 animate-fade-in">
           {[
-            { href: '/contractor/rfq/new', icon: '📝', label: t.newRfqBtn, primary: true },
-            { href: '/contractor/project/new', icon: '📋', label: locale === 'en' ? 'Upload BOQ' : 'رفع BOQ' },
-            { href: '/market', icon: '📈', label: locale === 'en' ? 'Price Index' : 'بورصة الأسعار' },
+            { href: '/contractor/rfq/quick', icon: '⚡', label: locale === 'en' ? 'Quick request (write, say or photo)' : locale === 'ur' ? 'فوری درخواست' : 'طلب سريع (اكتب، احكي، أو صوّر)', primary: true },
+            { href: '/contractor/rfq/new', icon: '📝', label: locale === 'en' ? 'Detailed request' : locale === 'ur' ? 'تفصیلی درخواست' : 'طلب تفصيلي' },
+            { href: '/contractor/project/new', icon: '📋', label: locale === 'en' ? 'Upload a quantities sheet' : 'رفع جدول كميات' },
           ].map((a: any) => (
             <Link key={a.href} href={a.href}
               className={`rounded-2xl p-4 text-center font-bold transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md ${a.primary ? 'text-white' : 'bg-white border border-gray-100 text-[#1B2D5B]'}`}

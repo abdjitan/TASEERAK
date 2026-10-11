@@ -1,0 +1,359 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { useTranslation } from '@/i18n'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
+import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory } from '@/types'
+
+// Quick request: for anyone, no engineering terms. Write, dictate or photograph what you need;
+// we turn it into lines you can fix, then send. Detailed specs stay on /contractor/rfq/new.
+
+const UNITS = ['حبة', 'كيس', 'طن', 'م³', 'م²', 'متر', 'م.ط', 'لفة', 'كرتون', 'سطل', 'لوح', 'جالون', 'لتر', 'كغ', 'طقم', 'نقلة', 'يوم', 'ساعة', 'عدد']
+
+type Line = {
+  key: string
+  product_name: string
+  sector: string
+  quantity: string
+  unit: string
+  details: string
+  photoId?: string
+  suggestion?: { name: string; sector: string } | null
+}
+type Photo = {
+  id: string
+  file: File
+  url: string
+  status: 'identifying' | 'done' | 'failed'
+  share: boolean
+  confidence?: string
+}
+
+let seq = 0
+const uid = () => 'k' + Date.now().toString(36) + (seq++)
+
+export default function QuickRequestPage() {
+  const { locale, dir } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  const [userId, setUserId] = useState('')
+  const [text, setText] = useState('')
+  const [listening, setListening] = useState(false)
+  const [canListen, setCanListen] = useState(false)
+  const [parsing, setParsing] = useState(false)
+  const [lines, setLines] = useState<Line[]>([])
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [region, setRegion] = useState('')
+  const [city, setCity] = useState('')
+  const [hours, setHours] = useState(48)
+  const [notes, setNotes] = useState('')
+  const [hideIdentity, setHideIdentity] = useState(true)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState('')
+  const [done, setDone] = useState(false)
+  const recRef = useRef<any>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    ;(async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { window.location.href = '/login?next=/contractor/rfq/quick'; return }
+      setUserId(user.id)
+      const { data: p } = await supabase.from('profiles').select('region, city').eq('id', user.id).single()
+      if (p?.region) setRegion(p.region)
+      if (p?.city) setCity(p.city)
+    })()
+    setCanListen(typeof window !== 'undefined' && !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition))
+  }, [])
+
+  // 🎤 Speech to text (browser built-in). The transcript is appended to the text box.
+  function toggleMic() {
+    if (listening) { try { recRef.current?.stop() } catch {} ; return }
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SR) return
+    const rec = new SR()
+    rec.lang = locale === 'en' ? 'en-US' : locale === 'ur' ? 'ur-PK' : 'ar-SA'
+    rec.interimResults = false
+    rec.continuous = true
+    rec.onresult = (e: any) => {
+      let said = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) said += e.results[i][0].transcript + '، '
+      if (said) setText(t => (t ? t.replace(/\s*$/, '') + '، ' : '') + said.replace(/،\s*$/, ''))
+    }
+    rec.onend = () => setListening(false)
+    rec.onerror = () => setListening(false)
+    recRef.current = rec
+    setListening(true)
+    try { rec.start() } catch { setListening(false) }
+  }
+
+  async function parseText() {
+    if (!text.trim()) return
+    setParsing(true); setError('')
+    try {
+      const r = await fetch('/api/quick-request/parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })
+      const j = await r.json()
+      if (!r.ok) { setError(j?.error || L('Could not read the list. Try again.', 'فہرست نہیں پڑھ سکے۔', 'ما قدرنا نقرأ القائمة. جرّب كمان مرة.')); return }
+      const add: Line[] = (j.items || []).map((it: any) => ({
+        key: uid(), product_name: it.product_name, sector: it.sector,
+        quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details: it.details || '',
+        suggestion: it.suggestion || null,
+      }))
+      setLines(prev => [...prev, ...add])
+      setText('')
+    } catch {
+      setError(L('Network error. Try again.', 'نیٹ ورک خرابی۔', 'مشكلة بالاتصال. جرّب كمان مرة.'))
+    } finally { setParsing(false) }
+  }
+
+  // 📷 Each photo becomes a line. The AI suggests a name; the buyer can edit it, and chooses
+  // whether suppliers get the photo itself.
+  async function addPhotos(files: FileList | null) {
+    if (!files) return
+    for (const file of Array.from(files).slice(0, 6)) {
+      if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 6 * 1024 * 1024) {
+        setError(L('Photos must be JPG/PNG/WEBP under 6 MB.', 'تصویر JPG/PNG/WEBP اور 6MB سے کم ہو۔', 'الصورة لازم تكون JPG أو PNG أو WEBP وأقل من ٦ ميغا.'))
+        continue
+      }
+      const id = uid()
+      const url = URL.createObjectURL(file)
+      setPhotos(prev => [...prev, { id, file, url, status: 'identifying', share: true }])
+      setLines(prev => [...prev, { key: uid(), product_name: '', sector: 'supply_store', quantity: '', unit: 'حبة', details: '', photoId: id }])
+      const fd = new FormData(); fd.append('image', file)
+      fetch('/api/quick-request/identify', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(j => {
+          const s = j?.suggestion
+          setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence } : p))
+          if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', suggestion: s.catalog_suggestion || null } : l))
+        })
+        .catch(() => setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'failed' } : p)))
+    }
+  }
+
+  function updateLine(key: string, patch: Partial<Line>) { setLines(prev => prev.map(l => l.key === key ? { ...l, ...patch } : l)) }
+  function removeLine(key: string) {
+    const l = lines.find(x => x.key === key)
+    setLines(prev => prev.filter(x => x.key !== key))
+    if (l?.photoId) setPhotos(prev => prev.filter(p => p.id !== l.photoId))
+  }
+
+  const ready = lines.length > 0 && lines.every(l => l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) && !!region
+
+  async function send() {
+    setError('')
+    if (!lines.length) { setError(L('Add at least one item.', 'کم از کم ایک چیز شامل کریں۔', 'ضيف مادة وحدة عالأقل.')); return }
+    const bad = lines.find(l => !l.product_name.trim() || !(parseFloat(l.quantity) > 0) || !l.unit)
+    if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر بدو اسم وكمية ووحدة.')); return }
+    if (!region) { setError(L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختار منطقتك.')); return }
+    setSending(true)
+    const supabase = createClient()
+    try {
+      const items: any[] = []
+      for (let i = 0; i < lines.length; i++) {
+        const l = lines[i]
+        const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
+        let photoUrl: string | null = null
+        if (ph && ph.share) {
+          const ext = ph.file.type === 'image/png' ? 'png' : ph.file.type === 'image/webp' ? 'webp' : 'jpg'
+          const path = `${userId}/photo-${Date.now()}-${i}.${ext}`
+          const { data: up } = await supabase.storage.from('licenses').upload(path, ph.file, { upsert: false, contentType: ph.file.type })
+          if (up) photoUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
+        }
+        items.push({
+          sector: l.sector,
+          product_name: l.product_name.trim(),
+          sub_category: detectSubCategory(l.product_name, l.sector as any),
+          specification: l.details.trim() || null,
+          quantity: parseFloat(l.quantity),
+          unit: l.unit,
+          supplier_tiers: null, in_stock: false, max_days: null, specsObj: {},
+          spec_file_url: photoUrl, spec_file_name: photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
+          photo_url: photoUrl,
+          quick: true,
+        })
+      }
+      const first = items[0]
+      const { error: insErr } = await supabase.from('rfqs').insert({
+        contractor_id: userId, sector: first.sector,
+        product_name: items.length > 1 ? `${first.product_name} +${items.length - 1} ${L('more', 'مزید', 'أصناف أخرى')}` : first.product_name,
+        sectors: Array.from(new Set(items.map(it => it.sector))),
+        sub_category: first.sub_category, specification: first.specification, quantity: first.quantity, unit: first.unit,
+        items,
+        region, city: city || null, delivery_required: true, vat_invoice_required: false,
+        hide_identity: hideIdentity, verified_only: false, nearby_only: false,
+        notes: notes.trim() || null,
+        expires_at: new Date(Date.now() + hours * 3600 * 1000).toISOString(),
+      })
+      if (insErr) {
+        setError((insErr.message || '').includes('rfq_daily_limit')
+          ? L('Daily request limit reached. Try again later.', 'روزانہ حد پوری ہو گئی۔', 'وصلت الحد اليومي للطلبات. جرّب بعدين.')
+          : L('Could not send. Try again.', 'نہیں بھیج سکے۔', 'ما قدرنا نبعت الطلب. جرّب كمان مرة.'))
+        return
+      }
+      setDone(true)
+    } finally { setSending(false) }
+  }
+
+  const sectorLabel = (s: string) => {
+    const lab: any = (SECTOR_LABELS as any)[s]
+    return typeof lab === 'string' ? lab : (lab?.[locale] || lab?.ar || s)
+  }
+
+  if (done) {
+    return (
+      <AppShell title={L('Quick request', 'فوری درخواست', 'طلب سريع')} nav={getNav('contractor', locale, '/contractor/rfq/new')} dir={dir}>
+        <div className="max-w-lg mx-auto bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
+          <div className="text-5xl mb-4">✅</div>
+          <h2 className="text-2xl font-extrabold text-navy mb-2">{L('Request sent', 'درخواست بھیج دی گئی', 'انبعت طلبك')}</h2>
+          <p className="text-gray-500 mb-6">{L('Suppliers near you will send their prices. We will notify you as quotes arrive.', 'قریبی سپلائرز قیمتیں بھیجیں گے۔', 'الموردين القريبين منك رح يبعتوا أسعارهم، وبنبلّغك أول ما يوصل عرض.')}</p>
+          <div className="flex gap-3">
+            <Link href="/contractor" className="flex-1 py-3 rounded-xl font-bold text-white" style={{ background: '#1B2D5B' }}>{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
+            <button type="button" onClick={() => { setDone(false); setLines([]); setPhotos([]); setNotes('') }} className="flex-1 py-3 rounded-xl font-bold border border-gray-200 text-gray-700">{L('New request', 'نئی درخواست', 'طلب جديد')}</button>
+          </div>
+        </div>
+      </AppShell>
+    )
+  }
+
+  return (
+    <AppShell title={L('Quick request', 'فوری درخواست', 'طلب سريع')} nav={getNav('contractor', locale, '/contractor/rfq/new')} dir={dir}>
+      <div className="max-w-3xl mx-auto space-y-5 pb-28">
+        <div>
+          <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'شو بدك؟')}</h1>
+          <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, or take a photo. We will organise it into a list.', 'لکھیں، بولیں یا تصویر لیں۔', 'اكتبها، أو احكيها، أو صوّرها. وإحنا منرتّبها لك بقائمة.')}
+            {' '}<Link href="/contractor/rfq/new" className="font-bold text-[#d96f15] hover:underline">{L('Detailed request for engineers →', 'تفصیلی درخواست →', 'طلب تفصيلي للمهندسين ←')}</Link>
+          </p>
+        </div>
+
+        {/* Input: text + mic + photo */}
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+          <label htmlFor="quick-text" className="block text-sm font-bold text-navy">{L('Write or paste your list', 'اپنی فہرست لکھیں', 'اكتب أو الصق قائمتك')}</label>
+          <textarea id="quick-text" value={text} onChange={e => setText(e.target.value)} rows={4}
+            className="input-field text-base leading-relaxed"
+            placeholder={L('e.g. 10 bags cement, 500 hollow blocks 20cm, 2 tons rebar 12mm', 'مثلاً: 10 بوری سیمنٹ، 500 بلاک', 'مثلاً: ١٠ أكياس أسمنت، ٥٠٠ بلك ٢٠، ٢ طن حديد ١٢')} />
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={parseText} disabled={!text.trim() || parsing} className="btn-orange px-5 py-2.5 rounded-xl font-bold disabled:opacity-50">
+              {parsing ? L('Reading…', 'پڑھ رہے ہیں…', 'عم نقرأ…') : L('Organise my list', 'فہرست ترتیب دیں', 'رتّب قائمتي')}
+            </button>
+            {canListen && (
+              <button type="button" onClick={toggleMic} aria-pressed={listening}
+                className={`px-4 py-2.5 rounded-xl font-bold border transition-all ${listening ? 'bg-red-50 border-red-300 text-red-600 animate-pulse' : 'bg-white border-gray-200 text-gray-700'}`}>
+                {listening ? '⏺ ' + L('Listening… tap to stop', 'سن رہے ہیں…', 'عم اسمعك… اضغط لتوقف') : '🎤 ' + L('Say it', 'بولیں', 'احكيها')}
+              </button>
+            )}
+            <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
+              📷 {L('Add a photo', 'تصویر شامل کریں', 'صوّر المادة')}
+            </button>
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden"
+              onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
+          </div>
+        </div>
+
+        {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3" role="alert">{error}</div>}
+
+        {/* Review list */}
+        {lines.length > 0 && (
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-navy">{L('Your list', 'آپ کی فہرست', 'قائمتك')} <span className="text-gray-400 font-normal">({lines.length})</span></h2>
+              <span className="text-xs text-gray-400">{L('Check each line before sending', 'بھیجنے سے پہلے چیک کریں', 'راجع كل سطر قبل الإرسال')}</span>
+            </div>
+            {lines.map(l => {
+              const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
+              return (
+                <div key={l.key} className="rounded-xl border border-gray-200 p-3 space-y-2">
+                  <div className="flex gap-3 items-start">
+                    {ph && <img src={ph.url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0 border border-gray-100" />}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <input value={l.product_name} onChange={e => updateLine(l.key, { product_name: e.target.value })} aria-label={L('Item name', 'نام', 'اسم المادة')}
+                        className="input-field font-semibold" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'عم نتعرّف عالصورة…') : L('Item name', 'نام', 'اسم المادة')} />
+                      {ph && ph.status === 'done' && (
+                        <p className="text-[11px] text-gray-500">🤖 {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'مش متأكد') : ''}</p>
+                      )}
+                      {ph && ph.status === 'failed' && (
+                        <p className="text-[11px] text-gray-500">{L('Could not recognise it. Write the name, or just send the photo to suppliers.', 'پہچان نہیں سکے۔', 'ما عرفناها. اكتب اسمها، أو ابعت الصورة للموردين وهنّي بيعرفوها.')}</p>
+                      )}
+                      {l.suggestion && l.suggestion.name !== l.product_name && (
+                        <button type="button" onClick={() => updateLine(l.key, { product_name: l.suggestion!.name, sector: l.suggestion!.sector, suggestion: null })}
+                          className="text-[11px] font-bold px-2 py-1 rounded-lg border border-dashed hover:bg-[#0F6E56]/5" style={{ borderColor: '#0F6E56', color: '#0F6E56' }}>
+                          📦 {L('Did you mean', 'کیا آپ کا مطلب', 'هل تقصد')}: {l.suggestion.name}؟
+                        </button>
+                      )}
+                      <div className="text-[11px] text-gray-400">{sectorLabel(l.sector)}</div>
+                    </div>
+                    <button type="button" onClick={() => removeLine(l.key)} className="text-gray-400 hover:text-red-500 text-lg leading-none px-1" aria-label={L('Remove', 'ہٹائیں', 'احذف')}>×</button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="number" inputMode="decimal" min="0" value={l.quantity} onChange={e => updateLine(l.key, { quantity: e.target.value })}
+                      className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} aria-label={L('Quantity', 'مقدار', 'الكمية')} />
+                    <select value={l.unit} onChange={e => updateLine(l.key, { unit: e.target.value })} className="input-field" aria-label={L('Unit', 'یونٹ', 'الوحدة')}>
+                      <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>
+                      {Array.from(new Set([...(l.unit && !UNITS.includes(l.unit) ? [l.unit] : []), ...UNITS])).map(u => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </div>
+                  <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })} className="input-field text-sm"
+                    placeholder={L('Size, type or brand (optional)', 'سائز یا برانڈ (اختیاری)', 'المقاس أو النوع أو الماركة (اختياري)')} />
+                  {ph && (
+                    <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
+                      <input type="checkbox" checked={ph.share} onChange={e => setPhotos(prev => prev.map(p => p.id === ph.id ? { ...p, share: e.target.checked } : p))} className="w-4 h-4 accent-[#0F6E56]" />
+                      {L('Send this photo to suppliers so they quote the same item', 'یہ تصویر سپلائرز کو بھیجیں', 'ابعت الصورة للموردين ليسعّروا نفس الشي')}
+                    </label>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Where + advanced */}
+        {lines.length > 0 && (
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+            <h2 className="font-bold text-navy">📍 {L('Delivery to', 'ڈیلیوری', 'التوصيل لـ')}</h2>
+            <div className="grid grid-cols-2 gap-2">
+              <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" aria-label={L('Region', 'علاقہ', 'المنطقة')}>
+                <option value="">{L('Region', 'علاقہ', 'المنطقة')}</option>
+                {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              <select value={city} onChange={e => setCity(e.target.value)} className="input-field" aria-label={L('City', 'شہر', 'المدينة')} disabled={!region}>
+                <option value="">{L('City', 'شہر', 'المدينة')}</option>
+                {((CITIES_BY_REGION as any)[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
+              </select>
+            </div>
+            <details>
+              <summary className="cursor-pointer text-xs font-bold text-[#d96f15] select-none">{L('More options (optional)', 'مزید اختیارات', 'خيارات إضافية (اختياري)')}</summary>
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Suppliers can send prices for', 'قیمت بھیجنے کا وقت', 'الموردين بيقدروا يبعتوا أسعار خلال')}</label>
+                  <select value={hours} onChange={e => setHours(parseInt(e.target.value))} className="input-field">
+                    {[6, 24, 48, 72, 168].map(h => <option key={h} value={h}>{h < 24 ? `${h} ${L('hours', 'گھنٹے', 'ساعات')}` : `${h / 24} ${L('day(s)', 'دن', h === 24 ? 'يوم' : 'أيام')}`}</option>)}
+                  </select>
+                </div>
+                <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-sm" placeholder={L('Notes for suppliers (optional)', 'نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                  <input type="checkbox" checked={hideIdentity} onChange={e => setHideIdentity(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
+                  {L('Hide my name until I choose a supplier', 'سپلائر چننے تک نام چھپائیں', 'اخفي اسمي لين اختار مورد')}
+                </label>
+              </div>
+            </details>
+          </div>
+        )}
+      </div>
+
+      {lines.length > 0 && (
+        <div className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-200 px-4 pt-3 z-30" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
+          <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+            <span className="text-sm text-gray-500">{lines.length} {L('items', 'اشیاء', 'مواد')}</span>
+            <button type="button" onClick={send} disabled={sending || photos.some(p => p.status === 'identifying')}
+              className="btn-orange px-6 py-3 rounded-xl font-extrabold disabled:opacity-50">
+              {sending ? L('Sending…', 'بھیج رہے ہیں…', 'عم نبعت…') : ready ? L('Send for prices', 'قیمت منگوائیں', 'ابعت لطلب الأسعار') : L('Complete the lines', 'لائنیں مکمل کریں', 'كمّل الأسطر')}
+            </button>
+          </div>
+        </div>
+      )}
+    </AppShell>
+  )
+}

@@ -113,6 +113,37 @@ export async function aiJson<T = any>(opts: AiJsonOpts): Promise<T | null> {
   }
 }
 
+// قراءة صورة + طلب JSON مُنظّم (تعرّف على مادة من صورة). Anthropic أو Gemini؛ Groq لا يدعم الصور → null.
+// المخرج اقتراح فقط: المستدعي يعرضه للمستخدم ليؤكّده، ولا يُعامَل كحقيقة.
+export async function aiVisionJson<T = any>(opts: AiJsonOpts & { image: { base64: string; mime: string } }): Promise<T | null> {
+  const prov = aiProvider()
+  if (!prov || prov === 'groq') return null
+  try {
+    let text: string | null
+    if (prov === 'gemini') {
+      const schemaHint = `\n\nأعد الإجابة بصيغة JSON صالحة فقط (respond in valid JSON) تطابق هذا المخطط:\n${JSON.stringify(opts.schema)}`
+      text = await geminiGenerate(opts.system + schemaHint, [{
+        role: 'user',
+        parts: [{ inline_data: { mime_type: opts.image.mime, data: opts.image.base64 } }, { text: opts.user }],
+      }], opts.maxTokens || 1500, true)
+    } else {
+      text = await anthropicMessages(opts.system, [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: opts.image.mime, data: opts.image.base64 } },
+          { type: 'text', text: opts.user },
+        ],
+      }], opts.maxTokens || 1500, opts.model || DEFAULT_AI_MODEL, opts.schema)
+    }
+    if (!text) return null
+    const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '')
+    return JSON.parse(clean) as T
+  } catch (e: any) {
+    console.error('aiVisionJson error:', e?.message || e)
+    return null
+  }
+}
+
 // محادثة نصّية (للمساعد الذكي). messages: [{role:'user'|'assistant', content}]
 export async function aiText(system: string, messages: { role: string; content: string }[], maxTokens = 1024): Promise<string | null> {
   const prov = aiProvider()

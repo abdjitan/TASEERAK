@@ -524,8 +524,15 @@ export default function SupplierRFQPage() {
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(sectors as any)[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ توفّر فوري</span>}
                             {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}ي</span>}
-                            {it.spec_file_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
+                            {it.spec_file_url && !it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 ملف</a>}
                           </div>
+                          {/* صورة المادة من الطلب السريع: المورد يشوف نفس الشي اللي بدّو ياه الزبون */}
+                          {it.photo_url && (
+                            <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 group" title="صورة المادة من الزبون">
+                              <img src={fileHref(it.photo_url)} alt="صورة المادة" loading="lazy" className="w-24 h-24 object-cover rounded-lg border border-gray-200 group-hover:border-[#F5831F]" />
+                              <span className="text-[11px] font-bold text-[#d96f15]">📷 صورة من الزبون<br /><span className="font-normal text-gray-500">سعّر نفس الشي</span></span>
+                            </a>
+                          )}
                         </td>
                         <td className="py-3 px-3 font-bold text-[15px] text-[#d96f15] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
                         <td className="py-3 px-3 text-sm text-gray-700 leading-relaxed">{it.specification || '—'}</td>

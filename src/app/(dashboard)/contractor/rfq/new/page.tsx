@@ -519,6 +519,9 @@ export default function NewRFQPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.title}</h1>
           <p className="text-gray-500 mt-1 text-sm">{t.sub}</p>
+          <Link href="/contractor/rfq/quick" className="mt-3 inline-flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-xl border-2 hover:bg-[#F5831F]/5" style={{ borderColor: '#F5831F', color: '#d96f15' }}>
+            ⚡ {locale === 'en' ? 'In a hurry? Quick request: write, say or photograph it' : locale === 'ur' ? 'جلدی ہے؟ فوری درخواست' : 'مستعجل؟ طلب سريع: اكتب، احكي، أو صوّر'}
+          </Link>
         </div>
 
         {/* مؤشّر الخطوات */}

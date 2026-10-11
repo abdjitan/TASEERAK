@@ -64,12 +64,12 @@ async function geminiMatchDoc(base64: string, mime: string, itemsJson: string): 
   const userText = `${SYSTEM}\n\nبنود الجدول (JSON):\n${itemsJson}\n\nأعد JSON صالحاً فقط مطابقاً: ${JSON.stringify(SCHEMA)}`
   let lastErr = ''
   for (const model of GEMINI_MODELS) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey()}`
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent` // key in header, not URL
     const body = {
       contents: [{ role: 'user', parts: [{ inline_data: { mime_type: mime, data: base64 } }, { text: userText }] }],
       generationConfig: { maxOutputTokens: 8000, temperature: 0.2, responseMimeType: 'application/json' },
     }
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey() }, body: JSON.stringify(body) })
     if (!r.ok) {
       lastErr = `Gemini ${r.status} (${model})`
       if (r.status === 404 || r.status === 400 || r.status === 429) continue
