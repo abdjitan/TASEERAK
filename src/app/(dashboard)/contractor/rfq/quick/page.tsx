@@ -177,7 +177,7 @@ export default function QuickRequestPage() {
       .then(j => {
         const s = j?.suggestion
         setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence, localName: s?.local_name || undefined } : p))
-        if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', suggestion: s.catalog_suggestion || null } : l))
+        if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', unit: s.unit || l.unit, suggestion: s.catalog_suggestion || null } : l))
       })
       .catch(() => setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'failed' } : p)))
   }

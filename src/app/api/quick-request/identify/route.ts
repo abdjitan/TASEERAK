@@ -11,6 +11,8 @@ export const maxDuration = 30
 
 const SECTORS: Sector[] = ['civil', 'architectural', 'electrical', 'mechanical', 'equipment', 'supply_store']
 const MAX_BYTES = 6 * 1024 * 1024
+// Same order-units as the quick page's unit picker.
+const UNITS_AR = ['حبة', 'كيس', 'طن', 'م³', 'م²', 'متر', 'م.ط', 'لفة', 'كرتون', 'سطل', 'لوح', 'جالون', 'لتر', 'كغ', 'طقم', 'نقلة', 'يوم', 'ساعة']
 
 function imageMime(buf: Buffer): string | null {
   const h = buf.subarray(0, 12).toString('hex')
@@ -29,9 +31,10 @@ const SCHEMA = {
     name_ur: { type: 'string', description: 'the same name in Urdu (as Pakistani/Indian workers in Saudi say it)' },
     visible_details: { type: ['string', 'null'], description: 'only what is clearly visible: size printed, brand on label, color, count. null if nothing clear' },
     sector: { type: 'string', enum: SECTORS },
+    unit: { type: ['string', 'null'], description: `usual Saudi order unit for this item, one of: ${UNITS_AR.join('، ')}; e.g. tiles/stone cladding → م², cement → كيس, pipes/cable → متر or لفة, fittings → حبة. null if unclear` },
     confidence: { type: 'string', enum: ['low', 'medium', 'high'] },
   },
-  required: ['is_construction_item', 'name_ar', 'name_en', 'name_ur', 'visible_details', 'sector', 'confidence'],
+  required: ['is_construction_item', 'name_ar', 'name_en', 'name_ur', 'visible_details', 'sector', 'unit', 'confidence'],
   additionalProperties: false,
 }
 
@@ -81,6 +84,7 @@ export async function POST(req: NextRequest) {
       local_name: locale === 'ur' ? String(r.name_ur || '').slice(0, 140) : locale === 'en' ? String(r.name_en || '').slice(0, 140) : null,
       details: r.visible_details ? String(r.visible_details).slice(0, 300) : null,
       confidence: ['low', 'medium', 'high'].includes(r.confidence) ? r.confidence : 'low',
+      unit: UNITS_AR.includes(r.unit) ? r.unit : null,
     },
   })
 }
