@@ -13,10 +13,29 @@ export function coreName(s: string): string {
     .replace(/[()×x*\-]/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-export function suggestCatalog(name: string, sector?: Sector | null): { exact: string | null; suggestion: { name: string; sector: Sector } | null } {
-  const core = coreName(name)
+// Sizes don't decide WHAT the item is, but among near-equal matches they pick the right one:
+// "سلك" + "2.5" -> "سلك كهرباء 2.5مم" rather than "سلك تأريض".
+export function suggestCatalog(name: string, sector?: Sector | null, details?: string | null): { exact: string | null; suggestion: { name: string; sector: Sector } | null } {
+  // A brand the AI left in the name but also put in details ("سلك الفنار" + "الفنار") is not
+  // part of what the item is.
+  const detailWords = new Set(normalizeText(details || '').split(/[\s،,]+/).filter(w => w.length >= 2))
+  const fullCore = coreName(name)
+  const kept = fullCore.split(' ').filter(w =>!detailWords.has(normalizeText(w)))
+  const core = kept.length ? kept.join(' ') : fullCore
   if (core.length < 2) return { exact: null, suggestion: null }
-  const hit = (sector && searchProducts(core, { sector, limit: 1 })[0]) || searchProducts(core, { limit: 1 })[0]
+  const numsOf = (s: string): string[] => toLatinDigits(s).match(/\d+(?:\.\d+)?/g) || []
+  const nums = numsOf(`${name} ${details || ''}`)
+  const pick = (hits: ReturnType<typeof searchProducts>) => {
+    const close = hits.filter(h => h.score >= (hits[0]?.score ?? 0) - 1)
+    return (nums.length ? close.find(h => numsOf(h.name).some(n => nums.includes(n))) : undefined) || hits[0]
+  }
+  const inSector = sector ? searchProducts(core, { sector, limit: 8 }) : []
+  const global = searchProducts(core, { limit: 12 })
+  const a = inSector.length ? pick(inSector) : undefined
+  const b = pick(global)
+  // Prefer the buyer's sector, unless only the other sector has the written size.
+  const sized = (h?: { name: string }) => !!h && nums.length > 0 && numsOf(h.name).some(n => nums.includes(n))
+  const hit = a && (sized(a) || !sized(b)) ? a : b
   if (!hit || hit.score < 9 || !sharesNameWord(core, hit.name)) return { exact: null, suggestion: null }
   const same = normalizeText(coreName(hit.name)).replace(/\s+/g, '') === normalizeText(core).replace(/\s+/g, '')
   return same ? { exact: hit.name, suggestion: null } : { exact: null, suggestion: { name: hit.name, sector: hit.sector } }

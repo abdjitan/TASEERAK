@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
   if (!r || !r.is_construction_item) return NextResponse.json({ suggestion: null, ai: true })
 
   const sector: Sector = SECTORS.includes(r.sector) ? r.sector : 'supply_store'
-  const m = suggestCatalog(String(r.name_ar || ''), sector)
+  const m = suggestCatalog(String(r.name_ar || ''), sector, r.visible_details ? String(r.visible_details) : null)
   return NextResponse.json({
     ai: true,
     suggestion: {

@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
     const sector: Sector | null = SECTORS.includes(it.sector) ? it.sector : null
     // The buyer's own wording stays; a catalog match is only applied when it is the same item
     // spelled differently, otherwise offered as a suggestion.
-    const m = suggestCatalog(name, sector)
+    const m = suggestCatalog(name, sector, it.details ? String(it.details) : null)
     const q = typeof it.quantity === 'number' && isFinite(it.quantity) && it.quantity > 0 ? it.quantity : null
     return {
       input_name: name,
