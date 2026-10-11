@@ -24,7 +24,10 @@ const MAX_CALLS = Number(arg('max-calls', '3000'))
 const DRY = args.includes('--dry')
 const CONCURRENCY = 4
 const CITY = arg('city', 'الرياض')
-const BBOX = D.DISCOVERY_CITIES[CITY].bbox
+const CFG = D.DISCOVERY_CITIES[CITY]
+const CITIES = CFG.cities || [CITY]
+const Q_CITY = CFG.queryCity || CITY
+const BBOX = CFG.bbox
 const MIN_SPAN = 0.015 // ≈1.6 km: stop splitting below this
 
 // Shop-type search terms covering every catalog specialty: [term, pack] from PACK_QUERIES.
@@ -37,15 +40,17 @@ function readKey() {
 const KEY = readKey()
 if (!KEY) { console.error('NO_KEY'); process.exit(1) }
 
+// --pro: no phone/website/rating → billed as "Text Search Pro" (5,000 free calls/month)
+// instead of "Enterprise" (1,000 free). Gives names, types, addresses and map links only.
+const PRO_ONLY = args.includes('--pro')
 const FIELD_MASK = [
-  'places.id', 'places.displayName', 'places.formattedAddress', 'places.addressComponents',
-  'places.nationalPhoneNumber', 'places.internationalPhoneNumber', 'places.websiteUri', 'places.location',
-  'places.rating', 'places.userRatingCount', 'places.googleMapsUri', 'places.businessStatus',
-  'places.primaryTypeDisplayName', 'nextPageToken',
+  'places.id', 'places.displayName', 'places.formattedAddress', 'places.addressComponents', 'places.location',
+  'places.googleMapsUri', 'places.businessStatus', 'places.primaryTypeDisplayName', 'nextPageToken',
+  ...(PRO_ONLY ? [] : ['places.nationalPhoneNumber', 'places.internationalPhoneNumber', 'places.websiteUri', 'places.rating', 'places.userRatingCount']),
 ].join(',')
 
 fs.mkdirSync(OUT, { recursive: true })
-const CACHE_FILE = path.join(OUT, 'google-cache.json')
+const CACHE_FILE = path.join(OUT, PRO_ONLY ? 'google-cache-pro.json' : 'google-cache.json')
 const cache = fs.existsSync(CACHE_FILE) ? JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')) : {}
 let calls = 0, cached = 0, budgetHit = false
 const saveCache = () => fs.writeFileSync(CACHE_FILE, JSON.stringify(cache))
@@ -56,7 +61,7 @@ async function page(term, rect, token) {
   if (DRY || calls >= MAX_CALLS) { budgetHit = true; return null }
   calls++
   const body = {
-    textQuery: `${term} ${CITY}`, regionCode: 'SA', languageCode: 'ar', pageSize: 20,
+    textQuery: `${term} ${Q_CITY}`, regionCode: 'SA', languageCode: 'ar', pageSize: 20,
     locationRestriction: { rectangle: { low: { latitude: rect.s, longitude: rect.w }, high: { latitude: rect.n, longitude: rect.e } } },
   }
   if (token) body.pageToken = token
@@ -199,7 +204,7 @@ for (const r of rows) {
 // A generic-type shop that several different trade searches all returned is a real trade shop.
 for (const r of out) if (r.relevance === 'review' && r.found_by.length >= 3) r.relevance = 'supplier'
 
-const riyadh = out.filter(r => r.city === CITY)
+const riyadh = out.filter(r => CITIES.includes(r.city))
 const cnt = (arr, f) => arr.reduce((m, x) => (m[f(x)] = (m[f(x)] || 0) + 1, m), {})
 console.log('rows', rows.length, 'unique', out.length, 'riyadh', riyadh.length, 'dupSame', dupSame, 'dupPhone', dupPhone, 'dropped', drop)
 console.log('riyadh relevance', cnt(riyadh, r => r.relevance), 'mobile', riyadh.filter(r => r.is_mobile).length)

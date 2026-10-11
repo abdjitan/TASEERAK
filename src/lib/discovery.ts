@@ -12,7 +12,15 @@ import { CITIES_BY_REGION } from '@/types'
 // its centre, so Google's 60-results-per-query cap applies per zone, not per city.
 export type DiscoveryZone = { name: string; lat: number; lng: number; radiusKm: number; priority?: boolean }
 
-export const DISCOVERY_CITIES: Record<string, { region: string; bbox: { s: number; w: number; n: number; e: number }; zones: DiscoveryZone[] }> = {
+export const DISCOVERY_CITIES: Record<string, {
+  region: string
+  bbox: { s: number; w: number; n: number; e: number }
+  zones: DiscoveryZone[]
+  /** Cities whose shops count for this discovery area (default: the key itself). */
+  cities?: string[]
+  /** Place word appended to search text (default: the key). */
+  queryCity?: string
+}> = {
   'الرياض': {
     region: 'الرياض',
     bbox: { s: 24.35, w: 46.40, n: 25.05, e: 47.10 },
@@ -69,6 +77,20 @@ export const DISCOVERY_CITIES: Record<string, { region: string; bbox: { s: numbe
       { name: 'الحمراء والروضة', lat: 21.540, lng: 39.160, radiusKm: 3 },
       { name: 'الفيصلية والنزهة', lat: 21.600, lng: 39.165, radiusKm: 3 },
       { name: 'أبحر', lat: 21.750, lng: 39.130, radiusKm: 5 },
+    ],
+  },
+  'الدمام والخبر': {
+    region: 'المنطقة الشرقية',
+    bbox: { s: 26.15, w: 49.90, n: 26.60, e: 50.25 },
+    cities: ['الدمام', 'الخبر', 'الظهران'],
+    queryCity: 'الدمام',
+    zones: [
+      { name: 'الصناعية الأولى بالدمام', lat: 26.405, lng: 50.100, radiusKm: 3, priority: true },
+      { name: 'الصناعية الثانية بالدمام', lat: 26.330, lng: 50.010, radiusKm: 5, priority: true },
+      { name: 'طريق الملك فهد والعدامة', lat: 26.430, lng: 50.110, radiusKm: 2.5, priority: true },
+      { name: 'الثقبة', lat: 26.270, lng: 50.195, radiusKm: 2.5, priority: true },
+      { name: 'الخبر الشمالية والعقربية', lat: 26.300, lng: 50.205, radiusKm: 2.5, priority: true },
+      { name: 'الفيصلية والريان', lat: 26.440, lng: 50.050, radiusKm: 3 },
     ],
   },
 }

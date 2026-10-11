@@ -18,6 +18,7 @@ const args = process.argv.slice(2)
 const arg = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : d }
 const DIR = arg('dir')
 const CITY = arg('city', 'الرياض')
+const CITIES = D.DISCOVERY_CITIES[CITY].cities || [CITY]
 const YES = args.includes('--yes')
 const LIMIT = Number(arg('limit', '1000000'))
 const KEY = (fs.readFileSync(path.join(ROOT, '.env.local'), 'utf8').match(/^\s*GOOGLE_MAPS_API_KEY\s*=\s*(.+?)\s*$/m) || [])[1]
@@ -72,7 +73,7 @@ for (const u of unknown) {
     address: p.formattedAddress, lat: p.location?.latitude, lng: p.location?.longitude, status: p.businessStatus,
     city: comp(p, ['locality']), district: comp(p, ['sublocality_level_1', 'neighborhood', 'sublocality']), query: trade.join(' / ') }, { fallbackPack })
   if (!row) { drop[reason] = (drop[reason] || 0) + 1; continue }
-  if (row.city !== CITY) { drop.other_city = (drop.other_city || 0) + 1; continue }
+  if (!CITIES.includes(row.city)) { drop.other_city = (drop.other_city || 0) + 1; continue }
   if (row.relevance === 'contractor') { drop.contractor = (drop.contractor || 0) + 1; continue }
   row.found_by = trade.length ? trade : u.terms
   row.found_packs = []

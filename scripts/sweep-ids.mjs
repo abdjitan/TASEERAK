@@ -16,7 +16,10 @@ const args = process.argv.slice(2)
 const arg = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : d }
 const DIR = arg('dir')
 const CITY = arg('city', 'الرياض')
-const BBOX = D.DISCOVERY_CITIES[CITY].bbox
+const CFG = D.DISCOVERY_CITIES[CITY]
+const CITIES = CFG.cities || [CITY]
+const Q_CITY = CFG.queryCity || CITY
+const BBOX = CFG.bbox
 const MIN_SPAN = Number(arg('min-span', '0.006')) // ≈650 m
 const CONCURRENCY = 3
 const KEY = (fs.readFileSync(path.join(ROOT, '.env.local'), 'utf8').match(/^\s*GOOGLE_MAPS_API_KEY\s*=\s*(.+?)\s*$/m) || [])[1]
@@ -38,7 +41,7 @@ let calls = 0
 async function page(term, r, token) {
   const k = `${term}|${r.s},${r.w},${r.n},${r.e}|${token || ''}`
   if (cache[k]) return cache[k]
-  const body = { textQuery: `${term} ${CITY}`, regionCode: 'SA', languageCode: 'ar', pageSize: 20,
+  const body = { textQuery: `${term} ${Q_CITY}`, regionCode: 'SA', languageCode: 'ar', pageSize: 20,
     locationRestriction: { rectangle: { low: { latitude: r.s, longitude: r.w }, high: { latitude: r.n, longitude: r.e } } } }
   if (token) body.pageToken = token
   let last = ''
