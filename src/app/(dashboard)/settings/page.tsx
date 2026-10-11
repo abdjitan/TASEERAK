@@ -368,7 +368,8 @@ export default function SettingsPage() {
 
               {[
                 { key: 'profile', icon: '🏢', label: t.profileTab },
-                { key: 'docs', icon: '📄', label: t.docsTab },
+                // فرد / وكيل أسعار: ما عنده سجل ولا رخصة — ثقته من التقييمات، فما في تبويب مستندات
+                ...(['individual', 'price_agent', 'broker'].includes(profile?.provider_type) ? [] : [{ key: 'docs', icon: '📄', label: t.docsTab }]),
                 { key: 'support', icon: '💬', label: locale === 'en' ? 'Support' : locale === 'ur' ? 'سپورٹ' : 'الدعم والرسائل' },
                 { key: 'password', icon: '🔒', label: t.passwordTab },
                 { key: 'language', icon: '🌐', label: t.langTab },
@@ -648,7 +649,12 @@ export default function SettingsPage() {
             {tab === 'docs' && (
               <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
                 <h2 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>{t.docsTitle}</h2>
-                <p className="text-sm text-gray-500 mb-6">{t.docsSub}</p>
+                <p className="text-sm text-gray-500 mb-4">{t.docsSub}</p>
+                {/* التوثيق اختياري: يوضّح فايدته وفي خيار «لاحقاً» */}
+                <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6" style={{ background: 'rgba(15,110,86,0.06)', border: '1px solid rgba(15,110,86,0.2)' }}>
+                  <p className="text-sm text-gray-700 leading-relaxed flex-1 min-w-[220px]">🛡 {locale === 'en' ? 'Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.' : locale === 'ur' ? 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔' : 'التوثيق اختياري. بعد ما تتوثّق، اللي بيطلب السعر بيشوف شارة «موثّق» جنب عرضك، وهاد بيخلّي محلك عالي الموثوقية وبيزيد فرصك تكسب الطلبات.'}</p>
+                  <a href={profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'} className="text-sm font-bold px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#1B2D5B' }}>{locale === 'en' ? 'Later' : locale === 'ur' ? 'بعد میں' : 'لاحقاً'}</a>
+                </div>
 
                 {profile?.verification_status === 'rejected' && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 flex items-start gap-2">

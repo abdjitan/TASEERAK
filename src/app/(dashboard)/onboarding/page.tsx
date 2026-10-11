@@ -7,6 +7,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import DistrictField from '@/components/shared/DistrictField'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
+import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGION } from '@/types'
 
@@ -32,7 +33,7 @@ const TR = {
     manufacturer: 'مصنع / مورد رئيسي', commercial: 'مورد تجاري', local: 'مورد محلي',
     minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات — أو حدّده ليُفلتر الطلبات حسب قدرتك التوريدية.',
     gradeTitle: 'درجة تصنيف شركتك', gradeSub: 'من رخصتك (وزارة الشؤون البلدية) — يستخدمها الموردون لفلترة الطلبات حسب حجم المشروع. اختياري.',
-    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'يتطلب استقبال الطلبات وتقديم العروض المسعّرة توثيق سجلك التجاري ومستنداتك.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وقطاعاتك وتخصصاتك أعلاه لتُفتح خطوة التوثيق.',
+    verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'التوثيق اختياري: بيطلّع شارة «موثّق» على عروضك للي بيطلب السعر، فبيخلّي محلك عالي الموثوقية ويرفع فرصك تكسب الطلبات.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وقطاعاتك وتخصصاتك أعلاه لتُفتح خطوة التوثيق.',
     addMatTitle: 'لا تجد مادة توردّها بالقائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
     save: 'حفظ ومتابعة ←', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
     needLoc: 'اختر المنطقة والمدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك ✓',
@@ -49,7 +50,7 @@ const TR = {
     manufacturer: 'Factory / Major Supplier', commercial: 'Commercial Supplier', local: 'Local Supplier',
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
     gradeTitle: 'Company grade', gradeSub: 'From your license (Ministry of Municipal Affairs) — suppliers use it to filter by project size. Optional.',
-    verifyTitle: 'Verify your business', verifyBody: 'Receiving requests and submitting priced offers requires verifying your CR and documents.', verifyCta: 'Save & start verification →', verifyLocked: 'Complete your location, sectors and specialties above to unlock verification.',
+    verifyTitle: 'Verify your business', verifyBody: 'Optional: verification adds a «Verified» badge to your quotes for buyers, making your shop highly trusted and raising your chance of winning requests.', verifyCta: 'Save & start verification →', verifyLocked: 'Complete your location, sectors and specialties above to unlock verification.',
     addMatTitle: "Can't find a material you supply?", addMatPh: 'Material name...', addMatBtn: 'Add', remove: 'Remove',
     save: 'Save & continue →', saving: 'Saving...', later: 'Later', selected: 'selected',
     needLoc: 'Select region and city', needSector: 'Select at least one sector', saved: 'Profile saved ✓',
@@ -66,7 +67,7 @@ const TR = {
     manufacturer: 'فیکٹری / بڑا سپلائر', commercial: 'تجارتی سپلائر', local: 'مقامی سپلائر',
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
     gradeTitle: 'کمپنی کا درجہ', gradeSub: 'آپ کے لائسنس سے — سپلائرز پروجیکٹ سائز کے مطابق فلٹر کرتے ہیں۔ اختیاری۔',
-    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'درخواستیں وصول کرنے اور قیمت والی آفرز دینے کے لیے CR اور دستاویزات کی تصدیق ضروری ہے۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں →', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام، شعبے اور مہارتیں مکمل کریں۔',
+    verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'اختیاری: تصدیق آپ کی آفرز پر «تصدیق شدہ» بیج دکھاتی ہے، جس سے خریداروں کا اعتماد بڑھتا ہے۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں →', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام، شعبے اور مہارتیں مکمل کریں۔',
     addMatTitle: 'فہرست میں کوئی مواد نہیں؟', addMatPh: 'مواد کا نام...', addMatBtn: 'شامل کریں', remove: 'ہٹائیں',
     save: 'محفوظ کریں اور جاری رکھیں →', saving: 'محفوظ ہو رہا ہے...', later: 'بعد میں', selected: 'منتخب',
     needLoc: 'علاقہ اور شہر منتخب کریں', needSector: 'کم از کم ایک شعبہ منتخب کریں', saved: 'پروفائل محفوظ ✓',
@@ -95,6 +96,9 @@ export default function OnboardingPage() {
   const [specialties, setSpecialties] = useState<string[]>([])
   const [openSector, setOpenSector] = useState<string | null>(null)
   const [supplierTier, setSupplierTier] = useState<'manufacturer' | 'commercial' | 'local'>('local')
+  const [providerType, setProviderType] = useState('')
+  // فرد / وكيل أسعار / سمسار: ما عنده محل ولا سجل — ثقته من التقييمات، فما نسأله تصنيف ولا توثيق
+  const isIndividual = ['individual', 'price_agent', 'broker'].includes(providerType)
   const [minOrderValue, setMinOrderValue] = useState('')
   const [contractorGrade, setContractorGrade] = useState<'A' | 'B' | 'C' | 'D' | ''>('')
   const [extraMaterials, setExtraMaterials] = useState<{ sector: string; name: string }[]>([])
@@ -107,12 +111,13 @@ export default function OnboardingPage() {
       if (!session) { window.location.href = '/login'; return }
       setUid(session.user.id)
       const metaRole = (session.user.user_metadata as any)?.role
-      const { data: p } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude').eq('id', session.user.id).single()
+      const { data: p } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type').eq('id', session.user.id).single()
       setRole(((p?.role || metaRole) === 'supplier') ? 'supplier' : 'contractor')
       if (p) {
         setRegion(p.region || ''); setCity(p.city || ''); setDistrict(p.district || '')
         setLat(p.latitude ?? null); setLng(p.longitude ?? null)
         if (p.supplier_tier) setSupplierTier(p.supplier_tier)
+        setProviderType(p.provider_type || '')
         if (p.min_order_value) setMinOrderValue(String(p.min_order_value))
         if (p.contractor_grade) setContractorGrade(p.contractor_grade)
       }
@@ -150,7 +155,7 @@ export default function OnboardingPage() {
     try {
       const update: any = { region, city, district: district || null, preferred_language: locale }
       if (lat != null && lng != null) { update.latitude = lat; update.longitude = lng }
-      if (role === 'supplier') { update.supplier_tier = supplierTier; update.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0 }
+      if (role === 'supplier') { if (!isIndividual) update.supplier_tier = supplierTier; update.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0 }
       if (role === 'contractor') update.contractor_grade = contractorGrade || null
       await supabase.from('profiles').update(update).eq('id', uid)
       await supabase.from('profile_sectors').delete().eq('profile_id', uid)
@@ -298,7 +303,17 @@ export default function OnboardingPage() {
               )}
 
               {role === 'supplier' && (
-                <div className="mt-4">
+                <div className="mt-4 space-y-4">
+                  {/* الطريقة السريعة: باقات جاهزة حسب نوع النشاط */}
+                  <div>
+                    <p className="text-sm font-bold text-navy mb-0.5">{locale === 'en' ? 'What do you sell? Pick one or more' : locale === 'ur' ? 'آپ کیا بیچتے ہیں؟ ایک یا زیادہ منتخب کریں' : 'شو بتبيع؟ اختار وحدة أو أكتر'}</p>
+                    <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects everything that kind of business sells. You can fine-tune below.' : locale === 'ur' ? 'ایک کلک میں سب منتخب، نیچے تبدیل کر سکتے ہیں۔' : 'ضغطة وحدة بتختار كل شي بيبيعه هالنوع من المحلات، وبتقدر تعدّل تحت.'}</p>
+                    <SupplierPackPicker sectors={sectors} specialties={specialties} locale={locale}
+                      onChange={(n: any) => { setSectors(n.sectors); setSpecialties(n.specialties) }} />
+                  </div>
+                  <details className="group">
+                    <summary className="cursor-pointer text-xs font-bold text-[#d96f15] select-none">{locale === 'en' ? 'Fine-tune materials (optional)' : locale === 'ur' ? 'تفصیل سے منتخب کریں (اختیاری)' : 'تعديل المواد بالتفصيل (اختياري)'} {specialties.length > 0 && `· ${specialties.length}`}</summary>
+                    <div className="mt-3">
                   <SpecialtyPicker
                     sectors={sectors} specialties={specialties}
                     openSector={openSector} onOpenSector={setOpenSector}
@@ -329,12 +344,14 @@ export default function OnboardingPage() {
                       )
                     }}
                   />
+                    </div>
+                  </details>
                 </div>
               )}
             </div>
 
-            {/* ملف الشركة: التصنيف/الدرجة (اختياري) */}
-            {role === 'supplier' && (
+            {/* ملف الشركة: التصنيف/الدرجة (اختياري) — مش للفرد/الوكيل */}
+            {role === 'supplier' && !isIndividual && (
               <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-sm font-bold text-navy">🏭 {t.classTitle}</h2>
@@ -376,7 +393,13 @@ export default function OnboardingPage() {
             )}
 
             {/* التوثيق (للمورّد) — بوابة إيراد: مقفلة حتى يكتمل الملف أعلاه، ثم تحفظ وتنقل لتبويب المستندات */}
-            {role === 'supplier' && (
+            {role === 'supplier' && isIndividual && (
+              <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56', background: 'rgba(15,110,86,0.06)', border: '1px solid rgba(15,110,86,0.2)' }}>
+                <div className="text-sm font-bold text-navy mb-1">⭐ {locale === 'en' ? 'Your trust comes from ratings' : locale === 'ur' ? 'آپ کا اعتماد ریٹنگ سے بنتا ہے' : 'ثقتك بتنبني من التقييمات'}</div>
+                <p className="text-xs text-gray-600 leading-relaxed">{locale === 'en' ? 'As an individual or price agent you do not need a shop or a commercial registration. After every deal the buyer rates your price accuracy and service, and those ratings show next to your quotes.' : locale === 'ur' ? 'انفرادی یا پرائس ایجنٹ کے طور پر آپ کو دکان یا کمرشل رجسٹریشن کی ضرورت نہیں۔ ہر ڈیل کے بعد خریدار آپ کو ریٹ کرتا ہے۔' : 'كفرد أو وكيل أسعار ما بتحتاج محل ولا سجل تجاري. بعد كل صفقة، اللي طلب السعر بيقيّم دقة سعرك وخدمتك، وهالتقييمات بتظهر جنب عروضك.'}</p>
+              </div>
+            )}
+            {role === 'supplier' && !isIndividual && (
               profileComplete ? (
                 <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#F5831F', background: '#fff7ed', border: '1px solid #F5831F33' }}>
                   <div className="flex items-start gap-3">
@@ -433,7 +456,7 @@ export default function OnboardingPage() {
                     <span className={s.done ? 'text-white' : 'text-blue-200'}>{s.label}</span>
                   </div>
                 ))}
-                {role === 'supplier' && (
+                {role === 'supplier' && !isIndividual && (
                   <div className="flex items-center gap-2 text-sm">
                     <span className="w-5 h-5 grid place-items-center rounded-full text-[11px] shrink-0 bg-white/15">🛡</span>
                     <span className="text-blue-200">{t.stepVerify}</span>
