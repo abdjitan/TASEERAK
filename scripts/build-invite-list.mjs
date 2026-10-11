@@ -18,11 +18,12 @@ const rows = JSON.parse(fs.readFileSync(arg('rows'), 'utf8'))
 const emails = arg('emails') && fs.existsSync(arg('emails')) ? JSON.parse(fs.readFileSync(arg('emails'), 'utf8')) : {}
 const OUT = arg('out')
 const ORIGIN = 'https://taseerak.vercel.app'
+const CITY = arg('city', 'الرياض')
 
 const sup = rows.filter(r => r.relevance === 'supplier')
   .sort((a, b) => D.packLabel(a.pack).localeCompare(D.packLabel(b.pack), 'ar') || (b.google_reviews || 0) - (a.google_reviews || 0))
 
-const EMAIL_SUBJECT = 'دعوة للانضمام إلى تسعيرك: طلبات أسعار مواد بناء من الرياض'
+const EMAIL_SUBJECT = `دعوة للانضمام إلى تسعيرك: طلبات أسعار مواد بناء من ${CITY}`
 
 function base(r) {
   return {
@@ -45,7 +46,7 @@ const withLinks = (data, linkCols) => {
 }
 
 const wa = sup.filter(r => r.is_mobile).map(r => {
-  const link = D.waLink(r.phone_norm, D.inviteText('الرياض', r.pack, ORIGIN))
+  const link = D.waLink(r.phone_norm, D.inviteText(CITY, r.pack, ORIGIN))
   return {
     row: { ...base(r), 'الجوال': '0' + r.phone_norm, 'واتساب (اضغط)': 'افتح واتساب', 'الإيميل': (emails[r.website] || [])[0] || '', 'تم الإرسال؟': '', 'ملاحظات': '', 'الخريطة': r.maps_url ? 'الخريطة' : '' },
     links: { 'واتساب (اضغط)': link, 'الخريطة': r.maps_url },
@@ -53,7 +54,7 @@ const wa = sup.filter(r => r.is_mobile).map(r => {
 })
 const em = sup.filter(r => (emails[r.website] || []).length).map(r => {
   const to = emails[r.website][0]
-  const body = D.inviteText('الرياض', r.pack, ORIGIN).replace('وإذا ما بدك رسائل منا، ردّ بكلمة "إيقاف".', 'وإذا ما بدك رسائل منا، ردّ على هالإيميل بكلمة "إيقاف".')
+  const body = D.inviteText(CITY, r.pack, ORIGIN).replace('وإذا ما بدك رسائل منا، ردّ بكلمة "إيقاف".', 'وإذا ما بدك رسائل منا، ردّ على هالإيميل بكلمة "إيقاف".')
   return {
     row: { ...base(r), 'الإيميل': to, 'إيميل تاني': emails[r.website][1] || '', 'أرسل (اضغط)': 'افتح الإيميل', 'الجوال': r.phone_norm ? '0' + r.phone_norm : '', 'الموقع': r.website, 'تم الإرسال؟': '' },
     links: { 'أرسل (اضغط)': `mailto:${to}?subject=${encodeURIComponent(EMAIL_SUBJECT)}&body=${encodeURIComponent(body)}`, 'الموقع': r.website },
@@ -64,7 +65,7 @@ const rev = rows.filter(r => r.relevance === 'review' && r.is_mobile)
   .sort((a, b) => D.packLabel(a.pack).localeCompare(D.packLabel(b.pack), 'ar') || (b.google_reviews || 0) - (a.google_reviews || 0))
   .map(r => ({
     row: { ...base(r), 'نوع Google': r.google_type || '', 'الجوال': '0' + r.phone_norm, 'واتساب (اضغط)': 'افتح واتساب', 'مورد؟ (نعم/لا)': '', 'تم الإرسال؟': '', 'الخريطة': r.maps_url ? 'الخريطة' : '' },
-    links: { 'واتساب (اضغط)': D.waLink(r.phone_norm, D.inviteText('الرياض', r.pack, ORIGIN)), 'الخريطة': r.maps_url },
+    links: { 'واتساب (اضغط)': D.waLink(r.phone_norm, D.inviteText(CITY, r.pack, ORIGIN)), 'الخريطة': r.maps_url },
   }))
 const land = sup.filter(r => !r.is_mobile && r.phone_norm).map(r => ({
   row: { ...base(r), 'الهاتف': '0' + r.phone_norm, 'الإيميل': (emails[r.website] || [])[0] || '', 'الموقع': r.website || '', 'تم الاتصال؟': '', 'ملاحظات': '' },
@@ -77,7 +78,7 @@ const byPack = Object.entries(count(sup, r => D.packLabel(r.pack))).sort((a, b) 
 
 const wb = XLSX.utils.book_new()
 const summary = XLSX.utils.aoa_to_sheet([
-  ['قائمة دعوات موردين الرياض', ''],
+  [`قائمة دعوات موردين ${CITY}`, ''],
   ['موردين', sup.length], ['عندهم واتساب (جوال)', wa.length], ['عندهم إيميل', em.length], ['رقم أرضي بس (اتصال)', land.length], ['محلات غير مؤكدة عندها جوال (ورقة بحاجة نظرة)', rev.length],
   ['بدون أي وسيلة تواصل', sup.filter(r => !r.phone_norm && !(emails[r.website] || []).length).length], [],
   ['طريقة الإرسال', 'اضغط "افتح واتساب" بيفتح المحادثة والرسالة جاهزة، اضغط إرسال، وبعدين حط ✓ بعمود "تم الإرسال؟".'],

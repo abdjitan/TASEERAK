@@ -16,7 +16,7 @@ const args = process.argv.slice(2)
 const arg = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i + 1] : d }
 const DIR = arg('dir')
 const CITY = arg('city', 'الرياض')
-const BBOX = { s: 24.35, w: 46.40, n: 25.05, e: 47.10 }
+const BBOX = D.DISCOVERY_CITIES[CITY].bbox
 const MIN_SPAN = Number(arg('min-span', '0.006')) // ≈650 m
 const CONCURRENCY = 3
 const KEY = (fs.readFileSync(path.join(ROOT, '.env.local'), 'utf8').match(/^\s*GOOGLE_MAPS_API_KEY\s*=\s*(.+?)\s*$/m) || [])[1]

@@ -12,9 +12,10 @@ import { CITIES_BY_REGION } from '@/types'
 // its centre, so Google's 60-results-per-query cap applies per zone, not per city.
 export type DiscoveryZone = { name: string; lat: number; lng: number; radiusKm: number; priority?: boolean }
 
-export const DISCOVERY_CITIES: Record<string, { region: string; zones: DiscoveryZone[] }> = {
+export const DISCOVERY_CITIES: Record<string, { region: string; bbox: { s: number; w: number; n: number; e: number }; zones: DiscoveryZone[] }> = {
   'الرياض': {
     region: 'الرياض',
+    bbox: { s: 24.35, w: 46.40, n: 25.05, e: 47.10 },
     zones: [
       // High-density trade areas first (brief §2).
       { name: 'البطحاء', lat: 24.637, lng: 46.716, radiusKm: 2.5, priority: true },
@@ -52,6 +53,22 @@ export const DISCOVERY_CITIES: Record<string, { region: string; zones: Discovery
       { name: 'نمار', lat: 24.565, lng: 46.650, radiusKm: 3 },
       { name: 'الملقا', lat: 24.810, lng: 46.610, radiusKm: 3 },
       { name: 'النرجس', lat: 24.860, lng: 46.660, radiusKm: 3.5 },
+    ],
+  },
+  'جدة': {
+    region: 'مكة المكرمة',
+    bbox: { s: 21.20, w: 39.05, n: 21.95, e: 39.40 },
+    zones: [
+      { name: 'المنطقة الصناعية', lat: 21.415, lng: 39.225, radiusKm: 4, priority: true },
+      { name: 'البغدادية والكندرة', lat: 21.490, lng: 39.190, radiusKm: 2, priority: true },
+      { name: 'طريق مكة القديم', lat: 21.470, lng: 39.215, radiusKm: 3, priority: true },
+      { name: 'الصفا والمروة', lat: 21.580, lng: 39.215, radiusKm: 3, priority: true },
+      { name: 'الحرازات', lat: 21.520, lng: 39.300, radiusKm: 4, priority: true },
+      { name: 'السامر والأجواد', lat: 21.590, lng: 39.250, radiusKm: 3, priority: true },
+      { name: 'الخمرة', lat: 21.340, lng: 39.200, radiusKm: 4, priority: true },
+      { name: 'الحمراء والروضة', lat: 21.540, lng: 39.160, radiusKm: 3 },
+      { name: 'الفيصلية والنزهة', lat: 21.600, lng: 39.165, radiusKm: 3 },
+      { name: 'أبحر', lat: 21.750, lng: 39.130, radiusKm: 5 },
     ],
   },
 }

@@ -23,9 +23,8 @@ const OLD = arg('old', '')
 const MAX_CALLS = Number(arg('max-calls', '3000'))
 const DRY = args.includes('--dry')
 const CONCURRENCY = 4
-const CITY = 'الرياض'
-// Riyadh metro incl. الحائر / الدرعية / outskirts industrial areas.
-const BBOX = { s: 24.35, w: 46.40, n: 25.05, e: 47.10 }
+const CITY = arg('city', 'الرياض')
+const BBOX = D.DISCOVERY_CITIES[CITY].bbox
 const MIN_SPAN = 0.015 // ≈1.6 km: stop splitting below this
 
 // Shop-type search terms covering every catalog specialty: [term, pack] from PACK_QUERIES.
@@ -241,7 +240,8 @@ XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet(riyadh.filter(r 
 XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(sheet(riyadh.filter(r => r.relevance === 'contractor'))), 'مقاولين')
 for (const ws of Object.values(wb.Sheets)) ws['!views'] = [{ RTL: true }]
 wb.Workbook = { Views: [{ RTL: true }] }
-const file = path.join(OUT, `محلات-الرياض-كل-التصنيفات-${new Date().toISOString().slice(0, 10)}.xlsx`)
+const file = path.join(OUT, `محلات-${CITY}-كل-التصنيفات-${new Date().toISOString().slice(0, 10)}.xlsx`)
 XLSX.writeFile(wb, file)
-fs.writeFileSync(path.join(OUT, 'riyadh-rows.json'), JSON.stringify(riyadh))
+fs.writeFileSync(path.join(OUT, 'city-rows.json'), JSON.stringify(riyadh))
+if (CITY === 'الرياض') fs.writeFileSync(path.join(OUT, 'riyadh-rows.json'), JSON.stringify(riyadh))
 console.log('wrote', file)
