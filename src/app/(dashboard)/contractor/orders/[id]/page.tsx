@@ -319,7 +319,7 @@ export default function OrderDetailPage() {
           <div className="p-6 border-b border-gray-100">
             <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>بيان الصفقة</h2>
             <p className="text-xs text-gray-500 mt-1 leading-relaxed">مستند غير رسمي يوضّح مبلغ الصفقة، وليس فاتورة ضريبية. الفاتورة الرسمية يصدرها المورد وتُرفق أدناه.</p>
-            <div className="text-xs text-gray-500 mt-2">رقم البيان: <span className="font-mono" dir="ltr">{offer.invoice_number || `ST-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>
+            <div className="text-xs text-gray-500 mt-2">رقم البيان: <span className="font-mono" dir="ltr">{(offer.invoice_number || '').replace(/^INV-/, 'ST-') || `ST-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>
             <div className="text-xs text-gray-500">التاريخ: {new Date(offer.accepted_at || offer.created_at).toLocaleString('ar-SA-u-ca-gregory', { timeZone: 'Asia/Riyadh' })}</div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 sm:p-6 border-b border-gray-100 text-sm">
