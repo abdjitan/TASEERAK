@@ -23,6 +23,7 @@ export default function SupplierRFQPage() {
   const router = useRouter()
   const { locale, dir } = useTranslation()
   const [user, setUser] = useState<any>(null)
+  const [actingId, setActingId] = useState('') // الشركة لعضو الفريق، وإلا المستخدم نفسه
   const [verified, setVerified] = useState(true) // تفاؤلي؛ يُضبط من الملف. القفل الحقيقي على مستوى القاعدة (RLS)
   const [rfq, setRfq] = useState<any>(null)
   const [existingOffer, setExistingOffer] = useState<any>(null)
@@ -118,7 +119,11 @@ export default function SupplierRFQPage() {
       setVerified(canQuote === true)
       // A company quotes from its own stock by default; an independent seller must say where the
       // price comes from.
-      const { data: me } = await supabase.from('profiles').select('provider_type').eq('id', session.user.id).single()
+      // A team member prices on behalf of the company.
+      const { data: actRaw } = await supabase.rpc('acting_uid')
+      const actId: string = (actRaw as any) || session.user.id
+      setActingId(actId)
+      const { data: me } = await supabase.from('profiles').select('provider_type').eq('id', actId).single()
       const indep = sellerKindOf(me?.provider_type) === 'independent'
       setIsIndependent(indep)
       if (!indep) setSourceType('own_stock')
@@ -131,9 +136,9 @@ export default function SupplierRFQPage() {
 
       // ✅ المورد يرى/يسعّر فقط المواد ضمن تخصصه — لا تظهر له مواد قطاع لا يخدمه
       if (Array.isArray(rfqData?.items) && rfqData.items.length > 0) {
-        const { data: p2 } = await supabase.from('profiles').select('supplier_tier').eq('id', session.user.id).single()
-        const { data: secRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
-        const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
+        const { data: p2 } = await supabase.from('profiles').select('supplier_tier').eq('id', actId).single()
+        const { data: secRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', actId)
+        const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', actId)
         const mySectors = (secRows || []).map((r: any) => r.sector)
         const mySpecialties = (specRows || []).map((r: any) => r.specialty)
         const myTier = p2?.supplier_tier || 'shop'
@@ -147,7 +152,7 @@ export default function SupplierRFQPage() {
         // تعبئة تلقائية من أسعار المورّد المحفوظة (صفحة «أسعاري»)
         // key on product_name + unit so a per-ton saved price never fills a per-bar field (B5);
         // skip saved prices tied to a different region (region-agnostic saved prices still apply).
-        const { data: myPrices } = await supabase.from('live_prices').select('product_name, price, unit, region').eq('supplier_id', session.user.id)
+        const { data: myPrices } = await supabase.from('live_prices').select('product_name, price, unit, region').eq('supplier_id', actId)
         const rfqRegion = rfqData?.region || null
         const priceMap: Record<string, number> = {}
         for (const pr of (myPrices || [])) {
@@ -165,7 +170,7 @@ export default function SupplierRFQPage() {
 
       // auto-calc unit price from quantity
       const { data: offerData } = await supabase
-        .from('offers').select('*').eq('rfq_id', id).eq('supplier_id', session.user.id).single()
+        .from('offers').select('*').eq('rfq_id', id).eq('supplier_id', actId).single()
       if (offerData) {
         setExistingOffer(offerData)
         if (offerData.status === 'accepted') {
@@ -372,7 +377,7 @@ export default function SupplierRFQPage() {
       rfq_id: id,
       source_type: sourceType,
       availability: availability || null,
-      supplier_id: user.id,
+      supplier_id: actingId || user.id,
       total_price: finalTotal,
       price_valid_until: new Date(Date.now() + (parseInt(priceValidity) || 3) * 86400000).toISOString(),
       vat_included: vatIncluded,
@@ -395,7 +400,7 @@ export default function SupplierRFQPage() {
   async function handleDismiss() {
     const supabase = createClient()
     await supabase.from('rfq_dismissals').insert({
-      rfq_id: id, supplier_id: user.id, reason: dismissReason || null,
+      rfq_id: id, supplier_id: actingId || user.id, reason: dismissReason || null,
     })
     setDismissed(true)
     setShowDismiss(false)

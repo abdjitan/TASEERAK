@@ -68,6 +68,7 @@ export default function SupplierDashboard() {
 
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const [isMember, setIsMember] = useState(false) // عضو في فريق شركة: يعمل باسمها
   const [launchUntil, setLaunchUntil] = useState<any>(null)
   const [pricesCount, setPricesCount] = useState<any>(null)
   const [openRfqs, setOpenRfqs] = useState<any[]>([])
@@ -83,18 +84,22 @@ export default function SupplierDashboard() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+      // A team member works on behalf of their company: everything below reads the company.
+      const { data: actRaw } = await supabase.rpc('acting_uid')
+      const actId: string = (actRaw as any) || session.user.id
+      setIsMember(actId !== session.user.id)
+      const { data: p } = await supabase.from('profiles').select('*').eq('id', actId).single()
       setProfile(p)
       const { data: cfg } = await supabase.from('app_config').select('launch_free_until').maybeSingle()
       setLaunchUntil(cfg?.launch_free_until || null)
 
       // جلب قطاعات المورد المتخصص فيها
-      const { data: sectorRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
+      const { data: sectorRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', actId)
       const mySectors = (sectorRows || []).map((r: any) => r.sector)
       setHasSectors(mySectors.length > 0)
 
       // جلب التخصصات الفرعية للمورد
-      const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
+      const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', actId)
       const mySpecialties = (specRows || []).map((r: any) => r.specialty)
       setHasSpecialties(mySpecialties.length > 0)
 
@@ -135,7 +140,7 @@ export default function SupplierDashboard() {
       const myTier = p?.supplier_tier || 'shop'
       const isVerified = p?.verification_status === 'verified'
       // الفروع: المورد يخدم منطقته الرئيسية + كل مناطق فروعه
-      const { data: myBranches } = await supabase.from('branches').select('region').eq('supplier_id', session.user.id)
+      const { data: myBranches } = await supabase.from('branches').select('region').eq('supplier_id', actId)
       const servedRegions = [p?.region, ...(myBranches || []).map((b: any) => b.region)].filter(Boolean)
       rfqs = rfqs.filter((r: any) => {
         if (r.verified_only && !isVerified) return false
@@ -147,7 +152,7 @@ export default function SupplierDashboard() {
       })
 
       // استبعاد الطلبات المتجاهلة + المنتهية مهلتها (ما عاد يقدر يسعّرها)
-      const { data: dismissals } = await supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', session.user.id)
+      const { data: dismissals } = await supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', actId)
       const dismissedIds = new Set((dismissals || []).map((d: any) => d.rfq_id))
       const visibleRfqs = (rfqs || []).filter((r: any) => !dismissedIds.has(r.id) && !isExpired(r.expires_at))
 
@@ -159,9 +164,9 @@ export default function SupplierDashboard() {
         toast(`⏰ ${expiringSoon.length} ${expiringSoon.length === 1 ? 'طلب تنتهي مهلته' : 'طلبات تنتهي مهلتها'} قريباً — سارِع بالتسعير`, { duration: 7000 })
       }
 
-      const { data: offers } = await supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status)').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
+      const { data: offers } = await supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status)').eq('supplier_id', actId).order('created_at', { ascending: false })
       setMyOffers(offers || [])
-      const { count: lpCount } = await supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', session.user.id)
+      const { count: lpCount } = await supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', actId)
       setPricesCount(lpCount ?? 0)
       setLoading(false)
   }
@@ -231,8 +236,14 @@ export default function SupplierDashboard() {
       dir={dir}
     >
       <div className="max-w-6xl mx-auto">
+        {isMember && (
+          <div className="rounded-xl px-4 py-2.5 mb-4 text-sm border flex flex-wrap items-center justify-between gap-2" style={{ background: '#1B2D5B0A', borderColor: '#1B2D5B26', color: '#1B2D5B' }}>
+            <span>👥 {locale === 'en' ? 'You are working on behalf of' : locale === 'ur' ? 'آپ اس کمپنی کی جانب سے کام کر رہے ہیں:' : 'تعمل باسم'} <b>{companyName}</b></span>
+            <Link href="/supplier/team" className="text-xs font-bold underline">{locale === 'en' ? 'Team' : locale === 'ur' ? 'ٹیم' : 'فريق العمل'}</Link>
+          </div>
+        )}
         {/* بوابة إكمال الملف — بارزة؛ بدونها لا تصل أي طلبات. باقي التنبيهات مخفيّة حتى الإكمال (لتفادي التشتيت). */}
-        {profile && !profile.region && (
+        {profile && !profile.region && !isMember && (
           <Link href="/onboarding" className="block rounded-2xl p-5 mb-4 border-2 hover:shadow-lg transition-all" style={{ borderColor: '#F5831F', background: 'linear-gradient(120deg,#fff7ed,#ffffff)' }}>
             <div className="flex items-start gap-3">
               <span className="text-3xl shrink-0">🔒</span>

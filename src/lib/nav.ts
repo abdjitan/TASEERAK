@@ -25,6 +25,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/supplier/prices', icon: '📈', label: L('Live Prices', 'لائیو قیمتیں', 'أسعاري'), section: sec, mobile: 3 },
       { href: '/supplier/analytics', icon: '🏆', label: L('Performance', 'کارکردگی', 'أدائي'), section: sec },
       { href: '/supplier/branches', icon: '🏢', label: L('Branches', 'شاخیں', 'فروع الشركة'), section: sec },
+      { href: '/supplier/team', icon: '👥', label: L('Team', 'ٹیم', 'فريق العمل'), section: sec },
       { href: '/supplier/subscription', icon: '⭐', label: L('Subscription', 'سبسکرپشن', 'الاشتراك'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📊', label: L('Price Index', 'انڈیکس', 'البورصة'), section: secTools },

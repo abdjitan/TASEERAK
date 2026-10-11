@@ -46,6 +46,11 @@ export function tierAllowed(targets: string[] | null | undefined, mine: string |
 export type SellerKind = 'independent' | 'company'
 /** /join/company and /join/seller remember the chosen kind here until signup applies it. */
 export const SIGNUP_KIND_KEY = 'taseerak_signup_kind'
+/** A company team invitation opened before signing in: resumed right after login. */
+export const TEAM_INVITE_KEY = 'taseerak_team_invite'
+export function pendingTeamInvite(): string | null {
+  try { const t = window.localStorage.getItem(TEAM_INVITE_KEY); return t && /^[0-9a-f]{36}$/.test(t) ? t : null } catch { return null }
+}
 export function rememberedSignupKind(): SellerKind | null {
   try { const k = window.localStorage.getItem(SIGNUP_KIND_KEY); return k === 'company' || k === 'independent' ? k : null } catch { return null }
 }

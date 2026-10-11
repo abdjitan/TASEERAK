@@ -87,6 +87,16 @@ cross-user operations go through `SECURITY DEFINER` RPCs granted to `authenticat
   - The hard-coded TS `SUB_CATEGORIES` is the **fallback/baseline**; keep its keys and the
     DB `sub_key`s aligned (don't rename keys without a migration). `SECTOR_PRODUCTS`
     (product lists) is separate and still TS-only.
+- **Seller structure** (migrations 123/124, `src/lib/sellers.ts`): two kinds only:
+  independent (`provider_type` individual/broker/price_agent) or company (activity:
+  manufacturer/distributor/trading_company/retail_shop/company). `supplier_tier` is **derived
+  by trigger** (`zz_derive_supplier_tier`): `company` = CR-verified non-shop, `shop`, `independent`;
+  never set it from the client. Offers carry `source_type` + `availability` (shown to buyers;
+  sourced quotes are never shown as direct). Company **team members** (`company_members`,
+  invites via `/supplier/team` → `/team/join/<token>`) act through `acting_uid()` (= company id
+  for an active member): use it, not `auth.uid()`, for supplier-side checks; supplier pages read
+  `supabase.rpc('acting_uid')`. Deals after award + messaging stay with the owner (for now).
+- **UI language**: Arabic copy is فصحى (MSA), never dialect, even though the owner chats in dialect.
 - **Privacy**: contractor identity is masked in `profiles_public`; reveal only via
   `get_rfq_contractor()` (owner/admin/accepted-supplier). Bid-sniping blind period in
   `get_rfq_offer_ranking()` (last 30 min). `profiles.approvals[]` = trust badges.

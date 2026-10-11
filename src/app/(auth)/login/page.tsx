@@ -9,6 +9,7 @@ import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import PhoneOtpForm from '@/components/auth/PhoneOtpForm'
 import { PHONE_OTP_ENABLED } from '@/lib/features'
+import { pendingTeamInvite } from '@/lib/sellers'
 
 const txt = {
   ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساب جديد', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد للمقاولين', s_auth:'الخطوة 1/3: جارٍ التحقق من بياناتك…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'الخطوة 3/3: تم الدخول ✓ جارٍ التحويل…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، يتنافس عليه أفضل الموردين.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'موردون موثّقون ومصنّفون', l2:'قارن العروض بالأسعار ومتوسط السوق', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.' },
@@ -59,6 +60,9 @@ function LoginForm() {
 
   // Where a signed-in user goes: pick a role first (phone signups), then complete the profile.
   async function routeSignedIn(userId: string, metaRole?: string) {
+    // A company team invitation opened before signing in comes first.
+    const invite = pendingTeamInvite()
+    if (invite) { window.location.href = `/team/join/${invite}`; return }
     const supabase = createClient()
     let p: any = null
     try {

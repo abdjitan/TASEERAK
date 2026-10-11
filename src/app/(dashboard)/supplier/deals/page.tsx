@@ -23,10 +23,12 @@ export default function SupplierDealsPage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
+      const { data: actRaw } = await supabase.rpc('acting_uid') // a team member sees the company's deals
+      const actId: string = (actRaw as any) || session.user.id
       const { data } = await supabase
         .from('offers')
         .select('*, rfq:rfqs(id, product_name, title, contractor:profiles!contractor_id(company_name_ar))')
-        .eq('supplier_id', session.user.id)
+        .eq('supplier_id', actId)
         .eq('status', 'accepted')
         .order('accepted_at', { ascending: false })
         .limit(200)
