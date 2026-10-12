@@ -20,7 +20,7 @@ export const SEARCH_SYNONYMS: string[][] = [
   ['حديد', 'سيخ', 'اسياخ', 'تسليح', 'rebar', 'steel'],
   ['رمل', 'رمله', 'sand'],
   ['بحص', 'حصى', 'حصمه', 'زلط', 'كسارة', 'aggregate', 'gravel'],
-  ['بلاط', 'سيراميك', 'بورسلان', 'بورسلين', 'tiles', 'ceramic', 'porcelain'],
+  ['بلاط', 'سيراميك', 'بورسلان', 'بورسلين', 'سيراميك ارضيات', 'بلاط ارضيات', 'بلاط حمام', 'tiles', 'ceramic', 'porcelain'],
   ['رخام', 'جرانيت', 'marble', 'granite'],
   ['دهان', 'بويه', 'صبغ', 'طلاء', 'paint'],
   ['جبس', 'جبسوم', 'جبس بورد', 'gypsum'],
@@ -41,9 +41,9 @@ export const SEARCH_SYNONYMS: string[][] = [
   ['مضخه', 'طرمبه', 'دينمو', 'pump'],
   ['خلاط', 'حنفيه', 'محبس', 'mixer', 'faucet', 'tap'],
   ['مغسله', 'حوض', 'basin', 'sink'],
-  ['كرسي حمام', 'كرسي افرنجي', 'كرسي عربي', 'مرحاض', 'تواليت', 'toilet', 'wc'],
-  ['بانيو', 'حوض استحمام', 'bathtub'],
-  ['مضخه غاطسه', 'غطاسه', 'مضخه نزح', 'submersible'],
+  ['مرحاض', 'كرسي حمام', 'كرسي افرنجي', 'كرسي عربي', 'تواليت', 'toilet', 'wc'],
+  ['حوض استحمام', 'بانيو', 'bathtub'],
+  ['غطاسه', 'مضخه غاطسه', 'مضخه نزح', 'submersible'],
   ['عربانه', 'عربيه يد', 'عربه يد', 'wheelbarrow'],
   ['انتركم', 'جرس باب', 'intercom'],
   ['مرايه', 'مرآه', 'مرايا', 'mirror'],
@@ -118,7 +118,7 @@ function editDistance(a: string, b: string, max: number): number {
 }
 
 type Field = { toks: string[]; weight: number }
-type Doc = { name: string; sector: Sector; sub: string | null; nameNorm: string; fields: Field[] }
+type Doc = { name: string; sector: Sector; sub: string | null; nameNorm: string; fields: Field[]; groups?: number[] }
 
 let INDEX: Doc[] | null = null
 let SYN_NORM: string[][] | null = null
@@ -129,14 +129,18 @@ function synonymGroups(): string[][] {
 }
 
 // Whole-word matching only: "سلك" (wire) must not tag "سلكون" (silicone), "ac" must not tag "access".
-function expandSynonyms(text: string): string[] {
+function synonymGroupsOf(text: string): number[] {
   const words = new Set(tokens(text))
   const hay = ' ' + Array.from(words).join(' ') + ' '
-  const extra: string[] = []
-  for (const g of synonymGroups()) {
-    if (g.some(w => (w.includes(' ') ? hay.includes(' ' + w + ' ') : words.has(w)))) extra.push(...g.flatMap(tokens))
-  }
-  return extra
+  const out: number[] = []
+  synonymGroups().forEach((g, i) => {
+    if (g.some(w => (w.includes(' ') ? hay.includes(' ' + w + ' ') : words.has(w)))) out.push(i)
+  })
+  return out
+}
+function expandSynonyms(text: string): string[] {
+  const groups = synonymGroups()
+  return synonymGroupsOf(text).flatMap(i => groups[i].flatMap(tokens))
 }
 
 function buildIndex(): Doc[] {
@@ -157,6 +161,7 @@ function buildIndex(): Doc[] {
           { toks: expandSynonyms(name + ' ' + en), weight: 1.0 },
           { toks: sc ? tokens([sc.ar, sc.en, ...(sc.keywords || [])].join(' ')) : [], weight: 0.7 },
         ],
+        groups: synonymGroupsOf(name + ' ' + en),
       })
     }
   }
@@ -191,6 +196,9 @@ export function searchProducts(query: string, opts: { sector?: Sector | ''; limi
   }
   if (opts.sector) docs = docs.filter(d => d.sector === opts.sector)
   const qNorm = norm(query)
+  // The buyer's words name a synonym group ("كرسي افرنجي" → toilets, "طبلون" → distribution
+  // boards): products of that group rank above ones that merely share a literal word.
+  const qGroups = synonymGroupsOf(query)
 
   // Score each query word against each distinct catalog word once (the vocabulary repeats a lot).
   const memo = qToks.map(() => new Map<string, number>())
@@ -216,6 +224,9 @@ export function searchProducts(query: string, opts: { sector?: Sector | ''; limi
       if (total <= 0 || matched === 0) continue
       if (d.nameNorm.startsWith(qNorm)) total += 6
       else if (d.nameNorm.includes(qNorm)) total += 3
+      // only the thing itself (its name holds the group's first word, e.g. "مرحاض"), not its parts
+      // ("سيفون كرسي" shares the group through "WC" but is not a toilet)
+      if (qGroups.some(g => d.groups?.includes(g) && d.nameNorm.includes(synonymGroups()[g][0]))) total += 12
       total -= d.name.length / 200 // shorter (more generic) names first on ties
       hits.push({ name: d.name, sector: d.sector, sub: d.sub, score: total })
     }
