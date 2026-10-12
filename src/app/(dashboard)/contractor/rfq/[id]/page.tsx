@@ -295,7 +295,7 @@ export default function RFQDetailPage() {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-4">
           <Link href="/contractor" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">← {L('Back to requests', 'درخواستوں پر واپس', 'رجوع للطلبات')}</Link>
-          <Link href={`/contractor/rfq/new?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#d96f15] hover:underline">🔁 {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>
+          <Link href={`/contractor/rfq/quick?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#d96f15] hover:underline">🔁 {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>
         </div>
 
         {/* RFQ Card */}

@@ -6,13 +6,14 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, type Sector } from '@/types'
+import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import { productImageUrl } from '@/lib/productImage'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 
-// Quick request: for anyone, no engineering terms. Write, dictate or photograph what you need;
-// we turn it into lines you can fix, then send. Detailed specs stay on /contractor/rfq/new.
+// The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
+// it into lines the buyer can fix, then send. Each line can open its specifications (PRODUCT_SPECS)
+// and carry a drawing/file. Reorder (?from=<rfq>) and saved drafts (?draft=<id>) open here too.
 
 const UNITS = ['حبة', 'كيس', 'طن', 'م³', 'م²', 'متر', 'م.ط', 'لفة', 'كرتون', 'سطل', 'لوح', 'جالون', 'لتر', 'كغ', 'طقم', 'نقلة', 'يوم', 'ساعة', 'عدد']
 
@@ -26,6 +27,9 @@ type Line = {
   photoId?: string
   original?: string // what the buyer wrote, when it differs from the Arabic name suppliers see
   suggestion?: { name: string; sector: string } | null
+  specs?: Record<string, string> // chosen specification values (PRODUCT_SPECS keys, without 'unit')
+  fileId?: string                // attached drawing/spec file, kept in IndexedDB until sending
+  fileName?: string
 }
 type Photo = {
   id: string
@@ -39,6 +43,24 @@ type Photo = {
 
 let seq = 0
 const uid = () => 'k' + Date.now().toString(36) + (seq++)
+
+// "القطر: 12 مم، الطول: 12 متر" from the chosen specification values (the order unit is the line's unit).
+function specText(name: string, specs?: Record<string, string>) {
+  if (!specs) return ''
+  return getProductSpecs(name).filter(f => f.key !== 'unit' && (specs[f.key] || '').trim()).map(f => `${f.ar}: ${specs[f.key].trim()}`).join('، ')
+}
+// A saved request item (rfqs.items / rfq_drafts) back into an editable line.
+function lineFromItem(it: any): Line {
+  const specs: Record<string, string> = it.specsObj && typeof it.specsObj === 'object' ? { ...it.specsObj } : {}
+  delete specs.unit
+  const st = specText(it.product_name || '', specs)
+  let details = String(it.specification || '')
+  if (st && details.startsWith(st)) details = details.slice(st.length).replace(/^\s*—\s*/, '')
+  return {
+    key: uid(), product_name: it.product_name || '', sector: it.sector || 'supply_store',
+    quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details, specs,
+  }
+}
 
 export default function QuickRequestPage() {
   const { locale, dir } = useTranslation()
@@ -55,6 +77,13 @@ export default function QuickRequestPage() {
   const [hours, setHours] = useState(48)
   const [notes, setNotes] = useState('')
   const [hideIdentity, setHideIdentity] = useState(true)
+  const [vatRequired, setVatRequired] = useState(false)
+  const [verifiedOnly, setVerifiedOnly] = useState(false)
+  const [pickup, setPickup] = useState(false) // the buyer collects from the supplier instead of delivery
+  const [specsOpen, setSpecsOpen] = useState<string | null>(null) // line key whose specifications are open
+  const [draftId, setDraftId] = useState<string | null>(null)     // a saved draft (rfq_drafts) opened here
+  const specFileRef = useRef<HTMLInputElement>(null)
+  const [fileFor, setFileFor] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
@@ -72,6 +101,35 @@ export default function QuickRequestPage() {
       const { data: p } = await supabase.from('profiles').select('region, city').eq('id', user.id).single()
       if (p?.region) setRegion(p.region)
       if (p?.city) setCity(p.city)
+      // Reorder an earlier request, or continue a saved draft: these replace the local list.
+      const qs = new URLSearchParams(window.location.search)
+      const fromId = qs.get('from'), dId = qs.get('draft')
+      if (fromId || dId) {
+        if (fromId) {
+          const { data: r } = await supabase.from('rfqs').select('*').eq('id', fromId).eq('contractor_id', user.id).single()
+          if (r) {
+            const its: any[] = Array.isArray(r.items) && r.items.length ? r.items
+              : r.product_name ? [{ sector: r.sector, product_name: r.product_name, specification: r.specification, quantity: r.quantity, unit: r.unit }] : []
+            setLines(its.map(lineFromItem))
+            if (r.region && r.region !== 'كل المناطق') { setRegion(r.region); setCity(r.city || '') }
+            setNotes(r.notes || ''); setHideIdentity(r.hide_identity ?? true)
+            setVatRequired(!!r.vat_invoice_required); setVerifiedOnly(!!r.verified_only); setPickup(r.delivery_required === false)
+          }
+        } else if (dId) {
+          const { data: dr } = await supabase.from('rfq_drafts').select('*').eq('id', dId).single()
+          const dd: any = dr?.data
+          if (dd) {
+            setDraftId(dr.id)
+            if (Array.isArray(dd.items)) setLines(dd.items.map(lineFromItem))
+            if (dd.region) { setRegion(dd.region); setCity(dd.city || '') }
+            setNotes(dd.notes || ''); setHideIdentity(dd.hideIdentity ?? true)
+            setVatRequired(!!dd.vatRequired); setVerifiedOnly(!!dd.verifiedOnly); setPickup(dd.deliveryRequired === false)
+          }
+        }
+        window.history.replaceState(null, '', '/contractor/rfq/quick')
+        setRestored(true)
+        return
+      }
       // Bring back what the buyer had entered before leaving the page.
       const d = loadLocalDraft<any>('quick:' + user.id)
       if (d) {
@@ -82,6 +140,9 @@ export default function QuickRequestPage() {
         if (d.hours) setHours(d.hours)
         if (typeof d.notes === 'string') setNotes(d.notes)
         if (typeof d.hideIdentity === 'boolean') setHideIdentity(d.hideIdentity)
+        if (typeof d.vatRequired === 'boolean') setVatRequired(d.vatRequired)
+        if (typeof d.verifiedOnly === 'boolean') setVerifiedOnly(d.verifiedOnly)
+        if (typeof d.pickup === 'boolean') setPickup(d.pickup)
         const back: Photo[] = []
         for (const m of Array.isArray(d.photos) ? d.photos : []) {
           const blob = await getDraftBlob(m.id)
@@ -102,14 +163,14 @@ export default function QuickRequestPage() {
   useEffect(() => {
     if (!restored || !userId || done) return
     const t = setTimeout(() => saveLocalDraft('quick:' + userId, {
-      text, lines, region, city, hours, notes, hideIdentity,
+      text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, pickup,
       photos: photos.map(p => ({ id: p.id, name: p.file.name, type: p.file.type, status: p.status, share: p.share, confidence: p.confidence, localName: p.localName })),
     }), 300)
     return () => clearTimeout(t)
-  }, [restored, userId, done, text, lines, region, city, hours, notes, hideIdentity, photos])
+  }, [restored, userId, done, text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, pickup, photos])
 
   function startOver() {
-    deleteDraftBlobs(photos.map(p => p.id))
+    deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[]])
     if (userId) clearLocalDraft('quick:' + userId)
     setLines([]); setPhotos([]); setText(''); setNotes(''); setError('')
   }
@@ -189,10 +250,27 @@ export default function QuickRequestPage() {
     setLines(prev => [...prev, { key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '' }])
   }
 
+  // 📎 a drawing or specification file for one line (PDF or image, up to 10 MB)
+  function attachFile(key: string, file: File | undefined) {
+    if (!file) return
+    if (!/^(image\/(jpeg|png|webp)|application\/pdf)$/.test(file.type) || file.size > 10 * 1024 * 1024) {
+      setError(L('Files must be PDF, JPG, PNG or WEBP under 10 MB.', 'فائل PDF یا تصویر اور 10MB سے کم ہو۔', 'يجب أن يكون الملف PDF أو صورة وأقل من ١٠ ميغابايت.'))
+      return
+    }
+    const id = uid()
+    putDraftBlob(id, file)
+    setLines(prev => prev.map(l => {
+      if (l.key !== key) return l
+      if (l.fileId) deleteDraftBlobs([l.fileId])
+      return { ...l, fileId: id, fileName: file.name }
+    }))
+  }
+
   function updateLine(key: string, patch: Partial<Line>) { setLines(prev => prev.map(l => l.key === key ? { ...l, ...patch } : l)) }
   function removeLine(key: string) {
     const l = lines.find(x => x.key === key)
     setLines(prev => prev.filter(x => x.key !== key))
+    if (l?.fileId) deleteDraftBlobs([l.fileId])
     if (l?.photoId) { deleteDraftBlobs([l.photoId]); setPhotos(prev => prev.filter(p => p.id !== l.photoId)) }
   }
 
@@ -212,21 +290,34 @@ export default function QuickRequestPage() {
         const l = lines[i]
         const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
         let photoUrl: string | null = null
+        let fileUrl: string | null = null
+        if (l.fileId) {
+          const blob = await getDraftBlob(l.fileId)
+          if (blob) {
+            const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
+            const { data: up } = await supabase.storage.from('licenses').upload(`${userId}/spec-${Date.now()}-${i}.${ext}`, blob, { upsert: false, contentType: blob.type })
+            if (up) fileUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
+          }
+        }
         if (ph && ph.share) {
           const ext = ph.file.type === 'image/png' ? 'png' : ph.file.type === 'image/webp' ? 'webp' : 'jpg'
           const path = `${userId}/photo-${Date.now()}-${i}.${ext}`
           const { data: up } = await supabase.storage.from('licenses').upload(path, ph.file, { upsert: false, contentType: ph.file.type })
           if (up) photoUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
         }
+        const st = specText(l.product_name, l.specs)
+        const specsObj: Record<string, string> = {}
+        for (const [k, v] of Object.entries(l.specs || {})) if ((v || '').trim()) specsObj[k] = v.trim()
         items.push({
           sector: l.sector,
           product_name: l.product_name.trim(),
-          sub_category: detectSubCategory(l.product_name, l.sector as any),
-          specification: l.details.trim() || null,
+          sub_category: detectSubCategory(`${l.product_name} ${st}`, l.sector as any),
+          specification: [st, l.details.trim()].filter(Boolean).join(' — ') || null,
           quantity: parseFloat(l.quantity),
           unit: l.unit,
-          supplier_tiers: null, in_stock: false, max_days: null, specsObj: {},
-          spec_file_url: photoUrl, spec_file_name: photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
+          supplier_tiers: null, in_stock: false, max_days: null, specsObj,
+          spec_file_url: fileUrl || photoUrl,
+          spec_file_name: fileUrl ? (l.fileName || L('Attachment', 'فائل', 'مرفق')) : photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
           photo_url: photoUrl,
           quick: true,
         })
@@ -238,8 +329,8 @@ export default function QuickRequestPage() {
         sectors: Array.from(new Set(items.map(it => it.sector))),
         sub_category: first.sub_category, specification: first.specification, quantity: first.quantity, unit: first.unit,
         items,
-        region, city: city || null, delivery_required: true, vat_invoice_required: false,
-        hide_identity: hideIdentity, verified_only: false, nearby_only: false,
+        region, city: city || null, delivery_required: !pickup, vat_invoice_required: vatRequired,
+        hide_identity: hideIdentity, verified_only: verifiedOnly, nearby_only: false,
         notes: notes.trim() || null,
         expires_at: new Date(Date.now() + hours * 3600 * 1000).toISOString(),
       })
@@ -249,8 +340,9 @@ export default function QuickRequestPage() {
           : L('Could not send. Try again.', 'نہیں بھیج سکے۔', 'تعذّر إرسال الطلب. حاول مرة أخرى.'))
         return
       }
-      deleteDraftBlobs(photos.map(p => p.id))
+      deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[]])
       clearLocalDraft('quick:' + userId)
+      if (draftId) { try { await supabase.from('rfq_drafts').delete().eq('id', draftId) } catch {} ; setDraftId(null) }
       setDone(true)
     } finally { setSending(false) }
   }
@@ -310,6 +402,8 @@ export default function QuickRequestPage() {
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden"
               onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
+            <input ref={specFileRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden"
+              onChange={e => { if (fileFor) attachFile(fileFor, e.target.files?.[0]); e.target.value = '' }} />
           </div>
         </div>
 
@@ -378,11 +472,59 @@ export default function QuickRequestPage() {
                       className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} aria-label={L('Quantity', 'مقدار', 'الكمية')} />
                     <select value={l.unit} onChange={e => updateLine(l.key, { unit: e.target.value })} className="input-field" aria-label={L('Unit', 'یونٹ', 'الوحدة')}>
                       <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>
-                      {Array.from(new Set([...(l.unit && !UNITS.includes(l.unit) ? [l.unit] : []), ...UNITS])).map(u => <option key={u} value={u}>{u}</option>)}
+                      {Array.from(new Set([...(getProductSpecs(l.product_name).find(f => f.key === 'unit')?.options || []), ...(l.unit && !UNITS.includes(l.unit) ? [l.unit] : []), ...UNITS])).map(u => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
                   <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })} className="input-field text-sm"
                     placeholder={L('Size, type or brand (optional)', 'سائز یا برانڈ (اختیاری)', 'المقاس أو النوع أو الماركة (اختياري)')} />
+                  {(() => {
+                    const fields = getProductSpecs(l.product_name).filter(f => f.key !== 'unit')
+                    const n = fields.filter(f => (l.specs?.[f.key] || '').trim()).length
+                    const open = specsOpen === l.key
+                    return (
+                      <>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {fields.length > 0 && (
+                            <button type="button" onClick={() => setSpecsOpen(open ? null : l.key)} aria-expanded={open}
+                              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${n ? 'border-[#0F6E56] text-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 text-gray-600'}`}>
+                              ⚙️ {L('Specifications', 'تفصیلات', 'المواصفات')}{n ? ` (${n})` : ''} {open ? '▴' : '▾'}
+                            </button>
+                          )}
+                          <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
+                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border max-w-[14rem] truncate ${l.fileId ? 'border-purple-300 text-purple-700 bg-purple-50' : 'border-gray-200 text-gray-600'}`}>
+                            📎 {l.fileId ? (l.fileName || L('File attached', 'فائل منسلک', 'ملف مرفق')) : L('Attach a drawing or file', 'ڈرائنگ یا فائل', 'أرفق مخططاً أو ملفاً')}
+                          </button>
+                          {l.fileId && (
+                            <button type="button" onClick={() => { deleteDraftBlobs([l.fileId!]); updateLine(l.key, { fileId: undefined, fileName: undefined }) }}
+                              className="text-[11px] text-gray-400 hover:text-red-500" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}>×</button>
+                          )}
+                        </div>
+                        {open && fields.length > 0 && (
+                          <div className="grid sm:grid-cols-2 gap-2 rounded-xl bg-gray-50 p-2.5">
+                            {fields.map(f => {
+                              const v = l.specs?.[f.key] || ''
+                              const custom = !!v && !f.options.includes(v)
+                              const setV = (val: string) => updateLine(l.key, { specs: { ...(l.specs || {}), [f.key]: val } })
+                              return (
+                                <label key={f.key} className="block">
+                                  <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{locale === 'ar' ? f.ar : f.en}</span>
+                                  <select value={custom ? '__other' : v} onChange={e => setV(e.target.value === '__other' ? ' ' : e.target.value)} className="input-field text-sm">
+                                    <option value="">{L('Any', 'کوئی بھی', 'أي')}</option>
+                                    {f.options.map(o => <option key={o} value={o}>{getOptionLabel(o, locale)}</option>)}
+                                    <option value="__other">{L('Other…', 'دیگر…', 'أخرى…')}</option>
+                                  </select>
+                                  {custom && (
+                                    <input value={v.trim()} onChange={e => setV(e.target.value || ' ')} className="input-field text-sm mt-1"
+                                      placeholder={L('Write it', 'لکھیں', 'اكتبها')} />
+                                  )}
+                                </label>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                   {ph && (
                     <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
                       <input type="checkbox" checked={ph.share} onChange={e => setPhotos(prev => prev.map(p => p.id === ph.id ? { ...p, share: e.target.checked } : p))} className="w-4 h-4 accent-[#0F6E56]" />
@@ -398,7 +540,7 @@ export default function QuickRequestPage() {
         {/* C: delivery + options, under the list */}
         {lines.length > 0 && (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
-            <h2 className="font-bold text-navy">📍 {L('Delivery to', 'ڈیلیوری', 'التوصيل لـ')}</h2>
+            <h2 className="font-bold text-navy">📍 {pickup ? L('Your area', 'آپ کا علاقہ', 'منطقتك') : L('Delivery to', 'ڈیلیوری', 'التوصيل لـ')}</h2>
             <div className="grid grid-cols-2 gap-2">
               <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" aria-label={L('Region', 'علاقہ', 'المنطقة')}>
                 <option value="">{L('Region', 'علاقہ', 'المنطقة')}</option>
@@ -422,6 +564,18 @@ export default function QuickRequestPage() {
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={hideIdentity} onChange={e => setHideIdentity(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
                   {L('Hide my name until I choose a supplier', 'سپلائر چننے تک نام چھپائیں', 'إخفاء اسمي حتى أختار المورد')}
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                  <input type="checkbox" checked={pickup} onChange={e => setPickup(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
+                  {L('I will collect from the supplier (no delivery)', 'میں خود لے لوں گا (ڈیلیوری نہیں)', 'سأستلم من المورد بنفسي (بلا توصيل)')}
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                  <input type="checkbox" checked={vatRequired} onChange={e => setVatRequired(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
+                  {L('I need a VAT tax invoice', 'مجھے VAT ٹیکس انوائس چاہیے', 'أحتاج فاتورة ضريبية')}
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                  <input type="checkbox" checked={verifiedOnly} onChange={e => setVerifiedOnly(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
+                  {L('Only verified suppliers', 'صرف تصدیق شدہ سپلائرز', 'الموردون الموثّقون فقط')}
                 </label>
               </div>
             </details>

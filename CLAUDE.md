@@ -60,7 +60,7 @@ Arabic-first, RTL, with English + Urdu i18n.
 - `src/lib/supabase/client.ts` + `server.ts` — Supabase clients.
 - `src/components/shared/AppShell.tsx` (sidebar shell + unread-messages badge), `CatIcon.tsx` (SVG group/sector icons, `currentColor`), `PageLoader.tsx` (branded navy loader, hidden first 350ms).
 - `src/app/(auth)/login`, `register` — auth (national ID removed for PDPL).
-- `src/app/(dashboard)/contractor/` — `rfq/new` (accordion material picker + deadline + request-new-material), `rfq/[id]` (per-item award matrix + finalize), `rfq/[id]/offer/[offerId]`, `orders/[id]` (itemized PO + ZATCA invoice, award-scoped, VAT-aware), `project/new` (BOQ).
+- `src/app/(dashboard)/contractor/` — `rfq/quick` (THE request page: write/voice/photo/catalog, per-line specs + file, advanced options, ?from= reorder, ?draft= drafts; `rfq/new` only redirects here), `rfq/[id]` (per-item award matrix + finalize), `rfq/[id]/offer/[offerId]`, `orders/[id]` (itemized PO + ZATCA invoice, award-scoped, VAT-aware), `project/new` (BOQ).
 - `src/app/(dashboard)/supplier/` — `dashboard`, `dashboard/rfq/[id]` (per-item pricing cards, own-specialty filtering, VAT, competitive ranking, deadline guard), `specialties`, `prices`, `branches`.
 - `src/app/(dashboard)/admin/` — review queue, material-request approval with edits, analytics.
 - `src/app/(dashboard)/messages/` — internal inbox/thread (realtime).

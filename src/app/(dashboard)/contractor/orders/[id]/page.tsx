@@ -137,7 +137,7 @@ export default function OrderDetailPage() {
           <Link href="/contractor" className="text-sm text-gray-500 hover:text-gray-700">← {L('Back to dashboard', 'ڈیش بورڈ پر واپس', 'رجوع للوحة التحكم')}</Link>
           <div className="flex items-center gap-2">
             {offer?.rfq_id && (
-              <Link href={`/contractor/rfq/new?from=${offer.rfq_id}`}
+              <Link href={`/contractor/rfq/quick?from=${offer.rfq_id}`}
                 className="border border-[#1B2D5B] text-[#1B2D5B] px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#1B2D5B]/5 transition-colors">
                 🔁 {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}
               </Link>

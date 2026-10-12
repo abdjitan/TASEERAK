@@ -514,7 +514,7 @@ export default function ContractorDashboard() {
                     <div className="text-[11px] text-gray-400">{(d.data?.items?.length || 0)} {locale === 'en' ? 'items' : 'مادة'} · {new Date(d.updated_at).toLocaleDateString('ar-SA-u-ca-gregory')}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Link href={`/contractor/rfq/new?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: '#F5831F' }}>{locale === 'en' ? 'Continue' : 'إكمال'} ←</Link>
+                    <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: '#F5831F' }}>{locale === 'en' ? 'Continue' : 'إكمال'} ←</Link>
                     <button onClick={async () => { if (!confirm(locale === 'en' ? 'Delete this draft?' : 'حذف المسودة؟')) return; await createClient().from('rfq_drafts').delete().eq('id', d.id); setDrafts(drafts.filter((x: any) => x.id !== d.id)) }} className="text-sm text-red-400 hover:text-red-600 w-9 h-9 grid place-items-center rounded-lg">🗑</button>
                   </div>
                 </div>
