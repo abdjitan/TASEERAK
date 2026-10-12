@@ -561,11 +561,11 @@ export default function SupplierRFQPage() {
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(sectors as any)[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
                             {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{L('d', ' دن', 'ي')}</span>}
-                            {it.spec_file_url && !it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 {L('File', 'فائل', 'ملف')}</a>}
+                            {it.spec_file_url && it.spec_file_url !== it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 {L('File', 'فائل', 'ملف')}</a>}
                           </div>
                           {/* صورة المادة من الطلب السريع: المورد يشوف نفس الشي اللي بدّو ياه الزبون */}
                           {it.photo_url && (
-                            <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 group" title={L('Material photo from the buyer', 'خریدار کی طرف سے مال کی تصویر', 'صورة المادة من الزبون')}>
+                            <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 group" title={L('Material photo from the buyer', 'خریدار کی طرف سے مال کی تصویر', 'صورة المادة من المشتري')}>
                               <img src={fileHref(it.photo_url)} alt={L('Material photo', 'مال کی تصویر', 'صورة المادة')} loading="lazy" className="w-24 h-24 object-cover rounded-lg border border-gray-200 group-hover:border-[#F5831F]" />
                               <span className="text-[11px] font-bold text-[#d96f15]">📷 {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
                             </a>
