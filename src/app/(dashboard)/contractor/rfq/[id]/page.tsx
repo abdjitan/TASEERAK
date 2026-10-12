@@ -130,56 +130,47 @@ export default function RFQDetailPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
 
-      const { data: rfqData } = await supabase.from('rfqs').select('*').eq('id', id).single()
+      // Speed: the database is far from our users (~1 s a request): the request, its offers, the
+      // per-item awards and the market sample load together, the page shows, then the supplier
+      // contacts and track records fill in (was up to six requests in a row).
+      const [{ data: rfqData }, { data: offersData }, { data: awardRows }, { data: similarOffers }] = await Promise.all([
+        supabase.from('rfqs').select('*').eq('id', id).single(),
+        supabase.from('offers').select('*, supplier:profiles_public(company_name_ar, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source, approvals)')
+          .eq('rfq_id', id).order('total_price', { ascending: true }),
+        // ترسية بند-بند (إن وُجدت)
+        supabase.from('rfq_item_awards').select('*').eq('rfq_id', id),
+        // متوسط السوق من عروض مشابهة — recent offers only, filtered by product below
+        supabase.from('offers').select('unit_price, rfq:rfqs(product_name, sector)')
+          .not('unit_price', 'is', null).not('status', 'eq', 'rejected')
+          .order('created_at', { ascending: false }).limit(500),
+      ])
       setRfq(rfqData)
       setEditNotes(rfqData?.notes || '')
       setEditSpec(rfqData?.specification || '')
       setEditName(rfqData?.product_name || '')
       setEditQty(rfqData?.quantity ?? '')
       setEditUnit(rfqData?.unit || '')
-
-      const { data: offersData } = await supabase
-        .from('offers').select('*, supplier:profiles_public(company_name_ar, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source, approvals)')
-        .eq('rfq_id', id).order('total_price', { ascending: true })
       setOffers(offersData || [])
-
-      // ترسية بند-بند (إن وُجدت)
-      const { data: awardRows } = await supabase.from('rfq_item_awards').select('*').eq('rfq_id', id)
       const am: any = {}; (awardRows || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
-
-      // أرقام تواصل الموردين المُرسى عليهم — RLS يسمح بقراءة الملف الكامل بعد الترسية فقط
-      const awardedIds = [...new Set((awardRows || []).map((a: any) => a.supplier_id).filter(Boolean))]
-      if (awardedIds.length) {
-        const { data: contacts } = await supabase.from('profiles').select('id, phone, contact_phone').in('id', awardedIds)
-        const cm: any = {}; (contacts || []).forEach((c: any) => { cm[c.id] = c.contact_phone || c.phone }); setAwardedContacts(cm)
-      }
-
-      // سجل أداء الموردين (سرعة الرد، نسبة الترسية، عدد العروض السابقة)
-      const supplierIds = [...new Set((offersData || []).map((o: any) => o.supplier_id).filter(Boolean))]
-      if (supplierIds.length) {
-        const { data: stats } = await supabase.rpc('get_supplier_stats', { ids: supplierIds })
-        const m: any = {}; (stats || []).forEach((s: any) => { m[s.supplier_id] = s })
-        setSupplierStats(m)
-      }
-
-      // متوسط السوق من عروض مشابهة
       if (rfqData) {
-        const { data: similarOffers } = await supabase
-          .from('offers')
-          .select('unit_price, rfq:rfqs(product_name, sector)')
-          .not('unit_price', 'is', null)
-          .not('status', 'eq', 'rejected')
-          .order('created_at', { ascending: false })
-          .limit(500) // bound: recent offers only (market avg for this product is filtered client-side)
-        const similar = (similarOffers || []).filter((o: any) =>
-          o.rfq?.product_name === rfqData.product_name
-        )
+        const similar = (similarOffers || []).filter((o: any) => o.rfq?.product_name === rfqData.product_name)
         if (similar.length >= 2) {
           const avg = similar.reduce((s: any, o: any) => s + o.unit_price, 0) / similar.length
           setMarketAvg(Math.round(avg))
         }
       }
       setLoading(false)
+
+      // أرقام تواصل الموردين المُرسى عليهم (RLS يسمح بقراءة الملف الكامل بعد الترسية فقط)
+      // + سجل أداء الموردين (سرعة الرد، نسبة الترسية، عدد العروض السابقة)
+      const awardedIds = [...new Set((awardRows || []).map((a: any) => a.supplier_id).filter(Boolean))]
+      const supplierIds = [...new Set((offersData || []).map((o: any) => o.supplier_id).filter(Boolean))]
+      const [{ data: contacts }, { data: stats }] = await Promise.all([
+        awardedIds.length ? supabase.from('profiles').select('id, phone, contact_phone').in('id', awardedIds) : Promise.resolve({ data: null } as any),
+        supplierIds.length ? supabase.rpc('get_supplier_stats', { ids: supplierIds }) : Promise.resolve({ data: null } as any),
+      ])
+      if (contacts) { const cm: any = {}; contacts.forEach((c: any) => { cm[c.id] = c.contact_phone || c.phone }); setAwardedContacts(cm) }
+      if (stats) { const m: any = {}; stats.forEach((st: any) => { m[st.supplier_id] = st }); setSupplierStats(m) }
     }
     load()
   }, [id])

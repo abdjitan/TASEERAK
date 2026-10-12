@@ -88,18 +88,31 @@ export default function SupplierDashboard() {
       const { data: actRaw } = await supabase.rpc('acting_uid')
       const actId: string = (actRaw as any) || session.user.id
       setIsMember(actId !== session.user.id)
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', actId).single()
+      // Speed: the database is far from our users (~1 s a request), so everything that only needs
+      // the company id goes out at once instead of one after another (was 11 sequential requests).
+      const [
+        { data: p }, { data: cfg }, { data: sectorRows }, { data: specRows },
+        { data: myBranches }, { data: dismissals }, { data: offers }, { count: lpCount },
+      ] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', actId).single(),
+        supabase.from('app_config').select('launch_free_until').maybeSingle(),
+        supabase.from('profile_sectors').select('sector').eq('profile_id', actId),
+        supabase.from('profile_specialties').select('specialty').eq('profile_id', actId),
+        supabase.from('branches').select('region').eq('supplier_id', actId),
+        supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', actId),
+        supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status, ref_no, items, created_at)').eq('supplier_id', actId).order('created_at', { ascending: false }),
+        supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', actId),
+      ])
       setProfile(p)
-      const { data: cfg } = await supabase.from('app_config').select('launch_free_until').maybeSingle()
       setLaunchUntil(cfg?.launch_free_until || null)
+      setMyOffers(offers || [])
+      setPricesCount(lpCount ?? 0)
 
       // جلب قطاعات المورد المتخصص فيها
-      const { data: sectorRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', actId)
       const mySectors = (sectorRows || []).map((r: any) => r.sector)
       setHasSectors(mySectors.length > 0)
 
       // جلب التخصصات الفرعية للمورد
-      const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', actId)
       const mySpecialties = (specRows || []).map((r: any) => r.specialty)
       setHasSpecialties(mySpecialties.length > 0)
 
@@ -140,7 +153,6 @@ export default function SupplierDashboard() {
       const myTier = p?.supplier_tier || 'shop'
       const isVerified = p?.verification_status === 'verified'
       // الفروع: المورد يخدم منطقته الرئيسية + كل مناطق فروعه
-      const { data: myBranches } = await supabase.from('branches').select('region').eq('supplier_id', actId)
       const servedRegions = [p?.region, ...(myBranches || []).map((b: any) => b.region)].filter(Boolean)
       rfqs = rfqs.filter((r: any) => {
         if (r.verified_only && !isVerified) return false
@@ -152,7 +164,6 @@ export default function SupplierDashboard() {
       })
 
       // استبعاد الطلبات المتجاهلة + المنتهية مهلتها (ما عاد يقدر يسعّرها)
-      const { data: dismissals } = await supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', actId)
       const dismissedIds = new Set((dismissals || []).map((d: any) => d.rfq_id))
       const visibleRfqs = (rfqs || []).filter((r: any) => !dismissedIds.has(r.id) && !isExpired(r.expires_at))
 
@@ -164,10 +175,6 @@ export default function SupplierDashboard() {
         toast(`⏰ ${expiringSoon.length} ${expiringSoon.length === 1 ? 'طلب تنتهي مهلته' : 'طلبات تنتهي مهلتها'} قريباً — سارِع بالتسعير`, { duration: 7000 })
       }
 
-      const { data: offers } = await supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status, ref_no, items, created_at)').eq('supplier_id', actId).order('created_at', { ascending: false })
-      setMyOffers(offers || [])
-      const { count: lpCount } = await supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', actId)
-      setPricesCount(lpCount ?? 0)
       setLoading(false)
   }
 

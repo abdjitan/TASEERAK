@@ -77,14 +77,16 @@ export default function OfferDetailPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setMyId(session.user.id)
-      const { data: rfqData } = await supabase.from('rfqs').select('*').eq('id', id).single()
-      setRfq(rfqData)
       // العرض العام بلا رقم تواصل (profiles_public) — الرقم يُجلب فقط بعد القبول
       // (RLS يسمح بقراءة الملف الكامل للطرف المقبول فقط) — منع الالتفاف قبل الترسية.
-      const { data: offerData } = await supabase
-        .from('offers')
-        .select('*, supplier:profiles_public(company_name_ar, company_name_en, rating_avg, city, region, district, supplier_tier, national_short_address, latitude, longitude, verification_status, cr_verification_source, approvals)')
-        .eq('id', offerId).single()
+      // Speed: the request and the offer load together (the database is far from our users).
+      const [{ data: rfqData }, { data: offerData }] = await Promise.all([
+        supabase.from('rfqs').select('*').eq('id', id).single(),
+        supabase.from('offers')
+          .select('*, supplier:profiles_public(company_name_ar, company_name_en, rating_avg, city, region, district, supplier_tier, national_short_address, latitude, longitude, verification_status, cr_verification_source, approvals)')
+          .eq('id', offerId).single(),
+      ])
+      setRfq(rfqData)
       let full = offerData
       if (offerData?.status === 'accepted') {
         const { data: contact } = await supabase.from('profiles').select('phone, contact_phone').eq('id', offerData.supplier_id).single()

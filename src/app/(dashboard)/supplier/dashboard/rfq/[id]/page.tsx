@@ -118,35 +118,45 @@ export default function SupplierRFQPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
-      // Who may quote: CR-verified suppliers OR providers with a WhatsApp-verified phone.
-      // Same rule as the offers INSERT policy (can_submit_quote, migration 117).
-      const { data: canQuote } = await supabase.rpc('can_submit_quote')
+      // Speed: the database is far from our users (~1 s a request), so requests go out in two
+      // parallel rounds instead of ten in a row.
+      // Round 1 — who may quote (CR-verified suppliers OR a WhatsApp-verified phone, same rule as the
+      // offers INSERT policy, migration 117), who we act for (a team member prices for the company),
+      // the request itself (precise delivery location stripped server-side for non-awarded
+      // suppliers, H1; null if this supplier may not see it) and the buyer identity (revealed by the
+      // server only after acceptance).
+      const [{ data: canQuote }, { data: actRaw }, { data: rfqData }, { data: cInfo }] = await Promise.all([
+        supabase.rpc('can_submit_quote'),
+        supabase.rpc('acting_uid'),
+        supabase.rpc('get_rfq_for_viewer', { p_rfq_id: id }),
+        supabase.rpc('get_rfq_contractor', { p_rfq_id: id }),
+      ])
       setVerified(canQuote === true)
-      // A company quotes from its own stock by default; an independent seller must say where the
-      // price comes from.
-      // A team member prices on behalf of the company.
-      const { data: actRaw } = await supabase.rpc('acting_uid')
       const actId: string = (actRaw as any) || session.user.id
       setActingId(actId)
-      const { data: me } = await supabase.from('profiles').select('provider_type').eq('id', actId).single()
+      if (!rfqData) { setRfq(null); setLoading(false); return }
+      setRfq(rfqData)
+      setContractorInfo(Array.isArray(cInfo) ? cInfo[0] : cInfo)
+
+      // Round 2 — everything about this supplier and its offer on this request.
+      const [{ data: me }, { data: secRows }, { data: specRows }, { data: myPrices }, { data: offerData }] = await Promise.all([
+        supabase.from('profiles').select('provider_type, supplier_tier').eq('id', actId).single(),
+        supabase.from('profile_sectors').select('sector').eq('profile_id', actId),
+        supabase.from('profile_specialties').select('specialty').eq('profile_id', actId),
+        supabase.from('live_prices').select('product_name, price, unit, region').eq('supplier_id', actId),
+        supabase.from('offers').select('*').eq('rfq_id', id).eq('supplier_id', actId).maybeSingle(),
+      ])
+      // A company quotes from its own stock by default; an independent seller must say where the
+      // price comes from.
       const indep = sellerKindOf(me?.provider_type) === 'independent'
       setIsIndependent(indep)
       if (!indep) setSourceType('own_stock')
 
-      // Precise delivery location is stripped for non-awarded suppliers server-side (H1);
-      // region/city stay visible for pricing. Returns null if this supplier may not see the RFQ.
-      const { data: rfqData } = await supabase.rpc('get_rfq_for_viewer', { p_rfq_id: id })
-      if (!rfqData) { setRfq(null); setLoading(false); return }
-      setRfq(rfqData)
-
       // ✅ المورد يرى/يسعّر فقط المواد ضمن تخصصه — لا تظهر له مواد قطاع لا يخدمه
       if (Array.isArray(rfqData?.items) && rfqData.items.length > 0) {
-        const { data: p2 } = await supabase.from('profiles').select('supplier_tier').eq('id', actId).single()
-        const { data: secRows } = await supabase.from('profile_sectors').select('sector').eq('profile_id', actId)
-        const { data: specRows } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', actId)
         const mySectors = (secRows || []).map((r: any) => r.sector)
         const mySpecialties = (specRows || []).map((r: any) => r.specialty)
-        const myTier = p2?.supplier_tier || 'shop'
+        const myTier = me?.supplier_tier || 'shop'
         const filtered = (rfqData.items as any[]).map((it: any, i: number) => ({ ...it, item_index: i })).filter((it: any) => {
           if (mySectors.length > 0 && !mySectors.includes(it.sector)) return false
           if (mySpecialties.length > 0 && it.sub_category && !mySpecialties.includes(it.sub_category)) return false
@@ -157,7 +167,6 @@ export default function SupplierRFQPage() {
         // تعبئة تلقائية من أسعار المورّد المحفوظة (صفحة «أسعاري»)
         // key on product_name + unit so a per-ton saved price never fills a per-bar field (B5);
         // skip saved prices tied to a different region (region-agnostic saved prices still apply).
-        const { data: myPrices } = await supabase.from('live_prices').select('product_name, price, unit, region').eq('supplier_id', actId)
         const rfqRegion = rfqData?.region || null
         const priceMap: Record<string, number> = {}
         for (const pr of (myPrices || [])) {
@@ -170,12 +179,9 @@ export default function SupplierRFQPage() {
           if (sp > 0) { const q = Number(it.quantity) || 0; return { unit_price: String(sp), line_total: q > 0 ? String(+(sp * q).toFixed(2)) : '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '', autofilled: true } }
           return { unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '' }
         }))
-        setOpenItem(null) // تبقى كل المواد مطويّة — المورد يضغط المادة التي يريد تسعيرها
+        setOpenItem(null)
       }
 
-      // auto-calc unit price from quantity
-      const { data: offerData } = await supabase
-        .from('offers').select('*').eq('rfq_id', id).eq('supplier_id', actId).single()
       if (offerData) {
         setExistingOffer(offerData)
         if (offerData.status === 'accepted') {
@@ -183,10 +189,6 @@ export default function SupplierRFQPage() {
           if (rev && rev.length) setCDone(true)
         }
       }
-
-      // هوية المشتري تُكشف من الخادم فقط بعد قبول العرض (لا تُرسَل قبل ذلك)
-      const { data: cInfo } = await supabase.rpc('get_rfq_contractor', { p_rfq_id: id })
-      setContractorInfo(Array.isArray(cInfo) ? cInfo[0] : cInfo)
 
       setLoading(false)
     }

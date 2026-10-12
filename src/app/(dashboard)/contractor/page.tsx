@@ -108,12 +108,30 @@ export default function ContractorDashboard() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+      // Speed: the database is far from our users (~1 s a request): load everything that only needs
+      // the user id at once, then the deals of closed requests (was 8 sequential requests).
+      const uid = session.user.id
+      const safe = (q: any) => Promise.resolve(q).catch(() => ({ data: null }))
+      const [{ data: p }, { data: r }, { data: dr }, { data: proj }, { data: notifs }, { data: mp }, { data: tr }] = await Promise.all([
+        supabase.from('profiles').select('*').eq('id', uid).single(),
+        supabase.from('rfqs').select('*').eq('contractor_id', uid).order('created_at', { ascending: false }).limit(200),
+        supabase.from('rfq_drafts').select('id, title, updated_at, data').order('updated_at', { ascending: false }).limit(50),
+        safe(supabase.from('project_rfqs').select('*').eq('contractor_id', uid).order('created_at', { ascending: false }).limit(5)),
+        safe(supabase.from('notifications').select('*').eq('user_id', uid).order('created_at', { ascending: false }).limit(6)),
+        safe(supabase.rpc('get_market_prices')),
+        safe(supabase.rpc('get_market_price_trend')),
+      ])
       setProfile(p)
-      const { data: r } = await supabase.from('rfqs').select('*').eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(200)
       setRfqs(r || [])
-      const { data: dr } = await supabase.from('rfq_drafts').select('id, title, updated_at, data').order('updated_at', { ascending: false }).limit(50)
       setDrafts(dr || [])
+      setProjects(proj || [])
+      setActivity(notifs || [])
+      // نبض السوق (متوسطات الأسعار) + اتجاه السعر (٣٠ يوم مقابل السابقة)
+      setMarketTop((mp || []).sort((a: any, b: any) => Number(b.offer_count) - Number(a.offer_count)).slice(0, 3))
+      const map: Record<string, any> = {}
+      for (const row of (tr || [])) map[`${row.product_name}|${row.sector}`] = row
+      setMarketTrend(map)
+      setLoading(false)
       try {
         const closedIds = (r || []).filter((x: any) => x.status === 'closed').map((x: any) => x.id)
         if (closedIds.length) {
@@ -124,30 +142,6 @@ export default function ContractorDashboard() {
           setDeals(m)
         }
       } catch {}
-      // جلب المشاريع
-      try {
-        const { data: proj } = await supabase.from('project_rfqs').select('*')
-          .eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(5)
-        setProjects(proj || [])
-      } catch { setProjects([]) }
-      // آخر النشاطات (من الإشعارات)
-      try {
-        const { data: notifs } = await supabase.from('notifications').select('*')
-          .eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(6)
-        setActivity(notifs || [])
-      } catch { setActivity([]) }
-      // نبض السوق (متوسطات الأسعار) + اتجاه السعر (٣٠ يوم مقابل السابقة)
-      try {
-        const { data: mp } = await supabase.rpc('get_market_prices')
-        setMarketTop((mp || []).sort((a: any, b: any) => Number(b.offer_count) - Number(a.offer_count)).slice(0, 3))
-      } catch { setMarketTop([]) }
-      try {
-        const { data: tr } = await supabase.rpc('get_market_price_trend')
-        const map: Record<string, any> = {}
-        for (const row of (tr || [])) map[`${row.product_name}|${row.sector}`] = row
-        setMarketTrend(map)
-      } catch { setMarketTrend({}) }
-      setLoading(false)
     }
     init()
   }, [])
