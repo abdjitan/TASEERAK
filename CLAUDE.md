@@ -118,6 +118,8 @@ cross-user operations go through `SECURITY DEFINER` RPCs granted to `authenticat
   arrays with `as any`. Don't reintroduce `@ts-nocheck`.
 - RTL + Arabic primary; always provide ar/en/ur strings via the `L(en,ur,ar)` or `t.*` pattern.
 - Realtime notifications: use the **per-user filtered** subscription pattern, not broad table subscriptions.
+- **API routes** get the user with `getRouteUser()` (`src/lib/supabase/server.ts`): site cookie OR the mobile app's `Authorization: Bearer`. Use it in every new route, never `createServerSupabaseClient()` + `getUser()` directly.
+- **Account deletion** = `POST /api/account/delete` → `delete_my_account()` (anonymise + close sign-in, never hard-delete: deals belong to the other party too). Public page `/account/delete`.
 - Supabase joins with ambiguous FKs need disambiguation hints, e.g. `profiles!supplier_id`, `profiles!requested_by`.
 - When changing an RPC signature, `drop` the old overload first to avoid ambiguity.
 
