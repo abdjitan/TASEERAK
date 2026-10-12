@@ -30,6 +30,12 @@ export default function AppShell({
 }) {
   const { locale } = useTranslation()
   const [open, setOpen] = useState(false)
+  // desktop: the sidebar can be folded away (☰ in the top bar) to give the page more room
+  const [collapsed, setCollapsed] = useState(false)
+  useEffect(() => { try { setCollapsed(localStorage.getItem('taseerak_nav_collapsed') === '1') } catch {} }, [])
+  function toggleCollapsed() {
+    setCollapsed(c => { const v = !c; try { localStorage.setItem('taseerak_nav_collapsed', v ? '1' : '0') } catch {} ; return v })
+  }
   async function defaultSignOut() {
     try { await createClient().auth.signOut() } catch {}
     window.location.href = '/login'
@@ -57,14 +63,15 @@ export default function AppShell({
   const sideEdge = dir === 'rtl' ? 'right-0' : 'left-0'
   const accentEdge = dir === 'rtl' ? 'right-0' : 'left-0'
   const hidden = dir === 'rtl' ? 'translate-x-full' : '-translate-x-full'
-  const mainPush = dir === 'rtl' ? 'lg:mr-[272px]' : 'lg:ml-[272px]'
+  const deskHidden = dir === 'rtl' ? 'lg:translate-x-full' : 'lg:-translate-x-full'
+  const mainPush = collapsed ? '' : dir === 'rtl' ? 'lg:mr-[272px]' : 'lg:ml-[272px]'
   const initial = (company || 'ت').trim().charAt(0)
 
   return (
     <div className="min-h-screen" dir={dir} style={{ background: 'var(--bg)' }}>
       {/* ===== Sidebar ===== */}
       <aside
-        className={`fixed inset-y-0 ${sideEdge} z-50 w-[272px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} lg:translate-x-0`}
+        className={`fixed inset-y-0 ${sideEdge} z-50 w-[272px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} ${collapsed ? deskHidden : 'lg:translate-x-0'}`}
         style={{ background: 'linear-gradient(180deg,#1B2D5B 0%,#10203f 60%,#0c1730 100%)' }}
       >
         {/* Brand */}
@@ -128,11 +135,13 @@ export default function AppShell({
       {open && <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)} />}
 
       {/* ===== Main column ===== */}
-      <div className={`${mainPush} flex flex-col min-h-screen`}>
+      <div className={`${mainPush} flex flex-col min-h-screen transition-[margin] duration-300`}>
         <header className="sticky top-0 z-30 backdrop-blur-md border-b" style={{ background: 'rgba(255,255,255,.85)', borderColor: 'var(--line)' }}>
           <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
             <div className="flex items-center gap-3 min-w-0">
-              <button className="lg:hidden w-9 h-9 grid place-items-center rounded-lg hover:bg-gray-100 shrink-0" onClick={() => setOpen(true)} aria-label="القائمة">
+              <button className="w-9 h-9 grid place-items-center rounded-lg hover:bg-gray-100 shrink-0"
+                onClick={() => (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches ? toggleCollapsed() : setOpen(true))}
+                aria-label={locale === 'en' ? 'Menu' : locale === 'ur' ? 'مینو' : 'القائمة'} aria-expanded={!collapsed}>
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
               </button>
               <div className="min-w-0">

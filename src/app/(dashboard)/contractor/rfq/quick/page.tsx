@@ -7,7 +7,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, type Sector } from '@/types'
-import CatalogPicker from '@/components/shared/CatalogPicker'
+import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import { productImageUrl } from '@/lib/productImage'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 
@@ -185,6 +185,10 @@ export default function QuickRequestPage() {
       .catch(() => setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'failed' } : p)))
   }
 
+  function addFromCatalog({ name, sector }: { name: string; sector: Sector }) {
+    setLines(prev => [...prev, { key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '' }])
+  }
+
   function updateLine(key: string, patch: Partial<Line>) { setLines(prev => prev.map(l => l.key === key ? { ...l, ...patch } : l)) }
   function removeLine(key: string) {
     const l = lines.find(x => x.key === key)
@@ -274,8 +278,8 @@ export default function QuickRequestPage() {
 
   return (
     <AppShell title={L('Price request', 'قیمت کی درخواست', 'طلب تسعير')} nav={getNav('contractor', locale, '/contractor/rfq/quick')} dir={dir}>
-      <div className="max-w-6xl mx-auto pb-28 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-6 lg:items-start">
-        {/* A: how to add (first column on desktop, first on mobile) */}
+      <div className="max-w-6xl mx-auto pb-28 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(320px,1fr)] lg:gap-6 lg:items-start">
+        {/* A: how to add (main column on desktop, first on mobile) */}
         <div className="space-y-5 lg:col-start-1 lg:row-start-1">
         <div>
           <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
@@ -301,7 +305,7 @@ export default function QuickRequestPage() {
             <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
               📷 {L('Add a photo', 'تصویر شامل کریں', 'صوّر المادة')}
             </button>
-            <button type="button" onClick={() => setShowCatalog(true)} className="px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
+            <button type="button" onClick={() => setShowCatalog(true)} className="lg:hidden px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
               🔍 {L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden"
@@ -312,8 +316,14 @@ export default function QuickRequestPage() {
         {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3" role="alert">{error}</div>}
         </div>
 
-        {/* B: the list, beside the add methods on desktop (sticky), under them on mobile */}
-        <div className="lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-4 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        {/* Desktop: the catalog fills the main column; phones open it as a sheet */}
+        <div className="hidden lg:block lg:col-start-1 lg:row-start-2 lg:mt-5 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+          <h2 className="font-bold text-navy">🔍 {L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}</h2>
+          <CatalogBrowser inline locale={locale} picked={lines.map(l => ({ key: l.key, name: l.product_name }))} onPick={addFromCatalog} />
+        </div>
+
+        {/* B: the chosen list + delivery, a side column on desktop (sticky), under the inputs on mobile */}
+        <div className="space-y-5 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-20 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
         {lines.length === 0 ? (
           <div className="hidden lg:block bg-white rounded-2xl p-6 border border-dashed border-gray-200 text-center text-sm text-gray-400">
             <div className="text-3xl mb-2">🧾</div>
@@ -384,11 +394,10 @@ export default function QuickRequestPage() {
             })}
           </div>
         )}
-        </div>
 
-        {/* C: delivery + options (under the add methods on desktop) */}
+        {/* C: delivery + options, under the list */}
         {lines.length > 0 && (
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3 lg:col-start-1 lg:row-start-2">
+          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
             <h2 className="font-bold text-navy">📍 {L('Delivery to', 'ڈیلیوری', 'التوصيل لـ')}</h2>
             <div className="grid grid-cols-2 gap-2">
               <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" aria-label={L('Region', 'علاقہ', 'المنطقة')}>
@@ -418,6 +427,7 @@ export default function QuickRequestPage() {
             </details>
           </div>
         )}
+        </div>
       </div>
 
       {lines.length > 0 && (
@@ -435,9 +445,7 @@ export default function QuickRequestPage() {
         <CatalogPicker locale={locale} onClose={() => setShowCatalog(false)}
           picked={lines.map(l => ({ key: l.key, name: l.product_name }))}
           onRemove={(key: string) => removeLine(key)}
-          onPick={({ name, sector }: { name: string; sector: Sector }) => setLines(prev => [...prev, {
-            key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '',
-          }])} />
+          onPick={addFromCatalog} />
       )}
     </AppShell>
   )
