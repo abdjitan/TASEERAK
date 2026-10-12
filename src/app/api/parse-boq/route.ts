@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { normalizeText } from '@/lib/normalize'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getRouteUser } from '@/lib/supabase/server'
 import { aiJson, AI_ENABLED } from '@/lib/ai'
 import { SUB_CATEGORIES, detectSubCategory } from '@/types'
 import { getTaxonomyRows, detectSubCategoryDb, type TaxRow } from '@/lib/serverTaxonomy'
@@ -231,8 +231,7 @@ function parseQty(raw: any): number | null {
 export async function POST(req: NextRequest) {
   try {
     // Auth + rate-limit — this route burns paid AI tokens (H7/SEC-05).
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase: supabase, user } = await getRouteUser()
     if (!user) return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
     const { data: allowed } = await supabase.rpc('check_rate_limit', { p_bucket: 'parse-boq:' + user.id, p_max: 20, p_window_seconds: 3600 })
     if (allowed === false) return NextResponse.json({ error: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })

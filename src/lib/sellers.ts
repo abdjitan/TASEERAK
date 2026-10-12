@@ -48,11 +48,17 @@ export type SellerKind = 'independent' | 'company'
 export const SIGNUP_KIND_KEY = 'taseerak_signup_kind'
 /** A company team invitation opened before signing in: resumed right after login. */
 export const TEAM_INVITE_KEY = 'taseerak_team_invite'
+// Browser storage when it exists (the site); null on the server and in the mobile app, which
+// shares this file.
+function webStorage(): Storage | null {
+  return typeof window !== 'undefined' && typeof (window as any).localStorage !== 'undefined' ? window.localStorage : null
+}
+
 export function pendingTeamInvite(): string | null {
-  try { const t = window.localStorage.getItem(TEAM_INVITE_KEY); return t && /^[0-9a-f]{36}$/.test(t) ? t : null } catch { return null }
+  try { const t = webStorage()?.getItem(TEAM_INVITE_KEY); return t && /^[0-9a-f]{36}$/.test(t) ? t : null } catch { return null }
 }
 export function rememberedSignupKind(): SellerKind | null {
-  try { const k = window.localStorage.getItem(SIGNUP_KIND_KEY); return k === 'company' || k === 'independent' ? k : null } catch { return null }
+  try { const k = webStorage()?.getItem(SIGNUP_KIND_KEY); return k === 'company' || k === 'independent' ? k : null } catch { return null }
 }
 export function sellerKindOf(providerType?: string | null): SellerKind {
   return ['individual', 'broker', 'price_agent'].includes(providerType || '') ? 'independent' : 'company'

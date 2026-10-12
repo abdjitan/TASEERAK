@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { aiJson } from '@/lib/ai'
 import { checkParsableUpload, SAFE_XLSX_READ } from '@/lib/serverUpload'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getRouteUser } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 export const maxDuration = 60
@@ -86,8 +86,7 @@ async function geminiMatchDoc(base64: string, mime: string, itemsJson: string): 
 export async function POST(req: NextRequest) {
   try {
     // Auth + rate-limit — this route burns paid AI tokens (H7/SEC-05).
-    const supabase = createServerSupabaseClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { supabase: supabase, user } = await getRouteUser()
     if (!user) return NextResponse.json({ ok: false, message: 'يجب تسجيل الدخول' }, { status: 401 })
     const { data: allowed } = await supabase.rpc('check_rate_limit', { p_bucket: 'match-spec:' + user.id, p_max: 20, p_window_seconds: 3600 })
     if (allowed === false) return NextResponse.json({ ok: false, message: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })

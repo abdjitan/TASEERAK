@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase/server'
+import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 
@@ -7,9 +7,9 @@ export const runtime = 'nodejs'
 // proxy turns a stored value (a full public-style URL or a bare object path) into a short-lived
 // signed URL and redirects to it — so shared attachments require a logged-in session and the
 // links expire, instead of being world-readable forever via a public URL.
+// Signed-in by cookie (site) or `Authorization: Bearer` (mobile app, see getRouteUser).
 export async function GET(req: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
 
   const raw = req.nextUrl.searchParams.get('p') || ''
@@ -32,5 +32,7 @@ export async function GET(req: NextRequest) {
   const admin = createAdminSupabaseClient()
   const { data, error } = await admin.storage.from('licenses').createSignedUrl(path, 300)
   if (error || !data?.signedUrl) return NextResponse.json({ error: 'not_found' }, { status: 404 })
+  // the mobile app asks for the link itself (?json=1) and opens it in its own viewer
+  if (req.nextUrl.searchParams.get('json') === '1') return NextResponse.json({ url: data.signedUrl, expires_in: 300 })
   return NextResponse.redirect(data.signedUrl)
 }

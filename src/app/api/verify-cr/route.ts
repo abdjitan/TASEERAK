@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getRouteUser } from '@/lib/supabase/server'
 
 export const runtime = 'nodejs'
 
@@ -114,8 +114,7 @@ export async function POST(req: NextRequest) {
     // the REGISTRATION page calls this BEFORE signup, so a hard auth requirement would
     // break registration. Owner/manager names are stripped from the response below, so an
     // anonymous caller can at most confirm a CR's official name/status (SEC-12).
-    const rl = createServerSupabaseClient()
-    const { data: { user } } = await rl.auth.getUser()
+    const { supabase: rl, user } = await getRouteUser()
     const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'anon'
     const bucket = user ? 'verify-cr:' + user.id : 'verify-cr:ip:' + ip
     const { data: allowed } = await rl.rpc('check_rate_limit', { p_bucket: bucket, p_max: user ? 20 : 10, p_window_seconds: 3600 })

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createAdminSupabaseClient } from '@/lib/supabase/server'
+import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
 import { mimeForExt } from '@/lib/serverUpload'
 
 export const runtime = 'nodejs'
@@ -21,8 +21,7 @@ function magicOk(ext: string, bytes: Uint8Array): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase: supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
 
   const { data: allowed } = await supabase.rpc('check_rate_limit', { p_bucket: 'verifupload:' + user.id, p_max: 20, p_window_seconds: 3600 })
