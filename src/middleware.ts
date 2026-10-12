@@ -90,11 +90,38 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // getUser() validates the JWT with Supabase Auth servers — more secure
-  // than getSession() which only reads the local cookie without verification.
+  // Speed (2026-10-12): the database is far from our users, and getUser() re-verified the token
+  // with Supabase Auth on EVERY navigation (a full round trip before the page could start).
+  // Routing only needs to know who is signed in: getSession() reads the session cookie and
+  // refreshes it only when it has expired. Data is still protected by RLS, which verifies the
+  // JWT on every query, and admin routes are still checked against the database below.
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user ?? null
+
+  // The role/onboarding lookup is cached in a short-lived cookie (uid:role:1) so a normal
+  // navigation makes no database call at all. Only cached once onboarding is done, so a new
+  // account always sees its real state. Never trusted for /admin (checked in the DB below).
+  const ROLE_COOKIE = 'tsk_role'
+  let roleCookie: string | null = null
+  let profileMemo: any
+  async function profileOf(uid: string): Promise<{ role?: string; role_chosen_at?: any } | null> {
+    if (profileMemo !== undefined) return profileMemo
+    const c = request.cookies.get(ROLE_COOKIE)?.value
+    if (c) {
+      const [id, role, chosen] = c.split(':')
+      if (id === uid && role && chosen === '1') { profileMemo = { role, role_chosen_at: true }; return profileMemo }
+    }
+    const { data } = await supabase.from('profiles').select('role, role_chosen_at').eq('id', uid).single()
+    if (data?.role && data.role_chosen_at) roleCookie = `${uid}:${data.role}:1`
+    profileMemo = data || null
+    return profileMemo
+  }
+  const withRole = (res: NextResponse) => {
+    if (roleCookie) res.cookies.set(ROLE_COOKIE, roleCookie, { path: '/', maxAge: 600, httpOnly: true, sameSite: 'lax', secure: true })
+    return res
+  }
 
   const { pathname } = request.nextUrl
 
@@ -104,7 +131,7 @@ export async function middleware(request: NextRequest) {
   const redirectTo = (url: URL) => {
     const res = NextResponse.redirect(url)
     response.cookies.getAll().forEach((c) => res.cookies.set(c.name, c.value, c))
-    return res
+    return withRole(res)
   }
 
   // Match a protected/auth prefix on a path-segment boundary so "/supplier" does
@@ -117,7 +144,7 @@ export async function middleware(request: NextRequest) {
   if (user && AUTH_PAGES.some(matches)) {
     let home = '/contractor'
     try {
-      const { data: profile } = await supabase.from('profiles').select('role, role_chosen_at').eq('id', user.id).single()
+      const profile = await profileOf(user.id)
       home = profile?.role === 'admin' ? '/admin' : !profile?.role_chosen_at ? '/welcome' : profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
     } catch {}
     return redirectTo(new URL(home, request.url))
@@ -133,15 +160,14 @@ export async function middleware(request: NextRequest) {
 
   // ── Rule 2.2: phone signups pick what they want to do before anything else ──
   if (user && PROTECTED.some(matches) && !matches('/welcome') && !ADMIN_ONLY.some(matches)) {
-    const { data: profile } = await supabase.from('profiles').select('role, role_chosen_at').eq('id', user.id).single()
+    const profile = await profileOf(user.id)
     if (profile && profile.role !== 'admin' && !profile.role_chosen_at) return redirectTo(new URL('/welcome', request.url))
   }
 
   // ── Rule 2.5: role separation — a supplier can't browse contractor pages and
   // vice-versa (previously client-side only). Admin may view both.
   if (user && (matches('/contractor') || matches('/supplier'))) {
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    const role = profile?.role
+    const role = (await profileOf(user.id))?.role
     // The purchase order / deal statement is shared by both parties of the deal (data is
     // still scoped by RLS: a supplier only loads its own offers).
     const sharedDealPage = request.nextUrl.pathname.startsWith('/contractor/orders/')
@@ -166,14 +192,18 @@ export async function middleware(request: NextRequest) {
   }
 
   // All checks passed — continue to the requested page
-  return response
+  return withRole(response)
 }
 
 // ─── Matcher ─────────────────────────────────────────────────────────────────
 // Run middleware on every route EXCEPT static assets and image optimisation
 // so we don't waste CPU on files that don't need auth checks.
+// Only the pages these rules are about. Public pages, assets and API routes no longer pay for an
+// auth check on every request (API routes check the user themselves with getRouteUser()).
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/contractor/:path*', '/supplier/:path*', '/settings/:path*', '/admin/:path*', '/location/:path*',
+    '/market/:path*', '/onboarding/:path*', '/welcome/:path*', '/messages/:path*', '/notifications/:path*',
+    '/login', '/register',
   ],
 }
