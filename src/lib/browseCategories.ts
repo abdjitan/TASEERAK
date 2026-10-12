@@ -1,4 +1,4 @@
-import { SECTOR_PRODUCTS, getGroupedProducts, detectSubCategory, type Sector } from '@/types'
+import { SECTOR_PRODUCTS, GROUP_LABELS, getGroupedProducts, detectSubCategory, type Sector } from '@/types'
 
 // User-facing browse sections (owner decision 2026-10-12, from the "universal categories" study).
 //
@@ -63,6 +63,24 @@ export function sectionOfSub(subKey: string | null | undefined, groupKey: string
 
 export type SectionGroup = { group: string; icon: string; ar: string; en: string; ur: string; items: { name: string; sector: Sector }[] }
 
+// Inside a section, near-duplicate groups (an engineering group and its shop twin) show as one.
+// Display only: each product keeps its sector and sub-category.
+const MERGE: Partial<Record<BrowseSection, Record<string, string>>> = {
+  plumbing: { store_plumbing: 'plumbing_supplies', sanitary_finish: 'plumbing' },
+  tools: { access_equipment: 'scaffolding' },
+  finishing: { store_paint: 'paint_facade' },
+  insulation: { mech_insulation: 'building_insulation' },
+}
+const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: string; ur: string }>>> = {
+  building: { infrastructure: { ar: 'الخوازيق والأساسات', en: 'Piling & foundations', ur: 'پائلنگ اور بنیادیں' } },
+  plumbing: { plumbing_supplies: { ar: 'لوازم وأدوات السباكة', en: 'Plumbing supplies & tools', ur: 'پلمبنگ کا سامان' } },
+  tools: { scaffolding: { ar: 'السقالات ومنصات الرفع', en: 'Scaffolding & access platforms', ur: 'سکیفولڈنگ اور لفٹ پلیٹ فارم' } },
+  insulation: {
+    building_insulation: { ar: 'العزل الحراري والمائي', en: 'Thermal & water insulation', ur: 'حرارتی اور واٹر پروفنگ' },
+    store_paint: { ar: 'لواصق وسيليكون ورغوة', en: 'Adhesives, silicone & foam', ur: 'گلو، سلیکون اور فوم' },
+  },
+}
+
 export function getSectionGroups(section: BrowseSection): SectionGroup[] {
   const out: Record<string, SectionGroup> = {}
   const order: string[] = []
@@ -71,8 +89,14 @@ export function getSectionGroups(section: BrowseSection): SectionGroup[] {
       for (const name of g.items) {
         const sub = detectSubCategory(name, sector)
         if (sectionOfSub(sub, g.group) !== section) continue
-        if (!out[g.group]) { out[g.group] = { group: g.group, icon: g.icon, ar: g.ar, en: g.en, ur: g.ur, items: [] }; order.push(g.group) }
-        if (!out[g.group].items.some(i => i.name === name)) out[g.group].items.push({ name, sector })
+        const key = MERGE[section]?.[g.group] || g.group
+        if (!out[key]) {
+          const base: any = (GROUP_LABELS as any)[key] || g
+          const lab = LABEL[section]?.[key] || base
+          out[key] = { group: key, icon: base.icon || g.icon, ar: lab.ar, en: lab.en, ur: lab.ur, items: [] }
+          order.push(key)
+        }
+        if (!out[key].items.some(i => i.name === name)) out[key].items.push({ name, sector })
       }
     }
   }
