@@ -370,7 +370,7 @@ export default function QuickRequestPage() {
 
   return (
     <AppShell title={L('Price request', 'قیمت کی درخواست', 'طلب تسعير')} nav={getNav('contractor', locale, '/contractor/rfq/quick')} dir={dir}>
-      <div className="max-w-6xl mx-auto pb-28 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(320px,1fr)] lg:gap-6 lg:items-start">
+      <div className="max-w-[1700px] mx-auto pb-28 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(320px,1fr)] lg:gap-6 lg:items-start">
         {/* A: how to add (main column on desktop, first on mobile) */}
         <div className="space-y-5 lg:col-start-1 lg:row-start-1">
         <div>
@@ -586,7 +586,7 @@ export default function QuickRequestPage() {
 
       {lines.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-200 px-4 pt-3 z-30" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
-          <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+          <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3">
             <span className="text-sm text-gray-500">{lines.length} {L('items', 'اشیاء', 'مواد')}</span>
             <button type="button" onClick={send} disabled={sending || photos.some(p => p.status === 'identifying')}
               className="btn-orange px-6 py-3 rounded-xl font-extrabold disabled:opacity-50">
