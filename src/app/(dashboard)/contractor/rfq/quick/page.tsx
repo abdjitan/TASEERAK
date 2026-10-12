@@ -8,7 +8,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
-import { productImageUrl } from '@/lib/productImage'
+import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
@@ -442,7 +442,7 @@ export default function QuickRequestPage() {
                   <div className="flex gap-3 items-start">
                     {ph ? <img src={ph.url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0 border border-gray-100" />
                       : l.product_name ? <img src={productImageUrl(l.product_name)} alt="" loading="lazy" className="w-16 h-16 rounded-lg object-contain shrink-0 border border-gray-100 bg-gray-50"
-                          onError={(e: any) => { e.currentTarget.style.display = 'none' }} /> : null}
+                          onError={(e: any) => imgFallback(e, detectSubCategory(l.product_name, l.sector as any))} /> : null}
                     <div className="flex-1 min-w-0 space-y-1">
                       <input value={l.product_name} onChange={e => updateLine(l.key, { product_name: e.target.value })} aria-label={L('Item name', 'نام', 'اسم المادة')}
                         className="input-field font-semibold" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'جارٍ التعرّف على الصورة…') : L('Item name', 'نام', 'اسم المادة')} />

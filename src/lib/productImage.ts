@@ -35,3 +35,12 @@ export function groupImageUrl(groupKey: string): string {
   if (!groupKey) return ''
   return thumb(`group/${groupKey}.png`, 110)
 }
+
+// <img onError>: when a product has no picture of its own (a name typed by the buyer, e.g. "بلك"
+// for the catalog's "بلوك"), show its sub-category's picture; if that fails too, hide the image.
+export function imgFallback(e: any, subKey?: string | null) {
+  const el = e?.currentTarget
+  if (!el) return
+  if (subKey && !el.dataset.fallback) { el.dataset.fallback = '1'; el.src = specialtyImageUrl(subKey); return }
+  el.style.visibility = 'hidden'
+}

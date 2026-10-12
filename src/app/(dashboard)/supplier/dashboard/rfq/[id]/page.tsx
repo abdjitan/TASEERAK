@@ -12,8 +12,8 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import DealProtection from '@/components/shared/DealProtection'
-import { productImageUrl } from '@/lib/productImage'
-import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel, getUnitLabel } from '@/types'
+import { productImageUrl, imgFallback } from '@/lib/productImage'
+import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel, getUnitLabel, detectSubCategory } from '@/types'
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf, WARRANTY_OPTIONS } from '@/lib/sellers'
@@ -550,7 +550,7 @@ export default function SupplierRFQPage() {
                       <tr key={i} className="border-b border-gray-50 align-top">
                         <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                         <td className="py-2.5 px-3">
-                          <div className="font-bold text-[15px] text-[#1B2D5B] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => { e.currentTarget.style.display = 'none' }} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span>{getProductLabel(it.product_name, locale)}</span></div>
+                          <div className="font-bold text-[15px] text-[#1B2D5B] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span>{getProductLabel(it.product_name, locale)}</span></div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(sectors as any)[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
@@ -746,7 +746,7 @@ export default function SupplierRFQPage() {
                         <div key={i} className={`rounded-2xl border p-3 sm:p-4 transition-all ${line > 0 ? 'border-[#0F6E56]/40 bg-[#0F6E56]/[0.03]' : 'border-gray-200 bg-white'}`}>
                           <div className="flex gap-3">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => { e.currentTarget.style.visibility = 'hidden' }}
+                            <img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))}
                               className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl bg-gray-50 border border-gray-100 shrink-0" />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-3">
