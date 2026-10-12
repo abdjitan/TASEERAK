@@ -1,5 +1,5 @@
-// notify: out-of-app delivery for a notification row — web-push now, email when a
-// Resend key is set in notify_config. Called by the DB trigger `deliver_notification`
+// notify: out-of-app delivery for a notification row — web push, mobile-app push (Expo), and
+// email when a Resend key is set in notify_config. Called by the DB trigger `deliver_notification`
 // via pg_net with an `x-notify-secret` header (deployed with verify_jwt=false; auth
 // is the shared secret compared against notify_config.notify_secret).
 import webpush from 'npm:web-push@3.6.7'
@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // Same-origin path only: an url like "@evil.com/x" or "//evil.com" must not become a link.
     const rawUrl = (n.data && typeof n.data.url === 'string') ? n.data.url : '/'
     const url: string = /^\/(?![\/\\])[^\s"'<>]*$/.test(rawUrl) ? rawUrl : '/'
-    let sent = 0, removed = 0, emailed = false
+    let sent = 0, removed = 0, emailed = false, appSent = 0, appRemoved = 0
 
     // ── Web push ──
     const { data: subs } = await supabase.from('push_subscriptions').select('*').eq('user_id', n.user_id)
@@ -45,12 +45,38 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Mobile app push (Expo push service → FCM on Android, APNs on iPhone) ──
+    // Tokens come from device_tokens (register_device_token, migration 136). data.url is the web
+    // path; the app maps it to its own screen. Tokens Expo reports as DeviceNotRegistered are dropped.
+    const { data: devices } = await supabase.from('device_tokens').select('token').eq('user_id', n.user_id)
+    if (devices && devices.length) {
+      try {
+        const messages = devices.slice(0, 100).map((d: any) => ({
+          to: d.token, title: n.title, body: n.body || '', data: { url, type: n.type },
+          sound: 'default', channelId: 'default', priority: 'high',
+        }))
+        const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'application/json' }
+        const expoToken = Deno.env.get('EXPO_ACCESS_TOKEN')
+        if (expoToken) headers.Authorization = `Bearer ${expoToken}`
+        const res = await fetch('https://exp.host/--/api/v2/push/send', { method: 'POST', headers, body: JSON.stringify(messages) })
+        const out = await res.json().catch(() => null)
+        const tickets: any[] = Array.isArray(out?.data) ? out.data : []
+        for (let i = 0; i < tickets.length; i++) {
+          const t = tickets[i]
+          if (t?.status === 'ok') appSent++
+          else if (t?.details?.error === 'DeviceNotRegistered') {
+            await supabase.from('device_tokens').delete().eq('token', messages[i].to); appRemoved++
+          }
+        }
+      } catch (_) { /* app push best-effort */ }
+    }
+
     // ── Email (best-effort; activates once notify_config.resend_api_key is set) ──
     if (cfg.resend_api_key) {
       try {
         const { data: au } = await supabase.auth.admin.getUserById(n.user_id)
         const to = au?.user?.email
-        if (to) {
+        if (to && !to.endsWith('@deleted.invalid')) {
           const res = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { Authorization: `Bearer ${cfg.resend_api_key}`, 'Content-Type': 'application/json' },
@@ -66,7 +92,7 @@ Deno.serve(async (req) => {
       } catch (_) { /* email best-effort */ }
     }
 
-    return json({ ok: true, sent, removed, emailed }, 200)
+    return json({ ok: true, sent, removed, appSent, appRemoved, emailed }, 200)
   } catch (e: any) {
     return json({ error: String(e?.message || e) }, 500)
   }
