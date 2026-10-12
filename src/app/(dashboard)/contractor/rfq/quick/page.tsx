@@ -370,7 +370,7 @@ export default function QuickRequestPage() {
 
   return (
     <AppShell title={L('Price request', 'قیمت کی درخواست', 'طلب تسعير')} nav={getNav('contractor', locale, '/contractor/rfq/quick')} dir={dir}>
-      <div className="max-w-[1700px] mx-auto pb-28 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(320px,1fr)] lg:gap-6 lg:items-start">
+      <div className="max-w-[1700px] mx-auto pb-28 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-[minmax(0,1.75fr)_minmax(320px,1fr)] lg:grid-rows-[auto_1fr] lg:gap-x-6 lg:items-start">
         {/* A: how to add (main column on desktop, first on mobile) */}
         <div className="space-y-5 lg:col-start-1 lg:row-start-1">
         <div>
