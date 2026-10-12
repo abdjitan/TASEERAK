@@ -257,15 +257,6 @@ export default function SupplierRFQPage() {
   function setItemField(i: any, field: any, val: any) {
     setItemForms(prev => prev.map((f: any, idx: any) => idx === i ? { ...f, [field]: val } : f))
   }
-  // حفظ المادة: لازم سعر، ثم يُقفل البطاقة وينتقل للمادة التالية غير المحفوظة
-  function saveItem(i: any) {
-    const f = itemForms[i] || {}
-    if (!(parseFloat(f.line_total) > 0)) { setError(L(`Enter the price of «${getProductLabel(myItems[i]?.product_name, locale)}» before saving`, `محفوظ کرنے سے پہلے «${getProductLabel(myItems[i]?.product_name, locale)}» کی قیمت درج کریں`, `أدخل سعر «${myItems[i]?.product_name}» قبل الحفظ`)); return }
-    setError('')
-    setItemForms(prev => prev.map((x: any, idx: any) => idx === i ? { ...x, saved: true } : x))
-    const nextIdx = myItems.findIndex((_: any, idx: any) => idx !== i && !(itemForms[idx]?.saved) && idx > i)
-    setOpenItem(nextIdx >= 0 ? nextIdx : null)
-  }
   async function setItemFile(i: any, f: any) {
     if (!f) { setItemForms(prev => prev.map((x: any, idx: any) => idx === i ? { ...x, file: null } : x)); return }
     const v = await validateUploadFile(f)
@@ -516,13 +507,15 @@ export default function SupplierRFQPage() {
     )
   }
 
+  // pricing is open: no offer yet, request open and within its deadline, and allowed to quote
+  const pricingOpen = !existingOffer && rfq?.status === 'open' && !expired && verified
+  const pricedCount = (myItems || []).filter((_: any, i: number) => parseFloat(itemForms[i]?.line_total) > 0).length
   return (
     <AppShell title={L('Submit Offer', 'پیشکش', 'تقديم عرض')} nav={getNav('supplier', locale, '/supplier/dashboard')} dir={dir}>
-      {(() => { const showPanel = false /* (H2) competitive-position panel removed — suppliers no longer see competitor prices */; return (
-      <div className={`max-w-6xl mx-auto grid gap-5 items-start ${showPanel ? 'lg:grid-cols-3' : 'lg:grid-cols-1'}`}>
-        <div className={`min-w-0 ${showPanel ? 'lg:col-span-2' : ''}`}>
-        {/* RFQ Details */}
-        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 mb-5">
+      <div className="max-w-[1500px] mx-auto grid gap-5 items-start lg:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)]">
+        {/* MAIN: the request and, while pricing is open, a card per material with its price */}
+        <div className="min-w-0 space-y-5">
+        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
           <div className="flex items-start justify-between gap-2">
             {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المشتري للطلب */}
             <div>
@@ -538,7 +531,8 @@ export default function SupplierRFQPage() {
               router.push(`/messages?c=${data}`)
             }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#1B2D5B' }}>💬 {L('Message buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>
           </div>
-
+          {/* the materials table is for the read-only states; while pricing, the cards below show them */}
+          {!pricingOpen && (<>
           {rfqIsMulti && myItems.length > 0 && (
             <div className="my-4">
               <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 {L('Materials in your specialty', 'آپ کی مہارت کا مال', 'المواد ضمن تخصصك')} ({myItems.length})</h3>
@@ -580,58 +574,7 @@ export default function SupplierRFQPage() {
               </div>
             </div>
           )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mt-4">
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => (sectors as any)[s] || s).join(' + ') : ((sectors as any)[rfq.sector] || rfq.sector)}</strong></div>
-            {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📦 {T.qty}</span><br/><strong>{rfq.quantity} {getUnitLabel(rfq.unit, locale)}</strong></div>}
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📍 {T.location}</span><br/><strong>{rfq.city || rfq.region}</strong></div>
-            <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
-              <span className="text-gray-500 text-[12px] font-semibold">🚚 {T.delivery}</span><br/>
-              {rfq.delivery_required ? (
-                <div className="flex items-center justify-between gap-2 flex-wrap mt-0.5">
-                  <strong className="text-amber-800">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
-                  {(rfq.delivery_geo || rfq.delivery_location) && (
-                    <a href={rfq.delivery_geo ? `https://www.google.com/maps?q=${rfq.delivery_geo}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rfq.delivery_location)}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="text-xs font-bold text-white rounded-lg px-3 py-1.5 hover:opacity-90 whitespace-nowrap shrink-0" style={{ background: '#1B2D5B' }}>
-                      📍 {L('Open in Maps', 'نقشے میں کھولیں', 'افتح في الخرائط')}
-                    </a>
-                  )}
-                </div>
-              ) : <strong className="text-gray-500">{T.notRequired}</strong>}
-            </div>
-            <div className="bg-[#f4f6f9] rounded-lg p-3">
-              <span className="text-gray-500 text-[12px] font-semibold">🏢 {T.contractor}</span><br/>
-              {contractorInfo?.revealed && contractorInfo?.company_name_ar ? (
-                <strong>{locale === 'en' && contractorInfo.company_name_en ? contractorInfo.company_name_en : contractorInfo.company_name_ar}</strong>
-              ) : (
-                <>
-                  <strong className="text-gray-600">{L('Buyer', 'خریدار', 'مشترٍ')} · {rfq.city || rfq.region}</strong>
-                  <div className="text-[10px] text-gray-400 mt-0.5">🔒 {L('Buyer identity is revealed once your offer is accepted.', 'آپ کی آفر قبول ہونے پر خریدار کی شناخت ظاہر ہو گی۔', 'تظهر هوية المشتري عند قبول عرضك (إتمام الصفقة).')}</div>
-                </>
-              )}
-            </div>
-            {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
-            {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">📝 {T.notes}</span><br/>{cleanNotes}</div>}
-            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🗓 {L('Posted', 'درخواست کی تاریخ', 'تاريخ الطلب')}</span><br/><strong className="text-sm">{formatDateTime(rfq.created_at)}</strong></div>
-            {rfq.expires_at && (
-              <div className="rounded-lg p-3" style={{ background: urgencyStyle(deadlineUrgency(rfq.expires_at)).bg, border: `1px solid ${urgencyStyle(deadlineUrgency(rfq.expires_at)).border}` }}>
-                <span className="text-gray-500 text-[12px] font-semibold">⏰ {L('Pricing deadline', 'قیمت دینے کی آخری تاریخ', 'مهلة التسعير')}</span><br/>
-                <strong className="text-sm" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{formatDateTime(rfq.expires_at)}</strong>
-                <span className="text-xs block font-bold" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{expired ? '' : `(${formatTimeLeft(rfq.expires_at, locale)})`}</span>
-              </div>
-            )}
-          </div>
-
-          {/* ملف المواصفات المرفق */}
-          {specFileUrl && (
-            <a href={specFileUrl} target="_blank" rel="noopener noreferrer"
-              className="mt-3 flex items-center gap-2 bg-[#F5831F]/5 border border-blue-200 rounded-xl p-3 hover:bg-blue-100 transition-all">
-              <span className="text-xl">📎</span>
-              <span className="text-sm font-semibold text-[#d96f15] flex-1">{T.attachedFile}</span>
-              <span className="text-xs text-[#d96f15]">{T.viewFile} ←</span>
-            </a>
-          )}
+          </>)}
         </div>
 
         {existingOffer ? (
@@ -771,25 +714,9 @@ export default function SupplierRFQPage() {
             <Link href="/onboarding" className="inline-block mt-4 px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#F5831F' }}>{T.verifyFirstCta}</Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
+          <form id="offer-form" onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
             <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{T.submitOffer}</h3>
-
-            {/* عدّاد مهلة التسعير */}
-            {rfq.expires_at && (() => {
-              const u = deadlineUrgency(rfq.expires_at)
-              const st = urgencyStyle(u)
-              return (
-                <div className="flex items-center justify-between gap-2 rounded-xl px-3 py-2 mb-4 text-sm" style={{ background: st.bg, border: `1px solid ${st.border}` }}>
-                  <span className="font-semibold" style={{ color: st.fg }}>
-                    {u === 'critical' ? '🔴' : u === 'soon' ? '🟠' : '⏰'} {L('Time left to price', 'قیمت دینے کا باقی وقت', 'الوقت المتبقّي للتسعير')}
-                  </span>
-                  <span className="font-extrabold" style={{ color: st.fg }}>{formatTimeLeft(rfq.expires_at, locale)}</span>
-                </div>
-              )
-            })()}
-
             {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>}
-
             <div className="space-y-4">
               {isMultiItem && myItems.length === 0 ? (
                 <div className="text-center py-6">
@@ -799,122 +726,117 @@ export default function SupplierRFQPage() {
                 </div>
               ) : isMultiItem ? (
                 <div>
-                  <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
-                    {L('Price each material', 'ہر مواد کی قیمت', 'سعّر كل مادة على حدة')} *
-                  </label>
+                  <div className="flex items-end justify-between gap-2 mb-1">
+                    <label className="block text-sm font-bold" style={{ color: '#1B2D5B' }}>
+                      {L('Price the materials you can supply', 'جو مال آپ دے سکتے ہیں اس کی قیمت دیں', 'سعّر المواد التي تقدر توفّرها')}
+                    </label>
+                    <span className="text-xs font-bold text-gray-500">{pricedCount}/{myItems.length}</span>
+                  </div>
                   <p className="text-xs text-gray-400 mb-3">
-                    {L('Tap a material to enter its unit price, specs and its own catalog.', 'ہر مال پر دبائیں اور اس کی قیمت، خصوصیات اور کیٹلاگ درج کریں۔', 'اضغط على كل مادة لإدخال سعرها وخصائصها وكتالوجها الخاص.')}
+                    {L('Enter the total price of each material. You do not have to price them all; open «Details» for unit price, delivery time, warranty or a catalog.', 'ہر مال کی کل قیمت درج کریں۔ سب کی قیمت دینا ضروری نہیں؛ فی یونٹ قیمت، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل السعر الإجمالي لكل مادة، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لسعر الوحدة ومدة التوصيل والضمان والكتالوج.')}
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {myItems.map((it: any, i: any) => {
                       const form = itemForms[i] || {}
                       const line = parseFloat(form.line_total) || 0
-                      const isOpen = openItem === i
-                      const done = !!form.saved && line > 0
+                      const qty = Number(it.quantity) || 0
+                      const more = openItem === i
+                      const detailCount = [form.specs, form.delivery_days, (form.warranty || '').trim(), form.file, form.priceUnit && !sameUnit(form, i) ? 'u' : ''].filter(Boolean).length
                       return (
-                        <div key={i} className={`border rounded-xl overflow-hidden transition-all ${isOpen ? 'border-[#F5831F]/60 shadow-sm' : 'border-gray-200'}`}>
-                          {/* رأس البطاقة — اضغط للفتح/الإغلاق */}
-                          <button type="button" onClick={() => setOpenItem(isOpen ? null : i)}
-                            className={`w-full flex items-center justify-between gap-2 p-3.5 text-right transition-colors ${isOpen ? 'bg-[#F5831F]/5' : 'hover:bg-gray-50'}`}>
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[11px] font-bold ${done ? 'bg-[#0F6E56] text-white' : 'bg-gray-100 text-gray-400'}`}>
-                                {done ? '✓' : i + 1}
-                              </span>
-                              <div className="min-w-0">
-                                <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{getProductLabel(it.product_name, locale)}</div>
-                                <div className="text-xs text-gray-500 font-medium">
-                                  {it.sub_category ? getSubCategoryLabel(it.sector, it.sub_category, locale) + ' · ' : ''}{(it.quantity || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}
+                        <div key={i} className={`rounded-2xl border p-3 sm:p-4 transition-all ${line > 0 ? 'border-[#0F6E56]/40 bg-[#0F6E56]/[0.03]' : 'border-gray-200 bg-white'}`}>
+                          <div className="flex gap-3">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => { e.currentTarget.style.visibility = 'hidden' }}
+                              className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl bg-gray-50 border border-gray-100 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <div className="font-bold text-[15px] leading-snug" style={{ color: '#1B2D5B' }}>
+                                    {line > 0 && <span className="inline-grid place-items-center w-5 h-5 rounded-full text-[11px] text-white me-1.5 align-middle" style={{ background: '#0F6E56' }}>✓</span>}
+                                    {getProductLabel(it.product_name, locale)}
+                                  </div>
+                                  {it.sub_category && <div className="text-xs text-gray-500 mt-0.5">{getSubCategoryLabel(it.sector, it.sub_category, locale)}</div>}
+                                </div>
+                                <div className="text-end shrink-0">
+                                  <div className="text-[11px] text-gray-400">{L('Quantity', 'مقدار', 'الكمية')}</div>
+                                  <div className="font-extrabold text-[15px] text-[#d96f15] whitespace-nowrap">{qty.toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</div>
                                 </div>
                               </div>
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
+                                {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{L('d', ' دن', 'ي')}</span>}
+                                {it.spec_file_url && it.spec_file_url !== it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 {it.spec_file_name || L('Buyer file', 'خریدار کی فائل', 'ملف من المشتري')}</a>}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {line > 0 && (
-                                <span className="text-sm font-extrabold whitespace-nowrap" style={{ color: done ? '#0F6E56' : '#d96f15' }}>
-                                  {(+line.toFixed(2)).toLocaleString('en-US')} {SAR}{!done && <span className="text-[10px] font-normal"> · {L('unsaved', 'محفوظ نہیں', 'غير محفوظ')}</span>}
-                                </span>
-                              )}
-                              {!isOpen && line === 0 && <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#F5831F]/10 text-[#d96f15] whitespace-nowrap">{L('+ Price', '+ قیمت', '+ سعّر')}</span>}
-                              <span className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}>▾</span>
-                            </div>
-                          </button>
+                          </div>
 
-                          {/* تفاصيل التسعير — تنزل عند الفتح */}
-                          {isOpen && (
-                            <div className="px-3 pb-3 pt-1 space-y-3 border-t border-gray-100">
-                              {/* مواصفات المشتري المطلوبة — بارزة وواضحة ليسعّر المورد بدقّة */}
-                              {it.specification && (
-                                <div className="rounded-xl p-3 border" style={{ background: '#F5831F0a', borderColor: '#F5831F44' }}>
-                                  <div className="text-xs font-bold mb-1.5 flex items-center gap-1.5" style={{ color: '#d96f15' }}>
-                                    📋 {L('Specifications required by the buyer', 'خریدار کی مطلوبہ اسپیسیفکیشن', 'المواصفات المطلوبة من المشتري')}
-                                  </div>
-                                  <div className="text-sm text-gray-800 leading-relaxed font-medium">{it.specification}</div>
+                          {/* what the buyer asked for: specs and photo, prominent so the price matches */}
+                          {it.specification && (
+                            <div className="mt-3 rounded-xl p-2.5 border text-sm text-gray-800 leading-relaxed" style={{ background: '#F5831F0a', borderColor: '#F5831F44' }}>
+                              <span className="text-xs font-bold me-1" style={{ color: '#d96f15' }}>📋 {L('Buyer specs:', 'خریدار کی تفصیل:', 'مواصفات المشتري:')}</span>{it.specification}
+                            </div>
+                          )}
+                          {it.photo_url && (
+                            <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 group" title={L('Material photo from the buyer', 'خریدار کی طرف سے مال کی تصویر', 'صورة المادة من المشتري')}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={fileHref(it.photo_url)} alt={L('Material photo', 'مال کی تصویر', 'صورة المادة')} loading="lazy" className="w-20 h-20 object-cover rounded-lg border border-gray-200 group-hover:border-[#F5831F]" />
+                              <span className="text-[11px] font-bold text-[#d96f15]">📷 {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
+                            </a>
+                          )}
+
+                          {/* the price, right away */}
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <div className="relative flex-1 min-w-[11rem]">
+                              <input type="number" inputMode="decimal" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
+                                aria-label={L(`Total price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} کی کل قیمت`, `السعر الإجمالي لـ ${it.product_name}`)}
+                                className="input-field font-bold pe-14" placeholder={L(`Total for ${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}`, `${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)} کی کل قیمت`, `إجمالي ${qty.toLocaleString('en-US')} ${it.unit}`)} min="0" step="any" />
+                              <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">{SAR}</span>
+                            </div>
+                            <button type="button" onClick={() => setOpenItem(more ? null : i)} aria-expanded={more}
+                              className={`text-xs font-bold px-3 py-2.5 rounded-xl border transition-all ${more || detailCount ? 'border-[#F5831F]/50 text-[#d96f15] bg-[#F5831F]/5' : 'border-gray-200 text-gray-600 hover:border-[#F5831F]/50'}`}>
+                              {more ? '▴' : '▾'} {L('Details', 'تفصیلات', 'التفاصيل')}{detailCount ? ` (${detailCount})` : ''}
+                            </button>
+                          </div>
+                          {line > 0 && qty > 0 && sameUnit(form, i) && (
+                            <p className="text-[11px] text-gray-500 mt-1">
+                              = {(+(line / qty).toFixed(2)).toLocaleString('en-US')} {SAR} / {getUnitLabel(it.unit, locale)}
+                              {form.autofilled && <span className="text-gray-400"> · {L('from your price list', 'آپ کی قیمتوں کی فہرست سے', 'من قائمة أسعارك')}</span>}
+                            </p>
+                          )}
+
+                          {more && (
+                            <div className="mt-3 pt-3 border-t border-gray-100 grid sm:grid-cols-2 gap-3">
+                              {/* price by another unit: unit + unit price (total auto-calculates when the unit matches) */}
+                              <div className="sm:col-span-2 grid grid-cols-5 gap-2">
+                                <div className="col-span-2">
+                                  <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Your unit', 'آپ کا یونٹ', 'وحدتك')}</label>
+                                  <input type="text" value={form.priceUnit ?? it.unit} onChange={(e: any) => setItemPriceUnit(i, e.target.value)}
+                                    className="input-field text-sm" placeholder={it.unit} list={`units-${i}`} />
+                                  <datalist id={`units-${i}`}>
+                                    {[it.unit, 'طن', 'سيخ', 'م³', 'م²', 'متر طولي', 'كيس', 'قطعة', 'لتر', 'لفة', 'صندوق'].filter((u, k, a) => u && a.indexOf(u) === k).map((u: any) => <option key={u} value={u} />)}
+                                  </datalist>
                                 </div>
-                              )}
-
-                              {/* السعر الإجمالي للمادة هو الأساس — وتفاصيل سعر الوحدة اختيارية */}
-                              <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  💰 {L(`Total price for this material (for ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)})`, `اس مال کی کل قیمت (${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)} کے لیے)`, `السعر الإجمالي للمادة (لـ ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit})`)} *
-                                </label>
-                                <input type="number" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
-                                  className="input-field text-sm font-bold" placeholder={L('e.g. 5200', 'مثال: 5200', 'مثال: 5200')} min="0" step="any" />
-                                <button type="button" onClick={() => setItemField(i, 'priceDetails', !form.priceDetails)}
-                                  className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
-                                  {form.priceDetails
-                                    ? L('− Hide price details', '− قیمت کی تفصیل چھپائیں', '− إخفاء تفاصيل السعر')
-                                    : L('+ Add price details (unit price)', '+ قیمت کی تفصیل شامل کریں (فی یونٹ قیمت)', '+ إضافة تفاصيل السعر (سعر الوحدة)')}
-                                </button>
-                                {form.priceDetails && (
-                                  <div className="mt-2">
-                                    <div className="grid grid-cols-5 gap-2">
-                                      {/* وحدة المورد — يقدر يغيّرها لو يبي يسعّر بوحدة خاصة */}
-                                      <div className="col-span-2">
-                                        <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Unit', 'یونٹ', 'الوحدة')}</label>
-                                        <input type="text" value={form.priceUnit ?? it.unit} onChange={(e: any) => setItemPriceUnit(i, e.target.value)}
-                                          className="input-field text-sm" placeholder={it.unit} list={`units-${i}`} />
-                                        <datalist id={`units-${i}`}>
-                                          {[it.unit, 'طن', 'سيخ', 'م³', 'م²', 'متر طولي', 'كيس', 'قطعة', 'لتر', 'لفة', 'صندوق'].filter((u, k, a) => u && a.indexOf(u) === k).map((u: any) => <option key={u} value={u} />)}
-                                        </datalist>
-                                      </div>
-                                      {/* سعر الوحدة */}
-                                      <div className="col-span-3">
-                                        <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</label>
-                                        <input type="number" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
-                                          className="input-field text-sm" placeholder={L('Price / ', 'قیمت / ', 'السعر / ') + (form.priceUnit || it.unit)} min="0" step="any" />
-                                      </div>
-                                    </div>
-                                    <p className="text-[10px] text-gray-400 mt-1.5">
-                                      {sameUnit(form, i)
-                                        ? L(`Total auto-calculates (unit price × ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}).`, `کل رقم خود بخود بنے گی (فی یونٹ قیمت × ${(it.quantity || 0).toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)})۔`, `الإجمالي يُحسب تلقائياً (سعر الوحدة × ${(it.quantity || 0).toLocaleString('en-US')} ${it.unit}).`)
-                                        : L('Custom unit — enter the material total above manually.', 'الگ یونٹ — اوپر اس مال کی کل رقم خود درج کریں۔', 'وحدة خاصة — أدخل إجمالي المادة بالأعلى يدوياً.')}
-                                    </p>
-                                  </div>
-                                )}
+                                <div className="col-span-3">
+                                  <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</label>
+                                  <input type="number" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
+                                    className="input-field text-sm" placeholder={L('Price / ', 'قیمت / ', 'السعر / ') + (form.priceUnit || it.unit)} min="0" step="any" />
+                                </div>
+                                <p className="col-span-5 text-[10px] text-gray-400">
+                                  {sameUnit(form, i)
+                                    ? L('The total fills in from the unit price.', 'کل رقم فی یونٹ قیمت سے خود بنتی ہے۔', 'يُحسب الإجمالي تلقائياً من سعر الوحدة.')
+                                    : L('Custom unit: enter the material total above yourself.', 'الگ یونٹ: اوپر کل رقم خود درج کریں۔', 'وحدة خاصة: أدخل إجمالي المادة في الأعلى بنفسك.')}
+                                </p>
                               </div>
-
-                              {/* مواصفات المادة (نص حر) */}
-                              <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  📝 {L('Material specifications', 'مال کی اسپیسیفکیشن', 'مواصفات المادة')}
-                                </label>
-                                <textarea value={form.specs || ''} onChange={(e: any) => setItemField(i, 'specs', e.target.value)}
-                                  rows={2} className="input-field text-sm" placeholder={L('Type, origin, brand, grade…', 'قسم، کہاں کا بنا ہے، برانڈ، گریڈ…', 'النوع، المنشأ، العلامة التجارية، الدرجة…')} />
+                              <div className="sm:col-span-2">
+                                <label className="block text-xs font-bold text-gray-500 mb-1">📝 {L('What you offer (type, origin, brand…)', 'آپ کیا دے رہے ہیں (قسم، برانڈ…)', 'ما تقدّمه (النوع، المنشأ، العلامة…)')}</label>
+                                <textarea value={form.specs || ''} onChange={(e: any) => setItemField(i, 'specs', e.target.value)} rows={2} className="input-field text-sm" />
                               </div>
-
-                              {/* مدة التوصيل الخاصة بهذه المادة */}
                               <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  ⏱ {L('Delivery time for this material (days)', 'اس مال کی ڈیلیوری کا وقت (دن)', 'مدة توصيل هذه المادة (أيام)')}
-                                </label>
-                                <input type="number" value={form.delivery_days || ''} onChange={(e: any) => setItemField(i, 'delivery_days', e.target.value)}
-                                  className="input-field text-sm" placeholder="3" min="0" />
+                                <label className="block text-xs font-bold text-gray-500 mb-1">⏱ {L('Delivery time (days)', 'ڈیلیوری کا وقت (دن)', 'مدة التوصيل (أيام)')}</label>
+                                <input type="number" value={form.delivery_days || ''} onChange={(e: any) => setItemField(i, 'delivery_days', e.target.value)} className="input-field text-sm" placeholder="3" min="0" />
                               </div>
-
-                              {/* الضمان (اختياري، حسب الصنف) */}
                               <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  🛡 {L('Warranty (optional)', 'وارنٹی (اختیاری)', 'الضمان (اختياري)')}
-                                </label>
+                                <label className="block text-xs font-bold text-gray-500 mb-1">🛡 {L('Warranty (optional)', 'وارنٹی (اختیاری)', 'الضمان (اختياري)')}</label>
                                 <select value={WARRANTY_OPTIONS.some(o => o.v === (form.warranty || '')) ? (form.warranty || '') : '__other'}
                                   onChange={(e: any) => setItemField(i, 'warranty', e.target.value === '__other' ? ' ' : e.target.value)} className="input-field text-sm">
                                   {WARRANTY_OPTIONS.map(o => <option key={o.v} value={o.v}>{locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}</option>)}
@@ -925,12 +847,7 @@ export default function SupplierRFQPage() {
                                     className="input-field text-sm mt-1.5" maxLength={80} placeholder={L('e.g. 18 months on the motor', 'مثال: موٹر پر 18 مہینے', 'مثال: 18 شهراً على المحرك')} />
                                 )}
                               </div>
-
-                              {/* رفع ملف المواصفات */}
-                              <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                                  📎 {L('Upload spec / datasheet file', 'اسپیسیفکیشن فائل اپ لوڈ کریں', 'رفع ملف المواصفات')}
-                                </label>
+                              <div className="sm:col-span-2">
                                 {form.file ? (
                                   <div className="flex items-center gap-3 bg-[#1B2D5B]/5 rounded-xl p-2.5 border border-[#1B2D5B]/20">
                                     <span className="text-xl">📄</span>
@@ -938,30 +855,18 @@ export default function SupplierRFQPage() {
                                     <button type="button" onClick={() => setItemFile(i, null)} className="text-xs text-red-500 hover:underline">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                                   </div>
                                 ) : (
-                                  <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-3 cursor-pointer hover:border-[#F5831F]/50 transition-all">
-                                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
-                                      onChange={(e: any) => setItemFile(i, e.target.files?.[0] ?? null)} />
-                                    <span className="text-xl">📤</span>
-                                    <span className="text-xs text-gray-500">{L('Attach catalog / datasheet', 'کیٹلاگ / پروڈکٹ کی معلومات منسلک کریں', 'إرفاق كتالوج / بيانات المنتج')}</span>
+                                  <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-2.5 cursor-pointer hover:border-[#F5831F]/50 transition-all">
+                                    <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx" onChange={(e: any) => setItemFile(i, e.target.files?.[0] ?? null)} />
+                                    <span className="text-lg">📤</span>
+                                    <span className="text-xs text-gray-500">{L('Attach a catalog / datasheet (optional)', 'کیٹلاگ منسلک کریں (اختیاری)', 'أرفق كتالوجاً أو بيانات المنتج (اختياري)')}</span>
                                   </label>
                                 )}
                               </div>
-
-                              {/* زر حفظ المادة — يقفل البطاقة وينتقل للتالية */}
-                              <button type="button" onClick={() => saveItem(i)}
-                                className="w-full py-2.5 rounded-xl font-bold text-white text-sm transition-all hover:shadow disabled:opacity-40"
-                                disabled={!(parseFloat(form.line_total) > 0)}
-                                style={{ background: '#0F6E56' }}>
-                                ✓ {L('Save material', 'مال محفوظ کریں', 'حفظ المادة')}
-                              </button>
                             </div>
                           )}
                         </div>
                       )
                     })}
-                  </div>
-                  <div className="mt-3 text-[11px] text-gray-500 bg-amber-50 border border-amber-200 rounded-xl p-2.5">
-                    💡 {L('Price only the materials you can supply — you are not required to price all of them. Each material has its own delivery time.', 'صرف وہ مال کی قیمت دیں جو آپ سپلائی کر سکتے ہیں — سب کی قیمت دینا ضروری نہیں۔ ہر مال کی ڈیلیوری کا اپنا وقت ہے۔', 'سعّر فقط المواد التي تقدر توردها — لست ملزماً بتسعير الكل. ولكل مادة مدة توصيلها الخاصة.')}
                   </div>
                 </div>
               ) : (
@@ -986,79 +891,6 @@ export default function SupplierRFQPage() {
                   </div>
                 </>
               )}
-
-              {/* إضافات الفاتورة (توصيل/تركيب/رسوم) */}
-              <div className="border-t border-gray-100 pt-4">
-                <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
-                  🧾 {L('Invoice extras (delivery / installation / fees)', 'انوائس اضافی (ڈیلیوری/تنصیب/فیس)', 'إضافات الفاتورة (توصيل / تركيب / رسوم)')}
-                </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  {rfq.delivery_required
-                    ? L('The buyer requested delivery — add the shipping cost here.', 'خریدار نے ڈیلیوری طلب کی — شپنگ لاگت یہاں شامل کریں۔', 'المشتري طلب التوصيل — أضف تكلفة الشحن هنا.')
-                    : L('Optional charges added on top of the goods price.', 'سامان کی قیمت کے علاوہ اختیاری چارجز۔', 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
-                </p>
-                <div className="space-y-2">
-                  {extras.map((ex: any, i: any) => (
-                    <div key={i} className="flex gap-2">
-                      <input value={ex.label} onChange={(e: any) => updateExtra(i, 'label', e.target.value)}
-                        className="input-field text-sm flex-1" placeholder={L('Item (e.g. Delivery)', 'آئٹم (مثلاً ڈیلیوری)', 'البند (مثال: توصيل)')} />
-                      <input type="number" value={ex.amount} onChange={(e: any) => updateExtra(i, 'amount', e.target.value)}
-                        className="input-field text-sm w-24" placeholder={L('Amount', 'رقم', 'المبلغ')} min="0" step="any" />
-                      {extras.length > 1 && (
-                        <button type="button" onClick={() => removeExtra(i)}
-                          className="w-10 min-h-[40px] grid place-items-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 shrink-0">×</button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
-                  + {L('Add item', 'شامل کریں', 'إضافة بند')}
-                </button>
-              </div>
-
-              {/* ضريبة القيمة المضافة 15% — خيار: هل السعر يشملها؟ + تفصيل الإجمالي */}
-              {(() => {
-                const goods = parseFloat(totalPrice) || 0
-                const exSum = extras.reduce((s: any, e: any) => s + (parseFloat(e.amount) || 0), 0)
-                const entered = goods + exSum
-                const net = vatIncluded ? entered / 1.15 : entered
-                const vat = net * 0.15
-                const gross = net + vat
-                const fmt = (n: any) => (+n.toFixed(2)).toLocaleString('en-US')
-                return (
-                  <div className="border-t border-gray-100 pt-4">
-                    {/* خيار شمول الضريبة */}
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <div>
-                        <div className="text-sm font-bold" style={{ color: '#1B2D5B' }}>🧾 {L('Price includes 15% VAT?', 'کیا قیمت میں 15% ویٹ (VAT) شامل ہے؟', 'هل السعر يشمل ضريبة القيمة المضافة (15%)؟')}</div>
-                        <div className="text-[11px] text-gray-400">{vatIncluded ? L('Yes — VAT will be extracted from your price.', 'ہاں — ٹیکس آپ کی قیمت میں سے نکالا جائے گا۔', 'نعم — تُستخرج الضريبة من سعرك.') : L('No — VAT is added on top.', 'نہیں — ٹیکس آپ کی قیمت کے اوپر لگے گا۔', 'لا — تُضاف الضريبة فوق سعرك.')}</div>
-                      </div>
-                      <button type="button" onClick={() => setVatIncluded(v => !v)}
-                        className="w-12 h-7 rounded-full transition-all flex items-center px-1 shrink-0" style={{ background: vatIncluded ? '#0F6E56' : '#d1d5db', justifyContent: vatIncluded ? 'flex-end' : 'flex-start' }}>
-                        <span className="w-5 h-5 bg-white rounded-full shadow" />
-                      </button>
-                    </div>
-                    {/* تفصيل الإجمالي */}
-                    {entered > 0 && (
-                      <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm space-y-1.5">
-                        <div className="flex items-center justify-between text-gray-600">
-                          <span>{L('Net (before VAT)', 'خالص (ٹیکس سے پہلے)', 'الصافي (قبل الضريبة)')}</span>
-                          <span className="font-semibold">{fmt(net)} {SAR}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-gray-600">
-                          <span>{L('VAT 15%', 'ویٹ (VAT) 15%', 'ضريبة القيمة المضافة 15%')}</span>
-                          <span className="font-semibold">+ {fmt(vat)} {SAR}</span>
-                        </div>
-                        <div className="flex items-center justify-between border-t border-[#0F6E56]/20 pt-1.5">
-                          <span className="font-bold" style={{ color: '#0F6E56' }}>{L('Grand Total (incl. VAT)', 'کل رقم (ٹیکس سمیت)', 'الإجمالي شامل الضريبة')}</span>
-                          <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>{fmt(gross)} {SAR}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )
-              })()}
-
               {/* خصائص المنتج — للطلب أحادي المادة فقط (متعدد المواد: الخصائص لكل مادة بداخل بطاقتها) */}
               {!isMultiItem && (
               <div>
@@ -1119,7 +951,141 @@ export default function SupplierRFQPage() {
                 )}
               </div>
               )}
+            </div>
+          </form>
+        )}
+        </div>{/* main */}
 
+        {/* SIDE (sticky on desktop): request details, then the offer summary and the send button */}
+        <aside className="min-w-0 space-y-5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+          <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100">
+          <div className="grid grid-cols-2 gap-2.5 text-sm">
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🏗 {T.sector}</span><br/><strong>{rfqIsMulti ? [...new Set(myItems.map((it: any) => it.sector))].map((s: string) => (sectors as any)[s] || s).join(' + ') : ((sectors as any)[rfq.sector] || rfq.sector)}</strong></div>
+            {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📦 {T.qty}</span><br/><strong>{rfq.quantity} {getUnitLabel(rfq.unit, locale)}</strong></div>}
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">📍 {T.location}</span><br/><strong>{rfq.city || rfq.region}</strong></div>
+            <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
+              <span className="text-gray-500 text-[12px] font-semibold">🚚 {T.delivery}</span><br/>
+              {rfq.delivery_required ? (
+                <div className="flex items-center justify-between gap-2 flex-wrap mt-0.5">
+                  <strong className="text-amber-800">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
+                  {(rfq.delivery_geo || rfq.delivery_location) && (
+                    <a href={rfq.delivery_geo ? `https://www.google.com/maps?q=${rfq.delivery_geo}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rfq.delivery_location)}`}
+                      target="_blank" rel="noopener noreferrer"
+                      className="text-xs font-bold text-white rounded-lg px-3 py-1.5 hover:opacity-90 whitespace-nowrap shrink-0" style={{ background: '#1B2D5B' }}>
+                      📍 {L('Open in Maps', 'نقشے میں کھولیں', 'افتح في الخرائط')}
+                    </a>
+                  )}
+                </div>
+              ) : <strong className="text-gray-500">{T.notRequired}</strong>}
+            </div>
+            <div className="bg-[#f4f6f9] rounded-lg p-3">
+              <span className="text-gray-500 text-[12px] font-semibold">🏢 {T.contractor}</span><br/>
+              {contractorInfo?.revealed && contractorInfo?.company_name_ar ? (
+                <strong>{locale === 'en' && contractorInfo.company_name_en ? contractorInfo.company_name_en : contractorInfo.company_name_ar}</strong>
+              ) : (
+                <>
+                  <strong className="text-gray-600">{L('Buyer', 'خریدار', 'مشترٍ')} · {rfq.city || rfq.region}</strong>
+                  <div className="text-[10px] text-gray-400 mt-0.5">🔒 {L('Buyer identity is revealed once your offer is accepted.', 'آپ کی آفر قبول ہونے پر خریدار کی شناخت ظاہر ہو گی۔', 'تظهر هوية المشتري عند قبول عرضك (إتمام الصفقة).')}</div>
+                </>
+              )}
+            </div>
+            {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">⚙️ {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
+            {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold">📝 {T.notes}</span><br/>{cleanNotes}</div>}
+            <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold">🗓 {L('Posted', 'درخواست کی تاریخ', 'تاريخ الطلب')}</span><br/><strong className="text-sm">{formatDateTime(rfq.created_at)}</strong></div>
+            {rfq.expires_at && (
+              <div className="rounded-lg p-3" style={{ background: urgencyStyle(deadlineUrgency(rfq.expires_at)).bg, border: `1px solid ${urgencyStyle(deadlineUrgency(rfq.expires_at)).border}` }}>
+                <span className="text-gray-500 text-[12px] font-semibold">⏰ {L('Pricing deadline', 'قیمت دینے کی آخری تاریخ', 'مهلة التسعير')}</span><br/>
+                <strong className="text-sm" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{formatDateTime(rfq.expires_at)}</strong>
+                <span className="text-xs block font-bold" style={{ color: urgencyStyle(deadlineUrgency(rfq.expires_at)).fg }}>{expired ? '' : `(${formatTimeLeft(rfq.expires_at, locale)})`}</span>
+              </div>
+            )}
+          </div>
+          {/* ملف المواصفات المرفق */}
+          {specFileUrl && (
+            <a href={specFileUrl} target="_blank" rel="noopener noreferrer"
+              className="mt-3 flex items-center gap-2 bg-[#F5831F]/5 border border-blue-200 rounded-xl p-3 hover:bg-blue-100 transition-all">
+              <span className="text-xl">📎</span>
+              <span className="text-sm font-semibold text-[#d96f15] flex-1">{T.attachedFile}</span>
+              <span className="text-xs text-[#d96f15]">{T.viewFile} ←</span>
+            </a>
+          )}
+          </div>
+          {pricingOpen && (isMultiItem ? myItems.length > 0 : true) && (
+            <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-extrabold" style={{ color: '#1B2D5B' }}>🧾 {L('Your offer', 'آپ کی آفر', 'عرضك')}</h3>
+                {isMultiItem && <span className="text-xs font-bold" style={{ color: pricedCount ? '#0F6E56' : '#9aa3b2' }}>{L(`${pricedCount} of ${myItems.length} priced`, `${myItems.length} میں سے ${pricedCount}`, `سعّرت ${pricedCount} من ${myItems.length}`)}</span>}
+              </div>
+              {/* إضافات الفاتورة (توصيل/تركيب/رسوم) */}
+              <div className="border-t border-gray-100 pt-4">
+                <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                  🧾 {L('Invoice extras (delivery / installation / fees)', 'انوائس اضافی (ڈیلیوری/تنصیب/فیس)', 'إضافات الفاتورة (توصيل / تركيب / رسوم)')}
+                </label>
+                <p className="text-xs text-gray-400 mb-3">
+                  {rfq.delivery_required
+                    ? L('The buyer requested delivery — add the shipping cost here.', 'خریدار نے ڈیلیوری طلب کی — شپنگ لاگت یہاں شامل کریں۔', 'المشتري طلب التوصيل — أضف تكلفة الشحن هنا.')
+                    : L('Optional charges added on top of the goods price.', 'سامان کی قیمت کے علاوہ اختیاری چارجز۔', 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
+                </p>
+                <div className="space-y-2">
+                  {extras.map((ex: any, i: any) => (
+                    <div key={i} className="flex gap-2">
+                      <input value={ex.label} onChange={(e: any) => updateExtra(i, 'label', e.target.value)}
+                        className="input-field text-sm flex-1" placeholder={L('Item (e.g. Delivery)', 'آئٹم (مثلاً ڈیلیوری)', 'البند (مثال: توصيل)')} />
+                      <input type="number" value={ex.amount} onChange={(e: any) => updateExtra(i, 'amount', e.target.value)}
+                        className="input-field text-sm w-24" placeholder={L('Amount', 'رقم', 'المبلغ')} min="0" step="any" />
+                      {extras.length > 1 && (
+                        <button type="button" onClick={() => removeExtra(i)}
+                          className="w-10 min-h-[40px] grid place-items-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 shrink-0">×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
+                  + {L('Add item', 'شامل کریں', 'إضافة بند')}
+                </button>
+              </div>
+              {/* ضريبة القيمة المضافة 15% — خيار: هل السعر يشملها؟ + تفصيل الإجمالي */}
+              {(() => {
+                const goods = parseFloat(totalPrice) || 0
+                const exSum = extras.reduce((s: any, e: any) => s + (parseFloat(e.amount) || 0), 0)
+                const entered = goods + exSum
+                const net = vatIncluded ? entered / 1.15 : entered
+                const vat = net * 0.15
+                const gross = net + vat
+                const fmt = (n: any) => (+n.toFixed(2)).toLocaleString('en-US')
+                return (
+                  <div className="border-t border-gray-100 pt-4">
+                    {/* خيار شمول الضريبة */}
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <div>
+                        <div className="text-sm font-bold" style={{ color: '#1B2D5B' }}>🧾 {L('Price includes 15% VAT?', 'کیا قیمت میں 15% ویٹ (VAT) شامل ہے؟', 'هل السعر يشمل ضريبة القيمة المضافة (15%)؟')}</div>
+                        <div className="text-[11px] text-gray-400">{vatIncluded ? L('Yes — VAT will be extracted from your price.', 'ہاں — ٹیکس آپ کی قیمت میں سے نکالا جائے گا۔', 'نعم — تُستخرج الضريبة من سعرك.') : L('No — VAT is added on top.', 'نہیں — ٹیکس آپ کی قیمت کے اوپر لگے گا۔', 'لا — تُضاف الضريبة فوق سعرك.')}</div>
+                      </div>
+                      <button type="button" onClick={() => setVatIncluded(v => !v)}
+                        className="w-12 h-7 rounded-full transition-all flex items-center px-1 shrink-0" style={{ background: vatIncluded ? '#0F6E56' : '#d1d5db', justifyContent: vatIncluded ? 'flex-end' : 'flex-start' }}>
+                        <span className="w-5 h-5 bg-white rounded-full shadow" />
+                      </button>
+                    </div>
+                    {/* تفصيل الإجمالي */}
+                    {entered > 0 && (
+                      <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm space-y-1.5">
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>{L('Net (before VAT)', 'خالص (ٹیکس سے پہلے)', 'الصافي (قبل الضريبة)')}</span>
+                          <span className="font-semibold">{fmt(net)} {SAR}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-gray-600">
+                          <span>{L('VAT 15%', 'ویٹ (VAT) 15%', 'ضريبة القيمة المضافة 15%')}</span>
+                          <span className="font-semibold">+ {fmt(vat)} {SAR}</span>
+                        </div>
+                        <div className="flex items-center justify-between border-t border-[#0F6E56]/20 pt-1.5">
+                          <span className="font-bold" style={{ color: '#0F6E56' }}>{L('Grand Total (incl. VAT)', 'کل رقم (ٹیکس سمیت)', 'الإجمالي شامل الضريبة')}</span>
+                          <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>{fmt(gross)} {SAR}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })()}
               {/* مصدر السعر + التوفّر: يظهران للمشتري، والعرض المنقول لا يُعرض كعرض مباشر */}
               <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-3">
                 <div>
@@ -1151,7 +1117,6 @@ export default function SupplierRFQPage() {
                   </div>
                 </div>
               </div>
-
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {L('Price valid for', 'قیمت کتنی دیر کے لیے درست ہے', 'مدة صلاحية السعر')}</label>
                 <div className="flex flex-wrap gap-2">
@@ -1163,16 +1128,13 @@ export default function SupplierRFQPage() {
                 </div>
                 <p className="text-[11px] text-gray-400 mt-1">{L('Your price is guaranteed until it expires — ideal for volatile materials (e.g. steel).', 'آپ کی قیمت مدت ختم ہونے تک پکی رہے گی — ان چیزوں کے لیے اچھا ہے جن کی قیمت بدلتی رہتی ہے (جیسے سریا)۔', 'سعرك مضمون حتى انتهاء المدة — مناسب للمواد المتغيّرة السعر (كالحديد).')}</p>
               </div>
-
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.offerNotes}</label>
                 <textarea value={notes} onChange={(e: any) => setNotes(e.target.value)}
                   className="input-field" rows={3} placeholder="..." />
               </div>
-            </div>
-
             <div className="mt-5 space-y-3">
-              <button type="submit" disabled={submitting || !totalPrice || (isMultiItem && !allItemsPriced)}
+              <button type="submit" form="offer-form" disabled={submitting || !totalPrice || (isMultiItem && !allItemsPriced)}
                 className="w-full py-3.5 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg"
                 style={{ background: '#0F6E56' }}>
                 {submitting ? T.sending : T.send}
@@ -1182,78 +1144,10 @@ export default function SupplierRFQPage() {
                 ✕ {T.dismiss}
               </button>
             </div>
-          </form>
-        )}
-        </div>{/* main column */}
-
-        {showPanel && (
-          <aside className="lg:col-span-1 lg:sticky lg:top-20">
-            {(() => {
-              // فترة التعتيم: في آخر 30 دقيقة تُخفى مراكز المنافسين لمنع القنص بآخر لحظة
-              const blind = (ranking || []).some((r: any) => r.blind)
-              if (blind) {
-                return (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 text-center">
-                    <div className="text-3xl mb-2">🕶️</div>
-                    <h3 className="font-extrabold text-base" style={{ color: '#1B2D5B' }}>{L('Final 30 minutes — ranking hidden', 'آخری 30 منٹ — پوزیشنیں چھپی ہوئی ہیں', 'آخر 30 دقيقة — المراكز مخفية')}</h3>
-                    <p className="text-xs text-gray-500 mt-1">{L('Competitor positions are hidden near the deadline to prevent last-second sniping. Submit your best price.', 'آخری لمحے کی چالاکی روکنے کے لیے مہلت کے قریب مقابلہ کرنے والوں کی پوزیشنیں چھپا دی جاتی ہیں۔ اپنی بہترین قیمت دیں۔', 'تُخفى مراكز المنافسين قرب انتهاء المهلة لمنع القنص. قدّم أفضل سعر لديك.')}</p>
-                  </div>
-                )
-              }
-              const others = (ranking || []).filter((r: any) => !r.is_mine)
-              const myT = parseFloat(totalPrice) || 0
-              const rank = myT > 0 ? others.filter((o: any) => Number(o.total_price) < myT).length + 1 : null
-              const totalCount = others.length + (myT > 0 ? 1 : 0)
-              const avgOthers = others.length ? others.reduce((s: number, o: any) => s + Number(o.total_price || 0), 0) / others.length : 0
-              const savePct = (myT > 0 && avgOthers > 0 && myT < avgOthers) ? Math.round((avgOthers - myT) / avgOthers * 100) : 0
-              const list = others.map((o: any) => ({ total: Number(o.total_price), mine: false }))
-              if (myT > 0) list.push({ total: myT, mine: true })
-              list.sort((a: any, b: any) => a.total - b.total)
-              const isTop = rank === 1
-              return (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                  <h3 className="font-extrabold text-base" style={{ color: '#1B2D5B' }}>{L('Your competitive position', 'آپ کی پوزیشن', 'موقعك التنافسي')}</h3>
-                  <p className="text-[11px] text-gray-400 mb-4">{L('Live — updates as you change your price', 'لائیو — قیمت بدلنے کے ساتھ اپڈیٹ ہوتا ہے', 'حيّ — يتحدّث مع تغيير سعرك')}</p>
-
-                  <div className="rounded-2xl p-4 text-center mb-4" style={{ background: isTop ? '#ecfdf5' : '#f4f6f9', border: `1px solid ${isTop ? '#a7f3d0' : '#eceff4'}` }}>
-                    <div className="text-[11px] text-gray-400">{L('Projected rank', 'متوقع پوزیشن', 'ترتيبك المتوقع')}</div>
-                    <div className="text-4xl font-black leading-tight" style={{ color: isTop ? '#0F6E56' : '#1B2D5B' }}>{rank ? `#${rank}` : '—'}</div>
-                    <div className="text-[11px] font-semibold" style={{ color: isTop ? '#0F6E56' : '#8089a0' }}>
-                      {rank == null ? (totalCount > 0 ? L(`${totalCount} offers so far`, `اب تک ${totalCount} آفرز`, `${totalCount} عروض حتى الآن`) : L('Be the first to price', 'سب سے پہلے قیمت دیں', 'كن أول من يسعّر'))
-                        : isTop ? L(`Cheapest of ${totalCount}`, `${totalCount} آفرز میں سب سے سستی`, `الأوفر بين ${totalCount} عروض`)
-                        : L(`Among ${totalCount} offers`, `${totalCount} آفرز میں سے`, `من بين ${totalCount} عروض`)}
-                    </div>
-                  </div>
-
-                  {savePct > 0 && <div className="text-center text-xs font-bold mb-3" style={{ color: '#0F6E56' }}>📉 {L(`${savePct}% below average offer`, `اوسط آفر سے ${savePct}% سستی`, `أوفر بـ ${savePct}% من متوسط العروض`)}</div>}
-
-                  {list.length > 0 && (
-                    <>
-                      <div className="text-[11px] font-bold text-gray-400 mb-2">{L('Current offers (anonymous)', 'موجودہ آفرز (نام ظاہر نہیں)', 'العروض الحالية (مجهولة الهوية)')}</div>
-                      <div className="space-y-1.5">
-                        {list.slice(0, 6).map((r: any, i: number) => (
-                          <div key={i} className="flex items-center justify-between rounded-xl px-3 py-2 text-sm" style={r.mine ? { background: '#F5831F12', border: '1px solid #F5831F55' } : { background: '#f7f8fa' }}>
-                            <span className="flex items-center gap-2">
-                              <span className="w-5 h-5 grid place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: r.mine ? '#0F6E56' : '#c3c9d4' }}>{i + 1}</span>
-                              <span style={r.mine ? { color: '#d96f15', fontWeight: 700 } : { color: '#8089a0' }}>{r.mine ? L('Your offer', 'آپ کی آفر', 'عرضك') : L('Anonymous', 'نامعلوم سپلائر', 'مورد مجهول')}</span>
-                            </span>
-                            <span className="font-bold" style={{ color: '#1B2D5B' }}>{r.total.toLocaleString('en-US')} {SAR}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  <div className="mt-4 flex items-start gap-2 text-[11px] text-gray-400 bg-gray-50 rounded-xl p-2.5">
-                    <span>🛈</span><span>{L('Smart matching shows the request to the right suppliers for its size.', 'سمارٹ درجہ بندی درخواست کو اس کے سائز کے مطابق صحیح سپلائرز تک پہنچاتی ہے۔', 'التصنيف الذكي يضمن وصول الطلب للموردين المناسبين لحجمه.')}</span>
-                  </div>
-                </div>
-              )
-            })()}
-          </aside>
-        )}
+            </div>
+          )}
+        </aside>
       </div>
-      ); })()}
 
       {/* Dismiss Modal */}
       {showDismiss && (
