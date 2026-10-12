@@ -15,8 +15,9 @@ import { getNav } from '@/lib/nav'
 import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 import { dealStage } from '@/lib/dealStage'
-import { TIERS, tierLabel, normTier, sourceLabel, availabilityLabel, isDirectSource } from '@/lib/sellers'
+import { TIERS, tierLabel, normTier, sourceLabel, availabilityLabel, isDirectSource, sourceIcon, availabilityIcon, tierIcon } from '@/lib/sellers'
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -450,7 +451,7 @@ export default function RFQDetailPage() {
                             <div className="font-semibold text-[#1B2D5B]">{getProductLabel(it.product_name, locale)}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{secLabel(it.sector)}</span>
-                              {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700">{tierLabel(tr, locale)}</span>)}
+                              {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700"><><SellerIcon name={tierIcon(tr)} /> {tierLabel(tr, locale)}</></span>)}
                               {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
                               {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{L('d', ' دن', 'ي')}</span>}
                               {it.spec_file_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 {L('File', 'فائل', 'ملف')}</a>}
@@ -560,16 +561,16 @@ export default function RFQDetailPage() {
                                   </div>
                                   {/* who is selling and where the price comes from — a sourced price is never shown as direct */}
                                   <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                                    {b.offer.supplier?.supplier_tier && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">{tierLabel(b.offer.supplier.supplier_tier, locale)}</span>}
+                                    {b.offer.supplier?.supplier_tier && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600"><><SellerIcon name={tierIcon(b.offer.supplier.supplier_tier)} /> {tierLabel(b.offer.supplier.supplier_tier, locale)}</></span>}
                                     {b.offer.supplier && b.offer.supplier.verification_status !== 'verified' && b.offer.supplier.cr_verification_source !== 'wathq' && (
                                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{L('Not verified yet', 'ابھی تصدیق نہیں ہوئی', 'غير موثّق بعد')}</span>
                                     )}
                                     {b.offer.source_type && (
                                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isDirectSource(b.offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                                        {isDirectSource(b.offer.source_type) ? `✓ ${L('Direct from seller', 'بیچنے والے سے براہ راست', 'مباشر من البائع')}` : sourceLabel(b.offer.source_type, locale)}
+                                        {isDirectSource(b.offer.source_type) ? <><SellerIcon name="check" /> {L('Direct from seller', 'بیچنے والے سے براہ راست', 'مباشر من البائع')}</> : <><SellerIcon name={sourceIcon(b.offer.source_type)} /> {sourceLabel(b.offer.source_type, locale)}</>}
                                       </span>
                                     )}
-                                    {b.offer.availability && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-50 text-gray-600">{availabilityLabel(b.offer.availability, locale)}</span>}
+                                    {b.offer.availability && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(b.offer.availability)} /> {availabilityLabel(b.offer.availability, locale)}</></span>}
                                   </div>
                                   <div className="text-[11px] text-gray-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                                     {Number(b.entry.unit_price) > 0 && <span>{Number(b.entry.unit_price).toLocaleString('en-US')} / {getUnitLabel(b.entry.unit || it.unit, locale)}</span>}
@@ -749,17 +750,17 @@ export default function RFQDetailPage() {
                             normTier(offer.supplier.supplier_tier) === 'company' ? 'bg-purple-100 text-purple-700' :
                             normTier(offer.supplier.supplier_tier) === 'shop' ? 'bg-blue-100 text-[#d96f15]' : 'bg-gray-100 text-gray-600'
                           }`}>
-                            {tierLabel(offer.supplier.supplier_tier, locale)}
+                            <><SellerIcon name={tierIcon(offer.supplier.supplier_tier)} /> {tierLabel(offer.supplier.supplier_tier, locale)}</>
                           </span>
                         )}
                         {/* Where the price comes from: a sourced quote is never shown as a direct one */}
                         {offer.source_type && (
                           <span className={`badge text-[10px] ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
                             title={isDirectSource(offer.source_type) ? L('Direct price from the seller', 'بیچنے والے سے براہ راست قیمت', 'سعر مباشر من البائع') : L('Price sourced elsewhere, not from the seller stock', 'یہ قیمت کسی دوسرے ذریعے سے ہے، بیچنے والے کے اسٹاک سے نہیں', 'سعر منقول من مصدر آخر وليس من مخزون البائع')}>
-                            {isDirectSource(offer.source_type) ? `✓ ${L('Direct from seller', 'بیچنے والے سے براہ راست', 'مباشر من البائع')}` : sourceLabel(offer.source_type, locale)}
+                            {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct from seller', 'بیچنے والے سے براہ راست', 'مباشر من البائع')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {sourceLabel(offer.source_type, locale)}</>}
                           </span>
                         )}
-                        {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600">{availabilityLabel(offer.availability, locale)}</span>}
+                        {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(offer.availability)} /> {availabilityLabel(offer.availability, locale)}</></span>}
                         {offer.supplier?.verification_status === 'verified' && (
                           <span className="badge text-[10px] inline-flex items-center gap-0.5"
                             style={offer.supplier?.cr_verification_source === 'wathq'

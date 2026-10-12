@@ -13,7 +13,8 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
-import { tierLabel } from '@/lib/sellers'
+import { tierLabel, tierIcon } from '@/lib/sellers'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
 const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
@@ -302,7 +303,7 @@ export default function ProjectResultsPage() {
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] text-gray-400 flex-wrap">
                                   {offer.supplier?.supplier_tier && (
-                                    <span>{tierLabel(offer.supplier.supplier_tier, locale)}</span>
+                                    <span><SellerIcon name={tierIcon(offer.supplier.supplier_tier)} /> {tierLabel(offer.supplier.supplier_tier, locale)}</span>
                                   )}
                                   {offer.supplier?.verification_status === 'verified' && (
                                     <span title={offer.supplier?.cr_verification_source === 'wathq' ? 'موثّق عبر واثق' : 'موثّق'} style={{ color: '#0F6E56', fontWeight: 700 }}>

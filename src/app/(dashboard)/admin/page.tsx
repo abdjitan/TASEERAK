@@ -1039,9 +1039,9 @@ export default function AdminPanel() {
                         }}
                         title="نوع الحساب (الفئة تُحسب تلقائياً من النوع والتوثيق)"
                         className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5 cursor-pointer">
-                        <option value="individual">🧑‍💼 بائع مستقل / وسيط</option>
+                        <option value="individual">بائع مستقل / وسيط</option>
                         <option value="company">🏢 شركة (النشاط غير محدد)</option>
-                        {COMPANY_ACTIVITIES.map(a => <option key={a.k} value={a.k}>{a.icon} {a.ar}</option>)}
+                        {COMPANY_ACTIVITIES.map(a => <option key={a.k} value={a.k}>{a.ar}</option>)}
                       </select>
                     )}
 

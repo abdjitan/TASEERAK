@@ -4,7 +4,8 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { scoreColor, approvalLabel } from '@/lib/supplierScore'
 import { SECTOR_LABELS } from '@/types'
-import { TIERS, tierLabel, normTier } from '@/lib/sellers'
+import { TIERS, tierLabel, normTier, tierIcon } from '@/lib/sellers'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 // دليل الموردين مع بحث وفلاتر (منطقة/قطاع/نوع/موثّق) — يستقبل القائمة مُرتّبة
 // ومحسوبة الدرجة من صفحة الخادم ويُصفّيها في المتصفح (قائمة محدودة).
@@ -93,11 +94,11 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                     {r.verification_status === 'verified' && <span className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>✓ موثّق</span>}
                   </div>
                   <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
-                    <span>{r.supplier_tier ? tierLabel(r.supplier_tier, 'ar') : '🏬 مورد'}</span>
+                    <span><SellerIcon name={r.supplier_tier ? tierIcon(r.supplier_tier) : 'store'} /> {r.supplier_tier ? tierLabel(r.supplier_tier, 'ar') : 'مورد'}</span>
                     {r.region && <span>📍 {r.region}</span>}
                     {rating > 0 && <span>⭐ {rating.toFixed(1)}</span>}
                     <span>📦 {r.total_offers} عرض</span>
-                    <span>🤝 {r.won_deals} صفقة</span>
+                    <span><SellerIcon name="handshake" /> {r.won_deals} صفقة</span>
                   </div>
                   {Array.isArray(r.approvals) && r.approvals.length > 0 && (
                     <div className="flex gap-1 mt-1.5 flex-wrap">

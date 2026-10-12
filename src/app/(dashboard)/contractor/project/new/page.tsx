@@ -9,6 +9,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel } from '@/types'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 // تجميع بنود الـ BOQ حسب المجموعة (مثل قوائم التسعير) — يحتفظ بالفهرس الأصلي لكل بند
 function getGroupedItems(items: any[], locale: string) {
@@ -801,7 +802,7 @@ export default function NewProjectPage() {
                     <button key={tier.key} type="button" onClick={() => toggleTier(tier.key)}
                       className={`p-3 rounded-xl border-2 text-start transition-all ${active ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
                       <div className="flex items-center gap-2">
-                        <span className="text-lg">{tier.icon}</span>
+                        <span className="text-[#1B2D5B]"><SellerIcon name={tier.icon} className="w-5 h-5" /></span>
                         <span className={`text-sm font-bold ${active ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</span>
                         {active && <span className="ms-auto text-[#F5831F] font-bold">✓</span>}
                       </div>

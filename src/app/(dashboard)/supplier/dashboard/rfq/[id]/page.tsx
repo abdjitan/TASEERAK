@@ -18,6 +18,7 @@ import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf, WARRANTY_OPTIONS } from '@/lib/sellers'
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 export default function SupplierRFQPage() {
   const { id } = useParams()
@@ -1098,7 +1099,7 @@ export default function SupplierRFQPage() {
                       <button type="button" key={o.k} onClick={() => setSourceType(o.k)} aria-pressed={sourceType === o.k}
                         className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${sourceType === o.k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-[#1B2D5B]/40'}`}
                         style={sourceType === o.k ? { background: '#1B2D5B' } : {}}>
-                        {o.icon} {locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}
+                        <SellerIcon name={o.icon} /> {locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}
                       </button>
                     ))}
                   </div>
@@ -1111,7 +1112,7 @@ export default function SupplierRFQPage() {
                       <button type="button" key={o.k} onClick={() => setAvailability(o.k)} aria-pressed={availability === o.k}
                         className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${availability === o.k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-[#0F6E56]/40'}`}
                         style={availability === o.k ? { background: '#0F6E56' } : {}}>
-                        {o.icon} {locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}
+                        <SellerIcon name={o.icon} /> {locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}
                       </button>
                     ))}
                   </div>

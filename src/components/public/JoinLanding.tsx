@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { PHONE_OTP_ENABLED } from '@/lib/features'
 import { SIGNUP_KIND_KEY } from '@/lib/sellers'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 // Invitation landing pages: /join/company (factories, distributors, trading companies, shops)
 // and /join/seller (independent sellers, brokers, price agents). They are ordinary public pages:
@@ -49,7 +50,7 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
 
       <main className="max-w-3xl mx-auto px-4 py-10">
         <div className="text-center mb-8">
-          <div className="text-5xl mb-3">{company ? '🏢' : '🧑‍💼'}</div>
+          <div className="mb-3 inline-grid place-items-center w-16 h-16 rounded-2xl bg-[#1B2D5B]/5 text-[#1B2D5B]"><SellerIcon name={company ? 'building' : 'user'} className="w-9 h-9" /></div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-navy leading-snug">
             {company
               ? L('Join Taseerak as a company', 'کمپنی کے طور پر شامل ہوں', 'انضم إلى تسعيرك كشركة أو محل')

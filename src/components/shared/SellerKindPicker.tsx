@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SELLER_KINDS, COMPANY_ACTIVITIES, sellerKindOf, tierLabel, type SellerKind } from '@/lib/sellers'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 // The seller's account kind (independent / company) and, for a company, its activity. Saved
 // immediately through set_seller_kind; the buyer-facing tier is derived by the DB from this and
@@ -43,7 +44,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
             <button key={k} type="button" disabled={busy} aria-pressed={on}
               onClick={() => { if (!on) save(k, k === 'company' ? 'company' : undefined) }}
               className={`text-start p-3 rounded-xl border-2 transition-all disabled:opacity-60 ${on ? 'border-navy bg-navy/5' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
-              <div className="font-bold text-sm text-navy">{info.icon} {pick(info)}</div>
+              <div className="font-bold text-sm text-navy"><SellerIcon name={info.icon} /> {pick(info)}</div>
               <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">{pick(info.sub)}</div>
             </button>
           )
@@ -59,7 +60,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
               return (
                 <button key={a.k} type="button" disabled={busy} aria-pressed={on} onClick={() => { if (!on) save('company', a.k) }}
                   className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all disabled:opacity-60 ${on ? 'bg-navy text-white border-navy' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'}`}>
-                  {a.icon} {pick(a)}
+                  <SellerIcon name={a.icon} /> {pick(a)}
                 </button>
               )
             })}

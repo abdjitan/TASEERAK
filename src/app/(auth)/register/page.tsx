@@ -11,6 +11,7 @@ import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import { PHONE_OTP_ENABLED } from '@/lib/features'
 import { SELLER_KINDS, rememberedSignupKind } from '@/lib/sellers'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
 // نجمع الحد الأدنى فقط: الدور + الاسم + اسم الشركة + الجوال + البريد + كلمة المرور.
@@ -224,7 +225,7 @@ export default function RegisterPage() {
                     return (
                       <button key={k} type="button" onClick={() => setSellerKind(k)} aria-pressed={on}
                         className={`p-3 rounded-xl border-2 text-start transition-all ${on ? 'border-navy bg-navy/5' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
-                        <div className="font-bold text-navy text-xs">{info.icon} {locale === 'en' ? info.en : locale === 'ur' ? info.ur : info.ar}</div>
+                        <div className="font-bold text-navy text-xs"><SellerIcon name={info.icon} /> {locale === 'en' ? info.en : locale === 'ur' ? info.ur : info.ar}</div>
                         <div className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{locale === 'en' ? info.sub.en : locale === 'ur' ? info.sub.ur : info.sub.ar}</div>
                       </button>
                     )

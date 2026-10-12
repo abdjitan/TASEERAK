@@ -11,15 +11,15 @@ export const TIERS: SupplierTier[] = ['company', 'shop', 'independent']
 
 export const TIER_INFO: Record<SupplierTier, T3 & { icon: string; hint: T3 }> = {
   company: {
-    icon: '🏢', ar: 'شركات ومصانع معتمدة', en: 'Verified companies & factories', ur: 'تصدیق شدہ کمپنیاں اور فیکٹریاں',
+    icon: 'building', ar: 'شركات ومصانع معتمدة', en: 'Verified companies & factories', ur: 'تصدیق شدہ کمپنیاں اور فیکٹریاں',
     hint: { ar: 'مصانع ووكلاء وموزّعون موثّقون بالسجل التجاري', en: 'Factories, agents and distributors verified by CR', ur: 'سی آر سے تصدیق شدہ فیکٹریاں اور ڈسٹری بیوٹرز' },
   },
   shop: {
-    icon: '🏪', ar: 'محلات ومؤسسات تجارية', en: 'Shops & trading businesses', ur: 'دکانیں اور کاروبار',
+    icon: 'store', ar: 'محلات ومؤسسات تجارية', en: 'Shops & trading businesses', ur: 'دکانیں اور کاروبار',
     hint: { ar: 'محلات مواد البناء والمؤسسات التجارية', en: 'Building-material shops and trading businesses', ur: 'تعمیراتی سامان کی دکانیں' },
   },
   independent: {
-    icon: '🧑‍💼', ar: 'بائعون مستقلون ووسطاء', en: 'Independent sellers & brokers', ur: 'آزاد فروخت کنندگان اور بروکرز',
+    icon: 'user', ar: 'بائعون مستقلون ووسطاء', en: 'Independent sellers & brokers', ur: 'آزاد فروخت کنندگان اور بروکرز',
     hint: { ar: 'أفراد يوفّرون المواد أو يجمعون الأسعار من السوق', en: 'Individuals who source materials or collect market prices', ur: 'افراد جو مارکیٹ سے سامان یا قیمتیں لاتے ہیں' },
   },
 }
@@ -30,10 +30,12 @@ export function normTier(t?: string | null): SupplierTier {
   if (t === 'independent') return 'independent'
   return 'shop'
 }
-export function tierLabel(t: string | null | undefined, locale: Locale, withIcon = true): string {
-  const i = TIER_INFO[normTier(t)]
-  return (withIcon ? i.icon + ' ' : '') + pick(i, locale)
+// Labels are text only; show the matching line icon with <SellerIcon name={tierIcon(t)} />.
+// (`withIcon` is kept for old call sites and ignored: the icons are SVG now, not emoji.)
+export function tierLabel(t: string | null | undefined, locale: Locale, _withIcon = false): string {
+  return pick(TIER_INFO[normTier(t)], locale)
 }
+export function tierIcon(t: string | null | undefined): string { return TIER_INFO[normTier(t)].icon }
 export function tierHint(t: string, locale: Locale): string { return pick(TIER_INFO[normTier(t)].hint, locale) }
 /** Does a request's tier filter include this supplier? (empty filter = everyone) */
 export function tierAllowed(targets: string[] | null | undefined, mine: string | null | undefined): boolean {
@@ -65,19 +67,19 @@ export function sellerKindOf(providerType?: string | null): SellerKind {
 }
 export const SELLER_KINDS: Record<SellerKind, T3 & { icon: string; sub: T3 }> = {
   independent: {
-    icon: '🧑‍💼', ar: 'أعمل بشكل مستقل', en: 'I work independently', ur: 'میں آزادانہ کام کرتا ہوں',
+    icon: 'user', ar: 'أعمل بشكل مستقل', en: 'I work independently', ur: 'میں آزادانہ کام کرتا ہوں',
     sub: { ar: 'بائع أو وسيط أو وكيل أسعار: توفّر المواد أو تجمع أسعارها من السوق', en: 'Seller, broker or price agent: you source materials or collect market prices', ur: 'فروخت کنندہ، بروکر یا پرائس ایجنٹ' },
   },
   company: {
-    icon: '🏢', ar: 'أمثّل شركة أو محلاً', en: 'I represent a company or shop', ur: 'میں کمپنی یا دکان کی نمائندگی کرتا ہوں',
+    icon: 'building', ar: 'أمثّل شركة أو محلاً', en: 'I represent a company or shop', ur: 'میں کمپنی یا دکان کی نمائندگی کرتا ہوں',
     sub: { ar: 'مصنع، أو وكيل وموزّع، أو شركة تجارية، أو محل مواد بناء', en: 'Factory, agent/distributor, trading company or building-materials shop', ur: 'فیکٹری، ڈسٹری بیوٹر، تجارتی کمپنی یا دکان' },
   },
 }
 export const COMPANY_ACTIVITIES: { k: string; icon: string; ar: string; en: string; ur: string }[] = [
-  { k: 'retail_shop', icon: '🏪', ar: 'محل مواد بناء', en: 'Building-materials shop', ur: 'تعمیراتی سامان کی دکان' },
-  { k: 'distributor', icon: '🚚', ar: 'وكيل أو موزّع', en: 'Agent / distributor', ur: 'ایجنٹ / ڈسٹری بیوٹر' },
-  { k: 'trading_company', icon: '🏢', ar: 'شركة تجارية', en: 'Trading company', ur: 'تجارتی کمپنی' },
-  { k: 'manufacturer', icon: '🏭', ar: 'مصنع', en: 'Factory / manufacturer', ur: 'فیکٹری' },
+  { k: 'retail_shop', icon: 'store', ar: 'محل مواد بناء', en: 'Building-materials shop', ur: 'تعمیراتی سامان کی دکان' },
+  { k: 'distributor', icon: 'truck', ar: 'وكيل أو موزّع', en: 'Agent / distributor', ur: 'ایجنٹ / ڈسٹری بیوٹر' },
+  { k: 'trading_company', icon: 'building', ar: 'شركة تجارية', en: 'Trading company', ur: 'تجارتی کمپنی' },
+  { k: 'manufacturer', icon: 'factory', ar: 'مصنع', en: 'Factory / manufacturer', ur: 'فیکٹری' },
 ]
 export function sellerKindLabel(k: SellerKind, locale: Locale) { return pick(SELLER_KINDS[k], locale) }
 export function activityLabel(providerType: string | null | undefined, locale: Locale): string {
@@ -87,10 +89,10 @@ export function activityLabel(providerType: string | null | undefined, locale: L
 
 // ── Quote source & availability ────────────────────────────────────────────────────────────────
 export const SOURCE_TYPES: { k: string; icon: string; direct: boolean; ar: string; en: string; ur: string }[] = [
-  { k: 'own_stock', icon: '📦', direct: true, ar: 'من مخزوني', en: 'From my stock', ur: 'میرے اسٹاک سے' },
-  { k: 'direct_supplier', icon: '🏭', direct: false, ar: 'من مصنع أو مورد', en: 'From a factory or supplier', ur: 'فیکٹری یا سپلائر سے' },
-  { k: 'shop', icon: '🏪', direct: false, ar: 'من محل في السوق', en: 'From a shop in the market', ur: 'مارکیٹ کی دکان سے' },
-  { k: 'intermediary', icon: '🤝', direct: false, ar: 'عن طريق وسيط', en: 'Through an intermediary', ur: 'ایک بروکر کے ذریعے' },
+  { k: 'own_stock', icon: 'box', direct: true, ar: 'من مخزوني', en: 'From my stock', ur: 'میرے اسٹاک سے' },
+  { k: 'direct_supplier', icon: 'factory', direct: false, ar: 'من مصنع أو مورد', en: 'From a factory or supplier', ur: 'فیکٹری یا سپلائر سے' },
+  { k: 'shop', icon: 'store', direct: false, ar: 'من محل في السوق', en: 'From a shop in the market', ur: 'مارکیٹ کی دکان سے' },
+  { k: 'intermediary', icon: 'handshake', direct: false, ar: 'عن طريق وسيط', en: 'Through an intermediary', ur: 'ایک بروکر کے ذریعے' },
 ]
 // Older values that may exist on offers.
 const LEGACY_SOURCE: Record<string, T3> = {
@@ -100,21 +102,23 @@ const LEGACY_SOURCE: Record<string, T3> = {
 export function sourceLabel(k: string | null | undefined, locale: Locale): string {
   if (!k) return ''
   const s = SOURCE_TYPES.find(x => x.k === k)
-  if (s) return s.icon + ' ' + pick(s, locale)
+  if (s) return pick(s, locale)
   return LEGACY_SOURCE[k] ? pick(LEGACY_SOURCE[k], locale) : ''
 }
 /** A quote straight from the seller's own stock (not sourced through someone else). */
 export function isDirectSource(k: string | null | undefined): boolean { return !k || k === 'own_stock' }
 
 export const AVAILABILITY: { k: string; icon: string; ar: string; en: string; ur: string }[] = [
-  { k: 'now', icon: '✅', ar: 'متوفر الآن', en: 'Available now', ur: 'ابھی دستیاب' },
-  { k: 'confirm', icon: '⏳', ar: 'يحتاج تأكيد التوفّر', en: 'Needs confirmation', ur: 'تصدیق درکار' },
-  { k: 'made_to_order', icon: '🛠️', ar: 'حسب الطلب', en: 'Made to order', ur: 'آرڈر پر' },
+  { k: 'now', icon: 'checkCircle', ar: 'متوفر الآن', en: 'Available now', ur: 'ابھی دستیاب' },
+  { k: 'confirm', icon: 'hourglass', ar: 'يحتاج تأكيد التوفّر', en: 'Needs confirmation', ur: 'تصدیق درکار' },
+  { k: 'made_to_order', icon: 'hammer', ar: 'حسب الطلب', en: 'Made to order', ur: 'آرڈر پر' },
 ]
 export function availabilityLabel(k: string | null | undefined, locale: Locale): string {
   const a = AVAILABILITY.find(x => x.k === k)
-  return a ? a.icon + ' ' + pick(a, locale) : ''
+  return a ? pick(a, locale) : ''
 }
+export function sourceIcon(k: string | null | undefined): string { return SOURCE_TYPES.find(x => x.k === k)?.icon || '' }
+export function availabilityIcon(k: string | null | undefined): string { return AVAILABILITY.find(x => x.k === k)?.icon || '' }
 
 // ── Warranty (optional, per material) ─────────────────────────────────────────────────────────
 // Stored as Arabic text on each priced line (item_prices[].warranty); '' = not stated.
@@ -140,12 +144,11 @@ export function verifyLevel(p: any): VerifyLevel {
   return 'none'
 }
 export const VERIFY_INFO: Record<VerifyLevel, T3 & { icon: string; tone: 'green' | 'amber' | 'blue' | 'gray' }> = {
-  business_verified: { icon: '✔️', tone: 'green', ar: 'منشأة موثّقة', en: 'Verified business', ur: 'تصدیق شدہ کاروبار' },
-  business_submitted: { icon: '📄', tone: 'amber', ar: 'بيانات المنشأة قيد المراجعة', en: 'Business details under review', ur: 'کاروباری تفصیلات زیر جائزہ' },
-  phone_verified: { icon: '📱', tone: 'blue', ar: 'رقم الجوال موثّق', en: 'Phone verified', ur: 'فون کی تصدیق' },
-  none: { icon: '•', tone: 'gray', ar: 'غير موثّق بعد', en: 'Not verified yet', ur: 'ابھی تصدیق نہیں' },
+  business_verified: { icon: 'badge', tone: 'green', ar: 'منشأة موثّقة', en: 'Verified business', ur: 'تصدیق شدہ کاروبار' },
+  business_submitted: { icon: 'file', tone: 'amber', ar: 'بيانات المنشأة قيد المراجعة', en: 'Business details under review', ur: 'کاروباری تفصیلات زیر جائزہ' },
+  phone_verified: { icon: 'phone', tone: 'blue', ar: 'رقم الجوال موثّق', en: 'Phone verified', ur: 'فون کی تصدیق' },
+  none: { icon: 'dot', tone: 'gray', ar: 'غير موثّق بعد', en: 'Not verified yet', ur: 'ابھی تصدیق نہیں' },
 }
 export function verifyLabel(p: any, locale: Locale): string {
-  const v = VERIFY_INFO[verifyLevel(p)]
-  return v.icon + ' ' + pick(v, locale)
+  return pick(VERIFY_INFO[verifyLevel(p)], locale)
 }

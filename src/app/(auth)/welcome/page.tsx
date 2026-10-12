@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { SELLER_KINDS, rememberedSignupKind, type SellerKind } from '@/lib/sellers'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 // After the first WhatsApp OTP: "Do you need prices or provide them?", and for a provider
 // "independent or company?", plus a name. Everything else (location, categories, company
@@ -121,7 +122,7 @@ export default function WelcomePage() {
                     <button key={k} type="button" onClick={() => setKind(k)} aria-pressed={on}
                       className={`text-start p-3 rounded-xl border-2 transition-all ${on ? 'border-navy bg-navy/5' : 'bg-white'}`}
                       style={on ? undefined : { borderColor: 'var(--line)' }}>
-                      <span className="block font-bold text-sm text-navy">{info.icon} {L(info.en, info.ur, info.ar)}</span>
+                      <span className="block font-bold text-sm text-navy"><SellerIcon name={info.icon} /> {L(info.en, info.ur, info.ar)}</span>
                       <span className="block text-[11px] text-ink-2 mt-0.5 leading-relaxed">{L(info.sub.en, info.sub.ur, info.sub.ar)}</span>
                     </button>
                   )

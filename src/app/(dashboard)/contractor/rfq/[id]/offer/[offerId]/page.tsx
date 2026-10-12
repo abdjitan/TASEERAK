@@ -14,8 +14,9 @@ import Logo from '@/components/shared/Logo'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import DealProtection from '@/components/shared/DealProtection'
-import { tierLabel, sourceLabel, availabilityLabel, isDirectSource } from '@/lib/sellers'
+import { tierLabel, sourceLabel, availabilityLabel, isDirectSource, sourceIcon, availabilityIcon, tierIcon } from '@/lib/sellers'
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -196,7 +197,7 @@ export default function OfferDetailPage() {
           <h2 className="font-bold text-sm mb-3" style={{ color: '#1B2D5B' }}>🏪 {L('Supplier', 'سپلائر', 'المورد')}</h2>
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="font-bold text-gray-900">{s.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</span>
-            {s.supplier_tier && <span className="badge text-[10px] bg-[#F5831F]/5 text-[#d96f15]">{tierText}</span>}
+            {s.supplier_tier && <span className="badge text-[10px] bg-[#F5831F]/5 text-[#d96f15]"><SellerIcon name={tierIcon(s.supplier_tier)} /> {tierText}</span>}
             {s.verification_status === 'verified' && (
               <span className="badge text-[10px]" style={s.cr_verification_source === 'wathq' ? { background: '#0F6E56', color: '#fff' } : { background: '#E1F5EE', color: '#0F6E56' }}>
                 {s.cr_verification_source === 'wathq' ? `🛡 ${L('Verified via Wathq', 'واثق کے ذریعے تصدیق شدہ', 'موثّق عبر واثق')}` : `✓ ${L('Verified', 'تصدیق شدہ', 'موثّق')}`}
@@ -207,10 +208,10 @@ export default function OfferDetailPage() {
             )}
             {offer.source_type && (
               <span className={`badge text-[10px] ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                {isDirectSource(offer.source_type) ? `✓ ${L('Direct price from the seller', 'بیچنے والے سے براہ راست قیمت', 'سعر مباشر من البائع')}` : sourceLabel(offer.source_type, locale)}
+                {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct price from the seller', 'بیچنے والے سے براہ راست قیمت', 'سعر مباشر من البائع')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {sourceLabel(offer.source_type, locale)}</>}
               </span>
             )}
-            {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600">{availabilityLabel(offer.availability, locale)}</span>}
+            {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(offer.availability)} /> {availabilityLabel(offer.availability, locale)}</></span>}
             {Array.isArray(s.approvals) && s.approvals.map((a: string) => (
               <span key={a} className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>🏅 {L('Approved by', 'منظور شدہ:', 'معتمد لدى')} {approvalLabel(a)}</span>
             ))}

@@ -8,6 +8,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 const txt = {
   ar: {
@@ -151,7 +152,7 @@ export default function MarketPricePage() {
                           <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{p.product_name}</div>
                           <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                         </div>
-                        {p.supplier?.supplier_tier === 'manufacturer' && <span className="text-base">🏭</span>}
+                        {p.supplier?.supplier_tier === 'manufacturer' && <span className="text-[#1B2D5B]" title="مصنع"><SellerIcon name="factory" /></span>}
                       </div>
                       <div className="flex items-end justify-between">
                         <div>

@@ -5,7 +5,8 @@ import { createPublicClient } from '@/lib/supabase/server'
 import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
-import { tierLabel } from '@/lib/sellers'
+import { tierLabel, tierIcon } from '@/lib/sellers'
+import SellerIcon from '@/components/shared/SellerIcon'
 
 export const dynamic = 'force-dynamic'
 
@@ -52,7 +53,7 @@ export default async function SupplierProfilePage({ params }: { params: { id: st
                 {s.verification_status === 'verified' && <span className="badge text-[11px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>{s.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}</span>}
               </div>
               <div className="text-sm text-gray-500 mt-1 flex items-center gap-3 flex-wrap">
-                <span>{s.supplier_tier ? tierLabel(s.supplier_tier, 'ar') : '🏬 مورد'}</span>
+                <span><SellerIcon name={s.supplier_tier ? tierIcon(s.supplier_tier) : 'store'} /> {s.supplier_tier ? tierLabel(s.supplier_tier, 'ar') : 'مورد'}</span>
                 {s.region && <span>📍 {s.region}{s.city ? ` · ${s.city}` : ''}</span>}
               </div>
             </div>
