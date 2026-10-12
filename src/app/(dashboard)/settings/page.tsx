@@ -385,6 +385,10 @@ export default function SettingsPage() {
                   <span>{item.label}</span>
                 </button>
               ))}
+              <a href="/account/delete" className="mt-2 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50">
+                <span>🗑</span>
+                <span>{locale === 'en' ? 'Delete my account' : locale === 'ur' ? 'میرا اکاؤنٹ حذف کریں' : 'حذف حسابي'}</span>
+              </a>
             </div>
           </div>
 
