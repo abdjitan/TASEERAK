@@ -28,6 +28,7 @@ const P: Record<string, ReactNode> = {
   truck: <><path d="M14 18V6a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h2" /><path d="M14 9h4l3 3v5a1 1 0 0 1-1 1h-1" /><circle cx="7" cy="18" r="2" /><circle cx="17" cy="18" r="2" /></>,
   cog: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M5 5l2 2M17 17l2 2M2 12h3M19 12h3M5 19l2-2M17 7l2-2" /></>,
   ladder: <><path d="M8 3v18M16 3v18M8 7h8M8 12h8M8 17h8" /></>,
+  sofa: <><path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" /><path d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v5H3z" /><path d="M5 18v2M19 18v2" /></>,
 }
 
 // مفتاح المجموعة/القطاع → أيقونة
@@ -51,6 +52,8 @@ const MAP: Record<string, string> = {
   // قطاعات
   civil: 'building', architectural: 'layers', electrical: 'zap', mechanical: 'cog',
   equip: 'truck', equipment: 'truck', supply_store: 'box',
+  // browse sections
+  furniture: 'sofa',
 }
 
 export default function CatIcon({ k, className = 'w-5 h-5' }: { k: string; className?: string }) {

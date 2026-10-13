@@ -10,24 +10,25 @@ import { SECTOR_PRODUCTS, GROUP_LABELS, getGroupedProducts, detectSubCategory, t
 export type BrowseSection =
   | 'building' | 'finishing' | 'furniture' | 'electrical' | 'plumbing' | 'hvac_fire' | 'insulation' | 'tools' | 'outdoor'
 
-export const BROWSE_SECTIONS: { key: BrowseSection; icon: string; ar: string; en: string; ur: string; hint: { ar: string; en: string; ur: string } }[] = [
-  { key: 'building', icon: '🧱', ar: 'البناء والإنشاءات', en: 'Building & structure', ur: 'تعمیر و ڈھانچہ',
+// cat = CatIcon key (line icon, same set as the groups); icon = emoji kept for plain-text places
+export const BROWSE_SECTIONS: { key: BrowseSection; icon: string; cat?: string; ar: string; en: string; ur: string; hint: { ar: string; en: string; ur: string } }[] = [
+  { key: 'building', cat: 'civil', icon: '🧱', ar: 'البناء والإنشاءات', en: 'Building & structure', ur: 'تعمیر و ڈھانچہ',
     hint: { ar: 'أسمنت، خرسانة، حديد، بلك، رمل، شدّات', en: 'Cement, concrete, rebar, blocks, sand, formwork', ur: 'سیمنٹ، کنکریٹ، سریا، بلاک، ریت' } },
-  { key: 'finishing', icon: '🎨', ar: 'التشطيبات والديكور', en: 'Finishing & decoration', ur: 'فنشنگ اور سجاوٹ',
+  { key: 'finishing', cat: 'paint_facade', icon: '🎨', ar: 'التشطيبات', en: 'Finishing', ur: 'فنشنگ',
     hint: { ar: 'بلاط، رخام، دهان، جبس، أبواب وشبابيك', en: 'Tiles, marble, paint, gypsum, doors & windows', ur: 'ٹائلیں، ماربل، پینٹ، جپسم، دروازے' } },
-  { key: 'furniture', icon: '🛋️', ar: 'الأثاث والديكور', en: 'Furniture & decor', ur: 'فرنیچر اور سجاوٹ',
+  { key: 'furniture', cat: 'furniture', icon: '🛋️', ar: 'الأثاث والديكور', en: 'Furniture & decor', ur: 'فرنیچر اور سجاوٹ',
     hint: { ar: 'طاولات، كنب، خزائن، ستائر، ثريات وإنارة ديكور حسب الطلب', en: 'Custom tables, sofas, wardrobes, curtains, chandeliers', ur: 'میزیں، صوفے، الماریاں، پردے، جھومر' } },
-  { key: 'electrical', icon: '⚡', ar: 'الكهرباء والإنارة', en: 'Electrical & lighting', ur: 'بجلی اور روشنی',
+  { key: 'electrical', cat: 'lighting', icon: '⚡', ar: 'الكهرباء والإنارة', en: 'Electrical & lighting', ur: 'بجلی اور روشنی',
     hint: { ar: 'أسلاك، قواطع، مفاتيح، إنارة، كاميرات', en: 'Cables, breakers, switches, lighting, CCTV', ur: 'تاریں، بریکر، سوئچ، لائٹس' } },
-  { key: 'plumbing', icon: '🚿', ar: 'السباكة والمياه', en: 'Plumbing & water', ur: 'پلمبنگ اور پانی',
+  { key: 'plumbing', cat: 'plumbing', icon: '🚿', ar: 'السباكة والمياه', en: 'Plumbing & water', ur: 'پلمبنگ اور پانی',
     hint: { ar: 'مواسير، خلاطات، مضخات، خزانات، أدوات صحية', en: 'Pipes, mixers, pumps, tanks, sanitary ware', ur: 'پائپ، مکسر، پمپ، ٹینک' } },
-  { key: 'hvac_fire', icon: '❄️', ar: 'التكييف والتهوية والحريق', en: 'AC, ventilation & firefighting', ur: 'اے سی، وینٹیلیشن، فائر',
+  { key: 'hvac_fire', cat: 'hvac', icon: '❄️', ar: 'التكييف والتهوية والحريق', en: 'AC, ventilation & firefighting', ur: 'اے سی، وینٹیلیشن، فائر',
     hint: { ar: 'مكيفات، دكت، مراوح شفط، رشاشات وإطفاء', en: 'AC units, ducts, fans, sprinklers', ur: 'اے سی، ڈکٹ، پنکھے، فائر' } },
-  { key: 'insulation', icon: '💧', ar: 'العزل والكيماويات', en: 'Insulation & chemicals', ur: 'انسولیشن اور کیمیکل',
+  { key: 'insulation', cat: 'building_insulation', icon: '💧', ar: 'العزل والكيماويات', en: 'Insulation & chemicals', ur: 'انسولیشن اور کیمیکل',
     hint: { ar: 'عزل مائي وحراري وصوتي، سيليكون، لواصق، إيبوكسي', en: 'Water/thermal/acoustic insulation, sealants, adhesives', ur: 'واٹر پروفنگ، انسولیشن، سیلنٹ' } },
-  { key: 'tools', icon: '🛠️', ar: 'العدد والمعدات والسلامة', en: 'Tools, equipment & safety', ur: 'اوزار، مشینری، حفاظت',
+  { key: 'tools', cat: 'store_tools', icon: '🛠️', ar: 'العدد والمعدات والسلامة', en: 'Tools, equipment & safety', ur: 'اوزار، مشینری، حفاظت',
     hint: { ar: 'عدد يدوية وكهربائية، مسامير، أقفال، سقالات، آليات، سلامة', en: 'Hand/power tools, fasteners, hardware, scaffolding, machinery', ur: 'اوزار، کیل، تالے، سکیفولڈنگ، مشینری' } },
-  { key: 'outdoor', icon: '🌳', ar: 'الحدائق والأعمال الخارجية', en: 'Garden & outdoor works', ur: 'باغ اور بیرونی کام',
+  { key: 'outdoor', cat: 'landscape', icon: '🌳', ar: 'الحدائق والأعمال الخارجية', en: 'Garden & outdoor works', ur: 'باغ اور بیرونی کام',
     hint: { ar: 'عشب، ري، إنترلوك، أسوار، صرف خارجي', en: 'Turf, irrigation, interlock, fencing, external drainage', ur: 'گھاس، آبپاشی، انٹرلاک، باڑ' } },
 ]
 

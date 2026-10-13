@@ -6,6 +6,7 @@ import { BROWSE_SECTIONS, getSectionGroups, type BrowseSection } from '@/lib/bro
 import { searchProducts, normQuery } from '@/lib/productSearch'
 import { createClient } from '@/lib/supabase/client'
 import { productImageUrl } from '@/lib/productImage'
+import CatIcon from '@/components/shared/CatIcon'
 
 // Pick materials from the catalog inside the request page (the 4th way to add a line, next to
 // writing, speaking and a photo). Search across everything, or browse the 8 user-facing sections
@@ -111,7 +112,7 @@ export function CatalogBrowser({ locale, onPick, picked = [], inline = false }: 
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
               className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-full border ${b.key === section ? 'text-white border-transparent' : 'border-gray-200 bg-white text-gray-600'}`}
               style={b.key === section ? { background: '#1B2D5B' } : undefined}>
-              {b.icon} {pickT(b)}
+              <CatIcon k={b.cat || b.key} className="w-4 h-4 inline-block align-[-0.2em] me-1" />{pickT(b)}
             </button>
           ))}
         </div>
@@ -172,7 +173,7 @@ export function CatalogBrowser({ locale, onPick, picked = [], inline = false }: 
           {BROWSE_SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
               className="text-start rounded-2xl border border-gray-200 bg-white p-3 hover:border-[#F5831F]/60 hover:shadow-sm transition-all">
-              <div className="text-2xl">{b.icon}</div>
+              <div className="w-10 h-10 rounded-xl grid place-items-center text-[#1B2D5B]" style={{ background: '#F5831F14' }}><CatIcon k={b.cat || b.key} className="w-6 h-6" /></div>
               <div className="font-bold text-sm text-navy mt-1 leading-snug">{pickT(b)}</div>
               <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{pickT(b.hint)}</div>
             </button>
@@ -186,7 +187,7 @@ export function CatalogBrowser({ locale, onPick, picked = [], inline = false }: 
               <div key={g.group} className="rounded-xl border border-gray-100 bg-white">
                 <button type="button" onClick={() => setOpenGroup(open ? null : g.group)} aria-expanded={open}
                   className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-bold text-navy">
-                  <span>{g.icon} {pickT(g)} <span className="text-gray-400 font-normal">({g.items.length})</span></span>
+                  <span className="flex items-center gap-2"><span className="w-7 h-7 rounded-lg grid place-items-center text-[#1B2D5B] shrink-0" style={{ background: '#1B2D5B0d' }}><CatIcon k={g.group} className="w-4 h-4" /></span>{pickT(g)} <span className="text-gray-400 font-normal">({g.items.length})</span></span>
                   <span className="text-gray-400">{open ? '▴' : '▾'}</span>
                 </button>
                 {open && (

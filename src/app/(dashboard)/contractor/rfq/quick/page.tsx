@@ -267,6 +267,19 @@ export default function QuickRequestPage() {
     }))
   }
 
+  function addMore() {
+    const box = typeof window !== 'undefined' ? document.getElementById('catalog-inline') : null
+    if (box && box.offsetParent !== null) {
+      box.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setTimeout(() => (box.querySelector('input') as HTMLInputElement | null)?.focus(), 350)
+    } else setShowCatalog(true)
+  }
+  // after the catalog sheet closes, show the list so the buyer sees what was added
+  function closeCatalog() {
+    setShowCatalog(false)
+    setTimeout(() => document.getElementById('request-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120)
+  }
+
   function updateLine(key: string, patch: Partial<Line>) { setLines(prev => prev.map(l => l.key === key ? { ...l, ...patch } : l)) }
   function removeLine(key: string) {
     const l = lines.find(x => x.key === key)
@@ -418,7 +431,7 @@ export default function QuickRequestPage() {
         </div>
 
         {/* Desktop: the catalog fills the main column; phones open it as a sheet */}
-        <div className="hidden lg:block lg:col-start-1 lg:row-start-2 lg:mt-5 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+        <div id="catalog-inline" className="hidden lg:block lg:col-start-1 lg:row-start-2 lg:mt-5 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
           <h2 className="font-bold text-navy">🔍 {L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}</h2>
           <CatalogBrowser inline locale={locale} picked={lines.map(l => ({ key: l.key, name: l.product_name }))} onPick={addFromCatalog} />
         </div>
@@ -433,7 +446,7 @@ export default function QuickRequestPage() {
         ) : (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-navy">{L('Your list', 'آپ کی فہرست', 'قائمتك')} <span className="text-gray-400 font-normal">({lines.length})</span></h2>
+              <h2 id="request-list" className="font-bold text-navy scroll-mt-24">{L('Your list', 'آپ کی فہرست', 'قائمتك')} <span className="text-gray-400 font-normal">({lines.length})</span></h2>
               <span className="text-xs text-gray-400">{L('Check each line before sending', 'بھیجنے سے پہلے چیک کریں', 'راجع كل سطر قبل الإرسال')}</span>
             </div>
             <div className="flex items-center justify-between text-[11px] text-gray-400">
@@ -483,7 +496,7 @@ export default function QuickRequestPage() {
                     </select>
                   </div>
                   <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })} className="input-field text-sm"
-                    placeholder={L('Size, type or brand (optional)', 'سائز یا برانڈ (اختیاری)', 'المقاس أو النوع أو الماركة (اختياري)')} />
+                    placeholder={L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
                   {(() => {
                     const fields = getProductSpecs(l.product_name).filter(f => f.key !== 'unit')
                     const n = fields.filter(f => (l.specs?.[f.key] || '').trim()).length
@@ -541,6 +554,10 @@ export default function QuickRequestPage() {
                 </div>
               )
             })}
+            <button type="button" onClick={addMore}
+              className="w-full py-3 rounded-xl border-2 border-dashed border-[#F5831F]/50 text-[#d96f15] font-bold text-sm hover:bg-[#F5831F]/5 transition-all">
+              + {L('Add another material', 'ایک اور سامان شامل کریں', 'أضف مادة أخرى')}
+            </button>
           </div>
         )}
 
@@ -593,7 +610,7 @@ export default function QuickRequestPage() {
 
       {lines.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-200 px-4 pt-3 z-30" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
-          <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3">
+          <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3 lg:pe-24">
             <span className="text-sm text-gray-500">{lines.length} {L('items', 'اشیاء', 'مواد')}</span>
             <button type="button" onClick={send} disabled={sending || photos.some(p => p.status === 'identifying')}
               className="btn-orange px-6 py-3 rounded-xl font-extrabold disabled:opacity-50">
@@ -603,7 +620,7 @@ export default function QuickRequestPage() {
         </div>
       )}
       {showCatalog && (
-        <CatalogPicker locale={locale} onClose={() => setShowCatalog(false)}
+        <CatalogPicker locale={locale} onClose={closeCatalog}
           picked={lines.map(l => ({ key: l.key, name: l.product_name }))}
           onRemove={(key: string) => removeLine(key)}
           onPick={addFromCatalog} />

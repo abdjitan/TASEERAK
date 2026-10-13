@@ -10,6 +10,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import EnablePush from '@/components/shared/EnablePush'
 import { AppIcon } from '@/components/AppIcon'
 import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
@@ -200,14 +201,7 @@ export default function ContractorDashboard() {
     return t.expired
   }
 
-  const nav = [
-    { href: '/contractor', label: locale === 'en' ? 'Dashboard' : locale === 'ur' ? 'ڈیش بورڈ' : 'الرئيسية', icon: '🏠', active: true },
-    { href: '/contractor/rfq/quick', label: locale === 'en' ? 'New RFQ' : locale === 'ur' ? 'نئی درخواست' : 'طلب تسعير', icon: '📝' },
-    { href: '/contractor/project/new', label: locale === 'en' ? 'Project (BOQ)' : locale === 'ur' ? 'پراجیکٹ BOQ' : 'مشروع BOQ', icon: '📋' },
-    { href: '/market', label: locale === 'en' ? 'Price Index' : locale === 'ur' ? 'بورس' : 'بورصة الأسعار', icon: '📈' },
-    { href: '/location', label: locale === 'en' ? 'Location' : locale === 'ur' ? 'مقام' : 'الموقع', icon: '📍' },
-    { href: '/settings', label: locale === 'en' ? 'Settings' : locale === 'ur' ? 'ترتیبات' : 'الإعدادات', icon: '⚙️' },
-  ]
+  const nav = getNav('contractor', locale, '/contractor') // the shared menu (طلباتي، صفقاتي، الرسائل…)
   const headerActions = profile?.verification_status !== 'rejected' ? (
     <>
       <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#1B2D5B' }}>📋 {locale === 'en' ? 'Project' : 'مشروع'}</Link>
