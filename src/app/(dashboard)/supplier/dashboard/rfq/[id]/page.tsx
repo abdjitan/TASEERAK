@@ -48,6 +48,10 @@ export default function SupplierRFQPage() {
   // تسعير بند-بند: لكل مادة بطاقة مستقلة (سعر الوحدة + خصائص + ملاحظة + كتالوج خاص)
   const [itemForms, setItemForms] = useState<any[]>([])
   const [openItem, setOpenItem] = useState<number | null>(null) // البطاقة المفتوحة (أكورديون)
+  // Help understanding the request: per line, what the material is and which details are missing
+  // (/api/explain-items: catalog fields checked for free, AI for the rest, cached for every supplier).
+  const [itemNotes, setItemNotes] = useState<Record<number, { what_it_is: string; missing: string[] }>>({})
+  const [asking, setAsking] = useState<number | null>(null)
   // المواد التي تخصّ هذا المورد فقط (ضمن قطاعاته/تخصصاته) — هي وحدها التي يسعّرها ويراها
   const [myItems, setMyItems] = useState<any[]>([])
   // (H2) أسعار المنافسين لم تعُد تُعرض للمورّد — يبقى فارغاً واللوحة معطّلة
@@ -137,6 +141,13 @@ export default function SupplierRFQPage() {
       if (!rfqData) { setRfq(null); setLoading(false); return }
       setRfq(rfqData)
       setContractorInfo(Array.isArray(cInfo) ? cInfo[0] : cInfo)
+      fetch('/api/explain-items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rfq_id: id }) })
+        .then(r => r.json()).then(j => {
+          if (!j?.ok) return
+          const m: Record<number, { what_it_is: string; missing: string[] }> = {}
+          for (const x of j.items || []) m[x.index] = { what_it_is: x.what_it_is || '', missing: x.missing || [] }
+          setItemNotes(m)
+        }).catch(() => {})
 
       // Round 2 — everything about this supplier and its offer on this request.
       const [{ data: me }, { data: secRows }, { data: specRows }, { data: myPrices }, { data: offerData }] = await Promise.all([
@@ -260,6 +271,19 @@ export default function SupplierRFQPage() {
   function setItemField(i: any, field: any, val: any) {
     setItemForms(prev => prev.map((f: any, idx: any) => idx === i ? { ...f, [field]: val } : f))
   }
+  // «اسأل المشتري»: open the conversation on this request with the question already written.
+  async function askBuyer(it: any, missing: string[]) {
+    const idx = Number(it.item_index ?? 0)
+    setAsking(idx)
+    const supabase = createClient()
+    const { data, error: e } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: actingId || user?.id })
+    setAsking(null)
+    if (e || !data) { setError(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }
+    const name = getProductLabel(it.product_name, locale)
+    const msg = L(`Hello, about «${name}»: could you specify ${missing.join(', ')}?`, `السلام علیکم، «${name}» کے بارے میں: کیا آپ ${missing.join('، ')} بتا سکتے ہیں؟`, `مرحباً، بخصوص «${it.product_name}»: هل يمكنك تحديد ${missing.join('، ')}؟`)
+    router.push(`/messages?c=${data}&msg=${encodeURIComponent(msg)}`)
+  }
+
   async function setItemFile(i: any, f: any) {
     if (!f) { setItemForms(prev => prev.map((x: any, idx: any) => idx === i ? { ...x, file: null } : x)); return }
     const v = await validateUploadFile(f)
@@ -786,6 +810,32 @@ export default function SupplierRFQPage() {
                               <span className="text-[11px] font-bold text-[#d96f15]">📷 {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
                             </a>
                           )}
+
+                          {/* understanding the request: what it is, and what the buyer did not say */}
+                          {(() => {
+                            const nt = itemNotes[Number(it.item_index ?? i)]
+                            if (!nt || (!nt.what_it_is && !nt.missing.length)) return null
+                            return (
+                              <div className="mt-3 space-y-2">
+                                {nt.what_it_is && (
+                                  <p className="text-xs text-gray-600 leading-relaxed" dir="auto">
+                                    <span className="font-bold text-[#1B2D5B]">ℹ️ {L('What it is:', 'یہ کیا ہے:', 'ما هذه المادة؟')} </span>{nt.what_it_is}
+                                  </p>
+                                )}
+                                {nt.missing.length > 0 && (
+                                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 flex flex-wrap items-center gap-2">
+                                    <span className="text-xs text-amber-800 flex-1 min-w-[12rem]">
+                                      ⚠️ <b>{L('Not specified by the buyer:', 'خریدار نے نہیں بتایا:', 'لم يحدّد المشتري:')}</b> {nt.missing.join(L(', ', '، ', '، '))}
+                                    </span>
+                                    <button type="button" onClick={() => askBuyer(it, nt.missing)} disabled={asking === Number(it.item_index ?? i)}
+                                      className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-50" style={{ background: '#1B2D5B' }}>
+                                      💬 {L('Ask the buyer', 'خریدار سے پوچھیں', 'اسأل المشتري')}
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })()}
 
                           {/* the price, right away */}
                           <div className="mt-3 flex flex-wrap items-center gap-2">

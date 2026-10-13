@@ -25,7 +25,7 @@ export const DEFAULT_AI_MODEL = process.env.AI_MODEL || 'claude-opus-4-8'
 // نماذج Gemini المجانية للمحاولة بالترتيب (قابلة للتهيئة عبر GEMINI_MODEL كقائمة مفصولة بفواصل)
 const GEMINI_MODEL_FALLBACKS = 'gemini-3.8-flash,gemini-flash-latest,gemini-2.5-flash'
 
-export interface AiJsonOpts { system: string; user: string; schema: any; model?: string; maxTokens?: number }
+export interface AiJsonOpts { system: string; user: string; schema: any; model?: string; maxTokens?: number; preferFree?: boolean }
 
 // قائمة نماذج Gemini للمحاولة بالترتيب (إن لم يتوفّر الأول 404 نجرّب التالي)
 const GEMINI_MODELS = (process.env.GEMINI_MODEL || GEMINI_MODEL_FALLBACKS).split(',').map(s => s.trim()).filter(Boolean)
@@ -91,10 +91,12 @@ async function anthropicMessages(system: string, messages: any[], maxTokens: num
 
 // Providers to try, in order: the configured AI_PROVIDER first, then every other provider that
 // has a key. One dead provider (e.g. a retired Groq model) must not take every AI feature down.
-function providerChain(opts: { vision?: boolean } = {}): ('anthropic' | 'gemini' | 'groq')[] {
+function providerChain(opts: { vision?: boolean; preferFree?: boolean } = {}): ('anthropic' | 'gemini' | 'groq')[] {
   const all: ('anthropic' | 'gemini' | 'groq')[] = []
+  // preferFree: free-tier providers first (Gemini, Groq), the paid one only as a last resort.
+  if (opts.preferFree) { if (geminiKey()) all.push('gemini'); if (groqKey()) all.push('groq') }
   const first = aiProvider()
-  if (first) all.push(first)
+  if (first && !all.includes(first)) all.push(first)
   for (const p of ['anthropic', 'gemini', 'groq'] as const) {
     const has = p === 'anthropic' ? !!anthropicKey() : p === 'gemini' ? !!geminiKey() : !!groqKey()
     if (has && !all.includes(p)) all.push(p)
@@ -111,7 +113,7 @@ function parseJsonText<T>(text: string | null): T | null {
 // طلب واحد بمخرجات JSON مُنظّمة. يُرجع الكائن المُحلَّل أو null.
 export async function aiJson<T = any>(opts: AiJsonOpts): Promise<T | null> {
   const schemaHint = `\n\nأعد الإجابة بصيغة JSON صالحة فقط (respond in valid JSON) تطابق هذا المخطط:\n${JSON.stringify(opts.schema)}`
-  for (const prov of providerChain()) {
+  for (const prov of providerChain({ preferFree: opts.preferFree })) {
     try {
       let text: string | null
       if (prov === 'gemini') {

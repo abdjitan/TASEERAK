@@ -27,7 +27,7 @@ function Messages() {
   const [convos, setConvos] = useState<any[]>([])
   const [activeId, setActiveId] = useState(sp.get('c') || '')
   const [msgs, setMsgs] = useState<any[]>([])
-  const [body, setBody] = useState('')
+  const [body, setBody] = useState(sp.get('msg')?.slice(0, 500) || '') // ?msg= pre-fills a question (e.g. «ask the buyer» on a request)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [awarded, setAwarded] = useState(true) // افتراضياً نسمح؛ نتحقق عند فتح المحادثة
