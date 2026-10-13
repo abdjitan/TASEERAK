@@ -227,6 +227,25 @@ function tokenScore(q: string, t: string): number {
 
 export type ProductHit = { name: string; sector: Sector; sub: string | null; score: number }
 
+// ── Learned words (migration 142) ───────────────────────────────────────────────────────────
+// Words the platform learned: seeded from this dictionary, then from what people search and the
+// product they choose (search_events → learned_synonyms, approved after 3 different people).
+// Loaded once from get_learned_synonyms() by TaxonomyProvider and cached on the device.
+let LEARNED: Map<string, { name: string; sector: Sector }[]> = new Map()
+export function setLearnedSynonyms(rows: { term_norm: string; product_name: string; sector: string }[]) {
+  const m = new Map<string, { name: string; sector: Sector }[]>()
+  for (const r of rows || []) {
+    if (!r?.term_norm || !r?.product_name) continue
+    const k = norm(r.term_norm)
+    const list = m.get(k) || []
+    if (!list.some(x => x.name === r.product_name)) list.push({ name: r.product_name, sector: (r.sector || 'supply_store') as Sector })
+    m.set(k, list)
+  }
+  LEARNED = m
+}
+/** The normalized form the learning tables use (same as the search's own matching). */
+export function normQuery(s: string): string { return norm(s) }
+
 export function searchProducts(query: string, opts: { sector?: Sector | ''; limit?: number; extra?: { name: string; sector: Sector }[] } = {}): ProductHit[] {
   const qToks = tokens(query).filter((t, i, a) => a.indexOf(t) === i)
   if (!qToks.length) return []
@@ -276,6 +295,19 @@ export function searchProducts(query: string, opts: { sector?: Sector | ''; limi
 
   let hits = run(true)
   if (!hits.length && qToks.length > 1) hits = run(false)
+
+  // Learned words: the whole query or one of its words was searched before and people chose these
+  // products, so they go first (and appear even when no catalog word matched at all).
+  if (LEARNED.size) {
+    const learned = [...(LEARNED.get(qNorm) || []), ...qToks.flatMap(t => LEARNED.get(t) || [])]
+    for (const l of learned) {
+      if (opts.sector && l.sector !== opts.sector) continue
+      const h = hits.find(x => x.name === l.name)
+      if (h) h.score += 14
+      else hits.push({ name: l.name, sector: l.sector, sub: null, score: 30 - l.name.length / 200 })
+    }
+    hits.sort((a, b) => b.score - a.score)
+  }
   const seen = new Set<string>()
   return hits.filter(h => (seen.has(h.sector + '|' + h.name) ? false : (seen.add(h.sector + '|' + h.name), true))).slice(0, opts.limit ?? 40)
 }

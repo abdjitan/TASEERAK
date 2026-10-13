@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getProductLabel, type Sector } from '@/types'
 import { BROWSE_SECTIONS, getSectionGroups, type BrowseSection } from '@/lib/browseCategories'
-import { searchProducts } from '@/lib/productSearch'
+import { searchProducts, normQuery } from '@/lib/productSearch'
+import { createClient } from '@/lib/supabase/client'
 import { productImageUrl } from '@/lib/productImage'
 
 // Pick materials from the catalog inside the request page (the 4th way to add a line, next to
@@ -35,14 +36,31 @@ export function CatalogBrowser({ locale, onPick, picked = [], inline = false }: 
     return good.length >= 3 ? good.slice(0, 30) : all.slice(0, 8)
   }, [q])
   const groups = useMemo(() => (section ? getSectionGroups(section) : []), [section])
+  // A search that still finds nothing after a pause is recorded, so the admin sees what is missing.
+  useEffect(() => {
+    const query = q.trim()
+    if (query.length < 2 || hits.length) return
+    const t = setTimeout(() => {
+      try { createClient().rpc('log_search_event', { p_query: query, p_query_norm: normQuery(query), p_action: 'no_result', p_source: 'catalog' }).then(() => {}, () => {}) } catch {}
+    }, 1800)
+    return () => clearTimeout(t)
+  }, [q, hits.length])
   const pickT = (o: any) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
   const isAdded = (name: string) => picked.some(p => p.name === name)
+  // Teach the search: what the person typed → the product they chose (fire and forget).
+  function choose(item: { name: string; sector: Sector }) {
+    const query = q.trim()
+    if (query) {
+      try { createClient().rpc('log_search_event', { p_query: query, p_query_norm: normQuery(query), p_action: 'picked', p_picked: item.name, p_sector: item.sector, p_source: 'catalog' }).then(() => {}, () => {}) } catch {}
+    }
+    onPick(item)
+  }
   const tileGrid = inline ? 'grid grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2' : 'grid grid-cols-3 sm:grid-cols-5 gap-2'
 
   const Tile = ({ name, s }: { name: string; s: Sector }) => {
     const on = isAdded(name)
     return (
-      <button type="button" onClick={() => onPick({ name, sector: s })}
+      <button type="button" onClick={() => choose({ name, sector: s })}
         className={`relative text-start rounded-xl border p-2 flex flex-col gap-1.5 transition-all ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 bg-white hover:border-[#F5831F]/60 hover:shadow-sm'}`}>
         <span className="aspect-square w-full rounded-lg bg-gray-50 overflow-hidden grid place-items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}

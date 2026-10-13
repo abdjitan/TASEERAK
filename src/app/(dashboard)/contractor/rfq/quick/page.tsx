@@ -9,6 +9,7 @@ import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
+import { normQuery } from '@/lib/productSearch'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
@@ -342,6 +343,12 @@ export default function QuickRequestPage() {
       }
       deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[]])
       clearLocalDraft('quick:' + userId)
+      // Teach the search: the words the buyer wrote → the material name that was sent.
+      for (const l of lines) {
+        if (l.original && l.original.trim() && l.original.trim() !== l.product_name.trim()) {
+          try { supabase.rpc('log_search_event', { p_query: l.original.trim(), p_query_norm: normQuery(l.original), p_action: 'picked', p_picked: l.product_name.trim(), p_sector: l.sector, p_source: 'quick_text' }).then(() => {}, () => {}) } catch {}
+        }
+      }
       if (draftId) { try { await supabase.from('rfq_drafts').delete().eq('id', draftId) } catch {} ; setDraftId(null) }
       setDone(true)
     } finally { setSending(false) }

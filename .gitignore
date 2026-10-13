@@ -28,3 +28,7 @@ catalog-audit/
 scripts/migrate/.env.migrate
 scripts/migrate/out/
 scripts/migrate/.copied.json
+
+# temporary env pulls (never commit)
+.env.vercel.tmp
+.env*.tmp

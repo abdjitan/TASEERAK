@@ -24,6 +24,7 @@ create trigger trg_claim_discovered_on_phone_confirm after update of phone_confi
 
 -- Scheduled deal reminders
 select cron.schedule('deal-reminders-hourly', '0 * * * *', 'SELECT public.generate_deal_reminders()');
+select cron.schedule('learn-search-words-daily', '30 2 * * *', 'select public.refresh_learned_synonyms()');
 
 -- Realtime
 alter publication supabase_realtime add table public.conversations;
