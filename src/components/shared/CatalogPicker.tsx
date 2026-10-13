@@ -17,9 +17,10 @@ import CatIcon from '@/components/shared/CatIcon'
 
 type Picked = { key: string; name: string }
 
-export function CatalogBrowser({ locale, onPick, picked = [], inline = false }: {
+export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline = false }: {
   locale: string
   onPick: (item: { name: string; sector: Sector }) => void
+  onRemove?: (key: string) => void   // a second tap on a picked material takes it off the list
   picked?: Picked[]
   inline?: boolean
 }) {
@@ -69,6 +70,9 @@ export function CatalogBrowser({ locale, onPick, picked = [], inline = false }: 
   const isAdded = (name: string) => picked.some(p => p.name === name)
   // Teach the search: what the person typed → the product they chose (fire and forget).
   function choose(item: { name: string; sector: Sector }) {
+    // already in the list → a tap removes it (the ✓ goes, the line leaves the list)
+    const already = [...picked].reverse().find(p => p.name === item.name)
+    if (already && onRemove) { onRemove(already.key); return }
     const query = q.trim()
     if (query) {
       try { createClient().rpc('log_search_event', { p_query: query, p_query_norm: normQuery(query), p_action: 'picked', p_picked: item.name, p_sector: item.sector, p_source: 'catalog' }).then(() => {}, () => {}) } catch {}
@@ -225,7 +229,7 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
-          <CatalogBrowser locale={locale} onPick={onPick} picked={picked} />
+          <CatalogBrowser locale={locale} onPick={onPick} onRemove={onRemove} picked={picked} />
         </div>
         {picked.length > 0 && (
           <div className="border-t border-gray-100 bg-gray-50">
