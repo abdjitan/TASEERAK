@@ -22,11 +22,11 @@ begin
 
   -- 1. buyer creates a 2-material request
   insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city,
-                    delivery_required, hide_identity, expires_at, status)
+                    delivery_required, delivery_location, delivery_geo, hide_identity, expires_at, status)
   values (buyer, 'civil', 'أسمنت +1 أصناف أخرى', array['civil'],
           '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":20,"unit":"كيس"},
             {"sector":"civil","product_name":"بلك","sub_category":"blocks","quantity":100,"unit":"حبة"}]'::jsonb,
-          20, 'كيس', 'الرياض', 'الرياض', true, true, now() + interval '2 days', 'open')
+          20, 'كيس', 'الرياض', 'الرياض', true, 'حي النرجس، شارع الاختبار', '24.8,46.6', true, now() + interval '2 days', 'open')
   returning id, ref_no into v_rfq, v_ref;
   select product_name into t from rfqs where id = v_rfq;
   if t = 'حزمة توريدات (مادتان)' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL rfq name=' || t; end if;
@@ -35,6 +35,13 @@ begin
   select count(*) into n from notifications where type = 'new_rfq' and data->>'rfq_id' = v_rfq::text
      and data->>'url' like '/supplier/dashboard/rfq/%' and body like 'RFQ-' || v_ref || ' ·%';
   if n > 0 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL suppliers not notified with ref'; end if;
+
+  -- H2: the owner still sees the location
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from rfq_private where rfq_id = v_rfq and delivery_location like 'حي النرجس%';
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL owner cannot see location'; end if;
+  reset role;
 
   -- 2. pre-award message: buyer is masked as "مشترٍ"
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
@@ -52,6 +59,10 @@ begin
   set local role authenticated;
   r := public.get_rfq_for_viewer(v_rfq);
   if r is not null and not (r ? 'contractor_id') then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL viewer rfq/identity'; end if;
+  -- H2: the precise delivery location is not readable before winning (table, private table, viewer)
+  select count(*) into n from rfqs where id = v_rfq and (delivery_location is not null or delivery_geo is not null);
+  if n = 0 and not exists (select 1 from rfq_private where rfq_id = v_rfq) and not (r ? 'delivery_location')
+    then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL location visible before award'; end if;
   if public.can_submit_quote() then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL supplier cannot quote'; end if;
   insert into offers (rfq_id, supplier_id, total_price, status, source_type, availability, item_prices)
   values (v_rfq, sup, 500, 'accepted', 'shop', 'now',
@@ -105,6 +116,12 @@ begin
   reset role;
   select status::text into t from offers where id = v_offer;
   if t = 'accepted' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL award status=' || t; end if;
+  -- H2: the supplier who won now sees the location
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from rfq_private where rfq_id = v_rfq;
+  reset role;
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL winner cannot see location'; end if;
   select status::text into t from offers where id = v_offer2;
   if t = 'rejected' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL losing offer=' || t; end if;
   select count(*) into n from notifications where user_id = sup and type = 'offer_accepted' and data->>'offer_id' = v_offer::text

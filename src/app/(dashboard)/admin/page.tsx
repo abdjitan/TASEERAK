@@ -77,12 +77,15 @@ export default function AdminPanel() {
     setMaterialReqs(mreqs || [])
 
     // Requests / offers overview (admin can read all via RLS is_admin())
-    const [{ data: rfqData }, { data: offerData }, { data: projData }, { data: pItems }] = await Promise.all([
+    const [{ data: rfqRows }, { data: offerData }, { data: projData }, { data: pItems }, { data: privRows }] = await Promise.all([
       client.from('rfqs').select('*').order('created_at', { ascending: false }).limit(LIM),
       client.from('offers').select('*').order('created_at', { ascending: false }).limit(LIM),
       client.from('project_rfqs').select('*').order('created_at', { ascending: false }).limit(LIM),
       client.from('project_rfq_items').select('*').limit(LIM),
+      client.from('rfq_private').select('rfq_id, delivery_location, delivery_geo').limit(LIM), // precise location (H2)
     ])
+    const privById = new Map((privRows || []).map((x: any) => [x.rfq_id, x]))
+    const rfqData = (rfqRows || []).map((r: any) => ({ ...r, ...(privById.get(r.id) || {}) }))
     setRfqs(rfqData || [])
     setOffers(offerData || [])
     setProjects(projData || [])

@@ -1055,7 +1055,7 @@ export default function SupplierRFQPage() {
           </div>
           {/* ملف المواصفات المرفق */}
           {specFileUrl && (
-            <a href={specFileUrl} target="_blank" rel="noopener noreferrer"
+            <a href={fileHref(specFileUrl)} target="_blank" rel="noopener noreferrer"
               className="mt-3 flex items-center gap-2 bg-[#F5831F]/5 border border-blue-200 rounded-xl p-3 hover:bg-blue-100 transition-all">
               <span className="text-xl">📎</span>
               <span className="text-sm font-semibold text-[#d96f15] flex-1">{T.attachedFile}</span>

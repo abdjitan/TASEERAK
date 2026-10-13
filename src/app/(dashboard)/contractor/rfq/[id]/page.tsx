@@ -133,7 +133,7 @@ export default function RFQDetailPage() {
       // Speed: the database is far from our users (~1 s a request): the request, its offers, the
       // per-item awards and the market sample load together, the page shows, then the supplier
       // contacts and track records fill in (was up to six requests in a row).
-      const [{ data: rfqData }, { data: offersData }, { data: awardRows }, { data: similarOffers }] = await Promise.all([
+      const [{ data: rfqRow }, { data: offersData }, { data: awardRows }, { data: similarOffers }, { data: priv }] = await Promise.all([
         supabase.from('rfqs').select('*').eq('id', id).single(),
         supabase.from('offers').select('*, supplier:profiles_public(company_name_ar, rating_avg, city, region, supplier_tier, latitude, longitude, national_short_address, district, verification_status, cr_verification_source, approvals)')
           .eq('rfq_id', id).order('total_price', { ascending: true }),
@@ -143,7 +143,10 @@ export default function RFQDetailPage() {
         supabase.from('offers').select('unit_price, rfq:rfqs(product_name, sector)')
           .not('unit_price', 'is', null).not('status', 'eq', 'rejected')
           .order('created_at', { ascending: false }).limit(500),
+        // the precise delivery location lives in rfq_private (owner / admin / winning supplier only, H2)
+        supabase.from('rfq_private').select('delivery_location, delivery_geo').eq('rfq_id', id).maybeSingle(),
       ])
+      const rfqData = rfqRow ? { ...rfqRow, ...(priv || {}) } : rfqRow
       setRfq(rfqData)
       setEditNotes(rfqData?.notes || '')
       setEditSpec(rfqData?.specification || '')
