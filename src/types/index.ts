@@ -171,7 +171,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     tile_adhesive: { ar: 'مواد تركيب البلاط (غراء/ترويبة)', en: 'Tile Adhesive & Grout', ur: 'ٹائل گلو', icon: '🪣', group: 'floors_walls',
       keywords: ['غراء','ترويبة','grout','adhesive','لاصق بلاط','tile glue'] },
     special_floor: { ar: 'أرضيات أكسس فلور وسكريد وسجاد', en: 'Raised Access, Screed & Carpet', ur: 'ایکسیس فلور، اسکریڈ اور قالین', icon: '🟪', group: 'floors_walls',
-      keywords: ['سجاد','carpet','raised access','أكسس فلور','access floor','رايزد أكسس','screed','سكريد','فرشة','مطاطية','مطاط','matting','rubber'] },
+      keywords: ['سجاد','موكيت','زولية','carpet','raised access','أكسس فلور','access floor','رايزد أكسس','screed','سكريد','فرشة','مطاطية','مطاط','matting','rubber'] },
     // ═══ الدهانات والديكورات الخارجية ═══
     paint: { ar: 'دهانات ودهان أرضيات إيبوكسي', en: 'Paints & Epoxy Floor Coatings', ur: 'پینٹ اور ایپوکسی فرش کوٹنگ', icon: '🎨', group: 'paint_facade',
       keywords: ['دهان','دهانات','paint','جوتن','jotun','الجزيرة','أكريليك','acrylic','زيتي','ورق جدران','wallpaper','إيبوكسي','epoxy','دهان أرضيات','دهان إيبوكسي','floor coating'] },
@@ -209,6 +209,10 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['نجارة','joinery','millwork','كاونتر','counter','reception','مكتب استقبال','بار','bar counter','خشب مفصل','MDF','mdf','خشب مضغوط','OSB','بلوك بورد','chipboard','blockboard','لوح خشبي'] },
     fitted_furniture: { ar: 'أثاث ثابت وخزائن', en: 'Fitted Furniture & Wardrobes', ur: 'فکسڈ فرنیچر', icon: '🪑', group: 'joinery',
       keywords: ['خزائن','wardrobe','أثاث ثابت','fitted','بانكيت','banquette','vanity','solid surface','corian'] },
+    custom_furniture: { ar: 'أثاث حسب الطلب', en: 'Custom-Made Furniture', ur: 'آرڈر پر فرنیچر', icon: '🛋', group: 'joinery',
+      keywords: ['أثاث','موبيليا','طاولة','طاولات','ترابيزة','سفرة','كنب','كنبة','أريكة','صوفا','كراسي','كرسي طعام','كرسي مكتب','سرير','تسريحة','مكتب خشب','مكتبة','دولاب','خزانة ملابس','جلسة','مجلس','حسب الطلب','furniture','table','sofa','bed','wardrobe','custom'] },
+    curtains: { ar: 'ستائر وبرادي', en: 'Curtains & Blinds', ur: 'پردے', icon: '🪟', group: 'joinery',
+      keywords: ['ستائر','ستارة','برادي','بلاك أوت','blackout','blinds','curtain','ستائر رول','ستائر شرائح','ستائر قماش'] },
     cubicles: { ar: 'قواطع حمامات وكبائن', en: 'Toilet Cubicles & Partitions', ur: 'کیوبیکل', icon: '🚪', group: 'joinery',
       keywords: ['قواطع حمام','cubicle','toilet partition','كبائن','HPL partition','لوكرات','locker'] },
     // ═══ العزل الصوتي (Acoustic) ═══
@@ -256,6 +260,8 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['شريط LED','شريط ليد','نيون','neon','led strip','درايفر','driver','بروفايل ألمنيوم','RGB','كنترول شريط','موصل شريط'] },
     outdoor_lighting: { ar: 'إنارة خارجية وأعمدة', en: 'Outdoor & Landscape Lighting', ur: 'بیرونی روشنی', icon: '🏮', group: 'lighting',
       keywords: ['إنارة خارجية','حدائق','كشاف','floodlight','أعمدة إنارة','واجهات','جمالية','landscape'] },
+    decor_lighting: { ar: 'إنارة ديكور وثريات', en: 'Decorative Lighting & Chandeliers', ur: 'سجاوٹی روشنی', icon: '✨', group: 'lighting',
+      keywords: ['ثريا','ثريات','نجفة','نجف','أباجورة','أبليك','إنارة ديكور','إنارة معلقة','معلقة ديكور','إنارة أرضية','chandelier','pendant','lamp','wall light','floor lamp'] },
     earthing: { ar: 'تأريض وحماية برق', en: 'Earthing & Lightning', ur: 'ارتھنگ', icon: '🛡', group: 'lighting',
       keywords: ['تأريض','earthing','earth','حماية برق','lightning','أقطاب','rod'] },
     // ═══ أنظمة التيار الخفيف ═══
@@ -470,6 +476,7 @@ const SUB_UNITS: Record<string, string> = {
   // معماري
   tiles: 'م²', marble: 'م²', wood_floor: 'م²', tile_adhesive: 'كيس', special_floor: 'م²',
   paint: 'جالون', grc_facade: 'م²', gypsum: 'م²', false_ceiling: 'م²',
+  custom_furniture: 'عدد', curtains: 'م²', decor_lighting: 'عدد',
   aluminum: 'م²', wood_doors: 'عدد', fire_doors: 'عدد', auto_doors: 'عدد',
   curtain_wall: 'م²', rainscreen: 'م²', stone_facade: 'م²', louvers: 'م²',
   millwork: 'م.ط', fitted_furniture: 'عدد', cubicles: 'عدد',
@@ -2142,6 +2149,23 @@ export const SECTOR_COLORS: Record<Sector, string> = {
 
 // Product translations — keys are Arabic (stored in DB), values are EN/UR display names
 export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
+  'طاولة طعام حسب الطلب': { en: 'Custom dining table', ur: 'آرڈر پر کھانے کی میز' },
+  'طاولة قهوة حسب الطلب': { en: 'Custom coffee table', ur: 'آرڈر پر کافی ٹیبل' },
+  'كنب حسب الطلب': { en: 'Custom sofa', ur: 'آرڈر پر صوفہ' },
+  'خزانة ملابس (دولاب) حسب الطلب': { en: 'Custom wardrobe', ur: 'آرڈر پر الماری' },
+  'سرير حسب الطلب': { en: 'Custom bed', ur: 'آرڈر پر بستر' },
+  'مكتب خشبي حسب الطلب': { en: 'Custom wooden desk', ur: 'آرڈر پر لکڑی کی میز' },
+  'كراسي طعام': { en: 'Dining chairs', ur: 'کھانے کی کرسیاں' },
+  'مكتبة ورفوف حسب الطلب': { en: 'Custom bookcase & shelves', ur: 'آرڈر پر کتابوں کی الماری' },
+  'ستائر قماش': { en: 'Fabric curtains', ur: 'کپڑے کے پردے' },
+  'ستائر رول (بلاك آوت)': { en: 'Roller blinds (blackout)', ur: 'رولر پردے (بلیک آؤٹ)' },
+  'ستائر شرائح (Blinds)': { en: 'Slat blinds', ur: 'سلیٹ بلائنڈز' },
+  'موكيت': { en: 'Wall-to-wall carpet', ur: 'قالین' },
+  'ثريا (نجفة)': { en: 'Chandelier', ur: 'فانوس (جھومر)' },
+  'إنارة معلقة ديكور': { en: 'Decorative pendant light', ur: 'سجاوٹی لٹکنے والی روشنی' },
+  'أبليك جداري': { en: 'Wall sconce', ur: 'دیوار کی روشنی' },
+  'أباجورة': { en: 'Table lamp', ur: 'ٹیبل لیمپ' },
+  'إنارة أرضية (ستاند)': { en: 'Floor lamp', ur: 'فرش لیمپ' },
   'مكيف سبليت': { en: 'Split air conditioner', ur: 'اسپلٹ اے سی' },
   'مكيف شباك': { en: 'Window air conditioner', ur: 'ونڈو اے سی' },
   'مكيف دولابي': { en: 'Floor-standing air conditioner', ur: 'فلور اسٹینڈنگ اے سی' },
@@ -2978,7 +3002,6 @@ export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = 
   'لمبة LED': { en: 'LED Bulb', ur: 'ایل ای ڈی بلب' },
   'لمبة سبوت': { en: 'Spotlight', ur: 'اسپاٹ لائٹ' },
   'كشاف صغير': { en: 'Small Floodlight', ur: 'چھوٹا کشاف' },
-  'أباجورة': { en: 'Lampshade', ur: 'لیمپ شیڈ' },
   'فيش كهرباء': { en: 'Electrical Plug', ur: 'پلگ' },
   'محول صغير': { en: 'Small Adapter', ur: 'اڈاپٹر' },
   'شريط لحام كهرب': { en: 'Electrical Insulation Tape', ur: 'انسولیشن ٹیپ' },
@@ -3167,6 +3190,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'ردم عام / إحلال (General Backfill)',
   ],
   architectural: [
+    'طاولة طعام حسب الطلب', 'طاولة قهوة حسب الطلب', 'كنب حسب الطلب', 'خزانة ملابس (دولاب) حسب الطلب', 'سرير حسب الطلب', 'مكتب خشبي حسب الطلب', 'كراسي طعام', 'مكتبة ورفوف حسب الطلب', 'ستائر قماش', 'ستائر رول (بلاك آوت)', 'ستائر شرائح (Blinds)', 'موكيت',
     'ورق جدران', 'معجون جدران', 'باب حديد خارجي', 'مرآة حمام', 'خزائن مطبخ', 'سطح مطبخ (رخام/جرانيت)', 'مظلة سيارات', 'بوابة كراج (حديد/أوتوماتيك)',
     // ═══ مواد مضافة (مراجعة الذكاء) ═══
     'غراء وترويبة بلاط', 'حديد أسقف مستعارة', 'خلطة لياسة جاهزة', 'إكسسوارات لياسة',
@@ -3246,6 +3270,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'شريط تسليح فواصل الجبس',
   ],
   electrical: [
+    'ثريا (نجفة)', 'إنارة معلقة ديكور', 'أبليك جداري', 'أباجورة', 'إنارة أرضية (ستاند)',
     'إنتركم (جرس باب مرئي)',
     // ═══ مواد مضافة (مراجعة الذكاء) ═══
     'مواسير كهرباء EMT/PVC',

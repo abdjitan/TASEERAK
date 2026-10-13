@@ -8,13 +8,15 @@ import { SECTOR_PRODUCTS, GROUP_LABELS, getGroupedProducts, detectSubCategory, t
 // products with the same images and search.
 
 export type BrowseSection =
-  | 'building' | 'finishing' | 'electrical' | 'plumbing' | 'hvac_fire' | 'insulation' | 'tools' | 'outdoor'
+  | 'building' | 'finishing' | 'furniture' | 'electrical' | 'plumbing' | 'hvac_fire' | 'insulation' | 'tools' | 'outdoor'
 
 export const BROWSE_SECTIONS: { key: BrowseSection; icon: string; ar: string; en: string; ur: string; hint: { ar: string; en: string; ur: string } }[] = [
   { key: 'building', icon: '🧱', ar: 'البناء والإنشاءات', en: 'Building & structure', ur: 'تعمیر و ڈھانچہ',
     hint: { ar: 'أسمنت، خرسانة، حديد، بلك، رمل، شدّات', en: 'Cement, concrete, rebar, blocks, sand, formwork', ur: 'سیمنٹ، کنکریٹ، سریا، بلاک، ریت' } },
   { key: 'finishing', icon: '🎨', ar: 'التشطيبات والديكور', en: 'Finishing & decoration', ur: 'فنشنگ اور سجاوٹ',
     hint: { ar: 'بلاط، رخام، دهان، جبس، أبواب وشبابيك', en: 'Tiles, marble, paint, gypsum, doors & windows', ur: 'ٹائلیں، ماربل، پینٹ، جپسم، دروازے' } },
+  { key: 'furniture', icon: '🛋️', ar: 'الأثاث والديكور', en: 'Furniture & decor', ur: 'فرنیچر اور سجاوٹ',
+    hint: { ar: 'طاولات، كنب، خزائن، ستائر، ثريات وإنارة ديكور حسب الطلب', en: 'Custom tables, sofas, wardrobes, curtains, chandeliers', ur: 'میزیں، صوفے، الماریاں، پردے، جھومر' } },
   { key: 'electrical', icon: '⚡', ar: 'الكهرباء والإنارة', en: 'Electrical & lighting', ur: 'بجلی اور روشنی',
     hint: { ar: 'أسلاك، قواطع، مفاتيح، إنارة، كاميرات', en: 'Cables, breakers, switches, lighting, CCTV', ur: 'تاریں، بریکر، سوئچ، لائٹس' } },
   { key: 'plumbing', icon: '🚿', ar: 'السباكة والمياه', en: 'Plumbing & water', ur: 'پلمبنگ اور پانی',
@@ -50,6 +52,10 @@ const BY_SUB: Record<string, BrowseSection> = {
   piling: 'building',               // infrastructure group, but it is structure
   store_adhesives: 'insulation',    // sealants, silicone, foam
   duct_insulation: 'hvac_fire',     // bought with the ducts
+  custom_furniture: 'furniture',    // made-to-order furniture, curtains and decorative lighting:
+  curtains: 'furniture',            // what a home owner looks for («a table / a chandelier like this»)
+  decor_lighting: 'furniture',
+  fitted_furniture: 'furniture',
 }
 
 export function sectionOfSub(subKey: string | null | undefined, groupKey: string | null | undefined): BrowseSection | null {
@@ -72,6 +78,10 @@ const MERGE: Partial<Record<BrowseSection, Record<string, string>>> = {
   insulation: { mech_insulation: 'building_insulation' },
 }
 const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: string; ur: string }>>> = {
+  furniture: {
+    joinery: { ar: 'أثاث وخزائن وستائر حسب الطلب', en: 'Custom furniture, wardrobes & curtains', ur: 'آرڈر پر فرنیچر اور پردے' },
+    lighting: { ar: 'ثريات وإنارة ديكور', en: 'Chandeliers & decorative lighting', ur: 'جھومر اور سجاوٹی روشنی' },
+  },
   building: { infrastructure: { ar: 'الخوازيق والأساسات', en: 'Piling & foundations', ur: 'پائلنگ اور بنیادیں' } },
   plumbing: { plumbing_supplies: { ar: 'لوازم وأدوات السباكة', en: 'Plumbing supplies & tools', ur: 'پلمبنگ کا سامان' } },
   tools: { scaffolding: { ar: 'السقالات ومنصات الرفع', en: 'Scaffolding & access platforms', ur: 'سکیفولڈنگ اور لفٹ پلیٹ فارم' } },
