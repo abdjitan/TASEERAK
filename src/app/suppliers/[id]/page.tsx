@@ -19,7 +19,8 @@ async function getSupplier(id: string) {
   } catch { return null }
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const params = await props.params
   const s = await getSupplier(params.id)
   if (!s) return { title: 'مورد | تسعيرك' }
   const name = s.company_name_ar || 'مورد'
@@ -30,7 +31,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   }
 }
 
-export default async function SupplierProfilePage({ params }: { params: { id: string } }) {
+export default async function SupplierProfilePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const s = await getSupplier(params.id)
   if (!s) notFound()
   const total = Number(s.total_offers) || 0

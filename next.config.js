@@ -20,9 +20,9 @@ const securityHeaders = [
 
 const nextConfig = {
   poweredByHeader: false,
+  serverExternalPackages: ['xlsx'],
   experimental: {
     serverActions: { allowedOrigins: ['localhost:3000', 'taseerak.vercel.app', 'taseerak.com', 'www.taseerak.com'] },
-    serverComponentsExternalPackages: ['xlsx'],
   },
   // The app never uses next/image. The optimizer (/_next/image) stays off: Next 14.2.x has
   // unpatched image-optimizer advisories, and the old *.supabase.co wildcard let any Supabase
