@@ -110,6 +110,14 @@ export const SUPPLIER_PACKS: SupplierPack[] = [
     hint: { ar: 'عشب، ري، إنترلوك، صرف خارجي', en: 'Turf, irrigation, interlock, drainage', ur: 'گھاس، آبپاشی، انٹرلاک' },
     specialties: { civil: ['turf', 'irrigation', 'fountains', 'hardscape', 'planters', 'fencing', 'drainage'] },
   },
+  {
+    id: 'furniture', icon: '🛋', ar: 'أثاث وورش نجارة', en: 'Furniture & joinery workshops', ur: 'فرنیچر اور بڑھئی ورکشاپ',
+    hint: { ar: 'أثاث حسب الطلب، مطابخ، خزائن، تنجيد، ستائر', en: 'Custom furniture, kitchens, wardrobes, upholstery, curtains', ur: 'آرڈر پر فرنیچر، کچن، الماریاں، پردے' },
+    specialties: {
+      architectural: ['custom_furniture', 'fitted_furniture', 'millwork', 'curtains', 'wood_doors'],
+      supply_store: ['store_hinges', 'store_handles'],
+    },
+  },
 ]
 
 export function packSectors(p: SupplierPack): string[] {
