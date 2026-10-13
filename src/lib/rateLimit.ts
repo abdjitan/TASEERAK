@@ -1,8 +1,11 @@
 // Per-user hourly limit backed by the check_rate_limit RPC (migration 116 pins end-user
-// buckets to the caller's own uid, so the bucket must end with ":<userId>").
+// buckets to the caller's own uid, so the bucket must end with ":<userId>"). Fails closed: if
+// the check itself errors (DB slow/down), the request counts as over the limit.
 export async function overHourlyLimit(supabase: any, name: string, userId: string, max: number): Promise<boolean> {
-  const { data } = await supabase.rpc('check_rate_limit', { p_bucket: `${name}:${userId}`, p_max: max, p_window_seconds: 3600 })
-  return data === false
+  try {
+    const { data, error } = await supabase.rpc('check_rate_limit', { p_bucket: `${name}:${userId}`, p_max: max, p_window_seconds: 3600 })
+    return !!error || data !== true
+  } catch { return true }
 }
 
 // A ceiling for one AI route across all users per day (bucket "<name>:global", service role), so

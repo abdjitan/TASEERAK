@@ -24,8 +24,8 @@ export async function POST(req: NextRequest) {
   const { supabase: supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
 
-  const { data: allowed } = await supabase.rpc('check_rate_limit', { p_bucket: 'verifupload:' + user.id, p_max: 20, p_window_seconds: 3600 })
-  if (allowed === false) return NextResponse.json({ ok: false, error: 'rate_limited', message: 'محاولات رفع كثيرة — حاول بعد قليل.' }, { status: 429 })
+  const { data: allowed, error: rlErr } = await supabase.rpc('check_rate_limit', { p_bucket: 'verifupload:' + user.id, p_max: 20, p_window_seconds: 3600 })
+  if (rlErr || allowed !== true) return NextResponse.json({ ok: false, error: 'rate_limited', message: 'محاولات رفع كثيرة — حاول بعد قليل.' }, { status: 429 })
 
   const form = await req.formData().catch(() => null)
   const file = form?.get('file') as File | null

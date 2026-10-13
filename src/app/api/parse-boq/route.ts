@@ -233,8 +233,8 @@ export async function POST(req: NextRequest) {
     // Auth + rate-limit — this route burns paid AI tokens (H7/SEC-05).
     const { supabase: supabase, user } = await getRouteUser()
     if (!user) return NextResponse.json({ error: 'يجب تسجيل الدخول' }, { status: 401 })
-    const { data: allowed } = await supabase.rpc('check_rate_limit', { p_bucket: 'parse-boq:' + user.id, p_max: 20, p_window_seconds: 3600 })
-    if (allowed === false) return NextResponse.json({ error: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })
+    const { data: allowed, error: rlErr } = await supabase.rpc('check_rate_limit', { p_bucket: 'parse-boq:' + user.id, p_max: 20, p_window_seconds: 3600 })
+    if (rlErr || allowed !== true) return NextResponse.json({ error: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })
 
     const formData = await req.formData()
     const file = formData.get('file') as File
@@ -371,6 +371,7 @@ export async function POST(req: NextRequest) {
 
   } catch (err: any) {
     console.error('BOQ parse error:', err)
-    return NextResponse.json({ error: err.message || 'Failed to parse file' }, { status: 500 })
+    // generic text only: internal error details stay in the server log
+    return NextResponse.json({ error: 'تعذّرت قراءة الملف، تأكّد من صيغته وحاول مرة أخرى.' }, { status: 500 })
   }
 }

@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
   if (!item || item.confidence === 'low' || !firstMatch?.exact) {
     const { data: mine } = await supabase.rpc('check_rate_limit', { p_bucket: `understand-photo:${user.id}`, p_max: 15, p_window_seconds: 3600 })
     const { data: all } = mine === false ? { data: false } : await createAdminSupabaseClient().rpc('check_rate_limit', { p_bucket: 'understand:global', p_max: 300, p_window_seconds: 86400 })
-    if (mine !== false && all !== false) {
+    if (mine === true && all === true) { // an errored limit check skips the paid web lookup
       const w = await aiWebJson<any>({
         system: SYSTEM + `\nإن لم تكن متأكداً مما في الصورة فابحث في الإنترنت (Google) عن شكلها قبل الإجابة.\nأجب بكائن JSON فقط بهذه الحقول: ${JSON.stringify(Object.keys(SCHEMA.properties))}`,
         user: 'ما هذه المادة في الصورة؟ ما اسمها التجاري في السعودية؟',

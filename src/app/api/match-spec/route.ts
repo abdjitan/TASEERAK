@@ -89,8 +89,8 @@ export async function POST(req: NextRequest) {
     // Auth + rate-limit — this route burns paid AI tokens (H7/SEC-05).
     const { supabase: supabase, user } = await getRouteUser()
     if (!user) return NextResponse.json({ ok: false, message: 'يجب تسجيل الدخول' }, { status: 401 })
-    const { data: allowed } = await supabase.rpc('check_rate_limit', { p_bucket: 'match-spec:' + user.id, p_max: 20, p_window_seconds: 3600 })
-    if (allowed === false) return NextResponse.json({ ok: false, message: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })
+    const { data: allowed, error: rlErr } = await supabase.rpc('check_rate_limit', { p_bucket: 'match-spec:' + user.id, p_max: 20, p_window_seconds: 3600 })
+    if (rlErr || allowed !== true) return NextResponse.json({ ok: false, message: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })
     if (await overGlobalDailyLimit('match-spec', 300)) return NextResponse.json({ ok: false, message: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })
 
     const formData = await req.formData()
@@ -174,6 +174,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, specs: byRef, matched, total: batch.length, submittedTotal: items.length, truncated: specTruncated })
   } catch (err: any) {
     console.error('match-spec error:', err?.message || err)
-    return NextResponse.json({ ok: false, message: err?.message || 'فشل مطابقة المواصفات' }, { status: 500 })
+    // generic text only: provider status / model names stay in the server log
+    return NextResponse.json({ ok: false, message: 'فشل مطابقة المواصفات، حاول مرة أخرى.' }, { status: 500 })
   }
 }

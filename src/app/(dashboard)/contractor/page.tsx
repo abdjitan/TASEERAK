@@ -16,6 +16,7 @@ import { AppIcon } from '@/components/AppIcon'
 import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
 import { dealStage } from '@/lib/dealStage'
+import { clearAllLocalDrafts } from '@/lib/localDraft'
 
 const txt = {
   ar: {
@@ -149,6 +150,7 @@ export default function ContractorDashboard() {
 
   async function handleSignOut() {
     const supabase = createClient()
+    clearAllLocalDrafts()
     await supabase.auth.signOut()
     window.location.href = '/login'
   }

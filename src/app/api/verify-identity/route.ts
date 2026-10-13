@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient, createServiceClient } from '@/lib/supabase/server'
+import { getRouteUser, createServiceClient } from '@/lib/supabase/server'
 import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
@@ -25,8 +25,7 @@ const ALLOW_SANDBOX = process.env.WATHQ_ALLOW_SANDBOX === '1' || process.env.WAT
 const WATHQ_LIVE = !!WATHQ_KEY && (!IS_SANDBOX || ALLOW_SANDBOX)
 
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   if (await overHourlyLimit(supabase, 'verify-identity', user.id, 10)) return NextResponse.json({ ok: false, error: 'rate_limited', message: RATE_LIMITED_AR }, { status: 429 })
 

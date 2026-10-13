@@ -11,6 +11,7 @@ import AppShell from '@/components/shared/AppShell'
 import { SECTOR_LABELS, getGroupedSubCategories } from '@/types'
 import { safeHttpUrl } from '@/lib/safeUrl'
 import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
+import { clearAllLocalDrafts } from '@/lib/localDraft'
 
 export default function AdminPanel() {
   const [user, setUser] = useState<any>(null)
@@ -299,6 +300,7 @@ export default function AdminPanel() {
 
   async function handleSignOut() {
     const supabase = createClient()
+    clearAllLocalDrafts()
     await supabase.auth.signOut()
     window.location.href = '/login'
   }

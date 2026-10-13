@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getRouteUser } from '@/lib/supabase/server'
 import { DISCOVERY_CITIES, toSupplierRow } from '@/lib/discovery'
 
 export const runtime = 'nodejs'
@@ -38,8 +38,7 @@ function component(p: any, types: string[]): string | null {
 // new), classifies every place, dedups + saves via upsert_discovered_suppliers and logs
 // the run in discovery_runs. The admin page drives batches by calling this per cell.
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized', message: 'سجّل الدخول أولاً.' }, { status: 401 })
   const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (me?.role !== 'admin') return NextResponse.json({ error: 'Forbidden', message: 'هذه الأداة للإدارة فقط.' }, { status: 403 })

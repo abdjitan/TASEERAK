@@ -37,6 +37,26 @@ const ADMIN_ONLY = ['/admin']
 /** Redirect logged-in users AWAY from these (they're already authed) */
 const AUTH_PAGES = ['/login', '/register']
 
+// ─── Signed role cookie ───────────────────────────────────────────────────────
+
+const ROLE_SECRET = process.env.ROLE_COOKIE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || ''
+let roleKey: Promise<CryptoKey> | null = null
+
+async function signRole(value: string): Promise<string> {
+  roleKey ||= crypto.subtle.importKey('raw', new TextEncoder().encode('tsk_role|' + ROLE_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const mac = new Uint8Array(await crypto.subtle.sign('HMAC', await roleKey, new TextEncoder().encode(value)))
+  let b = ''
+  for (let i = 0; i < mac.length; i++) b += String.fromCharCode(mac[i])
+  return btoa(b).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function sameText(a: string, b: string) {
+  if (a.length !== b.length) return false
+  let d = 0
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return d === 0
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
 export async function middleware(request: NextRequest) {
@@ -100,21 +120,28 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getSession()
   const user = session?.user ?? null
 
-  // The role/onboarding lookup is cached in a short-lived cookie (uid:role:1) so a normal
+  // The role/onboarding lookup is cached in a short-lived cookie (uid:role:1:hmac) so a normal
   // navigation makes no database call at all. Only cached once onboarding is done, so a new
   // account always sees its real state. Never trusted for /admin (checked in the DB below).
+  // The cookie is HMAC-signed with a server-only secret (audit: an unsigned cookie let a user
+  // pick their own role for page routing); without a secret the cache is simply not used.
   const ROLE_COOKIE = 'tsk_role'
   let roleCookie: string | null = null
   let profileMemo: any
   async function profileOf(uid: string): Promise<{ role?: string; role_chosen_at?: any } | null> {
     if (profileMemo !== undefined) return profileMemo
     const c = request.cookies.get(ROLE_COOKIE)?.value
-    if (c) {
-      const [id, role, chosen] = c.split(':')
-      if (id === uid && role && chosen === '1') { profileMemo = { role, role_chosen_at: true }; return profileMemo }
+    if (c && ROLE_SECRET) {
+      const [id, role, chosen, sig] = c.split(':')
+      if (id === uid && role && chosen === '1' && sig && sameText(sig, await signRole(`${id}:${role}:1`))) {
+        profileMemo = { role, role_chosen_at: true }; return profileMemo
+      }
     }
     const { data } = await supabase.from('profiles').select('role, role_chosen_at').eq('id', uid).single()
-    if (data?.role && data.role_chosen_at) roleCookie = `${uid}:${data.role}:1`
+    if (data?.role && data.role_chosen_at && ROLE_SECRET) {
+      const v = `${uid}:${data.role}:1`
+      roleCookie = `${v}:${await signRole(v)}`
+    }
     profileMemo = data || null
     return profileMemo
   }

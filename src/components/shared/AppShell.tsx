@@ -7,6 +7,7 @@ import NotificationBell from '@/components/shared/NotificationBell'
 import AiAssistant from '@/components/shared/AiAssistant'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
+import { clearAllLocalDrafts } from '@/lib/localDraft'
 
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
 export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number }
@@ -37,6 +38,7 @@ export default function AppShell({
     setCollapsed(c => { const v = !c; try { localStorage.setItem('taseerak_nav_collapsed', v ? '1' : '0') } catch {} ; return v })
   }
   async function defaultSignOut() {
+    clearAllLocalDrafts()
     try { await createClient().auth.signOut() } catch {}
     window.location.href = '/login'
   }

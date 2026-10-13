@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 import type { Profile } from '@/types'
+import { clearAllLocalDrafts } from '@/lib/localDraft'
 
 interface AuthContextType {
   user: User | null
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   async function signOut() {
+    clearAllLocalDrafts()
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)

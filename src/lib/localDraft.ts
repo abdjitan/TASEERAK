@@ -28,6 +28,16 @@ export function clearLocalDraft(key: string) {
   try { window.localStorage.removeItem(PREFIX + key) } catch {}
 }
 
+// On sign-out: drop every draft (text + photos) so the next person on a shared device can't
+// read them from the browser storage.
+export function clearAllLocalDrafts() {
+  try {
+    const ls = window.localStorage
+    for (let i = ls.length - 1; i >= 0; i--) { const k = ls.key(i); if (k && k.startsWith(PREFIX)) ls.removeItem(k) }
+  } catch {}
+  try { window.indexedDB.deleteDatabase(DB) } catch {}
+}
+
 // ── Photos (IndexedDB) ────────────────────────────────────────────────────────────────────
 const DB = 'taseerak_drafts'
 const STORE = 'blobs'

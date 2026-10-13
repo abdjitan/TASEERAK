@@ -18,6 +18,7 @@ import { getNav } from '@/lib/nav'
 import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
 import { tierLabel, tierAllowed } from '@/lib/sellers'
+import { clearAllLocalDrafts } from '@/lib/localDraft'
 
 const txt = {
   ar: {
@@ -209,6 +210,7 @@ export default function SupplierDashboard() {
 
   async function handleSignOut() {
     const supabase = createClient()
+    clearAllLocalDrafts()
     await supabase.auth.signOut()
     window.location.href = '/login'
   }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { getRouteUser } from '@/lib/supabase/server'
 import { toSupplierRow } from '@/lib/discovery'
 
 export const runtime = 'nodejs'
@@ -9,8 +9,7 @@ export const maxDuration = 60
 // Imports rows from an earlier survey export (Excel columns mapped client-side). Every row
 // goes through the same classifier + dedup (place_id → CID → phone) as live discovery.
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized', message: 'سجّل الدخول أولاً.' }, { status: 401 })
   const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
   if (me?.role !== 'admin') return NextResponse.json({ error: 'Forbidden', message: 'هذه الأداة للإدارة فقط.' }, { status: 403 })

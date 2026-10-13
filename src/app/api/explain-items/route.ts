@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   const todo = items.map((it, i) => ({ it, i })).filter(({ i }) => !cache.has(keys[i]))
   if (todo.length) {
     const { data: okRate } = await supabase.rpc('check_rate_limit', { p_bucket: `explain:${user.id}`, p_max: 60, p_window_seconds: 3600 })
-    if (okRate !== false) {
+    if (okRate === true) { // fails closed: no AI call when the limit check errors
       // The notes are cached for every supplier, so one line's buyer text must never reach another
       // line's note (audit M9): lines without a description go together in one call; each line
       // with a description is asked alone (up to 6 per request), so its text only shapes its own

@@ -14,6 +14,7 @@ import EnablePush from '@/components/shared/EnablePush'
 import SellerKindPicker from '@/components/shared/SellerKindPicker'
 import { REGIONS } from '@/types'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
+import { clearAllLocalDrafts } from '@/lib/localDraft'
 
 const txt = {
   ar: {
@@ -335,6 +336,7 @@ export default function SettingsPage() {
 
   async function handleSignOut() {
     const supabase = createClient()
+    clearAllLocalDrafts()
     await supabase.auth.signOut()
     window.location.href = '/login'
   }

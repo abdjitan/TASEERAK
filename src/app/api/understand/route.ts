@@ -49,10 +49,10 @@ export async function POST(req: NextRequest) {
   }
 
   // 2) limits (per person, then the daily total)
-  const { data: mine } = await supabase.rpc('check_rate_limit', { p_bucket: `understand:${user.id}`, p_max: 30, p_window_seconds: 3600 })
-  if (mine === false) return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 })
-  const { data: all } = await admin.rpc('check_rate_limit', { p_bucket: 'understand:global', p_max: 300, p_window_seconds: 86400 })
-  if (all === false) return NextResponse.json({ ok: false, error: 'daily_limit' }, { status: 429 })
+  const { data: mine, error: mineErr } = await supabase.rpc('check_rate_limit', { p_bucket: `understand:${user.id}`, p_max: 30, p_window_seconds: 3600 })
+  if (mineErr || mine !== true) return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 })
+  const { data: all, error: allErr } = await admin.rpc('check_rate_limit', { p_bucket: 'understand:global', p_max: 300, p_window_seconds: 86400 })
+  if (allErr || all !== true) return NextResponse.json({ ok: false, error: 'daily_limit' }, { status: 429 })
 
   // 3) ask, with a web search when needed
   const res = await aiWebJson<any>({ system: SYSTEM, user: `المستخدم كتب: «${q}»` })

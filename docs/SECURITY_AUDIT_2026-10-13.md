@@ -89,6 +89,23 @@
 - **M12. Mobile sign-out offline may keep session** (`taseerak-mobile/src/lib/auth.tsx:76-79`): on error call `signOut({scope:'local'})` + `clearQueryCache()`.
 
 ## Priority 3 — Low
+
+> **Status (2026-10-13): fixed, except two accepted risks.** DB → migration
+> `148_security_low_fixes.sql` (applied live; e2e 44/44): CR squatting blocked against verified
+> CRs, accepted-offer terms frozen (po_number, accepted_at, delivery days, notes, attachment,
+> source…), CHECKs for negative/zero prices, notifications INSERT removed, synonym auto-approval
+> needs 5 accounts ≥ 7 days old, `report_cr_objection` capped, Arabic-Indic/Persian digits masked,
+> `delete_my_account` releases team members. Web: rate limits fail closed (`overHourlyLimit` +
+> every inline check), generic 500 messages (parse-boq, match-spec), `getRouteUser` in
+> verify-identity + discover-suppliers/*, HMAC-signed `tsk_role` cookie (key: `ROLE_COOKIE_SECRET`
+> or the service-role key), drafts (localStorage + IndexedDB) cleared at every sign-out.
+> verify-cr national-ID check removed in M8. Mobile: `android.allowBackup:false`, Captcha
+> WebView top-frame navigation restricted; edit-RFQ writes checked (M1).
+> **Accepted:** `register_device_token` token move (normal phone hand-over; tokens are private);
+> `decode-uri-component` via expo-router 57 (moderate, on-device deep-link DoS) → fixed by the
+> Expo SDK 58 upgrade (expo-router ≥ 58.0.18); forcing 0.5.0 (ESM) would break query-string 7.
+> Not changed: phone/contact_phone stay editable (claiming discovered suppliers already requires
+> a confirmed auth phone); total_price vs sum of items (VAT/extra charges make it non-trivial).
 - `verify-cr` lets any signed-in user test nationalId↔CR ownership and echoes the ID (`route.ts:128,197,218`) — only for caller's own CR.
 - Rate limiter fails open when RPC errors (`src/lib/rateLimit.ts:4-5` + inline checks) — treat error as 429 on expensive routes.
 - Middleware trusts unsigned `tsk_role` cookie + `getSession()` (`src/middleware.ts:96-120`) — UI-only; RLS still holds. HMAC-sign or accept.

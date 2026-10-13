@@ -2,7 +2,7 @@
 -- that is always rolled back (the block ends with RAISE). Nothing is saved.
 --
 -- Run: paste into the Supabase SQL editor / MCP execute_sql. The error message is the report:
---   "E2E: 41 passed, 0 failed | ..." — any FAIL lines say what broke.
+--   "E2E: 44 passed, 0 failed | ..." — any FAIL lines say what broke.
 --
 -- Test accounts (must exist): buyer edc9cbfe…, shop supplier 61e3c9b0…, verified company 58a5ac07…,
 -- spare account e6e39fc0… (no own activity, used as a company employee).
@@ -175,6 +175,17 @@ begin
   reset role;
   select count(*) into n from offers where id = v_offer and total_price = 500 and supplier_invoice_url is not null;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL buyer edited price/invoice'; end if;
+  -- 8b. (148) after acceptance the supplier can't change the deal terms; nobody can insert notifications
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  update offers set delivery_days = 99, po_number = 'X' where id = v_offer;
+  begin
+    insert into notifications (user_id, type, title, body) values (sup, 'new_message', 'x', 'y');
+    bad := bad + 1; log := log || ' FAIL user inserted a notification';
+  exception when others then ok := ok + 1; end;
+  reset role;
+  select count(*) into n from offers where id = v_offer and coalesce(delivery_days, -1) <> 99 and po_number is distinct from 'X';
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL accepted deal terms edited'; end if;
 
   -- 9. H3/H5: once a deal is accepted the buyer can neither unaward nor delete the request
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
@@ -205,8 +216,8 @@ begin
   perform public.award_rfq_item(v_rfq, 0, v_offer2);
   -- (shares_deal_with can't be asserted here: the test buyer has older real deals with company)
   v_conv := public.get_or_create_conversation(v_rfq, company);   -- company quoted → allowed
-  perform public.send_message(v_conv, 'رقمي 0559876543');
-  if not exists (select 1 from messages where conversation_id = v_conv and body like '%0559876543%')
+  perform public.send_message(v_conv, 'رقمي ٠٥٥٩٨٧٦٥٤٣');   -- Arabic-Indic digits are masked too (148)
+  if not exists (select 1 from messages where conversation_id = v_conv and body like '%٠٥٥٩٨٧٦٥٤٣%')
     then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL award alone unmasks contact'; end if;
   perform public.unaward_rfq_item(v_rfq, 0);   -- still allowed while open and nothing accepted
   -- H3: a request with no deal can still be deleted by its owner
@@ -238,6 +249,11 @@ begin
   begin
     perform public.submit_price_reduction(v_offer, 999);
     bad := bad + 1; log := log || ' FAIL price change without a reduction request';
+  exception when others then ok := ok + 1; end;
+  -- (148) negative prices are refused
+  begin
+    update offers set item_prices = '[{"item_index":0,"product_name":"أسمنت","unit_price":-5,"total":-50}]'::jsonb where id = v_offer;
+    bad := bad + 1; log := log || ' FAIL negative item price accepted';
   exception when others then ok := ok + 1; end;
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   begin

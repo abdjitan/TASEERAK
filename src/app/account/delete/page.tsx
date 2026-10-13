@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { createClient } from '@/lib/supabase/client'
+import { clearAllLocalDrafts } from '@/lib/localDraft'
 
 // Public page required by Google Play / the App Store: how to delete a Taseerak account, what is
 // deleted and what is kept. A signed-in visitor can delete the account here (POST /api/account/delete).
@@ -76,6 +77,7 @@ export default function DeleteAccountPage() {
       const r = await fetch('/api/account/delete', { method: 'POST' })
       const j = await r.json().catch(() => ({}))
       if (!r.ok || !j.ok) { setError(j.error === 'admin_cannot_self_delete' ? t.adminErr : t.err); return }
+      clearAllLocalDrafts()
       try { await createClient().auth.signOut() } catch {}
       setDone(true)
     } catch { setError(t.err) } finally { setBusy(false) }
