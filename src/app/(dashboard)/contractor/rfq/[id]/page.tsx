@@ -239,17 +239,18 @@ export default function RFQDetailPage() {
       product_name: (editName || '').trim() || rfq.product_name,
       quantity: parseFloat(String(editQty)) || rfq.quantity,
       unit: editUnit || rfq.unit,
-      offer_count: 0,
     }
-    // 1. Update RFQ
-    await supabase.from('rfqs').update(patch).eq('id', id)
-
-    // 2. Delete all existing offers for this RFQ (السعر القديم لم يعد صالحاً بعد تغيير التفاصيل)
+    // 1. Delete the existing offers first (السعر القديم لم يعد صالحاً بعد تغيير التفاصيل):
+    //    the database refuses material changes while offers exist.
     if (offers.length > 0) {
-      await supabase.from('offers').delete().eq('rfq_id', id)
+      const { error: delErr } = await supabase.from('offers').delete().eq('rfq_id', id)
+      if (delErr) { alert(delErr.message); return }
     }
+    // 2. Update the request
+    const { error } = await supabase.from('rfqs').update(patch).eq('id', id)
+    if (error) { alert(error.message); return }
 
-    setRfq({ ...rfq, ...patch })
+    setRfq({ ...rfq, ...patch, offer_count: 0 })
     setOffers([])
     setEditing(false)
     setShowEditWarning(false)

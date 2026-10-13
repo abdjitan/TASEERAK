@@ -2,7 +2,7 @@
 -- that is always rolled back (the block ends with RAISE). Nothing is saved.
 --
 -- Run: paste into the Supabase SQL editor / MCP execute_sql. The error message is the report:
---   "E2E: 35 passed, 0 failed | ..." — any FAIL lines say what broke.
+--   "E2E: 41 passed, 0 failed | ..." — any FAIL lines say what broke.
 --
 -- Test accounts (must exist): buyer edc9cbfe…, shop supplier 61e3c9b0…, verified company 58a5ac07…,
 -- spare account e6e39fc0… (no own activity, used as a company employee).
@@ -44,9 +44,16 @@ begin
   reset role;
 
   -- 2. pre-award message: buyer is masked as "مشترٍ"
+  --    M4: the buyer can't open a thread with a supplier who hasn't quoted; the supplier can (visible open request)
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   set local role authenticated;
+  begin
+    perform public.get_or_create_conversation(v_rfq, emp);
+    bad := bad + 1; log := log || ' FAIL buyer opened a thread with a non-bidder';
+  exception when others then ok := ok + 1; end;
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
   v_conv := public.get_or_create_conversation(v_rfq, sup);
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   perform public.send_message(v_conv, 'اختبار: هل الأسمنت متوفر؟ اتصل 0551234567');
   reset role;
   select title into t from notifications where user_id = sup and data->>'conversation_id' = v_conv::text order by created_at desc limit 1;
@@ -197,7 +204,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   perform public.award_rfq_item(v_rfq, 0, v_offer2);
   -- (shares_deal_with can't be asserted here: the test buyer has older real deals with company)
-  v_conv := public.get_or_create_conversation(v_rfq, company);
+  v_conv := public.get_or_create_conversation(v_rfq, company);   -- company quoted → allowed
   perform public.send_message(v_conv, 'رقمي 0559876543');
   if not exists (select 1 from messages where conversation_id = v_conv and body like '%0559876543%')
     then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL award alone unmasks contact'; end if;
@@ -214,6 +221,46 @@ begin
   select count(*) into n from public.get_market_prices() where offer_count < 3;
   reset role;
   if n = 0 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL market prices with < 3 samples'; end if;
+
+  -- 12. M1: with offers on it, the buyer can't swap materials, move the deadline or reopen
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city, expires_at, status)
+  values (buyer, 'civil', 'أسمنت', array['civil'],
+          '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":10,"unit":"كيس"}]'::jsonb,
+          10, 'كيس', 'الرياض', 'الرياض', now() + interval '2 days', 'open')
+  returning id into v_rfq;
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  insert into offers (rfq_id, supplier_id, total_price, source_type, item_prices)
+  values (v_rfq, sup, 250, 'shop', '[{"item_index":0,"product_name":"أسمنت","quantity":10,"unit":"كيس","unit_price":25,"total":250}]'::jsonb)
+  returning id into v_offer;
+  -- M2: no reduction was requested → the supplier can't change the price this way
+  begin
+    perform public.submit_price_reduction(v_offer, 999);
+    bad := bad + 1; log := log || ' FAIL price change without a reduction request';
+  exception when others then ok := ok + 1; end;
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  begin
+    update rfqs set items = jsonb_set(items, '{0,product_name}', '"حديد تسليح"') where id = v_rfq;
+    bad := bad + 1; log := log || ' FAIL materials swapped after pricing';
+  exception when others then ok := ok + 1; end;
+  begin
+    update rfqs set expires_at = now() + interval '9 days' where id = v_rfq;
+    bad := bad + 1; log := log || ' FAIL deadline moved directly';
+  exception when others then ok := ok + 1; end;
+  update rfqs set notes = 'ملاحظة جديدة' where id = v_rfq;   -- notes stay editable
+  -- M2: after a reduction request, only a lower price is accepted and item prices follow it
+  perform public.request_price_reduction(v_offer, 24, null);
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  begin
+    perform public.submit_price_reduction(v_offer, 300);
+    bad := bad + 1; log := log || ' FAIL price raised via reduction';
+  exception when others then ok := ok + 1; end;
+  perform public.submit_price_reduction(v_offer, 200);
+  reset role;
+  select count(*) into n from offers where id = v_offer and total_price = 200 and (item_prices->0->>'total')::numeric = 200
+     and (item_prices->0->>'unit_price')::numeric = 20;
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL reduction did not rescale item prices'; end if;
 
   raise exception 'E2E: % passed, % failed |%', ok, bad, log;
 end $$;

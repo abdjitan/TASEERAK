@@ -105,7 +105,7 @@ cross-user operations go through `SECURITY DEFINER` RPCs granted to `authenticat
 - `supabase/tests/e2e_deal_flow.sql`: the whole deal (request → message → offer → team member
   offer → award → delivery → seller invoice → receipt → payment) plus security checks, run as the
   real test accounts inside one transaction that is always rolled back. Paste it into the SQL
-  editor / MCP `execute_sql`; the error text is the report: `E2E: 35 passed, 0 failed`.
+  editor / MCP `execute_sql`; the error text is the report: `E2E: 41 passed, 0 failed`.
   Add a check whenever a bug is fixed in the deal flow.
 
 ## Conventions / gotchas
