@@ -18,11 +18,10 @@ const nextConfig = {
     serverActions: { allowedOrigins: ['localhost:3000', 'taseerak.vercel.app', 'taseerak.com', 'www.taseerak.com'] },
     serverComponentsExternalPackages: ['xlsx'],
   },
-  images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: '*.supabase.co' },
-    ],
-  },
+  // The app never uses next/image. The optimizer (/_next/image) stays off: Next 14.2.x has
+  // unpatched image-optimizer advisories, and the old *.supabase.co wildcard let any Supabase
+  // project be fetched through it. Re-enable only with Next >= 15.5.27 and our exact host.
+  images: { unoptimized: true },
   eslint: {
     ignoreDuringBuilds: true,
   },

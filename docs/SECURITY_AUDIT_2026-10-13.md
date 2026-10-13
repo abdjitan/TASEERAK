@@ -15,6 +15,12 @@
 
 ## Priority 1 — High
 
+> **Status (2026-10-13): H1–H5 fixed, H6 mitigated.**
+> H1 web + H2 → commit fe30975 (migration 145). H1 mobile → `taseerak-mobile` supplier RFQ page
+> (no raw-URL fallback). H3/H4/H5 → migration `146_security_high_fixes.sql` (applied live;
+> e2e test extended to 35 checks, all passing). H6 → `images.unoptimized`, wildcard removed,
+> `npm audit fix` (nanoid, source-map-js); **Next 15.5.27 upgrade still open** as its own task.
+
 ### H1. Stored link injection in RFQ notes → supplier opens attacker URL (web + mobile)
 - Web `src/app/(dashboard)/supplier/dashboard/rfq/[id]/page.tsx:511-512, 1057-1058`:
   URL parsed from free-text `rfq.notes` (`[مواصفات مرفقة: …]`) goes raw into `<a href>`.

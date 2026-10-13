@@ -2,7 +2,7 @@
 -- that is always rolled back (the block ends with RAISE). Nothing is saved.
 --
 -- Run: paste into the Supabase SQL editor / MCP execute_sql. The error message is the report:
---   "E2E: 27 passed, 0 failed | ..." — any FAIL lines say what broke.
+--   "E2E: 35 passed, 0 failed | ..." — any FAIL lines say what broke.
 --
 -- Test accounts (must exist): buyer edc9cbfe…, shop supplier 61e3c9b0…, verified company 58a5ac07…,
 -- spare account e6e39fc0… (no own activity, used as a company employee).
@@ -168,6 +168,52 @@ begin
   reset role;
   select count(*) into n from offers where id = v_offer and total_price = 500 and supplier_invoice_url is not null;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL buyer edited price/invoice'; end if;
+
+  -- 9. H3/H5: once a deal is accepted the buyer can neither unaward nor delete the request
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.unaward_rfq_item(v_rfq, 0);
+    bad := bad + 1; log := log || ' FAIL unaward after deal';
+  exception when others then ok := ok + 1; end;
+  begin
+    perform public.delete_rfq(v_rfq);
+    bad := bad + 1; log := log || ' FAIL deleted a request with a deal';
+  exception when others then ok := ok + 1; end;
+  reset role;
+
+  -- 10. H5: an un-finalized award does not unlock contact (award → read phone → unaward)
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city, expires_at, status)
+  values (buyer, 'civil', 'بلك', array['civil'],
+          '[{"sector":"civil","product_name":"بلك","sub_category":"blocks","quantity":50,"unit":"حبة"}]'::jsonb,
+          50, 'حبة', 'الرياض', 'الرياض', now() + interval '2 days', 'open')
+  returning id into v_rfq;
+  perform set_config('request.jwt.claims', json_build_object('sub', company, 'role', 'authenticated')::text, true);
+  insert into offers (rfq_id, supplier_id, total_price, source_type, item_prices)
+  values (v_rfq, company, 100, 'own_stock', '[{"item_index":0,"product_name":"بلك","quantity":50,"unit":"حبة","unit_price":2,"total":100}]'::jsonb)
+  returning id into v_offer2;
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  perform public.award_rfq_item(v_rfq, 0, v_offer2);
+  -- (shares_deal_with can't be asserted here: the test buyer has older real deals with company)
+  v_conv := public.get_or_create_conversation(v_rfq, company);
+  perform public.send_message(v_conv, 'رقمي 0559876543');
+  if not exists (select 1 from messages where conversation_id = v_conv and body like '%0559876543%')
+    then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL award alone unmasks contact'; end if;
+  perform public.unaward_rfq_item(v_rfq, 0);   -- still allowed while open and nothing accepted
+  -- H3: a request with no deal can still be deleted by its owner
+  perform public.delete_rfq(v_rfq);
+  reset role;
+  select count(*) into n from rfqs where id = v_rfq;
+  if n = 0 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL owner cannot delete a request without a deal'; end if;
+
+  -- 11. H4: market prices never expose a product with fewer than 3 accepted samples
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  select count(*) into n from public.get_market_prices() where offer_count < 3;
+  reset role;
+  if n = 0 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL market prices with < 3 samples'; end if;
 
   raise exception 'E2E: % passed, % failed |%', ok, bad, log;
 end $$;
