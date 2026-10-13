@@ -43,7 +43,7 @@ const MAP: Record<string, string> = {
   // ميكانيك
   hvac: 'snowflake', plumbing: 'droplet', plumbing_supplies: 'wrench', firefighting: 'flame', mech_insulation: 'waves',
   // كهرباء
-  cabling: 'zap', panels_switches: 'grid', lighting: 'bulb', low_current: 'camera',
+  cabling: 'zap', panels_switches: 'grid', lighting: 'bulb', low_current: 'camera', solar: 'zap',
   // آليات
   heavy_equipment: 'truck', light_equipment: 'cog', concrete_machinery: 'cog', access_equipment: 'ladder', workshop_equip: 'flame',
   // محل توريد

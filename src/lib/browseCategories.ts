@@ -40,7 +40,7 @@ const BY_GROUP: Record<string, BrowseSection> = {
   facade_systems: 'finishing', joinery: 'finishing', arch_metalwork: 'finishing',
   acoustic: 'insulation', building_insulation: 'insulation', mech_insulation: 'insulation',
   sanitary_finish: 'plumbing',
-  cabling: 'electrical', panels_switches: 'electrical', lighting: 'electrical', low_current: 'electrical',
+  cabling: 'electrical', panels_switches: 'electrical', lighting: 'electrical', low_current: 'electrical', solar: 'electrical',
   hvac: 'hvac_fire', firefighting: 'hvac_fire',
   plumbing: 'plumbing', plumbing_supplies: 'plumbing',
   heavy_equipment: 'tools', concrete_machinery: 'tools', light_equipment: 'tools', access_equipment: 'tools', workshop_equip: 'tools',
@@ -56,6 +56,8 @@ const BY_SUB: Record<string, BrowseSection> = {
   custom_furniture: 'furniture',    // made-to-order furniture, curtains and decorative lighting:
   curtains: 'furniture',            // what a home owner looks for («a table / a chandelier like this»)
   decor_lighting: 'furniture',
+  kitchen_appliances: 'furniture',  // built-in appliances and kitchen fittings
+  office_furniture: 'furniture',
   fitted_furniture: 'furniture',
 }
 
