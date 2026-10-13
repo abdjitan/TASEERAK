@@ -31,6 +31,12 @@ const SCHEMA = {
 
 const n = (s: any) => normalizeText(String(s || ''))
 
+// Notes are shared between suppliers: never let them carry a link or a phone number.
+const clean = (s: any, max: number) => String(s || '')
+  .replace(/(https?:\/\/|www\.)\S+/gi, '')
+  .replace(/[+＋]?[\d٠-٩][\d٠-٩\s\-().]{6,}[\d٠-٩]/g, '')
+  .replace(/\s{2,}/g, ' ').trim().slice(0, max)
+
 // Catalog fields the buyer left open (free, no AI). Optional fields and the order unit don't count.
 function missingFields(it: any): string[] {
   const fields = getProductSpecs(it.product_name || '').filter(f => f.key !== 'unit' && !/اختياري/.test(f.ar))
@@ -65,18 +71,29 @@ export async function POST(req: NextRequest) {
   if (todo.length) {
     const { data: okRate } = await supabase.rpc('check_rate_limit', { p_bucket: `explain:${user.id}`, p_max: 60, p_window_seconds: 3600 })
     if (okRate !== false) {
-      const list = todo.map(({ it, i }) => `${i}. ${String(it.product_name || '').slice(0, 120)} — الكمية: ${it.quantity || '?'} ${it.unit || ''}${it.specification ? ' — وصف المشتري: ' + String(it.specification).slice(0, 300) : ' — بلا وصف'}`).join('\n')
-      const out = await aiJson<any>({ system: SYSTEM, user: `مواد الطلب:\n${list}`, schema: SCHEMA, maxTokens: 1200, preferFree: true })
-      for (const row of (out?.items || [])) {
-        const idx = Number(row?.i)
-        if (!Number.isInteger(idx) || !items[idx] || cache.has(keys[idx])) continue
-        const result = {
-          what_it_is: String(row.what_it_is || '').slice(0, 220),
-          needed: (Array.isArray(row.needed) ? row.needed : []).map((x: any) => String(x).slice(0, 40)).filter(Boolean).slice(0, 4),
+      // The notes are cached for every supplier, so one line's buyer text must never reach another
+      // line's note (audit M9): lines without a description go together in one call; each line
+      // with a description is asked alone (up to 6 per request), so its text only shapes its own
+      // note, whose cache key already includes that text.
+      const bare = todo.filter(({ it }) => !String(it.specification || '').trim())
+      const described = todo.filter(({ it }) => String(it.specification || '').trim()).slice(0, 6)
+      const groups = [...(bare.length ? [bare] : []), ...described.map(t => [t])]
+      const ask = async (group: { it: any; i: number }[]) => {
+        const list = group.map(({ it, i }) => `${i}. ${String(it.product_name || '').slice(0, 120)} — الكمية: ${it.quantity || '?'} ${String(it.unit || '').slice(0, 20)}${it.specification ? ' — وصف المشتري: ' + String(it.specification).slice(0, 300) : ' — بلا وصف'}`).join('\n')
+        const out = await aiJson<any>({ system: SYSTEM, user: `مواد الطلب:\n${list}`, schema: SCHEMA, maxTokens: 1200, preferFree: true })
+        const allowed = new Set(group.map(g => g.i))
+        for (const row of (out?.items || [])) {
+          const idx = Number(row?.i)
+          if (!Number.isInteger(idx) || !allowed.has(idx) || cache.has(keys[idx])) continue
+          const result = {
+            what_it_is: clean(row.what_it_is, 220),
+            needed: (Array.isArray(row.needed) ? row.needed : []).map((x: any) => clean(x, 40)).filter(Boolean).slice(0, 4),
+          }
+          cache.set(keys[idx], result)
+          await admin.from('ai_item_notes').upsert({ key: keys[idx], product_name: String(items[idx].product_name || '').slice(0, 200), result }, { onConflict: 'key' })
         }
-        cache.set(keys[idx], result)
-        await admin.from('ai_item_notes').upsert({ key: keys[idx], product_name: String(items[idx].product_name || '').slice(0, 200), result }, { onConflict: 'key' })
       }
+      await Promise.all(groups.map(g => ask(g).catch(() => {})))
     }
   }
 

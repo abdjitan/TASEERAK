@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteUser } from '@/lib/supabase/server'
-import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
+import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiJson } from '@/lib/ai'
 
 export const runtime = 'nodejs'
@@ -15,12 +15,15 @@ export async function POST(req: NextRequest) {
 
   let body: any = {}
   try { body = await req.json() } catch {}
-  const product = String(body?.product_name || '').trim()
-  const rough = String(body?.rough || '').trim()
+  // input caps (audit M10): a material name and a short description, never a whole document
+  const product = String(body?.product_name || '').trim().slice(0, 150)
+  const rough = String(body?.rough || '').trim().slice(0, 1500)
   if (!product) return NextResponse.json({ error: 'product_name required' }, { status: 400 })
+  if (await overGlobalDailyLimit('assist-rfq', 2000)) return NextResponse.json({ error: RATE_LIMITED_AR }, { status: 429 })
 
   const ai = await aiJson({
     maxTokens: 600,
+    preferFree: true,
     system: `أنت مهندس مشتريات خبير في السوق السعودي. ستصلك مادة بناء ووصف خام من المشتري.
 اكتب مواصفات احترافية موجزة ومرتبة لطلب التسعير بالعربية، تشمل ما يهمّ المورد فعلاً حسب نوع المادة
 (المقاس، الدرجة/القوة، المعيار، التشطيب، العلامة إن لزم). أعد:

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
+import { getRouteUser } from '@/lib/supabase/server'
+import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiJson, buildTaxonomyRef } from '@/lib/ai'
 import { SECTOR_LABELS, SUB_CATEGORIES, getSubCategoryLabel, GROUP_LABELS } from '@/types'
 import { detectSpecialtiesFromText } from '@/lib/classify'
@@ -15,20 +15,21 @@ const SECTORS = ['civil', 'architectural', 'electrical', 'mechanical', 'equipmen
 // { sector, sub_category, group, product_name, confidence, source }
 // يُستخدم في: طلب مادة جديدة (المقاول/المورد) + تصنيف طلبات المواد (الأدمن).
 export async function POST(req: NextRequest) {
-  const supabase = createServerSupabaseClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const { supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (await overHourlyLimit(supabase, 'match-material', user.id, 200)) return NextResponse.json({ error: RATE_LIMITED_AR }, { status: 429 })
 
   let body: any = {}
   try { body = await req.json() } catch {}
-  const text = String(body?.text || '').trim()
+  const text = String(body?.text || '').trim().slice(0, 200) // a material name (audit M10)
   const hintSector = SECTORS.includes(body?.sector) ? body.sector : null
   if (!text) return NextResponse.json({ error: 'text required' }, { status: 400 })
+  if (await overGlobalDailyLimit('match-material', 3000)) return NextResponse.json({ error: RATE_LIMITED_AR }, { status: 429 })
 
   // ── الذكاء الاصطناعي أولاً ──
   const ai = await aiJson({
     maxTokens: 500,
+    preferFree: true,
     system: `أنت خبير تصنيف مواد بناء في منصة مشتريات سعودية. ستصلك مادة بنص حر.
 حدّد مكانها الصحيح في شجرة الموادنا. أعد:
 - sector: واحد من: ${SECTORS.join(', ')}.
