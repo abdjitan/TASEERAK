@@ -26,6 +26,7 @@ type Line = {
   unit: string
   details: string
   photoId?: string
+  done?: boolean   // «حفظ» pressed: shown as a compact row until tapped again
   original?: string // what the buyer wrote, when it differs from the Arabic name suppliers see
   suggestion?: { name: string; sector: string } | null
   specs?: Record<string, string> // chosen specification values (PRODUCT_SPECS keys, without 'unit')
@@ -458,6 +459,27 @@ export default function QuickRequestPage() {
             {lines.map(l => {
               const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
               return (
+                l.done ? (
+                  <div key={l.key} className="rounded-xl border border-[#0F6E56]/30 bg-[#0F6E56]/[0.03] flex items-center gap-3 p-2.5">
+                    <button type="button" onClick={() => updateLine(l.key, { done: false })} className="flex-1 min-w-0 flex items-center gap-3 text-start"
+                      aria-label={L('Edit', 'ترمیم', 'تعديل')}>
+                      {ph ? <img src={ph.url} alt="" className="w-11 h-11 rounded-lg object-cover shrink-0" />
+                        : <img src={productImageUrl(l.product_name)} alt="" loading="lazy" className="w-11 h-11 rounded-lg object-contain bg-white border border-gray-100 shrink-0"
+                            onError={(e: any) => imgFallback(e, detectSubCategory(l.product_name, l.sector as any))} />}
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-bold text-sm text-navy truncate" dir="auto">{l.product_name}</span>
+                        <span className="block text-xs text-gray-500 truncate" dir="auto">
+                          <b className="text-[#d96f15]">{l.quantity} {l.unit}</b>
+                          {Object.values(l.specs || {}).filter(v => (v || '').trim()).length ? ' · ' + Object.values(l.specs || {}).filter(v => (v || '').trim()).join('، ') : ''}
+                          {l.details.trim() ? ' · ' + l.details.trim() : ''}
+                          {l.fileId ? ' · 📎' : ''}
+                        </span>
+                      </span>
+                      <span className="text-xs font-bold text-gray-400 shrink-0">✎ {L('Edit', 'ترمیم', 'تعديل')}</span>
+                    </button>
+                    <button type="button" onClick={() => removeLine(l.key)} className="text-gray-400 hover:text-red-500 text-lg leading-none px-1" aria-label={L('Remove', 'ہٹائیں', 'احذف')}>×</button>
+                  </div>
+                ) :
                 <div key={l.key} className="rounded-xl border border-gray-200 p-3 space-y-2">
                   <div className="flex gap-3 items-start">
                     {ph ? <img src={ph.url} alt="" className="w-16 h-16 rounded-lg object-cover shrink-0 border border-gray-100" />
@@ -551,11 +573,16 @@ export default function QuickRequestPage() {
                       {L('Send this photo to suppliers so they quote the same item', 'یہ تصویر سپلائرز کو بھیجیں', 'أرسل الصورة للموردين ليسعّروا المادة نفسها')}
                     </label>
                   )}
+                  <button type="button" onClick={() => { setSpecsOpen(null); updateLine(l.key, { done: true }) }}
+                    disabled={!(l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit)}
+                    className="w-full py-2 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0F6E56' }}>
+                    ✓ {parseFloat(l.quantity) > 0 ? L('Save', 'محفوظ کریں', 'حفظ') : L('Enter the quantity to save', 'محفوظ کرنے کے لیے مقدار لکھیں', 'أدخل الكمية للحفظ')}
+                  </button>
                 </div>
               )
             })}
             <button type="button" onClick={addMore}
-              className="w-full py-3 rounded-xl border-2 border-dashed border-[#F5831F]/50 text-[#d96f15] font-bold text-sm hover:bg-[#F5831F]/5 transition-all">
+              className="lg:hidden w-full py-3 rounded-xl border-2 border-dashed border-[#F5831F]/50 text-[#d96f15] font-bold text-sm hover:bg-[#F5831F]/5 transition-all">
               + {L('Add another material', 'ایک اور سامان شامل کریں', 'أضف مادة أخرى')}
             </button>
           </div>
