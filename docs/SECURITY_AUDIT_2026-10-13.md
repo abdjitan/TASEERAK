@@ -57,6 +57,14 @@
 
 ## Priority 2 — Medium
 
+> **Status (2026-10-13): M1–M12 fixed.** M1–M6 → migration `147_security_medium_fixes.sql`
+> (applied live; e2e 41/41) + request-edit flows (web + mobile) now delete offers before
+> changing materials. M5: no legacy 001 policies were live; "Insert own profile" dropped.
+> M7, M9, M10 → main agent (account/delete, explain-items, AI input caps + `overGlobalDailyLimit`).
+> M8 → `/api/verify-cr` signed-in only + per-user and global daily caps, national-ID owner
+> check removed (lives in verify-identity). M11 → CSP `script-src` (self + Turnstile), no
+> X-Powered-By. M12 → mobile signOut falls back to local scope + clears the cache.
+
 - **M1. Contractor can UPDATE any `rfqs` column** (`009_rls_lockdown.sql:123`): swap item names after pricing,
   move `expires_at` (unfreezes supplier prices), reopen closed. Fix: BEFORE UPDATE trigger freezing
   items/quantity/product_name/expires_at once `offer_count > 0`; status only via RPC.

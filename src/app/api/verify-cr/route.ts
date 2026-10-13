@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteUser } from '@/lib/supabase/server'
+import { overGlobalDailyLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 
@@ -12,8 +13,8 @@ export const runtime = 'nodejs'
 // • If WATHQ_API_KEY IS set      → mode:'wathq' with official name, status,
 //   city, capital, AND the partners/managers list.
 //
-// Anti-fraud: pass { cr, nationalId } and we report whether that national ID
-// is actually an owner/partner/manager of the CR.
+// Signed-in users only. The owner/manager match by national ID is done by
+// /api/verify-identity (caller's own CR), not here.
 //
 // Configure (Vercel → Settings → Environment Variables, and/or .env.local):
 //   WATHQ_API_KEY  = <مفتاح الأمان from api.wathq.sa>
@@ -110,22 +111,22 @@ function ownerCheck(ex: any, nationalId: string) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Rate-limit: by USER id when logged in (settings), by IP (tighter) when anonymous —
-    // the REGISTRATION page calls this BEFORE signup, so a hard auth requirement would
-    // break registration. Owner/manager names are stripped from the response below, so an
-    // anonymous caller can at most confirm a CR's official name/status (SEC-12).
+    // Signed-in users only (settings page, mobile documents screen; registration no longer
+    // calls this). Every live lookup bills two Wathq calls, so anonymous access let anyone
+    // with rotating IPs drain the quota and scrape the registry (audit M8). Per-user hourly
+    // limit plus a ceiling across all users per day.
     const { supabase: rl, user } = await getRouteUser()
-    const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'anon'
-    const bucket = user ? 'verify-cr:' + user.id : 'verify-cr:ip:' + ip
-    const { data: allowed } = await rl.rpc('check_rate_limit', { p_bucket: bucket, p_max: user ? 20 : 10, p_window_seconds: 3600 })
-    if (allowed === false) {
+    if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
+    const { data: allowed, error: rlErr } = await rl.rpc('check_rate_limit', { p_bucket: 'verify-cr:' + user.id, p_max: 20, p_window_seconds: 3600 })
+    if (rlErr || allowed === false || (WATHQ_LIVE && await overGlobalDailyLimit('verify-cr', 500))) {
       return NextResponse.json({ ok: false, error: 'rate_limited', message: 'محاولات كثيرة — حاول بعد قليل.' }, { status: 429 })
     }
 
     const body = await req.json().catch(() => ({}))
     const cr = String(body?.cr || '').trim()
-    // Owner/manager matching confirms a person<->company link (PDPL): signed-in users only.
-    const nationalId = user ? String(body?.nationalId || '').trim() : ''
+    // The owner match (national ID ↔ CR) lives in /api/verify-identity, against the caller's
+    // own CR only; this route never takes a national ID (it let anyone test ID↔company links).
+    const nationalId = ''
 
     // 1) format check (Saudi CR = exactly 10 digits)
     if (!/^\d{10}$/.test(cr)) {
