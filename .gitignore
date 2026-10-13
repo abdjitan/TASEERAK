@@ -23,3 +23,8 @@ npm-install.log
 .vercel
 supabase/.temp
 catalog-audit/
+
+# Frankfurt migration: secrets and dumps
+scripts/migrate/.env.migrate
+scripts/migrate/out/
+scripts/migrate/.copied.json
