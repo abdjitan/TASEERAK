@@ -25,6 +25,7 @@ export default function MyRequestsPage() {
   const [rfqs, setRfqs] = useState<any[]>([])
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     (async () => {
@@ -56,6 +57,33 @@ export default function MyRequestsPage() {
       || items.some((it: any) => String(it.product_name || '').includes(t))
   })
 
+  // Delete every ended request at once. A request with an accepted offer or an awarded item is a
+  // deal and is kept.
+  async function deleteEnded() {
+    const ended = rfqs.filter(r => stateOf(r) === 'ended')
+    if (!ended.length) return
+    if (!confirm(L(`Delete all ${ended.length} ended requests? This cannot be undone.`, `تمام ${ended.length} ختم شدہ درخواستیں حذف کریں؟`,
+      `حذف جميع الطلبات المنتهية (${ended.length})؟ لا يمكن التراجع عن ذلك.`))) return
+    setDeleting(true)
+    const sb = createClient()
+    const ids = ended.map(r => r.id)
+    const [{ data: acc }, { data: aw }] = await Promise.all([
+      sb.from('offers').select('rfq_id').in('rfq_id', ids).eq('status', 'accepted'),
+      sb.from('rfq_item_awards').select('rfq_id').in('rfq_id', ids),
+    ])
+    const keep = new Set([...(acc || []), ...(aw || [])].map((x: any) => x.rfq_id))
+    const gone: string[] = []
+    for (const id of ids) {
+      if (keep.has(id)) continue
+      const { error } = await sb.rpc('delete_rfq', { p_rfq_id: id })
+      if (!error) gone.push(id)
+    }
+    setRfqs(prev => prev.filter(r => !gone.includes(r.id)))
+    setDeleting(false)
+    const left = ids.length - gone.length
+    if (left) alert(L(`${left} request(s) were kept because they have a deal.`, `${left} درخواستیں رکھی گئیں۔`, `أُبقي ${left} من الطلبات لأنها تتضمّن صفقة.`))
+  }
+
   const badge = (r: any) => {
     const s = stateOf(r)
     if (s === 'closed') return { t: L('Deal done', 'سودا مکمل', 'تمّت الترسية'), c: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
@@ -76,6 +104,12 @@ export default function MyRequestsPage() {
               {label} <span className="opacity-70">({counts[k]})</span>
             </button>
           ))}
+          {filter === 'ended' && counts.ended > 0 && (
+            <button type="button" onClick={deleteEnded} disabled={deleting}
+              className="px-3.5 py-2 rounded-xl text-sm font-bold border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50">
+              🗑 {deleting ? L('Deleting…', 'حذف ہو رہا ہے…', 'جارٍ الحذف…') : L(`Delete all (${counts.ended})`, `سب حذف کریں (${counts.ended})`, `حذف الكل (${counts.ended})`)}
+            </button>
+          )}
           <input value={q} onChange={e => setQ(e.target.value)} className="input-field max-w-xs ms-auto"
             placeholder={L('Search by number or material…', 'نمبر یا سامان سے تلاش…', 'ابحث برقم الطلب أو المادة…')} />
           <Link href="/contractor/rfq/quick" className="btn-orange px-4 py-2.5 rounded-xl font-bold text-sm">+ {L('New request', 'نئی درخواست', 'طلب جديد')}</Link>

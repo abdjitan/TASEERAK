@@ -8,6 +8,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
+import LocationPicker from '@/components/shared/LocationPicker'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { normQuery } from '@/lib/productSearch'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
@@ -82,6 +83,8 @@ export default function QuickRequestPage() {
   const [vatRequired, setVatRequired] = useState(false)
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [pickup, setPickup] = useState(false) // the buyer collects from the supplier instead of delivery
+  const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null) // delivery point (map / GPS)
+  const [address, setAddress] = useState('')                                // district, street, landmark
   const [specsOpen, setSpecsOpen] = useState<string | null>(null) // line key whose specifications are open
   const [draftId, setDraftId] = useState<string | null>(null)     // a saved draft (rfq_drafts) opened here
   const specFileRef = useRef<HTMLInputElement>(null)
@@ -100,9 +103,10 @@ export default function QuickRequestPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login?next=/contractor/rfq/quick'; return }
       setUserId(user.id)
-      const { data: p } = await supabase.from('profiles').select('region, city').eq('id', user.id).single()
+      const { data: p } = await supabase.from('profiles').select('region, city, latitude, longitude').eq('id', user.id).single()
       if (p?.region) setRegion(p.region)
       if (p?.city) setCity(p.city)
+      if (p?.latitude != null && p?.longitude != null) setGeo({ lat: p.latitude, lng: p.longitude })
       // Reorder an earlier request, or continue a saved draft: these replace the local list.
       const qs = new URLSearchParams(window.location.search)
       const fromId = qs.get('from'), dId = qs.get('draft')
@@ -145,6 +149,8 @@ export default function QuickRequestPage() {
         if (typeof d.vatRequired === 'boolean') setVatRequired(d.vatRequired)
         if (typeof d.verifiedOnly === 'boolean') setVerifiedOnly(d.verifiedOnly)
         if (typeof d.pickup === 'boolean') setPickup(d.pickup)
+        if (d.geo && typeof d.geo.lat === 'number') setGeo(d.geo)
+        if (typeof d.address === 'string') setAddress(d.address)
         const back: Photo[] = []
         for (const m of Array.isArray(d.photos) ? d.photos : []) {
           const blob = await getDraftBlob(m.id)
@@ -165,11 +171,11 @@ export default function QuickRequestPage() {
   useEffect(() => {
     if (!restored || !userId || done) return
     const t = setTimeout(() => saveLocalDraft('quick:' + userId, {
-      text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, pickup,
+      text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, pickup, geo, address,
       photos: photos.map(p => ({ id: p.id, name: p.file.name, type: p.file.type, status: p.status, share: p.share, confidence: p.confidence, localName: p.localName })),
     }), 300)
     return () => clearTimeout(t)
-  }, [restored, userId, done, text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, pickup, photos])
+  }, [restored, userId, done, text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, pickup, geo, address, photos])
 
   function startOver() {
     deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[]])
@@ -297,6 +303,7 @@ export default function QuickRequestPage() {
     const bad = lines.find(l => !l.product_name.trim() || !(parseFloat(l.quantity) > 0) || !l.unit)
     if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر يحتاج إلى اسم وكمية ووحدة.')); return }
     if (!region) { setError(L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختر منطقتك.')); return }
+    if (!pickup && !geo && !address.trim()) { setError(L('Set the delivery location: detect it, paste a Google Maps link, or write the address.', 'ڈیلیوری کا مقام بتائیں۔', 'حدّد موقع التوصيل: بتحديد موقعك، أو بلصق رابط خرائط Google، أو بكتابة العنوان.')); return }
     setSending(true)
     const supabase = createClient()
     try {
@@ -345,6 +352,8 @@ export default function QuickRequestPage() {
         sub_category: first.sub_category, specification: first.specification, quantity: first.quantity, unit: first.unit,
         items,
         region, city: city || null, delivery_required: !pickup, vat_invoice_required: vatRequired,
+        delivery_location: pickup ? null : (address.trim().slice(0, 300) || null),
+        delivery_geo: pickup || !geo ? null : `${geo.lat},${geo.lng}`,
         hide_identity: hideIdentity, verified_only: verifiedOnly, nearby_only: false,
         notes: notes.trim() || null,
         expires_at: new Date(Date.now() + hours * 3600 * 1000).toISOString(),
@@ -591,7 +600,17 @@ export default function QuickRequestPage() {
         {/* C: delivery + options, under the list */}
         {lines.length > 0 && (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
-            <h2 className="font-bold text-navy">📍 {pickup ? L('Your area', 'آپ کا علاقہ', 'منطقتك') : L('Delivery to', 'ڈیلیوری', 'التوصيل لـ')}</h2>
+            <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={L('Receiving', 'وصولی', 'طريقة الاستلام')}>
+              {([[false, '🚚', L('Delivery', 'ڈیلیوری', 'توصيل'), L('The supplier delivers to my site', 'سپلائر پہنچائے گا', 'يوصل المورد إلى موقعي')],
+                 [true, '🏪', L('Pickup', 'خود لوں گا', 'استلام'), L('I collect from the supplier', 'میں خود لوں گا', 'أستلم من المورد بنفسي')]] as [boolean, string, string, string][]).map(([v, ic, t, sub]) => (
+                <button key={String(v)} type="button" role="radio" aria-checked={pickup === v} onClick={() => setPickup(v)}
+                  className={`rounded-xl border-2 p-3 text-start transition-all ${pickup === v ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                  <div className="font-bold text-navy text-sm">{ic} {t}</div>
+                  <div className="text-[11px] text-gray-500 mt-0.5">{sub}</div>
+                </button>
+              ))}
+            </div>
+            <h2 className="font-bold text-navy">📍 {pickup ? L('Your area', 'آپ کا علاقہ', 'منطقتك') : L('Delivery to', 'ڈیلیوری', 'التوصيل إلى')}</h2>
             <div className="grid grid-cols-2 gap-2">
               <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" aria-label={L('Region', 'علاقہ', 'المنطقة')}>
                 <option value="">{L('Region', 'علاقہ', 'المنطقة')}</option>
@@ -602,6 +621,14 @@ export default function QuickRequestPage() {
                 {((CITIES_BY_REGION as any)[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
               </select>
             </div>
+            {!pickup && (
+              <div className="space-y-2">
+                <LocationPicker lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={(a: number, b: number) => setGeo({ lat: a, lng: b })} />
+                <input value={address} onChange={e => setAddress(e.target.value)} maxLength={300} className="input-field text-sm"
+                  placeholder={L('Address details: district, street, landmark (optional)', 'پتہ: محلہ، گلی، نشانی (اختیاری)', 'تفاصيل العنوان: الحي، الشارع، علامة مميزة (اختياري)')} />
+                <p className="text-[11px] text-gray-400">🔒 {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
+              </div>
+            )}
             <details>
               <summary className="cursor-pointer text-xs font-bold text-[#d96f15] select-none">{L('More options (optional)', 'مزید اختیارات', 'خيارات إضافية (اختياري)')}</summary>
               <div className="mt-3 space-y-3">
@@ -615,10 +642,6 @@ export default function QuickRequestPage() {
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={hideIdentity} onChange={e => setHideIdentity(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
                   {L('Hide my name until I choose a supplier', 'سپلائر چننے تک نام چھپائیں', 'إخفاء اسمي حتى أختار المورد')}
-                </label>
-                <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
-                  <input type="checkbox" checked={pickup} onChange={e => setPickup(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
-                  {L('I will collect from the supplier (no delivery)', 'میں خود لے لوں گا (ڈیلیوری نہیں)', 'سأستلم من المورد بنفسي (بلا توصيل)')}
                 </label>
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={vatRequired} onChange={e => setVatRequired(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
