@@ -23,7 +23,7 @@ export function aiProvider(): 'anthropic' | 'gemini' | 'groq' | null {
 export const AI_ENABLED = !!(anthropicKey() || geminiKey() || groqKey())
 export const DEFAULT_AI_MODEL = process.env.AI_MODEL || 'claude-opus-4-8'
 // نماذج Gemini المجانية للمحاولة بالترتيب (قابلة للتهيئة عبر GEMINI_MODEL كقائمة مفصولة بفواصل)
-const GEMINI_MODEL_FALLBACKS = 'gemini-2.0-flash,gemini-2.5-flash,gemini-1.5-flash'
+const GEMINI_MODEL_FALLBACKS = 'gemini-3.8-flash,gemini-flash-latest,gemini-2.5-flash'
 
 export interface AiJsonOpts { system: string; user: string; schema: any; model?: string; maxTokens?: number }
 
@@ -202,7 +202,7 @@ export function buildTaxonomyRef(SUB_CATEGORIES: any, SECTOR_LABELS: any): strin
 // with JSON mode, so the JSON is read out of the text.
 export async function aiWebJson<T = any>(opts: { system: string; user: string; image?: { base64: string; mime: string }; maxTokens?: number }): Promise<{ data: T; sources: { title: string; uri: string }[] } | null> {
   if (!geminiKey()) return null
-  const models = (process.env.GEMINI_WEB_MODEL || 'gemini-2.5-flash,gemini-2.0-flash').split(',').map(s => s.trim()).filter(Boolean)
+  const models = (process.env.GEMINI_WEB_MODEL || 'gemini-3.8-flash,gemini-flash-latest').split(',').map(s => s.trim()).filter(Boolean)
   const parts: any[] = [{ text: opts.user }]
   if (opts.image) parts.push({ inline_data: { mime_type: opts.image.mime, data: opts.image.base64 } })
   for (const model of models) {

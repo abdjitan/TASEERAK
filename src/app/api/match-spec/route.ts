@@ -14,7 +14,7 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 
 function geminiKey() { return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '' }
-const GEMINI_MODELS = (process.env.GEMINI_MODEL || 'gemini-2.0-flash,gemini-2.5-flash,gemini-1.5-flash')
+const GEMINI_MODELS = (process.env.GEMINI_MODEL || 'gemini-3.8-flash,gemini-flash-latest,gemini-2.5-flash')
   .split(',').map(s => s.trim()).filter(Boolean)
 
 const SYSTEM = `أنت مهندس مواصفات (Specifications Engineer) خبير في مشاريع البناء في السعودية.
