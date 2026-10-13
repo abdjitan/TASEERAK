@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { getProductLabel, type Sector } from '@/types'
+import { getProductLabel, detectSubCategory, type Sector } from '@/types'
 import { BROWSE_SECTIONS, getSectionGroups, type BrowseSection } from '@/lib/browseCategories'
 import { searchProducts, normQuery } from '@/lib/productSearch'
 import { createClient } from '@/lib/supabase/client'
-import { productImageUrl } from '@/lib/productImage'
+import { productImageUrl, imgFallback } from '@/lib/productImage'
 import CatIcon from '@/components/shared/CatIcon'
 
 // Pick materials from the catalog inside the request page (the 4th way to add a line, next to
@@ -16,6 +16,21 @@ import CatIcon from '@/components/shared/CatIcon'
 // area (the chosen list sits beside it). CatalogPicker wraps it in a sheet for phones.
 
 type Picked = { key: string; name: string }
+
+const coverCache: Record<string, { name: string; sector: Sector }[]> = {}
+function sectionCovers(key: BrowseSection) {
+  if (!coverCache[key]) {
+    const gs = getSectionGroups(key).filter(g => g.items.length)
+    const out: { name: string; sector: Sector }[] = []
+    for (let i = 0; out.length < 3 && i < 9; i++) {
+      const g = gs[i % Math.max(gs.length, 1)]
+      const it = g?.items[Math.floor(i / Math.max(gs.length, 1))]
+      if (it && !out.some(o => o.name === it.name)) out.push(it)
+    }
+    coverCache[key] = out
+  }
+  return coverCache[key]
+}
 
 export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline = false }: {
   locale: string
@@ -177,8 +192,13 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
           {BROWSE_SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
               className="text-start rounded-2xl border border-gray-200 bg-white p-3 hover:border-[#F5831F]/60 hover:shadow-sm transition-all">
-              <div className="w-10 h-10 rounded-xl grid place-items-center text-[#1B2D5B]" style={{ background: '#F5831F14' }}><CatIcon k={b.cat || b.key} className="w-6 h-6" /></div>
-              <div className="font-bold text-sm text-navy mt-1 leading-snug">{pickT(b)}</div>
+              <div className="grid grid-cols-3 gap-1 rounded-xl bg-gray-50 p-1.5 mb-2" aria-hidden>
+                {sectionCovers(b.key).map(it => (
+                  <img key={it.name} src={productImageUrl(it.name)} alt="" loading="lazy" className="w-full aspect-square object-contain rounded-lg bg-white"
+                    onError={(e: any) => imgFallback(e, detectSubCategory(it.name, it.sector))} />
+                ))}
+              </div>
+              <div className="font-bold text-sm text-navy leading-snug">{pickT(b)}</div>
               <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{pickT(b.hint)}</div>
             </button>
           ))}
@@ -191,7 +211,9 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
               <div key={g.group} className="rounded-xl border border-gray-100 bg-white">
                 <button type="button" onClick={() => setOpenGroup(open ? null : g.group)} aria-expanded={open}
                   className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-bold text-navy">
-                  <span className="flex items-center gap-2"><span className="w-7 h-7 rounded-lg grid place-items-center text-[#1B2D5B] shrink-0" style={{ background: '#1B2D5B0d' }}><CatIcon k={g.group} className="w-4 h-4" /></span>{pickT(g)} <span className="text-gray-400 font-normal">({g.items.length})</span></span>
+                  <span className="flex items-center gap-2">{g.items[0] ? <img src={productImageUrl(g.items[0].name)} alt="" loading="lazy" className="w-10 h-10 rounded-lg object-contain bg-white border border-gray-100 shrink-0"
+                    onError={(e: any) => imgFallback(e, detectSubCategory(g.items[0].name, g.items[0].sector))} />
+                    : <span className="w-10 h-10 rounded-lg grid place-items-center text-[#1B2D5B] shrink-0" style={{ background: '#1B2D5B0d' }}><CatIcon k={g.group} className="w-5 h-5" /></span>}{pickT(g)} <span className="text-gray-400 font-normal">({g.items.length})</span></span>
                   <span className="text-gray-400">{open ? '▴' : '▾'}</span>
                 </button>
                 {open && (
