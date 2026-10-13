@@ -9,6 +9,7 @@ import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
+import SellerIcon from '@/components/shared/SellerIcon'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { normQuery } from '@/lib/productSearch'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
@@ -62,6 +63,7 @@ function lineFromItem(it: any): Line {
   return {
     key: uid(), product_name: it.product_name || '', sector: it.sector || 'supply_store',
     quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details, specs,
+    done: !!(it.product_name && Number(it.quantity) > 0 && it.unit),
   }
 }
 
@@ -90,6 +92,7 @@ export default function QuickRequestPage() {
   const specFileRef = useRef<HTMLInputElement>(null)
   const [fileFor, setFileFor] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  const [confirming, setConfirming] = useState(false) // the summary shown before sending
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const recRef = useRef<any>(null)
@@ -297,13 +300,26 @@ export default function QuickRequestPage() {
 
   const ready = lines.length > 0 && lines.every(l => l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) && !!region
 
-  async function send() {
+  const allSaved = lines.length > 0 && lines.every(l => l.done)
+
+  function review() {
+    if (!validate()) return
+    setConfirming(true)
+  }
+
+  function validate(): boolean {
     setError('')
-    if (!lines.length) { setError(L('Add at least one item.', 'کم از کم ایک چیز شامل کریں۔', 'أضف مادة واحدة على الأقل.')); return }
+    if (!lines.length) { setError(L('Add at least one item.', 'کم از کم ایک چیز شامل کریں۔', 'أضف مادة واحدة على الأقل.')); return false }
     const bad = lines.find(l => !l.product_name.trim() || !(parseFloat(l.quantity) > 0) || !l.unit)
-    if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر يحتاج إلى اسم وكمية ووحدة.')); return }
-    if (!region) { setError(L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختر منطقتك.')); return }
-    if (!pickup && !geo && !address.trim()) { setError(L('Set the delivery location: detect it, paste a Google Maps link, or write the address.', 'ڈیلیوری کا مقام بتائیں۔', 'حدّد موقع التوصيل: بتحديد موقعك، أو بلصق رابط خرائط Google، أو بكتابة العنوان.')); return }
+    if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر يحتاج إلى اسم وكمية ووحدة.')); return false }
+    if (!region) { setError(L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختر منطقتك.')); return false }
+    if (!pickup && !geo && !address.trim()) { setError(L('Set the delivery location: detect it, paste a Google Maps link, or write the address.', 'ڈیلیوری کا مقام بتائیں۔', 'حدّد موقع التوصيل: بتحديد موقعك، أو بلصق رابط خرائط Google، أو بكتابة العنوان.')); return false }
+    return true
+  }
+
+  async function send() {
+    if (!validate()) { setConfirming(false); return }
+    setConfirming(false)
     setSending(true)
     const supabase = createClient()
     try {
@@ -594,6 +610,9 @@ export default function QuickRequestPage() {
               className="lg:hidden w-full py-3 rounded-xl border-2 border-dashed border-[#F5831F]/50 text-[#d96f15] font-bold text-sm hover:bg-[#F5831F]/5 transition-all">
               + {L('Add another material', 'ایک اور سامان شامل کریں', 'أضف مادة أخرى')}
             </button>
+            {!allSaved && (
+              <p className="text-xs text-gray-500 text-center">{L('Press «Save» on each material to continue to sending.', 'بھیجنے کے لیے ہر سامان پر «محفوظ کریں» دبائیں۔', 'اضغط «حفظ» على كل مادة للانتقال إلى الإرسال.')}</p>
+            )}
           </div>
         )}
 
@@ -601,16 +620,23 @@ export default function QuickRequestPage() {
         {lines.length > 0 && (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
             <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={L('Receiving', 'وصولی', 'طريقة الاستلام')}>
-              {([[false, '🚚', L('Delivery', 'ڈیلیوری', 'توصيل'), L('The supplier delivers to my site', 'سپلائر پہنچائے گا', 'يوصل المورد إلى موقعي')],
-                 [true, '🏪', L('Pickup', 'خود لوں گا', 'استلام'), L('I collect from the supplier', 'میں خود لوں گا', 'أستلم من المورد بنفسي')]] as [boolean, string, string, string][]).map(([v, ic, t, sub]) => (
+              {([[false, 'truck', L('Delivery', 'ڈیلیوری', 'توصيل'), L('The supplier delivers to my site', 'سپلائر پہنچائے گا', 'يوصل المورد إلى موقعي')],
+                 [true, 'store', L('Pickup', 'خود لوں گا', 'استلام'), L('I collect from the supplier', 'میں خود لوں گا', 'أستلم من المورد بنفسي')]] as [boolean, string, string, string][]).map(([v, ic, t, sub]) => (
                 <button key={String(v)} type="button" role="radio" aria-checked={pickup === v} onClick={() => setPickup(v)}
                   className={`rounded-xl border-2 p-3 text-start transition-all ${pickup === v ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 hover:border-gray-300'}`}>
-                  <div className="font-bold text-navy text-sm">{ic} {t}</div>
-                  <div className="text-[11px] text-gray-500 mt-0.5">{sub}</div>
+                  <div className="flex items-center gap-2.5">
+                    <span className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${pickup === v ? 'bg-[#0F6E56] text-white' : 'bg-gray-100 text-[#1B2D5B]'}`}>
+                      <SellerIcon name={ic} className="w-5 h-5" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block font-bold text-navy text-sm">{t}</span>
+                      <span className="block text-[11px] text-gray-500 mt-0.5">{sub}</span>
+                    </span>
+                  </div>
                 </button>
               ))}
             </div>
-            <h2 className="font-bold text-navy">📍 {pickup ? L('Your area', 'آپ کا علاقہ', 'منطقتك') : L('Delivery to', 'ڈیلیوری', 'التوصيل إلى')}</h2>
+            <h2 className="font-bold text-navy flex items-center gap-1.5"><SellerIcon name="pin" className="w-4 h-4 text-[#F5831F]" />{pickup ? L('Your area', 'آپ کا علاقہ', 'منطقتك') : L('Delivery to', 'ڈیلیوری', 'التوصيل إلى')}</h2>
             <div className="grid grid-cols-2 gap-2">
               <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" aria-label={L('Region', 'علاقہ', 'المنطقة')}>
                 <option value="">{L('Region', 'علاقہ', 'المنطقة')}</option>
@@ -658,14 +684,81 @@ export default function QuickRequestPage() {
         </div>
       </div>
 
-      {lines.length > 0 && (
+      {allSaved && (
         <div className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-200 px-4 pt-3 z-30" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
           <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3 lg:pe-24">
             <span className="text-sm text-gray-500">{lines.length} {L('items', 'اشیاء', 'مواد')}</span>
-            <button type="button" onClick={send} disabled={sending || photos.some(p => p.status === 'identifying')}
+            <button type="button" onClick={review} disabled={sending || photos.some(p => p.status === 'identifying')}
               className="btn-orange px-6 py-3 rounded-xl font-extrabold disabled:opacity-50">
               {sending ? L('Sending…', 'بھیج رہے ہیں…', 'جارٍ الإرسال…') : ready ? L('Send for prices', 'قیمت منگوائیں', 'أرسل طلب التسعير') : L('Complete the lines', 'لائنیں مکمل کریں', 'أكمل البيانات')}
             </button>
+          </div>
+        </div>
+      )}
+      {confirming && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setConfirming(false)}>
+          <div role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={e => e.stopPropagation()}
+            className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
+            <div className="p-5 border-b border-gray-100">
+              <h2 id="confirm-title" className="font-extrabold text-navy text-lg">{L('Review your request', 'درخواست کا جائزہ لیں', 'راجع طلبك قبل الإرسال')}</h2>
+              <p className="text-xs text-gray-500 mt-1">{L('Check every detail; suppliers price exactly what is here.', 'ہر تفصیل چیک کریں۔', 'تأكّد من كل التفاصيل، فالموردون يسعّرون ما هو مكتوب هنا بالضبط.')}</p>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-4 text-sm">
+              <div>
+                <div className="text-xs font-bold text-gray-500 mb-2">{L('Materials', 'سامان', 'المواد')} ({lines.length})</div>
+                <ol className="space-y-2">
+                  {lines.map((l, i) => {
+                    const sp = Object.values(l.specs || {}).filter(v => (v || '').trim())
+                    return (
+                      <li key={l.key} className="rounded-xl bg-gray-50 border border-gray-100 p-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-bold text-navy" dir="auto">{i + 1}. {l.product_name}</span>
+                          <span className="font-bold text-[#d96f15] whitespace-nowrap">{l.quantity} {l.unit}</span>
+                        </div>
+                        {(sp.length > 0 || l.details.trim() || l.fileId) && (
+                          <div className="text-xs text-gray-500 mt-1" dir="auto">
+                            {[sp.join('، '), l.details.trim(), l.fileId ? '📎 ' + (l.fileName || L('Attachment', 'فائل', 'مرفق')) : ''].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ol>
+              </div>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2">
+                <dt className="text-gray-500">{L('Receiving', 'وصولی', 'الاستلام')}</dt>
+                <dd className="font-semibold"><span className="inline-flex items-center gap-1.5"><SellerIcon name={pickup ? 'store' : 'truck'} className="w-4 h-4 text-[#0F6E56]" />{pickup ? L('Pickup from the supplier', 'سپلائر سے خود', 'استلام من المورد') : L('Delivery', 'ڈیلیوری', 'توصيل')}</span></dd>
+                <dt className="text-gray-500">{L('Area', 'علاقہ', 'المنطقة')}</dt>
+                <dd className="font-semibold">{[city, region].filter(Boolean).join('، ')}</dd>
+                {!pickup && (<>
+                  <dt className="text-gray-500">{L('Location', 'مقام', 'الموقع')}</dt>
+                  <dd className="font-semibold" dir="auto">
+                    {geo ? <a href={`https://www.google.com/maps?q=${geo.lat},${geo.lng}`} target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] underline inline-flex items-center gap-1"><SellerIcon name="pin" className="w-3.5 h-3.5" />{L('On the map', 'نقشے پر', 'على الخريطة')}</a> : null}
+                    {geo && address.trim() ? ' · ' : ''}{address.trim()}
+                  </dd>
+                </>)}
+                <dt className="text-gray-500">{L('Prices within', 'قیمتیں', 'مهلة التسعير')}</dt>
+                <dd className="font-semibold">{hours < 24 ? `${hours} ${L('hours', 'گھنٹے', 'ساعات')}` : `${hours / 24} ${L('day(s)', 'دن', hours === 24 ? 'يوم' : 'أيام')}`}</dd>
+                {notes.trim() && (<>
+                  <dt className="text-gray-500">{L('Notes', 'نوٹس', 'ملاحظات')}</dt>
+                  <dd className="font-semibold whitespace-pre-wrap" dir="auto">{notes.trim()}</dd>
+                </>)}
+              </dl>
+              <div className="flex flex-wrap gap-1.5 text-xs">
+                {hideIdentity && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{L('Name hidden', 'نام چھپا', 'الاسم مخفي')}</span>}
+                {vatRequired && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{L('VAT invoice', 'VAT انوائس', 'فاتورة ضريبية')}</span>}
+                {verifiedOnly && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{L('Verified suppliers only', 'صرف تصدیق شدہ', 'الموردون الموثّقون فقط')}</span>}
+                {photos.some(p => p.share) && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{L('Photos shared', 'تصاویر شیئر', 'الصور مرفقة')}</span>}
+              </div>
+            </div>
+            <div className="p-4 border-t border-gray-100 grid grid-cols-2 gap-2" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
+              <button type="button" onClick={() => setConfirming(false)} className="py-3 rounded-xl border border-gray-200 font-bold text-gray-700">
+                ✎ {L('Edit', 'ترمیم', 'تعديل')}
+              </button>
+              <button type="button" onClick={send} disabled={sending} className="btn-orange py-3 rounded-xl font-extrabold disabled:opacity-50">
+                {L('Confirm and send', 'تصدیق کر کے بھیجیں', 'تأكيد وإرسال')}
+              </button>
+            </div>
           </div>
         </div>
       )}
