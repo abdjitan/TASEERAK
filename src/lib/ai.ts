@@ -194,3 +194,43 @@ export function buildTaxonomyRef(SUB_CATEGORIES: any, SECTOR_LABELS: any): strin
   }
   return lines.join('\n')
 }
+
+// ── Understand with a web search (Gemini + Google Search grounding) ──────────────────────────
+// For words or photos the catalog and the dictionary do not understand: the model may search the
+// web before answering. Gemini only (its free tier includes search grounding); returns null when
+// no Gemini key or every model fails, so callers fall back quietly. Grounding cannot be combined
+// with JSON mode, so the JSON is read out of the text.
+export async function aiWebJson<T = any>(opts: { system: string; user: string; image?: { base64: string; mime: string }; maxTokens?: number }): Promise<{ data: T; sources: { title: string; uri: string }[] } | null> {
+  if (!geminiKey()) return null
+  const models = (process.env.GEMINI_WEB_MODEL || 'gemini-2.5-flash,gemini-2.0-flash').split(',').map(s => s.trim()).filter(Boolean)
+  const parts: any[] = [{ text: opts.user }]
+  if (opts.image) parts.push({ inline_data: { mime_type: opts.image.mime, data: opts.image.base64 } })
+  for (const model of models) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey() },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: opts.system }] },
+          contents: [{ role: 'user', parts }],
+          tools: [{ google_search: {} }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: opts.maxTokens || 900 },
+        }),
+      })
+      if (!r.ok) { console.error('aiWebJson', model, r.status, (await r.text().catch(() => '')).slice(0, 200)); continue }
+      const j = await r.json()
+      const cand = j?.candidates?.[0]
+      const text = (cand?.content?.parts || []).map((p: any) => p.text || '').join('').trim()
+      const m = text.match(/\{[\s\S]*\}/)
+      if (!m) continue
+      const data = JSON.parse(m[0]) as T
+      const sources = ((cand?.groundingMetadata?.groundingChunks || []) as any[])
+        .map((c: any) => ({ title: String(c?.web?.title || '').slice(0, 120), uri: String(c?.web?.uri || '') }))
+        .filter(s => s.uri).slice(0, 4)
+      return { data, sources }
+    } catch (e: any) {
+      console.error('aiWebJson', model, e?.message || e)
+    }
+  }
+  return null
+}

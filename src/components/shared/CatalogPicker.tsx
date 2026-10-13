@@ -29,12 +29,31 @@ export function CatalogBrowser({ locale, onPick, picked = [], inline = false }: 
 
   // Exact/prefix/synonym matches score >= ~10; loose typo matches (بلك → بلدوزر) ~6. Show only
   // the confident ones unless that leaves almost nothing.
-  const hits = useMemo(() => {
-    if (!q.trim()) return []
+  const { hits, confident } = useMemo(() => {
+    if (!q.trim()) return { hits: [], confident: 0 }
     const all = searchProducts(q, { limit: 40 })
     const good = all.filter(h => h.score >= 7)
-    return good.length >= 3 ? good.slice(0, 30) : all.slice(0, 8)
+    return { hits: good.length >= 3 ? good.slice(0, 30) : all.slice(0, 8), confident: good.length }
   }, [q])
+
+  // Not understood by the catalog or the dictionary → ask the AI, which may search the web
+  // (/api/understand; answers are remembered, so a repeat costs nothing).
+  const [web, setWeb] = useState<{ q: string; loading: boolean; result?: any; matches?: { name: string; sector: Sector }[]; sources?: any[]; error?: string } | null>(null)
+  useEffect(() => {
+    const query = q.trim()
+    if (query.length < 2 || confident > 0) { setWeb(null); return }
+    let alive = true
+    const t = setTimeout(async () => {
+      setWeb({ q: query, loading: true })
+      try {
+        const r = await fetch('/api/understand', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: query }) })
+        const j = await r.json().catch(() => ({}))
+        if (!alive) return
+        setWeb(r.ok && j.ok ? { q: query, loading: false, result: j.result, matches: j.matches || [], sources: j.sources || [] } : { q: query, loading: false, error: j.error || 'failed' })
+      } catch { if (alive) setWeb({ q: query, loading: false, error: 'failed' }) }
+    }, 1100)
+    return () => { alive = false; clearTimeout(t) }
+  }, [q, confident])
   const groups = useMemo(() => (section ? getSectionGroups(section) : []), [section])
   // A search that still finds nothing after a pause is recorded, so the admin sees what is missing.
   useEffect(() => {
@@ -98,8 +117,46 @@ export function CatalogBrowser({ locale, onPick, picked = [], inline = false }: 
         </div>
       )}
 
+      {q.trim() && web && web.q === q.trim() && (
+        <div className="rounded-2xl border border-[#1B2D5B]/15 bg-[#1B2D5B]/[0.03] p-3 space-y-2" aria-live="polite">
+          {web.loading ? (
+            <p className="text-sm text-gray-600 flex items-center gap-2">
+              <span className="inline-block w-4 h-4 rounded-full border-2 border-[#1B2D5B]/30 border-t-[#1B2D5B] animate-spin" />
+              {L(`Looking up «${web.q}» on the internet…`, `«${web.q}» انٹرنیٹ پر تلاش ہو رہا ہے…`, `نبحث عن «${web.q}» في الإنترنت…`)}
+            </p>
+          ) : web.result?.understood ? (
+            <>
+              <div className="text-sm">
+                <span className="text-xs font-bold text-[#0F6E56]">🌐 {L('We found what you mean', 'ہم سمجھ گئے', 'فهمنا ما تقصد')}</span>
+                <div className="font-extrabold text-navy mt-0.5" dir="auto">{web.result.name_ar}{web.result.name_en ? <span className="text-xs font-normal text-gray-400"> · {web.result.name_en}</span> : null}</div>
+                {web.result.what_it_is && <div className="text-xs text-gray-600 mt-0.5" dir="auto">{web.result.what_it_is}</div>}
+              </div>
+              {!!web.matches?.length && (
+                <>
+                  <div className="text-[11px] font-bold text-gray-500">{L('Closest in our list', 'ہماری فہرست میں قریب ترین', 'الأقرب في قائمتنا')}</div>
+                  <div className={tileGrid}>{web.matches.map(m => <Tile key={`w:${m.sector}:${m.name}`} name={m.name} s={m.sector} />)}</div>
+                </>
+              )}
+              <button type="button" onClick={() => choose({ name: web.result.name_ar, sector: web.result.sector })}
+                className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: '#F5831F' }}>
+                + {L(`Add «${web.result.name_ar}» to my list`, `«${web.result.name_ar}» فہرست میں شامل کریں`, `أضف «${web.result.name_ar}» إلى قائمتي`)}
+              </button>
+              {!!web.sources?.length && (
+                <div className="text-[10px] text-gray-400 truncate" dir="ltr">{L('Sources', 'ذرائع', 'المصادر')}: {web.sources.map((s: any) => s.title || s.uri).join(' · ')}</div>
+              )}
+            </>
+          ) : (
+            <p className="text-sm text-gray-600">
+              {web.error === 'daily_limit' || web.error === 'rate_limited'
+                ? L('Internet lookups are busy right now. Write the item as text above and suppliers will price it.', 'ابھی انٹرنیٹ تلاش مصروف ہے۔ اوپر لکھ دیں، سپلائرز قیمت دیں گے۔', 'البحث في الإنترنت مشغول الآن. اكتب المادة نصاً في الأعلى وسيسعّرها الموردون.')
+                : L('We could not identify it. Write it as text above, or add a photo, and suppliers will price it.', 'ہم پہچان نہیں سکے۔ اوپر لکھیں یا تصویر لگائیں۔', 'لم نتعرّف عليها. اكتبها نصاً في الأعلى أو أضف صورة، وسيسعّرها الموردون.')}
+            </p>
+          )}
+        </div>
+      )}
+
       {q.trim() ? (
-        hits.length === 0 ? (
+        hits.length === 0 ? (web ? null :
           <p className="text-sm text-gray-500 text-center py-8">
             {L('Not in the catalog. Write it as text above — suppliers will still price it.',
               'فہرست میں نہیں۔ اسے اوپر لکھ دیں، سپلائرز پھر بھی قیمت دیں گے۔',

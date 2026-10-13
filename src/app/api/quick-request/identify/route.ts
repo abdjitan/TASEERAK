@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRouteUser } from '@/lib/supabase/server'
+import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
 import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
-import { aiVisionJson, AI_VISION_ENABLED } from '@/lib/ai'
+import { aiVisionJson, aiWebJson, AI_VISION_ENABLED } from '@/lib/ai'
 import { suggestCatalog } from '@/lib/catalogSuggest'
 import type { Sector } from '@/types'
 
@@ -38,7 +38,8 @@ const SCHEMA = {
   additionalProperties: false,
 }
 
-const SYSTEM = `أنت خبير مواد بناء وأدوات في السوق السعودي. ستصلك صورة لمادة أو قطعة يريد شخص شراءها.
+const SYSTEM = `أنت خبير في مواد البناء والتشطيبات والأثاث والإنارة والديكور والأدوات المنزلية في السوق السعودي. ستصلك صورة لمادة أو قطعة يريد شخص شراءها أو تفصيلها (مثلاً طاولة أو ثريا أو ستارة أو باب أو بلاط أعجبه شكلها).
+is_construction_item = true لأي شيء يمكن شراؤه أو تفصيله من محلات المواد أو الأثاث أو الإنارة أو الديكور.
 حدّد ما هي باسمها التجاري الشائع في السعودية. اذكر فقط التفاصيل الظاهرة بوضوح في الصورة (مقاس مطبوع، ماركة على الملصق، لون).
 لا تخمّن مقاسات أو مواصفات غير ظاهرة. إذا لم تكن متأكداً اجعل confidence = low.
 اكتب name_ar و visible_details بالعربي (الماركة والأرقام كما هي)، و name_en بالإنجليزي، و name_ur بالأوردو.
@@ -67,23 +68,47 @@ export async function POST(req: NextRequest) {
     image: { base64: buf.toString('base64'), mime },
     maxTokens: 800,
   })
-  if (!r || !r.is_construction_item) return NextResponse.json({ suggestion: null, ai: true })
+  let item: any = r && r.is_construction_item ? r : null
+  let webSources: any[] = []
+  // Not recognised, not sure, or nothing like it in our list → look it up on the internet
+  // (Gemini + Google Search, inside the free tier: 15 photo lookups an hour per person, shares the
+  // 300-a-day total with the text lookups).
+  const firstMatch = item ? suggestCatalog(String(item.name_ar || ''), SECTORS.includes(item.sector) ? item.sector : 'supply_store', null) : null
+  if (!item || item.confidence === 'low' || !firstMatch?.exact) {
+    const { data: mine } = await supabase.rpc('check_rate_limit', { p_bucket: `understand-photo:${user.id}`, p_max: 15, p_window_seconds: 3600 })
+    const { data: all } = mine === false ? { data: false } : await createAdminSupabaseClient().rpc('check_rate_limit', { p_bucket: 'understand:global', p_max: 300, p_window_seconds: 86400 })
+    if (mine !== false && all !== false) {
+      const w = await aiWebJson<any>({
+        system: SYSTEM + `\nإن لم تكن متأكداً مما في الصورة فابحث في الإنترنت (Google) عن شكلها قبل الإجابة.\nأجب بكائن JSON فقط بهذه الحقول: ${JSON.stringify(Object.keys(SCHEMA.properties))}`,
+        user: 'ما هذه المادة في الصورة؟ ما اسمها التجاري في السعودية؟',
+        image: { base64: buf.toString('base64'), mime },
+      })
+      if (w?.data?.is_construction_item !== false && w?.data?.name_ar && (!item || item.confidence === 'low' || w.data.confidence !== 'low')) {
+        item = { ...(item || {}), ...w.data }
+        webSources = w.sources
+      }
+    }
+  }
+  if (!item) return NextResponse.json({ suggestion: null, ai: true })
+  const rr = item
 
-  const sector: Sector = SECTORS.includes(r.sector) ? r.sector : 'supply_store'
-  const m = suggestCatalog(String(r.name_ar || ''), sector, r.visible_details ? String(r.visible_details) : null)
+  const sector: Sector = SECTORS.includes(rr.sector) ? rr.sector : 'supply_store'
+  const m = suggestCatalog(String(rr.name_ar || ''), sector, rr.visible_details ? String(rr.visible_details) : null)
   return NextResponse.json({
     ai: true,
     suggestion: {
-      product_name: m.exact || String(r.name_ar || '').slice(0, 140),
+      product_name: m.exact || String(rr.name_ar || '').slice(0, 140),
       in_catalog: !!m.exact,
       catalog_suggestion: m.suggestion,
       sector,
-      name_en: String(r.name_en || '').slice(0, 140),
+      name_en: String(rr.name_en || '').slice(0, 140),
       // Shown to an English/Urdu speaker next to the Arabic trade name suppliers will read.
-      local_name: locale === 'ur' ? String(r.name_ur || '').slice(0, 140) : locale === 'en' ? String(r.name_en || '').slice(0, 140) : null,
-      details: r.visible_details ? String(r.visible_details).slice(0, 300) : null,
-      confidence: ['low', 'medium', 'high'].includes(r.confidence) ? r.confidence : 'low',
-      unit: UNITS_AR.includes(r.unit) ? r.unit : null,
+      local_name: locale === 'ur' ? String(rr.name_ur || '').slice(0, 140) : locale === 'en' ? String(rr.name_en || '').slice(0, 140) : null,
+      details: rr.visible_details ? String(rr.visible_details).slice(0, 300) : null,
+      confidence: ['low', 'medium', 'high'].includes(rr.confidence) ? rr.confidence : 'low',
+      unit: UNITS_AR.includes(rr.unit) ? rr.unit : null,
+      web: webSources.length > 0,
     },
+    sources: webSources,
   })
 }
