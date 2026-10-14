@@ -130,14 +130,14 @@ export default function AdminTaxonomyPage() {
             </p>
           </div>
           <button onClick={() => setShowAdd(s => !s)} className="text-sm font-bold text-white px-4 py-2 rounded-xl shrink-0" style={{ background: '#0F6E56' }}>
-            {showAdd ? '✕ إغلاق' : '➕ إضافة تخصص'}
+            {showAdd ? '✕ إغلاق' : 'إضافة تخصص'}
           </button>
         </div>
 
         {/* إضافة تخصص جديد */}
         {showAdd && (
           <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4 mb-5">
-            <h3 className="font-bold text-sm mb-3" style={{ color: '#0F6E56' }}>➕ تخصص جديد</h3>
+            <h3 className="font-bold text-sm mb-3" style={{ color: '#0F6E56' }}><Glyph e="➕" /> تخصص جديد</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-gray-500 mb-1">القطاع</label>

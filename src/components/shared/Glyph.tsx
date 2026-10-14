@@ -6,7 +6,7 @@ import {
   Hand, Inbox, Circle, Tag, CalendarDays, Settings2, MessageCircle, AlarmClock, Ban, Zap, Paperclip, Camera,
   ShieldCheck, TrendingDown, HelpCircle, FileText, PenLine, HardHat, Truck, Home, CreditCard, Lightbulb,
   Menu, Scale, Globe, Sprout, Medal, Factory, Eye, Wallet, Ruler, Files, Mail, Mailbox, Repeat, KeyRound, Feather,
-  Printer, FolderOpen, Map, Flag, Footprints, Bot, Handshake, Brain, Puzzle, BrickWall, Landmark, Tractor, Store,
+  Printer, FolderOpen, Map, Flag, Footprints, Bot, Handshake, Brain, Puzzle, BrickWall, Landmark, Tractor, Store, Plus, Pencil,
 } from 'lucide-react'
 
 const MAP: Record<string, [any, string?]> = {
@@ -25,6 +25,7 @@ const MAP: Record<string, [any, string?]> = {
   '🔁': [Repeat], '🔎': [Search], '🔑': [KeyRound], '🕊': [Feather], '🖨': [Printer], '🗂': [FolderOpen], '🗺': [Map],
   '🙍': [User], '🚩': [Flag, 'text-red-500'], '🚶': [Footprints], '🤖': [Bot], '🤝': [Handshake], '🧠': [Brain], '🧩': [Puzzle],
   '🧱': [BrickWall], '🏛': [Landmark], '🚜': [Tractor], '🏪': [Store],
+  '✉': [Mail], '❔': [HelpCircle], '✨': [Sparkles, 'text-[#D4A543]'], '➕': [Plus], '✏': [Pencil],
   '🥇': [Medal, 'text-[#D4AF37]'], '🥈': [Medal, 'text-[#9CA3AF]'], '🥉': [Medal, 'text-[#CD7F32]'],
 }
 

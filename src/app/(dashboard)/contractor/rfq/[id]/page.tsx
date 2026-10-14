@@ -396,7 +396,7 @@ export default function RFQDetailPage() {
                     setEditing(!editing)
                   }}
                   className="text-xs text-[#9D7425] border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-[#D4A543]/5 transition-colors">
-                  ✏️ {L('Edit', 'ترمیم', 'تعديل')}
+                  <Glyph e="✏" /> {L('Edit', 'ترمیم', 'تعديل')}
                 </button>
                 <button onClick={cancelRfq}
                   className="text-xs text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
@@ -736,12 +736,12 @@ export default function RFQDetailPage() {
               <button type="button" onClick={runCompare} disabled={cmpLoading}
                 className="w-full py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-60 transition-all hover:shadow"
                 style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
-                {cmpLoading ? `${L('Analyzing offers...', 'آفرز کا تجزیہ ہو رہا ہے...', 'جارٍ تحليل العروض...')}` : `✨ ${L('Analyze the offers and recommend the best (AI)', 'آفرز کا تجزیہ کر کے بہترین بتائیں (AI)', 'حلّل العروض ووصِّ لي بالأفضل (ذكاء اصطناعي)')}`}
+                {cmpLoading ? `${L('Analyzing offers...', 'آفرز کا تجزیہ ہو رہا ہے...', 'جارٍ تحليل العروض...')}` : `${L('Analyze the offers and recommend the best (AI)', 'آفرز کا تجزیہ کر کے بہترین بتائیں (AI)', 'حلّل العروض ووصِّ لي بالأفضل (ذكاء اصطناعي)')}`}
               </button>
             ) : aiCmp.ai ? (
               <div className="rounded-xl p-4 border" style={{ background: '#7C3AED0a', borderColor: '#7C3AED33' }}>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-sm" style={{ color: '#7C3AED' }}>✨ {L('AI recommendation', 'AI کی سفارش', 'توصية الذكاء الاصطناعي')}</span>
+                  <span className="font-bold text-sm" style={{ color: '#7C3AED' }}><Glyph e="✨" /> {L('AI recommendation', 'AI کی سفارش', 'توصية الذكاء الاصطناعي')}</span>
                   <button onClick={() => setAiCmp(null)} className="text-[11px] text-gray-400 hover:text-gray-600">{L('Hide', 'چھپائیں', 'إخفاء')}</button>
                 </div>
                 {aiCmp.best_supplier && <div className="text-sm mb-1.5 font-bold text-emerald-700"><Glyph e="🏆" /> {L('Best value:', 'بہترین قیمت:', 'الأفضل قيمةً:')} {aiCmp.best_supplier}</div>}

@@ -554,7 +554,7 @@ export default function AdminPanel() {
                         <span><Glyph e="🏢" /> الحساب المُبلَّغ عنه: <b>{o.existing_company || '—'}</b></span>
                         <span><Glyph e="🙍" /> المُبلِّغ: <b>{o.reporter_name || '—'}</b></span>
                         {o.reporter_phone && <span dir="ltr"><Glyph e="📞" /> {o.reporter_phone}</span>}
-                        {o.reporter_email && <span dir="ltr">✉ {o.reporter_email}</span>}
+                        {o.reporter_email && <span dir="ltr"><Glyph e="✉" /> {o.reporter_email}</span>}
                         <span><Glyph e="📅" /> {dt(o.created_at)}</span>
                       </div>
                       {o.reason && <div className="mt-2 bg-amber-50 rounded-lg p-2.5 text-sm text-amber-800"><Glyph e="📝" /> {o.reason}</div>}
@@ -988,7 +988,7 @@ export default function AdminPanel() {
                       )}
                       {/* Extra details */}
                       <div className="text-[11px] text-gray-500 mt-2 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-0.5">
-                        {emails[u.id]?.email && <span>✉️ <span dir="ltr">{emails[u.id].email}</span>{emails[u.id]?.email_confirmed ? ' ✓' : ' (غير مؤكد)'}</span>}
+                        {emails[u.id]?.email && <span><Glyph e="✉" /> <span dir="ltr">{emails[u.id].email}</span>{emails[u.id]?.email_confirmed ? ' ✓' : ' (غير مؤكد)'}</span>}
                         {emails[u.id]?.last_sign_in_at && <span><Glyph e="🕐" /> آخر دخول: {dt(emails[u.id].last_sign_in_at)}</span>}
                         {u.role === 'contractor' && <span><Glyph e="📋" /> طلبات التسعير: {rfqCountBy[u.id] || 0}</span>}
                         {u.role === 'supplier' && <span><Glyph e="📨" /> العروض المقدّمة: {offerCountBy[u.id] || 0}</span>}
@@ -1227,7 +1227,7 @@ export default function AdminPanel() {
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <button type="button" onClick={aiSuggestMaterial} disabled={matAi || !matName.trim()}
                 className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
-                {matAi ? 'جارٍ...' : '✨ اقترح التصنيف بالذكاء الاصطناعي'}
+                {matAi ? 'جارٍ...' : 'اقترح التصنيف بالذكاء الاصطناعي'}
               </button>
               {matAiMsg && <span className="text-[11px] font-semibold text-emerald-700">{matAiMsg}</span>}
             </div>

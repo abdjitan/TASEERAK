@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from '@/i18n'
+import Glyph from '@/components/shared/Glyph'
 
 // مساعد تسعيرك الذكي — زر عائم + نافذة محادثة تظهر في كل صفحات لوحة التحكم.
 export default function AiAssistant() {
@@ -45,7 +46,7 @@ export default function AiAssistant() {
       <button onClick={() => setOpen(o => !o)} aria-label={T.title}
         className="fixed z-[60] w-14 h-14 rounded-full grid place-items-center text-white shadow-xl hover:scale-105 transition-transform bottom-[84px] lg:bottom-5"
         style={{ ...sideStyle, background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
-        <span className="text-2xl">{open ? '✕' : '✨'}</span>
+        <span className="text-2xl">{open ? '✕' : <Glyph e="✨" />}</span>
       </button>
 
       {/* نافذة المحادثة */}
@@ -54,7 +55,7 @@ export default function AiAssistant() {
           style={{ ...sideStyle, width: 'min(380px, calc(100vw - 32px))', height: 'min(560px, calc(100vh - 210px))' }}>
           {/* رأس */}
           <div className="px-4 py-3 text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
-            <span className="text-lg">✨</span>
+            <span className="text-lg"><Glyph e="✨" /></span>
             <span className="font-bold text-sm flex-1">{T.title}</span>
             <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white text-lg leading-none">✕</button>
           </div>

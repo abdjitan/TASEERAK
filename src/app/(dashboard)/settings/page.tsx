@@ -440,12 +440,12 @@ export default function SettingsPage() {
                         ? <p className="text-[11px] text-amber-600"><Glyph e="⏳" /> طلب تغيير الاسم قيد مراجعة الإدارة (إلى «{pendingFor('name').new_value}»).</p>
                         : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#0B2438' }}><Glyph e="🔒" /> الاسم ثابت لارتباطه بالسجل التجاري — اطلب تعديله</button>
                     ) : (
-                      <p className="text-[11px] text-gray-400">✏️ {locale === 'en' ? 'You can edit your company name until your account is verified.' : 'يمكنك تعديل اسم الشركة حتى يتم توثيق حسابك، ثم يُقفل.'}</p>
+                      <p className="text-[11px] text-gray-400"><Glyph e="✏" /> {locale === 'en' ? 'You can edit your company name until your account is verified.' : 'يمكنك تعديل اسم الشركة حتى يتم توثيق حسابك، ثم يُقفل.'}</p>
                     )}
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.phone}{profile?.role === 'supplier' ? ' (واتساب)' : ''}</label>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.phone}</label>
                     <input value={phone} onChange={e => setPhone(e.target.value)}
                       className="input-field" placeholder="+966 5X XXX XXXX" />
                     {profile?.role === 'supplier' && (

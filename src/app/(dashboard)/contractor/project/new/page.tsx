@@ -543,7 +543,7 @@ export default function NewProjectPage() {
                 {locale === 'en' ? `Materials (${items.length})` : `المواد (${items.length})`}
                 {aiUsed && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
-                    ✨ {locale === 'en' ? 'AI-analyzed' : 'حُلّل بالذكاء الاصطناعي'}
+                    <Glyph e="✨" /> {locale === 'en' ? 'AI-analyzed' : 'حُلّل بالذكاء الاصطناعي'}
                   </span>
                 )}
               </h2>
@@ -563,8 +563,8 @@ export default function NewProjectPage() {
                 <div className="text-xs text-red-700 leading-relaxed">
                   <strong>{unclassifiedCount} {locale === 'en' ? 'item(s) are not classified.' : 'بند غير مصنّف.'}</strong>{' '}
                   {locale === 'en'
-                    ? 'Items without a category from the lists go to all suppliers in the sector instead of the right specialist. Open each one (✏️) and pick its category — or classify them in bulk below.'
-                    : 'البنود بدون تصنيف من القوائم تُرسل لكل موردي القطاع بدل المورد المتخصص. افتح كل بند (✏️) واختر تصنيفه — أو صنّفها جماعياً بالأسفل.'}
+                    ? 'Items without a category from the lists go to all suppliers in the sector instead of the right specialist. Open each one (Edit) and pick its category — or classify them in bulk below.'
+                    : 'البنود بدون تصنيف من القوائم تُرسل لكل موردي القطاع بدل المورد المتخصص. افتح كل بند (زر «تعديل») واختر تصنيفه — أو صنّفها جماعياً بالأسفل.'}
                 </div>
               </div>
             )}
@@ -764,7 +764,7 @@ export default function NewProjectPage() {
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
                             <button type="button" onClick={() => setEditingIndex(i)}
-                              className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">✏️</button>
+                              className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"><Glyph e="✏" /></button>
                             <button type="button" onClick={() => removeItem(item.id)}
                               className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50"><Glyph e="🗑" /></button>
                           </div>

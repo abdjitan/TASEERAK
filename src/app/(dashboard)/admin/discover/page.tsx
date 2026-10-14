@@ -475,7 +475,7 @@ export default function DiscoverSuppliersPage() {
                 <tbody>
                   {(stats.by_pack || []).slice().sort((a: any, b: any) => b.total - a.total).map((r: any) => (
                     <tr key={r.pack} className="border-t border-gray-100 text-center">
-                      <td className="text-right p-1">{r.pack === '_none' ? '❔ غير مصنّف' : `${packIcon(r.pack)} ${packLabel(r.pack)}`}</td>
+                      <td className="text-right p-1">{r.pack === '_none' ? 'غير مصنّف' : `${packIcon(r.pack)} ${packLabel(r.pack)}`}</td>
                       <td className="p-1 font-bold">{r.total}</td><td className="p-1">{r.mobile}</td><td className="p-1">{r.invited}</td><td className="p-1">{r.registered}</td>
                     </tr>
                   ))}

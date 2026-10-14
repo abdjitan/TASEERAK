@@ -213,7 +213,7 @@ export default function AdminUserDetail() {
             <Field label="الرقم الضريبي">{p.vat_number}</Field>
           </Section>
 
-          <Section title="التواصل والحساب" icon="✉️">
+          <Section title="التواصل والحساب" icon={<Glyph e="✉" />}>
             <Field label="البريد الإلكتروني">{authInfo?.email ? <span dir="ltr">{authInfo.email}{authInfo.email_confirmed ? ' ✓' : ' (غير مؤكد)'}</span> : '—'}</Field>
             <Field label="رقم الجوال">{p.phone}</Field>
             <Field label="آخر دخول">{dtt(authInfo?.last_sign_in_at)}</Field>
