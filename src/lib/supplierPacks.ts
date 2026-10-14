@@ -118,6 +118,51 @@ export const SUPPLIER_PACKS: SupplierPack[] = [
       supply_store: ['store_hinges', 'store_handles'],
     },
   },
+  {
+    id: 'lighting_decor', icon: '💡', ar: 'إنارة وثريات', en: 'Lighting & chandeliers', ur: 'لائٹنگ اور جھومر',
+    hint: { ar: 'ثريات، سبوتات، إنارة ديكور وخارجية، إضاءة ذكية', en: 'Chandeliers, spots, decor & outdoor lights, smart lighting', ur: 'جھومر، اسپاٹ، آرائشی اور بیرونی لائٹس' },
+    specialties: { electrical: ['decor_lighting', 'indoor_lighting', 'outdoor_lighting', 'led_strips', 'smart_home'] },
+  },
+  {
+    id: 'solar', icon: '☀️', ar: 'طاقة شمسية', en: 'Solar power', ur: 'سولر انرجی',
+    hint: { ar: 'ألواح، انفرترات، بطاريات، سخانات شمسية', en: 'Panels, inverters, batteries, solar heaters', ur: 'پینل، انورٹر، بیٹریاں' },
+    specialties: { electrical: ['solar_pv'] },
+  },
+  {
+    id: 'kitchens_appliances', icon: '🍳', ar: 'مطابخ وأجهزة منزلية', en: 'Kitchens & home appliances', ur: 'کچن اور گھریلو آلات',
+    hint: { ar: 'مطابخ حسب الطلب، أفران، شفاطات، أجهزة مدمجة', en: 'Custom kitchens, ovens, hoods, built-in appliances', ur: 'کچن، اوون، ہڈ، بلٹ اِن آلات' },
+    specialties: { architectural: ['kitchen_appliances', 'fitted_furniture'] },
+  },
+  {
+    id: 'office_furniture', icon: '🗂', ar: 'أثاث مكتبي ورفوف', en: 'Office furniture & shelving', ur: 'دفتری فرنیچر اور ریک',
+    hint: { ar: 'مكاتب، كراسي، رفوف، قواطع حمامات', en: 'Desks, chairs, shelving, toilet cubicles', ur: 'میزیں، کرسیاں، ریک' },
+    specialties: { architectural: ['office_furniture', 'cubicles'] },
+  },
+  {
+    id: 'facades', icon: '🏛', ar: 'واجهات وكلادينج', en: 'Facades & cladding', ur: 'فاساد اور کلیڈنگ',
+    hint: { ar: 'GRC، كسوة حجرية وألمنيوم، ألواح صوتية', en: 'GRC, stone and aluminium cladding, acoustic panels', ur: 'جی آر سی، پتھر اور ایلومینیم کلیڈنگ' },
+    specialties: { architectural: ['grc_facade', 'rainscreen', 'stone_facade', 'acoustic_panels', 'acoustic_timber'] },
+  },
+  {
+    id: 'pools_shades', icon: '🏊', ar: 'مسابح ومظلات وسواتر', en: 'Pools, shades & screens', ur: 'سوئمنگ پول اور سائبان',
+    hint: { ar: 'مستلزمات المسابح، مظلات، سواتر', en: 'Pool supplies, shades, privacy screens', ur: 'پول کا سامان، سائبان' },
+    specialties: { civil: ['pools', 'shades_screens'] },
+  },
+  {
+    id: 'prefab', icon: '🏗', ar: 'مبانٍ جاهزة وساندوتش بانل', en: 'Prefab buildings & sandwich panels', ur: 'ریڈی میڈ عمارتیں',
+    hint: { ar: 'هناجر، ملاحق، كبائن، ساندوتش بانل', en: 'Hangars, annexes, cabins, sandwich panels', ur: 'ہینگر، کیبن، سینڈوچ پینل' },
+    specialties: { civil: ['prefab_buildings'] },
+  },
+  {
+    id: 'water_gas', icon: '💧', ar: 'تنقية مياه وغاز مركزي', en: 'Water treatment & central gas', ur: 'پانی صاف کرنا اور سینٹرل گیس',
+    hint: { ar: 'فلاتر، محطات تحلية، تمديدات غاز، صرف أمطار', en: 'Filters, RO units, gas lines, storm drainage', ur: 'فلٹر، آر او، گیس لائن' },
+    specialties: { mechanical: ['water_treatment', 'central_gas', 'storm_drainage', 'silent_drainage'] },
+  },
+  {
+    id: 'elevators', icon: '🛗', ar: 'مصاعد وسلالم كهربائية', en: 'Elevators & escalators', ur: 'لفٹ اور ایسکلیٹر',
+    hint: { ar: 'مصاعد منازل وعمارات، سلالم متحركة', en: 'Home and building lifts, escalators', ur: 'گھر اور عمارت کی لفٹ' },
+    specialties: { architectural: ['vertical_transport'] },
+  },
 ]
 
 export function packSectors(p: SupplierPack): string[] {
