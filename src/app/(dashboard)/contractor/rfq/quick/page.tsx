@@ -100,6 +100,20 @@ export default function QuickRequestPage() {
   const fileRef = useRef<HTMLInputElement>(null)
   const [showCatalog, setShowCatalog] = useState(false)
   const [restored, setRestored] = useState(false)
+  // From the buyer home: open the guide already searching (?q=) or on a section (?section=)
+  const [startQ, setStartQ] = useState('')
+  const [startSection, setStartSection] = useState<string | null>(null)
+  useEffect(() => {
+    const qs = new URLSearchParams(window.location.search)
+    const sq = (qs.get('q') || '').slice(0, 80), ss = qs.get('section')
+    if (sq) setStartQ(sq)
+    if (ss && /^[a-z_]{3,20}$/.test(ss)) setStartSection(ss)
+    if (sq || ss) {
+      // phones show the guide as a sheet; desktop has it inline on the page
+      if (window.matchMedia('(min-width: 1024px)').matches) setTimeout(() => document.getElementById('catalog-inline')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
+      else setShowCatalog(true)
+    }
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -472,7 +486,7 @@ export default function QuickRequestPage() {
         {/* Desktop: the catalog fills the main column; phones open it as a sheet */}
         <div id="catalog-inline" className="hidden lg:block lg:col-start-1 lg:row-start-2 lg:mt-5 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
           <h2 className="font-bold text-navy">🔍 {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
-          <CatalogBrowser inline locale={locale} picked={lines.map(l => ({ key: l.key, name: l.product_name }))} onPick={addFromCatalog} onRemove={removeLine} />
+          <CatalogBrowser key={startQ + '|' + (startSection || '')} inline initialQuery={startQ} initialSection={startSection as any} locale={locale} picked={lines.map(l => ({ key: l.key, name: l.product_name }))} onPick={addFromCatalog} onRemove={removeLine} />
         </div>
 
         {/* B: the chosen list + delivery, a side column on desktop (sticky), under the inputs on mobile */}
@@ -778,7 +792,7 @@ export default function QuickRequestPage() {
         </div>
       )}
       {showCatalog && (
-        <CatalogPicker locale={locale} onClose={closeCatalog}
+        <CatalogPicker locale={locale} onClose={closeCatalog} initialQuery={startQ} initialSection={startSection as any}
           picked={lines.map(l => ({ key: l.key, name: l.product_name }))}
           onRemove={(key: string) => removeLine(key)}
           onPick={addFromCatalog} />

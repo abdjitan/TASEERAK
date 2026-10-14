@@ -136,7 +136,7 @@ function LoginForm() {
   return (
     <div className="auth-screen min-h-screen flex" dir={dir}>
       {/* ===== Brand panel (hidden on small screens) ===== */}
-      <div className="auth-brand-panel hidden lg:flex lg:w-[54%] relative overflow-hidden flex-col justify-between p-12 text-white"
+      <div className="auth-brand-panel hidden lg:flex lg:w-[46%] relative overflow-hidden flex-col justify-between p-12 text-white"
         style={{ background: 'linear-gradient(135deg,#0a1530 0%,#0B2438 55%,#102E45 100%)' }}>
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[8%] right-[8%] w-[420px] h-[420px] rounded-full blur-3xl" style={{ background: 'rgba(212,165,67,.12)' }} />
@@ -173,7 +173,7 @@ function LoginForm() {
         </div>
 
         <div className="flex-1 flex items-center justify-center px-5 pb-12">
-          <div className="auth-form-card w-full max-w-[400px] animate-slide-up">
+          <div className="auth-form-card w-full max-w-[480px] animate-slide-up">
             <div className="flex lg:hidden items-center justify-center mb-7">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-mobile-lockup" />
@@ -190,7 +190,7 @@ function LoginForm() {
             ) : (
               <>
                 {error && <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg><span>{error}</span></div>}
-                <form onSubmit={handleLogin} className="space-y-4">
+                <form onSubmit={handleLogin} className="space-y-5">
                   <div>
                     <label htmlFor="login-email" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.email}</label>
                     <input id="login-email" type="email" inputMode="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="name@company.com" autoComplete="username" required disabled={loading} />

@@ -17,6 +17,14 @@ import CatIcon from '@/components/shared/CatIcon'
 
 type Picked = { key: string; name: string }
 
+// Section photos from the approved design (public/images/sections, cut from the category sprite).
+// Sections without a photo yet show three of their materials instead.
+const SECTION_PHOTO: Partial<Record<BrowseSection, string>> = {
+  building: '/images/sections/building.webp', finishing: '/images/sections/finishing.webp',
+  furniture: '/images/sections/furniture.webp', electrical: '/images/sections/lighting.webp',
+  plumbing: '/images/sections/plumbing.webp', tools: '/images/sections/tools.webp',
+}
+
 const coverCache: Record<string, { name: string; sector: Sector }[]> = {}
 function sectionCovers(key: BrowseSection) {
   if (!coverCache[key]) {
@@ -32,16 +40,18 @@ function sectionCovers(key: BrowseSection) {
   return coverCache[key]
 }
 
-export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline = false }: {
+export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline = false, initialQuery = '', initialSection = null }: {
   locale: string
+  initialQuery?: string
+  initialSection?: BrowseSection | null
   onPick: (item: { name: string; sector: Sector }) => void
   onRemove?: (key: string) => void   // a second tap on a picked material takes it off the list
   picked?: Picked[]
   inline?: boolean
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const [q, setQ] = useState('')
-  const [section, setSection] = useState<BrowseSection | null>(null)
+  const [q, setQ] = useState(initialQuery)
+  const [section, setSection] = useState<BrowseSection | null>(initialSection)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
 
   // Exact/prefix/synonym matches score >= ~10; loose typo matches (بلك → بلدوزر) ~6. Show only
@@ -201,15 +211,25 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
         <div className={inline ? 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5' : 'grid grid-cols-2 sm:grid-cols-4 gap-2.5'}>
           {BROWSE_SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
-              className="text-start rounded-2xl border border-gray-200 bg-white p-3 hover:border-[#D4A543]/60 hover:shadow-sm transition-all">
-              <div className="grid grid-cols-3 gap-1 rounded-xl bg-gray-50 p-1.5 mb-2" aria-hidden>
-                {sectionCovers(b.key).map(it => (
-                  <img key={it.name} src={productImageUrl(it.name)} alt="" loading="lazy" className="w-full aspect-square object-contain rounded-lg bg-white"
-                    onError={(e: any) => imgFallback(e, detectSubCategory(it.name, it.sector))} />
-                ))}
+              className="group relative text-start rounded-2xl overflow-hidden border border-[#0B2438]/10 bg-[#0B2438] min-h-[150px] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
+              {SECTION_PHOTO[b.key] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={SECTION_PHOTO[b.key]} alt="" loading="lazy" aria-hidden className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              ) : (
+                <div className="absolute inset-0 grid grid-cols-3 gap-1 p-2 pb-16 bg-[#F5F7FA]" aria-hidden>
+                  {sectionCovers(b.key).map(it => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={it.name} src={productImageUrl(it.name)} alt="" loading="lazy" className="w-full h-full object-contain rounded-lg bg-white"
+                      onError={(e: any) => imgFallback(e, detectSubCategory(it.name, it.sector))} />
+                  ))}
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050B12]/90 via-[#071827]/35 to-transparent" aria-hidden />
+              <div className="relative flex flex-col justify-end h-full min-h-[150px] p-3">
+                <span className="w-9 h-9 rounded-xl grid place-items-center mb-auto bg-white/15 backdrop-blur border border-white/20 text-white"><CatIcon k={b.cat || b.key} className="w-5 h-5" /></span>
+                <div className="font-bold text-[15px] text-white leading-snug drop-shadow">{pickT(b)}</div>
+                <div className="text-[11px] text-white/80 mt-0.5 leading-relaxed line-clamp-2">{pickT(b.hint)}</div>
               </div>
-              <div className="font-bold text-sm text-navy leading-snug">{pickT(b)}</div>
-              <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{pickT(b.hint)}</div>
             </button>
           ))}
         </div>
@@ -240,8 +260,10 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   )
 }
 
-export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove }: {
+export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove, initialQuery = '', initialSection = null }: {
   locale: string
+  initialQuery?: string
+  initialSection?: BrowseSection | null
   onPick: (item: { name: string; sector: Sector }) => void
   onClose: () => void
   picked?: Picked[]   // the request's current lines, shown under the catalog
@@ -261,7 +283,7 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
-          <CatalogBrowser locale={locale} onPick={onPick} onRemove={onRemove} picked={picked} />
+          <CatalogBrowser locale={locale} onPick={onPick} onRemove={onRemove} picked={picked} initialQuery={initialQuery} initialSection={initialSection} />
         </div>
         {picked.length > 0 && (
           <div className="border-t border-gray-100 bg-gray-50">

@@ -8,6 +8,7 @@ import AiAssistant from '@/components/shared/AiAssistant'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
+import NavIcon from '@/components/shared/NavIcon'
 
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
 export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number }
@@ -94,9 +95,10 @@ export default function AppShell({
                 )}
                 <Link href={n.href} prefetch onClick={() => setOpen(false)}
                   aria-current={n.active ? 'page' : undefined}
-                  className={`ts-sidebar-link relative flex items-center gap-3 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors ${n.active ? 'is-active bg-white/[0.12] text-white shadow-sm' : 'text-blue-100/75 hover:bg-white/[0.07] hover:text-white'}`}>
-                  {n.active && <span className={`ts-sidebar-marker absolute ${accentEdge} top-2.5 bottom-2.5 w-1 rounded-full`} style={{ background: '#D4A543' }} />}
-                  <span className="ts-sidebar-icon w-6 grid place-items-center text-[18px]">{n.icon}</span>
+                  className={`ts-sidebar-link group relative flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[15px] font-semibold border transition-colors ${n.active ? 'is-active bg-white/[0.09] text-white border-[#D4A543]/35 shadow-[0_6px_20px_-10px_rgba(212,165,67,.45)]' : 'text-[#C7CED6] border-transparent hover:bg-white/[0.05] hover:text-white'}`}>
+                  <span className={`ts-sidebar-icon w-9 h-9 shrink-0 grid place-items-center rounded-xl border transition-colors ${n.active ? 'border-[#D4A543]/45 bg-[#D4A543]/10 text-[#F5C55B]' : 'border-white/[0.14] bg-white/[0.04] text-[#E3C77F] group-hover:border-white/25'}`}>
+                    <NavIcon href={n.href} fallback={n.icon} />
+                  </span>
                   <span className="truncate">{n.label}</span>
                   {badge != null && badge !== 0 && (
                     <span className="ml-auto min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full text-[11px] font-extrabold" style={{ background: '#D4A543', color: '#050B12' }}>
@@ -175,7 +177,7 @@ export default function AppShell({
               className={`ts-mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2 relative ${n.active ? 'is-active' : ''}`}
               style={{ color: n.active ? '#0B2438' : '#64748b' }}>
               {n.active && <span className="absolute top-0 inset-x-5 h-0.5 rounded-full" style={{ background: '#D4A543' }} />}
-              <span className="text-[19px] leading-none">{n.icon}</span>
+              <NavIcon href={n.href} fallback={n.icon} className="w-[21px] h-[21px]" />
               <span className="text-[10px] font-bold truncate max-w-[68px]">{n.label}</span>
               {badge != null && badge !== 0 && (
                 <span className="absolute top-1.5 left-[calc(50%-18px)] min-w-[15px] h-[15px] px-1 grid place-items-center rounded-full text-[8px] font-extrabold" style={{ background: '#D4A543', color: '#050B12' }}>{badge}</span>

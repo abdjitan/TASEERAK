@@ -12,6 +12,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import EnablePush from '@/components/shared/EnablePush'
+import MarketHero from '@/components/buyer/MarketHero'
 import { AppIcon } from '@/components/AppIcon'
 import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
@@ -283,20 +284,8 @@ export default function ContractorDashboard() {
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
 
-        {/* شريط الإجراءات السريعة */}
-        <div className="grid grid-cols-2 gap-3 mb-5 animate-fade-in">
-          {[
-            { href: '/contractor/rfq/quick', icon: '⚡', label: locale === 'en' ? 'Price request (write, say, photo or pick from the catalog)' : locale === 'ur' ? 'قیمت کی درخواست (لکھیں، بولیں، تصویر یا فہرست)' : 'طلب تسعير (اكتب، أو تحدّث، أو صوّر، أو اختر من القائمة)', primary: true },
-            { href: '/contractor/project/new', icon: '📋', label: locale === 'en' ? 'Upload a quantities sheet' : locale === 'ur' ? 'مقدار کی شیٹ اپ لوڈ کریں' : 'رفع جدول كميات' },
-          ].map((a: any) => (
-            <Link key={a.href} href={a.href}
-              className={`rounded-2xl p-4 text-center font-bold transition-all hover:-translate-y-0.5 shadow-sm hover:shadow-md ${a.primary ? 'text-white' : 'bg-white border border-gray-100 text-[#0B2438]'}`}
-              style={a.primary ? { background: 'linear-gradient(135deg,#D4A543,#9D7425)' } : {}}>
-              <div className="text-2xl mb-1">{a.icon}</div>
-              <div className="text-xs sm:text-sm">{a.label}</div>
-            </Link>
-          ))}
-        </div>
+        {/* السوق: «ماذا تحتاج اليوم؟» + الأقسام بالصور (التصميم المعتمد) */}
+        <MarketHero locale={locale} />
 
         {/* تنبيه سعري — أكبر تغيّر شهري (يخلق قيمة عودة يومية) */}
         {(() => {
