@@ -223,6 +223,8 @@ export default function ContractorDashboard() {
       dir={dir}
     >
       <div className="max-w-6xl mx-auto">
+        {/* السوق: «ماذا تحتاج اليوم؟» + الأقسام بالصور (التصميم المعتمد) */}
+        <MarketHero locale={locale} />
         {/* أكمل ملفك — يظهر بعد التسجيل المبسّط حتى تُعبّأ البيانات */}
         {!profile?.region && (
           <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 text-white hover:shadow-lg transition-shadow" style={{ background: 'linear-gradient(120deg,#D4A543,#9D7425)' }}>
@@ -284,8 +286,6 @@ export default function ContractorDashboard() {
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
 
-        {/* السوق: «ماذا تحتاج اليوم؟» + الأقسام بالصور (التصميم المعتمد) */}
-        <MarketHero locale={locale} />
 
         {/* تنبيه سعري — أكبر تغيّر شهري (يخلق قيمة عودة يومية) */}
         {(() => {

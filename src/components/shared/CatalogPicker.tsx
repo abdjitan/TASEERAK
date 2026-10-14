@@ -209,7 +209,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
           </div>
         )
       ) : !current ? (
-        <div className={inline ? 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5' : 'grid grid-cols-2 sm:grid-cols-4 gap-2.5'}>
+        <div className={inline ? 'grid grid-cols-2 md:grid-cols-3 gap-3' : 'grid grid-cols-2 sm:grid-cols-4 gap-2.5'}>
           {BROWSE_SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
               className="group relative text-start rounded-2xl overflow-hidden border border-[#0B2438]/10 bg-[#0B2438] min-h-[150px] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">

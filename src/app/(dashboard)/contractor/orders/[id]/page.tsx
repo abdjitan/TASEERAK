@@ -153,17 +153,17 @@ export default function OrderDetailPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-2 print:shadow-none print:border-none print:rounded-none">
 
           {/* Header */}
-          <div className="bg-gradient-to-l from-blue-600 to-blue-800 text-white p-4 sm:p-8 print:bg-blue-800">
+          <div className="bg-gradient-to-l from-[#071827] via-[#0B2438] to-[#123B53] text-white p-4 sm:p-8 border-b-2 border-[#D4A543] print:bg-[#0B2438]">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold">{L('Purchase Order', 'پرچیز آرڈر', 'أمر شراء')}</h1>
-                {locale !== 'en' && <p className="text-blue-200 text-sm mt-1">Purchase Order</p>}
+                {locale !== 'en' && <p className="text-[#F5C55B] text-sm mt-1">Purchase Order</p>}
               </div>
               <div className="text-left">
-                <div className="text-sm text-blue-200">{L('Order no.', 'آرڈر نمبر', 'رقم الأمر')}</div>
+                <div className="text-sm text-[#F5C55B]">{L('Order no.', 'آرڈر نمبر', 'رقم الأمر')}</div>
                 <div className="text-xl font-bold font-mono">{poNumber}</div>
-                <div className="text-sm text-blue-200 mt-1">{L('Date:', 'تاریخ:', 'التاريخ:')} {date}</div>
-                {rfqRef(rfq) && <div className="text-sm text-blue-200 mt-1">{L('Request:', 'درخواست:', 'الطلب:')} <span className="font-mono" dir="ltr">{rfqRef(rfq)}</span></div>}
+                <div className="text-sm text-[#F5C55B] mt-1">{L('Date:', 'تاریخ:', 'التاريخ:')} {date}</div>
+                {rfqRef(rfq) && <div className="text-sm text-[#F5C55B] mt-1">{L('Request:', 'درخواست:', 'الطلب:')} <span className="font-mono" dir="ltr">{rfqRef(rfq)}</span></div>}
               </div>
             </div>
           </div>

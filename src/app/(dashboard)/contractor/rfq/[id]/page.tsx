@@ -320,7 +320,7 @@ export default function RFQDetailPage() {
 
   return (
     <AppShell title={L('Quote request details', 'قیمت کی درخواست کی تفصیل', 'تفاصيل طلب التسعير')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {liveNote && (
           <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800">
             <span>🔔 {liveNote}</span>
