@@ -2,9 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
 import { cookies, headers } from 'next/headers'
 
-// Server client — use in Server Components, API Routes, Middleware
-export function createServerSupabaseClient() {
-  const cookieStore = cookies()
+// Server client — use in Server Components and API Routes (Next 15: cookies() is async)
+export async function createServerSupabaseClient() {
+  const cookieStore = await cookies()
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -74,8 +74,9 @@ export function createAdminSupabaseClient() {
 // API routes: the signed-in user from EITHER the site's session cookie OR a mobile-app
 // `Authorization: Bearer <access_token>` header (the Expo app has no site cookies).
 // The returned client acts as that user, so RLS applies exactly as on the site.
-export async function getRouteUser(): Promise<{ supabase: ReturnType<typeof createServerSupabaseClient>; user: any }> {
-  const m = /^Bearer\s+(.+)$/i.exec(headers().get('authorization') || '')
+type ServerClient = Awaited<ReturnType<typeof createServerSupabaseClient>>
+export async function getRouteUser(): Promise<{ supabase: ServerClient; user: any }> {
+  const m = /^Bearer\s+(.+)$/i.exec((await headers()).get('authorization') || '')
   if (m) {
     const token = m[1].trim()
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -83,9 +84,9 @@ export async function getRouteUser(): Promise<{ supabase: ReturnType<typeof crea
       global: { headers: { Authorization: `Bearer ${token}` } },
     })
     const { data } = await supabase.auth.getUser(token)
-    return { supabase: supabase as unknown as ReturnType<typeof createServerSupabaseClient>, user: data?.user || null }
+    return { supabase: supabase as unknown as ServerClient, user: data?.user || null }
   }
-  const supabase = createServerSupabaseClient()
+  const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
   return { supabase, user }
 }
