@@ -165,23 +165,33 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                 <div className="text-[10px] text-gray-400 truncate" dir="ltr">{L('Sources', 'ذرائع', 'المصادر')}: {web.sources.map((s: any) => s.title || s.uri).join(' · ')}</div>
               )}
             </>
-          ) : (
+          ) : (<>
             <p className="text-sm text-gray-600">
               {web.error === 'daily_limit' || web.error === 'rate_limited'
-                ? L('Internet lookups are busy right now. Write the item as text above and suppliers will price it.', 'ابھی انٹرنیٹ تلاش مصروف ہے۔ اوپر لکھ دیں، سپلائرز قیمت دیں گے۔', 'البحث في الإنترنت مشغول الآن. اكتب المادة نصاً في الأعلى وسيسعّرها الموردون.')
-                : L('We could not identify it. Write it as text above, or add a photo, and suppliers will price it.', 'ہم پہچان نہیں سکے۔ اوپر لکھیں یا تصویر لگائیں۔', 'لم نتعرّف عليها. اكتبها نصاً في الأعلى أو أضف صورة، وسيسعّرها الموردون.')}
+                ? L('Internet lookups are busy right now. You can still add it as you wrote it.', 'ابھی انٹرنیٹ تلاش مصروف ہے۔ جیسا لکھا ہے ویسا شامل کریں۔', 'البحث في الإنترنت مشغول الآن. يمكنك إضافتها كما كتبتها.')
+                : L('We could not identify it. Add it as you wrote it, and suppliers will price it.', 'ہم پہچان نہیں سکے۔ جیسا لکھا ہے ویسا شامل کریں۔', 'لم نتعرّف عليها. أضفها كما كتبتها، وسيسعّرها الموردون.')}
             </p>
-          )}
+            <button type="button" onClick={() => choose({ name: q.trim().slice(0, 120), sector: 'supply_store' as Sector })}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold border-2 border-[#F5831F] text-[#d96f15]">
+              + {L(`Add «${q.trim()}» as written`, `«${q.trim()}» جیسا لکھا شامل کریں`, `أضف «${q.trim()}» كما كتبتها`)}
+            </button>
+          </>)}
         </div>
       )}
 
       {q.trim() ? (
         hits.length === 0 ? (web ? null :
-          <p className="text-sm text-gray-500 text-center py-8">
-            {L('Not in the catalog. Write it as text above — suppliers will still price it.',
-              'فہرست میں نہیں۔ اسے اوپر لکھ دیں، سپلائرز پھر بھی قیمت دیں گے۔',
-              'غير موجودة في القائمة. اكتبها نصاً في الأعلى، وسيسعّرها الموردون.')}
-          </p>
+          <div className="text-center py-8 space-y-3">
+            <p className="text-sm text-gray-500">
+              {L('Not in the materials guide — you can still add it as you wrote it, and suppliers will price it.',
+                'گائیڈ میں نہیں — جیسا لکھا ہے ویسا شامل کریں، سپلائرز قیمت دیں گے۔',
+                'غير موجودة في دليل المواد — يمكنك إضافتها كما كتبتها، وسيسعّرها الموردون.')}
+            </p>
+            <button type="button" onClick={() => choose({ name: q.trim().slice(0, 120), sector: 'supply_store' as Sector })}
+              className="px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: '#F5831F' }}>
+              + {L(`Add «${q.trim()}» to my request`, `«${q.trim()}» شامل کریں`, `أضف «${q.trim()}» إلى طلبي`)}
+            </button>
+          </div>
         ) : (
           <div className={tileGrid}>
             {hits.map(h => <Tile key={`${h.sector}:${h.name}`} name={h.name} s={h.sector} />)}
@@ -243,9 +253,9 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center" onClick={onClose}>
       <div className="bg-white w-full sm:max-w-3xl max-h-[92vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
-        onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}>
+        onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}>
         <div className="px-4 pt-4 pb-2 flex items-center justify-between border-b border-gray-100">
-          <h2 className="font-extrabold text-navy">🔍 {L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}</h2>
+          <h2 className="font-extrabold text-navy">🔍 {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
           <button type="button" onClick={onClose} className="text-sm font-bold px-4 py-1.5 rounded-xl text-white" style={{ background: '#1B2D5B' }}>
             {picked.length ? L(`Done (${picked.length})`, `مکمل (${picked.length})`, `تم (${picked.length})`) : L('Close', 'بند کریں', 'إغلاق')}
           </button>

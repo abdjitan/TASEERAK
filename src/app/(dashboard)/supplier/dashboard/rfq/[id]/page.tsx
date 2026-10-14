@@ -307,7 +307,18 @@ export default function SupplierRFQPage() {
 
   // إضافات الفاتورة (توصيل/تركيب/رسوم) — label + amount
   const [extras, setExtras] = useState([{ label: '', amount: '' }])
-  const [vatIncluded, setVatIncluded] = useState(false) // هل السعر المُدخل يشمل ضريبة القيمة المضافة 15%؟
+  // هل السعر المُدخل يشمل ضريبة القيمة المضافة 15%؟ — اختيار صريح بلا قيمة افتراضية (null = لم يُحدَّد بعد)،
+  // كي لا تُضاف 15% فوق سعر شامل دون أن ينتبه المورّد.
+  const [vatIncluded, setVatIncluded] = useState<boolean | null>(null)
+  // الإجمالي كما سيراه المشتري (صافٍ + ضريبة + إجمالي) — يُستخدم في التفصيل وفي ملخّص ما قبل الإرسال
+  function offerTotals() {
+    const goods = parseFloat(totalPrice) || 0
+    const exSum = extras.reduce((s: any, e: any) => s + (parseFloat(e.amount) || 0), 0)
+    const entered = goods + exSum
+    const net = vatIncluded ? entered / 1.15 : entered
+    const vat = net * 0.15
+    return { entered, net, vat, gross: net + vat }
+  }
   function addExtra() { setExtras(prev => [...prev, { label: '', amount: '' }]) }
   function updateExtra(i: any, field: any, val: any) { setExtras(prev => prev.map((e: any, idx: any) => idx === i ? { ...e, [field]: val } : e)) }
   function removeExtra(i: any) { setExtras(prev => prev.filter((_: any, idx: any) => idx !== i)) }
@@ -321,6 +332,10 @@ export default function SupplierRFQPage() {
     }
     if (isMultiItem && !allItemsPriced) {
       setError(L('Enter a price for at least one material before sending the offer.', 'آفر بھیجنے سے پہلے کم از کم ایک مال کی قیمت درج کریں۔', 'أدخل سعر مادة واحدة على الأقل قبل إرسال العرض.'))
+      return
+    }
+    if (vatIncluded === null) {
+      setError(L('Choose whether your price includes 15% VAT.', 'منتخب کریں کہ آیا آپ کی قیمت میں 15% ویٹ شامل ہے۔', 'حدّد هل يشمل سعرك ضريبة القيمة المضافة (15%).'))
       return
     }
     setSubmitting(true)
@@ -405,7 +420,7 @@ export default function SupplierRFQPage() {
       supplier_id: actingId || user.id,
       total_price: finalTotal,
       price_valid_until: new Date(Date.now() + (parseInt(priceValidity) || 3) * 86400000).toISOString(),
-      vat_included: vatIncluded,
+      vat_included: vatIncluded === true,
       item_prices: itemPricesPayload,
       unit_price: isMultiItem ? null : (unitPrice ? parseFloat(unitPrice) : null),
       delivery_days: isMultiItem
@@ -563,7 +578,7 @@ export default function SupplierRFQPage() {
           {rfqIsMulti && myItems.length > 0 && (
             <div className="my-4">
               <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 {L('Materials in your specialty', 'آپ کی مہارت کا مال', 'المواد ضمن تخصصك')} ({myItems.length})</h3>
-              <p className="text-[11px] text-gray-400 mb-2">{L('You only see the materials you can supply — price them and send your offer.', 'آپ کو صرف وہ مال دکھایا جاتا ہے جو آپ سپلائی کر سکتے ہیں — قیمت لگائیں اور آفر بھیجیں۔', 'تظهر لك فقط المواد التي تقدر توردها — سعّرها وأرسل عرضك.')}</p>
+              <p className="text-[11px] text-gray-400 mb-2">{L('You only see the materials you can supply — price them and send your offer.', 'آپ کو صرف وہ مال دکھایا جاتا ہے جو آپ سپلائی کر سکتے ہیں — قیمت لگائیں اور آفر بھیجیں۔', 'تظهر لك فقط المواد التي تستطيع توريدها — سعّرها وأرسل عرضك.')}</p>
               <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-sm">
                   <thead><tr className="text-[13px] text-gray-500 bg-[#f4f6f9] border-b border-gray-100">
@@ -683,7 +698,7 @@ export default function SupplierRFQPage() {
             {canEditOffer && (
               <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-right">
                 <div className="text-xs text-gray-600 mb-2 leading-relaxed">
-                  ⏱ <strong>{L(`You have ${editMinsLeft} minutes`, `آپ کے پاس ${editMinsLeft} منٹ ہیں`, `لديك ${editMinsLeft} دقيقة`)}</strong> {L('to edit or cancel your offer. Cancelling deletes the current offer so you can price again (add a material you missed or change prices). After that, the offer stays fixed until the buyer decides.', 'اپنی آفر میں ترمیم یا منسوخی کے لیے۔ منسوخ کرنے سے موجودہ آفر حذف ہو جائے گی اور آپ دوبارہ قیمت دے سکیں گے (بھولا ہوا مال شامل کریں یا قیمتیں بدلیں)۔ وقت ختم ہونے کے بعد آفر خریدار کے فیصلے تک ویسی ہی رہے گی۔', 'لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتقدر تسعّر من جديد (تضيف مادة نسيتها أو تعدّل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.')}
+                  ⏱ <strong>{L(`You have ${editMinsLeft} minutes`, `آپ کے پاس ${editMinsLeft} منٹ ہیں`, `لديك ${editMinsLeft} دقيقة`)}</strong> {L('to edit or cancel your offer. Cancelling deletes the current offer so you can price again (add a material you missed or change prices). After that, the offer stays fixed until the buyer decides.', 'اپنی آفر میں ترمیم یا منسوخی کے لیے۔ منسوخ کرنے سے موجودہ آفر حذف ہو جائے گی اور آپ دوبارہ قیمت دے سکیں گے (بھولا ہوا مال شامل کریں یا قیمتیں بدلیں)۔ وقت ختم ہونے کے بعد آفر خریدار کے فیصلے تک ویسی ہی رہے گی۔', 'لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتستطيع التسعير من جديد (إضافة مادة نسيتها أو تعديل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.')}
                 </div>
                 <button type="button" onClick={cancelOffer} disabled={cancelling}
                   className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#b91c1c' }}>
@@ -755,7 +770,7 @@ export default function SupplierRFQPage() {
                 <div>
                   <div className="flex items-end justify-between gap-2 mb-1">
                     <label className="block text-sm font-bold" style={{ color: '#1B2D5B' }}>
-                      {L('Price the materials you can supply', 'جو مال آپ دے سکتے ہیں اس کی قیمت دیں', 'سعّر المواد التي تقدر توفّرها')}
+                      {L('Price the materials you can supply', 'جو مال آپ دے سکتے ہیں اس کی قیمت دیں', 'سعّر المواد التي تستطيع توفيرها')}
                     </label>
                     <span className="text-xs font-bold text-gray-500">{pricedCount}/{myItems.length}</span>
                   </div>
@@ -1099,28 +1114,34 @@ export default function SupplierRFQPage() {
               </div>
               {/* ضريبة القيمة المضافة 15% — خيار: هل السعر يشملها؟ + تفصيل الإجمالي */}
               {(() => {
-                const goods = parseFloat(totalPrice) || 0
-                const exSum = extras.reduce((s: any, e: any) => s + (parseFloat(e.amount) || 0), 0)
-                const entered = goods + exSum
-                const net = vatIncluded ? entered / 1.15 : entered
-                const vat = net * 0.15
-                const gross = net + vat
+                const { entered, net, vat, gross } = offerTotals()
                 const fmt = (n: any) => (+n.toFixed(2)).toLocaleString('en-US')
+                const vatOpts = [
+                  { v: true, label: L('Yes, includes VAT', 'ہاں، ویٹ شامل ہے', 'نعم، شامل الضريبة'), hint: L('VAT will be extracted from your price.', 'ٹیکس آپ کی قیمت میں سے نکالا جائے گا۔', 'تُستخرج الضريبة من سعرك.') },
+                  { v: false, label: L('No, excludes VAT', 'نہیں، ویٹ شامل نہیں', 'لا، غير شامل الضريبة'), hint: L('15% VAT is added on top of your price.', '15% ٹیکس آپ کی قیمت کے اوپر لگے گا۔', 'تُضاف ضريبة 15% فوق سعرك.') },
+                ]
                 return (
                   <div className="border-t border-gray-100 pt-4">
-                    {/* خيار شمول الضريبة */}
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <div>
-                        <div className="text-sm font-bold" style={{ color: '#1B2D5B' }}>🧾 {L('Price includes 15% VAT?', 'کیا قیمت میں 15% ویٹ (VAT) شامل ہے؟', 'هل السعر يشمل ضريبة القيمة المضافة (15%)؟')}</div>
-                        <div className="text-[11px] text-gray-400">{vatIncluded ? L('Yes — VAT will be extracted from your price.', 'ہاں — ٹیکس آپ کی قیمت میں سے نکالا جائے گا۔', 'نعم — تُستخرج الضريبة من سعرك.') : L('No — VAT is added on top.', 'نہیں — ٹیکس آپ کی قیمت کے اوپر لگے گا۔', 'لا — تُضاف الضريبة فوق سعرك.')}</div>
+                    {/* خيار شمول الضريبة — إلزامي وصريح، بلا قيمة افتراضية */}
+                    <div className="mb-3">
+                      <div id="vat-choice-label" className="text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>
+                        🧾 {L('Does your price include 15% VAT?', 'کیا آپ کی قیمت میں 15% ویٹ (VAT) شامل ہے؟', 'هل يشمل سعرك ضريبة القيمة المضافة (15%)؟')} <span className="text-red-500">*</span>
                       </div>
-                      <button type="button" onClick={() => setVatIncluded(v => !v)}
-                        className="w-12 h-7 rounded-full transition-all flex items-center px-1 shrink-0" style={{ background: vatIncluded ? '#0F6E56' : '#d1d5db', justifyContent: vatIncluded ? 'flex-end' : 'flex-start' }}>
-                        <span className="w-5 h-5 bg-white rounded-full shadow" />
-                      </button>
+                      <div role="radiogroup" aria-labelledby="vat-choice-label" aria-required="true" className="grid grid-cols-2 gap-2">
+                        {vatOpts.map((o) => {
+                          const on = vatIncluded === o.v
+                          return (
+                            <button type="button" key={String(o.v)} role="radio" aria-checked={on} onClick={() => setVatIncluded(o.v)}
+                              className={`text-start px-3 py-2 rounded-xl border-2 transition-all ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : vatIncluded === null ? 'border-amber-300 bg-white hover:border-[#0F6E56]/40' : 'border-gray-200 bg-white hover:border-[#0F6E56]/40'}`}>
+                              <div className="text-sm font-bold" style={{ color: on ? '#0F6E56' : '#1B2D5B' }}>{on ? '● ' : '○ '}{o.label}</div>
+                              <div className="text-[11px] text-gray-500 mt-0.5">{o.hint}</div>
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
                     {/* تفصيل الإجمالي */}
-                    {entered > 0 && (
+                    {entered > 0 && vatIncluded !== null && (
                       <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm space-y-1.5">
                         <div className="flex items-center justify-between text-gray-600">
                           <span>{L('Net (before VAT)', 'خالص (ٹیکس سے پہلے)', 'الصافي (قبل الضريبة)')}</span>
@@ -1186,17 +1207,41 @@ export default function SupplierRFQPage() {
                 <textarea value={notes} onChange={(e: any) => setNotes(e.target.value)}
                   className="input-field" rows={3} placeholder="..." />
               </div>
+            {(() => {
+              // سبب تعطيل زر الإرسال يظهر صراحةً، وملخّص ما سيراه المشتري قبل الإرسال
+              const blockReason = (isMultiItem && !allItemsPriced) || !totalPrice
+                ? (isMultiItem
+                  ? L('Enter a price for at least one material to send.', 'بھیجنے کے لیے کم از کم ایک مال کی قیمت درج کریں۔', 'أدخل سعر مادة واحدة على الأقل لتتمكّن من الإرسال.')
+                  : L('Enter the total price to send.', 'بھیجنے کے لیے کل قیمت درج کریں۔', 'أدخل السعر الإجمالي لتتمكّن من الإرسال.'))
+                : vatIncluded === null
+                  ? L('Choose whether your price includes VAT to send.', 'بھیجنے کے لیے منتخب کریں کہ قیمت میں ویٹ شامل ہے یا نہیں۔', 'حدّد هل يشمل سعرك الضريبة لتتمكّن من الإرسال.')
+                  : !sourceType
+                    ? L('Choose where this price comes from to send.', 'بھیجنے کے لیے قیمت کا ذریعہ منتخب کریں۔', 'حدّد مصدر السعر لتتمكّن من الإرسال.')
+                    : ''
+              const { gross } = offerTotals()
+              const fmtG = (+gross.toFixed(2)).toLocaleString('en-US')
+              return (
             <div className="mt-5 space-y-3">
-              <button type="submit" form="offer-form" disabled={submitting || !totalPrice || (isMultiItem && !allItemsPriced)}
+              {!blockReason && gross > 0 && (
+                <div className="rounded-xl px-3 py-2.5 text-sm font-bold text-center border" style={{ background: '#0F6E560D', borderColor: '#0F6E5633', color: '#0F6E56' }} aria-live="polite">
+                  {L(`The buyer will see: ${fmtG} SAR incl. VAT`, `خریدار دیکھے گا: ${fmtG} ریال ٹیکس سمیت`, `سيرى المشتري: ${fmtG} ر.س شاملاً الضريبة`)}
+                </div>
+              )}
+              <button type="submit" form="offer-form" disabled={submitting || !!blockReason} aria-describedby={blockReason ? 'offer-block-reason' : undefined}
                 className="w-full py-3.5 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg"
                 style={{ background: '#0F6E56' }}>
                 {submitting ? T.sending : T.send}
               </button>
+              {blockReason && !submitting && (
+                <p id="offer-block-reason" className="text-xs text-center font-semibold text-amber-700" aria-live="polite">⚠️ {blockReason}</p>
+              )}
               <button type="button" onClick={() => setShowDismiss(true)}
                 className="w-full py-3 rounded-xl font-semibold text-sm border-2 border-red-200 text-red-500 hover:bg-red-50 transition-all flex items-center justify-center gap-2">
                 ✕ {T.dismiss}
               </button>
             </div>
+              )
+            })()}
             </div>
           )}
         </aside>

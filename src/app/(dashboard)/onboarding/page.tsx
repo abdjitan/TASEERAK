@@ -30,7 +30,7 @@ const TR = {
   ar: {
     title: 'إعداد ملفك التجاري', subC: 'أضف موقعك ومجالات عملك لتصلك أفضل العروض', subS: 'أضف موقعك وتخصصاتك لتظهر للمشترين وتصلك الطلبات المطابقة',
     location: 'الموقع', region: 'المنطقة', selectRegion: '-- اختر --', city: 'المدينة', district: 'الحي',
-    sectorsTitleC: 'قطاعات عملك', sectorsHintC: 'اختر القطاعات التي تعمل فيها',
+    sectorsTitleC: 'قطاعات عملك', sectorsHintC: 'اختياري: يمكنك تخطّي هذه الخطوة، فطلبك يصل إلى الموردين المناسبين بحسب المواد التي تطلبها.',
     sectorsTitleS: 'تخصصاتك والمواد', sectorsHintS: 'اختر قطاعاتك ثم حدّد ما توردّه بالضبط',
     classTitle: 'نوع الحساب', classHint: 'هل تمثّل شركة أو محلاً، أم تعمل بشكل مستقل؟ يمكنك تغييره لاحقاً من الإعدادات.',
     minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات — أو حدّده ليُفلتر الطلبات حسب قدرتك التوريدية.',
@@ -42,11 +42,16 @@ const TR = {
     progress: 'اكتمال ملفك', stepLocation: 'الموقع', stepSectors: 'القطاعات', stepSpecialties: 'التخصصات', stepVerify: 'التوثيق (لاحقاً)',
     warn: 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين ولن تصلك أي طلبات مطابقة.',
     company: 'ملف الشركة', required: 'مطلوب', optional: 'اختياري',
+    loadFailed: 'تعذّر تحميل بيانات ملفك. حدّث الصفحة وحاول مرة أخرى قبل الحفظ حتى لا تُستبدل بياناتك المحفوظة.',
+    saveFailed: 'تعذّر حفظ ملفك، ولم يُغيَّر شيء من قطاعاتك وتخصصاتك المحفوظة. تحقّق من اتصالك ثم حاول مرة أخرى.',
+    profileFailed: 'تعذّر حفظ الموقع والبيانات الأساسية. تحقّق من اتصالك ثم حاول مرة أخرى.',
+    matFailed: 'حُفظ ملفك، لكن تعذّر إرسال بعض المواد المقترحة. اضغط «حفظ» مرة أخرى لإعادة إرسالها.',
+    kindFailed: 'تعذّر تطبيق نوع الحساب تلقائياً، يُرجى اختياره يدوياً أدناه.',
   },
   en: {
     title: 'Set up your business profile', subC: 'Add your location and work areas to get the best offers', subS: 'Add your location and specialties to appear to buyers and receive matching requests',
     location: 'Location', region: 'Region', selectRegion: '-- Select --', city: 'City', district: 'District',
-    sectorsTitleC: 'Your sectors', sectorsHintC: 'Select the sectors you work in',
+    sectorsTitleC: 'Your sectors', sectorsHintC: 'Optional: you can skip this. Your request reaches the right suppliers based on the materials you ask for.',
     sectorsTitleS: 'Specialties & materials', sectorsHintS: 'Select your sectors then pick exactly what you supply',
     classTitle: 'Account type', classHint: 'Do you represent a company or shop, or work independently? You can change it later in settings.',
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
@@ -58,11 +63,16 @@ const TR = {
     progress: 'Profile completion', stepLocation: 'Location', stepSectors: 'Sectors', stepSpecialties: 'Specialties', stepVerify: 'Verification (later)',
     warn: "Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests.",
     company: 'Company profile', required: 'Required', optional: 'Optional',
+    loadFailed: 'Could not load your profile. Refresh the page and try again before saving so your saved data is not replaced.',
+    saveFailed: 'Could not save your profile; your saved sectors and specialties were not changed. Check your connection and try again.',
+    profileFailed: 'Could not save your location and basic details. Check your connection and try again.',
+    matFailed: 'Your profile was saved, but some suggested materials could not be sent. Press Save again to resend them.',
+    kindFailed: 'Could not apply your account type automatically; please pick it below.',
   },
   ur: {
     title: 'اپنی کاروباری پروفائل ترتیب دیں', subC: 'بہترین آفرز کے لیے اپنا مقام اور کام کے شعبے شامل کریں', subS: 'خریداروں کو نظر آنے اور مماثل درخواستیں وصول کرنے کے لیے مقام اور مہارتیں شامل کریں',
     location: 'مقام', region: 'علاقہ', selectRegion: '-- منتخب کریں --', city: 'شہر', district: 'علاقہ',
-    sectorsTitleC: 'آپ کے شعبے', sectorsHintC: 'وہ شعبے منتخب کریں جہاں آپ کام کرتے ہیں',
+    sectorsTitleC: 'آپ کے شعبے', sectorsHintC: 'اختیاری: آپ یہ مرحلہ چھوڑ سکتے ہیں۔ آپ کی درخواست مطلوبہ مواد کے مطابق درست سپلائرز تک پہنچتی ہے۔',
     sectorsTitleS: 'مہارتیں اور مواد', sectorsHintS: 'اپنے شعبے منتخب کریں پھر بالکل وہی چنیں جو فراہم کرتے ہیں',
     classTitle: 'اکاؤنٹ کی قسم', classHint: 'کیا آپ کمپنی یا دکان کی نمائندگی کرتے ہیں یا آزادانہ کام کرتے ہیں؟ بعد میں ترتیبات میں بدل سکتے ہیں۔',
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
@@ -74,6 +84,11 @@ const TR = {
     progress: 'پروفائل تکمیل', stepLocation: 'مقام', stepSectors: 'شعبے', stepSpecialties: 'مہارتیں', stepVerify: 'تصدیق (بعد میں)',
     warn: 'مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔',
     company: 'کمپنی پروفائل', required: 'ضروری', optional: 'اختیاری',
+    loadFailed: 'آپ کی پروفائل لوڈ نہیں ہو سکی۔ محفوظ کرنے سے پہلے صفحہ ریفریش کریں تاکہ آپ کا محفوظ ڈیٹا تبدیل نہ ہو۔',
+    saveFailed: 'پروفائل محفوظ نہیں ہو سکی؛ آپ کے محفوظ شعبے اور مہارتیں تبدیل نہیں ہوئیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
+    profileFailed: 'مقام اور بنیادی معلومات محفوظ نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
+    matFailed: 'پروفائل محفوظ ہو گئی، لیکن کچھ تجویز کردہ مواد نہیں بھیجے جا سکے۔ دوبارہ بھیجنے کے لیے پھر سے محفوظ کریں۔',
+    kindFailed: 'اکاؤنٹ کی قسم خود بخود لاگو نہیں ہو سکی، براہ کرم نیچے منتخب کریں۔',
   },
 }
 
@@ -104,6 +119,13 @@ export default function OnboardingPage() {
   const [extraMaterials, setExtraMaterials] = useState<{ sector: string; name: string }[]>([])
   const [extraMaterialInput, setExtraMaterialInput] = useState('')
   const [err, setErr] = useState('')
+  // فشل تحميل القطاعات/التخصصات المحفوظة: نمنع الحفظ حتى لا تُستبدل البيانات المحفوظة بقائمة فارغة.
+  const [loadFailed, setLoadFailed] = useState(false)
+
+  function showErr(m: string) {
+    setErr(m)
+    setTimeout(() => { try { document.getElementById('onboarding-err')?.scrollIntoView({ behavior: 'smooth', block: 'center' }) } catch {} }, 50)
+  }
 
   useEffect(() => {
     (async () => {
@@ -111,7 +133,8 @@ export default function OnboardingPage() {
       if (!session) { window.location.href = '/login'; return }
       setUid(session.user.id)
       const metaRole = (session.user.user_metadata as any)?.role
-      const { data: p } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type').eq('id', session.user.id).single()
+      const { data: p, error: pErr } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type').eq('id', session.user.id).single()
+      if (pErr) { setLoadFailed(true); showErr(t.loadFailed) }
       setRole(((p?.role || metaRole) === 'supplier') ? 'supplier' : 'contractor')
       if (p) {
         setRegion(p.region || ''); setCity(p.city || ''); setDistrict(p.district || '')
@@ -122,16 +145,18 @@ export default function OnboardingPage() {
         const metaKind = (session.user.user_metadata as any)?.seller_kind || rememberedSignupKind()
         try { localStorage.removeItem(SIGNUP_KIND_KEY) } catch {}
         if (p.role === 'supplier' && !p.provider_type && (metaKind === 'company' || metaKind === 'independent')) {
-          const { data: np } = await supabase.rpc('set_seller_kind', { p_kind: metaKind, p_activity: null })
-          if (np) setProviderType(String(np))
+          const { data: np, error: kErr } = await supabase.rpc('set_seller_kind', { p_kind: metaKind, p_activity: null })
+          if (kErr) showErr(t.kindFailed)
+          else if (np) setProviderType(String(np))
         }
         if (p.min_order_value) setMinOrderValue(String(p.min_order_value))
         if (p.contractor_grade) setContractorGrade(p.contractor_grade)
       }
-      const [{ data: ps }, { data: psp }] = await Promise.all([
+      const [{ data: ps, error: psErr }, { data: psp, error: pspErr }] = await Promise.all([
         supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id),
         supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id),
       ])
+      if (psErr || pspErr) { setLoadFailed(true); showErr(t.loadFailed) }
       if (ps) setSectors(ps.map((r: any) => r.sector))
       if (psp) setSpecialties(psp.map((r: any) => r.specialty))
       setLoading(false)
@@ -156,28 +181,50 @@ export default function OnboardingPage() {
 
   async function save(dest?: string) {
     setErr('')
-    if (!region || !city) { setErr(t.needLoc); return }
-    if (sectors.length === 0) { setErr(t.needSector); return }
+    if (loadFailed) { showErr(t.loadFailed); return }
+    if (!region || !city) { showErr(t.needLoc); return }
+    // القطاعات إلزامية للمورّد فقط؛ المشتري يكفيه الموقع (التوجيه يتم من مواد الطلب).
+    if (role === 'supplier' && sectors.length === 0) { showErr(t.needSector); return }
+    // نتحقّق من البيانات قبل أي كتابة: قطاعات معروفة فقط (عمود enum) وبلا تكرار.
+    const validSectors = Array.from(new Set(sectors.filter(s => Object.prototype.hasOwnProperty.call(SECTOR_LABELS, s))))
+    const validSpecialties = Array.from(new Set(specialties.filter(k => typeof k === 'string' && k.trim() !== '')))
+    if (role === 'supplier' && validSectors.length === 0) { showErr(t.needSector); return }
+    const minOrder = minOrderValue ? parseFloat(minOrderValue) : 0
     setSaving(true)
     try {
       const update: any = { region, city, district: district || null, preferred_language: locale }
       if (lat != null && lng != null) { update.latitude = lat; update.longitude = lng }
-      if (role === 'supplier') update.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
+      if (role === 'supplier') update.min_order_value = Number.isFinite(minOrder) && minOrder > 0 ? minOrder : 0
       if (role === 'contractor') update.contractor_grade = contractorGrade || null
-      await supabase.from('profiles').update(update).eq('id', uid)
-      await supabase.from('profile_sectors').delete().eq('profile_id', uid)
-      if (sectors.length) await supabase.from('profile_sectors').insert(sectors.map(s => ({ profile_id: uid, sector: s })))
+      const { error: upErr } = await supabase.from('profiles').update(update).eq('id', uid)
+      if (upErr) { showErr(t.profileFailed); setSaving(false); return }
+
+      // حفظ ذرّي للقطاعات والتخصصات: حذف + إدراج داخل معاملة واحدة على الخادم (RPC من الترحيل 100)،
+      // فإن فشل الإدراج يتراجع الحذف ولا تُمسح البيانات المحفوظة. للمشتري نمرّر تخصصاته كما حُمّلت فلا تتغيّر.
+      const { error: secErr } = await supabase.rpc('save_supplier_specialties', {
+        p_sectors: validSectors,
+        p_specialties: validSpecialties,
+      })
+      if (secErr) { showErr(t.saveFailed); setSaving(false); return }
+
       if (role === 'supplier') {
-        await supabase.from('profile_specialties').delete().eq('profile_id', uid)
-        if (specialties.length) await supabase.from('profile_specialties').insert(specialties.map(k => ({ profile_id: uid, specialty: k })))
+        // المواد المقترحة: نزيل ما أُرسل بنجاح من القائمة، فإعادة الحفظ ترسل الفاشل فقط بلا تكرار.
+        const failed: { sector: string; name: string }[] = []
         for (const m of extraMaterials) {
-          try { await supabase.from('material_requests').insert({ supplier_id: uid, name: m.name }) } catch {}
+          try {
+            const { error: mErr } = await supabase.from('material_requests').insert({ supplier_id: uid, name: m.name })
+            if (mErr) failed.push(m)
+          } catch { failed.push(m) }
         }
+        setExtraMaterials(failed)
+        // التصنيف الآلي يعمل في الخلفية ولا يمنع المتابعة.
         try { await fetch('/api/classify-supplier', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }) } catch {}
+        if (failed.length) { showErr(t.matFailed); setSaving(false); return }
       }
       window.location.href = typeof dest === 'string' ? dest : (role === 'supplier' ? '/supplier/dashboard' : '/contractor')
-    } catch (e: any) {
-      setErr(e?.message || 'حدث خطأ أثناء الحفظ'); setSaving(false)
+    } catch {
+      // خطأ شبكة غير متوقّع: تبقى اختيارات المستخدم كما هي على الشاشة.
+      showErr(t.saveFailed); setSaving(false)
     }
   }
 
@@ -187,9 +234,9 @@ export default function OnboardingPage() {
   // ── التقدّم ──
   const steps = role === 'supplier'
     ? [{ label: t.stepLocation, done: !!(region && city) }, { label: t.stepSectors, done: sectors.length > 0 }, { label: t.stepSpecialties, done: specialties.length > 0 }]
-    : [{ label: t.stepLocation, done: !!(region && city) }, { label: t.stepSectors, done: sectors.length > 0 }]
+    : [{ label: t.stepLocation, done: !!(region && city) }] // المشتري: الموقع فقط مطلوب، والقطاعات اختيارية
   const pct = Math.round((steps.filter(s => s.done).length / steps.length) * 100)
-  const canSave = !!(region && city) && sectors.length > 0
+  const canSave = !loadFailed && !!(region && city) && (role !== 'supplier' || sectors.length > 0)
   // اكتمال كل المطلوب أعلاه (يفتح خطوة التوثيق للمورّد)
   const profileComplete = canSave && (role !== 'supplier' || specialties.length > 0)
   const ringC = 2 * Math.PI * 24
@@ -285,11 +332,13 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* القطاعات / التخصصات (مطلوب) */}
+            {/* القطاعات / التخصصات (مطلوب للمورّد، اختياري للمشتري) */}
             <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#1B2D5B' }}>
               <div className="flex items-center justify-between mb-0.5">
                 <h2 className="text-sm font-bold text-navy">🧩 {role === 'supplier' ? t.sectorsTitleS : t.sectorsTitleC}</h2>
-                <span className="text-[10px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
+                {role === 'supplier'
+                  ? <span className="text-[10px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
+                  : <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{t.optional}</span>}
               </div>
               <p className="text-xs text-gray-500 mb-1">{role === 'supplier' ? t.sectorsHintS : t.sectorsHintC}</p>
 
@@ -434,7 +483,7 @@ export default function OnboardingPage() {
               )
             )}
 
-            {err && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{err}</div>}
+            {err && <div id="onboarding-err" role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{err}</div>}
           </div>
 
           {/* ═══ السايدبار: التقدّم + الحفظ (ديسكتوب) ═══ */}
@@ -468,7 +517,7 @@ export default function OnboardingPage() {
                 )}
               </div>
 
-              <div className="text-[11px] text-blue-50 bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed">⚠️ {t.warn}</div>
+              {role === 'supplier' && <div className="text-[11px] text-blue-50 bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed">⚠️ {t.warn}</div>}
 
               <SaveBtn full />
               <a href={roleHome} className="block text-center text-xs text-blue-200 hover:text-white mt-2.5">{t.later}</a>

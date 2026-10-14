@@ -70,7 +70,7 @@ export default function SupplierDealsPage() {
         {shown.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
             <div className="text-5xl mb-3">📦</div>
-            <p className="text-gray-500">{locale === 'en' ? 'No deals yet — win an offer to start one.' : 'لا صفقات بعد — افز بعرض لتبدأ صفقة.'}</p>
+            <p className="text-gray-500">{locale === 'en' ? 'No deals yet — once a buyer accepts one of your offers, the deal appears here.' : locale === 'ur' ? 'ابھی کوئی ڈیل نہیں — جب خریدار آپ کی کوئی پیشکش قبول کرے گا تو ڈیل یہاں نظر آئے گی۔' : 'لا توجد صفقات بعد — عندما يقبل مشترٍ أحد عروضك تظهر الصفقة هنا.'}</p>
             <Link href="/supplier/dashboard" className="inline-block mt-4 text-sm font-bold text-[#0F6E56] hover:underline">{locale === 'en' ? 'Browse requests →' : 'تصفّح الطلبات ←'}</Link>
           </div>
         ) : (

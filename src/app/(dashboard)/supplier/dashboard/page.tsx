@@ -66,6 +66,7 @@ export default function SupplierDashboard() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
   const sectors = (sectorLabels as any)[locale] || sectorLabels.ar
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -79,6 +80,8 @@ export default function SupplierDashboard() {
   const [rfqFilter, setRfqFilter] = useState('all') // all | expiring
   const [hasSpecialties, setHasSpecialties] = useState(true)
   const [hasSectors, setHasSectors] = useState(true)
+  const [showMoreBanners, setShowMoreBanners] = useState(false) // باقي التنبيهات خلف «عرض المزيد»
+  const [showScoreMobile, setShowScoreMobile] = useState(false) // بطاقة قوة الملف على الجوال
 
   async function load() {
       const supabase = createClient()
@@ -173,7 +176,7 @@ export default function SupplierDashboard() {
       // إنذار: طلبات تنتهي مهلتها قريباً (خلال 12 ساعة) — حثّ المورد على التسعير
       const expiringSoon = visibleRfqs.filter((r: any) => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
       if (expiringSoon.length > 0) {
-        toast(`⏰ ${expiringSoon.length} ${expiringSoon.length === 1 ? 'طلب تنتهي مهلته' : 'طلبات تنتهي مهلتها'} قريباً — سارِع بالتسعير`, { duration: 7000 })
+        toast(`⏰ ${expiringSoon.length} ${expiringSoon.length === 1 ? L('request ends soon — price it now', 'درخواست کی مہلت جلد ختم ہو رہی ہے — جلدی قیمت دیں', 'طلب تنتهي مهلته قريباً — سارِع بالتسعير') : L('requests end soon — price them now', 'درخواستوں کی مہلت جلد ختم ہو رہی ہے — جلدی قیمت دیں', 'طلبات تنتهي مهلتها قريباً — سارِع بالتسعير')}`, { duration: 7000 })
       }
 
       setLoading(false)
@@ -197,7 +200,7 @@ export default function SupplierDashboard() {
         }, (payload: any) => {
           const n = payload.new
           if (n?.type === 'new_rfq') {
-            toast.success(n.title || (locale === 'en' ? '🔔 New RFQ received' : '🔔 وصلك طلب تسعير جديد'), {
+            toast.success(n.title || (L('🔔 New RFQ received', '🔔 نئی قیمت کی درخواست موصول ہوئی', '🔔 وصلك طلب تسعير جديد')), {
               description: n.body || undefined, duration: 7000,
             })
             load()
@@ -235,7 +238,7 @@ export default function SupplierDashboard() {
 
   return (
     <AppShell
-      title={locale === 'en' ? 'Supplier Dashboard' : locale === 'ur' ? 'سپلائر ڈیش بورڈ' : 'لوحة المورّد'}
+      title={L('Supplier Dashboard', 'سپلائر ڈیش بورڈ', 'لوحة المورّد')}
       company={companyName}
       companyMeta={tierLabel(profile?.supplier_tier, locale, false)}
       companyVerified={profile?.verification_status === 'verified'}
@@ -251,124 +254,150 @@ export default function SupplierDashboard() {
             <Link href="/supplier/team" className="text-xs font-bold underline">{locale === 'en' ? 'Team' : locale === 'ur' ? 'ٹیم' : 'فريق العمل'}</Link>
           </div>
         )}
-        {/* بوابة إكمال الملف — بارزة؛ بدونها لا تصل أي طلبات. باقي التنبيهات مخفيّة حتى الإكمال (لتفادي التشتيت). */}
-        {profile && !profile.region && !isMember && (
-          <Link href="/onboarding" className="block rounded-2xl p-5 mb-4 border-2 hover:shadow-lg transition-all" style={{ borderColor: '#F5831F', background: 'linear-gradient(120deg,#fff7ed,#ffffff)' }}>
-            <div className="flex items-start gap-3">
-              <span className="text-3xl shrink-0">🔒</span>
-              <div className="flex-1">
-                <div className="font-extrabold text-sm" style={{ color: '#d96f15' }}>⚠️ {locale === 'en' ? 'Complete your profile to receive requests' : locale === 'ur' ? 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں' : 'أكمل ملفك لاستلام الطلبات'}</div>
-                <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{locale === 'en' ? "Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests. One minute is enough." : locale === 'ur' ? 'اپنے مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی مماثل درخواست موصول نہیں ہوگی۔' : 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين، ولن تصلك أي طلبات مطابقة. دقيقة واحدة تكفي.'}</div>
-                <span className="inline-block mt-2.5 text-sm font-bold text-white px-4 py-2 rounded-xl" style={{ background: '#F5831F' }}>{locale === 'en' ? 'Complete now →' : locale === 'ur' ? 'ابھی مکمل کریں ←' : 'أكمل ملفك الآن ←'}</span>
-              </div>
-            </div>
-          </Link>
-        )}
-        <EnablePush variant="nudge" />
-        {/* تنبيهات ثانوية (أسعار/ضريبة/اشتراك) — بعد إكمال الملف فقط */}
-        {profile && profile.region && pricesCount === 0 && (
-          <Link href="/supplier/prices" className="block mb-4 bg-gradient-to-l from-[#F5831F]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">📈</span>
-              <div className="flex-1">
-                <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>انشر أسعارك في بورصة الأسعار</div>
-                <div className="text-xs text-gray-500">المشترون يبحثون عن أحدث الأسعار — كن أول من يظهر. اضغط لإضافة أسعارك ←</div>
-              </div>
-            </div>
-          </Link>
-        )}
-        {profile && profile.region && !profile.vat_number && (
-          <Link href="/settings" className="block mb-4 bg-[#F5831F]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🧾</span>
-              <div className="flex-1">
-                <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>أضف رقمك الضريبي</div>
-                <div className="text-xs text-gray-500">يلزم لإصدار فواتير ضريبية (ZATCA) لصفقاتك. اضغط للإضافة ←</div>
-              </div>
-            </div>
-          </Link>
-        )}
-        {profile && profile.region && !isSubscribed(profile) && (isLaunchFree(launchUntil) ? (
-          <Link href="/supplier/subscription" className="block mb-4 rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0F6E56,#1B2D5B)' }}>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">🎉</span>
-              <div className="flex-1">
-                <div className="font-bold text-sm text-white">{locale === 'en' ? 'Free launch period — all features open' : 'فترة إطلاق مجانية — كل الميزات مفتوحة'}</div>
-                <div className="text-xs text-emerald-50">{locale === 'en' ? 'Enjoy everything free now. See the future plans →' : 'استمتع بجميع الميزات مجاناً الآن. اطّلع على الباقات القادمة ←'}</div>
-              </div>
-            </div>
-          </Link>
-        ) : (
-          <Link href="/supplier/subscription" className="block mb-4 rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#1B2D5B,#2a4a8a)' }}>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">⭐</span>
-              <div className="flex-1">
-                <div className="font-bold text-sm text-white">{locale === 'en' ? 'Upgrade to Professional' : 'رقِّ لباقة احترافية'}</div>
-                <div className="text-xs text-blue-100">{locale === 'en' ? 'Unlimited offers + priority visibility + full price index. Tap for plans →' : 'عروض غير محدودة + أولوية ظهور + وصول كامل لمؤشّر الأسعار ←'}</div>
-              </div>
-            </div>
-          </Link>
-        ))}
-        {profile?.verification_status === 'rejected' && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">
-            <div className="flex items-start gap-3 mb-3">
-              <span className="text-2xl">❌</span>
-              <div>
-                <div className="font-bold text-red-700 mb-1">
-                  {locale === 'en' ? 'Account Rejected' : locale === 'ur' ? 'اکاؤنٹ مسترد' : 'تم رفض حسابك'}
+        {/* التنبيهات: نعرض «الخطوة التالية» الأعلى أولوية فقط، والباقي خلف «عرض المزيد» — كي لا تُدفع قائمة الطلبات أسفل الشاشة على الجوال */}
+        {(() => {
+          const banners: { key: string; node: any }[] = []
+          // بوابة إكمال الملف — بدونها لا تصل أي طلبات (أعلى أولوية)
+          if (profile && !profile.region && !isMember) banners.push({ key: 'onboarding', node: (
+            <Link href="/onboarding" className="block rounded-2xl p-5 border-2 hover:shadow-lg transition-all" style={{ borderColor: '#F5831F', background: 'linear-gradient(120deg,#fff7ed,#ffffff)' }}>
+              <div className="flex items-start gap-3">
+                <span className="text-3xl shrink-0">🔒</span>
+                <div className="flex-1">
+                  <div className="font-extrabold text-sm" style={{ color: '#d96f15' }}>⚠️ {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
+                  <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{L("Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests. One minute is enough.", 'اپنے مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی مماثل درخواست موصول نہیں ہوگی۔', 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين، ولن تصلك أي طلبات مطابقة. دقيقة واحدة تكفي.')}</div>
+                  <span className="inline-block mt-2.5 text-sm font-bold text-white px-4 py-2 rounded-xl" style={{ background: '#F5831F' }}>{L('Complete now →', 'ابھی مکمل کریں ←', 'أكمل ملفك الآن ←')}</span>
                 </div>
-                <div className="text-sm text-red-600">
-                  {locale === 'en' ? 'Your account has been rejected. Please review the reason and reupload your documents.'
-                  : locale === 'ur' ? 'آپ کا اکاؤنٹ مسترد ہو گیا۔ وجہ دیکھیں اور دستاویزات دوبارہ اپلوڈ کریں۔'
-                  : 'تم رفض حسابك. يرجى مراجعة السبب وإعادة رفع المستندات.'}
-                </div>
-                {profile?.rejection_reason && (
-                  <div className="mt-2 bg-red-100 rounded-lg px-3 py-2 text-sm text-red-800 font-medium">
-                    📋 {locale === 'en' ? 'Reason: ' : locale === 'ur' ? 'وجہ: ' : 'السبب: '}{profile.rejection_reason}
-                  </div>
-                )}
               </div>
-            </div>
-            <Link href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
-              {locale === 'en' ? '📤 Reupload Documents' : locale === 'ur' ? '📤 دستاویزات دوبارہ اپلوڈ کریں' : '📤 إعادة رفع المستندات'}
             </Link>
-          </div>
-        )}
-
-        {profile?.verification_status === 'pending' && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3 animate-fade-in">
-            <span className="text-2xl">⏳</span>
-            <div>
-              <div className="font-bold text-amber-700 mb-1">
-                {locale === 'en' ? 'Account Under Review' : locale === 'ur' ? 'اکاؤنٹ زیر جائزہ' : 'حسابك قيد المراجعة'}
+          ) })
+          if (profile?.verification_status === 'rejected') banners.push({ key: 'rejected', node: (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <span className="text-2xl">❌</span>
+                <div>
+                  <div className="font-bold text-red-700 mb-1">{L('Account Rejected', 'اکاؤنٹ مسترد', 'تم رفض حسابك')}</div>
+                  <div className="text-sm text-red-600">{L('Your account has been rejected. Please review the reason and reupload your documents.', 'آپ کا اکاؤنٹ مسترد ہو گیا۔ وجہ دیکھیں اور دستاویزات دوبارہ اپلوڈ کریں۔', 'تم رفض حسابك. يرجى مراجعة السبب وإعادة رفع المستندات.')}</div>
+                  {profile?.rejection_reason && (
+                    <div className="mt-2 bg-red-100 rounded-lg px-3 py-2 text-sm text-red-800 font-medium">
+                      📋 {L('Reason: ', 'وجہ: ', 'السبب: ')}{profile.rejection_reason}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="text-sm text-amber-600">
-                {locale === 'en' ? 'Your account is being reviewed. This usually takes up to 24 hours.'
-                : locale === 'ur' ? 'آپ کے اکاؤنٹ کا جائزہ لیا جا رہا ہے۔'
-                : 'يتم مراجعة بياناتك ورخصة عملك. عادةً تستغرق 24 ساعة.'}
+              <Link href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
+                {L('📤 Reupload Documents', '📤 دستاویزات دوبارہ اپلوڈ کریں', '📤 إعادة رفع المستندات')}
+              </Link>
+            </div>
+          ) })
+          // حدّد تخصصاتك الدقيقة
+          if (!hasSpecialties && !hasSectors && profile?.verification_status !== 'rejected') banners.push({ key: 'specialties', node: (
+            <Link href="/supplier/specialties" className="block bg-gradient-to-l from-[#F5831F]/10 to-[#1B2D5B]/5 border-2 border-[#F5831F]/30 rounded-2xl p-5 hover:shadow-md transition-all">
+              <div className="flex items-center gap-4">
+                <div className="text-3xl">🎯</div>
+                <div className="flex-1">
+                  <div className="font-bold" style={{ color: '#1B2D5B' }}>{L('Set your exact specialties for precise matching!', 'درست مماثلت کے لیے اپنی مہارتیں مقرر کریں!', 'حدّد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!')}</div>
+                  <div className="text-sm text-gray-500 mt-0.5">{L('e.g. only "Bricks" or only "Marble" — get only relevant requests', 'مثلاً صرف "اینٹ" یا صرف "سنگ مرمر"', 'مثلاً: محل طوب فقط، أو محل رخام فقط — تصلك الطلبات المطابقة لتخصصك')}</div>
+                </div>
+                <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#F5831F' }}>{L('Setup →', 'ترتیب دیں ←', 'إعداد ←')}</div>
+              </div>
+            </Link>
+          ) })
+          if (profile?.verification_status === 'pending') banners.push({ key: 'pending', node: (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
+              <span className="text-2xl">⏳</span>
+              <div>
+                <div className="font-bold text-amber-700 mb-1">{L('Account Under Review', 'اکاؤنٹ زیر جائزہ', 'حسابك قيد المراجعة')}</div>
+                <div className="text-sm text-amber-600">{L('Your account is being reviewed. This usually takes up to 24 hours.', 'آپ کے اکاؤنٹ کا جائزہ لیا جا رہا ہے۔ اس میں عموماً 24 گھنٹے لگتے ہیں۔', 'تجري مراجعة بياناتك ورخصة عملك، وتستغرق المراجعة عادةً 24 ساعة.')}</div>
               </div>
             </div>
-          </div>
-        )}
+          ) })
+          // تنبيهات ثانوية (ضريبة/أسعار/اشتراك) — بعد إكمال الملف فقط
+          if (profile && profile.region && !profile.vat_number) banners.push({ key: 'vat', node: (
+            <Link href="/settings" className="block bg-[#F5831F]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🧾</span>
+                <div className="flex-1">
+                  <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{L('Add your VAT number', 'اپنا ٹیکس (VAT) نمبر شامل کریں', 'أضف رقمك الضريبي')}</div>
+                  <div className="text-xs text-gray-500">{L('Required to issue tax invoices for your deals. Tap to add →', 'آپ کی ڈیلز کے لیے ٹیکس انوائس جاری کرنے کے لیے ضروری ہے۔ شامل کرنے کے لیے دبائیں ←', 'يلزم لإصدار فواتير ضريبية لصفقاتك. اضغط للإضافة ←')}</div>
+                </div>
+              </div>
+            </Link>
+          ) })
+          if (profile && profile.region && pricesCount === 0) banners.push({ key: 'prices', node: (
+            <Link href="/supplier/prices" className="block bg-gradient-to-l from-[#F5831F]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📈</span>
+                <div className="flex-1">
+                  <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{L('Publish your prices on the price board', 'قیمتوں کے بورڈ پر اپنی قیمتیں شائع کریں', 'انشر أسعارك في بورصة الأسعار')}</div>
+                  <div className="text-xs text-gray-500">{L('Buyers look for the latest prices — be the first they see. Tap to add your prices →', 'خریدار تازہ ترین قیمتیں تلاش کرتے ہیں — سب سے پہلے نظر آئیں۔ قیمتیں شامل کرنے کے لیے دبائیں ←', 'يبحث المشترون عن أحدث الأسعار — كن أول من يظهر لهم. اضغط لإضافة أسعارك ←')}</div>
+                </div>
+              </div>
+            </Link>
+          ) })
+          if (profile && profile.region && !isSubscribed(profile)) banners.push({ key: 'subscription', node: isLaunchFree(launchUntil) ? (
+            <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0F6E56,#1B2D5B)' }}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🎉</span>
+                <div className="flex-1">
+                  <div className="font-bold text-sm text-white">{L('Free launch period — all features open', 'مفت لانچ مدت — تمام سہولیات کھلی ہیں', 'فترة إطلاق مجانية — كل الميزات مفتوحة')}</div>
+                  <div className="text-xs text-emerald-50">{L('Enjoy everything free now. See the future plans →', 'ابھی سب کچھ مفت استعمال کریں۔ آئندہ پلان دیکھیں ←', 'استمتع بجميع الميزات مجاناً الآن. اطّلع على الباقات القادمة ←')}</div>
+                </div>
+              </div>
+            </Link>
+          ) : (
+            <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#1B2D5B,#2a4a8a)' }}>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">⭐</span>
+                <div className="flex-1">
+                  <div className="font-bold text-sm text-white">{L('Upgrade to Professional', 'پروفیشنل پلان پر اپ گریڈ کریں', 'رقِّ حسابك إلى الباقة الاحترافية')}</div>
+                  <div className="text-xs text-blue-100">{L('Unlimited offers + priority visibility + full price index. Tap for plans →', 'لامحدود پیشکشیں + ترجیحی نمائش + قیمتوں کے اشاریے تک مکمل رسائی ←', 'عروض غير محدودة + أولوية في الظهور + وصول كامل إلى مؤشّر الأسعار ←')}</div>
+                </div>
+              </div>
+            </Link>
+          ) })
+          if (banners.length === 0) return null
+          const [first, ...rest] = banners
+          return (
+            <div className="mb-4 space-y-3 animate-fade-in">
+              {first.node}
+              {rest.length > 0 && (
+                <>
+                  <button type="button" onClick={() => setShowMoreBanners(v => !v)} aria-expanded={showMoreBanners}
+                    className="text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-600 hover:border-[#F5831F]/40">
+                    {showMoreBanners ? L('Show less ▲', 'کم دکھائیں ▲', 'عرض أقل ▲') : `${L('Show more', 'مزید دکھائیں', 'عرض المزيد')} (${rest.length}) ▼`}
+                  </button>
+                  {showMoreBanners && rest.map((b) => <div key={b.key}>{b.node}</div>)}
+                </>
+              )}
+            </div>
+          )
+        })()}
+        <EnablePush variant="nudge" />
 
-        <div className="mb-6 animate-fade-in">
-          <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.welcome}، {companyName || profile?.full_name || (locale === 'en' ? 'Supplier' : 'مورد')} 👋</h1>
+        <div className="mb-4 sm:mb-6 animate-fade-in">
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.welcome}، {companyName || profile?.full_name || L('Supplier', 'سپلائر', 'مورّد')} 👋</h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
 
-        {/* تقييم المورد (Supplier Score) + اكتمال الملف */}
+        {/* نقاط اكتمال الملف + خطوات رفعها — مخفية على الجوال افتراضياً كي تظهر الطلبات أولاً */}
         {(() => {
           const checks = [
-            { ok: profile?.verification_status === 'verified', w: 35, label: locale === 'en' ? 'Verify your CR' : 'فعّل التحقق', href: '/settings' },
-            { ok: hasSpecialties, w: 25, label: locale === 'en' ? 'Add specialties' : 'أضف تخصصاتك', href: '/supplier/specialties' },
-            { ok: !!(profile?.latitude || profile?.national_short_address), w: 20, label: locale === 'en' ? 'Add map location' : 'حدّد موقعك', href: '/location' },
-            { ok: (profile?.rating_avg || 0) > 0, w: 20, label: locale === 'en' ? 'Get your first rating' : 'احصل على أول تقييم', href: '/supplier/specialties' },
+            { ok: profile?.verification_status === 'verified', w: 35, label: L('Verify your CR', 'اپنا سی آر تصدیق کریں', 'وثّق سجلّك التجاري'), href: '/settings' },
+            { ok: hasSpecialties, w: 25, label: L('Add specialties', 'مہارتیں شامل کریں', 'أضف تخصصاتك'), href: '/supplier/specialties' },
+            { ok: !!(profile?.latitude || profile?.national_short_address), w: 20, label: L('Add map location', 'نقشے پر مقام شامل کریں', 'حدّد موقعك'), href: '/location' },
+            // التقييم يأتي من المشتري بعد إتمام صفقة — نوجّه إلى الصفقات لا إلى التخصصات
+            { ok: (profile?.rating_avg || 0) > 0, w: 20, label: L('Complete a deal to get your first rating', 'پہلی ریٹنگ کے لیے ایک ڈیل مکمل کریں', 'أتمّ صفقة لتحصل على أول تقييم'), href: '/supplier/deals' },
           ]
           const score = checks.reduce((s: any, c: any) => s + (c.ok ? c.w : 0), 0)
           const missing = checks.filter((c: any) => !c.ok)
           const col = score >= 70 ? '#0F6E56' : score >= 40 ? '#F5831F' : '#dc2626'
           return (
-            <div className="mb-6 grid sm:grid-cols-3 gap-4 animate-fade-in">
+            <>
+              <button type="button" onClick={() => setShowScoreMobile(v => !v)} aria-expanded={showScoreMobile}
+                className="sm:hidden mb-4 text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-600">
+                {L('Profile strength', 'پروفائل کی مضبوطی', 'قوة ملفك')}: {score}/100 {showScoreMobile ? '▲' : '▼'}
+              </button>
+            <div className={`mb-6 ${showScoreMobile ? 'grid' : 'hidden'} sm:grid sm:grid-cols-3 gap-4 animate-fade-in`}>
               <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center gap-3">
                 <div className="relative w-16 h-16 shrink-0">
                   <svg viewBox="0 0 36 36" className="w-16 h-16 -rotate-90">
@@ -380,46 +409,22 @@ export default function SupplierDashboard() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Supplier Score' : 'تقييم موردك'}</div>
-                  <div className="text-[11px] text-gray-400">{score}/100 — {score >= 70 ? (locale === 'en' ? 'Excellent' : 'ممتاز') : score >= 40 ? (locale === 'en' ? 'Good' : 'جيد') : (locale === 'en' ? 'Improve it' : 'حسّنه')}</div>
+                  <div className="text-xs font-bold" style={{ color: '#1B2D5B' }}>{L('Profile strength', 'پروفائل کی مضبوطی', 'قوة ملفك')}</div>
+                  <div className="text-[11px] text-gray-400">{score}/100 — {score >= 70 ? L('Excellent', 'بہترین', 'ممتاز') : score >= 40 ? L('Good', 'اچھا', 'جيد') : L('Needs improvement', 'بہتری کی ضرورت', 'يحتاج إلى تحسين')}</div>
                 </div>
               </div>
               {missing.length > 0 && (
                 <div className="sm:col-span-2 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                  <div className="text-xs font-bold mb-2" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Boost your score:' : 'ارفع تقييمك:'}</div>
+                  <div className="text-xs font-bold mb-2" style={{ color: '#1B2D5B' }}>{L('Strengthen your profile:', 'اپنی پروفائل مضبوط کریں:', 'عزّز ملفك:')}</div>
                   <div className="flex flex-wrap gap-2">
-                    {missing.map((c: any) => <Link key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></Link>)}
+                    {missing.map((c: any) => <Link key={c.href} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></Link>)}
                   </div>
                 </div>
               )}
             </div>
+            </>
           )
         })()}
-
-        {/* تنبيه: حدد تخصصاتك الدقيقة */}
-        {!hasSpecialties && !hasSectors && profile?.verification_status !== 'rejected' && (
-          <Link href="/supplier/specialties"
-            className="block mb-6 bg-gradient-to-l from-[#F5831F]/10 to-[#1B2D5B]/5 border-2 border-[#F5831F]/30 rounded-2xl p-5 hover:shadow-md transition-all animate-fade-in">
-            <div className="flex items-center gap-4">
-              <div className="text-3xl">🎯</div>
-              <div className="flex-1">
-                <div className="font-bold" style={{ color: '#1B2D5B' }}>
-                  {locale === 'en' ? 'Set your exact specialties for precise matching!'
-                  : locale === 'ur' ? 'درست مماثلت کے لیے اپنی مہارتیں مقرر کریں!'
-                  : 'حدد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!'}
-                </div>
-                <div className="text-sm text-gray-500 mt-0.5">
-                  {locale === 'en' ? 'e.g. only "Bricks" or only "Marble" — get only relevant requests'
-                  : locale === 'ur' ? 'مثلاً صرف "اینٹ" یا صرف "سنگ مرمر"'
-                  : 'مثلاً: محل طوب فقط، أو محل رخام فقط — تصلك الطلبات المطابقة لتخصصك'}
-                </div>
-              </div>
-              <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#F5831F' }}>
-                {locale === 'en' ? 'Setup →' : 'إعداد ←'}
-              </div>
-            </div>
-          </Link>
-        )}
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
@@ -457,8 +462,8 @@ export default function SupplierDashboard() {
             {/* فلاتر الطلبات — منها «تنتهي قريباً» (قابلة للضغط) */}
             <div className="flex gap-2 mb-4 flex-wrap">
               {[
-                { key: 'all', label: locale === 'en' ? `All (${openRfqs.length})` : `الكل (${openRfqs.length})`, icon: '📋' },
-                { key: 'expiring', label: locale === 'en' ? `Ending soon (${expiringList.length})` : `تنتهي قريباً (${expiringList.length})`, icon: '⏰' },
+                { key: 'all', label: `${L('All', 'سب', 'الكل')} (${openRfqs.length})`, icon: '📋' },
+                { key: 'expiring', label: `${L('Ending soon', 'جلد ختم ہونے والی', 'تنتهي قريباً')} (${expiringList.length})`, icon: '⏰' },
               ].map((f: any) => (
                 <button key={f.key} onClick={() => setRfqFilter(f.key)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${rfqFilter === f.key ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
@@ -470,8 +475,8 @@ export default function SupplierDashboard() {
             {displayedRfqs.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
                 <div className="text-5xl mb-4 animate-float">{rfqFilter === 'expiring' ? '⏰' : '📭'}</div>
-                <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{rfqFilter === 'expiring' ? (locale === 'en' ? 'Nothing ending soon' : 'لا يوجد طلبات تنتهي قريباً') : t.noRfqs}</h3>
-                <p className="text-sm text-gray-500">{rfqFilter === 'expiring' ? (locale === 'en' ? 'All open requests still have time.' : 'كل الطلبات المفتوحة لسه عندها وقت.') : t.noRfqsSub}</p>
+                <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{rfqFilter === 'expiring' ? L('Nothing ending soon', 'کوئی درخواست جلد ختم نہیں ہو رہی', 'لا توجد طلبات تنتهي قريباً') : t.noRfqs}</h3>
+                <p className="text-sm text-gray-500">{rfqFilter === 'expiring' ? L('All open requests still have time.', 'تمام کھلی درخواستوں کے پاس ابھی کافی وقت ہے۔', 'ما زال لدى كل الطلبات المفتوحة متّسع من الوقت.') : t.noRfqsSub}</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -485,7 +490,7 @@ export default function SupplierDashboard() {
                           <div className="font-bold truncate" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {rfq.created_at && (Date.now() - new Date(rfq.created_at).getTime() < 12 * 3600 * 1000) && (
-                              <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}>🟢 {locale === 'en' ? 'New' : 'جديد'}</span>
+                              <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}>🟢 {L('New', 'نیا', 'جديد')}</span>
                             )}
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                             {rfq.sub_category && (

@@ -73,6 +73,8 @@ export default function RFQDetailPage() {
   const [onlyVerified, setOnlyVerified] = useState(false)
   const [tierFilter, setTierFilter] = useState('') // '' | company | shop | independent
   const [loading, setLoading] = useState(true)
+  const [refresh, setRefresh] = useState(0)            // bumped when a new offer arrives (live)
+  const [liveNote, setLiveNote] = useState('')
   const [editing, setEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editSpec, setEditSpec] = useState('')
@@ -176,9 +178,35 @@ export default function RFQDetailPage() {
       if (stats) { const m: any = {}; stats.forEach((st: any) => { m[st.supplier_id] = st }); setSupplierStats(m) }
     }
     load()
-  }, [id])
+  }, [id, refresh])
+
+  // Live: a new offer (or any change) on this request notifies the buyer; reload the offers in
+  // place instead of asking them to refresh. Per-user filtered subscription (reliable pattern).
+  useEffect(() => {
+    const supabase = createClient()
+    let ch: any
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return
+      ch = supabase.channel(`rfq-live-${id}-${session.user.id}`)
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, (payload: any) => {
+          const n = payload.new
+          if (!n || !JSON.stringify(n.data || {}).includes(String(id))) return
+          setLiveNote(n.title || L('Your request was updated', 'آپ کی درخواست اپ ڈیٹ ہوئی', 'تم تحديث طلبك'))
+          setRefresh(r => r + 1)
+        })
+        .subscribe()
+    })
+    return () => { if (ch) supabase.removeChannel(ch) }
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function acceptOffer(offerId: any) {
+    const o = offers.find((x: any) => x.id === offerId)
+    const who = o?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
+    const total = o ? offerComparable(o).toLocaleString('en-US', { maximumFractionDigits: 0 }) : ''
+    if (!confirm(L(
+      `Accept the offer from ${who} for ${total} SAR incl. VAT?\nThe other offers will be declined and a purchase order is created.`,
+      `${who} کی آفر ${total} ریال (VAT سمیت) میں قبول کریں؟\nباقی آفرز رد ہو جائیں گی اور پرچیز آرڈر بنے گا۔`,
+      `قبول عرض ${who} بمبلغ ${total} ر.س شاملاً الضريبة؟\nستُرفض العروض الأخرى ويُنشأ أمر شراء.`))) return
     const supabase = createClient()
     // Atomic: accept + reject others + close RFQ in one transaction (prevents double-accept).
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
@@ -187,9 +215,13 @@ export default function RFQDetailPage() {
   }
 
   async function rejectOffer(offerId: any) {
+    const o = offers.find((x: any) => x.id === offerId)
+    const who = o?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
+    if (!confirm(L(`Decline the offer from ${who}? This cannot be undone.`, `${who} کی آفر رد کریں؟ یہ واپس نہیں ہو سکتا۔`, `رفض عرض ${who}؟ لا يمكن التراجع عن ذلك.`))) return
     const supabase = createClient()
-    await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
-    window.location.reload()
+    const { error } = await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
+    if (error) { alert(L('Could not decline the offer — please try again.', 'آفر رد نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر رفض العرض — حاول مرة أخرى.')); return }
+    setOffers((prev: any[]) => prev.map((x: any) => x.id === offerId ? { ...x, status: 'rejected' } : x))
   }
 
   // ترسية بند-بند: ترسية مادة على مورد مُحدّد (أرخص أو من اختيار المشتري)
@@ -287,10 +319,16 @@ export default function RFQDetailPage() {
     })
 
   return (
-    <AppShell title={L('Quote request details', 'قیمت کی درخواست کی تفصیل', 'تفاصيل طلب التسعير')} nav={getNav('contractor', locale, '/contractor')} dir={dir}>
+    <AppShell title={L('Quote request details', 'قیمت کی درخواست کی تفصیل', 'تفاصيل طلب التسعير')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-3xl mx-auto">
+        {liveNote && (
+          <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800">
+            <span>🔔 {liveNote}</span>
+            <button type="button" onClick={() => setLiveNote('')} className="text-emerald-600 text-lg leading-none" aria-label={L('Close', 'بند کریں', 'إغلاق')}>×</button>
+          </div>
+        )}
         <div className="flex items-center justify-between mb-4">
-          <Link href="/contractor" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">← {L('Back to requests', 'درخواستوں پر واپس', 'رجوع للطلبات')}</Link>
+          <Link href="/contractor/rfqs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">← {L('Back to my requests', 'میری درخواستوں پر واپس', 'العودة إلى طلباتي')}</Link>
           <Link href={`/contractor/rfq/quick?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#d96f15] hover:underline">🔁 {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>
         </div>
 
@@ -488,8 +526,8 @@ export default function RFQDetailPage() {
           <div className="mb-6">
             <div className="mb-3 flex items-end justify-between gap-2 flex-wrap">
               <div>
-                <h3 className="text-sm font-bold text-gray-900">🧱 {L('Award per item', 'ہر آئٹم کا الگ ایوارڈ', 'ترسية بند-بند')}</h3>
-                <p className="text-xs text-gray-400">{L('Pick the best supplier for each material — one request can be split across several suppliers.', 'ہر مال کے لیے بہترین سپلائر چنیں — ایک درخواست کئی سپلائرز میں تقسیم ہو سکتی ہے۔', 'اختر أفضل مورد لكل مادة — الطلب الواحد يقدر ينقسم على أكثر من مورد.')}</p>
+                <h3 className="text-sm font-bold text-gray-900">🧱 {L('Award per item', 'ہر آئٹم کا الگ ایوارڈ', 'اختيار المورد لكل مادة')}</h3>
+                <p className="text-xs text-gray-400">{L('Pick the best supplier for each material — one request can be split across several suppliers.', 'ہر مال کے لیے بہترین سپلائر چنیں — ایک درخواست کئی سپلائرز میں تقسیم ہو سکتی ہے۔', 'اختر أفضل مورد لكل مادة — يمكن توزيع الطلب الواحد على أكثر من مورد.')}</p>
               </div>
               {activeOffers.length > 0 && (
                 <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 text-xs font-semibold">
@@ -533,7 +571,7 @@ export default function RFQDetailPage() {
                           <span className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{getProductLabel(it.product_name, locale)}</span>
                           <span className="text-xs text-gray-400"> · {Number(it.quantity).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</span>
                         </div>
-                        {award ? <span className="badge badge-green text-[10px] whitespace-nowrap">✓ {L('Awarded', 'ایوارڈ ہو گیا', 'مُرسى')}</span> : <span className="text-[11px] text-gray-400 whitespace-nowrap">{bids.length} {L('offers', 'آفرز', 'عرض')}</span>}
+                        {award ? <span className="badge badge-green text-[10px] whitespace-nowrap">✓ {L('Selected', 'منتخب', 'تم الاختيار')}</span> : <span className="text-[11px] text-gray-400 whitespace-nowrap">{bids.length} {L('offers', 'آفرز', 'عرض')}</span>}
                       </div>
                       {bids.length === 0 ? (
                         <div className="px-4 py-3 text-xs text-gray-400">{L('No supplier has priced this material yet', 'ابھی کسی سپلائر نے اس مال کی قیمت نہیں دی', 'لا يوجد مورد سعّر هذه المادة بعد')}</div>
@@ -584,7 +622,7 @@ export default function RFQDetailPage() {
                                     <div className="text-[9px] text-gray-400">{L('incl. VAT', 'ٹیکس سمیت', 'شامل الضريبة')}</div>
                                   </div>
                                   {isAwarded ? (
-                                    <span className="badge badge-green text-[10px] whitespace-nowrap">{L('Awarded', 'ایوارڈ ہو گیا', 'مُرسى')} ✓</span>
+                                    <span className="badge badge-green text-[10px] whitespace-nowrap">{L('Selected', 'منتخب', 'تم الاختيار')} ✓</span>
                                   ) : rfq.status === 'open' ? (
                                     <button onClick={() => awardItem(idx, b.offer.id)} disabled={awarding === `${idx}:${b.offer.id}`}
                                       className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>
@@ -796,8 +834,9 @@ export default function RFQDetailPage() {
                     </div>
                   </div>
                   <div className="text-left">
-                    <div className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{offer.total_price?.toLocaleString('en-US')}</div>
-                    <div className="text-xs text-gray-400">{SAR}</div>
+                    <div className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{offerComparable(offer).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+                    <div className="text-xs text-gray-400">{SAR} · {L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}</div>
+                    {!offer.vat_included && <div className="text-[11px] text-gray-400">{L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')} {Number(offer.total_price || 0).toLocaleString('en-US')}</div>}
                     {marketAvg && offer.unit_price && (() => {
                       const diff = Math.abs(((offer.unit_price - marketAvg) / marketAvg * 100)).toFixed(0)
                       const isLow = offer.unit_price < marketAvg
@@ -942,7 +981,7 @@ export default function RFQDetailPage() {
 
         {/* حذف الطلب — متاح للمشتري دائماً (انتهت المهلة أو لقي المواد) */}
         <div className="mt-8 pt-5 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
-          <span className="text-xs text-gray-400">{L('No longer need this request?', 'اب یہ درخواست نہیں چاہیے؟', 'ما عدت تحتاج هذا الطلب؟')}</span>
+          <span className="text-xs text-gray-400">{L('No longer need this request?', 'اب یہ درخواست نہیں چاہیے؟', 'ألم تعد بحاجة إلى هذا الطلب؟')}</span>
           <button type="button" onClick={deleteRfq} disabled={deleting}
             className="text-xs font-bold px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-all disabled:opacity-50">
             {deleting ? '⏳…' : `🗑 ${L('Delete request', 'درخواست حذف کریں', 'حذف الطلب')}`}

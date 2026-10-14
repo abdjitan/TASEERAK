@@ -86,7 +86,8 @@ export default function QuickRequestPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [pickup, setPickup] = useState(false) // the buyer collects from the supplier instead of delivery
   const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null) // delivery point (map / GPS)
-  const [address, setAddress] = useState('')                                // district, street, landmark
+  const [address, setAddress] = useState('')
+  const [geoFromProfile, setGeoFromProfile] = useState(false) // pre-filled: say so, so the buyer checks it                                // district, street, landmark
   const [specsOpen, setSpecsOpen] = useState<string | null>(null) // line key whose specifications are open
   const [draftId, setDraftId] = useState<string | null>(null)     // a saved draft (rfq_drafts) opened here
   const specFileRef = useRef<HTMLInputElement>(null)
@@ -109,7 +110,7 @@ export default function QuickRequestPage() {
       const { data: p } = await supabase.from('profiles').select('region, city, latitude, longitude').eq('id', user.id).single()
       if (p?.region) setRegion(p.region)
       if (p?.city) setCity(p.city)
-      if (p?.latitude != null && p?.longitude != null) setGeo({ lat: p.latitude, lng: p.longitude })
+      if (p?.latitude != null && p?.longitude != null) { setGeo({ lat: p.latitude, lng: p.longitude }); setGeoFromProfile(true) }
       // Reorder an earlier request, or continue a saved draft: these replace the local list.
       const qs = new URLSearchParams(window.location.search)
       const fromId = qs.get('from'), dId = qs.get('draft')
@@ -342,14 +343,16 @@ export default function QuickRequestPage() {
           if (blob) {
             const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
             const { data: up } = await supabase.storage.from('licenses').upload(`${userId}/spec-${Date.now()}-${i}.${ext}`, blob, { upsert: false, contentType: blob.type })
-            if (up) fileUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
+            if (!up) { setError(L(`Could not upload the attachment of «${l.product_name}». Check your connection and try again, or remove the attachment.`, `«${l.product_name}» کی فائل اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں یا فائل ہٹا دیں۔`, `تعذّر رفع مرفق «${l.product_name}». تحقّق من الاتصال وحاول مرة أخرى، أو احذف المرفق.`)); return }
+            fileUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
           }
         }
         if (ph && ph.share) {
           const ext = ph.file.type === 'image/png' ? 'png' : ph.file.type === 'image/webp' ? 'webp' : 'jpg'
           const path = `${userId}/photo-${Date.now()}-${i}.${ext}`
           const { data: up } = await supabase.storage.from('licenses').upload(path, ph.file, { upsert: false, contentType: ph.file.type })
-          if (up) photoUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
+          if (!up) { setError(L(`Could not upload the photo of «${l.product_name}». Try again, or untick «send the photo».`, `«${l.product_name}» کی تصویر اپ لوڈ نہیں ہو سکی۔`, `تعذّر رفع صورة «${l.product_name}». حاول مرة أخرى، أو ألغِ خيار إرسال الصورة.`)); return }
+          photoUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
         }
         const st = specText(l.product_name, l.specs)
         const specsObj: Record<string, string> = {}
@@ -398,6 +401,8 @@ export default function QuickRequestPage() {
       }
       if (draftId) { try { await supabase.from('rfq_drafts').delete().eq('id', draftId) } catch {} ; setDraftId(null) }
       setDone(true)
+    } catch {
+      setError(L('Network problem — your request was not sent. It is still saved here; try again.', 'نیٹ ورک کا مسئلہ — درخواست نہیں گئی۔ دوبارہ کوشش کریں۔', 'حدثت مشكلة في الاتصال ولم يُرسل الطلب. ما زال محفوظاً هنا؛ حاول مرة أخرى.'))
     } finally { setSending(false) }
   }
 
@@ -429,7 +434,7 @@ export default function QuickRequestPage() {
         <div className="space-y-5 lg:col-start-1 lg:row-start-1">
         <div>
           <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, photograph it or pick it from the catalog. We will organise it into a list.', 'لکھیں، بولیں، تصویر لیں یا فہرست سے منتخب کریں۔', 'اكتبها، أو تحدّث بها، أو صوّرها، أو اخترها من القائمة، وسنرتّبها لك في قائمة.')}</p>
+          <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, photograph it or pick it from the catalog. We will organise it into a list.', 'لکھیں، بولیں، تصویر لیں یا فہرست سے منتخب کریں۔', 'اكتبها، أو تحدّث بها، أو صوّرها، أو اخترها من دليل المواد، وسنرتّبها لك في طلبك.')}</p>
         </div>
 
         {/* Input: text + mic + photo */}
@@ -452,7 +457,7 @@ export default function QuickRequestPage() {
               📷 {L('Add a photo', 'تصویر شامل کریں', 'صوّر المادة')}
             </button>
             <button type="button" onClick={() => setShowCatalog(true)} className="lg:hidden px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
-              🔍 {L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}
+              🔍 {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden"
               onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
@@ -466,7 +471,7 @@ export default function QuickRequestPage() {
 
         {/* Desktop: the catalog fills the main column; phones open it as a sheet */}
         <div id="catalog-inline" className="hidden lg:block lg:col-start-1 lg:row-start-2 lg:mt-5 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
-          <h2 className="font-bold text-navy">🔍 {L('Pick from the catalog', 'فہرست سے منتخب کریں', 'اختر من القائمة')}</h2>
+          <h2 className="font-bold text-navy">🔍 {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
           <CatalogBrowser inline locale={locale} picked={lines.map(l => ({ key: l.key, name: l.product_name }))} onPick={addFromCatalog} onRemove={removeLine} />
         </div>
 
@@ -475,7 +480,7 @@ export default function QuickRequestPage() {
         {lines.length === 0 ? (
           <div className="hidden lg:block bg-white rounded-2xl p-6 border border-dashed border-gray-200 text-center text-sm text-gray-400">
             <div className="text-3xl mb-2">🧾</div>
-            {L('Your list is empty. Add materials by writing, speaking, a photo or from the catalog.', 'آپ کی فہرست خالی ہے۔', 'قائمتك فارغة. أضف موادك بالكتابة أو الصوت أو الصورة أو من القائمة.')}
+            {L('Your list is empty. Add materials by writing, speaking, a photo or from the catalog.', 'آپ کی فہرست خالی ہے۔', 'طلبك فارغ. أضف موادك بالكتابة أو الصوت أو الصورة أو من دليل المواد.')}
           </div>
         ) : (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
@@ -657,9 +662,11 @@ export default function QuickRequestPage() {
             </div>
             {!pickup && (
               <div className="space-y-2">
-                <LocationPicker lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={(a: number, b: number) => setGeo({ lat: a, lng: b })} />
+                <LocationPicker lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={(a: number, b: number) => { setGeo({ lat: a, lng: b }); setGeoFromProfile(false) }} />
                 <input value={address} onChange={e => setAddress(e.target.value)} maxLength={300} className="input-field text-sm"
-                  placeholder={L('Address details: district, street, landmark (optional)', 'پتہ: محلہ، گلی، نشانی (اختیاری)', 'تفاصيل العنوان: الحي، الشارع، علامة مميزة (اختياري)')} />
+                  placeholder={geo ? L('Address details: district, street, landmark (optional)', 'پتہ: محلہ، گلی، نشانی (اختیاری)', 'تفاصيل العنوان: الحي، الشارع، علامة مميزة (اختياري)')
+                    : L('Address: district, street, landmark (required if no map location)', 'پتہ (اگر نقشے پر مقام نہیں تو ضروری)', 'العنوان: الحي، الشارع، علامة مميزة (مطلوب إن لم تحدّد الموقع)')} />
+                {geo && geoFromProfile && <p className="text-[11px] text-gray-500">{L('Location filled from your profile — change it if this delivery goes elsewhere.', 'مقام آپ کی پروفائل سے لیا گیا — ضرورت ہو تو بدلیں۔', 'عُبّئ الموقع من ملفك الشخصي — غيّره إن كان التوصيل إلى مكان آخر.')}</p>}
                 <p className="text-[11px] text-gray-400">🔒 {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
               </div>
             )}

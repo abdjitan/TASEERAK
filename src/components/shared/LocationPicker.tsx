@@ -13,21 +13,21 @@ const txt = {
   ar: {
     title: 'الموقع الجغرافي', detect: '📍 تحديد موقعي الحالي', detecting: 'جارٍ تحديد الموقع...',
     orPaste: 'أو الصق رابط خرائط Google', pasteHint: 'انسخ الرابط من تطبيق خرائط جوجل والصقه هنا',
-    extract: 'استخراج', coords: 'الإحداثيات', viewMap: 'عرض على الخريطة', openGoogle: 'فتح في خرائط Google',
+    extract: 'استخراج', coords: 'الإحداثيات', set: 'تم تحديد الموقع', viewMap: 'عرض على الخريطة', openGoogle: 'فتح في خرائط Google',
     noLocation: 'لم يتم تحديد الموقع بعد', denied: 'تم رفض الوصول للموقع — فعّله من إعدادات المتصفح',
     notSupported: 'المتصفح لا يدعم تحديد الموقع', invalidLink: 'الرابط غير صحيح',
   },
   en: {
     title: 'Geographic Location', detect: '📍 Detect My Location', detecting: 'Detecting location...',
     orPaste: 'Or paste Google Maps link', pasteHint: 'Copy the link from Google Maps and paste here',
-    extract: 'Extract', coords: 'Coordinates', viewMap: 'View on Map', openGoogle: 'Open in Google Maps',
+    extract: 'Extract', coords: 'Coordinates', set: 'Location set', viewMap: 'View on Map', openGoogle: 'Open in Google Maps',
     noLocation: 'Location not set yet', denied: 'Location access denied — enable in browser settings',
     notSupported: 'Browser does not support geolocation', invalidLink: 'Invalid link',
   },
   ur: {
     title: 'جغرافیائی محل وقوع', detect: '📍 میرا مقام تلاش کریں', detecting: 'مقام تلاش ہو رہا ہے...',
     orPaste: 'یا Google Maps لنک پیسٹ کریں', pasteHint: 'Google Maps سے لنک کاپی کرکے یہاں پیسٹ کریں',
-    extract: 'نکالیں', coords: 'کوآرڈینیٹس', viewMap: 'نقشے پر دیکھیں', openGoogle: 'Google Maps میں کھولیں',
+    extract: 'نکالیں', coords: 'کوآرڈینیٹس', set: 'مقام مقرر ہو گیا', viewMap: 'نقشے پر دیکھیں', openGoogle: 'Google Maps میں کھولیں',
     noLocation: 'مقام ابھی مقرر نہیں', denied: 'مقام تک رسائی مسترد', notSupported: 'براؤزر سپورٹ نہیں کرتا',
     invalidLink: 'غلط لنک',
   },
@@ -118,10 +118,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar' }: Lo
       {hasLocation ? (
         <div className="bg-[#f4f6f9] rounded-xl p-3">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-xs">
-              <span className="text-gray-400">{T.coords}:</span>{' '}
-              <span className="font-mono font-semibold" style={{ color: '#1B2D5B' }} dir="ltr">{lat}, {lng}</span>
-            </div>
+            <div className="text-xs font-semibold text-emerald-700">✓ {T.set}</div>
             <a href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer"
               className="text-xs font-semibold hover:underline" style={{ color: '#F5831F' }}>
               {T.openGoogle} ←
@@ -129,7 +126,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar' }: Lo
           </div>
           {/* خريطة OpenStreetMap مجانية بدون API key */}
           <div className="rounded-lg overflow-hidden border border-gray-200">
-            <iframe
+            <iframe title={T.viewMap}
               width="100%" height="200" frameBorder="0" style={{ border: 0 }}
               src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.005}%2C${lat - 0.005}%2C${lng + 0.005}%2C${lat + 0.005}&layer=mapnik&marker=${lat}%2C${lng}`}
             />

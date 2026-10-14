@@ -317,7 +317,7 @@ export default function ContractorDashboard() {
               <span className="flex-1 text-sm font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>
                 {locale === 'en'
                   ? `${best.name} ${down ? 'down' : 'up'} ${Math.abs(best.pct)}% vs last month`
-                  : `سعر ${best.name} ${down ? 'نزل' : 'ارتفع'} ${Math.abs(best.pct)}% عن الشهر الماضي`}
+                  : `سعر ${best.name} ${down ? 'انخفض' : 'ارتفع'} ${Math.abs(best.pct)}% عن الشهر الماضي`}
               </span>
               <span className="text-xs font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>←</span>
             </Link>
