@@ -619,6 +619,10 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
   'سطح مطبخ (رخام/جرانيت)': [{ key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م.ط', 'م²'] }],
   'مظلة سيارات': [{ key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م²', 'عدد'] }],
   'عشب صناعي': [{ key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م²', 'لفة'] }],
+  // general furniture: the buyer picks the type (or writes it under «أخرى») and can attach a photo
+  'طاولة حسب الطلب (أي نوع)': [{ key: 'type', ar: 'نوع الطاولة', en: 'Table type', options: ['طاولة طعام', 'طاولة قهوة', 'طاولة جانبية', 'طاولة مكتب', 'طاولة تلفزيون', 'طاولة اجتماعات', 'طاولة خارجية', 'طاولة أطفال'] }, { key: 'material', ar: 'الخامة', en: 'Material', options: ['خشب طبيعي', 'MDF / خشب مضغوط', 'رخام أو حجر', 'زجاج', 'معدن', 'خامات مختلطة'] }],
+  'كرسي حسب الطلب (أي نوع)': [{ key: 'type', ar: 'نوع الكرسي', en: 'Chair type', options: ['كرسي طعام', 'كرسي مكتب', 'كرسي استرخاء (فوتيه)', 'كرسي بار', 'كرسي خارجي', 'كرسي أطفال'] }, { key: 'material', ar: 'الخامة', en: 'Material', options: ['خشب طبيعي', 'MDF / خشب مضغوط', 'رخام أو حجر', 'زجاج', 'معدن', 'خامات مختلطة'] }],
+  'خزانة حسب الطلب (أي نوع)': [{ key: 'type', ar: 'نوع الخزانة', en: 'Cabinet type', options: ['خزانة ملابس', 'خزانة مطبخ', 'خزانة حمّام', 'خزانة أحذية', 'خزانة كتب أو عرض', 'خزانة تلفزيون', 'خزانة تخزين'] }, { key: 'material', ar: 'الخامة', en: 'Material', options: ['خشب طبيعي', 'MDF / خشب مضغوط', 'رخام أو حجر', 'زجاج', 'معدن', 'خامات مختلطة'] }],
   'حديد تسليح': [
     { key: 'diameter', ar: 'القطر', en: 'Diameter', options: ['8 مم','10 مم','12 مم','14 مم','16 مم','18 مم','20 مم','25 مم','32 مم'] },
     { key: 'length', ar: 'الطول', en: 'Length', options: ['12 متر','6 متر','حسب القص (مقصوص)'] },
@@ -2167,6 +2171,10 @@ export const SECTOR_COLORS: Record<Sector, string> = {
 
 // Product translations — keys are Arabic (stored in DB), values are EN/UR display names
 export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
+  // ═══ 2026-10-14: generic furniture (buyer specifies the type) ═══
+  'طاولة حسب الطلب (أي نوع)': { en: 'Custom table (any type)', ur: 'کوئی بھی میز' },
+  'كرسي حسب الطلب (أي نوع)': { en: 'Custom chair (any type)', ur: 'کوئی بھی کرسی' },
+  'خزانة حسب الطلب (أي نوع)': { en: 'Custom cabinet (any type)', ur: 'کوئی بھی الماری' },
   // ═══ 2026-10-14: furniture by room ═══
   'غرفة نوم كاملة حسب الطلب': { en: 'Complete custom bedroom set', ur: 'مکمل بیڈروم سیٹ' },
   'تسريحة ومرآة حسب الطلب': { en: 'Custom dressing table & mirror', ur: 'ڈریسنگ ٹیبل' },
@@ -3403,6 +3411,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'ردم عام / إحلال (General Backfill)',
   ],
   architectural: [
+    // ═══ 2026-10-14: generic furniture ═══
+    'طاولة حسب الطلب (أي نوع)', 'كرسي حسب الطلب (أي نوع)', 'خزانة حسب الطلب (أي نوع)',
     // ═══ 2026-10-14: furniture by room ═══
     'غرفة نوم كاملة حسب الطلب', 'تسريحة ومرآة حسب الطلب', 'كومودينو (طاولة جانبية للسرير)', 'غرفة أطفال حسب الطلب', 'سرير أطفال وأسرّة دورين', 'كنب زاوية (L) حسب الطلب',
     'طاولات جانبية (سايد تيبل)', 'بوفيه وسايدبورد حسب الطلب', 'جدار تلفزيون وديكور جداري حسب الطلب', 'رفوف حائط ديكور', 'قواطع ديكور خشبية (بارتيشن)',

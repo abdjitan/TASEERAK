@@ -96,6 +96,7 @@ const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: stri
 // The furniture section is browsed by ROOM (what a home buyer thinks in), not by trade group.
 // First matching rule wins; anything unmatched lands in «أثاث وديكور متنوّع».
 const ROOMS: { key: string; ar: string; en: string; ur: string; icon: string; re: RegExp }[] = [
+  { key: 'room_any', ar: 'قطع حسب الطلب (أي نوع)', en: 'Made to order (any type)', ur: 'آرڈر پر (کوئی بھی قسم)', icon: '✨', re: /أي نوع/ },
   { key: 'room_kids', ar: 'غرف الأطفال', en: "Kids' rooms", ur: 'بچوں کے کمرے', icon: '🧸', re: /أطفال|اطفال|دورين/ },
   { key: 'room_bed', ar: 'غرف النوم', en: 'Bedrooms', ur: 'بیڈروم', icon: '🛏', re: /غرفة نوم|سرير|خزانة ملابس|دولاب|مراتب|فرشات|تسريحة|كومودينو/ },
   { key: 'room_living', ar: 'غرف المعيشة والمجالس', en: 'Living rooms & majlis', ur: 'لونگ روم اور مجلس', icon: '🛋', re: /كنب|مجلس|طاولة قهوة|طاولات جانبية|وحدة تلفزيون|مشب|سجاد|زوالي|موكيت/ },
@@ -115,7 +116,7 @@ function byRoom(groups: SectionGroup[]): SectionGroup[] {
     const bucket = r ? (out[r.key] ||= { group: r.key, icon: r.icon, ar: r.ar, en: r.en, ur: r.ur, items: [] }) : other
     if (!bucket.items.some(i => i.name === it.name)) bucket.items.push(it)
   }
-  const SHOW = ['room_living', 'room_bed', 'room_kids', 'room_dining', 'room_kitchen', 'room_office', 'room_walls', 'room_curtains', 'room_bath', 'room_outdoor']
+  const SHOW = ['room_any', 'room_living', 'room_bed', 'room_kids', 'room_dining', 'room_kitchen', 'room_office', 'room_walls', 'room_curtains', 'room_bath', 'room_outdoor']
   return [...SHOW.map(k => out[k]).filter(Boolean), ...(other.items.length ? [other] : [])]
 }
 
