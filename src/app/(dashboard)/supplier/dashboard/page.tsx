@@ -84,6 +84,17 @@ export default function SupplierDashboard() {
   const [hasSectors, setHasSectors] = useState(true)
   const [showMoreBanners, setShowMoreBanners] = useState(false) // باقي التنبيهات خلف «عرض المزيد»
   const [showScoreMobile, setShowScoreMobile] = useState(false) // بطاقة قوة الملف على الجوال
+  // Requests this supplier already opened (this device) — unopened, unpriced ones glow until opened.
+  const [seen, setSeen] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    if (!user?.id) return
+    try { setSeen(new Set(JSON.parse(localStorage.getItem('tsk_seen_rfqs_' + user.id) || '[]'))) } catch {}
+  }, [user?.id])
+  const markSeen = (id: string) => {
+    if (!user?.id || seen.has(id)) return
+    const next = new Set(seen); next.add(id); setSeen(next)
+    try { localStorage.setItem('tsk_seen_rfqs_' + user.id, JSON.stringify([...next].slice(-500))) } catch {}
+  }
 
   async function load() {
       const supabase = createClient()
@@ -242,6 +253,26 @@ export default function SupplierDashboard() {
   const pending = myOffers.filter((o: any) => o.status === 'pending').length
   const totalRevenue = myOffers.filter((o: any) => o.status === 'accepted').reduce((s: any, o: any) => s + (o.total_price || 0), 0)
 
+  // Requests still waiting for this supplier's price: shown first, the unopened ones glow.
+  const toPrice = openRfqs.filter((r: any) => !offeredRfqIds.has(r.id))
+  const isFresh = (r: any) => !offeredRfqIds.has(r.id) && !seen.has(r.id)
+  const freshCount = openRfqs.filter(isFresh).length
+  const sortedOpen = [...openRfqs].sort((a: any, b: any) =>
+    (Number(isFresh(b)) - Number(isFresh(a))) || (Number(!offeredRfqIds.has(b.id)) - Number(!offeredRfqIds.has(a.id))) ||
+    (new Date(b.created_at).getTime() - new Date(a.created_at).getTime()))
+  // Sales over the last 6 months (accepted offers, by acceptance month) for the chart.
+  const months = Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - (5 - i)); return { y: d.getFullYear(), m: d.getMonth(), sales: 0, deals: 0 } })
+  for (const o of myOffers) {
+    if (o.status !== 'accepted') continue
+    const d = new Date(o.accepted_at || o.updated_at || o.created_at)
+    const b = months.find(x => x.y === d.getFullYear() && x.m === d.getMonth())
+    if (b) { b.sales += Number(o.total_price) || 0; b.deals += 1 }
+  }
+  const decided = myOffers.filter((o: any) => o.status === 'accepted' || o.status === 'rejected').length
+  const winRate = decided ? Math.round((accepted / decided) * 100) : 0
+  const avgDeal = accepted ? Math.round(totalRevenue / accepted) : 0
+  const monthName = (m: number) => new Date(2026, m, 1).toLocaleDateString(locale === 'en' ? 'en-US' : locale === 'ur' ? 'ur-PK' : 'ar-SA', { month: 'short' })
+
   const offerStatusLabel = (status: any) => {
     if (status === 'accepted') return t.accepted
     if (status === 'rejected') return t.rejected
@@ -265,6 +296,38 @@ export default function SupplierDashboard() {
       dir={dir}
     >
       <div className="max-w-6xl mx-auto">
+        {toPrice.length > 0 && (
+          <div className={`mb-5 rounded-2xl p-4 sm:p-5 border-2 animate-fade-in ${freshCount ? 'tsk-glow' : ''}`} style={{ borderColor: '#D4A543', background: 'linear-gradient(120deg,#071827,#0B2438 60%,#102E45)' }}>
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <span className="relative grid place-items-center w-11 h-11 rounded-xl text-xl text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                  <Glyph e="🔔" />
+                  {freshCount > 0 && <span className="absolute -top-1 -end-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold grid place-items-center">{freshCount}</span>}
+                </span>
+                <div>
+                  <div className="font-extrabold text-white">{L(`${toPrice.length} request(s) waiting for your price`, `${toPrice.length} درخواستیں آپ کی قیمت کی منتظر`, toPrice.length === 1 ? 'طلب واحد بانتظار تسعيرك' : `${toPrice.length} طلبات بانتظار تسعيرك`)}</div>
+                  <div className="text-xs text-white/70">{freshCount ? L(`${freshCount} new — price early to stand out`, `${freshCount} نئی — جلد قیمت دیں`, `منها ${freshCount} جديدة لم تفتحها — التسعير المبكر يرفع فرصتك`) : L('Price early to raise your chances', 'جلد قیمت دیں', 'التسعير المبكر يرفع فرصتك')}</div>
+                </div>
+              </div>
+              <button type="button" onClick={() => { setTab('rfqs'); setRfqFilter('all'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+                className="text-sm font-extrabold text-[#071827] px-4 py-2 rounded-xl" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                {L('Show them', 'دیکھیں', 'اعرضها')} ←
+              </button>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              {sortedOpen.filter((r: any) => !offeredRfqIds.has(r.id)).slice(0, 3).map((rfq: any) => (
+                <Link key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`} onClick={() => markSeen(rfq.id)}
+                  className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 bg-white/[.07] border border-white/10 hover:bg-white/[.12] transition-colors">
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-white truncate">{rfqDisplayName(rfq, locale, rfq._myItemCount)}</span>
+                    <span className="block text-[11px] text-white/60 truncate">{rfq.region}{rfq.expires_at ? ' · ' + formatTimeLeft(rfq.expires_at, locale) : ''}</span>
+                  </span>
+                  {isFresh(rfq) && <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#F5C55B' }}>{L('New', 'نیا', 'جديد')}</span>}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
         {isMember && (
           <div className="rounded-xl px-4 py-2.5 mb-4 text-sm border flex flex-wrap items-center justify-between gap-2" style={{ background: '#0B24380A', borderColor: '#0B243826', color: '#0B2438' }}>
             <span><Glyph e="👥" /> {locale === 'en' ? 'You are working on behalf of' : locale === 'ur' ? 'آپ اس کمپنی کی جانب سے کام کر رہے ہیں:' : 'تعمل باسم'} <b>{companyName}</b></span>
@@ -461,6 +524,51 @@ export default function SupplierDashboard() {
           ))}
         </div>
 
+        {/* مبيعاتك: آخر ٦ أشهر (العروض المقبولة) — أعمدة للمبيعات + عدد الصفقات */}
+        {(() => {
+          const max = Math.max(1, ...months.map(x => x.sales))
+          const hasAny = months.some(x => x.deals > 0)
+          return (
+            <div className="mb-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 animate-fade-in">
+              <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+                <div>
+                  <h2 className="font-extrabold text-[#0B2438]">{L('Your sales', 'آپ کی فروخت', 'مبيعاتك')}</h2>
+                  <p className="text-xs text-gray-500">{L('Accepted offers, last 6 months', 'قبول شدہ پیشکشیں، پچھلے ۶ ماہ', 'العروض المقبولة خلال آخر ٦ أشهر')}</p>
+                </div>
+                <Link href="/supplier/analytics" className="text-xs font-bold text-[#9D7425] hover:underline">{L('Full performance', 'مکمل کارکردگی', 'أداؤك بالتفصيل')} ←</Link>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+                {[
+                  { k: L('Total sales', 'کل فروخت', 'إجمالي المبيعات'), v: totalRevenue.toLocaleString('en-US') + ' ' + t.sar },
+                  { k: L('Completed deals', 'مکمل ڈیلز', 'صفقات تمّت'), v: String(accepted) },
+                  { k: L('Win rate', 'کامیابی کی شرح', 'نسبة الفوز'), v: decided ? winRate + '%' : '—' },
+                  { k: L('Average deal', 'اوسط ڈیل', 'متوسط الصفقة'), v: avgDeal ? avgDeal.toLocaleString('en-US') + ' ' + t.sar : '—' },
+                ].map(x => (
+                  <div key={x.k} className="rounded-xl bg-[#F6F7F9] px-3 py-2.5">
+                    <div className="text-[11px] text-gray-500">{x.k}</div>
+                    <div className="font-extrabold text-[#0B2438] tabular-nums">{x.v}</div>
+                  </div>
+                ))}
+              </div>
+              {hasAny ? (
+                <div className="flex items-end gap-2 sm:gap-4 h-40" role="img" aria-label={L('Monthly sales chart', 'ماہانہ فروخت کا چارٹ', 'رسم المبيعات الشهرية')}>
+                  {months.map((x, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1 min-w-0">
+                      <span className="text-[10px] font-bold text-[#0B2438] tabular-nums truncate max-w-full">{x.sales ? x.sales.toLocaleString('en-US') : ''}</span>
+                      <div className="w-full max-w-[46px] rounded-t-lg"
+                        style={{ height: `${Math.max(x.sales ? 8 : 2, (x.sales / max) * 100)}%`, background: x.sales ? 'linear-gradient(180deg,#F5C55B,#D4A543)' : '#E8EBF0' }} />
+                      <span className="text-[10px] text-gray-500">{monthName(x.m)}</span>
+                      <span className="text-[10px] font-semibold text-[#0F6E56] h-3">{x.deals ? L(`${x.deals} deal(s)`, `${x.deals} ڈیل`, x.deals === 1 ? 'صفقة' : `${x.deals} صفقات`) : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-6">{L('Your sales chart appears here after your first accepted offer.', 'پہلی قبول شدہ پیشکش کے بعد یہاں چارٹ نظر آئے گا۔', 'سيظهر رسم مبيعاتك هنا بعد أول عرض مقبول.')}</p>
+              )}
+            </div>
+          )
+        })()}
+
         <div className="flex gap-2 mb-6" id="sup-list" style={{ scrollMarginTop: '70px' }}>
           {[{ key: 'rfqs', label: `${t.tabRfqs} (${openRfqs.length})` }, { key: 'offers', label: `${t.tabOffers} (${myOffers.length})` }].map((tab_: any) => (
             <button key={tab_.key} onClick={() => setTab(tab_.key)}
@@ -473,7 +581,7 @@ export default function SupplierDashboard() {
 
         {tab === 'rfqs' && (() => {
           const expiringList = openRfqs.filter((r: any) => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
-          const displayedRfqs = rfqFilter === 'expiring' ? expiringList : openRfqs
+          const displayedRfqs = rfqFilter === 'expiring' ? expiringList : sortedOpen
           return (
           <div className="stagger">
             {/* فلاتر الطلبات — منها «تنتهي قريباً» (قابلة للضغط) */}
@@ -498,15 +606,15 @@ export default function SupplierDashboard() {
             ) : (
               <div className="space-y-3">
                 {displayedRfqs.map((rfq: any) => (
-                  <Link key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`}
-                    className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#D4A543]/30 hover:-translate-y-0.5 transition-all duration-300">
+                  <Link key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`} onClick={() => markSeen(rfq.id)}
+                    className={`block bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:border-[#D4A543]/30 hover:-translate-y-0.5 transition-all duration-300 ${isFresh(rfq) ? 'tsk-glow border-[#D4A543]' : 'border-gray-100'}`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <AppIcon name="orders" tone="brand" variant="tone" size={44} />
                         <div className="min-w-0">
                           <div className="font-bold truncate" style={{ color: '#0B2438' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            {rfq.created_at && (Date.now() - new Date(rfq.created_at).getTime() < 12 * 3600 * 1000) && (
+                            {!offeredRfqIds.has(rfq.id) && (isFresh(rfq) || (rfq.created_at && Date.now() - new Date(rfq.created_at).getTime() < 12 * 3600 * 1000)) && (
                               <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}><Glyph e="🟢" /> {L('New', 'نیا', 'جديد')}</span>
                             )}
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>

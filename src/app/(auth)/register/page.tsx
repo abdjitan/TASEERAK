@@ -22,7 +22,8 @@ import Glyph from '@/components/shared/Glyph'
 const schema = z.object({
   role: z.enum(['contractor', 'supplier'] as const, { required_error: 'اختر نوع الحساب' }),
   full_name: z.string().min(3, 'الاسم مطلوب'),
-  company_name_ar: z.string().min(2, 'اسم الشركة أو النشاط مطلوب'),
+  // required for buyers and companies; an independent seller trades under their own name (checked in onSubmit)
+  company_name_ar: z.string().optional(),
   phone: z.string().regex(/^05[0-9]{8}$/, 'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
   password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
@@ -99,7 +100,7 @@ export default function RegisterPage() {
   const [phoneDup, setPhoneDup] = useState(false)
   const [emailDup, setEmailDup] = useState(false)
 
-  const { register, handleSubmit, watch, setValue, trigger, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, watch, setValue, trigger, setError, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema), mode: 'onChange',
   })
 
@@ -130,6 +131,10 @@ export default function RegisterPage() {
 
   async function onSubmit(data: FormData) {
     if (!agreedToTerms) { setFormError(t.agreeErr); return }
+    const soloSeller = data.role === 'supplier' && sellerKind === 'independent'
+    if (!soloSeller && (data.company_name_ar || '').trim().length < 2) {
+      setError('company_name_ar', { message: locale === 'en' ? 'Company or business name is required' : locale === 'ur' ? 'کمپنی یا کاروبار کا نام ضروری ہے' : 'اسم الشركة أو النشاط مطلوب' }); return
+    }
     if (phoneDup) { setFormError(t.phoneTaken); return }
     if (await checkEmailDup(data.email)) { setFormError(''); return }
     setSubmitting(true); setFormError('')
@@ -138,7 +143,7 @@ export default function RegisterPage() {
       const meta = {
         role: data.role,
         full_name: data.full_name.trim(),
-        company_name_ar: data.company_name_ar.trim() || data.full_name.trim(),
+        company_name_ar: (soloSeller ? '' : (data.company_name_ar || '').trim()) || data.full_name.trim(),
         phone: data.phone,
         preferred_language: locale,
         ...(data.role === 'supplier' ? { seller_kind: sellerKind } : {}),
@@ -250,11 +255,11 @@ export default function RegisterPage() {
             </div>
             {phoneDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2"><Glyph e="⚠" /> {t.phoneTaken}</p>}
 
-            <div>
+            {!(selectedType === 'supplier' && sellerKind === 'independent') && <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-400 font-normal">— {t.companyHint}</span></label>
               <input {...register('company_name_ar')} className="input-field" placeholder="شركة الصخر للمقاولات" />
               {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
-            </div>
+            </div>}
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>

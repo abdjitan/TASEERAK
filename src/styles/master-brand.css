@@ -873,3 +873,8 @@ html:has(.ts-dashboard) { font-size: 14.5px; }
 .ts-dashboard-brand { padding-block: 14px 10px !important; }
 .dashboard-brand-lockup { height: 68px !important; max-width: 102px !important; }
 .ts-dashboard-topbar > div { padding-block: 8px !important; }
+
+/* Supplier dashboard: requests still waiting for the supplier's price glow until opened */
+@keyframes tskGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(212,165,67,.45), 0 8px 24px -12px rgba(212,165,67,.5) } 50% { box-shadow: 0 0 0 6px rgba(212,165,67,0), 0 10px 30px -10px rgba(212,165,67,.75) } }
+.tsk-glow { animation: tskGlow 2.4s ease-in-out infinite }
+@media (prefers-reduced-motion: reduce) { .tsk-glow { animation: none; box-shadow: 0 0 0 3px rgba(212,165,67,.45) } }
