@@ -13,6 +13,7 @@ import SellerIcon from '@/components/shared/SellerIcon'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { normQuery } from '@/lib/productSearch'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
+import Glyph from '@/components/shared/Glyph'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
 // it into lines the buyer can fix, then send. Each line can open its specifications (PRODUCT_SPECS)
@@ -429,7 +430,7 @@ export default function QuickRequestPage() {
     return (
       <AppShell title={L('Price request', 'قیمت کی درخواست', 'طلب تسعير')} nav={getNav('contractor', locale, '/contractor/rfq/quick')} dir={dir}>
         <div className="max-w-lg mx-auto bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
-          <div className="text-5xl mb-4">✅</div>
+          <div className="text-5xl mb-4"><Glyph e="✅" /></div>
           <h2 className="text-2xl font-extrabold text-navy mb-2">{L('Request sent', 'درخواست بھیج دی گئی', 'تم إرسال طلبك')}</h2>
           <p className="text-gray-500 mb-6">{L('Suppliers near you will send their prices. We will notify you as quotes arrive.', 'قریبی سپلائرز قیمتیں بھیجیں گے۔', 'سيرسل الموردون القريبون منك أسعارهم، وسنُبلغك فور وصول أي عرض.')}</p>
           <div className="flex gap-3">
@@ -464,14 +465,14 @@ export default function QuickRequestPage() {
             {canListen && (
               <button type="button" onClick={toggleMic} aria-pressed={listening}
                 className={`px-4 py-2.5 rounded-xl font-bold border transition-all ${listening ? 'bg-red-50 border-red-300 text-red-600 animate-pulse' : 'bg-white border-gray-200 text-gray-700'}`}>
-                {listening ? '⏺ ' + L('Listening… tap to stop', 'سن رہے ہیں…', 'جارٍ الاستماع… اضغط للإيقاف') : '🎤 ' + L('Say it', 'بولیں', 'تحدّث')}
+                {listening ? '⏺ ' + L('Listening… tap to stop', 'سن رہے ہیں…', 'جارٍ الاستماع… اضغط للإيقاف') : '' + L('Say it', 'بولیں', 'تحدّث')}
               </button>
             )}
             <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
-              📷 {L('Add a photo', 'تصویر شامل کریں', 'صوّر المادة')}
+              <Glyph e="📷" /> {L('Add a photo', 'تصویر شامل کریں', 'صوّر المادة')}
             </button>
             <button type="button" onClick={() => setShowCatalog(true)} className="lg:hidden px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
-              🔍 {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}
+              <Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden"
               onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
@@ -485,7 +486,7 @@ export default function QuickRequestPage() {
 
         {/* Desktop: the catalog fills the main column; phones open it as a sheet */}
         <div id="catalog-inline" className="hidden lg:block lg:col-start-1 lg:row-start-2 lg:mt-5 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
-          <h2 className="font-bold text-navy">🔍 {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
+          <h2 className="font-bold text-navy"><Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
           <CatalogBrowser key={startQ + '|' + (startSection || '')} inline initialQuery={startQ} initialSection={startSection as any} locale={locale} picked={lines.map(l => ({ key: l.key, name: l.product_name }))} onPick={addFromCatalog} onRemove={removeLine} />
         </div>
 
@@ -493,7 +494,7 @@ export default function QuickRequestPage() {
         <div className="space-y-5 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-20 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
         {lines.length === 0 ? (
           <div className="hidden lg:block bg-white rounded-2xl p-6 border border-dashed border-gray-200 text-center text-sm text-gray-400">
-            <div className="text-3xl mb-2">🧾</div>
+            <div className="text-3xl mb-2"><Glyph e="🧾" /></div>
             {L('Your list is empty. Add materials by writing, speaking, a photo or from the catalog.', 'آپ کی فہرست خالی ہے۔', 'طلبك فارغ. أضف موادك بالكتابة أو الصوت أو الصورة أو من دليل المواد.')}
           </div>
         ) : (
@@ -524,7 +525,7 @@ export default function QuickRequestPage() {
                           <b className="text-[#9D7425]">{l.quantity} {l.unit}</b>
                           {Object.values(l.specs || {}).filter(v => (v || '').trim()).length ? ' · ' + Object.values(l.specs || {}).filter(v => (v || '').trim()).join('، ') : ''}
                           {l.details.trim() ? ' · ' + l.details.trim() : ''}
-                          {l.fileId ? ' · 📎' : ''}
+                          {l.fileId ? ' · ' : ''}
                         </span>
                       </span>
                       <span className="text-xs font-bold text-gray-400 shrink-0">✎ {L('Edit', 'ترمیم', 'تعديل')}</span>
@@ -544,7 +545,7 @@ export default function QuickRequestPage() {
                         <p className="text-[11px] font-semibold text-gray-700" dir="auto">= {l.original}</p>
                       )}
                       {ph && ph.status === 'done' && (
-                        <p className="text-[11px] text-gray-500">🤖 {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'غير متأكد') : ''}
+                        <p className="text-[11px] text-gray-500"><Glyph e="🤖" /> {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'غير متأكد') : ''}
                           {locale !== 'ar' && ph.localName && <span className="block font-semibold text-gray-700" dir="auto">= {ph.localName}</span>}
                         </p>
                       )}
@@ -554,7 +555,7 @@ export default function QuickRequestPage() {
                       {l.suggestion && l.suggestion.name !== l.product_name && (
                         <button type="button" onClick={() => updateLine(l.key, { product_name: l.suggestion!.name, sector: l.suggestion!.sector, suggestion: null })}
                           className="text-[11px] font-bold px-2 py-1 rounded-lg border border-dashed hover:bg-[#0F6E56]/5" style={{ borderColor: '#0F6E56', color: '#0F6E56' }}>
-                          📦 {L('Did you mean', 'کیا آپ کا مطلب', 'هل تقصد')}: {l.suggestion.name}؟
+                          <Glyph e="📦" /> {L('Did you mean', 'کیا آپ کا مطلب', 'هل تقصد')}: {l.suggestion.name}؟
                         </button>
                       )}
                       <div className="text-[11px] text-gray-400">{sectorLabel(l.sector)}</div>
@@ -581,12 +582,12 @@ export default function QuickRequestPage() {
                           {fields.length > 0 && (
                             <button type="button" onClick={() => setSpecsOpen(open ? null : l.key)} aria-expanded={open}
                               className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${n ? 'border-[#0F6E56] text-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 text-gray-600'}`}>
-                              ⚙️ {L('Specifications', 'تفصیلات', 'المواصفات')}{n ? ` (${n})` : ''} {open ? '▴' : '▾'}
+                              <Glyph e="⚙" /> {L('Specifications', 'تفصیلات', 'المواصفات')}{n ? ` (${n})` : ''} {open ? '▴' : '▾'}
                             </button>
                           )}
                           <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
                             className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border max-w-[14rem] truncate ${l.fileId ? 'border-purple-300 text-purple-700 bg-purple-50' : 'border-gray-200 text-gray-600'}`}>
-                            📎 {l.fileId ? (l.fileName || L('File attached', 'فائل منسلک', 'ملف مرفق')) : L('Attach a drawing or file', 'ڈرائنگ یا فائل', 'أرفق مخططاً أو ملفاً')}
+                            <Glyph e="📎" /> {l.fileId ? (l.fileName || L('File attached', 'فائل منسلک', 'ملف مرفق')) : L('Attach a drawing or file', 'ڈرائنگ یا فائل', 'أرفق مخططاً أو ملفاً')}
                           </button>
                           {l.fileId && (
                             <button type="button" onClick={() => { deleteDraftBlobs([l.fileId!]); updateLine(l.key, { fileId: undefined, fileName: undefined }) }}
@@ -681,7 +682,7 @@ export default function QuickRequestPage() {
                   placeholder={geo ? L('Address details: district, street, landmark (optional)', 'پتہ: محلہ، گلی، نشانی (اختیاری)', 'تفاصيل العنوان: الحي، الشارع، علامة مميزة (اختياري)')
                     : L('Address: district, street, landmark (required if no map location)', 'پتہ (اگر نقشے پر مقام نہیں تو ضروری)', 'العنوان: الحي، الشارع، علامة مميزة (مطلوب إن لم تحدّد الموقع)')} />
                 {geo && geoFromProfile && <p className="text-[11px] text-gray-500">{L('Location filled from your profile — change it if this delivery goes elsewhere.', 'مقام آپ کی پروفائل سے لیا گیا — ضرورت ہو تو بدلیں۔', 'عُبّئ الموقع من ملفك الشخصي — غيّره إن كان التوصيل إلى مكان آخر.')}</p>}
-                <p className="text-[11px] text-gray-400">🔒 {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
+                <p className="text-[11px] text-gray-400"><Glyph e="🔒" /> {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
               </div>
             )}
             <details>
@@ -746,7 +747,7 @@ export default function QuickRequestPage() {
                         </div>
                         {(sp.length > 0 || l.details.trim() || l.fileId) && (
                           <div className="text-xs text-gray-500 mt-1" dir="auto">
-                            {[sp.join('، '), l.details.trim(), l.fileId ? '📎 ' + (l.fileName || L('Attachment', 'فائل', 'مرفق')) : ''].filter(Boolean).join(' · ')}
+                            {[sp.join('، '), l.details.trim(), l.fileId ? '' + (l.fileName || L('Attachment', 'فائل', 'مرفق')) : ''].filter(Boolean).join(' · ')}
                           </div>
                         )}
                       </li>

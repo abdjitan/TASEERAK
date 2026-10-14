@@ -1,3 +1,4 @@
+import Glyph from '@/components/shared/Glyph'
 'use client'
 
 // Reusable verification badge — shows a supplier/contractor's
@@ -31,7 +32,7 @@ export default function VerifiedBadge({ status, source, locale = 'ar', size = 's
         style={{ background: viaWathq ? '#0F6E56' : '#E1F5EE', color: viaWathq ? '#fff' : '#0F6E56' }}
         title={viaWathq ? t.wathq : t.verified}
       >
-        <span>{viaWathq ? '🛡' : '✓'}</span>
+        <span>{viaWathq ? <Glyph e="🛡" /> : '✓'}</span>
         {viaWathq ? t.wathq : t.verified}
       </span>
     )
@@ -50,7 +51,7 @@ export default function VerifiedBadge({ status, source, locale = 'ar', size = 's
   return (
     <span className={`inline-flex items-center gap-1 rounded-full font-bold ${pad}`}
       style={{ background: '#FEF3C7', color: '#D97706' }}>
-      ⏳ {t.pending}
+      <Glyph e="⏳" /> {t.pending}
     </span>
   )
 }

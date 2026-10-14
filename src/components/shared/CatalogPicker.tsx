@@ -7,6 +7,7 @@ import { searchProducts, normQuery } from '@/lib/productSearch'
 import { createClient } from '@/lib/supabase/client'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import CatIcon from '@/components/shared/CatIcon'
+import Glyph from '@/components/shared/Glyph'
 
 // Pick materials from the catalog inside the request page (the 4th way to add a line, next to
 // writing, speaking and a photo). Search across everything, or browse the 8 user-facing sections
@@ -158,7 +159,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
           ) : web.result?.understood ? (
             <>
               <div className="text-sm">
-                <span className="text-xs font-bold text-[#0F6E56]">🌐 {L('We found what you mean', 'ہم سمجھ گئے', 'فهمنا ما تقصد')}</span>
+                <span className="text-xs font-bold text-[#0F6E56]"><Glyph e="🌐" /> {L('We found what you mean', 'ہم سمجھ گئے', 'فهمنا ما تقصد')}</span>
                 <div className="font-extrabold text-navy mt-0.5" dir="auto">{web.result.name_ar}{web.result.name_en ? <span className="text-xs font-normal text-gray-400"> · {web.result.name_en}</span> : null}</div>
                 {web.result.what_it_is && <div className="text-xs text-gray-600 mt-0.5" dir="auto">{web.result.what_it_is}</div>}
               </div>
@@ -278,7 +279,7 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
       <div className="bg-white w-full sm:max-w-3xl max-h-[92vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}>
         <div className="px-4 pt-4 pb-2 flex items-center justify-between border-b border-gray-100">
-          <h2 className="font-extrabold text-navy">🔍 {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
+          <h2 className="font-extrabold text-navy"><Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
           <button type="button" onClick={onClose} className="text-sm font-bold px-4 py-1.5 rounded-xl text-white" style={{ background: '#0B2438' }}>
             {picked.length ? L(`Done (${picked.length})`, `مکمل (${picked.length})`, `تم (${picked.length})`) : L('Close', 'بند کریں', 'إغلاق')}
           </button>
@@ -289,7 +290,7 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
         {picked.length > 0 && (
           <div className="border-t border-gray-100 bg-gray-50">
             <button type="button" onClick={() => setShowPicked(v => !v)} className="w-full px-4 py-2.5 text-xs font-bold text-navy flex justify-between">
-              <span>🧾 {L('Your list', 'آپ کی فہرست', 'قائمتك')} ({picked.length})</span><span>{showPicked ? '▾' : '▴'}</span>
+              <span><Glyph e="🧾" /> {L('Your list', 'آپ کی فہرست', 'قائمتك')} ({picked.length})</span><span>{showPicked ? '▾' : '▴'}</span>
             </button>
             {showPicked && (
               <div className="max-h-40 overflow-y-auto px-3 pb-3 space-y-1">

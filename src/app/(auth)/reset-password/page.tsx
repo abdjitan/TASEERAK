@@ -5,13 +5,14 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import Glyph from '@/components/shared/Glyph'
 
 const txt = {
   ar: {
     title: 'تعيين كلمة مرور جديدة', sub: 'اكتب كلمة المرور الجديدة لحسابك',
     pass: 'كلمة المرور الجديدة', confirm: 'تأكيد كلمة المرور',
     save: 'حفظ كلمة المرور', saving: 'جارٍ الحفظ...',
-    doneTitle: 'تم بنجاح ✅', doneSub: 'تم تغيير كلمة مرورك. يمكنك تسجيل الدخول الآن.',
+    doneTitle: 'تم بنجاح ', doneSub: 'تم تغيير كلمة مرورك. يمكنك تسجيل الدخول الآن.',
     toLogin: 'تسجيل الدخول ←',
     short: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
     mismatch: 'كلمتا المرور غير متطابقتين',
@@ -22,7 +23,7 @@ const txt = {
     title: 'Set a new password', sub: 'Enter a new password for your account',
     pass: 'New password', confirm: 'Confirm password',
     save: 'Save password', saving: 'Saving...',
-    doneTitle: 'Success ✅', doneSub: 'Your password has been changed. You can sign in now.',
+    doneTitle: 'Success ', doneSub: 'Your password has been changed. You can sign in now.',
     toLogin: 'Sign in →',
     short: 'Password must be at least 8 characters',
     mismatch: 'Passwords do not match',
@@ -33,7 +34,7 @@ const txt = {
     title: 'نیا پاسورڈ مقرر کریں', sub: 'اپنے اکاؤنٹ کے لیے نیا پاسورڈ درج کریں',
     pass: 'نیا پاسورڈ', confirm: 'پاسورڈ کی تصدیق',
     save: 'پاسورڈ محفوظ کریں', saving: 'محفوظ ہو رہا ہے...',
-    doneTitle: 'کامیاب ✅', doneSub: 'آپ کا پاسورڈ تبدیل ہو گیا۔ اب سائن ان کریں۔',
+    doneTitle: 'کامیاب ', doneSub: 'آپ کا پاسورڈ تبدیل ہو گیا۔ اب سائن ان کریں۔',
     toLogin: 'سائن ان ←',
     short: 'پاسورڈ کم از کم 8 حروف کا ہونا چاہیے',
     mismatch: 'پاسورڈ مماثل نہیں',
@@ -97,7 +98,7 @@ export default function ResetPasswordPage() {
         <div className="bg-white rounded-3xl p-8 shadow-2xl">
           {done ? (
             <div className="text-center">
-              <div className="text-5xl mb-4">🎉</div>
+              <div className="text-5xl mb-4"><Glyph e="🎉" /></div>
               <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.doneTitle}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.doneSub}</p>
               <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.toLogin}</a>
@@ -106,7 +107,7 @@ export default function ResetPasswordPage() {
             <p className="text-center text-sm text-gray-500 py-6">...</p>
           ) : !ready ? (
             <div className="text-center">
-              <div className="text-4xl mb-3">⚠️</div>
+              <div className="text-4xl mb-3"><Glyph e="⚠" /></div>
               <p className="text-sm text-gray-600 mb-6">{t.invalid}</p>
               <a href="/forgot-password" className="inline-block w-full py-3 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{t.requestNew}</a>
             </div>
@@ -114,7 +115,7 @@ export default function ResetPasswordPage() {
             <>
               <h2 className="text-xl font-bold text-[#0B2438] mb-1">{t.title}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.sub}</p>
-              {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">⚠️ {error}</div>}
+              {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4 mb-5">
                   <div>

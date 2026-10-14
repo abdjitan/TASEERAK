@@ -17,6 +17,7 @@ import DealProtection from '@/components/shared/DealProtection'
 import { tierLabel, sourceLabel, availabilityLabel, isDirectSource, sourceIcon, availabilityIcon, tierIcon } from '@/lib/sellers'
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
+import Glyph from '@/components/shared/Glyph'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -118,7 +119,7 @@ export default function OfferDetailPage() {
   if (loading) return <PageLoader />
   if (!offer || !rfq) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9] text-center">
-      <div><div className="text-5xl mb-3">🔍</div><p className="font-bold" style={{ color: '#0B2438' }}>{L('Offer not found', 'آفر نہیں ملی', 'العرض غير موجود')}</p>
+      <div><div className="text-5xl mb-3"><Glyph e="🔍" /></div><p className="font-bold" style={{ color: '#0B2438' }}>{L('Offer not found', 'آفر نہیں ملی', 'العرض غير موجود')}</p>
         <Link href={`/contractor/rfq/${id}`} className="text-sm text-[#9D7425] underline mt-2 inline-block">← {L('Back to request', 'درخواست پر واپس', 'رجوع للطلب')}</Link></div>
     </div>
   )
@@ -138,7 +139,7 @@ export default function OfferDetailPage() {
   const waReduce = '' // التفاوض قبل الترسية يتم داخل المنصة (لا واتساب)
   const statusBadge = offer.status === 'accepted' ? { t: `✓ ${L('Accepted', 'قبول شدہ', 'مقبول')}`, c: 'bg-emerald-100 text-emerald-700' }
     : offer.status === 'rejected' ? { t: `✕ ${L('Rejected', 'رد شدہ', 'مرفوض')}`, c: 'bg-gray-100 text-gray-500' }
-    : { t: `⏳ ${L('Under review', 'زیرِ غور', 'قيد المراجعة')}`, c: 'bg-amber-100 text-amber-700' }
+    : { t: `${L('Under review', 'زیرِ غور', 'قيد المراجعة')}`, c: 'bg-amber-100 text-amber-700' }
 
   const Row = ({ label, value }: any) => value ? (
     <div className="flex justify-between gap-3 py-2 border-b border-gray-50 text-sm">
@@ -150,7 +151,7 @@ export default function OfferDetailPage() {
     <AppShell title={L('Offer details', 'آفر کی تفصیل', 'تفاصيل العرض')} nav={getNav('contractor', locale, '/contractor')} dir={dir}>
       <div className="max-w-3xl mx-auto space-y-5">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}>📋</div>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}><Glyph e="📋" /></div>
           <div>
             <h1 className="text-xl font-bold" style={{ color: '#0B2438' }}>{L('Offer details', 'آفر کی تفصیل', 'تفاصيل العرض')}</h1>
             <p className="text-gray-500 text-sm"><span className="font-mono font-bold text-[#9D7425]" dir="auto">{rfqRefLine(rfq, locale)}</span> · {rfqDesc(rfq, locale)}</p>
@@ -179,13 +180,13 @@ export default function OfferDetailPage() {
           <Link href={`/contractor/orders/${offer.id}`}
             className="block text-center text-sm font-semibold py-2.5 rounded-xl border-2 transition-all hover:shadow-sm"
             style={{ borderColor: '#0F6E56', color: '#0F6E56' }}>
-            📄 {L('Purchase order / deal statement', 'پرچیز آرڈر / ڈیل کا بیان', 'أمر الشراء / بيان الصفقة')} ←
+            <Glyph e="📄" /> {L('Purchase order / deal statement', 'پرچیز آرڈر / ڈیل کا بیان', 'أمر الشراء / بيان الصفقة')} ←
           </Link>
         )}
 
         {/* الطلب */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <h2 className="font-bold text-sm mb-2" style={{ color: '#0B2438' }}>📦 {L('Request details', 'درخواست کی تفصیل', 'تفاصيل الطلب')}</h2>
+          <h2 className="font-bold text-sm mb-2" style={{ color: '#0B2438' }}><Glyph e="📦" /> {L('Request details', 'درخواست کی تفصیل', 'تفاصيل الطلب')}</h2>
           <Row label={L('Product', 'پروڈکٹ', 'المنتج')} value={getProductLabel(rfq.product_name, locale)} />
           <Row label={L('Sector', 'شعبہ', 'القطاع')} value={(locale !== 'ar' && SECTOR_I18N[locale]?.[rfq.sector]) || (SECTOR_LABELS as any)[rfq.sector] || rfq.sector} />
           <Row label={L('Quantity', 'مقدار', 'الكمية')} value={`${rfq.quantity} ${getUnitLabel(rfq.unit, locale)}`} />
@@ -196,13 +197,13 @@ export default function OfferDetailPage() {
 
         {/* المورد */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}>🏪 {L('Supplier', 'سپلائر', 'المورد')}</h2>
+          <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}><Glyph e="🏪" /> {L('Supplier', 'سپلائر', 'المورد')}</h2>
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="font-bold text-gray-900">{s.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</span>
             {s.supplier_tier && <span className="badge text-[10px] bg-[#D4A543]/5 text-[#9D7425]"><SellerIcon name={tierIcon(s.supplier_tier)} /> {tierText}</span>}
             {s.verification_status === 'verified' && (
               <span className="badge text-[10px]" style={s.cr_verification_source === 'wathq' ? { background: '#0F6E56', color: '#fff' } : { background: '#E1F5EE', color: '#0F6E56' }}>
-                {s.cr_verification_source === 'wathq' ? `🛡 ${L('Verified via Wathq', 'واثق کے ذریعے تصدیق شدہ', 'موثّق عبر واثق')}` : `✓ ${L('Verified', 'تصدیق شدہ', 'موثّق')}`}
+                {s.cr_verification_source === 'wathq' ? `${L('Verified via Wathq', 'واثق کے ذریعے تصدیق شدہ', 'موثّق عبر واثق')}` : `✓ ${L('Verified', 'تصدیق شدہ', 'موثّق')}`}
               </span>
             )}
             {s.verification_status !== 'verified' && s.cr_verification_source !== 'wathq' && (
@@ -215,30 +216,30 @@ export default function OfferDetailPage() {
             )}
             {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(offer.availability)} /> {availabilityLabel(offer.availability, locale)}</></span>}
             {Array.isArray(s.approvals) && s.approvals.map((a: string) => (
-              <span key={a} className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>🏅 {L('Approved by', 'منظور شدہ:', 'معتمد لدى')} {approvalLabel(a)}</span>
+              <span key={a} className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}><Glyph e="🏅" /> {L('Approved by', 'منظور شدہ:', 'معتمد لدى')} {approvalLabel(a)}</span>
             ))}
           </div>
-          <Row label={L('Rating', 'ریٹنگ', 'التقييم')} value={s.rating_avg > 0 ? `⭐ ${s.rating_avg}` : null} />
+          <Row label={L('Rating', 'ریٹنگ', 'التقييم')} value={s.rating_avg > 0 ? `${s.rating_avg}` : null} />
           <Row label={L('Location', 'مقام', 'الموقع')} value={[s.district, s.city, s.region].filter(Boolean).join(L(', ', '، ', '، '))} />
           <Row label={L('National address', 'نیشنل ایڈریس', 'العنوان الوطني')} value={s.national_short_address} />
           {accepted
             ? <Row label={L('Contact number', 'رابطہ نمبر', 'رقم التواصل')} value={contactNum} />
-            : <div className="text-[11px] text-gray-400 py-2 border-b border-gray-50 leading-relaxed">🔒 {L('The supplier contact number appears after award (deal done). For now, contact them through the in-app chat.', 'سپلائر کا رابطہ نمبر ایوارڈ (ڈیل مکمل ہونے) کے بعد نظر آئے گا۔ ابھی اندرونی چیٹ سے رابطہ کریں۔', 'رقم تواصل المورد يظهر بعد الترسية (إتمام الصفقة). تواصل معه الآن عبر الدردشة الداخلية.')}</div>}
+            : <div className="text-[11px] text-gray-400 py-2 border-b border-gray-50 leading-relaxed"><Glyph e="🔒" /> {L('The supplier contact number appears after award (deal done). For now, contact them through the in-app chat.', 'سپلائر کا رابطہ نمبر ایوارڈ (ڈیل مکمل ہونے) کے بعد نظر آئے گا۔ ابھی اندرونی چیٹ سے رابطہ کریں۔', 'رقم تواصل المورد يظهر بعد الترسية (إتمام الصفقة). تواصل معه الآن عبر الدردشة الداخلية.')}</div>}
           <div className="flex gap-2 mt-3 flex-wrap">
             <button type="button" onClick={async () => {
               const supabase = createClient()
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: offer.supplier_id })
               if (error || !data) { alert(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }
               router.push(`/messages?c=${data}`)
-            }} className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#0B2438' }}>💬 {L('In-app message', 'اندرونی پیغام', 'رسالة داخلية')}</button>
+            }} className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="💬" /> {L('In-app message', 'اندرونی پیغام', 'رسالة داخلية')}</button>
             {wa && <a href={wa} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold text-white" style={{ background: '#25D366' }}>{L('WhatsApp', 'واٹس ایپ', 'تواصل واتساب')}</a>}
-            {mapsUrl && <a href={mapsUrl} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600">🗺 {L('Supplier location', 'سپلائر کا مقام', 'موقع المورد')}</a>}
+            {mapsUrl && <a href={mapsUrl} target="_blank" rel="noreferrer" className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600"><Glyph e="🗺" /> {L('Supplier location', 'سپلائر کا مقام', 'موقع المورد')}</a>}
           </div>
         </div>
 
         {/* العرض */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}>💰 {L('Offer details', 'آفر کی تفصیل', 'تفاصيل العرض')}</h2>
+          <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}><Glyph e="💰" /> {L('Offer details', 'آفر کی تفصیل', 'تفاصيل العرض')}</h2>
           <Row label={L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')} value={offer.unit_price ? `${offer.unit_price.toLocaleString('en-US')} ${SAR}` : null} />
           <Row label={L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')} value={offer.delivery_days ? `${offer.delivery_days} ${L('days', 'دن', 'يوم')}` : null} />
 
@@ -262,11 +263,11 @@ export default function OfferDetailPage() {
                     <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</div>
                   </div>
                   {/* مواصفات المادة من المورد */}
-                  {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5">📝 {it.specification || it.notes}</p>}
-                  {it.warranty && <p className="text-[11px] font-semibold text-[#0F6E56] mt-1">🛡 {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</p>}
+                  {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5"><Glyph e="📝" /> {it.specification || it.notes}</p>}
+                  {it.warranty && <p className="text-[11px] font-semibold text-[#0F6E56] mt-1"><Glyph e="🛡" /> {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</p>}
                   {it.attachment_url && (
                     <a href={fileHref(it.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#9D7425] underline mt-1.5">
-                      📎 {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}
+                      <Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}
                     </a>
                   )}
                 </div>
@@ -299,10 +300,10 @@ export default function OfferDetailPage() {
               ))}
             </div>
           )}
-          {offer.notes && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-2">📝 {offer.notes}</p>}
+          {offer.notes && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-2"><Glyph e="📝" /> {offer.notes}</p>}
           {offer.attachment_url && (
             <a href={fileHref(offer.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-[#9D7425] underline mt-1">
-              📎 {offer.attachment_name || L('Offer attachment', 'آفر کی فائل', 'مرفق العرض')}
+              <Glyph e="📎" /> {offer.attachment_name || L('Offer attachment', 'آفر کی فائل', 'مرفق العرض')}
             </a>
           )}
         </div>
@@ -310,7 +311,7 @@ export default function OfferDetailPage() {
         {/* معلومات إضافية عن المنتج */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-bold text-sm" style={{ color: '#0B2438' }}>❓ {L('More product information', 'پروڈکٹ کے بارے میں مزید معلومات', 'معلومات إضافية عن المنتج')}</h2>
+            <h2 className="font-bold text-sm" style={{ color: '#0B2438' }}><Glyph e="❓" /> {L('More product information', 'پروڈکٹ کے بارے میں مزید معلومات', 'معلومات إضافية عن المنتج')}</h2>
             {offer.status === 'pending' && !offer.info_request && (
               <button type="button" onClick={() => setInfoOpen(true)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 font-semibold">{L('Ask for info', 'معلومات مانگیں', 'اطلب معلومات')}</button>
             )}
@@ -320,7 +321,7 @@ export default function OfferDetailPage() {
               <div className="bg-gray-50 rounded-lg p-2.5 text-sm"><span className="text-gray-400 text-[11px]">{L('Your question:', 'آپ کا سوال:', 'سؤالك:')}</span><div>{offer.info_request}</div></div>
               {offer.info_response
                 ? <div className="bg-emerald-50 rounded-lg p-2.5 text-sm"><span className="text-emerald-600 text-[11px]">{L('Supplier reply:', 'سپلائر کا جواب:', 'رد المورد:')}</span><div>{offer.info_response}</div></div>
-                : <div className="text-xs text-amber-600">⏳ {L('Waiting for the supplier reply...', 'سپلائر کے جواب کا انتظار ہے...', 'بانتظار رد المورد...')}</div>}
+                : <div className="text-xs text-amber-600"><Glyph e="⏳" /> {L('Waiting for the supplier reply...', 'سپلائر کے جواب کا انتظار ہے...', 'بانتظار رد المورد...')}</div>}
             </div>
           ) : (
             <p className="text-xs text-gray-400">{L('Ask the supplier for more product details (type, specs, origin, warranty...).', 'سپلائر سے پروڈکٹ کی مزید تفصیل مانگیں (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی...)۔', 'اطلب من المورد تفاصيل إضافية عن المنتج (النوع، المواصفات، المنشأ، الضمان...).')}</p>
@@ -342,7 +343,7 @@ export default function OfferDetailPage() {
             ) : (
               <>
                 <button type="button" onClick={() => setReqOpen(true)} className="block w-full text-center text-sm mb-2 px-4 py-2.5 rounded-xl font-semibold border" style={{ borderColor: '#D4A543', color: '#D4A543' }}>
-                  📉 {L('Ask for a further discount (with a deadline)', 'مزید رعایت مانگیں (مقررہ وقت کے ساتھ)', 'اطلب تخفيض إضافي (بمهلة محددة)')}
+                  <Glyph e="📉" /> {L('Ask for a further discount (with a deadline)', 'مزید رعایت مانگیں (مقررہ وقت کے ساتھ)', 'اطلب تخفيض إضافي (بمهلة محددة)')}
                 </button>
                 {waReduce && <a href={waReduce} target="_blank" rel="noreferrer" className="block text-center text-[11px] text-gray-400 underline mb-3">{L('or message them on WhatsApp', 'یا واٹس ایپ پر پیغام بھیجیں', 'أو راسله عبر واتساب')}</a>}
               </>
@@ -358,7 +359,7 @@ export default function OfferDetailPage() {
         {reqOpen && (
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !reqBusy && setReqOpen(false)}>
             <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir={dir} onClick={(e: any) => e.stopPropagation()}>
-              <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>📉 {L('Further discount request', 'مزید رعایت کی درخواست', 'طلب تخفيض إضافي')}</h3>
+              <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="📉" /> {L('Further discount request', 'مزید رعایت کی درخواست', 'طلب تخفيض إضافي')}</h3>
               <p className="text-xs text-gray-500 mb-4">{L('We send the supplier a request to lower the price; they reply within the deadline you set.', 'ہم سپلائر کو قیمت کم کرنے کی درخواست بھیجیں گے، وہ آپ کے دیے گئے وقت میں جواب دے گا۔', 'نرسل طلباً للمورد لتخفيض سعره، ويرد خلال المهلة التي تحددها أنت.')}</p>
               <label className="block text-xs font-bold text-gray-500 mb-1">{L('Reply deadline', 'جواب کی مہلت', 'مهلة الرد')}</label>
               <select value={reqHours} onChange={(e: any) => setReqHours(Number(e.target.value))} className="input-field mb-3">
@@ -382,7 +383,7 @@ export default function OfferDetailPage() {
         {infoOpen && (
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !infoBusy && setInfoOpen(false)}>
             <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir={dir} onClick={(e: any) => e.stopPropagation()}>
-              <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>❓ {L('Request more information', 'مزید معلومات کی درخواست', 'طلب معلومات إضافية')}</h3>
+              <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="❓" /> {L('Request more information', 'مزید معلومات کی درخواست', 'طلب معلومات إضافية')}</h3>
               <p className="text-xs text-gray-500 mb-3">{L('What do you want to know about the product? (type, specs, origin, warranty…)', 'پروڈکٹ کے بارے میں کیا معلومات چاہیے؟ (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی…)', 'ما المعلومات التي تريدها عن المنتج؟ (النوع، المواصفات، المنشأ، الضمان…)')}</p>
               <textarea value={infoText} onChange={(e: any) => setInfoText(e.target.value)} rows={3} className="input-field mb-3" placeholder={L('e.g. Where is the steel from? Does it meet ASTM? Is there a quality certificate?', 'مثال: سریا کہاں کا بنا ہے؟ کیا یہ ASTM کے مطابق ہے؟ کیا کوالٹی سرٹیفکیٹ ہے؟', 'مثال: ما منشأ الحديد؟ هل يطابق مواصفة ASTM؟ هل يوجد شهادة جودة؟')} />
               <div className="flex gap-2">

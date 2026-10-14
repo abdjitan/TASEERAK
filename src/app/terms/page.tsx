@@ -3,12 +3,13 @@
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import Glyph from '@/components/shared/Glyph'
 
 const C = {
   ar: {
     title: 'الشروط والأحكام',
     updated: 'آخر تحديث: يونيو 2026',
-    home: '🏠 الرئيسية',
+    home: 'الرئيسية',
     intro: 'مرحباً بك في منصة «تسعيرك». باستخدامك المنصة فإنك توافق على هذه الشروط والأحكام بالكامل. إذا لم توافق عليها، يُرجى عدم استخدام المنصة.',
     liabilityTitle: 'إخلاء مسؤولية مهم',
     liability: '«تسعيرك» منصة وسيطة لنقل المعلومات وتسهيل التواصل فقط — لا تبيع ولا توّرد ولا تشتري ولا تتوسّط مالياً. جميع الاتفاقيات والمدفوعات والتسليم والجودة تتم مباشرةً بين المشتري والمورد وعلى مسؤوليتهما الكاملة. لا تتحمّل المنصة أيّ مسؤولية — قانونية أو مالية أو جنائية أو غيرها — عن أي عملية نصب أو احتيال أو سرقة أو غشّ أو تزوير أو إخلال بالاتفاق أو ضرر أو أي تصرّف غير قانوني يقع بين المستخدمين أو من أي طرف. التحقّق والعناية الواجبة مسؤولية الطرفين وحدهما. وتتعاون المنصة مع الجهات المختصة عند ورود طلب نظامي، لكنها ليست طرفاً في أي نزاع ولا تضمن أو تكفل أي طرف أو منتج أو خدمة.',
@@ -31,7 +32,7 @@ const C = {
   en: {
     title: 'Terms & Conditions',
     updated: 'Last updated: June 2026',
-    home: '🏠 Home',
+    home: 'Home',
     intro: 'Welcome to Taseerak. By using the platform you agree to these Terms & Conditions in full. If you do not agree, please do not use the platform.',
     liabilityTitle: 'Important disclaimer',
     liability: 'Taseerak is an intermediary for transmitting information and enabling contact only — it does not sell, supply, buy, or act as a financial intermediary. All agreements, payments, delivery, and quality take place directly between the buyer and the supplier and at their full responsibility. The platform bears NO liability — legal, financial, criminal, or otherwise — for any scam, fraud, theft, deception, forgery, breach of agreement, damage, or any illegal act occurring between users or by any party. Verification and due diligence are solely the responsibility of both parties. The platform cooperates with the competent authorities upon lawful request, but is not a party to any dispute and does not guarantee any party, product, or service.',
@@ -54,7 +55,7 @@ const C = {
   ur: {
     title: 'شرائط و ضوابط',
     updated: 'آخری تازہ کاری: جون 2026',
-    home: '🏠 مرکزی صفحہ',
+    home: 'مرکزی صفحہ',
     intro: 'تسعیرک پلیٹ فارم میں خوش آمدید۔ پلیٹ فارم استعمال کرنے سے آپ ان شرائط و ضوابط سے مکمل اتفاق کرتے ہیں۔ اگر آپ متفق نہیں ہیں تو براہ کرم پلیٹ فارم استعمال نہ کریں۔',
     liabilityTitle: 'اہم دستبرداری (ذمہ داری سے انکار)',
     liability: '«تسعیرک» صرف معلومات کی ترسیل اور رابطہ آسان بنانے والا ثالث پلیٹ فارم ہے — یہ نہ بیچتا ہے، نہ سپلائی کرتا ہے، نہ خریدتا ہے اور نہ مالی ثالثی کرتا ہے۔ تمام معاہدے، ادائیگیاں، ترسیل اور معیار براہِ راست خریدار اور سپلائر کے درمیان اور انہی کی مکمل ذمہ داری پر ہوتے ہیں۔ پلیٹ فارم صارفین کے درمیان یا کسی بھی فریق کی جانب سے کسی دھوکہ دہی، فراڈ، چوری، جعل سازی، معاہدے کی خلاف ورزی، نقصان یا کسی بھی غیر قانونی عمل کے لیے کوئی قانونی، مالی، فوجداری یا کسی اور قسم کی ذمہ داری نہیں اٹھاتا۔ تصدیق اور مناسب احتیاط صرف دونوں فریقوں کی ذمہ داری ہے۔ پلیٹ فارم قانونی درخواست پر متعلقہ حکام کے ساتھ تعاون کرتا ہے، لیکن کسی تنازع میں فریق نہیں اور کسی فریق، پروڈکٹ یا سروس کی ضمانت نہیں دیتا۔',
@@ -100,13 +101,13 @@ export default function TermsPage() {
 
         <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-4">
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-lg">⚠️</span>
+            <span className="text-lg"><Glyph e="⚠" /></span>
             <h2 className="text-base font-extrabold text-red-700">{t.liabilityTitle}</h2>
           </div>
           <p className="text-sm text-red-800 leading-relaxed font-medium">{t.liability}</p>
         </div>
 
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 mb-6">⚠️ {t.note}</div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 mb-6"><Glyph e="⚠" /> {t.note}</div>
 
         <div className="space-y-5">
           {t.sections.map(([h, body], i) => (

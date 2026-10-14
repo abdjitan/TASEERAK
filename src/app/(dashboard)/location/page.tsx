@@ -10,6 +10,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import LocationPicker from '@/components/shared/LocationPicker'
 import { REGIONS } from '@/types'
+import Glyph from '@/components/shared/Glyph'
 
 const txt = {
   ar: {
@@ -20,7 +21,7 @@ const txt = {
     street: 'اسم الشارع', district: 'الحي', region: 'المنطقة', city: 'المدينة',
     postalCode: 'الرمز البريدي', additionalNo: 'الرقم الإضافي', selectRegion: 'اختر المنطقة',
     locationSection: 'تحديد الموقع على الخريطة', loading: 'جارٍ التحميل...',
-    verifyNote: '✅ توثيق الموقع يزيد من ثقة المشترين بك ويرفع ترتيبك في نتائج البحث',
+    verifyNote: 'توثيق الموقع يزيد من ثقة المشترين بك ويرفع ترتيبك في نتائج البحث',
     optional: 'اختياري',
   },
   en: {
@@ -31,7 +32,7 @@ const txt = {
     street: 'Street Name', district: 'District', region: 'Region', city: 'City',
     postalCode: 'Postal Code', additionalNo: 'Additional Number', selectRegion: 'Select region',
     locationSection: 'Pin Location on Map', loading: 'Loading...',
-    verifyNote: '✅ Verifying your location increases buyers\' trust and boosts your ranking',
+    verifyNote: 'Verifying your location increases buyers\' trust and boosts your ranking',
     optional: 'optional',
   },
   ur: {
@@ -42,7 +43,7 @@ const txt = {
     street: 'گلی کا نام', district: 'ضلع', region: 'علاقہ', city: 'شہر',
     postalCode: 'پوسٹل کوڈ', additionalNo: 'اضافی نمبر', selectRegion: 'علاقہ منتخب کریں',
     locationSection: 'نقشے پر مقام', loading: 'لوڈ ہو رہا ہے...',
-    verifyNote: '✅ مقام کی تصدیق خریداروں کا اعتماد بڑھاتی ہے',
+    verifyNote: 'مقام کی تصدیق خریداروں کا اعتماد بڑھاتی ہے',
     optional: 'اختیاری',
   },
 }
@@ -131,7 +132,7 @@ export default function LocationPage() {
         {/* العنوان الوطني */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl">🏛</span>
+            <span className="text-xl"><Glyph e="🏛" /></span>
             <h2 className="font-bold" style={{ color: '#0B2438' }}>{T.nationalAddr}</h2>
           </div>
           <p className="text-xs text-gray-400 mb-4">{T.nationalSub}</p>
@@ -185,7 +186,7 @@ export default function LocationPage() {
         {/* الموقع على الخريطة */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-xl">🗺</span>
+            <span className="text-xl"><Glyph e="🗺" /></span>
             <h2 className="font-bold" style={{ color: '#0B2438' }}>{T.locationSection}</h2>
           </div>
           <LocationPicker lat={lat} lng={lng} locale={locale}

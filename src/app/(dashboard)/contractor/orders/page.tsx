@@ -9,6 +9,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import { dealStage } from '@/lib/dealStage'
 import SellerIcon from '@/components/shared/SellerIcon'
+import Glyph from '@/components/shared/Glyph'
 
 // «صفقاتي» للمقاول — تجمع كل الصفقات المُرساة (العروض المقبولة) في مكان واحد مع مرحلتها
 // ورقم الفاتورة، وترتبط بأمر الشراء/الفاتورة. كانت دورة الصفقة تُفتح فقط من الطلب الأصلي.
@@ -55,7 +56,7 @@ export default function ContractorDealsPage() {
     <AppShell title={locale === 'en' ? 'My Deals' : 'صفقاتي'} nav={getNav('contractor', locale, '/contractor/orders')} dir={dir}>
       <div className="max-w-4xl mx-auto">
         <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-          className="input-field mb-3" placeholder={locale === 'en' ? '🔍 Search deals (product, supplier, invoice №)…' : '🔍 ابحث في الصفقات (منتج، مورّد، رقم فاتورة)…'} />
+          className="input-field mb-3" placeholder={locale === 'en' ? 'Search deals (product, supplier, invoice №)…' : 'ابحث في الصفقات (منتج، مورّد، رقم فاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">
           {[{ k: 'all', l: locale === 'en' ? 'All' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Disputed' : 'نزاعات' }].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)}
@@ -67,7 +68,7 @@ export default function ContractorDealsPage() {
 
         {shown.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
-            <div className="text-5xl mb-3">📦</div>
+            <div className="text-5xl mb-3"><Glyph e="📦" /></div>
             <p className="text-gray-500">{locale === 'en' ? 'No deals yet — accept an offer to start one.' : 'لا صفقات بعد — اقبل عرضاً لتبدأ صفقة.'}</p>
             <Link href="/contractor" className="inline-block mt-4 text-sm font-bold text-[#9D7425] hover:underline">{locale === 'en' ? 'Go to your requests →' : 'اذهب لطلباتك ←'}</Link>
           </div>

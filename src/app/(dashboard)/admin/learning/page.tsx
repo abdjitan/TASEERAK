@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import PageLoader from '@/components/shared/PageLoader'
+import Glyph from '@/components/shared/Glyph'
 
 // What the search learned from people (migration 142). Pairs reach "approved" by themselves once
 // 3 different people searched the same word and chose the same product; the rest wait here.
@@ -77,7 +78,7 @@ export default function AdminLearningPage() {
     <AppShell title="تعلّم البحث" nav={getNav('admin', 'ar', '/admin/learning')} dir="rtl">
       <div className="max-w-5xl mx-auto space-y-5">
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <h1 className="text-xl font-extrabold text-navy">🧠 ما تعلّمه البحث من المستخدمين</h1>
+          <h1 className="text-xl font-extrabold text-navy"><Glyph e="🧠" /> ما تعلّمه البحث من المستخدمين</h1>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
             كل بحث ينتهي باختيار مادة يُسجَّل. عندما يبحث 3 أشخاص مختلفين بالكلمة نفسها ويختارون المادة نفسها، تُعتمد الكلمة تلقائياً فتظهر تلك المادة أولاً للجميع. يمكنك اعتماد الكلمات المعلّقة أو رفضها هنا.
           </p>
@@ -139,7 +140,7 @@ export default function AdminLearningPage() {
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-          <h2 className="font-bold text-navy">🔎 عمليات بحث لم تجد شيئاً</h2>
+          <h2 className="font-bold text-navy"><Glyph e="🔎" /> عمليات بحث لم تجد شيئاً</h2>
           <p className="text-xs text-gray-500 mt-1">كلمات أو مواد ما زالت ناقصة: أضفها إلى القائمة أو إلى قاموس البحث.</p>
           {misses.length === 0 ? <p className="text-sm text-gray-400 mt-3">لا شيء بعد.</p> : (
             <div className="flex flex-wrap gap-2 mt-3">

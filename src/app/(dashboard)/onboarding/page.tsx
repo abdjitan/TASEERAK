@@ -13,6 +13,7 @@ import { rememberedSignupKind, SIGNUP_KIND_KEY } from '@/lib/sellers'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGION } from '@/types'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
+import Glyph from '@/components/shared/Glyph'
 
 // ── إعداد ملفك التجاري (Progressive profiling) ────────────────────────────
 // تُعبّأ هنا البيانات المنقولة خارج التسجيل: الموقع + القطاعات + (للمقاول: الدرجة)
@@ -297,7 +298,7 @@ export default function OnboardingPage() {
             {/* الموقع (مطلوب) */}
             <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-bold text-navy">📍 {t.location}</h2>
+                <h2 className="text-sm font-bold text-navy"><Glyph e="📍" /> {t.location}</h2>
                 <span className="text-[10px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -325,7 +326,7 @@ export default function OnboardingPage() {
               {/* موقعك على الخريطة (اختياري): المقاول بيشوف الأقرب، والمورد بتوصله طلبات منطقته */}
               <div className="mt-4">
                 <label className="block text-xs font-semibold text-gray-600 mb-1">
-                  📍 {locale === 'en' ? 'Your location on the map' : locale === 'ur' ? 'نقشے پر آپ کا مقام' : 'موقعك على الخريطة'}
+                  <Glyph e="📍" /> {locale === 'en' ? 'Your location on the map' : locale === 'ur' ? 'نقشے پر آپ کا مقام' : 'موقعك على الخريطة'}
                   <span className="font-normal text-gray-400"> ({locale === 'en' ? 'optional, recommended' : locale === 'ur' ? 'اختیاری' : 'اختياري، ويُنصح به'})</span>
                 </label>
                 <LocationPicker lat={lat} lng={lng} locale={locale} onChange={(a: number, b: number) => { setLat(a); setLng(b) }} />
@@ -335,7 +336,7 @@ export default function OnboardingPage() {
             {/* القطاعات / التخصصات (مطلوب للمورّد، اختياري للمشتري) */}
             <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
               <div className="flex items-center justify-between mb-0.5">
-                <h2 className="text-sm font-bold text-navy">🧩 {role === 'supplier' ? t.sectorsTitleS : t.sectorsTitleC}</h2>
+                <h2 className="text-sm font-bold text-navy"><Glyph e="🧩" /> {role === 'supplier' ? t.sectorsTitleS : t.sectorsTitleC}</h2>
                 {role === 'supplier'
                   ? <span className="text-[10px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
                   : <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{t.optional}</span>}
@@ -410,7 +411,7 @@ export default function OnboardingPage() {
             {role === 'supplier' && (
               <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-bold text-navy">🏢 {t.classTitle}</h2>
+                  <h2 className="text-sm font-bold text-navy"><Glyph e="🏢" /> {t.classTitle}</h2>
                 </div>
                 <p className="text-xs text-gray-500 mb-3 leading-relaxed">{t.classHint}</p>
                 <SellerKindPicker providerType={providerType || null} supplierTier={supplierTier} locale={locale}
@@ -428,7 +429,7 @@ export default function OnboardingPage() {
             {CONTRACTOR_FEATURES && role === 'contractor' && (
               <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>
                 <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-bold text-navy">🏅 {t.gradeTitle}</h2>
+                  <h2 className="text-sm font-bold text-navy"><Glyph e="🏅" /> {t.gradeTitle}</h2>
                   <span className="text-[10px] font-bold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">{t.optional}</span>
                 </div>
                 <p className="text-xs text-gray-500 mb-3 leading-relaxed">{t.gradeSub}</p>
@@ -448,7 +449,7 @@ export default function OnboardingPage() {
             {/* التوثيق (للمورّد) — بوابة إيراد: مقفلة حتى يكتمل الملف أعلاه، ثم تحفظ وتنقل لتبويب المستندات */}
             {role === 'supplier' && isIndividual && (
               <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56', background: 'rgba(15,110,86,0.06)', border: '1px solid rgba(15,110,86,0.2)' }}>
-                <div className="text-sm font-bold text-navy mb-1">⭐ {locale === 'en' ? 'Your trust comes from ratings' : locale === 'ur' ? 'آپ کا اعتماد ریٹنگ سے بنتا ہے' : 'تُبنى ثقتك من التقييمات'}</div>
+                <div className="text-sm font-bold text-navy mb-1"><Glyph e="⭐" /> {locale === 'en' ? 'Your trust comes from ratings' : locale === 'ur' ? 'آپ کا اعتماد ریٹنگ سے بنتا ہے' : 'تُبنى ثقتك من التقييمات'}</div>
                 <p className="text-xs text-gray-600 leading-relaxed">{locale === 'en' ? 'As an individual or price agent you do not need a shop or a commercial registration. After every deal the buyer rates your price accuracy and service, and those ratings show next to your quotes.' : locale === 'ur' ? 'انفرادی یا پرائس ایجنٹ کے طور پر آپ کو دکان یا کمرشل رجسٹریشن کی ضرورت نہیں۔ ہر ڈیل کے بعد خریدار آپ کو ریٹ کرتا ہے۔' : 'بصفتك بائعاً مستقلاً أو وسيطاً لا تحتاج إلى محل أو سجل تجاري. بعد كل صفقة يقيّم المشتري دقة سعرك وخدمتك، وتظهر هذه التقييمات بجانب عروضك.'}</p>
               </div>
             )}
@@ -456,7 +457,7 @@ export default function OnboardingPage() {
               profileComplete ? (
                 <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#D4A543', background: '#fff7ed', border: '1px solid #D4A54333' }}>
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl shrink-0">🛡️</span>
+                    <span className="text-2xl shrink-0"><Glyph e="🛡" /></span>
                     <div className="flex-1">
                       <div className="font-bold text-navy text-sm">{t.verifyTitle}</div>
                       <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t.verifyBody}</p>
@@ -470,7 +471,7 @@ export default function OnboardingPage() {
               ) : (
                 <div className="rounded-2xl p-5 border border-dashed" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#cbd2e0', background: '#f8fafc', borderColor: '#e4e9f2' }}>
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl shrink-0 opacity-50 grayscale">🛡️</span>
+                    <span className="text-2xl shrink-0 opacity-50 grayscale"><Glyph e="🛡" /></span>
                     <div className="flex-1">
                       <div className="flex items-center gap-1.5 font-bold text-gray-500 text-sm">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0"><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
@@ -511,13 +512,13 @@ export default function OnboardingPage() {
                 ))}
                 {role === 'supplier' && !isIndividual && (
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="w-5 h-5 grid place-items-center rounded-full text-[11px] shrink-0 bg-white/15">🛡</span>
+                    <span className="w-5 h-5 grid place-items-center rounded-full text-[11px] shrink-0 bg-white/15"><Glyph e="🛡" /></span>
                     <span className="text-blue-200">{t.stepVerify}</span>
                   </div>
                 )}
               </div>
 
-              {role === 'supplier' && <div className="text-[11px] text-blue-50 bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed">⚠️ {t.warn}</div>}
+              {role === 'supplier' && <div className="text-[11px] text-blue-50 bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed"><Glyph e="⚠" /> {t.warn}</div>}
 
               <SaveBtn full />
               <a href={roleHome} className="block text-center text-xs text-blue-200 hover:text-white mt-2.5">{t.later}</a>

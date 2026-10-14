@@ -11,6 +11,7 @@ import { getProductLabel, getUnitLabel } from '@/types'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { rfqRef, rfqDate } from '@/lib/rfqName'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
+import Glyph from '@/components/shared/Glyph'
 
 // «طلباتي»: every request of the buyer with its details — reference, date, materials (with
 // pictures), offers received, deadline and status — filterable and searchable; a card opens the
@@ -107,7 +108,7 @@ export default function MyRequestsPage() {
           {filter === 'ended' && counts.ended > 0 && (
             <button type="button" onClick={deleteEnded} disabled={deleting}
               className="px-3.5 py-2 rounded-xl text-sm font-bold border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50">
-              🗑 {deleting ? L('Deleting…', 'حذف ہو رہا ہے…', 'جارٍ الحذف…') : L(`Delete all (${counts.ended})`, `سب حذف کریں (${counts.ended})`, `حذف الكل (${counts.ended})`)}
+              <Glyph e="🗑" /> {deleting ? L('Deleting…', 'حذف ہو رہا ہے…', 'جارٍ الحذف…') : L(`Delete all (${counts.ended})`, `سب حذف کریں (${counts.ended})`, `حذف الكل (${counts.ended})`)}
             </button>
           )}
           <input value={q} onChange={e => setQ(e.target.value)} className="input-field max-w-xs ms-auto"
@@ -117,7 +118,7 @@ export default function MyRequestsPage() {
 
         {shown.length === 0 ? (
           <div className="bg-white rounded-2xl p-10 text-center border border-gray-100 text-gray-400">
-            <div className="text-4xl mb-2">🧾</div>
+            <div className="text-4xl mb-2"><Glyph e="🧾" /></div>
             {rfqs.length === 0 ? L('No requests yet.', 'ابھی کوئی درخواست نہیں۔', 'لا توجد طلبات بعد.') : L('Nothing matches.', 'کچھ نہیں ملا۔', 'لا توجد طلبات مطابقة.')}
           </div>
         ) : (
@@ -142,7 +143,7 @@ export default function MyRequestsPage() {
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${offers ? 'bg-[#D4A543]/10 text-[#9D7425] border-[#D4A543]/30' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
                         {offers ? L(`${offers} offer(s)`, `${offers} آفرز`, offers === 1 ? 'عرض واحد' : `${offers} عروض`) : L('No offers yet', 'ابھی کوئی آفر نہیں', 'لا عروض بعد')}
                       </span>
-                      {u && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: u.bg, color: u.fg, border: `1px solid ${u.border}` }}>⏰ {formatTimeLeft(r.expires_at, locale)}</span>}
+                      {u && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: u.bg, color: u.fg, border: `1px solid ${u.border}` }}><Glyph e="⏰" /> {formatTimeLeft(r.expires_at, locale)}</span>}
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">

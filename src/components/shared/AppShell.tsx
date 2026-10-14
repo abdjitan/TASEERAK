@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import NavIcon from '@/components/shared/NavIcon'
+import Glyph from '@/components/shared/Glyph'
 
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
 export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number }
@@ -189,7 +190,7 @@ export default function AppShell({
         <button onClick={() => setOpen(true)}
           className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2"
           style={{ color: '#64748b' }} aria-label={locale === 'en' ? 'More' : 'المزيد'}>
-          <span className="text-[19px] leading-none">☰</span>
+          <span className="text-[19px] leading-none"><Glyph e="☰" /></span>
           <span className="text-[10px] font-bold">{locale === 'en' ? 'More' : locale === 'ur' ? 'مزید' : 'المزيد'}</span>
         </button>
       </nav>

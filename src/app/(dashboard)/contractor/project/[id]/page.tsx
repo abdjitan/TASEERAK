@@ -15,8 +15,9 @@ import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 import { tierLabel, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
+import Glyph from '@/components/shared/Glyph'
 
-const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
+const SECTOR_ICONS = { civil: <Glyph e="🏗" />, architectural: <Glyph e="🏛" />, electrical: <Glyph e="⚡" />, mechanical: <Glyph e="⚙" />, equipment: <Glyph e="🚜" />, supply_store: <Glyph e="🏪" /> }
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 export default function ProjectResultsPage() {
@@ -89,17 +90,17 @@ export default function ProjectResultsPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-2xl">📋</span>
+                <span className="text-2xl"><Glyph e="📋" /></span>
                 <h1 className="text-xl font-bold" style={{ color: '#0B2438' }}>{project?.title}</h1>
               </div>
               <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span>📍 {project?.city || project?.region}</span>
-                <span>📅 {new Date(project?.created_at).toLocaleDateString('ar-SA')}</span>
+                <span><Glyph e="📍" /> {project?.city || project?.region}</span>
+                <span><Glyph e="📅" /> {new Date(project?.created_at).toLocaleDateString('ar-SA')}</span>
               </div>
               {project?.boq_url && (
                 <a href={fileHref(project.boq_url)} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 mt-2 text-xs text-[#9D7425] hover:underline">
-                  📊 {locale === 'en' ? 'View Original BOQ' : 'عرض BOQ الأصلي'}
+                  <Glyph e="📊" /> {locale === 'en' ? 'View Original BOQ' : 'عرض BOQ الأصلي'}
                 </a>
               )}
             </div>
@@ -115,10 +116,10 @@ export default function ProjectResultsPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 stagger">
           {[
-            { label: locale === 'en' ? 'Total Items' : 'إجمالي البنود', value: totalItems, icon: '📦', bg: '#0B2438' },
-            { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: totalOffers, icon: '💬', bg: '#D4A543' },
-            { label: locale === 'en' ? 'Accepted' : 'مقبولة', value: acceptedItems, icon: '✅', bg: '#0F6E56' },
-            { label: locale === 'en' ? 'Pending' : 'قيد المراجعة', value: totalItems - acceptedItems, icon: '⏳', bg: '#7c3aed' },
+            { label: locale === 'en' ? 'Total Items' : 'إجمالي البنود', value: totalItems, icon: <Glyph e="📦" />, bg: '#0B2438' },
+            { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: totalOffers, icon: <Glyph e="💬" />, bg: '#D4A543' },
+            { label: locale === 'en' ? 'Accepted' : 'مقبولة', value: acceptedItems, icon: <Glyph e="✅" />, bg: '#0F6E56' },
+            { label: locale === 'en' ? 'Pending' : 'قيد المراجعة', value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#7c3aed' },
           ].map(({ label, value, icon, bg }) => (
             <div key={label} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white mx-auto mb-2" style={{ background: bg }}>{icon}</div>
@@ -134,10 +135,10 @@ export default function ProjectResultsPage() {
             {/* Status filter */}
             <div className="flex gap-2 overflow-x-auto pb-1">
               {[
-                { key: 'all', label: locale === 'en' ? 'All' : 'الكل', icon: '📋' },
-                { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: '💬' },
-                { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: '⏳' },
-                { key: 'accepted', label: locale === 'en' ? 'Accepted' : 'تم القبول', icon: '✅' },
+                { key: 'all', label: locale === 'en' ? 'All' : 'الكل', icon: <Glyph e="📋" /> },
+                { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: <Glyph e="💬" /> },
+                { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: <Glyph e="⏳" /> },
+                { key: 'accepted', label: locale === 'en' ? 'Accepted' : 'تم القبول', icon: <Glyph e="✅" /> },
               ].map((f: any) => {
                 const count = f.key === 'all' ? items.length
                   : f.key === 'has_offers' ? items.filter((i: any) => (i.rfq?.offers?.length || 0) > 0 && !i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
@@ -162,7 +163,7 @@ export default function ProjectResultsPage() {
                 {Object.keys(SECTOR_LABELS).map((s: any) => <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>)}
               </select>
               <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-                className="input-field text-xs flex-1 py-2" placeholder={`🔍 ${locale === 'en' ? 'Search material...' : 'ابحث عن مادة...'}`} />
+                className="input-field text-xs flex-1 py-2" placeholder={`${locale === 'en' ? 'Search material...' : 'ابحث عن مادة...'}`} />
             </div>
           </div>
         </div>
@@ -185,7 +186,7 @@ export default function ProjectResultsPage() {
             })
             if (filtered.length === 0) return (
               <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
-                <div className="text-5xl mb-4">🔍</div>
+                <div className="text-5xl mb-4"><Glyph e="🔍" /></div>
                 <p className="text-gray-500">{locale === 'en' ? 'No matching items' : 'لا توجد بنود مطابقة للفلتر'}</p>
               </div>
             )
@@ -216,8 +217,8 @@ export default function ProjectResultsPage() {
                           <span className="badge text-[10px] text-white" style={{ background: (SECTOR_COLORS as any)[item.sector] }}>
                             {(SECTOR_LABELS as any)[item.sector]}
                           </span>
-                          {item.quantity && <span className="text-xs text-gray-500">📦 {item.quantity} {item.unit}</span>}
-                          {item.specification && <span className="text-xs text-gray-400">⚙️ {item.specification}</span>}
+                          {item.quantity && <span className="text-xs text-gray-500"><Glyph e="📦" /> {item.quantity} {item.unit}</span>}
+                          {item.specification && <span className="text-xs text-gray-400"><Glyph e="⚙" /> {item.specification}</span>}
                         </div>
                       </div>
                     </div>
@@ -245,26 +246,26 @@ export default function ProjectResultsPage() {
                         <div className="text-sm">
                           <span className="text-gray-500">{locale === 'en' ? 'Supplier: ' : 'المورد: '}</span>
                           <strong style={{ color: '#0B2438' }}>{acceptedOffer.supplier?.company_name_ar}</strong>
-                          {contactsById[acceptedOffer.supplier_id] && <span className="text-xs text-gray-400 mr-2">📞 {contactsById[acceptedOffer.supplier_id]}</span>}
+                          {contactsById[acceptedOffer.supplier_id] && <span className="text-xs text-gray-400 mr-2"><Glyph e="📞" /> {contactsById[acceptedOffer.supplier_id]}</span>}
                         </div>
                         <Link href={`/contractor/orders/${acceptedOffer.id}`}
                           className="text-xs font-bold text-white px-4 py-2 rounded-lg transition-all hover:shadow"
                           style={{ background: '#0F6E56' }}>
-                          📄 {locale === 'en' ? 'View Purchase Order' : 'عرض أمر الشراء'} ←
+                          <Glyph e="📄" /> {locale === 'en' ? 'View Purchase Order' : 'عرض أمر الشراء'} ←
                         </Link>
                       </div>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {acceptedOffer.attachment_url && (
                           <a href={fileHref(acceptedOffer.attachment_url)} target="_blank" rel="noopener noreferrer"
                             className="text-[10px] bg-white text-[#0B2438] px-2 py-1 rounded-lg font-semibold border border-gray-200">
-                            📎 {acceptedOffer.attachment_name || 'كتالوج'}
+                            <Glyph e="📎" /> {acceptedOffer.attachment_name || 'كتالوج'}
                           </a>
                         )}
                         {acceptedOffer.supplier?.latitude && acceptedOffer.supplier?.longitude && (
                           <a href={`https://www.google.com/maps?q=${acceptedOffer.supplier.latitude},${acceptedOffer.supplier.longitude}`}
                             target="_blank" rel="noopener noreferrer"
                             className="text-[10px] bg-white text-emerald-700 px-2 py-1 rounded-lg font-semibold border border-emerald-200">
-                            🗺 موقع المورد
+                            <Glyph e="🗺" /> موقع المورد
                           </a>
                         )}
                         {acceptedOffer.attributes && Object.entries(acceptedOffer.attributes).map(([k, v]: any) => (
@@ -282,7 +283,7 @@ export default function ProjectResultsPage() {
                   <div className="p-4 sm:p-5">
                     {!acceptedOffer && (
                       <div className="text-xs font-bold text-gray-500 mb-3">
-                        🏆 {locale === 'en' ? 'Top 3 Cheapest Offers' : 'أفضل 3 عروض سعراً'}
+                        <Glyph e="🏆" /> {locale === 'en' ? 'Top 3 Cheapest Offers' : 'أفضل 3 عروض سعراً'}
                       </div>
                     )}
 
@@ -294,9 +295,9 @@ export default function ProjectResultsPage() {
                         }`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                              {rank === 0 && !acceptedOffer && <span className="text-sm">🥇</span>}
-                              {rank === 1 && !acceptedOffer && <span className="text-sm">🥈</span>}
-                              {rank === 2 && !acceptedOffer && <span className="text-sm">🥉</span>}
+                              {rank === 0 && !acceptedOffer && <span className="text-sm"><Glyph e="🥇" /></span>}
+                              {rank === 1 && !acceptedOffer && <span className="text-sm"><Glyph e="🥈" /></span>}
+                              {rank === 2 && !acceptedOffer && <span className="text-sm"><Glyph e="🥉" /></span>}
                               <div className="min-w-0">
                                 <div className="font-semibold text-sm truncate" style={{ color: '#0B2438' }}>
                                   {offer.supplier?.company_name_ar}
@@ -307,11 +308,11 @@ export default function ProjectResultsPage() {
                                   )}
                                   {offer.supplier?.verification_status === 'verified' && (
                                     <span title={offer.supplier?.cr_verification_source === 'wathq' ? 'موثّق عبر واثق' : 'موثّق'} style={{ color: '#0F6E56', fontWeight: 700 }}>
-                                      {offer.supplier?.cr_verification_source === 'wathq' ? '🛡' : '✓'}
+                                      {offer.supplier?.cr_verification_source === 'wathq' ? <Glyph e="🛡" /> : '✓'}
                                     </span>
                                   )}
-                                  {offer.supplier?.rating_avg > 0 && <span>⭐ {offer.supplier.rating_avg}</span>}
-                                  {offer.delivery_days && <span>📦 {offer.delivery_days} {locale === 'en' ? 'days' : 'يوم'}</span>}
+                                  {offer.supplier?.rating_avg > 0 && <span><Glyph e="⭐" /> {offer.supplier.rating_avg}</span>}
+                                  {offer.delivery_days && <span><Glyph e="📦" /> {offer.delivery_days} {locale === 'en' ? 'days' : 'يوم'}</span>}
                                   {/* 🔒 الرقم لا يظهر قبل القبول */}
                                 </div>
                               </div>
@@ -360,7 +361,7 @@ export default function ProjectResultsPage() {
                   </div>
                 ) : (
                   <div className="p-4 text-center text-sm text-gray-400">
-                    ⏳ {locale === 'en' ? 'Waiting for offers...' : 'في انتظار العروض...'}
+                    <Glyph e="⏳" /> {locale === 'en' ? 'Waiting for offers...' : 'في انتظار العروض...'}
                   </div>
                 )}
               </div>
@@ -373,7 +374,7 @@ export default function ProjectResultsPage() {
         {acceptedItems > 0 && (
           <div className="mt-5 bg-emerald-50 rounded-2xl p-5 border border-emerald-200">
             <h3 className="font-bold text-emerald-800 mb-3">
-              📊 {locale === 'en' ? 'Project Cost Summary' : 'ملخص تكلفة المشروع'}
+              <Glyph e="📊" /> {locale === 'en' ? 'Project Cost Summary' : 'ملخص تكلفة المشروع'}
             </h3>
             <div className="space-y-2">
               {items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).map((item: any) => {

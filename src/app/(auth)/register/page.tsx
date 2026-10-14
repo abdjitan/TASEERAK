@@ -12,6 +12,7 @@ import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import { PHONE_OTP_ENABLED } from '@/lib/features'
 import { SELLER_KINDS, rememberedSignupKind } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
+import Glyph from '@/components/shared/Glyph'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
 // نجمع الحد الأدنى فقط: الدور + الاسم + اسم الشركة + الجوال + البريد + كلمة المرور.
@@ -44,7 +45,7 @@ const TR = {
     captchaErr: 'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.',
     verifyTitle: 'فعّل بريدك الإلكتروني', verifyBody: 'أرسلنا رابط تأكيد إلى بريدك الإلكتروني. افتحه لتفعيل حسابك، ثم سجّل الدخول.',
     verifyNext: 'بعد الدخول ستكمل بياناتك (الموقع، القطاعات، والتوثيق) بخطوات سهلة.',
-    goSignIn: 'الذهاب لتسجيل الدخول', home: '🏠 الرئيسية',
+    goSignIn: 'الذهاب لتسجيل الدخول', home: 'الرئيسية',
   },
   en: {
     title: 'Create your account', sub: 'One minute to start — finish your details after signing in',
@@ -61,7 +62,7 @@ const TR = {
     captchaErr: 'Please complete the “I am human” check and try again.',
     verifyTitle: 'Verify your email', verifyBody: 'We sent a confirmation link to your email. Open it to activate your account, then sign in.',
     verifyNext: 'After signing in you will complete your details (location, sectors, verification) in easy steps.',
-    goSignIn: 'Go to sign in', home: '🏠 Home',
+    goSignIn: 'Go to sign in', home: 'Home',
   },
   ur: {
     title: 'اپنا اکاؤنٹ بنائیں', sub: 'شروع کرنے کے لیے ایک منٹ — تفصیلات سائن اِن کے بعد مکمل کریں',
@@ -78,7 +79,7 @@ const TR = {
     captchaErr: 'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔',
     verifyTitle: 'اپنا ای میل تصدیق کریں', verifyBody: 'ہم نے آپ کے ای میل پر تصدیقی لنک بھیجا ہے۔ اسے کھول کر اکاؤنٹ فعال کریں، پھر سائن ان کریں۔',
     verifyNext: 'سائن اِن کے بعد آپ اپنی تفصیلات (مقام، شعبے، تصدیق) آسان مراحل میں مکمل کریں گے۔',
-    goSignIn: 'سائن ان پر جائیں', home: '🏠 مرکزی صفحہ',
+    goSignIn: 'سائن ان پر جائیں', home: 'مرکزی صفحہ',
   },
 }
 
@@ -166,7 +167,7 @@ export default function RegisterPage() {
         <div className="absolute top-4 left-4"><LanguageSwitcher variant="minimal" /></div>
         <a href="/" className="absolute top-4 right-4 text-sm font-medium text-gray-500 hover:text-navy transition-colors">{t.home}</a>
         <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
-          <div className="text-5xl mb-4">📬</div>
+          <div className="text-5xl mb-4"><Glyph e="📬" /></div>
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
           <p className="text-xs text-gray-400 mb-6">{t.verifyNext}</p>
@@ -247,7 +248,7 @@ export default function RegisterPage() {
                 {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
               </div>
             </div>
-            {phoneDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2">⚠ {t.phoneTaken}</p>}
+            {phoneDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2"><Glyph e="⚠" /> {t.phoneTaken}</p>}
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-400 font-normal">— {t.companyHint}</span></label>
@@ -260,7 +261,7 @@ export default function RegisterPage() {
               <input {...register('email', { onBlur: (e) => checkEmailDup(e.target.value), onChange: () => { if (emailDup) setEmailDup(false) } })}
                 className="input-field" placeholder="name@company.com" type="email" />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
-              {emailDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1">⚠ {t.emailTaken}<a href="/login" className="underline font-bold">{t.signInInstead}</a></p>}
+              {emailDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<a href="/login" className="underline font-bold">{t.signInInstead}</a></p>}
             </div>
 
             <div>

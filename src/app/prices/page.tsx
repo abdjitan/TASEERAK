@@ -4,6 +4,7 @@ import { createPublicClient } from '@/lib/supabase/server'
 import { SECTOR_LABELS } from '@/types'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
+import Glyph from '@/components/shared/Glyph'
 
 export const dynamic = 'force-dynamic' // عرض وقت الطلب — يتفادى إنشاء عميل Supabase وقت البناء (build-safe)
 
@@ -47,7 +48,7 @@ export default async function PricesPage() {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}>💰 مؤشّر أسعار مواد البناء</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}><Glyph e="💰" /> مؤشّر أسعار مواد البناء</h1>
           <p className="text-sm text-gray-500 max-w-2xl mx-auto leading-relaxed">
             متوسّط أسعار مواد البناء في السعودية، محسوبة من أسعار ترسية حقيقية على منصة تسعيرك — <span className="whitespace-nowrap">غير شاملة ضريبة القيمة المضافة</span> وبعد استبعاد القيم الشاذّة. أسعار استرشادية تتحدّث تلقائياً.
           </p>
@@ -55,7 +56,7 @@ export default async function PricesPage() {
 
         {rows.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <div className="text-4xl mb-3">📊</div>
+            <div className="text-4xl mb-3"><Glyph e="📊" /></div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
             <p className="text-sm text-gray-400 max-w-sm mx-auto">سيظهر هنا مؤشّر أسعار مواد البناء بمجرد إتمام صفقات على المنصّة. كل صفقة تُغذّي المؤشّر تلقائياً.</p>
             <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>ابدأ الآن مجاناً</Link>

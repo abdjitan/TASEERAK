@@ -7,6 +7,7 @@ import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
 import { tierLabel, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
+import Glyph from '@/components/shared/Glyph'
 
 export const dynamic = 'force-dynamic'
 
@@ -48,15 +49,15 @@ export default async function SupplierProfilePage(props: { params: Promise<{ id:
         <Link href="/suppliers" className="text-sm text-gray-500 hover:text-[#0B2438]">← لوحة شرف الموردين</Link>
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-4">
           <div className="flex items-start gap-4">
-            <div className="w-16 h-16 shrink-0 grid place-items-center rounded-2xl text-2xl" style={{ background: '#0B2438' }}>🏢</div>
+            <div className="w-16 h-16 shrink-0 grid place-items-center rounded-2xl text-2xl" style={{ background: '#0B2438' }}><Glyph e="🏢" /></div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-xl font-extrabold" style={{ color: '#0B2438' }}>{s.company_name_ar || 'مورد'}</h1>
-                {s.verification_status === 'verified' && <span className="badge text-[11px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>{s.cr_verification_source === 'wathq' ? '🛡 موثّق عبر واثق' : '✓ موثّق'}</span>}
+                {s.verification_status === 'verified' && <span className="badge text-[11px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>{s.cr_verification_source === 'wathq' ? 'موثّق عبر واثق' : '✓ موثّق'}</span>}
               </div>
               <div className="text-sm text-gray-500 mt-1 flex items-center gap-3 flex-wrap">
                 <span><SellerIcon name={s.supplier_tier ? tierIcon(s.supplier_tier) : 'store'} /> {s.supplier_tier ? tierLabel(s.supplier_tier, 'ar') : 'مورد'}</span>
-                {s.region && <span>📍 {s.region}{s.city ? ` · ${s.city}` : ''}</span>}
+                {s.region && <span><Glyph e="📍" /> {s.region}{s.city ? ` · ${s.city}` : ''}</span>}
               </div>
             </div>
             <div className="shrink-0 text-center">
@@ -67,7 +68,7 @@ export default async function SupplierProfilePage(props: { params: Promise<{ id:
 
           <div className="grid grid-cols-3 gap-3 mt-6">
             {[
-              { l: 'التقييم', v: rating > 0 ? `⭐ ${rating.toFixed(1)}` : '—', sub: s.rating_count ? `${s.rating_count} تقييم` : '' },
+              { l: 'التقييم', v: rating > 0 ? `${rating.toFixed(1)}` : '—', sub: s.rating_count ? `${s.rating_count} تقييم` : '' },
               { l: 'العروض', v: total.toLocaleString('en-US'), sub: 'عرض مقدَّم' },
               { l: 'الصفقات', v: won.toLocaleString('en-US'), sub: 'صفقة منجزة' },
             ].map((k: any) => (
@@ -81,16 +82,16 @@ export default async function SupplierProfilePage(props: { params: Promise<{ id:
 
           {Array.isArray(s.approvals) && s.approvals.length > 0 && (
             <div className="mt-5">
-              <div className="text-xs font-bold text-gray-400 mb-2">🏅 اعتمادات جهات كبرى</div>
+              <div className="text-xs font-bold text-gray-400 mb-2"><Glyph e="🏅" /> اعتمادات جهات كبرى</div>
               <div className="flex gap-1.5 flex-wrap">
-                {s.approvals.map((a: string) => <span key={a} className="text-[11px] px-2 py-1 rounded-lg" style={{ background: '#0B24380d', color: '#0B2438' }}>🏅 {approvalLabel(a)}</span>)}
+                {s.approvals.map((a: string) => <span key={a} className="text-[11px] px-2 py-1 rounded-lg" style={{ background: '#0B24380d', color: '#0B2438' }}><Glyph e="🏅" /> {approvalLabel(a)}</span>)}
               </div>
             </div>
           )}
 
           {Array.isArray(s.recent_reviews) && s.recent_reviews.length > 0 && (
             <div className="mt-6 pt-5 border-t border-gray-100">
-              <div className="text-xs font-bold text-gray-400 mb-3">💬 آراء المشترين</div>
+              <div className="text-xs font-bold text-gray-400 mb-3"><Glyph e="💬" /> آراء المشترين</div>
               <div className="space-y-3">
                 {s.recent_reviews.map((rv: any, i: number) => (
                   <div key={i} className="rounded-xl bg-[#f7f8fa] p-3">

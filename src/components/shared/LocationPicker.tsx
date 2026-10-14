@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Glyph from '@/components/shared/Glyph'
 
 interface LocationPickerProps {
   lat: number | null
@@ -11,21 +12,21 @@ interface LocationPickerProps {
 
 const txt = {
   ar: {
-    title: 'الموقع الجغرافي', detect: '📍 تحديد موقعي الحالي', detecting: 'جارٍ تحديد الموقع...',
+    title: 'الموقع الجغرافي', detect: 'تحديد موقعي الحالي', detecting: 'جارٍ تحديد الموقع...',
     orPaste: 'أو الصق رابط خرائط Google', pasteHint: 'انسخ الرابط من تطبيق خرائط جوجل والصقه هنا',
     extract: 'استخراج', coords: 'الإحداثيات', set: 'تم تحديد الموقع', viewMap: 'عرض على الخريطة', openGoogle: 'فتح في خرائط Google',
     noLocation: 'لم يتم تحديد الموقع بعد', denied: 'تم رفض الوصول للموقع — فعّله من إعدادات المتصفح',
     notSupported: 'المتصفح لا يدعم تحديد الموقع', invalidLink: 'الرابط غير صحيح',
   },
   en: {
-    title: 'Geographic Location', detect: '📍 Detect My Location', detecting: 'Detecting location...',
+    title: 'Geographic Location', detect: 'Detect My Location', detecting: 'Detecting location...',
     orPaste: 'Or paste Google Maps link', pasteHint: 'Copy the link from Google Maps and paste here',
     extract: 'Extract', coords: 'Coordinates', set: 'Location set', viewMap: 'View on Map', openGoogle: 'Open in Google Maps',
     noLocation: 'Location not set yet', denied: 'Location access denied — enable in browser settings',
     notSupported: 'Browser does not support geolocation', invalidLink: 'Invalid link',
   },
   ur: {
-    title: 'جغرافیائی محل وقوع', detect: '📍 میرا مقام تلاش کریں', detecting: 'مقام تلاش ہو رہا ہے...',
+    title: 'جغرافیائی محل وقوع', detect: 'میرا مقام تلاش کریں', detecting: 'مقام تلاش ہو رہا ہے...',
     orPaste: 'یا Google Maps لنک پیسٹ کریں', pasteHint: 'Google Maps سے لنک کاپی کرکے یہاں پیسٹ کریں',
     extract: 'نکالیں', coords: 'کوآرڈینیٹس', set: 'مقام مقرر ہو گیا', viewMap: 'نقشے پر دیکھیں', openGoogle: 'Google Maps میں کھولیں',
     noLocation: 'مقام ابھی مقرر نہیں', denied: 'مقام تک رسائی مسترد', notSupported: 'براؤزر سپورٹ نہیں کرتا',
@@ -112,7 +113,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar' }: Lo
         <p className="text-[10px] text-gray-400 mt-1">{T.pasteHint}</p>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg p-2">⚠️ {error}</div>}
+      {error && <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg p-2"><Glyph e="⚠" /> {error}</div>}
 
       {/* عرض الموقع + الخريطة */}
       {hasLocation ? (
@@ -134,7 +135,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar' }: Lo
         </div>
       ) : (
         <div className="bg-gray-50 rounded-xl p-6 text-center text-gray-400 text-sm border border-dashed border-gray-200">
-          📍 {T.noLocation}
+          <Glyph e="📍" /> {T.noLocation}
         </div>
       )}
     </div>

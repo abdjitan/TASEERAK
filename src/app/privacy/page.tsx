@@ -3,12 +3,13 @@
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import Glyph from '@/components/shared/Glyph'
 
 const C: Record<string, any> = {
   ar: {
     title: 'سياسة الخصوصية',
     updated: 'آخر تحديث: أكتوبر 2026',
-    home: '🏠 الرئيسية',
+    home: 'الرئيسية',
     intro: 'تحترم منصة «تسعيرك» خصوصيتك وتلتزم بحماية بياناتك وفق نظام حماية البيانات الشخصية (PDPL) في المملكة العربية السعودية. تنطبق هذه السياسة على الموقع وعلى تطبيق «تسعيرك» للجوال (أندرويد وآيفون)، وتوضّح البيانات التي نجمعها وكيف نستخدمها.',
     note: 'ملاحظة: هذه نسخة مبدئية. يُنصح بمراجعتها من مستشار قانوني للتأكد من توافقها الكامل مع نظام حماية البيانات الشخصية.',
     sections: [
@@ -29,7 +30,7 @@ const C: Record<string, any> = {
   en: {
     title: 'Privacy Policy',
     updated: 'Last updated: October 2026',
-    home: '🏠 Home',
+    home: 'Home',
     intro: 'Taseerak respects your privacy and is committed to protecting your data in line with the Personal Data Protection Law (PDPL) of Saudi Arabia. This policy covers the website and the Taseerak mobile app (Android and iPhone), and explains what data we collect and how we use it.',
     note: 'Note: This is a preliminary version. Please have it reviewed by a legal advisor to ensure full compliance with the PDPL.',
     sections: [
@@ -50,7 +51,7 @@ const C: Record<string, any> = {
   ur: {
     title: 'رازداری کی پالیسی',
     updated: 'آخری تازہ کاری: اکتوبر 2026',
-    home: '🏠 مرکزی صفحہ',
+    home: 'مرکزی صفحہ',
     intro: 'تسعیرک آپ کی رازداری کا احترام کرتا ہے اور سعودی عرب کے ذاتی ڈیٹا کے تحفظ کے قانون (PDPL) کے مطابق آپ کے ڈیٹا کے تحفظ کا پابند ہے۔ یہ پالیسی ویب سائٹ اور تسعیرک موبائل ایپ (اینڈرائیڈ اور آئی فون) دونوں پر لاگو ہوتی ہے۔',
     note: 'نوٹ: یہ ابتدائی نسخہ ہے۔ ذاتی ڈیٹا کے تحفظ کے قانون سے مکمل مطابقت یقینی بنانے کے لیے کسی قانونی مشیر سے جائزہ لینے کی سفارش کی جاتی ہے۔',
     sections: [
@@ -91,7 +92,7 @@ export default function PrivacyPage() {
         <p className="text-xs text-gray-400 mb-5">{t.updated}</p>
 
         <p className="text-sm text-gray-700 leading-relaxed mb-4">{t.intro}</p>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 mb-6">⚠️ {t.note}</div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 mb-6"><Glyph e="⚠" /> {t.note}</div>
 
         <div className="space-y-5">
           {t.sections.map(([h, body]: string[], i: number) => (

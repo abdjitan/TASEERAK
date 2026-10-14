@@ -7,12 +7,13 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
+import Glyph from '@/components/shared/Glyph'
 
 const txt = {
   ar: {
     title: 'نسيت كلمة المرور؟', sub: 'أدخل بريدك الإلكتروني ونرسل لك رابط إعادة التعيين',
     email: 'البريد الإلكتروني', send: 'إرسال رابط الاستعادة', sending: 'جارٍ الإرسال...',
-    back: '← رجوع لتسجيل الدخول', home: '🏠 الرئيسية',
+    back: '← رجوع لتسجيل الدخول', home: 'الرئيسية',
     sentTitle: 'تحقق من بريدك ✉️',
     sentSub: 'أرسلنا رابط إعادة تعيين كلمة المرور إلى بريدك. افتح الرابط لتعيين كلمة مرور جديدة.',
     err: 'تعذّر الإرسال، تأكد من البريد وحاول مرة أخرى',
@@ -20,7 +21,7 @@ const txt = {
   en: {
     title: 'Forgot your password?', sub: 'Enter your email and we will send you a reset link',
     email: 'Email Address', send: 'Send reset link', sending: 'Sending...',
-    back: '← Back to sign in', home: '🏠 Home',
+    back: '← Back to sign in', home: 'Home',
     sentTitle: 'Check your inbox ✉️',
     sentSub: 'We sent a password reset link to your email. Open it to set a new password.',
     err: 'Could not send. Check the email and try again',
@@ -28,7 +29,7 @@ const txt = {
   ur: {
     title: 'پاسورڈ بھول گئے؟', sub: 'اپنا ای میل درج کریں، ہم ری سیٹ لنک بھیجیں گے',
     email: 'ای میل', send: 'ری سیٹ لنک بھیجیں', sending: 'بھیجا جا رہا ہے...',
-    back: '← سائن ان پر واپس', home: '🏠 مرکزی صفحہ',
+    back: '← سائن ان پر واپس', home: 'مرکزی صفحہ',
     sentTitle: 'اپنا ان باکس دیکھیں ✉️',
     sentSub: 'ہم نے آپ کے ای میل پر ری سیٹ لنک بھیج دیا ہے۔',
     err: 'بھیجنے میں ناکامی، دوبارہ کوشش کریں',
@@ -75,7 +76,7 @@ export default function ForgotPasswordPage() {
         <div className="bg-white rounded-3xl p-8 shadow-2xl">
           {sent ? (
             <div className="text-center">
-              <div className="text-5xl mb-4">📬</div>
+              <div className="text-5xl mb-4"><Glyph e="📬" /></div>
               <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.sentTitle}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.sentSub}</p>
               <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.back}</a>
@@ -84,7 +85,7 @@ export default function ForgotPasswordPage() {
             <>
               <h2 className="text-xl font-bold text-[#0B2438] mb-1">{t.title}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.sub}</p>
-              {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">⚠️ {error}</div>}
+              {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
               <form onSubmit={handleSubmit}>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-4" placeholder="info@company.com" required disabled={loading} />

@@ -15,6 +15,7 @@ import SellerKindPicker from '@/components/shared/SellerKindPicker'
 import { REGIONS } from '@/types'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
+import Glyph from '@/components/shared/Glyph'
 
 const txt = {
   ar: {
@@ -371,12 +372,12 @@ export default function SettingsPage() {
               </div>
 
               {[
-                { key: 'profile', icon: '🏢', label: t.profileTab },
+                { key: 'profile', icon: <Glyph e="🏢" />, label: t.profileTab },
                 // فرد / وكيل أسعار: ما عنده سجل ولا رخصة — ثقته من التقييمات، فما في تبويب مستندات
-                ...(['individual', 'price_agent', 'broker'].includes(profile?.provider_type) ? [] : [{ key: 'docs', icon: '📄', label: t.docsTab }]),
-                { key: 'support', icon: '💬', label: locale === 'en' ? 'Support' : locale === 'ur' ? 'سپورٹ' : 'الدعم والرسائل' },
-                { key: 'password', icon: '🔒', label: t.passwordTab },
-                { key: 'language', icon: '🌐', label: t.langTab },
+                ...(['individual', 'price_agent', 'broker'].includes(profile?.provider_type) ? [] : [{ key: 'docs', icon: <Glyph e="📄" />, label: t.docsTab }]),
+                { key: 'support', icon: <Glyph e="💬" />, label: locale === 'en' ? 'Support' : locale === 'ur' ? 'سپورٹ' : 'الدعم والرسائل' },
+                { key: 'password', icon: <Glyph e="🔒" />, label: t.passwordTab },
+                { key: 'language', icon: <Glyph e="🌐" />, label: t.langTab },
               ].map(item => (
                 <button key={item.key} onClick={() => setTab(item.key)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-right ${
@@ -388,7 +389,7 @@ export default function SettingsPage() {
                 </button>
               ))}
               <a href="/account/delete" className="mt-2 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50">
-                <span>🗑</span>
+                <span><Glyph e="🗑" /></span>
                 <span>{locale === 'en' ? 'Delete my account' : locale === 'ur' ? 'میرا اکاؤنٹ حذف کریں' : 'حذف حسابي'}</span>
               </a>
             </div>
@@ -419,7 +420,7 @@ export default function SettingsPage() {
                 <form onSubmit={saveProfile} className="space-y-5">
                   <div className={companyEn ? 'grid grid-cols-2 gap-4' : ''}>
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? '🔒' : ''}</label>
+                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? <Glyph e="🔒" /> : ''}</label>
                       {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? (
                         <div className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
                       ) : (
@@ -428,7 +429,7 @@ export default function SettingsPage() {
                     </div>
                     {companyEn && (
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyEn} 🔒</label>
+                        <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyEn} <Glyph e="🔒" /></label>
                         <div className="input-field bg-gray-50 text-gray-500 flex items-center min-h-[44px]" dir="ltr">{companyEn}</div>
                       </div>
                     )}
@@ -436,8 +437,8 @@ export default function SettingsPage() {
                   <div className="-mt-3">
                     {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? (
                       pendingFor('name')
-                        ? <p className="text-[11px] text-amber-600">⏳ طلب تغيير الاسم قيد مراجعة الإدارة (إلى «{pendingFor('name').new_value}»).</p>
-                        : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#0B2438' }}>🔒 الاسم ثابت لارتباطه بالسجل التجاري — اطلب تعديله</button>
+                        ? <p className="text-[11px] text-amber-600"><Glyph e="⏳" /> طلب تغيير الاسم قيد مراجعة الإدارة (إلى «{pendingFor('name').new_value}»).</p>
+                        : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#0B2438' }}><Glyph e="🔒" /> الاسم ثابت لارتباطه بالسجل التجاري — اطلب تعديله</button>
                     ) : (
                       <p className="text-[11px] text-gray-400">✏️ {locale === 'en' ? 'You can edit your company name until your account is verified.' : 'يمكنك تعديل اسم الشركة حتى يتم توثيق حسابك، ثم يُقفل.'}</p>
                     )}
@@ -448,14 +449,14 @@ export default function SettingsPage() {
                     <input value={phone} onChange={e => setPhone(e.target.value)}
                       className="input-field" placeholder="+966 5X XXX XXXX" />
                     {profile?.role === 'supplier' && (
-                      <p className="text-[10px] text-gray-400 mt-1">🔒 رقم الواتساب للمنصة والإشعارات فقط — لا يظهر للمشتري.</p>
+                      <p className="text-[10px] text-gray-400 mt-1"><Glyph e="🔒" /> رقم الواتساب للمنصة والإشعارات فقط — لا يظهر للمشتري.</p>
                     )}
                   </div>
 
                   {/* رقم التواصل الرسمي — يظهر للمقاول بعد الترسية فقط (المورد فقط) */}
                   {profile?.role === 'supplier' && (
                     <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3.5">
-                      <label className="block text-xs font-bold text-gray-600 mb-2">📞 رقم التواصل الرسمي مع المشتري</label>
+                      <label className="block text-xs font-bold text-gray-600 mb-2"><Glyph e="📞" /> رقم التواصل الرسمي مع المشتري</label>
                       <label className="flex items-center gap-2 cursor-pointer mb-2">
                         <input type="checkbox" checked={!useDiffContact} onChange={e => setUseDiffContact(!e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
                         <span className="text-xs text-gray-700">نفس رقم الواتساب</span>
@@ -536,15 +537,15 @@ export default function SettingsPage() {
                   {/* Contractor Grade — locked (hidden until contractor features return) */}
                   {CONTRACTOR_FEATURES && profile?.role === 'contractor' && (
                     <div className="border-t border-gray-100 pt-5">
-                      <label className="block text-xs font-bold text-gray-500 mb-2">درجة تصنيف شركتك (للمقاولين) — وزارة الشؤون البلدية 🔒</label>
+                      <label className="block text-xs font-bold text-gray-500 mb-2">درجة تصنيف شركتك (للمقاولين) — وزارة الشؤون البلدية <Glyph e="🔒" /></label>
                       <div className="mb-1">
                         <span className="inline-block px-5 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm font-black text-gray-700">
                           {contractorGrade ? `درجة ${({ A: 'أ', B: 'ب', C: 'ج', D: 'د' })[contractorGrade] || contractorGrade}` : '— غير محدّدة —'}
                         </span>
                       </div>
                       {pendingFor('classification')
-                        ? <p className="text-[11px] text-amber-600">⏳ طلب تغيير الدرجة قيد مراجعة الإدارة.</p>
-                        : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(contractorGrade || 'C'); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#0B2438' }}>🔒 الدرجة ثابتة — اطلب تعديلها</button>}
+                        ? <p className="text-[11px] text-amber-600"><Glyph e="⏳" /> طلب تغيير الدرجة قيد مراجعة الإدارة.</p>
+                        : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(contractorGrade || 'C'); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#0B2438' }}><Glyph e="🔒" /> الدرجة ثابتة — اطلب تعديلها</button>}
                     </div>
                   )}
 
@@ -566,7 +567,7 @@ export default function SettingsPage() {
                   <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !crqSaving && setCrqModal(null)}>
                     <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" dir="rtl" onClick={e => e.stopPropagation()}>
                       <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>
-                        {crqModal === 'name' ? '🔒 طلب تعديل اسم الشركة' : '🔒 طلب تعديل التصنيف'}
+                        {crqModal === 'name' ? 'طلب تعديل اسم الشركة' : 'طلب تعديل التصنيف'}
                       </h3>
                       <p className="text-xs text-gray-500 mb-4">يُرسل الطلب للإدارة للمراجعة — لا يتغيّر شيء قبل الموافقة.</p>
 
@@ -611,7 +612,7 @@ export default function SettingsPage() {
 
                 <form onSubmit={changePassword} className="space-y-5 max-w-md">
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
-                    💡 {locale === 'en' ? 'Enter your new password and confirm it below' : locale === 'ur' ? 'نیچے اپنا نیا پاسورڈ درج کریں اور تصدیق کریں' : 'أدخل كلمة المرور الجديدة وأكدها'}
+                    <Glyph e="💡" /> {locale === 'en' ? 'Enter your new password and confirm it below' : locale === 'ur' ? 'نیچے اپنا نیا پاسورڈ درج کریں اور تصدیق کریں' : 'أدخل كلمة المرور الجديدة وأكدها'}
                   </div>
 
                   <div>
@@ -648,13 +649,13 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-500 mb-4">{t.docsSub}</p>
                 {/* التوثيق اختياري: يوضّح فايدته وفي خيار «لاحقاً» */}
                 <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6" style={{ background: 'rgba(15,110,86,0.06)', border: '1px solid rgba(15,110,86,0.2)' }}>
-                  <p className="text-sm text-gray-700 leading-relaxed flex-1 min-w-[220px]">🛡 {locale === 'en' ? 'Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.' : locale === 'ur' ? 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔' : 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، وتظهر ضمن «شركات ومصانع معتمدة»، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.'}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {locale === 'en' ? 'Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.' : locale === 'ur' ? 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔' : 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، وتظهر ضمن «شركات ومصانع معتمدة»، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.'}</p>
                   <a href={profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'} className="text-sm font-bold px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{locale === 'en' ? 'Later' : locale === 'ur' ? 'بعد میں' : 'لاحقاً'}</a>
                 </div>
 
                 {profile?.verification_status === 'rejected' && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 flex items-start gap-2">
-                    <span>❌</span>
+                    <span><Glyph e="❌" /></span>
                     <div className="text-sm text-red-600 font-medium">{t.rejectedBanner}</div>
                   </div>
                 )}
@@ -675,7 +676,7 @@ export default function SettingsPage() {
                     }`}>
                       <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
                         onChange={e => setLicenseFile(e.target.files?.[0] ?? null)} />
-                      <span className="text-2xl">{licenseFile ? '📎' : '📄'}</span>
+                      <span className="text-2xl">{licenseFile ? <Glyph e="📎" /> : <Glyph e="📄" />}</span>
                       <div>
                         <div className="text-sm font-semibold text-gray-700">
                           {licenseFile ? licenseFile.name : t.uploadDoc}
@@ -690,7 +691,7 @@ export default function SettingsPage() {
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div>
                         <div className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#0F6E56' }}>
-                          🛡 {cv.card}
+                          <Glyph e="🛡" /> {cv.card}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">{cv.sub}</div>
                         {profile?.commercial_registration && (
@@ -698,12 +699,12 @@ export default function SettingsPage() {
                         )}
                       </div>
                       {profile?.verification_status === 'verified' && profile?.cr_verification_source === 'wathq' ? (
-                        <span className="text-xs px-3 py-1.5 rounded-lg font-bold text-white" style={{ background: '#0F6E56' }}>🛡 {t.verified}</span>
+                        <span className="text-xs px-3 py-1.5 rounded-lg font-bold text-white" style={{ background: '#0F6E56' }}><Glyph e="🛡" /> {t.verified}</span>
                       ) : (
                         <button type="button" onClick={verifyCRSettings} disabled={crChecking}
                           className="text-xs px-4 py-2 rounded-xl font-bold text-white whitespace-nowrap disabled:opacity-50 transition-all hover:shadow"
                           style={{ background: '#0F6E56' }}>
-                          {crChecking ? cv.checking : `🛡 ${cv.btn}`}
+                          {crChecking ? cv.checking : `${cv.btn}`}
                         </button>
                       )}
                     </div>
@@ -713,7 +714,7 @@ export default function SettingsPage() {
                         : crCheck.mode === 'manual' ? 'bg-[#D4A543]/5 text-[#9D7425] border border-blue-200'
                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}>
-                        <span>{crCheck.verified ? '🛡' : crCheck.mode === 'manual' ? 'ℹ️' : '⚠️'}</span>
+                        <span>{crCheck.verified ? <Glyph e="🛡" /> : crCheck.mode === 'manual' ? 'ℹ️' : <Glyph e="⚠" />}</span>
                         <div>
                           {crCheck.name && <div className="font-bold">{crCheck.name}</div>}
                           {crCheck.activity && <div className="opacity-80">{crCheck.activity}</div>}
@@ -738,7 +739,7 @@ export default function SettingsPage() {
                     }`}>
                       <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
                         onChange={e => setCrFile(e.target.files?.[0] ?? null)} />
-                      <span className="text-2xl">{crFile ? '📎' : '📋'}</span>
+                      <span className="text-2xl">{crFile ? <Glyph e="📎" /> : <Glyph e="📋" />}</span>
                       <div>
                         <div className="text-sm font-semibold text-gray-700">
                           {crFile ? crFile.name : t.uploadDoc}

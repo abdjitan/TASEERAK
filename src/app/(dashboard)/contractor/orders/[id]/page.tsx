@@ -9,6 +9,7 @@ import { fileHref } from '@/lib/fileHref'
 import { SECTOR_LABELS, getProductLabel, getUnitLabel } from '@/types'
 import { useTranslation } from '@/i18n'
 import { rfqRef } from '@/lib/rfqName'
+import Glyph from '@/components/shared/Glyph'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -139,12 +140,12 @@ export default function OrderDetailPage() {
             {offer?.rfq_id && (
               <Link href={`/contractor/rfq/quick?from=${offer.rfq_id}`}
                 className="border border-[#0B2438] text-[#0B2438] px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0B2438]/5 transition-colors">
-                🔁 {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}
+                <Glyph e="🔁" /> {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}
               </Link>
             )}
             <button onClick={handlePrint}
               className="bg-[#0B2438] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#071827] transition-colors">
-              🖨️ {L('Print purchase order', 'پرچیز آرڈر پرنٹ کریں', 'طباعة أمر الشراء')}
+              <Glyph e="🖨" /> {L('Print purchase order', 'پرچیز آرڈر پرنٹ کریں', 'طباعة أمر الشراء')}
             </button>
           </div>
         </div>
@@ -188,7 +189,7 @@ export default function OrderDetailPage() {
               {supplier?.phone && <div className="text-sm text-gray-500">{L('Mobile:', 'موبائل:', 'جوال:')} {supplier.phone}</div>}
               {(supplier?.city || supplier?.region) && <div className="text-sm text-gray-500">{supplier.city || supplier.region}</div>}
               {supplier?.national_short_address && (
-                <div className="text-sm text-gray-500 font-mono" dir="ltr">🏛 {supplier.national_short_address}</div>
+                <div className="text-sm text-gray-500 font-mono" dir="ltr"><Glyph e="🏛" /> {supplier.national_short_address}</div>
               )}
               {supplier?.building_number && supplier?.street_name && (
                 <div className="text-xs text-gray-400">
@@ -199,7 +200,7 @@ export default function OrderDetailPage() {
                 <a href={`https://www.google.com/maps?q=${supplier.latitude},${supplier.longitude}`}
                   target="_blank" rel="noopener noreferrer"
                   className="inline-block text-xs text-[#9D7425] hover:underline mt-1 print:hidden">
-                  🗺 {L('View location on map', 'نقشے پر مقام دیکھیں', 'عرض الموقع على الخريطة')} ←
+                  <Glyph e="🗺" /> {L('View location on map', 'نقشے پر مقام دیکھیں', 'عرض الموقع على الخريطة')} ←
                 </a>
               )}
             </div>
@@ -223,7 +224,7 @@ export default function OrderDetailPage() {
               {offer?.attachment_url && (
                 <a href={fileHref(offer.attachment_url)} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm font-semibold text-[#9D7425] hover:underline print:hidden">
-                  📎 {offer.attachment_name || L('Product catalog', 'پروڈکٹ کیٹلاگ', 'كتالوج المنتج')} ←
+                  <Glyph e="📎" /> {offer.attachment_name || L('Product catalog', 'پروڈکٹ کیٹلاگ', 'كتالوج المنتج')} ←
                 </a>
               )}
             </div>
@@ -250,7 +251,7 @@ export default function OrderDetailPage() {
                       <div className="font-semibold text-gray-900">{getProductLabel(it.product_name, locale)}</div>
                       {(it.specification || it.notes) && <div className="text-xs text-gray-400 mt-0.5">{it.specification || it.notes}</div>}
                       {it.attachment_url && (
-                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9D7425] hover:underline print:hidden">📎 {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
+                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9D7425] hover:underline print:hidden"><Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
                       )}
                     </td>
                     <td className="py-4 text-sm text-gray-600">{it.sector ? ((locale !== 'ar' && SECTOR_I18N[locale]?.[it.sector]) || (SECTOR_LABELS as any)[it.sector] || it.sector) : '—'}</td>
@@ -288,21 +289,21 @@ export default function OrderDetailPage() {
             <h3 className="text-sm font-bold text-gray-900 mb-3">{L('Supply terms', 'سپلائی کی شرائط', 'شروط التوريد')}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-2">
-                <span>{rfq.delivery_required ? '✅' : '❌'}</span>
+                <span>{rfq.delivery_required ? <Glyph e="✅" /> : <Glyph e="❌" />}</span>
                 <span>{rfq.delivery_required ? L('Delivery included', 'ڈیلیوری شامل ہے', 'التوصيل مشمول') : L('Delivery not included', 'ڈیلیوری شامل نہیں', 'التوصيل غير مشمول')}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span>{rfq.vat_invoice_required ? '✅' : '❌'}</span>
+                <span>{rfq.vat_invoice_required ? <Glyph e="✅" /> : <Glyph e="❌" />}</span>
                 <span>{rfq.vat_invoice_required ? L('Tax invoice required', 'ٹیکس انوائس درکار ہے', 'فاتورة ضريبية مطلوبة') : L('Tax invoice not required', 'ٹیکس انوائس درکار نہیں', 'فاتورة ضريبية غير مطلوبة')}</span>
               </div>
               {offer.delivery_days && (
                 <div className="flex items-center gap-2">
-                  <span>📦</span>
+                  <span><Glyph e="📦" /></span>
                   <span>{L('Delivery time:', 'ڈیلیوری کا وقت:', 'مدة التوصيل:')} {offer.delivery_days} {L('working days', 'کاروباری دن', 'يوم عمل')}</span>
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <span>📍</span>
+                <span><Glyph e="📍" /></span>
                 <span>{L('Delivery location:', 'ڈیلیوری کی جگہ:', 'موقع التسليم:')} {rfq.city || rfq.region}</span>
               </div>
             </div>
@@ -316,7 +317,7 @@ export default function OrderDetailPage() {
           {/* Status Badge */}
           <div className="p-4 sm:p-8 text-center">
             <div className="inline-flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-6 py-3 rounded-xl">
-              <span className="text-xl">✅</span>
+              <span className="text-xl"><Glyph e="✅" /></span>
               <div>
                 <div className="font-bold">{L('Offer approved', 'آفر منظور ہو گئی', 'تمت الموافقة على العرض')}</div>
                 <div className="text-xs text-green-600">{L('on', 'بتاریخ', 'بتاريخ')} {date}</div>
@@ -354,7 +355,7 @@ export default function OrderDetailPage() {
               <tbody>
                 {rows.map((it: any, idx: any) => (
                   <tr key={idx} className="border-b border-gray-50">
-                    <td className="py-2 font-semibold text-gray-900">{getProductLabel(it.product_name, locale)}{it.warranty ? <span className="block text-[11px] font-normal text-gray-500">🛡 {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</span> : null}</td>
+                    <td className="py-2 font-semibold text-gray-900">{getProductLabel(it.product_name, locale)}{it.warranty ? <span className="block text-[11px] font-normal text-gray-500"><Glyph e="🛡" /> {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</span> : null}</td>
                     <td className="py-2 text-gray-600">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
                     <td className="py-2 text-gray-600">{Number(it.unitNet) > 0 ? Number(it.unitNet).toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
                     <td className="py-2 font-bold text-gray-900">{Number(it.net).toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</td>
@@ -375,12 +376,12 @@ export default function OrderDetailPage() {
             {offer.supplier_invoice_url ? (
               <a href={fileHref(offer.supplier_invoice_url)} target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm hover:shadow-sm">
-                <span className="font-bold text-emerald-800">📄 {L('Official invoice from the supplier', 'سپلائر کی باضابطہ انوائس', 'الفاتورة الرسمية من المورد')}</span>
+                <span className="font-bold text-emerald-800"><Glyph e="📄" /> {L('Official invoice from the supplier', 'سپلائر کی باضابطہ انوائس', 'الفاتورة الرسمية من المورد')}</span>
                 <span className="text-xs text-emerald-700">{new Date(offer.supplier_invoice_at).toLocaleDateString(dloc)} · {L('Download', 'ڈاؤن لوڈ', 'تنزيل')} ←</span>
               </a>
             ) : (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-3 text-xs text-gray-500 leading-relaxed">
-                🧾 {L('The supplier has not attached the official invoice yet. It is usually attached on delivery and will show here.', 'سپلائر نے ابھی باضابطہ انوائس منسلک نہیں کی۔ عام طور پر ڈیلیوری پر منسلک کی جاتی ہے اور یہاں نظر آئے گی۔', 'لم يرفق المورد فاتورته الرسمية بعد. يرفقها عادةً عند التوصيل، وستظهر هنا.')}
+                <Glyph e="🧾" /> {L('The supplier has not attached the official invoice yet. It is usually attached on delivery and will show here.', 'سپلائر نے ابھی باضابطہ انوائس منسلک نہیں کی۔ عام طور پر ڈیلیوری پر منسلک کی جاتی ہے اور یہاں نظر آئے گی۔', 'لم يرفق المورد فاتورته الرسمية بعد. يرفقها عادةً عند التوصيل، وستظهر هنا.')}
               </div>
             )}
           </div>
@@ -391,7 +392,7 @@ export default function OrderDetailPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 order-4 print:hidden" dir={dir}>
             {existingReview ? (
               <div className="text-center">
-                <div className="text-sm font-bold text-gray-900 mb-2">{L('Thanks for your rating', 'ریٹنگ کا شکریہ', 'شكراً لتقييمك')} ⭐</div>
+                <div className="text-sm font-bold text-gray-900 mb-2">{L('Thanks for your rating', 'ریٹنگ کا شکریہ', 'شكراً لتقييمك')} <Glyph e="⭐" /></div>
                 <div className="flex items-center justify-center gap-0.5 text-xl">
                   {[1, 2, 3, 4, 5].map((n: any) => (
                     <span key={n} className={n <= existingReview.rating ? 'text-yellow-400' : 'text-gray-200'}>★</span>
@@ -426,7 +427,7 @@ export default function OrderDetailPage() {
               </div>
             ) : (
               <div className="text-center py-2">
-                <div className="text-2xl mb-1">📦</div>
+                <div className="text-2xl mb-1"><Glyph e="📦" /></div>
                 <div className="text-sm font-bold text-gray-700 mb-1">{L('Rate the supplier after receipt', 'وصولی کے بعد سپلائر کی ریٹنگ دیں', 'قيّم المورد بعد الاستلام')}</div>
                 <p className="text-xs text-gray-400">{L('Rating opens once receipt of the goods is confirmed (receipt record), so it reflects the actual delivery.', 'مال کی وصولی کنفرم ہوتے ہی (وصولی کا ریکارڈ) ریٹنگ کھل جائے گی — تاکہ ریٹنگ اصل ڈیلیوری کے مطابق ہو۔', 'يفتح التقييم بمجرد تأكيد استلام البضاعة (محضر الاستلام) — ليعكس التقييمُ التسليمَ الفعلي.')}</p>
               </div>

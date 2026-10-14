@@ -11,9 +11,10 @@ import SupportThread from '@/components/shared/SupportThread'
 import PageLoader from '@/components/shared/PageLoader'
 import { APPROVAL_LABELS } from '@/lib/supplierScore'
 import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
+import Glyph from '@/components/shared/Glyph'
 
-const RFQ_STATUS: Record<string, string> = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
-const OFFER_STATUS: Record<string, string> = { pending: '⏳ بانتظار', submitted: '📨 مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
+const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمت الترسية', cancelled: '✕ ملغي', expired: 'منتهي' }
+const OFFER_STATUS: Record<string, string> = { pending: 'بانتظار', submitted: 'مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
 
 export default function AdminUserDetail() {
   const params = useParams()
@@ -120,7 +121,7 @@ export default function AdminUserDetail() {
   if (loading || !ok) return <PageLoader />
   if (!p) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]" dir="rtl">
-      <div className="text-center"><div className="text-5xl mb-3">🔍</div><div className="font-bold" style={{ color: '#0B2438' }}>الحساب غير موجود</div><Link href="/admin" className="text-sm text-[#9D7425] hover:underline mt-2 inline-block">← رجوع للوحة</Link></div>
+      <div className="text-center"><div className="text-5xl mb-3"><Glyph e="🔍" /></div><div className="font-bold" style={{ color: '#0B2438' }}>الحساب غير موجود</div><Link href="/admin" className="text-sm text-[#9D7425] hover:underline mt-2 inline-block">← رجوع للوحة</Link></div>
     </div>
   )
 
@@ -155,12 +156,12 @@ export default function AdminUserDetail() {
                 <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{p.company_name_ar || '—'}</div>
                 {p.company_name_en && <div className="text-sm text-gray-400">{p.company_name_en}</div>}
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <span className={`badge text-[10px] ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? '🛒 مشترٍ' : p.role === 'supplier' ? '🏪 مورد' : p.role}</span>
+                  <span className={`badge text-[10px] ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? 'مشترٍ' : p.role === 'supplier' ? 'مورد' : p.role}</span>
                   <span className={`badge text-[10px] ${isVerified ? 'badge-green' : p.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'}`}>
-                    {isVerified ? '✓ موثق' : p.verification_status === 'rejected' ? '✕ مرفوض' : '⏳ قيد المراجعة'}
+                    {isVerified ? '✓ موثق' : p.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
                   </span>
-                  {!active && <span className="badge text-[10px] bg-red-100 text-red-700">⛔ موقوف</span>}
-                  {p.cr_verification_source === 'wathq' && <span className="badge text-[10px] text-white" style={{ background: '#0F6E56' }}>🛡 واثق</span>}
+                  {!active && <span className="badge text-[10px] bg-red-100 text-red-700"><Glyph e="⛔" /> موقوف</span>}
+                  {p.cr_verification_source === 'wathq' && <span className="badge text-[10px] text-white" style={{ background: '#0F6E56' }}><Glyph e="🛡" /> واثق</span>}
                 </div>
               </div>
             </div>
@@ -169,9 +170,9 @@ export default function AdminUserDetail() {
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {!isVerified && <button onClick={() => setStatus('verified')} disabled={busy === 'verified'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>{busy === 'verified' ? '...' : '✓ موافقة'}</button>}
               {p.verification_status !== 'rejected' && <button onClick={() => setRejecting(!rejecting)} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600">✕ رفض</button>}
-              <button onClick={() => setShowPw(!showPw)} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50">🔑 كلمة المرور</button>
+              <button onClick={() => setShowPw(!showPw)} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50"><Glyph e="🔑" /> كلمة المرور</button>
               <button onClick={toggleActive} disabled={busy === 'is_active'} className={`text-xs px-3 py-2 rounded-xl border disabled:opacity-50 ${active ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'}`}>
-                {active ? '⛔ إيقاف الحساب' : '✓ تفعيل الحساب'}
+                {active ? 'إيقاف الحساب' : '✓ تفعيل الحساب'}
               </button>
             </div>
           </div>
@@ -188,7 +189,7 @@ export default function AdminUserDetail() {
           {/* Password */}
           {showPw && (
             <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200">
-              <div className="text-xs text-amber-700 mb-2">⚠️ تعيين كلمة مرور جديدة لهذا الحساب — أبلغ صاحبه بها.</div>
+              <div className="text-xs text-amber-700 mb-2"><Glyph e="⚠" /> تعيين كلمة مرور جديدة لهذا الحساب — أبلغ صاحبه بها.</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input type="text" value={pw} onChange={(e: any) => setPw(e.target.value)} className="input-field font-mono" placeholder="كلمة المرور الجديدة" dir="ltr" />
                 <input type="text" value={pwConfirm} onChange={(e: any) => setPwConfirm(e.target.value)} className="input-field font-mono" placeholder="تأكيد" dir="ltr" />
@@ -201,7 +202,7 @@ export default function AdminUserDetail() {
 
         {/* Details grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Section title="الهوية والسجل التجاري" icon="🏛">
+          <Section title="الهوية والسجل التجاري" icon={<Glyph e="🏛" />}>
             <Field label="الاسم (عربي)">{p.company_name_ar}</Field>
             <Field label="الاسم (إنجليزي)">{p.company_name_en}</Field>
             <Field label="رقم السجل التجاري">{p.commercial_registration}</Field>
@@ -221,25 +222,25 @@ export default function AdminUserDetail() {
             <Field label="معرّف الحساب (ID)"><span className="font-mono text-[11px]" dir="ltr">{p.id}</span></Field>
           </Section>
 
-          <Section title="الموقع والعنوان الوطني" icon="📍">
+          <Section title="الموقع والعنوان الوطني" icon={<Glyph e="📍" />}>
             <Field label="المنطقة / المدينة">{[p.region, p.city].filter(Boolean).join(' / ') || '—'}</Field>
             <Field label="الحي">{p.district}</Field>
             <Field label="الشارع / رقم المبنى">{[p.street_name, p.building_number].filter(Boolean).join(' — ') || '—'}</Field>
             <Field label="الرمز البريدي / الرقم الإضافي">{[p.postal_code, p.additional_number].filter(Boolean).join(' — ') || '—'}</Field>
             <Field label="العنوان الوطني المختصر"><span className="font-mono" dir="ltr">{p.national_short_address || '—'}</span></Field>
             {p.latitude && p.longitude && (
-              <Field label="الإحداثيات"><a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" className="text-[#9D7425] hover:underline">🗺 فتح على الخريطة</a></Field>
+              <Field label="الإحداثيات"><a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" className="text-[#9D7425] hover:underline"><Glyph e="🗺" /> فتح على الخريطة</a></Field>
             )}
           </Section>
 
-          <Section title="التصنيف" icon="🏷">
+          <Section title="التصنيف" icon={<Glyph e="🏷" />}>
             <Field label="نوع الحساب">{p.role === 'contractor' ? 'مشترٍ' : 'مورد'}</Field>
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
                 <div className="text-[11px] text-gray-400 mb-1">نوع الحساب · الفئة: <b className="text-purple-700">{tierLabel(p.supplier_tier, 'ar')}</b> <span className="text-gray-300">(تلقائية)</span></div>
                 <select value={p.provider_type || 'company'} onChange={(e: any) => setField('provider_type', e.target.value)} className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5">
                   <option value="individual">بائع مستقل / وسيط</option>
-                  <option value="company">🏢 شركة (النشاط غير محدد)</option>
+                  <option value="company">شركة (النشاط غير محدد)</option>
                   {COMPANY_ACTIVITIES.map(a => <option key={a.k} value={a.k}>{a.ar}</option>)}
                 </select>
               </div>
@@ -254,7 +255,7 @@ export default function AdminUserDetail() {
             )}
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
-                <div className="text-[11px] text-gray-400 mb-1.5">🏅 اعتمادات المورد (تظهر للمشترين كدليل ثقة)</div>
+                <div className="text-[11px] text-gray-400 mb-1.5"><Glyph e="🏅" /> اعتمادات المورد (تظهر للمشترين كدليل ثقة)</div>
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(APPROVAL_LABELS).map(([key, label]) => {
                     const on = Array.isArray(p.approvals) && p.approvals.includes(key)
@@ -278,7 +279,7 @@ export default function AdminUserDetail() {
             {p.role === 'supplier' && p.auto_classification && (
               <Field label="فحص التصنيف الآلي">
                 <span className={p.auto_classification === 'match' ? 'text-emerald-600' : p.auto_classification === 'mismatch' ? 'text-red-600' : 'text-amber-600'}>
-                  {p.auto_classification === 'match' ? '🤖 مطابق' : p.auto_classification === 'mismatch' ? '🤖 مشكوك' : '🤖 يحتاج مراجعة'}
+                  {p.auto_classification === 'match' ? 'مطابق' : p.auto_classification === 'mismatch' ? 'مشكوك' : 'يحتاج مراجعة'}
                   {p.auto_classification_confidence ? ` (${p.auto_classification_confidence}%)` : ''}{p.auto_classification_source === 'ai' ? ' — ذكاء' : ''}
                 </span>
                 {p.auto_classification_note && <div className="text-[11px] text-gray-500 mt-0.5">{p.auto_classification_note}</div>}
@@ -286,28 +287,28 @@ export default function AdminUserDetail() {
             )}
           </Section>
 
-          <Section title="التوثيق والمستندات" icon="📄">
+          <Section title="التوثيق والمستندات" icon={<Glyph e="📄" />}>
             <Field label="حالة التحقق">{isVerified ? 'موثق' : p.verification_status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}</Field>
             {p.rejection_reason && <Field label="سبب الرفض"><span className="text-red-600">{p.rejection_reason}</span></Field>}
             <Field label="مصدر التحقق">{p.cr_verification_source || '—'}{p.cr_verified_at ? ` (${dt(p.cr_verified_at)})` : ''}</Field>
             <div className="flex gap-2 mt-2 flex-wrap">
-              {p.license_url && <button onClick={() => openDoc(p.license_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5">📄 الرخصة</button>}
-              {p.cr_url && <button onClick={() => openDoc(p.cr_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5">📋 السجل</button>}
+              {p.license_url && <button onClick={() => openDoc(p.license_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5"><Glyph e="📄" /> الرخصة</button>}
+              {p.cr_url && <button onClick={() => openDoc(p.cr_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5"><Glyph e="📋" /> السجل</button>}
               {!p.license_url && !p.cr_url && <span className="text-xs text-gray-400">لا توجد مستندات مرفوعة</span>}
             </div>
           </Section>
 
-          <Section title="الاشتراك والتقييم" icon="⭐">
+          <Section title="الاشتراك والتقييم" icon={<Glyph e="⭐" />}>
             <Field label="الباقة">{p.subscription_plan || 'free'}{p.subscription_expires_at ? ` · حتى ${dt(p.subscription_expires_at)}` : ''}</Field>
             <Field label="التقييم">{p.rating_count > 0 ? `${Number(p.rating_avg).toFixed(1)} من 5 (${p.rating_count} تقييم)` : 'لا توجد تقييمات'}</Field>
-            <Field label="حالة النشاط">{active ? '🟢 نشط' : '🔴 موقوف'}</Field>
+            <Field label="حالة النشاط">{active ? 'نشط' : 'موقوف'}</Field>
           </Section>
         </div>
 
         {/* Activity */}
         <div className="mt-5">
           {p.role === 'contractor' ? (
-            <Section title={`النشاط — طلبات التسعير (${rfqs.length}) والمشاريع (${projects.length})`} icon="📋">
+            <Section title={`النشاط — طلبات التسعير (${rfqs.length}) والمشاريع (${projects.length})`} icon={<Glyph e="📋" />}>
               {rfqs.length === 0 && projects.length === 0 ? <div className="text-sm text-gray-400 py-2">لا يوجد نشاط بعد</div> : (
                 <div className="space-y-2">
                   {rfqs.map((r: any) => (
@@ -321,7 +322,7 @@ export default function AdminUserDetail() {
                   ))}
                   {projects.map((pr: any) => (
                     <div key={pr.id} className="flex items-center justify-between gap-2 text-xs bg-[#D4A543]/5 rounded-lg p-2.5 flex-wrap">
-                      <span className="font-semibold" style={{ color: '#0B2438' }}>🏗 {pr.title}</span>
+                      <span className="font-semibold" style={{ color: '#0B2438' }}><Glyph e="🏗" /> {pr.title}</span>
                       <span className="badge text-[10px] badge-gray">{RFQ_STATUS[pr.status] || pr.status}</span>
                       <span className="text-gray-400">{dt(pr.created_at)}</span>
                     </div>
@@ -330,7 +331,7 @@ export default function AdminUserDetail() {
               )}
             </Section>
           ) : p.role === 'supplier' ? (
-            <Section title={`النشاط — العروض المقدّمة (${myOffers.length})`} icon="📨">
+            <Section title={`النشاط — العروض المقدّمة (${myOffers.length})`} icon={<Glyph e="📨" />}>
               {myOffers.length === 0 ? <div className="text-sm text-gray-400 py-2">لا توجد عروض بعد</div> : (
                 <div className="space-y-2">
                   {myOffers.map((o: any) => (
@@ -350,7 +351,7 @@ export default function AdminUserDetail() {
 
         {/* Support / internal messaging with this user */}
         <div className="mt-5">
-          <Section title="الرسائل / الدعم" icon="💬">
+          <Section title="الرسائل / الدعم" icon={<Glyph e="💬" />}>
             <SupportThread userId={id} viewerRole="admin" />
           </Section>
         </div>

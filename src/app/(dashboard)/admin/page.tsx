@@ -12,6 +12,7 @@ import { SECTOR_LABELS, getGroupedSubCategories } from '@/types'
 import { safeHttpUrl } from '@/lib/safeUrl'
 import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
+import Glyph from '@/components/shared/Glyph'
 
 export default function AdminPanel() {
   const [user, setUser] = useState<any>(null)
@@ -191,7 +192,7 @@ export default function AdminPanel() {
         body: JSON.stringify({ supplierId: profileId }),
       })
       const j = await res.json()
-      setMsg(j?.autoVerified ? '✓ تطابق واضح — تم التوثيق تلقائياً' : '🤖 تم تحديث نتيجة الفحص')
+      setMsg(j?.autoVerified ? '✓ تطابق واضح — تم التوثيق تلقائياً' : 'تم تحديث نتيجة الفحص')
     } catch {
       setMsg('تعذّر الفحص، حاول لاحقاً')
     }
@@ -226,8 +227,8 @@ export default function AdminPanel() {
   }
 
   // Display helpers
-  const RFQ_STATUS: Record<string, string> = { open: '🟢 مفتوح', closed: '🔒 مغلق', awarded: '🏆 تمت الترسية', cancelled: '✕ ملغي', expired: '⏳ منتهي' }
-  const OFFER_STATUS: Record<string, string> = { pending: '⏳ بانتظار', submitted: '📨 مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
+  const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمت الترسية', cancelled: '✕ ملغي', expired: 'منتهي' }
+  const OFFER_STATUS: Record<string, string> = { pending: 'بانتظار', submitted: 'مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
   const sar = (n: any) => (n || n === 0) ? Number(n).toLocaleString('en-US') + ' ر.س' : '—'
   const dt = (d: any) => d ? new Date(d).toLocaleDateString('ar-SA') : '—'
 
@@ -381,8 +382,8 @@ export default function AdminPanel() {
   })
 
   const adminNav = [
-    { href: '/admin', label: 'لوحة الإدارة', icon: '🛡️', active: true },
-    { href: '/admin/discover', label: 'اكتشاف موردين', icon: '🔍' },
+    { href: '/admin', label: 'لوحة الإدارة', icon: <Glyph e="🛡" />, active: true },
+    { href: '/admin/discover', label: 'اكتشاف موردين', icon: <Glyph e="🔍" /> },
   ]
 
   return (
@@ -396,11 +397,11 @@ export default function AdminPanel() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 stagger">
           {[
-            { label: 'إجمالي المستخدمين', value: stats.total, icon: '👥', bg: '#0B2438', go: () => { setTab('all'); setRoleFilter('') } },
-            { label: 'مشترون', value: stats.contractors, icon: '👷', bg: '#102E45', go: () => { setTab('all'); setRoleFilter('contractor') } },
-            { label: 'موردون', value: stats.suppliers, icon: '🏪', bg: '#7c3aed', go: () => { setTab('all'); setRoleFilter('supplier') } },
-            { label: 'قيد المراجعة', value: stats.pending, icon: '⏳', bg: '#D4A543', go: () => { setTab('pending'); setRoleFilter('') } },
-            { label: 'موثقون', value: stats.verified, icon: '✅', bg: '#0F6E56', go: () => { setTab('verified'); setRoleFilter('') } },
+            { label: 'إجمالي المستخدمين', value: stats.total, icon: <Glyph e="👥" />, bg: '#0B2438', go: () => { setTab('all'); setRoleFilter('') } },
+            { label: 'مشترون', value: stats.contractors, icon: <Glyph e="👷" />, bg: '#102E45', go: () => { setTab('all'); setRoleFilter('contractor') } },
+            { label: 'موردون', value: stats.suppliers, icon: <Glyph e="🏪" />, bg: '#7c3aed', go: () => { setTab('all'); setRoleFilter('supplier') } },
+            { label: 'قيد المراجعة', value: stats.pending, icon: <Glyph e="⏳" />, bg: '#D4A543', go: () => { setTab('pending'); setRoleFilter('') } },
+            { label: 'موثقون', value: stats.verified, icon: <Glyph e="✅" />, bg: '#0F6E56', go: () => { setTab('verified'); setRoleFilter('') } },
           ].map(({ label, value, icon, bg, go }) => (
             <button key={label} type="button" onClick={go}
               className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D4A543]/40">
@@ -424,18 +425,18 @@ export default function AdminPanel() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-5">
           <div className="flex gap-2 flex-wrap">
             {[
-              { key: 'analytics', label: '📊 الإحصائيات' },
+              { key: 'analytics', label: 'الإحصائيات' },
               { key: 'pending', label: `قيد المراجعة (${stats.pending})` },
               { key: 'verified', label: `موثقون (${stats.verified})` },
               { key: 'rejected', label: 'مرفوضون' },
               { key: 'all', label: `الكل (${stats.total})` },
-              { key: 'rfqs', label: `📋 طلبات التسعير (${rfqs.length + projects.length})` },
-              { key: 'messages', label: `💬 الرسائل${totalUnread ? ' (' + totalUnread + ')' : ''}` },
-              { key: 'deals', label: `📦 الصفقات (${acceptedOffers})` },
-              { key: 'disputes', label: `⚠ النزاعات${disputes.length ? ' (' + disputes.length + ')' : ''}` },
-              { key: 'objections', label: `🚩 بلاغات حسابات وهمية${openObjections.length ? ' (' + openObjections.length + ')' : ''}` },
-              { key: 'changereqs', label: `📝 طلبات التعديل${openChangeReqs.length ? ' (' + openChangeReqs.length + ')' : ''}` },
-              { key: 'materials', label: `📦 طلبات المواد (${materialReqs.filter((r: any) => r.status === 'pending').length})` },
+              { key: 'rfqs', label: `طلبات التسعير (${rfqs.length + projects.length})` },
+              { key: 'messages', label: `الرسائل${totalUnread ? ' (' + totalUnread + ')' : ''}` },
+              { key: 'deals', label: `الصفقات (${acceptedOffers})` },
+              { key: 'disputes', label: `النزاعات${disputes.length ? ' (' + disputes.length + ')' : ''}` },
+              { key: 'objections', label: `بلاغات حسابات وهمية${openObjections.length ? ' (' + openObjections.length + ')' : ''}` },
+              { key: 'changereqs', label: `طلبات التعديل${openChangeReqs.length ? ' (' + openChangeReqs.length + ')' : ''}` },
+              { key: 'materials', label: `طلبات المواد (${materialReqs.filter((r: any) => r.status === 'pending').length})` },
             ].map((t: any) => (
               <button key={t.key} onClick={() => { setTab(t.key); setRoleFilter('') }}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === t.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
@@ -445,12 +446,12 @@ export default function AdminPanel() {
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/admin/discover" className="text-xs px-3 py-2 rounded-xl font-semibold text-white whitespace-nowrap transition-all hover:shadow-md" style={{ background: '#0F6E56' }}>🔎 اكتشاف موردين</Link>
+            <Link href="/admin/discover" className="text-xs px-3 py-2 rounded-xl font-semibold text-white whitespace-nowrap transition-all hover:shadow-md" style={{ background: '#0F6E56' }}><Glyph e="🔎" /> اكتشاف موردين</Link>
             {['pending', 'verified', 'rejected', 'all'].includes(tab) && filtered.length > 0 && (
               <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-all">⬇ تصدير CSV</button>
             )}
             <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-              className="input-field max-w-xs text-sm" placeholder="🔍 بحث بالاسم أو الجوال" />
+              className="input-field max-w-xs text-sm" placeholder="بحث بالاسم أو الجوال" />
           </div>
         </div>
 
@@ -459,7 +460,7 @@ export default function AdminPanel() {
           <div className="mb-4 flex items-center gap-2">
             <span className="text-xs text-gray-500">عرض:</span>
             <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-[#0B2438] text-white">
-              {roleFilter === 'contractor' ? '🛒 المشترون فقط' : '🏪 الموردون فقط'} ({filtered.length})
+              {roleFilter === 'contractor' ? 'المشترون فقط' : 'الموردون فقط'} ({filtered.length})
               <button onClick={() => setRoleFilter('')} className="hover:text-orange-300">✕</button>
             </span>
           </div>
@@ -468,7 +469,7 @@ export default function AdminPanel() {
         {/* Deals oversight — كل الصفقات المُرساة بمراحلها (إشراف الأدمن) */}
         {tab === 'deals' ? (
           dealsList.length === 0 ? (
-            <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center"><div className="text-5xl mb-3">📦</div><p className="text-gray-500">لا صفقات مُرساة بعد.</p></div>
+            <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center"><div className="text-5xl mb-3"><Glyph e="📦" /></div><p className="text-gray-500">لا صفقات مُرساة بعد.</p></div>
           ) : (
             <div className="space-y-2">
               {dealsList.map((o: any) => {
@@ -479,7 +480,7 @@ export default function AdminPanel() {
                   <div key={o.id} className="flex items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                     <div className="min-w-0">
                       <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{rfq?.title || rfq?.product_name || 'صفقة'}</div>
-                      <div className="text-xs text-gray-400 mt-0.5 truncate">🏭 {sup?.company_name_ar || '—'} · {Number(o.total_price || 0).toLocaleString('en-US')} ر.س{o.invoice_number ? ` · ${o.invoice_number}` : ''}</div>
+                      <div className="text-xs text-gray-400 mt-0.5 truncate"><Glyph e="🏭" /> {sup?.company_name_ar || '—'} · {Number(o.total_price || 0).toLocaleString('en-US')} ر.س{o.invoice_number ? ` · ${o.invoice_number}` : ''}</div>
                     </div>
                     <div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}>
                       <div className="text-lg leading-none">{st.emoji}</div>
@@ -493,7 +494,7 @@ export default function AdminPanel() {
         ) : tab === 'disputes' ? (
           disputes.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
-              <div className="text-5xl mb-4">🕊️</div>
+              <div className="text-5xl mb-4"><Glyph e="🕊" /></div>
               <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد نزاعات مفتوحة</h3>
               <p className="text-sm text-gray-400 mt-1">تظهر هنا النزاعات بين المشترين والموردين للوساطة</p>
             </div>
@@ -506,16 +507,16 @@ export default function AdminPanel() {
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="badge text-[10px] bg-red-100 text-red-700">⚠ نزاع مفتوح</span>
+                          <span className="badge text-[10px] bg-red-100 text-red-700"><Glyph e="⚠" /> نزاع مفتوح</span>
                           <span className="font-bold" style={{ color: '#0B2438' }}>{r?.product_name || 'طلب'}</span>
                         </div>
                         <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
-                          <span>🏢 المشتري: <b>{nameOf(r?.contractor_id)}</b></span>
-                          <span>🏪 المورد: <b>{nameOf(o.supplier_id)}</b></span>
-                          <span>💰 القيمة: {sar(o.total_price)}</span>
-                          <span>📅 فُتح: {dt(o.dispute_opened_at)}</span>
+                          <span><Glyph e="🏢" /> المشتري: <b>{nameOf(r?.contractor_id)}</b></span>
+                          <span><Glyph e="🏪" /> المورد: <b>{nameOf(o.supplier_id)}</b></span>
+                          <span><Glyph e="💰" /> القيمة: {sar(o.total_price)}</span>
+                          <span><Glyph e="📅" /> فُتح: {dt(o.dispute_opened_at)}</span>
                         </div>
-                        <div className="mt-2 bg-red-50 rounded-lg p-2.5 text-sm text-red-700">📝 {o.dispute_reason}</div>
+                        <div className="mt-2 bg-red-50 rounded-lg p-2.5 text-sm text-red-700"><Glyph e="📝" /> {o.dispute_reason}</div>
                         <div className="text-[11px] text-gray-400 mt-1.5">
                           التسليم: {o.supplier_delivered_at ? '✓' : '—'} · الاستلام: {o.received_at ? '✓' : '—'} · الدفع: {o.payment_status === 'paid' ? '✓' : '—'}
                         </div>
@@ -533,7 +534,7 @@ export default function AdminPanel() {
         ) : tab === 'objections' ? (
           objections.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
-              <div className="text-5xl mb-4">🚩</div>
+              <div className="text-5xl mb-4"><Glyph e="🚩" /></div>
               <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد بلاغات</h3>
               <p className="text-sm text-gray-400 mt-1">تظهر هنا بلاغات «هذا الحساب وهمي» المرسلة من صفحة التسجيل</p>
             </div>
@@ -545,18 +546,18 @@ export default function AdminPanel() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`badge text-[10px] ${o.status === 'open' ? 'bg-red-100 text-red-700' : o.status === 'reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {o.status === 'open' ? '🚩 بلاغ جديد' : o.status === 'reviewed' ? '✓ تمت المراجعة' : '✕ مرفوض'}
+                          {o.status === 'open' ? 'بلاغ جديد' : o.status === 'reviewed' ? '✓ تمت المراجعة' : '✕ مرفوض'}
                         </span>
                         <span className="font-bold" style={{ color: '#0B2438' }} dir="ltr">سجل تجاري: {o.commercial_registration}</span>
                       </div>
                       <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
-                        <span>🏢 الحساب المُبلَّغ عنه: <b>{o.existing_company || '—'}</b></span>
-                        <span>🙍 المُبلِّغ: <b>{o.reporter_name || '—'}</b></span>
-                        {o.reporter_phone && <span dir="ltr">📞 {o.reporter_phone}</span>}
+                        <span><Glyph e="🏢" /> الحساب المُبلَّغ عنه: <b>{o.existing_company || '—'}</b></span>
+                        <span><Glyph e="🙍" /> المُبلِّغ: <b>{o.reporter_name || '—'}</b></span>
+                        {o.reporter_phone && <span dir="ltr"><Glyph e="📞" /> {o.reporter_phone}</span>}
                         {o.reporter_email && <span dir="ltr">✉ {o.reporter_email}</span>}
-                        <span>📅 {dt(o.created_at)}</span>
+                        <span><Glyph e="📅" /> {dt(o.created_at)}</span>
                       </div>
-                      {o.reason && <div className="mt-2 bg-amber-50 rounded-lg p-2.5 text-sm text-amber-800">📝 {o.reason}</div>}
+                      {o.reason && <div className="mt-2 bg-amber-50 rounded-lg p-2.5 text-sm text-amber-800"><Glyph e="📝" /> {o.reason}</div>}
                     </div>
                     {o.status === 'open' && (
                       <div className="flex flex-col gap-2 flex-shrink-0">
@@ -578,7 +579,7 @@ export default function AdminPanel() {
         ) : tab === 'changereqs' ? (
           changeReqs.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
-              <div className="text-5xl mb-4">📝</div>
+              <div className="text-5xl mb-4"><Glyph e="📝" /></div>
               <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد طلبات تعديل</h3>
               <p className="text-sm text-gray-400 mt-1">تظهر هنا طلبات تغيير الاسم أو التصنيف المرسلة من المستخدمين</p>
             </div>
@@ -594,9 +595,9 @@ export default function AdminPanel() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={`badge text-[10px] ${r.status === 'pending' ? 'bg-amber-100 text-amber-700' : r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                            {r.status === 'pending' ? '⏳ بانتظار المراجعة' : r.status === 'approved' ? '✓ معتمد' : '✕ مرفوض'}
+                            {r.status === 'pending' ? 'بانتظار المراجعة' : r.status === 'approved' ? '✓ معتمد' : '✕ مرفوض'}
                           </span>
-                          <span className="badge badge-blue text-[10px]">{isName ? '🏢 تغيير الاسم' : '🏷 تغيير التصنيف'}</span>
+                          <span className="badge badge-blue text-[10px]">{isName ? 'تغيير الاسم' : 'تغيير التصنيف'}</span>
                           <span className="font-bold" style={{ color: '#0B2438' }}>{nameOf(r.user_id)}</span>
                         </div>
                         <div className="mt-2 text-sm flex items-center gap-2 flex-wrap">
@@ -604,9 +605,9 @@ export default function AdminPanel() {
                           <span className="text-gray-400">←</span>
                           <span className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">{newL}</span>
                         </div>
-                        {r.reason && <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-600">📝 {r.reason}</div>}
-                        {safeHttpUrl(r.document_url) && <a href={safeHttpUrl(r.document_url)} target="_blank" rel="noreferrer" className="text-xs underline text-[#9D7425] mt-1 inline-block">📎 مستند مرفق</a>}
-                        <div className="text-[11px] text-gray-400 mt-1.5">📅 {dt(r.created_at)}{r.admin_note ? ` · ملاحظة الإدارة: ${r.admin_note}` : ''}</div>
+                        {r.reason && <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-600"><Glyph e="📝" /> {r.reason}</div>}
+                        {safeHttpUrl(r.document_url) && <a href={safeHttpUrl(r.document_url)} target="_blank" rel="noreferrer" className="text-xs underline text-[#9D7425] mt-1 inline-block"><Glyph e="📎" /> مستند مرفق</a>}
+                        <div className="text-[11px] text-gray-400 mt-1.5"><Glyph e="📅" /> {dt(r.created_at)}{r.admin_note ? ` · ملاحظة الإدارة: ${r.admin_note}` : ''}</div>
                       </div>
                       {r.status === 'pending' && (
                         <div className="flex flex-col gap-2 flex-shrink-0">
@@ -630,7 +631,7 @@ export default function AdminPanel() {
           <div className="space-y-6">
             {/* وضع الإطلاق المجاني — التحكّم ببدء تحصيل رسوم الاشتراك */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="font-bold text-sm mb-1" style={{ color: '#0B2438' }}>🎉 فترة الإطلاق المجانية</div>
+              <div className="font-bold text-sm mb-1" style={{ color: '#0B2438' }}><Glyph e="🎉" /> فترة الإطلاق المجانية</div>
               <div className="text-xs text-gray-500 mb-3">
                 {(!launchUntil || new Date(launchUntil) > new Date())
                   ? `مفعّلة الآن — كل الميزات مجانية للموردين${launchUntil ? ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')}` : ' (بلا تاريخ نهاية معلن)'}.`
@@ -653,13 +654,13 @@ export default function AdminPanel() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'تسجيلات آخر 7 أيام', value: newLast7, icon: '🆕', bg: '#0F6E56' },
-                { label: 'تسجيلات آخر 30 يوم', value: newLast30, icon: '📈', bg: '#0B2438' },
-                { label: 'طلبات التسعير', value: rfqs.length, icon: '📋', bg: '#D4A543' },
-                { label: 'المشاريع (BOQ)', value: projects.length, icon: '🏗', bg: '#102E45' },
-                { label: 'إجمالي العروض', value: offers.length, icon: '📨', bg: '#7c3aed' },
-                { label: 'عروض مقبولة', value: acceptedOffers, icon: '✅', bg: '#0F6E56' },
-                { label: 'متوسط العروض/طلب', value: offersPerRfq, icon: '⚖️', bg: '#0B2438' },
-                { label: 'رسائل الدعم', value: support.length, icon: '💬', bg: '#D4A543' },
+                { label: 'تسجيلات آخر 30 يوم', value: newLast30, icon: <Glyph e="📈" />, bg: '#0B2438' },
+                { label: 'طلبات التسعير', value: rfqs.length, icon: <Glyph e="📋" />, bg: '#D4A543' },
+                { label: 'المشاريع (BOQ)', value: projects.length, icon: <Glyph e="🏗" />, bg: '#102E45' },
+                { label: 'إجمالي العروض', value: offers.length, icon: <Glyph e="📨" />, bg: '#7c3aed' },
+                { label: 'عروض مقبولة', value: acceptedOffers, icon: <Glyph e="✅" />, bg: '#0F6E56' },
+                { label: 'متوسط العروض/طلب', value: offersPerRfq, icon: <Glyph e="⚖" />, bg: '#0B2438' },
+                { label: 'رسائل الدعم', value: support.length, icon: <Glyph e="💬" />, bg: '#D4A543' },
               ].map((k: any) => (
                 <div key={k.label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="flex items-center justify-between">
@@ -672,7 +673,7 @@ export default function AdminPanel() {
             </div>
 
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <h3 className="text-sm font-bold mb-4" style={{ color: '#0B2438' }}>📈 التسجيلات خلال آخر 30 يوماً</h3>
+              <h3 className="text-sm font-bold mb-4" style={{ color: '#0B2438' }}><Glyph e="📈" /> التسجيلات خلال آخر 30 يوماً</h3>
               <div className="flex items-end gap-1 h-40">
                 {signupSeries.map((s: any) => (
                   <div key={s.day} className="flex-1 flex flex-col items-center justify-end" title={`${s.day}: ${s.n}`}>
@@ -687,19 +688,19 @@ export default function AdminPanel() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                <h3 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>📍 أعلى المناطق</h3>
+                <h3 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}><Glyph e="📍" /> أعلى المناطق</h3>
                 {topRegions.length === 0 ? <div className="text-xs text-gray-400">—</div> : topRegions.map(([k, v]: any) => (
                   <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{k}</span><span className="font-bold" style={{ color: '#0B2438' }}>{v}</span></div>
                 ))}
               </div>
               <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                <h3 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>🏷 أكثر القطاعات طلباً</h3>
+                <h3 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}><Glyph e="🏷" /> أكثر القطاعات طلباً</h3>
                 {topSectors.length === 0 ? <div className="text-xs text-gray-400">—</div> : topSectors.map(([k, v]: any) => (
                   <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{k}</span><span className="font-bold" style={{ color: '#0B2438' }}>{v}</span></div>
                 ))}
               </div>
               <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                <h3 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>🏭 فئات الموردين</h3>
+                <h3 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}><Glyph e="🏭" /> فئات الموردين</h3>
                 {tierBreakdown.length === 0 ? <div className="text-xs text-gray-400">—</div> : tierBreakdown.map(([k, v]: any) => (
                   <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{tierLabel(k, 'ar')}</span><span className="font-bold" style={{ color: '#0B2438' }}>{v}</span></div>
                 ))}
@@ -709,7 +710,7 @@ export default function AdminPanel() {
         ) : tab === 'messages' ? (
           conversations.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
-              <div className="text-5xl mb-4">💬</div>
+              <div className="text-5xl mb-4"><Glyph e="💬" /></div>
               <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد رسائل</h3>
               <p className="text-sm text-gray-400 mt-1">تظهر هنا رسائل المشترين والموردين</p>
             </div>
@@ -742,7 +743,7 @@ export default function AdminPanel() {
           <div className="space-y-8">
             {/* Single RFQs */}
             <div>
-              <h3 className="text-sm font-bold text-gray-500 mb-3">📋 طلبات مفردة ({filteredRfqs.length})</h3>
+              <h3 className="text-sm font-bold text-gray-500 mb-3"><Glyph e="📋" /> طلبات مفردة ({filteredRfqs.length})</h3>
               {filteredRfqs.length === 0 ? (
                 <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center text-gray-400 text-sm">لا توجد طلبات تسعير مفردة</div>
               ) : (
@@ -762,12 +763,12 @@ export default function AdminPanel() {
                               <span className="badge text-[10px] bg-orange-100 text-orange-700">{rOffers.length} عرض</span>
                             </div>
                             <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1">
-                              <span>🏢 المشتري: <b>{nameOf(r.contractor_id)}</b>{r.hide_identity ? ' (هوية مخفية)' : ''}</span>
-                              <span>📦 الكمية: {r.quantity} {r.unit}</span>
-                              <span>💰 تقديري: {sar(r.estimated_value)}</span>
-                              <span>📍 {r.region || '—'}{r.city ? ' / ' + r.city : ''}</span>
-                              <span>🚚 {r.delivery_required ? ('توصيل: ' + (r.delivery_location || '—')) : 'استلام ذاتي'}</span>
-                              <span>🧾 {r.vat_invoice_required ? 'فاتورة ضريبية' : 'بدون ضريبة'}</span>
+                              <span><Glyph e="🏢" /> المشتري: <b>{nameOf(r.contractor_id)}</b>{r.hide_identity ? ' (هوية مخفية)' : ''}</span>
+                              <span><Glyph e="📦" /> الكمية: {r.quantity} {r.unit}</span>
+                              <span><Glyph e="💰" /> تقديري: {sar(r.estimated_value)}</span>
+                              <span><Glyph e="📍" /> {r.region || '—'}{r.city ? ' / ' + r.city : ''}</span>
+                              <span><Glyph e="🚚" /> {r.delivery_required ? ('توصيل: ' + (r.delivery_location || '—')) : 'استلام ذاتي'}</span>
+                              <span><Glyph e="🧾" /> {r.vat_invoice_required ? 'فاتورة ضريبية' : 'بدون ضريبة'}</span>
                             </div>
                             {(r.target_tiers?.length || r.verified_only || r.nearby_only) && (
                               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
@@ -776,8 +777,8 @@ export default function AdminPanel() {
                                 {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-[#9D7425]">القريبون فقط</span>}
                               </div>
                             )}
-                            {r.specification && <p className="text-xs text-gray-500 mt-1.5">📋 {r.specification}</p>}
-                            {r.notes && <p className="text-xs text-gray-400 mt-1">📝 {r.notes}</p>}
+                            {r.specification && <p className="text-xs text-gray-500 mt-1.5"><Glyph e="📋" /> {r.specification}</p>}
+                            {r.notes && <p className="text-xs text-gray-400 mt-1"><Glyph e="📝" /> {r.notes}</p>}
                             <div className="text-[10px] text-gray-400 mt-1.5">أُنشئ: {dt(r.created_at)} · ينتهي: {dt(r.expires_at)}</div>
                           </div>
                           {rOffers.length > 0 && (
@@ -792,7 +793,7 @@ export default function AdminPanel() {
                             {rOffers.map((o: any) => (
                               <div key={o.id} className="bg-[#f4f6f9] rounded-xl p-3 text-xs">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-semibold" style={{ color: '#0B2438' }}>🏪 {nameOf(o.supplier_id)}</span>
+                                  <span className="font-semibold" style={{ color: '#0B2438' }}><Glyph e="🏪" /> {nameOf(o.supplier_id)}</span>
                                   <span className="badge text-[10px] badge-gray">{OFFER_STATUS[o.status] || o.status}</span>
                                   <span className="text-emerald-700 font-bold">{sar(o.total_price)}</span>
                                   {o.delivery_days != null && <span className="text-gray-500">⏱ {o.delivery_days} يوم</span>}
@@ -801,8 +802,8 @@ export default function AdminPanel() {
                                 {Array.isArray(o.extra_charges) && o.extra_charges.length > 0 && (
                                   <div className="text-gray-500 mt-1">رسوم إضافية: {o.extra_charges.map((e: any) => `${e.label || e.name || 'بند'}: ${sar(e.amount ?? e.value)}`).join(' · ')}</div>
                                 )}
-                                {o.notes && <div className="text-gray-400 mt-1">📝 {o.notes}</div>}
-                                {o.attachment_url && <button onClick={() => openBoq(o.attachment_url)} className="text-[#9D7425] hover:underline mt-1">📎 {o.attachment_name || 'مرفق'}</button>}
+                                {o.notes && <div className="text-gray-400 mt-1"><Glyph e="📝" /> {o.notes}</div>}
+                                {o.attachment_url && <button onClick={() => openBoq(o.attachment_url)} className="text-[#9D7425] hover:underline mt-1"><Glyph e="📎" /> {o.attachment_name || 'مرفق'}</button>}
                                 <div className="text-[10px] text-gray-400 mt-1">{dt(o.created_at)}{o.accepted_at ? ` · قُبل: ${dt(o.accepted_at)}` : ''}</div>
                               </div>
                             ))}
@@ -818,7 +819,7 @@ export default function AdminPanel() {
             {/* Project (BOQ) RFQs */}
             {filteredProjects.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold text-gray-500 mb-3">🏗 مشاريع — جداول كميات BOQ ({filteredProjects.length})</h3>
+                <h3 className="text-sm font-bold text-gray-500 mb-3"><Glyph e="🏗" /> مشاريع — جداول كميات BOQ ({filteredProjects.length})</h3>
                 <div className="space-y-3 stagger">
                   {filteredProjects.map((p: any) => {
                     const items = itemsByProject[p.id] || []
@@ -828,16 +829,16 @@ export default function AdminPanel() {
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold" style={{ color: '#0B2438' }}>🏗 {p.title}</span>
+                              <span className="font-bold" style={{ color: '#0B2438' }}><Glyph e="🏗" /> {p.title}</span>
                               <span className="badge text-[10px] badge-navy">{RFQ_STATUS[p.status] || p.status}</span>
                               <span className="badge text-[10px] bg-orange-100 text-orange-700">{items.length} بند</span>
                             </div>
-                            <div className="text-xs text-gray-600 mt-1.5">🏢 {nameOf(p.contractor_id)} · 📍 {p.region || '—'}{p.city ? ' / ' + p.city : ''}</div>
-                            {p.notes && <p className="text-xs text-gray-400 mt-1">📝 {p.notes}</p>}
+                            <div className="text-xs text-gray-600 mt-1.5"><Glyph e="🏢" /> {nameOf(p.contractor_id)} · <Glyph e="📍" /> {p.region || '—'}{p.city ? ' / ' + p.city : ''}</div>
+                            {p.notes && <p className="text-xs text-gray-400 mt-1"><Glyph e="📝" /> {p.notes}</p>}
                             <div className="text-[10px] text-gray-400 mt-1.5">أُنشئ: {dt(p.created_at)}</div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {p.boq_url && <button onClick={() => openBoq(p.boq_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5">📄 BOQ</button>}
+                            {p.boq_url && <button onClick={() => openBoq(p.boq_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5"><Glyph e="📄" /> BOQ</button>}
                             {items.length > 0 && <button onClick={() => setExpandedProject(open ? null : p.id)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">{open ? '▲ إخفاء' : '▼ البنود'}</button>}
                           </div>
                         </div>
@@ -868,7 +869,7 @@ export default function AdminPanel() {
         ) : tab === 'materials' ? (
           materialReqs.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
-              <div className="text-5xl mb-4">📦</div>
+              <div className="text-5xl mb-4"><Glyph e="📦" /></div>
               <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد طلبات مواد</h3>
             </div>
           ) : (
@@ -885,11 +886,11 @@ export default function AdminPanel() {
                         <span className={`badge text-[10px] ${
                           r.status === 'approved' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-amber'
                         }`}>
-                          {r.status === 'approved' ? '✓ مقبولة' : r.status === 'rejected' ? '✕ مرفوضة' : '⏳ قيد المراجعة'}
+                          {r.status === 'approved' ? '✓ مقبولة' : r.status === 'rejected' ? '✕ مرفوضة' : 'قيد المراجعة'}
                         </span>
                       </div>
-                      {r.description && <p className="text-sm text-gray-500 mt-1">📝 {r.description}</p>}
-                      {r.spec_file_url && <a href={fileHref(r.spec_file_url)} target="_blank" rel="noreferrer" className="text-xs text-[#9D7425] underline mt-0.5 inline-block">📎 مرفق تفاصيل المنتج ←</a>}
+                      {r.description && <p className="text-sm text-gray-500 mt-1"><Glyph e="📝" /> {r.description}</p>}
+                      {r.spec_file_url && <a href={fileHref(r.spec_file_url)} target="_blank" rel="noreferrer" className="text-xs text-[#9D7425] underline mt-0.5 inline-block"><Glyph e="📎" /> مرفق تفاصيل المنتج ←</a>}
                       {r.admin_note && <p className="text-xs text-[#0F6E56] bg-emerald-50 rounded-lg px-2 py-1 mt-1 inline-block">ملاحظة الإدارة: {r.admin_note}</p>}
                       <div className="text-[11px] text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
@@ -916,7 +917,7 @@ export default function AdminPanel() {
           )
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
-            <div className="text-5xl mb-4 animate-float">📭</div>
+            <div className="text-5xl mb-4 animate-float"><Glyph e="📭" /></div>
             <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>لا يوجد مستخدمين</h3>
           </div>
         ) : (
@@ -937,7 +938,7 @@ export default function AdminPanel() {
                       {u.company_name_en && <div className="text-xs text-gray-400">{u.company_name_en}</div>}
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className={`badge text-[10px] ${u.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>
-                          {u.role === 'contractor' ? '🛒 مشترٍ' : '🏪 مورد'}
+                          {u.role === 'contractor' ? 'مشترٍ' : 'مورد'}
                         </span>
                         {u.role === 'contractor' && u.contractor_grade && (
                           <span className="badge text-[10px] bg-indigo-100 text-indigo-700">درجة {u.contractor_grade}</span>
@@ -953,8 +954,8 @@ export default function AdminPanel() {
                             u.auto_classification === 'mismatch' ? 'bg-red-100 text-red-700' :
                             'bg-amber-100 text-amber-700'
                           }`} title={u.auto_classification_note || ''}>
-                            {u.auto_classification === 'match' ? '🤖 تصنيف مطابق' :
-                             u.auto_classification === 'mismatch' ? '🤖 تصنيف مشكوك ⚠' : '🤖 يحتاج مراجعة'}
+                            {u.auto_classification === 'match' ? 'تصنيف مطابق' :
+                             u.auto_classification === 'mismatch' ? 'تصنيف مشكوك ' : 'يحتاج مراجعة'}
                             {u.auto_classification_source === 'ai' ? ' (ذكاء)' : ''}
                           </span>
                         )}
@@ -965,37 +966,37 @@ export default function AdminPanel() {
                           u.verification_status === 'verified' ? 'badge-green' :
                           u.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'
                         }`}>
-                          {u.verification_status === 'verified' ? '✓ موثق' : u.verification_status === 'rejected' ? '✕ مرفوض' : '⏳ قيد المراجعة'}
+                          {u.verification_status === 'verified' ? '✓ موثق' : u.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
                         </span>
                         {u.cr_verification_source === 'wathq' && (
-                          <span className="badge text-[10px] inline-flex items-center gap-0.5" style={{ background: '#0F6E56', color: '#fff' }}>🛡 واثق</span>
+                          <span className="badge text-[10px] inline-flex items-center gap-0.5" style={{ background: '#0F6E56', color: '#fff' }}><Glyph e="🛡" /> واثق</span>
                         )}
                         {u.commercial_registration && (
                           <span className="text-[10px] text-gray-400">سجل: {u.commercial_registration}</span>
                         )}
                         {u.cr_official_name && (
-                          <span className="text-[10px] text-emerald-600">🏛 {u.cr_official_name}</span>
+                          <span className="text-[10px] text-emerald-600"><Glyph e="🏛" /> {u.cr_official_name}</span>
                         )}
-                        {u.phone && <span className="text-[10px] text-gray-400">📞 {u.phone}</span>}
-                        {u.region && <span className="text-[10px] text-gray-400">📍 {u.region}</span>}
-                        {u.national_short_address && <span className="text-[10px] text-gray-400 font-mono" dir="ltr">🏛 {u.national_short_address}</span>}
+                        {u.phone && <span className="text-[10px] text-gray-400"><Glyph e="📞" /> {u.phone}</span>}
+                        {u.region && <span className="text-[10px] text-gray-400"><Glyph e="📍" /> {u.region}</span>}
+                        {u.national_short_address && <span className="text-[10px] text-gray-400 font-mono" dir="ltr"><Glyph e="🏛" /> {u.national_short_address}</span>}
                       </div>
                       {u.role === 'supplier' && u.auto_classification_note && u.auto_classification !== 'match' && (
                         <div className={`text-[11px] mt-1.5 rounded-lg px-2 py-1 inline-block ${u.auto_classification === 'mismatch' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'}`}>
-                          🤖 {u.auto_classification_note}
+                          <Glyph e="🤖" /> {u.auto_classification_note}
                         </div>
                       )}
                       {/* Extra details */}
                       <div className="text-[11px] text-gray-500 mt-2 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-0.5">
                         {emails[u.id]?.email && <span>✉️ <span dir="ltr">{emails[u.id].email}</span>{emails[u.id]?.email_confirmed ? ' ✓' : ' (غير مؤكد)'}</span>}
-                        {emails[u.id]?.last_sign_in_at && <span>🕐 آخر دخول: {dt(emails[u.id].last_sign_in_at)}</span>}
-                        {u.role === 'contractor' && <span>📋 طلبات التسعير: {rfqCountBy[u.id] || 0}</span>}
-                        {u.role === 'supplier' && <span>📨 العروض المقدّمة: {offerCountBy[u.id] || 0}</span>}
-                        {u.vat_number && <span>🧾 الرقم الضريبي: {u.vat_number}</span>}
-                        {u.subscription_plan && <span>💳 {u.subscription_plan}{u.subscription_expires_at ? ' · حتى ' + dt(u.subscription_expires_at) : ''}</span>}
-                        {u.rating_count > 0 && <span>⭐ {Number(u.rating_avg).toFixed(1)} ({u.rating_count} تقييم)</span>}
-                        {u.cr_expiry_date && <span>📅 انتهاء السجل: {dt(u.cr_expiry_date)}</span>}
-                        {u.is_active === false && <span className="text-red-500 font-semibold">⛔ حساب غير نشط</span>}
+                        {emails[u.id]?.last_sign_in_at && <span><Glyph e="🕐" /> آخر دخول: {dt(emails[u.id].last_sign_in_at)}</span>}
+                        {u.role === 'contractor' && <span><Glyph e="📋" /> طلبات التسعير: {rfqCountBy[u.id] || 0}</span>}
+                        {u.role === 'supplier' && <span><Glyph e="📨" /> العروض المقدّمة: {offerCountBy[u.id] || 0}</span>}
+                        {u.vat_number && <span><Glyph e="🧾" /> الرقم الضريبي: {u.vat_number}</span>}
+                        {u.subscription_plan && <span><Glyph e="💳" /> {u.subscription_plan}{u.subscription_expires_at ? ' · حتى ' + dt(u.subscription_expires_at) : ''}</span>}
+                        {u.rating_count > 0 && <span><Glyph e="⭐" /> {Number(u.rating_avg).toFixed(1)} ({u.rating_count} تقييم)</span>}
+                        {u.cr_expiry_date && <span><Glyph e="📅" /> انتهاء السجل: {dt(u.cr_expiry_date)}</span>}
+                        {u.is_active === false && <span className="text-red-500 font-semibold"><Glyph e="⛔" /> حساب غير نشط</span>}
                       </div>
                     </div>
                   </div>
@@ -1003,25 +1004,25 @@ export default function AdminPanel() {
                   <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                     {/* Full detail page */}
                     <Link href={`/admin/users/${u.id}`} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition-all hover:shadow" style={{ background: '#0B2438' }}>
-                      👁 التفاصيل
+                      <Glyph e="👁" /> التفاصيل
                     </Link>
                     {/* License Links */}
                     {u.license_url && (
                       <button type="button" onClick={() => openDoc(u.license_url)}
                         className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5 transition-all">
-                        📄 الرخصة
+                        <Glyph e="📄" /> الرخصة
                       </button>
                     )}
                     {u.cr_url && (
                       <button type="button" onClick={() => openDoc(u.cr_url)}
                         className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5 transition-all">
-                        📋 السجل
+                        <Glyph e="📋" /> السجل
                       </button>
                     )}
                     {u.latitude && u.longitude && (
                       <a href={`https://www.google.com/maps?q=${u.latitude},${u.longitude}`} target="_blank" rel="noopener noreferrer"
                         className="text-xs px-3 py-1.5 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 transition-all">
-                        🗺 الموقع
+                        <Glyph e="🗺" /> الموقع
                       </a>
                     )}
 
@@ -1029,7 +1030,7 @@ export default function AdminPanel() {
                     {u.role === 'supplier' && (
                       <button type="button" disabled={actionLoading === u.id} onClick={() => reclassify(u.id)}
                         className="text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-all disabled:opacity-50">
-                        🤖 إعادة فحص
+                        <Glyph e="🤖" /> إعادة فحص
                       </button>
                     )}
 
@@ -1045,7 +1046,7 @@ export default function AdminPanel() {
                         title="نوع الحساب (الفئة تُحسب تلقائياً من النوع والتوثيق)"
                         className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5 cursor-pointer">
                         <option value="individual">بائع مستقل / وسيط</option>
-                        <option value="company">🏢 شركة (النشاط غير محدد)</option>
+                        <option value="company">شركة (النشاط غير محدد)</option>
                         {COMPANY_ACTIVITIES.map(a => <option key={a.k} value={a.k}>{a.ar}</option>)}
                       </select>
                     )}
@@ -1062,9 +1063,9 @@ export default function AdminPanel() {
                         }}
                         title={u.subscription_expires_at ? `حتى ${new Date(u.subscription_expires_at).toLocaleDateString('ar-SA-u-ca-gregory')}` : ''}
                         className="text-xs border border-amber-200 text-amber-700 bg-amber-50 rounded-lg px-2 py-1.5 cursor-pointer">
-                        <option value="free">⭐ مجاني</option>
-                        <option value="professional">⭐ احترافي</option>
-                        <option value="premium">⭐ بريميوم</option>
+                        <option value="free">مجاني</option>
+                        <option value="professional">احترافي</option>
+                        <option value="premium">بريميوم</option>
                       </select>
                     )}
 
@@ -1106,7 +1107,7 @@ export default function AdminPanel() {
                     <button type="button"
                       onClick={() => { setPwModal({ id: u.id, name: u.company_name_ar, email: emails[u.id]?.email }); setPwValue(''); setPwConfirm(''); setPwMsg('') }}
                       className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
-                      🔑 كلمة المرور
+                      <Glyph e="🔑" /> كلمة المرور
                     </button>
                   </div>
                 </div>
@@ -1176,12 +1177,12 @@ export default function AdminPanel() {
       {pwModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-7 max-w-md w-full shadow-2xl animate-slide-up" dir="rtl">
-            <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>🔑 تغيير كلمة المرور</h3>
+            <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="🔑" /> تغيير كلمة المرور</h3>
             <p className="text-sm text-gray-500">الحساب: <strong>{pwModal.name}</strong></p>
             {pwModal.email && <p className="text-xs text-gray-400 mb-3" dir="ltr">{pwModal.email}</p>}
 
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 my-4">
-              ⚠️ سيتم تعيين كلمة مرور جديدة لهذا الحساب فوراً — أبلغ صاحب الحساب بها بعد الحفظ.
+              <Glyph e="⚠" /> سيتم تعيين كلمة مرور جديدة لهذا الحساب فوراً — أبلغ صاحب الحساب بها بعد الحفظ.
             </div>
 
             <div className="space-y-3 mb-4">
@@ -1226,7 +1227,7 @@ export default function AdminPanel() {
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <button type="button" onClick={aiSuggestMaterial} disabled={matAi || !matName.trim()}
                 className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
-                {matAi ? '⏳ جارٍ...' : '✨ اقترح التصنيف بالذكاء الاصطناعي'}
+                {matAi ? 'جارٍ...' : '✨ اقترح التصنيف بالذكاء الاصطناعي'}
               </button>
               {matAiMsg && <span className="text-[11px] font-semibold text-emerald-700">{matAiMsg}</span>}
             </div>

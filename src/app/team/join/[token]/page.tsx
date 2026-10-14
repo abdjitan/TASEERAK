@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { PHONE_OTP_ENABLED } from '@/lib/features'
 import { TEAM_INVITE_KEY } from '@/lib/sellers'
+import Glyph from '@/components/shared/Glyph'
 
 // A company team invitation (/team/join/<token>). Shows the company name; a signed-in user
 // joins with one tap, otherwise the token is kept and the user is brought back after login.
@@ -64,13 +65,13 @@ export default function JoinTeamPage() {
             <p className="text-sm text-gray-400">{L('Loading…', 'لوڈ ہو رہا ہے…', 'جارٍ التحميل…')}</p>
           ) : !invite?.ok || !invite?.valid ? (
             <>
-              <div className="text-4xl mb-2">⏳</div>
+              <div className="text-4xl mb-2"><Glyph e="⏳" /></div>
               <h1 className="text-lg font-extrabold text-navy">{L('Invitation not valid', 'دعوت درست نہیں', 'الدعوة غير صالحة')}</h1>
               <p className="text-sm text-gray-500 mt-1">{L('It may have been used or expired. Ask the company for a new link.', 'نیا لنک مانگیں۔', 'ربما استُخدمت أو انتهت صلاحيتها. اطلب من الشركة رابطاً جديداً.')}</p>
             </>
           ) : (
             <>
-              <div className="text-4xl mb-2">👥</div>
+              <div className="text-4xl mb-2"><Glyph e="👥" /></div>
               <h1 className="text-xl font-extrabold text-navy leading-snug">
                 {L('Join the team of', 'ٹیم میں شامل ہوں:', 'انضم إلى فريق')} {invite.company_name}
               </h1>

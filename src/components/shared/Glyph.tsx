@@ -5,6 +5,8 @@ import {
   ReceiptText, Bell, Lock, AlertTriangle, XCircle, CheckCircle2, ClipboardList, Upload, Target, Hourglass, Star,
   Hand, Inbox, Circle, Tag, CalendarDays, Settings2, MessageCircle, AlarmClock, Ban, Zap, Paperclip, Camera,
   ShieldCheck, TrendingDown, HelpCircle, FileText, PenLine, HardHat, Truck, Home, CreditCard, Lightbulb,
+  Menu, Scale, Globe, Sprout, Medal, Factory, Eye, Wallet, Ruler, Files, Mail, Mailbox, Repeat, KeyRound, Feather,
+  Printer, FolderOpen, Map, Flag, Footprints, Bot, Handshake, Brain, Puzzle, BrickWall, Landmark, Tractor, Store,
 } from 'lucide-react'
 
 const MAP: Record<string, [any, string?]> = {
@@ -18,6 +20,12 @@ const MAP: Record<string, [any, string?]> = {
   '⚙': [Settings2], '💬': [MessageCircle], '🚫': [Ban, 'text-red-500'], '⚡': [Zap], '📎': [Paperclip], '📷': [Camera],
   '🛡': [ShieldCheck], '📉': [TrendingDown], '❓': [HelpCircle], '📄': [FileText], '📝': [PenLine], '🏗': [HardHat],
   '🚚': [Truck], '🏘': [Home], '💳': [CreditCard], '💡': [Lightbulb, 'text-[#D4A543]'], '🎁': [Sparkles], '🏷': [Tag],
+  '☰': [Menu], '⚖': [Scale], '⛔': [Ban, 'text-red-500'], '🌐': [Globe], '🌱': [Sprout, 'text-emerald-600'], '🏅': [Medal, 'text-[#D4A543]'],
+  '🏭': [Factory], '👁': [Eye], '👷': [HardHat], '💰': [Wallet], '📏': [Ruler], '📑': [Files], '📨': [Mail], '📬': [Mailbox],
+  '🔁': [Repeat], '🔎': [Search], '🔑': [KeyRound], '🕊': [Feather], '🖨': [Printer], '🗂': [FolderOpen], '🗺': [Map],
+  '🙍': [User], '🚩': [Flag, 'text-red-500'], '🚶': [Footprints], '🤖': [Bot], '🤝': [Handshake], '🧠': [Brain], '🧩': [Puzzle],
+  '🧱': [BrickWall], '🏛': [Landmark], '🚜': [Tractor], '🏪': [Store],
+  '🥇': [Medal, 'text-[#D4AF37]'], '🥈': [Medal, 'text-[#9CA3AF]'], '🥉': [Medal, 'text-[#CD7F32]'],
 }
 
 export default function Glyph({ e, className = '' }: { e: string; className?: string }) {

@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
+import Glyph from '@/components/shared/Glyph'
 
 // صفحة الإشعارات الكاملة — كانت متاحة فقط عبر قائمة الجرس المنسدلة.
 export default function NotificationsPage() {
@@ -43,7 +44,7 @@ export default function NotificationsPage() {
       <div className="max-w-2xl mx-auto">
         {notifs.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
-            <div className="text-5xl mb-3">🔔</div>
+            <div className="text-5xl mb-3"><Glyph e="🔔" /></div>
             <p className="text-gray-500">{locale === 'en' ? 'No notifications yet.' : 'لا إشعارات بعد.'}</p>
           </div>
         ) : (

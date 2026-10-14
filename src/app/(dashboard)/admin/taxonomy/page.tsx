@@ -6,6 +6,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import PageLoader from '@/components/shared/PageLoader'
 import { SECTOR_LABELS } from '@/types'
+import Glyph from '@/components/shared/Glyph'
 
 type Row = {
   sector: string
@@ -123,7 +124,7 @@ export default function AdminTaxonomyPage() {
       <div className="max-w-5xl mx-auto">
         <div className="mb-5 flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>🗂️ شجرة التصنيفات والكلمات المفتاحية</h1>
+            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}><Glyph e="🗂" /> شجرة التصنيفات والكلمات المفتاحية</h1>
             <p className="text-sm text-gray-500 mt-1 max-w-2xl">
               عدّل الاسم والكلمات لكل تخصّص أو أضِف تخصصاً جديداً. الكلمات توجّه بنود الـBOQ للمورد الصحيح، والاسم يظهر في القوائم. التعديل <strong>يسري دون نشر</strong> (الواجهات تتحدّث عند أول تنقّل/تحديث، والتصنيف الخادمي خلال 5 دقائق).
             </p>
@@ -182,7 +183,7 @@ export default function AdminTaxonomyPage() {
               </button>
             ))}
           </div>
-          <input value={search} onChange={e => setSearch(e.target.value)} className="input-field sm:max-w-xs text-sm" placeholder="🔍 ابحث في الأسماء أو الكلمات..." />
+          <input value={search} onChange={e => setSearch(e.target.value)} className="input-field sm:max-w-xs text-sm" placeholder="ابحث في الأسماء أو الكلمات..." />
         </div>
 
         <div className="space-y-5">

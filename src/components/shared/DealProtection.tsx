@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { waLink } from '@/lib/wa'
 import { fileHref } from '@/lib/fileHref'
 import { useTranslation } from '@/i18n'
+import Glyph from '@/components/shared/Glyph'
 
 // 🛡 حماية الصفقة — محضر استلام + تأكيد دفع + نزاع (للطرفين).
 // مكوّن مشترك يُعرض في صفحة تفاصيل الصفقة لكلٍّ من المشتري والمورد (كلٌّ يرى أزراره).
@@ -72,22 +73,22 @@ export default function DealProtection({
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6" dir={dir}>
-      <h3 className="text-base font-bold mb-1" style={{ color: '#0B2438' }}>🛡 {L('Deal protection', 'ڈیل کا تحفظ', 'حماية الصفقة')}</h3>
+      <h3 className="text-base font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="🛡" /> {L('Deal protection', 'ڈیل کا تحفظ', 'حماية الصفقة')}</h3>
       <p className="text-xs text-gray-400 mb-3">{L('The platform records each stage of the deal as proof that protects both sides — it never holds any money.', 'پلیٹ فارم ڈیل کے ہر مرحلے کو ریکارڈ کرتا ہے تاکہ دونوں فریقوں کا تحفظ ہو — یہ کوئی رقم اپنے پاس نہیں رکھتا۔', 'توثّق المنصة مراحل الصفقة كدليل يحمي الطرفين — ولا تحتفظ بأي مبالغ.')}</p>
       {deliverOverdue && (
         <div className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-2 leading-relaxed">
-          ⏰ {isSupplier ? L('You are past the agreed delivery date — please confirm delivery or contact the buyer.', 'آپ طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہیں — براہ کرم ڈیلیوری کنفرم کریں یا خریدار سے رابطہ کریں۔', 'تأخّرت عن موعد التوصيل المتّفق عليه — يرجى تأكيد التسليم أو التواصل مع المشتري.') : L('The supplier is past the agreed delivery date — follow up with them or open a dispute below.', 'سپلائر طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہے — اس سے رابطہ کریں یا نیچے شکایت درج کریں۔', 'المورد تأخّر عن موعد التوصيل المتّفق عليه — تابع معه أو افتح نزاعاً أدناه.')}
+          <Glyph e="⏰" /> {isSupplier ? L('You are past the agreed delivery date — please confirm delivery or contact the buyer.', 'آپ طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہیں — براہ کرم ڈیلیوری کنفرم کریں یا خریدار سے رابطہ کریں۔', 'تأخّرت عن موعد التوصيل المتّفق عليه — يرجى تأكيد التسليم أو التواصل مع المشتري.') : L('The supplier is past the agreed delivery date — follow up with them or open a dispute below.', 'سپلائر طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہے — اس سے رابطہ کریں یا نیچے شکایت درج کریں۔', 'المورد تأخّر عن موعد التوصيل المتّفق عليه — تابع معه أو افتح نزاعاً أدناه.')}
         </div>
       )}
       {receiptOverdue && (
         <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold px-3 py-2 leading-relaxed">
-          ⏰ {isContractor ? L('More than 48 hours since delivery was confirmed — please confirm receipt or report a problem.', 'ڈیلیوری کنفرم ہوئے 48 گھنٹے سے زیادہ ہو گئے — براہ کرم وصولی کنفرم کریں یا مسئلہ بتائیں۔', 'مضى أكثر من 48 ساعة على تأكيد التوصيل — يرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.') : L('Waiting for the buyer to confirm receipt of the goods.', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے۔', 'بانتظار تأكيد المشتري لاستلام البضاعة.')}
+          <Glyph e="⏰" /> {isContractor ? L('More than 48 hours since delivery was confirmed — please confirm receipt or report a problem.', 'ڈیلیوری کنفرم ہوئے 48 گھنٹے سے زیادہ ہو گئے — براہ کرم وصولی کنفرم کریں یا مسئلہ بتائیں۔', 'مضى أكثر من 48 ساعة على تأكيد التوصيل — يرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.') : L('Waiting for the buyer to confirm receipt of the goods.', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے۔', 'بانتظار تأكيد المشتري لاستلام البضاعة.')}
         </div>
       )}
       {w && (
         <a href={w} target="_blank" rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-xs mb-4 px-3 py-1.5 rounded-full font-semibold text-white" style={{ background: '#25D366' }}>
-          💬 {isContractor ? L('Contact the supplier on WhatsApp', 'سپلائر سے واٹس ایپ پر رابطہ کریں', 'تواصل مع المورد عبر واتساب') : L('Contact the buyer on WhatsApp', 'خریدار سے واٹس ایپ پر رابطہ کریں', 'تواصل مع المشتري عبر واتساب')}
+          <Glyph e="💬" /> {isContractor ? L('Contact the supplier on WhatsApp', 'سپلائر سے واٹس ایپ پر رابطہ کریں', 'تواصل مع المورد عبر واتساب') : L('Contact the buyer on WhatsApp', 'خریدار سے واٹس ایپ پر رابطہ کریں', 'تواصل مع المشتري عبر واتساب')}
         </a>
       )}
 
@@ -128,7 +129,7 @@ export default function DealProtection({
           {!offer.received_at && isContractor && (
             <div className="flex items-center gap-2 shrink-0">
               <button onClick={() => { setDisputeReason(L('The goods were not delivered or do not match the order', 'مال ڈیلیور نہیں ہوا یا آرڈر کے مطابق نہیں ہے', 'البضاعة لم تُسلَّم أو لم تتطابق مع المطلوب')); setShowDispute(true) }} className="text-xs px-3 py-2 rounded-xl font-semibold border border-red-300 text-red-600 hover:bg-red-50 whitespace-nowrap">✕ {L('Not received', 'وصول نہیں ہوا', 'لم يتم الاستلام')}</button>
-              <button onClick={() => { if (confirm(L('⚠ Have you actually received the goods, matching the order?\n\nA dated receipt record will be saved. Note: confirming receipt without actually receiving lowers your rating and makes you accountable.', '⚠ کیا آپ کو واقعی مال مل گیا ہے اور وہ آرڈر کے مطابق ہے؟\n\nتاریخ کے ساتھ وصولی کا ریکارڈ محفوظ ہو جائے گا۔ نوٹ: مال ملے بغیر وصولی کنفرم کرنے سے آپ کی ریٹنگ کم ہو گی اور آپ جواب دہ ہوں گے۔', '⚠ هل استلمت البضاعة فعلياً ومطابقة للمطلوب؟\n\nسيُسجَّل محضر استلام موثّق بالتاريخ. تنبيه: تأكيد الاستلام دون استلام فعلي يُخفّض تقييمك ويُعرّضك للمساءلة.'))) callRpc('confirm_receipt', { p_offer_id: offer.id }, 'receipt') }} disabled={busy === 'receipt'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ {L('I confirm receipt', 'میں وصولی کنفرم کرتا ہوں', 'أؤكّد الاستلام')}</button>
+              <button onClick={() => { if (confirm(L('Have you actually received the goods, matching the order?\n\nA dated receipt record will be saved. Note: confirming receipt without actually receiving lowers your rating and makes you accountable.', 'کیا آپ کو واقعی مال مل گیا ہے اور وہ آرڈر کے مطابق ہے؟\n\nتاریخ کے ساتھ وصولی کا ریکارڈ محفوظ ہو جائے گا۔ نوٹ: مال ملے بغیر وصولی کنفرم کرنے سے آپ کی ریٹنگ کم ہو گی اور آپ جواب دہ ہوں گے۔', 'هل استلمت البضاعة فعلياً ومطابقة للمطلوب؟\n\nسيُسجَّل محضر استلام موثّق بالتاريخ. تنبيه: تأكيد الاستلام دون استلام فعلي يُخفّض تقييمك ويُعرّضك للمساءلة.'))) callRpc('confirm_receipt', { p_offer_id: offer.id }, 'receipt') }} disabled={busy === 'receipt'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ {L('I confirm receipt', 'میں وصولی کنفرم کرتا ہوں', 'أؤكّد الاستلام')}</button>
             </div>
           )}
         </div>
@@ -137,7 +138,7 @@ export default function DealProtection({
         <div className="rounded-xl p-3" style={{ background: offer.supplier_invoice_url ? '#E1F5EE' : '#f9fafb' }}>
           <div className="flex items-center justify-between gap-3">
             <div className="text-sm min-w-0">
-              <div className="font-semibold text-gray-700">🧾 {L('Official invoice', 'باضابطہ انوائس', 'الفاتورة الرسمية')}</div>
+              <div className="font-semibold text-gray-700"><Glyph e="🧾" /> {L('Official invoice', 'باضابطہ انوائس', 'الفاتورة الرسمية')}</div>
               <div className="text-xs text-gray-400">
                 {offer.supplier_invoice_url
                   ? `✓ ${L('Attached by the supplier', 'سپلائر نے منسلک کر دی', 'أرفقها المورد')} — ${new Date(offer.supplier_invoice_at).toLocaleString(dloc)}`
@@ -148,7 +149,7 @@ export default function DealProtection({
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {offer.supplier_invoice_url && (
-                <a href={fileHref(offer.supplier_invoice_url)} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold border border-gray-200 bg-white text-gray-700 whitespace-nowrap">📄 {L('View invoice', 'انوائس دیکھیں', 'عرض الفاتورة')}</a>
+                <a href={fileHref(offer.supplier_invoice_url)} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold border border-gray-200 bg-white text-gray-700 whitespace-nowrap"><Glyph e="📄" /> {L('View invoice', 'انوائس دیکھیں', 'عرض الفاتورة')}</a>
               )}
               {isSupplier && (
                 <label className={`text-xs px-4 py-2 rounded-xl font-semibold text-white whitespace-nowrap cursor-pointer ${busy === 'invoice' ? 'opacity-50 pointer-events-none' : ''}`} style={{ background: '#0B2438' }}>
@@ -187,14 +188,14 @@ export default function DealProtection({
       <div className="mt-4 pt-4 border-t border-gray-100">
         {offer.dispute_status === 'open' ? (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm">
-            <div className="font-bold text-red-700">⚠ {L('Open dispute', 'شکایت زیرِ کارروائی', 'نزاع مفتوح')}</div>
+            <div className="font-bold text-red-700"><Glyph e="⚠" /> {L('Open dispute', 'شکایت زیرِ کارروائی', 'نزاع مفتوح')}</div>
             <div className="text-xs text-red-600 mt-1">{offer.dispute_reason}</div>
             <div className="text-[11px] text-gray-500 mt-1">{L('The platform team will contact both sides to mediate.', 'پلیٹ فارم کی ٹیم صلح کے لیے دونوں فریقوں سے رابطہ کرے گی۔', 'فريق المنصة سيتواصل مع الطرفين للوساطة.')}</div>
           </div>
         ) : offer.dispute_status === 'resolved' ? (
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-700">✓ {L('Dispute resolved', 'شکایت حل ہو گئی', 'تم حل النزاع')}{offer.dispute_resolution ? `: ${offer.dispute_resolution}` : ''}</div>
         ) : !showDispute ? (
-          <button onClick={() => setShowDispute(true)} className="text-xs text-red-600 hover:underline">⚠ {L('Had a problem? Open a dispute', 'کوئی مسئلہ ہوا؟ شکایت درج کریں', 'واجهت مشكلة؟ افتح نزاعاً')}</button>
+          <button onClick={() => setShowDispute(true)} className="text-xs text-red-600 hover:underline"><Glyph e="⚠" /> {L('Had a problem? Open a dispute', 'کوئی مسئلہ ہوا؟ شکایت درج کریں', 'واجهت مشكلة؟ افتح نزاعاً')}</button>
         ) : (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3">
             <label className="block text-xs font-bold text-red-700 mb-1.5">{L('Describe the problem', 'مسئلہ بیان کریں', 'صف المشكلة')}</label>

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useNotifications } from '@/hooks/useNotifications'
+import Glyph from '@/components/shared/Glyph'
 
 function timeAgo(d: any) {
   const mins = Math.floor((Date.now() - new Date(d).getTime()) / 60000)
@@ -28,7 +29,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
   return (
     <div className="relative" ref={ref}>
       <button onClick={() => setOpen(!open)} className="relative p-2 rounded-lg hover:bg-gray-100 transition-all" aria-label="الإشعارات">
-        <span className="text-lg">🔔</span>
+        <span className="text-lg"><Glyph e="🔔" /></span>
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -left-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}

@@ -9,6 +9,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import PageLoader from '@/components/shared/PageLoader'
 import { rfqDisplayName } from '@/lib/rfqName'
+import Glyph from '@/components/shared/Glyph'
 
 function fmtTime(d: any, locale: string = 'ar') {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -151,7 +152,7 @@ function Messages() {
         <aside className={`lg:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-y-auto ${activeId ? 'hidden lg:block' : ''}`}>
           <div className="p-4 border-b border-gray-100 font-bold text-sm flex items-center gap-2" style={{ color: '#0B2438' }}>
             <Link href={backHref} title={L('Back', 'واپس', 'رجوع')} className="w-7 h-7 grid place-items-center rounded-lg hover:bg-gray-100 text-gray-500 shrink-0">{dir === 'rtl' ? '→' : '←'}</Link>
-            <span>💬 {L('Conversations', 'گفتگو', 'المحادثات')} ({convos.length})</span>
+            <span><Glyph e="💬" /> {L('Conversations', 'گفتگو', 'المحادثات')} ({convos.length})</span>
           </div>
           {convos.length === 0 ? (
             <div className="p-8 text-center text-sm text-gray-400">{L('No conversations yet', 'ابھی کوئی گفتگو نہیں', 'لا توجد محادثات بعد')}</div>
@@ -162,7 +163,7 @@ function Messages() {
                 <span className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{counterpart(c)}</span>
                 <span className="text-[10px] text-gray-400 shrink-0">{fmtTime(c.last_message_at, locale)}</span>
               </div>
-              {ctx(c) && <div className="text-[11px] text-[#9D7425] truncate">📦 {ctx(c)}</div>}
+              {ctx(c) && <div className="text-[11px] text-[#9D7425] truncate"><Glyph e="📦" /> {ctx(c)}</div>}
               {c.last_message && <div className="text-xs text-gray-500 truncate mt-0.5">{c.last_message}</div>}
             </button>
           ))}
@@ -178,7 +179,7 @@ function Messages() {
                 <button onClick={() => setActiveId('')} className="lg:hidden w-8 h-8 grid place-items-center rounded-lg hover:bg-gray-100">{dir === 'rtl' ? '→' : '←'}</button>
                 <div className="min-w-0">
                   <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{counterpart(active)}</div>
-                  {ctx(active) && <div className="text-[11px] text-gray-400 truncate">📦 {ctx(active)}</div>}
+                  {ctx(active) && <div className="text-[11px] text-gray-400 truncate"><Glyph e="📦" /> {ctx(active)}</div>}
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-2" style={{ background: '#f7f8fa' }}>
@@ -189,9 +190,9 @@ function Messages() {
                       <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white' : 'bg-white border border-gray-100 text-gray-800'}`} style={mine ? { background: m._status === 'failed' ? '#b91c1c' : '#0F6E56' } : {}}>
                         <div className="whitespace-pre-wrap break-words">{m.body}</div>
                         <div className={`text-[9px] mt-1 ${mine ? 'text-white/80' : 'text-gray-400'}`}>
-                          {m._status === 'pending' ? `⏳ ${L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…')}`
+                          {m._status === 'pending' ? `${L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…')}`
                             : m._status === 'failed'
-                              ? <button type="button" onClick={() => retry(m)} className="underline font-semibold text-white">⚠ {L('Failed to send — retry', 'نہیں بھیجا جا سکا — دوبارہ کوشش کریں', 'فشل الإرسال — إعادة المحاولة')} ↻</button>
+                              ? <button type="button" onClick={() => retry(m)} className="underline font-semibold text-white"><Glyph e="⚠" /> {L('Failed to send — retry', 'نہیں بھیجا جا سکا — دوبارہ کوشش کریں', 'فشل الإرسال — إعادة المحاولة')} ↻</button>
                               : <>{fmtTime(m.created_at, locale)}{mine ? ' ✓' : ''}</>}
                         </div>
                       </div>
@@ -203,7 +204,7 @@ function Messages() {
               {!awarded && (
                 <div className={`px-3 pt-2 text-[10px] ${blocked ? 'text-red-500' : 'text-gray-400'}`}>
                   {blocked
-                    ? `🔒 ${L('You have reached the message limit before award. Full contact opens once the deal is done.', 'ایوارڈ سے پہلے پیغامات کی حد پوری ہو گئی۔ ڈیل مکمل ہونے کے بعد مکمل رابطہ کھل جائے گا۔', 'بلغت الحد الأقصى للرسائل قبل الترسية. يكتمل التواصل بعد إتمام الصفقة.')}`
+                    ? `${L('You have reached the message limit before award. Full contact opens once the deal is done.', 'ایوارڈ سے پہلے پیغامات کی حد پوری ہو گئی۔ ڈیل مکمل ہونے کے بعد مکمل رابطہ کھل جائے گا۔', 'بلغت الحد الأقصى للرسائل قبل الترسية. يكتمل التواصل بعد إتمام الصفقة.')}`
                     : L(`Messaging before award is limited — ${remaining} messages left`, `ایوارڈ سے پہلے پیغامات محدود ہیں — ${remaining} پیغامات باقی`, `التواصل قبل الترسية محدود — متبقٍّ ${remaining} رسالة`)}
                 </div>
               )}

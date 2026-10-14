@@ -5,6 +5,7 @@ import { supplierScore } from '@/lib/supplierScore'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
 import SuppliersDirectory from './SuppliersDirectory'
+import Glyph from '@/components/shared/Glyph'
 
 export const dynamic = 'force-dynamic' // عرض وقت الطلب — يتفادى إنشاء عميل Supabase وقت البناء (build-safe)
 
@@ -45,21 +46,21 @@ export default async function SuppliersLeaderboard() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* الترويسة */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}>🏆 لوحة شرف الموردين</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}><Glyph e="🏆" /> لوحة شرف الموردين</h1>
           <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed">
             موردون لمواد البناء على منصة تسعيرك، مرتّبون حسب التوثيق والتقييم والصفقات المنجزة. كل مورد يحصل على «درجة موثوقية» من ١٠٠.
           </p>
           {(ranked.length > 0 || listings.length > 0) && (
             <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-500">
-              <span>👥 {ranked.length + listings.length} مورد</span>
-              {verifiedCount > 0 && <span>✅ {verifiedCount} موثّق</span>}
+              <span><Glyph e="👥" /> {ranked.length + listings.length} مورد</span>
+              {verifiedCount > 0 && <span><Glyph e="✅" /> {verifiedCount} موثّق</span>}
             </div>
           )}
         </div>
 
         {ranked.length === 0 && listings.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <div className="text-4xl mb-3">🏗️</div>
+            <div className="text-4xl mb-3"><Glyph e="🏗" /></div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
             <p className="text-sm text-gray-400">سيظهر هنا أفضل الموردين بمجرد بدء الصفقات على المنصّة.</p>
             <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>سجّل كمورّد</Link>
@@ -82,8 +83,8 @@ export default async function SuppliersLeaderboard() {
                         <div className="font-bold text-sm text-gray-800 truncate">{l.name}</div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap text-[11px] text-gray-500">
                           {l.category && <span className="badge badge-gray text-[10px]">{l.category}</span>}
-                          {l.region && <span>📍 {l.region}{l.city ? ` · ${l.city}` : ''}</span>}
-                          {l.google_rating != null && <span>⭐ {l.google_rating}{l.google_reviews ? ` (${l.google_reviews})` : ''}</span>}
+                          {l.region && <span><Glyph e="📍" /> {l.region}{l.city ? ` · ${l.city}` : ''}</span>}
+                          {l.google_rating != null && <span><Glyph e="⭐" /> {l.google_rating}{l.google_reviews ? ` (${l.google_reviews})` : ''}</span>}
                         </div>
                       </div>
                       <span className="text-[10px] font-semibold text-gray-400 whitespace-nowrap border border-gray-200 rounded-lg px-2 py-1">غير مسجّل</span>

@@ -9,6 +9,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 import SellerIcon from '@/components/shared/SellerIcon'
+import Glyph from '@/components/shared/Glyph'
 
 const txt = {
   ar: {
@@ -117,7 +118,7 @@ export default function MarketPricePage() {
         {/* Header */}
         <div className="mb-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}>📊</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}><Glyph e="📊" /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{T.title}</h1>
               <p className="text-gray-500 text-xs sm:text-sm">{T.sub}</p>
@@ -135,7 +136,7 @@ export default function MarketPricePage() {
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
               </span>
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
-                {locale === 'en' ? '🔴 LIVE Prices from Factories' : locale === 'ur' ? '🔴 لائیو قیمتیں' : '🔴 أسعار مباشرة من المصانع'}
+                {locale === 'en' ? 'LIVE Prices from Factories' : locale === 'ur' ? 'لائیو قیمتیں' : 'أسعار مباشرة من المصانع'}
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger">
@@ -166,8 +167,8 @@ export default function MarketPricePage() {
                           <div className="text-[10px] text-gray-400">ر.س / {p.unit}{pct ? ` · ${trend === 'up' ? '+' : '-'}${pct}%` : ''}</div>
                         </div>
                         <div className="text-left">
-                          <div className="text-[10px] text-gray-400">🕐 {timeAgo(p.updated_at)}</div>
-                          {p.region && <div className="text-[10px] text-gray-400">📍 {p.region}</div>}
+                          <div className="text-[10px] text-gray-400"><Glyph e="🕐" /> {timeAgo(p.updated_at)}</div>
+                          {p.region && <div className="text-[10px] text-gray-400"><Glyph e="📍" /> {p.region}</div>}
                         </div>
                       </div>
                       <div className="text-[10px] text-gray-400 mt-2 pt-2 border-t border-gray-50 truncate">
@@ -184,9 +185,9 @@ export default function MarketPricePage() {
         {priceData.length > 0 && (
           <div className="grid grid-cols-3 gap-3 mb-6 stagger">
             {[
-              { label: locale === 'en' ? 'Materials Tracked' : 'مادة مرصودة', value: priceData.length, icon: '📦', bg: '#0B2438' },
-              { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: priceData.reduce((s, p) => s + p.count, 0), icon: '💬', bg: '#D4A543' },
-              { label: locale === 'en' ? 'Sectors' : 'قطاعات', value: Object.keys(SECTOR_LABELS).length, icon: '🏗', bg: '#0F6E56' },
+              { label: locale === 'en' ? 'Materials Tracked' : 'مادة مرصودة', value: priceData.length, icon: <Glyph e="📦" />, bg: '#0B2438' },
+              { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: priceData.reduce((s, p) => s + p.count, 0), icon: <Glyph e="💬" />, bg: '#D4A543' },
+              { label: locale === 'en' ? 'Sectors' : 'قطاعات', value: Object.keys(SECTOR_LABELS).length, icon: <Glyph e="🏗" />, bg: '#0F6E56' },
             ].map(({ label, value, icon, bg }) => (
               <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm text-center">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg text-white mx-auto mb-2" style={{ background: bg }}>{icon}</div>
@@ -210,7 +211,7 @@ export default function MarketPricePage() {
             ))}
           </div>
           <input value={search} onChange={e => setSearch(e.target.value)}
-            className="input-field sm:max-w-xs text-sm" placeholder={`🔍 ${locale === 'en' ? 'Search material...' : 'ابحث عن مادة...'}`} />
+            className="input-field sm:max-w-xs text-sm" placeholder={`${locale === 'en' ? 'Search material...' : 'ابحث عن مادة...'}`} />
         </div>
 
         {/* Price Table */}
@@ -218,7 +219,7 @@ export default function MarketPricePage() {
           <div className="text-center py-20 animate-pulse text-gray-500">{locale === 'en' ? 'Loading...' : 'جارٍ التحميل...'}</div>
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center animate-fade-in">
-            <div className="text-6xl mb-4 animate-float">📊</div>
+            <div className="text-6xl mb-4 animate-float"><Glyph e="📊" /></div>
             <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{T.noData}</h3>
             <p className="text-sm text-gray-500">{T.noDataSub}</p>
           </div>

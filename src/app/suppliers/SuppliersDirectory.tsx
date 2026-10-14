@@ -6,14 +6,15 @@ import { scoreColor, approvalLabel } from '@/lib/supplierScore'
 import { SECTOR_LABELS } from '@/types'
 import { TIERS, tierLabel, normTier, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
+import Glyph from '@/components/shared/Glyph'
 
 // دليل الموردين مع بحث وفلاتر (منطقة/قطاع/نوع/موثّق) — يستقبل القائمة مُرتّبة
 // ومحسوبة الدرجة من صفحة الخادم ويُصفّيها في المتصفح (قائمة محدودة).
 
 function rankBadge(i: number) {
-  if (i === 0) return { e: '🥇', c: '#D4AF37' }
-  if (i === 1) return { e: '🥈', c: '#9CA3AF' }
-  if (i === 2) return { e: '🥉', c: '#CD7F32' }
+  if (i === 0) return { e: <Glyph e="🥇" />, c: '#D4AF37' }
+  if (i === 1) return { e: <Glyph e="🥈" />, c: '#9CA3AF' }
+  if (i === 2) return { e: <Glyph e="🥉" />, c: '#CD7F32' }
   return { e: `${i + 1}`, c: '#0B2438' }
 }
 
@@ -46,7 +47,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
     <>
       {/* الفلاتر */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
-        <input value={q} onChange={(e: any) => setQ(e.target.value)} placeholder="🔍 ابحث باسم المورد..."
+        <input value={q} onChange={(e: any) => setQ(e.target.value)} placeholder="ابحث باسم المورد..."
           className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#D4A543] mb-3" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <select value={region} onChange={(e: any) => setRegion(e.target.value)} className={selectCls}>
@@ -76,7 +77,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
 
       {filtered.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
-          <div className="text-3xl mb-2">🔍</div>
+          <div className="text-3xl mb-2"><Glyph e="🔍" /></div>
           <p className="font-bold text-gray-700 mb-1">لا يوجد مورد مطابق</p>
           <p className="text-sm text-gray-400">جرّب توسيع الفلاتر أو مسحها.</p>
         </div>
@@ -95,15 +96,15 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                   </div>
                   <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
                     <span><SellerIcon name={r.supplier_tier ? tierIcon(r.supplier_tier) : 'store'} /> {r.supplier_tier ? tierLabel(r.supplier_tier, 'ar') : 'مورد'}</span>
-                    {r.region && <span>📍 {r.region}</span>}
-                    {rating > 0 && <span>⭐ {rating.toFixed(1)}</span>}
-                    <span>📦 {r.total_offers} عرض</span>
+                    {r.region && <span><Glyph e="📍" /> {r.region}</span>}
+                    {rating > 0 && <span><Glyph e="⭐" /> {rating.toFixed(1)}</span>}
+                    <span><Glyph e="📦" /> {r.total_offers} عرض</span>
                     <span><SellerIcon name="handshake" /> {r.won_deals} صفقة</span>
                   </div>
                   {Array.isArray(r.approvals) && r.approvals.length > 0 && (
                     <div className="flex gap-1 mt-1.5 flex-wrap">
                       {r.approvals.slice(0, 4).map((a: string) => (
-                        <span key={a} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#0B24380d', color: '#0B2438' }}>🏅 {approvalLabel(a)}</span>
+                        <span key={a} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#0B24380d', color: '#0B2438' }}><Glyph e="🏅" /> {approvalLabel(a)}</span>
                       ))}
                     </div>
                   )}

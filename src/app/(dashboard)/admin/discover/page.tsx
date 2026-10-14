@@ -7,6 +7,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { safeHttpUrl } from '@/lib/safeUrl'
 import { SUPPLIER_PACKS } from '@/lib/supplierPacks'
+import Glyph from '@/components/shared/Glyph'
 import {
   DISCOVERY_CITIES, PACK_QUERIES, packLabel, packIcon, packSector, waLink, inviteText, INVITE_COOLDOWN_DAYS,
 } from '@/lib/discovery'
@@ -271,7 +272,7 @@ export default function DiscoverSuppliersPage() {
     <AppShell title="اكتشاف الموردين" nav={getNav('admin', 'ar', '/admin/discover')} dir="rtl">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-3 mb-1">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: NAVY }}>🔎</div>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: NAVY }}><Glyph e="🔎" /></div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold" style={{ color: NAVY }}>اكتشاف الموردين ودعوتهم</h1>
             <p className="text-gray-500 text-xs sm:text-sm">اجمع محلات المدينة منطقة منطقة ونوع نوع، بدون تكرار، وادعُهم واحد واحد.</p>
@@ -410,7 +411,7 @@ export default function DiscoverSuppliersPage() {
                           <span>{packIcon(row.pack)} {packLabel(row.pack)}</span>
                           {row.district && <span>· {row.district}</span>}
                           {row.google_type && <span className="text-gray-400">· {row.google_type}</span>}
-                          {row.google_rating != null && <span>· ⭐ {row.google_rating} ({row.google_reviews || 0})</span>}
+                          {row.google_rating != null && <span>· <Glyph e="⭐" /> {row.google_rating} ({row.google_reviews || 0})</span>}
                         </div>
                       </div>
                       <div className="text-[10px] font-bold whitespace-nowrap text-left">
@@ -420,19 +421,19 @@ export default function DiscoverSuppliersPage() {
                       </div>
                     </div>
                     <div className="mt-2 text-xs text-gray-600 space-y-1">
-                      {row.address && <div className="flex gap-1.5"><span>📍</span><span className="flex-1">{row.address}</span></div>}
-                      <div dir="ltr" className="text-right">📞 {row.phone_norm ? <a href={`tel:0${row.phone_norm}`} className="font-semibold" style={{ color: NAVY }}>0{row.phone_norm}</a> : <span className="text-gray-400">لا يوجد رقم</span>}</div>
+                      {row.address && <div className="flex gap-1.5"><span><Glyph e="📍" /></span><span className="flex-1">{row.address}</span></div>}
+                      <div dir="ltr" className="text-right"><Glyph e="📞" /> {row.phone_norm ? <a href={`tel:0${row.phone_norm}`} className="font-semibold" style={{ color: NAVY }}>0{row.phone_norm}</a> : <span className="text-gray-400">لا يوجد رقم</span>}</div>
                     </div>
                     <div className="mt-3 flex items-center gap-2 flex-wrap">
                       {wa && !row.claimed_by && !row.opted_out
                         ? <button onClick={() => inviteWhatsApp(row)} disabled={!!recent}
                             className="flex-1 text-center py-2 rounded-xl font-bold text-white text-xs disabled:opacity-40" style={{ background: '#25D366' }}
-                            title={recent ? `انبعتله خلال آخر ${INVITE_COOLDOWN_DAYS} يوم` : ''}>💬 دعوة واتساب</button>
+                            title={recent ? `انبعتله خلال آخر ${INVITE_COOLDOWN_DAYS} يوم` : ''}><Glyph e="💬" /> دعوة واتساب</button>
                         : <span className="flex-1 text-center py-2 rounded-xl text-xs text-gray-400 border border-gray-200">{row.claimed_by ? 'مسجّل' : row.opted_out ? 'طلب الإيقاف' : 'لا يوجد جوال'}</span>}
                       {!row.claimed_by && !row.opted_out && !recent &&
-                        <button onClick={() => markInvited(row)} className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600" title="زيارة ميدانية أو اتصال">🚶 دُعي يدوياً</button>}
-                      {safeHttpUrl(row.maps_url) && <a href={safeHttpUrl(row.maps_url)} target="_blank" rel="noreferrer" className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600">🗺</a>}
-                      {safeHttpUrl(row.website) && <a href={safeHttpUrl(row.website)} target="_blank" rel="noreferrer" className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600">🌐</a>}
+                        <button onClick={() => markInvited(row)} className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600" title="زيارة ميدانية أو اتصال"><Glyph e="🚶" /> دُعي يدوياً</button>}
+                      {safeHttpUrl(row.maps_url) && <a href={safeHttpUrl(row.maps_url)} target="_blank" rel="noreferrer" className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600"><Glyph e="🗺" /></a>}
+                      {safeHttpUrl(row.website) && <a href={safeHttpUrl(row.website)} target="_blank" rel="noreferrer" className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600"><Glyph e="🌐" /></a>}
                     </div>
                     <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px]">
                       <select value={row.pack || ''} onChange={(e: any) => updateRow(row, { pack: e.target.value || null, sector: packSector(e.target.value) }, '✓ تعدّل النوع')}

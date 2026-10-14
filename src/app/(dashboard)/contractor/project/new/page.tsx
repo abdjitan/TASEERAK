@@ -10,6 +10,7 @@ import { getNav } from '@/lib/nav'
 import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel } from '@/types'
 import SellerIcon from '@/components/shared/SellerIcon'
+import Glyph from '@/components/shared/Glyph'
 
 // تجميع بنود الـ BOQ حسب المجموعة (مثل قوائم التسعير) — يحتفظ بالفهرس الأصلي لكل بند
 function getGroupedItems(items: any[], locale: string) {
@@ -22,7 +23,7 @@ function getGroupedItems(items: any[], locale: string) {
       groups[gkey] = {
         key: gkey,
         label: gkey === '_unclassified' ? (locale === 'en' ? 'Unclassified' : 'غير مصنّف') : (gl ? (locale === 'en' ? gl.en : gl.ar) : gkey),
-        icon: gkey === '_unclassified' ? '⚠️' : (gl?.icon || '📦'),
+        icon: gkey === '_unclassified' ? <Glyph e="⚠" /> : (gl?.icon || '<Glyph e="📦" />'),
         defaultOpen: gkey === '_unclassified',
         entries: [],
       }
@@ -32,7 +33,7 @@ function getGroupedItems(items: any[], locale: string) {
   return Object.keys(groups).sort((a, b) => (a === '_unclassified' ? -1 : b === '_unclassified' ? 1 : 0)).map(k => groups[k])
 }
 
-const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
+const SECTOR_ICONS = { civil: <Glyph e="🏗" />, architectural: <Glyph e="🏛" />, electrical: <Glyph e="⚡" />, mechanical: <Glyph e="⚙" />, equipment: <Glyph e="🚜" />, supply_store: <Glyph e="🏪" /> }
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 export default function NewProjectPage() {
@@ -115,7 +116,7 @@ export default function NewProjectPage() {
       fd.append('items', JSON.stringify(targets.map((i: any) => ({ ref: i.id, product_name: i.product_name, sector: i.sector }))))
       const res = await fetch('/api/match-spec', { method: 'POST', body: fd })
       const data = await res.json()
-      if (!data.ok) { setSpecMsg((data.needsGemini ? 'ملف PDF/صورة يحتاج تفعيل Gemini من الإدارة أو حوّله لـExcel/نص — ' : '⚠️ ') + (data.message || 'تعذّرت مطابقة المواصفات')); return }
+      if (!data.ok) { setSpecMsg((data.needsGemini ? 'ملف PDF/صورة يحتاج تفعيل Gemini من الإدارة أو حوّله لـExcel/نص — ' : '') + (data.message || 'تعذّرت مطابقة المواصفات')); return }
       let filled = 0, diff = 0
       setItems(prev => prev.map((it: any) => {
         const s = data.specs?.[it.id]
@@ -129,10 +130,10 @@ export default function NewProjectPage() {
       const parts = [`✓ طوبق ${data.matched} من ${data.total} بند`]
       if (filled) parts.push(`عُبّئ ${filled}`)
       if (diff) parts.push(`${diff} تختلف عن BOQ — راجعها`)
-      if (data.truncated) parts.push('⚠ المواصفات كبيرة واقتُطعت، قسّم الملف')
+      if (data.truncated) parts.push('المواصفات كبيرة واقتُطعت، قسّم الملف')
       setSpecMsg(parts.join(' · '))
     } catch {
-      setSpecMsg('⚠️ تعذّر الاتصال — حاول ثانية')
+      setSpecMsg('تعذّر الاتصال — حاول ثانية')
     } finally { setMatchingSpecs(false) }
   }
 
@@ -364,7 +365,7 @@ export default function NewProjectPage() {
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>
-            {locale === 'en' ? '📋 New Project RFQ' : locale === 'ur' ? '📋 نیا پراجیکٹ' : '📋 طلب تسعير مشروع'}
+            {locale === 'en' ? 'New Project RFQ' : locale === 'ur' ? 'نیا پراجیکٹ' : 'طلب تسعير مشروع'}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {locale === 'en' ? 'Upload a BOQ or add materials manually — we send each to the right supplier'
@@ -403,13 +404,13 @@ export default function NewProjectPage() {
             <div className="sm:col-span-2 -mt-1">
               <button type="button" onClick={geolocate}
                 className="text-xs font-bold px-3 py-2 rounded-xl border border-[#0F6E56] text-[#0F6E56] hover:bg-[#0F6E56]/5 transition-colors">
-                📍 {locale === 'en' ? 'Auto-detect my location' : 'حدّد موقعي تلقائياً'}
+                <Glyph e="📍" /> {locale === 'en' ? 'Auto-detect my location' : 'حدّد موقعي تلقائياً'}
               </button>
               {geoMsg && <span className="text-[11px] text-gray-500 ms-2">{geoMsg}</span>}
             </div>
             <div className="sm:col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-amber-800">🚚 {locale === 'en' ? 'Delivery required (for the whole project)' : 'التوصيل مطلوب (لكل المشروع)'}</div>
+                <div className="text-sm font-semibold text-amber-800"><Glyph e="🚚" /> {locale === 'en' ? 'Delivery required (for the whole project)' : 'التوصيل مطلوب (لكل المشروع)'}</div>
                 <div onClick={() => setDeliveryRequired(!deliveryRequired)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${deliveryRequired ? 'justify-end' : 'justify-start'}`}
                   style={{ background: deliveryRequired ? '#0F6E56' : '#e5e7eb' }}>
                   <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
@@ -447,7 +448,7 @@ export default function NewProjectPage() {
               onChange={(e: any) => { if (e.target.files?.[0]) handleBOQUpload(e.target.files[0]) }} />
             {parsing ? (
               <div className="text-center">
-                <div className="text-4xl mb-3 animate-pulse">⏳</div>
+                <div className="text-4xl mb-3 animate-pulse"><Glyph e="⏳" /></div>
                 <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>
                   {locale === 'en' ? 'Analyzing BOQ...' : 'جارٍ تحليل الـ BOQ...'}
                 </div>
@@ -457,7 +458,7 @@ export default function NewProjectPage() {
               </div>
             ) : boqFile ? (
               <div className="text-center">
-                <div className="text-4xl mb-2">✅</div>
+                <div className="text-4xl mb-2"><Glyph e="✅" /></div>
                 <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{boqFile.name}</div>
                 <div className="text-xs text-gray-400 mt-1">{items.length} {locale === 'en' ? 'items extracted' : 'بند تم استخراجه'}</div>
                 <button type="button" onClick={(e: any) => { e.preventDefault(); setBoqFile(null); setItems([]) }}
@@ -467,7 +468,7 @@ export default function NewProjectPage() {
               </div>
             ) : (
               <div className="text-center">
-                <div className="text-5xl mb-3">📊</div>
+                <div className="text-5xl mb-3"><Glyph e="📊" /></div>
                 <div className="font-semibold text-sm text-gray-700">
                   {locale === 'en' ? 'Drop Excel BOQ here or click to upload' : 'اسحب ملف BOQ هنا أو اضغط للرفع'}
                 </div>
@@ -477,13 +478,13 @@ export default function NewProjectPage() {
           </label>
 
           {parseError && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">⚠️ {parseError}</div>
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {parseError}</div>
           )}
 
           {/* مستند مواصفات المشروع — يقرأه الذكاء ويطابق رموز البنود (DRS-701...) لاستخراج التفاصيل */}
           <div className="rounded-xl border border-[#0B2438]/15 bg-[#0B2438]/[0.03] p-4 mb-4">
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-base">📑</span>
+              <span className="text-base"><Glyph e="📑" /></span>
               <h3 className="font-bold text-sm" style={{ color: '#0B2438' }}>
                 {locale === 'en' ? 'Project specifications (optional)' : 'مواصفات المشروع (اختياري)'}
               </h3>
@@ -496,7 +497,7 @@ export default function NewProjectPage() {
             <div className="flex flex-wrap items-center gap-2">
               {specsFile ? (
                 <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
-                  <span className="text-base">📄</span>
+                  <span className="text-base"><Glyph e="📄" /></span>
                   <span className="text-xs font-semibold truncate max-w-[200px]" style={{ color: '#0B2438' }}>{specsFile.name}</span>
                   <button type="button" onClick={() => { setSpecsFile(null); setSpecMsg('') }} className="text-xs text-red-500 hover:underline">{locale === 'en' ? 'Remove' : 'إزالة'}</button>
                 </div>
@@ -504,14 +505,14 @@ export default function NewProjectPage() {
                 <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-[#0B2438]/40 transition-all">
                   <input ref={specsRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg"
                     onChange={(e: any) => { const f = e.target.files?.[0]; if (f) { setSpecsFile(f); setSpecMsg('') } }} />
-                  <span className="text-base">📤</span>
+                  <span className="text-base"><Glyph e="📤" /></span>
                   <span className="text-xs text-gray-600">{locale === 'en' ? 'Upload spec (PDF, Excel, image...)' : 'ارفع المواصفات (PDF، Excel، صورة...)'}</span>
                 </label>
               )}
               <button type="button" onClick={matchSpecs} disabled={matchingSpecs || !specsFile || items.length === 0}
                 className="text-xs font-bold text-white px-4 py-2 rounded-lg disabled:opacity-40 transition-all hover:shadow"
                 style={{ background: '#0B2438' }}>
-                {matchingSpecs ? (locale === 'en' ? '⏳ Reading...' : '⏳ جارٍ القراءة...') : (locale === 'en' ? '🔎 Read & match specs' : '🔎 اقرأ المواصفات وطابقها')}
+                {matchingSpecs ? (locale === 'en' ? 'Reading...' : 'جارٍ القراءة...') : (locale === 'en' ? 'Read & match specs' : 'اقرأ المواصفات وطابقها')}
               </button>
             </div>
             {specMsg && (
@@ -558,7 +559,7 @@ export default function NewProjectPage() {
             {/* تنبيه البنود غير المصنّفة — لن تصل للمورد المتخصص بدقّة حتى تُصنّف */}
             {unclassifiedCount > 0 && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
-                <span className="text-lg">⚠️</span>
+                <span className="text-lg"><Glyph e="⚠" /></span>
                 <div className="text-xs text-red-700 leading-relaxed">
                   <strong>{unclassifiedCount} {locale === 'en' ? 'item(s) are not classified.' : 'بند غير مصنّف.'}</strong>{' '}
                   {locale === 'en'
@@ -571,7 +572,7 @@ export default function NewProjectPage() {
             {/* تصنيف جماعي: طبّق تصنيفاً على كل غير المصنّف في قطاع واحد بضغطة */}
             {unclassifiedCount > 0 && (
               <div className="bg-white border border-gray-200 rounded-xl p-3">
-                <div className="text-xs font-bold text-gray-600 mb-2">⚡ {locale === 'en' ? 'Bulk classify the unclassified' : 'تصنيف جماعي لغير المصنّف'}</div>
+                <div className="text-xs font-bold text-gray-600 mb-2"><Glyph e="⚡" /> {locale === 'en' ? 'Bulk classify the unclassified' : 'تصنيف جماعي لغير المصنّف'}</div>
                 <div className="flex flex-wrap items-end gap-2">
                   <div className="min-w-[150px]">
                     <label className="block text-[10px] text-gray-400 mb-0.5">{locale === 'en' ? 'Sector' : 'القطاع'}</label>
@@ -695,7 +696,7 @@ export default function NewProjectPage() {
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Specification (optional)' : 'المواصفة (اختياري)'} />
                             {item.specFromDoc && (item.specFromDoc !== (item.specification || '')) && (
                               <div className="mt-1.5 text-[11px] bg-[#D4A543]/5 border border-[#D4A543]/30 rounded-lg p-2 flex items-start gap-2">
-                                <span className="text-[#9D7425] font-bold shrink-0">📄 {locale === 'en' ? 'Spec doc:' : 'من الوثيقة:'}</span>
+                                <span className="text-[#9D7425] font-bold shrink-0"><Glyph e="📄" /> {locale === 'en' ? 'Spec doc:' : 'من الوثيقة:'}</span>
                                 <span className="text-gray-600 flex-1 min-w-0">{item.specFromDoc}</span>
                                 <button type="button" onClick={() => updateItem(item.id, 'specification', item.specFromDoc)}
                                   className="text-[#0F6E56] font-bold shrink-0 hover:underline">{locale === 'en' ? 'Use' : 'استبدل'}</button>
@@ -709,7 +710,7 @@ export default function NewProjectPage() {
                             </label>
                             {item.specFile ? (
                               <div className="flex items-center gap-2 bg-[#0B2438]/5 rounded-lg p-2 border border-[#0B2438]/20">
-                                <span className="text-base">📎</span>
+                                <span className="text-base"><Glyph e="📎" /></span>
                                 <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#0B2438' }}>{item.specFile.name}</span>
                                 <button type="button" onClick={() => updateItem(item.id, 'specFile', null)}
                                   className="text-xs text-red-500 hover:underline">
@@ -720,7 +721,7 @@ export default function NewProjectPage() {
                               <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg p-2 cursor-pointer hover:border-[#D4A543]/50 transition-all">
                                 <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.dwg,.xlsx,.doc,.docx"
                                   onChange={(e: any) => updateItem(item.id, 'specFile', e.target.files?.[0] ?? null)} />
-                                <span className="text-base">📄</span>
+                                <span className="text-base"><Glyph e="📄" /></span>
                                 <span className="text-xs text-gray-500">
                                   {locale === 'en' ? 'Upload drawing/spec (PDF, DWG, Image...)' : 'ارفع رسمة أو مواصفة (PDF، DWG، صورة...)'}
                                 </span>
@@ -753,19 +754,19 @@ export default function NewProjectPage() {
                               {item.needs_classification && (
                                 <button type="button" onClick={() => setEditingIndex(i)}
                                   className="badge text-[10px] bg-red-100 text-red-600 font-bold hover:bg-red-200">
-                                  ⚠ {locale === 'en' ? 'Unclassified — set category' : 'غير مصنّف — اختر التصنيف'}
+                                  <Glyph e="⚠" /> {locale === 'en' ? 'Unclassified — set category' : 'غير مصنّف — اختر التصنيف'}
                                 </button>
                               )}
-                              {item.quantity && <span className="text-xs text-gray-500">📦 {item.quantity} {item.unit}</span>}
-                              {item.specification && <span className="text-xs text-gray-400 truncate max-w-[200px]">⚙️ {item.specification}</span>}
-                              {item.specFile && <span className="text-xs text-[#0B2438] font-semibold">📎 {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
+                              {item.quantity && <span className="text-xs text-gray-500"><Glyph e="📦" /> {item.quantity} {item.unit}</span>}
+                              {item.specification && <span className="text-xs text-gray-400 truncate max-w-[200px]"><Glyph e="⚙" /> {item.specification}</span>}
+                              {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
                             </div>
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
                             <button type="button" onClick={() => setEditingIndex(i)}
                               className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">✏️</button>
                             <button type="button" onClick={() => removeItem(item.id)}
-                              className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">🗑</button>
+                              className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50"><Glyph e="🗑" /></button>
                           </div>
                         </div>
                       )}
@@ -823,7 +824,7 @@ export default function NewProjectPage() {
               </div>
               <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5 mt-2">
                 <div>
-                  <div className="text-sm font-semibold text-gray-800">📍 {locale === 'en' ? 'Nearby only (same region)' : locale === 'ur' ? 'صرف قریب (اسی علاقہ)' : 'القريبون فقط (نفس المنطقة)'}</div>
+                  <div className="text-sm font-semibold text-gray-800"><Glyph e="📍" /> {locale === 'en' ? 'Nearby only (same region)' : locale === 'ur' ? 'صرف قریب (اسی علاقہ)' : 'القريبون فقط (نفس المنطقة)'}</div>
                   <div className="text-xs text-gray-400">{locale === 'en' ? 'Only suppliers in your region' : locale === 'ur' ? 'صرف آپ کے علاقے کے سپلائرز' : 'موردو منطقتك فقط — شحن أقرب وأرخص'}</div>
                 </div>
                 <div onClick={() => setNearbyOnly(!nearbyOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${nearbyOnly ? 'justify-end' : 'justify-start'}`}

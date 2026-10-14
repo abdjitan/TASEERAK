@@ -60,7 +60,7 @@ export default function SupportThread({ userId, viewerRole }: { userId: string; 
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
                 style={mine ? { background: '#0B2438' } : {}}>
-                <div className="text-[10px] opacity-60 mb-0.5">{m.sender === 'admin' ? '🛠 الإدارة' : '👤 المستخدم'}</div>
+                <div className="text-[10px] opacity-60 mb-0.5">{m.sender === 'admin' ? 'الإدارة' : 'المستخدم'}</div>
                 <div className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</div>
                 <div className="text-[9px] opacity-50 mt-1 text-left" dir="ltr">{new Date(m.created_at).toLocaleString('ar-SA')}</div>
               </div>

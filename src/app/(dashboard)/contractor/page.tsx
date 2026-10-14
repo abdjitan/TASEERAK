@@ -18,6 +18,7 @@ import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
 import { dealStage } from '@/lib/dealStage'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
+import Glyph from '@/components/shared/Glyph'
 
 const txt = {
   ar: {
@@ -193,9 +194,9 @@ export default function ContractorDashboard() {
       default: return { name: 'active', tone: 'neutral' }
     }
   }
-  const gameBadge = rfqs.length >= 10 ? { t: locale === 'en' ? 'Pro Buyer' : 'مشترٍ محترف', e: '🏆' }
-    : rfqs.length >= 3 ? { t: locale === 'en' ? 'Active Buyer' : 'مشترٍ نشط', e: '⭐' }
-    : { t: locale === 'en' ? 'Getting Started' : 'بداية موفقة', e: '🌱' }
+  const gameBadge = rfqs.length >= 10 ? { t: locale === 'en' ? 'Pro Buyer' : 'مشترٍ محترف', e: <Glyph e="🏆" /> }
+    : rfqs.length >= 3 ? { t: locale === 'en' ? 'Active Buyer' : 'مشترٍ نشط', e: <Glyph e="⭐" /> }
+    : { t: locale === 'en' ? 'Getting Started' : 'بداية موفقة', e: <Glyph e="🌱" /> }
 
   const statusLabel = (status: any) => {
     if (status === 'open') return t.open
@@ -207,7 +208,7 @@ export default function ContractorDashboard() {
   const nav = getNav('contractor', locale, '/contractor') // the shared menu (طلباتي، صفقاتي، الرسائل…)
   const headerActions = profile?.verification_status !== 'rejected' ? (
     <>
-      <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#0B2438' }}>📋 {locale === 'en' ? 'Project' : 'مشروع'}</Link>
+      <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /> {locale === 'en' ? 'Project' : 'مشروع'}</Link>
       <Link href="/contractor/rfq/quick" className="btn-orange text-xs px-4 py-2">{t.newRfq}</Link>
     </>
   ) : null
@@ -229,7 +230,7 @@ export default function ContractorDashboard() {
         {!profile?.region && (
           <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 text-white hover:shadow-lg transition-shadow" style={{ background: 'linear-gradient(120deg,#D4A543,#9D7425)' }}>
             <div>
-              <div className="font-extrabold text-sm">👋 {locale === 'en' ? 'Complete your profile' : locale === 'ur' ? 'اپنی پروفائل مکمل کریں' : 'أكمل ملفك'}</div>
+              <div className="font-extrabold text-sm"><Glyph e="👋" /> {locale === 'en' ? 'Complete your profile' : locale === 'ur' ? 'اپنی پروفائل مکمل کریں' : 'أكمل ملفك'}</div>
               <div className="text-[12px] text-orange-50 mt-0.5">{locale === 'en' ? 'Add your location and sectors to get the best offers.' : locale === 'ur' ? 'بہترین آفرز کے لیے اپنا مقام اور شعبے شامل کریں۔' : 'أضف موقعك وقطاعاتك لتصلك أفضل العروض.'}</div>
             </div>
             <span className="shrink-0 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5">{locale === 'en' ? 'Complete →' : 'أكمل ←'}</span>
@@ -240,7 +241,7 @@ export default function ContractorDashboard() {
         {profile?.verification_status === 'rejected' && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">
             <div className="flex items-start gap-3 mb-3">
-              <span className="text-2xl">❌</span>
+              <span className="text-2xl"><Glyph e="❌" /></span>
               <div>
                 <div className="font-bold text-red-700 mb-1">
                   {locale === 'en' ? 'Account Rejected' : locale === 'ur' ? 'اکاؤنٹ مسترد' : 'تم رفض حسابك'}
@@ -252,20 +253,20 @@ export default function ContractorDashboard() {
                 </div>
                 {profile?.rejection_reason && (
                   <div className="mt-2 bg-red-100 rounded-lg px-3 py-2 text-sm text-red-800 font-medium">
-                    📋 {locale === 'en' ? 'Reason: ' : locale === 'ur' ? 'وجہ: ' : 'السبب: '}{profile.rejection_reason}
+                    <Glyph e="📋" /> {locale === 'en' ? 'Reason: ' : locale === 'ur' ? 'وجہ: ' : 'السبب: '}{profile.rejection_reason}
                   </div>
                 )}
               </div>
             </div>
             <Link href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
-              {locale === 'en' ? '📤 Reupload Documents' : locale === 'ur' ? '📤 دستاویزات دوبارہ اپلوڈ کریں' : '📤 إعادة رفع المستندات'}
+              {locale === 'en' ? 'Reupload Documents' : locale === 'ur' ? 'دستاویزات دوبارہ اپلوڈ کریں' : 'إعادة رفع المستندات'}
             </Link>
           </div>
         )}
 
         {profile?.verification_status === 'pending' && (
           <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3 animate-fade-in">
-            <span className="text-2xl">⏳</span>
+            <span className="text-2xl"><Glyph e="⏳" /></span>
             <div>
               <div className="font-bold text-amber-700 mb-1">
                 {locale === 'en' ? 'Account Under Review' : locale === 'ur' ? 'اکاؤنٹ زیر جائزہ' : 'حسابك قيد المراجعة'}
@@ -281,7 +282,7 @@ export default function ContractorDashboard() {
 
         <div className="mb-5 animate-fade-in">
           <h1 className="text-2xl font-bold" style={{ color: '#0B2438' }}>
-            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || (locale === 'en' ? 'Buyer' : 'مشترٍ')} 👋
+            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || (locale === 'en' ? 'Buyer' : 'مشترٍ')} <Glyph e="👋" />
           </h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
@@ -302,7 +303,7 @@ export default function ContractorDashboard() {
           return (
             <Link href="/market" className="mb-5 rounded-2xl p-3.5 flex items-center gap-3 border animate-fade-in transition-all hover:shadow-md"
               style={{ background: down ? '#ecfdf5' : '#fef2f2', borderColor: down ? '#a7f3d0' : '#fecaca' }}>
-              <span className="text-xl">{down ? '📉' : '📈'}</span>
+              <span className="text-xl">{down ? <Glyph e="📉" /> : <Glyph e="📈" />}</span>
               <span className="flex-1 text-sm font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>
                 {locale === 'en'
                   ? `${best.name} ${down ? 'down' : 'up'} ${Math.abs(best.pct)}% vs last month`
@@ -355,7 +356,7 @@ export default function ContractorDashboard() {
           <button type="button" onClick={() => { setFilter('has_offers'); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
             className="w-full mb-5 rounded-2xl p-4 flex items-center gap-3 text-start animate-fade-in transition-all hover:shadow-md border"
             style={{ background: 'linear-gradient(135deg,#D4A54312,#0B243808)', borderColor: '#D4A54344' }}>
-            <span className="w-10 h-10 rounded-xl grid place-items-center text-[#071827] shrink-0 animate-pulse" style={{ background: '#D4A543' }}>🔔</span>
+            <span className="w-10 h-10 rounded-xl grid place-items-center text-[#071827] shrink-0 animate-pulse" style={{ background: '#D4A543' }}><Glyph e="🔔" /></span>
             <span className="flex-1 text-sm font-bold" style={{ color: '#0B2438' }}>
               {awaitingReply} {locale === 'en' ? 'request(s) received new offers — compare now' : 'طلبات وصلها عروض جديدة — قارنها الآن'}
             </span>
@@ -455,7 +456,7 @@ export default function ContractorDashboard() {
           <div className="mb-6 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
-                📋 {locale === 'en' ? 'Project RFQs' : 'مشاريع BOQ'}
+                <Glyph e="📋" /> {locale === 'en' ? 'Project RFQs' : 'مشاريع BOQ'}
               </h2>
               <Link href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#D4A543' }}>
                 + {locale === 'en' ? 'New Project' : 'مشروع جديد'}
@@ -466,10 +467,10 @@ export default function ContractorDashboard() {
                 <Link key={p.id} href={`/contractor/project/${p.id}`}
                   className="flex items-center justify-between bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#D4A543]/30 transition-all">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white" style={{ background: '#0B2438' }}>📋</div>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /></div>
                     <div>
                       <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{p.title}</div>
-                      <div className="text-xs text-gray-400">📍 {p.region} • {new Date(p.created_at).toLocaleDateString('ar-SA')}</div>
+                      <div className="text-xs text-gray-400"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString('ar-SA')}</div>
                     </div>
                   </div>
                   <div className="text-xs font-semibold" style={{ color: '#D4A543' }}>
@@ -484,7 +485,7 @@ export default function ContractorDashboard() {
         {/* Drafts — saved, not yet published (invisible to suppliers) */}
         {drafts.length > 0 && (
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6 animate-slide-up">
-            <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#0B2438' }}>📝 {locale === 'en' ? 'Drafts' : 'مسودّات'} <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{drafts.length}</span></h2>
+            <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#0B2438' }}><Glyph e="📝" /> {locale === 'en' ? 'Drafts' : 'مسودّات'} <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{drafts.length}</span></h2>
             <div className="space-y-2">
               {drafts.map((d: any) => (
                 <div key={d.id} className="flex items-center justify-between gap-2 border border-gray-100 rounded-xl px-3 py-2.5 hover:border-[#D4A543]/40 transition-colors">
@@ -494,7 +495,7 @@ export default function ContractorDashboard() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-[#071827]" style={{ background: '#D4A543' }}>{locale === 'en' ? 'Continue' : 'إكمال'} ←</Link>
-                    <button onClick={async () => { if (!confirm(locale === 'en' ? 'Delete this draft?' : 'حذف المسودة؟')) return; await createClient().from('rfq_drafts').delete().eq('id', d.id); setDrafts(drafts.filter((x: any) => x.id !== d.id)) }} className="text-sm text-red-400 hover:text-red-600 w-9 h-9 grid place-items-center rounded-lg">🗑</button>
+                    <button onClick={async () => { if (!confirm(locale === 'en' ? 'Delete this draft?' : 'حذف المسودة؟')) return; await createClient().from('rfq_drafts').delete().eq('id', d.id); setDrafts(drafts.filter((x: any) => x.id !== d.id)) }} className="text-sm text-red-400 hover:text-red-600 w-9 h-9 grid place-items-center rounded-lg"><Glyph e="🗑" /></button>
                   </div>
                 </div>
               ))}
@@ -505,7 +506,7 @@ export default function ContractorDashboard() {
         {/* RFQs */}
         {rfqs.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 shadow-sm border border-gray-100 text-center animate-slide-up">
-            <div className="text-6xl mb-5 animate-float">📋</div>
+            <div className="text-6xl mb-5 animate-float"><Glyph e="📋" /></div>
             <h2 className="text-xl font-bold mb-3" style={{ color: '#0B2438' }}>{t.noRfqs}</h2>
             <p className="text-gray-500 mb-6 text-sm">{t.noRfqsSub}</p>
             <Link href="/contractor/rfq/quick" className="inline-block btn-orange px-10 py-4 text-base rounded-2xl">{t.newRfqBtn}</Link>
@@ -522,10 +523,10 @@ export default function ContractorDashboard() {
               <div className="flex flex-col gap-3">
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {[
-                    { key: 'all', label: locale === 'en' ? 'All' : 'الكل', icon: '📋' },
-                    { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: '💬' },
-                    { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: '⏳' },
-                    { key: 'closed', label: locale === 'en' ? 'Completed' : 'مكتملة', icon: '✅' },
+                    { key: 'all', label: locale === 'en' ? 'All' : 'الكل', icon: <Glyph e="📋" /> },
+                    { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: <Glyph e="💬" /> },
+                    { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: <Glyph e="⏳" /> },
+                    { key: 'closed', label: locale === 'en' ? 'Completed' : 'مكتملة', icon: <Glyph e="✅" /> },
                   ].map((f: any) => {
                     const count = f.key === 'all' ? rfqs.length
                       : f.key === 'has_offers' ? rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) > 0).length
@@ -552,10 +553,10 @@ export default function ContractorDashboard() {
                   <select value={sortBy} onChange={(e: any) => setSortBy(e.target.value)}
                     className="input-field text-xs flex-shrink-0 w-auto py-2">
                     <option value="newest">{locale === 'en' ? '🆕 Newest' : '🆕 الأحدث'}</option>
-                    <option value="expiry">{locale === 'en' ? '⏰ Closest to expiry' : '⏰ الأقرب انتهاءً'}</option>
+                    <option value="expiry">{locale === 'en' ? 'Closest to expiry' : 'الأقرب انتهاءً'}</option>
                   </select>
                   <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-                    className="input-field text-xs flex-1 min-w-[160px] py-2" placeholder={`🔍 ${locale === 'en' ? 'Search...' : 'ابحث عن طلب...'}`} />
+                    className="input-field text-xs flex-1 min-w-[160px] py-2" placeholder={`${locale === 'en' ? 'Search...' : 'ابحث عن طلب...'}`} />
                 </div>
               </div>
             </div>
@@ -579,7 +580,7 @@ export default function ContractorDashboard() {
                 }
                 if (filtered.length === 0) return (
                   <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center text-gray-400 text-sm">
-                    🔍 {locale === 'en' ? 'No matching requests' : 'لا توجد طلبات مطابقة'}
+                    <Glyph e="🔍" /> {locale === 'en' ? 'No matching requests' : 'لا توجد طلبات مطابقة'}
                   </div>
                 )
                 return filtered.map((rfq: any) => (
@@ -594,7 +595,7 @@ export default function ContractorDashboard() {
                     <div className="absolute -top-2 ltr:-right-2 rtl:-left-2 z-10">
                       <span className="inline-flex items-center gap-1 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg animate-pulse"
                         style={{ background: '#D4A543' }}>
-                        🔔 {locale === 'en' ? 'New Offers!' : locale === 'ur' ? 'نئی پیشکشیں!' : 'عروض جديدة!'}
+                        <Glyph e="🔔" /> {locale === 'en' ? 'New Offers!' : locale === 'ur' ? 'نئی پیشکشیں!' : 'عروض جديدة!'}
                       </span>
                     </div>
                   )}
@@ -619,7 +620,7 @@ export default function ContractorDashboard() {
                             const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
                             return (
                               <span className="badge text-[10px]" style={{ background: st.bg, color: st.fg }}>
-                                {isExpired(rfq.expires_at) ? (locale === 'en' ? '⏰ ended' : '⏰ انتهت') : `⏰ ${formatTimeLeft(rfq.expires_at, locale)}`}
+                                {isExpired(rfq.expires_at) ? (locale === 'en' ? 'ended' : 'انتهت') : `${formatTimeLeft(rfq.expires_at, locale)}`}
                               </span>
                             )
                           })()}
@@ -642,17 +643,17 @@ export default function ContractorDashboard() {
                       </div>
                     ) : (
                       <div className="text-center rounded-xl px-3 py-2 bg-gray-100 text-gray-400 shrink-0 min-w-[78px]">
-                        <div className="text-base leading-none mb-0.5">⏳</div>
+                        <div className="text-base leading-none mb-0.5"><Glyph e="⏳" /></div>
                         <div className="text-[10px] font-semibold leading-tight">{locale === 'en' ? 'Awaiting offers' : 'بانتظار العروض'}</div>
                       </div>
                     )}
                   </div>
                   <div className="flex items-center gap-x-4 gap-y-1 text-xs text-gray-400 font-medium flex-wrap">
-                    <span>📦 {Array.isArray(rfq.items) && rfq.items.length > 1 ? arItems(rfq.items.length, locale) : `${rfq.quantity} ${rfq.unit}`}</span>
-                    <span>📍 {rfq.region}</span>
-                    {rfq.created_at && <span>🗓 {formatDateTime(rfq.created_at)}</span>}
-                    {rfq.expires_at && <span>⏰ {formatDateTime(rfq.expires_at)}</span>}
-                    {rfq.specification && <span className="truncate max-w-[200px]">⚙️ {rfq.specification}</span>}
+                    <span><Glyph e="📦" /> {Array.isArray(rfq.items) && rfq.items.length > 1 ? arItems(rfq.items.length, locale) : `${rfq.quantity} ${rfq.unit}`}</span>
+                    <span><Glyph e="📍" /> {rfq.region}</span>
+                    {rfq.created_at && <span><Glyph e="🗓" /> {formatDateTime(rfq.created_at)}</span>}
+                    {rfq.expires_at && <span><Glyph e="⏰" /> {formatDateTime(rfq.expires_at)}</span>}
+                    {rfq.specification && <span className="truncate max-w-[200px]"><Glyph e="⚙" /> {rfq.specification}</span>}
                     <span className="mr-auto" style={{ color: '#D4A543' }}>{t.viewDetails}</span>
                   </div>
                   {/* عدّاد وقت بصري ينقص حتى انتهاء المهلة */}

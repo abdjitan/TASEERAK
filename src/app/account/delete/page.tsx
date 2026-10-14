@@ -6,13 +6,14 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { createClient } from '@/lib/supabase/client'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
+import Glyph from '@/components/shared/Glyph'
 
 // Public page required by Google Play / the App Store: how to delete a Taseerak account, what is
 // deleted and what is kept. A signed-in visitor can delete the account here (POST /api/account/delete).
 
 const C: Record<string, any> = {
   ar: {
-    title: 'حذف الحساب', home: '🏠 الرئيسية',
+    title: 'حذف الحساب', home: 'الرئيسية',
     intro: 'يمكنك حذف حسابك في «تسعيرك» في أي وقت، من الموقع أو من تطبيق الجوال. يتم الحذف فوراً ولا يمكن التراجع عنه.',
     howTitle: 'طريقة الحذف',
     how: ['من التطبيق: الإعدادات ← حذف حسابي.', 'من الموقع: سجّل الدخول ثم افتح هذه الصفحة واضغط «احذف حسابي نهائياً».', 'إن تعذّر عليك ذلك، راسلنا عبر الدعم في المنصة من البريد المسجّل، وننفّذ الطلب خلال 30 يوماً.'],
@@ -27,7 +28,7 @@ const C: Record<string, any> = {
     adminErr: 'لا يمكن حذف حساب مدير المنصة من هنا.', err: 'تعذّر حذف الحساب. حاول مرة أخرى أو راسل الدعم.',
   },
   en: {
-    title: 'Delete your account', home: '🏠 Home',
+    title: 'Delete your account', home: 'Home',
     intro: 'You can delete your Taseerak account at any time, on the website or in the mobile app. Deletion is immediate and cannot be undone.',
     howTitle: 'How to delete',
     how: ['In the app: Settings → Delete my account.', 'On the website: sign in, open this page and press "Delete my account permanently".', 'If you cannot, message us through in-platform support from your registered email and we will complete it within 30 days.'],
@@ -42,7 +43,7 @@ const C: Record<string, any> = {
     adminErr: 'A platform admin account cannot be deleted here.', err: 'Could not delete the account. Try again or contact support.',
   },
   ur: {
-    title: 'اکاؤنٹ حذف کریں', home: '🏠 مرکزی صفحہ',
+    title: 'اکاؤنٹ حذف کریں', home: 'مرکزی صفحہ',
     intro: 'آپ کسی بھی وقت ویب سائٹ یا موبائل ایپ سے اپنا تسعیرک اکاؤنٹ حذف کر سکتے ہیں۔ حذف فوری ہوتا ہے اور واپس نہیں ہو سکتا۔',
     howTitle: 'حذف کرنے کا طریقہ',
     how: ['ایپ میں: ترتیبات ← میرا اکاؤنٹ حذف کریں۔', 'ویب سائٹ پر: لاگ اِن کریں، یہ صفحہ کھولیں اور «میرا اکاؤنٹ مستقل حذف کریں» دبائیں۔', 'اگر ممکن نہ ہو تو اپنی رجسٹرڈ ای میل سے پلیٹ فارم سپورٹ کو پیغام بھیجیں، ہم 30 دن کے اندر حذف کر دیں گے۔'],
@@ -110,7 +111,7 @@ export default function DeleteAccountPage() {
 
         <div className="bg-white rounded-2xl border border-red-100 p-5">
           {done ? (
-            <p className="text-sm font-bold text-[#0F6E56]" role="status">✅ {t.done}</p>
+            <p className="text-sm font-bold text-[#0F6E56]" role="status"><Glyph e="✅" /> {t.done}</p>
           ) : signedIn === false ? (
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <p className="text-sm text-gray-600">{t.signedOut}</p>
