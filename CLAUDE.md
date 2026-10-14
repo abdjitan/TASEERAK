@@ -22,7 +22,7 @@ Arabic-first, RTL, with English + Urdu i18n.
 
 ## Environment / accounts (cloud — tied to owner's PERSONAL email + phone)
 - **GitHub** (code): `https://github.com/abdjitan/TASEERAK.git` — repo root = the working copy (no `buildora/` subfolder)
-- **Supabase** project_id: `afqksuduomkdqrcohntk` (backend + all data live here, NOT in files)
+- **Supabase** project_id: `svswlsnsfhxelslbysvz` (Frankfurt, eu-central-1; backend + all data live here, NOT in files). Moved from Sydney `afqksuduomkdqrcohntk` on 2026-10-14 (old project kept ~1 week as backup, cron paused; kit in `scripts/migrate`).
 - **Vercel**: deployment
 - **Secrets**: `.env.local` (gitignored — Supabase URL/keys). Also stored in Vercel env vars + Supabase dashboard, so recoverable. NEVER commit secrets or paste them in chat.
 
@@ -133,7 +133,7 @@ cross-user operations go through `SECURITY DEFINER` RPCs granted to `authenticat
 1. Install Node + Git. `git clone https://github.com/abdjitan/TASEERAK.git` → `cd TASEERAK`.
 2. Restore `.env.local` (and `.mcp.json`, gitignored) (from your backup zip — it's gitignored).
 3. `npm install` → `npm run dev`.
-4. **Reconnect the Supabase MCP connector** in Claude Code (it's account-level, not in the repo). Once connected, Claude Code can read all live data (suppliers, RFQs, numbers) via SQL — project_id `afqksuduomkdqrcohntk`.
+4. **Reconnect the Supabase MCP connector** in Claude Code (it's account-level, not in the repo). Once connected, Claude Code can read all live data (suppliers, RFQs, numbers) via SQL — project_id `svswlsnsfhxelslbysvz`.
 
 ## Open / pending (high level)
 - Registration redesign: phone + WhatsApp OTP first (blocked on WhatsApp Business API account/token).
