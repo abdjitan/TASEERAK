@@ -221,7 +221,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     office_furniture: { ar: 'الأثاث المكتبي والرفوف', en: 'Office Furniture & Shelving', ur: 'دفتری فرنیچر اور ریک', icon: '🗄', group: 'joinery',
       keywords: ['أثاث مكتبي','مكتبي','كرسي مكتب','خزائن ملفات','رفوف معدنية','رفوف','أرفف','racking','office furniture'] },
     custom_furniture: { ar: 'أثاث حسب الطلب', en: 'Custom-Made Furniture', ur: 'آرڈر پر فرنیچر', icon: '🛋', group: 'joinery',
-      keywords: ['أثاث','موبيليا','طاولة','طاولات','ترابيزة','سفرة','كنب','كنبة','أريكة','صوفا','كراسي','كرسي طعام','كرسي مكتب','سرير','تسريحة','مكتب خشب','مكتبة','دولاب','خزانة ملابس','جلسة','مجلس','حسب الطلب','furniture','table','sofa','bed','wardrobe','custom','سجاد وزوالي','سجاد','مشب نار','موقد حطب','لوحات وتحف ديكور','خزانة أحذية'] },
+      keywords: ['أثاث','موبيليا','طاولة','طاولات','ترابيزة','سفرة','كنب','كنبة','أريكة','صوفا','كراسي','كرسي طعام','كرسي مكتب','سرير','تسريحة','مكتب خشب','مكتبة','دولاب','خزانة ملابس','جلسة','مجلس','حسب الطلب','furniture','table','sofa','bed','wardrobe','custom','سجاد وزوالي','سجاد','مشب نار','موقد حطب','لوحات وتحف ديكور','خزانة أحذية','بوفيه وسايدبورد حسب الطلب','رفوف حائط ديكور','رفوف حائط','قواطع ديكور خشبية','بارتيشن'] },
     curtains: { ar: 'ستائر وبرادي', en: 'Curtains & Blinds', ur: 'پردے', icon: '🪟', group: 'joinery',
       keywords: ['ستائر','ستارة','برادي','بلاك أوت','blackout','blinds','curtain','ستائر رول','ستائر شرائح','ستائر قماش'] },
     cubicles: { ar: 'قواطع حمامات وكبائن', en: 'Toilet Cubicles & Partitions', ur: 'کیوبیکل', icon: '🚪', group: 'joinery',
@@ -266,20 +266,20 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['محول','مولد','transformer','generator','UPS','ATS','مكثفات','محطة تحويل','substation'] },
     // ═══ أنظمة الإنارة ═══
     indoor_lighting: { ar: 'إنارة داخلية (داون لايت/ليد)', en: 'Indoor Lighting', ur: 'اندرونی روشنی', icon: '💡', group: 'lighting',
-      keywords: ['إضاءة داخلية','داون لايت','downlight','سبوت','spot','لوحات ليد','LED panel','لمبة','مصباح','طوارئ','emergency','exit','مخرج','شريطية','strip','DALI','إنارة تراك'] },
+      keywords: ['إضاءة داخلية','داون لايت','downlight','سبوت','spot','لوحات ليد','LED panel','لمبة','مصباح','طوارئ','emergency','exit','مخرج','شريطية','strip','DALI','إنارة تراك','إنارة مخفية خطية','إنارة تحت خزائن المطبخ'] },
     led_strips: { ar: 'شرائط LED ونيون وإكسسواراتها', en: 'LED Strips, Neon & Accessories', ur: 'ایل ای ڈی سٹرپ', icon: '🌈', group: 'lighting',
       keywords: ['شريط LED','شريط ليد','نيون','neon','led strip','درايفر','driver','بروفايل ألمنيوم','RGB','كنترول شريط','موصل شريط'] },
     outdoor_lighting: { ar: 'إنارة خارجية وأعمدة', en: 'Outdoor & Landscape Lighting', ur: 'بیرونی روشنی', icon: '🏮', group: 'lighting',
-      keywords: ['إنارة خارجية','حدائق','كشاف','floodlight','أعمدة إنارة','واجهات','جمالية','landscape','كشافات وإنارة بالطاقة الشمسية'] },
+      keywords: ['إنارة خارجية','حدائق','كشاف','floodlight','أعمدة إنارة','واجهات','جمالية','landscape','كشافات وإنارة بالطاقة الشمسية','إنارة جدارية خارجية','إنارة درج وأرضيات'] },
     solar_pv: { ar: 'الطاقة الشمسية', en: 'Solar Energy', ur: 'شمسی توانائی', icon: '☀', group: 'solar',
       keywords: ['طاقة شمسية','الطاقة الشمسية','ألواح شمسية','الألواح الشمسية','شمسي','سولار','انفرتر طاقة','ليثيوم','منظم شحن','solar','pv'] },
     decor_lighting: { ar: 'إنارة ديكور وثريات', en: 'Decorative Lighting & Chandeliers', ur: 'سجاوٹی روشنی', icon: '✨', group: 'lighting',
-      keywords: ['ثريا','ثريات','نجفة','نجف','أباجورة','أبليك','إنارة ديكور','إنارة معلقة','معلقة ديكور','إنارة أرضية','chandelier','pendant','lamp','wall light','floor lamp'] },
+      keywords: ['ثريا','ثريات','نجفة','نجف','أباجورة','أبليك','إنارة ديكور','إنارة معلقة','معلقة ديكور','إنارة أرضية','chandelier','pendant','lamp','wall light','floor lamp','إنارة سقف مودرن','إنارة مرآة وحمّام','مصباح طاولة ومكتب LED','مصباح طاولة','لمبات ديكور فيلامنت'] },
     earthing: { ar: 'تأريض وحماية برق', en: 'Earthing & Lightning', ur: 'ارتھنگ', icon: '🛡', group: 'lighting',
       keywords: ['تأريض','earthing','earth','حماية برق','lightning','أقطاب','rod'] },
     // ═══ أنظمة التيار الخفيف ═══
     smart_home: { ar: 'المنزل الذكي', en: 'Smart Home', ur: 'اسمارٹ ہوم', icon: '📱', group: 'low_current',
-      keywords: ['ذكي','ذكية','منزل ذكي','المنزل الذكي','سمارت','smart','موتور بوابة','محرك بوابة','زيجبي'] },
+      keywords: ['ذكي','ذكية','منزل ذكي','المنزل الذكي','سمارت','smart','موتور بوابة','محرك بوابة','زيجبي','حساس حركة للإنارة','حساس حركة'] },
     cctv: { ar: 'كاميرات مراقبة CCTV', en: 'CCTV Systems', ur: 'سی سی ٹی وی', icon: '📹', group: 'low_current',
       keywords: ['كاميرات','كاميرا','مراقبة','CCTV','PTZ','شاشات','surveillance'] },
     fire_alarm: { ar: 'إنذار حريق', en: 'Fire Alarm', ur: 'فائر الارم', icon: '🚨', group: 'low_current',
@@ -2167,6 +2167,30 @@ export const SECTOR_COLORS: Record<Sector, string> = {
 
 // Product translations — keys are Arabic (stored in DB), values are EN/UR display names
 export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
+  // ═══ 2026-10-14: furniture by room ═══
+  'غرفة نوم كاملة حسب الطلب': { en: 'Complete custom bedroom set', ur: 'مکمل بیڈروم سیٹ' },
+  'تسريحة ومرآة حسب الطلب': { en: 'Custom dressing table & mirror', ur: 'ڈریسنگ ٹیبل' },
+  'كومودينو (طاولة جانبية للسرير)': { en: 'Bedside tables (nightstands)', ur: 'سائیڈ ٹیبل بیڈ' },
+  'غرفة أطفال حسب الطلب': { en: 'Custom kids\' bedroom', ur: 'بچوں کا کمرہ' },
+  'سرير أطفال وأسرّة دورين': { en: 'Kids\' beds & bunk beds', ur: 'بچوں کا بستر' },
+  'كنب زاوية (L) حسب الطلب': { en: 'Custom corner (L-shaped) sofa', ur: 'کارنر صوفہ' },
+  'طاولات جانبية (سايد تيبل)': { en: 'Side tables', ur: 'سائیڈ ٹیبل' },
+  'بوفيه وسايدبورد حسب الطلب': { en: 'Custom buffet & sideboard', ur: 'بوفے سائیڈ بورڈ' },
+  'جدار تلفزيون وديكور جداري حسب الطلب': { en: 'Custom TV wall & feature wall', ur: 'ٹی وی وال ڈیکور' },
+  'رفوف حائط ديكور': { en: 'Decorative wall shelves', ur: 'دیواری شیلف' },
+  'قواطع ديكور خشبية (بارتيشن)': { en: 'Decorative wooden partitions', ur: 'لکڑی کا پارٹیشن' },
+  // ═══ 2026-10-14: home lighting ═══
+  'إنارة سقف مودرن (بلافونيير)': { en: 'Modern ceiling light (flush mount)', ur: 'جدید چھت کی لائٹ' },
+  'ثريا كريستال كبيرة للدرج والصالات': { en: 'Large crystal chandelier (stairwell / hall)', ur: 'بڑا کرسٹل جھومر' },
+  'إنارة مرآة وحمّام': { en: 'Mirror & bathroom light', ur: 'آئینہ اور باتھ روم لائٹ' },
+  'مصباح طاولة ومكتب LED': { en: 'LED desk & table lamp', ur: 'ایل ای ڈی ٹیبل لیمپ' },
+  'لمبات ديكور فيلامنت (إديسون)': { en: 'Decorative filament (Edison) bulbs', ur: 'فلامنٹ بلب' },
+  'إنارة مخفية خطية (لينير)': { en: 'Linear recessed lighting', ur: 'لینیئر لائٹ' },
+  'إنارة تحت خزائن المطبخ': { en: 'Under-cabinet kitchen lighting', ur: 'کچن کیبنٹ لائٹ' },
+  'إنارة جدارية خارجية': { en: 'Outdoor wall light', ur: 'بیرونی دیوار لائٹ' },
+  'إنارة درج وأرضيات (ستيب لايت)': { en: 'Step & floor lights', ur: 'سیڑھی کی لائٹس' },
+  'لمبة ذكية (واي فاي)': { en: 'Smart Wi-Fi bulb', ur: 'اسمارٹ بلب' },
+  'حساس حركة للإنارة': { en: 'Motion sensor for lighting', ur: 'موشن سینسر' },
   // ═══ 2026-10-13: materials buyers ask for that were missing (catalog gap study) ═══
   'ألواح ساندوتش بانل': { en: 'Sandwich panels', ur: 'سینڈوچ پینل' },
   'قرميد أسقف': { en: 'Roof tiles', ur: 'چھت کی ٹائلیں' },
@@ -3379,6 +3403,9 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'ردم عام / إحلال (General Backfill)',
   ],
   architectural: [
+    // ═══ 2026-10-14: furniture by room ═══
+    'غرفة نوم كاملة حسب الطلب', 'تسريحة ومرآة حسب الطلب', 'كومودينو (طاولة جانبية للسرير)', 'غرفة أطفال حسب الطلب', 'سرير أطفال وأسرّة دورين', 'كنب زاوية (L) حسب الطلب',
+    'طاولات جانبية (سايد تيبل)', 'بوفيه وسايدبورد حسب الطلب', 'جدار تلفزيون وديكور جداري حسب الطلب', 'رفوف حائط ديكور', 'قواطع ديكور خشبية (بارتيشن)',
     // ═══ 2026-10-13: catalog gap study ═══
     'ألواح أسمنت بورد (فايبر سمنت)', 'قطاعات وألواح ألمنيوم خام', 'كرانيش جبس وبولي يوريثان', 'ألواح بديل الرخام', 'ألواح جدارية بديل الخشب (WPC)', 'زوايا وبروفايلات البلاط',
     'بلاط موزاييك', 'صلبان وكلبسات تسوية البلاط', 'ترويبة إيبوكسي', 'دهان خارجي حجري (روشن/جرافياتو)', 'دهان أساس (برايمر)', 'دهان حديد مانع للصدأ (سلاقون)',
@@ -3469,6 +3496,9 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'شريط تسليح فواصل الجبس',
   ],
   electrical: [
+    // ═══ 2026-10-14: home lighting ═══
+    'إنارة سقف مودرن (بلافونيير)', 'ثريا كريستال كبيرة للدرج والصالات', 'إنارة مرآة وحمّام', 'مصباح طاولة ومكتب LED', 'لمبات ديكور فيلامنت (إديسون)', 'إنارة مخفية خطية (لينير)',
+    'إنارة تحت خزائن المطبخ', 'إنارة جدارية خارجية', 'إنارة درج وأرضيات (ستيب لايت)', 'لمبة ذكية (واي فاي)', 'حساس حركة للإنارة',
     // ═══ 2026-10-13: catalog gap study ═══
     'إنارة حدائق وممرات', 'أعمدة إنارة شوارع وأحواش', 'كشافات وإنارة بالطاقة الشمسية', 'إنارة تراك (مسار)', 'حامي جهد كهربائي', 'عداد كهرباء فرعي',
     'شاحن سيارات كهربائية', 'مفتاح فصل (آيسوليتر)', 'ألواح طاقة شمسية', 'انفرتر طاقة شمسية', 'بطاريات تخزين ليثيوم', 'منظم شحن شمسي',

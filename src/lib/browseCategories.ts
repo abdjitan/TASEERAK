@@ -17,9 +17,9 @@ export const BROWSE_SECTIONS: { key: BrowseSection; icon: string; cat?: string; 
   { key: 'finishing', cat: 'paint_facade', icon: '🎨', ar: 'التشطيبات', en: 'Finishing', ur: 'فنشنگ',
     hint: { ar: 'بلاط، رخام، دهان، جبس، أبواب وشبابيك', en: 'Tiles, marble, paint, gypsum, doors & windows', ur: 'ٹائلیں، ماربل، پینٹ، جپسم، دروازے' } },
   { key: 'furniture', cat: 'furniture', icon: '🛋️', ar: 'الأثاث والديكور', en: 'Furniture & decor', ur: 'فرنیچر اور سجاوٹ',
-    hint: { ar: 'طاولات، كنب، خزائن، ستائر، ثريات وإنارة ديكور حسب الطلب', en: 'Custom tables, sofas, wardrobes, curtains, chandeliers', ur: 'میزیں، صوفے، الماریاں، پردے، جھومر' } },
+    hint: { ar: 'طاولات، كنب، خزائن، ستائر، مجالس وسجاد', en: 'Custom tables, sofas, wardrobes, curtains, majlis, rugs', ur: 'میزیں، صوفے، الماریاں، پردے، مجلس' } },
   { key: 'electrical', cat: 'lighting', icon: '⚡', ar: 'الكهرباء والإنارة', en: 'Electrical & lighting', ur: 'بجلی اور روشنی',
-    hint: { ar: 'أسلاك، قواطع، مفاتيح، إنارة، كاميرات', en: 'Cables, breakers, switches, lighting, CCTV', ur: 'تاریں، بریکر، سوئچ، لائٹس' } },
+    hint: { ar: 'ثريات وإنارة ديكور، سبوتات، أسلاك، مفاتيح، طاقة شمسية', en: 'Chandeliers, decor lighting, spots, cables, switches, solar', ur: 'جھومر، لائٹس، تاریں، سوئچ، سولر' } },
   { key: 'plumbing', cat: 'plumbing', icon: '🚿', ar: 'السباكة والمياه', en: 'Plumbing & water', ur: 'پلمبنگ اور پانی',
     hint: { ar: 'مواسير، خلاطات، مضخات، خزانات، أدوات صحية', en: 'Pipes, mixers, pumps, tanks, sanitary ware', ur: 'پائپ، مکسر، پمپ، ٹینک' } },
   { key: 'hvac_fire', cat: 'hvac', icon: '❄️', ar: 'التكييف والتهوية والحريق', en: 'AC, ventilation & firefighting', ur: 'اے سی، وینٹیلیشن، فائر',
@@ -55,7 +55,6 @@ const BY_SUB: Record<string, BrowseSection> = {
   duct_insulation: 'hvac_fire',     // bought with the ducts
   custom_furniture: 'furniture',    // made-to-order furniture, curtains and decorative lighting:
   curtains: 'furniture',            // what a home owner looks for («a table / a chandelier like this»)
-  decor_lighting: 'furniture',
   kitchen_appliances: 'furniture',  // built-in appliances and kitchen fittings
   office_furniture: 'furniture',
   fitted_furniture: 'furniture',
@@ -94,7 +93,38 @@ const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: stri
   },
 }
 
+// The furniture section is browsed by ROOM (what a home buyer thinks in), not by trade group.
+// First matching rule wins; anything unmatched lands in «أثاث وديكور متنوّع».
+const ROOMS: { key: string; ar: string; en: string; ur: string; icon: string; re: RegExp }[] = [
+  { key: 'room_kids', ar: 'غرف الأطفال', en: "Kids' rooms", ur: 'بچوں کے کمرے', icon: '🧸', re: /أطفال|اطفال|دورين/ },
+  { key: 'room_bed', ar: 'غرف النوم', en: 'Bedrooms', ur: 'بیڈروم', icon: '🛏', re: /غرفة نوم|سرير|خزانة ملابس|دولاب|مراتب|فرشات|تسريحة|كومودينو/ },
+  { key: 'room_living', ar: 'غرف المعيشة والمجالس', en: 'Living rooms & majlis', ur: 'لونگ روم اور مجلس', icon: '🛋', re: /كنب|مجلس|طاولة قهوة|طاولات جانبية|وحدة تلفزيون|مشب|سجاد|زوالي|موكيت/ },
+  { key: 'room_dining', ar: 'السفرة والطعام', en: 'Dining', ur: 'ڈائننگ', icon: '🍽', re: /طعام|سفرة|بوفيه/ },
+  { key: 'room_kitchen', ar: 'المطابخ', en: 'Kitchens', ur: 'کچن', icon: '🍳', re: /مطبخ|المطبخ/ },
+  { key: 'room_office', ar: 'المكاتب والمكتبات', en: 'Offices & bookcases', ur: 'دفاتر اور لائبریری', icon: '🗄', re: /مكتب|مكتبة|رفوف معدنية|ملفات/ },
+  { key: 'room_walls', ar: 'الجدران والديكور', en: 'Walls & decor', ur: 'دیواریں اور سجاوٹ', icon: '🖼', re: /جدار|لوحات|تحف|رفوف حائط|قواطع ديكور|أحذية|جزامة/ },
+  { key: 'room_curtains', ar: 'الستائر', en: 'Curtains & blinds', ur: 'پردے', icon: '🪟', re: /ستائر|ستارة|الستائر/ },
+  { key: 'room_bath', ar: 'الحمّامات', en: 'Bathrooms', ur: 'باتھ روم', icon: '🛁', re: /مغسلة|فانيتي|حمّام|حمام/ },
+  { key: 'room_outdoor', ar: 'الأثاث الخارجي', en: 'Outdoor furniture', ur: 'بیرونی فرنیچر', icon: '⛱', re: /خارجي|حدائق/ },
+]
+function byRoom(groups: SectionGroup[]): SectionGroup[] {
+  const out: Record<string, SectionGroup> = {}
+  const other: SectionGroup = { group: 'room_other', icon: '🛋', ar: 'أثاث وديكور متنوّع', en: 'More furniture & decor', ur: 'مزید فرنیچر', items: [] }
+  for (const g of groups) for (const it of g.items) {
+    const r = ROOMS.find(x => x.re.test(it.name))
+    const bucket = r ? (out[r.key] ||= { group: r.key, icon: r.icon, ar: r.ar, en: r.en, ur: r.ur, items: [] }) : other
+    if (!bucket.items.some(i => i.name === it.name)) bucket.items.push(it)
+  }
+  const SHOW = ['room_living', 'room_bed', 'room_kids', 'room_dining', 'room_kitchen', 'room_office', 'room_walls', 'room_curtains', 'room_bath', 'room_outdoor']
+  return [...SHOW.map(k => out[k]).filter(Boolean), ...(other.items.length ? [other] : [])]
+}
+
 export function getSectionGroups(section: BrowseSection): SectionGroup[] {
+  if (section === 'furniture') return byRoom(getTradeGroups(section))
+  return getTradeGroups(section)
+}
+
+function getTradeGroups(section: BrowseSection): SectionGroup[] {
   const out: Record<string, SectionGroup> = {}
   const order: string[] = []
   for (const sector of Object.keys(SECTOR_PRODUCTS) as Sector[]) {

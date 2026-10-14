@@ -23,6 +23,7 @@ const SECTION_PHOTO: Partial<Record<BrowseSection, string>> = {
   building: '/images/sections/building.webp', finishing: '/images/sections/finishing.webp',
   furniture: '/images/sections/furniture.webp', electrical: '/images/sections/lighting.webp',
   plumbing: '/images/sections/plumbing.webp', tools: '/images/sections/tools.webp',
+  hvac_fire: '/images/sections/hvac_fire.webp', insulation: '/images/sections/insulation.webp', outdoor: '/images/sections/outdoor.webp',
 }
 
 const coverCache: Record<string, { name: string; sector: Sector }[]> = {}
