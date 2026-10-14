@@ -149,7 +149,7 @@ function Messages() {
       <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-4 h-[calc(100vh-130px)]">
         {/* قائمة المحادثات */}
         <aside className={`lg:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-y-auto ${activeId ? 'hidden lg:block' : ''}`}>
-          <div className="p-4 border-b border-gray-100 font-bold text-sm flex items-center gap-2" style={{ color: '#1B2D5B' }}>
+          <div className="p-4 border-b border-gray-100 font-bold text-sm flex items-center gap-2" style={{ color: '#0B2438' }}>
             <Link href={backHref} title={L('Back', 'واپس', 'رجوع')} className="w-7 h-7 grid place-items-center rounded-lg hover:bg-gray-100 text-gray-500 shrink-0">{dir === 'rtl' ? '→' : '←'}</Link>
             <span>💬 {L('Conversations', 'گفتگو', 'المحادثات')} ({convos.length})</span>
           </div>
@@ -157,12 +157,12 @@ function Messages() {
             <div className="p-8 text-center text-sm text-gray-400">{L('No conversations yet', 'ابھی کوئی گفتگو نہیں', 'لا توجد محادثات بعد')}</div>
           ) : convos.map(c => (
             <button key={c.id} onClick={() => setActiveId(c.id)}
-              className={`w-full text-start px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${activeId === c.id ? 'bg-[#F5831F]/5' : ''}`}>
+              className={`w-full text-start px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${activeId === c.id ? 'bg-[#D4A543]/5' : ''}`}>
               <div className="flex items-center justify-between gap-2">
-                <span className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{counterpart(c)}</span>
+                <span className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{counterpart(c)}</span>
                 <span className="text-[10px] text-gray-400 shrink-0">{fmtTime(c.last_message_at, locale)}</span>
               </div>
-              {ctx(c) && <div className="text-[11px] text-[#d96f15] truncate">📦 {ctx(c)}</div>}
+              {ctx(c) && <div className="text-[11px] text-[#9D7425] truncate">📦 {ctx(c)}</div>}
               {c.last_message && <div className="text-xs text-gray-500 truncate mt-0.5">{c.last_message}</div>}
             </button>
           ))}
@@ -177,7 +177,7 @@ function Messages() {
               <div className="p-3 border-b border-gray-100 flex items-center gap-2">
                 <button onClick={() => setActiveId('')} className="lg:hidden w-8 h-8 grid place-items-center rounded-lg hover:bg-gray-100">{dir === 'rtl' ? '→' : '←'}</button>
                 <div className="min-w-0">
-                  <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{counterpart(active)}</div>
+                  <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{counterpart(active)}</div>
                   {ctx(active) && <div className="text-[11px] text-gray-400 truncate">📦 {ctx(active)}</div>}
                 </div>
               </div>
@@ -209,7 +209,7 @@ function Messages() {
               )}
               <form onSubmit={send} className="p-3 border-t border-gray-100 flex gap-2">
                 <input value={body} onChange={e => setBody(e.target.value)} disabled={blocked} className="input-field flex-1 text-sm disabled:bg-gray-50" placeholder={blocked ? L('Limit reached before award', 'ایوارڈ سے پہلے کی حد پوری ہو گئی', 'انتهى الحد المسموح قبل الترسية') : L('Type a message…', 'پیغام لکھیں…', 'اكتب رسالة…')} />
-                <button type="submit" disabled={sending || blocked || !body.trim()} className="px-5 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#F5831F' }}>
+                <button type="submit" disabled={sending || blocked || !body.trim()} className="px-5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50" style={{ background: '#D4A543' }}>
                   {L('Send', 'بھیجیں', 'إرسال')}
                 </button>
               </form>

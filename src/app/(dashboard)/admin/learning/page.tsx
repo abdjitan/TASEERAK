@@ -90,7 +90,7 @@ export default function AdminLearningPage() {
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-4">
-            <button type="button" onClick={refresh} disabled={busy} className="px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50" style={{ background: '#1B2D5B' }}>
+            <button type="button" onClick={refresh} disabled={busy} className="px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>
               {busy ? 'جارٍ التحديث…' : '↻ تعلّم من عمليات البحث الآن'}
             </button>
             <span className="text-xs text-gray-400">يعمل تلقائياً كل يوم الساعة 2:30 فجراً.</span>
@@ -103,7 +103,7 @@ export default function AdminLearningPage() {
             {(['pending', 'approved', 'rejected'] as const).map(k => (
               <button key={k} type="button" onClick={() => setTab(k)}
                 className={`px-3 py-1.5 rounded-xl text-sm font-bold border ${tab === k ? 'text-white border-transparent' : 'border-gray-200 text-gray-600'}`}
-                style={tab === k ? { background: '#1B2D5B' } : undefined}>
+                style={tab === k ? { background: '#0B2438' } : undefined}>
                 {k === 'pending' ? `بانتظار المراجعة (${counts.pending})` : k === 'approved' ? `معتمدة (${counts.approved})` : `مرفوضة (${counts.rejected})`}
               </button>
             ))}

@@ -100,7 +100,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
     const on = isAdded(name)
     return (
       <button type="button" onClick={() => choose({ name, sector: s })}
-        className={`relative text-start rounded-xl border p-2 flex flex-col gap-1.5 transition-all ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 bg-white hover:border-[#F5831F]/60 hover:shadow-sm'}`}>
+        className={`relative text-start rounded-xl border p-2 flex flex-col gap-1.5 transition-all ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 bg-white hover:border-[#D4A543]/60 hover:shadow-sm'}`}>
         <span className="aspect-square w-full rounded-lg bg-gray-50 overflow-hidden grid place-items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={productImageUrl(name)} alt="" loading="lazy" className="w-full h-full object-contain"
@@ -130,7 +130,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
           {BROWSE_SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
               className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-full border ${b.key === section ? 'text-white border-transparent' : 'border-gray-200 bg-white text-gray-600'}`}
-              style={b.key === section ? { background: '#1B2D5B' } : undefined}>
+              style={b.key === section ? { background: '#0B2438' } : undefined}>
               <CatIcon k={b.cat || b.key} className="w-4 h-4 inline-block align-[-0.2em] me-1" />{pickT(b)}
             </button>
           ))}
@@ -138,10 +138,10 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
       )}
 
       {q.trim() && web && web.q === q.trim() && (
-        <div className="rounded-2xl border border-[#1B2D5B]/15 bg-[#1B2D5B]/[0.03] p-3 space-y-2" aria-live="polite">
+        <div className="rounded-2xl border border-[#0B2438]/15 bg-[#0B2438]/[0.03] p-3 space-y-2" aria-live="polite">
           {web.loading ? (
             <p className="text-sm text-gray-600 flex items-center gap-2">
-              <span className="inline-block w-4 h-4 rounded-full border-2 border-[#1B2D5B]/30 border-t-[#1B2D5B] animate-spin" />
+              <span className="inline-block w-4 h-4 rounded-full border-2 border-[#0B2438]/30 border-t-[#0B2438] animate-spin" />
               {L(`Looking up «${web.q}» on the internet…`, `«${web.q}» انٹرنیٹ پر تلاش ہو رہا ہے…`, `نبحث عن «${web.q}» في الإنترنت…`)}
             </p>
           ) : web.result?.understood ? (
@@ -158,7 +158,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                 </>
               )}
               <button type="button" onClick={() => choose({ name: web.result.name_ar, sector: web.result.sector })}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: '#F5831F' }}>
+                className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>
                 + {L(`Add «${web.result.name_ar}» to my list`, `«${web.result.name_ar}» فہرست میں شامل کریں`, `أضف «${web.result.name_ar}» إلى قائمتي`)}
               </button>
               {!!web.sources?.length && (
@@ -172,7 +172,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                 : L('We could not identify it. Add it as you wrote it, and suppliers will price it.', 'ہم پہچان نہیں سکے۔ جیسا لکھا ہے ویسا شامل کریں۔', 'لم نتعرّف عليها. أضفها كما كتبتها، وسيسعّرها الموردون.')}
             </p>
             <button type="button" onClick={() => choose({ name: q.trim().slice(0, 120), sector: 'supply_store' as Sector })}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold border-2 border-[#F5831F] text-[#d96f15]">
+              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold border-2 border-[#D4A543] text-[#9D7425]">
               + {L(`Add «${q.trim()}» as written`, `«${q.trim()}» جیسا لکھا شامل کریں`, `أضف «${q.trim()}» كما كتبتها`)}
             </button>
           </>)}
@@ -188,7 +188,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                 'غير موجودة في دليل المواد — يمكنك إضافتها كما كتبتها، وسيسعّرها الموردون.')}
             </p>
             <button type="button" onClick={() => choose({ name: q.trim().slice(0, 120), sector: 'supply_store' as Sector })}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: '#F5831F' }}>
+              className="px-4 py-2 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>
               + {L(`Add «${q.trim()}» to my request`, `«${q.trim()}» شامل کریں`, `أضف «${q.trim()}» إلى طلبي`)}
             </button>
           </div>
@@ -201,7 +201,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
         <div className={inline ? 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5' : 'grid grid-cols-2 sm:grid-cols-4 gap-2.5'}>
           {BROWSE_SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
-              className="text-start rounded-2xl border border-gray-200 bg-white p-3 hover:border-[#F5831F]/60 hover:shadow-sm transition-all">
+              className="text-start rounded-2xl border border-gray-200 bg-white p-3 hover:border-[#D4A543]/60 hover:shadow-sm transition-all">
               <div className="grid grid-cols-3 gap-1 rounded-xl bg-gray-50 p-1.5 mb-2" aria-hidden>
                 {sectionCovers(b.key).map(it => (
                   <img key={it.name} src={productImageUrl(it.name)} alt="" loading="lazy" className="w-full aspect-square object-contain rounded-lg bg-white"
@@ -223,7 +223,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                   className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-bold text-navy">
                   <span className="flex items-center gap-2">{g.items[0] ? <img src={productImageUrl(g.items[0].name)} alt="" loading="lazy" className="w-10 h-10 rounded-lg object-contain bg-white border border-gray-100 shrink-0"
                     onError={(e: any) => imgFallback(e, detectSubCategory(g.items[0].name, g.items[0].sector))} />
-                    : <span className="w-10 h-10 rounded-lg grid place-items-center text-[#1B2D5B] shrink-0" style={{ background: '#1B2D5B0d' }}><CatIcon k={g.group} className="w-5 h-5" /></span>}{pickT(g)} <span className="text-gray-400 font-normal">({g.items.length})</span></span>
+                    : <span className="w-10 h-10 rounded-lg grid place-items-center text-[#0B2438] shrink-0" style={{ background: '#0B24380d' }}><CatIcon k={g.group} className="w-5 h-5" /></span>}{pickT(g)} <span className="text-gray-400 font-normal">({g.items.length})</span></span>
                   <span className="text-gray-400">{open ? '▴' : '▾'}</span>
                 </button>
                 {open && (
@@ -256,7 +256,7 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
         onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}>
         <div className="px-4 pt-4 pb-2 flex items-center justify-between border-b border-gray-100">
           <h2 className="font-extrabold text-navy">🔍 {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
-          <button type="button" onClick={onClose} className="text-sm font-bold px-4 py-1.5 rounded-xl text-white" style={{ background: '#1B2D5B' }}>
+          <button type="button" onClick={onClose} className="text-sm font-bold px-4 py-1.5 rounded-xl text-white" style={{ background: '#0B2438' }}>
             {picked.length ? L(`Done (${picked.length})`, `مکمل (${picked.length})`, `تم (${picked.length})`) : L('Close', 'بند کریں', 'إغلاق')}
           </button>
         </div>

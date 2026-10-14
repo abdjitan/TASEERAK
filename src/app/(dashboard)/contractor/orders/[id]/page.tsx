@@ -138,12 +138,12 @@ export default function OrderDetailPage() {
           <div className="flex items-center gap-2">
             {offer?.rfq_id && (
               <Link href={`/contractor/rfq/quick?from=${offer.rfq_id}`}
-                className="border border-[#1B2D5B] text-[#1B2D5B] px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#1B2D5B]/5 transition-colors">
+                className="border border-[#0B2438] text-[#0B2438] px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0B2438]/5 transition-colors">
                 🔁 {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}
               </Link>
             )}
             <button onClick={handlePrint}
-              className="bg-[#1B2D5B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0f1d3d] transition-colors">
+              className="bg-[#0B2438] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#071827] transition-colors">
               🖨️ {L('Print purchase order', 'پرچیز آرڈر پرنٹ کریں', 'طباعة أمر الشراء')}
             </button>
           </div>
@@ -198,7 +198,7 @@ export default function OrderDetailPage() {
               {supplier?.latitude && supplier?.longitude && (
                 <a href={`https://www.google.com/maps?q=${supplier.latitude},${supplier.longitude}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="inline-block text-xs text-[#d96f15] hover:underline mt-1 print:hidden">
+                  className="inline-block text-xs text-[#9D7425] hover:underline mt-1 print:hidden">
                   🗺 {L('View location on map', 'نقشے پر مقام دیکھیں', 'عرض الموقع على الخريطة')} ←
                 </a>
               )}
@@ -222,7 +222,7 @@ export default function OrderDetailPage() {
               )}
               {offer?.attachment_url && (
                 <a href={fileHref(offer.attachment_url)} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#d96f15] hover:underline print:hidden">
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#9D7425] hover:underline print:hidden">
                   📎 {offer.attachment_name || L('Product catalog', 'پروڈکٹ کیٹلاگ', 'كتالوج المنتج')} ←
                 </a>
               )}
@@ -250,7 +250,7 @@ export default function OrderDetailPage() {
                       <div className="font-semibold text-gray-900">{getProductLabel(it.product_name, locale)}</div>
                       {(it.specification || it.notes) && <div className="text-xs text-gray-400 mt-0.5">{it.specification || it.notes}</div>}
                       {it.attachment_url && (
-                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#d96f15] hover:underline print:hidden">📎 {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
+                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9D7425] hover:underline print:hidden">📎 {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
                       )}
                     </td>
                     <td className="py-4 text-sm text-gray-600">{it.sector ? ((locale !== 'ar' && SECTOR_I18N[locale]?.[it.sector]) || (SECTOR_LABELS as any)[it.sector] || it.sector) : '—'}</td>
@@ -277,7 +277,7 @@ export default function OrderDetailPage() {
                 </div>
                 <div className="border-t border-gray-200 pt-2 flex justify-between">
                   <span className="font-bold text-gray-900">{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span>
-                  <span className="font-bold text-[#d96f15] text-lg">{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span>
+                  <span className="font-bold text-[#9D7425] text-lg">{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span>
                 </div>
               </div>
             </div>
@@ -329,7 +329,7 @@ export default function OrderDetailPage() {
             (من عنده، أو من المحل الذي اشترى منه) ويرفعها في صفحة الصفقة، وتظهر هنا للمشتري. */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-3">
           <div className="p-6 border-b border-gray-100">
-            <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>{L('Deal statement', 'ڈیل اسٹیٹمنٹ', 'بيان الصفقة')}</h2>
+            <h2 className="text-lg font-bold" style={{ color: '#0B2438' }}>{L('Deal statement', 'ڈیل اسٹیٹمنٹ', 'بيان الصفقة')}</h2>
             <p className="text-xs text-gray-500 mt-1 leading-relaxed">{L('An unofficial document showing the deal amount — not a tax invoice. The official invoice is issued by the supplier and attached below.', 'یہ غیر سرکاری دستاویز ہے جو ڈیل کی رقم دکھاتی ہے، ٹیکس انوائس نہیں ہے۔ باضابطہ انوائس سپلائر جاری کرتا ہے اور نیچے منسلک ہوتی ہے۔', 'مستند غير رسمي يوضّح مبلغ الصفقة، وليس فاتورة ضريبية. الفاتورة الرسمية يصدرها المورد وتُرفق أدناه.')}</p>
             <div className="text-xs text-gray-500 mt-2">{L('Statement no.:', 'اسٹیٹمنٹ نمبر:', 'رقم البيان:')} <span className="font-mono" dir="ltr">{(offer.invoice_number || '').replace(/^INV-/, 'ST-') || `ST-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>
             <div className="text-xs text-gray-500">{L('Date:', 'تاریخ:', 'التاريخ:')} {new Date(offer.accepted_at || offer.created_at).toLocaleString(dloc, { timeZone: 'Asia/Riyadh' })}</div>

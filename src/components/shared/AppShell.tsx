@@ -70,22 +70,16 @@ export default function AppShell({
   const initial = (company || 'ت').trim().charAt(0)
 
   return (
-    <div className="min-h-screen" dir={dir} style={{ background: 'var(--bg)' }}>
+    <div className="ts-dashboard min-h-screen" dir={dir}>
       {/* ===== Sidebar ===== */}
       <aside
-        className={`fixed inset-y-0 ${sideEdge} z-50 w-[272px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} ${collapsed ? deskHidden : 'lg:translate-x-0'}`}
-        style={{ background: 'linear-gradient(180deg,#1B2D5B 0%,#10203f 60%,#0c1730 100%)' }}
+        className={`ts-dashboard-sidebar fixed inset-y-0 ${sideEdge} z-50 w-[272px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} ${collapsed ? deskHidden : 'lg:translate-x-0'}`}
+        style={{ background: 'linear-gradient(180deg,#071827 0%,#0B2438 54%,#050B12 100%)' }}
       >
         {/* Brand */}
-        <div className="px-5 pt-6 pb-5 flex items-center gap-3">
-          <span className="w-11 h-11 rounded-2xl bg-white grid place-items-center shadow-lg shadow-black/20">
-            <img src="/logo.png" alt="تسعيرك" className="w-7 h-7 object-contain" />
-          </span>
-          <span className="text-2xl font-black tracking-tight">
-            {locale === 'en' ? <>TASEER<span style={{ color: '#F5831F' }}>AK</span></>
-              : locale === 'ur' ? <>تسعیر<span style={{ color: '#F5831F' }}>ک</span></>
-              : <>تسعير<span style={{ color: '#F5831F' }}>ك</span></>}
-          </span>
+        <div className="ts-dashboard-brand px-5 pt-5 pb-4 flex items-center justify-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/taseerak-metallic-logo.webp" alt={locale === 'en' ? 'Taseerak' : 'تسعيرك'} className="dashboard-brand-lockup" />
         </div>
 
         {/* Nav */}
@@ -99,12 +93,13 @@ export default function AppShell({
                   <div className="px-3 pt-5 pb-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-blue-200/45">{n.section}</div>
                 )}
                 <Link href={n.href} prefetch onClick={() => setOpen(false)}
-                  className={`relative flex items-center gap-3 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors ${n.active ? 'bg-white/[0.13] text-white' : 'text-blue-100/70 hover:bg-white/[0.07] hover:text-white'}`}>
-                  {n.active && <span className={`absolute ${accentEdge} top-2.5 bottom-2.5 w-1 rounded-full`} style={{ background: '#F5831F' }} />}
-                  <span className="w-6 grid place-items-center text-[18px]">{n.icon}</span>
+                  aria-current={n.active ? 'page' : undefined}
+                  className={`ts-sidebar-link relative flex items-center gap-3 px-3.5 py-3 rounded-xl text-[15px] font-semibold transition-colors ${n.active ? 'is-active bg-white/[0.12] text-white shadow-sm' : 'text-blue-100/75 hover:bg-white/[0.07] hover:text-white'}`}>
+                  {n.active && <span className={`ts-sidebar-marker absolute ${accentEdge} top-2.5 bottom-2.5 w-1 rounded-full`} style={{ background: '#D4A543' }} />}
+                  <span className="ts-sidebar-icon w-6 grid place-items-center text-[18px]">{n.icon}</span>
                   <span className="truncate">{n.label}</span>
                   {badge != null && badge !== 0 && (
-                    <span className="ml-auto min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full text-[11px] font-extrabold text-white" style={{ background: '#F5831F' }}>
+                    <span className="ml-auto min-w-[22px] h-[22px] px-1.5 grid place-items-center rounded-full text-[11px] font-extrabold" style={{ background: '#D4A543', color: '#050B12' }}>
                       {badge}
                     </span>
                   )}
@@ -117,7 +112,7 @@ export default function AppShell({
         {/* User card */}
         {company && (
           <div className="px-3 pb-4">
-            <div className="flex items-center gap-3 rounded-2xl p-3 bg-white/[0.06] border border-white/10">
+            <div className="ts-company-card flex items-center gap-3 rounded-2xl p-3 bg-white/[0.06] border border-white/10">
               <span className="w-10 h-10 rounded-xl grid place-items-center font-black text-white shrink-0 shadow" style={{ background: '#0F6E56' }}>{initial}</span>
               <div className="min-w-0">
                 <div className="font-bold text-sm truncate">{company}</div>
@@ -138,7 +133,7 @@ export default function AppShell({
 
       {/* ===== Main column ===== */}
       <div className={`${mainPush} flex flex-col min-h-screen transition-[margin] duration-300`}>
-        <header className="sticky top-0 z-30 backdrop-blur-md border-b" style={{ background: 'rgba(255,255,255,.85)', borderColor: 'var(--line)' }}>
+        <header className="ts-dashboard-topbar sticky top-0 z-30 backdrop-blur-md border-b" style={{ background: 'rgba(255,255,255,.85)', borderColor: 'var(--line)' }}>
           <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
             <div className="flex items-center gap-3 min-w-0">
               <button className="w-9 h-9 grid place-items-center rounded-lg hover:bg-gray-100 shrink-0"
@@ -147,8 +142,8 @@ export default function AppShell({
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
               </button>
               <div className="min-w-0">
-                {title && <h1 className="text-lg font-extrabold leading-tight truncate" style={{ color: '#1B2D5B' }}>{title}</h1>}
-                {subtitle && <p className="text-xs truncate" style={{ color: '#8089a0' }}>{subtitle}</p>}
+                {title && <h1 className="text-lg font-extrabold leading-tight truncate" style={{ color: '#0B2438' }}>{title}</h1>}
+                {subtitle && <p className="text-xs truncate" style={{ color: '#48596E' }}>{subtitle}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -163,11 +158,11 @@ export default function AppShell({
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-7 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-7">{children}</main>
+        <main className="ts-dashboard-main flex-1 p-4 sm:p-6 lg:p-7 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-7">{children}</main>
       </div>
 
       {/* ===== Bottom nav (mobile only) — 4 وجهات مُنسّقة (رتبة mobile) + «المزيد» يفتح القائمة الكاملة ===== */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 flex backdrop-blur-md border-t"
+      <nav className="ts-mobile-nav lg:hidden fixed bottom-0 inset-x-0 z-40 flex backdrop-blur-md border-t"
         style={{ background: 'rgba(255,255,255,.96)', borderColor: 'var(--line)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {(() => {
           // وجهات الشريط: المُرتّبة بـmobile أولاً (منسّقة لكل دور)، وإلا أول ٤ عناصر كاحتياط
@@ -177,13 +172,13 @@ export default function AppShell({
           const badge = (n.href === '/messages' && unreadMsgs > 0) ? unreadMsgs : n.badge
           return (
             <Link key={n.href} href={n.href} prefetch onClick={() => setOpen(false)}
-              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 relative"
-              style={{ color: n.active ? '#1B2D5B' : '#9aa3b2' }}>
-              {n.active && <span className="absolute top-0 inset-x-5 h-0.5 rounded-full" style={{ background: '#F5831F' }} />}
+              className={`ts-mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2 relative ${n.active ? 'is-active' : ''}`}
+              style={{ color: n.active ? '#0B2438' : '#64748b' }}>
+              {n.active && <span className="absolute top-0 inset-x-5 h-0.5 rounded-full" style={{ background: '#D4A543' }} />}
               <span className="text-[19px] leading-none">{n.icon}</span>
               <span className="text-[10px] font-bold truncate max-w-[68px]">{n.label}</span>
               {badge != null && badge !== 0 && (
-                <span className="absolute top-1.5 left-[calc(50%-18px)] min-w-[15px] h-[15px] px-1 grid place-items-center rounded-full text-[8px] font-extrabold text-white" style={{ background: '#F5831F' }}>{badge}</span>
+                <span className="absolute top-1.5 left-[calc(50%-18px)] min-w-[15px] h-[15px] px-1 grid place-items-center rounded-full text-[8px] font-extrabold" style={{ background: '#D4A543', color: '#050B12' }}>{badge}</span>
               )}
             </Link>
           )
@@ -191,7 +186,7 @@ export default function AppShell({
         {/* «المزيد» يفتح القائمة الجانبية كاملة — يضمن الوصول لكل الوجهات (الإعدادات إلخ) على الجوّال */}
         <button onClick={() => setOpen(true)}
           className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2"
-          style={{ color: '#9aa3b2' }} aria-label={locale === 'en' ? 'More' : 'المزيد'}>
+          style={{ color: '#64748b' }} aria-label={locale === 'en' ? 'More' : 'المزيد'}>
           <span className="text-[19px] leading-none">☰</span>
           <span className="text-[10px] font-bold">{locale === 'en' ? 'More' : locale === 'ur' ? 'مزید' : 'المزيد'}</span>
         </button>

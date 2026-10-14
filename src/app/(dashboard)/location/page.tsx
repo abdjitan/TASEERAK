@@ -122,7 +122,7 @@ export default function LocationPage() {
     <AppShell title={T.title} nav={getNav(profile?.role, locale, '/location')} dir={dir}>
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>{T.title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{T.title}</h1>
           <p className="text-sm text-gray-500 mt-1">{T.sub}</p>
         </div>
 
@@ -132,7 +132,7 @@ export default function LocationPage() {
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xl">🏛</span>
-            <h2 className="font-bold" style={{ color: '#1B2D5B' }}>{T.nationalAddr}</h2>
+            <h2 className="font-bold" style={{ color: '#0B2438' }}>{T.nationalAddr}</h2>
           </div>
           <p className="text-xs text-gray-400 mb-4">{T.nationalSub}</p>
 
@@ -186,7 +186,7 @@ export default function LocationPage() {
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-xl">🗺</span>
-            <h2 className="font-bold" style={{ color: '#1B2D5B' }}>{T.locationSection}</h2>
+            <h2 className="font-bold" style={{ color: '#0B2438' }}>{T.locationSection}</h2>
           </div>
           <LocationPicker lat={lat} lng={lng} locale={locale}
             onChange={(la, ln) => { setLat(la); setLng(ln) }} />
@@ -197,7 +197,7 @@ export default function LocationPage() {
           {msg && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl p-3 mb-3 text-center">{msg}</div>}
           <button onClick={handleSave} disabled={saving}
             className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
-            style={{ background: '#F5831F' }}>
+            style={{ background: '#D4A543' }}>
             {saving ? T.saving : T.save}
           </button>
         </div>

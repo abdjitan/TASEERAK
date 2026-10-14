@@ -17,7 +17,7 @@ import { tierLabel, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
-const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
+const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 export default function ProjectResultsPage() {
   const { id } = useParams()
@@ -90,7 +90,7 @@ export default function ProjectResultsPage() {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">📋</span>
-                <h1 className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{project?.title}</h1>
+                <h1 className="text-xl font-bold" style={{ color: '#0B2438' }}>{project?.title}</h1>
               </div>
               <div className="flex items-center gap-3 text-xs text-gray-500">
                 <span>📍 {project?.city || project?.region}</span>
@@ -98,13 +98,13 @@ export default function ProjectResultsPage() {
               </div>
               {project?.boq_url && (
                 <a href={fileHref(project.boq_url)} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 mt-2 text-xs text-[#d96f15] hover:underline">
+                  className="inline-flex items-center gap-1 mt-2 text-xs text-[#9D7425] hover:underline">
                   📊 {locale === 'en' ? 'View Original BOQ' : 'عرض BOQ الأصلي'}
                 </a>
               )}
             </div>
             <div className="text-left">
-              <div className="text-2xl font-bold" style={{ color: '#F5831F' }}>
+              <div className="text-2xl font-bold" style={{ color: '#D4A543' }}>
                 {totalAcceptedCost > 0 ? totalAcceptedCost.toLocaleString('en-US') + ' ر.س' : '—'}
               </div>
               <div className="text-xs text-gray-400">{locale === 'en' ? 'Total Accepted' : 'إجمالي المقبول'}</div>
@@ -115,14 +115,14 @@ export default function ProjectResultsPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 stagger">
           {[
-            { label: locale === 'en' ? 'Total Items' : 'إجمالي البنود', value: totalItems, icon: '📦', bg: '#1B2D5B' },
-            { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: totalOffers, icon: '💬', bg: '#F5831F' },
+            { label: locale === 'en' ? 'Total Items' : 'إجمالي البنود', value: totalItems, icon: '📦', bg: '#0B2438' },
+            { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: totalOffers, icon: '💬', bg: '#D4A543' },
             { label: locale === 'en' ? 'Accepted' : 'مقبولة', value: acceptedItems, icon: '✅', bg: '#0F6E56' },
             { label: locale === 'en' ? 'Pending' : 'قيد المراجعة', value: totalItems - acceptedItems, icon: '⏳', bg: '#7c3aed' },
           ].map(({ label, value, icon, bg }) => (
             <div key={label} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white mx-auto mb-2" style={{ background: bg }}>{icon}</div>
-              <div className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
+              <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{value}</div>
               <div className="text-[10px] text-gray-500 mt-0.5">{label}</div>
             </div>
           ))}
@@ -147,7 +147,7 @@ export default function ProjectResultsPage() {
                   <button key={f.key} onClick={() => setFilter(f.key)}
                     className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                       filter === f.key ? 'text-white' : 'bg-gray-50 text-gray-600 border border-gray-200'
-                    }`} style={filter === f.key ? { background: '#1B2D5B' } : {}}>
+                    }`} style={filter === f.key ? { background: '#0B2438' } : {}}>
                     {f.icon} {f.label}
                     <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${filter === f.key ? 'bg-white/20' : 'bg-gray-200'}`}>{count}</span>
                   </button>
@@ -211,7 +211,7 @@ export default function ProjectResultsPage() {
                         {(SECTOR_ICONS as any)[item.sector]}
                       </div>
                       <div>
-                        <div className="font-bold" style={{ color: '#1B2D5B' }}>{item.product_name}</div>
+                        <div className="font-bold" style={{ color: '#0B2438' }}>{item.product_name}</div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="badge text-[10px] text-white" style={{ background: (SECTOR_COLORS as any)[item.sector] }}>
                             {(SECTOR_LABELS as any)[item.sector]}
@@ -229,7 +229,7 @@ export default function ProjectResultsPage() {
                         </div>
                       ) : (
                         <div className="text-center">
-                          <div className="text-xl font-bold" style={{ color: '#F5831F' }}>{offers.length}</div>
+                          <div className="text-xl font-bold" style={{ color: '#D4A543' }}>{offers.length}</div>
                           <div className="text-[10px] text-gray-400">{locale === 'en' ? 'offers' : 'عرض'}</div>
                         </div>
                       )}
@@ -244,7 +244,7 @@ export default function ProjectResultsPage() {
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="text-sm">
                           <span className="text-gray-500">{locale === 'en' ? 'Supplier: ' : 'المورد: '}</span>
-                          <strong style={{ color: '#1B2D5B' }}>{acceptedOffer.supplier?.company_name_ar}</strong>
+                          <strong style={{ color: '#0B2438' }}>{acceptedOffer.supplier?.company_name_ar}</strong>
                           {contactsById[acceptedOffer.supplier_id] && <span className="text-xs text-gray-400 mr-2">📞 {contactsById[acceptedOffer.supplier_id]}</span>}
                         </div>
                         <Link href={`/contractor/orders/${acceptedOffer.id}`}
@@ -256,7 +256,7 @@ export default function ProjectResultsPage() {
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {acceptedOffer.attachment_url && (
                           <a href={fileHref(acceptedOffer.attachment_url)} target="_blank" rel="noopener noreferrer"
-                            className="text-[10px] bg-white text-[#1B2D5B] px-2 py-1 rounded-lg font-semibold border border-gray-200">
+                            className="text-[10px] bg-white text-[#0B2438] px-2 py-1 rounded-lg font-semibold border border-gray-200">
                             📎 {acceptedOffer.attachment_name || 'كتالوج'}
                           </a>
                         )}
@@ -290,7 +290,7 @@ export default function ProjectResultsPage() {
                       {displayOffers.map((offer: any, rank: any) => (
                         <div key={offer.id} className={`rounded-xl p-3 border transition-all ${
                           offer.status === 'accepted' ? 'border-emerald-300 bg-emerald-50' :
-                          rank === 0 && !acceptedOffer ? 'border-[#F5831F]/40 bg-[#F5831F]/5' : 'border-gray-100'
+                          rank === 0 && !acceptedOffer ? 'border-[#D4A543]/40 bg-[#D4A543]/5' : 'border-gray-100'
                         }`}>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
@@ -298,7 +298,7 @@ export default function ProjectResultsPage() {
                               {rank === 1 && !acceptedOffer && <span className="text-sm">🥈</span>}
                               {rank === 2 && !acceptedOffer && <span className="text-sm">🥉</span>}
                               <div className="min-w-0">
-                                <div className="font-semibold text-sm truncate" style={{ color: '#1B2D5B' }}>
+                                <div className="font-semibold text-sm truncate" style={{ color: '#0B2438' }}>
                                   {offer.supplier?.company_name_ar}
                                 </div>
                                 <div className="flex items-center gap-2 text-[10px] text-gray-400 flex-wrap">
@@ -318,7 +318,7 @@ export default function ProjectResultsPage() {
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <div className="text-right">
-                                <div className="font-bold text-sm" style={{ color: rank === 0 && !acceptedOffer ? '#F5831F' : '#1B2D5B' }}>
+                                <div className="font-bold text-sm" style={{ color: rank === 0 && !acceptedOffer ? '#D4A543' : '#0B2438' }}>
                                   {offer.total_price?.toLocaleString('en-US')} ر.س
                                 </div>
                                 {offer.unit_price && (
@@ -386,8 +386,8 @@ export default function ProjectResultsPage() {
                 )
               })}
               <div className="border-t border-emerald-200 pt-2 flex justify-between font-bold">
-                <span style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Total' : 'الإجمالي'}</span>
-                <span style={{ color: '#F5831F' }}>{totalAcceptedCost.toLocaleString('en-US')} ر.س</span>
+                <span style={{ color: '#0B2438' }}>{locale === 'en' ? 'Total' : 'الإجمالي'}</span>
+                <span style={{ color: '#D4A543' }}>{totalAcceptedCost.toLocaleString('en-US')} ر.س</span>
               </div>
             </div>
           </div>

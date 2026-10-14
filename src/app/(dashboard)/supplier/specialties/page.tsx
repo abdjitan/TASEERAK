@@ -15,7 +15,7 @@ import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
-const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
+const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 const txt = {
   ar: {
@@ -215,7 +215,7 @@ export default function SpecialtiesPage() {
     <AppShell title={T.title} nav={getNav('supplier', locale, '/supplier/specialties')} dir={dir}>
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>{T.title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{T.title}</h1>
           <p className="text-sm text-gray-500 mt-1">{T.sub}</p>
         </div>
 
@@ -223,7 +223,7 @@ export default function SpecialtiesPage() {
 
         {/* تحليل النشاط التجاري — يُحدّد التخصصات تلقائياً من السجل التجاري */}
         {crActivity && (
-          <div className="rounded-2xl p-4 mb-5 border shadow-sm" style={{ background: 'linear-gradient(135deg,#0F6E5608,#1B2D5B08)', borderColor: '#0F6E5633' }}>
+          <div className="rounded-2xl p-4 mb-5 border shadow-sm" style={{ background: 'linear-gradient(135deg,#0F6E5608,#0B243808)', borderColor: '#0F6E5633' }}>
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
                 <div className="font-bold text-sm flex items-center gap-1.5" style={{ color: '#0F6E56' }}>
@@ -246,10 +246,10 @@ export default function SpecialtiesPage() {
 
         {/* اختيار القطاعات + التخصصات — منتقي موحّد مع «أكمل ملفك» (نفس التصنيفات والأيقونات) */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
-          <p className="text-sm font-bold mb-0.5" style={{ color: '#1B2D5B' }}>{locale === 'en' ? 'Quick pick: what do you sell?' : locale === 'ur' ? 'فوری انتخاب: آپ کیا بیچتے ہیں؟' : 'اختيار سريع: ماذا تبيع؟'}</p>
+          <p className="text-sm font-bold mb-0.5" style={{ color: '#0B2438' }}>{locale === 'en' ? 'Quick pick: what do you sell?' : locale === 'ur' ? 'فوری انتخاب: آپ کیا بیچتے ہیں؟' : 'اختيار سريع: ماذا تبيع؟'}</p>
           <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects a whole kind of business.' : locale === 'ur' ? 'ایک کلک میں پورا کاروبار۔' : 'بضغطة واحدة تختار جميع مواد هذا النوع من المحلات.'}</p>
           <div className="mb-6"><SupplierPackPicker sectors={mySectors} specialties={mySpecialties} locale={locale} onChange={(n: any) => { setMySectors(n.sectors); setMySpecialties(n.specialties) }} /></div>
-          <h2 className="font-bold mb-4 text-sm" style={{ color: '#1B2D5B' }}>{T.selectSectors}</h2>
+          <h2 className="font-bold mb-4 text-sm" style={{ color: '#0B2438' }}>{T.selectSectors}</h2>
           <SpecialtyPicker
             sectors={mySectors} specialties={mySpecialties}
             openSector={openSector} onOpenSector={setOpenSector}
@@ -266,7 +266,7 @@ export default function SpecialtiesPage() {
 
         {/* اقتراح مادة جديدة غير موجودة بالقائمة */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
-          <h2 className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{T.suggestTitle}</h2>
+          <h2 className="font-bold text-sm" style={{ color: '#0B2438' }}>{T.suggestTitle}</h2>
           <p className="text-xs text-gray-500 mt-0.5 mb-4">{T.suggestSub}</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -330,7 +330,7 @@ export default function SpecialtiesPage() {
           {msg && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl p-3 mb-3 text-center">{msg}</div>}
           <button onClick={handleSave} disabled={saving}
             className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
-            style={{ background: '#F5831F' }}>
+            style={{ background: '#D4A543' }}>
             {saving ? T.saving : `${T.save} (${mySpecialties.length})`}
           </button>
         </div>

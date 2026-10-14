@@ -74,7 +74,7 @@ body.app-body { background: var(--bg); overflow-x: hidden; }
 .ic-navy { background: linear-gradient(135deg, var(--navy), var(--navy-soft)); }
 .ic-orange { background: linear-gradient(135deg, var(--orange), var(--orange-dark)); }
 .ic-green { background: linear-gradient(135deg, var(--mech), #0a5641); }
-.ic-purple { background: linear-gradient(135deg, var(--arch), #5b21b6); }
+.ic-purple { background: linear-gradient(135deg, var(--arch), #102E45); }
 
 /* ---------- Panels ---------- */
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }

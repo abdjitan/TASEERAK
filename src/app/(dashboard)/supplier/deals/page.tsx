@@ -81,7 +81,7 @@ export default function SupplierDealsPage() {
                 <Link key={d.id} href={`/supplier/dashboard/rfq/${d.rfq?.id}`}
                   className="flex items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:border-[#0F6E56]/40 transition-colors">
                   <div className="min-w-0">
-                    <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{d.rfq ? rfqDisplayName({ ...d.rfq, title: null }, locale) : (locale === 'en' ? 'Deal' : 'صفقة')}</div>
+                    <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{d.rfq ? rfqDisplayName({ ...d.rfq, title: null }, locale) : (locale === 'en' ? 'Deal' : 'صفقة')}</div>
                     <div className="text-xs text-gray-400 mt-0.5 truncate">👤 {d.rfq?.contractor?.company_name_ar || '—'} · {Number(d.total_price || 0).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}</div>
                     {d.invoice_number && <div className="text-[11px] text-gray-400 font-mono mt-0.5" dir="ltr">{d.invoice_number}</div>}
                   </div>

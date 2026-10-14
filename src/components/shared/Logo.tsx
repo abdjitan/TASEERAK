@@ -38,13 +38,13 @@ export default function Logo({
     }}>
       {isArabic ? (
         <>
-          <span style={{ color: theme === 'dark' ? '#ffffff' : '#1B2D5B' }}>تسعير</span>
-          <span style={{ color: '#F5831F' }}>ك</span>
+          <span style={{ color: theme === 'dark' ? '#ffffff' : '#0B2438' }}>تسعير</span>
+          <span style={{ color: '#D4A543' }}>ك</span>
         </>
       ) : (
         <>
-          <span style={{ color: theme === 'dark' ? '#ffffff' : '#1B2D5B' }}>Taseer</span>
-          <span style={{ color: '#F5831F' }}>ak</span>
+          <span style={{ color: theme === 'dark' ? '#ffffff' : '#0B2438' }}>Taseer</span>
+          <span style={{ color: '#D4A543' }}>ak</span>
         </>
       )}
     </span>

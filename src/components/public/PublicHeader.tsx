@@ -13,19 +13,19 @@ export default function PublicHeader({ active }: { active?: string }) {
         <Link href="/" className="flex items-center gap-2 shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="تسعيرك" className="h-8 w-auto" />
-          <span className="font-extrabold text-sm hidden sm:inline" style={{ color: '#1B2D5B' }}>تسعيرك</span>
+          <span className="font-extrabold text-sm hidden sm:inline" style={{ color: '#0B2438' }}>تسعيرك</span>
         </Link>
 
         <nav className="flex items-center gap-1 text-xs font-semibold overflow-x-auto">
           {LINKS.map(l => (
             <Link key={l.key} href={l.href}
               className={`px-2.5 py-1.5 rounded-lg whitespace-nowrap transition-colors ${active === l.key ? 'text-white' : 'text-gray-500 hover:bg-gray-100'}`}
-              style={active === l.key ? { background: '#1B2D5B' } : {}}>
+              style={active === l.key ? { background: '#0B2438' } : {}}>
               {l.label}
             </Link>
           ))}
           <Link href="/login" className="px-2.5 py-1.5 rounded-lg text-gray-500 hover:bg-gray-100 whitespace-nowrap">دخول</Link>
-          <Link href="/register" className="px-3 py-1.5 rounded-lg text-white font-bold whitespace-nowrap" style={{ background: '#F5831F' }}>سجّل</Link>
+          <Link href="/register" className="px-3 py-1.5 rounded-lg text-[#071827] font-bold whitespace-nowrap" style={{ background: '#D4A543' }}>سجّل</Link>
         </nav>
       </div>
     </header>

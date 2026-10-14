@@ -138,9 +138,9 @@ export default function SupplierPricesPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-4">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#F5831F' }}>📈</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#D4A543' }}>📈</div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>{T.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{T.title}</h1>
               <p className="text-gray-500 text-xs sm:text-sm">{T.sub}</p>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function SupplierPricesPage() {
         {!showForm && (
           <button onClick={() => setShowForm(true)}
             className="w-full mb-5 py-3 rounded-xl font-semibold text-white text-sm transition-all hover:shadow-lg"
-            style={{ background: '#1B2D5B' }}>
+            style={{ background: '#0B2438' }}>
             {T.addPrice}
           </button>
         )}
@@ -192,7 +192,7 @@ export default function SupplierPricesPage() {
                         {subResults.length ? subResults.map(x => (
                           <button key={x.key} type="button" onClick={() => setProduct(x.ar)}
                             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${product === x.ar ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                            style={product === x.ar ? { background: '#1B2D5B' } : {}}>{x.icon} {subLabel(x)}</button>
+                            style={product === x.ar ? { background: '#0B2438' } : {}}>{x.icon} {subLabel(x)}</button>
                         )) : <p className="text-xs text-gray-400">{locale === 'en' ? 'No match — type it manually.' : 'لا نتائج — اكتبها يدوياً.'}</p>}
                       </div>
                     ) : (
@@ -200,7 +200,7 @@ export default function SupplierPricesPage() {
                         <div className="flex flex-wrap gap-2 mb-2">
                           {subGroups.map(g => (
                             <button key={g.group} type="button" onClick={() => setPgroup(g.group)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${pgroup === g.group ? 'border-[#F5831F] bg-[#F5831F]/5 text-[#d96f15]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${pgroup === g.group ? 'border-[#D4A543] bg-[#D4A543]/5 text-[#9D7425]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                               <span className="me-1">{g.icon}</span>{subLabel(g)} <span className="opacity-60">({g.subs.length})</span>
                             </button>
                           ))}
@@ -210,7 +210,7 @@ export default function SupplierPricesPage() {
                             {activeSubGroup.subs.map(x => (
                               <button key={x.key} type="button" onClick={() => setProduct(x.ar)}
                                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${product === x.ar ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                                style={product === x.ar ? { background: '#1B2D5B' } : {}}>{x.icon} {subLabel(x)}</button>
+                                style={product === x.ar ? { background: '#0B2438' } : {}}>{x.icon} {subLabel(x)}</button>
                             ))}
                           </div>
                         )}
@@ -218,8 +218,8 @@ export default function SupplierPricesPage() {
                     )}
 
                     <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                      <span className="text-xs text-gray-500">{product ? <>✓ <span className="font-bold text-[#1B2D5B]">{product}</span></> : (locale === 'en' ? 'Pick an item above' : 'اختر سلعة من الأعلى')}</span>
-                      <button type="button" onClick={() => { setProductOther(true) }} className="text-xs font-semibold text-[#d96f15]">{locale === 'en' ? '✎ Type manually' : '✎ اكتب يدوياً'}</button>
+                      <span className="text-xs text-gray-500">{product ? <>✓ <span className="font-bold text-[#0B2438]">{product}</span></> : (locale === 'en' ? 'Pick an item above' : 'اختر سلعة من الأعلى')}</span>
+                      <button type="button" onClick={() => { setProductOther(true) }} className="text-xs font-semibold text-[#9D7425]">{locale === 'en' ? '✎ Type manually' : '✎ اكتب يدوياً'}</button>
                     </div>
                   </div>
                 )}
@@ -247,7 +247,7 @@ export default function SupplierPricesPage() {
             <div className="flex gap-2">
               <button type="submit" disabled={saving}
                 className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50"
-                style={{ background: '#F5831F' }}>
+                style={{ background: '#D4A543' }}>
                 {saving ? T.saving : T.save}
               </button>
               <button type="button" onClick={() => setShowForm(false)}
@@ -260,19 +260,19 @@ export default function SupplierPricesPage() {
         {prices.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
             <div className="text-5xl mb-3 animate-float">📈</div>
-            <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>{T.noPrices}</h3>
+            <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{T.noPrices}</h3>
             <p className="text-sm text-gray-500">{T.noPricesSub}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>{T.myPrices} ({prices.length})</h2>
+            <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{T.myPrices} ({prices.length})</h2>
             {prices.map(p => {
               const trend = p.previous_price ? (p.price > p.previous_price ? 'up' : p.price < p.previous_price ? 'down' : 'same') : null
               return (
                 <div key={p.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold" style={{ color: '#1B2D5B' }}>{p.product_name}</div>
+                      <div className="font-bold" style={{ color: '#0B2438' }}>{p.product_name}</div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-400">
                         <span className="badge badge-blue text-[10px]">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                         {p.region && <span>📍 {p.region}</span>}
@@ -283,7 +283,7 @@ export default function SupplierPricesPage() {
                       <div className="flex items-center gap-1">
                         {trend === 'up' && <span className="text-red-500 text-xs">▲</span>}
                         {trend === 'down' && <span className="text-emerald-500 text-xs">▼</span>}
-                        <span className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{p.price?.toLocaleString('en-US')}</span>
+                        <span className="text-xl font-bold" style={{ color: '#0B2438' }}>{p.price?.toLocaleString('en-US')}</span>
                       </div>
                       <div className="text-[10px] text-gray-400">ر.س / {p.unit}</div>
                     </div>

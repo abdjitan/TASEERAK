@@ -44,7 +44,7 @@ export default function AiAssistant() {
       {/* الزر العائم */}
       <button onClick={() => setOpen(o => !o)} aria-label={T.title}
         className="fixed z-[60] w-14 h-14 rounded-full grid place-items-center text-white shadow-xl hover:scale-105 transition-transform bottom-[84px] lg:bottom-5"
-        style={{ ...sideStyle, background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+        style={{ ...sideStyle, background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
         <span className="text-2xl">{open ? '✕' : '✨'}</span>
       </button>
 
@@ -53,7 +53,7 @@ export default function AiAssistant() {
         <div dir={dir} className="fixed z-[60] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bottom-[150px] lg:bottom-[86px]"
           style={{ ...sideStyle, width: 'min(380px, calc(100vw - 32px))', height: 'min(560px, calc(100vh - 210px))' }}>
           {/* رأس */}
-          <div className="px-4 py-3 text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+          <div className="px-4 py-3 text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
             <span className="text-lg">✨</span>
             <span className="font-bold text-sm flex-1">{T.title}</span>
             <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white text-lg leading-none">✕</button>
@@ -67,7 +67,7 @@ export default function AiAssistant() {
             {msgs.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm whitespace-pre-line shadow-sm ${m.role === 'user' ? 'text-white' : 'bg-white border border-gray-100 text-gray-700'}`}
-                  style={m.role === 'user' ? { background: '#1B2D5B' } : {}}>{m.content}</div>
+                  style={m.role === 'user' ? { background: '#0B2438' } : {}}>{m.content}</div>
               </div>
             ))}
             {loading && (
@@ -92,7 +92,7 @@ export default function AiAssistant() {
               className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-[#7C3AED] max-h-28" />
             <button onClick={send} disabled={loading || !input.trim()}
               className="shrink-0 w-10 h-10 rounded-xl grid place-items-center text-white disabled:opacity-50"
-              style={{ background: '#F5831F' }} aria-label={T.send}>➤</button>
+              style={{ background: '#D4A543' }} aria-label={T.send}>➤</button>
           </div>
         </div>
       )}

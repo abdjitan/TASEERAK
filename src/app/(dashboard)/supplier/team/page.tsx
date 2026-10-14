@@ -92,7 +92,7 @@ export default function SupplierTeamPage() {
           <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center">
             <div className="text-4xl mb-2">🏢</div>
             <p className="text-sm text-gray-600">{L('Teams are available for company and shop accounts.', 'ٹیم صرف کمپنی اکاؤنٹس کے لیے ہے۔', 'فريق العمل متاح لحسابات الشركات والمحلات.')}</p>
-            <Link href="/settings" className="inline-block mt-3 text-sm font-bold text-[#d96f15] hover:underline">{L('Change account type in settings', 'ترتیبات میں تبدیل کریں', 'غيّر نوع الحساب من الإعدادات')}</Link>
+            <Link href="/settings" className="inline-block mt-3 text-sm font-bold text-[#9D7425] hover:underline">{L('Change account type in settings', 'ترتیبات میں تبدیل کریں', 'غيّر نوع الحساب من الإعدادات')}</Link>
           </div>
         )}
 

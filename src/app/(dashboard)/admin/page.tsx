@@ -389,24 +389,24 @@ export default function AdminPanel() {
     <AppShell title="لوحة الإدارة" userId={user?.id} nav={adminNav} onSignOut={handleSignOut} dir="rtl">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>لوحة الإدارة</h1>
+          <h1 className="text-2xl font-bold" style={{ color: '#0B2438' }}>لوحة الإدارة</h1>
           <p className="text-gray-500 mt-1 text-sm">إدارة المستخدمين والتحقق من الرخص</p>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 stagger">
           {[
-            { label: 'إجمالي المستخدمين', value: stats.total, icon: '👥', bg: '#1B2D5B', go: () => { setTab('all'); setRoleFilter('') } },
-            { label: 'مشترون', value: stats.contractors, icon: '👷', bg: '#2a4a8a', go: () => { setTab('all'); setRoleFilter('contractor') } },
+            { label: 'إجمالي المستخدمين', value: stats.total, icon: '👥', bg: '#0B2438', go: () => { setTab('all'); setRoleFilter('') } },
+            { label: 'مشترون', value: stats.contractors, icon: '👷', bg: '#102E45', go: () => { setTab('all'); setRoleFilter('contractor') } },
             { label: 'موردون', value: stats.suppliers, icon: '🏪', bg: '#7c3aed', go: () => { setTab('all'); setRoleFilter('supplier') } },
-            { label: 'قيد المراجعة', value: stats.pending, icon: '⏳', bg: '#F5831F', go: () => { setTab('pending'); setRoleFilter('') } },
+            { label: 'قيد المراجعة', value: stats.pending, icon: '⏳', bg: '#D4A543', go: () => { setTab('pending'); setRoleFilter('') } },
             { label: 'موثقون', value: stats.verified, icon: '✅', bg: '#0F6E56', go: () => { setTab('verified'); setRoleFilter('') } },
           ].map(({ label, value, icon, bg, go }) => (
             <button key={label} type="button" onClick={go}
-              className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#F5831F]/40">
+              className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all text-right cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#D4A543]/40">
               <div className="flex items-start justify-between">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-base text-white" style={{ background: bg }}>{icon}</div>
-                <div className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
+                <div className="text-2xl font-bold" style={{ color: '#0B2438' }}>{value}</div>
               </div>
               <div className="text-xs text-gray-500 mt-2 font-medium flex items-center justify-between">
                 <span>{label}</span>
@@ -439,7 +439,7 @@ export default function AdminPanel() {
             ].map((t: any) => (
               <button key={t.key} onClick={() => { setTab(t.key); setRoleFilter('') }}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === t.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
-                style={tab === t.key ? { background: '#1B2D5B' } : {}}>
+                style={tab === t.key ? { background: '#0B2438' } : {}}>
                 {t.label}
               </button>
             ))}
@@ -458,7 +458,7 @@ export default function AdminPanel() {
         {roleFilter && tab !== 'rfqs' && tab !== 'materials' && (
           <div className="mb-4 flex items-center gap-2">
             <span className="text-xs text-gray-500">عرض:</span>
-            <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-[#1B2D5B] text-white">
+            <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-[#0B2438] text-white">
               {roleFilter === 'contractor' ? '🛒 المشترون فقط' : '🏪 الموردون فقط'} ({filtered.length})
               <button onClick={() => setRoleFilter('')} className="hover:text-orange-300">✕</button>
             </span>
@@ -478,7 +478,7 @@ export default function AdminPanel() {
                 return (
                   <div key={o.id} className="flex items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                     <div className="min-w-0">
-                      <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{rfq?.title || rfq?.product_name || 'صفقة'}</div>
+                      <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{rfq?.title || rfq?.product_name || 'صفقة'}</div>
                       <div className="text-xs text-gray-400 mt-0.5 truncate">🏭 {sup?.company_name_ar || '—'} · {Number(o.total_price || 0).toLocaleString('en-US')} ر.س{o.invoice_number ? ` · ${o.invoice_number}` : ''}</div>
                     </div>
                     <div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}>
@@ -494,7 +494,7 @@ export default function AdminPanel() {
           disputes.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
               <div className="text-5xl mb-4">🕊️</div>
-              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد نزاعات مفتوحة</h3>
+              <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد نزاعات مفتوحة</h3>
               <p className="text-sm text-gray-400 mt-1">تظهر هنا النزاعات بين المشترين والموردين للوساطة</p>
             </div>
           ) : (
@@ -507,7 +507,7 @@ export default function AdminPanel() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="badge text-[10px] bg-red-100 text-red-700">⚠ نزاع مفتوح</span>
-                          <span className="font-bold" style={{ color: '#1B2D5B' }}>{r?.product_name || 'طلب'}</span>
+                          <span className="font-bold" style={{ color: '#0B2438' }}>{r?.product_name || 'طلب'}</span>
                         </div>
                         <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
                           <span>🏢 المشتري: <b>{nameOf(r?.contractor_id)}</b></span>
@@ -534,7 +534,7 @@ export default function AdminPanel() {
           objections.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
               <div className="text-5xl mb-4">🚩</div>
-              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد بلاغات</h3>
+              <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد بلاغات</h3>
               <p className="text-sm text-gray-400 mt-1">تظهر هنا بلاغات «هذا الحساب وهمي» المرسلة من صفحة التسجيل</p>
             </div>
           ) : (
@@ -547,7 +547,7 @@ export default function AdminPanel() {
                         <span className={`badge text-[10px] ${o.status === 'open' ? 'bg-red-100 text-red-700' : o.status === 'reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
                           {o.status === 'open' ? '🚩 بلاغ جديد' : o.status === 'reviewed' ? '✓ تمت المراجعة' : '✕ مرفوض'}
                         </span>
-                        <span className="font-bold" style={{ color: '#1B2D5B' }} dir="ltr">سجل تجاري: {o.commercial_registration}</span>
+                        <span className="font-bold" style={{ color: '#0B2438' }} dir="ltr">سجل تجاري: {o.commercial_registration}</span>
                       </div>
                       <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
                         <span>🏢 الحساب المُبلَّغ عنه: <b>{o.existing_company || '—'}</b></span>
@@ -579,7 +579,7 @@ export default function AdminPanel() {
           changeReqs.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
               <div className="text-5xl mb-4">📝</div>
-              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد طلبات تعديل</h3>
+              <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد طلبات تعديل</h3>
               <p className="text-sm text-gray-400 mt-1">تظهر هنا طلبات تغيير الاسم أو التصنيف المرسلة من المستخدمين</p>
             </div>
           ) : (
@@ -597,7 +597,7 @@ export default function AdminPanel() {
                             {r.status === 'pending' ? '⏳ بانتظار المراجعة' : r.status === 'approved' ? '✓ معتمد' : '✕ مرفوض'}
                           </span>
                           <span className="badge badge-blue text-[10px]">{isName ? '🏢 تغيير الاسم' : '🏷 تغيير التصنيف'}</span>
-                          <span className="font-bold" style={{ color: '#1B2D5B' }}>{nameOf(r.user_id)}</span>
+                          <span className="font-bold" style={{ color: '#0B2438' }}>{nameOf(r.user_id)}</span>
                         </div>
                         <div className="mt-2 text-sm flex items-center gap-2 flex-wrap">
                           <span className="px-2 py-1 rounded-lg bg-gray-50 border border-gray-200 text-gray-500 line-through">{oldL}</span>
@@ -605,7 +605,7 @@ export default function AdminPanel() {
                           <span className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">{newL}</span>
                         </div>
                         {r.reason && <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-600">📝 {r.reason}</div>}
-                        {safeHttpUrl(r.document_url) && <a href={safeHttpUrl(r.document_url)} target="_blank" rel="noreferrer" className="text-xs underline text-[#d96f15] mt-1 inline-block">📎 مستند مرفق</a>}
+                        {safeHttpUrl(r.document_url) && <a href={safeHttpUrl(r.document_url)} target="_blank" rel="noreferrer" className="text-xs underline text-[#9D7425] mt-1 inline-block">📎 مستند مرفق</a>}
                         <div className="text-[11px] text-gray-400 mt-1.5">📅 {dt(r.created_at)}{r.admin_note ? ` · ملاحظة الإدارة: ${r.admin_note}` : ''}</div>
                       </div>
                       {r.status === 'pending' && (
@@ -630,7 +630,7 @@ export default function AdminPanel() {
           <div className="space-y-6">
             {/* وضع الإطلاق المجاني — التحكّم ببدء تحصيل رسوم الاشتراك */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-              <div className="font-bold text-sm mb-1" style={{ color: '#1B2D5B' }}>🎉 فترة الإطلاق المجانية</div>
+              <div className="font-bold text-sm mb-1" style={{ color: '#0B2438' }}>🎉 فترة الإطلاق المجانية</div>
               <div className="text-xs text-gray-500 mb-3">
                 {(!launchUntil || new Date(launchUntil) > new Date())
                   ? `مفعّلة الآن — كل الميزات مجانية للموردين${launchUntil ? ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')}` : ' (بلا تاريخ نهاية معلن)'}.`
@@ -653,18 +653,18 @@ export default function AdminPanel() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'تسجيلات آخر 7 أيام', value: newLast7, icon: '🆕', bg: '#0F6E56' },
-                { label: 'تسجيلات آخر 30 يوم', value: newLast30, icon: '📈', bg: '#1B2D5B' },
-                { label: 'طلبات التسعير', value: rfqs.length, icon: '📋', bg: '#F5831F' },
-                { label: 'المشاريع (BOQ)', value: projects.length, icon: '🏗', bg: '#2a4a8a' },
+                { label: 'تسجيلات آخر 30 يوم', value: newLast30, icon: '📈', bg: '#0B2438' },
+                { label: 'طلبات التسعير', value: rfqs.length, icon: '📋', bg: '#D4A543' },
+                { label: 'المشاريع (BOQ)', value: projects.length, icon: '🏗', bg: '#102E45' },
                 { label: 'إجمالي العروض', value: offers.length, icon: '📨', bg: '#7c3aed' },
                 { label: 'عروض مقبولة', value: acceptedOffers, icon: '✅', bg: '#0F6E56' },
-                { label: 'متوسط العروض/طلب', value: offersPerRfq, icon: '⚖️', bg: '#1B2D5B' },
-                { label: 'رسائل الدعم', value: support.length, icon: '💬', bg: '#F5831F' },
+                { label: 'متوسط العروض/طلب', value: offersPerRfq, icon: '⚖️', bg: '#0B2438' },
+                { label: 'رسائل الدعم', value: support.length, icon: '💬', bg: '#D4A543' },
               ].map((k: any) => (
                 <div key={k.label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white" style={{ background: k.bg }}>{k.icon}</div>
-                    <div className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{k.value}</div>
+                    <div className="text-2xl font-bold" style={{ color: '#0B2438' }}>{k.value}</div>
                   </div>
                   <div className="text-xs text-gray-500 mt-2">{k.label}</div>
                 </div>
@@ -672,11 +672,11 @@ export default function AdminPanel() {
             </div>
 
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <h3 className="text-sm font-bold mb-4" style={{ color: '#1B2D5B' }}>📈 التسجيلات خلال آخر 30 يوماً</h3>
+              <h3 className="text-sm font-bold mb-4" style={{ color: '#0B2438' }}>📈 التسجيلات خلال آخر 30 يوماً</h3>
               <div className="flex items-end gap-1 h-40">
                 {signupSeries.map((s: any) => (
                   <div key={s.day} className="flex-1 flex flex-col items-center justify-end" title={`${s.day}: ${s.n}`}>
-                    <div className="w-full rounded-t transition-all" style={{ height: `${(s.n / maxSignup) * 100}%`, minHeight: s.n ? '4px' : '0', background: s.n ? '#F5831F' : 'transparent' }} />
+                    <div className="w-full rounded-t transition-all" style={{ height: `${(s.n / maxSignup) * 100}%`, minHeight: s.n ? '4px' : '0', background: s.n ? '#D4A543' : 'transparent' }} />
                   </div>
                 ))}
               </div>
@@ -687,21 +687,21 @@ export default function AdminPanel() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                <h3 className="text-sm font-bold mb-3" style={{ color: '#1B2D5B' }}>📍 أعلى المناطق</h3>
+                <h3 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>📍 أعلى المناطق</h3>
                 {topRegions.length === 0 ? <div className="text-xs text-gray-400">—</div> : topRegions.map(([k, v]: any) => (
-                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{k}</span><span className="font-bold" style={{ color: '#1B2D5B' }}>{v}</span></div>
+                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{k}</span><span className="font-bold" style={{ color: '#0B2438' }}>{v}</span></div>
                 ))}
               </div>
               <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                <h3 className="text-sm font-bold mb-3" style={{ color: '#1B2D5B' }}>🏷 أكثر القطاعات طلباً</h3>
+                <h3 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>🏷 أكثر القطاعات طلباً</h3>
                 {topSectors.length === 0 ? <div className="text-xs text-gray-400">—</div> : topSectors.map(([k, v]: any) => (
-                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{k}</span><span className="font-bold" style={{ color: '#1B2D5B' }}>{v}</span></div>
+                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{k}</span><span className="font-bold" style={{ color: '#0B2438' }}>{v}</span></div>
                 ))}
               </div>
               <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-                <h3 className="text-sm font-bold mb-3" style={{ color: '#1B2D5B' }}>🏭 فئات الموردين</h3>
+                <h3 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>🏭 فئات الموردين</h3>
                 {tierBreakdown.length === 0 ? <div className="text-xs text-gray-400">—</div> : tierBreakdown.map(([k, v]: any) => (
-                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{tierLabel(k, 'ar')}</span><span className="font-bold" style={{ color: '#1B2D5B' }}>{v}</span></div>
+                  <div key={k} className="flex justify-between text-sm py-1 border-b border-gray-50 last:border-0"><span className="text-gray-600">{tierLabel(k, 'ar')}</span><span className="font-bold" style={{ color: '#0B2438' }}>{v}</span></div>
                 ))}
               </div>
             </div>
@@ -710,7 +710,7 @@ export default function AdminPanel() {
           conversations.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
               <div className="text-5xl mb-4">💬</div>
-              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد رسائل</h3>
+              <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد رسائل</h3>
               <p className="text-sm text-gray-400 mt-1">تظهر هنا رسائل المشترين والموردين</p>
             </div>
           ) : (
@@ -721,16 +721,16 @@ export default function AdminPanel() {
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0"
-                        style={{ background: profileById[cv.userId]?.role === 'supplier' ? '#7c3aed' : '#1B2D5B' }}>
+                        style={{ background: profileById[cv.userId]?.role === 'supplier' ? '#7c3aed' : '#0B2438' }}>
                         {nameOf(cv.userId)?.[0] || '?'}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{nameOf(cv.userId)}</div>
+                        <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{nameOf(cv.userId)}</div>
                         <div className="text-xs text-gray-500 truncate max-w-md">{cv.lastSender === 'admin' ? 'أنت: ' : ''}{cv.last}</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
-                      {cv.unread > 0 && <span className="text-[10px] font-bold text-white rounded-full px-2 py-0.5" style={{ background: '#F5831F' }}>{cv.unread} جديد</span>}
+                      {cv.unread > 0 && <span className="text-[10px] font-bold text-[#071827] rounded-full px-2 py-0.5" style={{ background: '#D4A543' }}>{cv.unread} جديد</span>}
                       <span className="text-[10px] text-gray-400">{dt(cv.lastAt)}</span>
                     </div>
                   </div>
@@ -755,7 +755,7 @@ export default function AdminPanel() {
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold" style={{ color: '#1B2D5B' }}>{r.product_name}</span>
+                              <span className="font-bold" style={{ color: '#0B2438' }}>{r.product_name}</span>
                               {r.sector && <span className="badge text-[10px] badge-gray">{r.sector}</span>}
                               {r.sub_category && <span className="badge text-[10px] badge-gray">{r.sub_category}</span>}
                               <span className="badge text-[10px] badge-navy">{RFQ_STATUS[r.status] || r.status}</span>
@@ -773,7 +773,7 @@ export default function AdminPanel() {
                               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                                 {(r.target_tiers || []).map((t: string) => <span key={t} className="badge text-[10px] bg-purple-100 text-purple-700">{tierLabel(t, 'ar')}</span>)}
                                 {r.verified_only && <span className="badge text-[10px] bg-emerald-100 text-emerald-700">موثقون فقط</span>}
-                                {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-[#d96f15]">القريبون فقط</span>}
+                                {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-[#9D7425]">القريبون فقط</span>}
                               </div>
                             )}
                             {r.specification && <p className="text-xs text-gray-500 mt-1.5">📋 {r.specification}</p>}
@@ -792,7 +792,7 @@ export default function AdminPanel() {
                             {rOffers.map((o: any) => (
                               <div key={o.id} className="bg-[#f4f6f9] rounded-xl p-3 text-xs">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-semibold" style={{ color: '#1B2D5B' }}>🏪 {nameOf(o.supplier_id)}</span>
+                                  <span className="font-semibold" style={{ color: '#0B2438' }}>🏪 {nameOf(o.supplier_id)}</span>
                                   <span className="badge text-[10px] badge-gray">{OFFER_STATUS[o.status] || o.status}</span>
                                   <span className="text-emerald-700 font-bold">{sar(o.total_price)}</span>
                                   {o.delivery_days != null && <span className="text-gray-500">⏱ {o.delivery_days} يوم</span>}
@@ -802,7 +802,7 @@ export default function AdminPanel() {
                                   <div className="text-gray-500 mt-1">رسوم إضافية: {o.extra_charges.map((e: any) => `${e.label || e.name || 'بند'}: ${sar(e.amount ?? e.value)}`).join(' · ')}</div>
                                 )}
                                 {o.notes && <div className="text-gray-400 mt-1">📝 {o.notes}</div>}
-                                {o.attachment_url && <button onClick={() => openBoq(o.attachment_url)} className="text-[#d96f15] hover:underline mt-1">📎 {o.attachment_name || 'مرفق'}</button>}
+                                {o.attachment_url && <button onClick={() => openBoq(o.attachment_url)} className="text-[#9D7425] hover:underline mt-1">📎 {o.attachment_name || 'مرفق'}</button>}
                                 <div className="text-[10px] text-gray-400 mt-1">{dt(o.created_at)}{o.accepted_at ? ` · قُبل: ${dt(o.accepted_at)}` : ''}</div>
                               </div>
                             ))}
@@ -828,7 +828,7 @@ export default function AdminPanel() {
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold" style={{ color: '#1B2D5B' }}>🏗 {p.title}</span>
+                              <span className="font-bold" style={{ color: '#0B2438' }}>🏗 {p.title}</span>
                               <span className="badge text-[10px] badge-navy">{RFQ_STATUS[p.status] || p.status}</span>
                               <span className="badge text-[10px] bg-orange-100 text-orange-700">{items.length} بند</span>
                             </div>
@@ -837,7 +837,7 @@ export default function AdminPanel() {
                             <div className="text-[10px] text-gray-400 mt-1.5">أُنشئ: {dt(p.created_at)}</div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {p.boq_url && <button onClick={() => openBoq(p.boq_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5">📄 BOQ</button>}
+                            {p.boq_url && <button onClick={() => openBoq(p.boq_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5">📄 BOQ</button>}
                             {items.length > 0 && <button onClick={() => setExpandedProject(open ? null : p.id)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">{open ? '▲ إخفاء' : '▼ البنود'}</button>}
                           </div>
                         </div>
@@ -869,7 +869,7 @@ export default function AdminPanel() {
           materialReqs.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
               <div className="text-5xl mb-4">📦</div>
-              <h3 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>لا توجد طلبات مواد</h3>
+              <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد طلبات مواد</h3>
             </div>
           ) : (
             <div className="space-y-3 stagger">
@@ -880,7 +880,7 @@ export default function AdminPanel() {
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-bold" style={{ color: '#1B2D5B' }}>{r.name}</span>
+                        <span className="font-bold" style={{ color: '#0B2438' }}>{r.name}</span>
                         {r.sector && <span className="badge text-[10px] badge-gray">{r.sector}</span>}
                         <span className={`badge text-[10px] ${
                           r.status === 'approved' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-amber'
@@ -889,7 +889,7 @@ export default function AdminPanel() {
                         </span>
                       </div>
                       {r.description && <p className="text-sm text-gray-500 mt-1">📝 {r.description}</p>}
-                      {r.spec_file_url && <a href={fileHref(r.spec_file_url)} target="_blank" rel="noreferrer" className="text-xs text-[#d96f15] underline mt-0.5 inline-block">📎 مرفق تفاصيل المنتج ←</a>}
+                      {r.spec_file_url && <a href={fileHref(r.spec_file_url)} target="_blank" rel="noreferrer" className="text-xs text-[#9D7425] underline mt-0.5 inline-block">📎 مرفق تفاصيل المنتج ←</a>}
                       {r.admin_note && <p className="text-xs text-[#0F6E56] bg-emerald-50 rounded-lg px-2 py-1 mt-1 inline-block">ملاحظة الإدارة: {r.admin_note}</p>}
                       <div className="text-[11px] text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
@@ -917,7 +917,7 @@ export default function AdminPanel() {
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
             <div className="text-5xl mb-4 animate-float">📭</div>
-            <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>لا يوجد مستخدمين</h3>
+            <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>لا يوجد مستخدمين</h3>
           </div>
         ) : (
           <div className="space-y-3 stagger">
@@ -929,11 +929,11 @@ export default function AdminPanel() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-white flex-shrink-0"
-                      style={{ background: u.role === 'contractor' ? '#1B2D5B' : '#7c3aed' }}>
+                      style={{ background: u.role === 'contractor' ? '#0B2438' : '#7c3aed' }}>
                       {u.company_name_ar?.[0] || '?'}
                     </div>
                     <div>
-                      <Link href={`/admin/users/${u.id}`} className="font-bold hover:underline decoration-dotted" style={{ color: '#1B2D5B' }}>{u.company_name_ar}</Link>
+                      <Link href={`/admin/users/${u.id}`} className="font-bold hover:underline decoration-dotted" style={{ color: '#0B2438' }}>{u.company_name_ar}</Link>
                       {u.company_name_en && <div className="text-xs text-gray-400">{u.company_name_en}</div>}
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className={`badge text-[10px] ${u.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>
@@ -1002,19 +1002,19 @@ export default function AdminPanel() {
 
                   <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
                     {/* Full detail page */}
-                    <Link href={`/admin/users/${u.id}`} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition-all hover:shadow" style={{ background: '#1B2D5B' }}>
+                    <Link href={`/admin/users/${u.id}`} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition-all hover:shadow" style={{ background: '#0B2438' }}>
                       👁 التفاصيل
                     </Link>
                     {/* License Links */}
                     {u.license_url && (
                       <button type="button" onClick={() => openDoc(u.license_url)}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5 transition-all">
+                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5 transition-all">
                         📄 الرخصة
                       </button>
                     )}
                     {u.cr_url && (
                       <button type="button" onClick={() => openDoc(u.cr_url)}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5 transition-all">
+                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5 transition-all">
                         📋 السجل
                       </button>
                     )}
@@ -1124,7 +1124,7 @@ export default function AdminPanel() {
       {rejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-7 max-w-md w-full shadow-2xl animate-slide-up" dir="rtl">
-            <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>سبب الرفض</h3>
+            <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>سبب الرفض</h3>
             <p className="text-sm text-gray-500 mb-4">
               رفض حساب <strong>{rejectModal.name}</strong> — سيتم إرسال السبب للمستخدم
             </p>
@@ -1176,7 +1176,7 @@ export default function AdminPanel() {
       {pwModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl p-7 max-w-md w-full shadow-2xl animate-slide-up" dir="rtl">
-            <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>🔑 تغيير كلمة المرور</h3>
+            <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>🔑 تغيير كلمة المرور</h3>
             <p className="text-sm text-gray-500">الحساب: <strong>{pwModal.name}</strong></p>
             {pwModal.email && <p className="text-xs text-gray-400 mb-3" dir="ltr">{pwModal.email}</p>}
 
@@ -1203,7 +1203,7 @@ export default function AdminPanel() {
 
             <div className="flex gap-3">
               <button onClick={changeUserPassword} disabled={actionLoading === 'pw-' + pwModal.id}
-                className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all" style={{ background: '#1B2D5B' }}>
+                className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all" style={{ background: '#0B2438' }}>
                 {actionLoading === 'pw-' + pwModal.id ? '...' : 'تعيين كلمة المرور'}
               </button>
               <button onClick={() => { setPwModal(null); setPwValue(''); setPwConfirm(''); setPwMsg('') }}
@@ -1217,7 +1217,7 @@ export default function AdminPanel() {
       {matEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" dir="rtl" onClick={() => actionLoading !== matEdit.id && setMatEdit(null)}>
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e: any) => e.stopPropagation()}>
-            <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>✎ مراجعة المادة المقترحة</h3>
+            <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>✎ مراجعة المادة المقترحة</h3>
             <p className="text-xs text-gray-400 mb-4">عدّل القطاع والمجموعة والاسم لتضعها في المكان الصحيح، ثم اعتمدها.</p>
 
             <label className="block text-xs font-bold text-gray-500 mb-1.5">اسم المادة</label>
@@ -1225,7 +1225,7 @@ export default function AdminPanel() {
 
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <button type="button" onClick={aiSuggestMaterial} disabled={matAi || !matName.trim()}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+                className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
                 {matAi ? '⏳ جارٍ...' : '✨ اقترح التصنيف بالذكاء الاصطناعي'}
               </button>
               {matAiMsg && <span className="text-[11px] font-semibold text-emerald-700">{matAiMsg}</span>}

@@ -249,7 +249,7 @@ export default function SupplierDashboard() {
     >
       <div className="max-w-6xl mx-auto">
         {isMember && (
-          <div className="rounded-xl px-4 py-2.5 mb-4 text-sm border flex flex-wrap items-center justify-between gap-2" style={{ background: '#1B2D5B0A', borderColor: '#1B2D5B26', color: '#1B2D5B' }}>
+          <div className="rounded-xl px-4 py-2.5 mb-4 text-sm border flex flex-wrap items-center justify-between gap-2" style={{ background: '#0B24380A', borderColor: '#0B243826', color: '#0B2438' }}>
             <span>👥 {locale === 'en' ? 'You are working on behalf of' : locale === 'ur' ? 'آپ اس کمپنی کی جانب سے کام کر رہے ہیں:' : 'تعمل باسم'} <b>{companyName}</b></span>
             <Link href="/supplier/team" className="text-xs font-bold underline">{locale === 'en' ? 'Team' : locale === 'ur' ? 'ٹیم' : 'فريق العمل'}</Link>
           </div>
@@ -259,13 +259,13 @@ export default function SupplierDashboard() {
           const banners: { key: string; node: any }[] = []
           // بوابة إكمال الملف — بدونها لا تصل أي طلبات (أعلى أولوية)
           if (profile && !profile.region && !isMember) banners.push({ key: 'onboarding', node: (
-            <Link href="/onboarding" className="block rounded-2xl p-5 border-2 hover:shadow-lg transition-all" style={{ borderColor: '#F5831F', background: 'linear-gradient(120deg,#fff7ed,#ffffff)' }}>
+            <Link href="/onboarding" className="block rounded-2xl p-5 border-2 hover:shadow-lg transition-all" style={{ borderColor: '#D4A543', background: 'linear-gradient(120deg,#fff7ed,#ffffff)' }}>
               <div className="flex items-start gap-3">
                 <span className="text-3xl shrink-0">🔒</span>
                 <div className="flex-1">
-                  <div className="font-extrabold text-sm" style={{ color: '#d96f15' }}>⚠️ {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
+                  <div className="font-extrabold text-sm" style={{ color: '#9D7425' }}>⚠️ {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
                   <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{L("Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests. One minute is enough.", 'اپنے مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی مماثل درخواست موصول نہیں ہوگی۔', 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين، ولن تصلك أي طلبات مطابقة. دقيقة واحدة تكفي.')}</div>
-                  <span className="inline-block mt-2.5 text-sm font-bold text-white px-4 py-2 rounded-xl" style={{ background: '#F5831F' }}>{L('Complete now →', 'ابھی مکمل کریں ←', 'أكمل ملفك الآن ←')}</span>
+                  <span className="inline-block mt-2.5 text-sm font-bold text-[#071827] px-4 py-2 rounded-xl" style={{ background: '#D4A543' }}>{L('Complete now →', 'ابھی مکمل کریں ←', 'أكمل ملفك الآن ←')}</span>
                 </div>
               </div>
             </Link>
@@ -291,14 +291,14 @@ export default function SupplierDashboard() {
           ) })
           // حدّد تخصصاتك الدقيقة
           if (!hasSpecialties && !hasSectors && profile?.verification_status !== 'rejected') banners.push({ key: 'specialties', node: (
-            <Link href="/supplier/specialties" className="block bg-gradient-to-l from-[#F5831F]/10 to-[#1B2D5B]/5 border-2 border-[#F5831F]/30 rounded-2xl p-5 hover:shadow-md transition-all">
+            <Link href="/supplier/specialties" className="block bg-gradient-to-l from-[#D4A543]/10 to-[#0B2438]/5 border-2 border-[#D4A543]/30 rounded-2xl p-5 hover:shadow-md transition-all">
               <div className="flex items-center gap-4">
                 <div className="text-3xl">🎯</div>
                 <div className="flex-1">
-                  <div className="font-bold" style={{ color: '#1B2D5B' }}>{L('Set your exact specialties for precise matching!', 'درست مماثلت کے لیے اپنی مہارتیں مقرر کریں!', 'حدّد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!')}</div>
+                  <div className="font-bold" style={{ color: '#0B2438' }}>{L('Set your exact specialties for precise matching!', 'درست مماثلت کے لیے اپنی مہارتیں مقرر کریں!', 'حدّد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!')}</div>
                   <div className="text-sm text-gray-500 mt-0.5">{L('e.g. only "Bricks" or only "Marble" — get only relevant requests', 'مثلاً صرف "اینٹ" یا صرف "سنگ مرمر"', 'مثلاً: محل طوب فقط، أو محل رخام فقط — تصلك الطلبات المطابقة لتخصصك')}</div>
                 </div>
-                <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#F5831F' }}>{L('Setup →', 'ترتیب دیں ←', 'إعداد ←')}</div>
+                <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#D4A543' }}>{L('Setup →', 'ترتیب دیں ←', 'إعداد ←')}</div>
               </div>
             </Link>
           ) })
@@ -313,29 +313,29 @@ export default function SupplierDashboard() {
           ) })
           // تنبيهات ثانوية (ضريبة/أسعار/اشتراك) — بعد إكمال الملف فقط
           if (profile && profile.region && !profile.vat_number) banners.push({ key: 'vat', node: (
-            <Link href="/settings" className="block bg-[#F5831F]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
+            <Link href="/settings" className="block bg-[#D4A543]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🧾</span>
                 <div className="flex-1">
-                  <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{L('Add your VAT number', 'اپنا ٹیکس (VAT) نمبر شامل کریں', 'أضف رقمك الضريبي')}</div>
+                  <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Add your VAT number', 'اپنا ٹیکس (VAT) نمبر شامل کریں', 'أضف رقمك الضريبي')}</div>
                   <div className="text-xs text-gray-500">{L('Required to issue tax invoices for your deals. Tap to add →', 'آپ کی ڈیلز کے لیے ٹیکس انوائس جاری کرنے کے لیے ضروری ہے۔ شامل کرنے کے لیے دبائیں ←', 'يلزم لإصدار فواتير ضريبية لصفقاتك. اضغط للإضافة ←')}</div>
                 </div>
               </div>
             </Link>
           ) })
           if (profile && profile.region && pricesCount === 0) banners.push({ key: 'prices', node: (
-            <Link href="/supplier/prices" className="block bg-gradient-to-l from-[#F5831F]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
+            <Link href="/supplier/prices" className="block bg-gradient-to-l from-[#D4A543]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
                 <span className="text-2xl">📈</span>
                 <div className="flex-1">
-                  <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{L('Publish your prices on the price board', 'قیمتوں کے بورڈ پر اپنی قیمتیں شائع کریں', 'انشر أسعارك في بورصة الأسعار')}</div>
+                  <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Publish your prices on the price board', 'قیمتوں کے بورڈ پر اپنی قیمتیں شائع کریں', 'انشر أسعارك في بورصة الأسعار')}</div>
                   <div className="text-xs text-gray-500">{L('Buyers look for the latest prices — be the first they see. Tap to add your prices →', 'خریدار تازہ ترین قیمتیں تلاش کرتے ہیں — سب سے پہلے نظر آئیں۔ قیمتیں شامل کرنے کے لیے دبائیں ←', 'يبحث المشترون عن أحدث الأسعار — كن أول من يظهر لهم. اضغط لإضافة أسعارك ←')}</div>
                 </div>
               </div>
             </Link>
           ) })
           if (profile && profile.region && !isSubscribed(profile)) banners.push({ key: 'subscription', node: isLaunchFree(launchUntil) ? (
-            <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0F6E56,#1B2D5B)' }}>
+            <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0F6E56,#0B2438)' }}>
               <div className="flex items-center gap-3">
                 <span className="text-2xl">🎉</span>
                 <div className="flex-1">
@@ -345,7 +345,7 @@ export default function SupplierDashboard() {
               </div>
             </Link>
           ) : (
-            <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#1B2D5B,#2a4a8a)' }}>
+            <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0B2438,#102E45)' }}>
               <div className="flex items-center gap-3">
                 <span className="text-2xl">⭐</span>
                 <div className="flex-1">
@@ -363,7 +363,7 @@ export default function SupplierDashboard() {
               {rest.length > 0 && (
                 <>
                   <button type="button" onClick={() => setShowMoreBanners(v => !v)} aria-expanded={showMoreBanners}
-                    className="text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-600 hover:border-[#F5831F]/40">
+                    className="text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-600 hover:border-[#D4A543]/40">
                     {showMoreBanners ? L('Show less ▲', 'کم دکھائیں ▲', 'عرض أقل ▲') : `${L('Show more', 'مزید دکھائیں', 'عرض المزيد')} (${rest.length}) ▼`}
                   </button>
                   {showMoreBanners && rest.map((b) => <div key={b.key}>{b.node}</div>)}
@@ -375,7 +375,7 @@ export default function SupplierDashboard() {
         <EnablePush variant="nudge" />
 
         <div className="mb-4 sm:mb-6 animate-fade-in">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>{t.welcome}، {companyName || profile?.full_name || L('Supplier', 'سپلائر', 'مورّد')} 👋</h1>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{t.welcome}، {companyName || profile?.full_name || L('Supplier', 'سپلائر', 'مورّد')} 👋</h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
 
@@ -390,7 +390,7 @@ export default function SupplierDashboard() {
           ]
           const score = checks.reduce((s: any, c: any) => s + (c.ok ? c.w : 0), 0)
           const missing = checks.filter((c: any) => !c.ok)
-          const col = score >= 70 ? '#0F6E56' : score >= 40 ? '#F5831F' : '#dc2626'
+          const col = score >= 70 ? '#0F6E56' : score >= 40 ? '#D4A543' : '#dc2626'
           return (
             <>
               <button type="button" onClick={() => setShowScoreMobile(v => !v)} aria-expanded={showScoreMobile}
@@ -405,19 +405,19 @@ export default function SupplierDashboard() {
                     <circle cx="18" cy="18" r="15.5" fill="none" stroke={col} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${(score * 0.974).toFixed(1)} 97.4`} />
                   </svg>
                   <div className="absolute inset-0 grid place-items-center">
-                    <span className="text-lg font-extrabold" style={{ color: '#1B2D5B' }}>{score}</span>
+                    <span className="text-lg font-extrabold" style={{ color: '#0B2438' }}>{score}</span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold" style={{ color: '#1B2D5B' }}>{L('Profile strength', 'پروفائل کی مضبوطی', 'قوة ملفك')}</div>
+                  <div className="text-xs font-bold" style={{ color: '#0B2438' }}>{L('Profile strength', 'پروفائل کی مضبوطی', 'قوة ملفك')}</div>
                   <div className="text-[11px] text-gray-400">{score}/100 — {score >= 70 ? L('Excellent', 'بہترین', 'ممتاز') : score >= 40 ? L('Good', 'اچھا', 'جيد') : L('Needs improvement', 'بہتری کی ضرورت', 'يحتاج إلى تحسين')}</div>
                 </div>
               </div>
               {missing.length > 0 && (
                 <div className="sm:col-span-2 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-                  <div className="text-xs font-bold mb-2" style={{ color: '#1B2D5B' }}>{L('Strengthen your profile:', 'اپنی پروفائل مضبوط کریں:', 'عزّز ملفك:')}</div>
+                  <div className="text-xs font-bold mb-2" style={{ color: '#0B2438' }}>{L('Strengthen your profile:', 'اپنی پروفائل مضبوط کریں:', 'عزّز ملفك:')}</div>
                   <div className="flex flex-wrap gap-2">
-                    {missing.map((c: any) => <Link key={c.href} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#F5831F', color: '#d96f15' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></Link>)}
+                    {missing.map((c: any) => <Link key={c.href} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#D4A543', color: '#9D7425' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></Link>)}
                   </div>
                 </div>
               )}
@@ -434,10 +434,10 @@ export default function SupplierDashboard() {
             { label: t.revenue, value: totalRevenue.toLocaleString('en-US'), icon: 'pricing', tone: 'info', go: 'offers' },
           ].map(({ label, value, icon, tone, go }) => (
             <button key={label} type="button" onClick={() => { setTab(go); if (go === 'rfqs') setRfqFilter('all'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
-              className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${tab === go ? 'border-[#F5831F] ring-1 ring-[#F5831F]/30' : 'border-gray-100'}`}>
+              className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${tab === go ? 'border-[#D4A543] ring-1 ring-[#D4A543]/30' : 'border-gray-100'}`}>
               <div className="flex items-start justify-between gap-2 min-w-0">
                 <AppIcon name={icon} tone={tone} variant="tone" size={44} />
-                <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" style={{ color: '#1B2D5B' }}>{value}</div>
+                <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" style={{ color: '#0B2438' }}>{value}</div>
               </div>
               <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
             </button>
@@ -448,7 +448,7 @@ export default function SupplierDashboard() {
           {[{ key: 'rfqs', label: `${t.tabRfqs} (${openRfqs.length})` }, { key: 'offers', label: `${t.tabOffers} (${myOffers.length})` }].map((tab_: any) => (
             <button key={tab_.key} onClick={() => setTab(tab_.key)}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === tab_.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
-              style={tab === tab_.key ? { background: '#1B2D5B' } : {}}>
+              style={tab === tab_.key ? { background: '#0B2438' } : {}}>
               {tab_.label}
             </button>
           ))}
@@ -467,7 +467,7 @@ export default function SupplierDashboard() {
               ].map((f: any) => (
                 <button key={f.key} onClick={() => setRfqFilter(f.key)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${rfqFilter === f.key ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
-                  style={rfqFilter === f.key ? { background: f.key === 'expiring' ? '#d97706' : '#1B2D5B' } : {}}>
+                  style={rfqFilter === f.key ? { background: f.key === 'expiring' ? '#d97706' : '#0B2438' } : {}}>
                   {f.icon} {f.label}
                 </button>
               ))}
@@ -475,26 +475,26 @@ export default function SupplierDashboard() {
             {displayedRfqs.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
                 <div className="text-5xl mb-4 animate-float">{rfqFilter === 'expiring' ? '⏰' : '📭'}</div>
-                <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{rfqFilter === 'expiring' ? L('Nothing ending soon', 'کوئی درخواست جلد ختم نہیں ہو رہی', 'لا توجد طلبات تنتهي قريباً') : t.noRfqs}</h3>
+                <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{rfqFilter === 'expiring' ? L('Nothing ending soon', 'کوئی درخواست جلد ختم نہیں ہو رہی', 'لا توجد طلبات تنتهي قريباً') : t.noRfqs}</h3>
                 <p className="text-sm text-gray-500">{rfqFilter === 'expiring' ? L('All open requests still have time.', 'تمام کھلی درخواستوں کے پاس ابھی کافی وقت ہے۔', 'ما زال لدى كل الطلبات المفتوحة متّسع من الوقت.') : t.noRfqsSub}</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {displayedRfqs.map((rfq: any) => (
                   <Link key={rfq.id} href={`/supplier/dashboard/rfq/${rfq.id}`}
-                    className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#F5831F]/30 hover:-translate-y-0.5 transition-all duration-300">
+                    className="block bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md hover:border-[#D4A543]/30 hover:-translate-y-0.5 transition-all duration-300">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <AppIcon name="orders" tone="brand" variant="tone" size={44} />
                         <div className="min-w-0">
-                          <div className="font-bold truncate" style={{ color: '#1B2D5B' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
+                          <div className="font-bold truncate" style={{ color: '#0B2438' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {rfq.created_at && (Date.now() - new Date(rfq.created_at).getTime() < 12 * 3600 * 1000) && (
                               <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}>🟢 {L('New', 'نیا', 'جديد')}</span>
                             )}
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                             {rfq.sub_category && (
-                              <span className="badge text-[10px] bg-[#F5831F]/10 text-[#F5831F] font-semibold">
+                              <span className="badge text-[10px] bg-[#D4A543]/10 text-[#D4A543] font-semibold">
                                 🎯 {getSubCategoryLabel(rfq.sector, rfq.sub_category, locale)}
                               </span>
                             )}
@@ -509,7 +509,7 @@ export default function SupplierDashboard() {
                       </div>
                       {offeredRfqIds.has(rfq.id)
                         ? <div className="text-white text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#0F6E56' }}>{t.offerSubmitted}</div>
-                        : <div className="text-white text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#F5831F' }}>{t.submitOffer}</div>}
+                        : <div className="text-[#071827] text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#D4A543' }}>{t.submitOffer}</div>}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium flex-wrap">
                       <span>📦 {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>
@@ -538,13 +538,13 @@ export default function SupplierDashboard() {
             {myOffers.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
                 <div className="text-5xl mb-4 animate-float">📤</div>
-                <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{t.noOffers}</h3>
+                <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{t.noOffers}</h3>
                 <p className="text-sm text-gray-500">{t.noOffersSub}</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {myOffers.map((offer: any) => (
-                  <Link key={offer.id} href={`/supplier/dashboard/rfq/${offer.rfq_id}`} className={`block bg-white rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md hover:border-[#F5831F]/40 ${
+                  <Link key={offer.id} href={`/supplier/dashboard/rfq/${offer.rfq_id}`} className={`block bg-white rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md hover:border-[#D4A543]/40 ${
                     offer.status === 'accepted' ? 'border-emerald-200 bg-emerald-50/50' :
                     offer.status === 'rejected' ? 'border-gray-200 opacity-50' : 'border-gray-100'
                   }`}>
@@ -554,14 +554,14 @@ export default function SupplierDashboard() {
                           offer.status === 'accepted' ? 'bg-emerald-100' : offer.status === 'rejected' ? 'bg-red-50' : 'bg-amber-50'
                         }`}>{offer.status === 'accepted' ? '✅' : offer.status === 'rejected' ? '❌' : '⏳'}</div>
                         <div>
-                          <span className="font-bold" style={{ color: '#1B2D5B' }}>{offer.rfq ? rfqDisplayName(offer.rfq, locale) : '—'}</span>
+                          <span className="font-bold" style={{ color: '#0B2438' }}>{offer.rfq ? rfqDisplayName(offer.rfq, locale) : '—'}</span>
                           {offer.rfq?.sector && (
                             <span className="badge badge-blue text-[10px] mx-2">{sectors[offer.rfq.sector] || offer.rfq.sector}</span>
                           )}
                         </div>
                       </div>
                       <div className="text-left">
-                        <div className="text-lg font-bold" style={{ color: '#1B2D5B' }}>{offer.total_price?.toLocaleString('en-US')} <span className="text-xs text-gray-400">{t.sar}</span></div>
+                        <div className="text-lg font-bold" style={{ color: '#0B2438' }}>{offer.total_price?.toLocaleString('en-US')} <span className="text-xs text-gray-400">{t.sar}</span></div>
                         <span className={`badge text-[10px] ${
                           offer.status === 'accepted' ? 'badge-green' : offer.status === 'rejected' ? 'badge-red' : 'badge-amber'
                         }`}>{offerStatusLabel(offer.status)}</span>
@@ -571,7 +571,7 @@ export default function SupplierDashboard() {
                       {offer.delivery_days && <span>📦 {offer.delivery_days} {t.day}</span>}
                       {offer.rfq?.region && <span>📍 {offer.rfq.region}</span>}
                     </div>
-                    <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#F5831F' }}>
+                    <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#D4A543' }}>
                       {offer.status === 'accepted'
                         ? (locale === 'en' ? 'View deal & invoice →' : locale === 'ur' ? 'ڈیل دیکھیں →' : 'افتح الصفقة والفاتورة ←')
                         : (locale === 'en' ? 'View / edit offer →' : locale === 'ur' ? 'پیشکش دیکھیں →' : 'افتح العرض والتفاصيل ←')}

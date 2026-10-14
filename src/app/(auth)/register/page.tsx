@@ -170,7 +170,7 @@ export default function RegisterPage() {
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
           <p className="text-xs text-gray-400 mb-6">{t.verifyNext}</p>
-          <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#1B2D5B' }}>{t.goSignIn}</a>
+          <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.goSignIn}</a>
         </div>
       </div>
     )
@@ -182,12 +182,12 @@ export default function RegisterPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-canvas" dir={dir}>
+    <div className="register-screen min-h-screen bg-canvas" dir={dir}>
       <header className="bg-white/90 backdrop-blur border-b border-line sticky top-0 z-20">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-xl bg-white border border-line grid place-items-center"><img src="/logo.png" alt="تسعيرك" className="w-7 h-7 object-contain" /></span>
-            <span className="font-extrabold text-navy text-lg">تسعير<span className="text-orange">ك</span></span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="register-brand-lockup" />
           </a>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="minimal" />
@@ -210,8 +210,8 @@ export default function RegisterPage() {
               <div className="grid grid-cols-2 gap-3">
                 {roleCards.map(({ type, title, desc, svg }) => (
                   <button key={type} type="button" onClick={() => { setSelectedType(type as any); setValue('role', type as any, { shouldValidate: true }) }}
-                    className={`p-4 rounded-2xl border-2 text-center transition-all ${selectedType === type ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 bg-white hover:border-[#F5831F]/40'}`}>
-                    <div className="w-12 h-12 rounded-2xl grid place-items-center mx-auto mb-2 text-white transition-colors" style={{ background: selectedType === type ? '#F5831F' : '#1B2D5B' }}>{svg}</div>
+                    className={`p-4 rounded-2xl border-2 text-center transition-all ${selectedType === type ? 'border-[#D4A543] bg-[#D4A543]/5' : 'border-gray-200 bg-white hover:border-[#D4A543]/40'}`}>
+                    <div className="w-12 h-12 rounded-2xl grid place-items-center mx-auto mb-2 text-white transition-colors" style={{ background: selectedType === type ? '#D4A543' : '#0B2438' }}>{svg}</div>
                     <div className="font-bold text-navy text-sm">{title}</div>
                     <div className="text-[11px] text-gray-500 mt-0.5">{desc}</div>
                   </button>
@@ -272,12 +272,12 @@ export default function RegisterPage() {
             {formError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{formError}</div>}
 
             <label className="flex items-start gap-2 cursor-pointer">
-              <input type="checkbox" checked={agreedToTerms} onChange={(e: any) => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#1B2D5B] flex-shrink-0" />
+              <input type="checkbox" checked={agreedToTerms} onChange={(e: any) => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#0B2438] flex-shrink-0" />
               <span className="text-xs text-gray-600 leading-relaxed">
                 {t.agreePre}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#F5831F' }}>{t.terms}</a>
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#D4A543' }}>{t.terms}</a>
                 {t.and}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#F5831F' }}>{t.privacy}</a>
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#D4A543' }}>{t.privacy}</a>
               </span>
             </label>
 

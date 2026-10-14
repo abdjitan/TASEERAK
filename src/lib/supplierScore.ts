@@ -25,7 +25,7 @@ export function supplierScore(profile: any, stats: any): number {
 }
 
 export function scoreColor(s: number): string {
-  return s >= 75 ? '#0F6E56' : s >= 50 ? '#F5831F' : '#9aa3b2'
+  return s >= 75 ? '#0F6E56' : s >= 50 ? '#D4A543' : '#9aa3b2'
 }
 
 // أسماء الاعتمادات المعروفة (يضبطها الأدمن) — social proof قوي في السوق السعودي

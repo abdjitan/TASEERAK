@@ -123,7 +123,7 @@ export default function AdminTaxonomyPage() {
       <div className="max-w-5xl mx-auto">
         <div className="mb-5 flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>🗂️ شجرة التصنيفات والكلمات المفتاحية</h1>
+            <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>🗂️ شجرة التصنيفات والكلمات المفتاحية</h1>
             <p className="text-sm text-gray-500 mt-1 max-w-2xl">
               عدّل الاسم والكلمات لكل تخصّص أو أضِف تخصصاً جديداً. الكلمات توجّه بنود الـBOQ للمورد الصحيح، والاسم يظهر في القوائم. التعديل <strong>يسري دون نشر</strong> (الواجهات تتحدّث عند أول تنقّل/تحديث، والتصنيف الخادمي خلال 5 دقائق).
             </p>
@@ -173,11 +173,11 @@ export default function AdminTaxonomyPage() {
           <div className="flex gap-2 overflow-x-auto pb-1">
             <button onClick={() => setSectorFilter('all')}
               className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 ${sectorFilter === 'all' ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
-              style={sectorFilter === 'all' ? { background: '#1B2D5B' } : {}}>الكل</button>
+              style={sectorFilter === 'all' ? { background: '#0B2438' } : {}}>الكل</button>
             {sectors.map(s => (
               <button key={s} onClick={() => setSectorFilter(s)}
                 className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap flex-shrink-0 ${sectorFilter === s ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
-                style={sectorFilter === s ? { background: '#1B2D5B' } : {}}>
+                style={sectorFilter === s ? { background: '#0B2438' } : {}}>
                 {(SECTOR_LABELS as any)[s] || s}
               </button>
             ))}
@@ -188,7 +188,7 @@ export default function AdminTaxonomyPage() {
         <div className="space-y-5">
           {Object.entries(bySector).map(([sector, list]) => (
             <div key={sector}>
-              <h2 className="text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#1B2D5B' }}>
+              <h2 className="text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#0B2438' }}>
                 <span className="badge badge-blue text-[10px]">{(SECTOR_LABELS as any)[sector] || sector}</span>
                 <span className="text-gray-400 font-normal">({list.length} تخصّص)</span>
               </h2>
@@ -202,12 +202,12 @@ export default function AdminTaxonomyPage() {
                           <input
                             value={nameEdits[key] ?? ''}
                             onChange={e => setNameEdits(prev => ({ ...prev, [key]: e.target.value }))}
-                            className="input-field text-sm font-bold py-1.5 max-w-[260px]" style={{ color: '#1B2D5B' }} />
+                            className="input-field text-sm font-bold py-1.5 max-w-[260px]" style={{ color: '#0B2438' }} />
                           <span className="text-[11px] text-gray-400 shrink-0">{r.sub_key}{r.grp ? ` · ${r.grp}` : ''}</span>
                         </div>
                         <button onClick={() => save(r)} disabled={savingKey === key}
                           className="text-xs font-bold text-white px-4 py-1.5 rounded-lg disabled:opacity-50 shrink-0"
-                          style={{ background: savedKey === key ? '#0F6E56' : '#1B2D5B' }}>
+                          style={{ background: savedKey === key ? '#0F6E56' : '#0B2438' }}>
                           {savingKey === key ? '...' : savedKey === key ? '✓ حُفظ' : 'حفظ'}
                         </button>
                       </div>

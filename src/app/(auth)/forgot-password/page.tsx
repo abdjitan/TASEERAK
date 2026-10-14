@@ -62,13 +62,13 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden" dir={dir}
-      style={{ background: 'linear-gradient(135deg, #0B1D3A 0%, #1B2D5B 50%, #2a4a8a 100%)' }}>
+      style={{ background: 'linear-gradient(135deg, #0B1D3A 0%, #0B2438 50%, #102E45 100%)' }}>
       <div className="absolute top-4 left-4 z-20"><LanguageSwitcher variant="minimal" /></div>
       <a href="/" className="absolute top-4 right-4 z-20 text-sm font-medium text-white/70 hover:text-white transition-colors">{t.home}</a>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/logo-outlined.png" alt="" className="w-20 h-20 mx-auto mb-4" />
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-mobile-lockup mx-auto mb-4" />
           <Logo theme="dark" size="lg" className="justify-center" variant="wordmark" />
         </div>
 
@@ -76,13 +76,13 @@ export default function ForgotPasswordPage() {
           {sent ? (
             <div className="text-center">
               <div className="text-5xl mb-4">📬</div>
-              <h2 className="text-xl font-bold text-[#1B2D5B] mb-2">{t.sentTitle}</h2>
+              <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.sentTitle}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.sentSub}</p>
-              <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#1B2D5B' }}>{t.back}</a>
+              <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.back}</a>
             </div>
           ) : (
             <>
-              <h2 className="text-xl font-bold text-[#1B2D5B] mb-1">{t.title}</h2>
+              <h2 className="text-xl font-bold text-[#0B2438] mb-1">{t.title}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.sub}</p>
               {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">⚠️ {error}</div>}
               <form onSubmit={handleSubmit}>
@@ -93,12 +93,12 @@ export default function ForgotPasswordPage() {
                 </div>
                 <button type="submit" disabled={loading}
                   className="w-full py-3.5 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"
-                  style={{ background: '#F5831F' }}>
+                  style={{ background: '#D4A543' }}>
                   {loading ? t.sending : t.send}
                 </button>
               </form>
               <p className="text-center text-sm text-gray-500 mt-5">
-                <a href="/login" className="font-medium hover:underline" style={{ color: '#F5831F' }}>{t.back}</a>
+                <a href="/login" className="font-medium hover:underline" style={{ color: '#D4A543' }}>{t.back}</a>
               </p>
             </>
           )}

@@ -419,7 +419,7 @@ export default function QuickRequestPage() {
           <h2 className="text-2xl font-extrabold text-navy mb-2">{L('Request sent', 'درخواست بھیج دی گئی', 'تم إرسال طلبك')}</h2>
           <p className="text-gray-500 mb-6">{L('Suppliers near you will send their prices. We will notify you as quotes arrive.', 'قریبی سپلائرز قیمتیں بھیجیں گے۔', 'سيرسل الموردون القريبون منك أسعارهم، وسنُبلغك فور وصول أي عرض.')}</p>
           <div className="flex gap-3">
-            <Link href="/contractor" className="flex-1 py-3 rounded-xl font-bold text-white" style={{ background: '#1B2D5B' }}>{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
+            <Link href="/contractor" className="flex-1 py-3 rounded-xl font-bold text-white" style={{ background: '#0B2438' }}>{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
             <button type="button" onClick={() => { setDone(false); setLines([]); setPhotos([]); setNotes('') }} className="flex-1 py-3 rounded-xl font-bold border border-gray-200 text-gray-700">{L('New request', 'نئی درخواست', 'طلب جديد')}</button>
           </div>
         </div>
@@ -507,7 +507,7 @@ export default function QuickRequestPage() {
                       <span className="min-w-0 flex-1">
                         <span className="block font-bold text-sm text-navy truncate" dir="auto">{l.product_name}</span>
                         <span className="block text-xs text-gray-500 truncate" dir="auto">
-                          <b className="text-[#d96f15]">{l.quantity} {l.unit}</b>
+                          <b className="text-[#9D7425]">{l.quantity} {l.unit}</b>
                           {Object.values(l.specs || {}).filter(v => (v || '').trim()).length ? ' · ' + Object.values(l.specs || {}).filter(v => (v || '').trim()).join('، ') : ''}
                           {l.details.trim() ? ' · ' + l.details.trim() : ''}
                           {l.fileId ? ' · 📎' : ''}
@@ -620,7 +620,7 @@ export default function QuickRequestPage() {
               )
             })}
             <button type="button" onClick={addMore}
-              className="lg:hidden w-full py-3 rounded-xl border-2 border-dashed border-[#F5831F]/50 text-[#d96f15] font-bold text-sm hover:bg-[#F5831F]/5 transition-all">
+              className="lg:hidden w-full py-3 rounded-xl border-2 border-dashed border-[#D4A543]/50 text-[#9D7425] font-bold text-sm hover:bg-[#D4A543]/5 transition-all">
               + {L('Add another material', 'ایک اور سامان شامل کریں', 'أضف مادة أخرى')}
             </button>
             {!allSaved && (
@@ -638,7 +638,7 @@ export default function QuickRequestPage() {
                 <button key={String(v)} type="button" role="radio" aria-checked={pickup === v} onClick={() => setPickup(v)}
                   className={`rounded-xl border-2 p-3 text-start transition-all ${pickup === v ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 hover:border-gray-300'}`}>
                   <div className="flex items-center gap-2.5">
-                    <span className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${pickup === v ? 'bg-[#0F6E56] text-white' : 'bg-gray-100 text-[#1B2D5B]'}`}>
+                    <span className={`w-10 h-10 rounded-xl grid place-items-center shrink-0 ${pickup === v ? 'bg-[#0F6E56] text-white' : 'bg-gray-100 text-[#0B2438]'}`}>
                       <SellerIcon name={ic} className="w-5 h-5" />
                     </span>
                     <span className="min-w-0">
@@ -649,7 +649,7 @@ export default function QuickRequestPage() {
                 </button>
               ))}
             </div>
-            <h2 className="font-bold text-navy flex items-center gap-1.5"><SellerIcon name="pin" className="w-4 h-4 text-[#F5831F]" />{pickup ? L('Your area', 'آپ کا علاقہ', 'منطقتك') : L('Delivery to', 'ڈیلیوری', 'التوصيل إلى')}</h2>
+            <h2 className="font-bold text-navy flex items-center gap-1.5"><SellerIcon name="pin" className="w-4 h-4 text-[#D4A543]" />{pickup ? L('Your area', 'آپ کا علاقہ', 'منطقتك') : L('Delivery to', 'ڈیلیوری', 'التوصيل إلى')}</h2>
             <div className="grid grid-cols-2 gap-2">
               <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" aria-label={L('Region', 'علاقہ', 'المنطقة')}>
                 <option value="">{L('Region', 'علاقہ', 'المنطقة')}</option>
@@ -671,7 +671,7 @@ export default function QuickRequestPage() {
               </div>
             )}
             <details>
-              <summary className="cursor-pointer text-xs font-bold text-[#d96f15] select-none">{L('More options (optional)', 'مزید اختیارات', 'خيارات إضافية (اختياري)')}</summary>
+              <summary className="cursor-pointer text-xs font-bold text-[#9D7425] select-none">{L('More options (optional)', 'مزید اختیارات', 'خيارات إضافية (اختياري)')}</summary>
               <div className="mt-3 space-y-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Suppliers can send prices for', 'قیمت بھیجنے کا وقت', 'يمكن للموردين إرسال الأسعار خلال')}</label>
@@ -728,7 +728,7 @@ export default function QuickRequestPage() {
                       <li key={l.key} className="rounded-xl bg-gray-50 border border-gray-100 p-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <span className="font-bold text-navy" dir="auto">{i + 1}. {l.product_name}</span>
-                          <span className="font-bold text-[#d96f15] whitespace-nowrap">{l.quantity} {l.unit}</span>
+                          <span className="font-bold text-[#9D7425] whitespace-nowrap">{l.quantity} {l.unit}</span>
                         </div>
                         {(sp.length > 0 || l.details.trim() || l.fileId) && (
                           <div className="text-xs text-gray-500 mt-1" dir="auto">

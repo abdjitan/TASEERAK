@@ -100,7 +100,7 @@ export default function MyRequestsPage() {
           {([['all', L('All', 'سب', 'الكل')], ['open', L('Open', 'کھلی', 'مفتوحة')], ['closed', L('Deal done', 'مکمل', 'تمّت الترسية')], ['ended', L('Ended', 'ختم', 'منتهية')]] as [Filter, string][]).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setFilter(k)}
               className={`px-3.5 py-2 rounded-xl text-sm font-bold border transition-all ${filter === k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600'}`}
-              style={filter === k ? { background: '#1B2D5B' } : undefined}>
+              style={filter === k ? { background: '#0B2438' } : undefined}>
               {label} <span className="opacity-70">({counts[k]})</span>
             </button>
           ))}
@@ -130,16 +130,16 @@ export default function MyRequestsPage() {
               const offers = Number(r.offer_count || 0)
               return (
                 <Link key={r.id} href={`/contractor/rfq/${r.id}`}
-                  className="block bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:border-[#F5831F]/50 hover:shadow transition-all">
+                  className="block bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:border-[#D4A543]/50 hover:shadow transition-all">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <div className="text-xs font-bold text-[#d96f15] font-mono" dir="ltr">{rfqRef(r)}</div>
+                      <div className="text-xs font-bold text-[#9D7425] font-mono" dir="ltr">{rfqRef(r)}</div>
                       <div className="font-extrabold text-navy" dir="auto">{r.title || L(`${items.length} material(s)`, `${items.length} اشیاء`, items.length === 1 ? 'مادة واحدة' : `${items.length} مواد`)}</div>
                       <div className="text-xs text-gray-400 mt-0.5">{rfqDate(r, locale)}{r.city || r.region ? ` · ${r.city || r.region}` : ''}</div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${b.c}`}>{b.t}</span>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${offers ? 'bg-[#F5831F]/10 text-[#d96f15] border-[#F5831F]/30' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${offers ? 'bg-[#D4A543]/10 text-[#9D7425] border-[#D4A543]/30' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
                         {offers ? L(`${offers} offer(s)`, `${offers} آفرز`, offers === 1 ? 'عرض واحد' : `${offers} عروض`) : L('No offers yet', 'ابھی کوئی آفر نہیں', 'لا عروض بعد')}
                       </span>
                       {u && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: u.bg, color: u.fg, border: `1px solid ${u.border}` }}>⏰ {formatTimeLeft(r.expires_at, locale)}</span>}

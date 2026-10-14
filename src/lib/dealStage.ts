@@ -25,11 +25,11 @@ export function dealStage(offer: any): DealStage {
   if (offer?.received_at) {
     if (paid)
       return { step: 4, key: 'paid', label: 'دُفعت — بانتظار تأكيد المورد لاستلام الدفعة', emoji: '💵', done: false, tone: '#0F6E56' }
-    return { step: 3, key: 'received', label: 'تمّ الاستلام — بانتظار الدفع', emoji: '📥', done: false, tone: '#1B2D5B' }
+    return { step: 3, key: 'received', label: 'تمّ الاستلام — بانتظار الدفع', emoji: '📥', done: false, tone: '#0B2438' }
   }
 
   if (offer?.supplier_delivered_at)
-    return { step: 2, key: 'delivered', label: 'أكّد المورد التسليم — بانتظار تأكيد استلامك', emoji: '📦', done: false, tone: '#F5831F' }
+    return { step: 2, key: 'delivered', label: 'أكّد المورد التسليم — بانتظار تأكيد استلامك', emoji: '📦', done: false, tone: '#D4A543' }
 
-  return { step: 1, key: 'accepted', label: 'تمّ القبول — بانتظار تسليم المورد', emoji: '🚚', done: false, tone: '#F5831F' }
+  return { step: 1, key: 'accepted', label: 'تمّ القبول — بانتظار تسليم المورد', emoji: '🚚', done: false, tone: '#D4A543' }
 }

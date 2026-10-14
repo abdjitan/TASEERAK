@@ -87,7 +87,7 @@ export default function PrivacyPage() {
       </nav>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
-        <h1 className="text-2xl font-bold mb-1" style={{ color: '#1B2D5B' }}>{t.title}</h1>
+        <h1 className="text-2xl font-bold mb-1" style={{ color: '#0B2438' }}>{t.title}</h1>
         <p className="text-xs text-gray-400 mb-5">{t.updated}</p>
 
         <p className="text-sm text-gray-700 leading-relaxed mb-4">{t.intro}</p>
@@ -96,7 +96,7 @@ export default function PrivacyPage() {
         <div className="space-y-5">
           {t.sections.map(([h, body]: string[], i: number) => (
             <section key={i}>
-              <h2 className="text-base font-bold mb-1.5" style={{ color: '#1B2D5B' }}>{h}</h2>
+              <h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{h}</h2>
               <p className="text-sm text-gray-600 leading-relaxed">{body}</p>
             </section>
           ))}

@@ -6,28 +6,28 @@
   * { box-sizing: border-box; }
   :root {
     /* Brand */
-    --navy: #1B2D5B;
-    --navy-dark: #0f1d3d;
-    --navy-deep: #0a1530;
-    --navy-soft: #2a4a8a;
-    --orange: #F5831F;
-    --orange-dark: #d96f15;
-    --orange-soft: #ffb05e;
+    --navy: #0B2438;
+    --navy-dark: #071827;
+    --navy-deep: #050B12;
+    --navy-soft: #102E45;
+    --orange: #D4A543;
+    --orange-dark: #9D7425;
+    --orange-soft: #F5C55B;
     /* Cool-tinted neutrals */
-    --bg: #f5f7fb;
-    --bg-2: #eef2f8;
-    --ink: #0f1b34;
-    --ink-2: #475069;
-    --ink-3: #8089a0;
-    --line: #e4e9f2;
+    --bg: #F5F7FA;
+    --bg-2: #E8EDF2;
+    --ink: #10243B;
+    --ink-2: #48596E;
+    --ink-3: #728196;
+    --line: #D9E0E8;
     --white: #ffffff;
     /* Sector accents */
-    --civil: #1B2D5B;
-    --arch: #7c3aed;
-    --elec: #F5831F;
+    --civil: #0B2438;
+    --arch: #435A70;
+    --elec: #D4A543;
     --mech: #0F6E56;
     /* Type */
-    --font: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif;
+    --font: "IBM Plex Sans Arabic", "Tajawal", "Cairo", "Segoe UI", Tahoma, Arial, sans-serif;
     /* Shape */
     --r-sm: 10px;
     --r-md: 16px;
@@ -37,8 +37,8 @@
     --sh-sm: 0 1px 3px rgba(15,27,52,.06), 0 1px 2px rgba(15,27,52,.04);
     --sh-md: 0 8px 24px -8px rgba(15,27,52,.16), 0 2px 6px rgba(15,27,52,.06);
     --sh-lg: 0 30px 70px -24px rgba(15,27,52,.32);
-    --sh-orange: 0 12px 30px -8px rgba(245,131,31,.5);
-    --maxw: 1200px;
+    --sh-orange: 0 12px 30px -8px rgba(212,165,67,.35);
+    --maxw: 1360px;
     /* legacy aliases */
     --dark: #0f172a;
   }
@@ -55,8 +55,8 @@
 
 @layer components {
   .input-field {
-    @apply w-full px-4 py-3 rounded-[12px] text-sm bg-white text-[#0f1b34] placeholder-[#8089a0]
-    border border-[#e4e9f2] focus:outline-none focus:border-[#1B2D5B] focus:ring-2 focus:ring-[#1B2D5B]/10
+    @apply w-full px-4 py-3 rounded-[12px] text-sm bg-white text-[#10243B] placeholder-[#728196]
+    border border-[#D9E0E8] focus:outline-none focus:border-[#D4A543] focus:ring-2 focus:ring-[#D4A543]/20
     transition-all duration-200;
   }
 
@@ -68,8 +68,8 @@
   }
   .btn-navy { background: var(--navy); color: #fff; box-shadow: var(--sh-md); }
   .btn-navy:hover { background: var(--navy-dark); transform: translateY(-2px); }
-  .btn-orange, .btn-primary { background: var(--orange); color: #fff; box-shadow: var(--sh-orange); }
-  .btn-orange:hover, .btn-primary:hover { background: var(--orange-dark); transform: translateY(-2px); box-shadow: 0 16px 36px -8px rgba(245,131,31,.6); }
+  .btn-orange, .btn-primary { background: var(--orange); color: #071827; box-shadow: var(--sh-orange); }
+  .btn-orange:hover, .btn-primary:hover { background: var(--orange-soft); color: #050B12; transform: translateY(-2px); box-shadow: 0 16px 36px -8px rgba(212,165,67,.44); }
   .btn-ghost { background: transparent; color: var(--navy); border: 1.5px solid var(--line); }
   .btn-ghost:hover { border-color: var(--navy); background: #fff; transform: translateY(-2px); }
   .btn-light { background: rgba(255,255,255,.1); color: #fff; border: 1.5px solid rgba(255,255,255,.25); backdrop-filter: blur(6px); }
@@ -100,11 +100,11 @@
   .eyebrow {
     @apply inline-flex items-center gap-2 text-[13px] font-bold rounded-full;
     color: var(--orange-dark);
-    background: rgba(245,131,31,.1);
-    border: 1px solid rgba(245,131,31,.22);
+    background: rgba(212,165,67,.12);
+    border: 1px solid rgba(212,165,67,.28);
     padding: 7px 14px;
   }
-  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 4px rgba(245,131,31,.18); }
+  .eyebrow .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 4px rgba(212,165,67,.2); }
 
   .glass { @apply bg-white/80 backdrop-blur-lg border border-white/20; }
 }

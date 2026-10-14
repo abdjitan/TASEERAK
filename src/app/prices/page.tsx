@@ -47,7 +47,7 @@ export default async function PricesPage() {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#1B2D5B' }}>💰 مؤشّر أسعار مواد البناء</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}>💰 مؤشّر أسعار مواد البناء</h1>
           <p className="text-sm text-gray-500 max-w-2xl mx-auto leading-relaxed">
             متوسّط أسعار مواد البناء في السعودية، محسوبة من أسعار ترسية حقيقية على منصة تسعيرك — <span className="whitespace-nowrap">غير شاملة ضريبة القيمة المضافة</span> وبعد استبعاد القيم الشاذّة. أسعار استرشادية تتحدّث تلقائياً.
           </p>
@@ -58,13 +58,13 @@ export default async function PricesPage() {
             <div className="text-4xl mb-3">📊</div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
             <p className="text-sm text-gray-400 max-w-sm mx-auto">سيظهر هنا مؤشّر أسعار مواد البناء بمجرد إتمام صفقات على المنصّة. كل صفقة تُغذّي المؤشّر تلقائياً.</p>
-            <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#F5831F' }}>ابدأ الآن مجاناً</Link>
+            <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>ابدأ الآن مجاناً</Link>
           </div>
         ) : (
           <div className="space-y-6">
             {sectors.map(sec => (
               <section key={sec} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <h2 className="px-4 py-3 font-bold text-sm border-b border-gray-100" style={{ color: '#1B2D5B' }}>
+                <h2 className="px-4 py-3 font-bold text-sm border-b border-gray-100" style={{ color: '#0B2438' }}>
                   {(SECTOR_LABELS as any)[sec] || 'مواد أخرى'}
                 </h2>
                 <div className="divide-y divide-gray-50">
@@ -90,12 +90,12 @@ export default async function PricesPage() {
 
         {/* قسم SEO نصّي */}
         <div className="mt-10 bg-white rounded-2xl border border-gray-100 p-5 text-sm text-gray-600 leading-relaxed">
-          <h2 className="font-bold mb-2" style={{ color: '#1B2D5B' }}>عن مؤشّر أسعار مواد البناء</h2>
+          <h2 className="font-bold mb-2" style={{ color: '#0B2438' }}>عن مؤشّر أسعار مواد البناء</h2>
           <p className="mb-2">
             يوفّر مؤشّر تسعيرك متوسّط أسعار أهم مواد البناء في السوق السعودي — مثل حديد التسليح، والأسمنت، والخرسانة الجاهزة، والبلوك، والبلاط والسيراميك، والمواد الكهربائية والميكانيكية — اعتماداً على أسعار فعلية من صفقات بين مشترين وموردين موثّقين.
           </p>
           <p>
-            للحصول على سعر دقيق لمشروعك، <Link href="/register" className="font-semibold underline" style={{ color: '#F5831F' }}>أنشئ طلب تسعير</Link> مجاناً، وسيتنافس عليه الموردون في منطقتك.
+            للحصول على سعر دقيق لمشروعك، <Link href="/register" className="font-semibold underline" style={{ color: '#D4A543' }}>أنشئ طلب تسعير</Link> مجاناً، وسيتنافس عليه الموردون في منطقتك.
           </p>
         </div>
       </main>

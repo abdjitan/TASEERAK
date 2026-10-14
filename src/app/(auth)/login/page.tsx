@@ -134,17 +134,17 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex" dir={dir}>
+    <div className="auth-screen min-h-screen flex" dir={dir}>
       {/* ===== Brand panel (hidden on small screens) ===== */}
-      <div className="hidden lg:flex lg:w-[54%] relative overflow-hidden flex-col justify-between p-12 text-white"
-        style={{ background: 'linear-gradient(135deg,#0a1530 0%,#1B2D5B 55%,#2a4a8a 100%)' }}>
+      <div className="auth-brand-panel hidden lg:flex lg:w-[54%] relative overflow-hidden flex-col justify-between p-12 text-white"
+        style={{ background: 'linear-gradient(135deg,#0a1530 0%,#0B2438 55%,#102E45 100%)' }}>
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[8%] right-[8%] w-[420px] h-[420px] rounded-full blur-3xl" style={{ background: 'rgba(245,131,31,.12)' }} />
+          <div className="absolute top-[8%] right-[8%] w-[420px] h-[420px] rounded-full blur-3xl" style={{ background: 'rgba(212,165,67,.12)' }} />
           <div className="absolute bottom-[6%] left-[6%] w-[480px] h-[480px] rounded-full blur-3xl bg-white/5" />
         </div>
-        <div className="relative z-10 flex items-center gap-3">
-          <span className="w-11 h-11 rounded-2xl bg-white grid place-items-center shadow-lg"><img src="/logo.png" alt="تسعيرك" className="w-8 h-8 object-contain" /></span>
-          <span className="text-2xl font-extrabold">تسعير<span className="text-orange">ك</span></span>
+        <div className="relative z-10 flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-brand-lockup" />
         </div>
         <div className="relative z-10 max-w-md">
           <h2 className="text-3xl xl:text-[40px] font-extrabold leading-[1.25] mb-4">{t.brandH}</h2>
@@ -152,8 +152,8 @@ function LoginForm() {
           <ul className="space-y-4">
             {[t.l1, t.l2, t.l3].map((it, i) => (
               <li key={i} className="flex items-center gap-3 text-[15px] text-blue-50">
-                <span className="w-6 h-6 rounded-full grid place-items-center shrink-0" style={{ background: '#F5831F' }}>
-                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                <span className="w-6 h-6 rounded-full grid place-items-center shrink-0" style={{ background: '#D4A543' }}>
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="#071827" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                 </span>{it}
               </li>
             ))}
@@ -163,7 +163,7 @@ function LoginForm() {
       </div>
 
       {/* ===== Form panel ===== */}
-      <div className="flex-1 flex flex-col" style={{ background: 'var(--bg)' }}>
+      <div className="auth-form-side flex-1 flex flex-col" style={{ background: 'var(--bg)' }}>
         <div className="flex items-center justify-between p-5">
           <a href="/" className="flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-navy transition-colors">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10v10h5v-6h4v6h5V10" /></svg>
@@ -173,10 +173,10 @@ function LoginForm() {
         </div>
 
         <div className="flex-1 flex items-center justify-center px-5 pb-12">
-          <div className="w-full max-w-[400px] animate-slide-up">
-            <div className="flex lg:hidden items-center gap-3 justify-center mb-7">
-              <span className="w-11 h-11 rounded-2xl grid place-items-center shadow-md" style={{ background: '#1B2D5B' }}><img src="/logo.png" alt="تسعيرك" className="w-8 h-8 object-contain" /></span>
-              <span className="text-2xl font-extrabold text-navy">تسعير<span className="text-orange">ك</span></span>
+          <div className="auth-form-card w-full max-w-[400px] animate-slide-up">
+            <div className="flex lg:hidden items-center justify-center mb-7">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-mobile-lockup" />
             </div>
 
             <h1 className="text-[26px] font-extrabold text-navy mb-1">{mode === 'phone' ? L('Sign in or create an account', 'سائن اِن کریں یا اکاؤنٹ بنائیں', 'ادخل أو أنشئ حسابك') : t.welcome}</h1>

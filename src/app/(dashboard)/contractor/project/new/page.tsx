@@ -33,7 +33,7 @@ function getGroupedItems(items: any[], locale: string) {
 }
 
 const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
-const SECTOR_COLORS = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
+const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 export default function NewProjectPage() {
   const { locale, dir } = useTranslation()
@@ -363,7 +363,7 @@ export default function NewProjectPage() {
     <AppShell title={locale === 'en' ? 'New Project RFQ' : locale === 'ur' ? 'نیا پراجیکٹ' : 'طلب تسعير مشروع'} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
       <div className="max-w-5xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>
             {locale === 'en' ? '📋 New Project RFQ' : locale === 'ur' ? '📋 نیا پراجیکٹ' : '📋 طلب تسعير مشروع'}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -375,7 +375,7 @@ export default function NewProjectPage() {
 
         {/* Step 1: Setup */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
-          <h2 className="font-bold mb-4" style={{ color: '#1B2D5B' }}>
+          <h2 className="font-bold mb-4" style={{ color: '#0B2438' }}>
             {locale === 'en' ? '1. Project Info' : '1. بيانات المشروع'}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -431,7 +431,7 @@ export default function NewProjectPage() {
 
         {/* BOQ Upload */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
-          <h2 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>
+          <h2 className="font-bold mb-1" style={{ color: '#0B2438' }}>
             {locale === 'en' ? '2. Upload BOQ or Add Manually' : '2. رفع BOQ أو إضافة يدوية'}
           </h2>
           <p className="text-xs text-gray-400 mb-4">
@@ -441,14 +441,14 @@ export default function NewProjectPage() {
 
           {/* BOQ Upload Zone */}
           <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-8 cursor-pointer transition-all mb-4 ${
-            boqFile ? 'border-[#1B2D5B] bg-[#1B2D5B]/5' : 'border-gray-200 hover:border-[#F5831F]/50'
+            boqFile ? 'border-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 hover:border-[#D4A543]/50'
           }`} onClick={() => fileRef.current?.click()}>
             <input ref={fileRef} type="file" className="hidden" accept=".xlsx,.xls"
               onChange={(e: any) => { if (e.target.files?.[0]) handleBOQUpload(e.target.files[0]) }} />
             {parsing ? (
               <div className="text-center">
                 <div className="text-4xl mb-3 animate-pulse">⏳</div>
-                <div className="font-semibold text-sm" style={{ color: '#1B2D5B' }}>
+                <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>
                   {locale === 'en' ? 'Analyzing BOQ...' : 'جارٍ تحليل الـ BOQ...'}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
@@ -458,7 +458,7 @@ export default function NewProjectPage() {
             ) : boqFile ? (
               <div className="text-center">
                 <div className="text-4xl mb-2">✅</div>
-                <div className="font-semibold text-sm" style={{ color: '#1B2D5B' }}>{boqFile.name}</div>
+                <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{boqFile.name}</div>
                 <div className="text-xs text-gray-400 mt-1">{items.length} {locale === 'en' ? 'items extracted' : 'بند تم استخراجه'}</div>
                 <button type="button" onClick={(e: any) => { e.preventDefault(); setBoqFile(null); setItems([]) }}
                   className="mt-2 text-xs text-red-500 hover:underline">
@@ -481,10 +481,10 @@ export default function NewProjectPage() {
           )}
 
           {/* مستند مواصفات المشروع — يقرأه الذكاء ويطابق رموز البنود (DRS-701...) لاستخراج التفاصيل */}
-          <div className="rounded-xl border border-[#1B2D5B]/15 bg-[#1B2D5B]/[0.03] p-4 mb-4">
+          <div className="rounded-xl border border-[#0B2438]/15 bg-[#0B2438]/[0.03] p-4 mb-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">📑</span>
-              <h3 className="font-bold text-sm" style={{ color: '#1B2D5B' }}>
+              <h3 className="font-bold text-sm" style={{ color: '#0B2438' }}>
                 {locale === 'en' ? 'Project specifications (optional)' : 'مواصفات المشروع (اختياري)'}
               </h3>
             </div>
@@ -497,11 +497,11 @@ export default function NewProjectPage() {
               {specsFile ? (
                 <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
                   <span className="text-base">📄</span>
-                  <span className="text-xs font-semibold truncate max-w-[200px]" style={{ color: '#1B2D5B' }}>{specsFile.name}</span>
+                  <span className="text-xs font-semibold truncate max-w-[200px]" style={{ color: '#0B2438' }}>{specsFile.name}</span>
                   <button type="button" onClick={() => { setSpecsFile(null); setSpecMsg('') }} className="text-xs text-red-500 hover:underline">{locale === 'en' ? 'Remove' : 'إزالة'}</button>
                 </div>
               ) : (
-                <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-[#1B2D5B]/40 transition-all">
+                <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-[#0B2438]/40 transition-all">
                   <input ref={specsRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg"
                     onChange={(e: any) => { const f = e.target.files?.[0]; if (f) { setSpecsFile(f); setSpecMsg('') } }} />
                   <span className="text-base">📤</span>
@@ -510,7 +510,7 @@ export default function NewProjectPage() {
               )}
               <button type="button" onClick={matchSpecs} disabled={matchingSpecs || !specsFile || items.length === 0}
                 className="text-xs font-bold text-white px-4 py-2 rounded-lg disabled:opacity-40 transition-all hover:shadow"
-                style={{ background: '#1B2D5B' }}>
+                style={{ background: '#0B2438' }}>
                 {matchingSpecs ? (locale === 'en' ? '⏳ Reading...' : '⏳ جارٍ القراءة...') : (locale === 'en' ? '🔎 Read & match specs' : '🔎 اقرأ المواصفات وطابقها')}
               </button>
             </div>
@@ -529,7 +529,7 @@ export default function NewProjectPage() {
           </div>
 
           <button type="button" onClick={addItem}
-            className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-500 hover:border-[#1B2D5B] hover:text-[#1B2D5B] transition-all">
+            className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-500 hover:border-[#0B2438] hover:text-[#0B2438] transition-all">
             + {locale === 'en' ? 'Add Material' : 'إضافة مادة'}
           </button>
         </div>
@@ -538,10 +538,10 @@ export default function NewProjectPage() {
         {items.length > 0 && (
           <div className="space-y-3 mb-5">
             <div className="flex items-center justify-between">
-              <h2 className="font-bold text-sm flex items-center gap-2" style={{ color: '#1B2D5B' }}>
+              <h2 className="font-bold text-sm flex items-center gap-2" style={{ color: '#0B2438' }}>
                 {locale === 'en' ? `Materials (${items.length})` : `المواد (${items.length})`}
                 {aiUsed && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
                     ✨ {locale === 'en' ? 'AI-analyzed' : 'حُلّل بالذكاء الاصطناعي'}
                   </span>
                 )}
@@ -592,7 +592,7 @@ export default function NewProjectPage() {
                     </select>
                   </div>
                   <button type="button" onClick={bulkApplyCategory} disabled={!bulkSector || !bulkSub}
-                    className="text-xs font-bold text-white px-4 py-2 rounded-lg disabled:opacity-40" style={{ background: '#1B2D5B' }}>
+                    className="text-xs font-bold text-white px-4 py-2 rounded-lg disabled:opacity-40" style={{ background: '#0B2438' }}>
                     {locale === 'en' ? 'Apply to all' : 'طبّق على الكل'}
                   </button>
                 </div>
@@ -610,7 +610,7 @@ export default function NewProjectPage() {
                 {locale === 'en' ? '✗ Deselect All' : 'إلغاء الكل'}
               </button>
               <button type="button" onClick={addItem}
-                className="text-xs px-3 py-1.5 rounded-lg text-white" style={{ background: '#1B2D5B' }}>
+                className="text-xs px-3 py-1.5 rounded-lg text-white" style={{ background: '#0B2438' }}>
                 + {locale === 'en' ? 'Add' : 'إضافة'}
               </button>
             </div>
@@ -623,7 +623,7 @@ export default function NewProjectPage() {
                   <div key={g.key} className="border border-gray-100 rounded-xl bg-white overflow-hidden shadow-sm">
                     <button type="button" onClick={() => toggleGroup(g.key)}
                       className={`w-full flex items-center justify-between px-4 py-3 ${g.key === '_unclassified' ? 'bg-red-50' : 'bg-gray-50'}`}>
-                      <span className="font-bold text-sm flex items-center gap-2" style={{ color: g.key === '_unclassified' ? '#dc2626' : '#1B2D5B' }}>
+                      <span className="font-bold text-sm flex items-center gap-2" style={{ color: g.key === '_unclassified' ? '#dc2626' : '#0B2438' }}>
                         <span>{g.icon}</span> {g.label}
                         <span className="badge text-[10px] bg-white border border-gray-200 text-gray-600">{g.entries.length}</span>
                       </span>
@@ -639,7 +639,7 @@ export default function NewProjectPage() {
                     {/* Checkbox */}
                     <input type="checkbox" checked={item.selected}
                       onChange={(e: any) => updateItem(item.id, 'selected', e.target.checked)}
-                      className="mt-1 w-4 h-4 accent-[#1B2D5B] flex-shrink-0" />
+                      className="mt-1 w-4 h-4 accent-[#0B2438] flex-shrink-0" />
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
@@ -694,8 +694,8 @@ export default function NewProjectPage() {
                               onChange={(e: any) => updateItem(item.id, 'specification', e.target.value)}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Specification (optional)' : 'المواصفة (اختياري)'} />
                             {item.specFromDoc && (item.specFromDoc !== (item.specification || '')) && (
-                              <div className="mt-1.5 text-[11px] bg-[#F5831F]/5 border border-[#F5831F]/30 rounded-lg p-2 flex items-start gap-2">
-                                <span className="text-[#d96f15] font-bold shrink-0">📄 {locale === 'en' ? 'Spec doc:' : 'من الوثيقة:'}</span>
+                              <div className="mt-1.5 text-[11px] bg-[#D4A543]/5 border border-[#D4A543]/30 rounded-lg p-2 flex items-start gap-2">
+                                <span className="text-[#9D7425] font-bold shrink-0">📄 {locale === 'en' ? 'Spec doc:' : 'من الوثيقة:'}</span>
                                 <span className="text-gray-600 flex-1 min-w-0">{item.specFromDoc}</span>
                                 <button type="button" onClick={() => updateItem(item.id, 'specification', item.specFromDoc)}
                                   className="text-[#0F6E56] font-bold shrink-0 hover:underline">{locale === 'en' ? 'Use' : 'استبدل'}</button>
@@ -708,16 +708,16 @@ export default function NewProjectPage() {
                               {locale === 'en' ? 'Spec file (optional)' : 'ملف مواصفات للبند (اختياري)'}
                             </label>
                             {item.specFile ? (
-                              <div className="flex items-center gap-2 bg-[#1B2D5B]/5 rounded-lg p-2 border border-[#1B2D5B]/20">
+                              <div className="flex items-center gap-2 bg-[#0B2438]/5 rounded-lg p-2 border border-[#0B2438]/20">
                                 <span className="text-base">📎</span>
-                                <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#1B2D5B' }}>{item.specFile.name}</span>
+                                <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#0B2438' }}>{item.specFile.name}</span>
                                 <button type="button" onClick={() => updateItem(item.id, 'specFile', null)}
                                   className="text-xs text-red-500 hover:underline">
                                   {locale === 'en' ? 'Remove' : 'إزالة'}
                                 </button>
                               </div>
                             ) : (
-                              <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg p-2 cursor-pointer hover:border-[#F5831F]/50 transition-all">
+                              <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg p-2 cursor-pointer hover:border-[#D4A543]/50 transition-all">
                                 <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.dwg,.xlsx,.doc,.docx"
                                   onChange={(e: any) => updateItem(item.id, 'specFile', e.target.files?.[0] ?? null)} />
                                 <span className="text-base">📄</span>
@@ -738,7 +738,7 @@ export default function NewProjectPage() {
                         // View Mode
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <div className="font-semibold text-sm truncate" style={{ color: '#1B2D5B' }}>
+                            <div className="font-semibold text-sm truncate" style={{ color: '#0B2438' }}>
                               {item.product_name || <span className="text-gray-400 italic">{locale === 'en' ? 'Unnamed item' : 'بند بدون اسم'}</span>}
                             </div>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -758,7 +758,7 @@ export default function NewProjectPage() {
                               )}
                               {item.quantity && <span className="text-xs text-gray-500">📦 {item.quantity} {item.unit}</span>}
                               {item.specification && <span className="text-xs text-gray-400 truncate max-w-[200px]">⚙️ {item.specification}</span>}
-                              {item.specFile && <span className="text-xs text-[#1B2D5B] font-semibold">📎 {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
+                              {item.specFile && <span className="text-xs text-[#0B2438] font-semibold">📎 {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
                             </div>
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
@@ -787,7 +787,7 @@ export default function NewProjectPage() {
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
             {/* Target supplier types + verified-only (applies to all items) */}
             <div className="mb-4 pb-4 border-b border-gray-100">
-              <h4 className="text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
+              <h4 className="text-sm font-bold mb-1" style={{ color: '#0B2438' }}>
                 {locale === 'en' ? 'Who should receive this?' : locale === 'ur' ? 'یہ کس کو بھیجیں؟' : 'لمن تريد إرسال الطلب؟'}
               </h4>
               <p className="text-xs text-gray-400 mb-3">
@@ -800,11 +800,11 @@ export default function NewProjectPage() {
                   const active = targetTiers.map(normTier).includes(tier.key)
                   return (
                     <button key={tier.key} type="button" onClick={() => toggleTier(tier.key)}
-                      className={`p-3 rounded-xl border-2 text-start transition-all ${active ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'}`}>
+                      className={`p-3 rounded-xl border-2 text-start transition-all ${active ? 'border-[#D4A543] bg-[#D4A543]/5' : 'border-gray-200 hover:border-gray-300'}`}>
                       <div className="flex items-center gap-2">
-                        <span className="text-[#1B2D5B]"><SellerIcon name={tier.icon} className="w-5 h-5" /></span>
-                        <span className={`text-sm font-bold ${active ? 'text-[#F5831F]' : 'text-gray-700'}`}>{tier.label}</span>
-                        {active && <span className="ms-auto text-[#F5831F] font-bold">✓</span>}
+                        <span className="text-[#0B2438]"><SellerIcon name={tier.icon} className="w-5 h-5" /></span>
+                        <span className={`text-sm font-bold ${active ? 'text-[#D4A543]' : 'text-gray-700'}`}>{tier.label}</span>
+                        {active && <span className="ms-auto text-[#D4A543] font-bold">✓</span>}
                       </div>
                       <div className="text-[11px] text-gray-400 mt-1">{tier.desc}</div>
                     </button>
@@ -827,7 +827,7 @@ export default function NewProjectPage() {
                   <div className="text-xs text-gray-400">{locale === 'en' ? 'Only suppliers in your region' : locale === 'ur' ? 'صرف آپ کے علاقے کے سپلائرز' : 'موردو منطقتك فقط — شحن أقرب وأرخص'}</div>
                 </div>
                 <div onClick={() => setNearbyOnly(!nearbyOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${nearbyOnly ? 'justify-end' : 'justify-start'}`}
-                  style={{ background: nearbyOnly ? '#1B2D5B' : '#e5e7eb' }}>
+                  style={{ background: nearbyOnly ? '#0B2438' : '#e5e7eb' }}>
                   <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
                 </div>
               </div>
@@ -835,7 +835,7 @@ export default function NewProjectPage() {
 
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="font-bold" style={{ color: '#1B2D5B' }}>
+                <h3 className="font-bold" style={{ color: '#0B2438' }}>
                   {locale === 'en' ? 'Ready to Send?' : 'جاهز للإرسال؟'}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
@@ -854,7 +854,7 @@ export default function NewProjectPage() {
             <button onClick={handleSubmit}
               disabled={loading || !title || !region || selectedCount === 0 || (deliveryRequired && !deliveryLocation)}
               className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-40 transition-all hover:shadow-lg"
-              style={{ background: '#F5831F' }}>
+              style={{ background: '#D4A543' }}>
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>

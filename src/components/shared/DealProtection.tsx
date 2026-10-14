@@ -72,7 +72,7 @@ export default function DealProtection({
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6" dir={dir}>
-      <h3 className="text-base font-bold mb-1" style={{ color: '#1B2D5B' }}>🛡 {L('Deal protection', 'ڈیل کا تحفظ', 'حماية الصفقة')}</h3>
+      <h3 className="text-base font-bold mb-1" style={{ color: '#0B2438' }}>🛡 {L('Deal protection', 'ڈیل کا تحفظ', 'حماية الصفقة')}</h3>
       <p className="text-xs text-gray-400 mb-3">{L('The platform records each stage of the deal as proof that protects both sides — it never holds any money.', 'پلیٹ فارم ڈیل کے ہر مرحلے کو ریکارڈ کرتا ہے تاکہ دونوں فریقوں کا تحفظ ہو — یہ کوئی رقم اپنے پاس نہیں رکھتا۔', 'توثّق المنصة مراحل الصفقة كدليل يحمي الطرفين — ولا تحتفظ بأي مبالغ.')}</p>
       {deliverOverdue && (
         <div className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-2 leading-relaxed">
@@ -115,7 +115,7 @@ export default function DealProtection({
             <div className="text-xs text-gray-400">{offer.supplier_delivered_at ? `✓ ${L('Supplier confirmed delivery', 'سپلائر نے ڈیلیوری کنفرم کر دی', 'أكّد المورد التسليم')} — ${new Date(offer.supplier_delivered_at).toLocaleString(dloc)}` : L('Waiting for the supplier to confirm', 'سپلائر کی تصدیق کا انتظار ہے', 'بانتظار تأكيد المورد')}</div>
           </div>
           {!offer.supplier_delivered_at && isSupplier && (
-            <button onClick={() => callRpc('confirm_delivery', { p_offer_id: offer.id }, 'deliver')} disabled={busy === 'deliver'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#1B2D5B' }}>✓ {L('I confirm delivery', 'میں نے ڈیلیوری کر دی', 'أكّدت التسليم')}</button>
+            <button onClick={() => callRpc('confirm_delivery', { p_offer_id: offer.id }, 'deliver')} disabled={busy === 'deliver'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>✓ {L('I confirm delivery', 'میں نے ڈیلیوری کر دی', 'أكّدت التسليم')}</button>
           )}
         </div>
 
@@ -151,7 +151,7 @@ export default function DealProtection({
                 <a href={fileHref(offer.supplier_invoice_url)} target="_blank" rel="noopener noreferrer" className="text-xs px-3 py-2 rounded-xl font-semibold border border-gray-200 bg-white text-gray-700 whitespace-nowrap">📄 {L('View invoice', 'انوائس دیکھیں', 'عرض الفاتورة')}</a>
               )}
               {isSupplier && (
-                <label className={`text-xs px-4 py-2 rounded-xl font-semibold text-white whitespace-nowrap cursor-pointer ${busy === 'invoice' ? 'opacity-50 pointer-events-none' : ''}`} style={{ background: '#1B2D5B' }}>
+                <label className={`text-xs px-4 py-2 rounded-xl font-semibold text-white whitespace-nowrap cursor-pointer ${busy === 'invoice' ? 'opacity-50 pointer-events-none' : ''}`} style={{ background: '#0B2438' }}>
                   {busy === 'invoice' ? L('Uploading…', 'اپ لوڈ ہو رہی ہے…', 'جارٍ الرفع…') : offer.supplier_invoice_url ? L('Replace', 'تبدیل کریں', 'استبدال') : `⬆ ${L('Upload invoice', 'انوائس اپ لوڈ کریں', 'رفع الفاتورة')}`}
                   <input type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden"
                     onChange={(e: any) => { uploadInvoice(e.target.files?.[0]); e.target.value = '' }} />
@@ -174,7 +174,7 @@ export default function DealProtection({
           </div>
           <div className="flex gap-2 flex-shrink-0">
             {offer.payment_status !== 'paid' && isContractor && (
-              <button onClick={() => callRpc('mark_paid', { p_offer_id: offer.id }, 'paid')} disabled={busy === 'paid'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#1B2D5B' }}>✓ {L('I confirm payment', 'میں نے ادائیگی کر دی', 'أكّدت الدفع')}</button>
+              <button onClick={() => callRpc('mark_paid', { p_offer_id: offer.id }, 'paid')} disabled={busy === 'paid'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>✓ {L('I confirm payment', 'میں نے ادائیگی کر دی', 'أكّدت الدفع')}</button>
             )}
             {offer.payment_status === 'paid' && !offer.payment_confirmed_at && isSupplier && (
               <button onClick={() => callRpc('confirm_payment', { p_offer_id: offer.id }, 'paycfm')} disabled={busy === 'paycfm'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ {L('I confirm payment received', 'ادائیگی وصول ہو گئی', 'أكّدت استلام الدفعة')}</button>

@@ -24,7 +24,7 @@ const SECTOR_TR: Record<string, any> = {
   equipment: { en: 'Machinery', ur: 'مشینری' }, supply_store: { en: 'Supply Store', ur: 'سپلائی اسٹور' },
 }
 // نفس ألوان المنتقي (SpecialtyPicker) — لإبراز القطاع المحدّد بلونه الخاص بهدوء بدل البرتقالي الصاخب.
-const SECTOR_COLORS: Record<string, string> = { civil: '#1B2D5B', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
+const SECTOR_COLORS: Record<string, string> = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 const TR = {
   ar: {
@@ -244,7 +244,7 @@ export default function OnboardingPage() {
   const SaveBtn = ({ full }: { full?: boolean }) => (
     <button type="button" onClick={() => save()} disabled={saving || !canSave}
       className={`${full ? 'w-full' : 'w-full'} py-3 rounded-xl font-bold text-white text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
-      style={{ background: canSave ? '#F5831F' : '#9ca3af' }}>
+      style={{ background: canSave ? '#D4A543' : '#9ca3af' }}>
       {saving ? t.saving : t.save}
     </button>
   )
@@ -255,8 +255,8 @@ export default function OnboardingPage() {
       style={{
         backgroundColor: '#f5f7fb',
         backgroundImage:
-          'radial-gradient(1100px 520px at 100% -8%, rgba(27,45,91,0.07), rgba(27,45,91,0) 60%),' +
-          'radial-gradient(900px 480px at -6% 108%, rgba(245,131,31,0.05), rgba(245,131,31,0) 55%),' +
+          'radial-gradient(1100px 520px at 100% -8%, rgba(11,36,56,0.07), rgba(11,36,56,0) 60%),' +
+          'radial-gradient(900px 480px at -6% 108%, rgba(212,165,67,0.05), rgba(212,165,67,0) 55%),' +
           'linear-gradient(180deg, #eef2f8 0%, #f5f7fb 34%, #f5f7fb 100%)',
         backgroundAttachment: 'fixed',
       }}>
@@ -264,9 +264,9 @@ export default function OnboardingPage() {
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(27,45,91,0.035) 1px, transparent 1px),' +
-            'linear-gradient(90deg, rgba(27,45,91,0.035) 1px, transparent 1px),' +
-            'radial-gradient(rgba(27,45,91,0.05) 1px, transparent 1.5px)',
+            'linear-gradient(rgba(11,36,56,0.035) 1px, transparent 1px),' +
+            'linear-gradient(90deg, rgba(11,36,56,0.035) 1px, transparent 1px),' +
+            'radial-gradient(rgba(11,36,56,0.05) 1px, transparent 1.5px)',
           backgroundSize: '38px 38px, 38px 38px, 38px 38px',
           backgroundPosition: '0 0, 0 0, 19px 19px',
           WebkitMaskImage: 'linear-gradient(180deg, transparent 0, #000 120px, #000 76%, transparent 100%)',
@@ -295,7 +295,7 @@ export default function OnboardingPage() {
           {/* ═══ العمود الرئيسي ═══ */}
           <div className="flex-1 min-w-0 space-y-4 pb-28 lg:pb-0">
             {/* الموقع (مطلوب) */}
-            <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#1B2D5B' }}>
+            <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-navy">📍 {t.location}</h2>
                 <span className="text-[10px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
@@ -333,7 +333,7 @@ export default function OnboardingPage() {
             </div>
 
             {/* القطاعات / التخصصات (مطلوب للمورّد، اختياري للمشتري) */}
-            <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#1B2D5B' }}>
+            <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
               <div className="flex items-center justify-between mb-0.5">
                 <h2 className="text-sm font-bold text-navy">🧩 {role === 'supplier' ? t.sectorsTitleS : t.sectorsTitleC}</h2>
                 {role === 'supplier'
@@ -368,7 +368,7 @@ export default function OnboardingPage() {
                       onChange={(n: any) => { setSectors(n.sectors); setSpecialties(n.specialties) }} />
                   </div>
                   <details className="group">
-                    <summary className="cursor-pointer text-xs font-bold text-[#d96f15] select-none">{locale === 'en' ? 'Fine-tune materials (optional)' : locale === 'ur' ? 'تفصیل سے منتخب کریں (اختیاری)' : 'تعديل المواد بالتفصيل (اختياري)'} {specialties.length > 0 && `· ${specialties.length}`}</summary>
+                    <summary className="cursor-pointer text-xs font-bold text-[#9D7425] select-none">{locale === 'en' ? 'Fine-tune materials (optional)' : locale === 'ur' ? 'تفصیل سے منتخب کریں (اختیاری)' : 'تعديل المواد بالتفصيل (اختياري)'} {specialties.length > 0 && `· ${specialties.length}`}</summary>
                     <div className="mt-3">
                   <SpecialtyPicker
                     sectors={sectors} specialties={specialties}
@@ -384,7 +384,7 @@ export default function OnboardingPage() {
                             <input type="text" value={extraMaterialInput} onChange={(e: any) => setExtraMaterialInput(e.target.value)}
                               onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
                               className="input-field flex-1" placeholder={t.addMatPh} />
-                            <button type="button" onClick={() => addExtraMaterial(sector)} className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#1B2D5B' }}>{t.addMatBtn}</button>
+                            <button type="button" onClick={() => addExtraMaterial(sector)} className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#0B2438' }}>{t.addMatBtn}</button>
                           </div>
                           {sectorMats.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2">
@@ -433,7 +433,7 @@ export default function OnboardingPage() {
                 </div>
                 <p className="text-xs text-gray-500 mb-3 leading-relaxed">{t.gradeSub}</p>
                 <div className="grid grid-cols-4 gap-2">
-                  {[{ grade: 'A', label: locale === 'ar' ? 'أ' : 'A', desc: '> 100M', color: '#F5831F' }, { grade: 'B', label: locale === 'ar' ? 'ب' : 'B', desc: '30–100M', color: '#1B2D5B' }, { grade: 'C', label: locale === 'ar' ? 'ج' : 'C', desc: '5–30M', color: '#0F6E56' }, { grade: 'D', label: locale === 'ar' ? 'د' : 'D', desc: '< 5M', color: '#888780' }].map((g: any) => (
+                  {[{ grade: 'A', label: locale === 'ar' ? 'أ' : 'A', desc: '> 100M', color: '#D4A543' }, { grade: 'B', label: locale === 'ar' ? 'ب' : 'B', desc: '30–100M', color: '#0B2438' }, { grade: 'C', label: locale === 'ar' ? 'ج' : 'C', desc: '5–30M', color: '#0F6E56' }, { grade: 'D', label: locale === 'ar' ? 'د' : 'D', desc: '< 5M', color: '#888780' }].map((g: any) => (
                     <button key={g.grade} type="button" onClick={() => setContractorGrade(contractorGrade === g.grade ? '' : g.grade)}
                       className={`p-3 rounded-xl border-2 text-center transition-all ${contractorGrade === g.grade ? 'border-current' : 'border-gray-200 hover:border-gray-300'}`}
                       style={contractorGrade === g.grade ? { borderColor: g.color, background: g.color + '10' } : {}}>
@@ -454,14 +454,14 @@ export default function OnboardingPage() {
             )}
             {role === 'supplier' && !isIndividual && (
               profileComplete ? (
-                <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#F5831F', background: '#fff7ed', border: '1px solid #F5831F33' }}>
+                <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#D4A543', background: '#fff7ed', border: '1px solid #D4A54333' }}>
                   <div className="flex items-start gap-3">
                     <span className="text-2xl shrink-0">🛡️</span>
                     <div className="flex-1">
                       <div className="font-bold text-navy text-sm">{t.verifyTitle}</div>
                       <p className="text-xs text-gray-600 mt-1 leading-relaxed">{t.verifyBody}</p>
                       <button type="button" onClick={() => save('/settings?tab=docs')} disabled={saving}
-                        className="inline-block mt-2 text-xs font-bold text-white px-3 py-1.5 rounded-lg disabled:opacity-60" style={{ background: '#F5831F' }}>
+                        className="inline-block mt-2 text-xs font-bold text-[#071827] px-3 py-1.5 rounded-lg disabled:opacity-60" style={{ background: '#D4A543' }}>
                         {saving ? t.saving : t.verifyCta}
                       </button>
                     </div>
@@ -488,11 +488,11 @@ export default function OnboardingPage() {
 
           {/* ═══ السايدبار: التقدّم + الحفظ (ديسكتوب) ═══ */}
           <aside className="hidden lg:block w-80 shrink-0">
-            <div className="sticky top-24 rounded-2xl p-5 text-white shadow-lg" style={{ background: 'linear-gradient(160deg,#1B2D5B,#0f1d3d)' }}>
+            <div className="sticky top-24 rounded-2xl p-5 text-white shadow-lg" style={{ background: 'linear-gradient(160deg,#0B2438,#071827)' }}>
               <div className="flex items-center gap-4 mb-4">
                 <svg width="60" height="60" viewBox="0 0 56 56" className="shrink-0">
                   <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="6" />
-                  <circle cx="28" cy="28" r="24" fill="none" stroke={pct === 100 ? '#22c55e' : '#F5831F'} strokeWidth="6" strokeLinecap="round"
+                  <circle cx="28" cy="28" r="24" fill="none" stroke={pct === 100 ? '#22c55e' : '#D4A543'} strokeWidth="6" strokeLinecap="round"
                     strokeDasharray={ringC} strokeDashoffset={ringC * (1 - pct / 100)} transform="rotate(-90 28 28)" style={{ transition: 'stroke-dashoffset .4s' }} />
                   <text x="28" y="33" textAnchor="middle" className="fill-white font-extrabold" style={{ fontSize: 15 }}>{pct}%</text>
                 </svg>
@@ -531,7 +531,7 @@ export default function OnboardingPage() {
         <div className="bg-white/95 backdrop-blur border-t border-line" style={{ boxShadow: '0 -8px 24px -12px rgba(15,27,52,.18)' }}>
           {/* شريط تقدّم رفيع */}
           <div className="h-1 w-full bg-canvas-2">
-            <div className="h-full transition-all duration-300" style={{ width: pct + '%', background: pct === 100 ? '#22c55e' : '#F5831F' }} />
+            <div className="h-full transition-all duration-300" style={{ width: pct + '%', background: pct === 100 ? '#22c55e' : '#D4A543' }} />
           </div>
           <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center gap-3">
             {/* النسبة + عدّاد الخطوات */}
@@ -544,7 +544,7 @@ export default function OnboardingPage() {
             {/* حفظ — الزر الأساسي الوحيد ذو البرتقالي القوي على الموبايل */}
             <button type="button" onClick={() => save()} disabled={saving || !canSave}
               className="flex-1 py-3 rounded-xl font-bold text-sm transition-all disabled:cursor-not-allowed"
-              style={{ background: canSave ? '#F5831F' : '#cbd2e0', color: canSave ? '#fff' : '#7c8496', boxShadow: canSave ? '0 12px 30px -8px rgba(245,131,31,.5)' : 'none' }}>
+              style={{ background: canSave ? '#D4A543' : '#cbd2e0', color: canSave ? '#fff' : '#7c8496', boxShadow: canSave ? '0 12px 30px -8px rgba(212,165,67,.5)' : 'none' }}>
               {saving ? t.saving : t.save}
             </button>
           </div>

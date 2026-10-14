@@ -120,7 +120,7 @@ export default function AdminUserDetail() {
   if (loading || !ok) return <PageLoader />
   if (!p) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]" dir="rtl">
-      <div className="text-center"><div className="text-5xl mb-3">🔍</div><div className="font-bold" style={{ color: '#1B2D5B' }}>الحساب غير موجود</div><Link href="/admin" className="text-sm text-[#d96f15] hover:underline mt-2 inline-block">← رجوع للوحة</Link></div>
+      <div className="text-center"><div className="text-5xl mb-3">🔍</div><div className="font-bold" style={{ color: '#0B2438' }}>الحساب غير موجود</div><Link href="/admin" className="text-sm text-[#9D7425] hover:underline mt-2 inline-block">← رجوع للوحة</Link></div>
     </div>
   )
 
@@ -132,7 +132,7 @@ export default function AdminUserDetail() {
   )
   const Section = ({ title, icon, children }: any) => (
     <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-      <h3 className="text-sm font-bold mb-2 flex items-center gap-1.5" style={{ color: '#1B2D5B' }}>{icon} {title}</h3>
+      <h3 className="text-sm font-bold mb-2 flex items-center gap-1.5" style={{ color: '#0B2438' }}>{icon} {title}</h3>
       <div>{children}</div>
     </div>
   )
@@ -150,9 +150,9 @@ export default function AdminUserDetail() {
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
-                style={{ background: p.role === 'contractor' ? '#1B2D5B' : '#7c3aed' }}>{p.company_name_ar?.[0] || '?'}</div>
+                style={{ background: p.role === 'contractor' ? '#0B2438' : '#7c3aed' }}>{p.company_name_ar?.[0] || '?'}</div>
               <div>
-                <div className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{p.company_name_ar || '—'}</div>
+                <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{p.company_name_ar || '—'}</div>
                 {p.company_name_en && <div className="text-sm text-gray-400">{p.company_name_en}</div>}
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span className={`badge text-[10px] ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? '🛒 مشترٍ' : p.role === 'supplier' ? '🏪 مورد' : p.role}</span>
@@ -194,7 +194,7 @@ export default function AdminUserDetail() {
                 <input type="text" value={pwConfirm} onChange={(e: any) => setPwConfirm(e.target.value)} className="input-field font-mono" placeholder="تأكيد" dir="ltr" />
               </div>
               {pwMsg && <div className="text-xs text-red-600 mt-2">{pwMsg}</div>}
-              <button onClick={changePassword} disabled={busy === 'pw'} className="mt-2 text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#1B2D5B' }}>{busy === 'pw' ? '...' : 'تعيين'}</button>
+              <button onClick={changePassword} disabled={busy === 'pw'} className="mt-2 text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>{busy === 'pw' ? '...' : 'تعيين'}</button>
             </div>
           )}
         </div>
@@ -228,7 +228,7 @@ export default function AdminUserDetail() {
             <Field label="الرمز البريدي / الرقم الإضافي">{[p.postal_code, p.additional_number].filter(Boolean).join(' — ') || '—'}</Field>
             <Field label="العنوان الوطني المختصر"><span className="font-mono" dir="ltr">{p.national_short_address || '—'}</span></Field>
             {p.latitude && p.longitude && (
-              <Field label="الإحداثيات"><a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" className="text-[#d96f15] hover:underline">🗺 فتح على الخريطة</a></Field>
+              <Field label="الإحداثيات"><a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" className="text-[#9D7425] hover:underline">🗺 فتح على الخريطة</a></Field>
             )}
           </Section>
 
@@ -291,8 +291,8 @@ export default function AdminUserDetail() {
             {p.rejection_reason && <Field label="سبب الرفض"><span className="text-red-600">{p.rejection_reason}</span></Field>}
             <Field label="مصدر التحقق">{p.cr_verification_source || '—'}{p.cr_verified_at ? ` (${dt(p.cr_verified_at)})` : ''}</Field>
             <div className="flex gap-2 mt-2 flex-wrap">
-              {p.license_url && <button onClick={() => openDoc(p.license_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5">📄 الرخصة</button>}
-              {p.cr_url && <button onClick={() => openDoc(p.cr_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#d96f15] hover:bg-[#F5831F]/5">📋 السجل</button>}
+              {p.license_url && <button onClick={() => openDoc(p.license_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5">📄 الرخصة</button>}
+              {p.cr_url && <button onClick={() => openDoc(p.cr_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5">📋 السجل</button>}
               {!p.license_url && !p.cr_url && <span className="text-xs text-gray-400">لا توجد مستندات مرفوعة</span>}
             </div>
           </Section>
@@ -312,7 +312,7 @@ export default function AdminUserDetail() {
                 <div className="space-y-2">
                   {rfqs.map((r: any) => (
                     <div key={r.id} className="flex items-center justify-between gap-2 text-xs bg-[#f4f6f9] rounded-lg p-2.5 flex-wrap">
-                      <span className="font-semibold" style={{ color: '#1B2D5B' }}>{r.product_name}</span>
+                      <span className="font-semibold" style={{ color: '#0B2438' }}>{r.product_name}</span>
                       <span className="text-gray-500">{r.quantity} {r.unit}</span>
                       <span className="badge text-[10px] badge-gray">{RFQ_STATUS[r.status] || r.status}</span>
                       <span className="text-orange-600">{r.offer_count || 0} عرض</span>
@@ -320,8 +320,8 @@ export default function AdminUserDetail() {
                     </div>
                   ))}
                   {projects.map((pr: any) => (
-                    <div key={pr.id} className="flex items-center justify-between gap-2 text-xs bg-[#F5831F]/5 rounded-lg p-2.5 flex-wrap">
-                      <span className="font-semibold" style={{ color: '#1B2D5B' }}>🏗 {pr.title}</span>
+                    <div key={pr.id} className="flex items-center justify-between gap-2 text-xs bg-[#D4A543]/5 rounded-lg p-2.5 flex-wrap">
+                      <span className="font-semibold" style={{ color: '#0B2438' }}>🏗 {pr.title}</span>
                       <span className="badge text-[10px] badge-gray">{RFQ_STATUS[pr.status] || pr.status}</span>
                       <span className="text-gray-400">{dt(pr.created_at)}</span>
                     </div>
@@ -335,7 +335,7 @@ export default function AdminUserDetail() {
                 <div className="space-y-2">
                   {myOffers.map((o: any) => (
                     <div key={o.id} className="flex items-center justify-between gap-2 text-xs bg-[#f4f6f9] rounded-lg p-2.5 flex-wrap">
-                      <span className="font-semibold" style={{ color: '#1B2D5B' }}>{o.rfqs?.product_name || 'طلب'}</span>
+                      <span className="font-semibold" style={{ color: '#0B2438' }}>{o.rfqs?.product_name || 'طلب'}</span>
                       <span className="text-emerald-700 font-bold">{sar(o.total_price)}</span>
                       {o.delivery_days != null && <span className="text-gray-500">⏱ {o.delivery_days} يوم</span>}
                       <span className="badge text-[10px] badge-gray">{OFFER_STATUS[o.status] || o.status}</span>

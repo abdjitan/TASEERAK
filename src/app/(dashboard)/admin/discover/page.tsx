@@ -11,7 +11,7 @@ import {
   DISCOVERY_CITIES, PACK_QUERIES, packLabel, packIcon, packSector, waLink, inviteText, INVITE_COOLDOWN_DAYS,
 } from '@/lib/discovery'
 
-const NAVY = '#1B2D5B', ORANGE = '#F5831F', GREEN = '#0F6E56'
+const NAVY = '#0B2438', ORANGE = '#D4A543', GREEN = '#0F6E56'
 const PAGE = 50
 // Places Text Search with phone/website fields bills as "Enterprise" (~$35 per 1000 pages).
 const USD_PER_PAGE = 0.035

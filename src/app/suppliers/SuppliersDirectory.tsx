@@ -14,10 +14,10 @@ function rankBadge(i: number) {
   if (i === 0) return { e: '🥇', c: '#D4AF37' }
   if (i === 1) return { e: '🥈', c: '#9CA3AF' }
   if (i === 2) return { e: '🥉', c: '#CD7F32' }
-  return { e: `${i + 1}`, c: '#1B2D5B' }
+  return { e: `${i + 1}`, c: '#0B2438' }
 }
 
-const selectCls = 'border border-gray-200 rounded-xl px-2 py-2 text-sm outline-none focus:border-[#F5831F] bg-white text-gray-700'
+const selectCls = 'border border-gray-200 rounded-xl px-2 py-2 text-sm outline-none focus:border-[#D4A543] bg-white text-gray-700'
 
 export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) {
   const [q, setQ] = useState('')
@@ -47,7 +47,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
       {/* الفلاتر */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-4">
         <input value={q} onChange={(e: any) => setQ(e.target.value)} placeholder="🔍 ابحث باسم المورد..."
-          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#F5831F] mb-3" />
+          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[#D4A543] mb-3" />
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <select value={region} onChange={(e: any) => setRegion(e.target.value)} className={selectCls}>
             <option value="">كل المناطق</option>
@@ -69,7 +69,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
         {anyFilter && (
           <div className="flex items-center justify-between mt-3 text-xs">
             <span className="text-gray-500">{filtered.length} نتيجة</span>
-            <button onClick={clear} className="text-[#F5831F] font-bold hover:underline">مسح الفلاتر ✕</button>
+            <button onClick={clear} className="text-[#D4A543] font-bold hover:underline">مسح الفلاتر ✕</button>
           </div>
         )}
       </div>
@@ -86,11 +86,11 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
             const rb = rankBadge(i)
             const rating = Number(r.rating_avg) || 0
             return (
-              <Link key={r.supplier_id} href={`/suppliers/${r.supplier_id}`} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:border-[#F5831F]/40 transition-colors">
+              <Link key={r.supplier_id} href={`/suppliers/${r.supplier_id}`} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:border-[#D4A543]/40 transition-colors">
                 <div className="w-10 h-10 shrink-0 grid place-items-center rounded-xl font-extrabold text-lg" style={{ color: rb.c, background: `${rb.c}14` }}>{rb.e}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{r.company_name_ar || 'مورد'}</span>
+                    <span className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{r.company_name_ar || 'مورد'}</span>
                     {r.verification_status === 'verified' && <span className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>✓ موثّق</span>}
                   </div>
                   <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
@@ -103,7 +103,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                   {Array.isArray(r.approvals) && r.approvals.length > 0 && (
                     <div className="flex gap-1 mt-1.5 flex-wrap">
                       {r.approvals.slice(0, 4).map((a: string) => (
-                        <span key={a} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#1B2D5B0d', color: '#1B2D5B' }}>🏅 {approvalLabel(a)}</span>
+                        <span key={a} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#0B24380d', color: '#0B2438' }}>🏅 {approvalLabel(a)}</span>
                       ))}
                     </div>
                   )}

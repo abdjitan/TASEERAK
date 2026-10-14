@@ -88,7 +88,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar' }: Lo
       {/* زر تحديد الموقع */}
       <button type="button" onClick={detectLocation} disabled={detecting}
         className="w-full py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg flex items-center justify-center gap-2"
-        style={{ background: '#1B2D5B' }}>
+        style={{ background: '#0B2438' }}>
         {detecting ? (
           <>
             <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
@@ -105,7 +105,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar' }: Lo
             className="input-field text-sm flex-1" placeholder="https://maps.google.com/..." dir="ltr" />
           <button type="button" onClick={extractFromLink} disabled={!mapLink}
             className="px-4 rounded-xl text-sm font-semibold text-white disabled:opacity-40 transition-all"
-            style={{ background: '#F5831F' }}>
+            style={{ background: '#D4A543' }}>
             {T.extract}
           </button>
         </div>
@@ -120,7 +120,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar' }: Lo
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs font-semibold text-emerald-700">✓ {T.set}</div>
             <a href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer"
-              className="text-xs font-semibold hover:underline" style={{ color: '#F5831F' }}>
+              className="text-xs font-semibold hover:underline" style={{ color: '#D4A543' }}>
               {T.openGoogle} ←
             </a>
           </div>

@@ -45,7 +45,7 @@ export default async function SuppliersLeaderboard() {
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* الترويسة */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#1B2D5B' }}>🏆 لوحة شرف الموردين</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}>🏆 لوحة شرف الموردين</h1>
           <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed">
             موردون لمواد البناء على منصة تسعيرك، مرتّبون حسب التوثيق والتقييم والصفقات المنجزة. كل مورد يحصل على «درجة موثوقية» من ١٠٠.
           </p>
@@ -62,17 +62,17 @@ export default async function SuppliersLeaderboard() {
             <div className="text-4xl mb-3">🏗️</div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
             <p className="text-sm text-gray-400">سيظهر هنا أفضل الموردين بمجرد بدء الصفقات على المنصّة.</p>
-            <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#F5831F' }}>سجّل كمورّد</Link>
+            <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>سجّل كمورّد</Link>
           </div>
         ) : (
           <>
             {ranked.length > 0 && <SuppliersDirectory suppliers={ranked} />}
             {listings.length > 0 && (
               <section className="mt-8">
-                <h2 className="text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>موردون في دليلنا</h2>
+                <h2 className="text-sm font-bold mb-1" style={{ color: '#0B2438' }}>موردون في دليلنا</h2>
                 <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
                   موردون معروفون في السوق لم يسجّلوا بعد. هل أحدها نشاطك؟{' '}
-                  <Link href="/register" className="underline font-semibold" style={{ color: '#F5831F' }}>سجّله مجاناً</Link>{' '}
+                  <Link href="/register" className="underline font-semibold" style={{ color: '#D4A543' }}>سجّله مجاناً</Link>{' '}
                   لاستقبال طلبات التسعير.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

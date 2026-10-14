@@ -17,6 +17,7 @@ export default function LandingPage() {
   return (
     <>
       <link rel="stylesheet" href="/design/styles.css" />
+      <link rel="stylesheet" href="/design/master-brand.css" />
       <div id="taseerak-landing" dangerouslySetInnerHTML={{ __html: html }} />
       <LandingBoot />
     </>

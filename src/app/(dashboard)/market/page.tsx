@@ -117,9 +117,9 @@ export default function MarketPricePage() {
         {/* Header */}
         <div className="mb-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#1B2D5B' }}>📊</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}>📊</div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>{T.title}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{T.title}</h1>
               <p className="text-gray-500 text-xs sm:text-sm">{T.sub}</p>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function MarketPricePage() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
               </span>
-              <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>
+              <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
                 {locale === 'en' ? '🔴 LIVE Prices from Factories' : locale === 'ur' ? '🔴 لائیو قیمتیں' : '🔴 أسعار مباشرة من المصانع'}
               </h2>
             </div>
@@ -149,17 +149,17 @@ export default function MarketPricePage() {
                     <div key={p.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all">
                       <div className="flex items-start justify-between mb-2">
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold text-sm truncate" style={{ color: '#1B2D5B' }}>{p.product_name}</div>
+                          <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{p.product_name}</div>
                           <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                         </div>
-                        {p.supplier?.supplier_tier === 'manufacturer' && <span className="text-[#1B2D5B]" title="مصنع"><SellerIcon name="factory" /></span>}
+                        {p.supplier?.supplier_tier === 'manufacturer' && <span className="text-[#0B2438]" title="مصنع"><SellerIcon name="factory" /></span>}
                       </div>
                       <div className="flex items-end justify-between">
                         <div>
                           <div className="flex items-center gap-1">
                             {trend === 'up' && <span className="text-red-500 text-sm">▲</span>}
                             {trend === 'down' && <span className="text-emerald-500 text-sm">▼</span>}
-                            <span className="text-2xl font-bold" style={{ color: trend === 'up' ? '#ef4444' : trend === 'down' ? '#0F6E56' : '#1B2D5B' }}>
+                            <span className="text-2xl font-bold" style={{ color: trend === 'up' ? '#ef4444' : trend === 'down' ? '#0F6E56' : '#0B2438' }}>
                               {p.price?.toLocaleString('en-US')}
                             </span>
                           </div>
@@ -184,13 +184,13 @@ export default function MarketPricePage() {
         {priceData.length > 0 && (
           <div className="grid grid-cols-3 gap-3 mb-6 stagger">
             {[
-              { label: locale === 'en' ? 'Materials Tracked' : 'مادة مرصودة', value: priceData.length, icon: '📦', bg: '#1B2D5B' },
-              { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: priceData.reduce((s, p) => s + p.count, 0), icon: '💬', bg: '#F5831F' },
+              { label: locale === 'en' ? 'Materials Tracked' : 'مادة مرصودة', value: priceData.length, icon: '📦', bg: '#0B2438' },
+              { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: priceData.reduce((s, p) => s + p.count, 0), icon: '💬', bg: '#D4A543' },
               { label: locale === 'en' ? 'Sectors' : 'قطاعات', value: Object.keys(SECTOR_LABELS).length, icon: '🏗', bg: '#0F6E56' },
             ].map(({ label, value, icon, bg }) => (
               <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm text-center">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg text-white mx-auto mb-2" style={{ background: bg }}>{icon}</div>
-                <div className="text-2xl font-bold" style={{ color: '#1B2D5B' }}>{value}</div>
+                <div className="text-2xl font-bold" style={{ color: '#0B2438' }}>{value}</div>
                 <div className="text-xs text-gray-500 mt-0.5">{label}</div>
               </div>
             ))}
@@ -204,7 +204,7 @@ export default function MarketPricePage() {
               <button key={s} onClick={() => setSelectedSector(s)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
                   selectedSector === s ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'
-                }`} style={selectedSector === s ? { background: '#1B2D5B' } : {}}>
+                }`} style={selectedSector === s ? { background: '#0B2438' } : {}}>
                 {s === 'all' ? T.all : (SECTOR_LABELS as any)[s]}
               </button>
             ))}
@@ -219,7 +219,7 @@ export default function MarketPricePage() {
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center animate-fade-in">
             <div className="text-6xl mb-4 animate-float">📊</div>
-            <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{T.noData}</h3>
+            <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{T.noData}</h3>
             <p className="text-sm text-gray-500">{T.noDataSub}</p>
           </div>
         ) : (
@@ -228,7 +228,7 @@ export default function MarketPricePage() {
             <div className="hidden sm:block bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-fade-in">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-100" style={{ background: '#1B2D5B' }}>
+                  <tr className="border-b border-gray-100" style={{ background: '#0B2438' }}>
                     {[T.material, T.sector, T.unit, T.minPrice, T.avgPrice, T.maxPrice, T.offers].map(h => (
                       <th key={h} className="text-right px-4 py-3 text-xs font-bold text-white">{h}</th>
                     ))}
@@ -236,15 +236,15 @@ export default function MarketPricePage() {
                 </thead>
                 <tbody>
                   {filtered.map((p, i) => (
-                    <tr key={i} className={`border-b border-gray-50 hover:bg-[#1B2D5B]/2 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
-                      <td className="px-4 py-3 font-semibold text-sm" style={{ color: '#1B2D5B' }}>{p.name}</td>
+                    <tr key={i} className={`border-b border-gray-50 hover:bg-[#0B2438]/2 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
+                      <td className="px-4 py-3 font-semibold text-sm" style={{ color: '#0B2438' }}>{p.name}</td>
                       <td className="px-4 py-3">
                         <span className="badge badge-blue text-[10px]">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500">{p.unit}</td>
                       <td className="px-4 py-3 text-sm text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
-                        <div className="text-base font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString('en-US')} {T.sar}</div>
+                        <div className="text-base font-bold" style={{ color: '#D4A543' }}>{p.avg?.toLocaleString('en-US')} {T.sar}</div>
                       </td>
                       <td className="px-4 py-3 text-sm text-red-500 font-semibold">{p.max?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
@@ -265,11 +265,11 @@ export default function MarketPricePage() {
                 <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{p.name}</div>
+                      <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{p.name}</div>
                       <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                     </div>
                     <div className="text-left">
-                      <div className="text-lg font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString('en-US')}</div>
+                      <div className="text-lg font-bold" style={{ color: '#D4A543' }}>{p.avg?.toLocaleString('en-US')}</div>
                       <div className="text-[10px] text-gray-400">{T.sar} / {p.unit}</div>
                     </div>
                   </div>
@@ -278,8 +278,8 @@ export default function MarketPricePage() {
                       <div className="text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')}</div>
                       <div className="text-gray-400 text-[10px]">{T.minPrice}</div>
                     </div>
-                    <div className="rounded-lg p-2" style={{ background: '#F5831F15' }}>
-                      <div className="font-bold" style={{ color: '#F5831F' }}>{p.avg?.toLocaleString('en-US')}</div>
+                    <div className="rounded-lg p-2" style={{ background: '#D4A54315' }}>
+                      <div className="font-bold" style={{ color: '#D4A543' }}>{p.avg?.toLocaleString('en-US')}</div>
                       <div className="text-gray-400 text-[10px]">{T.avgPrice}</div>
                     </div>
                     <div className="bg-red-50 rounded-lg p-2">

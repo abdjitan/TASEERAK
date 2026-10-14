@@ -348,7 +348,7 @@ export default function SettingsPage() {
   return (
     <AppShell title={t.title} company={companyAr} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} onSignOut={handleSignOut} dir={dir}>
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold mb-8" style={{ color: '#1B2D5B' }}>{t.title}</h1>
+        <h1 className="text-2xl font-bold mb-8" style={{ color: '#0B2438' }}>{t.title}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
@@ -357,10 +357,10 @@ export default function SettingsPage() {
               {/* Avatar */}
               <div className="text-center p-4 border-b border-gray-50 mb-2">
                 <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl text-white mx-auto mb-3 font-bold"
-                  style={{ background: '#1B2D5B' }}>
+                  style={{ background: '#0B2438' }}>
                   {companyAr?.[0] || '?'}
                 </div>
-                <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{companyAr}</div>
+                <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{companyAr}</div>
                 <div className="text-xs text-gray-400 mt-0.5">{user?.email}</div>
                 <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full font-semibold ${
                   profile?.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-700' :
@@ -382,7 +382,7 @@ export default function SettingsPage() {
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-right ${
                     tab === item.key ? 'text-white' : 'text-gray-600 hover:bg-gray-50'
                   }`}
-                  style={tab === item.key ? { background: '#1B2D5B' } : {}}>
+                  style={tab === item.key ? { background: '#0B2438' } : {}}>
                   <span>{item.icon}</span>
                   <span>{item.label}</span>
                 </button>
@@ -399,7 +399,7 @@ export default function SettingsPage() {
             {/* Profile Tab */}
             {tab === 'profile' && (
               <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
-                <h2 className="text-lg font-bold mb-6" style={{ color: '#1B2D5B' }}>{t.profileTab}</h2>
+                <h2 className="text-lg font-bold mb-6" style={{ color: '#0B2438' }}>{t.profileTab}</h2>
 
                 {/* Read-only info */}
                 <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-[#f4f6f9] rounded-xl">
@@ -410,7 +410,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1">{t.role}</label>
-                    <div className="text-sm font-semibold" style={{ color: '#1B2D5B' }}>
+                    <div className="text-sm font-semibold" style={{ color: '#0B2438' }}>
                       {profile?.role === 'contractor' ? t.contractor : t.supplier}
                     </div>
                   </div>
@@ -437,7 +437,7 @@ export default function SettingsPage() {
                     {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? (
                       pendingFor('name')
                         ? <p className="text-[11px] text-amber-600">⏳ طلب تغيير الاسم قيد مراجعة الإدارة (إلى «{pendingFor('name').new_value}»).</p>
-                        : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#1B2D5B' }}>🔒 الاسم ثابت لارتباطه بالسجل التجاري — اطلب تعديله</button>
+                        : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#0B2438' }}>🔒 الاسم ثابت لارتباطه بالسجل التجاري — اطلب تعديله</button>
                     ) : (
                       <p className="text-[11px] text-gray-400">✏️ {locale === 'en' ? 'You can edit your company name until your account is verified.' : 'يمكنك تعديل اسم الشركة حتى يتم توثيق حسابك، ثم يُقفل.'}</p>
                     )}
@@ -544,7 +544,7 @@ export default function SettingsPage() {
                       </div>
                       {pendingFor('classification')
                         ? <p className="text-[11px] text-amber-600">⏳ طلب تغيير الدرجة قيد مراجعة الإدارة.</p>
-                        : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(contractorGrade || 'C'); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#1B2D5B' }}>🔒 الدرجة ثابتة — اطلب تعديلها</button>}
+                        : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(contractorGrade || 'C'); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#0B2438' }}>🔒 الدرجة ثابتة — اطلب تعديلها</button>}
                     </div>
                   )}
 
@@ -556,7 +556,7 @@ export default function SettingsPage() {
 
                   <button type="submit" disabled={profileSaving}
                     className="px-8 py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
-                    style={{ background: '#F5831F' }}>
+                    style={{ background: '#D4A543' }}>
                     {profileSaving ? t.saving : t.saveProfile}
                   </button>
                 </form>
@@ -565,7 +565,7 @@ export default function SettingsPage() {
                 {crqModal && (
                   <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !crqSaving && setCrqModal(null)}>
                     <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" dir="rtl" onClick={e => e.stopPropagation()}>
-                      <h3 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                      <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>
                         {crqModal === 'name' ? '🔒 طلب تعديل اسم الشركة' : '🔒 طلب تعديل التصنيف'}
                       </h3>
                       <p className="text-xs text-gray-500 mb-4">يُرسل الطلب للإدارة للمراجعة — لا يتغيّر شيء قبل الموافقة.</p>
@@ -593,7 +593,7 @@ export default function SettingsPage() {
                       {crqMsg && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 mb-3">{crqMsg}</div>}
 
                       <div className="flex gap-2">
-                        <button type="button" disabled={crqSaving} onClick={submitChangeRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>
+                        <button type="button" disabled={crqSaving} onClick={submitChangeRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#0B2438' }}>
                           {crqSaving ? 'جارٍ الإرسال...' : 'إرسال الطلب للإدارة'}
                         </button>
                         <button type="button" onClick={() => setCrqModal(null)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
@@ -607,7 +607,7 @@ export default function SettingsPage() {
             {/* Password Tab */}
             {tab === 'password' && (
               <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
-                <h2 className="text-lg font-bold mb-6" style={{ color: '#1B2D5B' }}>{t.passwordTab}</h2>
+                <h2 className="text-lg font-bold mb-6" style={{ color: '#0B2438' }}>{t.passwordTab}</h2>
 
                 <form onSubmit={changePassword} className="space-y-5 max-w-md">
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
@@ -634,7 +634,7 @@ export default function SettingsPage() {
 
                   <button type="submit" disabled={passSaving}
                     className="px-8 py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
-                    style={{ background: '#1B2D5B' }}>
+                    style={{ background: '#0B2438' }}>
                     {passSaving ? t.saving : t.changePass}
                   </button>
                 </form>
@@ -644,12 +644,12 @@ export default function SettingsPage() {
             {/* Docs Tab */}
             {tab === 'docs' && (
               <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
-                <h2 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>{t.docsTitle}</h2>
+                <h2 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>{t.docsTitle}</h2>
                 <p className="text-sm text-gray-500 mb-4">{t.docsSub}</p>
                 {/* التوثيق اختياري: يوضّح فايدته وفي خيار «لاحقاً» */}
                 <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6" style={{ background: 'rgba(15,110,86,0.06)', border: '1px solid rgba(15,110,86,0.2)' }}>
                   <p className="text-sm text-gray-700 leading-relaxed flex-1 min-w-[220px]">🛡 {locale === 'en' ? 'Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.' : locale === 'ur' ? 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔' : 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، وتظهر ضمن «شركات ومصانع معتمدة»، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.'}</p>
-                  <a href={profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'} className="text-sm font-bold px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#1B2D5B' }}>{locale === 'en' ? 'Later' : locale === 'ur' ? 'بعد میں' : 'لاحقاً'}</a>
+                  <a href={profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'} className="text-sm font-bold px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{locale === 'en' ? 'Later' : locale === 'ur' ? 'بعد میں' : 'لاحقاً'}</a>
                 </div>
 
                 {profile?.verification_status === 'rejected' && (
@@ -667,11 +667,11 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
                         <button type="button" onClick={() => openDoc(profile.license_url)}
-                          className="text-xs text-[#d96f15] hover:underline font-semibold">{t.viewDoc}</button>
+                          className="text-xs text-[#9D7425] hover:underline font-semibold">{t.viewDoc}</button>
                       </div>
                     )}
                     <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
-                      licenseFile ? 'border-[#1B2D5B] bg-[#1B2D5B]/5' : 'border-gray-200 hover:border-[#F5831F]/50'
+                      licenseFile ? 'border-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 hover:border-[#D4A543]/50'
                     }`}>
                       <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
                         onChange={e => setLicenseFile(e.target.files?.[0] ?? null)} />
@@ -710,7 +710,7 @@ export default function SettingsPage() {
                     {crCheck && (
                       <div className={`text-xs rounded-lg p-2.5 mt-3 flex items-start gap-2 ${
                         crCheck.verified ? 'bg-emerald-100 text-emerald-800'
-                        : crCheck.mode === 'manual' ? 'bg-[#F5831F]/5 text-[#d96f15] border border-blue-200'
+                        : crCheck.mode === 'manual' ? 'bg-[#D4A543]/5 text-[#9D7425] border border-blue-200'
                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}>
                         <span>{crCheck.verified ? '🛡' : crCheck.mode === 'manual' ? 'ℹ️' : '⚠️'}</span>
@@ -730,11 +730,11 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
                         <button type="button" onClick={() => openDoc(profile.cr_url)}
-                          className="text-xs text-[#d96f15] hover:underline font-semibold">{t.viewDoc}</button>
+                          className="text-xs text-[#9D7425] hover:underline font-semibold">{t.viewDoc}</button>
                       </div>
                     )}
                     <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
-                      crFile ? 'border-[#1B2D5B] bg-[#1B2D5B]/5' : 'border-gray-200 hover:border-[#F5831F]/50'
+                      crFile ? 'border-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 hover:border-[#D4A543]/50'
                     }`}>
                       <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
                         onChange={e => setCrFile(e.target.files?.[0] ?? null)} />
@@ -756,7 +756,7 @@ export default function SettingsPage() {
 
                   <button type="submit" disabled={docsSaving || (!licenseFile && !crFile)}
                     className="px-8 py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
-                    style={{ background: '#F5831F' }}>
+                    style={{ background: '#D4A543' }}>
                     {docsSaving ? t.saving : t.uploadBtn}
                   </button>
                 </form>
@@ -766,7 +766,7 @@ export default function SettingsPage() {
             {/* Support / Messages Tab */}
             {tab === 'support' && (
               <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
-                <h2 className="text-lg font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                <h2 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>
                   {locale === 'en' ? 'Support & Messages' : locale === 'ur' ? 'سپورٹ اور پیغامات' : 'الدعم والرسائل'}
                 </h2>
                 <p className="text-sm text-gray-500 mb-5">
@@ -781,20 +781,20 @@ export default function SettingsPage() {
             {/* Language Tab */}
             {tab === 'language' && (
               <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
-                <h2 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{t.langTab}</h2>
+                <h2 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{t.langTab}</h2>
                 <p className="text-sm text-gray-500 mb-6">{t.langTitle}</p>
 
                 <div className="grid grid-cols-3 gap-4">
                   {langOptions.map(lang => (
                     <button key={lang.key} onClick={() => setLocale(lang.key as any)}
                       className={`p-6 rounded-2xl border-2 text-center transition-all hover:-translate-y-0.5 ${
-                        locale === lang.key ? 'border-[#F5831F] bg-[#F5831F]/5' : 'border-gray-200 hover:border-gray-300'
+                        locale === lang.key ? 'border-[#D4A543] bg-[#D4A543]/5' : 'border-gray-200 hover:border-gray-300'
                       }`}>
                       <div className="text-4xl mb-3">{lang.flag}</div>
-                      <div className={`font-bold text-sm ${locale === lang.key ? 'text-[#F5831F]' : 'text-gray-800'}`}>{lang.name}</div>
+                      <div className={`font-bold text-sm ${locale === lang.key ? 'text-[#D4A543]' : 'text-gray-800'}`}>{lang.name}</div>
                       <div className="text-xs text-gray-400 mt-1">{lang.nameLocal}</div>
                       {locale === lang.key && (
-                        <div className="mt-2 text-xs font-bold" style={{ color: '#F5831F' }}>✓ {t.langSaved}</div>
+                        <div className="mt-2 text-xs font-bold" style={{ color: '#D4A543' }}>✓ {t.langSaved}</div>
                       )}
                     </button>
                   ))}

@@ -52,7 +52,7 @@ export default function SubscriptionPage() {
     <AppShell title={locale === 'en' ? 'Subscription & Plans' : 'الاشتراك والباقات'} nav={getNav('supplier', locale, '/supplier/subscription')} dir={dir}>
       <div className="max-w-4xl mx-auto">
         {launchFree && (
-          <div className="rounded-2xl p-5 mb-6 text-white" style={{ background: 'linear-gradient(120deg,#0F6E56,#1B2D5B)' }}>
+          <div className="rounded-2xl p-5 mb-6 text-white" style={{ background: 'linear-gradient(120deg,#0F6E56,#0B2438)' }}>
             <div className="text-lg font-extrabold">🎉 {locale === 'en' ? 'Free launch period' : 'فترة إطلاق مجانية'}</div>
             <div className="text-sm text-emerald-50 mt-1">{locale === 'en' ? 'All features are open to you for free — no fees' : 'كل الميزات مفتوحة لك مجاناً بدون أي رسوم'}{launchUntil ? (locale === 'en' ? ` until ${new Date(launchUntil).toLocaleDateString('en-GB')}` : ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')}`) : ''}. {locale === 'en' ? 'The plans below show future pricing.' : 'الباقات أدناه توضّح الأسعار المستقبلية بعد فترة الإطلاق.'}</div>
           </div>
@@ -60,7 +60,7 @@ export default function SubscriptionPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-xs text-gray-400">{locale === 'en' ? 'Your current plan' : 'باقتك الحالية'}</div>
-            <div className="text-lg font-extrabold" style={{ color: '#1B2D5B' }}>{planLabel(current)}</div>
+            <div className="text-lg font-extrabold" style={{ color: '#0B2438' }}>{planLabel(current)}</div>
             {active && profile?.subscription_expires_at && <div className="text-[11px] text-gray-400">{locale === 'en' ? 'Active until ' : 'سارية حتى '}{new Date(profile.subscription_expires_at).toLocaleDateString('ar-SA-u-ca-gregory')}</div>}
           </div>
           <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{active ? (locale === 'en' ? '✓ Subscribed' : '✓ مشترك') : (locale === 'en' ? 'Free' : 'مجاني')}</span>
@@ -68,11 +68,11 @@ export default function SubscriptionPage() {
 
         <div className="grid md:grid-cols-3 gap-4">
           {PLANS.map((p) => (
-            <div key={p.key} className={`rounded-2xl border p-5 flex flex-col bg-white ${p.featured ? 'border-[#F5831F] shadow-lg' : 'border-gray-100 shadow-sm'}`}>
-              {p.featured && <span className="self-start text-[10px] font-extrabold text-white px-2.5 py-1 rounded-full mb-2" style={{ background: '#F5831F' }}>{locale === 'en' ? 'Most popular' : 'الأكثر ملاءمة'}</span>}
+            <div key={p.key} className={`rounded-2xl border p-5 flex flex-col bg-white ${p.featured ? 'border-[#D4A543] shadow-lg' : 'border-gray-100 shadow-sm'}`}>
+              {p.featured && <span className="self-start text-[10px] font-extrabold text-[#071827] px-2.5 py-1 rounded-full mb-2" style={{ background: '#D4A543' }}>{locale === 'en' ? 'Most popular' : 'الأكثر ملاءمة'}</span>}
               <div className="text-xs text-gray-400">{p.tagline}</div>
-              <div className="text-lg font-extrabold mt-0.5" style={{ color: '#1B2D5B' }}>{p.name}</div>
-              <div className="text-sm font-extrabold my-2" style={{ color: '#F5831F' }}>{p.price}</div>
+              <div className="text-lg font-extrabold mt-0.5" style={{ color: '#0B2438' }}>{p.name}</div>
+              <div className="text-sm font-extrabold my-2" style={{ color: '#D4A543' }}>{p.price}</div>
               <ul className="space-y-1.5 text-sm text-gray-600 flex-1 mt-1">
                 {p.benefits.map((b) => <li key={b} className="flex gap-2"><span className="text-[#0F6E56] font-bold shrink-0">✓</span><span>{b}</span></li>)}
               </ul>
@@ -87,7 +87,7 @@ export default function SubscriptionPage() {
                   <div className="text-center text-sm font-bold text-emerald-600 py-2.5">✓ {locale === 'en' ? 'Request sent' : 'أُرسل طلبك'}</div>
                 ) : (
                   <button onClick={() => requestPlan(p.key, p.name)} disabled={requesting === p.key}
-                    className="w-full py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: p.featured ? '#F5831F' : '#1B2D5B' }}>
+                    className="w-full py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: p.featured ? '#D4A543' : '#0B2438' }}>
                     {requesting === p.key ? '...' : (locale === 'en' ? 'Subscribe' : 'اشترك')}
                   </button>
                 )}
@@ -96,7 +96,7 @@ export default function SubscriptionPage() {
           ))}
         </div>
 
-        <div className="mt-6 bg-[#1B2D5B]/5 rounded-2xl p-4 text-sm text-gray-600 text-center leading-relaxed">
+        <div className="mt-6 bg-[#0B2438]/5 rounded-2xl p-4 text-sm text-gray-600 text-center leading-relaxed">
           {launchFree
             ? (locale === 'en' ? '🎉 Everything is free during the launch period — the prices above apply later, and we\'ll notify you before any fees start.' : '🎉 كل الباقات مجانية بالكامل خلال فترة الإطلاق — الأسعار أعلاه تُطبَّق لاحقاً، وسنُعلمك قبل بدء أي رسوم.')
             : (locale === 'en' ? '💳 To subscribe now: request the plan and our team activates it after payment (bank transfer). Online payment (mada / Apple Pay) is coming soon.' : '💳 للاشتراك الآن: اطلب الباقة ويفعّلها فريقنا بعد الدفع (تحويل بنكي). الدفع الإلكتروني (مدى / Apple Pay) قيد الإضافة قريباً.')}

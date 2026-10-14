@@ -50,11 +50,11 @@ export default function NotificationsPage() {
           <div className="space-y-2">
             {notifs.map((n: any) => (
               <button key={n.id} onClick={() => go(n)}
-                className={`w-full text-start rounded-2xl p-4 border transition-colors ${n.data?.url ? 'hover:border-[#F5831F]/40 cursor-pointer' : 'cursor-default'} ${n.is_read ? 'bg-white border-gray-100' : 'bg-[#F5831F]/5 border-[#F5831F]/30'}`}>
+                className={`w-full text-start rounded-2xl p-4 border transition-colors ${n.data?.url ? 'hover:border-[#D4A543]/40 cursor-pointer' : 'cursor-default'} ${n.is_read ? 'bg-white border-gray-100' : 'bg-[#D4A543]/5 border-[#D4A543]/30'}`}>
                 <div className="flex items-start gap-2">
-                  {!n.is_read && <span className="w-2 h-2 rounded-full bg-[#F5831F] mt-1.5 shrink-0" />}
+                  {!n.is_read && <span className="w-2 h-2 rounded-full bg-[#D4A543] mt-1.5 shrink-0" />}
                   <div className="min-w-0 flex-1">
-                    <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{n.title}</div>
+                    <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{n.title}</div>
                     {n.body && <div className="text-xs text-gray-500 mt-0.5">{n.body}</div>}
                     <div className="text-[10px] text-gray-400 mt-1">{new Date(n.created_at).toLocaleString('ar-SA-u-ca-gregory')}</div>
                   </div>

@@ -537,11 +537,11 @@ export default function SupplierRFQPage() {
       <div className="min-h-screen flex items-center justify-center p-4" dir={dir} style={{ background: '#f4f6f9' }}>
         <div className="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 text-center max-w-sm w-full">
           <div className="text-5xl mb-4">{success ? '✅' : '🚫'}</div>
-          <h2 className="text-xl font-bold mb-2" style={{ color: '#1B2D5B' }}>
+          <h2 className="text-xl font-bold mb-2" style={{ color: '#0B2438' }}>
             {success ? T.successTitle : T.dismissedTitle}
           </h2>
           <p className="text-sm text-gray-500 mb-6">{success ? T.successSub : T.dismissedSub}</p>
-          <Link href="/supplier/dashboard" className="block py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#1B2D5B' }}>
+          <Link href="/supplier/dashboard" className="block py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#0B2438' }}>
             {T.backDash}
           </Link>
         </div>
@@ -561,8 +561,8 @@ export default function SupplierRFQPage() {
           <div className="flex items-start justify-between gap-2">
             {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المشتري للطلب */}
             <div>
-              <div className="text-xs font-bold text-[#d96f15] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
-              <h2 className="text-lg font-bold" style={{ color: '#1B2D5B' }}>
+              <div className="text-xs font-bold text-[#9D7425] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
+              <h2 className="text-lg font-bold" style={{ color: '#0B2438' }}>
                 {rfqDesc({ ...rfq, title: null }, locale, rfqIsMulti ? (myItems.length || undefined) : 1)}
               </h2>
             </div>
@@ -571,13 +571,13 @@ export default function SupplierRFQPage() {
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: user?.id })
               if (error || !data) { setError(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }
               router.push(`/messages?c=${data}`)
-            }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#1B2D5B' }}>💬 {L('Message buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>
+            }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#0B2438' }}>💬 {L('Message buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>
           </div>
           {/* the materials table is for the read-only states; while pricing, the cards below show them */}
           {!pricingOpen && (<>
           {rfqIsMulti && myItems.length > 0 && (
             <div className="my-4">
-              <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 {L('Materials in your specialty', 'آپ کی مہارت کا مال', 'المواد ضمن تخصصك')} ({myItems.length})</h3>
+              <h3 className="font-bold text-sm mb-2 text-[#0B2438]">🧾 {L('Materials in your specialty', 'آپ کی مہارت کا مال', 'المواد ضمن تخصصك')} ({myItems.length})</h3>
               <p className="text-[11px] text-gray-400 mb-2">{L('You only see the materials you can supply — price them and send your offer.', 'آپ کو صرف وہ مال دکھایا جاتا ہے جو آپ سپلائی کر سکتے ہیں — قیمت لگائیں اور آفر بھیجیں۔', 'تظهر لك فقط المواد التي تستطيع توريدها — سعّرها وأرسل عرضك.')}</p>
               <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-sm">
@@ -592,7 +592,7 @@ export default function SupplierRFQPage() {
                       <tr key={i} className="border-b border-gray-50 align-top">
                         <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                         <td className="py-2.5 px-3">
-                          <div className="font-bold text-[15px] text-[#1B2D5B] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span>{getProductLabel(it.product_name, locale)}</span></div>
+                          <div className="font-bold text-[15px] text-[#0B2438] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span>{getProductLabel(it.product_name, locale)}</span></div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(sectors as any)[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">⚡ {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
@@ -602,12 +602,12 @@ export default function SupplierRFQPage() {
                           {/* صورة المادة من الطلب السريع: المورد يشوف نفس الشي اللي بدّو ياه الزبون */}
                           {it.photo_url && (
                             <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 group" title={L('Material photo from the buyer', 'خریدار کی طرف سے مال کی تصویر', 'صورة المادة من المشتري')}>
-                              <img src={fileHref(it.photo_url)} alt={L('Material photo', 'مال کی تصویر', 'صورة المادة')} loading="lazy" className="w-24 h-24 object-cover rounded-lg border border-gray-200 group-hover:border-[#F5831F]" />
-                              <span className="text-[11px] font-bold text-[#d96f15]">📷 {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
+                              <img src={fileHref(it.photo_url)} alt={L('Material photo', 'مال کی تصویر', 'صورة المادة')} loading="lazy" className="w-24 h-24 object-cover rounded-lg border border-gray-200 group-hover:border-[#D4A543]" />
+                              <span className="text-[11px] font-bold text-[#9D7425]">📷 {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
                             </a>
                           )}
                         </td>
-                        <td className="py-3 px-3 font-bold text-[15px] text-[#d96f15] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
+                        <td className="py-3 px-3 font-bold text-[15px] text-[#9D7425] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
                         <td className="py-3 px-3 text-sm text-gray-700 leading-relaxed">{it.specification || '—'}</td>
                       </tr>
                     ))}
@@ -625,7 +625,7 @@ export default function SupplierRFQPage() {
             existingOffer.status === 'rejected' ? 'border-red-300 bg-red-50' : 'border-amber-300 bg-amber-50'
           }`}>
             <div className="text-4xl mb-2">{existingOffer.status === 'accepted' ? '✅' : (existingOffer.status === 'rejected' && rfq.status === 'closed') ? '🔒' : existingOffer.status === 'rejected' ? '❌' : '⏳'}</div>
-            <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>
+            <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>
               {existingOffer.status === 'rejected' && rfq.status === 'closed'
                 ? L('Pricing closed — another offer was accepted', 'پرائسنگ بند — دوسری پیشکش قبول ہوگئی', 'انتهى التسعير — تم اعتماد عرض آخر')
                 : ((T.alreadyTitle as any)[existingOffer.status] || T.alreadyTitle.pending)}
@@ -645,7 +645,7 @@ export default function SupplierRFQPage() {
                       {getProductLabel(it.product_name, locale)}
                       <span className="text-gray-400 text-xs font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}{it.delivery_days ? ` · 📦 ${it.delivery_days}${L('d', ' دن', 'ي')}` : ''})</span>
                     </span>
-                    <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#1B2D5B' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
+                    <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#0B2438' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
                   </div>
                 ))}
               </div>
@@ -672,7 +672,7 @@ export default function SupplierRFQPage() {
                   <div className="text-sm font-bold" style={{ color: '#0F6E56' }}>⭐ {L('Thanks for rating the buyer', 'خریدار کی ریٹنگ دینے کا شکریہ', 'شكراً لتقييمك المشتري')}</div>
                 ) : (
                   <div>
-                    <div className="text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>{L('Rate the buyer', 'خریدار کی ریٹنگ دیں', 'قيّم المشتري')} ⭐</div>
+                    <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>{L('Rate the buyer', 'خریدار کی ریٹنگ دیں', 'قيّم المشتري')} ⭐</div>
                     <div className="flex gap-1 mb-2">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button key={n} type="button" onClick={() => setCRating(n)} className={`text-2xl leading-none ${n <= cRating ? 'text-yellow-400' : 'text-gray-300'}`}>★</button>
@@ -720,15 +720,15 @@ export default function SupplierRFQPage() {
             )}
 
             {existingOffer.info_request && (
-              <div className="mt-4 bg-[#F5831F]/5 border border-blue-200 rounded-xl p-4 text-right">
-                <div className="font-bold text-[#d96f15] mb-1">❓ {L('The buyer is asking for more information', 'خریدار مزید معلومات مانگ رہا ہے', 'المشتري يطلب معلومات إضافية')}</div>
+              <div className="mt-4 bg-[#D4A543]/5 border border-blue-200 rounded-xl p-4 text-right">
+                <div className="font-bold text-[#9D7425] mb-1">❓ {L('The buyer is asking for more information', 'خریدار مزید معلومات مانگ رہا ہے', 'المشتري يطلب معلومات إضافية')}</div>
                 <div className="text-sm text-gray-700 bg-white rounded-lg p-2.5 mb-2">{existingOffer.info_request}</div>
                 {existingOffer.info_response ? (
                   <div className="text-sm bg-emerald-50 rounded-lg p-2.5"><span className="text-emerald-600 text-[11px]">{L('Your reply:', 'آپ کا جواب:', 'ردّك:')}</span><div>{existingOffer.info_response}</div></div>
                 ) : existingOffer.status === 'pending' ? (
                   <div>
                     <textarea value={infoReply} onChange={(e: any) => setInfoReply(e.target.value)} rows={2} className="input-field mb-2" placeholder={L('Write your reply to the buyer about the product...', 'پروڈکٹ کے بارے میں خریدار کو اپنا جواب لکھیں...', 'اكتب ردّك للمشتري عن المنتج...')} />
-                    <button type="button" onClick={submitInfoResponse} disabled={infoReplying} className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#1B2D5B' }}>{infoReplying ? '...' : L('Send reply', 'جواب بھیجیں', 'إرسال الرد')}</button>
+                    <button type="button" onClick={submitInfoResponse} disabled={infoReplying} className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#0B2438' }}>{infoReplying ? '...' : L('Send reply', 'جواب بھیجیں', 'إرسال الرد')}</button>
                   </div>
                 ) : null}
               </div>
@@ -744,32 +744,32 @@ export default function SupplierRFQPage() {
         ) : (rfq.status !== 'open' || expired) ? (
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-center">
             <div className="text-4xl mb-2">{expired ? '⏰' : '🔒'}</div>
-            <h3 className="font-bold" style={{ color: '#1B2D5B' }}>{expired ? L('Pricing window closed', 'قیمت دینے کی مہلت ختم', 'انتهت مهلة التسعير') : T.closed}</h3>
+            <h3 className="font-bold" style={{ color: '#0B2438' }}>{expired ? L('Pricing window closed', 'قیمت دینے کی مہلت ختم', 'انتهت مهلة التسعير') : T.closed}</h3>
             <p className="text-sm text-gray-500">{expired ? L('The deadline passed — offers are no longer accepted.', 'مقررہ وقت ختم ہو گیا — اب آفرز قبول نہیں کی جاتیں۔', 'انتهى الوقت المحدد لاستقبال العروض على هذا الطلب.') : T.closedSub}</p>
             {rfq.expires_at && <p className="text-xs text-gray-400 mt-2">📅 {formatDateTime(rfq.expires_at)}</p>}
           </div>
         ) : !verified ? (
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-center">
             <div className="text-4xl mb-2">🛡️</div>
-            <h3 className="font-bold" style={{ color: '#1B2D5B' }}>{T.verifyFirst}</h3>
+            <h3 className="font-bold" style={{ color: '#0B2438' }}>{T.verifyFirst}</h3>
             <p className="text-sm text-gray-500 mt-1 leading-relaxed">{T.verifyFirstSub}</p>
-            <Link href="/onboarding" className="inline-block mt-4 px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#F5831F' }}>{T.verifyFirstCta}</Link>
+            <Link href="/onboarding" className="inline-block mt-4 px-5 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{T.verifyFirstCta}</Link>
           </div>
         ) : (
           <form id="offer-form" onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold mb-2" style={{ color: '#1B2D5B' }}>{T.submitOffer}</h3>
+            <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{T.submitOffer}</h3>
             {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>}
             <div className="space-y-4">
               {isMultiItem && myItems.length === 0 ? (
                 <div className="text-center py-6">
                   <div className="text-4xl mb-2">🚫</div>
-                  <p className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{L('No materials match your specialties', 'اس درخواست میں آپ کی مہارت کا کوئی مال نہیں', 'لا توجد مواد ضمن تخصصك في هذا الطلب')}</p>
+                  <p className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('No materials match your specialties', 'اس درخواست میں آپ کی مہارت کا کوئی مال نہیں', 'لا توجد مواد ضمن تخصصك في هذا الطلب')}</p>
                   <p className="text-xs text-gray-400 mt-1">{L('This request has no items in your sectors.', 'اس درخواست کا مال آپ کے شعبوں سے باہر ہے — آپ کو قیمت دینے کی ضرورت نہیں۔', 'مواد هذا الطلب خارج قطاعاتك — لا يلزمك تسعيرها.')}</p>
                 </div>
               ) : isMultiItem ? (
                 <div>
                   <div className="flex items-end justify-between gap-2 mb-1">
-                    <label className="block text-sm font-bold" style={{ color: '#1B2D5B' }}>
+                    <label className="block text-sm font-bold" style={{ color: '#0B2438' }}>
                       {L('Price the materials you can supply', 'جو مال آپ دے سکتے ہیں اس کی قیمت دیں', 'سعّر المواد التي تستطيع توفيرها')}
                     </label>
                     <span className="text-xs font-bold text-gray-500">{pricedCount}/{myItems.length}</span>
@@ -793,7 +793,7 @@ export default function SupplierRFQPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-start justify-between gap-3">
                                 <div className="min-w-0">
-                                  <div className="font-bold text-[15px] leading-snug" style={{ color: '#1B2D5B' }}>
+                                  <div className="font-bold text-[15px] leading-snug" style={{ color: '#0B2438' }}>
                                     {line > 0 && <span className="inline-grid place-items-center w-5 h-5 rounded-full text-[11px] text-white me-1.5 align-middle" style={{ background: '#0F6E56' }}>✓</span>}
                                     {getProductLabel(it.product_name, locale)}
                                   </div>
@@ -801,7 +801,7 @@ export default function SupplierRFQPage() {
                                 </div>
                                 <div className="text-end shrink-0">
                                   <div className="text-[11px] text-gray-400">{L('Quantity', 'مقدار', 'الكمية')}</div>
-                                  <div className="font-extrabold text-[15px] text-[#d96f15] whitespace-nowrap">{qty.toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</div>
+                                  <div className="font-extrabold text-[15px] text-[#9D7425] whitespace-nowrap">{qty.toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</div>
                                 </div>
                               </div>
                               <div className="flex flex-wrap gap-1 mt-1.5">
@@ -814,15 +814,15 @@ export default function SupplierRFQPage() {
 
                           {/* what the buyer asked for: specs and photo, prominent so the price matches */}
                           {it.specification && (
-                            <div className="mt-3 rounded-xl p-2.5 border text-sm text-gray-800 leading-relaxed" style={{ background: '#F5831F0a', borderColor: '#F5831F44' }}>
-                              <span className="text-xs font-bold me-1" style={{ color: '#d96f15' }}>📋 {L('Buyer specs:', 'خریدار کی تفصیل:', 'مواصفات المشتري:')}</span>{it.specification}
+                            <div className="mt-3 rounded-xl p-2.5 border text-sm text-gray-800 leading-relaxed" style={{ background: '#D4A5430a', borderColor: '#D4A54344' }}>
+                              <span className="text-xs font-bold me-1" style={{ color: '#9D7425' }}>📋 {L('Buyer specs:', 'خریدار کی تفصیل:', 'مواصفات المشتري:')}</span>{it.specification}
                             </div>
                           )}
                           {it.photo_url && (
                             <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 group" title={L('Material photo from the buyer', 'خریدار کی طرف سے مال کی تصویر', 'صورة المادة من المشتري')}>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={fileHref(it.photo_url)} alt={L('Material photo', 'مال کی تصویر', 'صورة المادة')} loading="lazy" className="w-20 h-20 object-cover rounded-lg border border-gray-200 group-hover:border-[#F5831F]" />
-                              <span className="text-[11px] font-bold text-[#d96f15]">📷 {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
+                              <img src={fileHref(it.photo_url)} alt={L('Material photo', 'مال کی تصویر', 'صورة المادة')} loading="lazy" className="w-20 h-20 object-cover rounded-lg border border-gray-200 group-hover:border-[#D4A543]" />
+                              <span className="text-[11px] font-bold text-[#9D7425]">📷 {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
                             </a>
                           )}
 
@@ -834,7 +834,7 @@ export default function SupplierRFQPage() {
                               <div className="mt-3 space-y-2">
                                 {nt.what_it_is && (
                                   <p className="text-xs text-gray-600 leading-relaxed" dir="auto">
-                                    <span className="font-bold text-[#1B2D5B]">ℹ️ {L('What it is:', 'یہ کیا ہے:', 'ما هذه المادة؟')} </span>{nt.what_it_is}
+                                    <span className="font-bold text-[#0B2438]">ℹ️ {L('What it is:', 'یہ کیا ہے:', 'ما هذه المادة؟')} </span>{nt.what_it_is}
                                   </p>
                                 )}
                                 {nt.missing.length > 0 && (
@@ -843,7 +843,7 @@ export default function SupplierRFQPage() {
                                       ⚠️ <b>{L('Not specified by the buyer:', 'خریدار نے نہیں بتایا:', 'لم يحدّد المشتري:')}</b> {nt.missing.join(L(', ', '، ', '، '))}
                                     </span>
                                     <button type="button" onClick={() => askBuyer(it, nt.missing)} disabled={asking === Number(it.item_index ?? i)}
-                                      className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-50" style={{ background: '#1B2D5B' }}>
+                                      className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-50" style={{ background: '#0B2438' }}>
                                       💬 {L('Ask the buyer', 'خریدار سے پوچھیں', 'اسأل المشتري')}
                                     </button>
                                   </div>
@@ -861,7 +861,7 @@ export default function SupplierRFQPage() {
                               <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">{SAR}</span>
                             </div>
                             <button type="button" onClick={() => setOpenItem(more ? null : i)} aria-expanded={more}
-                              className={`text-xs font-bold px-3 py-2.5 rounded-xl border transition-all ${more || detailCount ? 'border-[#F5831F]/50 text-[#d96f15] bg-[#F5831F]/5' : 'border-gray-200 text-gray-600 hover:border-[#F5831F]/50'}`}>
+                              className={`text-xs font-bold px-3 py-2.5 rounded-xl border transition-all ${more || detailCount ? 'border-[#D4A543]/50 text-[#9D7425] bg-[#D4A543]/5' : 'border-gray-200 text-gray-600 hover:border-[#D4A543]/50'}`}>
                               {more ? '▴' : '▾'} {L('Details', 'تفصیلات', 'التفاصيل')}{detailCount ? ` (${detailCount})` : ''}
                             </button>
                           </div>
@@ -917,13 +917,13 @@ export default function SupplierRFQPage() {
                               </div>
                               <div className="sm:col-span-2">
                                 {form.file ? (
-                                  <div className="flex items-center gap-3 bg-[#1B2D5B]/5 rounded-xl p-2.5 border border-[#1B2D5B]/20">
+                                  <div className="flex items-center gap-3 bg-[#0B2438]/5 rounded-xl p-2.5 border border-[#0B2438]/20">
                                     <span className="text-xl">📄</span>
-                                    <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#1B2D5B' }}>{form.file.name}</span>
+                                    <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#0B2438' }}>{form.file.name}</span>
                                     <button type="button" onClick={() => setItemFile(i, null)} className="text-xs text-red-500 hover:underline">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                                   </div>
                                 ) : (
-                                  <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-2.5 cursor-pointer hover:border-[#F5831F]/50 transition-all">
+                                  <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-2.5 cursor-pointer hover:border-[#D4A543]/50 transition-all">
                                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx" onChange={(e: any) => setItemFile(i, e.target.files?.[0] ?? null)} />
                                     <span className="text-lg">📤</span>
                                     <span className="text-xs text-gray-500">{L('Attach a catalog / datasheet (optional)', 'کیٹلاگ منسلک کریں (اختیاری)', 'أرفق كتالوجاً أو بيانات المنتج (اختياري)')}</span>
@@ -970,7 +970,7 @@ export default function SupplierRFQPage() {
               )}
               {!isMultiItem && (
               <div className="border-t border-gray-100 pt-4">
-                <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>{T.attributes}</label>
+                <label className="block text-sm font-bold mb-1" style={{ color: '#0B2438' }}>{T.attributes}</label>
                 <p className="text-xs text-gray-400 mb-3">{T.attrHint}</p>
                 <div className="space-y-2">
                   {attributes.map((attr: any, i: any) => (
@@ -987,24 +987,24 @@ export default function SupplierRFQPage() {
                   ))}
                 </div>
                 <button type="button" onClick={addAttribute}
-                  className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>{T.addAttr}</button>
+                  className="mt-2 text-xs font-semibold" style={{ color: '#D4A543' }}>{T.addAttr}</button>
               </div>
               )}
 
               {/* إرفاق ملف (كتالوج) — للطلب أحادي المادة فقط (متعدد المواد: كتالوج لكل مادة) */}
               {!isMultiItem && (
               <div className="border-t border-gray-100 pt-4">
-                <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>📎 {T.attachTitle}</label>
+                <label className="block text-sm font-bold mb-1" style={{ color: '#0B2438' }}>📎 {T.attachTitle}</label>
                 <p className="text-xs text-gray-400 mb-3">{T.attachHint}</p>
                 {attachFile ? (
-                  <div className="flex items-center gap-3 bg-[#1B2D5B]/5 rounded-xl p-3 border border-[#1B2D5B]/20">
+                  <div className="flex items-center gap-3 bg-[#0B2438]/5 rounded-xl p-3 border border-[#0B2438]/20">
                     <span className="text-2xl">📄</span>
-                    <span className="text-sm font-semibold flex-1 truncate" style={{ color: '#1B2D5B' }}>{attachFile.name}</span>
+                    <span className="text-sm font-semibold flex-1 truncate" style={{ color: '#0B2438' }}>{attachFile.name}</span>
                     <button type="button" onClick={() => setAttachFile(null)}
                       className="text-xs text-red-500 hover:underline">{T.removeAttach}</button>
                   </div>
                 ) : (
-                  <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-4 cursor-pointer hover:border-[#F5831F]/50 transition-all">
+                  <label className="flex items-center gap-3 border-2 border-dashed border-gray-200 rounded-xl p-4 cursor-pointer hover:border-[#D4A543]/50 transition-all">
                     <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx"
                       onChange={async e => {
                         const f = e.target.files?.[0] ?? null
@@ -1039,7 +1039,7 @@ export default function SupplierRFQPage() {
                   {(rfq.delivery_geo || rfq.delivery_location) && (
                     <a href={rfq.delivery_geo ? `https://www.google.com/maps?q=${rfq.delivery_geo}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rfq.delivery_location)}`}
                       target="_blank" rel="noopener noreferrer"
-                      className="text-xs font-bold text-white rounded-lg px-3 py-1.5 hover:opacity-90 whitespace-nowrap shrink-0" style={{ background: '#1B2D5B' }}>
+                      className="text-xs font-bold text-white rounded-lg px-3 py-1.5 hover:opacity-90 whitespace-nowrap shrink-0" style={{ background: '#0B2438' }}>
                       📍 {L('Open in Maps', 'نقشے میں کھولیں', 'افتح في الخرائط')}
                     </a>
                   )}
@@ -1071,22 +1071,22 @@ export default function SupplierRFQPage() {
           {/* ملف المواصفات المرفق */}
           {specFileUrl && (
             <a href={fileHref(specFileUrl)} target="_blank" rel="noopener noreferrer"
-              className="mt-3 flex items-center gap-2 bg-[#F5831F]/5 border border-blue-200 rounded-xl p-3 hover:bg-blue-100 transition-all">
+              className="mt-3 flex items-center gap-2 bg-[#D4A543]/5 border border-blue-200 rounded-xl p-3 hover:bg-blue-100 transition-all">
               <span className="text-xl">📎</span>
-              <span className="text-sm font-semibold text-[#d96f15] flex-1">{T.attachedFile}</span>
-              <span className="text-xs text-[#d96f15]">{T.viewFile} ←</span>
+              <span className="text-sm font-semibold text-[#9D7425] flex-1">{T.attachedFile}</span>
+              <span className="text-xs text-[#9D7425]">{T.viewFile} ←</span>
             </a>
           )}
           </div>
           {pricingOpen && (isMultiItem ? myItems.length > 0 : true) && (
             <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-100 space-y-4">
               <div className="flex items-center justify-between gap-2">
-                <h3 className="font-extrabold" style={{ color: '#1B2D5B' }}>🧾 {L('Your offer', 'آپ کی آفر', 'عرضك')}</h3>
+                <h3 className="font-extrabold" style={{ color: '#0B2438' }}>🧾 {L('Your offer', 'آپ کی آفر', 'عرضك')}</h3>
                 {isMultiItem && <span className="text-xs font-bold" style={{ color: pricedCount ? '#0F6E56' : '#9aa3b2' }}>{L(`${pricedCount} of ${myItems.length} priced`, `${myItems.length} میں سے ${pricedCount}`, `سعّرت ${pricedCount} من ${myItems.length}`)}</span>}
               </div>
               {/* إضافات الفاتورة (توصيل/تركيب/رسوم) */}
               <div className="border-t border-gray-100 pt-4">
-                <label className="block text-sm font-bold mb-1" style={{ color: '#1B2D5B' }}>
+                <label className="block text-sm font-bold mb-1" style={{ color: '#0B2438' }}>
                   🧾 {L('Invoice extras (delivery / installation / fees)', 'انوائس اضافی (ڈیلیوری/تنصیب/فیس)', 'إضافات الفاتورة (توصيل / تركيب / رسوم)')}
                 </label>
                 <p className="text-xs text-gray-400 mb-3">
@@ -1108,7 +1108,7 @@ export default function SupplierRFQPage() {
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#F5831F' }}>
+                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#D4A543' }}>
                   + {L('Add item', 'شامل کریں', 'إضافة بند')}
                 </button>
               </div>
@@ -1124,7 +1124,7 @@ export default function SupplierRFQPage() {
                   <div className="border-t border-gray-100 pt-4">
                     {/* خيار شمول الضريبة — إلزامي وصريح، بلا قيمة افتراضية */}
                     <div className="mb-3">
-                      <div id="vat-choice-label" className="text-sm font-bold mb-2" style={{ color: '#1B2D5B' }}>
+                      <div id="vat-choice-label" className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>
                         🧾 {L('Does your price include 15% VAT?', 'کیا آپ کی قیمت میں 15% ویٹ (VAT) شامل ہے؟', 'هل يشمل سعرك ضريبة القيمة المضافة (15%)؟')} <span className="text-red-500">*</span>
                       </div>
                       <div role="radiogroup" aria-labelledby="vat-choice-label" aria-required="true" className="grid grid-cols-2 gap-2">
@@ -1133,7 +1133,7 @@ export default function SupplierRFQPage() {
                           return (
                             <button type="button" key={String(o.v)} role="radio" aria-checked={on} onClick={() => setVatIncluded(o.v)}
                               className={`text-start px-3 py-2 rounded-xl border-2 transition-all ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : vatIncluded === null ? 'border-amber-300 bg-white hover:border-[#0F6E56]/40' : 'border-gray-200 bg-white hover:border-[#0F6E56]/40'}`}>
-                              <div className="text-sm font-bold" style={{ color: on ? '#0F6E56' : '#1B2D5B' }}>{on ? '● ' : '○ '}{o.label}</div>
+                              <div className="text-sm font-bold" style={{ color: on ? '#0F6E56' : '#0B2438' }}>{on ? '● ' : '○ '}{o.label}</div>
                               <div className="text-[11px] text-gray-500 mt-0.5">{o.hint}</div>
                             </button>
                           )
@@ -1170,8 +1170,8 @@ export default function SupplierRFQPage() {
                   <div className="flex flex-wrap gap-2">
                     {SOURCE_TYPES.map(o => (
                       <button type="button" key={o.k} onClick={() => setSourceType(o.k)} aria-pressed={sourceType === o.k}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${sourceType === o.k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-[#1B2D5B]/40'}`}
-                        style={sourceType === o.k ? { background: '#1B2D5B' } : {}}>
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${sourceType === o.k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-[#0B2438]/40'}`}
+                        style={sourceType === o.k ? { background: '#0B2438' } : {}}>
                         <SellerIcon name={o.icon} /> {locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}
                       </button>
                     ))}
@@ -1196,8 +1196,8 @@ export default function SupplierRFQPage() {
                 <div className="flex flex-wrap gap-2">
                   {[{ v: '1', l: L('24h', '24 گھنٹے', '٢٤ ساعة') }, { v: '3', l: L('3 days', '3 دن', '٣ أيام') }, { v: '7', l: L('1 week', '1 ہفتہ', 'أسبوع') }, { v: '30', l: L('1 month', '1 مہینہ', 'شهر') }].map((o) => (
                     <button type="button" key={o.v} onClick={() => setPriceValidity(o.v)}
-                      className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${priceValidity === o.v ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#F5831F]/40'}`}
-                      style={priceValidity === o.v ? { background: '#F5831F' } : {}}>{o.l}</button>
+                      className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${priceValidity === o.v ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#D4A543]/40'}`}
+                      style={priceValidity === o.v ? { background: '#D4A543' } : {}}>{o.l}</button>
                   ))}
                 </div>
                 <p className="text-[11px] text-gray-400 mt-1">{L('Your price is guaranteed until it expires — ideal for volatile materials (e.g. steel).', 'آپ کی قیمت مدت ختم ہونے تک پکی رہے گی — ان چیزوں کے لیے اچھا ہے جن کی قیمت بدلتی رہتی ہے (جیسے سریا)۔', 'سعرك مضمون حتى انتهاء المدة — مناسب للمواد المتغيّرة السعر (كالحديد).')}</p>
@@ -1252,7 +1252,7 @@ export default function SupplierRFQPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" dir={dir}>
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
             <div className="text-4xl text-center mb-3">🚫</div>
-            <h3 className="text-lg font-bold text-center mb-1" style={{ color: '#1B2D5B' }}>{T.dismissTitle}</h3>
+            <h3 className="text-lg font-bold text-center mb-1" style={{ color: '#0B2438' }}>{T.dismissTitle}</h3>
             <p className="text-sm text-gray-500 text-center mb-4">{T.dismissSub}</p>
             <textarea value={dismissReason} onChange={(e: any) => setDismissReason(e.target.value)}
               className="input-field mb-4" rows={2} placeholder={T.dismissReason} />

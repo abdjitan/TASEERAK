@@ -66,9 +66,9 @@ export default function SupplierBranchesPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-4">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#1B2D5B' }}>🏢</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}>🏢</div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#1B2D5B' }}>فروع الشركة</h1>
+              <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>فروع الشركة</h1>
               <p className="text-gray-500 text-xs sm:text-sm">أضف فروعك في المناطق المختلفة — تظهر شركتك للمشترين في كل منطقة فيها فرع.</p>
             </div>
           </div>
@@ -79,7 +79,7 @@ export default function SupplierBranchesPage() {
         </div>
 
         {!showForm && (
-          <button onClick={() => setShowForm(true)} className="w-full mb-5 py-3 rounded-xl font-semibold text-white text-sm transition-all hover:shadow-lg" style={{ background: '#1B2D5B' }}>
+          <button onClick={() => setShowForm(true)} className="w-full mb-5 py-3 rounded-xl font-semibold text-white text-sm transition-all hover:shadow-lg" style={{ background: '#0B2438' }}>
             + إضافة فرع
           </button>
         )}
@@ -119,7 +119,7 @@ export default function SupplierBranchesPage() {
               </div>
             </div>
             <div className="flex gap-2">
-              <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#F5831F' }}>
+              <button type="submit" disabled={saving} className="flex-1 py-2.5 rounded-xl font-semibold text-[#071827] text-sm disabled:opacity-50" style={{ background: '#D4A543' }}>
                 {saving ? 'جارٍ الحفظ...' : 'حفظ الفرع'}
               </button>
               <button type="button" onClick={reset} className="px-5 py-2.5 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600">✕</button>
@@ -130,16 +130,16 @@ export default function SupplierBranchesPage() {
         {branches.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
             <div className="text-5xl mb-3 animate-float">🏢</div>
-            <h3 className="font-bold mb-1" style={{ color: '#1B2D5B' }}>لا توجد فروع مضافة</h3>
+            <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>لا توجد فروع مضافة</h3>
             <p className="text-sm text-gray-500">أضف فروعك لتصلك طلبات التسعير من مناطقها.</p>
           </div>
         ) : (
           <div className="space-y-3">
-            <h2 className="text-sm font-bold" style={{ color: '#1B2D5B' }}>الفروع ({branches.length})</h2>
+            <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>الفروع ({branches.length})</h2>
             {branches.map(b => (
               <div key={b.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="font-bold" style={{ color: '#1B2D5B' }}>{b.name}</div>
+                  <div className="font-bold" style={{ color: '#0B2438' }}>{b.name}</div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500">
                     <span className="badge badge-blue text-[10px]">📍 {b.region}{b.city ? ' - ' + b.city : ''}</span>
                     {b.district && <span>🏘 {b.district}</span>}

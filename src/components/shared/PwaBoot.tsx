@@ -90,7 +90,7 @@ export default function PwaBoot() {
         <div className="flex items-start gap-3">
           <img src="/icons/maskable-192.png" alt="" className="w-11 h-11 rounded-xl border border-gray-100 shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{ios ? t.iosTitle : t.title}</div>
+            <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{ios ? t.iosTitle : t.title}</div>
             {ios ? (
               <div className="text-xs text-gray-500 mt-1 leading-relaxed">
                 <span className="inline-flex items-center gap-1">{t.ios1}
@@ -105,7 +105,7 @@ export default function PwaBoot() {
               {!ios && (
                 <button type="button" onClick={install}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-white"
-                  style={{ background: '#F5831F', boxShadow: '0 8px 20px -6px rgba(245,131,31,.5)' }}>
+                  style={{ background: '#D4A543', boxShadow: '0 8px 20px -6px rgba(212,165,67,.5)' }}>
                   {t.install}
                 </button>
               )}

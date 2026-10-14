@@ -59,7 +59,7 @@ export default function SupportThread({ userId, viewerRole }: { userId: string; 
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
-                style={mine ? { background: '#1B2D5B' } : {}}>
+                style={mine ? { background: '#0B2438' } : {}}>
                 <div className="text-[10px] opacity-60 mb-0.5">{m.sender === 'admin' ? '🛠 الإدارة' : '👤 المستخدم'}</div>
                 <div className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</div>
                 <div className="text-[9px] opacity-50 mt-1 text-left" dir="ltr">{new Date(m.created_at).toLocaleString('ar-SA')}</div>
@@ -73,7 +73,7 @@ export default function SupportThread({ userId, viewerRole }: { userId: string; 
       <form onSubmit={send} className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
         <input value={text} onChange={e => setText(e.target.value)} className="input-field flex-1" placeholder="اكتب رسالتك..." />
         <button type="submit" disabled={sending || !text.trim()}
-          className="px-5 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#F5831F' }}>
+          className="px-5 py-2.5 rounded-xl font-semibold text-[#071827] text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#D4A543' }}>
           {sending ? '...' : 'إرسال'}
         </button>
       </form>

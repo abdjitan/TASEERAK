@@ -50,7 +50,7 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
 
       <main className="max-w-3xl mx-auto px-4 py-10">
         <div className="text-center mb-8">
-          <div className="mb-3 inline-grid place-items-center w-16 h-16 rounded-2xl bg-[#1B2D5B]/5 text-[#1B2D5B]"><SellerIcon name={company ? 'building' : 'user'} className="w-9 h-9" /></div>
+          <div className="mb-3 inline-grid place-items-center w-16 h-16 rounded-2xl bg-[#0B2438]/5 text-[#0B2438]"><SellerIcon name={company ? 'building' : 'user'} className="w-9 h-9" /></div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-navy leading-snug">
             {company
               ? L('Join Taseerak as a company', 'کمپنی کے طور پر شامل ہوں', 'انضم إلى تسعيرك كشركة أو محل')

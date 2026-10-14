@@ -26,12 +26,12 @@ export default function PageLoader() {
         @keyframes tkFade{from{opacity:0}to{opacity:1}}
         .tk-pl-wrap{position:relative;width:170px;height:170px;display:grid;place-items:center}
         .tk-pl-plate{width:96px;height:96px;border-radius:26px;background:#fff;display:grid;place-items:center;box-shadow:0 24px 50px -16px rgba(0,0,0,.55);position:relative;z-index:2;animation:tkFloat 3s ease-in-out infinite}
-        .tk-pl-plate::after{content:"";position:absolute;inset:-7px;border-radius:32px;border:2px solid rgba(245,131,31,.45);animation:tkRing 2s ease-in-out infinite}
+        .tk-pl-plate::after{content:"";position:absolute;inset:-7px;border-radius:32px;border:2px solid rgba(212,165,67,.45);animation:tkRing 2s ease-in-out infinite}
         .tk-pl-plate img{width:64px;height:64px;object-fit:contain}
         .tk-pl-orbit{position:absolute;inset:0;animation:tkSpin 7s linear infinite}
-        .tk-pl-dot{position:absolute;top:50%;left:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#F5831F;box-shadow:0 0 10px rgba(245,131,31,.85);animation:tkBlink 1.7s ease-in-out infinite}
+        .tk-pl-dot{position:absolute;top:50%;left:50%;width:8px;height:8px;margin:-4px;border-radius:50%;background:#D4A543;box-shadow:0 0 10px rgba(212,165,67,.85);animation:tkBlink 1.7s ease-in-out infinite}
         .tk-pl-wm{font-family:'Cairo',sans-serif;font-size:24px;font-weight:900;color:#fff;letter-spacing:.5px}
-        .tk-pl-wm i{color:#F5831F;font-style:normal}
+        .tk-pl-wm i{color:#D4A543;font-style:normal}
         @keyframes tkFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
         @keyframes tkRing{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.06);opacity:1}}
         @keyframes tkSpin{to{transform:rotate(360deg)}}

@@ -43,10 +43,10 @@ export default function SupplierAnalyticsPage() {
   const sl = (s: string) => (SECTOR_LABELS as any)[s] || s
 
   const cards = [
-    { label: en ? 'Offers submitted' : 'عروض مقدَّمة', value: totalOffers, color: '#1B2D5B' },
+    { label: en ? 'Offers submitted' : 'عروض مقدَّمة', value: totalOffers, color: '#0B2438' },
     { label: en ? 'Won' : 'مكسوبة', value: won, color: '#0F6E56' },
     { label: en ? 'Lost' : 'خاسرة', value: lost, color: '#b91c1c' },
-    { label: en ? 'Pending' : 'قيد الانتظار', value: pending, color: '#d96f15' },
+    { label: en ? 'Pending' : 'قيد الانتظار', value: pending, color: '#9D7425' },
   ]
 
   return (
@@ -61,7 +61,7 @@ export default function SupplierAnalyticsPage() {
         ) : (
           <>
             {/* نسبة الفوز */}
-            <div className="rounded-2xl p-5 mb-4 text-white flex items-center justify-between" style={{ background: 'linear-gradient(120deg,#1B2D5B,#0F6E56)' }}>
+            <div className="rounded-2xl p-5 mb-4 text-white flex items-center justify-between" style={{ background: 'linear-gradient(120deg,#0B2438,#0F6E56)' }}>
               <div>
                 <div className="text-sm text-blue-50">{en ? 'Win rate' : 'نسبة الفوز'}</div>
                 <div className="text-4xl font-extrabold mt-1">{winRate}%</div>
@@ -83,7 +83,7 @@ export default function SupplierAnalyticsPage() {
             {/* حسب القطاع */}
             {sectors.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-                <div className="text-sm font-bold mb-3" style={{ color: '#1B2D5B' }}>📊 {en ? 'Win rate by sector' : 'نسبة الفوز حسب القطاع'}</div>
+                <div className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>📊 {en ? 'Win rate by sector' : 'نسبة الفوز حسب القطاع'}</div>
                 <div className="space-y-3">
                   {sectors.map((s: any) => {
                     const t = Number(s.total) || 0, w = Number(s.won) || 0, l = Number(s.lost) || 0
@@ -116,7 +116,7 @@ export default function SupplierAnalyticsPage() {
             {/* الاتجاه الشهري */}
             {monthly.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <div className="text-sm font-bold mb-4" style={{ color: '#1B2D5B' }}>📈 {en ? 'Last 6 months' : 'آخر ٦ أشهر'}</div>
+                <div className="text-sm font-bold mb-4" style={{ color: '#0B2438' }}>📈 {en ? 'Last 6 months' : 'آخر ٦ أشهر'}</div>
                 <div className="flex items-end justify-around gap-2 h-36">
                   {monthly.map((m: any) => {
                     const offs = Number(m.offers) || 0, w = Number(m.won) || 0
@@ -126,7 +126,7 @@ export default function SupplierAnalyticsPage() {
                       <div key={m.month} className="flex flex-col items-center gap-1 flex-1">
                         <div className="text-[10px] font-bold text-gray-500">{offs}</div>
                         <div className="w-full max-w-[42px] rounded-t-md relative flex flex-col justify-end" style={{ height: '100px' }}>
-                          <div className="w-full rounded-t-md bg-[#1B2D5B]/15 relative" style={{ height: `${h}%` }}>
+                          <div className="w-full rounded-t-md bg-[#0B2438]/15 relative" style={{ height: `${h}%` }}>
                             <div className="absolute bottom-0 left-0 right-0 rounded-t-md" style={{ height: `${wh}%`, background: '#0F6E56' }} title={`${w} ${en ? 'won' : 'فوز'}`} />
                           </div>
                         </div>
@@ -136,7 +136,7 @@ export default function SupplierAnalyticsPage() {
                   })}
                 </div>
                 <div className="flex items-center gap-4 mt-3 text-[10px] text-gray-400 justify-center">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#1B2D5B26' }} />{en ? 'Offers' : 'عروض'}</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#0B243826' }} />{en ? 'Offers' : 'عروض'}</span>
                   <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#0F6E56' }} />{en ? 'Won' : 'مكسوبة'}</span>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 /* تسعيرك — Service Worker: web-push notifications + app-shell offline cache */
-const CACHE_VERSION = 'taseerak-v1'
+const CACHE_VERSION = 'taseerak-v2' // v2: navy/gold redesign
 const STATIC_CACHE = CACHE_VERSION + '-static'
 const PAGE_CACHE = CACHE_VERSION + '-pages'
 

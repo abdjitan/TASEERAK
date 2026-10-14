@@ -329,17 +329,17 @@ export default function RFQDetailPage() {
         )}
         <div className="flex items-center justify-between mb-4">
           <Link href="/contractor/rfqs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">← {L('Back to my requests', 'میری درخواستوں پر واپس', 'العودة إلى طلباتي')}</Link>
-          <Link href={`/contractor/rfq/quick?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#d96f15] hover:underline">🔁 {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>
+          <Link href={`/contractor/rfq/quick?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#9D7425] hover:underline">🔁 {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>
         </div>
 
         {/* RFQ Card */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-xs font-bold text-[#d96f15] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
+              <div className="text-xs font-bold text-[#9D7425] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
               <h2 className="text-xl font-bold text-gray-900">{rfqDesc(rfq, locale)}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="bg-blue-100 text-[#d96f15] text-xs px-2 py-0.5 rounded-full font-semibold">
+                <span className="bg-blue-100 text-[#9D7425] text-xs px-2 py-0.5 rounded-full font-semibold">
                   {Array.isArray(rfq.sectors) && rfq.sectors.length > 1
                     ? rfq.sectors.map((s: string) => secLabel(s)).join(' + ')
                     : secLabel(rfq.sector)}
@@ -367,7 +367,7 @@ export default function RFQDetailPage() {
                 <div className="mt-2">
                   {!showExtend ? (
                     <button onClick={() => setShowExtend(true)}
-                      className="text-[11px] font-semibold text-[#1B2D5B] border border-blue-200 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">
+                      className="text-[11px] font-semibold text-[#0B2438] border border-blue-200 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">
                       ⏱ {L('Extend pricing deadline', 'قیمت دینے کی مہلت بڑھائیں', 'تمديد مهلة التسعير')}
                     </button>
                   ) : (
@@ -375,7 +375,7 @@ export default function RFQDetailPage() {
                       <span className="text-[11px] text-gray-600 font-semibold">{L('Extend by:', 'مہلت بڑھائیں:', 'مدّد المهلة:')}</span>
                       {[1, 3, 7].map((d: any) => (
                         <button key={d} onClick={() => extendDeadline(d)} disabled={extending}
-                          className="text-[11px] font-bold text-white px-2.5 py-1 rounded-md disabled:opacity-50" style={{ background: '#1B2D5B' }}>
+                          className="text-[11px] font-bold text-white px-2.5 py-1 rounded-md disabled:opacity-50" style={{ background: '#0B2438' }}>
                           {extending ? '…' : `+${d} ${d === 1 ? L('day', 'دن', 'يوم') : L('days', 'دن', 'أيام')}`}
                         </button>
                       ))}
@@ -394,7 +394,7 @@ export default function RFQDetailPage() {
                     }
                     setEditing(!editing)
                   }}
-                  className="text-xs text-[#d96f15] border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-[#F5831F]/5 transition-colors">
+                  className="text-xs text-[#9D7425] border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-[#D4A543]/5 transition-colors">
                   ✏️ {L('Edit', 'ترمیم', 'تعديل')}
                 </button>
                 <button onClick={cancelRfq}
@@ -406,7 +406,7 @@ export default function RFQDetailPage() {
           </div>
 
           {editing ? (
-            <div className="space-y-3 bg-[#F5831F]/5 rounded-xl p-4">
+            <div className="space-y-3 bg-[#D4A543]/5 rounded-xl p-4">
               {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && (
                 <>
                   <div>
@@ -437,7 +437,7 @@ export default function RFQDetailPage() {
                 <textarea value={editNotes} onChange={(e: any) => setEditNotes(e.target.value)} className="input-field" rows={3} placeholder={L('Notes', 'نوٹس', 'ملاحظات')} />
               </div>
               <div className="flex gap-2">
-                <button onClick={handleEditSave} className="bg-[#1B2D5B] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#0f1d3d]">{L('Save changes', 'تبدیلیاں محفوظ کریں', 'حفظ التعديل')}</button>
+                <button onClick={handleEditSave} className="bg-[#0B2438] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#071827]">{L('Save changes', 'تبدیلیاں محفوظ کریں', 'حفظ التعديل')}</button>
                 <button onClick={() => { setEditing(false); setShowEditWarning(false) }} className="text-sm text-gray-500">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
               </div>
 
@@ -467,7 +467,7 @@ export default function RFQDetailPage() {
             <>
             {Array.isArray(rfq.items) && rfq.items.length > 0 && (
               <div className="mb-4">
-                <h3 className="font-bold text-sm mb-2 text-[#1B2D5B]">🧾 {L('Requested materials', 'مطلوبہ مال', 'المواد المطلوبة')} ({rfq.items.length})</h3>
+                <h3 className="font-bold text-sm mb-2 text-[#0B2438]">🧾 {L('Requested materials', 'مطلوبہ مال', 'المواد المطلوبة')} ({rfq.items.length})</h3>
                 <div className="overflow-x-auto rounded-xl border border-gray-100">
                   <table className="w-full text-sm">
                     <thead><tr className="text-xs text-gray-400 bg-gray-50 border-b border-gray-100">
@@ -481,7 +481,7 @@ export default function RFQDetailPage() {
                         <tr key={i} className="border-b border-gray-50 align-top">
                           <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                           <td className="py-2.5 px-3">
-                            <div className="font-semibold text-[#1B2D5B]">{getProductLabel(it.product_name, locale)}</div>
+                            <div className="font-semibold text-[#0B2438]">{getProductLabel(it.product_name, locale)}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{secLabel(it.sector)}</span>
                               {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700"><><SellerIcon name={tierIcon(tr)} /> {tierLabel(tr, locale)}</></span>)}
@@ -490,7 +490,7 @@ export default function RFQDetailPage() {
                               {it.spec_file_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline">📎 {L('File', 'فائل', 'ملف')}</a>}
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 font-bold text-[#d96f15] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
+                          <td className="py-2.5 px-3 font-bold text-[#9D7425] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
                           <td className="py-2.5 px-3 text-xs text-gray-500">{it.specification || '—'}</td>
                         </tr>
                       ))}
@@ -533,7 +533,7 @@ export default function RFQDetailPage() {
                 <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 text-xs font-semibold">
                   {[{ k: 'cheapest', l: `💰 ${L('Cheapest', 'سب سے سستا', 'الأرخص')}` }, { k: 'fastest', l: `⚡ ${L('Fastest', 'سب سے تیز', 'الأسرع')}` }, ...(canSortNearest ? [{ k: 'nearest', l: `📍 ${L('Nearest', 'سب سے قریب', 'الأقرب')}` }] : [])].map((o: any) => (
                     <button key={o.k} type="button" onClick={() => setAwardSort(o.k)}
-                      className={`px-3 py-1.5 rounded-lg transition-all ${awardSort === o.k ? 'bg-white shadow-sm text-[#1B2D5B]' : 'text-gray-500'}`}>{o.l}</button>
+                      className={`px-3 py-1.5 rounded-lg transition-all ${awardSort === o.k ? 'bg-white shadow-sm text-[#0B2438]' : 'text-gray-500'}`}>{o.l}</button>
                   ))}
                 </div>
               )}
@@ -568,7 +568,7 @@ export default function RFQDetailPage() {
                     <div key={idx} className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
                       <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100 flex items-center justify-between gap-2">
                         <div className="min-w-0">
-                          <span className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{getProductLabel(it.product_name, locale)}</span>
+                          <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{getProductLabel(it.product_name, locale)}</span>
                           <span className="text-xs text-gray-400"> · {Number(it.quantity).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</span>
                         </div>
                         {award ? <span className="badge badge-green text-[10px] whitespace-nowrap">✓ {L('Selected', 'منتخب', 'تم الاختيار')}</span> : <span className="text-[11px] text-gray-400 whitespace-nowrap">{bids.length} {L('offers', 'آفرز', 'عرض')}</span>}
@@ -613,12 +613,12 @@ export default function RFQDetailPage() {
                                     {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]">⚙️ {b.entry.specification}</span>}
                                     {b.entry.warranty && <span className="text-[#0F6E56] font-semibold">🛡 {b.entry.warranty}</span>}
                                     {b.entry.attachment_url && <a href={fileHref(b.entry.attachment_url)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} className="text-purple-500 hover:underline">📎 {L('Catalog', 'کیٹلاگ', 'كتالوج')}</a>}
-                                    <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} title={L('View all details', 'تمام تفصیل دیکھیں', 'عرض كل التفاصيل')} className="inline-flex items-center gap-1 font-bold text-[11px] px-2.5 py-1 rounded-full transition-all hover:shadow-sm" style={{ color: '#fff', background: '#F5831F' }}>👁 {L('Details', 'تفصیل', 'التفاصيل')}</Link>
+                                    <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} title={L('View all details', 'تمام تفصیل دیکھیں', 'عرض كل التفاصيل')} className="inline-flex items-center gap-1 font-bold text-[11px] px-2.5 py-1 rounded-full transition-all hover:shadow-sm" style={{ color: '#fff', background: '#D4A543' }}>👁 {L('Details', 'تفصیل', 'التفاصيل')}</Link>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
                                   <div className="text-end leading-tight">
-                                    <div className="font-bold text-sm" style={{ color: '#1B2D5B' }}>{(b.offer.vat_included ? Number(b.entry.total) : Number(b.entry.total) * 1.15).toLocaleString('en-US', { maximumFractionDigits: 0 })} {SAR}</div>
+                                    <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{(b.offer.vat_included ? Number(b.entry.total) : Number(b.entry.total) * 1.15).toLocaleString('en-US', { maximumFractionDigits: 0 })} {SAR}</div>
                                     <div className="text-[9px] text-gray-400">{L('incl. VAT', 'ٹیکس سمیت', 'شامل الضريبة')}</div>
                                   </div>
                                   {isAwarded ? (
@@ -666,7 +666,7 @@ export default function RFQDetailPage() {
                   const awardedCount = Object.keys(awards).length
                   const finalized = rfq.status !== 'open'
                   return (
-                    <div className="rounded-xl p-4 text-white mt-2" style={{ background: '#1B2D5B' }}>
+                    <div className="rounded-xl p-4 text-white mt-2" style={{ background: '#0B2438' }}>
                       <h4 className="font-bold text-sm mb-2">📦 {L('Award summary', 'ایوارڈ کا خلاصہ', 'ملخص الترسية')} ({awardedCount}/{rfq.items.length} {L('materials', 'مال', 'مادة')} · {list.length} {L('suppliers', 'سپلائرز', 'مورد')})</h4>
                       {list.map((v: any, i: any) => (
                         <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-white/10 gap-2">
@@ -679,7 +679,7 @@ export default function RFQDetailPage() {
                         </div>
                       ))}
                       <div className="flex items-center justify-between font-extrabold mt-2 pt-1">
-                        <span>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span><span style={{ color: '#F5831F' }}>{money(grand)} {SAR}</span>
+                        <span>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span><span style={{ color: '#D4A543' }}>{money(grand)} {SAR}</span>
                       </div>
                       <div className="text-[11px] text-blue-200 text-end">{L('Before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')} {money(grandNet)} {SAR} · {L('VAT 15%', 'ٹیکس 15%', 'الضريبة 15%')} {money(grand - grandNet)} {SAR}</div>
                       {finalized ? (
@@ -734,7 +734,7 @@ export default function RFQDetailPage() {
             {!aiCmp ? (
               <button type="button" onClick={runCompare} disabled={cmpLoading}
                 className="w-full py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-60 transition-all hover:shadow"
-                style={{ background: 'linear-gradient(135deg,#7C3AED,#1B2D5B)' }}>
+                style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
                 {cmpLoading ? `⏳ ${L('Analyzing offers...', 'آفرز کا تجزیہ ہو رہا ہے...', 'جارٍ تحليل العروض...')}` : `✨ ${L('Analyze the offers and recommend the best (AI)', 'آفرز کا تجزیہ کر کے بہترین بتائیں (AI)', 'حلّل العروض ووصِّ لي بالأفضل (ذكاء اصطناعي)')}`}
               </button>
             ) : aiCmp.ai ? (
@@ -745,7 +745,7 @@ export default function RFQDetailPage() {
                 </div>
                 {aiCmp.best_supplier && <div className="text-sm mb-1.5 font-bold text-emerald-700">🏆 {L('Best value:', 'بہترین قیمت:', 'الأفضل قيمةً:')} {aiCmp.best_supplier}</div>}
                 <p className="text-xs text-gray-700 leading-relaxed mb-2 whitespace-pre-line">{aiCmp.summary}</p>
-                {aiCmp.advice && <p className="text-xs font-semibold rounded-lg p-2 bg-white" style={{ color: '#1B2D5B' }}>💡 {aiCmp.advice}</p>}
+                {aiCmp.advice && <p className="text-xs font-semibold rounded-lg p-2 bg-white" style={{ color: '#0B2438' }}>💡 {aiCmp.advice}</p>}
                 <p className="text-[10px] text-gray-400 mt-2">{L('Guidance only — the final decision is yours.', 'صرف رہنمائی ہے — آخری فیصلہ آپ کا ہے۔', 'توصية إرشادية — القرار النهائي لك.')}</p>
               </div>
             ) : (
@@ -772,7 +772,7 @@ export default function RFQDetailPage() {
               }`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-[#d96f15]">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-[#9D7425]">
                       {i + 1}
                     </div>
                     <div>
@@ -781,7 +781,7 @@ export default function RFQDetailPage() {
                         {offer.supplier?.supplier_tier && (
                           <span className={`badge text-[10px] ${
                             normTier(offer.supplier.supplier_tier) === 'company' ? 'bg-purple-100 text-purple-700' :
-                            normTier(offer.supplier.supplier_tier) === 'shop' ? 'bg-blue-100 text-[#d96f15]' : 'bg-gray-100 text-gray-600'
+                            normTier(offer.supplier.supplier_tier) === 'shop' ? 'bg-blue-100 text-[#9D7425]' : 'bg-gray-100 text-gray-600'
                           }`}>
                             <><SellerIcon name={tierIcon(offer.supplier.supplier_tier)} /> {tierLabel(offer.supplier.supplier_tier, locale)}</>
                           </span>
@@ -823,7 +823,7 @@ export default function RFQDetailPage() {
                               <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold">⚡ {L(`Replies within ~${st.avg_response_hours}h`, `تقریباً ${st.avg_response_hours} گھنٹے میں جواب دیتا ہے`, `يردّ خلال ~${st.avg_response_hours} س`)}</span>
                             )}
                             {st.won_rate != null && (
-                              <span className="text-[10px] bg-[#F5831F]/5 text-[#d96f15] px-2 py-0.5 rounded-full font-semibold">🤝 {L('Win rate', 'ایوارڈ کی شرح', 'نسبة الترسية')} {st.won_rate}%</span>
+                              <span className="text-[10px] bg-[#D4A543]/5 text-[#9D7425] px-2 py-0.5 rounded-full font-semibold">🤝 {L('Win rate', 'ایوارڈ کی شرح', 'نسبة الترسية')} {st.won_rate}%</span>
                             )}
                             <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">📨 {st.total_offers} {L('past offers', 'پچھلی آفرز', 'عرض سابق')}</span>
                           </div>
@@ -834,7 +834,7 @@ export default function RFQDetailPage() {
                     </div>
                   </div>
                   <div className="text-left">
-                    <div className="text-xl font-bold" style={{ color: '#1B2D5B' }}>{offerComparable(offer).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
+                    <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{offerComparable(offer).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
                     <div className="text-xs text-gray-400">{SAR} · {L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}</div>
                     {!offer.vat_included && <div className="text-[11px] text-gray-400">{L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')} {Number(offer.total_price || 0).toLocaleString('en-US')}</div>}
                     {marketAvg && offer.unit_price && (() => {
@@ -893,7 +893,7 @@ export default function RFQDetailPage() {
                 {offer.attributes && Object.keys(offer.attributes).length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {Object.entries(offer.attributes).map(([k, v]: any) => (
-                      <span key={k} className="text-[10px] bg-[#F5831F]/5 text-[#d96f15] px-2 py-1 rounded-lg">
+                      <span key={k} className="text-[10px] bg-[#D4A543]/5 text-[#9D7425] px-2 py-1 rounded-lg">
                         <strong>{k}:</strong> {v}
                       </span>
                     ))}
@@ -904,7 +904,7 @@ export default function RFQDetailPage() {
                 <div className="flex items-center gap-2 flex-wrap mb-3">
                   {offer.attachment_url && (
                     <a href={fileHref(offer.attachment_url)} target="_blank" rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-[10px] bg-[#1B2D5B]/10 text-[#1B2D5B] px-2 py-1 rounded-lg font-semibold hover:bg-[#1B2D5B]/20 transition-all">
+                      className="inline-flex items-center gap-1 text-[10px] bg-[#0B2438]/10 text-[#0B2438] px-2 py-1 rounded-lg font-semibold hover:bg-[#0B2438]/20 transition-all">
                       📎 {offer.attachment_name || L('Catalog', 'کیٹلاگ', 'كتالوج')}
                     </a>
                   )}
@@ -923,7 +923,7 @@ export default function RFQDetailPage() {
                 </div>
 
                 <Link href={`/contractor/rfq/${id}/offer/${offer.id}`}
-                  className="block text-center text-xs font-semibold py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#1B2D5B] hover:text-[#1B2D5B] transition-all mb-2">
+                  className="block text-center text-xs font-semibold py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#0B2438] hover:text-[#0B2438] transition-all mb-2">
                   📄 {L('View all details', 'تمام تفصیل دیکھیں', 'عرض كل التفاصيل')} ←
                 </Link>
 

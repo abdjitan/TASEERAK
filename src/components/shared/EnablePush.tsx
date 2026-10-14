@@ -45,7 +45,7 @@ export default function EnablePush({ variant = 'card' }: { variant?: 'card' | 'n
   if (variant === 'nudge') {
     if (active || state === 'denied') return null
     return (
-      <button onClick={turnOn} disabled={busy} className="flex items-center justify-between gap-3 w-full rounded-2xl p-4 mb-4 text-white hover:shadow-lg transition-shadow disabled:opacity-60" style={{ background: 'linear-gradient(120deg,#1B2D5B,#0F6E56)' }}>
+      <button onClick={turnOn} disabled={busy} className="flex items-center justify-between gap-3 w-full rounded-2xl p-4 mb-4 text-white hover:shadow-lg transition-shadow disabled:opacity-60" style={{ background: 'linear-gradient(120deg,#0B2438,#0F6E56)' }}>
         <div className="text-start">
           <div className="font-extrabold text-sm">🔔 {L('Turn on browser notifications', 'براؤزر نوٹیفکیشن آن کریں', 'فعّل إشعارات المتصفح')}</div>
           <div className="text-[12px] text-blue-50 mt-0.5">{L('Get new requests and offers instantly, even when the app is closed.', 'نئی درخواستیں اور آفرز فوراً ملیں گی، چاہے ایپ بند ہو۔', 'لتصلك الطلبات والعروض الجديدة فوراً حتى والتطبيق مغلق.')}</div>
@@ -68,7 +68,7 @@ export default function EnablePush({ variant = 'card' }: { variant?: 'card' | 'n
       {active ? (
         <button onClick={turnOff} disabled={busy} className="text-xs px-4 py-2 rounded-xl font-bold border border-gray-200 text-gray-600 disabled:opacity-50">{busy ? '...' : L('Turn off', 'بند کریں', 'إيقاف')}</button>
       ) : state !== 'denied' ? (
-        <button onClick={turnOn} disabled={busy} className="text-xs px-4 py-2 rounded-xl font-bold text-white disabled:opacity-50" style={{ background: '#1B2D5B' }}>{busy ? '...' : L('Turn on', 'آن کریں', 'تفعيل')}</button>
+        <button onClick={turnOn} disabled={busy} className="text-xs px-4 py-2 rounded-xl font-bold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>{busy ? '...' : L('Turn on', 'آن کریں', 'تفعيل')}</button>
       ) : null}
     </div>
   )

@@ -38,10 +38,10 @@ export default function AuthLoader({ show = false, progress = 0, status = '', lo
       if (nb <= 0) { bc(); nb = 2.2 + Math.random() }
       x.clearRect(0, 0, W, H)
       for (const s of nodes) { if (!reduce) s.dr += dt * 0.55; s.x = s.bx + Math.cos(s.dr) * 7; s.y = s.by + Math.sin(s.dr * 0.8) * 7; s.dist = Math.hypot(s.x - hub.x, s.y - hub.y) }
-      for (const s of nodes) { const a = 0.07 + s.g * 0.5, col = s.g > 0.02 ? '245,131,31' : '120,160,235'; const g = x.createLinearGradient(hub.x, hub.y, s.x, s.y); g.addColorStop(0, 'rgba(' + col + ',' + a + ')'); g.addColorStop(1, 'rgba(' + col + ',0)'); x.strokeStyle = g; x.lineWidth = 0.7 + s.g; x.beginPath(); x.moveTo(hub.x, hub.y); x.lineTo(s.x, s.y); x.stroke() }
+      for (const s of nodes) { const a = 0.07 + s.g * 0.5, col = s.g > 0.02 ? '212,165,67' : '120,160,235'; const g = x.createLinearGradient(hub.x, hub.y, s.x, s.y); g.addColorStop(0, 'rgba(' + col + ',' + a + ')'); g.addColorStop(1, 'rgba(' + col + ',0)'); x.strokeStyle = g; x.lineWidth = 0.7 + s.g; x.beginPath(); x.moveTo(hub.x, hub.y); x.lineTo(s.x, s.y); x.stroke() }
       const mx = Math.hypot(W, H) * 0.55
       for (let i = pulses.length - 1; i >= 0; i--) { const p = pulses[i]; if (!reduce) p.r += dt * 300; const lf = 1 - p.r / mx; if (lf <= 0) { pulses.splice(i, 1); continue } x.beginPath(); x.arc(hub.x, hub.y, p.r, 0, 6.28); x.strokeStyle = 'rgba(180,205,255,' + (lf * 0.25) + ')'; x.lineWidth = 1.2; x.stroke(); for (const s of nodes) if (s.q === false && p.r >= s.dist) { s.q = true; s.g = 1 } }
-      for (const s of nodes) { if (!reduce) s.g *= 0.96; if (s.g > 0.02) { x.beginPath(); x.arc(s.x, s.y, 2 + 7 * s.g, 0, 6.28); x.fillStyle = 'rgba(245,131,31,' + (s.g * 0.16) + ')'; x.fill() } x.beginPath(); x.arc(s.x, s.y, 2.1, 0, 6.28); x.fillStyle = s.g > 0.02 ? 'rgba(245,131,31,.95)' : 'rgba(150,180,235,.5)'; x.shadowColor = s.g > 0.02 ? 'rgba(245,131,31,.8)' : 'transparent'; x.shadowBlur = 8 * s.g; x.fill(); x.shadowBlur = 0 }
+      for (const s of nodes) { if (!reduce) s.g *= 0.96; if (s.g > 0.02) { x.beginPath(); x.arc(s.x, s.y, 2 + 7 * s.g, 0, 6.28); x.fillStyle = 'rgba(212,165,67,' + (s.g * 0.16) + ')'; x.fill() } x.beginPath(); x.arc(s.x, s.y, 2.1, 0, 6.28); x.fillStyle = s.g > 0.02 ? 'rgba(212,165,67,.95)' : 'rgba(150,180,235,.5)'; x.shadowColor = s.g > 0.02 ? 'rgba(212,165,67,.8)' : 'transparent'; x.shadowBlur = 8 * s.g; x.fill(); x.shadowBlur = 0 }
       rafRef.current = requestAnimationFrame(fr)
     }
     window.addEventListener('resize', rs); rs(); rafRef.current = requestAnimationFrame(fr)
@@ -58,16 +58,16 @@ export default function AuthLoader({ show = false, progress = 0, status = '', lo
         .tk-loader canvas{position:absolute;inset:0;width:100%;height:100%}
         .tk-l-core{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:22px}
         .tk-l-plate{width:122px;height:122px;border-radius:30px;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 30px 60px -18px rgba(0,0,0,.6);position:relative;animation:tkFloat 3s ease-in-out infinite}
-        .tk-l-plate::after{content:"";position:absolute;inset:-8px;border-radius:38px;border:2px solid rgba(245,131,31,.45);animation:tkPulseRing 2s ease-in-out infinite}
+        .tk-l-plate::after{content:"";position:absolute;inset:-8px;border-radius:38px;border:2px solid rgba(212,165,67,.45);animation:tkPulseRing 2s ease-in-out infinite}
         .tk-l-plate img{width:86px;height:86px;object-fit:contain}
         @keyframes tkFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
         @keyframes tkPulseRing{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.06);opacity:1}}
         .tk-l-wm{font-family:'Cairo',sans-serif;font-size:30px;font-weight:900;color:#fff}
-        .tk-l-wm i{color:#F5831F;font-style:normal}
+        .tk-l-wm i{color:#D4A543;font-style:normal}
         .tk-l-bar{width:240px;height:5px;border-radius:100px;background:rgba(255,255,255,.12);overflow:hidden;position:relative}
-        .tk-l-bar>span{position:absolute;inset-block:0;inset-inline-start:0;border-radius:100px;background:linear-gradient(90deg,#F5831F,#ffb05e);box-shadow:0 0 12px rgba(245,131,31,.7);transition:width .4s cubic-bezier(.3,.8,.3,1)}
+        .tk-l-bar>span{position:absolute;inset-block:0;inset-inline-start:0;border-radius:100px;background:linear-gradient(90deg,#D4A543,#F5C55B);box-shadow:0 0 12px rgba(212,165,67,.7);transition:width .4s cubic-bezier(.3,.8,.3,1)}
         .tk-l-status{font-family:'Cairo',sans-serif;font-size:14px;font-weight:600;color:rgba(255,255,255,.72);min-height:20px;transition:opacity .3s;text-align:center;padding:0 16px}
-        .tk-l-pct{font-family:'Cairo',sans-serif;font-size:12.5px;font-weight:800;color:#ffb05e;letter-spacing:.05em}
+        .tk-l-pct{font-family:'Cairo',sans-serif;font-size:12.5px;font-weight:800;color:#F5C55B;letter-spacing:.05em}
         @media (prefers-reduced-motion: reduce){.tk-l-plate,.tk-l-plate::after{animation:none}}
       `}</style>
       <canvas ref={canvasRef} />
