@@ -7,6 +7,7 @@ import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
+import Glyph from '@/components/shared/Glyph'
 
 // أداء المورّد: قمع (عرض → فوز/خسارة/انتظار) + نسبة الفوز حسب القطاع + اتجاه شهري.
 // بيانات المورّد نفسه فقط — لا أسعار منافسين (H2). المصدر: get_my_supplier_analytics().
@@ -54,7 +55,7 @@ export default function SupplierAnalyticsPage() {
       <div className="max-w-4xl mx-auto">
         {totalOffers === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <div className="text-4xl mb-3">🏆</div>
+            <div className="text-4xl mb-3"><Glyph e="🏆" /></div>
             <p className="font-bold text-gray-700 mb-1">{en ? 'No offers yet' : 'لا توجد عروض بعد'}</p>
             <p className="text-sm text-gray-400">{en ? 'Submit offers on requests and your win/loss stats will appear here.' : 'قدّم عروضاً على الطلبات وستظهر إحصاءات الفوز/الخسارة هنا.'}</p>
           </div>
@@ -67,7 +68,7 @@ export default function SupplierAnalyticsPage() {
                 <div className="text-4xl font-extrabold mt-1">{winRate}%</div>
                 <div className="text-[12px] text-blue-100 mt-1">{en ? `${won} won of ${decided} decided` : `${won} فوز من ${decided} صفقة محسومة`}</div>
               </div>
-              <div className="text-6xl opacity-30">🏆</div>
+              <div className="text-6xl opacity-30"><Glyph e="🏆" /></div>
             </div>
 
             {/* بطاقات القمع */}
@@ -83,7 +84,7 @@ export default function SupplierAnalyticsPage() {
             {/* حسب القطاع */}
             {sectors.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-                <div className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>📊 {en ? 'Win rate by sector' : 'نسبة الفوز حسب القطاع'}</div>
+                <div className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}><Glyph e="📊" /> {en ? 'Win rate by sector' : 'نسبة الفوز حسب القطاع'}</div>
                 <div className="space-y-3">
                   {sectors.map((s: any) => {
                     const t = Number(s.total) || 0, w = Number(s.won) || 0, l = Number(s.lost) || 0
@@ -116,7 +117,7 @@ export default function SupplierAnalyticsPage() {
             {/* الاتجاه الشهري */}
             {monthly.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <div className="text-sm font-bold mb-4" style={{ color: '#0B2438' }}>📈 {en ? 'Last 6 months' : 'آخر ٦ أشهر'}</div>
+                <div className="text-sm font-bold mb-4" style={{ color: '#0B2438' }}><Glyph e="📈" /> {en ? 'Last 6 months' : 'آخر ٦ أشهر'}</div>
                 <div className="flex items-end justify-around gap-2 h-36">
                   {monthly.map((m: any) => {
                     const offs = Number(m.offers) || 0, w = Number(m.won) || 0

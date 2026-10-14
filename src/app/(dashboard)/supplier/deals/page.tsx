@@ -9,6 +9,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import { dealStage } from '@/lib/dealStage'
 import { rfqDisplayName } from '@/lib/rfqName'
+import Glyph from '@/components/shared/Glyph'
 
 // «صفقاتي» للمورّد — الصفقات المُرساة عليه (عروضه المقبولة) مع مرحلتها، وترتبط بصفحة إدارة
 // الصفقة (حماية الصفقة: تسليم/استلام/دفع). الهوية تُكشف بعد الترسية فقط.
@@ -57,7 +58,7 @@ export default function SupplierDealsPage() {
     <AppShell title={locale === 'en' ? 'My Deals' : 'صفقاتي'} nav={getNav('supplier', locale, '/supplier/deals')} dir={dir}>
       <div className="max-w-4xl mx-auto">
         <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-          className="input-field mb-3" placeholder={locale === 'en' ? '🔍 Search deals (product, buyer, invoice №)…' : '🔍 ابحث في الصفقات (منتج، مشترٍ، رقم فاتورة)…'} />
+          className="input-field mb-3" placeholder={locale === 'en' ? 'Search deals (product, buyer, invoice №)…' : 'ابحث في الصفقات (منتج، مشترٍ، رقم فاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">
           {[{ k: 'all', l: locale === 'en' ? 'All' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Disputed' : 'نزاعات' }].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)}
@@ -69,7 +70,7 @@ export default function SupplierDealsPage() {
 
         {shown.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
-            <div className="text-5xl mb-3">📦</div>
+            <div className="text-5xl mb-3"><Glyph e="📦" /></div>
             <p className="text-gray-500">{locale === 'en' ? 'No deals yet — once a buyer accepts one of your offers, the deal appears here.' : locale === 'ur' ? 'ابھی کوئی ڈیل نہیں — جب خریدار آپ کی کوئی پیشکش قبول کرے گا تو ڈیل یہاں نظر آئے گی۔' : 'لا توجد صفقات بعد — عندما يقبل مشترٍ أحد عروضك تظهر الصفقة هنا.'}</p>
             <Link href="/supplier/dashboard" className="inline-block mt-4 text-sm font-bold text-[#0F6E56] hover:underline">{locale === 'en' ? 'Browse requests →' : 'تصفّح الطلبات ←'}</Link>
           </div>
@@ -82,7 +83,7 @@ export default function SupplierDealsPage() {
                   className="flex items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:border-[#0F6E56]/40 transition-colors">
                   <div className="min-w-0">
                     <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{d.rfq ? rfqDisplayName({ ...d.rfq, title: null }, locale) : (locale === 'en' ? 'Deal' : 'صفقة')}</div>
-                    <div className="text-xs text-gray-400 mt-0.5 truncate">👤 {d.rfq?.contractor?.company_name_ar || '—'} · {Number(d.total_price || 0).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}</div>
+                    <div className="text-xs text-gray-400 mt-0.5 truncate"><Glyph e="👤" /> {d.rfq?.contractor?.company_name_ar || '—'} · {Number(d.total_price || 0).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}</div>
                     {d.invoice_number && <div className="text-[11px] text-gray-400 font-mono mt-0.5" dir="ltr">{d.invoice_number}</div>}
                   </div>
                   <div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}>

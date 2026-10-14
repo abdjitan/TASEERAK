@@ -9,6 +9,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, SUB_CATEGORIES, getGroupedSubCategories } from '@/types'
+import Glyph from '@/components/shared/Glyph'
 
 const txt = {
   ar: {
@@ -19,7 +20,7 @@ const txt = {
     save: 'نشر السعر', saving: 'جارٍ النشر...', update: 'تحديث', updated: '✓ تم التحديث',
     noPrices: 'لم تنشر أي أسعار بعد', noPricesSub: 'انشر أسعار سلعك المتغيرة ليراها المشترون',
     lastUpdate: 'آخر تحديث', delete: 'حذف', edit: 'تعديل', loading: 'جارٍ التحميل...',
-    hint: '💡 أضف أسعار منتجاتك هنا — تظهر بالبورصة، وتُعبَّأ تلقائياً وقت تسعير طلبات المشترين (توفّر وقتك)',
+    hint: 'أضف أسعار منتجاتك هنا — تظهر بالبورصة، وتُعبَّأ تلقائياً وقت تسعير طلبات المشترين (توفّر وقتك)',
     justNow: 'الآن', minsAgo: 'دقيقة', hoursAgo: 'ساعة', daysAgo: 'يوم', ago: 'قبل',
     confirmDelete: 'حذف هذه السلعة؟',
   },
@@ -31,7 +32,7 @@ const txt = {
     save: 'Publish Price', saving: 'Publishing...', update: 'Update', updated: '✓ Updated',
     noPrices: 'No prices published yet', noPricesSub: 'Publish your volatile prices for buyers to see',
     lastUpdate: 'Last update', delete: 'Delete', edit: 'Edit', loading: 'Loading...',
-    hint: '💡 Volatile items (steel, cables, concrete) — update daily to top the index',
+    hint: 'Volatile items (steel, cables, concrete) — update daily to top the index',
     justNow: 'now', minsAgo: 'min', hoursAgo: 'h', daysAgo: 'd', ago: '',
     confirmDelete: 'Delete this item?',
   },
@@ -43,7 +44,7 @@ const txt = {
     save: 'قیمت شائع کریں', saving: 'شائع ہو رہا ہے...', update: 'اپ ڈیٹ', updated: '✓ اپ ڈیٹ ہو گیا',
     noPrices: 'ابھی کوئی قیمت نہیں', noPricesSub: 'اپنی قیمتیں شائع کریں',
     lastUpdate: 'آخری اپ ڈیٹ', delete: 'حذف', edit: 'ترمیم', loading: 'لوڈ ہو رہا ہے...',
-    hint: '💡 متغیر اشیاء (لوہا، کیبل، کنکریٹ) — روزانہ اپ ڈیٹ کریں',
+    hint: 'متغیر اشیاء (لوہا، کیبل، کنکریٹ) — روزانہ اپ ڈیٹ کریں',
     justNow: 'ابھی', minsAgo: 'منٹ', hoursAgo: 'گھنٹہ', daysAgo: 'دن', ago: 'پہلے',
     confirmDelete: 'یہ آئٹم حذف کریں؟',
   },
@@ -138,7 +139,7 @@ export default function SupplierPricesPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-4">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#D4A543' }}>📈</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#D4A543' }}><Glyph e="📈" /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{T.title}</h1>
               <p className="text-gray-500 text-xs sm:text-sm">{T.sub}</p>
@@ -182,7 +183,7 @@ export default function SupplierPricesPage() {
                   <div className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
                     {/* بحث */}
                     <div className="relative mb-3">
-                      <span className="absolute inset-y-0 start-3 my-auto h-5 w-5 text-gray-400 grid place-items-center">🔍</span>
+                      <span className="absolute inset-y-0 start-3 my-auto h-5 w-5 text-gray-400 grid place-items-center"><Glyph e="🔍" /></span>
                       <input type="text" value={psearch} onChange={e => setPsearch(e.target.value)} className="input-field ps-10 bg-white"
                         placeholder={locale === 'en' ? 'Search an item…' : 'ابحث عن سلعة…'} />
                     </div>
@@ -259,7 +260,7 @@ export default function SupplierPricesPage() {
         {/* My prices */}
         {prices.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
-            <div className="text-5xl mb-3 animate-float">📈</div>
+            <div className="text-5xl mb-3 animate-float"><Glyph e="📈" /></div>
             <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{T.noPrices}</h3>
             <p className="text-sm text-gray-500">{T.noPricesSub}</p>
           </div>
@@ -275,8 +276,8 @@ export default function SupplierPricesPage() {
                       <div className="font-bold" style={{ color: '#0B2438' }}>{p.product_name}</div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-400">
                         <span className="badge badge-blue text-[10px]">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
-                        {p.region && <span>📍 {p.region}</span>}
-                        <span>🕐 {T.lastUpdate}: {timeAgo(p.updated_at, T)}</span>
+                        {p.region && <span><Glyph e="📍" /> {p.region}</span>}
+                        <span><Glyph e="🕐" /> {T.lastUpdate}: {timeAgo(p.updated_at, T)}</span>
                       </div>
                     </div>
                     <div className="text-left flex-shrink-0">
@@ -298,7 +299,7 @@ export default function SupplierPricesPage() {
                       {T.update}
                     </button>
                     <button onClick={() => deletePrice(p.id)}
-                      className="px-3 py-2 rounded-lg text-xs border border-red-200 text-red-500 hover:bg-red-50">🗑</button>
+                      className="px-3 py-2 rounded-lg text-xs border border-red-200 text-red-500 hover:bg-red-50"><Glyph e="🗑" /></button>
                   </div>
                 </div>
               )

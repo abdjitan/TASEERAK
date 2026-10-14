@@ -7,6 +7,7 @@ import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import { PLANS, isSubscribed, planLabel, isLaunchFree } from '@/lib/plans'
+import Glyph from '@/components/shared/Glyph'
 
 // باقات اشتراك المورّد + حالته. التفعيل حالياً يدويّ عبر الإدارة (تحويل بنكي → الأدمن يفعّل)
 // إلى أن تُربَط بوّابة الدفع (مدى/Apple Pay). زر «اشترك» يرسل طلباً للإدارة عبر الدعم.
@@ -38,7 +39,7 @@ export default function SubscriptionPage() {
     if (!uid) return
     setRequesting(key)
     const supabase = createClient()
-    await supabase.from('support_messages').insert({ user_id: uid, sender: 'user', content: `🧾 طلب اشتراك في باقة «${name}». يرجى التواصل لإتمام الدفع والتفعيل.` })
+    await supabase.from('support_messages').insert({ user_id: uid, sender: 'user', content: `طلب اشتراك في باقة «${name}». يرجى التواصل لإتمام الدفع والتفعيل.` })
     setRequesting(''); setSent(key)
   }
 
@@ -53,7 +54,7 @@ export default function SubscriptionPage() {
       <div className="max-w-4xl mx-auto">
         {launchFree && (
           <div className="rounded-2xl p-5 mb-6 text-white" style={{ background: 'linear-gradient(120deg,#0F6E56,#0B2438)' }}>
-            <div className="text-lg font-extrabold">🎉 {locale === 'en' ? 'Free launch period' : 'فترة إطلاق مجانية'}</div>
+            <div className="text-lg font-extrabold"><Glyph e="🎉" /> {locale === 'en' ? 'Free launch period' : 'فترة إطلاق مجانية'}</div>
             <div className="text-sm text-emerald-50 mt-1">{locale === 'en' ? 'All features are open to you for free — no fees' : 'كل الميزات مفتوحة لك مجاناً بدون أي رسوم'}{launchUntil ? (locale === 'en' ? ` until ${new Date(launchUntil).toLocaleDateString('en-GB')}` : ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')}`) : ''}. {locale === 'en' ? 'The plans below show future pricing.' : 'الباقات أدناه توضّح الأسعار المستقبلية بعد فترة الإطلاق.'}</div>
           </div>
         )}
@@ -98,8 +99,8 @@ export default function SubscriptionPage() {
 
         <div className="mt-6 bg-[#0B2438]/5 rounded-2xl p-4 text-sm text-gray-600 text-center leading-relaxed">
           {launchFree
-            ? (locale === 'en' ? '🎉 Everything is free during the launch period — the prices above apply later, and we\'ll notify you before any fees start.' : '🎉 كل الباقات مجانية بالكامل خلال فترة الإطلاق — الأسعار أعلاه تُطبَّق لاحقاً، وسنُعلمك قبل بدء أي رسوم.')
-            : (locale === 'en' ? '💳 To subscribe now: request the plan and our team activates it after payment (bank transfer). Online payment (mada / Apple Pay) is coming soon.' : '💳 للاشتراك الآن: اطلب الباقة ويفعّلها فريقنا بعد الدفع (تحويل بنكي). الدفع الإلكتروني (مدى / Apple Pay) قيد الإضافة قريباً.')}
+            ? (locale === 'en' ? 'Everything is free during the launch period — the prices above apply later, and we\'ll notify you before any fees start.' : 'كل الباقات مجانية بالكامل خلال فترة الإطلاق — الأسعار أعلاه تُطبَّق لاحقاً، وسنُعلمك قبل بدء أي رسوم.')
+            : (locale === 'en' ? 'To subscribe now: request the plan and our team activates it after payment (bank transfer). Online payment (mada / Apple Pay) is coming soon.' : 'للاشتراك الآن: اطلب الباقة ويفعّلها فريقنا بعد الدفع (تحويل بنكي). الدفع الإلكتروني (مدى / Apple Pay) قيد الإضافة قريباً.')}
         </div>
       </div>
     </AppShell>

@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
+import Glyph from '@/components/shared/Glyph'
 
 // Company team: the owner (or an admin member) invites sales staff with a one-time link. A
 // member signs in with their own account and quotes on behalf of the company; their offers
@@ -80,7 +81,7 @@ export default function SupplierTeamPage() {
     <AppShell title={L('Team', 'ٹیم', 'فريق العمل')} nav={getNav('supplier', locale, '/supplier/team')} dir={dir}>
       <div className="max-w-3xl mx-auto space-y-5">
         <div>
-          <h1 className="text-2xl font-extrabold text-navy">👥 {L('Team', 'ٹیم', 'فريق العمل')}{team?.company_name ? ` · ${team.company_name}` : ''}</h1>
+          <h1 className="text-2xl font-extrabold text-navy"><Glyph e="👥" /> {L('Team', 'ٹیم', 'فريق العمل')}{team?.company_name ? ` · ${team.company_name}` : ''}</h1>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
             {L('Your sales staff sign in with their own accounts and price requests on behalf of the company. Every offer they send belongs to the company and shows who sent it.',
               'آپ کا عملہ اپنے اکاؤنٹ سے کمپنی کی جانب سے قیمتیں دیتا ہے۔',
@@ -90,7 +91,7 @@ export default function SupplierTeamPage() {
 
         {notCompany && (
           <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center">
-            <div className="text-4xl mb-2">🏢</div>
+            <div className="text-4xl mb-2"><Glyph e="🏢" /></div>
             <p className="text-sm text-gray-600">{L('Teams are available for company and shop accounts.', 'ٹیم صرف کمپنی اکاؤنٹس کے لیے ہے۔', 'فريق العمل متاح لحسابات الشركات والمحلات.')}</p>
             <Link href="/settings" className="inline-block mt-3 text-sm font-bold text-[#9D7425] hover:underline">{L('Change account type in settings', 'ترتیبات میں تبدیل کریں', 'غيّر نوع الحساب من الإعدادات')}</Link>
           </div>

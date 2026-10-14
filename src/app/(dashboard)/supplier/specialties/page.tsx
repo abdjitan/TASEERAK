@@ -13,8 +13,8 @@ import { detectSpecialtiesFromText } from '@/lib/classify'
 import CatIcon from '@/components/shared/CatIcon'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
+import Glyph from '@/components/shared/Glyph'
 
-const SECTOR_ICONS = { civil: '🏗', architectural: '🏛', electrical: '⚡', mechanical: '⚙️', equipment: '🚜', supply_store: '🏪' }
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 const txt = {
@@ -23,7 +23,7 @@ const txt = {
     back: '← رجوع', save: 'حفظ التخصصات', saving: 'جارٍ الحفظ...', saved: '✓ تم الحفظ بنجاح',
     selectSectors: 'أولاً، اختر القطاعات الرئيسية', thenSpecialties: 'ثم اختر تخصصاتك الدقيقة',
     selected: 'تخصص محدد', noSectors: 'اختر قطاعاً واحداً على الأقل من الأعلى لعرض التخصصات',
-    hint: '💡 كلما حددت تخصصك بدقة، وصلتك طلبات أكثر صلة بعملك',
+    hint: 'كلما حددت تخصصك بدقة، وصلتك طلبات أكثر صلة بعملك',
     loading: 'جارٍ التحميل...',
     suggestTitle: 'ما لقيت مادتك في القائمة؟',
     suggestSub: 'اقترح إضافتها وسيراجعها الفريق ويضيفها للقائمة',
@@ -41,7 +41,7 @@ const txt = {
     back: '← Back', save: 'Save Specialties', saving: 'Saving...', saved: '✓ Saved successfully',
     selectSectors: 'First, select main sectors', thenSpecialties: 'Then pick your exact specialties',
     selected: 'selected', noSectors: 'Select at least one sector above to show specialties',
-    hint: '💡 The more precise your specialties, the more relevant requests you receive',
+    hint: 'The more precise your specialties, the more relevant requests you receive',
     loading: 'Loading...',
     suggestTitle: "Didn't find your material?",
     suggestSub: 'Suggest it — our team will review and add it to the list',
@@ -59,7 +59,7 @@ const txt = {
     back: '← واپس', save: 'محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: '✓ محفوظ ہو گیا',
     selectSectors: 'پہلے، اہم شعبے منتخب کریں', thenSpecialties: 'پھر اپنی مہارتیں منتخب کریں',
     selected: 'منتخب', noSectors: 'مہارتیں دکھانے کے لیے کم از کم ایک شعبہ منتخب کریں',
-    hint: '💡 جتنی درست مہارت، اتنی متعلقہ درخواستیں',
+    hint: 'جتنی درست مہارت، اتنی متعلقہ درخواستیں',
     loading: 'لوڈ ہو رہا ہے...',
     suggestTitle: 'اپنا مواد نہیں ملا؟',
     suggestSub: 'تجویز کریں، ٹیم جائزہ لے کر شامل کرے گی',
@@ -227,7 +227,7 @@ export default function SpecialtiesPage() {
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
                 <div className="font-bold text-sm flex items-center gap-1.5" style={{ color: '#0F6E56' }}>
-                  🔍 {locale === 'en' ? 'Detected from your CR activity' : locale === 'ur' ? 'آپ کے ریکارڈ سے ملا' : 'تحليل نشاطك التجاري'}
+                  <Glyph e="🔍" /> {locale === 'en' ? 'Detected from your CR activity' : locale === 'ur' ? 'آپ کے ریکارڈ سے ملا' : 'تحليل نشاطك التجاري'}
                 </div>
                 <div className="text-xs text-gray-600 mt-0.5 leading-relaxed">
                   {locale === 'en' ? 'We read your official CR activity and pre-selected your specialties below — review and adjust freely, then save.'
@@ -275,7 +275,7 @@ export default function SpecialtiesPage() {
             <select value={suggestSector} onChange={e => setSuggestSector(e.target.value)} className="input-field">
               <option value="">{T.sSectorPh}</option>
               {Object.keys(SECTOR_LABELS).map(s => (
-                <option key={s} value={s}>{(SECTOR_ICONS as any)[s]} {(SECTOR_LABELS as any)[s]}</option>
+                <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>
               ))}
             </select>
           </div>

@@ -10,6 +10,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION } from '@/types'
 import DistrictField from '@/components/shared/DistrictField'
+import Glyph from '@/components/shared/Glyph'
 
 export default function SupplierBranchesPage() {
   const { dir, locale } = useTranslation()
@@ -66,7 +67,7 @@ export default function SupplierBranchesPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-4">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}>🏢</div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}><Glyph e="🏢" /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>فروع الشركة</h1>
               <p className="text-gray-500 text-xs sm:text-sm">أضف فروعك في المناطق المختلفة — تظهر شركتك للمشترين في كل منطقة فيها فرع.</p>
@@ -75,7 +76,7 @@ export default function SupplierBranchesPage() {
         </div>
 
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-700">
-          💡 مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المشترين في جميع هذه المناطق.
+          <Glyph e="💡" /> مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المشترين في جميع هذه المناطق.
         </div>
 
         {!showForm && (
@@ -129,7 +130,7 @@ export default function SupplierBranchesPage() {
 
         {branches.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
-            <div className="text-5xl mb-3 animate-float">🏢</div>
+            <div className="text-5xl mb-3 animate-float"><Glyph e="🏢" /></div>
             <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>لا توجد فروع مضافة</h3>
             <p className="text-sm text-gray-500">أضف فروعك لتصلك طلبات التسعير من مناطقها.</p>
           </div>
@@ -141,13 +142,13 @@ export default function SupplierBranchesPage() {
                 <div className="min-w-0">
                   <div className="font-bold" style={{ color: '#0B2438' }}>{b.name}</div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500">
-                    <span className="badge badge-blue text-[10px]">📍 {b.region}{b.city ? ' - ' + b.city : ''}</span>
-                    {b.district && <span>🏘 {b.district}</span>}
-                    {b.phone && <span dir="ltr">📞 {b.phone}</span>}
+                    <span className="badge badge-blue text-[10px]"><Glyph e="📍" /> {b.region}{b.city ? ' - ' + b.city : ''}</span>
+                    {b.district && <span><Glyph e="🏘" /> {b.district}</span>}
+                    {b.phone && <span dir="ltr"><Glyph e="📞" /> {b.phone}</span>}
                   </div>
                   {b.address && <div className="text-[11px] text-gray-400 mt-1">{b.address}</div>}
                 </div>
-                <button onClick={() => remove(b.id)} className="px-3 py-2 rounded-lg text-xs border border-red-200 text-red-500 hover:bg-red-50 flex-shrink-0">🗑</button>
+                <button onClick={() => remove(b.id)} className="px-3 py-2 rounded-lg text-xs border border-red-200 text-red-500 hover:bg-red-50 flex-shrink-0"><Glyph e="🗑" /></button>
               </div>
             ))}
           </div>

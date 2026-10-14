@@ -19,6 +19,7 @@ import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
 import { tierLabel, tierAllowed } from '@/lib/sellers'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
+import Glyph from '@/components/shared/Glyph'
 
 const txt = {
   ar: {
@@ -28,7 +29,7 @@ const txt = {
     tabRfqs: 'طلبات التسعير', tabOffers: 'عروضي',
     noRfqs: 'لا توجد طلبات مفتوحة الآن', noRfqsSub: 'تأكّد أن تخصصاتك وموقعك مكتملة ليصلك أول طلب مطابق — عادةً تصل الطلبات خلال ساعات، وسننبّهك فوراً.',
     noOffers: 'لم تقدم أي عروض بعد', noOffersSub: 'تصفح طلبات التسعير وقدم أول عرض',
-    submitOffer: 'تقديم عرض →', offerSubmitted: '✓ تم تقديم عرضك — راجِعه', accepted: '✓ مقبول', rejected: '✕ مرفوض', pending: '⏳ قيد المراجعة',
+    submitOffer: 'تقديم عرض →', offerSubmitted: '✓ تم تقديم عرضك — راجِعه', accepted: '✓ مقبول', rejected: '✕ مرفوض', pending: 'قيد المراجعة',
     day: 'يوم', offer: 'عرض', loading: 'جارٍ التحميل...',
     sar: 'ر.س',
   },
@@ -39,7 +40,7 @@ const txt = {
     tabRfqs: 'RFQ Requests', tabOffers: 'My Offers',
     noRfqs: 'No open requests', noRfqsSub: 'You will be notified when new requests arrive',
     noOffers: 'No offers submitted yet', noOffersSub: 'Browse RFQs and submit your first offer',
-    submitOffer: 'Submit Offer →', offerSubmitted: '✓ Offer submitted — review', accepted: '✓ Accepted', rejected: '✕ Rejected', pending: '⏳ Pending',
+    submitOffer: 'Submit Offer →', offerSubmitted: '✓ Offer submitted — review', accepted: '✓ Accepted', rejected: '✕ Rejected', pending: 'Pending',
     day: 'days', offer: 'offer', loading: 'Loading...',
     sar: 'SAR',
   },
@@ -50,7 +51,7 @@ const txt = {
     tabRfqs: 'قیمت کی درخواستیں', tabOffers: 'میری پیشکشیں',
     noRfqs: 'کوئی کھلی درخواست نہیں', noRfqsSub: 'نئی درخواستیں آنے پر آپ کو مطلع کیا جائے گا',
     noOffers: 'ابھی تک کوئی پیشکش نہیں', noOffersSub: 'درخواستیں دیکھیں اور پہلی پیشکش جمع کریں',
-    submitOffer: 'پیشکش جمع کریں →', offerSubmitted: '✓ پیشکش جمع ہو گئی — دیکھیں', accepted: '✓ قبول', rejected: '✕ مسترد', pending: '⏳ زیر التواء',
+    submitOffer: 'پیشکش جمع کریں →', offerSubmitted: '✓ پیشکش جمع ہو گئی — دیکھیں', accepted: '✓ قبول', rejected: '✕ مسترد', pending: 'زیر التواء',
     day: 'دن', offer: 'پیشکش', loading: 'لوڈ ہو رہا ہے...',
     sar: 'ریال',
   },
@@ -176,7 +177,7 @@ export default function SupplierDashboard() {
       // إنذار: طلبات تنتهي مهلتها قريباً (خلال 12 ساعة) — حثّ المورد على التسعير
       const expiringSoon = visibleRfqs.filter((r: any) => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
       if (expiringSoon.length > 0) {
-        toast(`⏰ ${expiringSoon.length} ${expiringSoon.length === 1 ? L('request ends soon — price it now', 'درخواست کی مہلت جلد ختم ہو رہی ہے — جلدی قیمت دیں', 'طلب تنتهي مهلته قريباً — سارِع بالتسعير') : L('requests end soon — price them now', 'درخواستوں کی مہلت جلد ختم ہو رہی ہے — جلدی قیمت دیں', 'طلبات تنتهي مهلتها قريباً — سارِع بالتسعير')}`, { duration: 7000 })
+        toast(`${expiringSoon.length} ${expiringSoon.length === 1 ? L('request ends soon — price it now', 'درخواست کی مہلت جلد ختم ہو رہی ہے — جلدی قیمت دیں', 'طلب تنتهي مهلته قريباً — سارِع بالتسعير') : L('requests end soon — price them now', 'درخواستوں کی مہلت جلد ختم ہو رہی ہے — جلدی قیمت دیں', 'طلبات تنتهي مهلتها قريباً — سارِع بالتسعير')}`, { duration: 7000 })
       }
 
       setLoading(false)
@@ -200,7 +201,7 @@ export default function SupplierDashboard() {
         }, (payload: any) => {
           const n = payload.new
           if (n?.type === 'new_rfq') {
-            toast.success(n.title || (L('🔔 New RFQ received', '🔔 نئی قیمت کی درخواست موصول ہوئی', '🔔 وصلك طلب تسعير جديد')), {
+            toast.success(n.title || (L('New RFQ received', 'نئی قیمت کی درخواست موصول ہوئی', 'وصلك طلب تسعير جديد')), {
               description: n.body || undefined, duration: 7000,
             })
             load()
@@ -250,7 +251,7 @@ export default function SupplierDashboard() {
       <div className="max-w-6xl mx-auto">
         {isMember && (
           <div className="rounded-xl px-4 py-2.5 mb-4 text-sm border flex flex-wrap items-center justify-between gap-2" style={{ background: '#0B24380A', borderColor: '#0B243826', color: '#0B2438' }}>
-            <span>👥 {locale === 'en' ? 'You are working on behalf of' : locale === 'ur' ? 'آپ اس کمپنی کی جانب سے کام کر رہے ہیں:' : 'تعمل باسم'} <b>{companyName}</b></span>
+            <span><Glyph e="👥" /> {locale === 'en' ? 'You are working on behalf of' : locale === 'ur' ? 'آپ اس کمپنی کی جانب سے کام کر رہے ہیں:' : 'تعمل باسم'} <b>{companyName}</b></span>
             <Link href="/supplier/team" className="text-xs font-bold underline">{locale === 'en' ? 'Team' : locale === 'ur' ? 'ٹیم' : 'فريق العمل'}</Link>
           </div>
         )}
@@ -261,9 +262,9 @@ export default function SupplierDashboard() {
           if (profile && !profile.region && !isMember) banners.push({ key: 'onboarding', node: (
             <Link href="/onboarding" className="block rounded-2xl p-5 border-2 hover:shadow-lg transition-all" style={{ borderColor: '#D4A543', background: 'linear-gradient(120deg,#fff7ed,#ffffff)' }}>
               <div className="flex items-start gap-3">
-                <span className="text-3xl shrink-0">🔒</span>
+                <span className="text-3xl shrink-0"><Glyph e="🔒" /></span>
                 <div className="flex-1">
-                  <div className="font-extrabold text-sm" style={{ color: '#9D7425' }}>⚠️ {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
+                  <div className="font-extrabold text-sm" style={{ color: '#9D7425' }}><Glyph e="⚠" /> {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
                   <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{L("Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests. One minute is enough.", 'اپنے مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی مماثل درخواست موصول نہیں ہوگی۔', 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين، ولن تصلك أي طلبات مطابقة. دقيقة واحدة تكفي.')}</div>
                   <span className="inline-block mt-2.5 text-sm font-bold text-[#071827] px-4 py-2 rounded-xl" style={{ background: '#D4A543' }}>{L('Complete now →', 'ابھی مکمل کریں ←', 'أكمل ملفك الآن ←')}</span>
                 </div>
@@ -273,19 +274,19 @@ export default function SupplierDashboard() {
           if (profile?.verification_status === 'rejected') banners.push({ key: 'rejected', node: (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
               <div className="flex items-start gap-3 mb-3">
-                <span className="text-2xl">❌</span>
+                <span className="text-2xl"><Glyph e="❌" /></span>
                 <div>
                   <div className="font-bold text-red-700 mb-1">{L('Account Rejected', 'اکاؤنٹ مسترد', 'تم رفض حسابك')}</div>
                   <div className="text-sm text-red-600">{L('Your account has been rejected. Please review the reason and reupload your documents.', 'آپ کا اکاؤنٹ مسترد ہو گیا۔ وجہ دیکھیں اور دستاویزات دوبارہ اپلوڈ کریں۔', 'تم رفض حسابك. يرجى مراجعة السبب وإعادة رفع المستندات.')}</div>
                   {profile?.rejection_reason && (
                     <div className="mt-2 bg-red-100 rounded-lg px-3 py-2 text-sm text-red-800 font-medium">
-                      📋 {L('Reason: ', 'وجہ: ', 'السبب: ')}{profile.rejection_reason}
+                      <Glyph e="📋" /> {L('Reason: ', 'وجہ: ', 'السبب: ')}{profile.rejection_reason}
                     </div>
                   )}
                 </div>
               </div>
               <Link href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
-                {L('📤 Reupload Documents', '📤 دستاویزات دوبارہ اپلوڈ کریں', '📤 إعادة رفع المستندات')}
+                {L('Reupload Documents', 'دستاویزات دوبارہ اپلوڈ کریں', 'إعادة رفع المستندات')}
               </Link>
             </div>
           ) })
@@ -293,7 +294,7 @@ export default function SupplierDashboard() {
           if (!hasSpecialties && !hasSectors && profile?.verification_status !== 'rejected') banners.push({ key: 'specialties', node: (
             <Link href="/supplier/specialties" className="block bg-gradient-to-l from-[#D4A543]/10 to-[#0B2438]/5 border-2 border-[#D4A543]/30 rounded-2xl p-5 hover:shadow-md transition-all">
               <div className="flex items-center gap-4">
-                <div className="text-3xl">🎯</div>
+                <div className="text-3xl"><Glyph e="🎯" /></div>
                 <div className="flex-1">
                   <div className="font-bold" style={{ color: '#0B2438' }}>{L('Set your exact specialties for precise matching!', 'درست مماثلت کے لیے اپنی مہارتیں مقرر کریں!', 'حدّد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!')}</div>
                   <div className="text-sm text-gray-500 mt-0.5">{L('e.g. only "Bricks" or only "Marble" — get only relevant requests', 'مثلاً صرف "اینٹ" یا صرف "سنگ مرمر"', 'مثلاً: محل طوب فقط، أو محل رخام فقط — تصلك الطلبات المطابقة لتخصصك')}</div>
@@ -304,7 +305,7 @@ export default function SupplierDashboard() {
           ) })
           if (profile?.verification_status === 'pending') banners.push({ key: 'pending', node: (
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3">
-              <span className="text-2xl">⏳</span>
+              <span className="text-2xl"><Glyph e="⏳" /></span>
               <div>
                 <div className="font-bold text-amber-700 mb-1">{L('Account Under Review', 'اکاؤنٹ زیر جائزہ', 'حسابك قيد المراجعة')}</div>
                 <div className="text-sm text-amber-600">{L('Your account is being reviewed. This usually takes up to 24 hours.', 'آپ کے اکاؤنٹ کا جائزہ لیا جا رہا ہے۔ اس میں عموماً 24 گھنٹے لگتے ہیں۔', 'تجري مراجعة بياناتك ورخصة عملك، وتستغرق المراجعة عادةً 24 ساعة.')}</div>
@@ -315,7 +316,7 @@ export default function SupplierDashboard() {
           if (profile && profile.region && !profile.vat_number) banners.push({ key: 'vat', node: (
             <Link href="/settings" className="block bg-[#D4A543]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">🧾</span>
+                <span className="text-2xl"><Glyph e="🧾" /></span>
                 <div className="flex-1">
                   <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Add your VAT number', 'اپنا ٹیکس (VAT) نمبر شامل کریں', 'أضف رقمك الضريبي')}</div>
                   <div className="text-xs text-gray-500">{L('Required to issue tax invoices for your deals. Tap to add →', 'آپ کی ڈیلز کے لیے ٹیکس انوائس جاری کرنے کے لیے ضروری ہے۔ شامل کرنے کے لیے دبائیں ←', 'يلزم لإصدار فواتير ضريبية لصفقاتك. اضغط للإضافة ←')}</div>
@@ -326,7 +327,7 @@ export default function SupplierDashboard() {
           if (profile && profile.region && pricesCount === 0) banners.push({ key: 'prices', node: (
             <Link href="/supplier/prices" className="block bg-gradient-to-l from-[#D4A543]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
-                <span className="text-2xl">📈</span>
+                <span className="text-2xl"><Glyph e="📈" /></span>
                 <div className="flex-1">
                   <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Publish your prices on the price board', 'قیمتوں کے بورڈ پر اپنی قیمتیں شائع کریں', 'انشر أسعارك في بورصة الأسعار')}</div>
                   <div className="text-xs text-gray-500">{L('Buyers look for the latest prices — be the first they see. Tap to add your prices →', 'خریدار تازہ ترین قیمتیں تلاش کرتے ہیں — سب سے پہلے نظر آئیں۔ قیمتیں شامل کرنے کے لیے دبائیں ←', 'يبحث المشترون عن أحدث الأسعار — كن أول من يظهر لهم. اضغط لإضافة أسعارك ←')}</div>
@@ -337,7 +338,7 @@ export default function SupplierDashboard() {
           if (profile && profile.region && !isSubscribed(profile)) banners.push({ key: 'subscription', node: isLaunchFree(launchUntil) ? (
             <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0F6E56,#0B2438)' }}>
               <div className="flex items-center gap-3">
-                <span className="text-2xl">🎉</span>
+                <span className="text-2xl"><Glyph e="🎉" /></span>
                 <div className="flex-1">
                   <div className="font-bold text-sm text-white">{L('Free launch period — all features open', 'مفت لانچ مدت — تمام سہولیات کھلی ہیں', 'فترة إطلاق مجانية — كل الميزات مفتوحة')}</div>
                   <div className="text-xs text-emerald-50">{L('Enjoy everything free now. See the future plans →', 'ابھی سب کچھ مفت استعمال کریں۔ آئندہ پلان دیکھیں ←', 'استمتع بجميع الميزات مجاناً الآن. اطّلع على الباقات القادمة ←')}</div>
@@ -347,7 +348,7 @@ export default function SupplierDashboard() {
           ) : (
             <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0B2438,#102E45)' }}>
               <div className="flex items-center gap-3">
-                <span className="text-2xl">⭐</span>
+                <span className="text-2xl"><Glyph e="⭐" /></span>
                 <div className="flex-1">
                   <div className="font-bold text-sm text-white">{L('Upgrade to Professional', 'پروفیشنل پلان پر اپ گریڈ کریں', 'رقِّ حسابك إلى الباقة الاحترافية')}</div>
                   <div className="text-xs text-blue-100">{L('Unlimited offers + priority visibility + full price index. Tap for plans →', 'لامحدود پیشکشیں + ترجیحی نمائش + قیمتوں کے اشاریے تک مکمل رسائی ←', 'عروض غير محدودة + أولوية في الظهور + وصول كامل إلى مؤشّر الأسعار ←')}</div>
@@ -375,7 +376,7 @@ export default function SupplierDashboard() {
         <EnablePush variant="nudge" />
 
         <div className="mb-4 sm:mb-6 animate-fade-in">
-          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{t.welcome}، {companyName || profile?.full_name || L('Supplier', 'سپلائر', 'مورّد')} 👋</h1>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{t.welcome}، {companyName || profile?.full_name || L('Supplier', 'سپلائر', 'مورّد')} <Glyph e="👋" /></h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
 
@@ -462,8 +463,8 @@ export default function SupplierDashboard() {
             {/* فلاتر الطلبات — منها «تنتهي قريباً» (قابلة للضغط) */}
             <div className="flex gap-2 mb-4 flex-wrap">
               {[
-                { key: 'all', label: `${L('All', 'سب', 'الكل')} (${openRfqs.length})`, icon: '📋' },
-                { key: 'expiring', label: `${L('Ending soon', 'جلد ختم ہونے والی', 'تنتهي قريباً')} (${expiringList.length})`, icon: '⏰' },
+                { key: 'all', label: `${L('All', 'سب', 'الكل')} (${openRfqs.length})`, icon: <Glyph e="📋" /> },
+                { key: 'expiring', label: `${L('Ending soon', 'جلد ختم ہونے والی', 'تنتهي قريباً')} (${expiringList.length})`, icon: <Glyph e="⏰" /> },
               ].map((f: any) => (
                 <button key={f.key} onClick={() => setRfqFilter(f.key)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${rfqFilter === f.key ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
@@ -474,7 +475,7 @@ export default function SupplierDashboard() {
             </div>
             {displayedRfqs.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
-                <div className="text-5xl mb-4 animate-float">{rfqFilter === 'expiring' ? '⏰' : '📭'}</div>
+                <div className="text-5xl mb-4 animate-float">{rfqFilter === 'expiring' ? <Glyph e="⏰" /> : <Glyph e="📭" />}</div>
                 <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{rfqFilter === 'expiring' ? L('Nothing ending soon', 'کوئی درخواست جلد ختم نہیں ہو رہی', 'لا توجد طلبات تنتهي قريباً') : t.noRfqs}</h3>
                 <p className="text-sm text-gray-500">{rfqFilter === 'expiring' ? L('All open requests still have time.', 'تمام کھلی درخواستوں کے پاس ابھی کافی وقت ہے۔', 'ما زال لدى كل الطلبات المفتوحة متّسع من الوقت.') : t.noRfqsSub}</p>
               </div>
@@ -490,18 +491,18 @@ export default function SupplierDashboard() {
                           <div className="font-bold truncate" style={{ color: '#0B2438' }}>{rfqDisplayName(rfq, locale, rfq._myItemCount)}</div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             {rfq.created_at && (Date.now() - new Date(rfq.created_at).getTime() < 12 * 3600 * 1000) && (
-                              <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}>🟢 {L('New', 'نیا', 'جديد')}</span>
+                              <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}><Glyph e="🟢" /> {L('New', 'نیا', 'جديد')}</span>
                             )}
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                             {rfq.sub_category && (
                               <span className="badge text-[10px] bg-[#D4A543]/10 text-[#D4A543] font-semibold">
-                                🎯 {getSubCategoryLabel(rfq.sector, rfq.sub_category, locale)}
+                                <Glyph e="🎯" /> {getSubCategoryLabel(rfq.sector, rfq.sub_category, locale)}
                               </span>
                             )}
                             {/* هوية المقاول مخفية في القائمة — تظهر فقط بعد قبول العرض (خصوصية) */}
                             {rfq.contractor?.company_name_ar && (
                               <span className="text-[10px] text-gray-400">
-                                🏢 {locale === 'en' && rfq.contractor.company_name_en ? rfq.contractor.company_name_en : rfq.contractor.company_name_ar}
+                                <Glyph e="🏢" /> {locale === 'en' && rfq.contractor.company_name_en ? rfq.contractor.company_name_en : rfq.contractor.company_name_ar}
                               </span>
                             )}
                           </div>
@@ -512,16 +513,16 @@ export default function SupplierDashboard() {
                         : <div className="text-[#071827] text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#D4A543' }}>{t.submitOffer}</div>}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium flex-wrap">
-                      <span>📦 {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>
-                      <span>📍 {rfq.region}</span>
-                      {rfq.created_at && <span>🗓 {formatDateTime(rfq.created_at)}</span>}
-                      {rfq.specification && <span className="truncate max-w-[180px]">⚙️ {rfq.specification}</span>}
-                      <span>💬 {rfq.offer_count || 0} {t.offer}</span>
+                      <span><Glyph e="📦" /> {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>
+                      <span><Glyph e="📍" /> {rfq.region}</span>
+                      {rfq.created_at && <span><Glyph e="🗓" /> {formatDateTime(rfq.created_at)}</span>}
+                      {rfq.specification && <span className="truncate max-w-[180px]"><Glyph e="⚙" /> {rfq.specification}</span>}
+                      <span><Glyph e="💬" /> {rfq.offer_count || 0} {t.offer}</span>
                       {rfq.expires_at && (() => {
                         const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
                         return (
                           <span className="px-2 py-0.5 rounded-full font-bold ml-auto" style={{ background: st.bg, color: st.fg }}>
-                            {u === 'critical' ? '🔴' : u === 'soon' ? '🟠' : '⏰'} {formatTimeLeft(rfq.expires_at, locale)}
+                            {u === 'critical' ? <Glyph e="🔴" /> : u === 'soon' ? <Glyph e="🟠" /> : <Glyph e="⏰" />} {formatTimeLeft(rfq.expires_at, locale)}
                           </span>
                         )
                       })()}
@@ -537,7 +538,7 @@ export default function SupplierDashboard() {
           <div className="stagger">
             {myOffers.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
-                <div className="text-5xl mb-4 animate-float">📤</div>
+                <div className="text-5xl mb-4 animate-float"><Glyph e="📤" /></div>
                 <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{t.noOffers}</h3>
                 <p className="text-sm text-gray-500">{t.noOffersSub}</p>
               </div>
@@ -552,7 +553,7 @@ export default function SupplierDashboard() {
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
                           offer.status === 'accepted' ? 'bg-emerald-100' : offer.status === 'rejected' ? 'bg-red-50' : 'bg-amber-50'
-                        }`}>{offer.status === 'accepted' ? '✅' : offer.status === 'rejected' ? '❌' : '⏳'}</div>
+                        }`}>{offer.status === 'accepted' ? <Glyph e="✅" /> : offer.status === 'rejected' ? <Glyph e="❌" /> : <Glyph e="⏳" />}</div>
                         <div>
                           <span className="font-bold" style={{ color: '#0B2438' }}>{offer.rfq ? rfqDisplayName(offer.rfq, locale) : '—'}</span>
                           {offer.rfq?.sector && (
@@ -568,8 +569,8 @@ export default function SupplierDashboard() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
-                      {offer.delivery_days && <span>📦 {offer.delivery_days} {t.day}</span>}
-                      {offer.rfq?.region && <span>📍 {offer.rfq.region}</span>}
+                      {offer.delivery_days && <span><Glyph e="📦" /> {offer.delivery_days} {t.day}</span>}
+                      {offer.rfq?.region && <span><Glyph e="📍" /> {offer.rfq.region}</span>}
                     </div>
                     <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#D4A543' }}>
                       {offer.status === 'accepted'
