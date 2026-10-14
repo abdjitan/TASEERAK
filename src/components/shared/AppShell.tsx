@@ -135,7 +135,7 @@ export default function AppShell({
 
       {/* ===== Main column ===== */}
       <div className={`${mainPush} flex flex-col min-h-screen transition-[margin] duration-300`}>
-        <header className="ts-dashboard-topbar sticky top-0 z-30 backdrop-blur-md border-b" style={{ background: 'rgba(255,255,255,.85)', borderColor: 'var(--line)' }}>
+        <header className="ts-dashboard-topbar sticky top-0 z-30 backdrop-blur-md border-b">
           <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3">
             <div className="flex items-center gap-3 min-w-0">
               <button className="w-9 h-9 grid place-items-center rounded-lg hover:bg-gray-100 shrink-0"

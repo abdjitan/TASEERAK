@@ -602,12 +602,13 @@ a { text-decoration: none; }
     radial-gradient(ellipse at 18% 0%, rgba(212,165,67,.14), transparent 33%),
     repeating-linear-gradient(135deg, transparent 0 40px, rgba(255,255,255,.012) 41px, transparent 42px 80px);
 }
-.ts-dashboard-topbar {
-  background: rgba(255,255,255,.9) !important;
-  border-bottom-color: rgba(16,46,69,.09) !important;
-  box-shadow: 0 5px 22px rgba(7,24,39,.035) !important;
-  backdrop-filter: blur(18px);
-}
+/* (a later white top bar override was removed: the approved design keeps it dark navy, and its
+   text rules above are white — together they produced white-on-white) */
+.ts-dashboard-topbar { border-bottom-color: rgba(212,165,67,.28) !important; box-shadow: 0 8px 26px rgba(5,11,18,.18) !important; }
+.ts-dashboard-topbar .bg-gray-100, .ts-dashboard-topbar .bg-white { background: rgba(255,255,255,.08) !important; border-color: rgba(255,255,255,.14) !important; }
+.ts-dashboard-topbar .bg-gray-100:hover { background: rgba(255,255,255,.16) !important; }
+.ts-dashboard-topbar .text-gray-700, .ts-dashboard-topbar .text-gray-600, .ts-dashboard-topbar .text-gray-500 { color: #E8EDF2 !important; }
+.ts-dashboard-topbar a:not(.btn-orange):not([class*="bg-"]) { color: #E8EDF2; }
 .ts-dashboard-main { padding-inline: clamp(18px, 2.6vw, 42px); }
 .ts-dashboard .ts-dashboard-greeting {
   color: #10243B;
