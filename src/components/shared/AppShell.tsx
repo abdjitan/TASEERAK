@@ -13,7 +13,7 @@ import NavIcon from '@/components/shared/NavIcon'
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
 export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number }
 
-// Shared dashboard shell — navy gradient sidebar (272px) + frosted topbar +
+// Shared dashboard shell — navy gradient sidebar (244px) + frosted topbar +
 // off-canvas drawer on mobile. Pages pass their own nav items + header actions.
 export default function AppShell({
   title, subtitle, company, companyMeta, companyVerified, userId, nav = [], actions, onSignOut, children, dir = 'rtl',
@@ -67,14 +67,14 @@ export default function AppShell({
   const accentEdge = dir === 'rtl' ? 'right-0' : 'left-0'
   const hidden = dir === 'rtl' ? 'translate-x-full' : '-translate-x-full'
   const deskHidden = dir === 'rtl' ? 'lg:translate-x-full' : 'lg:-translate-x-full'
-  const mainPush = collapsed ? '' : dir === 'rtl' ? 'lg:mr-[272px]' : 'lg:ml-[272px]'
+  const mainPush = collapsed ? '' : dir === 'rtl' ? 'lg:mr-[244px]' : 'lg:ml-[244px]'
   const initial = (company || 'ت').trim().charAt(0)
 
   return (
     <div className="ts-dashboard min-h-screen" dir={dir}>
       {/* ===== Sidebar ===== */}
       <aside
-        className={`ts-dashboard-sidebar fixed inset-y-0 ${sideEdge} z-50 w-[272px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} ${collapsed ? deskHidden : 'lg:translate-x-0'}`}
+        className={`ts-dashboard-sidebar fixed inset-y-0 ${sideEdge} z-50 w-[244px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} ${collapsed ? deskHidden : 'lg:translate-x-0'}`}
         style={{ background: 'linear-gradient(180deg,#071827 0%,#0B2438 54%,#050B12 100%)' }}
       >
         {/* Brand */}
@@ -95,8 +95,8 @@ export default function AppShell({
                 )}
                 <Link href={n.href} prefetch onClick={() => setOpen(false)}
                   aria-current={n.active ? 'page' : undefined}
-                  className={`ts-sidebar-link group relative flex items-center gap-3 px-3 py-2.5 rounded-2xl text-[15px] font-semibold border transition-colors ${n.active ? 'is-active bg-white/[0.09] text-white border-[#D4A543]/35 shadow-[0_6px_20px_-10px_rgba(212,165,67,.45)]' : 'text-[#C7CED6] border-transparent hover:bg-white/[0.05] hover:text-white'}`}>
-                  <span className={`ts-sidebar-icon w-9 h-9 shrink-0 grid place-items-center rounded-xl border transition-colors ${n.active ? 'border-[#D4A543]/45 bg-[#D4A543]/10 text-[#F5C55B]' : 'border-white/[0.14] bg-white/[0.04] text-[#E3C77F] group-hover:border-white/25'}`}>
+                  className={`ts-sidebar-link group relative flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-[14px] font-semibold border transition-colors ${n.active ? 'is-active bg-white/[0.09] text-white border-[#D4A543]/35 shadow-[0_6px_20px_-10px_rgba(212,165,67,.45)]' : 'text-[#C7CED6] border-transparent hover:bg-white/[0.05] hover:text-white'}`}>
+                  <span className={`ts-sidebar-icon w-8 h-8 shrink-0 grid place-items-center rounded-xl border transition-colors ${n.active ? 'border-[#D4A543]/45 bg-[#D4A543]/10 text-[#F5C55B]' : 'border-white/[0.14] bg-white/[0.04] text-[#E3C77F] group-hover:border-white/25'}`}>
                     <NavIcon href={n.href} fallback={n.icon} />
                   </span>
                   <span className="truncate">{n.label}</span>

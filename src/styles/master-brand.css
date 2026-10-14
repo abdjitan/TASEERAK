@@ -179,7 +179,7 @@ a { text-decoration: none; }
   background: linear-gradient(90deg, transparent, rgba(245,197,91,.48), transparent);
 }
 .ts-sidebar-link {
-  min-height: 46px;
+  min-height: 40px;
   border: 1px solid transparent;
   transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
 }
@@ -192,8 +192,8 @@ a { text-decoration: none; }
 }
 .ts-sidebar-icon {
   flex: none;
-  width: 34px !important;
-  height: 34px;
+  width: 31px !important;
+  height: 31px;
   border: 1px solid rgba(255,255,255,.075);
   border-radius: 11px;
   background: rgba(255,255,255,.055);
@@ -866,3 +866,10 @@ a { text-decoration: none; }
 
 /* photo cards (buyer home + materials guide): vivid images, lighter scrim */
 .ts-dashboard main a.group img.object-cover, .ts-dashboard main button.group img.object-cover { filter: saturate(1.15) contrast(1.06) brightness(1.04); }
+
+/* Density (owner: the dashboard looked zoomed in). Tailwind sizes are rem-based, so a slightly
+   smaller root size tightens every dashboard page at once; public pages keep 16px. */
+html:has(.ts-dashboard) { font-size: 14.5px; }
+.ts-dashboard-brand { padding-block: 14px 10px !important; }
+.dashboard-brand-lockup { height: 68px !important; max-width: 102px !important; }
+.ts-dashboard-topbar > div { padding-block: 8px !important; }
