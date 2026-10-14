@@ -5,6 +5,7 @@ import Link from 'next/link'
 import EnablePush from '@/components/shared/EnablePush'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
+import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { toast } from 'sonner'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -89,9 +90,19 @@ export default function SupplierDashboard() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
+      // Back on this page within the tab: show the last data at once, refresh below.
+      const cacheKey = 'sup_' + session.user.id
+      const snap = readPageCache(cacheKey)
+      if (snap) {
+        setProfile(snap.p); setIsMember(!!snap.isMember); setLaunchUntil(snap.launchUntil ?? null); setPricesCount(snap.pricesCount ?? 0)
+        setMyOffers(snap.offers || []); setHasSectors(snap.hasSectors !== false); setHasSpecialties(snap.hasSpecialties !== false)
+        setOpenRfqs(snap.openRfqs || []); setLoading(false)
+      }
       // A team member works on behalf of their company: everything below reads the company.
-      const { data: actRaw } = await supabase.rpc('acting_uid')
-      const actId: string = (actRaw as any) || session.user.id
+      // The company id barely ever changes, so a cached one lets the rest start right away; it is
+      // still verified below and the page reloads itself if it changed.
+      const actPromise = Promise.resolve(supabase.rpc('acting_uid')).then((x: any) => (x?.data as string) || session.user.id).catch(() => session.user.id)
+      const actId: string = snap?.actId || await actPromise
       setIsMember(actId !== session.user.id)
       // Speed: the database is far from our users (~1 s a request), so everything that only needs
       // the company id goes out at once instead of one after another (was 11 sequential requests).
@@ -176,11 +187,16 @@ export default function SupplierDashboard() {
 
       // إنذار: طلبات تنتهي مهلتها قريباً (خلال 12 ساعة) — حثّ المورد على التسعير
       const expiringSoon = visibleRfqs.filter((r: any) => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
-      if (expiringSoon.length > 0) {
+      if (expiringSoon.length > 0 && !snap) {
         toast(`${expiringSoon.length} ${expiringSoon.length === 1 ? L('request ends soon — price it now', 'درخواست کی مہلت جلد ختم ہو رہی ہے — جلدی قیمت دیں', 'طلب تنتهي مهلته قريباً — سارِع بالتسعير') : L('requests end soon — price them now', 'درخواستوں کی مہلت جلد ختم ہو رہی ہے — جلدی قیمت دیں', 'طلبات تنتهي مهلتها قريباً — سارِع بالتسعير')}`, { duration: 7000 })
       }
 
       setLoading(false)
+      if ((await actPromise) !== actId) { writePageCache(cacheKey, null); return load() }
+      writePageCache(cacheKey, {
+        actId, isMember: actId !== session.user.id, p, launchUntil: cfg?.launch_free_until || null, pricesCount: lpCount ?? 0,
+        offers: offers || [], hasSectors: mySectors.length > 0, hasSpecialties: mySpecialties.length > 0, openRfqs: visibleRfqs,
+      })
   }
 
   useEffect(() => { load() }, [])

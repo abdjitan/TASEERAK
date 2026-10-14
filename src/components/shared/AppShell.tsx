@@ -2,6 +2,7 @@
 
 import { useState, useEffect, ReactNode } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import AiAssistant from '@/components/shared/AiAssistant'
@@ -10,6 +11,9 @@ import { useTranslation } from '@/i18n'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import NavIcon from '@/components/shared/NavIcon'
 import Glyph from '@/components/shared/Glyph'
+
+// Unread-messages badge cache shared by every AppShell mount (see the effect below).
+const unreadCache = { uid: '', n: 0, at: 0 }
 
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
 export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number }
@@ -45,7 +49,10 @@ export default function AppShell({
     window.location.href = '/login'
   }
   // عدد الرسائل غير المقروءة — شارة على «الرسائل» في القائمة
-  const [unreadMsgs, setUnreadMsgs] = useState(0)
+  // Every page renders its own AppShell, so the count is kept in a module cache: a page change
+  // shows the last count at once and only re-asks the database when it is over a minute old
+  // (realtime keeps it fresh in between).
+  const [unreadMsgs, setUnreadMsgs] = useState(unreadCache.n)
   useEffect(() => {
     const supabase = createClient()
     let ch: any
@@ -55,15 +62,29 @@ export default function AppShell({
       if (!uid) return
       const refresh = async () => {
         const { count } = await supabase.from('messages').select('id', { count: 'exact', head: true }).is('read_at', null).neq('sender_id', uid)
+        Object.assign(unreadCache, { uid, n: count || 0, at: Date.now() })
         setUnreadMsgs(count || 0)
       }
-      await refresh()
+      if (unreadCache.uid === uid && Date.now() - unreadCache.at < 60_000) setUnreadMsgs(unreadCache.n)
+      else await refresh()
       ch = supabase.channel(`appshell-msgs-${uid}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { refresh() })
         .subscribe()
     })()
     return () => { if (ch) supabase.removeChannel(ch) }
   }, [userId])
+  // Warm every menu page in the background once the shell is idle, so even the first visit to a
+  // page doesn't wait for its code and server payload (the mobile drawer links are off-screen, so
+  // <Link prefetch> alone would not fetch them).
+  const router = useRouter()
+  const navKey = nav.map(n => n.href).join('|')
+  useEffect(() => {
+    const hrefs = navKey.split('|').filter(h => h.startsWith('/'))
+    const run = () => hrefs.forEach(h => { try { router.prefetch(h) } catch {} })
+    const w = window as any
+    const id = w.requestIdleCallback ? w.requestIdleCallback(run, { timeout: 2500 }) : setTimeout(run, 1200)
+    return () => { w.cancelIdleCallback ? w.cancelIdleCallback(id) : clearTimeout(id) }
+  }, [navKey, router])
   const sideEdge = dir === 'rtl' ? 'right-0' : 'left-0'
   const accentEdge = dir === 'rtl' ? 'right-0' : 'left-0'
   const hidden = dir === 'rtl' ? 'translate-x-full' : '-translate-x-full'

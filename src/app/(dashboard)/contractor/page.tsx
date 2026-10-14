@@ -17,6 +17,7 @@ import { AppIcon } from '@/components/AppIcon'
 import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
 import { dealStage } from '@/lib/dealStage'
+import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 
@@ -115,6 +116,13 @@ export default function ContractorDashboard() {
       // Speed: the database is far from our users (~1 s a request): load everything that only needs
       // the user id at once, then the deals of closed requests (was 8 sequential requests).
       const uid = session.user.id
+      // Back on the home page within this tab: show the last data at once, refresh below.
+      const snap = readPageCache('home_' + uid)
+      if (snap) {
+        setProfile(snap.p); setRfqs(snap.r || []); setDrafts(snap.dr || []); setProjects(snap.proj || [])
+        setActivity(snap.notifs || []); setMarketTop(snap.marketTop || []); setMarketTrend(snap.trend || {}); setDeals(snap.deals || {})
+        setLoading(false)
+      }
       const safe = (q: any) => Promise.resolve(q).catch(() => ({ data: null }))
       const [{ data: p }, { data: r }, { data: dr }, { data: proj }, { data: notifs }, { data: mp }, { data: tr }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', uid).single(),
@@ -136,6 +144,8 @@ export default function ContractorDashboard() {
       for (const row of (tr || [])) map[`${row.product_name}|${row.sector}`] = row
       setMarketTrend(map)
       setLoading(false)
+      const marketTop = (mp || []).sort((a: any, b: any) => Number(b.offer_count) - Number(a.offer_count)).slice(0, 3)
+      let deals: Record<string, any[]> = snap?.deals || {}
       try {
         const closedIds = (r || []).filter((x: any) => x.status === 'closed').map((x: any) => x.id)
         if (closedIds.length) {
@@ -144,8 +154,10 @@ export default function ContractorDashboard() {
           const m: Record<string, any[]> = {}
           for (const o of (acc || [])) (m[o.rfq_id] ||= []).push(o)
           setDeals(m)
+          deals = m
         }
       } catch {}
+      writePageCache('home_' + uid, { p, r, dr, proj, notifs, marketTop, trend: map, deals })
     }
     init()
   }, [])

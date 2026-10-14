@@ -1,3 +1,4 @@
+import { clearPageCache } from '@/lib/pageCache'
 // Auto-saved request drafts, kept on this device so leaving the page (opening another link,
 // switching to the detailed form, closing the tab) never loses what the buyer already entered.
 // Text goes to localStorage; photos go to IndexedDB (too big for localStorage).
@@ -31,6 +32,7 @@ export function clearLocalDraft(key: string) {
 // On sign-out: drop every draft (text + photos) so the next person on a shared device can't
 // read them from the browser storage.
 export function clearAllLocalDrafts() {
+  clearPageCache() // sign-out: also drop the per-tab page snapshots
   try {
     const ls = window.localStorage
     for (let i = ls.length - 1; i >= 0; i--) { const k = ls.key(i); if (k && k.startsWith(PREFIX)) ls.removeItem(k) }
