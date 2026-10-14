@@ -135,7 +135,7 @@ export default function OfferDetailPage() {
   const accepted = offer.status === 'accepted'
   const contactNum = s.contact_phone || s.phone || ''
   const mapsUrl = (s.latitude && s.longitude) ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}` : null
-  const wa = (accepted && contactNum) ? waLink(contactNum, L(`Hello, regarding your offer on «${rfq.product_name}» on Taseerak`, `السلام علیکم، تسعیرک پر «${rfq.product_name}» کے لیے آپ کی آفر کے بارے میں`, `السلام عليكم، بخصوص عرضكم على «${rfq.product_name}» في منصة تسعيرك`)) : ''
+  const wa = (accepted && contactNum) ? waLink(contactNum, L(`Hello, regarding your offer on «${getProductLabel(rfq.product_name, locale)}» on Taseerak`, `السلام علیکم، تسعیرک پر «${getProductLabel(rfq.product_name, locale)}» کے لیے آپ کی آفر کے بارے میں`, `السلام عليكم، بخصوص عرضكم على «${getProductLabel(rfq.product_name, locale)}» في منصة تسعيرك`)) : ''
   const waReduce = '' // التفاوض قبل الترسية يتم داخل المنصة (لا واتساب)
   const statusBadge = offer.status === 'accepted' ? { t: `✓ ${L('Accepted', 'قبول شدہ', 'مقبول')}`, c: 'bg-emerald-100 text-emerald-700' }
     : offer.status === 'rejected' ? { t: `✕ ${L('Rejected', 'رد شدہ', 'مرفوض')}`, c: 'bg-gray-100 text-gray-500' }

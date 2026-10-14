@@ -857,7 +857,7 @@ a { text-decoration: none; }
   border: 1px solid rgba(212,165,67,.35);
 }
 .market-hero::before {
-  content: ""; position: absolute; inset: 0; z-index: 0;
+  content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; /* hero is overflow-visible so search suggestions can drop below it */
   background:
     radial-gradient(ellipse at 22% 70%, rgba(245,197,91,.22), transparent 55%),
     linear-gradient(100deg, rgba(5,11,18,.25) 0%, rgba(7,24,39,.55) 45%, rgba(7,24,39,.84) 100%);

@@ -12,7 +12,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS } from '@/types'
+import { SECTOR_LABELS, getProductLabel } from '@/types'
 import { tierLabel, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
@@ -212,7 +212,7 @@ export default function ProjectResultsPage() {
                         {(SECTOR_ICONS as any)[item.sector]}
                       </div>
                       <div>
-                        <div className="font-bold" style={{ color: '#0B2438' }}>{item.product_name}</div>
+                        <div className="font-bold" style={{ color: '#0B2438' }}>{getProductLabel(item.product_name, locale)}</div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <span className="badge text-[10px] text-white" style={{ background: (SECTOR_COLORS as any)[item.sector] }}>
                             {(SECTOR_LABELS as any)[item.sector]}
@@ -381,7 +381,7 @@ export default function ProjectResultsPage() {
                 const acc = item.rfq.offers.find((o: any) => o.status === 'accepted')
                 return (
                   <div key={item.id} className="flex justify-between text-sm">
-                    <span className="text-gray-600 truncate ml-4">{item.product_name}</span>
+                    <span className="text-gray-600 truncate ml-4">{getProductLabel(item.product_name, locale)}</span>
                     <span className="font-semibold text-emerald-700 flex-shrink-0">{acc.total_price?.toLocaleString('en-US')} ر.س</span>
                   </div>
                 )

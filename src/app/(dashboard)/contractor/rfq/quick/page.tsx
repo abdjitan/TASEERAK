@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
+import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, getProductLabel, getUnitLabel, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -358,7 +358,7 @@ export default function QuickRequestPage() {
           if (blob) {
             const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
             const { data: up } = await supabase.storage.from('licenses').upload(`${userId}/spec-${Date.now()}-${i}.${ext}`, blob, { upsert: false, contentType: blob.type })
-            if (!up) { setError(L(`Could not upload the attachment of «${l.product_name}». Check your connection and try again, or remove the attachment.`, `«${l.product_name}» کی فائل اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں یا فائل ہٹا دیں۔`, `تعذّر رفع مرفق «${l.product_name}». تحقّق من الاتصال وحاول مرة أخرى، أو احذف المرفق.`)); return }
+            if (!up) { setError(L(`Could not upload the attachment of «${nameLabel(l.product_name)}». Check your connection and try again, or remove the attachment.`, `«${nameLabel(l.product_name)}» کی فائل اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں یا فائل ہٹا دیں۔`, `تعذّر رفع مرفق «${nameLabel(l.product_name)}». تحقّق من الاتصال وحاول مرة أخرى، أو احذف المرفق.`)); return }
             fileUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
           }
         }
@@ -366,7 +366,7 @@ export default function QuickRequestPage() {
           const ext = ph.file.type === 'image/png' ? 'png' : ph.file.type === 'image/webp' ? 'webp' : 'jpg'
           const path = `${userId}/photo-${Date.now()}-${i}.${ext}`
           const { data: up } = await supabase.storage.from('licenses').upload(path, ph.file, { upsert: false, contentType: ph.file.type })
-          if (!up) { setError(L(`Could not upload the photo of «${l.product_name}». Try again, or untick «send the photo».`, `«${l.product_name}» کی تصویر اپ لوڈ نہیں ہو سکی۔`, `تعذّر رفع صورة «${l.product_name}». حاول مرة أخرى، أو ألغِ خيار إرسال الصورة.`)); return }
+          if (!up) { setError(L(`Could not upload the photo of «${nameLabel(l.product_name)}». Try again, or untick «send the photo».`, `«${nameLabel(l.product_name)}» کی تصویر اپ لوڈ نہیں ہو سکی۔`, `تعذّر رفع صورة «${nameLabel(l.product_name)}». حاول مرة أخرى، أو ألغِ خيار إرسال الصورة.`)); return }
           photoUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
         }
         const st = specText(l.product_name, l.specs)
@@ -421,10 +421,20 @@ export default function QuickRequestPage() {
     } finally { setSending(false) }
   }
 
+  // Lines keep the Arabic catalog name/unit (that is what routes the request and what suppliers
+  // read); en/ur buyers see them in their language.
+  const SECTOR_I18N: Record<string, { en: string; ur: string }> = {
+    civil: { en: 'Civil', ur: 'سول' }, architectural: { en: 'Architectural', ur: 'آرکیٹیکچرل' },
+    electrical: { en: 'Electrical', ur: 'بجلی' }, mechanical: { en: 'Mechanical', ur: 'مکینیکل' },
+    equipment: { en: 'Machinery & equipment', ur: 'مشینری اور آلات' }, supply_store: { en: 'Supply store', ur: 'سپلائی اسٹور' },
+  }
   const sectorLabel = (s: string) => {
+    if (locale !== 'ar' && SECTOR_I18N[s]) return (SECTOR_I18N[s] as any)[locale] || SECTOR_I18N[s].en
     const lab: any = (SECTOR_LABELS as any)[s]
     return typeof lab === 'string' ? lab : (lab?.[locale] || lab?.ar || s)
   }
+  const nameLabel = (name: string) => (name ? getProductLabel(name, locale) : name)
+  const unitLabel = (u: string) => getUnitLabel(u, locale) || u
 
   if (done) {
     return (
@@ -520,9 +530,9 @@ export default function QuickRequestPage() {
                         : <img src={productImageUrl(l.product_name)} alt="" loading="lazy" className="w-11 h-11 rounded-lg object-contain bg-white border border-gray-100 shrink-0"
                             onError={(e: any) => imgFallback(e, detectSubCategory(l.product_name, l.sector as any))} />}
                       <span className="min-w-0 flex-1">
-                        <span className="block font-bold text-sm text-navy truncate" dir="auto">{l.product_name}</span>
+                        <span className="block font-bold text-sm text-navy truncate" dir="auto">{nameLabel(l.product_name)}</span>
                         <span className="block text-xs text-gray-500 truncate" dir="auto">
-                          <b className="text-[#9D7425]">{l.quantity} {l.unit}</b>
+                          <b className="text-[#9D7425]">{l.quantity} {unitLabel(l.unit)}</b>
                           {Object.values(l.specs || {}).filter(v => (v || '').trim()).length ? ' · ' + Object.values(l.specs || {}).filter(v => (v || '').trim()).join('، ') : ''}
                           {l.details.trim() ? ' · ' + l.details.trim() : ''}
                           {l.fileId ? ' · ' : ''}
@@ -539,7 +549,7 @@ export default function QuickRequestPage() {
                       : l.product_name ? <img src={productImageUrl(l.product_name)} alt="" loading="lazy" className="w-16 h-16 rounded-lg object-contain shrink-0 border border-gray-100 bg-gray-50"
                           onError={(e: any) => imgFallback(e, detectSubCategory(l.product_name, l.sector as any))} /> : null}
                     <div className="flex-1 min-w-0 space-y-1">
-                      <input value={l.product_name} onChange={e => updateLine(l.key, { product_name: e.target.value })} aria-label={L('Item name', 'نام', 'اسم المادة')}
+                      <input value={nameLabel(l.product_name)} onChange={e => updateLine(l.key, { product_name: e.target.value === nameLabel(l.product_name) ? l.product_name : e.target.value })} aria-label={L('Item name', 'نام', 'اسم المادة')}
                         className="input-field font-semibold" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'جارٍ التعرّف على الصورة…') : L('Item name', 'نام', 'اسم المادة')} />
                       {locale !== 'ar' && l.original && !ph && (
                         <p className="text-[11px] font-semibold text-gray-700" dir="auto">= {l.original}</p>
@@ -555,7 +565,7 @@ export default function QuickRequestPage() {
                       {l.suggestion && l.suggestion.name !== l.product_name && (
                         <button type="button" onClick={() => updateLine(l.key, { product_name: l.suggestion!.name, sector: l.suggestion!.sector, suggestion: null })}
                           className="text-[11px] font-bold px-2 py-1 rounded-lg border border-dashed hover:bg-[#0F6E56]/5" style={{ borderColor: '#0F6E56', color: '#0F6E56' }}>
-                          <Glyph e="📦" /> {L('Did you mean', 'کیا آپ کا مطلب', 'هل تقصد')}: {l.suggestion.name}؟
+                          <Glyph e="📦" /> {L('Did you mean', 'کیا آپ کا مطلب', 'هل تقصد')}: {nameLabel(l.suggestion.name)}؟
                         </button>
                       )}
                       <div className="text-[11px] text-gray-400">{sectorLabel(l.sector)}</div>
@@ -567,7 +577,7 @@ export default function QuickRequestPage() {
                       className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} aria-label={L('Quantity', 'مقدار', 'الكمية')} />
                     <select value={l.unit} onChange={e => updateLine(l.key, { unit: e.target.value })} className="input-field" aria-label={L('Unit', 'یونٹ', 'الوحدة')}>
                       <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>
-                      {Array.from(new Set([...(getProductSpecs(l.product_name).find(f => f.key === 'unit')?.options || []), ...(l.unit && !UNITS.includes(l.unit) ? [l.unit] : []), ...UNITS])).map(u => <option key={u} value={u}>{u}</option>)}
+                      {Array.from(new Set([...(getProductSpecs(l.product_name).find(f => f.key === 'unit')?.options || []), ...(l.unit && !UNITS.includes(l.unit) ? [l.unit] : []), ...UNITS])).map(u => <option key={u} value={u}>{unitLabel(u)}</option>)}
                     </select>
                   </div>
                   <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })} className="input-field text-sm"
@@ -742,8 +752,8 @@ export default function QuickRequestPage() {
                     return (
                       <li key={l.key} className="rounded-xl bg-gray-50 border border-gray-100 p-2.5">
                         <div className="flex items-start justify-between gap-2">
-                          <span className="font-bold text-navy" dir="auto">{i + 1}. {l.product_name}</span>
-                          <span className="font-bold text-[#9D7425] whitespace-nowrap">{l.quantity} {l.unit}</span>
+                          <span className="font-bold text-navy" dir="auto">{i + 1}. {nameLabel(l.product_name)}</span>
+                          <span className="font-bold text-[#9D7425] whitespace-nowrap">{l.quantity} {unitLabel(l.unit)}</span>
                         </div>
                         {(sp.length > 0 || l.details.trim() || l.fileId) && (
                           <div className="text-xs text-gray-500 mt-1" dir="auto">

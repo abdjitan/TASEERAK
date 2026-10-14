@@ -187,7 +187,7 @@ export default function SupplierRFQPage() {
           if (priceMap[key] == null) priceMap[key] = Number(pr.price)
         }
         setItemForms(filtered.map((it: any) => {
-          const sp = priceMap[`${it.product_name}__${it.unit || ''}`]
+          const sp = priceMap[`${getProductLabel(it.product_name, locale)}__${it.unit || ''}`]
           if (sp > 0) { const q = Number(it.quantity) || 0; return { unit_price: String(sp), line_total: q > 0 ? String(+(sp * q).toFixed(2)) : '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '', autofilled: true } }
           return { unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '' }
         }))
@@ -281,7 +281,7 @@ export default function SupplierRFQPage() {
     setAsking(null)
     if (e || !data) { setError(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }
     const name = getProductLabel(it.product_name, locale)
-    const msg = L(`Hello, about «${name}»: could you specify ${missing.join(', ')}?`, `السلام علیکم، «${name}» کے بارے میں: کیا آپ ${missing.join('، ')} بتا سکتے ہیں؟`, `مرحباً، بخصوص «${it.product_name}»: هل يمكنك تحديد ${missing.join('، ')}؟`)
+    const msg = L(`Hello, about «${name}»: could you specify ${missing.join(', ')}?`, `السلام علیکم، «${name}» کے بارے میں: کیا آپ ${missing.join('، ')} بتا سکتے ہیں؟`, `مرحباً، بخصوص «${getProductLabel(it.product_name, locale)}»: هل يمكنك تحديد ${missing.join('، ')}؟`)
     router.push(`/messages?c=${data}&msg=${encodeURIComponent(msg)}`)
   }
 
@@ -391,7 +391,7 @@ export default function SupplierRFQPage() {
           const ires = await fetch('/api/upload-attachment', { method: 'POST', body: ifd })
           const ij = await ires.json().catch(() => ({}))
           if (!ires.ok || !ij.ok) {
-            setError(L(`Could not upload the catalog for «${getProductLabel(it.product_name, locale)}» — remove it or try again.`, `«${getProductLabel(it.product_name, locale)}» کا کیٹلاگ اپ لوڈ نہیں ہو سکا — اسے ہٹائیں یا دوبارہ کوشش کریں۔`, `تعذّر رفع كتالوج «${it.product_name}» — أزله أو حاول مجدداً.`))
+            setError(L(`Could not upload the catalog for «${getProductLabel(it.product_name, locale)}» — remove it or try again.`, `«${getProductLabel(it.product_name, locale)}» کا کیٹلاگ اپ لوڈ نہیں ہو سکا — اسے ہٹائیں یا دوبارہ کوشش کریں۔`, `تعذّر رفع كتالوج «${getProductLabel(it.product_name, locale)}» — أزله أو حاول مجدداً.`))
             setSubmitting(false); return
           }
           upUrl = ij.url; upName = ij.name
@@ -857,7 +857,7 @@ export default function SupplierRFQPage() {
                           <div className="mt-3 flex flex-wrap items-center gap-2">
                             <div className="relative flex-1 min-w-[11rem]">
                               <input type="number" inputMode="decimal" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
-                                aria-label={L(`Total price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} کی کل قیمت`, `السعر الإجمالي لـ ${it.product_name}`)}
+                                aria-label={L(`Total price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} کی کل قیمت`, `السعر الإجمالي لـ ${getProductLabel(it.product_name, locale)}`)}
                                 className="input-field font-bold pe-14" placeholder={L(`Total for ${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}`, `${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)} کی کل قیمت`, `إجمالي ${qty.toLocaleString('en-US')} ${it.unit}`)} min="0" step="any" />
                               <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">{SAR}</span>
                             </div>

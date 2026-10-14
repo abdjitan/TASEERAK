@@ -8,7 +8,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel } from '@/types'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 
@@ -208,7 +208,7 @@ export default function NewProjectPage() {
   function setItemSector(id: any, sector: any) {
     setItems(prev => prev.map((it: any) => {
       if (it.id !== id) return it
-      const guess = detectSubCategory(`${it.product_name} ${it.specification || ''}`, sector)
+      const guess = detectSubCategory(`${getProductLabel(it.product_name, locale)} ${it.specification || ''}`, sector)
       const sub = guess && (SUB_CATEGORIES as any)[sector]?.[guess] ? guess : null
       return { ...it, sector, sub_category: sub, needs_classification: !sub }
     }))
@@ -648,7 +648,7 @@ export default function NewProjectPage() {
                         // Edit Mode
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="sm:col-span-2">
-                            <input value={item.product_name}
+                            <input value={getProductLabel(item.product_name, locale)}
                               onChange={(e: any) => updateItem(item.id, 'product_name', e.target.value)}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Material name *' : 'اسم المادة *'} />
                           </div>
