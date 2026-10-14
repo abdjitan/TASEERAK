@@ -301,6 +301,14 @@ export default function QuickRequestPage() {
   const ready = lines.length > 0 && lines.every(l => l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) && !!region
 
   const allSaved = lines.length > 0 && lines.every(l => l.done)
+  // MSA counting: يوم واحد، يومان، 3–10 أيام; ساعات for under a day
+  const durationLabel = (h: number) => {
+    if (h < 24) return `${h} ${L('hours', 'گھنٹے', 'ساعات')}`
+    const d = h / 24
+    if (locale === 'en') return `${d} day${d === 1 ? '' : 's'}`
+    if (locale === 'ur') return `${d} دن`
+    return d === 1 ? 'يوم واحد' : d === 2 ? 'يومان' : `${d} أيام`
+  }
 
   function review() {
     if (!validate()) return
@@ -661,7 +669,7 @@ export default function QuickRequestPage() {
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Suppliers can send prices for', 'قیمت بھیجنے کا وقت', 'يمكن للموردين إرسال الأسعار خلال')}</label>
                   <select value={hours} onChange={e => setHours(parseInt(e.target.value))} className="input-field">
-                    {[6, 24, 48, 72, 168].map(h => <option key={h} value={h}>{h < 24 ? `${h} ${L('hours', 'گھنٹے', 'ساعات')}` : `${h / 24} ${L('day(s)', 'دن', h === 24 ? 'يوم' : 'أيام')}`}</option>)}
+                    {[6, 24, 48, 72, 168].map(h => <option key={h} value={h}>{durationLabel(h)}</option>)}
                   </select>
                 </div>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-sm" placeholder={L('Notes for suppliers (optional)', 'نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
@@ -738,7 +746,7 @@ export default function QuickRequestPage() {
                   </dd>
                 </>)}
                 <dt className="text-gray-500">{L('Prices within', 'قیمتیں', 'مهلة التسعير')}</dt>
-                <dd className="font-semibold">{hours < 24 ? `${hours} ${L('hours', 'گھنٹے', 'ساعات')}` : `${hours / 24} ${L('day(s)', 'دن', hours === 24 ? 'يوم' : 'أيام')}`}</dd>
+                <dd className="font-semibold">{durationLabel(hours)}</dd>
                 {notes.trim() && (<>
                   <dt className="text-gray-500">{L('Notes', 'نوٹس', 'ملاحظات')}</dt>
                   <dd className="font-semibold whitespace-pre-wrap" dir="auto">{notes.trim()}</dd>
