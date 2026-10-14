@@ -17,6 +17,8 @@ const opts = { auth: { persistSession: false, autoRefreshToken: false } }
 const oldSb = createClient(env.OLD_URL, env.OLD_SERVICE_KEY, opts)
 const newSb = createClient(env.NEW_URL, env.NEW_SERVICE_KEY, opts)
 const DONE = path.join(here, '.copied.json')
+// Optional local backup of every file: BACKUP_DIR=C:/dev/taseerak-backup/... node 03-copy-storage.mjs
+const BACKUP = process.env.BACKUP_DIR || ''
 const done = new Set(fs.existsSync(DONE) ? JSON.parse(fs.readFileSync(DONE, 'utf8')) : [])
 const save = () => fs.writeFileSync(DONE, JSON.stringify([...done]))
 
@@ -42,6 +44,7 @@ async function copyOne(bucket, f) {
     try {
       const { data: blob, error: e1 } = await oldSb.storage.from(bucket).download(f.path)
       if (e1) throw e1
+      if (BACKUP) { const dst = path.join(BACKUP, bucket, f.path); fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.writeFileSync(dst, Buffer.from(await blob.arrayBuffer())) }
       const { error: e2 } = await newSb.storage.from(bucket).upload(f.path, blob, { contentType: f.type, upsert: true })
       if (e2) throw e2
       done.add(key)

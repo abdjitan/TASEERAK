@@ -9,7 +9,6 @@ declare
   c record; n bigint; total bigint := 0;
 begin
   if new_host like '\_\_%' then raise exception 'new ref not set'; end if;
-  perform set_config('session_replication_role', 'replica', true); -- no triggers/notifications while rewriting
   for c in
     select table_name, column_name, data_type from information_schema.columns
     where table_schema = 'public' and data_type in ('text', 'jsonb', 'character varying')

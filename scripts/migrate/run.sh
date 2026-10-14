@@ -17,7 +17,7 @@ case "${1:-}" in
   dump)
     pg_dump "$OLD_DB_URL" --schema=public --schema-only --no-owner -f out/schema.sql
     # the new project already has the public schema
-    sed -i -E '/^CREATE SCHEMA public;$/d; /^COMMENT ON SCHEMA public /d' out/schema.sql
+    sed -i -E '/^CREATE SCHEMA public;$/d; /^COMMENT ON SCHEMA public /d; /^ALTER DEFAULT PRIVILEGES FOR ROLE supabase_admin /d' out/schema.sql
     pg_dump "$OLD_DB_URL" --data-only --no-owner --table=auth.users --table=auth.identities -f out/auth-data.sql
     pg_dump "$OLD_DB_URL" --data-only --no-owner --schema=public -f out/public-data.sql
     psql "$OLD_DB_URL" -X -A -F ' | ' -f 00-inventory.sql > out/inventory-old.txt
@@ -31,7 +31,7 @@ case "${1:-}" in
     psql "$NEW_DB_URL" -X -v ON_ERROR_STOP=1 --single-transaction \
       -c 'SET session_replication_role = replica' -f out/auth-data.sql -f out/public-data.sql
     psql "$NEW_DB_URL" -X -v ON_ERROR_STOP=1 --single-transaction -f 02-extras.sql
-    psql "$NEW_DB_URL" -X -v ON_ERROR_STOP=1 -f out/04-fix-urls.sql
+    psql "$NEW_DB_URL" -X -v ON_ERROR_STOP=1 --single-transaction -c "SET session_replication_role = replica" -f out/04-fix-urls.sql
     psql "$NEW_DB_URL" -X -A -F ' | ' -f 00-inventory.sql > out/inventory-new.txt
     diff out/inventory-old.txt out/inventory-new.txt && echo "INVENTORY MATCHES (storage.objects fills in after 03-copy-storage)" || true
     ;;
