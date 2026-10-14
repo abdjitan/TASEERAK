@@ -34,7 +34,10 @@ export function suggestCatalog(name: string, sector?: Sector | null, details?: s
   // looked up on the head noun alone (Arabic puts it first).
   const head = core.split(' ')[0]
   const headHits = nums.length && head !== core && head.length >= 2 ? searchProducts(head, { limit: 12 }) : []
-  const hit = sizedIn(inSector) || sizedIn(global) || sizedIn(headHits) || inSector[0] || global[0]
+  // The sector is the AI's guess and can be wrong ("ثيل" filed under finishing): a weak hit inside
+  // it must not beat a clearly better one in the whole catalog.
+  const top = !inSector[0] ? global[0] : !global[0] ? inSector[0] : inSector[0].score >= global[0].score * 0.85 ? inSector[0] : global[0]
+  const hit = sizedIn(inSector) || sizedIn(global) || sizedIn(headHits) || top
   if (!hit || hit.score < 9 || !sharesNameWord(core, hit.name)) return { exact: null, suggestion: null }
   const same = normalizeText(coreName(hit.name)).replace(/\s+/g, '') === normalizeText(core).replace(/\s+/g, '')
   return same ? { exact: hit.name, suggestion: null } : { exact: null, suggestion: { name: hit.name, sector: hit.sector } }

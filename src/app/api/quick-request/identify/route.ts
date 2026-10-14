@@ -3,6 +3,7 @@ import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
 import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiVisionJson, aiWebJson, AI_VISION_ENABLED } from '@/lib/ai'
 import { suggestCatalog } from '@/lib/catalogSuggest'
+import { ensureLearnedSynonyms } from '@/lib/learnedServer'
 import type { Sector } from '@/types'
 
 // Photo of a material -> a SUGGESTED name the buyer confirms or replaces. The suggestion is
@@ -68,6 +69,7 @@ export async function POST(req: NextRequest) {
     image: { base64: buf.toString('base64'), mime },
     maxTokens: 800,
   })
+  await ensureLearnedSynonyms(supabase)
   let item: any = r && r.is_construction_item ? r : null
   let webSources: any[] = []
   // Not recognised, not sure, or nothing like it in our list → look it up on the internet

@@ -299,12 +299,13 @@ export function searchProducts(query: string, opts: { sector?: Sector | ''; limi
   // Learned words: the whole query or one of its words was searched before and people chose these
   // products, so they go first (and appear even when no catalog word matched at all).
   if (LEARNED.size) {
-    const learned = [...(LEARNED.get(qNorm) || []), ...qToks.flatMap(t => LEARNED.get(t) || [])]
+    // The whole phrase the buyer wrote ("ثيل صناعي") outweighs one of its words ("ثيل").
+    const learned = [...(LEARNED.get(qNorm) || []).map(l => ({ ...l, w: 10 })), ...qToks.flatMap(t => LEARNED.get(t) || []).map(l => ({ ...l, w: 0 }))]
     for (const l of learned) {
       if (opts.sector && l.sector !== opts.sector) continue
       const h = hits.find(x => x.name === l.name)
-      if (h) h.score += 14
-      else hits.push({ name: l.name, sector: l.sector, sub: null, score: 30 - l.name.length / 200 })
+      if (h) h.score += 14 + l.w
+      else hits.push({ name: l.name, sector: l.sector, sub: null, score: 30 + l.w - l.name.length / 200 })
     }
     hits.sort((a, b) => b.score - a.score)
   }
