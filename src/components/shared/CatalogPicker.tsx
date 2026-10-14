@@ -225,7 +225,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                   ))}
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050B12]/90 via-[#071827]/35 to-transparent" aria-hidden />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050B12]/85 via-[#071827]/15 to-transparent" aria-hidden />
               <div className="relative flex flex-col justify-end h-full min-h-[150px] p-3">
                 <span className="w-9 h-9 rounded-xl grid place-items-center mb-auto bg-white/15 backdrop-blur border border-white/20 text-white"><CatIcon k={b.cat || b.key} className="w-5 h-5" /></span>
                 <div className="font-bold text-[15px] text-white leading-snug drop-shadow">{pickT(b)}</div>

@@ -72,7 +72,7 @@ export default function MarketHero({ locale }: { locale: string }) {
             className="group relative overflow-hidden rounded-2xl min-h-[132px] sm:min-h-[150px] bg-[#0B2438] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`/images/sections/${c.img}.webp`} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-            <span className="absolute inset-0 bg-gradient-to-t from-[#050B12]/90 via-[#071827]/30 to-transparent" aria-hidden />
+            <span className="absolute inset-0 bg-gradient-to-t from-[#050B12]/85 via-[#071827]/15 to-transparent" aria-hidden />
             <span className="relative flex flex-col justify-end h-full min-h-[132px] sm:min-h-[150px] p-3">
               <span className="font-bold text-[15px] text-white leading-snug drop-shadow">{pick(c)}</span>
               <span className="text-[11px] text-white/80">{pick(c.sub)}</span>

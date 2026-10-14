@@ -858,6 +858,11 @@ a { text-decoration: none; }
 }
 .market-hero::before {
   content: ""; position: absolute; inset: 0; z-index: 0;
-  background: linear-gradient(100deg, rgba(5,11,18,.55) 0%, rgba(7,24,39,.72) 45%, rgba(7,24,39,.9) 100%);
+  background:
+    radial-gradient(ellipse at 22% 70%, rgba(245,197,91,.22), transparent 55%),
+    linear-gradient(100deg, rgba(5,11,18,.25) 0%, rgba(7,24,39,.55) 45%, rgba(7,24,39,.84) 100%);
 }
-[dir="ltr"] .market-hero::before { background: linear-gradient(260deg, rgba(5,11,18,.55) 0%, rgba(7,24,39,.72) 45%, rgba(7,24,39,.9) 100%); }
+[dir="ltr"] .market-hero::before { background: radial-gradient(ellipse at 78% 70%, rgba(245,197,91,.22), transparent 55%), linear-gradient(260deg, rgba(5,11,18,.25) 0%, rgba(7,24,39,.55) 45%, rgba(7,24,39,.84) 100%); }
+
+/* photo cards (buyer home + materials guide): vivid images, lighter scrim */
+.ts-dashboard main a.group img.object-cover, .ts-dashboard main button.group img.object-cover { filter: saturate(1.15) contrast(1.06) brightness(1.04); }
