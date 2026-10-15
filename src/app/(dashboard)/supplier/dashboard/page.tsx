@@ -273,7 +273,6 @@ export default function SupplierDashboard() {
   const decided = myOffers.filter((o: any) => o.status === 'accepted' || o.status === 'rejected').length
   const winRate = decided ? Math.round((accepted / decided) * 100) : 0
   const avgDeal = accepted ? Math.round(totalRevenue / accepted) : 0
-  const monthName = (m: number) => new Date(2026, m, 1).toLocaleDateString(locale === 'en' ? 'en-US' : locale === 'ur' ? 'ur-PK' : 'ar-SA', { month: 'short' })
 
   const needsMe = (o: any) => o.status === 'pending' && ((o.reduction_deadline && new Date(o.reduction_deadline).getTime() > Date.now()) || !!(o.info_request || '').trim())
   const offerStatusLabel = (status: any) => {
@@ -527,47 +526,80 @@ export default function SupplierDashboard() {
           ))}
         </div>
 
-        {/* مبيعاتك: آخر ٦ أشهر (العروض المقبولة) — أعمدة للمبيعات + عدد الصفقات */}
+        {/* مبيعاتك (اختيار المالك: دائرة نتائج العروض + بطاقات بأسهم مقارنة بالشهر الماضي) */}
         {(() => {
-          const max = Math.max(1, ...months.map(x => x.sales))
-          const hasAny = months.some(x => x.deals > 0)
+          const rejected = myOffers.filter((o: any) => o.status === 'rejected').length
+          const totalOffers = accepted + pending + rejected
+          const C = 2 * Math.PI * 58
+          const seg = (n: number) => (totalOffers ? (n / totalOffers) * C : 0)
+          const parts = [
+            { n: accepted, color: '#0F6E56', label: L('Accepted', 'قبول', 'مقبولة') },
+            { n: pending, color: '#D4A543', label: L('Waiting', 'منتظر', 'بانتظار القرار') },
+            { n: rejected, color: '#B4B2A9', label: L('Not chosen', 'منتخب نہیں', 'لم تُختر') },
+          ]
+          const thisM = months[months.length - 1], lastM = months[months.length - 2]
+          const salesDelta = lastM.sales ? Math.round(((thisM.sales - lastM.sales) / lastM.sales) * 100) : null
+          const dealsDelta = thisM.deals - lastM.deals
+          const Arrow = ({ up, text }: { up: boolean; text: string }) => (
+            <div className={`text-xs font-bold mt-0.5 ${up ? 'text-emerald-700' : 'text-red-600'}`}>{up ? '▲' : '▼'} {text}</div>
+          )
+          let offset = 0
           return (
             <div className="mb-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 animate-fade-in">
               <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
                 <div>
                   <h2 className="font-extrabold text-[#0B2438]">{L('Your sales', 'آپ کی فروخت', 'مبيعاتك')}</h2>
-                  <p className="text-xs text-gray-500">{L('Accepted offers, last 6 months', 'قبول شدہ پیشکشیں، پچھلے ۶ ماہ', 'العروض المقبولة خلال آخر ٦ أشهر')}</p>
+                  <p className="text-xs text-gray-500">{L('Your offers and this month vs last month', 'آپ کی پیشکشیں اور اس ماہ کا موازنہ', 'نتائج عروضك، وهذا الشهر مقارنة بالشهر الماضي')}</p>
                 </div>
                 <Link href="/supplier/analytics" className="text-xs font-bold text-[#9D7425] hover:underline">{L('Full performance', 'مکمل کارکردگی', 'أداؤك بالتفصيل')} ←</Link>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-                {[
-                  { k: L('Total sales', 'کل فروخت', 'إجمالي المبيعات'), v: totalRevenue.toLocaleString('en-US') + ' ' + t.sar },
-                  { k: L('Completed deals', 'مکمل ڈیلز', 'صفقات تمّت'), v: String(accepted) },
-                  { k: L('Win rate', 'کامیابی کی شرح', 'نسبة الفوز'), v: decided ? winRate + '%' : '—' },
-                  { k: L('Average deal', 'اوسط ڈیل', 'متوسط الصفقة'), v: avgDeal ? avgDeal.toLocaleString('en-US') + ' ' + t.sar : '—' },
-                ].map(x => (
-                  <div key={x.k} className="rounded-xl bg-[#F6F7F9] px-3 py-2.5">
-                    <div className="text-[11px] text-gray-500">{x.k}</div>
-                    <div className="font-extrabold text-[#0B2438] tabular-nums">{x.v}</div>
+              <div className="grid sm:grid-cols-[minmax(0,220px)_1fr] gap-5 items-center">
+                {/* donut: how many offers won, waiting, not chosen; win rate in the middle */}
+                <div className="flex flex-col items-center">
+                  <svg viewBox="0 0 160 160" className="w-40 h-40" role="img" aria-label={L(`Offers: ${accepted} accepted, ${pending} waiting, ${rejected} not chosen`, '', `العروض: ${accepted} مقبولة، ${pending} بانتظار القرار، ${rejected} لم تُختر`)}>
+                    <circle cx="80" cy="80" r="58" fill="none" stroke="#EEF1F5" strokeWidth="18" />
+                    {totalOffers > 0 && parts.map((p, k) => {
+                      const len = seg(p.n); const el = len > 0 ? (
+                        <circle key={k} cx="80" cy="80" r="58" fill="none" stroke={p.color} strokeWidth="18"
+                          strokeDasharray={`${Math.max(0, len - 2)} ${C}`} strokeDashoffset={-offset} transform="rotate(-90 80 80)" />
+                      ) : null
+                      offset += len; return el
+                    })}
+                    <text x="80" y="80" textAnchor="middle" className="fill-[#0B2438]" style={{ fontSize: 28, fontWeight: 800 }}>{decided ? winRate + '%' : '—'}</text>
+                    <text x="80" y="102" textAnchor="middle" className="fill-gray-500" style={{ fontSize: 12 }}>{L('win rate', 'کامیابی', 'نسبة الفوز')}</text>
+                  </svg>
+                  <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2 text-[12px] text-gray-600">
+                    {parts.map(p => (
+                      <span key={p.label} className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: p.color }} />{p.label} <b className="text-[#0B2438]">{p.n}</b></span>
+                    ))}
                   </div>
-                ))}
-              </div>
-              {hasAny ? (
-                <div className="flex items-end gap-2 sm:gap-4 h-40" role="img" aria-label={L('Monthly sales chart', 'ماہانہ فروخت کا چارٹ', 'رسم المبيعات الشهرية')}>
-                  {months.map((x, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center justify-end h-full gap-1 min-w-0">
-                      <span className="text-[10px] font-bold text-[#0B2438] tabular-nums truncate max-w-full">{x.sales ? x.sales.toLocaleString('en-US') : ''}</span>
-                      <div className="w-full max-w-[46px] rounded-t-lg"
-                        style={{ height: `${Math.max(x.sales ? 8 : 2, (x.sales / max) * 100)}%`, background: x.sales ? 'linear-gradient(180deg,#F5C55B,#D4A543)' : '#E8EBF0' }} />
-                      <span className="text-[10px] text-gray-500">{monthName(x.m)}</span>
-                      <span className="text-[10px] font-semibold text-[#0F6E56] h-3">{x.deals ? L(`${x.deals} deal(s)`, `${x.deals} ڈیل`, x.deals === 1 ? 'صفقة' : `${x.deals} صفقات`) : ''}</span>
-                    </div>
-                  ))}
                 </div>
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-6">{L('Your sales chart appears here after your first accepted offer.', 'پہلی قبول شدہ پیشکش کے بعد یہاں چارٹ نظر آئے گا۔', 'سيظهر رسم مبيعاتك هنا بعد أول عرض مقبول.')}</p>
-              )}
+                {/* number + arrow vs last month */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-[#F6F7F9] p-3.5">
+                    <div className="text-[12px] text-gray-500">{L('Sales this month', 'اس ماہ کی فروخت', 'مبيعات هذا الشهر')}</div>
+                    <div className="text-xl sm:text-2xl font-extrabold text-[#0B2438] tabular-nums">{thisM.sales.toLocaleString('en-US')} <span className="text-xs text-gray-400 font-bold">{t.sar}</span></div>
+                    {salesDelta !== null
+                      ? <Arrow up={salesDelta >= 0} text={L(`${Math.abs(salesDelta)}% vs last month`, `${Math.abs(salesDelta)}% پچھلے ماہ سے`, `${Math.abs(salesDelta)}% عن الشهر الماضي`)} />
+                      : <div className="text-xs text-gray-400 mt-0.5">{L('No sales last month', 'پچھلے ماہ فروخت نہیں', 'لا مبيعات الشهر الماضي')}</div>}
+                  </div>
+                  <div className="rounded-xl bg-[#F6F7F9] p-3.5">
+                    <div className="text-[12px] text-gray-500">{L('Deals this month', 'اس ماہ کی ڈیلز', 'صفقات هذا الشهر')}</div>
+                    <div className="text-xl sm:text-2xl font-extrabold text-[#0B2438] tabular-nums">{thisM.deals}</div>
+                    {dealsDelta !== 0
+                      ? <Arrow up={dealsDelta > 0} text={L(`${Math.abs(dealsDelta)} vs last month`, `${Math.abs(dealsDelta)} پچھلے ماہ سے`, `${Math.abs(dealsDelta) === 1 ? 'صفقة' : Math.abs(dealsDelta) + ' صفقات'} ${dealsDelta > 0 ? 'أكثر' : 'أقل'} من الماضي`)} />
+                      : <div className="text-xs text-gray-400 mt-0.5">{L('Same as last month', 'پچھلے ماہ جتنی', 'مثل الشهر الماضي')}</div>}
+                  </div>
+                  <div className="rounded-xl bg-[#F6F7F9] p-3.5">
+                    <div className="text-[12px] text-gray-500">{L('Total sales', 'کل فروخت', 'إجمالي المبيعات')}</div>
+                    <div className="text-lg font-extrabold text-[#0B2438] tabular-nums">{totalRevenue.toLocaleString('en-US')} <span className="text-xs text-gray-400 font-bold">{t.sar}</span></div>
+                  </div>
+                  <div className="rounded-xl bg-[#F6F7F9] p-3.5">
+                    <div className="text-[12px] text-gray-500">{L('Average deal', 'اوسط ڈیل', 'متوسط الصفقة')}</div>
+                    <div className="text-lg font-extrabold text-[#0B2438] tabular-nums">{avgDeal ? avgDeal.toLocaleString('en-US') : '—'} {avgDeal ? <span className="text-xs text-gray-400 font-bold">{t.sar}</span> : null}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           )
         })()}
