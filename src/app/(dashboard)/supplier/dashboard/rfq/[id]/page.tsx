@@ -49,6 +49,10 @@ export default function SupplierRFQPage() {
   // تسعير بند-بند: لكل مادة بطاقة مستقلة (سعر الوحدة + خصائص + ملاحظة + كتالوج خاص)
   const [itemForms, setItemForms] = useState<any[]>([])
   const [openItem, setOpenItem] = useState<number | null>(null) // البطاقة المفتوحة (أكورديون)
+  // «لا أوفّر هذه المادة»: skipped lines are cleared and left out of item_prices (same as the app)
+  const [skipped, setSkipped] = useState<Set<number>>(new Set())
+  // after sending: the next open request this supplier has not priced yet (from the home snapshot)
+  const [nextRfq, setNextRfq] = useState<string | null>(null)
   // Help understanding the request: per line, what the material is and which details are missing
   // (/api/explain-items: catalog fields checked for free, AI for the rest, cached for every supplier).
   const [itemNotes, setItemNotes] = useState<Record<number, { what_it_is: string; missing: string[] }>>({})
@@ -440,6 +444,16 @@ export default function SupplierRFQPage() {
         : `${L('Error:', 'خرابی:', 'خطأ:')} ${insertError.message}`)
       setSubmitting(false); return
     }
+    try {
+      for (let k = 0; k < sessionStorage.length; k++) {
+        const key = sessionStorage.key(k)
+        if (!key || !key.startsWith('tsk_pc_sup_')) continue
+        const snap = JSON.parse(sessionStorage.getItem(key) || '{}').data || {}
+        const done = new Set((snap.offers || []).map((o: any) => o.rfq_id)); done.add(id)
+        const nx = (snap.openRfqs || []).find((x: any) => !done.has(x.id))
+        if (nx) setNextRfq(nx.id)
+      }
+    } catch {}
     setSuccess(true); setSubmitting(false)
   }
 
@@ -542,6 +556,11 @@ export default function SupplierRFQPage() {
             {success ? T.successTitle : T.dismissedTitle}
           </h2>
           <p className="text-sm text-gray-500 mb-6">{success ? T.successSub : T.dismissedSub}</p>
+          {success && nextRfq && (
+            <a href={`/supplier/dashboard/rfq/${nextRfq}`} className="block mb-2.5 py-3 rounded-xl font-extrabold text-[#071827] text-center" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+              {L('Price the next request', 'اگلی درخواست کی قیمت', 'سعّر الطلب التالي')} ←
+            </a>
+          )}
           <Link href="/supplier/dashboard" className="block py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#0B2438' }}>
             {T.backDash}
           </Link>
@@ -853,25 +872,42 @@ export default function SupplierRFQPage() {
                             )
                           })()}
 
-                          {/* the price, right away */}
+                          {/* the price, right away: the unit price (the total follows); a custom unit prices the total */}
+                          {skipped.has(i) ? (
+                            <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-gray-50 border border-dashed border-gray-300 px-3 py-2.5">
+                              <span className="text-xs font-bold text-gray-500">{L("You don't carry this item — it won't be in your offer", 'یہ آئٹم آپ کے پاس نہیں — پیشکش میں شامل نہیں', 'لا توفّر هذه المادة — لن تدخل في عرضك')}</span>
+                              <button type="button" onClick={() => setSkipped(prev => { const n = new Set(prev); n.delete(i); return n })} className="text-xs font-bold text-[#9D7425] hover:underline">{L('Undo', 'واپس', 'تراجع')}</button>
+                            </div>
+                          ) : (<>
                           <div className="mt-3 flex flex-wrap items-center gap-2">
                             <div className="relative flex-1 min-w-[11rem]">
-                              <input type="number" inputMode="decimal" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
-                                aria-label={L(`Total price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} کی کل قیمت`, `السعر الإجمالي لـ ${getProductLabel(it.product_name, locale)}`)}
-                                className="input-field font-bold pe-14" placeholder={L(`Total for ${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}`, `${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)} کی کل قیمت`, `إجمالي ${qty.toLocaleString('en-US')} ${it.unit}`)} min="0" step="any" />
-                              <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">{SAR}</span>
+                              {sameUnit(form, i) ? (
+                                <input type="number" inputMode="decimal" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
+                                  aria-label={L(`Unit price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} فی یونٹ قیمت`, `سعر الوحدة لـ ${getProductLabel(it.product_name, locale)}`)}
+                                  className="input-field font-bold pe-20" placeholder={L(`Price per ${getUnitLabel(it.unit, locale)}`, `فی ${getUnitLabel(it.unit, locale)} قیمت`, `سعر ${getUnitLabel(it.unit, locale) || 'الوحدة'} الواحد`)} min="0" step="any" />
+                              ) : (
+                                <input type="number" inputMode="decimal" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
+                                  aria-label={L(`Total price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} کی کل قیمت`, `السعر الإجمالي لـ ${getProductLabel(it.product_name, locale)}`)}
+                                  className="input-field font-bold pe-14" placeholder={L(`Total for ${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}`, `${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)} کی کل قیمت`, `إجمالي ${qty.toLocaleString('en-US')} ${it.unit}`)} min="0" step="any" />
+                              )}
+                              <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">{sameUnit(form, i) ? `${SAR} / ${getUnitLabel(it.unit, locale)}` : SAR}</span>
                             </div>
                             <button type="button" onClick={() => setOpenItem(more ? null : i)} aria-expanded={more}
                               className={`text-xs font-bold px-3 py-2.5 rounded-xl border transition-all ${more || detailCount ? 'border-[#D4A543]/50 text-[#9D7425] bg-[#D4A543]/5' : 'border-gray-200 text-gray-600 hover:border-[#D4A543]/50'}`}>
                               {more ? '▴' : '▾'} {L('Details', 'تفصیلات', 'التفاصيل')}{detailCount ? ` (${detailCount})` : ''}
                             </button>
+                            <button type="button" onClick={() => { setItemUnit(i, ''); setItemTotal(i, ''); setOpenItem(null); setSkipped(prev => new Set(prev).add(i)) }}
+                              className="text-xs font-bold px-3 py-2.5 rounded-xl border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-600">
+                              {L("Don't carry", 'دستیاب نہیں', 'لا أوفّرها')}
+                            </button>
                           </div>
                           {line > 0 && qty > 0 && sameUnit(form, i) && (
-                            <p className="text-[11px] text-gray-500 mt-1">
-                              = {(+(line / qty).toFixed(2)).toLocaleString('en-US')} {SAR} / {getUnitLabel(it.unit, locale)}
+                            <p className="text-[12px] text-gray-600 mt-1">
+                              {L('Total', 'کل', 'الإجمالي')}: <b className="text-[#0B2438]">{line.toLocaleString('en-US')} {SAR}</b> <span className="text-gray-400">({qty.toLocaleString('en-US')} × {(+form.unit_price || 0).toLocaleString('en-US')})</span>
                               {form.autofilled && <span className="text-gray-400"> · {L('from your price list', 'آپ کی قیمتوں کی فہرست سے', 'من قائمة أسعارك')}</span>}
                             </p>
                           )}
+                          </>)}
 
                           {more && (
                             <div className="mt-3 pt-3 border-t border-gray-100 grid sm:grid-cols-2 gap-3">
@@ -886,13 +922,19 @@ export default function SupplierRFQPage() {
                                   </datalist>
                                 </div>
                                 <div className="col-span-3">
-                                  <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</label>
-                                  <input type="number" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
-                                    className="input-field text-sm" placeholder={L('Price / ', 'قیمت / ', 'السعر / ') + (form.priceUnit || it.unit)} min="0" step="any" />
+                                  {sameUnit(form, i) ? (<>
+                                    <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Or the total directly', 'یا کل رقم', 'أو الإجمالي مباشرة')}</label>
+                                    <input type="number" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
+                                      className="input-field text-sm" placeholder={L('Total', 'کل', 'الإجمالي')} min="0" step="any" />
+                                  </>) : (<>
+                                    <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</label>
+                                    <input type="number" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
+                                      className="input-field text-sm" placeholder={L('Price / ', 'قیمت / ', 'السعر / ') + (form.priceUnit || it.unit)} min="0" step="any" />
+                                  </>)}
                                 </div>
                                 <p className="col-span-5 text-[10px] text-gray-400">
                                   {sameUnit(form, i)
-                                    ? L('The total fills in from the unit price.', 'کل رقم فی یونٹ قیمت سے خود بنتی ہے۔', 'يُحسب الإجمالي تلقائياً من سعر الوحدة.')
+                                    ? L('Unit price and total update each other.', 'فی یونٹ قیمت اور کل رقم ایک دوسرے سے بنتی ہیں۔', 'سعر الوحدة والإجمالي يُحسب كلٌّ منهما من الآخر.')
                                     : L('Custom unit: enter the material total above yourself.', 'الگ یونٹ: اوپر کل رقم خود درج کریں۔', 'وحدة خاصة: أدخل إجمالي المادة في الأعلى بنفسك.')}
                                 </p>
                               </div>

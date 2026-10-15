@@ -275,6 +275,7 @@ export default function SupplierDashboard() {
   const avgDeal = accepted ? Math.round(totalRevenue / accepted) : 0
   const monthName = (m: number) => new Date(2026, m, 1).toLocaleDateString(locale === 'en' ? 'en-US' : locale === 'ur' ? 'ur-PK' : 'ar-SA', { month: 'short' })
 
+  const needsMe = (o: any) => o.status === 'pending' && ((o.reduction_deadline && new Date(o.reduction_deadline).getTime() > Date.now()) || !!(o.info_request || '').trim())
   const offerStatusLabel = (status: any) => {
     if (status === 'accepted') return t.accepted
     if (status === 'rejected') return t.rejected
@@ -572,7 +573,7 @@ export default function SupplierDashboard() {
         })()}
 
         <div className="flex gap-2 mb-6" id="sup-list" style={{ scrollMarginTop: '70px' }}>
-          {[{ key: 'rfqs', label: `${t.tabRfqs} (${openRfqs.length})` }, { key: 'offers', label: `${t.tabOffers} (${myOffers.length})` }].map((tab_: any) => (
+          {[{ key: 'rfqs', label: `${t.tabRfqs} (${openRfqs.length})` }, { key: 'offers', label: `${t.tabOffers} (${myOffers.length})${myOffers.some(needsMe) ? ' •' : ''}` }].map((tab_: any) => (
             <button key={tab_.key} onClick={() => setTab(tab_.key)}
               className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab === tab_.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
               style={tab === tab_.key ? { background: '#0B2438' } : {}}>
@@ -670,7 +671,7 @@ export default function SupplierDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {myOffers.map((offer: any) => (
+                {[...myOffers].sort((a: any, b: any) => Number(needsMe(b)) - Number(needsMe(a))).map((offer: any) => (
                   <Link key={offer.id} href={`/supplier/dashboard/rfq/${offer.rfq_id}`} className={`block bg-white rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md hover:border-[#D4A543]/40 ${
                     offer.status === 'accepted' ? 'border-emerald-200 bg-emerald-50/50' :
                     offer.status === 'rejected' ? 'border-gray-200 opacity-50' : 'border-gray-100'
@@ -692,6 +693,13 @@ export default function SupplierDashboard() {
                         <span className={`badge text-[10px] ${
                           offer.status === 'accepted' ? 'badge-green' : offer.status === 'rejected' ? 'badge-red' : 'badge-amber'
                         }`}>{offerStatusLabel(offer.status)}</span>
+                        {/* the buyer is waiting on the supplier: a discount request or a question (same badges as the app) */}
+                        {offer.status === 'pending' && offer.reduction_deadline && new Date(offer.reduction_deadline).getTime() > Date.now() && (
+                          <span className="block mt-1 badge text-[10px] font-bold" style={{ background: '#fff7ed', color: '#c2410c' }}><Glyph e="📉" /> {L('Buyer asked for a lower price', 'خریدار نے کم قیمت مانگی', 'طلب المشتري خصماً')}</span>
+                        )}
+                        {offer.status === 'pending' && (offer.info_request || '').trim() && (
+                          <span className="block mt-1 badge text-[10px] font-bold" style={{ background: '#D4A54318', color: '#9D7425' }}><Glyph e="❓" /> {L('Buyer has a question', 'خریدار کا سوال', 'سؤال من المشتري')}</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
