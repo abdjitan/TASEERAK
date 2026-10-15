@@ -528,12 +528,30 @@ const SUB_UNITS: Record<string, string> = {
 }
 
 // وحدة القياس الافتراضية لمادة: أولوية لوحدة المواصفات إن وُجدت، ثم وحدة التخصص الفرعي
+// Order units for pieces vs area (shared by the site and the mobile app, 2026-10-15):
+// furniture, decor and light fittings are bought by the piece or set; curtains, rugs, wallpaper,
+// parquet and turf by area/length. Everything else keeps PRODUCT_SPECS units then the general list.
+const PIECE_SUBS = new Set(['custom_furniture', 'fitted_furniture', 'office_furniture', 'decor_lighting', 'kitchen_appliances', 'cubicles'])
+const PIECE_RE = /طاولة|كرسي|كنب|أريكة|خزانة|سرير|دولاب|مكتب|ثري|أباجور|مصباح|مرآة|طقم|غرفة|بوفيه|(^|\s)رف|تسريحة|كومود|مجلس|ديكور|لوحة فنية/
+const AREA_RE = /ستار|ستائر|سجاد|موكيت|ورق جدران|باركيه|عشب|زوالي/
+/** Allowed order units for a product, or null when the general list applies. */
+export function unitOptionsFor(productName: string, sector: Sector): string[] | null {
+  const n = (productName || '').trim()
+  if (!n) return null
+  if (AREA_RE.test(n)) return ['م²', 'متر', 'عدد']
+  const sub = detectSubCategory(n, sector)
+  if ((sub && PIECE_SUBS.has(sub)) || PIECE_RE.test(n)) return ['عدد', 'طقم']
+  return null
+}
+
 export function getDefaultUnit(productName: string, sector: Sector): string {
   const specs = PRODUCT_SPECS[(productName || '').trim()]
   if (specs) {
     const u = specs.find(f => f.key === 'unit')
     if (u && u.options.length) return u.options[0]
   }
+  const only = unitOptionsFor(productName, sector)
+  if (only) return only[0]
   const sub = detectSubCategory(productName, sector)
   return (sub && SUB_UNITS[sub]) || ''
 }
