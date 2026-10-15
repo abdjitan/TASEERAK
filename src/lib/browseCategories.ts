@@ -154,7 +154,7 @@ export function sectionCount(section: BrowseSection): number {
 // Every specialty (sector + sub-category key) that belongs to a section — used to let the buyer
 // file a free-text item («not in the list») under the right specialty so it reaches the
 // specialist suppliers instead of the whole sector.
-export type SectionSub = { sector: Sector; key: string; ar: string; en: string; ur: string }
+export type SectionSub = { sector: Sector; key: string; group: string; ar: string; en: string; ur: string }
 const subsCache: Partial<Record<BrowseSection, SectionSub[]>> = {}
 export function subsOfSection(section: BrowseSection): SectionSub[] {
   if (subsCache[section]) return subsCache[section]!
@@ -162,7 +162,7 @@ export function subsOfSection(section: BrowseSection): SectionSub[] {
   for (const [sector, subs] of Object.entries(SUB_CATEGORIES)) {
     for (const [key, v] of Object.entries(subs as any)) {
       const sub: any = v
-      if (sectionOfSub(key, sub.group) === section) out.push({ sector: sector as Sector, key, ar: sub.ar, en: sub.en, ur: sub.ur })
+      if (sectionOfSub(key, sub.group) === section) out.push({ sector: sector as Sector, key, group: sub.group, ar: sub.ar, en: sub.en, ur: sub.ur })
     }
   }
   return (subsCache[section] = out)
