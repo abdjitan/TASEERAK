@@ -27,6 +27,9 @@ const SECTION_PHOTO: Partial<Record<BrowseSection, string>> = {
   hvac_fire: '/images/sections/hvac_fire.webp', insulation: '/images/sections/insulation.webp', outdoor: '/images/sections/outdoor.webp',
 }
 
+// Section medallions (owner's approved icon pack, navy + gold, public/images/section-icons).
+export const sectionIcon = (key: string) => `/images/section-icons/${key}.webp`
+
 const coverCache: Record<string, { name: string; sector: Sector }[]> = {}
 function sectionCovers(key: BrowseSection) {
   if (!coverCache[key]) {
@@ -136,14 +139,17 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
       {!q.trim() && section && (
         <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
           <button type="button" onClick={() => { setSection(null); setOpenGroup(null) }}
-            className="shrink-0 text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-600">
+            className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold ps-1 pe-3 py-1 rounded-full border border-gray-200 bg-white text-gray-600">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={sectionIcon('all')} alt="" aria-hidden className="w-7 h-7" />
             {L('All sections', 'تمام حصے', 'كل الأقسام')}
           </button>
           {BROWSE_SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
-              className={`shrink-0 text-xs font-bold px-3 py-1.5 rounded-full border ${b.key === section ? 'text-white border-transparent' : 'border-gray-200 bg-white text-gray-600'}`}
-              style={b.key === section ? { background: '#0B2438' } : undefined}>
-              <CatIcon k={b.cat || b.key} className="w-4 h-4 inline-block align-[-0.2em] me-1" />{pickT(b)}
+              className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-bold ps-1 pe-3 py-1 rounded-full border ${b.key === section ? 'text-white border-[#D4A543]' : 'border-gray-200 bg-white text-gray-600'}`}
+              style={b.key === section ? { background: '#0B2438', boxShadow: '0 0 0 2px rgba(212,165,67,.3)' } : undefined}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={sectionIcon(b.key)} alt="" aria-hidden className="w-7 h-7" />{pickT(b)}
             </button>
           ))}
         </div>
@@ -228,7 +234,8 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#050B12]/85 via-[#071827]/15 to-transparent" aria-hidden />
               <div className="relative flex flex-col justify-end h-full min-h-[150px] p-3">
-                <span className="w-9 h-9 rounded-xl grid place-items-center mb-auto bg-white/15 backdrop-blur border border-white/20 text-white"><CatIcon k={b.cat || b.key} className="w-5 h-5" /></span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sectionIcon(b.key)} alt="" aria-hidden className="w-12 h-12 mb-auto drop-shadow-[0_4px_10px_rgba(0,0,0,.45)]" />
                 <div className="font-bold text-[15px] text-white leading-snug drop-shadow">{pickT(b)}</div>
                 <div className="text-[11px] text-white/80 mt-0.5 leading-relaxed line-clamp-2">{pickT(b.hint)}</div>
               </div>

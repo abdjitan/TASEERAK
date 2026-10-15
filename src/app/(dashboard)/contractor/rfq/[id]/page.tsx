@@ -76,6 +76,12 @@ export default function RFQDetailPage() {
   const [loading, setLoading] = useState(true)
   const [refresh, setRefresh] = useState(0)            // bumped when a new offer arrives (live)
   const [liveNote, setLiveNote] = useState('')
+  // How far the request reached: suppliers per item (counts only, from get_rfq_coverage).
+  const [coverage, setCoverage] = useState<any>(null)
+  useEffect(() => {
+    if (!id) return
+    createClient().rpc('get_rfq_coverage', { p_rfq: id }).then(({ data }: any) => setCoverage(data || null), () => {})
+  }, [id])
   const [editing, setEditing] = useState(false)
   const [editNotes, setEditNotes] = useState('')
   const [editSpec, setEditSpec] = useState('')
@@ -328,6 +334,23 @@ export default function RFQDetailPage() {
             <button type="button" onClick={() => setLiveNote('')} className="text-emerald-600 text-lg leading-none" aria-label={L('Close', 'بند کریں', 'إغلاق')}>×</button>
           </div>
         )}
+        {rfq?.status === 'open' && coverage && (() => {
+          const items: any[] = Array.isArray(coverage.items) ? coverage.items : []
+          const uncovered = items.filter(x => !(Number(x.suppliers) > 0)).map(x => getProductLabel(x.name || '', locale)).filter(Boolean)
+          const reached = Number(coverage.reached) || 0
+          if (uncovered.length) return (
+            <div role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <div className="font-bold"><Glyph e="🔎" /> {L('We are finding suppliers for part of your request', 'ہم آپ کی درخواست کے کچھ حصے کے لیے سپلائرز تلاش کر رہے ہیں', 'نبحث لك عن موردين لجزء من طلبك')}</div>
+              <div className="mt-1 leading-relaxed">{L(`No registered supplier covers yet: ${uncovered.join(', ')}. Our team has been alerted and will look for one; we will notify you when offers arrive.`, `ابھی کوئی رجسٹرڈ سپلائر نہیں: ${uncovered.join('، ')}۔ ہماری ٹیم تلاش کر رہی ہے۔`, `لا يوجد حالياً مورد مسجَّل لـ: ${uncovered.join('، ')}. أُبلغ فريقنا وسيبحث لك عن مورد، وسنُعلمك عند وصول العروض.`)}</div>
+            </div>
+          )
+          if (offers.length === 0 && reached > 0) return (
+            <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800">
+              <Glyph e="📨" /> {L(`Your request reached ${reached} supplier(s) — waiting for their offers.`, `آپ کی درخواست ${reached} سپلائرز تک پہنچی — پیشکشوں کا انتظار ہے۔`, reached === 1 ? 'وصل طلبك إلى مورد واحد — بانتظار عرضه.' : `وصل طلبك إلى ${reached} موردين — بانتظار عروضهم.`)}
+            </div>
+          )
+          return null
+        })()}
         <div className="flex items-center justify-between mb-4">
           <Link href="/contractor/rfqs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">← {L('Back to my requests', 'میری درخواستوں پر واپس', 'العودة إلى طلباتي')}</Link>
           <Link href={`/contractor/rfq/quick?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#9D7425] hover:underline"><Glyph e="🔁" /> {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>

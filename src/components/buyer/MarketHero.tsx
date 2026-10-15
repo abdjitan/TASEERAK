@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { Search, Plus, FileSpreadsheet } from 'lucide-react'
 import { searchProducts } from '@/lib/productSearch'
 import { getProductLabel } from '@/types'
+import { BROWSE_SECTIONS } from '@/lib/browseCategories'
 
 const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub: { ar: string; en: string; ur: string } }[] = [
   { key: 'electrical', img: 'lighting', ar: 'الإنارة', en: 'Lighting', ur: 'روشنی', sub: { ar: 'مصابيح وثريات', en: 'Lamps & chandeliers', ur: 'لیمپ اور جھومر' } },
@@ -98,6 +99,18 @@ export default function MarketHero({ locale }: { locale: string }) {
           </Link>
         </div>
       </section>
+
+      {/* every section as a medallion chip (same row as the mobile app) */}
+      <div className="mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" aria-label={L('Sections', 'حصے', 'الأقسام')}>
+        {BROWSE_SECTIONS.map(b => (
+          <Link key={b.key} href={`/contractor/rfq/quick?section=${b.key}`}
+            className="shrink-0 inline-flex items-center gap-2 ps-1 pe-3.5 py-1 rounded-full border border-gray-200 bg-white text-[13px] font-bold text-[#0B2438] hover:border-[#D4A543] transition-colors">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/images/section-icons/${b.key}.webp`} alt="" aria-hidden className="w-8 h-8" />
+            {locale === 'en' ? b.en : locale === 'ur' ? b.ur : b.ar}
+          </Link>
+        ))}
+      </div>
 
       <div className="mt-6 flex items-end justify-between gap-3">
         <div>
