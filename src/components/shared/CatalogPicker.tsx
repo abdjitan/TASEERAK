@@ -25,6 +25,7 @@ const SECTION_PHOTO: Partial<Record<BrowseSection, string>> = {
   furniture: '/images/sections/furniture.webp', electrical: '/images/sections/lighting.webp',
   plumbing: '/images/sections/plumbing.webp', tools: '/images/sections/tools.webp',
   hvac_fire: '/images/sections/hvac_fire.webp', insulation: '/images/sections/insulation.webp', outdoor: '/images/sections/outdoor.webp',
+  machinery: '/images/sections/machinery.webp',
 }
 
 // Section medallions (owner's approved icon pack, navy + gold, public/images/section-icons).

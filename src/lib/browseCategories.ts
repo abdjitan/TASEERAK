@@ -8,7 +8,7 @@ import { SECTOR_PRODUCTS, SUB_CATEGORIES, GROUP_LABELS, getGroupedProducts, dete
 // products with the same images and search.
 
 export type BrowseSection =
-  | 'building' | 'finishing' | 'furniture' | 'electrical' | 'plumbing' | 'hvac_fire' | 'insulation' | 'tools' | 'outdoor'
+  | 'building' | 'finishing' | 'furniture' | 'electrical' | 'plumbing' | 'hvac_fire' | 'insulation' | 'tools' | 'machinery' | 'outdoor'
 
 // cat = CatIcon key (line icon, same set as the groups); icon = emoji kept for plain-text places
 export const BROWSE_SECTIONS: { key: BrowseSection; icon: string; cat?: string; ar: string; en: string; ur: string; hint: { ar: string; en: string; ur: string } }[] = [
@@ -27,7 +27,11 @@ export const BROWSE_SECTIONS: { key: BrowseSection; icon: string; cat?: string; 
   { key: 'insulation', cat: 'building_insulation', icon: '💧', ar: 'العزل والكيماويات', en: 'Insulation & chemicals', ur: 'انسولیشن اور کیمیکل',
     hint: { ar: 'عزل مائي وحراري وصوتي، سيليكون، لواصق، إيبوكسي', en: 'Water/thermal/acoustic insulation, sealants, adhesives', ur: 'واٹر پروفنگ، انسولیشن، سیلنٹ' } },
   { key: 'tools', cat: 'store_tools', icon: '🛠️', ar: 'العدد والمعدات والسلامة', en: 'Tools, equipment & safety', ur: 'اوزار، مشینری، حفاظت',
-    hint: { ar: 'عدد يدوية وكهربائية، مسامير، أقفال، سقالات، آليات، سلامة', en: 'Hand/power tools, fasteners, hardware, scaffolding, machinery', ur: 'اوزار، کیل، تالے، سکیفولڈنگ، مشینری' } },
+    hint: { ar: 'عدد يدوية وكهربائية، مسامير، أقفال، سقالات، لحام، سلامة', en: 'Hand/power tools, fasteners, hardware, scaffolding, welding, safety', ur: 'اوزار، کیل، تالے، سکیفولڈنگ، ویلڈنگ' } },
+  // heavy and concrete machinery got their own section (owner, 2026-10-15): renting a crane or a
+  // concrete pump is a different purchase from buying a drill
+  { key: 'machinery', cat: 'heavy_equipment', icon: '🚜', ar: 'الآليات والمعدات الثقيلة', en: 'Machinery & heavy equipment', ur: 'مشینری اور بھاری سامان',
+    hint: { ar: 'حفارات، رافعات، شاحنات، مضخات وخلاطات خرسانة، مولدات', en: 'Excavators, cranes, trucks, concrete pumps and mixers, generators', ur: 'کھدائی، کرین، ٹرک، کنکریٹ پمپ، جنریٹر' } },
   { key: 'outdoor', cat: 'landscape', icon: '🌳', ar: 'الحدائق والأعمال الخارجية', en: 'Garden & outdoor works', ur: 'باغ اور بیرونی کام',
     hint: { ar: 'عشب، ري، إنترلوك، أسوار، صرف خارجي', en: 'Turf, irrigation, interlock, fencing, external drainage', ur: 'گھاس، آبپاشی، انٹرلاک، باڑ' } },
 ]
@@ -43,7 +47,7 @@ const BY_GROUP: Record<string, BrowseSection> = {
   cabling: 'electrical', panels_switches: 'electrical', lighting: 'electrical', low_current: 'electrical', solar: 'electrical',
   hvac: 'hvac_fire', firefighting: 'hvac_fire',
   plumbing: 'plumbing', plumbing_supplies: 'plumbing',
-  heavy_equipment: 'tools', concrete_machinery: 'tools', light_equipment: 'tools', access_equipment: 'tools', workshop_equip: 'tools',
+  heavy_equipment: 'machinery', concrete_machinery: 'machinery', light_equipment: 'machinery', access_equipment: 'tools', workshop_equip: 'tools',
   store_plumbing: 'plumbing', store_electrical: 'electrical', store_tools: 'tools', store_fasteners: 'tools',
   store_safety: 'tools', store_paint: 'finishing', store_hardware: 'tools',
 }
