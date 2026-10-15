@@ -62,6 +62,12 @@ export function pendingTeamInvite(): string | null {
 export function rememberedSignupKind(): SellerKind | null {
   try { const k = webStorage()?.getItem(SIGNUP_KIND_KEY); return k === 'company' || k === 'independent' ? k : null } catch { return null }
 }
+/** The signed-in seller's kind, remembered on this device so menus can adapt on every page. */
+export const SELLER_KIND_KEY = 'tsk_seller_kind'
+export function rememberSellerKind(k: SellerKind) { try { webStorage()?.setItem(SELLER_KIND_KEY, k) } catch {} }
+export function storedSellerKind(): SellerKind | null {
+  try { const k = webStorage()?.getItem(SELLER_KIND_KEY); return k === 'company' || k === 'independent' ? k : null } catch { return null }
+}
 export function sellerKindOf(providerType?: string | null): SellerKind {
   return ['individual', 'broker', 'price_agent'].includes(providerType || '') ? 'independent' : 'company'
 }

@@ -33,6 +33,7 @@ export function clearLocalDraft(key: string) {
 // read them from the browser storage.
 export function clearAllLocalDrafts() {
   clearPageCache() // sign-out: also drop the per-tab page snapshots
+  try { window.localStorage.removeItem('tsk_seller_kind') } catch {}
   try {
     const ls = window.localStorage
     for (let i = ls.length - 1; i >= 0; i--) { const k = ls.key(i); if (k && k.startsWith(PREFIX)) ls.removeItem(k) }

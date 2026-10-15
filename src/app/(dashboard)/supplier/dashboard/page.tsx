@@ -6,6 +6,7 @@ import EnablePush from '@/components/shared/EnablePush'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
+import { FEATURES } from '@/lib/features'
 import { toast } from 'sonner'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -18,7 +19,7 @@ import { isSubscribed, isLaunchFree } from '@/lib/plans'
 import { getNav } from '@/lib/nav'
 import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
-import { tierLabel, tierAllowed } from '@/lib/sellers'
+import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind } from '@/lib/sellers'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 
@@ -131,6 +132,7 @@ export default function SupplierDashboard() {
         supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', actId),
       ])
       setProfile(p)
+      if (p) rememberSellerKind(sellerKindOf(p.provider_type))
       setLaunchUntil(cfg?.launch_free_until || null)
       setMyOffers(offers || [])
       setPricesCount(lpCount ?? 0)
@@ -392,7 +394,7 @@ export default function SupplierDashboard() {
             </div>
           ) })
           // تنبيهات ثانوية (ضريبة/أسعار/اشتراك) — بعد إكمال الملف فقط
-          if (profile && profile.region && !profile.vat_number) banners.push({ key: 'vat', node: (
+          if (profile && profile.region && !profile.vat_number && sellerKindOf(profile.provider_type) === 'company') banners.push({ key: 'vat', node: (
             <Link href="/settings" className="block bg-[#D4A543]/5 border border-blue-200 rounded-2xl p-4 hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
                 <span className="text-2xl"><Glyph e="🧾" /></span>
@@ -403,7 +405,7 @@ export default function SupplierDashboard() {
               </div>
             </Link>
           ) })
-          if (profile && profile.region && pricesCount === 0) banners.push({ key: 'prices', node: (
+          if (FEATURES.livePrices && profile && profile.region && pricesCount === 0) banners.push({ key: 'prices', node: (
             <Link href="/supplier/prices" className="block bg-gradient-to-l from-[#D4A543]/10 to-amber-50 border border-amber-200 rounded-2xl p-4 hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
                 <span className="text-2xl"><Glyph e="📈" /></span>
@@ -414,7 +416,7 @@ export default function SupplierDashboard() {
               </div>
             </Link>
           ) })
-          if (profile && profile.region && !isSubscribed(profile)) banners.push({ key: 'subscription', node: isLaunchFree(launchUntil) ? (
+          if (FEATURES.subscription && profile && profile.region && !isSubscribed(profile)) banners.push({ key: 'subscription', node: isLaunchFree(launchUntil) ? (
             <Link href="/supplier/subscription" className="block rounded-2xl p-4 hover:shadow-md transition-all" style={{ background: 'linear-gradient(120deg,#0F6E56,#0B2438)' }}>
               <div className="flex items-center gap-3">
                 <span className="text-2xl"><Glyph e="🎉" /></span>

@@ -13,6 +13,7 @@ import { detectSpecialtiesFromText } from '@/lib/classify'
 import CatIcon from '@/components/shared/CatIcon'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
+import { storedSellerKind } from '@/lib/sellers'
 import Glyph from '@/components/shared/Glyph'
 
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
@@ -94,6 +95,8 @@ export default function SpecialtiesPage() {
   const [suggestSubmitting, setSuggestSubmitting] = useState(false)
   const [myRequests, setMyRequests] = useState<any[]>([])
   const [openSector, setOpenSector] = useState<any>(null) // single-open accordion (Step 2)
+  const [showDetailed, setShowDetailed] = useState(true)
+  useEffect(() => { if (storedSellerKind() === 'independent') setShowDetailed(false) }, [])
   // auto-analysis of the CR commercial activity (Wathq)
   const [crActivity, setCrActivity] = useState('')
   const [companyName, setCompanyName] = useState('')
@@ -249,13 +252,22 @@ export default function SpecialtiesPage() {
           <p className="text-sm font-bold mb-0.5" style={{ color: '#0B2438' }}>{locale === 'en' ? 'Quick pick: what do you sell?' : locale === 'ur' ? 'فوری انتخاب: آپ کیا بیچتے ہیں؟' : 'اختيار سريع: ماذا تبيع؟'}</p>
           <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects a whole kind of business.' : locale === 'ur' ? 'ایک کلک میں پورا کاروبار۔' : 'بضغطة واحدة تختار جميع مواد هذا النوع من المحلات.'}</p>
           <div className="mb-6"><SupplierPackPicker sectors={mySectors} specialties={mySpecialties} locale={locale} onChange={(n: any) => { setMySectors(n.sectors); setMySpecialties(n.specialties) }} /></div>
-          <h2 className="font-bold mb-4 text-sm" style={{ color: '#0B2438' }}>{T.selectSectors}</h2>
-          <SpecialtyPicker
-            sectors={mySectors} specialties={mySpecialties}
-            openSector={openSector} onOpenSector={setOpenSector}
-            onToggleSector={toggleSector} onToggleSpecialty={toggleSpecialty}
-            locale={locale} dir={dir}
-          />
+          {/* The detailed list (6 sectors, ~130 specialties): open for companies; an independent seller
+              usually needs only the cards above, so it starts folded behind «تخصيص دقيق». */}
+          {showDetailed ? (<>
+            <h2 className="font-bold mb-4 text-sm" style={{ color: '#0B2438' }}>{T.selectSectors}</h2>
+            <SpecialtyPicker
+              sectors={mySectors} specialties={mySpecialties}
+              openSector={openSector} onOpenSector={setOpenSector}
+              onToggleSector={toggleSector} onToggleSpecialty={toggleSpecialty}
+              locale={locale} dir={dir}
+            />
+          </>) : (
+            <button type="button" onClick={() => setShowDetailed(true)}
+              className="w-full text-sm font-bold py-3 rounded-xl border border-dashed border-gray-300 text-gray-600 hover:border-[#D4A543] hover:text-[#9D7425]">
+              {locale === 'en' ? 'Fine-tune exact specialties (optional) ▾' : locale === 'ur' ? 'تفصیلی مہارتیں (اختیاری) ▾' : 'تخصيص دقيق للتخصصات (اختياري) ▾'}
+            </button>
+          )}
         </div>
 
         {mySectors.length === 0 && (

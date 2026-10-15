@@ -1,5 +1,6 @@
 'use client'
 
+import { sellerKindOf, rememberSellerKind } from '@/lib/sellers'
 import { useState, useEffect } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
@@ -160,6 +161,7 @@ export default function SettingsPage() {
       const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       if (p) {
         setProfile(p)
+        if (p.role === 'supplier') rememberSellerKind(sellerKindOf(p.provider_type))
         setCompanyAr(p.company_name_ar || '')
         setCompanyEn(p.company_name_en || '')
         setPhone(p.phone || '')
@@ -473,7 +475,8 @@ export default function SettingsPage() {
                     </div>
                   )}
 
-                  <div>
+                  {/* an independent seller normally has no VAT registration — shown only if one was entered */}
+                  {!(profile?.role === 'supplier' && ['individual', 'price_agent', 'broker'].includes(profile?.provider_type) && !vatNumber) && <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">
                       {locale === 'en' ? 'VAT Number' : locale === 'ur' ? 'ٹیکس نمبر' : 'الرقم الضريبي (ضريبة القيمة المضافة)'}
                     </label>
@@ -482,7 +485,7 @@ export default function SettingsPage() {
                     <p className="text-[10px] text-gray-400 mt-1">
                       {locale === 'en' ? 'Required to issue ZATCA tax invoices.' : locale === 'ur' ? 'ٹیکس انوائس کے لیے ضروری۔' : 'يلزم لإصدار الفواتير الضريبية وفق هيئة الزكاة والضريبة.'}
                     </p>
-                  </div>
+                  </div>}
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>

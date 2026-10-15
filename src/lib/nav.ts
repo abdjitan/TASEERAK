@@ -1,4 +1,5 @@
 import type { ShellNavItem } from '@/components/shared/AppShell'
+import { FEATURES } from '@/lib/features'
 
 // Build the dashboard sidebar nav for a role. Used by every page that sits on
 // AppShell so the navigation is consistent across the app.
@@ -6,7 +7,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const secTools = L('Tools', 'اوزار', 'الأدوات')
   const secAccount = L('Account', 'اکاؤنٹ', 'الحساب')
-  let items: { href: string; icon: string; label: string; section?: string; mobile?: number }[]
+  let items: { href: string; icon: string; label: string; section?: string; mobile?: number; only?: 'company'; off?: boolean }[]
   if (role === 'admin') {
     const sec = L('Admin', 'ایڈمن', 'الإدارة')
     items = [
@@ -23,14 +24,14 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
       { href: '/supplier/deals', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec, mobile: 2 },
       { href: '/supplier/specialties', icon: '🎯', label: L('Specialties', 'مہارتیں', 'تخصصاتي'), section: sec },
-      { href: '/supplier/prices', icon: '📈', label: L('Live Prices', 'لائیو قیمتیں', 'أسعاري'), section: sec, mobile: 3 },
-      { href: '/supplier/analytics', icon: '🏆', label: L('Performance', 'کارکردگی', 'أدائي'), section: sec },
-      { href: '/supplier/branches', icon: '🏢', label: L('Branches', 'شاخیں', 'فروع الشركة'), section: sec },
-      { href: '/supplier/team', icon: '👥', label: L('Team', 'ٹیم', 'فريق العمل'), section: sec },
-      { href: '/supplier/subscription', icon: '⭐', label: L('Subscription', 'سبسکرپشن', 'الاشتراك'), section: sec },
+      { href: '/supplier/prices', icon: '📈', label: L('Live Prices', 'لائیو قیمتیں', 'أسعاري'), section: sec, mobile: 3, off: !FEATURES.livePrices },
+      { href: '/supplier/analytics', icon: '🏆', label: L('Performance', 'کارکردگی', 'أدائي'), section: sec, off: !FEATURES.analyticsNav },
+      { href: '/supplier/branches', icon: '🏢', label: L('Branches', 'شاخیں', 'فروع الشركة'), section: sec, only: 'company' },
+      { href: '/supplier/team', icon: '👥', label: L('Team', 'ٹیم', 'فريق العمل'), section: sec, only: 'company' },
+      { href: '/supplier/subscription', icon: '⭐', label: L('Subscription', 'سبسکرپشن', 'الاشتراك'), section: sec, off: !FEATURES.subscription },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
-      { href: '/market', icon: '📊', label: L('Price Index', 'انڈیکس', 'البورصة'), section: secTools },
-      { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools },
+      { href: '/market', icon: '📊', label: L('Price Index', 'انڈیکس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
+      { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
   } else {
@@ -42,10 +43,11 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/contractor/orders', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec, mobile: 5 },
       { href: '/contractor/project/new', icon: '📋', label: L('Project (BOQ)', 'پراجیکٹ BOQ', 'مشروع BOQ'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
-      { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools },
-      { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools },
+      { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
+      { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
   }
-  return items.map((i) => ({ ...i, active: i.href === active }))
+  // switched-off items leave the menu, except the page you are on (so it stays highlighted)
+  return items.filter((i) => !i.off || i.href === active).map(({ off, ...i }) => ({ ...i, active: i.href === active }))
 }

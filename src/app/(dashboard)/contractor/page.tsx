@@ -18,6 +18,7 @@ import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
 import { dealStage } from '@/lib/dealStage'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
+import { FEATURES } from '@/lib/features'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 
@@ -327,7 +328,7 @@ export default function ContractorDashboard() {
         })()}
 
         {/* نبض السوق — متوسطات الأسعار الحالية */}
-        {marketTop.length > 0 && (
+        {FEATURES.priceBoard && marketTop.length > 0 && (
           <div className="mb-5 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2438' }}>
@@ -445,10 +446,10 @@ export default function ContractorDashboard() {
             </div>
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
               <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{locale === 'en' ? 'Your progress' : 'إنجازاتك'}</h2>
-              <div className="rounded-xl p-3 mb-3 text-center" style={{ background: 'linear-gradient(135deg,#D4A54312,#0B243808)' }}>
+              {FEATURES.gamification && <div className="rounded-xl p-3 mb-3 text-center" style={{ background: 'linear-gradient(135deg,#D4A54312,#0B243808)' }}>
                 <div className="text-3xl">{gameBadge.e}</div>
                 <div className="text-xs font-bold mt-1" style={{ color: '#0B2438' }}>{gameBadge.t}</div>
-              </div>
+              </div>}
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="bg-gray-50 rounded-xl p-2.5">
                   <div className="text-lg font-bold" style={{ color: '#0F6E56' }}>{closed.length}</div>

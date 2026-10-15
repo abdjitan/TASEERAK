@@ -11,17 +11,18 @@ import { useTranslation } from '@/i18n'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import NavIcon from '@/components/shared/NavIcon'
 import Glyph from '@/components/shared/Glyph'
+import { storedSellerKind } from '@/lib/sellers'
 
 // Unread-messages badge cache shared by every AppShell mount (see the effect below).
 const unreadCache = { uid: '', n: 0, at: 0 }
 
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
-export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number }
+export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number; only?: 'company' }
 
 // Shared dashboard shell — navy gradient sidebar (244px) + frosted topbar +
 // off-canvas drawer on mobile. Pages pass their own nav items + header actions.
 export default function AppShell({
-  title, subtitle, company, companyMeta, companyVerified, userId, nav = [], actions, onSignOut, children, dir = 'rtl',
+  title, subtitle, company, companyMeta, companyVerified, userId, nav: navIn = [], actions, onSignOut, children, dir = 'rtl',
 }: {
   title?: string
   subtitle?: string
@@ -36,6 +37,10 @@ export default function AppShell({
   dir?: string
 }) {
   const { locale } = useTranslation()
+  // An independent seller has no branches or team: company-only items leave the menu.
+  const [kind, setKind] = useState<string | null>(null)
+  useEffect(() => { setKind(storedSellerKind()) }, [])
+  const nav = navIn.filter(n => !(n.only === 'company' && kind === 'independent'))
   const [open, setOpen] = useState(false)
   // desktop: the sidebar can be folded away (☰ in the top bar) to give the page more room
   const [collapsed, setCollapsed] = useState(false)
