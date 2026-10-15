@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, getProductLabel, getUnitLabel, unitOptionsFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
+import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -14,11 +14,14 @@ import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { normQuery } from '@/lib/productSearch'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
+import LineSpecialty from '@/components/shared/LineSpecialty'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
 // it into lines the buyer can fix, then send. Each line can open its specifications (PRODUCT_SPECS)
 // and carry a drawing/file. Reorder (?from=<rfq>) and saved drafts (?draft=<id>) open here too.
 
+// Every catalog product name — a line outside it gets the «which specialty?» chooser.
+const CATALOG_NAMES = new Set<string>(Object.values(SECTOR_PRODUCTS).flat() as string[])
 const UNITS = ['حبة', 'كيس', 'طن', 'م³', 'م²', 'متر', 'م.ط', 'لفة', 'كرتون', 'سطل', 'لوح', 'جالون', 'لتر', 'كغ', 'طقم', 'نقلة', 'يوم', 'ساعة', 'عدد']
 
 type Line = {
@@ -35,6 +38,7 @@ type Line = {
   specs?: Record<string, string> // chosen specification values (PRODUCT_SPECS keys, without 'unit')
   fileId?: string                // attached drawing/spec file, kept in IndexedDB until sending
   fileName?: string
+  spec?: { sector: string; sub: string | null } // a «not in the list» item filed under a specialty by the buyer
 }
 type Photo = {
   id: string
@@ -375,7 +379,7 @@ export default function QuickRequestPage() {
         items.push({
           sector: l.sector,
           product_name: l.product_name.trim(),
-          sub_category: detectSubCategory(`${l.product_name} ${st}`, l.sector as any),
+          sub_category: l.spec ? l.spec.sub : detectSubCategory(`${l.product_name} ${st}`, l.sector as any),
           specification: [st, l.details.trim()].filter(Boolean).join(' — ') || null,
           quantity: parseFloat(l.quantity),
           unit: l.unit,
@@ -549,7 +553,7 @@ export default function QuickRequestPage() {
                       : l.product_name ? <img src={productImageUrl(l.product_name)} alt="" loading="lazy" className="w-16 h-16 rounded-lg object-contain shrink-0 border border-gray-100 bg-gray-50"
                           onError={(e: any) => imgFallback(e, detectSubCategory(l.product_name, l.sector as any))} /> : null}
                     <div className="flex-1 min-w-0 space-y-1">
-                      <input value={nameLabel(l.product_name)} onChange={e => updateLine(l.key, { product_name: e.target.value === nameLabel(l.product_name) ? l.product_name : e.target.value })} aria-label={L('Item name', 'نام', 'اسم المادة')}
+                      <input value={nameLabel(l.product_name)} onChange={e => updateLine(l.key, { product_name: e.target.value === nameLabel(l.product_name) ? l.product_name : e.target.value, spec: undefined })} aria-label={L('Item name', 'نام', 'اسم المادة')}
                         className="input-field font-semibold" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'جارٍ التعرّف على الصورة…') : L('Item name', 'نام', 'اسم المادة')} />
                       {locale !== 'ar' && l.original && !ph && (
                         <p className="text-[11px] font-semibold text-gray-700" dir="auto">= {l.original}</p>
@@ -568,7 +572,10 @@ export default function QuickRequestPage() {
                           <Glyph e="📦" /> {L('Did you mean', 'کیا آپ کا مطلب', 'هل تقصد')}: {nameLabel(l.suggestion.name)}؟
                         </button>
                       )}
-                      <div className="text-[11px] text-gray-400">{sectorLabel(l.sector)}</div>
+                      {l.product_name.trim() && !CATALOG_NAMES.has(l.product_name.trim())
+                        ? <LineSpecialty name={l.product_name} sector={l.sector} value={l.spec} locale={locale}
+                            onChange={v => updateLine(l.key, { spec: v, sector: v.sector })} />
+                        : <div className="text-[11px] text-gray-400">{sectorLabel(l.sector)}</div>}
                     </div>
                     <button type="button" onClick={() => removeLine(l.key)} className="text-gray-400 hover:text-red-500 text-lg leading-none px-1" aria-label={L('Remove', 'ہٹائیں', 'احذف')}>×</button>
                   </div>

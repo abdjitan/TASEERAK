@@ -1,4 +1,4 @@
-import { SECTOR_PRODUCTS, GROUP_LABELS, getGroupedProducts, detectSubCategory, type Sector } from '@/types'
+import { SECTOR_PRODUCTS, SUB_CATEGORIES, GROUP_LABELS, getGroupedProducts, detectSubCategory, type Sector } from '@/types'
 
 // User-facing browse sections (owner decision 2026-10-12, from the "universal categories" study).
 //
@@ -149,4 +149,21 @@ function getTradeGroups(section: BrowseSection): SectionGroup[] {
 
 export function sectionCount(section: BrowseSection): number {
   return getSectionGroups(section).reduce((n, g) => n + g.items.length, 0)
+}
+
+// Every specialty (sector + sub-category key) that belongs to a section — used to let the buyer
+// file a free-text item («not in the list») under the right specialty so it reaches the
+// specialist suppliers instead of the whole sector.
+export type SectionSub = { sector: Sector; key: string; ar: string; en: string; ur: string }
+const subsCache: Partial<Record<BrowseSection, SectionSub[]>> = {}
+export function subsOfSection(section: BrowseSection): SectionSub[] {
+  if (subsCache[section]) return subsCache[section]!
+  const out: SectionSub[] = []
+  for (const [sector, subs] of Object.entries(SUB_CATEGORIES)) {
+    for (const [key, v] of Object.entries(subs as any)) {
+      const sub: any = v
+      if (sectionOfSub(key, sub.group) === section) out.push({ sector: sector as Sector, key, ar: sub.ar, en: sub.en, ur: sub.ur })
+    }
+  }
+  return (subsCache[section] = out)
 }
