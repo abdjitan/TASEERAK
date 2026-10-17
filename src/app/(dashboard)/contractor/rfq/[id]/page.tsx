@@ -253,6 +253,7 @@ export default function RFQDetailPage() {
     return bids[0] || null
   }
   const [pickingAll, setPickingAll] = useState(false)
+  const [openBid, setOpenBid] = useState<string | null>(null) // «التفاصيل» of one bid row
   async function awardCheapestAll(offersList: any[]) {
     setPickingAll(true)
     const supabase = createClient()
@@ -644,24 +645,31 @@ export default function RFQDetailPage() {
                                     <span className="font-semibold text-sm text-gray-800 truncate">{b.offer.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</span>
                                     {b.offer.supplier?.verification_status === 'verified' && <span title={L('Verified', 'تصدیق شدہ', 'موثّق')} style={{ color: '#0F6E56' }}>{b.offer.supplier?.cr_verification_source === 'wathq' ? <Glyph e="🛡" /> : '✓'}</span>}
                                     {b.offer.supplier?.rating_avg > 0 && <span className="text-[10px] text-gray-400"><Glyph e="⭐" /> {b.offer.supplier.rating_avg}</span>}
-                                    {(() => { const sc = supplierScore(b.offer.supplier, supplierStats[b.offer.supplier_id]); return <span title={L('Supplier performance score (0-100): verification + rating + response speed + win rate + experience', 'سپلائر کی کارکردگی کا اسکور (0-100): تصدیق + ریٹنگ + جواب کی رفتار + جیتنے کی شرح + تجربہ', 'تقييم أداء المورد (0-100): تحقّق + تقييم + سرعة رد + نسبة فوز + خبرة')} className="text-[10px] font-bold px-1.5 rounded" style={{ color: scoreColor(sc), background: scoreColor(sc) + '1a' }}><Glyph e="⚡" />{sc}</span> })()}
-                                    {Array.isArray(b.offer.supplier?.approvals) && b.offer.supplier.approvals.slice(0, 2).map((a: string) => (
-                                      <span key={a} title={L('Approval', 'منظوری', 'اعتماد')} className="text-[9px] font-bold px-1.5 rounded-full" style={{ color: '#0F6E56', background: '#0F6E5614' }}><Glyph e="🏅" /> {approvalLabel(a)}</span>
-                                    ))}
                                   </div>
-                                  {/* who is selling and where the price comes from — a sourced price is never shown as direct */}
+                                  {/* the card keeps the essentials; a sourced price is never shown as direct, so a non-direct
+                                      source stays visible, the rest (tier, availability, score, approvals) is under «التفاصيل» */}
                                   <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                                    {b.offer.supplier?.supplier_tier && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600"><><SellerIcon name={tierIcon(b.offer.supplier.supplier_tier)} /> {tierLabel(b.offer.supplier.supplier_tier, locale)}</></span>}
                                     {b.offer.supplier && b.offer.supplier.verification_status !== 'verified' && b.offer.supplier.cr_verification_source !== 'wathq' && (
-                                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{L('Not verified yet', 'ابھی تصدیق نہیں ہوئی', 'غير موثّق بعد')}</span>
+                                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{L('Not verified yet', 'ابھی تصدیق نہیں ہوئی', 'غير موثّق بعد')}</span>
                                     )}
-                                    {b.offer.source_type && (
-                                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isDirectSource(b.offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                                        {isDirectSource(b.offer.source_type) ? <><SellerIcon name="check" /> {L('Direct from seller', 'بیچنے والے سے براہ راست', 'مباشر من البائع')}</> : <><SellerIcon name={sourceIcon(b.offer.source_type)} /> {sourceLabel(b.offer.source_type, locale)}</>}
-                                      </span>
+                                    {b.offer.source_type && !isDirectSource(b.offer.source_type) && (
+                                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700"><SellerIcon name={sourceIcon(b.offer.source_type)} /> {sourceLabel(b.offer.source_type, locale)}</span>
                                     )}
-                                    {b.offer.availability && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(b.offer.availability)} /> {availabilityLabel(b.offer.availability, locale)}</></span>}
+                                    <button type="button" onClick={() => setOpenBid(openBid === `${idx}:${b.offer.id}` ? null : `${idx}:${b.offer.id}`)} className="text-[11px] font-bold text-[#9D7425] hover:underline">
+                                      {openBid === `${idx}:${b.offer.id}` ? '▴' : '▾'} {L('Details', 'تفصیلات', 'التفاصيل')}
+                                    </button>
                                   </div>
+                                  {openBid === `${idx}:${b.offer.id}` && (
+                                    <div className="flex flex-wrap items-center gap-1 mt-1">
+                                      {(() => { const sc = supplierScore(b.offer.supplier, supplierStats[b.offer.supplier_id]); return <span className="text-[11px] font-bold px-1.5 rounded" style={{ color: scoreColor(sc), background: scoreColor(sc) + '1a' }}>{L('Score', 'اسکور', 'التقييم العام')} {sc}/100</span> })()}
+                                      {Array.isArray(b.offer.supplier?.approvals) && b.offer.supplier.approvals.slice(0, 2).map((a: string) => (
+                                        <span key={a} className="text-[11px] font-bold px-1.5 rounded-full" style={{ color: '#0F6E56', background: '#0F6E5614' }}><Glyph e="🏅" /> {approvalLabel(a)}</span>
+                                      ))}
+                                      {b.offer.supplier?.supplier_tier && <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600"><SellerIcon name={tierIcon(b.offer.supplier.supplier_tier)} /> {tierLabel(b.offer.supplier.supplier_tier, locale)}</span>}
+                                      {b.offer.source_type && isDirectSource(b.offer.source_type) && <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700"><SellerIcon name="check" /> {L('Direct from seller', 'بیچنے والے سے براہ راست', 'مباشر من البائع')}</span>}
+                                      {b.offer.availability && <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-gray-50 text-gray-600"><SellerIcon name={availabilityIcon(b.offer.availability)} /> {availabilityLabel(b.offer.availability, locale)}</span>}
+                                    </div>
+                                  )}
                                   <div className="text-[11px] text-gray-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                                     {Number(b.entry.unit_price) > 0 && <span>{Number(b.entry.unit_price).toLocaleString('en-US')} / {getUnitLabel(b.entry.unit || it.unit, locale)}</span>}
                                     {(b.entry.delivery_days ?? b.offer.delivery_days) ? <span><Glyph e="📦" /> {b.entry.delivery_days ?? b.offer.delivery_days} {L('days', 'دن', 'يوم')}</span> : null}
