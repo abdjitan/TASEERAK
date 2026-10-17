@@ -238,7 +238,7 @@ export default function RFQDetailPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('award_rfq_item', { p_rfq_id: id, p_item_index: itemIndex, p_offer_id: offerId })
     setAwarding(null)
-    if (error) { alert(L('Could not award — refresh the page and try again.', 'ایوارڈ نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّرت الترسية — حدّث الصفحة وحاول مجدداً.')); return }
+    if (error) { alert(L('Could not award — refresh the page and try again.', 'ایوارڈ نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر اختيار العرض — حدّث الصفحة وحاول مجدداً.')); return }
     await reloadAwards()
   }
   async function unawardItem(itemIndex: any) {
@@ -251,12 +251,12 @@ export default function RFQDetailPage() {
   // تأكيد الترسية: قبول الموردين الفائزين + إصدار أوامر الشراء + إغلاق الطلب
   const [finalizing, setFinalizing] = useState(false)
   async function finalizeAwards() {
-    if (!confirm(L('Confirm the award? The winning suppliers will be accepted, a purchase order issued for each, and the request closed.', 'ایوارڈ کنفرم کریں؟ جیتنے والے سپلائرز قبول ہوں گے، ہر سپلائر کا پرچیز آرڈر بنے گا، اور درخواست بند ہو جائے گی۔', 'تأكيد الترسية؟ سيتم قبول الموردين الفائزين، إصدار أمر شراء لكل مورد، وإغلاق الطلب.'))) return
+    if (!confirm(L('Confirm the award? The winning suppliers will be accepted, a purchase order issued for each, and the request closed.', 'ایوارڈ کنفرم کریں؟ جیتنے والے سپلائرز قبول ہوں گے، ہر سپلائر کا پرچیز آرڈر بنے گا، اور درخواست بند ہو جائے گی۔', 'تأكيد اختيار العرض؟ سيتم قبول الموردين الفائزين، إصدار أمر شراء لكل مورد، وإغلاق الطلب.'))) return
     setFinalizing(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('finalize_rfq_awards', { p_rfq_id: id })
     setFinalizing(false)
-    if (error) { alert(L('Could not confirm the award — refresh the page and try again.', 'ایوارڈ کنفرم نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر تأكيد الترسية — حدّث الصفحة وحاول مجدداً.')); return }
+    if (error) { alert(L('Could not confirm the award — refresh the page and try again.', 'ایوارڈ کنفرم نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر تأكيد اختيار العرض — حدّث الصفحة وحاول مجدداً.')); return }
     window.location.reload()
   }
 
@@ -650,7 +650,7 @@ export default function RFQDetailPage() {
                                   ) : rfq.status === 'open' ? (
                                     <button onClick={() => awardItem(idx, b.offer.id)} disabled={awarding === `${idx}:${b.offer.id}`}
                                       className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>
-                                      {awarding === `${idx}:${b.offer.id}` ? '...' : L('Award', 'ایوارڈ کریں', 'ترسية')}
+                                      {awarding === `${idx}:${b.offer.id}` ? '...' : L('Award', 'ایوارڈ کریں', 'اختيار العرض')}
                                     </button>
                                   ) : null}
                                 </div>
@@ -661,7 +661,7 @@ export default function RFQDetailPage() {
                       )}
                       {award && rfq.status === 'open' && (
                         <div className="px-4 py-2 border-t border-gray-100 bg-gray-50/50">
-                          <button onClick={() => unawardItem(idx)} disabled={awarding === `${idx}:x`} className="text-[11px] text-red-500 hover:underline disabled:opacity-50">✕ {L('Cancel award for this material', 'اس مال کا ایوارڈ منسوخ کریں', 'إلغاء ترسية هذه المادة')}</button>
+                          <button onClick={() => unawardItem(idx)} disabled={awarding === `${idx}:x`} className="text-[11px] text-red-500 hover:underline disabled:opacity-50">✕ {L('Cancel award for this material', 'اس مال کا ایوارڈ منسوخ کریں', 'إلغاء اختيار العرض لهذه المادة')}</button>
                         </div>
                       )}
                     </div>
@@ -691,13 +691,13 @@ export default function RFQDetailPage() {
                   const finalized = rfq.status !== 'open'
                   return (
                     <div className="rounded-xl p-4 text-white mt-2" style={{ background: '#0B2438' }}>
-                      <h4 className="font-bold text-sm mb-2"><Glyph e="📦" /> {L('Award summary', 'ایوارڈ کا خلاصہ', 'ملخص الترسية')} ({awardedCount}/{rfq.items.length} {L('materials', 'مال', 'مادة')} · {list.length} {L('suppliers', 'سپلائرز', 'مورد')})</h4>
+                      <h4 className="font-bold text-sm mb-2"><Glyph e="📦" /> {L('Award summary', 'ایوارڈ کا خلاصہ', 'ملخص اختيار العرض')} ({awardedCount}/{rfq.items.length} {L('materials', 'مال', 'مادة')} · {list.length} {L('suppliers', 'سپلائرز', 'مورد')})</h4>
                       {list.map((v: any, i: any) => (
                         <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-white/10 gap-2">
                           <span className="flex items-center gap-2 flex-wrap">{v.name} <span className="text-blue-200 text-xs">({v.count} {L('materials', 'مال', 'مادة')})</span>
                             {finalized
                               ? <Link href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}><Glyph e="📄" /> {L('Purchase order', 'پرچیز آرڈر', 'أمر الشراء')} ←</Link>
-                              : v.phone && <a href={waLink(v.phone, L('Regarding a materials award on Taseerak', 'تسعیرک پر مال کے ایوارڈ کے بارے میں', 'بخصوص ترسية مواد من منصة تسعيرك')) || undefined} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}><Glyph e="💬" /> {L('Contact', 'رابطہ', 'تواصل')}</a>}
+                              : v.phone && <a href={waLink(v.phone, L('Regarding a materials award on Taseerak', 'تسعیرک پر مال کے ایوارڈ کے بارے میں', 'بخصوص اختيار عروض مواد من منصة تسعيرك')) || undefined} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}><Glyph e="💬" /> {L('Contact', 'رابطہ', 'تواصل')}</a>}
                           </span>
                           <span className="font-bold whitespace-nowrap">{money(v.gross)} {SAR}</span>
                         </div>
@@ -707,11 +707,11 @@ export default function RFQDetailPage() {
                       </div>
                       <div className="text-[11px] text-blue-200 text-end">{L('Before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')} {money(grandNet)} {SAR} · {L('VAT 15%', 'ٹیکس 15%', 'الضريبة 15%')} {money(grand - grandNet)} {SAR}</div>
                       {finalized ? (
-                        <p className="text-[11px] text-emerald-300 mt-3">✓ {L('Awarded — open each supplier purchase order to follow delivery, payment and deal protection.', 'ایوارڈ ہو گیا — ڈیلیوری، ادائیگی اور ڈیل کے تحفظ کے لیے ہر سپلائر کا پرچیز آرڈر کھولیں۔', 'تمت الترسية — افتح أمر الشراء لكل مورد لمتابعة التسليم والدفع وحماية الصفقة.')}</p>
+                        <p className="text-[11px] text-emerald-300 mt-3">✓ {L('Awarded — open each supplier purchase order to follow delivery, payment and deal protection.', 'ایوارڈ ہو گیا — ڈیلیوری، ادائیگی اور ڈیل کے تحفظ کے لیے ہر سپلائر کا پرچیز آرڈر کھولیں۔', 'تمّ اختيار العرض — افتح أمر الشراء لكل مورد لمتابعة التسليم والدفع وحماية الصفقة.')}</p>
                       ) : (
                         <button type="button" onClick={finalizeAwards} disabled={finalizing}
                           className="w-full mt-3 py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#0F6E56' }}>
-                          {finalizing ? '...' : `✓ ${L('Confirm award and issue purchase orders', 'ایوارڈ کنفرم کریں اور پرچیز آرڈر جاری کریں', 'تأكيد الترسية وإصدار أوامر الشراء')}`}
+                          {finalizing ? '...' : `✓ ${L('Confirm award and issue purchase orders', 'ایوارڈ کنفرم کریں اور پرچیز آرڈر جاری کریں', 'تأكيد اختيار العروض وإصدار أوامر الشراء')}`}
                         </button>
                       )}
                     </div>
@@ -847,7 +847,7 @@ export default function RFQDetailPage() {
                               <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold"><Glyph e="⚡" /> {L(`Replies within ~${st.avg_response_hours}h`, `تقریباً ${st.avg_response_hours} گھنٹے میں جواب دیتا ہے`, `يردّ خلال ~${st.avg_response_hours} س`)}</span>
                             )}
                             {st.won_rate != null && (
-                              <span className="text-[10px] bg-[#D4A543]/5 text-[#9D7425] px-2 py-0.5 rounded-full font-semibold"><Glyph e="🤝" /> {L('Win rate', 'ایوارڈ کی شرح', 'نسبة الترسية')} {st.won_rate}%</span>
+                              <span className="text-[10px] bg-[#D4A543]/5 text-[#9D7425] px-2 py-0.5 rounded-full font-semibold"><Glyph e="🤝" /> {L('Win rate', 'ایوارڈ کی شرح', 'نسبة اختيار العروض')} {st.won_rate}%</span>
                             )}
                             <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"><Glyph e="📨" /> {st.total_offers} {L('past offers', 'پچھلی آفرز', 'عرض سابق')}</span>
                           </div>

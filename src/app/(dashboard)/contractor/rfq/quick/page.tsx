@@ -320,7 +320,6 @@ export default function QuickRequestPage() {
 
   const ready = lines.length > 0 && lines.every(l => l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) && !!region
 
-  const allSaved = lines.length > 0 && lines.every(l => l.done)
   // MSA counting: يوم واحد، يومان، 3–10 أيام; ساعات for under a day
   const durationLabel = (h: number) => {
     if (h < 24) return `${h} ${L('hours', 'گھنٹے', 'ساعات')}`
@@ -655,9 +654,6 @@ export default function QuickRequestPage() {
               className="lg:hidden w-full py-3 rounded-xl border-2 border-dashed border-[#D4A543]/50 text-[#9D7425] font-bold text-sm hover:bg-[#D4A543]/5 transition-all">
               + {L('Add another material', 'ایک اور سامان شامل کریں', 'أضف مادة أخرى')}
             </button>
-            {!allSaved && (
-              <p className="text-xs text-gray-500 text-center">{L('Press «Save» on each material to continue to sending.', 'بھیجنے کے لیے ہر سامان پر «محفوظ کریں» دبائیں۔', 'اضغط «حفظ» على كل مادة للانتقال إلى الإرسال.')}</p>
-            )}
           </div>
         )}
 
@@ -731,7 +727,9 @@ export default function QuickRequestPage() {
         </div>
       </div>
 
-      {allSaved && (
+      {/* owner 2026-10-17: the send bar is always there once there is an item; the review dialog
+          and validate() still catch incomplete lines */}
+      {lines.length > 0 && (
         <div className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-200 px-4 pt-3 z-30" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
           <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3 lg:pe-24">
             <span className="text-sm text-gray-500">{lines.length} {L('items', 'اشیاء', 'مواد')}</span>

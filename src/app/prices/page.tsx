@@ -50,7 +50,7 @@ export default async function PricesPage() {
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}><Glyph e="💰" /> مؤشّر أسعار مواد البناء</h1>
           <p className="text-sm text-gray-500 max-w-2xl mx-auto leading-relaxed">
-            متوسّط أسعار مواد البناء في السعودية، محسوبة من أسعار ترسية حقيقية على منصة تسعيرك — <span className="whitespace-nowrap">غير شاملة ضريبة القيمة المضافة</span> وبعد استبعاد القيم الشاذّة. أسعار استرشادية تتحدّث تلقائياً.
+            متوسّط أسعار مواد البناء في السعودية، محسوبة من أسعار عروض مختارة حقيقية على منصة تسعيرك — <span className="whitespace-nowrap">غير شاملة ضريبة القيمة المضافة</span> وبعد استبعاد القيم الشاذّة. أسعار استرشادية تتحدّث تلقائياً.
           </p>
         </div>
 

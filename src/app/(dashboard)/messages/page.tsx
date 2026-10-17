@@ -204,12 +204,12 @@ function Messages() {
               {!awarded && (
                 <div className={`px-3 pt-2 text-[10px] ${blocked ? 'text-red-500' : 'text-gray-400'}`}>
                   {blocked
-                    ? `${L('You have reached the message limit before award. Full contact opens once the deal is done.', 'ایوارڈ سے پہلے پیغامات کی حد پوری ہو گئی۔ ڈیل مکمل ہونے کے بعد مکمل رابطہ کھل جائے گا۔', 'بلغت الحد الأقصى للرسائل قبل الترسية. يكتمل التواصل بعد إتمام الصفقة.')}`
-                    : L(`Messaging before award is limited — ${remaining} messages left`, `ایوارڈ سے پہلے پیغامات محدود ہیں — ${remaining} پیغامات باقی`, `التواصل قبل الترسية محدود — متبقٍّ ${remaining} رسالة`)}
+                    ? `${L('You have reached the message limit before award. Full contact opens once the deal is done.', 'ایوارڈ سے پہلے پیغامات کی حد پوری ہو گئی۔ ڈیل مکمل ہونے کے بعد مکمل رابطہ کھل جائے گا۔', 'بلغت الحد الأقصى للرسائل قبل اختيار العرض. يكتمل التواصل بعد إتمام الصفقة.')}`
+                    : L(`Messaging before award is limited — ${remaining} messages left`, `ایوارڈ سے پہلے پیغامات محدود ہیں — ${remaining} پیغامات باقی`, `التواصل قبل اختيار العرض محدود — متبقٍّ ${remaining} رسالة`)}
                 </div>
               )}
               <form onSubmit={send} className="p-3 border-t border-gray-100 flex gap-2">
-                <input value={body} onChange={e => setBody(e.target.value)} disabled={blocked} className="input-field flex-1 text-sm disabled:bg-gray-50" placeholder={blocked ? L('Limit reached before award', 'ایوارڈ سے پہلے کی حد پوری ہو گئی', 'انتهى الحد المسموح قبل الترسية') : L('Type a message…', 'پیغام لکھیں…', 'اكتب رسالة…')} />
+                <input value={body} onChange={e => setBody(e.target.value)} disabled={blocked} className="input-field flex-1 text-sm disabled:bg-gray-50" placeholder={blocked ? L('Limit reached before award', 'ایوارڈ سے پہلے کی حد پوری ہو گئی', 'انتهى الحد المسموح قبل اختيار العرض') : L('Type a message…', 'پیغام لکھیں…', 'اكتب رسالة…')} />
                 <button type="submit" disabled={sending || blocked || !body.trim()} className="px-5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50" style={{ background: '#D4A543' }}>
                   {L('Send', 'بھیجیں', 'إرسال')}
                 </button>

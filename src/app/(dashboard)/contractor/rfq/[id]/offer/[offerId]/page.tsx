@@ -224,7 +224,7 @@ export default function OfferDetailPage() {
           <Row label={L('National address', 'نیشنل ایڈریس', 'العنوان الوطني')} value={s.national_short_address} />
           {accepted
             ? <Row label={L('Contact number', 'رابطہ نمبر', 'رقم التواصل')} value={contactNum} />
-            : <div className="text-[11px] text-gray-400 py-2 border-b border-gray-50 leading-relaxed"><Glyph e="🔒" /> {L('The supplier contact number appears after award (deal done). For now, contact them through the in-app chat.', 'سپلائر کا رابطہ نمبر ایوارڈ (ڈیل مکمل ہونے) کے بعد نظر آئے گا۔ ابھی اندرونی چیٹ سے رابطہ کریں۔', 'رقم تواصل المورد يظهر بعد الترسية (إتمام الصفقة). تواصل معه الآن عبر الدردشة الداخلية.')}</div>}
+            : <div className="text-[11px] text-gray-400 py-2 border-b border-gray-50 leading-relaxed"><Glyph e="🔒" /> {L('The supplier contact number appears after award (deal done). For now, contact them through the in-app chat.', 'سپلائر کا رابطہ نمبر ایوارڈ (ڈیل مکمل ہونے) کے بعد نظر آئے گا۔ ابھی اندرونی چیٹ سے رابطہ کریں۔', 'رقم تواصل المورد يظهر بعد اختيار العرض (إتمام الصفقة). تواصل معه الآن عبر الدردشة الداخلية.')}</div>}
           <div className="flex gap-2 mt-3 flex-wrap">
             <button type="button" onClick={async () => {
               const supabase = createClient()

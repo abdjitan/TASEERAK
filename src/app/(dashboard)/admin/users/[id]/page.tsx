@@ -13,7 +13,7 @@ import { APPROVAL_LABELS } from '@/lib/supplierScore'
 import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 import Glyph from '@/components/shared/Glyph'
 
-const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمت الترسية', cancelled: '✕ ملغي', expired: 'منتهي' }
+const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمّ اختيار العرض', cancelled: '✕ ملغي', expired: 'منتهي' }
 const OFFER_STATUS: Record<string, string> = { pending: 'بانتظار', submitted: 'مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
 
 export default function AdminUserDetail() {

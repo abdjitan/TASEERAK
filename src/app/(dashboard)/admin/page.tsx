@@ -227,7 +227,7 @@ export default function AdminPanel() {
   }
 
   // Display helpers
-  const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمت الترسية', cancelled: '✕ ملغي', expired: 'منتهي' }
+  const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمّ اختيار العرض', cancelled: '✕ ملغي', expired: 'منتهي' }
   const OFFER_STATUS: Record<string, string> = { pending: 'بانتظار', submitted: 'مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
   const sar = (n: any) => (n || n === 0) ? Number(n).toLocaleString('en-US') + ' ر.س' : '—'
   const dt = (d: any) => d ? new Date(d).toLocaleDateString('ar-SA') : '—'

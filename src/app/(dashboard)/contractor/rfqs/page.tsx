@@ -87,7 +87,7 @@ export default function MyRequestsPage() {
 
   const badge = (r: any) => {
     const s = stateOf(r)
-    if (s === 'closed') return { t: L('Deal done', 'سودا مکمل', 'تمّت الترسية'), c: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+    if (s === 'closed') return { t: L('Deal done', 'سودا مکمل', 'تمّ اختيار العرض'), c: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
     if (s === 'open') return { t: L('Receiving offers', 'آفرز آ رہی ہیں', 'يستقبل العروض'), c: 'bg-blue-50 text-blue-700 border-blue-200' }
     return { t: r.status === 'cancelled' ? L('Cancelled', 'منسوخ', 'ملغى') : L('Ended', 'ختم', 'انتهت المهلة'), c: 'bg-gray-100 text-gray-500 border-gray-200' }
   }
@@ -98,7 +98,7 @@ export default function MyRequestsPage() {
     <AppShell title={L('My requests', 'میری درخواستیں', 'طلباتي')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          {([['all', L('All', 'سب', 'الكل')], ['open', L('Open', 'کھلی', 'مفتوحة')], ['closed', L('Deal done', 'مکمل', 'تمّت الترسية')], ['ended', L('Ended', 'ختم', 'منتهية')]] as [Filter, string][]).map(([k, label]) => (
+          {([['all', L('All', 'سب', 'الكل')], ['open', L('Open', 'کھلی', 'مفتوحة')], ['closed', L('Deal done', 'مکمل', 'تمّ اختيار العرض')], ['ended', L('Ended', 'ختم', 'منتهية')]] as [Filter, string][]).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setFilter(k)}
               className={`px-3.5 py-2 rounded-xl text-sm font-bold border transition-all ${filter === k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600'}`}
               style={filter === k ? { background: '#0B2438' } : undefined}>

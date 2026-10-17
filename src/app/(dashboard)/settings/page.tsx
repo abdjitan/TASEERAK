@@ -471,7 +471,7 @@ export default function SettingsPage() {
                         <input value={contactPhone} onChange={e => setContactPhone(e.target.value)}
                           className="input-field" dir="ltr" placeholder="+966 1X XXX XXXX" />
                       )}
-                      <p className="text-[10px] text-gray-400 mt-1.5">يظهر هذا الرقم للمشتري <b>بعد الترسية فقط</b>. قبلها يكون التواصل عبر الدردشة الداخلية.</p>
+                      <p className="text-[10px] text-gray-400 mt-1.5">يظهر هذا الرقم للمشتري <b>بعد اختيار العرض فقط</b>. قبلها يكون التواصل عبر الدردشة الداخلية.</p>
                     </div>
                   )}
 
