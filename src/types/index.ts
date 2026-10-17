@@ -123,7 +123,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     piling: { ar: 'أوتاد وخوازيق الأساسات', en: 'Piling & Foundations', ur: 'پائلنگ', icon: '🛠', group: 'infrastructure',
       keywords: ['أوتاد','اوتاد','pile','piling','خازوق','وتد خرساني'] },
     construction_chemicals: { ar: 'مواد كيميائية للبناء', en: 'Construction Chemicals', ur: 'کیمیکل', icon: '🧪', group: 'infrastructure',
-      keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي','مبيد النمل الأبيض','مادة معالجة الخرسانة','مادة ربط الخرسانة','مثبت كيميائي','حشوة فواصل التمدد','لاصق بلوك','مونة رقيقة','مونة إصلاح الخرسانة'] },
+      keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي','مبيد النمل الأبيض','مادة معالجة الخرسانة','مادة ربط الخرسانة','مثبت كيميائي','حشوة فواصل التمدد','لاصق بلوك','مونة رقيقة','مونة إصلاح الخرسانة','سيليكون','silicone','مانع تسرب','sealant','ماستك','فوم بولي','مقاوم للحريق','معجون حريق','fire putty','water plug','بوليمر','بولي سلفايد','بولي يوريثان','لملء الفراغات','weather seal'] },
     drainage: { ar: 'صرف خارجي وبنية تحتية', en: 'External Drainage', ur: 'نکاسی', icon: '🚧', group: 'drainage_grp',
       keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف'] },
     // ═══ الكسارات والمواد الأولية وأعمال الموقع ═══
@@ -423,7 +423,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     store_paint: { ar: 'دهانات وفرش ورولات', en: 'Paint, Brushes & Rollers', ur: 'پینٹ', icon: '🎨', group: 'store_paint',
       keywords: ['دهان','paint','فرشاة','brush','رولة','roller','بوية','صبغ','تنر','thinner'] },
     store_adhesives: { ar: 'سيليكون ولواصق وفوم', en: 'Silicone, Glue & Foam', ur: 'سیلیکون', icon: '🧴', group: 'store_paint',
-      keywords: ['سيليكون','silicone','فوم','foam','لاصق','adhesive','glue','سيلانت','sealant','صمغ'] },
+      keywords: ['سيليكون','silicone','فوم','foam','لاصق','adhesive','glue','سيلانت','sealant','صمغ','مانع تسرب'] },
     // ═══ خردوات: مفصلات وأقفال ومقابض ═══
     store_hinges: { ar: 'مفصلات ومجاري أدراج', en: 'Hinges & Drawer Slides', ur: 'قبضے', icon: '🔗', group: 'store_hardware',
       keywords: ['مفصلة','مفصلات','hinge','مجرى درج','مجاري أدراج','كابح صدمة','سوفت كلوز','soft close'] },
@@ -2024,6 +2024,19 @@ const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'type', ar: 'النوع', en: 'Type', options: ['مذيب Solvent-based','مائي Water-based'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['لتر','جالون','برميل'] },
   ] },
+  // ═══ السيليكون ومانعات التسرب (2026-10-17) ═══
+  { products: ['ماستك بيتوميني للفواصل والأسطح', 'مانع تسرب مائي للأسطح والشقوق', 'مانع تسرب المياه الفوري (Water Plug)', 'معجون حريق لفتحات الكابلات والمواسير (Fire Putty)', 'مانع تسرب مائي للأسطح (سطل)'], spec: [
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['سطل', 'كيس', 'علبة', 'كرتون'] },
+  ] },
+  { products: ['سيليكون محايد (Neutral)', 'سيليكون حمضي (Acetic)', 'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)', 'سيليكون إنشائي للواجهات الزجاجية (Structural)', 'سيليكون عزل الطقس للزجاج والألمنيوم (Weather Seal)', 'سيليكون حراري لدرجات الحرارة العالية', 'سيليكون مقاوم للحريق (Fire Rated)', 'أكريليك مقاوم للحريق (Intumescent)', 'مانع تسرب بولي يوريثان (PU Sealant)', 'مانع تسرب أكريليك قابل للدهان', 'مانع تسرب MS بوليمر (هايبرد)', 'مانع تسرب بولي سلفايد للفواصل', 'سيليكون شفاف (أنبوب)', 'سيليكون صحي للحمامات (أنبوب)', 'سيليكون حراري (أنبوب)'], spec: [
+    { key: 'color', ar: 'اللون', en: 'Colour', options: ['شفاف (Clear)', 'أبيض (White)', 'رمادي (Grey)', 'أسود (Black)', 'بيج (Beige)'] },
+    { key: 'brand', ar: 'الماركة (اختياري)', en: 'Brand (optional)', options: ['أي ماركة معتمدة', 'Sika', 'Bostik', 'Dow (DOWSIL)', 'Soudal', 'Saveto', 'حسب المواصفة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['أنبوب (خرطوش 280–300 مل)', 'كيس سجق (600 مل)', 'كرتون'] },
+  ] },
+  { products: ['فوم مقاوم للحريق (PU Fire Foam)', 'فوم بولي يوريثان لملء الفراغات', 'فوم بخاخ (علبة)'], spec: [
+    { key: 'type', ar: 'طريقة الاستخدام', en: 'Application', options: ['بمسدس (Gun foam)', 'بخاخ يدوي (Straw foam)'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['علبة (750 مل)', 'كرتون (12 علبة)'] },
+  ] },
   // ═══ المواد اللاصقة والكيماويات (Adhesives & Sealants) — من مدار ═══
   { products: ['مواد لاصقة وكيماويات (Adhesives & Sealants)'], spec: [
     { key: 'type', ar: 'النوع', en: 'Type', options: ['سيليكون Silicone','بولي يوريثان PU','أكريليك Acrylic','لاصق تماس Contact','غراء خشب Wood Glue','فوم تمدد Expanding Foam','إيبوكسي Epoxy','مادة ربط Bonding Agent','جراوت إنشائي Grout'] },
@@ -2189,6 +2202,30 @@ export const SECTOR_COLORS: Record<Sector, string> = {
 
 // Product translations — keys are Arabic (stored in DB), values are EN/UR display names
 export const PRODUCT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
+  // silicones & sealants (2026-10-17)
+  'سيليكون محايد (Neutral)': { en: 'Neutral-cure silicone sealant', ur: 'نیوٹرل سلیکون' },
+  'سيليكون حمضي (Acetic)': { en: 'Acetic (acetoxy) silicone sealant', ur: 'ایسیٹک سلیکون' },
+  'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)': { en: 'Sanitary anti-fungal silicone', ur: 'سینیٹری اینٹی فنگل سلیکون' },
+  'سيليكون إنشائي للواجهات الزجاجية (Structural)': { en: 'Structural glazing silicone', ur: 'اسٹرکچرل گلیزنگ سلیکون' },
+  'سيليكون عزل الطقس للزجاج والألمنيوم (Weather Seal)': { en: 'Weatherseal silicone for glass & aluminium', ur: 'ویدر سیل سلیکون' },
+  'سيليكون حراري لدرجات الحرارة العالية': { en: 'High-temperature silicone', ur: 'ہائی ٹمپریچر سلیکون' },
+  'سيليكون مقاوم للحريق (Fire Rated)': { en: 'Fire-rated silicone sealant', ur: 'فائر ریٹڈ سلیکون' },
+  'أكريليك مقاوم للحريق (Intumescent)': { en: 'Intumescent fire-rated acrylic', ur: 'فائر ریٹڈ ایکریلک' },
+  'فوم مقاوم للحريق (PU Fire Foam)': { en: 'Fire-rated PU gun foam', ur: 'فائر ریٹڈ فوم' },
+  'معجون حريق لفتحات الكابلات والمواسير (Fire Putty)': { en: 'Intumescent fire putty for cable & pipe penetrations', ur: 'فائر پٹی' },
+  'فوم بولي يوريثان لملء الفراغات': { en: 'Expanding PU gap-filling foam', ur: 'پی یو فوم' },
+  'مانع تسرب بولي يوريثان (PU Sealant)': { en: 'Polyurethane joint sealant', ur: 'پی یو سیلنٹ' },
+  'مانع تسرب أكريليك قابل للدهان': { en: 'Paintable acrylic sealant', ur: 'ایکریلک سیلنٹ' },
+  'مانع تسرب MS بوليمر (هايبرد)': { en: 'MS polymer (hybrid) sealant', ur: 'ایم ایس پولیمر سیلنٹ' },
+  'مانع تسرب بولي سلفايد للفواصل': { en: 'Polysulphide joint sealant', ur: 'پولی سلفائیڈ سیلنٹ' },
+  'مانع تسرب مائي للأسطح والشقوق': { en: 'Waterproof sealant for roofs & cracks', ur: 'واٹر پروف سیلنٹ' },
+  'مانع تسرب المياه الفوري (Water Plug)': { en: 'Rapid water-stop plug (hydraulic cement)', ur: 'واٹر پلگ' },
+  'ماستك بيتوميني للفواصل والأسطح': { en: 'Bituminous mastic sealant', ur: 'بیٹومینس ماسٹک' },
+  'سيليكون شفاف (أنبوب)': { en: 'Clear silicone (tube)', ur: 'شفاف سلیکون (ٹیوب)' },
+  'سيليكون صحي للحمامات (أنبوب)': { en: 'Bathroom silicone (tube)', ur: 'باتھ روم سلیکون (ٹیوب)' },
+  'سيليكون حراري (أنبوب)': { en: 'High-temperature silicone (tube)', ur: 'ہیٹ ریزسٹنٹ سلیکون (ٹیوب)' },
+  'فوم بخاخ (علبة)': { en: 'Spray PU foam (can)', ur: 'اسپرے فوم (کین)' },
+  'مانع تسرب مائي للأسطح (سطل)': { en: 'Roof waterproof sealant (pail)', ur: 'چھت واٹر پروف سیلنٹ (بالٹی)' },
   // ═══ 2026-10-14: generic furniture (buyer specifies the type) ═══
   'طاولة حسب الطلب (أي نوع)': { en: 'Custom table (any type)', ur: 'کوئی بھی میز' },
   'كرسي حسب الطلب (أي نوع)': { en: 'Custom chair (any type)', ur: 'کوئی بھی کرسی' },
@@ -3366,7 +3403,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ 2026-10-13: catalog gap study ═══
     'ألواح ساندوتش بانل', 'قرميد أسقف', 'بلوك هوردي للأسقف', 'بلوك عازل حراري', 'مدادات حديد مجلفنة (Z/C)', 'فواصل تسليح (بسكوت خرساني)',
     'غرف جاهزة (كرفانات)', 'هناجر ومستودعات حديدية', 'صاج وأنابيب ستانلس ستيل', 'ألواح بولي كربونات', 'مبيد النمل الأبيض (معالجة التربة)', 'إضافات الخرسانة (ملدن/مسرع/مؤخر)',
-    'مادة معالجة الخرسانة (كيورنج)', 'مادة ربط الخرسانة (بوندنج)', 'جراوت غير قابل للانكماش', 'مثبت كيميائي (كيميكال أنكر)', 'مانع تسرب الفواصل (ماستك)', 'شريط مانع تسرب (ووتر ستوب)',
+    'مادة معالجة الخرسانة (كيورنج)', 'مادة ربط الخرسانة (بوندنج)', 'جراوت غير قابل للانكماش', 'مثبت كيميائي (كيميكال أنكر)', 'مانع تسرب الفواصل (ماستك)', 'سيليكون محايد (Neutral)', 'سيليكون حمضي (Acetic)', 'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)', 'سيليكون إنشائي للواجهات الزجاجية (Structural)', 'سيليكون عزل الطقس للزجاج والألمنيوم (Weather Seal)', 'سيليكون حراري لدرجات الحرارة العالية', 'سيليكون مقاوم للحريق (Fire Rated)', 'أكريليك مقاوم للحريق (Intumescent)', 'فوم مقاوم للحريق (PU Fire Foam)', 'معجون حريق لفتحات الكابلات والمواسير (Fire Putty)', 'فوم بولي يوريثان لملء الفراغات', 'مانع تسرب بولي يوريثان (PU Sealant)', 'مانع تسرب أكريليك قابل للدهان', 'مانع تسرب MS بوليمر (هايبرد)', 'مانع تسرب بولي سلفايد للفواصل', 'مانع تسرب مائي للأسطح والشقوق', 'مانع تسرب المياه الفوري (Water Plug)', 'ماستك بيتوميني للفواصل والأسطح', 'شريط مانع تسرب (ووتر ستوب)',
     'حشوة فواصل التمدد (فلر بورد)', 'قماش جيوتكستايل', 'لاصق بلوك (مونة رقيقة)', 'مونة إصلاح الخرسانة', 'برجولات ومظلات حدائق', 'سواتر (قماش/حديد/خشب)',
     'مظلات شراع (شد إنشائي)', 'بيوت شعر وخيام', 'مضخة وفلتر المسبح', 'كيماويات المسابح (كلور)', 'إنارة المسابح', 'سلالم المسابح الستانلس',
     'ملحقات المسابح (سكيمر وفوهات)', 'بلاط وحواف المسابح', 'نجيل طبيعي (ثيل)', 'رشاشات وتنقيط الري', 'مؤقت ري وصمامات كهربائية', 'حصى زينة وأحجار ديكور',
@@ -3833,6 +3870,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     // ═══ دهانات ولواصق ═══
     'دهان داخلي', 'فرشاة دهان', 'رولة دهان', 'تنر',
     'سيليكون', 'فوم عازل', 'لاصق قوي', 'صمغ',
+    'سيليكون شفاف (أنبوب)', 'سيليكون صحي للحمامات (أنبوب)', 'سيليكون حراري (أنبوب)', 'فوم بخاخ (علبة)', 'مانع تسرب مائي للأسطح (سطل)',
     // ═══ خردوات ومواد إضافية (بحث Madar) ═══
     'مفصلة فراشة',
     'مفصلة أوتوماتيك (زنبرك)',
