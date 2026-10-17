@@ -18,6 +18,8 @@ export default function SupplierBranchesPage() {
   const [branches, setBranches] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  // a company team member sees the company's branches; only the owner can change them (RLS)
+  const [readOnly, setReadOnly] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [name, setName] = useState('')
@@ -34,7 +36,10 @@ export default function SupplierBranchesPage() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { window.location.href = '/login'; return }
     setUser(session.user)
-    const { data } = await supabase.from('branches').select('*').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
+    const { data: actRaw } = await supabase.rpc('acting_uid')
+    const actId: string = (actRaw as any) || session.user.id
+    setReadOnly(actId !== session.user.id)
+    const { data } = await supabase.from('branches').select('*').eq('supplier_id', actId).order('created_at', { ascending: false })
     setBranches(data || [])
     setLoading(false)
   }
@@ -79,7 +84,10 @@ export default function SupplierBranchesPage() {
           <Glyph e="💡" /> مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المشترين في جميع هذه المناطق.
         </div>
 
-        {!showForm && (
+        {readOnly && (
+          <p className="mb-5 text-xs rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-gray-600">هذه فروع شركتك. يضيفها ويعدّلها مالك الحساب.</p>
+        )}
+        {!showForm && !readOnly && (
           <button onClick={() => setShowForm(true)} className="w-full mb-5 py-3 rounded-xl font-semibold text-white text-sm transition-all hover:shadow-lg" style={{ background: '#0B2438' }}>
             + إضافة فرع
           </button>
@@ -148,7 +156,7 @@ export default function SupplierBranchesPage() {
                   </div>
                   {b.address && <div className="text-[11px] text-gray-400 mt-1">{b.address}</div>}
                 </div>
-                <button onClick={() => remove(b.id)} className="px-3 py-2 rounded-lg text-xs border border-red-200 text-red-500 hover:bg-red-50 flex-shrink-0"><Glyph e="🗑" /></button>
+                {!readOnly && <button onClick={() => remove(b.id)} className="px-3 py-2 rounded-lg text-xs border border-red-200 text-red-500 hover:bg-red-50 flex-shrink-0"><Glyph e="🗑" /></button>}
               </div>
             ))}
           </div>

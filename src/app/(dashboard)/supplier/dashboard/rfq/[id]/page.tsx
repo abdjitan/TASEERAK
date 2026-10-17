@@ -156,7 +156,7 @@ export default function SupplierRFQPage() {
 
       // Round 2 — everything about this supplier and its offer on this request.
       const [{ data: me }, { data: secRows }, { data: specRows }, { data: myPrices }, { data: offerData }] = await Promise.all([
-        supabase.from('profiles').select('provider_type, supplier_tier').eq('id', actId).single(),
+        supabase.from('profiles').select('provider_type, supplier_tier, vat_number').eq('id', actId).single(),
         supabase.from('profile_sectors').select('sector').eq('profile_id', actId),
         supabase.from('profile_specialties').select('specialty').eq('profile_id', actId),
         supabase.from('live_prices').select('product_name, price, unit, region').eq('supplier_id', actId),
@@ -166,6 +166,9 @@ export default function SupplierRFQPage() {
       // price comes from.
       const indep = sellerKindOf(me?.provider_type) === 'independent'
       setIsIndependent(indep)
+      // An independent seller without a VAT number is not VAT-registered: no VAT question, the price
+      // they type is the final price the buyer pays (persona review: «لا تُضاف 15% فوق سعري»).
+      if (indep && !(me?.vat_number || '').trim()) { setNoVat(true); setVatIncluded(true) }
       if (!indep) setSourceType('own_stock')
 
       // ✅ المورد يرى/يسعّر فقط المواد ضمن تخصصه — لا تظهر له مواد قطاع لا يخدمه
@@ -315,6 +318,7 @@ export default function SupplierRFQPage() {
   // هل السعر المُدخل يشمل ضريبة القيمة المضافة 15%؟ — اختيار صريح بلا قيمة افتراضية (null = لم يُحدَّد بعد)،
   // كي لا تُضاف 15% فوق سعر شامل دون أن ينتبه المورّد.
   const [vatIncluded, setVatIncluded] = useState<boolean | null>(null)
+  const [noVat, setNoVat] = useState(false) // independent seller, not VAT-registered
   // الإجمالي كما سيراه المشتري (صافٍ + ضريبة + إجمالي) — يُستخدم في التفصيل وفي ملخّص ما قبل الإرسال
   function offerTotals() {
     const goods = parseFloat(totalPrice) || 0
@@ -795,7 +799,7 @@ export default function SupplierRFQPage() {
                     <span className="text-xs font-bold text-gray-500">{pricedCount}/{myItems.length}</span>
                   </div>
                   <p className="text-xs text-gray-400 mb-3">
-                    {L('Enter the total price of each material. You do not have to price them all; open «Details» for unit price, delivery time, warranty or a catalog.', 'ہر مال کی کل قیمت درج کریں۔ سب کی قیمت دینا ضروری نہیں؛ فی یونٹ قیمت، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل السعر الإجمالي لكل مادة، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لسعر الوحدة ومدة التوصيل والضمان والكتالوج.')}
+                    {L('Enter the price per unit of each material — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')}
                   </p>
                   <div className="space-y-3">
                     {myItems.map((it: any, i: any) => {
@@ -1165,7 +1169,12 @@ export default function SupplierRFQPage() {
                 ]
                 return (
                   <div className="border-t border-gray-100 pt-4">
-                    {/* خيار شمول الضريبة — إلزامي وصريح، بلا قيمة افتراضية */}
+                    {/* خيار شمول الضريبة — إلزامي وصريح، بلا قيمة افتراضية (لا يظهر للبائع المستقل غير المسجّل ضريبياً) */}
+                    {noVat ? (
+                      <p className="mb-3 text-xs rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-gray-600">
+                        {L('You are not VAT-registered: your price is the final price the buyer pays, no VAT is added.', 'آپ ٹیکس میں رجسٹرڈ نہیں: آپ کی قیمت ہی حتمی قیمت ہے، ٹیکس شامل نہیں ہوگا۔', 'أنت غير مسجّل في ضريبة القيمة المضافة: سعرك هو السعر النهائي الذي يدفعه المشتري، ولا تُضاف عليه ضريبة.')}
+                      </p>
+                    ) : (
                     <div className="mb-3">
                       <div id="vat-choice-label" className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>
                         <Glyph e="🧾" /> {L('Does your price include 15% VAT?', 'کیا آپ کی قیمت میں 15% ویٹ (VAT) شامل ہے؟', 'هل يشمل سعرك ضريبة القيمة المضافة (15%)؟')} <span className="text-red-500">*</span>
@@ -1182,7 +1191,7 @@ export default function SupplierRFQPage() {
                           )
                         })}
                       </div>
-                    </div>
+                    </div>)}
                     {/* تفصيل الإجمالي */}
                     {entered > 0 && vatIncluded !== null && (
                       <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm space-y-1.5">
@@ -1255,7 +1264,7 @@ export default function SupplierRFQPage() {
               const blockReason = (isMultiItem && !allItemsPriced) || !totalPrice
                 ? (isMultiItem
                   ? L('Enter a price for at least one material to send.', 'بھیجنے کے لیے کم از کم ایک مال کی قیمت درج کریں۔', 'أدخل سعر مادة واحدة على الأقل لتتمكّن من الإرسال.')
-                  : L('Enter the total price to send.', 'بھیجنے کے لیے کل قیمت درج کریں۔', 'أدخل السعر الإجمالي لتتمكّن من الإرسال.'))
+                  : L('Enter the total price to send.', 'بھیجنے کے لیے کل قیمت درج کریں۔', 'أدخل سعراً لمادة واحدة على الأقل لتتمكّن من الإرسال.'))
                 : vatIncluded === null
                   ? L('Choose whether your price includes VAT to send.', 'بھیجنے کے لیے منتخب کریں کہ قیمت میں ویٹ شامل ہے یا نہیں۔', 'حدّد هل يشمل سعرك الضريبة لتتمكّن من الإرسال.')
                   : !sourceType

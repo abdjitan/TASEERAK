@@ -53,17 +53,17 @@ export default function ContractorDealsPage() {
   })
 
   return (
-    <AppShell title={locale === 'en' ? 'My Deals' : 'صفقاتي'} nav={getNav('contractor', locale, '/contractor/orders')} dir={dir}>
+    <AppShell title={locale === 'en' ? 'My Deals' : locale === 'ur' ? 'میری ڈیلز' : 'صفقاتي'} nav={getNav('contractor', locale, '/contractor/orders')} dir={dir}>
       <div className="max-w-4xl mx-auto">
         <input value={search} onChange={(e: any) => setSearch(e.target.value)}
           className="input-field mb-3" placeholder={locale === 'en' ? 'Search deals (product, supplier, invoice №)…' : 'ابحث في الصفقات (منتج، مورّد، رقم فاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">
-          {[{ k: 'all', l: locale === 'en' ? 'All' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Disputed' : 'مشكلات' }].map((f: any) => (
+          {[{ k: 'all', l: locale === 'en' ? 'All' : locale === 'ur' ? 'سب' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : locale === 'ur' ? 'جاری' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : locale === 'ur' ? 'مکمل' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Problems' : locale === 'ur' ? 'مسائل' : 'مشكلات' }].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)}
               className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${filter === f.k ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
               style={filter === f.k ? { background: f.k === 'disputed' ? '#DC2626' : '#0B2438' } : {}}>{f.l}</button>
           ))}
-          <span className="text-xs text-gray-400 ms-auto">{shown.length} {locale === 'en' ? 'deals' : 'صفقة'}</span>
+          <span className="text-xs text-gray-400 ms-auto">{shown.length} {locale === 'en' ? 'deals' : locale === 'ur' ? 'ڈیلز' : 'صفقة'}</span>
         </div>
 
         {shown.length === 0 ? (
@@ -80,8 +80,8 @@ export default function ContractorDealsPage() {
                 <Link key={d.id} href={`/contractor/orders/${d.id}`}
                   className="flex items-center justify-between gap-3 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:border-[#D4A543]/40 transition-colors">
                   <div className="min-w-0">
-                    <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{d.rfq?.title || d.rfq?.product_name || (locale === 'en' ? 'Deal' : 'صفقة')}</div>
-                    <div className="text-xs text-gray-400 mt-0.5 truncate"><SellerIcon name="store" className="w-3.5 h-3.5" /> {d.supplier?.company_name_ar || '—'} · {Number(d.total_price || 0).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : 'ر.س'}</div>
+                    <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{d.rfq?.title || d.rfq?.product_name || (locale === 'en' ? 'Deal' : locale === 'ur' ? 'ڈیل' : 'صفقة')}</div>
+                    <div className="text-xs text-gray-400 mt-0.5 truncate"><SellerIcon name="store" className="w-3.5 h-3.5" /> {d.supplier?.company_name_ar || '—'} · {Number(d.total_price || 0).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : locale === 'ur' ? 'ریال' : 'ر.س'}</div>
                     {d.invoice_number && <div className="text-[11px] text-gray-400 font-mono mt-0.5" dir="ltr">{d.invoice_number}</div>}
                   </div>
                   <div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}>
