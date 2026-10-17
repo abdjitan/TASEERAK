@@ -212,7 +212,7 @@ export default function SpecialtiesPage() {
       spec_file_url,
     }).select().single()
     setSuggestSubmitting(false)
-    if (error) { setSuggestMsg('حدث خطأ، حاول مرة أخرى'); return }
+    if (error) { setSuggestMsg(locale === 'en' ? 'Something went wrong — please try again.' : locale === 'ur' ? 'خرابی ہوئی — دوبارہ کوشش کریں۔' : 'حدث خطأ، حاول مرة أخرى.'); return }
     setMyRequests(prev => [data, ...prev])
     setSuggestName(''); setSuggestSector(''); setSuggestDesc(''); setSuggestGroup(''); setSuggestFile(null)
     setSuggestMsg(T.sSent)
@@ -302,16 +302,16 @@ export default function SpecialtiesPage() {
             const gks = sortGroupKeys([...new Set(Object.values((SUB_CATEGORIES as any)[suggestSector] || {}).map((x: any) => x.group))] as string[])
             return (
               <select value={suggestGroup} onChange={e => setSuggestGroup(e.target.value)} className="input-field mt-3">
-                <option value="">{locale === 'en' ? 'Which group / list fits it?' : 'أي مجموعة/قائمة تناسبها؟'}</option>
+                <option value="">{locale === 'en' ? 'Which group / list fits it?' : locale === 'ur' ? 'یہ کس گروپ میں آتا ہے؟' : 'أي مجموعة/قائمة تناسبها؟'}</option>
                 {gks.map((g: string) => <option key={g} value={g}>{(GROUP_LABELS as any)[g]?.ar || g}</option>)}
-                <option value="__other__">{locale === 'en' ? 'Not listed — I will describe below' : 'غير مذكورة — أوضّح بالوصف'}</option>
+                <option value="__other__">{locale === 'en' ? 'Not listed — I will describe below' : locale === 'ur' ? 'فہرست میں نہیں — نیچے وضاحت کروں گا' : 'غير مذكورة — أوضّح بالوصف'}</option>
               </select>
             )
           })()}
           <textarea value={suggestDesc} onChange={e => setSuggestDesc(e.target.value)}
             className="input-field mt-3" rows={2} placeholder={T.sDescPh} />
           <label className="block mt-3">
-            <span className="text-xs font-bold text-gray-500">{locale === 'en' ? 'Attach product details (photo / spec / PDF)' : 'أرفق تفاصيل المنتج (صورة / مواصفة / PDF)'}</span>
+            <span className="text-xs font-bold text-gray-500">{locale === 'en' ? 'Attach product details (photo / spec / PDF)' : locale === 'ur' ? 'پروڈکٹ کی تفصیل لگائیں (تصویر / تفصیل / PDF)' : 'أرفق تفاصيل المنتج (صورة / مواصفة / PDF)'}</span>
             <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={e => setSuggestFile((e.target as any).files?.[0] || null)} className="input-field mt-1 text-sm" />
           </label>
 

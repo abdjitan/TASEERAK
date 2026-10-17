@@ -27,7 +27,7 @@ export default function SupplierRFQPage() {
   const router = useRouter()
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const SAR = L('SAR', 'SAR', 'ر.س')
+  const SAR = L('SAR', 'ریال', 'ر.س')
   const [user, setUser] = useState<any>(null)
   const [actingId, setActingId] = useState('') // الشركة لعضو الفريق، وإلا المستخدم نفسه
   const [verified, setVerified] = useState(true) // تفاؤلي؛ يُضبط من الملف. القفل الحقيقي على مستوى القاعدة (RLS)
@@ -190,10 +190,11 @@ export default function SupplierRFQPage() {
         // skip saved prices tied to a different region (region-agnostic saved prices still apply).
         const rfqRegion = rfqData?.region || null
         const priceMap: Record<string, number> = {}
+        try { Object.assign(priceMap, JSON.parse(localStorage.getItem('tsk_myprices_' + actId) || '{}')) } catch {}
         for (const pr of (myPrices || [])) {
           if (rfqRegion && pr.region && pr.region !== rfqRegion) continue
           const key = `${pr.product_name}__${pr.unit || ''}`
-          if (priceMap[key] == null) priceMap[key] = Number(pr.price)
+          priceMap[key] = Number(pr.price) // a price kept in «أسعاري» wins over the remembered one
         }
         setItemForms(filtered.map((it: any) => {
           const sp = priceMap[`${it.product_name}__${it.unit || ''}`]
@@ -460,7 +461,9 @@ export default function SupplierRFQPage() {
     })
 
     if (insertError) {
-      setError((insertError.message || '').includes('offer_rate_limited')
+      setError((insertError as any).code === '23505'
+        ? L('Your company already sent an offer for this request (a colleague may have just priced it). Reopen the page to see it.', 'آپ کی کمپنی اس درخواست پر پہلے ہی آفر بھیج چکی ہے (شاید کسی ساتھی نے ابھی بھیجی)۔ دیکھنے کے لیے صفحہ دوبارہ کھولیں۔', 'أرسلت شركتك عرضاً لهذا الطلب (ربما سعّره زميلك للتو). أعد فتح الصفحة لتراه.')
+        : (insertError.message || '').includes('offer_rate_limited')
         ? (locale === 'en' ? 'Too many offers in the last hour. Verify your account to remove the limit, or try again later.' : locale === 'ur' ? 'ایک گھنٹے میں بہت زیادہ آفرز۔ حد ختم کرنے کے لیے اکاؤنٹ کی تصدیق کریں، یا بعد میں کوشش کریں۔' : 'تجاوزت عدد العروض المسموح في الساعة. وثّق حسابك لإزالة الحد، أو حاول لاحقاً.')
         : L('Could not send the offer — please try again.', 'آفر نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال العرض — حاول مرة ثانية.'))
       console.error('offer insert', insertError)
@@ -475,6 +478,13 @@ export default function SupplierRFQPage() {
         const nx = (snap.openRfqs || []).find((x: any) => !done.has(x.id))
         if (nx) setNextRfq(nx.id)
       }
+    } catch {}
+    try {
+      const k = 'tsk_myprices_' + (actingId || user.id)
+      const mem = JSON.parse(localStorage.getItem(k) || '{}')
+      for (const it of (itemPricesPayload || []) as any[]) if (Number(it.unit_price) > 0) mem[`${it.product_name}__${it.unit || ''}`] = Number(it.unit_price)
+      const keys = Object.keys(mem); if (keys.length > 400) for (const x of keys.slice(0, keys.length - 400)) delete mem[x]
+      localStorage.setItem(k, JSON.stringify(mem))
     } catch {}
     setSuccess(true); setSubmitting(false)
   }
@@ -592,6 +602,7 @@ export default function SupplierRFQPage() {
   }
 
   // pricing is open: no offer yet, request open and within its deadline, and allowed to quote
+  const isMember = !!actingId && !!user && actingId !== user.id // a company team member
   const pricingOpen = !existingOffer && rfq?.status === 'open' && !expired && verified
   const pricedCount = (myItems || []).filter((_: any, i: number) => parseFloat(itemForms[i]?.line_total) > 0).length
   // why the send button is disabled (shown under it and on the phone bar)
@@ -689,6 +700,10 @@ export default function SupplierRFQPage() {
             </h3>
             <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString('en-US')} {SAR}{existingOffer.status === 'rejected' && rfq.status === 'closed' ? ` — ${L('thanks for participating', 'شرکت کا شکریہ', 'شكراً لمشاركتك')}` : ''}</p>
 
+            {isMember && existingOffer.submitted_by && (
+              <p className="text-xs font-semibold text-gray-500 mt-1">{existingOffer.submitted_by === user?.id ? L('Sent by you', 'آپ نے بھیجی', 'أرسلتَه أنت') : L('Sent by a colleague from your company', 'آپ کی کمپنی کے ساتھی نے بھیجی', 'أرسله زميل من فريق شركتك')}</p>
+            )}
+
             {/* المواد التي سعّرتها — كل مادة وسعرها (واضحة للمورد) */}
             {Array.isArray(existingOffer.item_prices) && existingOffer.item_prices.length > 0 && (
               <div className="mt-4 text-right border border-gray-200 rounded-xl overflow-hidden bg-white">
@@ -754,6 +769,9 @@ export default function SupplierRFQPage() {
             {/* نافذة الـ١٥ دقيقة: تعديل/إلغاء العرض بعد إرساله */}
             {canEditOffer && (
               <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-right">
+                {isMember && existingOffer.submitted_by && existingOffer.submitted_by !== user?.id && (
+                  <div className="text-xs font-bold text-amber-800 mb-2">{L('This is a colleague\'s offer — check with them before editing or cancelling it.', 'یہ ساتھی کی آفر ہے — بدلنے یا منسوخ کرنے سے پہلے ان سے بات کریں۔', 'هذا عرض زميلك؛ تواصل معه قبل تعديله أو إلغائه.')}</div>
+                )}
                 <div className="text-xs text-gray-600 mb-2 leading-relaxed">
                   ⏱ <strong>{L(`You have ${editMinsLeft} minutes`, `آپ کے پاس ${editMinsLeft} منٹ ہیں`, `لديك ${editMinsLeft} دقيقة`)}</strong> {L('to edit or cancel your offer. Cancelling deletes the current offer so you can price again (add a material you missed or change prices). After that, the offer stays fixed until the buyer decides.', 'اپنی آفر میں ترمیم یا منسوخی کے لیے۔ منسوخ کرنے سے موجودہ آفر حذف ہو جائے گی اور آپ دوبارہ قیمت دے سکیں گے (بھولا ہوا مال شامل کریں یا قیمتیں بدلیں)۔ وقت ختم ہونے کے بعد آفر خریدار کے فیصلے تک ویسی ہی رہے گی۔', 'لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتستطيع التسعير من جديد (إضافة مادة نسيتها أو تعديل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.')}
                 </div>
@@ -899,10 +917,14 @@ export default function SupplierRFQPage() {
                                     <span className="text-xs text-amber-800 flex-1 min-w-[12rem]">
                                       <Glyph e="⚠" /> <b>{L('Not specified by the buyer:', 'خریدار نے نہیں بتایا:', 'لم يحدّد المشتري:')}</b> {nt.missing.join(L(', ', '، ', '، '))}
                                     </span>
+                                    {isMember ? (
+                                      <span className="text-xs font-semibold text-gray-500">{L('Questions to the buyer go through the account owner.', 'خریدار سے سوال اکاؤنٹ کے مالک کے ذریعے ہوتے ہیں۔', 'الأسئلة للمشتري تمرّ عبر مالك الحساب.')}</span>
+                                    ) : (
                                     <button type="button" onClick={() => askBuyer(it, nt.missing)} disabled={asking === Number(it.item_index ?? i)}
                                       className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-50" style={{ background: '#0B2438' }}>
                                       <Glyph e="💬" /> {L('Ask the buyer', 'خریدار سے پوچھیں', 'اسأل المشتري')}
                                     </button>
+                                    )}
                                   </div>
                                 )}
                               </div>
@@ -920,6 +942,7 @@ export default function SupplierRFQPage() {
                             <div className="relative flex-1 min-w-[11rem]">
                               {sameUnit(form, i) ? (
                                 <input type="number" inputMode="decimal" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
+                                  data-unit-price enterKeyHint="next" onKeyDown={(e: any) => { if (e.key !== 'Enter') return; e.preventDefault(); const all = Array.from(document.querySelectorAll('input[data-unit-price]')) as HTMLInputElement[]; const nx = all[all.indexOf(e.currentTarget) + 1]; if (nx) nx.focus(); else e.currentTarget.blur() }}
                                   aria-label={L(`Unit price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} فی یونٹ قیمت`, `سعر الوحدة لـ ${getProductLabel(it.product_name, locale)}`)}
                                   className="input-field font-bold pe-20" placeholder={L(`Price per ${getUnitLabel(it.unit, locale)}`, `فی ${getUnitLabel(it.unit, locale)} قیمت`, `سعر ${getUnitLabel(it.unit, locale) || 'الوحدة'} الواحد`)} min="0" step="any" />
                               ) : (

@@ -174,11 +174,15 @@ export default function SupplierTeamPage() {
           }} L={L} />
         )}
 
-        <p className="text-[11px] text-gray-400 leading-relaxed">
-          {L('Note: after an offer is accepted, the deal (delivery, invoice) and conversations with the buyer are handled from the company owner account.',
-            'نوٹ: آفر قبول ہونے کے بعد ڈیل کمپنی مالک کے اکاؤنٹ سے ہوتی ہے۔',
-            'ملاحظة: بعد قبول العرض، تُدار الصفقة (التوصيل والفاتورة) والمحادثات مع المشتري من حساب مالك الشركة.')}
-        </p>
+        {/* what a team member can and cannot do (persona review: the old note contradicted the deal page) */}
+        <div className="text-[12px] text-gray-600 leading-relaxed rounded-xl bg-gray-50 border border-gray-200 p-3">
+          <div className="font-bold mb-1" style={{ color: '#0B2438' }}>{L('What team members can do', 'ٹیم ممبر کیا کر سکتے ہیں', 'ما يستطيعه أعضاء الفريق')}</div>
+          <ul className="list-disc ps-5 space-y-0.5">
+            <li>{L('Price requests in the company name; each offer shows who sent it.', 'کمپنی کے نام سے قیمت دینا؛ ہر آفر پر بھیجنے والے کا نام۔', 'تسعير الطلبات باسم الشركة، ويظهر على كل عرض من أرسله.')}</li>
+            <li>{L('After the buyer chooses an offer: confirm delivery and attach the invoice.', 'خریدار کے انتخاب کے بعد: ڈیلیوری کی تصدیق اور انوائس لگانا۔', 'بعد اختيار المشتري للعرض: تأكيد التسليم وإرفاق الفاتورة.')}</li>
+            <li>{L('Only the account owner: conversations with buyers, specialties, branches and the company profile.', 'صرف اکاؤنٹ کا مالک: خریداروں سے بات چیت، سامان، شاخیں اور کمپنی پروفائل۔', 'لمالك الحساب فقط: المحادثات مع المشترين، والتخصصات، والفروع، وملف الشركة.')}</li>
+          </ul>
+        </div>
       </div>
     </AppShell>
   )

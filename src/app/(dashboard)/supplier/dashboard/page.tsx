@@ -78,6 +78,8 @@ export default function SupplierDashboard() {
   const [pricesCount, setPricesCount] = useState<any>(null)
   const [openRfqs, setOpenRfqs] = useState<any[]>([])
   const [myOffers, setMyOffers] = useState<any[]>([])
+  // company team: who sent each offer (offers.submitted_by → name), so colleagues don't price twice
+  const [team, setTeam] = useState<{ me: string; company: string; names: Record<string, string> } | null>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('rfqs')
   // ?tab=offers opens «عروضي» (from «عروضي وصفقاتي»)
@@ -118,6 +120,14 @@ export default function SupplierDashboard() {
       const actPromise = Promise.resolve(supabase.rpc('acting_uid')).then((x: any) => (x?.data as string) || session.user.id).catch(() => session.user.id)
       const actId: string = snap?.actId || await actPromise
       setIsMember(actId !== session.user.id)
+      // a company with team members: names for «أرسله …» (fails quietly for an independent seller)
+      Promise.resolve(supabase.rpc('list_company_team')).then(({ data }: any) => {
+        const members = (data?.ok && Array.isArray(data.members)) ? data.members : []
+        if (!members.length) return
+        const names: Record<string, string> = {}
+        for (const m of members) names[m.user_id] = m.name || ''
+        setTeam({ me: session.user.id, company: actId, names })
+      }).catch(() => {})
       // Speed: the database is far from our users (~1 s a request), so everything that only needs
       // the company id goes out at once instead of one after another (was 11 sequential requests).
       const [
@@ -253,6 +263,16 @@ export default function SupplierDashboard() {
   if (loading) return <PageLoader />
 
   const offeredRfqIds = new Set(myOffers.map((o: any) => o.rfq_id)) // RFQs the supplier already bid on
+  const offerByRfq: Record<string, any> = {}
+  for (const o of myOffers) offerByRfq[o.rfq_id] = o
+  // «أرسلتَه أنت» / «أرسله أحمد» / «أرسله مالك الحساب» — only for a company that has team members
+  const sentBy = (o: any): string => {
+    if (!team || !o?.submitted_by) return ''
+    if (o.submitted_by === team.me) return L('Sent by you', 'آپ نے بھیجی', 'أرسلتَه أنت')
+    if (o.submitted_by === team.company) return L('Sent by the account owner', 'اکاؤنٹ کے مالک نے بھیجی', 'أرسله مالك الحساب')
+    const n = team.names[o.submitted_by]
+    return n ? L(`Sent by ${n}`, `${n} نے بھیجی`, `أرسله ${n}`) : ''
+  }
   const accepted = myOffers.filter((o: any) => o.status === 'accepted').length
   const pending = myOffers.filter((o: any) => o.status === 'pending').length
   const totalRevenue = myOffers.filter((o: any) => o.status === 'accepted').reduce((s: any, o: any) => s + (o.total_price || 0), 0)
@@ -671,7 +691,7 @@ export default function SupplierDashboard() {
                         </div>
                       </div>
                       {offeredRfqIds.has(rfq.id)
-                        ? <div className="text-white text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#0F6E56' }}>{t.offerSubmitted}</div>
+                        ? <div className="text-end"><div className="text-white text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#0F6E56' }}>{t.offerSubmitted}</div>{sentBy(offerByRfq[rfq.id]) && <div className="text-[11px] font-semibold text-gray-500 mt-1">{sentBy(offerByRfq[rfq.id])}</div>}</div>
                         : <div className="text-[#071827] text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#D4A543' }}>{t.submitOffer}</div>}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium flex-wrap">
@@ -740,6 +760,7 @@ export default function SupplierDashboard() {
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
                       {offer.delivery_days && <span><Glyph e="📦" /> {offer.delivery_days} {t.day}</span>}
                       {offer.rfq?.region && <span><Glyph e="📍" /> {getRegionLabel(offer.rfq.region, locale)}</span>}
+                      {sentBy(offer) && <span className="font-semibold text-gray-500">{sentBy(offer)}</span>}
                     </div>
                     <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#D4A543' }}>
                       {offer.status === 'accepted'
