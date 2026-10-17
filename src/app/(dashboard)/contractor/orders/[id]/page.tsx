@@ -10,6 +10,7 @@ import { SECTOR_LABELS, getProductLabel, getUnitLabel } from '@/types'
 import { useTranslation } from '@/i18n'
 import { rfqRef } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
+import { paymentTermsLabel } from '@/lib/paymentTerms'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -296,6 +297,12 @@ export default function OrderDetailPage() {
                 <span>{rfq.vat_invoice_required ? <Glyph e="✅" /> : <Glyph e="❌" />}</span>
                 <span>{rfq.vat_invoice_required ? L('Tax invoice required', 'ٹیکس انوائس درکار ہے', 'فاتورة ضريبية مطلوبة') : L('Tax invoice not required', 'ٹیکس انوائس درکار نہیں', 'فاتورة ضريبية غير مطلوبة')}</span>
               </div>
+              {offer.payment_terms && (
+                <div className="flex items-center gap-2">
+                  <span><Glyph e="💳" /></span>
+                  <span>{L('Payment terms:', 'ادائیگی کی شرائط:', 'شروط الدفع:')} <b>{paymentTermsLabel(offer.payment_terms, locale)}</b></span>
+                </div>
+              )}
               {offer.delivery_days && (
                 <div className="flex items-center gap-2">
                   <span><Glyph e="📦" /></span>

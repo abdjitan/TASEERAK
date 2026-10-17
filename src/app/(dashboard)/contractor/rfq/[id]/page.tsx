@@ -19,6 +19,7 @@ import { TIERS, tierLabel, normTier, sourceLabel, availabilityLabel, isDirectSou
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { paymentTermsLabel } from '@/lib/paymentTerms'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -632,6 +633,7 @@ export default function RFQDetailPage() {
                                   <div className="text-[11px] text-gray-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                                     {Number(b.entry.unit_price) > 0 && <span>{Number(b.entry.unit_price).toLocaleString('en-US')} / {getUnitLabel(b.entry.unit || it.unit, locale)}</span>}
                                     {(b.entry.delivery_days ?? b.offer.delivery_days) ? <span><Glyph e="📦" /> {b.entry.delivery_days ?? b.offer.delivery_days} {L('days', 'دن', 'يوم')}</span> : null}
+                                    {b.offer.payment_terms ? <span><Glyph e="💳" /> {paymentTermsLabel(b.offer.payment_terms, locale)}</span> : null}
                                     {b.offer.supplier?.city && <span><Glyph e="📍" /> {b.offer.supplier.city}</span>}
                                     {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title={L('Distance from the delivery location', 'ڈیلیوری کی جگہ سے فاصلہ', 'المسافة من موقع التوصيل')}><Glyph e="📏" /> {km < 1 ? '<1' : Math.round(km)} {L('km', 'کلومیٹر', 'كم')}</span> : null })()}
                                     {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]"><Glyph e="⚙" /> {b.entry.specification}</span>}
@@ -876,6 +878,7 @@ export default function RFQDetailPage() {
                 <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
                   {offer.unit_price && <span>{L('Unit price:', 'فی یونٹ قیمت:', 'سعر الوحدة:')} {offer.unit_price} {SAR}</span>}
                   {offer.delivery_days && <span><Glyph e="📦" /> {L('Delivery:', 'ڈیلیوری:', 'التوصيل:')} {offer.delivery_days} {L('days', 'دن', 'يوم')}</span>}
+                  {offer.payment_terms && <span><Glyph e="💳" /> {paymentTermsLabel(offer.payment_terms, locale)}</span>}
                 </div>
 
                 {/* تسعير بند-بند: سعر كل مادة */}

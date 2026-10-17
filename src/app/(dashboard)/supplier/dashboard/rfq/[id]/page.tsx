@@ -20,6 +20,7 @@ import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf, WARRANTY_OPTIONS
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { PAYMENT_TERMS } from '@/lib/paymentTerms'
 
 export default function SupplierRFQPage() {
   const { id } = useParams()
@@ -317,6 +318,7 @@ export default function SupplierRFQPage() {
   const [extras, setExtras] = useState([{ label: '', amount: '' }])
   // delivery requested by the buyer: how the supplier charges it (null = not answered)
   const [delivMode, setDelivMode] = useState<'included' | 'free' | 'amount' | null>(null)
+  const [payTerms, setPayTerms] = useState<string | null>(null) // offers.payment_terms (optional)
   const [delivAmount, setDelivAmount] = useState('')
   const [showOtherExtras, setShowOtherExtras] = useState(false)
   // هل السعر المُدخل يشمل ضريبة القيمة المضافة 15%؟ — اختيار صريح بلا قيمة افتراضية (null = لم يُحدَّد بعد)،
@@ -445,6 +447,7 @@ export default function SupplierRFQPage() {
       notes: [delivNote, notes].filter(Boolean).join('\n') || null,
       attributes: Object.keys(attrObj).length > 0 ? attrObj : null,
       extra_charges: validExtras.length > 0 ? validExtras : null,
+      payment_terms: payTerms,
       attachment_url: attachUrl,
       attachment_name: attachName,
     })
@@ -1148,6 +1151,18 @@ export default function SupplierRFQPage() {
                     ? L('The buyer requested delivery — say how you charge it.', 'خریدار نے ڈیلیوری طلب کی — بتائیں کیسے چارج کریں گے۔', 'طلب المشتري التوصيل — حدّد كيف تحتسب تكلفته.')
                     : L('Optional charges added on top of the goods price.', 'سامان کی قیمت کے علاوہ اختیاری چارجز۔', 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
                 </p>
+                {/* شروط الدفع (اختياري) — تظهر للمشتري على العرض وأمر الشراء */}
+                <div className="mb-3">
+                  <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="💳" /> {L('Payment terms (optional)', 'ادائیگی کی شرائط (اختیاری)', 'شروط الدفع (اختياري)')}</div>
+                  <div role="radiogroup" className="flex flex-wrap gap-2">
+                    {PAYMENT_TERMS.map(pt => (
+                      <button key={pt.key} type="button" role="radio" aria-checked={payTerms === pt.key} onClick={() => setPayTerms(payTerms === pt.key ? null : pt.key)}
+                        className={`px-3 py-2 rounded-xl border-2 text-sm font-bold ${payTerms === pt.key ? 'border-[#0F6E56] bg-[#0F6E56]/5 text-[#0F6E56]' : 'border-gray-200 bg-white text-gray-600'}`}>
+                        {locale === 'en' ? pt.en : locale === 'ur' ? pt.ur : pt.ar}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 {rfq.delivery_required && (
                   <div className="mb-3">
                     <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="🚚" /> {L('Delivery cost', 'ڈیلیوری کی لاگت', 'تكلفة التوصيل')}</div>
