@@ -80,6 +80,8 @@ export default function SpecialtiesPage() {
   const T = txt[locale] || txt.ar
 
   const [user, setUser] = useState<any>(null)
+  const [isMember, setIsMember] = useState(false) // team member: sees the company's list, the owner edits it
+  const [msgErr, setMsgErr] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
@@ -126,11 +128,15 @@ export default function SpecialtiesPage() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
+      // a team member works for the company: read the company's specialties, not the personal account's
+      const { data: act } = await supabase.rpc('acting_uid')
+      const actId = (act as any) || session.user.id
+      setIsMember(actId !== session.user.id)
 
-      const { data: secs } = await supabase.from('profile_sectors').select('sector').eq('profile_id', session.user.id)
+      const { data: secs } = await supabase.from('profile_sectors').select('sector').eq('profile_id', actId)
       setMySectors((secs || []).map(s => s.sector))
 
-      const { data: specs } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', session.user.id)
+      const { data: specs } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', actId)
       setMySpecialties((specs || []).map(s => s.specialty))
 
       const { data: reqs } = await supabase.from('material_requests')
@@ -138,10 +144,10 @@ export default function SpecialtiesPage() {
       setMyRequests(reqs || [])
 
       // اقرأ نشاط السجل التجاري — وحدّد التخصصات تلقائياً أول مرة (إن لم يحفظ المورد شيئاً بعد)
-      const { data: prof } = await supabase.from('profiles').select('cr_activity, company_name_ar').eq('id', session.user.id).single()
+      const { data: prof } = await supabase.from('profiles').select('cr_activity, company_name_ar').eq('id', actId).single()
       setCrActivity(prof?.cr_activity || '')
       setCompanyName(prof?.company_name_ar || '')
-      if (prof?.cr_activity && (specs || []).length === 0 && (secs || []).length === 0) {
+      if (actId === session.user.id && prof?.cr_activity && (specs || []).length === 0 && (secs || []).length === 0) {
         analyzeFromCR(prof.cr_activity, prof.company_name_ar, true)
       }
 
@@ -168,7 +174,8 @@ export default function SpecialtiesPage() {
   }
 
   async function handleSave() {
-    setSaving(true); setMsg('')
+    if (isMember) return
+    setSaving(true); setMsg(''); setMsgErr(false)
     const supabase = createClient()
 
     // حفظ ذرّي: حذف + إضافة داخل معاملة واحدة على الخادم — لو فشلت الإضافة يتراجع الحذف
@@ -178,7 +185,7 @@ export default function SpecialtiesPage() {
       p_specialties: mySpecialties,
     })
     setSaving(false)
-    if (error) { setMsg('تعذّر الحفظ، حاول مرة أخرى'); return }
+    if (error) { setMsgErr(true); setMsg(locale === 'en' ? 'Could not save — please try again.' : locale === 'ur' ? 'محفوظ نہیں ہو سکا — دوبارہ کوشش کریں۔' : 'تعذّر الحفظ، حاول مرة أخرى.'); return }
     setMsg(T.saved)
     setTimeout(() => { window.location.href = '/supplier/dashboard' }, 1200)
   }
@@ -339,12 +346,18 @@ export default function SpecialtiesPage() {
 
         {/* Save */}
         <div className="sticky bottom-4 mt-6">
-          {msg && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl p-3 mb-3 text-center">{msg}</div>}
+          {msg && <div role={msgErr ? 'alert' : undefined} className={`text-sm rounded-xl p-3 mb-3 text-center border ${msgErr ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>{msg}</div>}
+          {isMember ? (
+            <div className="rounded-xl p-3 text-sm text-center bg-white border border-gray-200 text-gray-600 shadow">
+              {locale === 'en' ? "These are your company's specialties. The account owner edits them." : locale === 'ur' ? 'یہ آپ کی کمپنی کا سامان ہے۔ اکاؤنٹ کا مالک اسے بدلتا ہے۔' : 'هذه تخصصات شركتك، ويعدّلها مالك الحساب.'}
+            </div>
+          ) : (
           <button onClick={handleSave} disabled={saving}
-            className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
-            style={{ background: '#D4A543' }}>
+            className="w-full py-4 rounded-xl font-bold text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
+            style={{ background: '#D4A543', color: '#071827' }}>
             {saving ? T.saving : `${T.save} (${mySpecialties.length})`}
           </button>
+          )}
         </div>
       </div>
     </AppShell>

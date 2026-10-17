@@ -12,7 +12,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
-import { getSubCategoryLabel, getProductLabel, getUnitLabel } from '@/types'
+import { getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel } from '@/types'
 import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
 import { isSubscribed, isLaunchFree } from '@/lib/plans'
@@ -31,7 +31,7 @@ const txt = {
     tabRfqs: 'طلبات التسعير', tabOffers: 'عروضي',
     noRfqs: 'لا توجد طلبات مفتوحة الآن', noRfqsSub: 'تأكّد أن تخصصاتك وموقعك مكتملة ليصلك أول طلب مطابق — عادةً تصل الطلبات خلال ساعات، وسننبّهك فوراً.',
     noOffers: 'لم تقدم أي عروض بعد', noOffersSub: 'تصفح طلبات التسعير وقدم أول عرض',
-    submitOffer: 'تقديم عرض →', offerSubmitted: '✓ تم تقديم عرضك — راجِعه', accepted: '✓ مقبول', rejected: '✕ مرفوض', pending: 'بانتظار قرار المشتري',
+    submitOffer: 'سعّر الآن ←', offerSubmitted: '✓ تمّ إرسال العرض — راجِعه', accepted: '✓ مقبول', rejected: 'لم يُختر', pending: 'بانتظار قرار المشتري',
     day: 'يوم', offer: 'عرض', loading: 'جارٍ التحميل...',
     sar: 'ر.س',
   },
@@ -42,7 +42,7 @@ const txt = {
     tabRfqs: 'RFQ Requests', tabOffers: 'My Offers',
     noRfqs: 'No open requests', noRfqsSub: 'You will be notified when new requests arrive',
     noOffers: 'No offers submitted yet', noOffersSub: 'Browse RFQs and submit your first offer',
-    submitOffer: 'Submit Offer →', offerSubmitted: '✓ Offer submitted — review', accepted: '✓ Accepted', rejected: '✕ Rejected', pending: 'Pending',
+    submitOffer: 'Price now →', offerSubmitted: '✓ Offer sent — review', accepted: '✓ Accepted', rejected: 'Not chosen', pending: 'Pending',
     day: 'days', offer: 'offer', loading: 'Loading...',
     sar: 'SAR',
   },
@@ -53,7 +53,7 @@ const txt = {
     tabRfqs: 'قیمت کی درخواستیں', tabOffers: 'میری پیشکشیں',
     noRfqs: 'کوئی کھلی درخواست نہیں', noRfqsSub: 'نئی درخواستیں آنے پر آپ کو مطلع کیا جائے گا',
     noOffers: 'ابھی تک کوئی پیشکش نہیں', noOffersSub: 'درخواستیں دیکھیں اور پہلی پیشکش جمع کریں',
-    submitOffer: 'پیشکش جمع کریں →', offerSubmitted: '✓ پیشکش جمع ہو گئی — دیکھیں', accepted: '✓ قبول', rejected: '✕ مسترد', pending: 'زیر التواء',
+    submitOffer: 'ابھی قیمت دیں ←', offerSubmitted: '✓ آفر بھیج دی گئی — دیکھیں', accepted: '✓ قبول', rejected: 'منتخب نہیں ہوئی', pending: 'زیر التواء',
     day: 'دن', offer: 'پیشکش', loading: 'لوڈ ہو رہا ہے...',
     sar: 'ریال',
   },
@@ -324,7 +324,7 @@ export default function SupplierDashboard() {
                   className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 bg-white/[.07] border border-white/10 hover:bg-white/[.12] transition-colors">
                   <span className="min-w-0">
                     <span className="block text-sm font-bold text-white truncate">{rfqDisplayName(rfq, locale, rfq._myItemCount)}</span>
-                    <span className="block text-[11px] text-white/60 truncate">{rfq.region}{rfq.expires_at ? ' · ' + formatTimeLeft(rfq.expires_at, locale) : ''}</span>
+                    <span className="block text-[11px] text-white/60 truncate">{getRegionLabel(rfq.region, locale)}{rfq.expires_at ? ' · ' + formatTimeLeft(rfq.expires_at, locale) : ''}</span>
                   </span>
                   {isFresh(rfq) && <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#F5C55B' }}>{L('New', 'نیا', 'جديد')}</span>}
                 </Link>
@@ -464,7 +464,7 @@ export default function SupplierDashboard() {
         </div>
 
         {/* نقاط اكتمال الملف + خطوات رفعها — مخفية على الجوال افتراضياً كي تظهر الطلبات أولاً */}
-        {(() => {
+        {!isMember && (() => {
           const checks = [
             { ok: profile?.verification_status === 'verified', w: 35, label: L('Verify your CR', 'اپنا سی آر تصدیق کریں', 'وثّق سجلّك التجاري'), href: '/settings' },
             { ok: hasSpecialties, w: 25, label: L('Add specialties', 'مہارتیں شامل کریں', 'أضف تخصصاتك'), href: '/supplier/specialties' },
@@ -510,7 +510,8 @@ export default function SupplierDashboard() {
           )
         })()}
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
+        {/* numbers and the sales chart wait for the first offer (persona review: zeros on day one) */}
+        {myOffers.length > 0 && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
             { label: t.openRfqs, value: openRfqs.length, icon: 'orders', tone: 'brand', go: 'rfqs' },
             { label: t.pendingOffers, value: pending, icon: 'waiting', tone: 'warning', go: 'offers' },
@@ -526,10 +527,10 @@ export default function SupplierDashboard() {
               <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
             </button>
           ))}
-        </div>
+        </div>}
 
         {/* مبيعاتك (اختيار المالك: دائرة نتائج العروض + بطاقات بأسهم مقارنة بالشهر الماضي) */}
-        {(() => {
+        {myOffers.length > 0 && (() => {
           const rejected = myOffers.filter((o: any) => o.status === 'rejected').length
           const totalOffers = accepted + pending + rejected
           const C = 2 * Math.PI * 58
@@ -675,7 +676,7 @@ export default function SupplierDashboard() {
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium flex-wrap">
                       <span><Glyph e="📦" /> {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>
-                      <span><Glyph e="📍" /> {rfq.region}</span>
+                      <span><Glyph e="📍" /> {getRegionLabel(rfq.region, locale)}</span>
                       {rfq.created_at && <span><Glyph e="🗓" /> {formatDateTime(rfq.created_at)}</span>}
                       {rfq.specification && <span className="truncate max-w-[180px]"><Glyph e="⚙" /> {rfq.specification}</span>}
                       <span><Glyph e="💬" /> {rfq.offer_count || 0} {t.offer}</span>
@@ -738,7 +739,7 @@ export default function SupplierDashboard() {
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
                       {offer.delivery_days && <span><Glyph e="📦" /> {offer.delivery_days} {t.day}</span>}
-                      {offer.rfq?.region && <span><Glyph e="📍" /> {offer.rfq.region}</span>}
+                      {offer.rfq?.region && <span><Glyph e="📍" /> {getRegionLabel(offer.rfq.region, locale)}</span>}
                     </div>
                     <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#D4A543' }}>
                       {offer.status === 'accepted'

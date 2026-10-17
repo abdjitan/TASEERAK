@@ -30,19 +30,33 @@ export function deadlineUrgency(expiresAt?: string | null): DeadlineUrgency {
   return 'normal'
 }
 
-// "2 يوم و3 ساعة" / "5 ساعة" / "40 دقيقة" / "انتهت المهلة"
+// "يومان و3 ساعات" / "5 ساعات" / "40 دقيقة" / "انتهت المهلة" (ur: "2 دن 3 گھنٹے")
 export function formatTimeLeft(expiresAt?: string | null, locale: string = 'ar'): string {
   const m = msLeft(expiresAt)
   if (m === null) return ''
-  const ar = locale !== 'en'
-  if (m <= 0) return ar ? 'انتهت المهلة' : 'Expired'
+  if (m <= 0) return locale === 'en' ? 'Expired' : locale === 'ur' ? 'مہلت ختم' : 'انتهت المهلة'
   const totalMins = Math.floor(m / 60000)
   const days = Math.floor(totalMins / 1440)
   const hours = Math.floor((totalMins % 1440) / 60)
   const minutes = totalMins % 60
-  if (days > 0) return ar ? `${days} يوم${hours ? ` و${hours} ساعة` : ''}` : `${days}d ${hours}h`
-  if (hours > 0) return ar ? `${hours} ساعة${minutes ? ` و${minutes} د` : ''}` : `${hours}h ${minutes}m`
-  return ar ? `${minutes} دقيقة` : `${minutes}m`
+  if (locale === 'en') {
+    if (days > 0) return `${days}d ${hours}h`
+    if (hours > 0) return `${hours}h ${minutes}m`
+    return `${minutes}m`
+  }
+  if (locale === 'ur') {
+    if (days > 0) return `${days} دن${hours ? ` ${hours} گھنٹے` : ''}`
+    if (hours > 0) return `${hours} گھنٹے${minutes ? ` ${minutes} منٹ` : ''}`
+    return `${minutes} منٹ`
+  }
+  // Arabic counted nouns: يوم / يومان / 3 أيام / 11 يوماً
+  const count = (n: number, one: string, two: string, few: string, many: string) =>
+    n === 1 ? one : n === 2 ? two : n <= 10 ? `${n} ${few}` : `${n} ${many}`
+  const d = (n: number) => count(n, 'يوم', 'يومان', 'أيام', 'يوماً')
+  const h = (n: number) => count(n, 'ساعة', 'ساعتان', 'ساعات', 'ساعة')
+  if (days > 0) return `${d(days)}${hours ? ` و${h(hours)}` : ''}`
+  if (hours > 0) return `${h(hours)}${minutes ? ` و${minutes} د` : ''}`
+  return `${minutes} دقيقة`
 }
 
 // Gregorian, Western digits, e.g. "2026/06/13 14:30"

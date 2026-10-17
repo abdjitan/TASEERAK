@@ -68,7 +68,7 @@ export default function SupplierBranchesPage() {
   if (loading) return <PageLoader />
 
   return (
-    <AppShell title="فروع الشركة" nav={getNav('supplier', 'ar', '/supplier/branches')} dir={dir}>
+    <AppShell title="فروع الشركة" nav={getNav('supplier', locale, '/supplier/branches')} dir={dir}>
       <div className="max-w-4xl mx-auto">
         <div className="mb-4">
           <div className="flex items-center gap-3 mb-1">

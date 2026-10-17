@@ -169,7 +169,8 @@ export default function SupplierRFQPage() {
       setIsIndependent(indep)
       // An independent seller without a VAT number is not VAT-registered: no VAT question, the price
       // they type is the final price the buyer pays (persona review: «لا تُضاف 15% فوق سعري»).
-      if (indep && !(me?.vat_number || '').trim()) { setNoVat(true); setVatIncluded(true) }
+      if (!(me?.vat_number || '').trim()) { setNoVat(true); setVatIncluded(true) }
+      else { try { const v = localStorage.getItem('tsk_vat_incl'); if (v === '1' || v === '0') setVatIncluded(v === '1') } catch {} }
       if (!indep) setSourceType('own_stock')
 
       // ✅ المورد يرى/يسعّر فقط المواد ضمن تخصصه — لا تظهر له مواد قطاع لا يخدمه
@@ -195,7 +196,7 @@ export default function SupplierRFQPage() {
           if (priceMap[key] == null) priceMap[key] = Number(pr.price)
         }
         setItemForms(filtered.map((it: any) => {
-          const sp = priceMap[`${getProductLabel(it.product_name, locale)}__${it.unit || ''}`]
+          const sp = priceMap[`${it.product_name}__${it.unit || ''}`]
           if (sp > 0) { const q = Number(it.quantity) || 0; return { unit_price: String(sp), line_total: q > 0 ? String(+(sp * q).toFixed(2)) : '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '', autofilled: true } }
           return { unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '' }
         }))
@@ -288,8 +289,7 @@ export default function SupplierRFQPage() {
     const { data, error: e } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: actingId || user?.id })
     setAsking(null)
     if (e || !data) { setError(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }
-    const name = getProductLabel(it.product_name, locale)
-    const msg = L(`Hello, about «${name}»: could you specify ${missing.join(', ')}?`, `السلام علیکم، «${name}» کے بارے میں: کیا آپ ${missing.join('، ')} بتا سکتے ہیں؟`, `مرحباً، بخصوص «${getProductLabel(it.product_name, locale)}»: هل يمكنك تحديد ${missing.join('، ')}؟`)
+    const msg = `مرحباً، بخصوص «${it.product_name}»: هل يمكنك تحديد ${missing.join('، ')}؟`
     router.push(`/messages?c=${data}&msg=${encodeURIComponent(msg)}`)
   }
 
@@ -320,11 +320,11 @@ export default function SupplierRFQPage() {
   const [delivMode, setDelivMode] = useState<'included' | 'free' | 'amount' | null>(null)
   const [payTerms, setPayTerms] = useState<string | null>(null) // offers.payment_terms (optional)
   const [delivAmount, setDelivAmount] = useState('')
-  const [showOtherExtras, setShowOtherExtras] = useState(false)
   // هل السعر المُدخل يشمل ضريبة القيمة المضافة 15%؟ — اختيار صريح بلا قيمة افتراضية (null = لم يُحدَّد بعد)،
   // كي لا تُضاف 15% فوق سعر شامل دون أن ينتبه المورّد.
   const [vatIncluded, setVatIncluded] = useState<boolean | null>(null)
-  const [noVat, setNoVat] = useState(false) // independent seller, not VAT-registered
+  const [noVat, setNoVat] = useState(false) // seller without a VAT number: the price is final
+  const [showMore, setShowMore] = useState(false) // «خيارات أخرى (اختياري)»
   // الإجمالي كما سيراه المشتري (صافٍ + ضريبة + إجمالي) — يُستخدم في التفصيل وفي ملخّص ما قبل الإرسال
   function offerTotals() {
     const goods = parseFloat(totalPrice) || 0
@@ -347,6 +347,10 @@ export default function SupplierRFQPage() {
     }
     if (isMultiItem && !allItemsPriced) {
       setError(L('Enter a price for at least one material before sending the offer.', 'آفر بھیجنے سے پہلے کم از کم ایک مال کی قیمت درج کریں۔', 'أدخل سعر مادة واحدة على الأقل قبل إرسال العرض.'))
+      return
+    }
+    if (rfq?.delivery_required && (!delivMode || (delivMode === 'amount' && !(parseFloat(delivAmount) > 0)))) {
+      setError(L('Say how you charge the delivery the buyer requested.', 'خریدار نے ڈیلیوری مانگی ہے — بتائیں اس کی لاگت کیسے ہوگی۔', 'حدّد تكلفة التوصيل الذي طلبه المشتري.'))
       return
     }
     if (vatIncluded === null) {
@@ -455,8 +459,9 @@ export default function SupplierRFQPage() {
 
     if (insertError) {
       setError((insertError.message || '').includes('offer_rate_limited')
-        ? (locale === 'en' ? 'Too many offers in the last hour. Verify your account to remove the limit, or try again later.' : locale === 'ur' ? 'ایک گھنٹے میں بہت زیادہ پیشکشیں۔ بعد میں کوشش کریں۔' : 'تجاوزت عدد العروض المسموح في الساعة. وثّق حسابك لإزالة الحد، أو حاول لاحقاً.')
-        : `${L('Error:', 'خرابی:', 'خطأ:')} ${insertError.message}`)
+        ? (locale === 'en' ? 'Too many offers in the last hour. Verify your account to remove the limit, or try again later.' : locale === 'ur' ? 'ایک گھنٹے میں بہت زیادہ آفرز۔ حد ختم کرنے کے لیے اکاؤنٹ کی تصدیق کریں، یا بعد میں کوشش کریں۔' : 'تجاوزت عدد العروض المسموح في الساعة. وثّق حسابك لإزالة الحد، أو حاول لاحقاً.')
+        : L('Could not send the offer — please try again.', 'آفر نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال العرض — حاول مرة ثانية.'))
+      console.error('offer insert', insertError)
       setSubmitting(false); return
     }
     try {
@@ -469,6 +474,7 @@ export default function SupplierRFQPage() {
         if (nx) setNextRfq(nx.id)
       }
     } catch {}
+    try { if (!noVat && vatIncluded !== null) localStorage.setItem('tsk_vat_incl', vatIncluded ? '1' : '0') } catch {}
     setSuccess(true); setSubmitting(false)
   }
 
@@ -494,7 +500,7 @@ export default function SupplierRFQPage() {
       attachTitle: 'إرفاق ملف (كتالوج / بيانات منتج)', attachHint: 'PDF، صورة، Excel — يصل للمشتري مع عرضك',
       attachBtn: 'اضغط لرفع كتالوج أو ملف المنتج', removeAttach: 'إزالة',
       offerNotes: 'ملاحظات إضافية', send: 'إرسال العرض ←', sending: 'جارٍ الإرسال...',
-      dismiss: 'تجاهل الطلب', dismissTitle: 'تجاهل هذا الطلب؟',
+      dismiss: 'هذا الطلب لا يناسبني', dismissTitle: 'تجاهل هذا الطلب؟',
       dismissSub: 'لن يظهر هذا الطلب مرة أخرى في قائمتك', dismissReason: 'سبب التجاهل (اختياري)',
       confirmDismiss: 'تأكيد التجاهل', cancel: 'إلغاء',
       attachedFile: 'ملف مواصفات مرفق', viewFile: 'عرض الملف',
@@ -516,7 +522,7 @@ export default function SupplierRFQPage() {
       attachTitle: 'Attach File (catalog / product data)', attachHint: 'PDF, image, Excel — sent to the buyer with your offer',
       attachBtn: 'Click to upload catalog or product file', removeAttach: 'Remove',
       offerNotes: 'Additional Notes', send: 'Send Offer →', sending: 'Sending...',
-      dismiss: 'Dismiss Request', dismissTitle: 'Dismiss this request?',
+      dismiss: 'This request is not for me', dismissTitle: 'Dismiss this request?',
       dismissSub: 'This request will not appear again in your list', dismissReason: 'Reason (optional)',
       confirmDismiss: 'Confirm Dismiss', cancel: 'Cancel',
       attachedFile: 'Spec file attached', viewFile: 'View File',
@@ -538,7 +544,7 @@ export default function SupplierRFQPage() {
       attachTitle: 'فائل منسلک کریں (کیٹلاگ)', attachHint: 'PDF، تصویر، Excel',
       attachBtn: 'کیٹلاگ یا فائل اپلوڈ کریں', removeAttach: 'ہٹائیں',
       offerNotes: 'اضافی نوٹس', send: 'پیشکش بھیجیں →', sending: 'بھیجا جا رہا ہے...',
-      dismiss: 'درخواست نظر انداز کریں', dismissTitle: 'یہ درخواست نظر انداز کریں؟',
+      dismiss: 'یہ درخواست میرے لیے نہیں', dismissTitle: 'یہ درخواست نظر انداز کریں؟',
       dismissSub: 'یہ درخواست دوبارہ نظر نہیں آئے گی', dismissReason: 'وجہ (اختیاری)',
       confirmDismiss: 'تصدیق کریں', cancel: 'منسوخ',
       attachedFile: 'تفصیلات فائل منسلک', viewFile: 'فائل دیکھیں',
@@ -587,6 +593,21 @@ export default function SupplierRFQPage() {
   // pricing is open: no offer yet, request open and within its deadline, and allowed to quote
   const pricingOpen = !existingOffer && rfq?.status === 'open' && !expired && verified
   const pricedCount = (myItems || []).filter((_: any, i: number) => parseFloat(itemForms[i]?.line_total) > 0).length
+  // why the send button is disabled (shown under it and on the phone bar)
+  function sendBlockReason(): string {
+    if (!rfq) return ''
+    return (isMultiItem && !allItemsPriced) || !totalPrice
+                ? (isMultiItem
+                  ? L('Enter a price for at least one material to send.', 'بھیجنے کے لیے کم از کم ایک مال کی قیمت درج کریں۔', 'أدخل سعر مادة واحدة على الأقل لتتمكّن من الإرسال.')
+                  : L('Enter the price to send.', 'بھیجنے کے لیے قیمت درج کریں۔', 'أدخل السعر لتتمكّن من الإرسال.'))
+                : rfq.delivery_required && (!delivMode || (delivMode === 'amount' && !(parseFloat(delivAmount) > 0)))
+                  ? L('Choose the delivery cost to send.', 'بھیجنے کے لیے ڈیلیوری کی لاگت منتخب کریں۔', 'حدّد تكلفة التوصيل لتتمكّن من الإرسال.')
+                : vatIncluded === null
+                  ? L('Choose whether your price includes VAT to send.', 'بھیجنے کے لیے منتخب کریں کہ قیمت میں ویٹ شامل ہے یا نہیں۔', 'حدّد هل يشمل سعرك الضريبة لتتمكّن من الإرسال.')
+                  : !sourceType
+                    ? L('Choose where this price comes from to send.', 'بھیجنے کے لیے قیمت کا ذریعہ منتخب کریں۔', 'حدّد مصدر السعر لتتمكّن من الإرسال.')
+                    : ''
+  }
   return (
     <AppShell title={L('Submit Offer', 'پیشکش', 'تقديم عرض')} nav={getNav('supplier', locale, '/supplier/dashboard')} dir={dir}>
       <div className="max-w-[1500px] mx-auto grid gap-5 items-start lg:grid-cols-[minmax(0,1.7fr)_minmax(340px,1fr)]">
@@ -793,7 +814,7 @@ export default function SupplierRFQPage() {
         ) : (
           <form id="offer-form" onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
             <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{T.submitOffer}</h3>
-            {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>}
+            {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>}
             <div className="space-y-4">
               {isMultiItem && myItems.length === 0 ? (
                 <div className="text-center py-6">
@@ -1151,31 +1172,10 @@ export default function SupplierRFQPage() {
                 <h3 className="font-extrabold" style={{ color: '#0B2438' }}><Glyph e="🧾" /> {L('Your offer', 'آپ کی آفر', 'عرضك')}</h3>
                 {isMultiItem && <span className="text-xs font-bold" style={{ color: pricedCount ? '#0F6E56' : '#9aa3b2' }}>{L(`${pricedCount} of ${myItems.length} priced`, `${myItems.length} میں سے ${pricedCount}`, `سعّرت ${pricedCount} من ${myItems.length}`)}</span>}
               </div>
-              {/* إضافات الفاتورة (توصيل/تركيب/رسوم) */}
+              {rfq.delivery_required && (
               <div className="border-t border-gray-100 pt-4">
-                <label className="block text-sm font-bold mb-1" style={{ color: '#0B2438' }}>
-                  <Glyph e="🧾" /> {L('Invoice extras (delivery / installation / fees)', 'انوائس اضافی (ڈیلیوری/تنصیب/فیس)', 'إضافات الفاتورة (توصيل / تركيب / رسوم)')}
-                </label>
-                <p className="text-xs text-gray-400 mb-3">
-                  {rfq.delivery_required
-                    ? L('The buyer requested delivery — say how you charge it.', 'خریدار نے ڈیلیوری طلب کی — بتائیں کیسے چارج کریں گے۔', 'طلب المشتري التوصيل — حدّد كيف تحتسب تكلفته.')
-                    : L('Optional charges added on top of the goods price.', 'سامان کی قیمت کے علاوہ اختیاری چارجز۔', 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
-                </p>
-                {/* شروط الدفع (اختياري) — تظهر للمشتري على العرض وأمر الشراء */}
-                <div className="mb-3">
-                  <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="💳" /> {L('Payment terms (optional)', 'ادائیگی کی شرائط (اختیاری)', 'شروط الدفع (اختياري)')}</div>
-                  <div role="radiogroup" className="flex flex-wrap gap-2">
-                    {PAYMENT_TERMS.map(pt => (
-                      <button key={pt.key} type="button" role="radio" aria-checked={payTerms === pt.key} onClick={() => setPayTerms(payTerms === pt.key ? null : pt.key)}
-                        className={`px-3 py-2 rounded-xl border-2 text-sm font-bold ${payTerms === pt.key ? 'border-[#0F6E56] bg-[#0F6E56]/5 text-[#0F6E56]' : 'border-gray-200 bg-white text-gray-600'}`}>
-                        {locale === 'en' ? pt.en : locale === 'ur' ? pt.ur : pt.ar}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                {rfq.delivery_required && (
-                  <div className="mb-3">
-                    <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="🚚" /> {L('Delivery cost', 'ڈیلیوری کی لاگت', 'تكلفة التوصيل')}</div>
+                  <div>
+                    <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="🚚" /> {L('Delivery cost', 'ڈیلیوری کی لاگت', 'تكلفة التوصيل')} <span className="text-red-500">*</span></div>
                     <div role="radiogroup" className="flex flex-wrap gap-2">
                       {([['included', L('Included in my price', 'قیمت میں شامل', 'مشمولة في سعري')], ['free', L('Free', 'مفت', 'مجاناً')], ['amount', L('An amount', 'رقم', 'مبلغ')]] as const).map(([k, label]) => (
                         <button key={k} type="button" role="radio" aria-checked={delivMode === k} onClick={() => setDelivMode(k)}
@@ -1187,31 +1187,8 @@ export default function SupplierRFQPage() {
                       )}
                     </div>
                   </div>
-                )}
-                {rfq.delivery_required && !showOtherExtras ? (
-                  <button type="button" onClick={() => setShowOtherExtras(true)} className="text-xs font-semibold" style={{ color: '#9D7425' }}>
-                    + {L('Other charges (installation, fees…)', 'دیگر چارجز', 'رسوم أخرى (تركيب، رسوم…)')}
-                  </button>
-                ) : (<>
-                <div className="space-y-2">
-                  {extras.map((ex: any, i: any) => (
-                    <div key={i} className="flex gap-2">
-                      <input value={ex.label} onChange={(e: any) => updateExtra(i, 'label', e.target.value)}
-                        className="input-field text-sm flex-1" placeholder={L('Item (e.g. Delivery)', 'آئٹم (مثلاً ڈیلیوری)', 'البند (مثال: توصيل)')} />
-                      <input type="number" value={ex.amount} onChange={(e: any) => updateExtra(i, 'amount', e.target.value)}
-                        className="input-field text-sm w-24" placeholder={L('Amount', 'رقم', 'المبلغ')} min="0" step="any" />
-                      {extras.length > 1 && (
-                        <button type="button" onClick={() => removeExtra(i)}
-                          className="w-10 min-h-[40px] grid place-items-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 shrink-0">×</button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#D4A543' }}>
-                  + {L('Add item', 'شامل کریں', 'إضافة بند')}
-                </button>
-                </>)}
               </div>
+              )}
               {/* ضريبة القيمة المضافة 15% — خيار: هل السعر يشملها؟ + تفصيل الإجمالي */}
               {(() => {
                 const { entered, net, vat, gross } = offerTotals()
@@ -1226,6 +1203,7 @@ export default function SupplierRFQPage() {
                     {noVat ? (
                       <p className="mb-3 text-xs rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-gray-600">
                         {L('You are not VAT-registered: your price is the final price the buyer pays, no VAT is added.', 'آپ ٹیکس میں رجسٹرڈ نہیں: آپ کی قیمت ہی حتمی قیمت ہے، ٹیکس شامل نہیں ہوگا۔', 'أنت غير مسجّل في ضريبة القيمة المضافة: سعرك هو السعر النهائي الذي يدفعه المشتري، ولا تُضاف عليه ضريبة.')}
+                        {' '}<Link href="/settings" className="font-bold text-[#9D7425] hover:underline">{L('VAT-registered? Add your VAT number', 'ٹیکس میں رجسٹرڈ ہیں؟ ٹیکس نمبر شامل کریں', 'مسجّل في الضريبة؟ أضف رقمك الضريبي')}</Link>
                       </p>
                     ) : (
                     <div className="mb-3">
@@ -1271,8 +1249,8 @@ export default function SupplierRFQPage() {
                   </div>
                 )
               })()}
-              {/* مصدر السعر + التوفّر: يظهران للمشتري، والعرض المنقول لا يُعرض كعرض مباشر */}
-              <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-3">
+              {isIndependent && (
+              <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1.5">
                     {L('Where does this price come from?', 'یہ قیمت کہاں سے ہے؟', 'من أين هذا السعر؟')}
@@ -1289,6 +1267,67 @@ export default function SupplierRFQPage() {
                   </div>
                   <p className="text-[11px] text-gray-400 mt-1">{L('The buyer sees this. A price you collected from someone else is shown as such, never as a direct quote.', 'خریدار یہ دیکھتا ہے۔ جو قیمت آپ کسی اور سے لے کر دیتے ہیں وہ اسی طرح دکھائی جاتی ہے، براہ راست آفر کے طور پر نہیں۔', 'يظهر هذا للمشتري. السعر الذي تنقله من جهة أخرى يُعرض كذلك، ولا يُعرض كعرض مباشر.')}</p>
                 </div>
+              </div>
+              )}
+              {/* everything optional folds away (persona review: about 30 controls on one phone screen) */}
+              <div className="border-t border-gray-100 pt-3">
+                <button type="button" onClick={() => setShowMore(!showMore)} aria-expanded={showMore}
+                  className="w-full flex items-center justify-between text-sm font-bold py-2" style={{ color: '#0B2438' }}>
+                  <span>{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات أخرى (اختياري)')}</span>
+                  <span className="text-xs font-semibold text-gray-400">{showMore ? '▴' : L('payment, availability, validity, notes ▾', 'ادائیگی، دستیابی، مدت، نوٹس ▾', 'الدفع، التجهيز، مدة السعر، ملاحظات ▾')}</span>
+                </button>
+                {showMore && (
+                <div className="space-y-4 pt-2">
+                {/* شروط الدفع (اختياري) — تظهر للمشتري على العرض وأمر الشراء */}
+                <div>
+                  <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="💳" /> {L('Payment terms (optional)', 'ادائیگی کی شرائط (اختیاری)', 'شروط الدفع (اختياري)')}</div>
+                  <div role="radiogroup" className="flex flex-wrap gap-2">
+                    {PAYMENT_TERMS.map(pt => (
+                      <button key={pt.key} type="button" role="radio" aria-checked={payTerms === pt.key} onClick={() => setPayTerms(payTerms === pt.key ? null : pt.key)}
+                        className={`px-3 py-2 rounded-xl border-2 text-sm font-bold ${payTerms === pt.key ? 'border-[#0F6E56] bg-[#0F6E56]/5 text-[#0F6E56]' : 'border-gray-200 bg-white text-gray-600'}`}>
+                        {locale === 'en' ? pt.en : locale === 'ur' ? pt.ur : pt.ar}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>{L('Other charges (installation, fees…)', 'دیگر چارجز (تنصیب، فیس…)', 'مبالغ أخرى (تركيب، رسوم…)')}</div>
+                <div className="space-y-2">
+                  {extras.map((ex: any, i: any) => (
+                    <div key={i} className="flex gap-2">
+                      <input value={ex.label} onChange={(e: any) => updateExtra(i, 'label', e.target.value)}
+                        className="input-field text-sm flex-1" placeholder={L('Item (e.g. Delivery)', 'آئٹم (مثلاً ڈیلیوری)', 'البند (مثال: توصيل)')} />
+                      <input type="number" value={ex.amount} onChange={(e: any) => updateExtra(i, 'amount', e.target.value)}
+                        className="input-field text-sm w-24" placeholder={L('Amount', 'رقم', 'المبلغ')} min="0" step="any" />
+                      {extras.length > 1 && (
+                        <button type="button" onClick={() => removeExtra(i)}
+                          className="w-10 min-h-[40px] grid place-items-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50 shrink-0">×</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#D4A543' }}>
+                  + {L('Add item', 'شامل کریں', 'إضافة بند')}
+                </button>
+                </div>
+                {!isIndependent && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5">
+                    {L('Where does this price come from?', 'یہ قیمت کہاں سے ہے؟', 'من أين هذا السعر؟')}
+                    {isIndependent && <span className="text-red-500"> *</span>}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {SOURCE_TYPES.map(o => (
+                      <button type="button" key={o.k} onClick={() => setSourceType(o.k)} aria-pressed={sourceType === o.k}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${sourceType === o.k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-[#0B2438]/40'}`}
+                        style={sourceType === o.k ? { background: '#0B2438' } : {}}>
+                        <SellerIcon name={o.icon} /> {locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-1">{L('The buyer sees this. A price you collected from someone else is shown as such, never as a direct quote.', 'خریدار یہ دیکھتا ہے۔ جو قیمت آپ کسی اور سے لے کر دیتے ہیں وہ اسی طرح دکھائی جاتی ہے، براہ راست آفر کے طور پر نہیں۔', 'يظهر هذا للمشتري. السعر الذي تنقله من جهة أخرى يُعرض كذلك، ولا يُعرض كعرض مباشر.')}</p>
+                </div>
+                )}
                 <div>
                   <label className="block text-xs font-bold text-gray-600 mb-1.5">{L('Availability', 'دستیابی', 'التوفّر')}</label>
                   <div className="flex flex-wrap gap-2">
@@ -1301,13 +1340,12 @@ export default function SupplierRFQPage() {
                     ))}
                   </div>
                 </div>
-              </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {L('Price valid for', 'قیمت کتنی دیر کے لیے درست ہے', 'مدة صلاحية السعر')}</label>
                 <div className="flex flex-wrap gap-2">
                   {[{ v: '1', l: L('24h', '24 گھنٹے', '٢٤ ساعة') }, { v: '3', l: L('3 days', '3 دن', '٣ أيام') }, { v: '7', l: L('1 week', '1 ہفتہ', 'أسبوع') }, { v: '30', l: L('1 month', '1 مہینہ', 'شهر') }].map((o) => (
                     <button type="button" key={o.v} onClick={() => setPriceValidity(o.v)}
-                      className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${priceValidity === o.v ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#D4A543]/40'}`}
+                      className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${priceValidity === o.v ? 'text-[#071827] border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#D4A543]/40'}`}
                       style={priceValidity === o.v ? { background: '#D4A543' } : {}}>{o.l}</button>
                   ))}
                 </div>
@@ -1318,24 +1356,21 @@ export default function SupplierRFQPage() {
                 <textarea value={notes} onChange={(e: any) => setNotes(e.target.value)}
                   className="input-field" rows={3} placeholder="..." />
               </div>
+                </div>
+                )}
+              </div>
             {(() => {
               // سبب تعطيل زر الإرسال يظهر صراحةً، وملخّص ما سيراه المشتري قبل الإرسال
-              const blockReason = (isMultiItem && !allItemsPriced) || !totalPrice
-                ? (isMultiItem
-                  ? L('Enter a price for at least one material to send.', 'بھیجنے کے لیے کم از کم ایک مال کی قیمت درج کریں۔', 'أدخل سعر مادة واحدة على الأقل لتتمكّن من الإرسال.')
-                  : L('Enter the total price to send.', 'بھیجنے کے لیے کل قیمت درج کریں۔', 'أدخل سعراً لمادة واحدة على الأقل لتتمكّن من الإرسال.'))
-                : vatIncluded === null
-                  ? L('Choose whether your price includes VAT to send.', 'بھیجنے کے لیے منتخب کریں کہ قیمت میں ویٹ شامل ہے یا نہیں۔', 'حدّد هل يشمل سعرك الضريبة لتتمكّن من الإرسال.')
-                  : !sourceType
-                    ? L('Choose where this price comes from to send.', 'بھیجنے کے لیے قیمت کا ذریعہ منتخب کریں۔', 'حدّد مصدر السعر لتتمكّن من الإرسال.')
-                    : ''
+              const blockReason = sendBlockReason()
               const { gross } = offerTotals()
               const fmtG = (+gross.toFixed(2)).toLocaleString('en-US')
               return (
             <div className="mt-5 space-y-3">
               {!blockReason && gross > 0 && (
                 <div className="rounded-xl px-3 py-2.5 text-sm font-bold text-center border" style={{ background: '#0F6E560D', borderColor: '#0F6E5633', color: '#0F6E56' }} aria-live="polite">
-                  {L(`The buyer will see: ${fmtG} SAR incl. VAT`, `خریدار دیکھے گا: ${fmtG} ریال ٹیکس سمیت`, `سيرى المشتري: ${fmtG} ر.س شاملاً الضريبة`)}
+                  {noVat
+                    ? L(`The buyer will see: ${fmtG} SAR (final price)`, `خریدار دیکھے گا: ${fmtG} ریال (حتمی قیمت)`, `سيرى المشتري: ${fmtG} ر.س (سعر نهائي)`)
+                    : L(`The buyer will see: ${fmtG} SAR incl. VAT`, `خریدار دیکھے گا: ${fmtG} ریال ٹیکس سمیت`, `سيرى المشتري: ${fmtG} ر.س شاملاً الضريبة`)}
                 </div>
               )}
               <button type="submit" form="offer-form" disabled={submitting || !!blockReason} aria-describedby={blockReason ? 'offer-block-reason' : undefined}
@@ -1346,9 +1381,11 @@ export default function SupplierRFQPage() {
               {blockReason && !submitting && (
                 <p id="offer-block-reason" className="text-xs text-center font-semibold text-amber-700" aria-live="polite"><Glyph e="⚠" /> {blockReason}</p>
               )}
+              {error && <p role="alert" className="text-xs text-center font-semibold text-red-600">{error}</p>}
+              <p className="text-[12px] text-center text-gray-500">{L('You can edit or cancel the offer within 15 minutes of sending.', 'بھیجنے کے 15 منٹ تک آپ آفر بدل یا منسوخ کر سکتے ہیں۔', 'يمكنك تعديل العرض أو إلغاؤه خلال 15 دقيقة من إرساله.')}</p>
               <button type="button" onClick={() => setShowDismiss(true)}
-                className="w-full py-3 rounded-xl font-semibold text-sm border-2 border-red-200 text-red-500 hover:bg-red-50 transition-all flex items-center justify-center gap-2">
-                ✕ {T.dismiss}
+                className="w-full py-2 text-sm font-semibold text-gray-400 hover:text-gray-600 underline-offset-2 hover:underline">
+                {T.dismiss}
               </button>
             </div>
               )
@@ -1357,6 +1394,27 @@ export default function SupplierRFQPage() {
           )}
         </aside>
       </div>
+
+      {/* phone: the send bar stays above the bottom menu (persona review: the button was under every card) */}
+      {pricingOpen && !success && (isMultiItem ? myItems.length > 0 : true) && (() => {
+        const br = sendBlockReason(); const { gross } = offerTotals()
+        return (<>
+          <div className="lg:hidden h-20" aria-hidden />
+          <div className="lg:hidden fixed inset-x-0 z-30 px-3 pb-2" style={{ bottom: 'calc(3.9rem + env(safe-area-inset-bottom))' }}>
+            <div className="rounded-2xl bg-white shadow-lg border border-gray-200 p-2.5 flex items-center gap-3">
+              <div className="flex-1 min-w-0 text-[12px] leading-tight">
+                {isMultiItem && <div className="font-bold" style={{ color: pricedCount ? '#0F6E56' : '#6b7280' }}>{L(`${pricedCount} of ${myItems.length} priced`, `${myItems.length} میں سے ${pricedCount}`, `سعّرت ${pricedCount} من ${myItems.length}`)}</div>}
+                {br ? <div className="text-amber-700 font-semibold truncate">{br}</div>
+                  : <div className="font-extrabold text-[14px]" style={{ color: '#0B2438' }}>{(+gross.toFixed(2)).toLocaleString('en-US')} {SAR}</div>}
+              </div>
+              <button type="submit" form="offer-form" disabled={submitting || !!br}
+                className="shrink-0 min-h-[44px] px-5 rounded-xl font-bold text-white text-sm disabled:opacity-40" style={{ background: '#0F6E56' }}>
+                {submitting ? T.sending : T.send}
+              </button>
+            </div>
+          </div>
+        </>)
+      })()}
 
       {/* Dismiss Modal */}
       {showDismiss && (
