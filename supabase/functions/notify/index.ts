@@ -53,7 +53,10 @@ Deno.serve(async (req) => {
       try {
         const messages = devices.slice(0, 100).map((d: any) => ({
           to: d.token, title: n.title, body: n.body || '', data: { url, type: n.type },
-          sound: 'default', channelId: 'default', priority: 'high',
+          sound: 'default', priority: 'high',
+          // R17: a new matching price request uses the app's loud channel (importance MAX, lock screen);
+          // older builds without it fall back to 'default'. The admin «no supplier» alert is not one.
+          channelId: n.type === 'new_rfq' && !(n.data && n.data.uncovered) ? 'rfq-new' : 'default',
         }))
         const headers: Record<string, string> = { 'Content-Type': 'application/json', Accept: 'application/json' }
         const expoToken = Deno.env.get('EXPO_ACCESS_TOKEN')
@@ -84,7 +87,7 @@ Deno.serve(async (req) => {
               from: `تسعيرك <${cfg.from_email || 'no-reply@taseerak.com'}>`,
               to,
               subject: n.title,
-              html: `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;max-width:520px;margin:auto"><h2 style="color:#1B2D5B">${escapeHtml(n.title)}</h2><p style="color:#444">${escapeHtml(n.body || '')}</p><a href="https://taseerak.com${url}" style="display:inline-block;background:#F5831F;color:#fff;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:bold">افتح تسعيرك</a></div>`,
+              html: `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;max-width:520px;margin:auto"><h2 style="color:#0B2438">${escapeHtml(n.title)}</h2><p style="color:#444">${escapeHtml(n.body || '')}</p><a href="${Deno.env.get('SITE_URL') || 'https://taseerak.vercel.app'}${url}" style="display:inline-block;background:#D4A543;color:#071827;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:bold">افتح تسعيرك</a></div>`,
             }),
           })
           emailed = res.ok
