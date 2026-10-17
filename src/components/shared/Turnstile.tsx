@@ -53,7 +53,7 @@ const Turnstile = forwardRef(function Turnstile(
         widgetIdRef.current = ts.render(containerRef.current, {
           sitekey: siteKey,
           theme,
-          callback: (token: string) => onToken && onToken(token),
+          callback: (token: string) => { setErrCode(''); onToken && onToken(token) },
           'expired-callback': () => onToken && onToken(''),
           'timeout-callback': () => onToken && onToken(''),
           'error-callback': (code: string) => {
@@ -78,7 +78,7 @@ const Turnstile = forwardRef(function Turnstile(
   return (
     <div>
       <div ref={containerRef} dir={dir} style={{ minHeight: 65 }} />
-      {errCode && <p dir="ltr" style={{ fontSize: 11, color: '#9AA4BF', textAlign: 'center', marginTop: 4 }}>Turnstile error: {errCode}</p>}
+      {/* the error code is logged, not shown: Turnstile retries itself and usually succeeds right after */}
     </div>
   )
 })

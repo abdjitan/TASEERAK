@@ -354,8 +354,13 @@ a { text-decoration: none; }
   z-index: 0;
   background: linear-gradient(125deg, rgba(5,11,18,.95), rgba(7,24,39,.8) 58%, rgba(11,36,56,.58));
 }
-.auth-brand-panel > * { position: relative; z-index: 1; }
+/* keep the decorative glow layer absolute: made relative it became a flex item and pushed the logo down */
+.auth-brand-panel > *:not(.absolute) { position: relative; z-index: 1; }
 .auth-brand-lockup { width: auto; height: 90px; max-width: 135px; object-fit: contain; border-radius: 0; filter: drop-shadow(0 8px 20px rgba(0,0,0,.32)); }
+/* the logo can't be dragged, long-pressed or right-clicked to save (it is still on screen, so a screenshot is always possible) */
+.auth-brand-lockup, .auth-mobile-lockup, .register-brand-lockup, .dashboard-brand-lockup, img[src*="logo"] {
+  -webkit-user-drag: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; pointer-events: none;
+}
 .auth-mobile-lockup { width: auto; height: 88px; max-width: 132px; object-fit: contain; border-radius: 0; }
 .register-brand-lockup { width: auto; height: 62px; max-width: 93px; object-fit: contain; border-radius: 0; }
 .dashboard-brand-lockup { width: auto; height: 84px; max-width: 126px; object-fit: contain; border-radius: 0; filter: drop-shadow(0 8px 20px rgba(0,0,0,.32)); }
