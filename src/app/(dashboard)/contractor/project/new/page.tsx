@@ -1,5 +1,6 @@
 'use client'
 
+import { canUseProjects } from '@/lib/plans'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
@@ -39,6 +40,8 @@ const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: 
 export default function NewProjectPage() {
   const { locale, dir } = useTranslation()
   const [user, setUser] = useState<any>(null)
+  const [allowed, setAllowed] = useState<boolean | null>(null) // null = still checking
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [loading, setLoading] = useState(false)
   const [parsing, setParsing] = useState(false)
   const [step, setStep] = useState<'setup' | 'items' | 'review'>('setup')
@@ -154,6 +157,8 @@ export default function NewProjectPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { window.location.href = '/login'; return }
       setUser(data.session.user)
+      supabase.from('profiles').select('role, verification_status, cr_verified_at, subscription_plan, subscription_expires_at').eq('id', data.session.user.id).single()
+        .then(({ data: p }: any) => setAllowed(canUseProjects(p)))
     })
   }, [])
 
@@ -361,11 +366,27 @@ export default function NewProjectPage() {
   }, {})
 
   return (
-    <AppShell title={locale === 'en' ? 'New Project RFQ' : locale === 'ur' ? 'نیا پراجیکٹ' : 'طلب تسعير مشروع'} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
+    <AppShell title={locale === 'en' ? 'Add a bill of quantities (BOQ)' : locale === 'ur' ? 'مقداروں کا جدول (BOQ) شامل کریں' : 'إضافة جدول الكميات (BOQ)'} nav={getNav('contractor', locale, '/contractor/project/new')} dir={dir}>
       <div className="max-w-5xl mx-auto">
+        {allowed === false && (
+          <div className="bg-white rounded-2xl border border-[#D4A543]/40 p-6 sm:p-8 text-center shadow-sm">
+            <div className="text-4xl text-[#9D7425] mb-3"><Glyph e="🏗" /></div>
+            <h1 className="text-xl font-extrabold text-[#0B2438] mb-2">{L('Projects are for companies', 'پراجیکٹس کمپنیوں کے لیے ہیں', 'المشاريع متاحة لحسابات الشركات')}</h1>
+            <p className="text-sm text-gray-600 leading-relaxed max-w-lg mx-auto mb-5">
+              {L('Uploading a full bill of quantities and getting one purchase order per supplier is available to companies with a verified commercial registration, and to individuals on the higher plan.',
+                'پوری BOQ اپلوڈ کرنا اور ہر سپلائر کے لیے پرچیز آرڈر تصدیق شدہ کمپنیوں اور اعلیٰ پلان والے افراد کے لیے ہے۔',
+                'رفع جدول كميات كامل والحصول على أمر شراء لكل مورد ميزة لحسابات الشركات الموثّقة بالسجل التجاري، وللأفراد ضمن الباقة الأعلى.')}
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <a href="/settings" className="px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{L('Verify my commercial registration', 'تجارتی رجسٹریشن کی تصدیق', 'وثّق سجلك التجاري')}</a>
+              <a href="/contractor/rfq/quick" className="px-5 py-2.5 rounded-xl font-bold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Send a normal price request', 'عام قیمت کی درخواست', 'أرسل طلب تسعير عادياً')}</a>
+            </div>
+          </div>
+        )}
+        {allowed !== false && (<>
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>
-            {locale === 'en' ? 'New Project RFQ' : locale === 'ur' ? 'نیا پراجیکٹ' : 'طلب تسعير مشروع'}
+            {locale === 'en' ? 'Add a bill of quantities (BOQ)' : locale === 'ur' ? 'مقداروں کا جدول (BOQ) شامل کریں' : 'إضافة جدول الكميات (BOQ)'}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             {locale === 'en' ? 'Upload a BOQ or add materials manually — we send each to the right supplier'
@@ -865,6 +886,7 @@ export default function NewProjectPage() {
             </button>
           </div>
         )}
+        </>)}
       </div>
     </AppShell>
   )

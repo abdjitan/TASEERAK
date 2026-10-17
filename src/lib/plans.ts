@@ -51,3 +51,13 @@ export function isLaunchFree(launchFreeUntil: any): boolean {
   if (!launchFreeUntil) return true
   return new Date(launchFreeUntil) > new Date()
 }
+
+// «مشروع» (BOQ upload → one request per line, per-supplier POs): a company feature. Companies =
+// buyers whose commercial registration is verified; individuals need a paid (higher) plan.
+// Owner decision 2026-10-17.
+export function canUseProjects(profile: any): boolean {
+  if (!profile) return false
+  if (profile.role === 'admin') return true
+  if (profile.cr_verified_at || profile.verification_status === 'verified') return true
+  return isSubscribed(profile)
+}

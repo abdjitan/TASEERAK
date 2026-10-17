@@ -19,6 +19,7 @@ import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTim
 import { dealStage } from '@/lib/dealStage'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { FEATURES } from '@/lib/features'
+import { canUseProjects } from '@/lib/plans'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 
@@ -221,7 +222,7 @@ export default function ContractorDashboard() {
   const nav = getNav('contractor', locale, '/contractor') // the shared menu (طلباتي، صفقاتي، الرسائل…)
   const headerActions = profile?.verification_status !== 'rejected' ? (
     <>
-      <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /> {locale === 'en' ? 'Project' : 'مشروع'}</Link>
+      {canUseProjects(profile) && <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /> {locale === 'en' ? 'Project' : 'مشروع'}</Link>}
       <Link href="/contractor/rfq/quick" className="btn-orange text-xs px-4 py-2">{t.newRfq}</Link>
     </>
   ) : null
@@ -465,11 +466,11 @@ export default function ContractorDashboard() {
         )}
 
         {/* Projects */}
-        {projects.length > 0 && (
+        {projects.length > 0 && canUseProjects(profile) && (
           <div className="mb-6 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
-                <Glyph e="📋" /> {locale === 'en' ? 'Project RFQs' : 'مشاريع BOQ'}
+                <Glyph e="📋" /> {locale === 'en' ? 'My projects' : locale === 'ur' ? 'میرے پراجیکٹس' : 'مشاريعي'}
               </h2>
               <Link href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#D4A543' }}>
                 + {locale === 'en' ? 'New Project' : 'مشروع جديد'}
