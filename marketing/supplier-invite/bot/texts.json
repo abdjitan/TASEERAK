@@ -1,0 +1,27 @@
+{
+  "details": {
+    "ar": "شكرًا لكم. هذه تفاصيل *تسعيرك*:\n\n*كيف تعمل المنصة؟*\n1. يرسل المقاول أو المشتري قائمة المواد التي يحتاجها.\n2. يصلكم الطلب على جوالكم بحسب تخصصكم.\n3. تسعّرون كل مادة على حدة، ويختار المشتري العرض الأنسب له.\n\n*ما الذي تحصلون عليه؟*\n▪ مجاني بالكامل خلال الإطلاق، دون عمولة أو اشتراك\n▪ أسعاركم يراها صاحب الطلب فقط، ولا يراها المنافسون\n▪ أمر الشراء والفاتورة ومتابعة التسليم في مكان واحد\n▪ المسجلون الأوائل في الرياض تصلهم الطلبات الأولى\n\n*الأسهل: ردّوا بكلمة «نعم» ونساعدكم في التسجيل خلال دقيقتين.*\n\nأو اطّلعوا وسجّلوا بأنفسكم:\nhttps://Taseerak.com/invite?lang=ar\n\nفريق تسعيرك",
+    "en": "Thank you. Here are the details of *Taseerak*:\n\n*How it works*\n1. A contractor or buyer sends the list of materials they need.\n2. The request reaches your phone, matched to your specialty.\n3. You price each item separately, and the buyer chooses the offer that suits them.\n\n*What you get*\n▪ Completely free during launch: no commission, no subscription\n▪ Only the requester sees your prices, never your competitors\n▪ Purchase orders, invoices and delivery tracking in one place\n▪ Early suppliers in Riyadh receive the first requests\n\n*Easiest: reply «yes» and we will register you in two minutes.*\n\nOr see the details and register yourself:\nhttps://Taseerak.com/invite?lang=en\n\nThe Taseerak team",
+    "ur": "شکریہ۔ *تسعیرک* کی تفصیلات یہ ہیں:\n\n*یہ کیسے کام کرتا ہے؟*\n1. ٹھیکیدار یا خریدار مطلوبہ سامان کی فہرست بھیجتا ہے۔\n2. درخواست آپ کی مہارت کے مطابق آپ کے موبائل پر پہنچتی ہے۔\n3. آپ ہر آئٹم کی الگ قیمت دیتے ہیں، اور خریدار اپنے لیے بہترین آفر منتخب کرتا ہے۔\n\n*آپ کو کیا ملے گا؟*\n▪ لانچ کے دوران مکمل مفت: نہ کمیشن، نہ سبسکرپشن\n▪ آپ کی قیمتیں صرف درخواست بھیجنے والا دیکھتا ہے، حریف نہیں\n▪ پرچیز آرڈر، انوائس اور ڈیلیوری کی فالو اپ ایک ہی جگہ\n▪ ریاض میں پہلے رجسٹر ہونے والوں کو پہلی درخواستیں ملیں گی\n\n*سب سے آسان: «ہاں» لکھ کر جواب دیں، ہم دو منٹ میں رجسٹر کر دیں گے۔*\n\nیا تفصیلات دیکھیں اور خود رجسٹر کریں:\nhttps://Taseerak.com/invite?lang=ur\n\nٹیم تسعیرک"
+  },
+  "poster": {
+    "ar": "https://Taseerak.com/invite/assets/poster-ar.png",
+    "en": "https://Taseerak.com/invite/assets/poster-en.png",
+    "ur": "https://Taseerak.com/invite/assets/poster-ur.png"
+  },
+  "yes": {
+    "ar": "أهلًا بكم في تسعيرك.\nالتسجيل يأخذ دقيقتين من الجوال: https://Taseerak.com/register?role=supplier\nبعد التسجيل اختاروا تخصصاتكم، وتصلكم الطلبات المناسبة مباشرة. وإن كان لديكم أي سؤال فاكتبوه هنا.",
+    "en": "Welcome to Taseerak.\nRegistration takes two minutes from your phone: https://Taseerak.com/register?role=supplier\nAfter registering, choose your specialties and matching requests will reach you directly. If you have any question, write it here.",
+    "ur": "تسعیرک میں خوش آمدید۔\nرجسٹریشن موبائل سے دو منٹ میں ہو جاتی ہے: https://Taseerak.com/register?role=supplier\nرجسٹر کرنے کے بعد اپنی مہارتیں منتخب کریں، اور متعلقہ درخواستیں براہِ راست آپ تک پہنچیں گی۔ کوئی سوال ہو تو یہاں لکھیں۔"
+  },
+  "textPlease": {
+    "ar": "شكرًا لرسالتكم. نرجو كتابة سؤالكم نصًّا، ونرد عليكم فورًا.",
+    "en": "Thank you for your message. Please type your question as text and we will reply right away.",
+    "ur": "آپ کے پیغام کا شکریہ۔ براہِ کرم اپنا سوال لکھ کر بھیجیں، ہم فوراً جواب دیں گے۔"
+  },
+  "fallback": {
+    "ar": "شكرًا لرسالتكم. تجدون التفاصيل كاملة هنا: https://Taseerak.com/invite?lang=ar",
+    "en": "Thank you for your message. You will find all the details here: https://Taseerak.com/invite?lang=en",
+    "ur": "آپ کے پیغام کا شکریہ۔ مکمل تفصیلات یہاں دیکھیں: https://Taseerak.com/invite?lang=ur"
+  }
+}

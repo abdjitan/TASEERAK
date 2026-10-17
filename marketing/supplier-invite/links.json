@@ -1,0 +1,11 @@
+{
+  "_note": "Edit these before sending. Flip domain_live when Taseerak.com is connected, apps_live when both store listings exist, then re-run the scripts.",
+  "site": "https://Taseerak.com",
+  "android": "https://play.google.com/store/apps/details?id=com.taseerak.app",
+  "ios": "https://apps.apple.com/app/taseerak/id0000000000",
+  "email_from": "info@taseerak.com",
+  "whatsapp_business": "+9665XXXXXXXX",
+  "domain_live": true,
+  "apps_live": false,
+  "live_site": "https://taseerak.vercel.app"
+}

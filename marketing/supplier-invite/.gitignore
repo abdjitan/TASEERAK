@@ -1,0 +1,9 @@
+# Shop contact lists stay local (phone numbers), never in git.
+*.xlsx
+
+# Same lists as HTML (phone numbers).
+send-sheet.html
+
+# Generated intermediates (rebuilt by the scripts).
+posters/*.html
+invite-page/assets/

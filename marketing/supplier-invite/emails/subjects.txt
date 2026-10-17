@@ -1,0 +1,11 @@
+[ar]
+Subject: دعوة للانضمام إلى تسعيرك: طلبات تسعير مواد البناء تصلكم مباشرة
+Preheader: سجّلوا مجانًا، دون عمولة، وكونوا من أوائل الموردين في الرياض.
+
+[en]
+Subject: Invitation to join Taseerak: construction price requests, straight to you
+Preheader: Register free, no commission, and be among the first suppliers in Riyadh.
+
+[ur]
+Subject: تسعیرک میں شمولیت کی دعوت: تعمیراتی سامان کی قیمت کی درخواستیں براہِ راست آپ تک
+Preheader: مفت رجسٹر کریں، کوئی کمیشن نہیں، اور ریاض کے پہلے سپلائرز میں شامل ہوں۔
