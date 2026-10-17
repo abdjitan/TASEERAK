@@ -162,9 +162,9 @@ begin
      and payment_status = 'paid' and payment_confirmed_at is not null;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL deal stages'; end if;
   select count(*) into n from notifications where user_id = buyer and data->>'offer_id' = v_offer::text
-     and title in ('🚚 أكّد المورد التوصيل', '🧾 أرفق المورد فاتورته');
+     and title in ('أكّد المورد التوصيل', 'أرفق المورد فاتورته');
   if n = 2 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL buyer deal notifications=' || n; end if;
-  select count(*) into n from notifications where user_id = sup and data->>'offer_id' = v_offer::text and title = '✅ أكّد المشتري الاستلام';
+  select count(*) into n from notifications where user_id = sup and data->>'offer_id' = v_offer::text and title = 'أكّد المشتري الاستلام';
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL receipt notification'; end if;
 
   -- 8. post-award: the buyer may change no price; the supplier no deal stamp
