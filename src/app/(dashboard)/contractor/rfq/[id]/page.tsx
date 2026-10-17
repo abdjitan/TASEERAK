@@ -19,6 +19,7 @@ import { TIERS, tierLabel, normTier, sourceLabel, availabilityLabel, isDirectSou
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { daysText } from '@/lib/text'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
@@ -672,7 +673,7 @@ export default function RFQDetailPage() {
                                   )}
                                   <div className="text-[11px] text-gray-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
                                     {Number(b.entry.unit_price) > 0 && <span>{Number(b.entry.unit_price).toLocaleString('en-US')} / {getUnitLabel(b.entry.unit || it.unit, locale)}</span>}
-                                    {(b.entry.delivery_days ?? b.offer.delivery_days) ? <span><Glyph e="📦" /> {b.entry.delivery_days ?? b.offer.delivery_days} {L('days', 'دن', 'يوم')}</span> : null}
+                                    {(b.entry.delivery_days ?? b.offer.delivery_days) ? <span><Glyph e="📦" /> {daysText(b.entry.delivery_days ?? b.offer.delivery_days, locale)}</span> : null}
                                     {b.offer.payment_terms ? <span><Glyph e="💳" /> {paymentTermsLabel(b.offer.payment_terms, locale)}</span> : null}
                                     {b.offer.supplier?.city && <span><Glyph e="📍" /> {b.offer.supplier.city}</span>}
                                     {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title={L('Distance from the delivery location', 'ڈیلیوری کی جگہ سے فاصلہ', 'المسافة من موقع التوصيل')}><Glyph e="📏" /> {km < 1 ? '<1' : Math.round(km)} {L('km', 'کلومیٹر', 'كم')}</span> : null })()}
@@ -917,7 +918,7 @@ export default function RFQDetailPage() {
 
                 <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
                   {offer.unit_price && <span>{L('Unit price:', 'فی یونٹ قیمت:', 'سعر الوحدة:')} {offer.unit_price} {SAR}</span>}
-                  {offer.delivery_days && <span><Glyph e="📦" /> {L('Delivery:', 'ڈیلیوری:', 'التوصيل:')} {offer.delivery_days} {L('days', 'دن', 'يوم')}</span>}
+                  {offer.delivery_days && <span><Glyph e="📦" /> {L('Delivery:', 'ڈیلیوری:', 'التوصيل:')} {daysText(offer.delivery_days, locale)}</span>}
                   {offer.payment_terms && <span><Glyph e="💳" /> {paymentTermsLabel(offer.payment_terms, locale)}</span>}
                 </div>
 
@@ -1046,14 +1047,14 @@ export default function RFQDetailPage() {
         )}
         </>)}
 
-        {/* حذف الطلب — متاح للمشتري دائماً (انتهت المهلة أو لقي المواد) */}
-        <div className="mt-8 pt-5 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+        {/* حذف الطلب — متاح ما لم تتضمّن صفقة (يرفضه الخادم أيضاً: الصفقة تخصّ المورد كذلك) */}
+        {!offers.some((o: any) => o.status === 'accepted') && Object.keys(awards || {}).length === 0 && <div className="mt-8 pt-5 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <span className="text-xs text-gray-400">{L('No longer need this request?', 'اب یہ درخواست نہیں چاہیے؟', 'ألم تعد بحاجة إلى هذا الطلب؟')}</span>
           <button type="button" onClick={deleteRfq} disabled={deleting}
             className="text-xs font-bold px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-all disabled:opacity-50">
             {deleting ? '…' : `${L('Delete request', 'درخواست حذف کریں', 'حذف الطلب')}`}
           </button>
-        </div>
+        </div>}
       </div>
     </AppShell>
   )

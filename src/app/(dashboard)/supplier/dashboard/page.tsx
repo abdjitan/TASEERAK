@@ -22,6 +22,7 @@ import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTim
 import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind } from '@/lib/sellers'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
+import { daysText } from '@/lib/text'
 
 const txt = {
   ar: {
@@ -758,7 +759,7 @@ export default function SupplierDashboard() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium">
-                      {offer.delivery_days && <span><Glyph e="📦" /> {offer.delivery_days} {t.day}</span>}
+                      {offer.delivery_days && <span><Glyph e="📦" /> {daysText(offer.delivery_days, locale)}</span>}
                       {offer.rfq?.region && <span><Glyph e="📍" /> {getRegionLabel(offer.rfq.region, locale)}</span>}
                       {sentBy(offer) && <span className="font-semibold text-gray-500">{sentBy(offer)}</span>}
                     </div>

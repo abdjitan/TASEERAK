@@ -12,6 +12,7 @@ import { rfqRef } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { showsVatBreakdown } from '@/lib/vat'
+import { daysText } from '@/lib/text'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -311,7 +312,7 @@ export default function OrderDetailPage() {
               {offer.delivery_days && (
                 <div className="flex items-center gap-2">
                   <span><Glyph e="📦" /></span>
-                  <span>{L('Delivery time:', 'ڈیلیوری کا وقت:', 'مدة التوصيل:')} {offer.delivery_days} {L('working days', 'کاروباری دن', 'يوم عمل')}</span>
+                  <span>{L('Delivery time:', 'ڈیلیوری کا وقت:', 'مدة التوصيل:')} {daysText(offer.delivery_days, locale)}</span>
                 </div>
               )}
               <div className="flex items-center gap-2">

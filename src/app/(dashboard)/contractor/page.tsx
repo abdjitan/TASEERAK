@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { noEmoji, timeAgo as timeAgoText } from '@/lib/text'
 import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
@@ -192,11 +193,7 @@ export default function ContractorDashboard() {
 
   function timeAgo(d: any) {
     if (!d) return ''
-    const s = Math.floor((now - new Date(d).getTime()) / 1000)
-    if (s < 60) return locale === 'en' ? 'just now' : 'الآن'
-    const m = Math.floor(s / 60); if (m < 60) return locale === 'en' ? `${m}m ago` : `قبل ${m} د`
-    const h = Math.floor(m / 60); if (h < 24) return locale === 'en' ? `${h}h ago` : `قبل ${h} س`
-    const dd = Math.floor(h / 24); return locale === 'en' ? `${dd}d ago` : `قبل ${dd} يوم`
+    return timeAgoText(d, locale, now)
   }
   function actMeta(type: any) {
     switch (type) {
@@ -435,8 +432,8 @@ export default function ContractorDashboard() {
                       <div key={a.id} className="flex items-start gap-3">
                         <AppIcon name={m.name} tone={m.tone} variant="tone" size={36} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold truncate" style={{ color: '#0B2438' }}>{a.title}</div>
-                          {a.body && <div className="text-xs text-gray-500 truncate">{a.body}</div>}
+                          <div className="text-sm font-semibold truncate" style={{ color: '#0B2438' }}>{noEmoji(a.title)}</div>
+                          {a.body && <div className="text-xs text-gray-500 truncate">{noEmoji(a.body)}</div>}
                         </div>
                         <span className="text-[10px] text-gray-400 whitespace-nowrap shrink-0">{timeAgo(a.created_at)}</span>
                       </div>
@@ -628,9 +625,9 @@ export default function ContractorDashboard() {
                         <div className="flex items-center gap-2 mt-1">
                           <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                           <span className={`badge text-[10px] ${
-                            rfq.status === 'open' ? 'badge-green' : rfq.status === 'closed' ? 'badge-gray' : 'badge-red'
-                          }`}>{statusLabel(rfq.status)}</span>
-                          {rfq.status === 'open' && rfq.expires_at && (() => {
+                            rfq.status === 'open' && !isExpired(rfq.expires_at) ? 'badge-green' : rfq.status === 'closed' ? 'badge-gray' : 'badge-red'
+                          }`}>{rfq.status === 'open' && isExpired(rfq.expires_at) ? (locale === 'en' ? '● Deadline passed' : locale === 'ur' ? '● مہلت ختم' : '● انتهت المهلة') : statusLabel(rfq.status)}</span>
+                          {rfq.status === 'open' && rfq.expires_at && !isExpired(rfq.expires_at) && (() => {
                             const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
                             return (
                               <span className="badge text-[10px]" style={{ background: st.bg, color: st.fg }}>

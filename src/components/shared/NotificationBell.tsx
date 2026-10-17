@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { noEmoji } from '@/lib/text'
 import { useRouter } from 'next/navigation'
 import { useNotifications } from '@/hooks/useNotifications'
 import Glyph from '@/components/shared/Glyph'
@@ -53,8 +54,8 @@ export default function NotificationBell({ userId }: { userId?: string }) {
                 <div className="flex items-start gap-2">
                   {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-gray-800">{n.title}</div>
-                    {n.body && <div className="text-xs text-gray-500 mt-0.5">{n.body}</div>}
+                    <div className="text-sm font-semibold text-gray-800">{noEmoji(n.title)}</div>
+                    {n.body && <div className="text-xs text-gray-500 mt-0.5">{noEmoji(n.body)}</div>}
                     <div className="text-[10px] text-gray-400 mt-1">{timeAgo(n.created_at)}</div>
                   </div>
                 </div>
