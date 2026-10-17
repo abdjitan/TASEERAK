@@ -34,6 +34,10 @@ const nextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }]
   },
+  // static supplier invite page (marketing kit, public/invite/index.html)
+  async rewrites() {
+    return [{ source: '/invite', destination: '/invite/index.html' }]
+  },
 }
 
 module.exports = nextConfig
