@@ -422,6 +422,7 @@ export default function SupplierRFQPage() {
           delivery_days: parseInt(form.delivery_days) || null,
           warranty: (form.warranty || '').trim() || null,
           specification: (form.specs || '').trim() || null,
+          source_type: form.source_type || null,
           attachment_url: upUrl, attachment_name: upName,
         })
       }
@@ -952,6 +953,15 @@ export default function SupplierRFQPage() {
                                     : L('Custom unit: enter the material total above yourself.', 'الگ یونٹ: اوپر کل رقم خود درج کریں۔', 'وحدة خاصة: أدخل إجمالي المادة في الأعلى بنفسك.')}
                                 </p>
                               </div>
+                              {isIndependent && (
+                                <div className="sm:col-span-2">
+                                  <label className="block text-xs font-bold text-gray-500 mb-1">{L('Where this item\'s price comes from (if different)', 'اس چیز کی قیمت کا ذریعہ (اگر مختلف ہو)', 'مصدر سعر هذه المادة (إن اختلف عن العرض)')}</label>
+                                  <select value={form.source_type || ''} onChange={(e: any) => setItemField(i, 'source_type', e.target.value)} className="input-field text-sm">
+                                    <option value="">{L('Same as the offer', 'آفر جیسا', 'مثل العرض كله')}</option>
+                                    {SOURCE_TYPES.map(o => <option key={o.k} value={o.k}>{locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar}</option>)}
+                                  </select>
+                                </div>
+                              )}
                               <div className="sm:col-span-2">
                                 <label className="block text-xs font-bold text-gray-500 mb-1"><Glyph e="📝" /> {L('What you offer (type, origin, brand…)', 'آپ کیا دے رہے ہیں (قسم، برانڈ…)', 'ما تقدّمه (النوع، المنشأ، العلامة…)')}</label>
                                 <textarea value={form.specs || ''} onChange={(e: any) => setItemField(i, 'specs', e.target.value)} rows={2} className="input-field text-sm" />
