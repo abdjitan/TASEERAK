@@ -2,7 +2,7 @@
    Drop <script src="assets/notif.js"></script> before </body>. */
 (function () {
   const NOTIFS = [
-    { ic: 'offer', t: 'عرض جديد على طلبك', b: 'حديد تسليح Ø16 — مصنع الراجحي', time: 'قبل ٥ دقائق', unread: true },
+    { ic: 'offer', t: 'عرض جديد على طلبك', b: 'حديد تسليح Ø16 — مصنع حديد (أ)', time: 'قبل ٥ دقائق', unread: true },
     { ic: 'accept', t: 'تم قبول عرضك', b: 'مواسير PPR — مؤسسة عمار', time: 'قبل ساعة', unread: true },
     { ic: 'po', t: 'صدر أمر شراء', b: '#PO-2026-0418 بقيمة ١٠٩٬١١٠ ر.س', time: 'قبل ٣ ساعات', unread: true },
     { ic: 'deal', t: 'تأكيد استلام مطلوب', b: 'يرجى تأكيد استلام البضاعة', time: 'أمس', unread: false },
