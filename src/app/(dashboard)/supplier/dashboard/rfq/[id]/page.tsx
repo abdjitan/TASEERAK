@@ -169,8 +169,8 @@ export default function SupplierRFQPage() {
       setIsIndependent(indep)
       // An independent seller without a VAT number is not VAT-registered: no VAT question, the price
       // they type is the final price the buyer pays (persona review: «لا تُضاف 15% فوق سعري»).
-      if (!(me?.vat_number || '').trim()) { setNoVat(true); setVatIncluded(true) }
-      else { try { const v = localStorage.getItem('tsk_vat_incl'); if (v === '1' || v === '0') setVatIncluded(v === '1') } catch {} }
+      // no VAT number: kept on the offer (vat_status) so platform documents show no VAT amount for it
+      if (!(me?.vat_number || '').trim()) setNoVat(true)
       if (!indep) setSourceType('own_stock')
 
       // ✅ المورد يرى/يسعّر فقط المواد ضمن تخصصه — لا تظهر له مواد قطاع لا يخدمه
@@ -322,10 +322,9 @@ export default function SupplierRFQPage() {
   const [delivAmount, setDelivAmount] = useState('')
   // هل السعر المُدخل يشمل ضريبة القيمة المضافة 15%؟ — اختيار صريح بلا قيمة افتراضية (null = لم يُحدَّد بعد)،
   // كي لا تُضاف 15% فوق سعر شامل دون أن ينتبه المورّد.
-  const [vatIncluded, setVatIncluded] = useState<boolean | null>(null)
+  // owner decision 2026-10-17: every price is typed and shown including VAT (no VAT question)
+  const [vatIncluded, setVatIncluded] = useState<boolean | null>(true)
   const [noVat, setNoVat] = useState(false) // seller without a VAT number: the price is final
-  // no VAT number: final price, or VAT-inclusive with the tax invoice from the original shop (offers.vat_status)
-  const [invoiceMode, setInvoiceMode] = useState<'not_registered' | 'supplier_invoice'>('not_registered')
   const [showMore, setShowMore] = useState(false) // «خيارات أخرى (اختياري)»
   // الإجمالي كما سيراه المشتري (صافٍ + ضريبة + إجمالي) — يُستخدم في التفصيل وفي ملخّص ما قبل الإرسال
   function offerTotals() {
@@ -446,7 +445,7 @@ export default function SupplierRFQPage() {
       total_price: finalTotal,
       price_valid_until: new Date(Date.now() + (parseInt(priceValidity) || 3) * 86400000).toISOString(),
       vat_included: vatIncluded === true,
-      vat_status: noVat ? invoiceMode : 'registered',
+      vat_status: noVat ? 'not_registered' : 'registered',
       item_prices: itemPricesPayload,
       unit_price: isMultiItem ? null : (unitPrice ? parseFloat(unitPrice) : null),
       delivery_days: isMultiItem
@@ -477,7 +476,6 @@ export default function SupplierRFQPage() {
         if (nx) setNextRfq(nx.id)
       }
     } catch {}
-    try { if (!noVat && vatIncluded !== null) localStorage.setItem('tsk_vat_incl', vatIncluded ? '1' : '0') } catch {}
     setSuccess(true); setSubmitting(false)
   }
 
@@ -834,7 +832,7 @@ export default function SupplierRFQPage() {
                     <span className="text-xs font-bold text-gray-500">{pricedCount}/{myItems.length}</span>
                   </div>
                   <p className="text-xs text-gray-400 mb-3">
-                    {L('Enter the price per unit of each material — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')}
+                    {L('Enter the price per unit of each material, including VAT — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت ٹیکس سمیت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة شاملاً الضريبة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')}
                   </p>
                   <div className="space-y-3">
                     {myItems.map((it: any, i: any) => {
@@ -1196,64 +1194,16 @@ export default function SupplierRFQPage() {
               {(() => {
                 const { entered, net, vat, gross } = offerTotals()
                 const fmt = (n: any) => (+n.toFixed(2)).toLocaleString('en-US')
-                const vatOpts = [
-                  { v: true, label: L('Yes, includes VAT', 'ہاں، ویٹ شامل ہے', 'نعم، شامل الضريبة'), hint: L('VAT will be extracted from your price.', 'ٹیکس آپ کی قیمت میں سے نکالا جائے گا۔', 'تُستخرج الضريبة من سعرك.') },
-                  { v: false, label: L('No, excludes VAT', 'نہیں، ویٹ شامل نہیں', 'لا، غير شامل الضريبة'), hint: L('15% VAT is added on top of your price.', '15% ٹیکس آپ کی قیمت کے اوپر لگے گا۔', 'تُضاف ضريبة 15% فوق سعرك.') },
-                ]
                 return (
                   <div className="border-t border-gray-100 pt-4">
                     {/* خيار شمول الضريبة — إلزامي وصريح، بلا قيمة افتراضية (لا يظهر للبائع المستقل غير المسجّل ضريبياً) */}
-                    {noVat ? (
-                      // Saudi VAT: a seller without a VAT number does not show or add VAT. The price is final,
-                      // unless the tax invoice comes from the registered shop/factory the seller buys from.
-                      <div className="mb-3">
-                        <div id="inv-choice-label" className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>
-                          <Glyph e="🧾" /> {L('Will the buyer get a tax invoice?', 'کیا خریدار کو ٹیکس انوائس ملے گی؟', 'هل يحصل المشتري على فاتورة ضريبية؟')}
-                        </div>
-                        <div role="radiogroup" aria-labelledby="inv-choice-label" className="grid gap-2">
-                          {([
-                            ['not_registered', L('No — my price is final, no VAT', 'نہیں — میری قیمت حتمی ہے، ٹیکس نہیں', 'لا — سعري نهائي بلا ضريبة'), L('You are not VAT-registered, so no VAT is added or shown.', 'آپ ٹیکس میں رجسٹرڈ نہیں، اس لیے ٹیکس نہیں لگے گا۔', 'أنت غير مسجّل في الضريبة، فلا تُضاف ضريبة ولا تظهر.')],
-                            ['supplier_invoice', L('Yes — from the shop/factory I buy from', 'ہاں — اس دکان/فیکٹری سے جہاں سے خریدتا ہوں', 'نعم — من المحل أو المصنع الذي أشتري منه'), L('Your price includes VAT; the shop issues the tax invoice in the buyer\'s name and you attach it after delivery.', 'آپ کی قیمت میں ٹیکس شامل ہے؛ دکان خریدار کے نام ٹیکس انوائس دے گی اور آپ ڈیلیوری کے بعد لگائیں گے۔', 'سعرك شامل الضريبة؛ يُصدر المحل الفاتورة الضريبية باسم المشتري وترفقها بعد التسليم.')],
-                          ] as const).map(([k, label, hint]) => {
-                            const on = invoiceMode === k
-                            return (
-                              <button type="button" key={k} role="radio" aria-checked={on} onClick={() => setInvoiceMode(k)}
-                                className={`text-start px-3 py-2 rounded-xl border-2 transition-all ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 bg-white hover:border-[#0F6E56]/40'}`}>
-                                <div className="text-sm font-bold" style={{ color: on ? '#0F6E56' : '#0B2438' }}>{on ? '● ' : '○ '}{label}</div>
-                                <div className="text-[11px] text-gray-500 mt-0.5">{hint}</div>
-                              </button>
-                            )
-                          })}
-                        </div>
-                        {rfq.vat_invoice_required && invoiceMode === 'not_registered' && (
-                          <p className="mt-2 text-xs font-semibold rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
-                            {L('The buyer asked for a tax invoice. You can still send, but they may prefer an offer with one.', 'خریدار نے ٹیکس انوائس مانگی ہے۔ آپ بھیج سکتے ہیں، مگر وہ انوائس والی آفر کو ترجیح دے سکتا ہے۔', 'طلب المشتري فاتورة ضريبية. يمكنك الإرسال، لكنه قد يفضّل عرضاً معه فاتورة.')}
-                          </p>
-                        )}
-                        <Link href="/settings" className="inline-block mt-2 text-xs font-bold text-[#9D7425] hover:underline">{L('VAT-registered? Add your VAT number', 'ٹیکس میں رجسٹرڈ ہیں؟ ٹیکس نمبر شامل کریں', 'مسجّل في الضريبة؟ أضف رقمك الضريبي')}</Link>
-                      </div>
-                    ) : (
-                    <div className="mb-3">
-                      <div id="vat-choice-label" className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>
-                        <Glyph e="🧾" /> {L('Does your price include 15% VAT?', 'کیا آپ کی قیمت میں 15% ویٹ (VAT) شامل ہے؟', 'هل يشمل سعرك ضريبة القيمة المضافة (15%)؟')} <span className="text-red-500">*</span>
-                      </div>
-                      <div role="radiogroup" aria-labelledby="vat-choice-label" aria-required="true" className="grid grid-cols-2 gap-2">
-                        {vatOpts.map((o) => {
-                          const on = vatIncluded === o.v
-                          return (
-                            <button type="button" key={String(o.v)} role="radio" aria-checked={on} onClick={() => setVatIncluded(o.v)}
-                              className={`text-start px-3 py-2 rounded-xl border-2 transition-all ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : vatIncluded === null ? 'border-amber-300 bg-white hover:border-[#0F6E56]/40' : 'border-gray-200 bg-white hover:border-[#0F6E56]/40'}`}>
-                              <div className="text-sm font-bold" style={{ color: on ? '#0F6E56' : '#0B2438' }}>{on ? '● ' : '○ '}{o.label}</div>
-                              <div className="text-[11px] text-gray-500 mt-0.5">{o.hint}</div>
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>)}
+                    <p className="mb-3 text-sm font-semibold rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
+                      <Glyph e="🧾" /> {L('Enter your prices including 15% VAT. This is what the buyer pays.', 'اپنی قیمتیں 15% ٹیکس سمیت درج کریں۔ یہی رقم خریدار ادا کرے گا۔', 'أدخل أسعارك شاملةً ضريبة القيمة المضافة (15%)، فهذا ما يدفعه المشتري.')}
+                    </p>
                     {/* تفصيل الإجمالي */}
                     {entered > 0 && noVat && (
                       <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm flex items-center justify-between">
-                        <span className="font-bold" style={{ color: '#0F6E56' }}>{invoiceMode === 'supplier_invoice' ? L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة') : L('Final total', 'حتمی کل رقم', 'الإجمالي النهائي')}</span>
+                        <span className="font-bold" style={{ color: '#0F6E56' }}>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span>
                         <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>{fmt(entered)} {SAR}</span>
                       </div>
                     )}
@@ -1395,9 +1345,7 @@ export default function SupplierRFQPage() {
             <div className="mt-5 space-y-3">
               {!blockReason && gross > 0 && (
                 <div className="rounded-xl px-3 py-2.5 text-sm font-bold text-center border" style={{ background: '#0F6E560D', borderColor: '#0F6E5633', color: '#0F6E56' }} aria-live="polite">
-                  {noVat && invoiceMode === 'not_registered'
-                    ? L(`The buyer will see: ${fmtG} SAR (final price)`, `خریدار دیکھے گا: ${fmtG} ریال (حتمی قیمت)`, `سيرى المشتري: ${fmtG} ر.س (سعر نهائي)`)
-                    : L(`The buyer will see: ${fmtG} SAR incl. VAT`, `خریدار دیکھے گا: ${fmtG} ریال ٹیکس سمیت`, `سيرى المشتري: ${fmtG} ر.س شاملاً الضريبة`)}
+                  {L(`The buyer will see: ${fmtG} SAR incl. VAT`, `خریدار دیکھے گا: ${fmtG} ریال ٹیکس سمیت`, `سيرى المشتري: ${fmtG} ر.س شاملاً الضريبة`)}
                 </div>
               )}
               <button type="submit" form="offer-form" disabled={submitting || !!blockReason} aria-describedby={blockReason ? 'offer-block-reason' : undefined}

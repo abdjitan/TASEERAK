@@ -16,9 +16,9 @@ export const lineComparable = (entryTotal: any, offer: any) =>
 
 // The seller's VAT situation on an offer (migration 158). NULL = sent before the column = registered.
 //   registered       → normal: net + 15% VAT
-//   not_registered   → the price is final, no VAT is shown or charged (Saudi VAT: an unregistered
-//                      seller must not show or collect VAT)
-//   supplier_invoice → price includes VAT; the tax invoice comes from the shop/factory the seller buys from
+//   not_registered   → the seller has no VAT number: the price is VAT-inclusive (owner decision
+//                      2026-10-17), documents show one total without a VAT amount
+//   supplier_invoice → reserved (not offered in the UI)
 export type VatStatus = 'registered' | 'not_registered' | 'supplier_invoice'
 export const vatStatusOf = (o: any): VatStatus =>
   o?.vat_status === 'not_registered' || o?.vat_status === 'supplier_invoice' ? o.vat_status : 'registered'
@@ -26,11 +26,7 @@ export const vatStatusOf = (o: any): VatStatus =>
 // Does a platform document split 15% VAT out of this offer's amounts? Only for registered sellers.
 export const showsVatBreakdown = (o: any) => vatStatusOf(o) === 'registered'
 
-// The short tag under a price for the buyer: one number, the right words.
-export function vatTag(o: any, locale: string): string {
-  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const s = vatStatusOf(o)
-  if (s === 'not_registered') return L('final price · no VAT', 'حتمی قیمت · ٹیکس نہیں', 'سعر نهائي · بلا ضريبة')
-  if (s === 'supplier_invoice') return L('incl. VAT · invoice from the source shop', 'ٹیکس سمیت · انوائس اصل دکان سے', 'شامل الضريبة · الفاتورة من المورد الأصلي')
-  return L('incl. VAT', 'ٹیکس سمیت', 'شامل الضريبة')
+// The tag under a price for the buyer. Owner decision 2026-10-17: every price reads «شامل الضريبة».
+export function vatTag(_o: any, locale: string): string {
+  return locale === 'en' ? 'incl. VAT' : locale === 'ur' ? 'ٹیکس سمیت' : 'شامل الضريبة'
 }

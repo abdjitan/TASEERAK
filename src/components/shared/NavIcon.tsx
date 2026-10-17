@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react'
 import {
   House, FilePlus2, ClipboardList, Package, FileSpreadsheet, MessageSquare, TrendingUp, MapPin,
-  Settings, ShieldCheck, Search, FolderTree, Brain, Target, ChartLine, Trophy, Building2, Users, Star,
+  Settings, ShieldCheck, Search, FolderTree, Brain, Target, ChartLine, Trophy, Building2, Users, Star, UserPlus,
 } from 'lucide-react'
 
 const BY_PATH: [RegExp, any][] = [
@@ -14,7 +14,7 @@ const BY_PATH: [RegExp, any][] = [
   [/^\/supplier\/team/, Users], [/^\/supplier\/subscription/, Star],
   [/^\/contractor$/, House], [/^\/contractor\/rfq\/quick/, FilePlus2], [/^\/contractor\/rfqs/, ClipboardList],
   [/^\/contractor\/orders/, Package], [/^\/contractor\/project/, FileSpreadsheet],
-  [/^\/messages/, MessageSquare], [/^\/market/, TrendingUp], [/^\/location/, MapPin], [/^\/settings/, Settings],
+  [/^\/messages/, MessageSquare], [/^\/market/, TrendingUp], [/^\/location/, MapPin], [/^\/settings/, Settings], [/^\/invite-friends/, UserPlus],
 ]
 
 export default function NavIcon({ href, fallback, className = 'w-[18px] h-[18px]' }: { href: string; fallback?: ReactNode; className?: string }) {

@@ -11,7 +11,7 @@ import { useTranslation } from '@/i18n'
 import { rfqRef } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
-import { showsVatBreakdown, vatTag } from '@/lib/vat'
+import { showsVatBreakdown } from '@/lib/vat'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -244,7 +244,7 @@ export default function OrderDetailPage() {
                   <th className="text-right text-xs font-bold text-gray-500 pb-3">{L('Sector', 'شعبہ', 'القطاع')}</th>
                   <th className="text-right text-xs font-bold text-gray-500 pb-3">{L('Quantity', 'مقدار', 'الكمية')}</th>
                   <th className="text-right text-xs font-bold text-gray-500 pb-3">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</th>
-                  <th className="text-right text-xs font-bold text-gray-500 pb-3">{vatBreak ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : L('Total', 'کل', 'الإجمالي')}</th>
+                  <th className="text-right text-xs font-bold text-gray-500 pb-3">{vatBreak ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : L('Total incl. VAT', 'کل ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -283,7 +283,7 @@ export default function OrderDetailPage() {
                 </div>
                 </>)}
                 <div className="border-t border-gray-200 pt-2 flex justify-between">
-                  <span className="font-bold text-gray-900">{vatBreak ? L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة') : <>{L('Total', 'کل رقم', 'الإجمالي')} <span className="block text-[11px] font-semibold text-gray-500">{vatTag(offer, locale)}</span></>}</span>
+                  <span className="font-bold text-gray-900">{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span>
                   <span className="font-bold text-[#9D7425] text-lg">{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span>
                 </div>
               </div>
@@ -363,7 +363,7 @@ export default function OrderDetailPage() {
           </div>
           <div className="p-4 sm:p-6 overflow-x-auto">
             <table className="w-full min-w-[480px] text-sm mb-4">
-              <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">{L('Item', 'آئٹم', 'الصنف')}</th><th className="text-right pb-2">{L('Quantity', 'مقدار', 'الكمية')}</th><th className="text-right pb-2">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</th><th className="text-right pb-2">{vatBreak ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : L('Total', 'کل', 'الإجمالي')}</th></tr></thead>
+              <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">{L('Item', 'آئٹم', 'الصنف')}</th><th className="text-right pb-2">{L('Quantity', 'مقدار', 'الكمية')}</th><th className="text-right pb-2">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</th><th className="text-right pb-2">{vatBreak ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : L('Total incl. VAT', 'کل ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</th></tr></thead>
               <tbody>
                 {rows.map((it: any, idx: any) => (
                   <tr key={idx} className="border-b border-gray-50">
@@ -382,9 +382,8 @@ export default function OrderDetailPage() {
                 <div className="flex justify-between"><span className="text-gray-500">{L('VAT 15%', 'ویٹ (VAT) 15%', 'ضريبة القيمة المضافة 15%')}</span><span>{dealVat.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span></div>
                 <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span><span style={{ color: '#0F6E56' }}>{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span></div>
                 </>) : (
-                  <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>{L('Total', 'کل رقم', 'الإجمالي')}</span><span style={{ color: '#0F6E56' }}>{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span></div>
+                  <div className="flex justify-between font-bold border-t border-gray-200 pt-1"><span>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span><span style={{ color: '#0F6E56' }}>{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span></div>
                 )}
-                {!vatBreak && <div className="text-[11px] text-gray-500 text-end">{vatTag(offer, locale)}</div>}
               </div>
             </div>
           </div>

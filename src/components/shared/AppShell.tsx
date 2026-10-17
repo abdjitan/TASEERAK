@@ -12,6 +12,7 @@ import { clearAllLocalDrafts } from '@/lib/localDraft'
 import NavIcon from '@/components/shared/NavIcon'
 import Glyph from '@/components/shared/Glyph'
 import { storedSellerKind } from '@/lib/sellers'
+import { claimPendingRef } from '@/lib/referral'
 
 // Unread-messages badge cache shared by every AppShell mount (see the effect below).
 const unreadCache = { uid: '', n: 0, at: 0 }
@@ -65,6 +66,7 @@ export default function AppShell({
       const { data: { session } } = await supabase.auth.getSession()
       const uid = userId || session?.user?.id
       if (!uid) return
+      claimPendingRef(supabase) // a new account opened from an invite link: link it to the inviter once
       const refresh = async () => {
         const { count } = await supabase.from('messages').select('id', { count: 'exact', head: true }).is('read_at', null).neq('sender_id', uid)
         Object.assign(unreadCache, { uid, n: count || 0, at: Date.now() })

@@ -33,6 +33,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📊', label: L('Price Index', 'انڈیکس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
+      { href: '/invite-friends', icon: '🤝', label: L('Invite someone', 'دعوت دیں', 'ادعُ من تعرفه'), section: secAccount },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
   } else {
@@ -45,6 +46,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
+      { href: '/invite-friends', icon: '🤝', label: L('Invite someone', 'دعوت دیں', 'ادعُ من تعرفه'), section: secAccount },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
   }

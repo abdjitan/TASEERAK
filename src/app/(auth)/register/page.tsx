@@ -13,6 +13,7 @@ import { PHONE_OTP_ENABLED } from '@/lib/features'
 import { SELLER_KINDS, rememberedSignupKind } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { captureRef } from '@/lib/referral'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
 // نجمع الحد الأدنى فقط: الدور + الاسم + اسم الشركة + الجوال + البريد + كلمة المرور.
@@ -106,6 +107,7 @@ export default function RegisterPage() {
 
   // اختيار مسبق للدور من الرابط (?role=contractor|supplier) — لروابط الدعوة/الهبوط الموجّهة
   useEffect(() => {
+    captureRef() // «ادعُ من تعرفه»: keep ?ref= before any redirect
     try {
       // Phone + WhatsApp OTP is the main way in; this email form stays for ?email=1.
       if (PHONE_OTP_ENABLED && new URLSearchParams(window.location.search).get('email') !== '1') { window.location.replace('/login'); return }
