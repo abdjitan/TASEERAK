@@ -212,7 +212,7 @@ export default function QuickRequestPage() {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) return
     const rec = new SR()
-    rec.lang = locale === 'en' ? 'en-US' : locale === 'ur' ? 'ur-PK' : 'ar-SA'
+    rec.lang = locale === 'en' ? 'en-US' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA'
     rec.interimResults = false
     rec.continuous = true
     rec.onresult = (e: any) => {

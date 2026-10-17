@@ -30,7 +30,7 @@ export default function OfferDetailPage() {
   const router = useRouter()
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory'
+  const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
   const SAR = L('SAR', 'SAR', 'ر.س')
   const [rfq, setRfq] = useState<any>(null)
   const [offer, setOffer] = useState<any>(null)
@@ -339,7 +339,7 @@ export default function OfferDetailPage() {
             {(reqDone || offer.reduction_deadline) ? (
               <>
                 <div className="text-center text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-2">
-                  ✓ {L('Reduction request sent — waiting for the supplier reply', 'کمی کی درخواست بھیج دی گئی — سپلائر کے جواب کا انتظار ہے', 'تم إرسال طلب التخفيض — بانتظار رد المورد')}{offer.reduction_deadline ? ` (${L('Deadline:', 'آخری وقت:', 'المهلة:')} ${new Date(offer.reduction_deadline).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA')})` : ''}
+                  ✓ {L('Reduction request sent — waiting for the supplier reply', 'کمی کی درخواست بھیج دی گئی — سپلائر کے جواب کا انتظار ہے', 'تم إرسال طلب التخفيض — بانتظار رد المورد')}{offer.reduction_deadline ? ` (${L('Deadline:', 'آخری وقت:', 'المهلة:')} ${new Date(offer.reduction_deadline).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn')})` : ''}
                 </div>
                 <button type="button" onClick={cancelReduction} disabled={acting} className="block w-full text-center text-xs mb-3 px-4 py-2 rounded-xl font-semibold border border-gray-300 text-gray-600 disabled:opacity-50">
                   ✕ {L('Cancel reduction request', 'کمی کی درخواست منسوخ کریں', 'إلغاء طلب التخفيض')}

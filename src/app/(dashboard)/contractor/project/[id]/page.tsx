@@ -95,7 +95,7 @@ export default function ProjectResultsPage() {
               </div>
               <div className="flex items-center gap-3 text-xs text-gray-500">
                 <span><Glyph e="📍" /> {project?.city || project?.region}</span>
-                <span><Glyph e="📅" /> {new Date(project?.created_at).toLocaleDateString('ar-SA')}</span>
+                <span><Glyph e="📅" /> {new Date(project?.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</span>
               </div>
               {project?.boq_url && (
                 <a href={fileHref(project.boq_url)} target="_blank" rel="noopener noreferrer"

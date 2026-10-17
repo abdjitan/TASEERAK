@@ -34,7 +34,7 @@ export default function DealProtection({
   const [invErr, setInvErr] = useState('')
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory'
+  const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
 
   // المورد يرفع فاتورته الرسمية (من عنده، أو من المحل الذي اشترى منه) فتُرفق بالصفقة للمشتري.
   async function uploadInvoice(file: File | null | undefined) {

@@ -230,7 +230,7 @@ export default function AdminPanel() {
   const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمّ اختيار العرض', cancelled: '✕ ملغي', expired: 'منتهي' }
   const OFFER_STATUS: Record<string, string> = { pending: 'بانتظار', submitted: 'مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
   const sar = (n: any) => (n || n === 0) ? Number(n).toLocaleString('en-US') + ' ر.س' : '—'
-  const dt = (d: any) => d ? new Date(d).toLocaleDateString('ar-SA') : '—'
+  const dt = (d: any) => d ? new Date(d).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn') : '—'
 
   // BOQ/shared files live in the now-private "licenses" bucket — open via the auth-gated
   // /api/file proxy, which signs a short-lived URL (handles both full URLs and bare paths) (H9).
@@ -483,7 +483,7 @@ export default function AdminPanel() {
                       <div className="text-xs text-gray-400 mt-0.5 truncate"><Glyph e="🏭" /> {sup?.company_name_ar || '—'} · {Number(o.total_price || 0).toLocaleString('en-US')} ر.س{o.invoice_number ? ` · ${o.invoice_number}` : ''}</div>
                     </div>
                     <div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}>
-                      <div className="text-lg leading-none">{st.emoji}</div>
+                      <div className="text-lg leading-none"><Glyph e={st.emoji} /></div>
                       <div className="text-[10px] font-bold leading-tight mt-0.5">{st.label.split('—')[0].trim()}</div>
                     </div>
                   </div>
@@ -634,8 +634,8 @@ export default function AdminPanel() {
               <div className="font-bold text-sm mb-1" style={{ color: '#0B2438' }}><Glyph e="🎉" /> فترة الإطلاق المجانية</div>
               <div className="text-xs text-gray-500 mb-3">
                 {(!launchUntil || new Date(launchUntil) > new Date())
-                  ? `مفعّلة الآن — كل الميزات مجانية للموردين${launchUntil ? ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')}` : ' (بلا تاريخ نهاية معلن)'}.`
-                  : `انتهت في ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')} — الباقات المدفوعة سارية.`}
+                  ? `مفعّلة الآن — كل الميزات مجانية للموردين${launchUntil ? ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}` : ' (بلا تاريخ نهاية معلن)'}.`
+                  : `انتهت في ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')} — الباقات المدفوعة سارية.`}
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <input type="date" defaultValue={launchUntil ? new Date(launchUntil).toISOString().slice(0, 10) : ''}
@@ -895,7 +895,7 @@ export default function AdminPanel() {
                       <div className="text-[11px] text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
                         {r.requester?.role && ` (${r.requester.role === 'contractor' ? 'مشترٍ' : r.requester.role === 'supplier' ? 'مورد' : r.requester.role})`}
-                        {r.sub_category && ` · مجموعة: ${r.sub_category}`} · {new Date(r.created_at).toLocaleDateString('ar-SA')}
+                        {r.sub_category && ` · مجموعة: ${r.sub_category}`} · {new Date(r.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}
                       </div>
                     </div>
                     {r.status === 'pending' && (
@@ -1061,7 +1061,7 @@ export default function AdminPanel() {
                           await supabase.rpc('admin_set_subscription', { p_user_id: u.id, p_plan: e.target.value, p_months: months })
                           await loadData()
                         }}
-                        title={u.subscription_expires_at ? `حتى ${new Date(u.subscription_expires_at).toLocaleDateString('ar-SA-u-ca-gregory')}` : ''}
+                        title={u.subscription_expires_at ? `حتى ${new Date(u.subscription_expires_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}` : ''}
                         className="text-xs border border-amber-200 text-amber-700 bg-amber-50 rounded-lg px-2 py-1.5 cursor-pointer">
                         <option value="free">مجاني</option>
                         <option value="professional">احترافي</option>
@@ -1113,7 +1113,7 @@ export default function AdminPanel() {
                 </div>
 
                 <div className="text-[10px] text-gray-300 mt-2">
-                  ID: {u.id} | تاريخ التسجيل: {new Date(u.created_at).toLocaleDateString('ar-SA')}
+                  ID: {u.id} | تاريخ التسجيل: {new Date(u.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}
                 </div>
               </div>
             ))}

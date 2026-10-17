@@ -99,7 +99,7 @@ export default async function SupplierProfilePage(props: { params: Promise<{ id:
                       <div className="flex items-center gap-0.5 text-sm" aria-label={`${rv.rating} من 5`}>
                         {[1, 2, 3, 4, 5].map((n) => <span key={n} className={n <= rv.rating ? 'text-yellow-400' : 'text-gray-200'}>★</span>)}
                       </div>
-                      {rv.created_at && <span className="text-[10px] text-gray-400">{new Date(rv.created_at).toLocaleDateString('ar-SA-u-ca-gregory')}</span>}
+                      {rv.created_at && <span className="text-[10px] text-gray-400">{new Date(rv.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</span>}
                     </div>
                     {rv.comment && <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">{rv.comment}</p>}
                   </div>
@@ -113,7 +113,7 @@ export default async function SupplierProfilePage(props: { params: Promise<{ id:
             <Link href="/register" className="inline-block px-6 py-3 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>اطلب تسعيرة مجاناً</Link>
           </div>
         </div>
-        <p className="text-center text-[11px] text-gray-400 mt-6">عضو منذ {new Date(s.member_since).toLocaleDateString('ar-SA-u-ca-gregory')}</p>
+        <p className="text-center text-[11px] text-gray-400 mt-6">عضو منذ {new Date(s.member_since).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</p>
       </main>
       <PublicFooter />
     </div>

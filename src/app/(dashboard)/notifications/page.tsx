@@ -57,7 +57,7 @@ export default function NotificationsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{n.title}</div>
                     {n.body && <div className="text-xs text-gray-500 mt-0.5">{n.body}</div>}
-                    <div className="text-[10px] text-gray-400 mt-1">{new Date(n.created_at).toLocaleString('ar-SA-u-ca-gregory')}</div>
+                    <div className="text-[10px] text-gray-400 mt-1">{new Date(n.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</div>
                   </div>
                 </div>
               </button>

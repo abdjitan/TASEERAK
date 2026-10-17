@@ -62,7 +62,7 @@ export default function RFQDetailPage() {
   const router = useRouter()
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory'
+  const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
   const SAR = L('SAR', 'SAR', 'ر.س')
   const secLabel = (k: string) => (locale !== 'ar' && SECTOR_I18N[locale]?.[k]) || (SECTOR_LABELS as any)[k] || k
   const [rfq, setRfq] = useState<any>(null)
@@ -1013,7 +1013,7 @@ export default function RFQDetailPage() {
                   return (
                     <div className="rounded-xl border p-2.5 mb-2" style={{ borderColor: `${st.tone}33`, background: `${st.tone}0d` }}>
                       <div className="flex items-center gap-1.5 mb-2">
-                        <span className="text-sm">{st.emoji}</span>
+                        <span className="text-sm"><Glyph e={st.emoji} /></span>
                         <span className="text-[11px] font-bold leading-tight" style={{ color: st.tone }}>{locale === 'ar' ? st.label : ((STAGE_I18N as any)[st.key === 'paid' && !st.done ? 'paid_pending' : st.key]?.[locale] || st.label)}</span>
                       </div>
                       {st.key !== 'disputed' && (

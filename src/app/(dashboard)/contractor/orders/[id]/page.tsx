@@ -21,7 +21,7 @@ export default function OrderDetailPage() {
   const { id } = useParams() // offer id
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory'
+  const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
   const SAR = L('SAR', 'SAR', 'ر.س')
   const [offer, setOffer] = useState<any>(null)
   const [rfq, setRfq] = useState<any>(null)

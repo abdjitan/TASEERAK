@@ -22,7 +22,7 @@ export function arItems(n: number, locale = 'ar'): string {
 export function rfqDate(rfq: any, locale: string): string {
   const d = rfq?.created_at ? new Date(rfq.created_at) : null
   if (!d || isNaN(d.getTime())) return ''
-  return d.toLocaleDateString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory', { timeZone: 'Asia/Riyadh' })
+  return d.toLocaleDateString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn', { timeZone: 'Asia/Riyadh' })
 }
 
 // Old rows were named "first +N أصناف أخرى / more / مزید".

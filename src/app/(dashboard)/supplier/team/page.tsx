@@ -100,7 +100,7 @@ export default function SupplierTeamPage() {
         {team && team.can_manage && (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
             <h2 className="font-bold text-navy">{L('Invite a team member', 'رکن کو مدعو کریں', 'دعوة عضو جديد')}</h2>
-            <p className="text-xs text-gray-500">{L('Each link works once and expires after 7 days. Send it to the employee on WhatsApp.', 'ہر لنک ایک بار اور 7 دن کے لیے۔', 'كل رابط يُستخدم مرة واحدة وينتهي بعد ٧ أيام. أرسله إلى الموظف عبر واتساب.')}</p>
+            <p className="text-xs text-gray-500">{L('Each link works once and expires after 7 days. Send it to the employee on WhatsApp.', 'ہر لنک ایک بار اور 7 دن کے لیے۔', 'كل رابط يُستخدم مرة واحدة وينتهي بعد 7 أيام. أرسله إلى الموظف عبر واتساب.')}</p>
             <div className="flex flex-wrap items-center gap-2">
               <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="input-field w-auto" aria-label={L('Role', 'کردار', 'الدور')}>
                 <option value="member">{roleLabel('member')}: {L('prices requests', 'قیمتیں دیتا ہے', 'يسعّر الطلبات')}</option>
@@ -128,7 +128,7 @@ export default function SupplierTeamPage() {
                 <div className="space-y-1.5">
                   {team.invites.map((i: any) => (
                     <div key={i.id} className="flex items-center justify-between gap-2 text-xs rounded-lg border border-gray-100 px-3 py-2">
-                      <span className="text-gray-600">{roleLabel(i.role)} · {L('expires', 'ختم', 'ينتهي')} {new Date(i.expires_at).toLocaleDateString(locale === 'ar' ? 'ar-SA' : 'en-GB')}</span>
+                      <span className="text-gray-600">{roleLabel(i.role)} · {L('expires', 'ختم', 'ينتهي')} {new Date(i.expires_at).toLocaleDateString(locale === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : 'en-GB')}</span>
                       <span className="flex gap-2">
                         <button type="button" onClick={() => copy(linkFor(i.token))} className="font-bold text-navy">{copied === linkFor(i.token) ? '✓' : L('Copy', 'کاپی', 'نسخ')}</button>
                         <button type="button" onClick={() => revoke(i.id)} disabled={busy === i.id} className="font-bold text-red-500">{L('Revoke', 'منسوخ', 'إلغاء')}</button>

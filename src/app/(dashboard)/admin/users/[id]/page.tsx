@@ -114,8 +114,8 @@ export default function AdminUserDetail() {
     window.open(data?.signedUrl || val, '_blank')
   }
 
-  const dt = (d: any) => d ? new Date(d).toLocaleDateString('ar-SA') : '—'
-  const dtt = (d: any) => d ? new Date(d).toLocaleString('ar-SA') : '—'
+  const dt = (d: any) => d ? new Date(d).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn') : '—'
+  const dtt = (d: any) => d ? new Date(d).toLocaleString('ar-SA-u-ca-gregory-nu-latn') : '—'
   const sar = (n: any) => (n || n === 0) ? Number(n).toLocaleString('en-US') + ' ر.س' : '—'
 
   if (loading || !ok) return <PageLoader />

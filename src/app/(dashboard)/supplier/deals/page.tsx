@@ -92,7 +92,7 @@ export default function SupplierDealsPage() {
                     {d.invoice_number && <div className="text-[11px] text-gray-400 font-mono mt-0.5" dir="ltr">{d.invoice_number}</div>}
                   </div>
                   <div className="text-center rounded-xl px-3 py-2 shrink-0 w-[132px]" style={{ background: st.tone + '14', color: st.tone }}>
-                    <div className="text-lg leading-none">{st.emoji}</div>
+                    <div className="text-lg leading-none"><Glyph e={st.emoji} /></div>
                     <div className="text-[11px] font-bold leading-tight mt-0.5">{st.label}</div>
                   </div>
                 </Link>

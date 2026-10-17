@@ -15,6 +15,7 @@ const MAP: Record<string, [any, string?]> = {
   '🎉': [Sparkles, 'text-[#D4A543]'], '🧾': [ReceiptText], '🔔': [Bell], '🔒': [Lock], '⚠': [AlertTriangle, 'text-amber-600'],
   '❌': [XCircle, 'text-red-500'], '✅': [CheckCircle2, 'text-emerald-600'], '📋': [ClipboardList], '📤': [Upload],
   '🎯': [Target], '⏳': [Hourglass, 'text-amber-600'], '⭐': [Star, 'text-[#D4A543]'], '👋': [Hand, 'text-[#D4A543]'],
+  '📥': [Inbox], '💵': [Wallet],
   '📭': [Inbox], '🟢': [Circle, 'text-emerald-500 fill-emerald-500'], '🔴': [Circle, 'text-red-500 fill-red-500'],
   '🟠': [Circle, 'text-orange-500 fill-orange-500'], '⏰': [AlarmClock], '🗓': [CalendarDays], '📅': [CalendarDays],
   '⚙': [Settings2], '💬': [MessageCircle], '🚫': [Ban, 'text-red-500'], '⚡': [Zap], '📎': [Paperclip], '📷': [Camera],

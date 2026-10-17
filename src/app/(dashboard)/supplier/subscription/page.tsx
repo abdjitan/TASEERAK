@@ -55,14 +55,14 @@ export default function SubscriptionPage() {
         {launchFree && (
           <div className="rounded-2xl p-5 mb-6 text-white" style={{ background: 'linear-gradient(120deg,#0F6E56,#0B2438)' }}>
             <div className="text-lg font-extrabold"><Glyph e="🎉" /> {locale === 'en' ? 'Free launch period' : 'فترة إطلاق مجانية'}</div>
-            <div className="text-sm text-emerald-50 mt-1">{locale === 'en' ? 'All features are open to you for free — no fees' : 'كل الميزات مفتوحة لك مجاناً بدون أي رسوم'}{launchUntil ? (locale === 'en' ? ` until ${new Date(launchUntil).toLocaleDateString('en-GB')}` : ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory')}`) : ''}. {locale === 'en' ? 'The plans below show future pricing.' : 'الباقات أدناه توضّح الأسعار المستقبلية بعد فترة الإطلاق.'}</div>
+            <div className="text-sm text-emerald-50 mt-1">{locale === 'en' ? 'All features are open to you for free — no fees' : 'كل الميزات مفتوحة لك مجاناً بدون أي رسوم'}{launchUntil ? (locale === 'en' ? ` until ${new Date(launchUntil).toLocaleDateString('en-GB')}` : ` حتى ${new Date(launchUntil).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}`) : ''}. {locale === 'en' ? 'The plans below show future pricing.' : 'الباقات أدناه توضّح الأسعار المستقبلية بعد فترة الإطلاق.'}</div>
           </div>
         )}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-6 flex items-center justify-between flex-wrap gap-3">
           <div>
             <div className="text-xs text-gray-400">{locale === 'en' ? 'Your current plan' : 'باقتك الحالية'}</div>
             <div className="text-lg font-extrabold" style={{ color: '#0B2438' }}>{planLabel(current)}</div>
-            {active && profile?.subscription_expires_at && <div className="text-[11px] text-gray-400">{locale === 'en' ? 'Active until ' : 'سارية حتى '}{new Date(profile.subscription_expires_at).toLocaleDateString('ar-SA-u-ca-gregory')}</div>}
+            {active && profile?.subscription_expires_at && <div className="text-[11px] text-gray-400">{locale === 'en' ? 'Active until ' : 'سارية حتى '}{new Date(profile.subscription_expires_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</div>}
           </div>
           <span className={`text-xs font-bold px-3 py-1.5 rounded-full ${active ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{active ? (locale === 'en' ? '✓ Subscribed' : '✓ مشترك') : (locale === 'en' ? 'Free' : 'مجاني')}</span>
         </div>

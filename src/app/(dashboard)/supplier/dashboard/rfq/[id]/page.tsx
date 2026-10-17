@@ -715,7 +715,7 @@ export default function SupplierRFQPage() {
                   <div key={idx} className="px-3 py-2.5 border-t border-gray-100 flex items-center justify-between gap-3">
                     <span className="text-sm text-gray-800 font-medium truncate">
                       {getProductLabel(it.product_name, locale)}
-                      <span className="text-gray-400 text-xs font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}{it.delivery_days ? ` · ${it.delivery_days}${L('d', ' دن', 'ي')}` : ''})</span>
+                      <span className="text-gray-400 text-xs font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}{it.delivery_days ? ` · ${L(`delivery in ${it.delivery_days}d`, `${it.delivery_days} دن میں ڈیلیوری`, `التوصيل خلال ${Number(it.delivery_days) === 1 ? 'يوم واحد' : Number(it.delivery_days) === 2 ? 'يومين' : Number(it.delivery_days) <= 10 ? `${it.delivery_days} أيام` : `${it.delivery_days} يوماً`}`)}` : ''})</span>
                     </span>
                     <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#0B2438' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
                   </div>
@@ -786,7 +786,7 @@ export default function SupplierRFQPage() {
               <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 text-right">
                 <div className="font-bold text-orange-700 mb-1"><Glyph e="📉" /> {L('The buyer is asking for a lower price', 'خریدار قیمت کم کرنے کی درخواست کر رہا ہے', 'المشتري يطلب تخفيض السعر')}</div>
                 {existingOffer.reduction_note && <div className="text-xs text-gray-600 mb-1">«{existingOffer.reduction_note}»</div>}
-                <div className="text-[11px] text-gray-500 mb-3">{L('Reply by:', 'جواب کی آخری مہلت:', 'المهلة للرد:')} {new Date(existingOffer.reduction_deadline).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA')}</div>
+                <div className="text-[11px] text-gray-500 mb-3">{L('Reply by:', 'جواب کی آخری مہلت:', 'المهلة للرد:')} {new Date(existingOffer.reduction_deadline).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn')}</div>
                 <div className="flex gap-2">
                   <input type="number" value={newPrice} onChange={(e: any) => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={L(`Less than ${existingOffer.total_price?.toLocaleString('en-US')} SAR`, `${existingOffer.total_price?.toLocaleString('en-US')} SAR سے کم`, `أقل من ${existingOffer.total_price?.toLocaleString('en-US')} ر.س`)} min="0" step="any" />
                   <button type="button" onClick={submitReduction} disabled={reducing} className="px-4 rounded-xl font-semibold text-white text-sm disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>{reducing ? '...' : L('Send new price', 'نئی قیمت بھیجیں', 'إرسال السعر الجديد')}</button>

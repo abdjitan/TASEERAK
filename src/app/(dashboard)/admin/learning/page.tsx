@@ -144,7 +144,7 @@ export default function AdminLearningPage() {
           <p className="text-xs text-gray-500 mt-1">كلمات أو مواد ما زالت ناقصة: أضفها إلى القائمة أو إلى قاموس البحث.</p>
           {misses.length === 0 ? <p className="text-sm text-gray-400 mt-3">لا شيء بعد.</p> : (
             <div className="flex flex-wrap gap-2 mt-3">
-              {misses.map((m, i) => <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-100" dir="auto" title={new Date(m.created_at).toLocaleString('ar-SA')}>{m.query}</span>)}
+              {misses.map((m, i) => <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-100" dir="auto" title={new Date(m.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}>{m.query}</span>)}
             </div>
           )}
         </div>

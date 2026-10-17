@@ -484,7 +484,7 @@ export default function ContractorDashboard() {
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /></div>
                     <div>
                       <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{p.title}</div>
-                      <div className="text-xs text-gray-400"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString('ar-SA')}</div>
+                      <div className="text-xs text-gray-400"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</div>
                     </div>
                   </div>
                   <div className="text-xs font-semibold" style={{ color: '#D4A543' }}>
@@ -505,7 +505,7 @@ export default function ContractorDashboard() {
                 <div key={d.id} className="flex items-center justify-between gap-2 border border-gray-100 rounded-xl px-3 py-2.5 hover:border-[#D4A543]/40 transition-colors">
                   <div className="min-w-0">
                     <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{d.title || (locale === 'en' ? 'Untitled draft' : 'مسودة بلا اسم')}</div>
-                    <div className="text-[11px] text-gray-400">{(d.data?.items?.length || 0)} {locale === 'en' ? 'items' : 'مادة'} · {new Date(d.updated_at).toLocaleDateString('ar-SA-u-ca-gregory')}</div>
+                    <div className="text-[11px] text-gray-400">{(d.data?.items?.length || 0)} {locale === 'en' ? 'items' : 'مادة'} · {new Date(d.updated_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-[#071827]" style={{ background: '#D4A543' }}>{locale === 'en' ? 'Continue' : 'إكمال'} ←</Link>
@@ -649,7 +649,7 @@ export default function ContractorDashboard() {
                       const st = disputed || (allDone ? stages[0] : stages.slice().sort((a: any, b: any) => a.step - b.step)[0])
                       const n = deals[rfq.id].length
                       const lbl = st.key === 'disputed' ? 'نزاع' : allDone ? '✓ مكتملة' : st.step >= 3 ? 'بانتظار الدفع' : st.step >= 2 ? 'تم التوصيل' : 'جاري التوصيل'
-                      return (<div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}><div className="text-lg leading-none">{st.emoji}</div><div className="text-[10px] font-bold leading-tight mt-0.5">{lbl}{n > 1 ? ` (${n})` : ''}</div></div>)
+                      return (<div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}><div className="text-lg leading-none"><Glyph e={st.emoji} /></div><div className="text-[10px] font-bold leading-tight mt-0.5">{lbl}{n > 1 ? ` (${n})` : ''}</div></div>)
                     })() : (rfq.offer_count || 0) > 0 ? (
                       <div className="text-center rounded-xl px-4 py-2 text-[#071827] shrink-0" style={{ background: '#D4A543' }}>
                         <div className="text-xl font-bold">{rfq.offer_count}</div>
