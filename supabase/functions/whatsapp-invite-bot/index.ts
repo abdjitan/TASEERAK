@@ -20,6 +20,7 @@ const AI_CAP_USD = Number(Deno.env.get('AI_CAP_USD') || '5')
 // Owner messages that open a chat for the bot (the invitation and the one follow-up, messages.js).
 const INVITE_PREFIXES = ['السلام عليكم ورحمة الله وبركاته،\nتحية طيبة لفريق', 'السلام عليكم، نذكّركم بدعوة']
 const HISTORY_TURNS = 10
+const ESCALATION_HOURS = 24
 
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void }
 
@@ -84,8 +85,12 @@ async function onInbound(sb: SupabaseClient, m: any) {
   const { error: dup } = await sb.from('invite_messages').insert({ phone, role: 'shop', text, wa_message_id: m?.id || null })
   if (dup) return
 
+  // Escalated to the owner (migration 167): silent for 24 hours; if he has not written by then, resume.
+  let stage = chat.stage
+  if (stage === 'escalated' && chat.escalated_at && Date.now() - Date.parse(chat.escalated_at) > ESCALATION_HOURS * 3600e3) stage = 'invited'
+
   const apiKey = (Deno.env.get('ANTHROPIC_API_KEY') && await underCap(sb)) ? Deno.env.get('ANTHROPIC_API_KEY') : ''
-  const d: any = decide(text, { lang: chat.lang, stage: chat.stage }, texts, { ai: !!apiKey })
+  const d: any = decide(text, { lang: chat.lang, stage }, texts, { ai: !!apiKey })
   let replies: { text: string; image?: string }[] = d.replies
   const next = { ...d.nextState }
   let usage: any = null
@@ -99,6 +104,10 @@ async function onInbound(sb: SupabaseClient, m: any) {
     }
     if (r?.intent === 'interested') next.stage = 'interested'
     if (r?.intent === 'declined') next.stage = 'declined'
+    if (r?.intent === 'escalate' && r?.reply) {
+      next.stage = 'escalated'
+      await escalate(sb, chat, phone, String(r.reason || '').slice(0, 300), text)
+    }
     usage = r?.usage || null
     replies = [{ text: r?.reply || (next.stage === 'interested' ? (texts as any).yes[next.lang] : (texts as any).fallback[next.lang]) }]
   }
@@ -119,6 +128,20 @@ async function history(sb: SupabaseClient, phone: string, currentId?: string) {
     .map((r: any) => ({ role: r.role === 'shop' ? 'user' : 'assistant', content: r.text }))
   while (turns.length && turns[0].role !== 'user') turns.shift()
   return turns
+}
+
+// Rare hand-off to the owner: record it and notify every admin with the reason and the message.
+async function escalate(sb: SupabaseClient, chat: any, phone: string, reason: string, text: string) {
+  await sb.from('invite_chats').update({ escalated_at: new Date().toISOString(), escalation_reason: reason || null }).eq('phone', phone)
+  const { data: admins } = await sb.from('profiles').select('id').eq('role', 'admin')
+  const who = chat.shop_name || `+${phone}`
+  const rows = (admins || []).map((a: any) => ({
+    user_id: a.id, type: 'new_message',
+    title: `محادثة تحتاج ردّك على واتساب: ${who}`,
+    body: `${reason || 'حوّلها الرد الآلي إليك'}\nرسالتهم: «${text.slice(0, 200)}»`,
+    data: { kind: 'invite_escalation', url: `/admin/invites?phone=${phone}` },
+  }))
+  if (rows.length) await sb.from('notifications').insert(rows)
 }
 
 // This month's AI spend is under the cap. At the cap: notify every admin once per month.

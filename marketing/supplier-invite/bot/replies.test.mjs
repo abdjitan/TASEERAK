@@ -42,6 +42,9 @@ check('media-only -> text please (Urdu)', !r.ai && r.replies[0].text === texts.t
 r = decide('2', { stage: 'paused' }, texts, { ai: true });
 check('paused chat -> no reply, no AI', r.replies.length === 0 && r.ai === false && r.nextState.stage === 'paused');
 
+r = decide('كم العمولة؟', { stage: 'escalated' }, texts, { ai: true });
+check('escalated chat -> silent until the owner answers', r.replies.length === 0 && r.ai === false);
+
 // Old opt-out wording is gone from what the owner sends.
 const msgs = readFileSync(new URL('../messages.js', import.meta.url), 'utf8');
 check('follow-up no longer offers «not again»', !/لن نرسل مرة أخرى/.test(msgs));

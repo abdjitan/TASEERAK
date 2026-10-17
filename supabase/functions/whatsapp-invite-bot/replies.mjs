@@ -37,8 +37,9 @@ export function decide(text, state = {}, texts, opts = {}) {
   const L = st.lang;
   const fixed = (replies, patch = {}) => ({ replies, nextState: { ...st, ...patch }, ai: false });
 
-  // The owner typed in this chat himself: the bot stays out of the conversation.
-  if (st.stage === 'paused') return fixed([]);
+  // The owner typed in this chat himself, or the AI passed it to him (escalated, for 24 hours):
+  // the bot stays out of the conversation. The webhook lifts «escalated» after 24 hours.
+  if (st.stage === 'paused' || st.stage === 'escalated') return fixed([]);
 
   // Voice notes, images, stickers: the AI cannot hear or see them here, so ask for text.
   if (!t) return fixed([{ text: texts.textPlease[L] }]);

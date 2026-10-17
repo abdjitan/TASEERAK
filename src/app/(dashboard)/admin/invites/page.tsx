@@ -10,14 +10,14 @@ import PageLoader from '@/components/shared/PageLoader'
 // The owner sends invitations by hand; the bot answers every reply. Read only: nobody replies from
 // here. The month's AI cost is shown against the $5 cap the bot enforces.
 
-type Chat = { phone: string; shop_name: string | null; lang: string; stage: string; invited_at: string; last_inbound_at: string | null }
+type Chat = { phone: string; shop_name: string | null; lang: string; stage: string; invited_at: string; last_inbound_at: string | null; escalated_at: string | null; escalation_reason: string | null }
 type Msg = { id: number; phone: string; role: string; text: string; created_at: string; ai_input_tokens: number | null; ai_output_tokens: number | null }
 
 // Claude Haiku 5.5, USD per million tokens; same numbers as marketing/supplier-invite/bot/ai.mjs.
 const PRICE = { input: 0.10, output: 0.50 }
 const CAP_USD = 5
 
-const STAGES: Record<string, string> = { invited: 'مدعوّ', interested: 'مهتم', declined: 'غير مهتم', paused: 'أوقفتَ الرد الآلي' }
+const STAGES: Record<string, string> = { escalated: 'بانتظار ردّك', invited: 'مدعوّ', interested: 'مهتم', declined: 'غير مهتم', paused: 'أوقفتَ الرد الآلي' }
 const LANGS: Record<string, string> = { ar: 'العربية', en: 'English', ur: 'اردو' }
 const ROLES: Record<string, string> = { shop: 'المحل', bot: 'الرد الآلي', owner: 'أنت' }
 
@@ -39,10 +39,14 @@ export default function AdminInvitesPage() {
       if (me?.role !== 'admin') { window.location.href = '/'; return }
       const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
       const [{ data: cs }, { data: ai }] = await Promise.all([
-        sb.from('invite_chats').select('phone, shop_name, lang, stage, invited_at, last_inbound_at').order('updated_at', { ascending: false }).limit(1000),
+        sb.from('invite_chats').select('phone, shop_name, lang, stage, invited_at, last_inbound_at, escalated_at, escalation_reason').order('updated_at', { ascending: false }).limit(1000),
         sb.from('invite_messages').select('ai_input_tokens, ai_output_tokens').not('ai_input_tokens', 'is', null).gte('created_at', monthStart.toISOString()).limit(20000),
       ])
-      setChats((cs as Chat[]) || [])
+      // Chats handed to the owner come first.
+      const list = ((cs as Chat[]) || []).sort((a, b) => Number(b.stage === 'escalated') - Number(a.stage === 'escalated'))
+      setChats(list)
+      const want = new URLSearchParams(window.location.search).get('phone')
+      if (want && list.some(c => c.phone === want)) { setStage(list.find(c => c.phone === want)!.stage === 'escalated' ? 'escalated' : 'all'); openChat(want) }
       const rows: any[] = ai || []
       setAiReplies(rows.length)
       setMonthCost(rows.reduce((s, r) => s + ((r.ai_input_tokens || 0) * PRICE.input + (r.ai_output_tokens || 0) * PRICE.output) / 1e6, 0))
@@ -58,7 +62,7 @@ export default function AdminInvitesPage() {
   }
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { all: chats.length, invited: 0, interested: 0, declined: 0, paused: 0 }
+    const c: Record<string, number> = { all: chats.length, escalated: 0, invited: 0, interested: 0, declined: 0, paused: 0 }
     for (const x of chats) c[x.stage] = (c[x.stage] || 0) + 1
     return c
   }, [chats])
@@ -73,7 +77,7 @@ export default function AdminInvitesPage() {
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <h1 className="text-xl font-extrabold text-navy">دعوات الموردين على واتساب</h1>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
-            ترسل الدعوة بنفسك من تطبيق واتساب للأعمال، ويتولى الرد الآلي كل الردود بعدها. إذا كتبت أنت في محادثة يتوقف الرد الآلي فيها.
+            ترسل الدعوة بنفسك من تطبيق واتساب للأعمال، ويتولى الرد الآلي كل الردود بعدها. في الحالات المهمة النادرة يحوّل المحادثة إليك ويصلك إشعار، ويتوقف فيها 24 ساعة، ثم يعود إن لم ترد. إذا كتبت أنت في محادثة يتوقف الرد الآلي فيها نهائيًا.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 text-center">
             {[
@@ -88,7 +92,7 @@ export default function AdminInvitesPage() {
 
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            {(['all', 'invited', 'interested', 'declined', 'paused'] as const).map(k => (
+            {(['all', 'escalated', 'invited', 'interested', 'declined', 'paused'] as const).map(k => (
               <button key={k} type="button" onClick={() => setStage(k)}
                 className={`px-3 py-1.5 rounded-xl text-sm font-bold border ${stage === k ? 'text-white border-transparent' : 'border-gray-200 text-gray-600'}`}
                 style={stage === k ? { background: '#0B2438' } : undefined}>
@@ -109,6 +113,13 @@ export default function AdminInvitesPage() {
                     <span className="text-xs text-gray-400">{LANGS[c.lang] || c.lang}</span>
                     <span className="text-xs text-gray-400 ms-auto">{c.last_inbound_at ? `آخر رد: ${new Date(c.last_inbound_at).toLocaleString('ar-SA')}` : 'لم يرد بعد'}</span>
                   </button>
+                  {c.stage === 'escalated' && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-[#D4A543] bg-[#FBF5E6] px-3 py-2 text-sm">
+                      <span className="font-bold text-[#9D7425]">سبب التحويل:</span>
+                      <span className="text-gray-700">{c.escalation_reason || 'حوّلها الرد الآلي إليك'}</span>
+                      <a href={`https://wa.me/${c.phone}`} target="_blank" rel="noopener noreferrer" className="ms-auto rounded-lg px-3 py-1 text-xs font-bold text-[#071827]" style={{ background: '#D4A543' }}>افتح المحادثة في واتساب</a>
+                    </div>
+                  )}
                   {open === c.phone && (
                     <div className="mt-3 space-y-2 rounded-xl bg-gray-50 p-3">
                       {thread.length === 0 ? <p className="text-xs text-gray-400">لا رسائل.</p> : thread.map(m => (

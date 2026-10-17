@@ -24,6 +24,7 @@ The owner sends invitations **by hand** from the WhatsApp Business app. The bot 
 - 2 / 3 (also ٢ ٣, «English», «اردو»): fixed details plus the poster in that language.
 - Voice notes and images get «please type your question».
 - Anything else, including «yes», goes to the AI. The AI's intent sets the stage to interested or declined.
+- **Rare escalation (migration 167):** for a big deal, an important party (large company, government, investor, press), a serious complaint, or a problem the AI cannot solve, it tells the shop the person in charge will reply here, sets `escalated`, and notifies every admin with the reason. The bot is silent in that chat for 24 hours, then resumes if the owner has not written. If the owner writes, the chat becomes `paused`.
 - If the owner types in a chat himself, the stage becomes `paused` and the bot stays silent there.
 - **Cap.** Every AI call logs its tokens. Before each call the month's cost (Riyadh calendar month) is summed. At $5 (`AI_CAP_USD`), the fixed texts answer and every admin gets one notification that month.
 - If the AI fails or refuses, a fixed fallback line is sent. The tokens still count toward the cap.
