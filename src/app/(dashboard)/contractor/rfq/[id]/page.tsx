@@ -242,6 +242,32 @@ export default function RFQDetailPage() {
     if (error) { alert(L('Could not award — refresh the page and try again.', 'ایوارڈ نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر اختيار العرض — حدّث الصفحة وحاول مجدداً.')); return }
     await reloadAwards()
   }
+  // the cheapest offer for one item (same matching and comparable price as the matrix below)
+  function cheapestFor(it: any, idx: number, offersList: any[]) {
+    const bids = offersList.map((o: any) => {
+      const list = Array.isArray(o.item_prices) ? o.item_prices : []
+      const entry = list.find((ip: any) => ip.item_index === idx) || list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
+      return entry ? { offer: o, entry } : null
+    }).filter(Boolean) as any[]
+    bids.sort((a: any, b: any) => lineComparable(a.entry.total, a.offer) - lineComparable(b.entry.total, b.offer))
+    return bids[0] || null
+  }
+  const [pickingAll, setPickingAll] = useState(false)
+  async function awardCheapestAll(offersList: any[]) {
+    setPickingAll(true)
+    const supabase = createClient()
+    let failed = 0
+    for (let idx = 0; idx < (rfq?.items || []).length; idx++) {
+      if (awards[idx]) continue
+      const best = cheapestFor(rfq.items[idx], idx, offersList)
+      if (!best) continue
+      const { error } = await supabase.rpc('award_rfq_item', { p_rfq_id: id, p_item_index: idx, p_offer_id: best.offer.id })
+      if (error) failed++
+    }
+    setPickingAll(false)
+    await reloadAwards()
+    if (failed) alert(L('Some items could not be selected — refresh and try again.', 'کچھ اشیاء منتخب نہ ہو سکیں — ریفریش کریں۔', 'تعذّر اختيار بعض المواد — حدّث الصفحة وحاول مجدداً.'))
+  }
   async function unawardItem(itemIndex: any) {
     setAwarding(`${itemIndex}:x`)
     const supabase = createClient()
@@ -563,6 +589,12 @@ export default function RFQDetailPage() {
                 </div>
               )}
             </div>
+            {activeOffers.length > 0 && rfq.status === 'open' && (rfq.items || []).some((it: any, idx: number) => !awards[idx] && cheapestFor(it, idx, activeOffers)) && (
+              <button type="button" onClick={() => awardCheapestAll(activeOffers)} disabled={pickingAll}
+                className="w-full mb-3 py-3 rounded-xl font-extrabold text-sm text-[#071827] disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                {pickingAll ? L('Selecting…', 'منتخب ہو رہا ہے…', 'جارٍ الاختيار…') : L('Pick the cheapest for every item — you can change any line after', 'ہر چیز کے لیے سب سے سستی منتخب کریں', 'اختر الأرخص لكل المواد — ويمكنك تغيير أي مادة بعدها')}
+              </button>
+            )}
             {activeOffers.length === 0 ? (
               <div className="bg-white rounded-xl p-8 border border-gray-100 text-center">
                 <div className="text-4xl mb-3"><Glyph e="⏳" /></div>
