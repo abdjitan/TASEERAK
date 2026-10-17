@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 
   const { data: offers } = await supabase
     .from('offers')
-    .select('id, total_price, delivery_days, vat_included, item_prices, status, supplier:profiles_public(company_name_ar, rating_avg, supplier_tier, city, verification_status)')
+    .select('id, total_price, delivery_days, vat_included, vat_status, item_prices, status, supplier:profiles_public(company_name_ar, rating_avg, supplier_tier, city, verification_status)')
     .eq('rfq_id', rfqId)
     .neq('status', 'rejected')
     .order('total_price', { ascending: true })
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       total_price_sar: o.total_price,
       delivery_days: o.delivery_days ?? null,
       vat_included: !!o.vat_included,
+      vat_status: o.vat_status || 'registered',
       supplier_rating: (o.supplier as any)?.rating_avg ?? null,
       supplier_type: tierAr[(o.supplier as any)?.supplier_tier] || (o.supplier as any)?.supplier_tier || null,
       verified: (o.supplier as any)?.verification_status === 'verified',

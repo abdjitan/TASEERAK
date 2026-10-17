@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, UNIT_OPTIONS, getProductLabel, getUnitLabel } from '@/types'
 import { useTranslation } from '@/i18n'
 import { waLink } from '@/lib/wa'
-import { offerComparable, lineComparable } from '@/lib/vat'
+import { offerComparable, lineComparable, vatTag } from '@/lib/vat'
 import { fileHref } from '@/lib/fileHref'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -685,7 +685,7 @@ export default function RFQDetailPage() {
                                 <div className="flex items-center gap-2 shrink-0">
                                   <div className="text-end leading-tight">
                                     <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{(b.offer.vat_included ? Number(b.entry.total) : Number(b.entry.total) * 1.15).toLocaleString('en-US', { maximumFractionDigits: 0 })} {SAR}</div>
-                                    <div className="text-[9px] text-gray-400">{L('incl. VAT', 'ٹیکس سمیت', 'شامل الضريبة')}</div>
+                                    <div className="text-[10px] text-gray-400">{vatTag(b.offer, locale)}</div>
                                   </div>
                                   {isAwarded ? (
                                     <span className="badge badge-green text-[10px] whitespace-nowrap">{L('Selected', 'منتخب', 'تم الاختيار')} ✓</span>
@@ -901,7 +901,7 @@ export default function RFQDetailPage() {
                   </div>
                   <div className="text-left">
                     <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{offerComparable(offer).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
-                    <div className="text-xs text-gray-400">{SAR} · {L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}</div>
+                    <div className="text-xs text-gray-400">{SAR} · {vatTag(offer, locale)}</div>
                     {!offer.vat_included && <div className="text-[11px] text-gray-400">{L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')} {Number(offer.total_price || 0).toLocaleString('en-US')}</div>}
                     {marketAvg && offer.unit_price && (() => {
                       const diff = Math.abs(((offer.unit_price - marketAvg) / marketAvg * 100)).toFixed(0)
