@@ -37,7 +37,11 @@ const TR = {
     supplier: 'أقدّم أسعار المواد', supplierDesc: 'شركة أو محل أو مصنع أو بائع مستقل',
     contractor: 'أبحث عن أسعار', contractorDesc: 'اطلب أسعار المواد من الموردين وقارن العروض',
     accountType: 'نوع الحساب', fullName: 'الاسم الكامل',
-    company: 'اسم الشركة أو النشاط', companyHint: 'إن كنت فرداً اكتب اسمك',
+    company: 'اسم المحل أو النشاط التجاري', companyHint: 'يظهر للمشترين على عروضك',
+    brandH: 'ابدأ مجاناً خلال دقيقة.', brandP: 'حساب واحد تطلب به الأسعار أو تقدّمها، وتتابع كل شيء من الطلب إلى أمر الشراء.',
+    l1: 'أرسل قائمة موادك مرة واحدة، وتصلك عروض عدة موردين', l2: 'قارن واختر الأرخص لكل مادة', l3: 'مجاني خلال الإطلاق، بلا عمولة',
+    corpQ: 'شركة لديها فريق مشتريات؟', corpA: 'نجهّز لك حساباً للشركة يضم موظفيك — تواصل معنا',
+    copyright: '© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء',
     phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف على الأقل',
     create: 'إنشاء الحساب ←', creating: 'جارٍ الإنشاء...', haveAccount: 'لديك حساب؟', login: 'تسجيل الدخول',
     chooseType: 'اختر نوع الحساب أولاً', phoneTaken: 'رقم الجوال مسجّل مسبقاً — استخدم رقماً آخر.',
@@ -54,7 +58,11 @@ const TR = {
     supplier: 'I provide prices', supplierDesc: 'Company, shop, factory or independent seller',
     contractor: 'I need prices', contractorDesc: 'Request material prices from suppliers and compare quotes',
     accountType: 'Account type', fullName: 'Full name',
-    company: 'Company or business name', companyHint: 'If you are an individual, use your name',
+    company: 'Shop or business name', companyHint: 'Shown to buyers on your offers',
+    brandH: 'Start free in a minute.', brandP: 'One account to request prices or to quote them, and follow everything from request to purchase order.',
+    l1: 'Send your list once and get quotes from several suppliers', l2: 'Compare and pick the cheapest for each item', l3: 'Free during launch, no commission',
+    corpQ: 'A company with a procurement team?', corpA: 'We set up a company account for your staff — contact us',
+    copyright: '© 2026 Taseerak · Procurement platform for construction materials',
     phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: 'At least 8 characters',
     create: 'Create account →', creating: 'Creating...', haveAccount: 'Have an account?', login: 'Sign In',
     chooseType: 'Choose your account type first', phoneTaken: 'This phone is already registered — use another.',
@@ -71,7 +79,11 @@ const TR = {
     supplier: 'میں قیمتیں دیتا ہوں', supplierDesc: 'کمپنی، دکان، فیکٹری یا آزاد فروخت کنندہ',
     contractor: 'مجھے قیمتیں چاہییں', contractorDesc: 'قیمتیں منگوائیں اور موازنہ کریں',
     accountType: 'اکاؤنٹ کی قسم', fullName: 'پورا نام',
-    company: 'کمپنی یا کاروبار کا نام', companyHint: 'انفرادی ہیں تو اپنا نام لکھیں',
+    company: 'دکان یا کاروبار کا نام', companyHint: 'خریدار آپ کی آفر پر یہی نام دیکھیں گے',
+    brandH: 'ایک منٹ میں مفت شروع کریں۔', brandP: 'ایک اکاؤنٹ سے قیمتیں منگوائیں یا دیں، اور درخواست سے پرچیز آرڈر تک سب کچھ دیکھیں۔',
+    l1: 'اپنی فہرست ایک بار بھیجیں، کئی سپلائرز کی آفرز پائیں', l2: 'موازنہ کریں اور ہر چیز کی سستی قیمت چنیں', l3: 'لانچ کے دوران مفت، کوئی کمیشن نہیں',
+    corpQ: 'خریداری ٹیم والی کمپنی؟', corpA: 'ہم آپ کے عملے کے لیے کمپنی اکاؤنٹ بناتے ہیں — رابطہ کریں',
+    copyright: '© 2026 تسعیرک · تعمیراتی سامان کی قیمتوں کا پلیٹ فارم',
     phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: 'کم از کم 8 حروف',
     create: 'اکاؤنٹ بنائیں →', creating: 'بن رہا ہے...', haveAccount: 'اکاؤنٹ ہے؟', login: 'سائن ان',
     chooseType: 'پہلے اکاؤنٹ کی قسم منتخب کریں', phoneTaken: 'یہ فون پہلے سے رجسٹرڈ ہے — دوسرا استعمال کریں۔',
@@ -134,8 +146,9 @@ export default function RegisterPage() {
   async function onSubmit(data: FormData) {
     if (!agreedToTerms) { setFormError(t.agreeErr); return }
     const soloSeller = data.role === 'supplier' && sellerKind === 'independent'
-    if (!soloSeller && (data.company_name_ar || '').trim().length < 2) {
-      setError('company_name_ar', { message: locale === 'en' ? 'Company or business name is required' : locale === 'ur' ? 'کمپنی یا کاروبار کا نام ضروری ہے' : 'اسم الشركة أو النشاط مطلوب' }); return
+    const asksBusiness = data.role === 'supplier' && !soloSeller
+    if (asksBusiness && (data.company_name_ar || '').trim().length < 2) {
+      setError('company_name_ar', { message: locale === 'en' ? 'Company or business name is required' : locale === 'ur' ? 'کمپنی یا کاروبار کا نام ضروری ہے' : 'اسم المحل أو النشاط التجاري مطلوب' }); return
     }
     if (phoneDup) { setFormError(t.phoneTaken); return }
     if (await checkEmailDup(data.email)) { setFormError(''); return }
@@ -145,7 +158,7 @@ export default function RegisterPage() {
       const meta = {
         role: data.role,
         full_name: data.full_name.trim(),
-        company_name_ar: (soloSeller ? '' : (data.company_name_ar || '').trim()) || data.full_name.trim(),
+        company_name_ar: (asksBusiness ? (data.company_name_ar || '').trim() : '') || data.full_name.trim(),
         phone: data.phone,
         preferred_language: locale,
         ...(data.role === 'supplier' ? { seller_kind: sellerKind } : {}),
@@ -190,26 +203,52 @@ export default function RegisterPage() {
   ]
 
   return (
-    <div className="register-screen min-h-screen bg-canvas" dir={dir}>
-      <header className="bg-white/90 backdrop-blur border-b border-line sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-2">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="register-brand-lockup" />
+    <div className="auth-screen min-h-screen flex" dir={dir}>
+      {/* ===== Brand panel (wide screens), same as the login page ===== */}
+      <div className="auth-brand-panel hidden lg:flex lg:w-[42%] relative overflow-hidden flex-col justify-between p-12 text-white">
+        <a href="/" className="flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-brand-lockup" />
+        </a>
+        <div className="max-w-md">
+          <h2 className="text-3xl xl:text-[40px] font-extrabold leading-[1.25] mb-4">{t.brandH}</h2>
+          <p className="text-blue-100/80 text-base mb-8 leading-relaxed">{t.brandP}</p>
+          <ul className="space-y-4">
+            {[t.l1, t.l2, t.l3].map((it, i) => (
+              <li key={i} className="flex items-center gap-3 text-[15px] text-blue-50">
+                <span className="w-6 h-6 rounded-full grid place-items-center shrink-0" style={{ background: '#D4A543' }}>
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="#071827" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                </span>{it}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="text-xs text-blue-200/50">{t.copyright}</div>
+      </div>
+
+      {/* ===== Form panel ===== */}
+      <div className="auth-form-side flex-1 flex flex-col">
+        <div className="flex items-center justify-between p-5">
+          <a href="/" className="flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-navy transition-colors">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10v10h5v-6h4v6h5V10" /></svg>
+            {t.home}
           </a>
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher variant="minimal" />
+          <div className="flex items-center gap-4">
             <a href="/login" className="text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</a>
+            <LanguageSwitcher variant="minimal" />
           </div>
         </div>
-      </header>
 
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-line max-w-xl mx-auto">
-          <div className="text-center mb-6">
-            <h1 className="text-2xl font-extrabold text-navy">{t.title}</h1>
-            <p className="text-ink-2 mt-2 text-sm">{t.sub}</p>
-          </div>
+        <div className="flex-1 flex items-start lg:items-center justify-center px-5 pb-12">
+          <div className="auth-form-card w-full max-w-[600px] bg-white rounded-2xl p-6 sm:p-9 shadow-sm border border-line">
+            <div className="flex lg:hidden items-center justify-center mb-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-mobile-lockup" />
+            </div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-extrabold text-navy">{t.title}</h1>
+              <p className="text-ink-2 mt-1.5 text-sm">{t.sub}</p>
+            </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-start">
             {/* نوع الحساب */}
@@ -257,16 +296,17 @@ export default function RegisterPage() {
             </div>
             {phoneDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2"><Glyph e="⚠" /> {t.phoneTaken}</p>}
 
-            {!(selectedType === 'supplier' && sellerKind === 'independent') && <div>
+            {selectedType === 'supplier' && sellerKind !== 'independent' && <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-400 font-normal">— {t.companyHint}</span></label>
-              <input {...register('company_name_ar')} className="input-field" placeholder="شركة الصخر للمقاولات" />
+              <input {...register('company_name_ar')} className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : 'مؤسسة الصخر لمواد البناء'} />
               {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
             </div>}
 
+            <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
               <input {...register('email', { onBlur: (e) => checkEmailDup(e.target.value), onChange: () => { if (emailDup) setEmailDup(false) } })}
-                className="input-field" placeholder="name@company.com" type="email" />
+                className="input-field" placeholder="name@example.com" type="email" />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
               {emailDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<a href="/login" className="underline font-bold">{t.signInInstead}</a></p>}
             </div>
@@ -275,6 +315,7 @@ export default function RegisterPage() {
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
               <input {...register('password')} className="input-field" type="password" placeholder={t.passwordPh} />
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+            </div>
             </div>
 
             {formError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{formError}</div>}
@@ -299,6 +340,12 @@ export default function RegisterPage() {
               {submitting ? t.creating : t.create}
             </button>
           </form>
+
+            {/* company accounts with several procurement staff are set up with us, not here */}
+            <p className="mt-6 pt-5 border-t border-line text-xs text-gray-500 text-center">
+              {t.corpQ} <a href="mailto:info@taseerak.com?subject=%D8%AD%D8%B3%D8%A7%D8%A8%20%D8%B4%D8%B1%D9%83%D8%A9" className="font-bold hover:underline" style={{ color: '#9D7425' }}>{t.corpA}</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
