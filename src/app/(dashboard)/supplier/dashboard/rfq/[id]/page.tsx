@@ -315,6 +315,10 @@ export default function SupplierRFQPage() {
 
   // إضافات الفاتورة (توصيل/تركيب/رسوم) — label + amount
   const [extras, setExtras] = useState([{ label: '', amount: '' }])
+  // delivery requested by the buyer: how the supplier charges it (null = not answered)
+  const [delivMode, setDelivMode] = useState<'included' | 'free' | 'amount' | null>(null)
+  const [delivAmount, setDelivAmount] = useState('')
+  const [showOtherExtras, setShowOtherExtras] = useState(false)
   // هل السعر المُدخل يشمل ضريبة القيمة المضافة 15%؟ — اختيار صريح بلا قيمة افتراضية (null = لم يُحدَّد بعد)،
   // كي لا تُضاف 15% فوق سعر شامل دون أن ينتبه المورّد.
   const [vatIncluded, setVatIncluded] = useState<boolean | null>(null)
@@ -322,7 +326,7 @@ export default function SupplierRFQPage() {
   // الإجمالي كما سيراه المشتري (صافٍ + ضريبة + إجمالي) — يُستخدم في التفصيل وفي ملخّص ما قبل الإرسال
   function offerTotals() {
     const goods = parseFloat(totalPrice) || 0
-    const exSum = extras.reduce((s: any, e: any) => s + (parseFloat(e.amount) || 0), 0)
+    const exSum = extras.reduce((s: any, e: any) => s + (parseFloat(e.amount) || 0), 0) + (delivMode === 'amount' ? (parseFloat(delivAmount) || 0) : 0)
     const entered = goods + exSum
     const net = vatIncluded ? entered / 1.15 : entered
     const vat = net * 0.15
@@ -376,9 +380,12 @@ export default function SupplierRFQPage() {
     }
 
     // إضافات الفاتورة → total النهائي = سعر البضاعة + الإضافات
-    const validExtras = extras
+    const delivExtra = delivMode === 'amount' && parseFloat(delivAmount) > 0 ? [{ label: 'توصيل', amount: parseFloat(delivAmount) }] : []
+    const validExtras0 = extras
       .filter((e: any) => e.label && e.amount)
       .map((e: any) => ({ label: e.label, amount: parseFloat(e.amount) || 0 }))
+    const validExtras = [...delivExtra, ...validExtras0]
+    const delivNote = delivMode === 'included' ? 'التوصيل مشمول في السعر.' : delivMode === 'free' ? 'التوصيل مجاني.' : ''
     const goods = parseFloat(totalPrice) || 0
     const finalTotal = goods + validExtras.reduce((s: any, e: any) => s + e.amount, 0)
 
@@ -435,7 +442,7 @@ export default function SupplierRFQPage() {
       delivery_days: isMultiItem
         ? (itemPricesPayload && itemPricesPayload.length ? (Math.max(0, ...itemPricesPayload.map((e: any) => e.delivery_days || 0)) || null) : null)
         : (deliveryDays ? parseInt(deliveryDays) : null),
-      notes: notes || null,
+      notes: [delivNote, notes].filter(Boolean).join('\n') || null,
       attributes: Object.keys(attrObj).length > 0 ? attrObj : null,
       extra_charges: validExtras.length > 0 ? validExtras : null,
       attachment_url: attachUrl,
@@ -1138,9 +1145,29 @@ export default function SupplierRFQPage() {
                 </label>
                 <p className="text-xs text-gray-400 mb-3">
                   {rfq.delivery_required
-                    ? L('The buyer requested delivery — add the shipping cost here.', 'خریدار نے ڈیلیوری طلب کی — شپنگ لاگت یہاں شامل کریں۔', 'المشتري طلب التوصيل — أضف تكلفة الشحن هنا.')
+                    ? L('The buyer requested delivery — say how you charge it.', 'خریدار نے ڈیلیوری طلب کی — بتائیں کیسے چارج کریں گے۔', 'طلب المشتري التوصيل — حدّد كيف تحتسب تكلفته.')
                     : L('Optional charges added on top of the goods price.', 'سامان کی قیمت کے علاوہ اختیاری چارجز۔', 'رسوم اختيارية تُضاف فوق سعر البضاعة.')}
                 </p>
+                {rfq.delivery_required && (
+                  <div className="mb-3">
+                    <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="🚚" /> {L('Delivery cost', 'ڈیلیوری کی لاگت', 'تكلفة التوصيل')}</div>
+                    <div role="radiogroup" className="flex flex-wrap gap-2">
+                      {([['included', L('Included in my price', 'قیمت میں شامل', 'مشمولة في سعري')], ['free', L('Free', 'مفت', 'مجاناً')], ['amount', L('An amount', 'رقم', 'مبلغ')]] as const).map(([k, label]) => (
+                        <button key={k} type="button" role="radio" aria-checked={delivMode === k} onClick={() => setDelivMode(k)}
+                          className={`px-3 py-2 rounded-xl border-2 text-sm font-bold ${delivMode === k ? 'border-[#0F6E56] bg-[#0F6E56]/5 text-[#0F6E56]' : 'border-gray-200 bg-white text-gray-600'}`}>{label}</button>
+                      ))}
+                      {delivMode === 'amount' && (
+                        <input type="number" value={delivAmount} onChange={(e: any) => setDelivAmount(e.target.value)} min="0" step="any"
+                          className="input-field text-sm w-32" placeholder={L('SAR', 'ریال', 'ر.س')} aria-label={L('Delivery amount', 'ڈیلیوری رقم', 'مبلغ التوصيل')} />
+                      )}
+                    </div>
+                  </div>
+                )}
+                {rfq.delivery_required && !showOtherExtras ? (
+                  <button type="button" onClick={() => setShowOtherExtras(true)} className="text-xs font-semibold" style={{ color: '#9D7425' }}>
+                    + {L('Other charges (installation, fees…)', 'دیگر چارجز', 'رسوم أخرى (تركيب، رسوم…)')}
+                  </button>
+                ) : (<>
                 <div className="space-y-2">
                   {extras.map((ex: any, i: any) => (
                     <div key={i} className="flex gap-2">
@@ -1158,6 +1185,7 @@ export default function SupplierRFQPage() {
                 <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#D4A543' }}>
                   + {L('Add item', 'شامل کریں', 'إضافة بند')}
                 </button>
+                </>)}
               </div>
               {/* ضريبة القيمة المضافة 15% — خيار: هل السعر يشملها؟ + تفصيل الإجمالي */}
               {(() => {
@@ -1193,7 +1221,13 @@ export default function SupplierRFQPage() {
                       </div>
                     </div>)}
                     {/* تفصيل الإجمالي */}
-                    {entered > 0 && vatIncluded !== null && (
+                    {entered > 0 && noVat && (
+                      <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm flex items-center justify-between">
+                        <span className="font-bold" style={{ color: '#0F6E56' }}>{L('Final total', 'حتمی کل رقم', 'الإجمالي النهائي')}</span>
+                        <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>{fmt(entered)} {SAR}</span>
+                      </div>
+                    )}
+                    {entered > 0 && !noVat && vatIncluded !== null && (
                       <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm space-y-1.5">
                         <div className="flex items-center justify-between text-gray-600">
                           <span>{L('Net (before VAT)', 'خالص (ٹیکس سے پہلے)', 'الصافي (قبل الضريبة)')}</span>
