@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 
 const BY_PATH: [RegExp, any][] = [
-  [/^\/admin\/discover/, Search], [/^\/admin\/taxonomy/, FolderTree], [/^\/admin\/learning/, Brain], [/^\/admin$/, ShieldCheck],
+  [/^\/admin\/discover/, Search], [/^\/admin\/taxonomy/, FolderTree], [/^\/admin\/learning/, Brain], [/^\/admin\/invites/, MessageSquare], [/^\/admin$/, ShieldCheck],
   [/^\/supplier\/dashboard$/, House], [/^\/supplier\/deals/, Package], [/^\/supplier\/specialties/, Target],
   [/^\/supplier\/prices/, ChartLine], [/^\/supplier\/analytics/, Trophy], [/^\/supplier\/branches/, Building2],
   [/^\/supplier\/team/, Users], [/^\/supplier\/subscription/, Star],
