@@ -698,15 +698,19 @@ export default function QuickRequestPage() {
                 <p className="text-[11px] text-gray-400"><Glyph e="🔒" /> {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
               </div>
             )}
+            {/* when the buyer needs the prices — visible, with a same-day option (persona: the villa contractor) */}
+            <div>
+              <div className="text-xs font-bold text-gray-600 mb-1.5">{L('When do you need the prices?', 'قیمتیں کب تک چاہئیں؟', 'متى تحتاج الأسعار؟')}</div>
+              <div role="radiogroup" className="flex flex-wrap gap-1.5">
+                {([[6, L('Today', 'آج', 'اليوم')], [24, L('Tomorrow', 'کل', 'غداً')], [48, L('2 days', '2 دن', 'يومان')], [72, L('3 days', '3 دن', '3 أيام')], [168, L('A week', 'ایک ہفتہ', 'أسبوع')]] as [number, string][]).map(([h, lab]) => (
+                  <button key={h} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)}
+                    className={`px-3 py-1.5 rounded-full border text-xs font-bold ${hours === h ? 'bg-[#0B2438] text-white border-[#0B2438]' : 'bg-white text-gray-600 border-gray-200'}`}>{lab}</button>
+                ))}
+              </div>
+            </div>
             <details>
               <summary className="cursor-pointer text-xs font-bold text-[#9D7425] select-none">{L('More options (optional)', 'مزید اختیارات', 'خيارات إضافية (اختياري)')}</summary>
               <div className="mt-3 space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Suppliers can send prices for', 'قیمت بھیجنے کا وقت', 'يمكن للموردين إرسال الأسعار خلال')}</label>
-                  <select value={hours} onChange={e => setHours(parseInt(e.target.value))} className="input-field">
-                    {[6, 24, 48, 72, 168].map(h => <option key={h} value={h}>{durationLabel(h)}</option>)}
-                  </select>
-                </div>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-sm" placeholder={L('Notes for suppliers (optional)', 'نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={hideIdentity} onChange={e => setHideIdentity(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
