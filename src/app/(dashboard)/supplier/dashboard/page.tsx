@@ -26,12 +26,12 @@ import Glyph from '@/components/shared/Glyph'
 const txt = {
   ar: {
     welcome: 'أهلاً', subtitle: 'تصفح طلبات التسعير المتاحة وقدم عروضك',
-    logout: 'خروج', openRfqs: 'طلبات مفتوحة', pendingOffers: 'عروض قيد المراجعة',
+    logout: 'خروج', openRfqs: 'طلبات مفتوحة', pendingOffers: 'عروض بانتظار قرار المشتري',
     acceptedOffers: 'عروض مقبولة', revenue: 'إجمالي الإيرادات',
     tabRfqs: 'طلبات التسعير', tabOffers: 'عروضي',
     noRfqs: 'لا توجد طلبات مفتوحة الآن', noRfqsSub: 'تأكّد أن تخصصاتك وموقعك مكتملة ليصلك أول طلب مطابق — عادةً تصل الطلبات خلال ساعات، وسننبّهك فوراً.',
     noOffers: 'لم تقدم أي عروض بعد', noOffersSub: 'تصفح طلبات التسعير وقدم أول عرض',
-    submitOffer: 'تقديم عرض →', offerSubmitted: '✓ تم تقديم عرضك — راجِعه', accepted: '✓ مقبول', rejected: '✕ مرفوض', pending: 'قيد المراجعة',
+    submitOffer: 'تقديم عرض →', offerSubmitted: '✓ تم تقديم عرضك — راجِعه', accepted: '✓ مقبول', rejected: '✕ مرفوض', pending: 'بانتظار قرار المشتري',
     day: 'يوم', offer: 'عرض', loading: 'جارٍ التحميل...',
     sar: 'ر.س',
   },

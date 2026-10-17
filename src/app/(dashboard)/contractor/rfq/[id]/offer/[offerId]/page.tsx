@@ -139,7 +139,7 @@ export default function OfferDetailPage() {
   const waReduce = '' // التفاوض قبل الترسية يتم داخل المنصة (لا واتساب)
   const statusBadge = offer.status === 'accepted' ? { t: `✓ ${L('Accepted', 'قبول شدہ', 'مقبول')}`, c: 'bg-emerald-100 text-emerald-700' }
     : offer.status === 'rejected' ? { t: `✕ ${L('Rejected', 'رد شدہ', 'مرفوض')}`, c: 'bg-gray-100 text-gray-500' }
-    : { t: `${L('Under review', 'زیرِ غور', 'قيد المراجعة')}`, c: 'bg-amber-100 text-amber-700' }
+    : { t: `${L('Waiting for your decision', 'آپ کے فیصلے کا انتظار', 'بانتظار قرارك')}`, c: 'bg-amber-100 text-amber-700' }
 
   const Row = ({ label, value }: any) => value ? (
     <div className="flex justify-between gap-3 py-2 border-b border-gray-50 text-sm">

@@ -486,7 +486,7 @@ export default function SupplierRFQPage() {
       successTitle: 'تم إرسال العرض', successSub: 'سيتم إخطارك عند قبول أو رفض العرض',
       dismissedTitle: 'تم تجاهل الطلب', dismissedSub: 'لن يظهر هذا الطلب في قائمتك',
       backDash: 'رجوع للوحة التحكم',
-      alreadyTitle: { accepted: 'تم قبول عرضك!', rejected: 'تم رفض العرض', pending: 'عرضك قيد المراجعة' },
+      alreadyTitle: { accepted: 'تم قبول عرضك!', rejected: 'تم رفض العرض', pending: 'عرضك بانتظار قرار المشتري' },
       closed: 'هذا الطلب مغلق', closedSub: 'لا يقبل عروض جديدة',
     },
     en: {

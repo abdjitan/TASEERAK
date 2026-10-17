@@ -429,7 +429,7 @@ export default function OrderDetailPage() {
               <div className="text-center py-2">
                 <div className="text-2xl mb-1"><Glyph e="📦" /></div>
                 <div className="text-sm font-bold text-gray-700 mb-1">{L('Rate the supplier after receipt', 'وصولی کے بعد سپلائر کی ریٹنگ دیں', 'قيّم المورد بعد الاستلام')}</div>
-                <p className="text-xs text-gray-400">{L('Rating opens once receipt of the goods is confirmed (receipt record), so it reflects the actual delivery.', 'مال کی وصولی کنفرم ہوتے ہی (وصولی کا ریکارڈ) ریٹنگ کھل جائے گی — تاکہ ریٹنگ اصل ڈیلیوری کے مطابق ہو۔', 'يفتح التقييم بمجرد تأكيد استلام البضاعة (محضر الاستلام) — ليعكس التقييمُ التسليمَ الفعلي.')}</p>
+                <p className="text-xs text-gray-400">{L('Rating opens once receipt of the goods is confirmed (receipt record), so it reflects the actual delivery.', 'مال کی وصولی کنفرم ہوتے ہی (وصولی کا ریکارڈ) ریٹنگ کھل جائے گی — تاکہ ریٹنگ اصل ڈیلیوری کے مطابق ہو۔', 'يفتح التقييم بمجرد تأكيد استلام البضاعة (تأكيد الاستلام) — ليعكس التقييمُ التسليمَ الفعلي.')}</p>
               </div>
             )}
           </div>

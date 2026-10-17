@@ -58,7 +58,7 @@ export default function ContractorDealsPage() {
         <input value={search} onChange={(e: any) => setSearch(e.target.value)}
           className="input-field mb-3" placeholder={locale === 'en' ? 'Search deals (product, supplier, invoice №)…' : 'ابحث في الصفقات (منتج، مورّد، رقم فاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">
-          {[{ k: 'all', l: locale === 'en' ? 'All' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Disputed' : 'نزاعات' }].map((f: any) => (
+          {[{ k: 'all', l: locale === 'en' ? 'All' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Disputed' : 'مشكلات' }].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)}
               className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${filter === f.k ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
               style={filter === f.k ? { background: f.k === 'disputed' ? '#DC2626' : '#0B2438' } : {}}>{f.l}</button>

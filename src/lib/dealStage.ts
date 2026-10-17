@@ -15,7 +15,7 @@ export const DEAL_STEPS = ['قبول', 'تسليم', 'استلام', 'دفع'] a
 
 export function dealStage(offer: any): DealStage {
   if (offer?.dispute_status === 'open')
-    return { step: 0, key: 'disputed', label: 'نزاع مفتوح — قيد المعالجة', emoji: '⚠', done: false, tone: '#DC2626' }
+    return { step: 0, key: 'disputed', label: 'بلاغ عن مشكلة — قيد المعالجة', emoji: '⚠', done: false, tone: '#DC2626' }
 
   const paid = offer?.payment_status === 'paid'
 

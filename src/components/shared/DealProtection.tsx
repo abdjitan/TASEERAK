@@ -77,7 +77,7 @@ export default function DealProtection({
       <p className="text-xs text-gray-400 mb-3">{L('The platform records each stage of the deal as proof that protects both sides — it never holds any money.', 'پلیٹ فارم ڈیل کے ہر مرحلے کو ریکارڈ کرتا ہے تاکہ دونوں فریقوں کا تحفظ ہو — یہ کوئی رقم اپنے پاس نہیں رکھتا۔', 'توثّق المنصة مراحل الصفقة كدليل يحمي الطرفين — ولا تحتفظ بأي مبالغ.')}</p>
       {deliverOverdue && (
         <div className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold px-3 py-2 leading-relaxed">
-          <Glyph e="⏰" /> {isSupplier ? L('You are past the agreed delivery date — please confirm delivery or contact the buyer.', 'آپ طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہیں — براہ کرم ڈیلیوری کنفرم کریں یا خریدار سے رابطہ کریں۔', 'تأخّرت عن موعد التوصيل المتّفق عليه — يرجى تأكيد التسليم أو التواصل مع المشتري.') : L('The supplier is past the agreed delivery date — follow up with them or open a dispute below.', 'سپلائر طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہے — اس سے رابطہ کریں یا نیچے شکایت درج کریں۔', 'المورد تأخّر عن موعد التوصيل المتّفق عليه — تابع معه أو افتح نزاعاً أدناه.')}
+          <Glyph e="⏰" /> {isSupplier ? L('You are past the agreed delivery date — please confirm delivery or contact the buyer.', 'آپ طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہیں — براہ کرم ڈیلیوری کنفرم کریں یا خریدار سے رابطہ کریں۔', 'تأخّرت عن موعد التوصيل المتّفق عليه — يرجى تأكيد التسليم أو التواصل مع المشتري.') : L('The supplier is past the agreed delivery date — follow up with them or open a dispute below.', 'سپلائر طے شدہ ڈیلیوری کی تاریخ سے لیٹ ہے — اس سے رابطہ کریں یا نیچے شکایت درج کریں۔', 'المورد تأخّر عن موعد التوصيل المتّفق عليه — تابع معه أو أبلغ عن مشكلة أدناه.')}
         </div>
       )}
       {receiptOverdue && (
@@ -123,7 +123,7 @@ export default function DealProtection({
         {/* Receipt = محضر استلام */}
         <div className="flex items-center justify-between gap-3 rounded-xl p-3" style={{ background: offer.received_at ? '#E1F5EE' : '#f9fafb' }}>
           <div className="text-sm">
-            <div className="font-semibold text-gray-700">{L('Receipt record', 'وصولی کا ریکارڈ', 'محضر الاستلام')}</div>
+            <div className="font-semibold text-gray-700">{L('Receipt confirmation', 'وصولی کا ریکارڈ', 'تأكيد الاستلام')}</div>
             <div className="text-xs text-gray-400">{offer.received_at ? `✓ ${L('Recorded — the buyer confirmed receipt', 'ریکارڈ ہو گیا — خریدار نے وصولی کنفرم کر دی', 'موثّق — أكّد المشتري الاستلام')} ${new Date(offer.received_at).toLocaleString(dloc)}` : L('Waiting for the buyer to confirm receipt of the goods', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے', 'بانتظار تأكيد المشتري لاستلام البضاعة')}</div>
           </div>
           {!offer.received_at && isContractor && (
@@ -193,15 +193,15 @@ export default function DealProtection({
             <div className="text-[11px] text-gray-500 mt-1">{L('The platform team will contact both sides to mediate.', 'پلیٹ فارم کی ٹیم صلح کے لیے دونوں فریقوں سے رابطہ کرے گی۔', 'فريق المنصة سيتواصل مع الطرفين للوساطة.')}</div>
           </div>
         ) : offer.dispute_status === 'resolved' ? (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-700">✓ {L('Dispute resolved', 'شکایت حل ہو گئی', 'تم حل النزاع')}{offer.dispute_resolution ? `: ${offer.dispute_resolution}` : ''}</div>
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-sm text-emerald-700">✓ {L('Problem resolved', 'شکایت حل ہو گئی', 'تم حل المشكلة')}{offer.dispute_resolution ? `: ${offer.dispute_resolution}` : ''}</div>
         ) : !showDispute ? (
-          <button onClick={() => setShowDispute(true)} className="text-xs text-red-600 hover:underline"><Glyph e="⚠" /> {L('Had a problem? Open a dispute', 'کوئی مسئلہ ہوا؟ شکایت درج کریں', 'واجهت مشكلة؟ افتح نزاعاً')}</button>
+          <button onClick={() => setShowDispute(true)} className="text-xs text-red-600 hover:underline"><Glyph e="⚠" /> {L('Had a problem? Report it', 'کوئی مسئلہ ہوا؟ شکایت درج کریں', 'واجهت مشكلة؟ أبلغ عن مشكلة')}</button>
         ) : (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3">
             <label className="block text-xs font-bold text-red-700 mb-1.5">{L('Describe the problem', 'مسئلہ بیان کریں', 'صف المشكلة')}</label>
             <textarea value={disputeReason} onChange={(e: any) => setDisputeReason(e.target.value)} className="input-field" rows={2} placeholder={L('e.g. goods not delivered / different from the specs / late payment...', 'مثال: مال ڈیلیور نہیں ہوا / اسپیسیفکیشن سے مختلف ہے / ادائیگی میں تاخیر...', 'مثال: البضاعة لم تُسلّم / مختلفة عن المواصفات / تأخّر الدفع...')} />
             <div className="flex gap-2 mt-2">
-              <button onClick={() => { if (!disputeReason) return; callRpc('open_dispute', { p_offer_id: offer.id, p_reason: disputeReason }, 'dispute'); setShowDispute(false) }} disabled={!disputeReason || busy === 'dispute'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 disabled:opacity-50">{L('Submit dispute', 'شکایت بھیجیں', 'إرسال النزاع')}</button>
+              <button onClick={() => { if (!disputeReason) return; callRpc('open_dispute', { p_offer_id: offer.id, p_reason: disputeReason }, 'dispute'); setShowDispute(false) }} disabled={!disputeReason || busy === 'dispute'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 disabled:opacity-50">{L('Send report', 'شکایت بھیجیں', 'إرسال البلاغ')}</button>
               <button onClick={() => setShowDispute(false)} className="text-xs px-3 py-2 text-gray-500">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
             </div>
           </div>
