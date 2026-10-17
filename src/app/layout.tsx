@@ -36,7 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </LanguageProvider>
         <PwaBoot />
-        <Toaster richColors position="top-center" toastOptions={{ style: { fontFamily: 'Cairo, sans-serif' } }} />
+        <Toaster richColors position="top-center" toastOptions={{ style: { fontFamily: '"IBM Plex Sans Arabic", Inter, sans-serif' } }} />
       </body>
     </html>
   )

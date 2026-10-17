@@ -10,15 +10,19 @@ contractors compare, award best price per item, and generate purchase orders + Z
 Arabic-first, RTL, with English + Urdu i18n.
 
 ## Stack
-- **Next.js 14** (App Router) + **TypeScript** (files start with `// @ts-nocheck`)
-- **Tailwind CSS**, Cairo font, RTL-first
+- **Next.js 15** (App Router) + **React 19** + **TypeScript** strict (no `@ts-nocheck`, see Conventions)
+- **Tailwind CSS**, IBM Plex Sans Arabic (+ Inter for Latin), RTL-first
 - **Supabase**: Postgres + Auth + Row Level Security (RLS) + Realtime (postgres_changes) + Storage
 - **Vercel**: hosting; **push to `main` → auto-deploy** (allow ~1 min; CDN cache may lag — hard refresh Ctrl+Shift+R)
 - i18n: `useTranslation()` from `@/i18n` → `locale` ∈ `ar|en|ur`, `dir`
 
-## Brand
-- Navy `#1B2D5B` · Orange `#F5831F` · Green `#0F6E56`
-- Logo at `public/logo.png`
+## Brand (redesign, live since 2026-10-14; old design kept in branch `backup/pre-redesign-2026-10-14`)
+- Navy `#071827` / `#0B2438` / `#102E45` · Gold `#D4A543` / `#F5C55B` (text on gold = navy) · dark gold `#9D7425` · Green `#0F6E56`
+- Tokens: `tailwind.config.js`, `src/styles/globals.css`, `src/styles/master-brand.css` (dashboards use root 14.5px for density).
+- Logo: `public/taseerak-metallic-logo.webp` (sidebar/auth); app icons in `public/icons/`.
+- **No emoji in the UI**: line icons via `src/components/shared/Glyph.tsx` (emoji → lucide map) and `NavIcon.tsx` (menu).
+- Section medallions (navy/gold, owner-approved pack) in `public/images/section-icons/<sectionKey>.webp`; section photos in `public/images/sections/`.
+- Branch `redesign` is the working branch; ship by pushing `redesign:main` after the preview build is Ready.
 
 ## Environment / accounts (cloud — tied to owner's PERSONAL email + phone)
 - **GitHub** (code): `https://github.com/abdjitan/TASEERAK.git` — repo root = the working copy (no `buildora/` subfolder)
@@ -135,7 +139,16 @@ cross-user operations go through `SECURITY DEFINER` RPCs granted to `authenticat
 3. `npm install` → `npm run dev`.
 4. **Reconnect the Supabase MCP connector** in Claude Code (it's account-level, not in the repo). Once connected, Claude Code can read all live data (suppliers, RFQs, numbers) via SQL — project_id `svswlsnsfhxelslbysvz`.
 
+## Launch focus, seller kinds, buyer↔supplier linkage (2026-10-15)
+- `src/lib/features.ts` `FEATURES`: priceBoard, livePrices, analyticsNav, subscription, gamification, locationNav are **off** for launch (pages stay reachable by URL; `getNav` drops "off" items).
+- Independent sellers (`sellerKindOf(provider_type)`): no branches/team (nav items `only:'company'`), no VAT field, packs-first specialties. Kind remembered per device (`rememberSellerKind`).
+- Browse sections (display layer, `src/lib/browseCategories.ts`): 10 sections incl. `machinery`; `subsOfSection()` maps all specialties; `sectionOfSub()`.
+- Routing safety net: `count_matching_suppliers(rfq, item)` (same rules as `notify_suppliers_new_rfq`), admin alert when an item matches nobody (153), buyer-facing `get_rfq_coverage()` (154/155). Test: `supabase/tests/routing_coverage.sql` (one simulated request per specialty, rolled back).
+- **Mobile app parity**: every user-facing change is mirrored by the mobile session (`C:\dev\taseerak-mobile`, shares `src/types`, `src/lib/*`). Message it after each shipped change.
+
 ## Open / pending (high level)
 - Registration redesign: phone + WhatsApp OTP first (blocked on WhatsApp Business API account/token).
 - Install final professional SVG icons into `CatIcon` once a designer delivers them (per the brief / Canva work).
 - Launch hardening (owner dashboard actions): Wathq production key, CAPTCHA toggle, admin 2FA, leaked-password protection, PITR.
+- Supplier coverage: 21 specialties have no supplier yet (owner: too early to contact suppliers).
+- Retire the old Sydney Supabase project (~2026-10-21); WhatsApp edge-function secrets on the new project.
