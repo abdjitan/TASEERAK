@@ -1,5 +1,6 @@
 'use client'
 
+import RequestsTabs from '@/components/buyer/RequestsTabs'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -53,8 +54,9 @@ export default function ContractorDealsPage() {
   })
 
   return (
-    <AppShell title={locale === 'en' ? 'My Deals' : locale === 'ur' ? 'میری ڈیلز' : 'صفقاتي'} nav={getNav('contractor', locale, '/contractor/orders')} dir={dir}>
+    <AppShell title={locale === 'en' ? 'My Deals' : locale === 'ur' ? 'میری ڈیلز' : 'صفقاتي'} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-4xl mx-auto">
+        <RequestsTabs active="deals" locale={locale} />
         <input value={search} onChange={(e: any) => setSearch(e.target.value)}
           className="input-field mb-3" placeholder={locale === 'en' ? 'Search deals (product, supplier, invoice №)…' : 'ابحث في الصفقات (منتج، مورّد، رقم فاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">

@@ -1,4 +1,5 @@
 import type { ShellNavItem } from '@/components/shared/AppShell'
+import RequestsTabs from '@/components/buyer/RequestsTabs'
 import { FEATURES } from '@/lib/features'
 
 // Build the dashboard sidebar nav for a role. Used by every page that sits on
@@ -22,7 +23,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
     const sec = L('Supplier', 'سپلائر', 'المورّد')
     items = [
       { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
-      { href: '/supplier/deals', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec, mobile: 2 },
+      { href: '/supplier/deals', icon: '📦', label: L('My offers and deals', 'آفرز اور ڈیلز', 'عروضي وصفقاتي'), section: sec, mobile: 2 },
       { href: '/supplier/specialties', icon: '🎯', label: L('Specialties', 'مہارتیں', 'تخصصاتي'), section: sec },
       { href: '/supplier/prices', icon: '📈', label: L('Live Prices', 'لائیو قیمتیں', 'أسعاري'), section: sec, mobile: 3, off: !FEATURES.livePrices },
       { href: '/supplier/analytics', icon: '🏆', label: L('Performance', 'کارکردگی', 'أدائي'), section: sec, off: !FEATURES.analyticsNav },
@@ -39,8 +40,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
     items = [
       { href: '/contractor', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
       { href: '/contractor/rfq/quick', icon: '📝', label: L('Price request', 'قیمت کی درخواست', 'طلب تسعير'), section: sec, mobile: 3 },
-      { href: '/contractor/rfqs', icon: '🧾', label: L('My requests', 'میری درخواستیں', 'طلباتي'), section: sec, mobile: 2 },
-      { href: '/contractor/orders', icon: '📦', label: L('My Deals', 'میری ڈیلز', 'صفقاتي'), section: sec, mobile: 5 },
+      { href: '/contractor/rfqs', icon: '🧾', label: L('My requests and deals', 'درخواستیں اور ڈیلز', 'طلباتي وصفقاتي'), section: sec, mobile: 2 },
       { href: '/contractor/project/new', icon: '📋', label: L('Project', 'پراجیکٹ', 'مشروع'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },

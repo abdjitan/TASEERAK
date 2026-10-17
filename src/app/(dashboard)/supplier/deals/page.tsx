@@ -57,6 +57,11 @@ export default function SupplierDealsPage() {
   return (
     <AppShell title={locale === 'en' ? 'My Deals' : locale === 'ur' ? 'میری ڈیلز' : 'صفقاتي'} nav={getNav('supplier', locale, '/supplier/deals')} dir={dir}>
       <div className="max-w-4xl mx-auto">
+        {/* «عروضي وصفقاتي» (owner 2026-10-17, same as the app): offers waiting for the buyer live on the home list */}
+        <div role="tablist" className="inline-flex p-1 rounded-xl bg-gray-100 mb-4">
+          <a href="/supplier/dashboard?tab=offers" role="tab" aria-selected="false" className="px-5 py-2 rounded-lg text-sm font-bold text-gray-500 hover:text-[#0B2438]">{locale === 'en' ? 'Waiting for decision' : locale === 'ur' ? 'فیصلے کے منتظر' : 'بانتظار القرار'}</a>
+          <span role="tab" aria-selected="true" className="px-5 py-2 rounded-lg text-sm font-bold bg-white shadow-sm text-[#0B2438]">{locale === 'en' ? 'My deals' : locale === 'ur' ? 'میری ڈیلز' : 'صفقاتي'}</span>
+        </div>
         <input value={search} onChange={(e: any) => setSearch(e.target.value)}
           className="input-field mb-3" placeholder={locale === 'en' ? 'Search deals (product, buyer, invoice №)…' : locale === 'ur' ? 'ڈیلز تلاش کریں (مال، خریدار، انوائس نمبر)…' : 'ابحث في الصفقات (منتج، مشترٍ، رقم فاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">

@@ -80,6 +80,8 @@ export default function SupplierDashboard() {
   const [myOffers, setMyOffers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('rfqs')
+  // ?tab=offers opens «عروضي» (from «عروضي وصفقاتي»)
+  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('tab') === 'offers') { setTab('offers'); setTimeout(() => document.getElementById('sup-list')?.scrollIntoView({ block: 'start' }), 400) } } catch {} }, [])
   const [rfqFilter, setRfqFilter] = useState('all') // all | expiring
   const [hasSpecialties, setHasSpecialties] = useState(true)
   const [hasSectors, setHasSectors] = useState(true)
@@ -477,7 +479,7 @@ export default function SupplierDashboard() {
             <>
               <button type="button" onClick={() => setShowScoreMobile(v => !v)} aria-expanded={showScoreMobile}
                 className="sm:hidden mb-4 text-xs font-bold px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-600">
-                {L('Profile strength', 'پروفائل کی مضبوطی', 'قوة ملفك')}: {score}/100 {showScoreMobile ? '▲' : '▼'}
+                {L('Profile completion', 'پروفائل کی تکمیل', 'اكتمال ملفك')}: {score}% {showScoreMobile ? '▲' : '▼'}
               </button>
             <div className={`mb-6 ${showScoreMobile ? 'grid' : 'hidden'} sm:grid sm:grid-cols-3 gap-4 animate-fade-in`}>
               <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center gap-3">
@@ -491,15 +493,15 @@ export default function SupplierDashboard() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs font-bold" style={{ color: '#0B2438' }}>{L('Profile strength', 'پروفائل کی مضبوطی', 'قوة ملفك')}</div>
-                  <div className="text-[11px] text-gray-400">{score}/100 — {score >= 70 ? L('Excellent', 'بہترین', 'ممتاز') : score >= 40 ? L('Good', 'اچھا', 'جيد') : L('Needs improvement', 'بہتری کی ضرورت', 'يحتاج إلى تحسين')}</div>
+                  <div className="text-xs font-bold" style={{ color: '#0B2438' }}>{L('Profile completion', 'پروفائل کی تکمیل', 'اكتمال ملفك')}</div>
+                  <div className="text-[11px] text-gray-400">{score}% — {score >= 70 ? L('Excellent', 'بہترین', 'ممتاز') : score >= 40 ? L('Good', 'اچھا', 'جيد') : L('Needs improvement', 'بہتری کی ضرورت', 'يحتاج إلى تحسين')}</div>
                 </div>
               </div>
               {missing.length > 0 && (
                 <div className="sm:col-span-2 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="text-xs font-bold mb-2" style={{ color: '#0B2438' }}>{L('Strengthen your profile:', 'اپنی پروفائل مضبوط کریں:', 'عزّز ملفك:')}</div>
                   <div className="flex flex-wrap gap-2">
-                    {missing.map((c: any) => <Link key={c.href} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#D4A543', color: '#9D7425' }}>+ {c.label} <span className="opacity-60">(+{c.w})</span></Link>)}
+                    {missing.map((c: any) => <Link key={c.href} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#D4A543', color: '#9D7425' }}>+ {c.label}</Link>)}
                   </div>
                 </div>
               )}

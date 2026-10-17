@@ -1,5 +1,6 @@
 'use client'
 
+import RequestsTabs from '@/components/buyer/RequestsTabs'
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -97,6 +98,7 @@ export default function MyRequestsPage() {
   return (
     <AppShell title={L('My requests', 'میری درخواستیں', 'طلباتي')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-5xl mx-auto space-y-4">
+        <RequestsTabs active="requests" locale={locale} />
         <div className="flex flex-wrap items-center gap-2">
           {([['all', L('All', 'سب', 'الكل')], ['open', L('Open', 'کھلی', 'مفتوحة')], ['closed', L('Deal done', 'مکمل', 'تمّ اختيار العرض')], ['ended', L('Ended', 'ختم', 'منتهية')]] as [Filter, string][]).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setFilter(k)}
