@@ -55,8 +55,13 @@ export function isLaunchFree(launchFreeUntil: any): boolean {
 // «مشروع» (BOQ upload → one request per line, per-supplier POs): a company feature. Companies =
 // buyers whose commercial registration is verified; individuals need a paid (higher) plan.
 // Owner decision 2026-10-17.
+// «مشروع» (BOQ) is open to every buyer during the launch trial (owner 2026-10-17); set to false to
+// limit it again to verified companies and subscribers (the higher tier).
+export const PROJECTS_OPEN_TO_ALL = true
+
 export function canUseProjects(profile: any): boolean {
   if (!profile) return false
+  if (PROJECTS_OPEN_TO_ALL) return true
   if (profile.role === 'admin') return true
   if (profile.cr_verified_at || profile.verification_status === 'verified') return true
   return isSubscribed(profile)

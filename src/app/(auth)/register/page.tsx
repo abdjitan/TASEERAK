@@ -36,7 +36,7 @@ const TR = {
     title: 'أنشئ حسابك', sub: 'دقيقة واحدة للبدء — تُكمل بياناتك بعد الدخول',
     supplier: 'أقدّم أسعار المواد', supplierDesc: 'شركة أو محل أو مصنع أو بائع مستقل',
     contractor: 'أبحث عن أسعار', contractorDesc: 'اطلب أسعار المواد من الموردين وقارن العروض',
-    accountType: 'نوع الحساب', fullName: 'الاسم الكامل',
+    accountType: 'نوع الحساب', fullName: 'الاسم الكامل', pickTitle: 'كيف ستستخدم تسعيرك؟', pickSub: 'اختر نوع حسابك للمتابعة', change: 'تغيير',
     company: 'اسم المحل أو النشاط التجاري', companyHint: 'يظهر للمشترين على عروضك',
     brandH: 'ابدأ مجاناً خلال دقيقة.', brandP: 'حساب واحد تطلب به الأسعار أو تقدّمها، وتتابع كل شيء من الطلب إلى أمر الشراء.',
     l1: 'أرسل قائمة موادك مرة واحدة، وتصلك عروض عدة موردين', l2: 'قارن واختر الأرخص لكل مادة', l3: 'مجاني خلال الإطلاق، بلا عمولة',
@@ -57,7 +57,7 @@ const TR = {
     title: 'Create your account', sub: 'One minute to start — finish your details after signing in',
     supplier: 'I provide prices', supplierDesc: 'Company, shop, factory or independent seller',
     contractor: 'I need prices', contractorDesc: 'Request material prices from suppliers and compare quotes',
-    accountType: 'Account type', fullName: 'Full name',
+    accountType: 'Account type', fullName: 'Full name', pickTitle: 'How will you use Taseerak?', pickSub: 'Choose your account type to continue', change: 'Change',
     company: 'Shop or business name', companyHint: 'Shown to buyers on your offers',
     brandH: 'Start free in a minute.', brandP: 'One account to request prices or to quote them, and follow everything from request to purchase order.',
     l1: 'Send your list once and get quotes from several suppliers', l2: 'Compare and pick the cheapest for each item', l3: 'Free during launch, no commission',
@@ -78,7 +78,7 @@ const TR = {
     title: 'اپنا اکاؤنٹ بنائیں', sub: 'شروع کرنے کے لیے ایک منٹ — تفصیلات سائن اِن کے بعد مکمل کریں',
     supplier: 'میں قیمتیں دیتا ہوں', supplierDesc: 'کمپنی، دکان، فیکٹری یا آزاد فروخت کنندہ',
     contractor: 'مجھے قیمتیں چاہییں', contractorDesc: 'قیمتیں منگوائیں اور موازنہ کریں',
-    accountType: 'اکاؤنٹ کی قسم', fullName: 'پورا نام',
+    accountType: 'اکاؤنٹ کی قسم', fullName: 'پورا نام', pickTitle: 'آپ تسعیرک کیسے استعمال کریں گے؟', pickSub: 'جاری رکھنے کے لیے اکاؤنٹ کی قسم منتخب کریں', change: 'تبدیل کریں',
     company: 'دکان یا کاروبار کا نام', companyHint: 'خریدار آپ کی آفر پر یہی نام دیکھیں گے',
     brandH: 'ایک منٹ میں مفت شروع کریں۔', brandP: 'ایک اکاؤنٹ سے قیمتیں منگوائیں یا دیں، اور درخواست سے پرچیز آرڈر تک سب کچھ دیکھیں۔',
     l1: 'اپنی فہرست ایک بار بھیجیں، کئی سپلائرز کی آفرز پائیں', l2: 'موازنہ کریں اور ہر چیز کی سستی قیمت چنیں', l3: 'لانچ کے دوران مفت، کوئی کمیشن نہیں',
@@ -176,7 +176,7 @@ export default function RegisterPage() {
     } catch (err: any) {
       captchaRef.current?.reset(); setCaptchaToken('')
       const msg = err?.message || ''
-      setFormError(/captcha/i.test(msg) ? t.captchaErr : (msg || 'حدث خطأ أثناء التسجيل'))
+      setFormError(/captcha/i.test(msg) ? t.captchaErr : /database error|duplicate|unique/i.test(msg) ? t.phoneTaken : (msg || 'حدث خطأ أثناء التسجيل'))
     } finally { setSubmitting(false) }
   }
 
@@ -246,23 +246,35 @@ export default function RegisterPage() {
               <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-mobile-lockup" />
             </div>
             <div className="mb-6">
-              <h1 className="text-2xl font-extrabold text-navy">{t.title}</h1>
-              <p className="text-ink-2 mt-1.5 text-sm">{t.sub}</p>
+              <h1 className="text-2xl font-extrabold text-navy">{selectedType ? t.title : t.pickTitle}</h1>
+              <p className="text-ink-2 mt-1.5 text-sm">{selectedType ? t.sub : t.pickSub}</p>
             </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-start">
-            {/* نوع الحساب */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-2">{t.accountType} *</label>
-              <div className="grid grid-cols-2 gap-3">
+            {!selectedType ? (
+              /* step 1 — buyer or supplier */
+              <div className="grid sm:grid-cols-2 gap-4">
                 {roleCards.map(({ type, title, desc, svg }) => (
-                  <button key={type} type="button" onClick={() => { setSelectedType(type as any); setValue('role', type as any, { shouldValidate: true }) }}
-                    className={`p-4 rounded-2xl border-2 text-center transition-all ${selectedType === type ? 'border-[#D4A543] bg-[#D4A543]/5' : 'border-gray-200 bg-white hover:border-[#D4A543]/40'}`}>
-                    <div className="w-12 h-12 rounded-2xl grid place-items-center mx-auto mb-2 text-white transition-colors" style={{ background: selectedType === type ? '#D4A543' : '#0B2438' }}>{svg}</div>
-                    <div className="font-bold text-navy text-sm">{title}</div>
-                    <div className="text-[11px] text-gray-500 mt-0.5">{desc}</div>
+                  <button key={type} type="button" onClick={() => { setSelectedType(type as any); setValue('role', type as any, { shouldValidate: true }); setFormError('') }}
+                    className="p-6 rounded-2xl border-2 border-gray-200 bg-white text-center transition-all hover:border-[#D4A543] hover:bg-[#D4A543]/5 hover:shadow-md min-h-[180px]">
+                    <div className="w-14 h-14 rounded-2xl grid place-items-center mx-auto mb-3 text-white" style={{ background: '#0B2438' }}>{svg}</div>
+                    <div className="font-extrabold text-navy text-base">{title}</div>
+                    <div className="text-xs text-gray-500 mt-1 leading-relaxed">{desc}</div>
                   </button>
                 ))}
+              </div>
+            ) : (<>
+            {/* step 2 — the chosen type, changeable */}
+            <div>
+              <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-gray-50 px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-9 h-9 rounded-xl grid place-items-center text-white shrink-0" style={{ background: '#D4A543' }}>{roleCards.find(r => r.type === selectedType)?.svg}</span>
+                  <div className="min-w-0">
+                    <div className="text-[11px] text-gray-500">{t.accountType}</div>
+                    <div className="font-bold text-navy text-sm truncate">{roleCards.find(r => r.type === selectedType)?.title}</div>
+                  </div>
+                </div>
+                <button type="button" onClick={() => { setSelectedType(null); setValue('role', undefined as any) }} className="text-xs font-bold hover:underline shrink-0" style={{ color: '#9D7425' }}>{t.change}</button>
               </div>
               {selectedType === 'supplier' && (
                 <div className="grid grid-cols-2 gap-2 mt-3">
@@ -339,6 +351,7 @@ export default function RegisterPage() {
               className="btn-orange w-full disabled:opacity-50">
               {submitting ? t.creating : t.create}
             </button>
+            </>)}
           </form>
 
             {/* company accounts with several procurement staff are set up with us, not here */}
