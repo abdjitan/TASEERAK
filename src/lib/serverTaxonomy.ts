@@ -2,6 +2,7 @@
 // الأدمن) ويصنّف بها — فأي تعديل للكلمات يسري فوراً دون نشر جديد. مع كاش بالذاكرة.
 import { createServiceClient } from '@/lib/supabase/server'
 import { normalizeText } from '@/lib/normalize'
+import { PRODUCT_SUB } from '@/types'
 
 export type TaxRow = { sector: string; sub_key: string; keywords: string[] }
 
@@ -28,6 +29,9 @@ export async function getTaxonomyRows(): Promise<TaxRow[]> {
 
 // نفس خوارزمية detectSubCategory لكن على كلمات الـDB (أعلى نتيجة تفوز).
 export function detectSubCategoryDb(text: string, sector: string, rows: TaxRow[]): string | null {
+  // a catalog product with a fixed sub-category (PRODUCT_SUB) keeps it, as on the client
+  const fixed = PRODUCT_SUB[(text || '').trim()]
+  if (fixed && rows.some(r => r.sector === sector && r.sub_key === fixed)) return fixed
   const norm = normalizeText(text)
   let best: string | null = null
   let max = 0

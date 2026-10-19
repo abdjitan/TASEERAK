@@ -48,7 +48,8 @@ const BY_GROUP: Record<string, BrowseSection> = {
   hvac: 'hvac_fire', firefighting: 'hvac_fire',
   plumbing: 'plumbing', plumbing_supplies: 'plumbing',
   heavy_equipment: 'machinery', concrete_machinery: 'machinery', light_equipment: 'machinery', access_equipment: 'tools', workshop_equip: 'tools',
-  store_plumbing: 'plumbing', store_electrical: 'electrical', store_tools: 'tools', store_fasteners: 'tools',
+  store_plumbing: 'plumbing', store_electrical: 'electrical', store_tools: 'tools', store_fasteners: 'building', // owner 2026-10-19: nails, screws and anchors sit with building materials
+ 
   store_safety: 'tools', store_paint: 'finishing', store_hardware: 'tools',
 }
 
