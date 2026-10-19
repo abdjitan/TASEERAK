@@ -101,16 +101,16 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
   civil: {
     // ═══ الخرسانة والمنتجات الإسمنتية ═══
     readymix: { ar: 'خرسانة جاهزة (Ready-Mix)', en: 'Ready-Mix Concrete', ur: 'ریڈی مکس', icon: '🏭', group: 'concrete',
-      keywords: ['خرسانة جاهزة','ready mix','readymix','concrete','C25','C30','C35','C40','blinding'] },
+      keywords: ['خرسانة جاهزة','ready mix','readymix','concrete','C25','C30','C35','C40','blinding','ready mixed','خرسانة مسلحة','خرسانة عادية'] },
     blocks: { ar: 'بلوك وآجر (أسود/معزول/سيبوريكس)', en: 'Blocks & Bricks', ur: 'بلاک', icon: '🧱', group: 'masonry',
-      keywords: ['طوب','بلوك','بلك','بلكة','بلوكات','block','brick','aac','سيبوريكس','معزول','مدماك','خفيف','siporex','قرميد أسقف'] },
+      keywords: ['طوب','بلوك','بلك','بلكة','بلوكات','block','brick','aac','سيبوريكس','معزول','مدماك','خفيف','siporex','قرميد أسقف','concrete block','hollow block','blockwork'] },
     precast: { ar: 'خرسانة مسبقة الصنع (Precast)', en: 'Precast Concrete', ur: 'پری کاسٹ', icon: '🏗', group: 'concrete',
-      keywords: ['مسبق الصنع','precast','مسبقة','بلاطات مسبقة','أعمدة مسبقة','عتبات مسبقة','مدرجات','مقاعد','seating','bleacher'] },
+      keywords: ['مسبق الصنع','precast','مسبقة','بلاطات مسبقة','أعمدة مسبقة','عتبات مسبقة','مدرجات','مقاعد','seating','bleacher','kerb','curb','بردورة'] },
     cement: { ar: 'أسمنت ومواد رابطة', en: 'Cement & Binders', ur: 'سیمنٹ', icon: '🪨', group: 'concrete',
       keywords: ['أسمنت','اسمنت','cement','جير','lime','جبص','جبصين','gypsum'] },
     // ═══ الحديد والإنشاءات المعدنية ═══
     rebar: { ar: 'حديد تسليح', en: 'Rebar / Reinforcement', ur: 'سریا', icon: '🔩', group: 'steel',
-      keywords: ['حديد تسليح','تسليح','rebar','reinforc','سابك','الراجحي','بسكويت','سلك تربيط'] },
+      keywords: ['حديد تسليح','تسليح','rebar','reinforc','سابك','الراجحي','بسكويت','سلك تربيط','reinforcement','deformed bar','steel bar'] },
     structural_steel: { ar: 'حديد تجاري وقطاعات', en: 'Steel Profiles & Beams', ur: 'ساختی اسٹیل', icon: '🏗', group: 'steel',
       keywords: ['هيكلي','صلب','HEB','HEA','IPE','قطاع','structural steel','section','hollow','channel','صفائح','beam','تجاري'] },
     steel_sections: { ar: 'قطاعات وصاج حديد (زوايا/مواسير/صاج)', en: 'Steel Sections, Tubes & Sheets', ur: 'اسٹیل سیکشن', icon: '🔩', group: 'steel',
@@ -123,7 +123,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     piling: { ar: 'أوتاد وخوازيق الأساسات', en: 'Piling & Foundations', ur: 'پائلنگ', icon: '🛠', group: 'infrastructure',
       keywords: ['أوتاد','اوتاد','pile','piling','خازوق','وتد خرساني'] },
     construction_chemicals: { ar: 'مواد كيميائية للبناء', en: 'Construction Chemicals', ur: 'کیمیکل', icon: '🧪', group: 'infrastructure',
-      keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي','مبيد النمل الأبيض','مادة معالجة الخرسانة','مادة ربط الخرسانة','مثبت كيميائي','حشوة فواصل التمدد','لاصق بلوك','مونة رقيقة','مونة إصلاح الخرسانة','سيليكون','silicone','مانع تسرب','sealant','ماستك','فوم بولي','مقاوم للحريق','معجون حريق','fire putty','water plug','بوليمر','بولي سلفايد','بولي يوريثان','لملء الفراغات','weather seal'] },
+      keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي','مبيد النمل الأبيض','مادة معالجة الخرسانة','مادة ربط الخرسانة','مثبت كيميائي','حشوة فواصل التمدد','لاصق بلوك','مونة رقيقة','مونة إصلاح الخرسانة','سيليكون','silicone','مانع تسرب','sealant','ماستك','فوم بولي','مقاوم للحريق','معجون حريق','fire putty','water plug','بوليمر','بولي سلفايد','بولي يوريثان','لملء الفراغات','weather seal','chemical anchor','anchor bolt resin','curing compound','admixture'] },
     drainage: { ar: 'صرف خارجي وبنية تحتية', en: 'External Drainage', ur: 'نکاسی', icon: '🚧', group: 'drainage_grp',
       keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف'] },
     // ═══ الكسارات والمواد الأولية وأعمال الموقع ═══
