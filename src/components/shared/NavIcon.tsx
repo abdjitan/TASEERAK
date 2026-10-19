@@ -4,11 +4,11 @@
 import type { ReactNode } from 'react'
 import {
   House, FilePlus2, ClipboardList, Package, FileSpreadsheet, MessageSquare, TrendingUp, MapPin,
-  Settings, ShieldCheck, Search, FolderTree, Brain, Target, ChartLine, Trophy, Building2, Users, Star, UserPlus,
+  Settings, ShieldCheck, Search, FolderTree, Brain, Target, ChartLine, Trophy, Building2, Users, Star, UserPlus, Lightbulb,
 } from 'lucide-react'
 
 const BY_PATH: [RegExp, any][] = [
-  [/^\/admin\/discover/, Search], [/^\/admin\/taxonomy/, FolderTree], [/^\/admin\/learning/, Brain], [/^\/admin\/invites/, MessageSquare], [/^\/admin$/, ShieldCheck],
+  [/^\/admin\/discover/, Search], [/^\/admin\/taxonomy/, FolderTree], [/^\/admin\/learning/, Brain], [/^\/admin\/invites/, MessageSquare], [/^\/admin\/suggestions/, Lightbulb], [/^\/suggestions/, Lightbulb], [/^\/admin$/, ShieldCheck],
   [/^\/supplier\/dashboard$/, House], [/^\/supplier\/deals/, Package], [/^\/supplier\/specialties/, Target],
   [/^\/supplier\/prices/, ChartLine], [/^\/supplier\/analytics/, Trophy], [/^\/supplier\/branches/, Building2],
   [/^\/supplier\/team/, Users], [/^\/supplier\/subscription/, Star],
