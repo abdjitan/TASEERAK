@@ -9,13 +9,17 @@ import { searchProducts } from '@/lib/productSearch'
 import { getProductLabel } from '@/types'
 import { BROWSE_SECTIONS } from '@/lib/browseCategories'
 
+// All sections, building first (owner 2026-10-19: show every category photo, building materials first)
 const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub: { ar: string; en: string; ur: string } }[] = [
-  { key: 'electrical', img: 'lighting', ar: 'الإنارة', en: 'Lighting', ur: 'روشنی', sub: { ar: 'مصابيح وثريات', en: 'Lamps & chandeliers', ur: 'لیمپ اور جھومر' } },
-  { key: 'furniture', img: 'furniture', ar: 'الأثاث والديكور', en: 'Furniture & decor', ur: 'فرنیچر', sub: { ar: 'للبيت والمكتب', en: 'Home & office', ur: 'گھر اور دفتر' } },
+  { key: 'building', img: 'building', ar: 'مواد البناء', en: 'Building materials', ur: 'تعمیراتی سامان', sub: { ar: 'حديد، أسمنت، عزل', en: 'Steel, cement, insulation', ur: 'سریا، سیمنٹ، انسولیشن' } },
   { key: 'finishing', img: 'finishing', ar: 'الدهانات والتشطيبات', en: 'Paints & finishing', ur: 'پینٹ اور فنشنگ', sub: { ar: 'ألوان وبلاط ورخام', en: 'Colours, tiles, marble', ur: 'رنگ، ٹائلیں، ماربل' } },
-  { key: 'plumbing', img: 'plumbing', ar: 'الحمّام والسباكة', en: 'Bathroom & plumbing', ur: 'باتھ روم اور پلمبنگ', sub: { ar: 'أدوات وإكسسوارات', en: 'Fixtures & fittings', ur: 'سامان اور لوازمات' } },
-  { key: 'tools', img: 'tools', ar: 'الأدوات والمعدات', en: 'Tools & equipment', ur: 'اوزار اور مشینری', sub: { ar: 'للمنزل والموقع', en: 'Home & site', ur: 'گھر اور سائٹ' } },
-  { key: 'building', img: 'building', ar: 'مواد البناء', en: 'Building materials', ur: 'تعمیراتی سامان', sub: { ar: 'كل الكميات', en: 'Any quantity', ur: 'ہر مقدار' } },
+  { key: 'electrical', img: 'lighting', ar: 'الكهرباء والإنارة', en: 'Electrical & lighting', ur: 'بجلی اور روشنی', sub: { ar: 'مصابيح وكابلات', en: 'Lamps & cables', ur: 'لیمپ اور کیبل' } },
+  { key: 'plumbing', img: 'plumbing', ar: 'الحمّام والسباكة', en: 'Bathroom & plumbing', ur: 'باتھ روم اور پلمبنگ', sub: { ar: 'أدوات وإكسسوارات', en: 'Fixtures & fittings', ur: 'سامان اور فٹنگز' } },
+  { key: 'hvac_fire', img: 'hvac_fire', ar: 'التكييف والحريق', en: 'AC & firefighting', ur: 'اے سی اور فائر', sub: { ar: 'مكيفات ورشاشات', en: 'AC units, sprinklers', ur: 'اے سی، اسپرنکلر' } },
+  { key: 'furniture', img: 'furniture', ar: 'الأثاث والديكور', en: 'Furniture & decor', ur: 'فرنیچر', sub: { ar: 'للبيت والمكتب', en: 'Home & office', ur: 'گھر اور دفتر' } },
+  { key: 'tools', img: 'tools', ar: 'العدد والمعدات', en: 'Tools & equipment', ur: 'اوزار اور سامان', sub: { ar: 'للمنزل والموقع', en: 'Home & site', ur: 'گھر اور سائٹ' } },
+  { key: 'machinery', img: 'machinery', ar: 'الآليات الثقيلة', en: 'Heavy machinery', ur: 'بھاری مشینری', sub: { ar: 'تأجير وشراء', en: 'Rent or buy', ur: 'کرایہ یا خرید' } },
+  { key: 'outdoor', img: 'outdoor', ar: 'الحدائق والخارجيات', en: 'Garden & outdoor', ur: 'باغ اور بیرونی', sub: { ar: 'عشب وري وإنترلوك', en: 'Turf, irrigation, interlock', ur: 'گھاس، آبپاشی' } },
 ]
 
 export default function MarketHero({ locale }: { locale: string }) {
@@ -119,14 +123,14 @@ export default function MarketHero({ locale }: { locale: string }) {
         </div>
         <Link href="/contractor/rfq/quick" className="text-sm font-bold text-[#9D7425] hover:underline whitespace-nowrap">{L('All categories', 'تمام زمرے', 'كل التصنيفات')} ←</Link>
       </div>
-      <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="mt-3 grid grid-cols-3 lg:grid-cols-9 gap-2 sm:gap-3">
         {CATS.map(c => (
           <Link key={c.key} href={`/contractor/rfq/quick?section=${c.key}`}
-            className="group relative overflow-hidden rounded-2xl min-h-[132px] sm:min-h-[150px] bg-[#0B2438] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
+            className="group relative overflow-hidden rounded-2xl min-h-[112px] sm:min-h-[140px] bg-[#0B2438] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`/images/sections/${c.img}.webp`} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
             <span className="absolute inset-0 bg-gradient-to-t from-[#050B12]/85 via-[#071827]/15 to-transparent" aria-hidden />
-            <span className="relative flex flex-col justify-end h-full min-h-[132px] sm:min-h-[150px] p-3">
+            <span className="relative flex flex-col justify-end h-full min-h-[112px] sm:min-h-[140px] p-3">
               <span className="font-bold text-[15px] text-white leading-snug drop-shadow">{pick(c)}</span>
               <span className="text-[11px] text-white/80">{pick(c.sub)}</span>
             </span>
