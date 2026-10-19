@@ -13,7 +13,7 @@ export type BrowseSection =
 // cat = CatIcon key (line icon, same set as the groups); icon = emoji kept for plain-text places
 export const BROWSE_SECTIONS: { key: BrowseSection; icon: string; cat?: string; ar: string; en: string; ur: string; hint: { ar: string; en: string; ur: string } }[] = [
   { key: 'building', cat: 'civil', icon: '🧱', ar: 'البناء والإنشاءات', en: 'Building & structure', ur: 'تعمیر و ڈھانچہ',
-    hint: { ar: 'أسمنت، خرسانة، حديد، بلك، رمل، شدّات', en: 'Cement, concrete, rebar, blocks, sand, formwork', ur: 'سیمنٹ، کنکریٹ، سریا، بلاک، ریت' } },
+    hint: { ar: 'أسمنت، حديد، بلوك، شدّات، عزل وكيماويات، مسامير وانكرات', en: 'Cement, rebar, blocks, formwork, insulation & chemicals, fixings', ur: 'سیمنٹ، سریا، بلاک، شٹرنگ، انسولیشن اور کیمیکل، فکسنگ' } },
   { key: 'finishing', cat: 'paint_facade', icon: '🎨', ar: 'التشطيبات', en: 'Finishing', ur: 'فنشنگ',
     hint: { ar: 'بلاط، رخام، دهان، جبس، أبواب وشبابيك', en: 'Tiles, marble, paint, gypsum, doors & windows', ur: 'ٹائلیں، ماربل، پینٹ، جپسم، دروازے' } },
   { key: 'furniture', cat: 'furniture', icon: '🛋️', ar: 'الأثاث والديكور', en: 'Furniture & decor', ur: 'فرنیچر اور سجاوٹ',
@@ -24,8 +24,8 @@ export const BROWSE_SECTIONS: { key: BrowseSection; icon: string; cat?: string; 
     hint: { ar: 'مواسير، خلاطات، مضخات، خزانات، أدوات صحية', en: 'Pipes, mixers, pumps, tanks, sanitary ware', ur: 'پائپ، مکسر، پمپ، ٹینک' } },
   { key: 'hvac_fire', cat: 'hvac', icon: '❄️', ar: 'التكييف والتهوية والحريق', en: 'AC, ventilation & firefighting', ur: 'اے سی، وینٹیلیشن، فائر',
     hint: { ar: 'مكيفات، دكت، مراوح شفط، رشاشات وإطفاء', en: 'AC units, ducts, fans, sprinklers', ur: 'اے سی، ڈکٹ، پنکھے، فائر' } },
-  { key: 'insulation', cat: 'building_insulation', icon: '💧', ar: 'العزل والكيماويات', en: 'Insulation & chemicals', ur: 'انسولیشن اور کیمیکل',
-    hint: { ar: 'عزل مائي وحراري وصوتي، سيليكون، لواصق، إيبوكسي', en: 'Water/thermal/acoustic insulation, sealants, adhesives', ur: 'واٹر پروفنگ، انسولیشن، سیلنٹ' } },
+  // «العزل والكيماويات» merged into «البناء والإنشاءات» (owner 2026-10-19, after a 4-persona study):
+  // contractor-grade insulation and chemicals sit with building; shop silicone/adhesives with finishing.
   { key: 'tools', cat: 'store_tools', icon: '🛠️', ar: 'العدد والمعدات والسلامة', en: 'Tools, equipment & safety', ur: 'اوزار، مشینری، حفاظت',
     hint: { ar: 'عدد يدوية وكهربائية، مسامير، أقفال، سقالات، لحام، سلامة', en: 'Hand/power tools, fasteners, hardware, scaffolding, welding, safety', ur: 'اوزار، کیل، تالے، سکیفولڈنگ، ویلڈنگ' } },
   // heavy and concrete machinery got their own section (owner, 2026-10-15): renting a crane or a
@@ -39,10 +39,10 @@ export const BROWSE_SECTIONS: { key: BrowseSection; icon: string; cat?: string; 
 // group key (GROUP_LABELS) -> section. Most sub-categories follow their group.
 const BY_GROUP: Record<string, BrowseSection> = {
   concrete: 'building', masonry: 'building', steel: 'building', rawmaterials: 'building', formwork: 'building',
-  infrastructure: 'insulation', drainage_grp: 'outdoor', landscape: 'outdoor', scaffolding: 'tools',
+  infrastructure: 'building', drainage_grp: 'outdoor', landscape: 'outdoor', scaffolding: 'building',
   floors_walls: 'finishing', paint_facade: 'finishing', ceiling_decor: 'finishing', doors_windows: 'finishing',
   facade_systems: 'finishing', joinery: 'finishing', arch_metalwork: 'finishing',
-  acoustic: 'insulation', building_insulation: 'insulation', mech_insulation: 'insulation',
+  acoustic: 'finishing', building_insulation: 'building', mech_insulation: 'hvac_fire',
   sanitary_finish: 'plumbing',
   cabling: 'electrical', panels_switches: 'electrical', lighting: 'electrical', low_current: 'electrical', solar: 'electrical',
   hvac: 'hvac_fire', firefighting: 'hvac_fire',
@@ -56,7 +56,7 @@ const BY_GROUP: Record<string, BrowseSection> = {
 // sub-category exceptions to its group's section
 const BY_SUB: Record<string, BrowseSection> = {
   piling: 'building',               // infrastructure group, but it is structure
-  store_adhesives: 'insulation',    // sealants, silicone, foam
+  store_adhesives: 'finishing',    // sealants, silicone, foam
   duct_insulation: 'hvac_fire',     // bought with the ducts
   custom_furniture: 'furniture',    // made-to-order furniture, curtains and decorative lighting:
   curtains: 'furniture',            // what a home owner looks for («a table / a chandelier like this»)
@@ -89,7 +89,10 @@ const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: stri
     joinery: { ar: 'أثاث وخزائن وستائر حسب الطلب', en: 'Custom furniture, wardrobes & curtains', ur: 'آرڈر پر فرنیچر اور پردے' },
     lighting: { ar: 'ثريات وإنارة ديكور', en: 'Chandeliers & decorative lighting', ur: 'جھومر اور سجاوٹی روشنی' },
   },
-  building: { infrastructure: { ar: 'الخوازيق والأساسات', en: 'Piling & foundations', ur: 'پائلنگ اور بنیادیں' } },
+  building: {
+    infrastructure: { ar: 'الأساسات وكيماويات البناء', en: 'Foundations & construction chemicals', ur: 'بنیادیں اور تعمیراتی کیمیکل' },
+    building_insulation: { ar: 'العزل الحراري والمائي', en: 'Thermal & water insulation', ur: 'حرارتی اور واٹر پروفنگ' },
+  },
   plumbing: { plumbing_supplies: { ar: 'لوازم وأدوات السباكة', en: 'Plumbing supplies & tools', ur: 'پلمبنگ کا سامان' } },
   tools: { scaffolding: { ar: 'السقالات ومنصات الرفع', en: 'Scaffolding & access platforms', ur: 'سکیفولڈنگ اور لفٹ پلیٹ فارم' } },
   insulation: {
