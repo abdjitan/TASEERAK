@@ -28,3 +28,10 @@ export function daysText(n: any, locale: string): string {
   if (locale === 'ur') return `${d} دن`
   return d === 1 ? 'يوم واحد' : d === 2 ? 'يومان' : d <= 10 ? `${d} أيام` : `${d} يوماً`
 }
+
+// Arabic counted noun: (1) «بند واحد» (2) «بندان» (3–10) «3 بنود» (11+) «11 بنداً».
+export function arCount(n: number, one: string, two: string, few: string, many: string): string {
+  return n === 1 ? one : n === 2 ? two : n >= 3 && n <= 10 ? `${n} ${few}` : `${n} ${many}`
+}
+export const arItems = (n: number) => arCount(n, 'بند واحد', 'بندان', 'بنود', 'بنداً')
+export const arMaterials = (n: number) => arCount(n, 'مادة واحدة', 'مادتان', 'مواد', 'مادة')

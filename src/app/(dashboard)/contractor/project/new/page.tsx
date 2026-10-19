@@ -12,6 +12,8 @@ import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel } from '@/types'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { arCount, arItems, arMaterials } from '@/lib/text'
+import CatIcon from '@/components/shared/CatIcon'
 
 // تجميع بنود الـ BOQ حسب المجموعة (مثل قوائم التسعير) — يحتفظ بالفهرس الأصلي لكل بند
 function getGroupedItems(items: any[], locale: string) {
@@ -130,7 +132,7 @@ export default function NewProjectPage() {
         if ((it.specification || '').trim() !== doc) { diff++; return { ...it, specFromDoc: doc } }
         return { ...it, specFromDoc: doc }
       }))
-      const parts = [`✓ طوبق ${data.matched} من ${data.total} بند`]
+      const parts = [`✓ طوبق ${data.matched} من ${arItems(data.total)}`]
       if (filled) parts.push(`عُبّئ ${filled}`)
       if (diff) parts.push(`${diff} تختلف عن BOQ — راجعها`)
       if (data.truncated) parts.push('المواصفات كبيرة واقتُطعت، قسّم الملف')
@@ -252,7 +254,7 @@ export default function NewProjectPage() {
     // نرسل المصنّفة فقط، ونبقي غير المصنّفة لدى المقاول ليصنّفها لاحقاً.
     const classifiedItems = items.filter((i: any) => i.selected && i.product_name && !i.needs_classification)
     if (unclassifiedCount > 0) {
-      const ok = confirm(`يوجد ${unclassifiedCount} بند غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)
+      const ok = confirm(`يوجد ${arItems(unclassifiedCount)} غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)
       if (!ok) return
     }
     if (classifiedItems.length === 0) { alert('لا توجد بنود مصنّفة للإرسال — اختر تصنيف البنود أولاً.'); return }
@@ -351,7 +353,7 @@ export default function NewProjectPage() {
         if (linkErr) failed.push(item.product_name)
       }
 
-      if (failed.length) alert(`تعذّر إرسال ${failed.length} بند: ${failed.join('، ')}. حاول مجدداً لهذه البنود.`)
+      if (failed.length) alert(`تعذّر إرسال ${arItems(failed.length)}: ${failed.join('، ')}. حاول مجدداً لهذه البنود.`)
       window.location.href = `/contractor/project/${project.id}`
     } catch (err) {
       alert((err as any).message)
@@ -481,7 +483,7 @@ export default function NewProjectPage() {
               <div className="text-center">
                 <div className="text-4xl mb-2"><Glyph e="✅" /></div>
                 <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{boqFile.name}</div>
-                <div className="text-xs text-gray-400 mt-1">{items.length} {locale === 'en' ? 'items extracted' : 'بند تم استخراجه'}</div>
+                <div className="text-xs text-gray-400 mt-1">{locale === 'en' ? `${items.length} items extracted` : `تم استخراج ${arItems(items.length)}`}</div>
                 <button type="button" onClick={(e: any) => { e.preventDefault(); setBoqFile(null); setItems([]) }}
                   className="mt-2 text-xs text-red-500 hover:underline">
                   {locale === 'en' ? 'Remove' : 'إزالة الملف'}
@@ -646,7 +648,7 @@ export default function NewProjectPage() {
                     <button type="button" onClick={() => toggleGroup(g.key)}
                       className={`w-full flex items-center justify-between px-4 py-3 ${g.key === '_unclassified' ? 'bg-red-50' : 'bg-gray-50'}`}>
                       <span className="font-bold text-sm flex items-center gap-2" style={{ color: g.key === '_unclassified' ? '#dc2626' : '#0B2438' }}>
-                        <span>{g.icon}</span> {g.label}
+                        <span className="w-5 h-5 grid place-items-center"><CatIcon k={g.key} className="w-4 h-4" /></span> {g.label}
                         <span className="badge text-[10px] bg-white border border-gray-200 text-gray-600">{g.entries.length}</span>
                       </span>
                       <span className="text-gray-400 text-xs">{open ? '▲' : '▼'}</span>
@@ -861,13 +863,13 @@ export default function NewProjectPage() {
                   {locale === 'en' ? 'Ready to Send?' : 'جاهز للإرسال؟'}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {selectedCount} {locale === 'en' ? 'materials will be sent to' : 'مادة ستُرسل لـ'} {Object.keys(bySector).length} {locale === 'en' ? 'supplier groups' : 'مجموعة موردين'}
+                  {locale === 'en' ? `${selectedCount} materials will be sent to ${Object.keys(bySector).length} supplier groups` : `${arMaterials(selectedCount)} ستُرسل إلى ${arCount(Object.keys(bySector).length, 'مجموعة واحدة', 'مجموعتين', 'مجموعات', 'مجموعة')} من الموردين`}
                 </p>
               </div>
               <div className="text-left">
                 {Object.entries(bySector).map(([s, count]) => (
                   <div key={s} className="text-xs text-gray-500">
-                    {(SECTOR_ICONS as any)[s]} {(SECTOR_LABELS as any)[s]}: {count} {locale === 'en' ? 'items' : 'بند'}
+                    {(SECTOR_LABELS as any)[s]}: {locale === 'en' ? `${count} items` : arItems(count as number)}
                   </div>
                 ))}
               </div>
@@ -882,7 +884,7 @@ export default function NewProjectPage() {
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
                   {locale === 'en' ? 'Sending to suppliers...' : 'جارٍ الإرسال للموردين...'}
                 </span>
-              ) : locale === 'en' ? `Send ${selectedCount} Materials to Suppliers →` : `إرسال ${selectedCount} مادة للموردين المتخصصين ←`}
+              ) : locale === 'en' ? `Send ${selectedCount} Materials to Suppliers →` : `إرسال ${arMaterials(selectedCount)} للموردين المتخصصين ←`}
             </button>
           </div>
         )}
