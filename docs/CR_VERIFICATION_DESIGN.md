@@ -62,5 +62,5 @@ decision; free checks and a cheap AI read make it fast. Wathq later.
 ## Order
 170 (normalise + unique + delete release, after test-dupe fix) → 171 (admin RPC + claims) → admin card + QR/VAT buttons → AI read (after $ OK) → clients + mobile request.
 
-## Side finding (not this scope)
-`licenses` bucket is private but several places call `getPublicUrl` on it (`contractor/rfq/quick`, `contractor/project/new`, `supplier/specialties`, `api/upload-attachment`) → those links likely 400 unless served via `/api/file`. Worth a check by the main session.
+## Note on file links
+`getPublicUrl` on the private `licenses` bucket only builds the stored URL string; every display goes through `fileHref()` → `/api/file` (IDOR check, 300 s signed URL), so those links work (checked by the main session). Verification/claim files live in the private `verification` bucket and are opened by short-lived signed URLs (admin read policy), as the admin page already did.

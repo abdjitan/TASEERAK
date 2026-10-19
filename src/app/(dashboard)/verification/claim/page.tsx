@@ -60,10 +60,12 @@ export default function CrClaimPage() {
     const j = await res.json().catch(() => ({}))
     if (!res.ok || !j.ok) { setSaving(false); setMsg(j?.message || L('Upload failed.', 'اپ لوڈ ناکام ہو گیا۔', 'تعذّر رفع الملف.')); return }
     const supabase = createClient()
-    const { error } = await supabase.rpc('submit_cr_claim', { p_cr: digits, p_name: name.trim(), p_contact: contact.trim() || null, p_file_path: j.path })
+    const { data: claimId, error } = await supabase.rpc('submit_cr_claim', { p_cr: digits, p_name: name.trim(), p_contact: contact.trim() || null, p_file_path: j.path })
     setSaving(false)
     if (error) { setMsg(error.message); return }
     setDone(true)
+    // 172: AI read of the claim file for the admin (fire and forget; manual when off/capped)
+    fetch('/api/verification/extract', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'claim', claimId }) }).catch(() => {})
     const { data: { session } } = await supabase.auth.getSession()
     if (session) await loadMine(supabase, session.user.id)
   }

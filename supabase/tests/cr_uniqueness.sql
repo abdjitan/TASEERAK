@@ -153,5 +153,20 @@ begin
   select count(*) into n from profiles where id = spare and commercial_registration is null;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL delete kept the CR'; end if;
 
+  -- 12. (172) the race-proof unique index exists; the AI spend sum is not callable by users;
+  --     a user cannot write AI read rows
+  if exists (select 1 from pg_indexes where indexname = 'profiles_cr_one_holder') then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL unique index missing'; end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.cr_ai_spend_month();
+    bad := bad + 1; log := log || ' FAIL user read the AI spend';
+  exception when others then ok := ok + 1; end;
+  begin
+    insert into cr_document_checks (profile_id, file_path) values (buyer, buyer::text || '/cr.pdf');
+    bad := bad + 1; log := log || ' FAIL user wrote an AI read row';
+  exception when others then ok := ok + 1; end;
+  reset role;
+
   raise exception 'CR: % passed, % failed |%', ok, bad, log;
 end $$;

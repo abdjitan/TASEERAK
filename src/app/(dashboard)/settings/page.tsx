@@ -151,6 +151,7 @@ export default function SettingsPage() {
   const [crFile, setCrFile] = useState<any>(null)
   const [crNumber, setCrNumber] = useState('') // 170: one CR = one account (DB-enforced)
   const [crTaken, setCrTaken] = useState('')   // the CR another account holds → offer the claim flow
+  const [crRead, setCrRead] = useState<any>(null) // 172: AI read of the uploaded certificate
   const [docsMsg, setDocsMsg] = useState('')
   const [docsSaving, setDocsSaving] = useState(false)
   const [crCheck, setCrCheck] = useState<any>(null)
@@ -328,8 +329,19 @@ export default function SettingsPage() {
     if (error) { setDocsMsg(t.error); return }
     setDocsMsg(t.uploaded)
     setProfile((p: any) => ({ ...p, license_url: licenseUrl, cr_url: crUrl, verification_status: p?.verification_status === 'verified' ? 'verified' : 'pending' }))
+    const readCr = !!crFile
     setLicenseFile(null); setCrFile(null)
     setTimeout(() => setDocsMsg(''), 4000)
+    // 172: read the new CR certificate (helper for the admin + an auto-fill suggestion; manual when off/capped)
+    if (readCr) {
+      setCrRead(null)
+      const r = await fetch('/api/verification/extract', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'cr' }) })
+      const j = await r.json().catch(() => null)
+      if (j?.mode === 'ai' && j.extracted) {
+        setCrRead(j)
+        if (j.extracted.cr_number && !normalizeCrInput(crNumber)) setCrNumber(j.extracted.cr_number)
+      }
+    }
   }
 
   // Verify existing profile's CR against the official source (Wathq)
@@ -767,6 +779,20 @@ export default function SettingsPage() {
                       className="input-field font-mono disabled:opacity-60" placeholder="7001234567" />
                     {profile?.verification_status === 'verified' && profile?.commercial_registration && (
                       <div className="text-[11px] text-gray-400 mt-1">{L('Locked after verification.', 'تصدیق کے بعد مقفل ہے۔', 'يُقفل بعد التوثيق.')}</div>
+                    )}
+                    {crRead?.extracted && (
+                      <div className={`mt-2 text-xs rounded-xl p-3 border ${crRead.flags?.not_cr_document || crRead.flags?.cr_mismatch || crRead.flags?.expired ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+                        <div className="font-bold mb-0.5">{L('Read from your certificate', 'آپ کے سرٹیفکیٹ سے پڑھا گیا', 'قُرئ من شهادتك')}:</div>
+                        {crRead.extracted.entity_name && <div>{crRead.extracted.entity_name}</div>}
+                        {crRead.extracted.cr_number && <div dir="ltr" className="font-mono">CR: {crRead.extracted.cr_number}</div>}
+                        {crRead.flags?.not_cr_document && <div>{L('This file does not look like a commercial registration certificate.', 'یہ فائل تجارتی رجسٹریشن سرٹیفکیٹ نہیں لگتی۔', 'لا يبدو هذا الملف شهادة سجل تجاري.')}</div>}
+                        {crRead.flags?.cr_mismatch && <div>{L('The number on the certificate differs from the number above.', 'سرٹیفکیٹ کا نمبر اوپر والے نمبر سے مختلف ہے۔', 'الرقم في الشهادة يختلف عن الرقم المكتوب أعلاه.')}</div>}
+                        {crRead.flags?.expired && <div>{L('The registration looks expired.', 'رجسٹریشن کی مدت ختم لگتی ہے۔', 'يبدو أن السجل منتهي.')}</div>}
+                        {normalizeCrInput(crNumber) !== (profile?.commercial_registration || '') && (
+                          <div className="mt-1">{L('Check the number and press the button below to confirm it.', 'نمبر چیک کریں اور تصدیق کے لیے نیچے والا بٹن دبائیں۔', 'تحقّق من الرقم واضغط الزر أدناه لتأكيده.')}</div>
+                        )}
+                        <div className="mt-1 opacity-70">{L('An automatic read to help; the admin still reviews the document.', 'مدد کے لیے خودکار مطالعہ؛ انتظامیہ پھر بھی دستاویز دیکھتی ہے۔', 'قراءة آلية للمساعدة، والإدارة تراجع المستند بنفسها.')}</div>
+                      </div>
                     )}
                     {crTaken && (
                       <div className="mt-2 text-sm rounded-xl p-3 bg-amber-50 text-amber-800 border border-amber-200">

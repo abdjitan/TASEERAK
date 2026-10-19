@@ -43,6 +43,7 @@ export default function AdminPanel() {
   const [objections, setObjections] = useState<any[]>([]) // cr_objections (fake-account reports)
   const [changeReqs, setChangeReqs] = useState<any[]>([]) // profile_change_requests (name/classification)
   const [crClaims, setCrClaims] = useState<any[]>([]) // cr_claims (171): someone asks for a CR held by another account
+  const [crChecks, setCrChecks] = useState<any[]>([]) // cr_document_checks (172): AI reads of uploaded CRs, newest first
   const [expandedRfq, setExpandedRfq] = useState<any>(null)
   const [expandedProject, setExpandedProject] = useState<any>(null)
   // Admin password change
@@ -101,16 +102,18 @@ export default function AdminPanel() {
     setProjects(projData || [])
     setProjectItems(pItems || [])
 
-    const [{ data: supp }, { data: objs }, { data: pcr }, { data: claims }] = await Promise.all([
+    const [{ data: supp }, { data: objs }, { data: pcr }, { data: claims }, { data: checks }] = await Promise.all([
       client.from('support_messages').select('*').order('created_at', { ascending: false }).limit(LIM),
       client.from('cr_objections').select('*').order('created_at', { ascending: false }).limit(LIM),
       client.from('profile_change_requests').select('*').order('created_at', { ascending: false }).limit(LIM),
       client.from('cr_claims').select('*').order('created_at', { ascending: false }).limit(LIM),
+      client.from('cr_document_checks').select('id, profile_id, claim_id, file_path, extracted, flags, error, created_at').order('created_at', { ascending: false }).limit(LIM),
     ])
     setSupport(supp || [])
     setObjections(objs || [])
     setChangeReqs(pcr || [])
     setCrClaims(claims || [])
+    setCrChecks(checks || [])
 
     // Auth emails via the privileged edge function (non-blocking — cards still
     // render if this fails, e.g. function not yet deployed).
@@ -310,6 +313,18 @@ export default function AdminPanel() {
     setActionLoading('')
   }
 
+  // 172: AI read of an uploaded CR (helper only; manual when off / capped / unreadable)
+  async function readCr(body: any, key: string) {
+    setActionLoading(key)
+    const r = await fetch('/api/verification/extract', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const j = await r.json().catch(() => null)
+    const why: any = { no_key: 'القراءة الآلية غير مفعّلة (لا يوجد مفتاح).', cap_reached: 'بلغت القراءة الآلية حدّها الشهري.', spend_unknown: 'تعذّر التحقق من حدّ التكلفة، راجِع يدوياً.', read_failed: 'تعذّرت قراءة المستند، راجِعه يدوياً.', file_unavailable: 'تعذّر فتح الملف.', file_type: 'نوع الملف غير مدعوم للقراءة.' }
+    setMsg(j?.mode === 'ai' ? '✓ قُرئ المستند' : (why[j?.reason] || j?.message || 'تعذّرت القراءة'))
+    setTimeout(() => setMsg(''), 5000)
+    await loadData()
+    setActionLoading('')
+  }
+
   async function reviewChangeReq(id: string, approve: boolean) {
     const note = approve ? '' : (prompt('سبب الرفض (يظهر للمستخدم، اختياري):') ?? '')
     setActionLoading('pcr-' + id)
@@ -369,6 +384,29 @@ export default function AdminPanel() {
   const openObjections = objections.filter((o: any) => o.status === 'open')
   const openChangeReqs = changeReqs.filter((r: any) => r.status === 'pending')
   const openClaims = crClaims.filter((c: any) => c.status === 'open')
+  // newest AI read per uploaded file (crChecks is newest-first)
+  const checkFor = (filePath: string | null | undefined, claimId?: string) =>
+    filePath ? crChecks.find((k: any) => k.file_path === filePath && (claimId ? k.claim_id === claimId : !k.claim_id)) : undefined
+  const renderCheck = (k: any) => {
+    if (!k) return null
+    if (!k.extracted) return <div className="mt-2 text-[11px] text-gray-400"><Glyph e="🤖" /> تعذّرت القراءة الآلية ({dt(k.created_at)})، راجِع المستند يدوياً.</div>
+    const f = k.flags || {}, x = k.extracted
+    const warn = [f.not_cr_document && 'ليس شهادة سجل تجاري', f.cr_mismatch && 'الرقم يختلف عن رقم الحساب', f.name_mismatch && 'الاسم يختلف عن اسم الحساب', f.expired && 'السجل منتهي'].filter(Boolean)
+    return (
+      <div className={`mt-2 rounded-lg p-2.5 text-[11px] border ${warn.length ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+        <div className="font-bold mb-0.5"><Glyph e="🤖" /> قراءة آلية للمستند {warn.length ? '— تنبيه: ' + warn.join('، ') : '— لا تعارض'}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0.5 text-gray-700">
+          {x.entity_name && <span>الاسم: <b>{x.entity_name}</b></span>}
+          {x.cr_number && <span dir="ltr">CR: <b>{x.cr_number}</b></span>}
+          {x.expiry_date && <span>الانتهاء: {x.expiry_date}</span>}
+          {x.city && <span>المدينة: {x.city}</span>}
+          {x.activity && <span className="md:col-span-2">النشاط: {x.activity}</span>}
+          <span>رمز QR: {x.has_qr ? 'ظاهر' : 'غير ظاهر'}</span>
+        </div>
+        <div className="mt-1 text-gray-400">مساعدة فقط: القرار بعد فتح المستند ومسح رمز QR.</div>
+      </div>
+    )
+  }
   const crLabel = (v: string) => ((['company', 'shop', 'independent', 'manufacturer', 'commercial', 'local'].includes(v) ? { [v]: tierLabel(v, 'ar', false) } : {}) as any)[v] || (({ A: 'درجة أ', B: 'درجة ب', C: 'درجة ج', D: 'درجة د' } as any)[v] || v || '—')
 
   // ── Analytics (computed from already-loaded data) ──
@@ -605,6 +643,13 @@ export default function AdminPanel() {
                             <Glyph e="🧾" /> تحقق هيئة الزكاة (بالرقم الموحد)
                           </a>
                         </div>
+                        {renderCheck(checkFor(c.file_path, c.id))}
+                        {open && !checkFor(c.file_path, c.id) && (
+                          <button type="button" onClick={() => readCr({ target: 'claim', claimId: c.id }, 'read-' + c.id)} disabled={actionLoading === 'read-' + c.id}
+                            className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 disabled:opacity-50">
+                            <Glyph e="🤖" /> {actionLoading === 'read-' + c.id ? '...' : 'قراءة آلية للمستند'}
+                          </button>
+                        )}
                         <div className="mt-1.5 text-[11px] text-gray-400">{QR_HINT}</div>
                       </div>
                       {open && (
@@ -1098,6 +1143,17 @@ export default function AdminPanel() {
                         {u.commercial_registration && <span dir="ltr"><Glyph e="📋" /> CR: {u.commercial_registration}</span>}
                         {u.is_active === false && <span className="text-red-500 font-semibold"><Glyph e="⛔" /> حساب غير نشط</span>}
                       </div>
+                      {u.cr_url && !String(u.cr_url).startsWith('http') && u.verification_status !== 'verified' && (
+                        <>
+                          {renderCheck(checkFor(u.cr_url))}
+                          {!checkFor(u.cr_url) && (
+                            <button type="button" onClick={() => readCr({ target: 'cr', profileId: u.id }, 'read-' + u.id)} disabled={actionLoading === 'read-' + u.id}
+                              className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 disabled:opacity-50">
+                              <Glyph e="🤖" /> {actionLoading === 'read-' + u.id ? '...' : 'قراءة آلية للسجل'}
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </div>
 
