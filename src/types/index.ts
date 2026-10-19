@@ -950,6 +950,57 @@ const SUB_UNITS: Record<string, string> = {
   store_paint: 'عدد', store_adhesives: 'عدد',
 }
 
+
+// Units that make sense for each specialty (owner 2026-10-19: cement must not offer «طقم/يوم/نقلة»).
+// The specialty's default (SUB_UNITS) is always first; a product's own spec units come before these.
+const PIPE = ['م.ط', 'عدد'], PIECE = ['عدد', 'طقم'], RENT = ['يوم', 'ساعة', 'شهر']
+const SUB_UNIT_OPTIONS: Record<string, string[]> = {
+  // civil
+  readymix: ['م³', 'نقلة'], cement: ['كيس', 'طن'], blocks: ['عدد', 'م²'], precast: ['عدد', 'م.ط', 'م²'],
+  rebar: ['طن', 'سيخ', 'كغ'], structural_steel: ['طن', 'عدد', 'م.ط', 'كغ'], steel_mesh: ['عدد', 'لوح', 'م²', 'لفة'],
+  waterproofing: ['م²', 'لفة', 'سطل', 'برميل', 'كيس'], piling: ['م.ط', 'عدد'],
+  construction_chemicals: ['عدد', 'كيس', 'سطل', 'لتر', 'جالون', 'برميل', 'كغ', 'كرتون'],
+  drainage: PIPE, aggregates: ['م³', 'نقلة', 'طن'], earthworks: ['م³', 'نقلة', 'يوم'],
+  formwork_ply: ['لوح', 'عدد'], formwork_timber: ['عدد', 'م.ط', 'م³'], formwork_steel: ['عدد', 'م²', 'يوم', 'شهر'],
+  scaffold_structure: ['عدد', 'يوم', 'شهر'], scaffold_jacks: ['عدد', 'يوم', 'شهر'], shoring_props: ['عدد', 'يوم', 'شهر'],
+  turf: ['م²', 'لفة'], irrigation: ['عدد', 'م.ط', 'لفة'], fountains: ['عدد'], hardscape: ['م²', 'م.ط', 'عدد'], planters: ['عدد'],
+  // architectural
+  tiles: ['م²', 'كرتون'], marble: ['م²', 'م.ط', 'لوح'], wood_floor: ['م²', 'كرتون'], tile_adhesive: ['كيس', 'سطل', 'كغ'],
+  special_floor: ['م²', 'كيس', 'طقم'], paint: ['جالون', 'سطل', 'لتر', 'طقم'], grc_facade: ['م²', 'عدد'],
+  gypsum: ['م²', 'لوح', 'كيس', 'عدد'], false_ceiling: ['م²', 'لوح', 'عدد'], custom_furniture: PIECE,
+  curtains: ['م²', 'م.ط', 'عدد'], decor_lighting: PIECE, prefab_buildings: ['م²', 'عدد', 'لوح'], shades_screens: ['م²', 'عدد'],
+  pools: ['عدد', 'م²'], kitchen_appliances: PIECE, office_furniture: PIECE, solar_pv: PIECE, smart_home: PIECE,
+  central_gas: ['عدد', 'م.ط'], aluminum: ['م²', 'عدد', 'م.ط'], wood_doors: ['عدد'], fire_doors: ['عدد'], auto_doors: ['عدد'],
+  curtain_wall: ['م²'], rainscreen: ['م²', 'لوح'], stone_facade: ['م²'], louvers: ['م²', 'عدد'],
+  millwork: ['م.ط', 'لوح', 'عدد', 'م²'], fitted_furniture: ['عدد', 'م.ط'], cubicles: PIECE,
+  acoustic_panels: ['م²', 'لوح'], acoustic_timber: ['م²', 'لوح'], thermal_insulation: ['م²', 'لوح', 'لفة'],
+  metal_features: ['م.ط', 'م²', 'عدد'], vertical_transport: ['عدد'], sanitary_ware: PIECE, bath_accessories: PIECE,
+  // electrical
+  lv_cables: ['م.ط', 'لفة'], mv_cables: ['م.ط', 'لفة'], conduits: ['م.ط', 'عدد'],
+  panels: ['عدد'], breakers: ['عدد'], switches: ['عدد', 'كرتون'], transformers: ['عدد'],
+  indoor_lighting: ['عدد', 'كرتون'], outdoor_lighting: ['عدد'], earthing: ['عدد', 'م.ط', 'طقم'],
+  cctv: ['عدد', 'طقم', 'م.ط'], fire_alarm: ['عدد', 'طقم', 'م.ط'], data_network: ['عدد', 'م.ط', 'لفة'],
+  sound_systems: PIECE, led_screens: ['م²', 'عدد'], access_control: PIECE,
+  // mechanical
+  ac_units: ['عدد'], ductwork: ['م²', 'م.ط', 'كغ'], duct_insulation: ['م²', 'لفة'], hvac_dampers: ['عدد'],
+  ventilation_fans: ['عدد'], flexible_ducts: ['م.ط', 'لفة'],
+  water_supply: PIPE, drainage_pipes: PIPE, silent_drainage: PIPE, storm_drainage: PIPE,
+  water_treatment: PIECE, pumps: ['عدد'], tanks_heaters: ['عدد'],
+  faucets_mixers: PIECE, valves_fittings: PIECE, copper_fittings: ['عدد', 'م.ط'], traps_drains: ['عدد'],
+  flex_hoses: ['عدد'], plumbing_consumables: ['عدد', 'لفة', 'علبة'], shower_accessories: PIECE, floats_tanks: ['عدد'],
+  fire_fighting: ['عدد', 'م.ط'], fire_pumps: ['عدد'], fire_cabinets: ['عدد'], fire_valves: ['عدد'], fire_connections: ['عدد'],
+  chilled_water_insulation: ['م.ط', 'لفة'], cladding_jacketing: ['م²', 'لفة'],
+  // equipment (mostly rented)
+  heavy_machinery: RENT, cranes: RENT, trucks: ['نقلة', 'يوم', 'ساعة'], concrete_equip: ['يوم', 'ساعة', 'م³'],
+  compaction: RENT, generators_equip: RENT, pumps_equip: RENT, scaffolding_equip: ['عدد', 'يوم', 'شهر'],
+  // shops
+  store_faucets: PIECE, store_valves: PIECE, store_hoses: ['عدد', 'لفة', 'م.ط'],
+  store_wires: ['لفة', 'م.ط'], store_switches: ['عدد', 'كرتون'], store_lighting: ['عدد', 'كرتون'], store_elec_access: ['عدد', 'كرتون'],
+  store_hand_tools: PIECE, store_power_tools: PIECE, store_bits: PIECE,
+  store_fasteners: ['علبة', 'عدد', 'كغ', 'كرتون'], store_safety: ['عدد', 'طقم', 'كرتون'], store_consumables: ['عدد', 'لفة', 'كرتون'],
+  store_paint: ['جالون', 'لتر', 'سطل', 'عدد'], store_adhesives: ['عدد', 'علبة', 'كرتون'],
+}
+
 // وحدة القياس الافتراضية لمادة: أولوية لوحدة المواصفات إن وُجدت، ثم وحدة التخصص الفرعي
 // Order units for pieces vs area (shared by the site and the mobile app, 2026-10-15):
 // furniture, decor and light fittings are bought by the piece or set; curtains, rugs, wallpaper,
@@ -964,6 +1015,10 @@ export function unitOptionsFor(productName: string, sector: Sector): string[] | 
   if (AREA_RE.test(n)) return ['م²', 'متر', 'عدد']
   const sub = detectSubCategory(n, sector)
   if ((sub && PIECE_SUBS.has(sub)) || PIECE_RE.test(n)) return ['عدد', 'طقم']
+  if (sub && SUB_UNIT_OPTIONS[sub]) {
+    const def = SUB_UNITS[sub]
+    return Array.from(new Set([...(def ? [def] : []), ...SUB_UNIT_OPTIONS[sub]]))
+  }
   return null
 }
 
@@ -6146,6 +6201,10 @@ const UNIT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
   'بند': { en: 'item', ur: 'آئٹم' },
   'مقطوعية': { en: 'lump sum', ur: 'یکمشت' },
   'إجمالي': { en: 'total', ur: 'کل' },
+  'علبة': { en: 'box', ur: 'ڈبہ' },
+  'ساعة': { en: 'hour', ur: 'گھنٹہ' },
+  'نقلة': { en: 'truckload', ur: 'ٹرک لوڈ' },
+  'سطل': { en: 'pail', ur: 'بالٹی' },
 }
 export function getUnitLabel(unit: string | null | undefined, locale: string): string {
   if (!unit) return ''

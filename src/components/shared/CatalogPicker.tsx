@@ -120,7 +120,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
         <span className="aspect-square w-full rounded-lg bg-gray-50 overflow-hidden grid place-items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={productImageUrl(name)} alt="" loading="lazy" className="w-full h-full object-contain"
-            onError={(e: any) => { e.currentTarget.style.display = 'none' }} />
+            onError={(e: any) => imgFallback(e, detectSubCategory(name, s))} />
         </span>
         <span className="text-[12px] font-semibold text-gray-800 leading-snug line-clamp-2" dir="auto">{getProductLabel(name, locale)}</span>
         {on && <span className="absolute top-1.5 end-1.5 w-5 h-5 rounded-full grid place-items-center text-white text-[11px]" style={{ background: '#0F6E56' }}>✓</span>}

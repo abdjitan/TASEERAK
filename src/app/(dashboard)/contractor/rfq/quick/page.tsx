@@ -583,7 +583,8 @@ export default function QuickRequestPage() {
                       className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} aria-label={L('Quantity', 'مقدار', 'الكمية')} />
                     <select value={l.unit} onChange={e => updateLine(l.key, { unit: e.target.value })} className="input-field" aria-label={L('Unit', 'یونٹ', 'الوحدة')}>
                       <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>
-                      {Array.from(new Set([...(getProductSpecs(l.product_name).find(f => f.key === 'unit')?.options || []), ...(l.unit && !UNITS.includes(l.unit) ? [l.unit] : []), ...(unitOptionsFor(l.product_name, l.sector as any) || UNITS)])).map(u => <option key={u} value={u}>{unitLabel(u)}</option>)}
+                      {/* a product with its own order units shows only those; otherwise its specialty's logical units (owner 2026-10-19) */}
+                      {(() => { const own = getProductSpecs(l.product_name).find(f => f.key === 'unit')?.options || []; return Array.from(new Set([...(own.length ? own : (unitOptionsFor(l.product_name, l.sector as any) || UNITS)), ...(l.unit ? [l.unit] : [])])) })().map(u => <option key={u} value={u}>{unitLabel(u)}</option>)}
                     </select>
                   </div>
                   <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })} className="input-field text-sm"
@@ -708,8 +709,9 @@ export default function QuickRequestPage() {
                 ))}
               </div>
             </div>
-            <details>
-              <summary className="cursor-pointer text-xs font-bold text-[#9D7425] select-none">{L('More options (optional)', 'مزید اختیارات', 'خيارات إضافية (اختياري)')}</summary>
+            {/* always visible (owner 2026-10-19: a folded «خيارات إضافية» went unnoticed) */}
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+              <div className="text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')}</div>
               <div className="mt-3 space-y-3">
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-sm" placeholder={L('Notes for suppliers (optional)', 'نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
@@ -725,7 +727,7 @@ export default function QuickRequestPage() {
                   {L('Only verified suppliers', 'صرف تصدیق شدہ سپلائرز', 'الموردون الموثّقون فقط')}
                 </label>
               </div>
-            </details>
+            </div>
           </div>
         )}
         </div>
