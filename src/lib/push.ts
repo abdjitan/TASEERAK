@@ -24,14 +24,21 @@ export function pushPermission(): PushState {
   return Notification.permission as PushState
 }
 
+// No step may hang the button: a quietly blocked permission prompt, or a browser without a push
+// service (some privacy browsers), would otherwise leave «…» on screen forever (owner 2026-10-19).
+function withTimeout<T>(p: Promise<T>, ms: number, tag: string): Promise<T> {
+  return Promise.race([p, new Promise<T>((_, rej) => setTimeout(() => rej(new Error('timeout:' + tag)), ms))])
+}
+
 export async function enablePush(): Promise<{ ok: boolean; error?: string }> {
   try {
     if (!pushSupported()) return { ok: false, error: 'unsupported' }
-    const perm = await Notification.requestPermission()
-    if (perm !== 'granted') return { ok: false, error: 'denied' }
+    const perm = await withTimeout(Notification.requestPermission(), 30000, 'permission')
+    if (perm === 'denied') return { ok: false, error: 'denied' }
+    if (perm !== 'granted') return { ok: false, error: 'dismissed' }
 
-    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
-    await navigator.serviceWorker.ready
+    const reg = await withTimeout(navigator.serviceWorker.register('/sw.js', { scope: '/' }), 10000, 'sw')
+    await withTimeout(navigator.serviceWorker.ready, 10000, 'sw-ready')
 
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
@@ -41,7 +48,7 @@ export async function enablePush(): Promise<{ ok: boolean; error?: string }> {
 
     let sub = await reg.pushManager.getSubscription()
     if (!sub) {
-      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapid as string) })
+      sub = await withTimeout(reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapid as string) }), 15000, 'subscribe')
     }
     const j: any = sub.toJSON()
     if (!j?.endpoint || !j?.keys?.p256dh || !j?.keys?.auth) return { ok: false, error: 'bad-subscription' }
