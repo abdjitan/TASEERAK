@@ -232,7 +232,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     acoustic_timber: { ar: 'خشب صوتي مشقوق', en: 'Acoustic Timber Slats', ur: 'صوتی لکڑی', icon: '🪵', group: 'acoustic',
       keywords: ['خشب صوتي','acoustic timber','slat','مشقوق','veneer acoustic','شرائح خشب'] },
     // ═══ الأدوات الصحية والتشطيبات ═══
-    sanitary_ware: { ar: 'أدوات صحية (خلاطات/مغاسل)', en: 'Sanitary Ware', ur: 'سینیٹری ویئر', icon: '🚽', group: 'sanitary_finish',
+    sanitary_ware: { ar: 'مغاسل ومراحيض وأطقم حمامات', en: 'Basins, WCs & bathroom sets', ur: 'سینیٹری ویئر', icon: '🚽', group: 'sanitary_finish',
       keywords: ['أدوات صحية','مرحاض','مغسلة','حوض','خلاط','بانيو','كرسي','sanitary ware','WC','basin','mixer'] },
     bath_accessories: { ar: 'إكسسوارات حمامات ومطابخ', en: 'Bath & Kitchen Accessories', ur: 'لوازمات', icon: '🛁', group: 'sanitary_finish',
       keywords: ['إكسسوارات حمام','accessories','مطبخ','kitchen','مرايا','حوامل','مرآة','مراية','كابينة شاور زجاج','كابينة شاور'] },
@@ -387,16 +387,16 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
   },
   supply_store: {
     // ═══ أدوات سباكة بسيطة ═══
-    store_faucets: { ar: 'خلاطات وصنابير', en: 'Faucets & Mixers', ur: 'نل', icon: '🚿', group: 'store_plumbing',
+    store_faucets: { ar: 'خلاطات وصنابير (محلات السباكة)', en: 'Faucets & mixers (plumbing shops)', ur: 'نل', icon: '🚿', group: 'store_plumbing',
       keywords: ['خلاط','صنبور','حنفية','faucet','mixer','tap','بطارية مغسلة'] },
-    store_valves: { ar: 'محابس ووصلات سباكة', en: 'Valves & Fittings', ur: 'والو', icon: '🔩', group: 'store_plumbing',
+    store_valves: { ar: 'محابس ووصلات (محلات السباكة)', en: 'Valves & fittings (plumbing shops)', ur: 'والو', icon: '🔩', group: 'store_plumbing',
       keywords: ['محبس','صمام زاوية','angle valve','وصلة','كوع','تي','elbow','tee','سيفون','trap','نحاس','كوبلن','مصفاة','مصفاة أرضية','floor drain'] },
     store_hoses: { ar: 'خراطيم وتفلون ولوازم', en: 'Hoses, Teflon & Supplies', ur: 'نلی', icon: '🪢', group: 'store_plumbing',
       keywords: ['خرطوم','hose','مرن','شطاف','تفلون','teflon','معجون','جلدة','حشوة','seal','دش','shower','عوامة','float'] },
     // ═══ أدوات كهرباء بسيطة ═══
     store_wires: { ar: 'أسلاك وكابلات بسيطة', en: 'Wires & Cables', ur: 'تار', icon: '🔌', group: 'store_electrical',
       keywords: ['سلك','wire','كابل بسيط','أسلاك','تمديد','مدد كهرب'] },
-    store_switches: { ar: 'مفاتيح وأفياش وعلب', en: 'Switches, Sockets & Boxes', ur: 'سوئچ', icon: '🔲', group: 'store_electrical',
+    store_switches: { ar: 'مفاتيح وأفياش (محلات الكهرباء)', en: 'Switches & sockets (electrical shops)', ur: 'سوئچ', icon: '🔲', group: 'store_electrical',
       keywords: ['مفتاح','أفياش','بريزة','socket','switch','علبة كهرب','مقبس','أباجورة','outlet'] },
     store_lighting: { ar: 'لمبات وإنارة بسيطة', en: 'Bulbs & Lighting', ur: 'بلب', icon: '💡', group: 'store_electrical',
       keywords: ['لمبة','بلب','bulb','إنارة','سبوت','spot','led','مصباح','كشاف صغير','نجفة'] },

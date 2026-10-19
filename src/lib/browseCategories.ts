@@ -90,7 +90,7 @@ const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: stri
     lighting: { ar: 'ثريات وإنارة ديكور', en: 'Chandeliers & decorative lighting', ur: 'جھومر اور سجاوٹی روشنی' },
   },
   building: {
-    infrastructure: { ar: 'الأساسات وكيماويات البناء', en: 'Foundations & construction chemicals', ur: 'بنیادیں اور تعمیراتی کیمیکل' },
+    infrastructure: { ar: 'الأساسات وعزل الأساسات', en: 'Foundations & foundation waterproofing', ur: 'بنیادیں اور واٹر پروفنگ' },
     building_insulation: { ar: 'العزل الحراري والمائي', en: 'Thermal & water insulation', ur: 'حرارتی اور واٹر پروفنگ' },
   },
   plumbing: { plumbing_supplies: { ar: 'لوازم وأدوات السباكة', en: 'Plumbing supplies & tools', ur: 'پلمبنگ کا سامان' } },
@@ -133,6 +133,16 @@ export function getSectionGroups(section: BrowseSection): SectionGroup[] {
   return getTradeGroups(section)
 }
 
+// «مواد كيميائية للبناء» holds ~108 products: inside «البناء والإنشاءات» it shows as four groups
+// (owner 2026-10-19). Display only — every product keeps its sub-category and routing.
+const CHEM_GROUPS: { key: string; ar: string; en: string; ur: string; icon: string; re: RegExp }[] = [
+  { key: 'chem_fire', ar: 'الحماية من الحريق والدهانات الواقية', en: 'Fire protection & protective coatings', ur: 'آگ سے حفاظت اور حفاظتی کوٹنگ', icon: '🔥', re: /حريق|منتفخ|دهان حماية|طارد ماء|سيلان|كربنة|طلاء|^دهان|بطانة/ },
+  { key: 'chem_seal', ar: 'مانعات التسرب والسيليكون والفوم', en: 'Sealants, silicone & foam', ur: 'سیلنٹ، سلیکون اور فوم', icon: '🧴', re: /سيليكون|مانع (ال)?تسرب|ماستك|فوم|حشوة|فلر|سلفايد|شريط|فواصل/ },
+  { key: 'chem_repair', ar: 'الجراوت والإصلاح والتثبيت', en: 'Grouts, repair & anchoring', ur: 'گراؤٹ، مرمت اور اینکرنگ', icon: '🧰', re: /جراوت|مونة|إصلاح|اصلاح|حقن|كربون|إيبوكسي|ايبوكسي|انكر|أنكر|مثبت|تثبيت|ترميم|ميكرو|لاصق|خرسانة دقيقة|تسوية/ },
+  { key: 'chem_admix', ar: 'إضافات ومعالجة الخرسانة', en: 'Concrete admixtures & curing', ur: 'کنکریٹ ایڈمکسچر اور کیورنگ', icon: '🧪', re: /./ },
+]
+const BUILDING_ORDER = ['concrete', 'steel', 'masonry', 'rawmaterials', 'formwork', 'scaffolding', 'infrastructure', 'building_insulation', 'chem_admix', 'chem_repair', 'chem_seal', 'chem_fire', 'store_fasteners']
+
 function getTradeGroups(section: BrowseSection): SectionGroup[] {
   const out: Record<string, SectionGroup> = {}
   const order: string[] = []
@@ -141,7 +151,9 @@ function getTradeGroups(section: BrowseSection): SectionGroup[] {
       for (const name of g.items) {
         const sub = detectSubCategory(name, sector)
         if (sectionOfSub(sub, g.group) !== section) continue
-        const key = MERGE[section]?.[g.group] || g.group
+        const chem = section === 'building' && sector === 'civil' && sub === 'construction_chemicals' ? CHEM_GROUPS.find(c => c.re.test(name)) : undefined
+        const key = chem ? chem.key : (MERGE[section]?.[g.group] || g.group)
+        if (chem && !out[key]) { out[key] = { group: key, icon: chem.icon, ar: chem.ar, en: chem.en, ur: chem.ur, items: [] }; order.push(key) }
         if (!out[key]) {
           const base: any = (GROUP_LABELS as any)[key] || g
           const lab = LABEL[section]?.[key] || base
@@ -152,6 +164,7 @@ function getTradeGroups(section: BrowseSection): SectionGroup[] {
       }
     }
   }
+  if (section === 'building') order.sort((a, b) => (BUILDING_ORDER.indexOf(a) + 1 || 99) - (BUILDING_ORDER.indexOf(b) + 1 || 99))
   return order.map(k => out[k])
 }
 
