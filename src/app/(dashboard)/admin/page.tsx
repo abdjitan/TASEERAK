@@ -14,6 +14,11 @@ import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 
+// Free official checks for the manual CR review (no scraping: the admin opens them himself).
+// ZATCA's public VAT-registration check searches by VAT number OR the unified CR number (700…).
+const ZATCA_VAT_CHECK = 'https://zatca.gov.sa/ar/eServices/Pages/eServices-007.aspx'
+const QR_HINT = 'امسح رمز QR في شهادة السجل بجوالك: يجب أن يفتح صفحة رسمية تابعة لوزارة التجارة (mc.gov.sa) أو المركز السعودي للأعمال (business.sa) وتطابق بياناتها المستند.'
+
 export default function AdminPanel() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -37,6 +42,7 @@ export default function AdminPanel() {
   const [support, setSupport] = useState<any[]>([]) // all support_messages (admin reads all)
   const [objections, setObjections] = useState<any[]>([]) // cr_objections (fake-account reports)
   const [changeReqs, setChangeReqs] = useState<any[]>([]) // profile_change_requests (name/classification)
+  const [crClaims, setCrClaims] = useState<any[]>([]) // cr_claims (171): someone asks for a CR held by another account
   const [expandedRfq, setExpandedRfq] = useState<any>(null)
   const [expandedProject, setExpandedProject] = useState<any>(null)
   // Admin password change
@@ -56,6 +62,8 @@ export default function AdminPanel() {
       if (profile?.role !== 'admin') { window.location.href = '/'; return }
 
       setUser(session.user)
+      const qTab = new URLSearchParams(window.location.search).get('tab')
+      if (qTab) setTab(qTab)
       await loadData(supabase)
       setLoading(false)
     }
@@ -93,14 +101,16 @@ export default function AdminPanel() {
     setProjects(projData || [])
     setProjectItems(pItems || [])
 
-    const [{ data: supp }, { data: objs }, { data: pcr }] = await Promise.all([
+    const [{ data: supp }, { data: objs }, { data: pcr }, { data: claims }] = await Promise.all([
       client.from('support_messages').select('*').order('created_at', { ascending: false }).limit(LIM),
       client.from('cr_objections').select('*').order('created_at', { ascending: false }).limit(LIM),
       client.from('profile_change_requests').select('*').order('created_at', { ascending: false }).limit(LIM),
+      client.from('cr_claims').select('*').order('created_at', { ascending: false }).limit(LIM),
     ])
     setSupport(supp || [])
     setObjections(objs || [])
     setChangeReqs(pcr || [])
+    setCrClaims(claims || [])
 
     // Auth emails via the privileged edge function (non-blocking — cards still
     // render if this fails, e.g. function not yet deployed).
@@ -124,11 +134,10 @@ export default function AdminPanel() {
   async function updateStatus(profileId: string, status: 'verified' | 'rejected', reason?: string) {
     setActionLoading(profileId)
     const supabase = createClient()
-    const updateData: any = { verification_status: status }
-    if (reason) updateData.rejection_reason = reason
-    await supabase.from('profiles').update(updateData).eq('id', profileId)
-    setMsg(`✓ تم ${status === 'verified' ? 'الموافقة' : 'الرفض'} بنجاح`)
-    setTimeout(() => setMsg(''), 3000)
+    // 171: one RPC (audit + notification). A CR held by another account comes back as an error.
+    const { error } = await supabase.rpc('admin_review_verification', { p_user_id: profileId, p_decision: status, p_reason: reason || null })
+    setMsg(error ? `تعذّر التنفيذ: ${error.message}` : `✓ تم ${status === 'verified' ? 'الموافقة' : 'الرفض'} بنجاح`)
+    setTimeout(() => setMsg(''), error ? 8000 : 3000)
     await loadData()
     setActionLoading('')
     setRejectModal(null)
@@ -287,6 +296,20 @@ export default function AdminPanel() {
     setActionLoading('')
   }
 
+  async function resolveClaim(id: string, decision: 'approved' | 'rejected') {
+    const note = prompt(decision === 'approved'
+      ? 'سيُنقل السجل إلى صاحب الطلب ويعود صاحبه الحالي إلى «قيد المراجعة». ملاحظة (اختيارية):'
+      : 'سبب الرفض (يظهر لصاحب الطلب، اختياري):')
+    if (note === null) return
+    setActionLoading('claim-' + id)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('admin_resolve_cr_claim', { p_claim_id: id, p_decision: decision, p_note: note || null })
+    setMsg(error ? `تعذّر التنفيذ: ${error.message}` : decision === 'approved' ? '✓ نُقل السجل إلى صاحب الطلب' : '✕ رُفض الطلب')
+    setTimeout(() => setMsg(''), error ? 8000 : 3000)
+    await loadData()
+    setActionLoading('')
+  }
+
   async function reviewChangeReq(id: string, approve: boolean) {
     const note = approve ? '' : (prompt('سبب الرفض (يظهر للمستخدم، اختياري):') ?? '')
     setActionLoading('pcr-' + id)
@@ -345,6 +368,7 @@ export default function AdminPanel() {
   const disputes = offers.filter((o: any) => o.dispute_status === 'open')
   const openObjections = objections.filter((o: any) => o.status === 'open')
   const openChangeReqs = changeReqs.filter((r: any) => r.status === 'pending')
+  const openClaims = crClaims.filter((c: any) => c.status === 'open')
   const crLabel = (v: string) => ((['company', 'shop', 'independent', 'manufacturer', 'commercial', 'local'].includes(v) ? { [v]: tierLabel(v, 'ar', false) } : {}) as any)[v] || (({ A: 'درجة أ', B: 'درجة ب', C: 'درجة ج', D: 'درجة د' } as any)[v] || v || '—')
 
   // ── Analytics (computed from already-loaded data) ──
@@ -434,6 +458,7 @@ export default function AdminPanel() {
               { key: 'messages', label: `الرسائل${totalUnread ? ' (' + totalUnread + ')' : ''}` },
               { key: 'deals', label: `الصفقات (${acceptedOffers})` },
               { key: 'disputes', label: `النزاعات${disputes.length ? ' (' + disputes.length + ')' : ''}` },
+              { key: 'claims', label: `طلبات السجل التجاري${openClaims.length ? ' (' + openClaims.length + ')' : ''}` },
               { key: 'objections', label: `بلاغات حسابات وهمية${openObjections.length ? ' (' + openObjections.length + ')' : ''}` },
               { key: 'changereqs', label: `طلبات التعديل${openChangeReqs.length ? ' (' + openChangeReqs.length + ')' : ''}` },
               { key: 'materials', label: `طلبات المواد (${materialReqs.filter((r: any) => r.status === 'pending').length})` },
@@ -525,6 +550,75 @@ export default function AdminPanel() {
                         className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 flex-shrink-0" style={{ background: '#0F6E56' }}>
                         {actionLoading === 'disp-' + o.id ? '...' : '✓ حل النزاع'}
                       </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        ) : tab === 'claims' ? (
+          crClaims.length === 0 ? (
+            <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
+              <div className="text-5xl mb-4"><Glyph e="📋" /></div>
+              <h3 className="text-lg font-bold" style={{ color: '#0B2438' }}>لا توجد طلبات</h3>
+              <p className="text-sm text-gray-400 mt-1">تظهر هنا طلبات من يقول إن سجلاً تجارياً مسجّلاً في حساب آخر يخصّه</p>
+            </div>
+          ) : (
+            <div className="space-y-3 stagger">
+              {crClaims.map((c: any) => {
+                const holder = profileById[c.holder_id]
+                const claimant = profileById[c.claimant_id]
+                const open = c.status === 'open'
+                return (
+                  <div key={c.id} className={`bg-white rounded-2xl p-5 border shadow-sm ${open ? 'border-amber-200' : 'border-gray-100 opacity-70'}`}>
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`badge text-[10px] ${open ? 'bg-amber-100 text-amber-700' : c.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {open ? 'طلب مفتوح' : c.status === 'approved' ? '✓ نُقل السجل' : c.status === 'withdrawn' ? 'سحبه صاحبه' : '✕ مرفوض'}
+                          </span>
+                          <span className="font-bold" style={{ color: '#0B2438' }} dir="ltr">سجل تجاري: {c.commercial_registration}</span>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
+                          <span><Glyph e="🙍" /> صاحب الطلب: <b>{c.claimant_name}</b>{claimant ? ` (حساب: ${claimant.company_name_ar || '—'})` : ''}</span>
+                          {c.claimant_contact && <span dir="ltr"><Glyph e="📞" /> {c.claimant_contact}</span>}
+                          <span><Glyph e="🏢" /> الحساب الحالي: <b>{holder?.company_name_ar || '—'}</b>{holder ? ` · ${holder.verification_status === 'verified' ? 'موثّق' : holder.verification_status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'}` : ''}</span>
+                          <span><Glyph e="📅" /> {dt(c.created_at)}</span>
+                        </div>
+                        {c.holder_response
+                          ? <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-700"><Glyph e="💬" /> ردّ صاحب الحساب الحالي: {c.holder_response}</div>
+                          : open && <div className="mt-2 text-[11px] text-gray-400">لم يردّ صاحب الحساب الحالي بعد.</div>}
+                        {c.admin_note && <div className="mt-2 text-[11px] text-gray-500"><Glyph e="📝" /> ملاحظة الإدارة: {c.admin_note}</div>}
+                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                          <button type="button" onClick={() => openDoc(c.file_path)}
+                            className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5 transition-all">
+                            <Glyph e="📋" /> سجل صاحب الطلب
+                          </button>
+                          {holder?.cr_url && (
+                            <button type="button" onClick={() => openDoc(holder.cr_url)}
+                              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
+                              <Glyph e="📋" /> سجل الحساب الحالي
+                            </button>
+                          )}
+                          <a href={ZATCA_VAT_CHECK} target="_blank" rel="noopener noreferrer"
+                            className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
+                            <Glyph e="🧾" /> تحقق هيئة الزكاة (بالرقم الموحد)
+                          </a>
+                        </div>
+                        <div className="mt-1.5 text-[11px] text-gray-400">{QR_HINT}</div>
+                      </div>
+                      {open && (
+                        <div className="flex flex-col gap-2 flex-shrink-0">
+                          <button onClick={() => resolveClaim(c.id, 'approved')} disabled={actionLoading === 'claim-' + c.id}
+                            className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>
+                            {actionLoading === 'claim-' + c.id ? '...' : '✓ نقل السجل إليه'}
+                          </button>
+                          <button onClick={() => resolveClaim(c.id, 'rejected')} disabled={actionLoading === 'claim-' + c.id}
+                            className="text-xs px-4 py-2 rounded-xl font-semibold border border-gray-200 text-gray-600 disabled:opacity-50">
+                            ✕ رفض الطلب
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )
@@ -922,6 +1016,11 @@ export default function AdminPanel() {
           </div>
         ) : (
           <div className="space-y-3 stagger">
+            {tab === 'pending' && (
+              <div className="bg-[#D4A543]/10 border border-[#D4A543]/30 rounded-xl p-3 text-[12px] text-[#5c4413] leading-relaxed">
+                <b>قبل التوثيق:</b> افتح «السجل» وتأكد أن الرقم والاسم يطابقان الحساب وأن السجل ساري. {QR_HINT} ويمكن التحقق من التسجيل الضريبي عبر زر «تحقق هيئة الزكاة» (يُنسخ الرقم تلقائياً).
+              </div>
+            )}
             {filtered.map((u: any) => (
               <div key={u.id} className={`bg-white rounded-2xl p-5 border shadow-sm transition-all ${
                 u.verification_status === 'pending' ? 'border-amber-200' :
@@ -996,6 +1095,7 @@ export default function AdminPanel() {
                         {u.subscription_plan && <span><Glyph e="💳" /> {u.subscription_plan}{u.subscription_expires_at ? ' · حتى ' + dt(u.subscription_expires_at) : ''}</span>}
                         {u.rating_count > 0 && <span><Glyph e="⭐" /> {Number(u.rating_avg).toFixed(1)} ({u.rating_count} تقييم)</span>}
                         {u.cr_expiry_date && <span><Glyph e="📅" /> انتهاء السجل: {dt(u.cr_expiry_date)}</span>}
+                        {u.commercial_registration && <span dir="ltr"><Glyph e="📋" /> CR: {u.commercial_registration}</span>}
                         {u.is_active === false && <span className="text-red-500 font-semibold"><Glyph e="⛔" /> حساب غير نشط</span>}
                       </div>
                     </div>
@@ -1018,6 +1118,14 @@ export default function AdminPanel() {
                         className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5 transition-all">
                         <Glyph e="📋" /> السجل
                       </button>
+                    )}
+                    {(u.vat_number || u.commercial_registration) && u.verification_status !== 'verified' && (
+                      <a href={ZATCA_VAT_CHECK} target="_blank" rel="noopener noreferrer"
+                        title={`ابحث بـ ${u.vat_number ? 'الرقم الضريبي ' + u.vat_number : 'الرقم الموحد ' + u.commercial_registration}`}
+                        onClick={() => { try { navigator.clipboard?.writeText(u.vat_number || u.commercial_registration) } catch {} }}
+                        className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">
+                        <Glyph e="🧾" /> تحقق هيئة الزكاة
+                      </a>
                     )}
                     {u.latitude && u.longitude && (
                       <a href={`https://www.google.com/maps?q=${u.latitude},${u.longitude}`} target="_blank" rel="noopener noreferrer"

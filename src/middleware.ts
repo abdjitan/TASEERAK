@@ -29,6 +29,7 @@ const PROTECTED = [
   '/welcome',
   '/messages',
   '/notifications',
+  '/verification',
 ]
 
 /** Only users with role = 'admin' can access these */
@@ -231,6 +232,6 @@ export const config = {
   matcher: [
     '/contractor/:path*', '/supplier/:path*', '/settings/:path*', '/admin/:path*', '/location/:path*',
     '/market/:path*', '/onboarding/:path*', '/welcome/:path*', '/messages/:path*', '/notifications/:path*',
-    '/login', '/register',
+    '/verification/:path*', '/login', '/register',
   ],
 }

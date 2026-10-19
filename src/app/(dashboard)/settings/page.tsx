@@ -17,6 +17,7 @@ import { REGIONS } from '@/types'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
+import { normalizeCrInput, crTakenText, crClaimHref } from '@/lib/cr'
 
 const txt = {
   ar: {
@@ -148,6 +149,8 @@ export default function SettingsPage() {
   // Docs
   const [licenseFile, setLicenseFile] = useState<any>(null)
   const [crFile, setCrFile] = useState<any>(null)
+  const [crNumber, setCrNumber] = useState('') // 170: one CR = one account (DB-enforced)
+  const [crTaken, setCrTaken] = useState('')   // the CR another account holds → offer the claim flow
   const [docsMsg, setDocsMsg] = useState('')
   const [docsSaving, setDocsSaving] = useState(false)
   const [crCheck, setCrCheck] = useState<any>(null)
@@ -169,6 +172,7 @@ export default function SettingsPage() {
         setRegion(p.region || '')
         setCity(p.city || '')
         setVatNumber(p.vat_number || '')
+        setCrNumber(p.commercial_registration || '')
         setDistrict(p.district || '')
         setPrefLang(p.preferred_language || 'ar')
         setSupplierTier(p.supplier_tier || 'shop')
@@ -259,9 +263,33 @@ export default function SettingsPage() {
 
   async function uploadDocs(e: any) {
     e.preventDefault()
-    if (!licenseFile && !crFile) return
-    setDocsSaving(true); setDocsMsg('')
+    const crDigits = normalizeCrInput(crNumber)
+    const crChanged = crDigits !== (profile?.commercial_registration || '')
+    if (!licenseFile && !crFile && !crChanged) return
+    if (crDigits && !/^[0-9]{10}$/.test(crDigits)) {
+      setDocsMsg(L('The commercial registration number must be exactly 10 digits.', 'تجارتی رجسٹریشن نمبر بالکل 10 ہندسوں کا ہونا چاہیے۔', 'رقم السجل التجاري يجب أن يكون 10 أرقام بالضبط.'))
+      return
+    }
+    setDocsSaving(true); setDocsMsg(''); setCrTaken('')
     const supabase = createClient()
+
+    // Save the CR number first: the DB refuses a CR another account holds (hint CR_TAKEN),
+    // and then nothing is uploaded — the user is offered the claim flow instead.
+    if (crChanged) {
+      const { error: crErr } = await supabase.from('profiles').update({ commercial_registration: crDigits || null }).eq('id', user.id)
+      if (crErr) {
+        setDocsSaving(false)
+        if ((crErr as any).hint === 'CR_TAKEN') { setCrTaken(crDigits); return }
+        setDocsMsg(crErr.message || t.error); return
+      }
+      setProfile((p: any) => ({ ...p, commercial_registration: crDigits || null }))
+      if (!licenseFile && !crFile) {
+        setDocsSaving(false)
+        setDocsMsg(L('✓ Saved', '✓ محفوظ', '✓ تم الحفظ'))
+        setTimeout(() => setDocsMsg(''), 3000)
+        return
+      }
+    }
 
     let licenseUrl = profile?.license_url
     let crUrl = profile?.cr_url
@@ -299,7 +327,7 @@ export default function SettingsPage() {
     setDocsSaving(false)
     if (error) { setDocsMsg(t.error); return }
     setDocsMsg(t.uploaded)
-    setProfile({ ...profile, license_url: licenseUrl, cr_url: crUrl, verification_status: profile?.verification_status === 'verified' ? 'verified' : 'pending' })
+    setProfile((p: any) => ({ ...p, license_url: licenseUrl, cr_url: crUrl, verification_status: p?.verification_status === 'verified' ? 'verified' : 'pending' }))
     setLicenseFile(null); setCrFile(null)
     setTimeout(() => setDocsMsg(''), 4000)
   }
@@ -728,6 +756,26 @@ export default function SettingsPage() {
                     )}
                   </div>
 
+                  {/* CR number (one CR = one account, enforced in the DB) */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-2">
+                      {L('Commercial registration number (10 digits)', 'تجارتی رجسٹریشن نمبر (10 ہندسے)', 'رقم السجل التجاري (10 أرقام)')}
+                    </label>
+                    <input value={crNumber} inputMode="numeric" dir="ltr" maxLength={14}
+                      onChange={(e: any) => { setCrNumber(e.target.value); setCrTaken('') }}
+                      disabled={profile?.verification_status === 'verified'}
+                      className="input-field font-mono disabled:opacity-60" placeholder="7001234567" />
+                    {profile?.verification_status === 'verified' && profile?.commercial_registration && (
+                      <div className="text-[11px] text-gray-400 mt-1">{L('Locked after verification.', 'تصدیق کے بعد مقفل ہے۔', 'يُقفل بعد التوثيق.')}</div>
+                    )}
+                    {crTaken && (
+                      <div className="mt-2 text-sm rounded-xl p-3 bg-amber-50 text-amber-800 border border-amber-200">
+                        {crTakenText(locale).msg}{' '}
+                        <a href={crClaimHref(crTaken)} className="font-bold underline">{crTakenText(locale).cta}</a>
+                      </div>
+                    )}
+                  </div>
+
                   {/* CR */}
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-2">{t.crLabel}</label>
@@ -759,7 +807,7 @@ export default function SettingsPage() {
                     </div>
                   )}
 
-                  <button type="submit" disabled={docsSaving || (!licenseFile && !crFile)}
+                  <button type="submit" disabled={docsSaving || (!licenseFile && !crFile && normalizeCrInput(crNumber) === (profile?.commercial_registration || ''))}
                     className="px-8 py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
                     style={{ background: '#D4A543' }}>
                     {docsSaving ? t.saving : t.uploadBtn}
