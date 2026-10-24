@@ -14,6 +14,7 @@ import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { normQuery } from '@/lib/productSearch'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
+import { TIERS, tierLabel, tierHint } from '@/lib/sellers'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
@@ -92,6 +93,8 @@ export default function QuickRequestPage() {
   const [hideIdentity, setHideIdentity] = useState(true)
   const [vatRequired, setVatRequired] = useState(false)
   const [verifiedOnly, setVerifiedOnly] = useState(false)
+  // who prices it (owner 2026-10-24): all / companies & factories / shops / independents — rfqs.target_tiers
+  const [tier, setTier] = useState<'all' | 'company' | 'shop' | 'independent'>('all')
   const [pickup, setPickup] = useState(false) // the buyer collects from the supplier instead of delivery
   const [geo, setGeo] = useState<{ lat: number; lng: number } | null>(null) // delivery point (map / GPS)
   const [address, setAddress] = useState('')
@@ -149,7 +152,7 @@ export default function QuickRequestPage() {
             setLines(its.map(lineFromItem))
             if (r.region && r.region !== 'كل المناطق') { setRegion(r.region); setCity(r.city || '') }
             setNotes(r.notes || ''); setHideIdentity(r.hide_identity ?? true)
-            setVatRequired(!!r.vat_invoice_required); setVerifiedOnly(!!r.verified_only); setPickup(r.delivery_required === false)
+            setVatRequired(!!r.vat_invoice_required); setVerifiedOnly(!!r.verified_only); setTier(Array.isArray(r.target_tiers) && r.target_tiers.length === 1 ? r.target_tiers[0] : 'all'); setPickup(r.delivery_required === false)
           }
         } else if (dId) {
           const { data: dr } = await supabase.from('rfq_drafts').select('*').eq('id', dId).single()
@@ -159,7 +162,7 @@ export default function QuickRequestPage() {
             if (Array.isArray(dd.items)) setLines(dd.items.map(lineFromItem))
             if (dd.region) { setRegion(dd.region); setCity(dd.city || '') }
             setNotes(dd.notes || ''); setHideIdentity(dd.hideIdentity ?? true)
-            setVatRequired(!!dd.vatRequired); setVerifiedOnly(!!dd.verifiedOnly); setPickup(dd.deliveryRequired === false)
+            setVatRequired(!!dd.vatRequired); setVerifiedOnly(!!dd.verifiedOnly); if (dd.tier) setTier(dd.tier); setPickup(dd.deliveryRequired === false)
           }
         }
         window.history.replaceState(null, '', '/contractor/rfq/quick')
@@ -201,11 +204,11 @@ export default function QuickRequestPage() {
   useEffect(() => {
     if (!restored || !userId || done) return
     const t = setTimeout(() => saveLocalDraft('quick:' + userId, {
-      text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, pickup, geo, address,
+      text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, tier, pickup, geo, address,
       photos: photos.map(p => ({ id: p.id, name: p.file.name, type: p.file.type, status: p.status, share: p.share, confidence: p.confidence, localName: p.localName })),
     }), 300)
     return () => clearTimeout(t)
-  }, [restored, userId, done, text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, pickup, geo, address, photos])
+  }, [restored, userId, done, text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, tier, pickup, geo, address, photos])
 
   function startOver() {
     deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[]])
@@ -413,6 +416,7 @@ export default function QuickRequestPage() {
         delivery_location: pickup ? null : (address.trim().slice(0, 300) || null),
         delivery_geo: pickup || !geo ? null : `${geo.lat},${geo.lng}`,
         hide_identity: hideIdentity, verified_only: verifiedOnly, nearby_only: false,
+        target_tiers: tier === 'all' ? null : [tier],
         notes: notes.trim() || null,
         expires_at: new Date(Date.now() + hours * 3600 * 1000).toISOString(),
       })
@@ -735,6 +739,18 @@ export default function QuickRequestPage() {
               <div className="text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')}</div>
               <div className="mt-3 space-y-3">
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-sm" placeholder={L('Notes for suppliers (optional)', 'نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
+                <div>
+                  <div className="text-sm font-bold text-[#0B2438] mb-2">{L('Who should price it?', 'کون قیمت دے؟', 'من تريد أن يسعّر لك؟')}</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {([['all', L('All suppliers', 'سب سپلائرز', 'كل الموردين'), L('The most offers', 'زیادہ پیشکشیں', 'أكثر عروض')], ...TIERS.map(k => [k, tierLabel(k, locale as any, false), tierHint(k, locale as any)])] as [string, string, string][]).map(([k, label, hint]) => (
+                      <button key={k} type="button" onClick={() => setTier(k as any)} aria-pressed={tier === k}
+                        className={`p-2.5 rounded-xl border-2 text-start transition-colors ${tier === k ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 bg-white hover:border-[#D4A543]'}`}>
+                        <div className="text-[13px] font-bold text-[#0B2438] leading-snug">{tier === k ? '✓ ' : ''}{label}</div>
+                        <div className="text-[11px] text-gray-500 mt-0.5 leading-snug line-clamp-2">{hint}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={hideIdentity} onChange={e => setHideIdentity(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
                   {L('Hide my name until I choose a supplier', 'سپلائر چننے تک نام چھپائیں', 'إخفاء اسمي حتى أختار المورد')}
@@ -745,7 +761,7 @@ export default function QuickRequestPage() {
                 </label>
                 <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={verifiedOnly} onChange={e => setVerifiedOnly(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
-                  {L('Only verified suppliers', 'صرف تصدیق شدہ سپلائرز', 'الموردون الموثّقون فقط')}
+                  {L('Only verified (trusted) suppliers', 'صرف تصدیق شدہ سپلائرز', 'الموردون الموثّقون والمعتمدون فقط')}
                 </label>
               </div>
             </div>
@@ -820,6 +836,7 @@ export default function QuickRequestPage() {
                 {hideIdentity && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{L('Name hidden', 'نام چھپا', 'الاسم مخفي')}</span>}
                 {vatRequired && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{L('VAT invoice', 'VAT انوائس', 'فاتورة ضريبية')}</span>}
                 {verifiedOnly && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{L('Verified suppliers only', 'صرف تصدیق شدہ', 'الموردون الموثّقون فقط')}</span>}
+                {tier !== 'all' && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{tierLabel(tier, locale as any, false)}</span>}
                 {photos.some(p => p.share) && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">{L('Photos shared', 'تصاویر شیئر', 'الصور مرفقة')}</span>}
               </div>
             </div>
