@@ -115,7 +115,8 @@ export default function RFQDetailPage() {
     setDeleting(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('delete_rfq', { p_rfq_id: id })
-    if (error) { alert(error.message); setDeleting(false); return }
+    // the deal message only when there really is a deal; anything else is a plain retry message (as in the app)
+    if (error) { alert(/صفقة|deal/i.test(error.message || '') ? error.message : L('Could not delete the request — please try again.', 'درخواست حذف نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حذف الطلب، حاول مرة أخرى.')); setDeleting(false); return }
     router.push('/contractor')
   }
 
@@ -291,8 +292,15 @@ export default function RFQDetailPage() {
 
   const [showEditWarning, setShowEditWarning] = useState(false)
 
+  // only a material change (name, quantity, unit, spec) cancels the offers; notes alone keep them
+  const editIsMaterial = () =>
+    ((editName || '').trim() || rfq.product_name) !== rfq.product_name
+    || (parseFloat(String(editQty)) || rfq.quantity) !== Number(rfq.quantity)
+    || (editUnit || rfq.unit) !== rfq.unit
+    || (editSpec || '') !== (rfq.specification || '')
+
   function handleEditSave() {
-    if (offers.length > 0) {
+    if (offers.length > 0 && editIsMaterial()) {
       setShowEditWarning(true)
     } else {
       doSaveEdit()
@@ -308,18 +316,14 @@ export default function RFQDetailPage() {
       quantity: parseFloat(String(editQty)) || rfq.quantity,
       unit: editUnit || rfq.unit,
     }
-    // 1. Delete the existing offers first (السعر القديم لم يعد صالحاً بعد تغيير التفاصيل):
-    //    the database refuses material changes while offers exist.
-    if (offers.length > 0) {
-      const { error: delErr } = await supabase.from('offers').delete().eq('rfq_id', id)
-      if (delErr) { alert(delErr.message); return }
-    }
-    // 2. Update the request
-    const { error } = await supabase.from('rfqs').update(patch).eq('id', id)
-    if (error) { alert(error.message); return }
+    // one transaction on the server (175): offers are dropped only on a material change, and only
+    // if the request update succeeds too (the suppliers are told to price again)
+    const { data: res, error } = await supabase.rpc('edit_rfq', { p_rfq_id: id, p_patch: patch })
+    if (error) { alert(error.message || L('Could not save — please try again.', 'محفوظ نہیں ہو سکا — دوبارہ کوشش کریں۔', 'تعذّر الحفظ — حاول مرة ثانية.')); return }
+    const dropped = Number((res as any)?.offers_deleted || 0) > 0
 
-    setRfq({ ...rfq, ...patch, offer_count: 0 })
-    setOffers([])
+    setRfq({ ...rfq, ...patch, ...(dropped ? { offer_count: 0 } : {}) })
+    if (dropped) setOffers([])
     setEditing(false)
     setShowEditWarning(false)
   }

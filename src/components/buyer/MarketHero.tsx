@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, Plus, FileSpreadsheet } from 'lucide-react'
+import { Search, Plus, FileSpreadsheet, Camera } from 'lucide-react'
 import { searchProducts } from '@/lib/productSearch'
 import { getProductLabel } from '@/types'
 import { BROWSE_SECTIONS } from '@/lib/browseCategories'
@@ -97,7 +97,8 @@ export default function MarketHero({ locale }: { locale: string }) {
                 onClick={() => router.push(`/contractor/rfq/quick?line=${encodeURIComponent(q.trim().slice(0, 80))}`)}
                 className="flex w-full items-center gap-3 px-4 py-3 text-start text-[14px] font-bold border-t border-gray-100 bg-[#0F6E56]/5 text-[#0F6E56] hover:bg-[#0F6E56]/10">
                 <Plus className="w-4 h-4 shrink-0" aria-hidden />
-                <span>{L('Not what you need? Tap here to send it as you wrote it', 'جو چاہیے نہیں ملا؟ یہاں دبائیں اور جیسا لکھا ویسا بھیجیں', 'لم تجد طلبك؟ اضغط هنا وأرسله كما كتبته')}</span>
+                <span className="min-w-0"><span className="block">{L('Not what you need? Tap here', 'جو چاہیے نہیں ملا؟ یہاں دبائیں', 'لم تجد طلبك؟ اضغط هنا')}</span>
+                  <span className="block text-[12px] font-semibold opacity-80 truncate">{L(`Request «${q.trim()}» as you want it, with a photo and its section`, `«${q.trim()}» جیسا چاہیں منگوائیں، تصویر اور شعبے کے ساتھ`, `اطلب «${q.trim()}» كما تريده، مع صورة وقسمه`)}</span></span>
               </button>
             </li>
           </ul>
@@ -106,6 +107,9 @@ export default function MarketHero({ locale }: { locale: string }) {
         <div className="relative z-10 mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
           <Link href="/contractor/rfq/quick" className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B2438]/80 border border-white/15 px-4 py-2.5 text-sm font-bold hover:bg-[#0B2438] transition-colors">
             <Plus className="w-4 h-4" aria-hidden />{L('Ask a price for any product', 'کسی بھی چیز کی قیمت پوچھیں', 'اطلب سعر أي منتج')}
+          </Link>
+          <Link href="/contractor/rfq/quick?start=photo" className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B2438]/80 border border-white/15 px-4 py-2.5 text-sm font-bold hover:bg-[#0B2438] transition-colors">
+            <Camera className="w-4 h-4" aria-hidden />{L('Snap your product and send it', 'اپنی چیز کی تصویر لیں اور بھیجیں', 'صوّر منتجك وأرسله')}
           </Link>
           <Link href="/contractor/project/new" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-[#F5C55B] transition-colors">
             <FileSpreadsheet className="w-4 h-4" aria-hidden />{L('A big project? Upload your materials list', 'بڑا پراجیکٹ؟ سامان کی فہرست اپ لوڈ کریں', 'تجهّز مشروعًا كبيرًا؟ أضف قائمة المواد')}

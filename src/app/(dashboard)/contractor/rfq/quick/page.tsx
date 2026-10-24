@@ -21,6 +21,9 @@ import LineSpecialty from '@/components/shared/LineSpecialty'
 // and carry a drawing/file. Reorder (?from=<rfq>) and saved drafts (?draft=<id>) open here too.
 
 // Every catalog product name — a line outside it gets the «which specialty?» chooser.
+// «١٢٫٥» / «۱۲» → «12.5» / «12» (phones with an Arabic or Urdu keyboard type these digits)
+const toLatinNumber = (v: string) => v.replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٫,]/g, '.').replace(/[^0-9.]/g, '')
+
 const CATALOG_NAMES = new Set<string>(Object.values(SECTOR_PRODUCTS).flat() as string[])
 const UNITS = ['حبة', 'كيس', 'طن', 'م³', 'م²', 'متر', 'م.ط', 'لفة', 'كرتون', 'سطل', 'لوح', 'جالون', 'لتر', 'كغ', 'طقم', 'نقلة', 'يوم', 'ساعة', 'عدد']
 
@@ -113,6 +116,7 @@ export default function QuickRequestPage() {
     // «لم تجد طلبك؟» from the home search: start with that text as a line (the buyer picks its specialty)
     const sl = (qs.get('line') || '').trim().slice(0, 80)
     if (sl) setLines(prev => prev.some(l => l.product_name === sl) ? prev : [...prev, { key: uid(), product_name: sl, sector: 'supply_store', quantity: '', unit: 'حبة', details: '' }])
+    if (qs.get('start') === 'photo') setTimeout(() => { document.getElementById('quick-photo')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); fileRef.current?.click() }, 400)
     const sq = (qs.get('q') || '').slice(0, 80), ss = qs.get('section')
     if (sq) setStartQ(sq)
     if (ss && /^[a-z_]{3,20}$/.test(ss)) setStartSection(ss)
@@ -388,7 +392,7 @@ export default function QuickRequestPage() {
           supplier_tiers: null, in_stock: false, max_days: null, specsObj,
           spec_file_url: fileUrl || photoUrl,
           spec_file_name: fileUrl ? (l.fileName || L('Attachment', 'فائل', 'مرفق')) : photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
-          photo_url: photoUrl,
+          photo_url: photoUrl || (fileUrl && /\.(jpe?g|png|webp)$/i.test(l.fileName || '') ? fileUrl : null),
           quick: true,
           // a line written by hand (not a catalog product): admins hear about it when an offer is chosen (174)
           custom: !CATALOG_NAMES.has(l.product_name.trim()),
@@ -577,14 +581,22 @@ export default function QuickRequestPage() {
                         </button>
                       )}
                       {l.product_name.trim() && !CATALOG_NAMES.has(l.product_name.trim())
-                        ? <LineSpecialty name={l.product_name} sector={l.sector} value={l.spec} locale={locale}
-                            onChange={v => updateLine(l.key, { spec: v, sector: v.sector })} />
+                        ? <div className="space-y-1.5">
+                            <LineSpecialty name={l.product_name} sector={l.sector} value={l.spec} locale={locale}
+                              onChange={v => updateLine(l.key, { spec: v, sector: v.sector })} />
+                            {!l.photoId && !(l.fileId && /\.(jpe?g|png|webp)$/i.test(l.fileName || '')) && (
+                              <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
+                                className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#D4A543] text-[#9D7425] bg-[#D4A543]/10">
+                                <Glyph e="📷" /> {L('Add a photo so suppliers understand your request', 'تصویر لگائیں تاکہ سپلائرز آپ کی درخواست سمجھیں', 'أضف صورة ليفهم الموردون طلبك')}
+                              </button>
+                            )}
+                          </div>
                         : <div className="text-[11px] text-gray-400">{sectorLabel(l.sector)}</div>}
                     </div>
                     <button type="button" onClick={() => removeLine(l.key)} className="text-gray-400 hover:text-red-500 text-lg leading-none px-1" aria-label={L('Remove', 'ہٹائیں', 'احذف')}>×</button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <input type="number" inputMode="decimal" min="0" value={l.quantity} onChange={e => updateLine(l.key, { quantity: e.target.value })}
+                    <input type="text" inputMode="decimal" value={l.quantity} onChange={e => updateLine(l.key, { quantity: toLatinNumber(e.target.value) })}
                       className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} aria-label={L('Quantity', 'مقدار', 'الكمية')} />
                     <select value={l.unit} onChange={e => updateLine(l.key, { unit: e.target.value })} className="input-field" aria-label={L('Unit', 'یونٹ', 'الوحدة')}>
                       <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>

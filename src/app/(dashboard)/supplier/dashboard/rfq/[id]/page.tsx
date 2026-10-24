@@ -264,8 +264,9 @@ export default function SupplierRFQPage() {
       return next
     })
   }
+  // a remembered per-unit price no longer fits once the unit changes (as in the app)
   function setItemPriceUnit(i: any, val: any) {
-    setItemForms(prev => prev.map((f: any, idx: any) => idx === i ? { ...f, priceUnit: val, saved: false } : f))
+    setItemForms(prev => prev.map((f: any, idx: any) => idx === i ? { ...f, priceUnit: val, saved: false, ...(f.autofilled ? { unit_price: '', line_total: '', autofilled: false } : {}) } : f))
   }
   function setItemTotal(i: any, val: any) {
     setItemForms(prev => {
@@ -349,6 +350,11 @@ export default function SupplierRFQPage() {
     }
     if (isMultiItem && !allItemsPriced) {
       setError(L('Enter a price for at least one material before sending the offer.', 'آفر بھیجنے سے پہلے کم از کم ایک مال کی قیمت درج کریں۔', 'أدخل سعر مادة واحدة على الأقل قبل إرسال العرض.'))
+      return
+    }
+    // an unnamed extra amount would make the shown total differ from the total that is sent
+    if (extras.some((ex: any) => parseFloat(ex.amount) > 0 && !String(ex.label || '').trim())) {
+      setError(L('Name each extra amount (e.g. installation).', 'ہر اضافی رقم کا نام لکھیں (جیسے: تنصیب)۔', 'اكتب اسم كل مبلغ إضافي (مثل: تركيب).'))
       return
     }
     if (rfq?.delivery_required && (!delivMode || (delivMode === 'amount' && !(parseFloat(delivAmount) > 0)))) {
@@ -612,6 +618,8 @@ export default function SupplierRFQPage() {
                 ? (isMultiItem
                   ? L('Enter a price for at least one material to send.', 'بھیجنے کے لیے کم از کم ایک مال کی قیمت درج کریں۔', 'أدخل سعر مادة واحدة على الأقل لتتمكّن من الإرسال.')
                   : L('Enter the price to send.', 'بھیجنے کے لیے قیمت درج کریں۔', 'أدخل السعر لتتمكّن من الإرسال.'))
+                : extras.some((ex: any) => parseFloat(ex.amount) > 0 && !String(ex.label || '').trim())
+                  ? L('Name each extra amount (e.g. installation).', 'ہر اضافی رقم کا نام لکھیں (جیسے: تنصیب)۔', 'اكتب اسم كل مبلغ إضافي (مثل: تركيب).')
                 : rfq.delivery_required && (!delivMode || (delivMode === 'amount' && !(parseFloat(delivAmount) > 0)))
                   ? L('Choose the delivery cost to send.', 'بھیجنے کے لیے ڈیلیوری کی لاگت منتخب کریں۔', 'حدّد تكلفة التوصيل لتتمكّن من الإرسال.')
                 : vatIncluded === null
