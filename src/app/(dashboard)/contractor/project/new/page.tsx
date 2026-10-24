@@ -10,7 +10,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, type Sector } from '@/types'
-import LineSpecialty from '@/components/shared/LineSpecialty'
+import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arItems, arMaterials } from '@/lib/text'
@@ -209,7 +209,7 @@ export default function NewProjectPage() {
     if (!name) return
     const g = draftGuess(name)
     // the buyer's choice, else our guess (shown to them with «نعم / تغيير»)
-    const choice = draft.spec ?? (g.sub ? { sector: g.sector, sub: g.sub } : undefined)
+    const choice = choiceDone(draft.spec) ? draft.spec : (g.sub ? { sector: g.sector, sub: g.sub } : undefined)
     const sector = choice?.sector || g.sector
     setItems(prev => [...prev, {
       id: `item-${Date.now()}`, product_name: name, sector,
@@ -728,8 +728,8 @@ export default function NewProjectPage() {
                           {/* التخصص — يحدّد المورد المتخصص الذي يستقبل البند */}
                           <div className="sm:col-span-2">
                             <LineSpecialty name={item.product_name} sector={item.sector}
-                              value={item.needs_classification ? undefined : { sector: item.sector, sub: item.sub_category || null }} locale={locale}
-                              onChange={(v: any) => setItems(prev => prev.map((it: any) => it.id === item.id ? { ...it, sector: v.sector, sub_category: v.sub, needs_classification: false } : it))} />
+                              value={item.needs_classification ? undefined : { sector: item.sector, sub: item.sub_category || null, section: item.section }} locale={locale}
+                              onChange={(v: any) => setItems(prev => prev.map((it: any) => it.id === item.id ? { ...it, sector: v.sector, sub_category: v.sub, section: v.section, needs_classification: !choiceDone(v) } : it))} />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <input type="number" value={item.quantity}

@@ -14,7 +14,7 @@ import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { normQuery } from '@/lib/productSearch'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
-import LineSpecialty from '@/components/shared/LineSpecialty'
+import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
 // it into lines the buyer can fix, then send. Each line can open its specifications (PRODUCT_SPECS)
@@ -41,7 +41,7 @@ type Line = {
   specs?: Record<string, string> // chosen specification values (PRODUCT_SPECS keys, without 'unit')
   fileId?: string                // attached drawing/spec file, kept in IndexedDB until sending
   fileName?: string
-  spec?: { sector: string; sub: string | null } // a «not in the list» item filed under a specialty by the buyer
+  spec?: { sector: string; sub: string | null; section?: string } // a «not in the list» item filed under a specialty by the buyer
 }
 type Photo = {
   id: string
@@ -341,11 +341,15 @@ export default function QuickRequestPage() {
     setConfirming(true)
   }
 
+  const l2n = (l: Line) => l.product_name.trim().slice(0, 40)
   function validate(): boolean {
     setError('')
     if (!lines.length) { setError(L('Add at least one item.', 'کم از کم ایک چیز شامل کریں۔', 'أضف مادة واحدة على الأقل.')); return false }
     const bad = lines.find(l => !l.product_name.trim() || !(parseFloat(l.quantity) > 0) || !l.unit)
     if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر يحتاج إلى اسم وكمية ووحدة.')); return false }
+    // an item written by hand needs at least its main section (owner 2026-10-24)
+    const lost = lines.find(l => !CATALOG_NAMES.has(l.product_name.trim()) && (l.spec ? !choiceDone(l.spec) : !detectSubCategory(l.product_name, l.sector as any)))
+    if (lost) { setError(L(`Choose the section of «${l2n(lost)}» so it reaches the right suppliers.`, `«${l2n(lost)}» کا شعبہ منتخب کریں۔`, `اختر قسم «${l2n(lost)}» ليصل إلى الموردين المختصين.`)); return false }
     if (!region) { setError(L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختر منطقتك.')); return false }
     if (!pickup && !geo && !address.trim()) { setError(L('Set the delivery location: detect it, paste a Google Maps link, or write the address.', 'ڈیلیوری کا مقام بتائیں۔', 'حدّد موقع التوصيل: بتحديد موقعك، أو بلصق رابط خرائط Google، أو بكتابة العنوان.')); return false }
     return true
