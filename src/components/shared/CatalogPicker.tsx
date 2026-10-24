@@ -112,10 +112,10 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   }
   const tileGrid = inline ? 'grid grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2' : 'grid grid-cols-3 sm:grid-cols-5 gap-2'
 
-  const Tile = ({ name, s }: { name: string; s: Sector }) => {
+  const tile = (name: string, s: Sector, k: string) => {
     const on = isAdded(name)
     return (
-      <button type="button" onClick={() => choose({ name, sector: s })}
+      <button key={k} type="button" onClick={() => choose({ name, sector: s })}
         className={`relative text-start rounded-xl border p-2 flex flex-col gap-1.5 transition-all ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 bg-white hover:border-[#D4A543]/60 hover:shadow-sm'}`}>
         <span className="aspect-square w-full rounded-lg bg-gray-50 overflow-hidden grid place-items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -173,7 +173,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
               {!!web.matches?.length && (
                 <>
                   <div className="text-[11px] font-bold text-gray-500">{L('Closest in our list', 'ہماری فہرست میں قریب ترین', 'الأقرب في قائمتنا')}</div>
-                  <div className={tileGrid}>{web.matches.map(m => <Tile key={`w:${m.sector}:${m.name}`} name={m.name} s={m.sector} />)}</div>
+                  <div className={tileGrid}>{web.matches.map(m => tile(m.name, m.sector, `w:${m.sector}:${m.name}`))}</div>
                 </>
               )}
               <button type="button" onClick={() => choose({ name: web.result.name_ar, sector: web.result.sector })}
@@ -213,7 +213,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
           </div>
         ) : (
           <div className={tileGrid}>
-            {hits.map(h => <Tile key={`${h.sector}:${h.name}`} name={h.name} s={h.sector} />)}
+            {hits.map(h => tile(h.name, h.sector, `${h.sector}:${h.name}`))}
           </div>
         )
       ) : !current ? (
@@ -258,7 +258,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                 </button>
                 {open && (
                   <div className={`${tileGrid} p-2 pt-0`}>
-                    {g.items.map(it => <Tile key={`${it.sector}:${it.name}`} name={it.name} s={it.sector} />)}
+                    {g.items.map(it => tile(it.name, it.sector, `${it.sector}:${it.name}`))}
                   </div>
                 )}
               </div>

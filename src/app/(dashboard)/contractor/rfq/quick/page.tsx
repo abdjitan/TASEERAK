@@ -471,7 +471,7 @@ export default function QuickRequestPage() {
         <div className="space-y-5 lg:col-start-1 lg:row-start-1">
         <div>
           <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
-          <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, photograph it or pick it from the catalog. We will organise it into a list.', 'لکھیں، بولیں، تصویر لیں یا فہرست سے منتخب کریں۔', 'اكتبها، أو تحدّث بها، أو صوّرها، أو اخترها من دليل المواد، وسنرتّبها لك في طلبك.')}</p>
+          <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, upload a photo or pick it from the catalog. We will organise it into a list.', 'لکھیں، بولیں، تصویر لیں یا فہرست سے منتخب کریں۔', 'اكتبها، أو تحدّث بها، أو ارفع صورتها، أو اخترها من دليل المواد، وسنرتّبها لك في طلبك.')}</p>
         </div>
 
         {/* Input: text + mic + photo */}
@@ -491,12 +491,12 @@ export default function QuickRequestPage() {
               </button>
             )}
             <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
-              <Glyph e="📷" /> {L('Add a photo', 'تصویر شامل کریں', 'صوّر المادة')}
+              <Glyph e="📷" /> {L('Photo of the item', 'چیز کی تصویر', 'صورة المادة')}
             </button>
             <button type="button" onClick={() => setShowCatalog(true)} className="lg:hidden px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
               <Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}
             </button>
-            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden"
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
               onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
             <input ref={specFileRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden"
               onChange={e => { if (fileFor) attachFile(fileFor, e.target.files?.[0]); e.target.value = '' }} />

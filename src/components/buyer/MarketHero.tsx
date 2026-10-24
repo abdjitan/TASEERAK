@@ -1,7 +1,7 @@
 'use client'
 // Buyer home hero from the approved design: «ماذا تحتاج اليوم؟» over the city photo, one search
 // that opens the request page already searching, and the shopping categories as photo cards.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Search, Plus, FileSpreadsheet, Camera } from 'lucide-react'
@@ -27,6 +27,9 @@ export default function MarketHero({ locale }: { locale: string }) {
   const pick = (o: { ar: string; en: string; ur: string }) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
   const router = useRouter()
   const [q, setQ] = useState('')
+  // computers have no camera: the photo button says «ارفع صورة» there, «صوّر أو ارفع» on phones
+  const [touch, setTouch] = useState(false)
+  useEffect(() => { try { setTouch(window.matchMedia('(pointer: coarse)').matches) } catch {} }, [])
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(-1)
   // Live suggestions while typing («بلو» → بلوك، بلوك عازل…), from the same catalog search the request page uses.
@@ -109,7 +112,7 @@ export default function MarketHero({ locale }: { locale: string }) {
             <Plus className="w-4 h-4" aria-hidden />{L('Ask a price for any product', 'کسی بھی چیز کی قیمت پوچھیں', 'اطلب سعر أي منتج')}
           </Link>
           <Link href="/contractor/rfq/quick?start=photo" className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B2438]/80 border border-white/15 px-4 py-2.5 text-sm font-bold hover:bg-[#0B2438] transition-colors">
-            <Camera className="w-4 h-4" aria-hidden />{L('Snap your product and send it', 'اپنی چیز کی تصویر لیں اور بھیجیں', 'صوّر منتجك وأرسله')}
+            <Camera className="w-4 h-4" aria-hidden />{touch ? L('Take or upload a photo of your product', 'تصویر لیں یا اپلوڈ کریں', 'صوّر منتجك أو ارفع صورته') : L('Upload a photo of your product', 'اپنی چیز کی تصویر اپلوڈ کریں', 'ارفع صورة منتجك وأرسلها')}
           </Link>
           <Link href="/contractor/project/new" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-[#F5C55B] transition-colors">
             <FileSpreadsheet className="w-4 h-4" aria-hidden />{L('A big project? Upload your materials list', 'بڑا پراجیکٹ؟ سامان کی فہرست اپ لوڈ کریں', 'تجهّز مشروعًا كبيرًا؟ أضف قائمة المواد')}
