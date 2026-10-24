@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
+import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -601,7 +601,7 @@ export default function QuickRequestPage() {
                     <select value={l.unit} onChange={e => updateLine(l.key, { unit: e.target.value })} className="input-field" aria-label={L('Unit', 'یونٹ', 'الوحدة')}>
                       <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>
                       {/* a product with its own order units shows only those; otherwise its specialty's logical units (owner 2026-10-19) */}
-                      {(() => { const own = getProductSpecs(l.product_name).find(f => f.key === 'unit')?.options || []; return Array.from(new Set([...(own.length ? own : (unitOptionsFor(l.product_name, l.sector as any) || UNITS)), ...(l.unit ? [l.unit] : [])])) })().map(u => <option key={u} value={u}>{unitLabel(u)}</option>)}
+                      {Array.from(new Set([...(unitChoicesFor(l.product_name, l.sector as any) || UNITS), ...(l.unit ? [l.unit] : [])])).map(u => <option key={u} value={u}>{unitLabel(u)}</option>)}
                     </select>
                   </div>
                   <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })} className="input-field text-sm"

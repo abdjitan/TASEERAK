@@ -906,7 +906,7 @@ export function hydrateTaxonomy(rows: any[]): void {
 // وحدة القياس الافتراضية لكل تخصص فرعي — تُملأ تلقائياً عند اختيار المادة
 const SUB_UNITS: Record<string, string> = {
   // مدني
-  readymix: 'م³', cement: 'كيس', blocks: 'عدد', precast: 'عدد',
+  readymix: 'م³', cement: 'كيس', blocks: 'حبة', precast: 'عدد',
   rebar: 'طن', structural_steel: 'طن', steel_mesh: 'عدد',
   waterproofing: 'م²', piling: 'م.ط', construction_chemicals: 'عدد',
   drainage: 'م.ط', aggregates: 'م³', earthworks: 'م³',
@@ -956,7 +956,7 @@ const SUB_UNITS: Record<string, string> = {
 const PIPE = ['م.ط', 'عدد'], PIECE = ['عدد', 'طقم'], RENT = ['يوم', 'ساعة', 'شهر']
 const SUB_UNIT_OPTIONS: Record<string, string[]> = {
   // civil
-  readymix: ['م³', 'نقلة'], cement: ['كيس', 'طن'], blocks: ['عدد', 'م²'], precast: ['عدد', 'م.ط', 'م²'],
+  readymix: ['م³', 'نقلة'], cement: ['كيس', 'طن'], blocks: ['حبة', 'طبلية', 'ألف حبة', 'م²', 'م³'], precast: ['عدد', 'م.ط', 'م²'],
   rebar: ['طن', 'سيخ', 'كغ'], structural_steel: ['طن', 'عدد', 'م.ط', 'كغ'], steel_mesh: ['عدد', 'لوح', 'م²', 'لفة'],
   waterproofing: ['م²', 'لفة', 'سطل', 'برميل', 'كيس'], piling: ['م.ط', 'عدد'],
   construction_chemicals: ['عدد', 'كيس', 'سطل', 'لتر', 'جالون', 'برميل', 'كغ', 'كرتون'],
@@ -1020,6 +1020,17 @@ export function unitOptionsFor(productName: string, sector: Sector): string[] | 
     return Array.from(new Set([...(def ? [def] : []), ...SUB_UNIT_OPTIONS[sub]]))
   }
   return null
+}
+
+// The unit choices shown for a product (web + app): its own spec units when it has several; when it
+// has one (or none), that one first, then its specialty's logical units (owner 2026-10-24: a block
+// must offer «حبة / طبلية», not only «حبة»).
+export function unitChoicesFor(productName: string, sector: Sector): string[] | null {
+  const own = (PRODUCT_SPECS[(productName || '').trim()] || []).find(f => f.key === 'unit')?.options || []
+  if (own.length >= 2) return own
+  const logical = unitOptionsFor(productName, sector)
+  if (!logical) return own.length ? own : null
+  return Array.from(new Set([...own, ...logical]))
 }
 
 export function getDefaultUnit(productName: string, sector: Sector): string {
@@ -6205,6 +6216,8 @@ const UNIT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
   'ساعة': { en: 'hour', ur: 'گھنٹہ' },
   'نقلة': { en: 'truckload', ur: 'ٹرک لوڈ' },
   'سطل': { en: 'pail', ur: 'بالٹی' },
+  'طبلية': { en: 'pallet', ur: 'پیلیٹ' },
+  'ألف حبة': { en: '1,000 pcs', ur: 'ہزار عدد' },
 }
 export function getUnitLabel(unit: string | null | undefined, locale: string): string {
   if (!unit) return ''
