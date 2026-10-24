@@ -103,7 +103,7 @@ export default function RegisterPage() {
   const supabase = createClient()
 
   const [selectedType, setSelectedType] = useState<'contractor' | 'supplier' | null>(null)
-  const [sellerKind, setSellerKind] = useState<'company' | 'independent'>('company')
+  const [sellerKind, setSellerKind] = useState<'company' | 'independent' | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
@@ -144,6 +144,7 @@ export default function RegisterPage() {
   }
 
   async function onSubmit(data: FormData) {
+    if (data.role === 'supplier' && !sellerKind) { setFormError(locale === 'en' ? 'Choose: a company / shop, or an independent seller' : locale === 'ur' ? 'منتخب کریں: کمپنی / دکان یا آزاد فروخت کنندہ' : 'اختر نوع نشاطك: شركة أو محل، أو بائع مستقل'); return }
     if (!agreedToTerms) { setFormError(t.agreeErr); return }
     const soloSeller = data.role === 'supplier' && sellerKind === 'independent'
     const asksBusiness = data.role === 'supplier' && !soloSeller
@@ -276,21 +277,22 @@ export default function RegisterPage() {
                 </div>
                 <button type="button" onClick={() => { setSelectedType(null); setValue('role', undefined as any) }} className="text-xs font-bold hover:underline shrink-0" style={{ color: '#9D7425' }}>{t.change}</button>
               </div>
-              {selectedType === 'supplier' && (
-                <div className="grid grid-cols-2 gap-2 mt-3">
+              {selectedType === 'supplier' && (<>
+                <p className="text-sm font-bold text-navy mt-4 mb-2">{locale === 'en' ? 'How do you sell? *' : locale === 'ur' ? 'آپ کیسے بیچتے ہیں؟ *' : 'ما نوع نشاطك؟ *'}</p>
+                <div className="grid sm:grid-cols-2 gap-3">
                   {(['company', 'independent'] as const).map(k => {
                     const on = sellerKind === k
                     const info = SELLER_KINDS[k]
                     return (
-                      <button key={k} type="button" onClick={() => setSellerKind(k)} aria-pressed={on}
-                        className={`p-3 rounded-xl border-2 text-start transition-all ${on ? 'border-navy bg-navy/5' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
-                        <div className="font-bold text-navy text-xs"><SellerIcon name={info.icon} /> {locale === 'en' ? info.en : locale === 'ur' ? info.ur : info.ar}</div>
-                        <div className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">{locale === 'en' ? info.sub.en : locale === 'ur' ? info.sub.ur : info.sub.ar}</div>
+                      <button key={k} type="button" onClick={() => { setSellerKind(k); setFormError('') }} aria-pressed={on}
+                        className={`p-4 rounded-xl border-2 text-start transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/10 shadow-sm' : 'border-gray-200 bg-white hover:border-[#D4A543]/60'}`}>
+                        <div className="font-extrabold text-navy text-sm">{on ? '✓ ' : ''}<SellerIcon name={info.icon} /> {locale === 'en' ? info.en : locale === 'ur' ? info.ur : info.ar}</div>
+                        <div className="text-xs text-gray-500 mt-1 leading-relaxed">{locale === 'en' ? info.sub.en : locale === 'ur' ? info.sub.ur : info.sub.ar}</div>
                       </button>
                     )
                   })}
                 </div>
-              )}
+              </>)}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -308,7 +310,7 @@ export default function RegisterPage() {
             </div>
             {phoneDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2"><Glyph e="⚠" /> {t.phoneTaken}</p>}
 
-            {selectedType === 'supplier' && sellerKind !== 'independent' && <div>
+            {selectedType === 'supplier' && sellerKind === 'company' && <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-400 font-normal">— {t.companyHint}</span></label>
               <input {...register('company_name_ar')} className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : 'مؤسسة الصخر لمواد البناء'} />
               {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}

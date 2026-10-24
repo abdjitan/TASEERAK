@@ -1,7 +1,7 @@
 'use client'
 
 import { canUseProjects } from '@/lib/plans'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
@@ -9,7 +9,8 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, type Sector } from '@/types'
+import LineSpecialty from '@/components/shared/LineSpecialty'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arItems, arMaterials } from '@/lib/text'
@@ -192,19 +193,31 @@ export default function NewProjectPage() {
     } finally { setParsing(false) }
   }
 
-  // إضافة بند يدوي — يبدأ «غير مصنّف» حتى يختار المقاول التخصص من القوائم
-  function addItem() {
+  // إضافة مادة يدوياً (owner 2026-10-24: كانت تُضاف «بند بدون اسم / مدني» ثم تُعدَّل). لوحة واحدة:
+  // الاسم (اقتراحات من الكتالوج أو نص حر) → التخصص يُقترح تلقائياً → الكمية والوحدة → «أضف إلى القائمة».
+  const [draft, setDraft] = useState<any>(null)
+  const catalogNames = useMemo(() => Array.from(new Set(Object.values(SECTOR_PRODUCTS).flat())), [])
+  function addItem() { setEditingIndex(null); setDraft({ product_name: '', quantity: '', unit: '', specification: '', spec: undefined }) }
+  function draftGuess(name: string): { sector: string; sub: string | null; catalog: boolean } {
+    const n = (name || '').trim()
+    for (const sc of Object.keys(SECTOR_PRODUCTS) as Sector[]) if (SECTOR_PRODUCTS[sc].includes(n)) return { sector: sc, sub: detectSubCategory(n, sc) || null, catalog: true }
+    for (const sc of Object.keys(SECTOR_PRODUCTS) as Sector[]) { const sub = detectSubCategory(n, sc); if (sub) return { sector: sc, sub, catalog: false } }
+    return { sector: 'civil', sub: null, catalog: false }
+  }
+  function commitDraft() {
+    const name = (draft?.product_name || '').trim()
+    if (!name) return
+    const g = draftGuess(name)
+    // the buyer's choice, else our guess (shown to them with «نعم / تغيير»)
+    const choice = draft.spec ?? (g.sub ? { sector: g.sector, sub: g.sub } : undefined)
+    const sector = choice?.sector || g.sector
     setItems(prev => [...prev, {
-      id: `item-${Date.now()}`,
-      product_name: '',
-      sector: 'civil',
-      quantity: '',
-      unit: 'عدد',
-      specification: '',
-      sub_category: null,
-      needs_classification: true,
-      selected: true,
+      id: `item-${Date.now()}`, product_name: name, sector,
+      quantity: draft.quantity, unit: draft.unit || getDefaultUnit(name, sector as Sector) || 'عدد',
+      specification: draft.specification, sub_category: choice?.sub ?? null, needs_classification: !choice, selected: true,
     }])
+    setDraft(null)
+    setStep('items')
   }
 
   function updateItem(id: any, field: any, value: any) {
@@ -245,6 +258,48 @@ export default function NewProjectPage() {
   function removeItem(id: any) {
     setItems(prev => prev.filter((item: any) => item.id !== id))
   }
+
+  const draftG = draft ? draftGuess(draft.product_name) : null
+  const draftSector = (draft?.spec?.sector || draftG?.sector || 'civil') as Sector
+  const draftName = (draft?.product_name || '').trim()
+  const draftDefUnit = draft ? (draft.unit || getDefaultUnit(draftName, draftSector) || '') : ''
+  const draftUnits = draft ? Array.from(new Set([draftDefUnit, ...(unitChoicesFor(draftName, draftSector) || UNIT_OPTIONS)].filter(Boolean))) : []
+  const draftPanel = draft && (
+    <div className="rounded-2xl border-2 border-[#D4A543]/60 bg-white p-4 space-y-3 text-start">
+      <div className="flex items-center justify-between gap-2">
+        <b className="text-base text-[#0B2438]">{L('Add a material', 'مواد شامل کریں', 'أضف مادة')}</b>
+        <button type="button" onClick={() => setDraft(null)} className="text-sm font-bold text-gray-500 hover:underline">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
+      </div>
+      <div>
+        <input list="boq-catalog" autoFocus value={draft.product_name}
+          onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, product_name: v, spec: undefined, unit: '' })) }}
+          className="input-field" placeholder={L('Material name: type and pick from the list, or write it your way', 'مواد کا نام', 'اسم المادة: اكتب واختر من القائمة، أو اكتبها كما تريد')} />
+        <datalist id="boq-catalog">{catalogNames.map(n => <option key={n} value={n} />)}</datalist>
+        {draftG?.catalog && (
+          <p className="text-xs text-[#0F6E56] font-bold mt-1.5">✓ {L('From the catalog', 'کیٹلاگ سے', 'من دليل المواد')}{draftG.sub ? ' · ' + getSubCategoryLabel(draftG.sector as any, draftG.sub, locale) : ''}</p>
+        )}
+      </div>
+      {draftName.length >= 2 && !draftG?.catalog && (
+        <LineSpecialty key={draftName} name={draftName} sector={draftG?.sector || 'civil'} value={draft.spec} locale={locale}
+          onChange={(v: any) => setDraft((d: any) => ({ ...d, spec: v }))} />
+      )}
+      <div className="grid grid-cols-2 gap-3">
+        <input type="text" inputMode="decimal" value={draft.quantity}
+          onChange={(e: any) => { const v = e.target.value.replace(/[٠-٩]/g, (x: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, ''); setDraft((d: any) => ({ ...d, quantity: v })) }}
+          className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
+        <select value={draftDefUnit || draftUnits[0] || ''}
+          onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, unit: v })) }} className="input-field">
+          {draftUnits.map((u: any) => <option key={u} value={u}>{u}</option>)}
+        </select>
+      </div>
+      <input value={draft.specification} onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, specification: v })) }}
+        className="input-field" placeholder={L('Specification (optional): size, grade, brand…', 'تفصیل (اختیاری)', 'المواصفة (اختياري): المقاس، الدرجة، الماركة…')} />
+      <button type="button" disabled={!draftName} onClick={commitDraft}
+        className="w-full py-3 rounded-xl text-white font-bold disabled:opacity-40" style={{ background: '#0F6E56' }}>
+        {L('Add to the list', 'فہرست میں شامل کریں', 'أضف إلى القائمة')}
+      </button>
+    </div>
+  )
 
   // إرسال المشروع
   async function handleSubmit() {
@@ -552,10 +607,11 @@ export default function NewProjectPage() {
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
+          {draft && items.length === 0 ? draftPanel : (
           <button type="button" onClick={addItem}
             className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-500 hover:border-[#0B2438] hover:text-[#0B2438] transition-all">
             + {locale === 'en' ? 'Add Material' : 'إضافة مادة'}
-          </button>
+          </button>)}
         </div>
 
         {/* Items List */}
@@ -570,13 +626,6 @@ export default function NewProjectPage() {
                   </span>
                 )}
               </h2>
-              <div className="flex gap-2 flex-wrap">
-                {Object.entries(bySector).map(([s, count]) => (
-                  <span key={s} className="badge text-[10px] text-white" style={{ background: (SECTOR_COLORS as any)[s] }}>
-                    {(SECTOR_ICONS as any)[s]} {(SECTOR_LABELS as any)[s]} ({count})
-                  </span>
-                ))}
-              </div>
             </div>
 
             {/* تنبيه البنود غير المصنّفة — لن تصل للمورد المتخصص بدقّة حتى تُصنّف */}
@@ -635,9 +684,10 @@ export default function NewProjectPage() {
               </button>
               <button type="button" onClick={addItem}
                 className="text-xs px-3 py-1.5 rounded-lg text-white" style={{ background: '#0B2438' }}>
-                + {locale === 'en' ? 'Add' : 'إضافة'}
+                + {locale === 'en' ? 'Add a material' : 'أضف مادة'}
               </button>
             </div>
+            {draft && items.length > 0 && draftPanel}
 
             {/* Items — grouped by category (accordion, like the pricing lists) */}
             <div className="space-y-3">
@@ -675,33 +725,11 @@ export default function NewProjectPage() {
                               onChange={(e: any) => updateItem(item.id, 'product_name', e.target.value)}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Material name *' : 'اسم المادة *'} />
                           </div>
-                          {/* التصنيف (التخصص) — يُحدّد المورد المتخصص الذي يستقبل البند. إجباري من القوائم. */}
+                          {/* التخصص — يحدّد المورد المتخصص الذي يستقبل البند */}
                           <div className="sm:col-span-2">
-                            <label className="block text-xs font-bold text-gray-500 mb-1">
-                              {locale === 'en' ? 'Category (routing) *' : 'التصنيف — يحدّد المورد المتخصص *'}
-                            </label>
-                            <select value={item.sub_category || ''}
-                              onChange={(e: any) => setItemCategory(item.id, e.target.value)}
-                              className={`input-field text-sm ${item.needs_classification ? 'border-red-300 bg-red-50' : ''}`}>
-                              <option value="">{locale === 'en' ? '— Pick a category from the list —' : '— اختر التصنيف من القائمة —'}</option>
-                              {Object.entries((SUB_CATEGORIES as any)[item.sector] || {}).map(([k, v]: any) => (
-                                <option key={k} value={k}>{getSubCategoryLabel(item.sector, k, locale)}</option>
-                              ))}
-                            </select>
-                            {item.needs_classification && (
-                              <p className="text-[11px] text-red-500 mt-1">
-                                {locale === 'en' ? 'Unclassified — without a category it goes to all suppliers in the sector (less precise).'
-                                : 'غير مصنّف — بدون تصنيف يُرسل لكل موردي القطاع (تطابق أقل دقّة). اختر التصنيف الصحيح.'}
-                              </p>
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">{locale === 'en' ? 'Sector' : 'القطاع'}</label>
-                            <select value={item.sector}
-                              onChange={(e: any) => setItemSector(item.id, e.target.value)}
-                              className="input-field text-sm">
-                              {Object.entries(SECTOR_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                            </select>
+                            <LineSpecialty name={item.product_name} sector={item.sector}
+                              value={item.needs_classification ? undefined : { sector: item.sector, sub: item.sub_category || null }} locale={locale}
+                              onChange={(v: any) => setItems(prev => prev.map((it: any) => it.id === item.id ? { ...it, sector: v.sector, sub_category: v.sub, needs_classification: false } : it))} />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <input type="number" value={item.quantity}
@@ -710,7 +738,7 @@ export default function NewProjectPage() {
                             <select value={item.unit}
                               onChange={(e: any) => updateItem(item.id, 'unit', e.target.value)}
                               className="input-field text-sm">
-                              {UNIT_OPTIONS.map((u: any) => <option key={u} value={u}>{u}</option>)}
+                              {Array.from(new Set([...(unitChoicesFor(item.product_name, item.sector) || UNIT_OPTIONS), ...(item.unit ? [item.unit] : [])])).map((u: any) => <option key={u} value={u}>{u}</option>)}
                             </select>
                           </div>
                           <div className="sm:col-span-2">
@@ -766,18 +794,17 @@ export default function NewProjectPage() {
                               {item.product_name || <span className="text-gray-400 italic">{locale === 'en' ? 'Unnamed item' : 'بند بدون اسم'}</span>}
                             </div>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
-                              <span className="badge text-white text-[10px]" style={{ background: (SECTOR_COLORS as any)[item.sector] }}>
-                                {(SECTOR_ICONS as any)[item.sector]} {(SECTOR_LABELS as any)[item.sector]}
-                              </span>
-                              {item.sub_category && (
-                                <span className="badge text-[10px] bg-gray-100 text-gray-600">
-                                  → {getSubCategoryLabel(item.sector, item.sub_category, locale)}
+                              {item.sub_category ? (
+                                <span className="badge text-[10px] bg-[#0B2438]/5 text-[#0B2438] font-bold">
+                                  {getSubCategoryLabel(item.sector, item.sub_category, locale)}
                                 </span>
+                              ) : !item.needs_classification && (
+                                <span className="badge text-[10px] bg-gray-100 text-gray-600">{L('All suppliers of the section', 'شعبے کے سب سپلائرز', 'كل موردي القسم')}</span>
                               )}
                               {item.needs_classification && (
                                 <button type="button" onClick={() => setEditingIndex(i)}
                                   className="badge text-[10px] bg-red-100 text-red-600 font-bold hover:bg-red-200">
-                                  <Glyph e="⚠" /> {locale === 'en' ? 'Unclassified — set category' : 'غير مصنّف — اختر التصنيف'}
+                                  <Glyph e="⚠" /> {locale === 'en' ? 'Choose its specialty' : 'اختر تخصصها'}
                                 </button>
                               )}
                               {item.quantity && <span className="text-xs text-gray-500"><Glyph e="📦" /> {item.quantity} {item.unit}</span>}

@@ -1026,10 +1026,14 @@ export function unitOptionsFor(productName: string, sector: Sector): string[] | 
 // has one (or none), that one first, then its specialty's logical units (owner 2026-10-24: a block
 // must offer «حبة / طبلية», not only «حبة»).
 export function unitChoicesFor(productName: string, sector: Sector): string[] | null {
-  const own = (PRODUCT_SPECS[(productName || '').trim()] || []).find(f => f.key === 'unit')?.options || []
-  if (own.length >= 2) return own
+  // older spec lists spell some units long-hand; show one spelling
+  const SAME: Record<string, string> = { 'متر مربع': 'م²', 'متر مكعب': 'م³', 'بالألف حبة': 'ألف حبة' }
+  const own = ((PRODUCT_SPECS[(productName || '').trim()] || []).find(f => f.key === 'unit')?.options || []).map(u => SAME[u] || u)
   const logical = unitOptionsFor(productName, sector)
-  if (!logical) return own.length ? own : null
+  if (!logical) return own.length ? Array.from(new Set(own)) : null
+  // a product with its own list keeps it, adding the specialty's units only when the two lists
+  // share a unit (same kind of product — guards against a mis-detected specialty, e.g. طوبار ⊃ طوب)
+  if (own.length >= 2 && !own.some(u => logical.includes(u))) return Array.from(new Set(own))
   return Array.from(new Set([...own, ...logical]))
 }
 
@@ -1154,12 +1158,12 @@ export const PRODUCT_SPECS: Record<string, SpecField[]> = {
   'بلوك': [
     { key: 'type', ar: 'النوع', en: 'Type', options: ['خرساني مجوف Hollow','خرساني مصمت Solid','خفيف AAC','معزول EPS','أسمنتي مفرّغ Cement-Hollow'] },
     { key: 'size', ar: 'المقاس', en: 'Size', options: ['20×20×40 سم','15×20×40 سم','10×20×40 سم','25×20×40 سم'] },
-    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','متر مربع','بالألف حبة'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة','طبلية','ألف حبة','م²','م³'] },
   ],
   'طوب أحمر': [
     { key: 'type', ar: 'النوع', en: 'Type', options: ['مفرّغ','مصمت','حراري'] },
     { key: 'size', ar: 'المقاس', en: 'Size', options: ['قياسي 6×12×25','كبير','حسب الطلب'] },
-    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['بالألف حبة','حبة','متر مربع'] },
+    { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['ألف حبة','حبة','طبلية','م²','م³'] },
   ],
 }
 
