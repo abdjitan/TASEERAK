@@ -110,6 +110,9 @@ export default function QuickRequestPage() {
   const [startSection, setStartSection] = useState<string | null>(null)
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search)
+    // «لم تجد طلبك؟» from the home search: start with that text as a line (the buyer picks its specialty)
+    const sl = (qs.get('line') || '').trim().slice(0, 80)
+    if (sl) setLines(prev => prev.some(l => l.product_name === sl) ? prev : [...prev, { key: uid(), product_name: sl, sector: 'supply_store', quantity: '', unit: 'حبة', details: '' }])
     const sq = (qs.get('q') || '').slice(0, 80), ss = qs.get('section')
     if (sq) setStartQ(sq)
     if (ss && /^[a-z_]{3,20}$/.test(ss)) setStartSection(ss)

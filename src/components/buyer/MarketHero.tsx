@@ -50,7 +50,8 @@ export default function MarketHero({ locale }: { locale: string }) {
     else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(a => (a <= 0 ? hits.length - 1 : a - 1)) }
     else if (e.key === 'Escape') { setOpen(false); setActive(-1) }
   }
-  const showList = open && hits.length > 0
+  // the list also opens with no match, so «لم تجد طلبك؟» is always there (owner 2026-10-24, as in the app)
+  const showList = open && q.trim().length > 0
 
   return (
     <div className="mb-6 animate-fade-in">
@@ -91,6 +92,14 @@ export default function MarketHero({ locale }: { locale: string }) {
                 </button>
               </li>
             ))}
+            <li>
+              <button type="button" onMouseDown={e => e.preventDefault()}
+                onClick={() => router.push(`/contractor/rfq/quick?line=${encodeURIComponent(q.trim().slice(0, 80))}`)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-start text-[14px] font-bold border-t border-gray-100 bg-[#0F6E56]/5 text-[#0F6E56] hover:bg-[#0F6E56]/10">
+                <Plus className="w-4 h-4 shrink-0" aria-hidden />
+                <span>{L('Not what you need? Tap here to send it as you wrote it', 'جو چاہیے نہیں ملا؟ یہاں دبائیں اور جیسا لکھا ویسا بھیجیں', 'لم تجد طلبك؟ اضغط هنا وأرسله كما كتبته')}</span>
+              </button>
+            </li>
           </ul>
         )}
         </div>
