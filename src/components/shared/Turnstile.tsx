@@ -31,7 +31,16 @@ const Turnstile = forwardRef(function Turnstile(
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
-  const [errCode, setErrCode] = useState('') // shown under the widget so a failure can be diagnosed
+  const [errCode, setErrCode] = useState('') // logged, not shown
+  // no token after an error or 15 s: offer «حاول مرة أخرى» (as in the app)
+  const [stuck, setStuck] = useState(false)
+  const gotToken = useRef(false)
+  const lang = typeof document !== 'undefined' ? (document.documentElement.lang || 'ar') : 'ar'
+  const retry = () => {
+    setStuck(false); setErrCode('')
+    try { if (widgetIdRef.current && (window as any).turnstile) (window as any).turnstile.reset(widgetIdRef.current) } catch {}
+    if (!widgetIdRef.current) window.location.reload()
+  }
 
   useImperativeHandle(ref, () => ({
     reset() {
@@ -53,18 +62,20 @@ const Turnstile = forwardRef(function Turnstile(
         widgetIdRef.current = ts.render(containerRef.current, {
           sitekey: siteKey,
           theme,
-          callback: (token: string) => { setErrCode(''); onToken && onToken(token) },
+          callback: (token: string) => { gotToken.current = true; setStuck(false); setErrCode(''); onToken && onToken(token) },
           'expired-callback': () => onToken && onToken(''),
           'timeout-callback': () => onToken && onToken(''),
           'error-callback': (code: string) => {
-            setErrCode(String(code || 'unknown'))
+            setErrCode(String(code || 'unknown')); if (!gotToken.current) setStuck(true)
             try { console.warn('[turnstile] error', code) } catch {}
             onToken && onToken(''); onError && onError()
           },
         })
       })
-      .catch(() => { onError && onError() })
+      .catch(() => { setStuck(true); onError && onError() })
+    const t = setTimeout(() => { if (!gotToken.current) setStuck(true) }, 15000)
     return () => {
+      clearTimeout(t)
       cancelled = true
       try {
         if (widgetIdRef.current && (window as any).turnstile) {
@@ -79,6 +90,12 @@ const Turnstile = forwardRef(function Turnstile(
     <div>
       <div ref={containerRef} dir={dir} style={{ minHeight: 65 }} />
       {/* the error code is logged, not shown: Turnstile retries itself and usually succeeds right after */}
+      {stuck && (
+        <p dir={dir} style={{ fontSize: 12, textAlign: 'center', marginTop: 6, color: '#9D7425', fontWeight: 600 }}>
+          {lang.startsWith('en') ? 'The security check did not finish. ' : lang.startsWith('ur') ? 'سیکیورٹی چیک مکمل نہیں ہوا۔ ' : 'لم يكتمل فحص الأمان. '}
+          <button type="button" onClick={retry} style={{ textDecoration: 'underline', fontWeight: 700 }}>{lang.startsWith('en') ? 'Try again' : lang.startsWith('ur') ? 'دوبارہ کوشش کریں' : 'حاول مرة أخرى'}</button>
+        </p>
+      )}
     </div>
   )
 })
