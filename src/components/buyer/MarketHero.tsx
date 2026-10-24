@@ -80,6 +80,12 @@ export default function MarketHero({ locale }: { locale: string }) {
             aria-activedescendant={showList && active >= 0 ? `hero-suggest-${active}` : undefined}
             className="flex-1 min-w-0 bg-transparent px-2 py-2.5 text-[15px] text-[#0B2438] placeholder-[#728196] outline-none"
             placeholder={L('e.g. ceiling light, paint, sofa, rebar…', 'مثلاً: چھت کی لائٹ، پینٹ، صوفہ، سریا…', 'مثال: إنارة سقف، دهان، أريكة، حديد…')} aria-label={L('Search', 'تلاش', 'ابحث')} />
+          {/* owner 2026-10-24: one main button below; the photo is a camera inside the search (like a lens) */}
+          <Link href="/contractor/rfq/quick?start=photo" title={touch ? L('Take or upload a photo of your product', 'تصویر لیں یا اپلوڈ کریں', 'صوّر منتجك أو ارفع صورته') : L('Search by a photo of your product', 'تصویر سے تلاش کریں', 'ابحث بصورة منتجك')}
+            aria-label={touch ? L('Take or upload a photo of your product', 'تصویر لیں یا اپلوڈ کریں', 'صوّر منتجك أو ارفع صورته') : L('Search by a photo of your product', 'تصویر سے تلاش کریں', 'ابحث بصورة منتجك')}
+            className="shrink-0 grid place-items-center w-11 h-11 rounded-xl text-[#9D7425] hover:bg-[#F7F1E3] transition-colors">
+            <Camera className="w-5 h-5" aria-hidden />
+          </Link>
           <button type="submit" className="shrink-0 rounded-xl px-4 sm:px-6 py-2.5 text-sm font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
             {L('Search', 'تلاش', 'ابحث في السوق')}
           </button>
@@ -108,11 +114,8 @@ export default function MarketHero({ locale }: { locale: string }) {
         )}
         </div>
         <div className="relative z-10 mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-          <Link href="/contractor/rfq/quick" className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B2438]/80 border border-white/15 px-4 py-2.5 text-sm font-bold hover:bg-[#0B2438] transition-colors">
+          <Link href="/contractor/rfq/quick" className="inline-flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-extrabold text-[#071827] shadow-md hover:brightness-105 transition" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
             <Plus className="w-4 h-4" aria-hidden />{L('Ask a price for any product', 'کسی بھی چیز کی قیمت پوچھیں', 'اطلب سعر أي منتج')}
-          </Link>
-          <Link href="/contractor/rfq/quick?start=photo" className="inline-flex items-center gap-1.5 rounded-xl bg-[#0B2438]/80 border border-white/15 px-4 py-2.5 text-sm font-bold hover:bg-[#0B2438] transition-colors">
-            <Camera className="w-4 h-4" aria-hidden />{touch ? L('Take or upload a photo of your product', 'تصویر لیں یا اپلوڈ کریں', 'صوّر منتجك أو ارفع صورته') : L('Upload a photo of your product', 'اپنی چیز کی تصویر اپلوڈ کریں', 'ارفع صورة منتجك وأرسلها')}
           </Link>
           <Link href="/contractor/project/new" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-[#F5C55B] transition-colors">
             <FileSpreadsheet className="w-4 h-4" aria-hidden />{L('A big project? Upload your materials list', 'بڑا پراجیکٹ؟ سامان کی فہرست اپ لوڈ کریں', 'تجهّز مشروعًا كبيرًا؟ أضف قائمة المواد')}

@@ -11,6 +11,7 @@ import { getNav } from '@/lib/nav'
 import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, type Sector } from '@/types'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
+import CatalogPicker from '@/components/shared/CatalogPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arItems, arMaterials } from '@/lib/text'
@@ -196,6 +197,17 @@ export default function NewProjectPage() {
   // إضافة مادة يدوياً (owner 2026-10-24: كانت تُضاف «بند بدون اسم / مدني» ثم تُعدَّل). لوحة واحدة:
   // الاسم (اقتراحات من الكتالوج أو نص حر) → التخصص يُقترح تلقائياً → الكمية والوحدة → «أضف إلى القائمة».
   const [draft, setDraft] = useState<any>(null)
+  const [showCatalog, setShowCatalog] = useState(false)
+  // a material picked from the catalog popup goes straight into the list, already classified
+  function addFromCatalog(p: { name: string; sector: Sector }) {
+    setItems(prev => prev.some((it: any) => it.product_name === p.name) ? prev : [...prev, {
+      id: `item-${Date.now()}-${prev.length}`, product_name: p.name, sector: p.sector, quantity: '',
+      unit: getDefaultUnit(p.name, p.sector) || 'عدد', specification: '', sub_category: detectSubCategory(p.name, p.sector) || null,
+      needs_classification: !detectSubCategory(p.name, p.sector), selected: true,
+    }])
+    setDraft(null)
+    setStep('items')
+  }
   const catalogNames = useMemo(() => Array.from(new Set(Object.values(SECTOR_PRODUCTS).flat())), [])
   function addItem() { setEditingIndex(null); setDraft({ product_name: '', quantity: '', unit: '', specification: '', spec: undefined }) }
   function draftGuess(name: string): { sector: string; sub: string | null; catalog: boolean } {
@@ -262,8 +274,8 @@ export default function NewProjectPage() {
   const draftG = draft ? draftGuess(draft.product_name) : null
   const draftSector = (draft?.spec?.sector || draftG?.sector || 'civil') as Sector
   const draftName = (draft?.product_name || '').trim()
-  const draftDefUnit = draft ? (draft.unit || getDefaultUnit(draftName, draftSector) || '') : ''
-  const draftUnits = draft ? Array.from(new Set([draftDefUnit, ...(unitChoicesFor(draftName, draftSector) || UNIT_OPTIONS)].filter(Boolean))) : []
+  const draftDefUnit = draft && draftName ? (draft.unit || getDefaultUnit(draftName, draftSector) || '') : (draft?.unit || '')
+  const draftUnits = draft ? Array.from(new Set([draftDefUnit, ...((draftName && unitChoicesFor(draftName, draftSector)) || UNIT_OPTIONS)].filter(Boolean))) : []
   const draftPanel = draft && (
     <div className="rounded-2xl border-2 border-[#D4A543]/60 bg-white p-4 space-y-3 text-start">
       <div className="flex items-center justify-between gap-2">
@@ -275,6 +287,10 @@ export default function NewProjectPage() {
           onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, product_name: v, spec: undefined, unit: '' })) }}
           className="input-field" placeholder={L('Material name: type and pick from the list, or write it your way', 'مواد کا نام', 'اسم المادة: اكتب واختر من القائمة، أو اكتبها كما تريد')} />
         <datalist id="boq-catalog">{catalogNames.map(n => <option key={n} value={n} />)}</datalist>
+        <button type="button" onClick={() => setShowCatalog(true)}
+          className="mt-2 w-full sm:w-auto px-4 py-2.5 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#9D7425] hover:bg-[#D4A543]/20">
+          {L("Can't find it? Browse the materials guide by section", 'نہیں ملا؟ شعبوں سے فہرست دیکھیں', 'لم تجدها؟ تصفّح دليل المواد حسب الأقسام')}
+        </button>
         {draftG?.catalog && (
           <p className="text-xs text-[#0F6E56] font-bold mt-1.5">✓ {L('From the catalog', 'کیٹلاگ سے', 'من دليل المواد')}{draftG.sub ? ' · ' + getSubCategoryLabel(draftG.sector as any, draftG.sub, locale) : ''}</p>
         )}
@@ -287,8 +303,9 @@ export default function NewProjectPage() {
         <input type="text" inputMode="decimal" value={draft.quantity}
           onChange={(e: any) => { const v = e.target.value.replace(/[٠-٩]/g, (x: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, ''); setDraft((d: any) => ({ ...d, quantity: v })) }}
           className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
-        <select value={draftDefUnit || draftUnits[0] || ''}
+        <select value={draftDefUnit}
           onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, unit: v })) }} className="input-field">
+          {!draftDefUnit && <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>}
           {draftUnits.map((u: any) => <option key={u} value={u}>{u}</option>)}
         </select>
       </div>
@@ -917,6 +934,12 @@ export default function NewProjectPage() {
         )}
         </>)}
       </div>
+      {showCatalog && (
+        <CatalogPicker locale={locale} onClose={() => setShowCatalog(false)}
+          picked={items.map((it: any) => ({ key: it.id, name: it.product_name }))}
+          onRemove={(key: string) => removeItem(key)}
+          onPick={addFromCatalog} />
+      )}
     </AppShell>
   )
 }
