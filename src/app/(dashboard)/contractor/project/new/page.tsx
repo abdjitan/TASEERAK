@@ -226,7 +226,7 @@ export default function NewProjectPage() {
     setItems(prev => [...prev, {
       id: `item-${Date.now()}`, product_name: name, sector,
       quantity: draft.quantity, unit: draft.unit || getDefaultUnit(name, sector as Sector) || 'عدد',
-      specification: draft.specification, sub_category: choice?.sub ?? null, needs_classification: !choice, selected: true,
+      specification: draft.specification, sub_category: choice?.sub ?? null, section: choice?.section, needs_classification: !choice, selected: true,
     }])
     setDraft(null)
     setStep('items')
