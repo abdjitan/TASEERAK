@@ -387,6 +387,8 @@ export default function QuickRequestPage() {
           spec_file_name: fileUrl ? (l.fileName || L('Attachment', 'فائل', 'مرفق')) : photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
           photo_url: photoUrl,
           quick: true,
+          // a line written by hand (not a catalog product): admins hear about it when an offer is chosen (174)
+          custom: !CATALOG_NAMES.has(l.product_name.trim()),
         })
       }
       const first = items[0]
