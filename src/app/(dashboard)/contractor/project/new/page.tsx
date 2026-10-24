@@ -35,6 +35,8 @@ function getGroupedItems(items: any[], locale: string) {
     }
     groups[gkey].entries.push({ item, i })
   })
+  // open a group that still needs something: a specialty or a quantity (owner 2026-10-24)
+  for (const g of Object.values(groups)) if (g.entries.some((e: any) => !(parseFloat(e.item.quantity) > 0))) g.defaultOpen = true
   return Object.keys(groups).sort((a, b) => (a === '_unclassified' ? -1 : b === '_unclassified' ? 1 : 0)).map(k => groups[k])
 }
 
@@ -203,7 +205,7 @@ export default function NewProjectPage() {
     setItems(prev => prev.some((it: any) => it.product_name === p.name) ? prev : [...prev, {
       id: `item-${Date.now()}-${prev.length}`, product_name: p.name, sector: p.sector, quantity: '',
       unit: getDefaultUnit(p.name, p.sector) || 'عدد', specification: '', sub_category: detectSubCategory(p.name, p.sector) || null,
-      needs_classification: !detectSubCategory(p.name, p.sector), selected: true,
+      needs_classification: !detectSubCategory(p.name, p.sector), selected: true, needsQty: true,
     }])
     setDraft(null)
     setStep('items')
@@ -226,7 +228,7 @@ export default function NewProjectPage() {
     setItems(prev => [...prev, {
       id: `item-${Date.now()}`, product_name: name, sector,
       quantity: draft.quantity, unit: draft.unit || getDefaultUnit(name, sector as Sector) || 'عدد',
-      specification: draft.specification, sub_category: choice?.sub ?? null, section: choice?.section, needs_classification: !choice, selected: true,
+      specification: draft.specification, sub_category: choice?.sub ?? null, section: choice?.section, needs_classification: !choice, selected: true, needsQty: !(parseFloat(draft.quantity) > 0),
     }])
     setDraft(null)
     setStep('items')
@@ -329,6 +331,8 @@ export default function NewProjectPage() {
       const ok = confirm(`يوجد ${arItems(unclassifiedCount)} غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)
       if (!ok) return
     }
+    const noQty = classifiedItems.filter((i: any) => !(parseFloat(i.quantity) > 0))
+    if (noQty.length) { alert(`أدخل كمية ${noQty.length === 1 ? '«' + noQty[0].product_name + '»' : arItems(noQty.length)} قبل الإرسال.`); return }
     if (classifiedItems.length === 0) { alert('لا توجد بنود مصنّفة للإرسال — اختر تصنيف البنود أولاً.'); return }
     setLoading(true)
     const supabase = createClient()
@@ -828,6 +832,17 @@ export default function NewProjectPage() {
                               {item.specification && <span className="text-xs text-gray-400 truncate max-w-[200px]"><Glyph e="⚙" /> {item.specification}</span>}
                               {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
                             </div>
+                            {(item.needsQty || !(parseFloat(item.quantity) > 0)) && (
+                              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                <input type="text" inputMode="decimal" value={item.quantity || ''} autoFocus={i === items.length - 1} onBlur={() => { if (parseFloat(item.quantity) > 0) updateItem(item.id, 'needsQty', false) }} onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() } }}
+                                  onChange={(e: any) => updateItem(item.id, 'quantity', e.target.value.replace(/[٠-٩]/g, (x: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, ''))}
+                                  className="input-field text-sm w-32 border-[#D4A543] bg-[#D4A543]/5" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
+                                <select value={item.unit} onChange={(e: any) => updateItem(item.id, 'unit', e.target.value)} className="input-field text-sm w-36">
+                                  {Array.from(new Set([...(unitChoicesFor(item.product_name, item.sector) || UNIT_OPTIONS), ...(item.unit ? [item.unit] : [])])).map((u: any) => <option key={u} value={u}>{u}</option>)}
+                                </select>
+                                <span className="text-xs font-bold text-[#9D7425]">{L('How many do you need?', 'کتنی مقدار چاہیے؟', 'كم الكمية التي تحتاجها؟')}</span>
+                              </div>
+                            )}
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
                             <button type="button" onClick={() => setEditingIndex(i)}
