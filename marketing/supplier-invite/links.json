@@ -1,11 +1,12 @@
 {
-  "_note": "Edit these before sending. Flip domain_live when Taseerak.com is connected, apps_live when both store listings exist, then re-run the scripts.",
+  "_note": "Edit these before sending. domain_live: Taseerak.com connected. bot_live: WhatsApp bot connected (then the invitation asks for a reply instead of carrying links). apps_live: both store listings exist. Re-run the scripts after any change.",
   "site": "https://Taseerak.com",
   "android": "https://play.google.com/store/apps/details?id=com.taseerak.app",
   "ios": "https://apps.apple.com/app/taseerak/id0000000000",
   "email_from": "info@taseerak.com",
   "whatsapp_business": "+9665XXXXXXXX",
-  "domain_live": true,
+  "domain_live": false,
   "apps_live": false,
-  "live_site": "https://taseerak.vercel.app"
+  "live_site": "https://taseerak.vercel.app",
+  "bot_live": false
 }

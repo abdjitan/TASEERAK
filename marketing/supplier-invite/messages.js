@@ -6,7 +6,7 @@
 //       3) no answer after 3 days -> `followUp` once.
 // `direct[lang]` is for a shop whose language is already known (skip the opener).
 // Placeholders: {shop} {invite} {apps}. WhatsApp formatting: *bold*. Arabic is MSA.
-const { links, inviteUrl } = require('./links');
+const { links, base, inviteUrl } = require('./links');
 
 const ESCAPE = 'For English reply *2* · اردو کے لیے *3* لکھیں';
 
@@ -24,6 +24,25 @@ const opener = `السلام عليكم ورحمة الله وبركاته،
 فريق تسعيرك
 
 ${ESCAPE}`;
+
+// Manual mode (links.json bot_live=false): nobody answers replies yet, so the invitation carries the
+// registration link itself, and the invite page (with its own AR / EN / UR buttons) covers the other
+// languages. Same greeting, so the bot still recognises it once it is switched on.
+const openerManual = `السلام عليكم ورحمة الله وبركاته،
+تحية طيبة لفريق *{shop}*.
+
+يسعدنا دعوتكم للانضمام إلى *تسعيرك*، المنصة السعودية التي تصل فيها طلبات تسعير مواد البناء من المقاولين والمشترين في الرياض مباشرة إلى جوالكم وبريدكم، بحسب تخصصكم.
+
+▪ مجاني خلال الإطلاق، دون عمولة أو اشتراك
+▪ أسعاركم يراها صاحب الطلب فقط، ولا يراها المنافسون
+▪ المسجلون الأوائل تصلهم الطلبات الأولى
+
+*التسجيل مجاني ويأخذ دقيقتين:*
+{register}
+
+فريق تسعيرك
+
+English · اردو: {inviteAny}`;
 
 const reply = {
   ar: `شكرًا لكم. هذه تفاصيل *تسعيرك*:
@@ -101,6 +120,11 @@ const followUp = `السلام عليكم، نذكّركم بدعوة *تسعي�
 
 ${ESCAPE}`;
 
+const followUpManual = `السلام عليكم، نذكّركم بدعوة *تسعيرك*: طلبات تسعير مواد البناء تصل إلى جوالكم مجانًا.
+التسجيل في دقيقتين: {register}
+
+English · اردو: {inviteAny}`;
+
 const APPS = {
   ar: `\nأندرويد: ${links.android}\nآيفون: ${links.ios}`,
   en: `\nAndroid: ${links.android}\niPhone: ${links.ios}`,
@@ -113,7 +137,7 @@ function fill(text, vars) {
 
 // Variables for one message: the invite page opens in the chosen language; store links only once both listings are live.
 function varsFor(lang, shop) {
-  return { shop, invite: inviteUrl(lang), apps: links.apps_live && APPS[lang] ? APPS[lang] : '' };
+  return { shop, invite: inviteUrl(lang), register: `${base}/register?role=supplier`, inviteAny: inviteUrl(), apps: links.apps_live && APPS[lang] ? APPS[lang] : '' };
 }
 
-module.exports = { opener, reply, direct, followUp, fill, varsFor };
+module.exports = { opener: links.bot_live ? opener : openerManual, reply, direct, followUp: links.bot_live ? followUp : followUpManual, fill, varsFor };

@@ -62,7 +62,7 @@ for (const [sec, quota] of Object.entries(QUOTA)) {
 const intl = p => '966' + p.slice(1);
 const chat = p => `https://wa.me/${intl(p)}`;
 // kind: 'opener' (Arabic invitation), 'follow' (one reminder), or en/ur/ar (full details, language already known).
-const textFor = (kind, shop) => kind === 'opener' ? fill(opener, { shop }) : kind === 'follow' ? followUp : fill(direct[kind], varsFor(kind, shop));
+const textFor = (kind, shop) => kind === 'opener' ? fill(opener, varsFor('ar', shop)) : kind === 'follow' ? fill(followUp, varsFor('ar', shop)) : fill(direct[kind], varsFor(kind, shop));
 const wa = (p, kind, shop) => `${chat(p)}?text=${encodeURIComponent(textFor(kind, shop))}`;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -86,8 +86,8 @@ XLSX.utils.book_append_sheet(out, ws, 'الدفعة الأولى');
 const how = [
   ['طريقة الاستخدام'],
   ['1. لا يُرسَل شيء تلقائيًا. افتح send-sheet.html (بجانب هذا الملف) في المتصفح: زر «الدعوة» يفتح واتساب والرسالة العربية جاهزة، وأنت من يضغط إرسال.'],
-  ['2. الدعوة بالعربية، وآخر سطر فيها: 2 للإنجليزية و3 للأردية. كل الردود بعد ذلك يرسلها الرد الآلي (bot)، ولا يحتاج أحد أن يرد بنفسه.'],
-  ['3. مع الدعوة أرفق posters/poster-ar.png. الرد الآلي يرسل صورة الإنجليزية أو الأردية بنفسه.'],
+  [require('./links').links.bot_live ? '2. الدعوة بالعربية، وآخر سطر فيها: 2 للإنجليزية و3 للأردية. كل الردود بعد ذلك يرسلها الرد الآلي (bot)، ولا يحتاج أحد أن يرد بنفسه.' : '2. الرد الآلي لم يُربط بعد، لذلك الدعوة فيها رابط التسجيل مباشرة، وآخر سطر رابط صفحة فيها الإنجليزية والأردية. لا يلزمك الرد على أحد.'],
+  ['3. مع الدعوة أرفق posters/poster-ar.png (رمز QR فيها يفتح صفحة الدعوة).'],
   ['4. حدّث عمود «الحالة» هنا: أُرسل / ردّ / سجّل / سعّر طلبًا / رفض / لا تراسله.'],
   ['5. متابعة واحدة فقط بعد 3 أيام لمن لم يرد (نصها في messages.js)، ومن رفض لا يُراسل مرة أخرى.'],
   ['6. قبل الإرسال: صحّح الروابط في links.json ثم أعد تشغيل pick-first-batch.js.'],
@@ -125,7 +125,7 @@ td{padding:10px;border-bottom:1px solid #E3E8ED;vertical-align:middle;font-size:
 tr.sent{opacity:.45}
 </style></head><body>
 <header><h1>دعوات الموردين: الدفعة الأولى (${picked.length} محلًا)</h1>
-<p>الزر يفتح واتساب والرسالة جاهزة، ولا يُرسَل شيء إلا عندما تضغط إرسال بنفسك. أول رسالة: «الدعوة» بالعربية مع posters/poster-ar.png. كل الردود بعدها يرسلها الرد الآلي. «متابعة» مرة واحدة بعد 3 أيام لمن لم يرد. علامة «أُرسلت» تُحفظ في هذا المتصفح فقط.</p></header>
+<p>الزر يفتح واتساب والرسالة جاهزة، ولا يُرسَل شيء إلا عندما تضغط إرسال بنفسك. أول رسالة: «الدعوة» بالعربية مع posters/poster-ar.png. ${require("./links").links.bot_live ? "كل الردود بعدها يرسلها الرد الآلي." : "الرد الآلي لم يُربط بعد: الرسالة فيها رابط التسجيل وصفحة اللغات، فلا يلزمك الرد."} «متابعة» مرة واحدة بعد 3 أيام لمن لم يرد. علامة «أُرسلت» تُحفظ في هذا المتصفح فقط.</p></header>
 <main><table>${rowsHtml}</table></main>
 <script>
 const KEY='taseerak-invite-sent';
