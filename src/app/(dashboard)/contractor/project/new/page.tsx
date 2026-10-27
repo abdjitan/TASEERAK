@@ -449,72 +449,67 @@ export default function NewProjectPage() {
 
       if (projErr) throw new Error(projErr.message)
 
-      // إنشاء RFQ لكل بند وربطه بالمشروع
+      // ONE request with all the project's items (owner 2026-10-27), like the request page: each
+      // supplier sees the items of his specialties in one request, and the buyer awards the best
+      // price per item on the request page (one purchase order per supplier).
       const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString()
-      const failed: string[] = []
+      const rfqItems: any[] = []
       for (const item of selectedItems) {
         // رفع ملف مواصفات البند إن وجد
-        let itemSpecUrl = null
+        let itemSpecUrl: string | null = null
         if (item.specFile) {
           const ext = item.specFile.name.split('.').pop()
           const path = `${user.id}/spec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`
           const { data: up } = await supabase.storage.from('licenses').upload(path, item.specFile, { upsert: true })
-          if (up) {
-            const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path)
-            itemSpecUrl = publicUrl
-          }
+          if (!up) { alert(`تعذّر رفع ملف مواصفات «${item.product_name}». تحقّق من الاتصال وحاول مرة أخرى، أو احذف الملف.`); return }
+          itemSpecUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
         }
-
-        const itemNotes = itemSpecUrl
-          ? `مشروع: ${title}\n[مواصفات مرفقة: ${itemSpecUrl}]`
-          : `مشروع: ${title}`
-
-        const qn = Number(item.quantity)
-        const quantity = Number.isFinite(qn) && qn > 0 ? qn : 1
-
         const st = specTextOf(item.product_name, item.specs)
-        const fullSpec = [st, (item.specification || '').trim()].filter(Boolean).join(' — ') || null
         const specsObj: Record<string, string> = {}
         for (const [k, v] of Object.entries(item.specs || {})) if (String(v || '').trim()) specsObj[k] = String(v).trim()
-        const { data: rfq, error: rfqErr } = await supabase.from('rfqs').insert({
-          contractor_id: user.id,
+        rfqItems.push({
           sector: item.sector,
-          sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector),
           product_name: item.product_name,
-          specification: fullSpec,
-          quantity,
+          sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector) || null,
+          specification: [st, (item.specification || '').trim()].filter(Boolean).join(' — ') || null,
+          quantity: Number(item.quantity),
           unit: item.unit || 'عدد',
-          items: [{ sector: item.sector, product_name: item.product_name, sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector), specification: fullSpec, quantity, unit: item.unit || 'عدد', specsObj, custom: !!item.custom, spec_file_url: itemSpecUrl || null, spec_file_name: itemSpecUrl ? 'مواصفات مرفقة' : null }],
-          region, city: city || null,
-          delivery_required: deliveryRequired,
-          delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
-          vat_invoice_required: vatRequired,
-          hide_identity: hideIdentity,
-          target_tiers: targetTiers.length > 0 ? targetTiers : null,
-          verified_only: verifiedOnly,
-          nearby_only: nearbyOnly,
-          notes: itemNotes,
-          expires_at: expiresAt,
-        }).select().single()
-
-        if (rfqErr || !rfq) { failed.push(item.product_name); continue }
-
-        const { error: linkErr } = await supabase.from('project_rfq_items').insert({
-          project_rfq_id: project.id,
-          rfq_id: rfq.id,
-          product_name: item.product_name,
-          sector: item.sector,
-          quantity,
-          unit: item.unit,
-          specification: fullSpec,
-          status: 'sent',
+          supplier_tiers: null, in_stock: false, max_days: null, specsObj,
+          spec_file_url: itemSpecUrl,
+          spec_file_name: itemSpecUrl ? (item.specFile?.name || 'مواصفات مرفقة') : null,
+          photo_url: itemSpecUrl && /\.(jpe?g|png|webp)$/i.test(item.specFile?.name || '') ? itemSpecUrl : null,
+          custom: !!item.custom,
         })
-        if (linkErr) failed.push(item.product_name)
       }
-
-      if (failed.length) alert(`تعذّر إرسال ${arItems(failed.length)}: ${failed.join('، ')}. حاول مجدداً لهذه البنود.`)
+      const first = rfqItems[0]
+      const { data: rfq, error: rfqErr } = await supabase.from('rfqs').insert({
+        contractor_id: user.id, title,
+        sector: first.sector, sectors: Array.from(new Set(rfqItems.map(it => it.sector))),
+        product_name: first.product_name, sub_category: first.sub_category, specification: first.specification,
+        quantity: first.quantity, unit: first.unit,
+        items: rfqItems,
+        region, city: city || null,
+        delivery_required: deliveryRequired,
+        delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
+        vat_invoice_required: vatRequired,
+        hide_identity: hideIdentity,
+        target_tiers: targetTiers.length > 0 ? targetTiers : null,
+        verified_only: verifiedOnly,
+        nearby_only: nearbyOnly,
+        notes: [`مشروع: ${title}`, projNotes].filter(Boolean).join('\n'),
+        expires_at: expiresAt,
+      }).select('id').single()
+      if (rfqErr || !rfq) {
+        alert((rfqErr?.message || '').includes('rfq_daily_limit') ? 'وصلت إلى الحد اليومي للطلبات. حاول لاحقاً.' : 'تعذّر إرسال المشروع. حاول مرة أخرى.')
+        return
+      }
+      // the project keeps its list of items, all pointing at the one request
+      await supabase.from('project_rfq_items').insert(rfqItems.map(it => ({
+        project_rfq_id: project.id, rfq_id: rfq.id, product_name: it.product_name, sector: it.sector,
+        quantity: it.quantity, unit: it.unit, specification: it.specification, status: 'sent',
+      })))
       try { localStorage.removeItem(DRAFT_KEY) } catch {}
-      window.location.href = `/contractor/project/${project.id}`
+      window.location.href = `/contractor/rfq/${rfq.id}`
     } catch (err) {
       alert((err as any).message)
     } finally { setLoading(false) }

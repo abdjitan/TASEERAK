@@ -47,6 +47,9 @@ export default function ProjectResultsPage() {
         .eq('project_rfq_id', id)
         .order('sector')
 
+      // a project sent as ONE request (since 2026-10-27) is followed on that request's page
+      const rfqIds = [...new Set((projItems || []).map((it: any) => it.rfq_id).filter(Boolean))]
+      if (rfqIds.length === 1 && (projItems || []).length > 1) { window.location.replace(`/contractor/rfq/${rfqIds[0]}`); return }
       setItems(projItems || [])
 
       // أرقام تواصل الموردين المقبولين فقط (RLS يسمح بعد القبول) — لا أرقام قبل الترسية
