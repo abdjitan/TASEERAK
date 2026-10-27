@@ -1033,15 +1033,8 @@ export default function NewProjectPage() {
                   {locale === 'en' ? 'Ready to Send?' : 'جاهز للإرسال؟'}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {locale === 'en' ? `${selectedCount} materials will be sent to ${Object.keys(bySector).length} supplier groups` : `${arMaterials(selectedCount)} ستُرسل إلى ${arCount(Object.keys(bySector).length, 'مجموعة واحدة', 'مجموعتين', 'مجموعات', 'مجموعة')} من الموردين`}
+                  {locale === 'en' ? `${selectedCount} materials in one request to the specialist suppliers` : `${arMaterials(selectedCount)} في طلب واحد للموردين المختصين`}
                 </p>
-              </div>
-              <div className="text-left">
-                {Object.entries(bySector).map(([s, count]) => (
-                  <div key={s} className="text-xs text-gray-500">
-                    {(SECTOR_LABELS as any)[s]}: {locale === 'en' ? `${count} items` : arItems(count as number)}
-                  </div>
-                ))}
               </div>
             </div>
 
