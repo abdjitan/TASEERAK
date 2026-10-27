@@ -8,12 +8,11 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
+import { TIERS, tierLabel, tierHint, normTier } from '@/lib/sellers'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, missingSpecs, getProductSpecs, getOptionLabel, type Sector } from '@/types'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import CatalogPicker from '@/components/shared/CatalogPicker'
-import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arItems, arMaterials } from '@/lib/text'
 import CatIcon from '@/components/shared/CatIcon'
@@ -198,9 +197,6 @@ export default function NewProjectPage() {
   const [hideIdentity, setHideIdentity] = useState(true)
   const [vatRequired, setVatRequired] = useState(true)
   const [nearbyOnly, setNearbyOnly] = useState(false)
-  function toggleTier(tier: string) {
-    setTargetTiers(prev => prev.includes(tier) ? prev.filter((x: any) => x !== tier) : [...prev, tier])
-  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -256,7 +252,7 @@ export default function NewProjectPage() {
           // التخصص يأتي مُصنّفاً من الخادم (من القوائم الرسمية). نتأكد أنه مفتاح صحيح وإلا = غير مصنّف.
           const sub = (item.sub_category && (SUB_CATEGORIES as any)[item.sector]?.[item.sub_category]) ? item.sub_category : null
           // غير مصنّف لو بلا تخصص، أو لو الذكاء أبلغ ثقة منخفضة (يبقى الاقتراح ظاهراً في القائمة ليؤكّده المقاول)
-          return { ...item, id: `item-${i}`, selected: true, sub_category: sub, needs_classification: !sub || !!item.needs_classification || !!item.low_confidence }
+          return { ...item, id: `item-${i}`, selected: true, done: parseFloat(item.quantity) > 0 && missingSpecs(item.product_name, item.sector, {}, item.specification || '').length === 0, sub_category: sub, needs_classification: !sub || !!item.needs_classification || !!item.low_confidence }
         }))
         setStep('items')
       } else {
@@ -276,7 +272,7 @@ export default function NewProjectPage() {
     setItems(prev => prev.some((it: any) => it.product_name === p.name) ? prev : [...prev, {
       id: `item-${Date.now()}-${prev.length}`, product_name: p.name, sector: p.sector, quantity: '',
       unit: getDefaultUnit(p.name, p.sector) || 'عدد', specification: '', specs: {}, sub_category: detectSubCategory(p.name, p.sector) || null,
-      needs_classification: !detectSubCategory(p.name, p.sector), selected: true, needsQty: true,
+      needs_classification: !detectSubCategory(p.name, p.sector), selected: true, done: false,
     }])
     setDraft(null)
     setStep('items')
@@ -299,7 +295,7 @@ export default function NewProjectPage() {
     setItems(prev => [...prev, {
       id: `item-${Date.now()}`, product_name: name, sector,
       quantity: draft.quantity, unit: draft.unit || getDefaultUnit(name, sector as Sector) || 'عدد',
-      specification: draft.specification, specs: draft.specs || {}, custom: !g.catalog, sub_category: choice?.sub ?? null, section: choice?.section, needs_classification: !choice, selected: true, needsQty: !(parseFloat(draft.quantity) > 0),
+      specification: draft.specification, specs: draft.specs || {}, custom: !g.catalog, sub_category: choice?.sub ?? null, section: choice?.section, needs_classification: !choice, selected: true, done: parseFloat(draft.quantity) > 0 && missingSpecs(name, sector as Sector, draft.specs, draft.specification || '').length === 0,
     }])
     setDraft(null)
     setStep('items')
@@ -923,17 +919,31 @@ export default function NewProjectPage() {
                               )}
                               {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
                             </div>
-                            {(item.needsQty || !(parseFloat(item.quantity) > 0)) && (
-                              <div className="mt-2 flex items-center gap-2 flex-wrap">
-                                <input type="text" inputMode="decimal" value={item.quantity || ''} autoFocus={i === items.length - 1} onBlur={() => { if (parseFloat(item.quantity) > 0) updateItem(item.id, 'needsQty', false) }} onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() } }}
-                                  onChange={(e: any) => updateItem(item.id, 'quantity', e.target.value.replace(/[٠-٩]/g, (x: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, ''))}
-                                  className="input-field text-sm w-32 border-[#D4A543] bg-[#D4A543]/5" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
-                                <select value={item.unit} onChange={(e: any) => updateItem(item.id, 'unit', e.target.value)} className="input-field text-sm w-36">
-                                  {Array.from(new Set([...(unitChoicesFor(item.product_name, item.sector) || UNIT_OPTIONS), ...(item.unit ? [item.unit] : [])])).map((u: any) => <option key={u} value={u}>{u}</option>)}
-                                </select>
-                                <span className="text-xs font-bold text-[#9D7425]">{L('How many do you need?', 'کتنی مقدار چاہیے؟', 'كم الكمية التي تحتاجها؟')}</span>
-                              </div>
-                            )}
+                            {(item.done === false || !(parseFloat(item.quantity) > 0)) && (() => {
+                              const miss = missingSpecs(item.product_name, item.sector, item.specs, item.specification || '', !!item.specFile)
+                              const needWritten = miss.includes('*')
+                              const ok = parseFloat(item.quantity) > 0 && miss.length === 0
+                              return (
+                                <div className="mt-3 space-y-2 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/[.04] p-3">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <input type="text" inputMode="decimal" value={item.quantity || ''} autoFocus={i === items.length - 1}
+                                      onChange={(e: any) => updateItem(item.id, 'quantity', e.target.value.replace(/[٠-٩]/g, (x: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, ''))}
+                                      className={`input-field text-sm ${parseFloat(item.quantity) > 0 ? '' : 'border-[#D4A543] bg-white'}`} placeholder={L('Quantity', 'مقدار', 'الكمية')} />
+                                    <select value={item.unit} onChange={(e: any) => updateItem(item.id, 'unit', e.target.value)} className="input-field text-sm">
+                                      {Array.from(new Set([...(unitChoicesFor(item.product_name, item.sector) || UNIT_OPTIONS), ...(item.unit ? [item.unit] : [])])).map((u: any) => <option key={u} value={u}>{u}</option>)}
+                                    </select>
+                                  </div>
+                                  <ItemSpecFields name={item.product_name} sector={item.sector} specs={item.specs} locale={locale} onChange={(v: any) => updateItem(item.id, 'specs', v)} />
+                                  <input value={item.specification || ''} onChange={(e: any) => updateItem(item.id, 'specification', e.target.value)}
+                                    className={`input-field text-sm ${needWritten ? 'border-[#D4A543] bg-white' : ''}`}
+                                    placeholder={needWritten ? L('Size and specs (required): length, width, thickness, grade…', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): الطول، العرض، السماكة، الدرجة…') : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
+                                  <button type="button" disabled={!ok} onClick={() => updateItem(item.id, 'done', true)}
+                                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0F6E56' }}>
+                                    ✓ {!(parseFloat(item.quantity) > 0) ? L('Enter the quantity to save', 'مقدار لکھیں', 'أدخل الكمية للحفظ') : miss.length ? L('Enter the specs to save', 'تفصیل لکھیں', 'أدخل المواصفات للحفظ') : L('Save', 'محفوظ کریں', 'حفظ')}
+                                  </button>
+                                </div>
+                              )
+                            })()}
                           </div>
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
@@ -962,33 +972,22 @@ export default function NewProjectPage() {
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
             {/* Target supplier types + verified-only (applies to all items) */}
             <div className="mb-4 pb-4 border-b border-gray-100">
-              <h4 className="text-sm font-bold mb-1" style={{ color: '#0B2438' }}>
-                {locale === 'en' ? 'Who should receive this?' : locale === 'ur' ? 'یہ کس کو بھیجیں؟' : 'لمن تريد إرسال الطلب؟'}
-              </h4>
-              <p className="text-xs text-gray-400 mb-3">
-                {locale === 'en' ? 'Pick supplier types — leave empty for all'
-                : locale === 'ur' ? 'سپلائر کی قسم منتخب کریں — سب کے لیے خالی چھوڑیں'
-                : 'اختر نوع الموردين — اتركه فارغاً للجميع'}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-                {TIERS.map(k => ({ key: k, icon: TIER_INFO[k].icon, label: tierLabel(k, locale, false), desc: tierHint(k, locale) })).map((tier: any) => {
-                  const active = targetTiers.map(normTier).includes(tier.key)
+              <div className="text-sm font-bold text-[#0B2438] mb-2">{L('Who should price it?', 'کون قیمت دے؟', 'من تريد أن يسعّر لك؟')}</div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                {([['all', L('All suppliers', 'سب سپلائرز', 'كل الموردين'), L('The most offers', 'زیادہ پیشکشیں', 'أكثر عروض')], ...TIERS.map(k => [k, tierLabel(k, locale, false), tierHint(k, locale)])] as [string, string, string][]).map(([k, label, hint]) => {
+                  const on = k === 'all' ? targetTiers.length === 0 : (targetTiers.length === 1 && normTier(targetTiers[0]) === k)
                   return (
-                    <button key={tier.key} type="button" onClick={() => toggleTier(tier.key)}
-                      className={`p-3 rounded-xl border-2 text-start transition-all ${active ? 'border-[#D4A543] bg-[#D4A543]/5' : 'border-gray-200 hover:border-gray-300'}`}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[#0B2438]"><SellerIcon name={tier.icon} className="w-5 h-5" /></span>
-                        <span className={`text-sm font-bold ${active ? 'text-[#D4A543]' : 'text-gray-700'}`}>{tier.label}</span>
-                        {active && <span className="ms-auto text-[#D4A543] font-bold">✓</span>}
-                      </div>
-                      <div className="text-[11px] text-gray-400 mt-1">{tier.desc}</div>
+                    <button key={k} type="button" onClick={() => setTargetTiers(k === 'all' ? [] : [k])} aria-pressed={on}
+                      className={`p-2.5 rounded-xl border-2 text-start transition-colors ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 bg-white hover:border-[#D4A543]'}`}>
+                      <div className="text-[13px] font-bold text-[#0B2438] leading-snug">{on ? '✓ ' : ''}{label}</div>
+                      <div className="text-[11px] text-gray-500 mt-0.5 leading-snug line-clamp-2">{hint}</div>
                     </button>
                   )
                 })}
               </div>
               <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5">
                 <div>
-                  <div className="text-sm font-semibold text-gray-800">{locale === 'en' ? 'Verified only' : locale === 'ur' ? 'صرف تصدیق شدہ' : 'الموثّقون فقط'}</div>
+                  <div className="text-sm font-semibold text-gray-800">{L('Verified (trusted) suppliers only', 'صرف تصدیق شدہ', 'الموردون الموثّقون والمعتمدون فقط')}</div>
                   <div className="text-xs text-gray-400">{locale === 'en' ? 'Receive offers from verified suppliers only ✓' : locale === 'ur' ? 'صرف تصدیق شدہ سپلائرز سے ✓' : 'استقبل عروضاً من الموثّقين فقط ✓'}</div>
                 </div>
                 <div onClick={() => setVerifiedOnly(!verifiedOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${verifiedOnly ? 'justify-end' : 'justify-start'}`}
