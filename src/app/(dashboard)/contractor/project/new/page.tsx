@@ -357,7 +357,7 @@ export default function NewProjectPage() {
       </div>
       <div>
         <input list="boq-catalog" autoFocus value={draft.product_name}
-          onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, product_name: v, spec: undefined, unit: '' })) }}
+          onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, product_name: v, spec: undefined, unit: '', specs: {} })) }}
           className="input-field" placeholder={L('Material name: type and pick from the list, or write it your way', 'مواد کا نام', 'اسم المادة: اكتب واختر من القائمة، أو اكتبها كما تريد')} />
         <datalist id="boq-catalog">{catalogNames.map(n => <option key={n} value={n} />)}</datalist>
         <button type="button" onClick={() => setShowCatalog(true)}
@@ -822,7 +822,7 @@ export default function NewProjectPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div className="sm:col-span-2">
                             <input value={getProductLabel(item.product_name, locale)}
-                              onChange={(e: any) => updateItem(item.id, 'product_name', e.target.value)}
+                              onChange={(e: any) => { const v = e.target.value; setItems(prev => prev.map((it: any) => it.id === item.id ? { ...it, product_name: v, specs: {} } : it)) }}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Material name *' : 'اسم المادة *'} />
                           </div>
                           {/* التخصص — يحدّد المورد المتخصص الذي يستقبل البند */}
