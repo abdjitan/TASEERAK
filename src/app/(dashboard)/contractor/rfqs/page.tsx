@@ -13,6 +13,7 @@ import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { rfqRef, rfqDate } from '@/lib/rfqName'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 import Glyph from '@/components/shared/Glyph'
+import { arCount } from '@/lib/text'
 
 // «طلباتي»: every request of the buyer with its details — reference, date, materials (with
 // pictures), offers received, deadline and status — filterable and searchable; a card opens the
@@ -99,7 +100,7 @@ export default function MyRequestsPage() {
     const pick = rfqs.filter(r => sel.has(r.id) && cancellable(r))
     if (!pick.length) return
     if (!confirm(L(`Cancel ${pick.length} request(s)? They move to «Cancelled», where you can review or request them again.`, `${pick.length} درخواستیں منسوخ کریں؟`,
-      `إلغاء ${pick.length === 1 ? 'الطلب المحدد' : pick.length + ' طلبات'}؟ تنتقل إلى «الملغاة» ويمكنك مراجعتها أو طلبها مرة أخرى.`))) return
+      `إلغاء ${pick.length === 1 ? 'الطلب المحدد' : arCount(pick.length, 'طلب واحد', 'طلبين', 'طلبات', 'طلباً')}؟ تنتقل إلى «الملغاة» ويمكنك مراجعتها أو طلبها مرة أخرى.`))) return
     setCancelling(true)
     const sb = createClient()
     const ids = pick.map(r => r.id)

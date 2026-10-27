@@ -9,7 +9,8 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, type Sector } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, missingSpecs, getProductSpecs, getOptionLabel, type Sector } from '@/types'
+import { productImageUrl, imgFallback } from '@/lib/productImage'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import CatalogPicker from '@/components/shared/CatalogPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -38,6 +39,45 @@ function getGroupedItems(items: any[], locale: string) {
   // open a group that still needs something: a specialty or a quantity (owner 2026-10-24)
   for (const g of Object.values(groups)) if (g.entries.some((e: any) => !(parseFloat(e.item.quantity) > 0))) g.defaultOpen = true
   return Object.keys(groups).sort((a, b) => (a === '_unclassified' ? -1 : b === '_unclassified' ? 1 : 0)).map(k => groups[k])
+}
+
+// «الطول: 2.0م، العرض: 20سم» from the chosen spec fields (same format as the request page)
+function specTextOf(name: string, specs?: Record<string, string>) {
+  if (!specs) return ''
+  return getProductSpecs(name).filter(f => f.key !== 'unit' && (specs[f.key] || '').trim()).map(f => `${f.ar}: ${specs[f.key].trim()}`).join('، ')
+}
+
+// The product's spec fields as selects (+ «أخرى…» to write a value) — as on the request page.
+// Required ones (materials priced by size/grade) are marked and highlighted until filled.
+function ItemSpecFields({ name, sector, specs, onChange, locale }: { name: string; sector: string; specs?: Record<string, string>; onChange: (v: Record<string, string>) => void; locale: string }) {
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  const fields = getProductSpecs(name).filter(f => f.key !== 'unit')
+  if (!fields.length) return null
+  const req = specsRequired(name, sector as Sector)
+  return (
+    <div className="rounded-xl bg-gray-50 p-2.5">
+      <div className="text-xs font-bold text-[#0B2438] mb-1.5">{L('Specifications', 'تفصیلات', 'المواصفات')}{req ? L(' (required)', ' (ضروری)', ' (مطلوبة)') : L(' (optional)', ' (اختیاری)', ' (اختيارية)')}</div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        {fields.map(f => {
+          const v = specs?.[f.key] || ''
+          const custom = !!v && !f.options.includes(v)
+          const setV = (val: string) => onChange({ ...(specs || {}), [f.key]: val })
+          return (
+            <label key={f.key} className="block">
+              <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{locale === 'ar' ? f.ar : f.en}{req ? ' *' : ''}</span>
+              <select value={custom ? '__other' : v} onChange={(e: any) => setV(e.target.value === '__other' ? ' ' : e.target.value)}
+                className={`input-field text-sm ${req && !v.trim() ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
+                <option value="">{req ? L('Choose', 'منتخب کریں', 'اختر') : L('Any', 'کوئی بھی', 'أي')}</option>
+                {f.options.map(o => <option key={o} value={o}>{getOptionLabel(o, locale)}</option>)}
+                <option value="__other">{L('Other…', 'دیگر…', 'أخرى…')}</option>
+              </select>
+              {custom && <input value={v.trim()} onChange={(e: any) => setV(e.target.value || ' ')} className="input-field text-sm mt-1" placeholder={L('Write it', 'لکھیں', 'اكتبها')} />}
+            </label>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 const SECTOR_ICONS = { civil: <Glyph e="🏗" />, architectural: <Glyph e="🏛" />, electrical: <Glyph e="⚡" />, mechanical: <Glyph e="⚙" />, equipment: <Glyph e="🚜" />, supply_store: <Glyph e="🏪" /> }
@@ -153,6 +193,10 @@ export default function NewProjectPage() {
   // استهداف نوع الموردين + الموثّقون فقط (يطبَّق على كل بنود المشروع)
   const [targetTiers, setTargetTiers] = useState<string[]>([])
   const [verifiedOnly, setVerifiedOnly] = useState(false)
+  // same request options as the request page (owner 2026-10-27: the project lacked them)
+  const [hours, setHours] = useState(72)
+  const [hideIdentity, setHideIdentity] = useState(true)
+  const [vatRequired, setVatRequired] = useState(true)
   const [nearbyOnly, setNearbyOnly] = useState(false)
   function toggleTier(tier: string) {
     setTargetTiers(prev => prev.includes(tier) ? prev.filter((x: any) => x !== tier) : [...prev, tier])
@@ -167,6 +211,33 @@ export default function NewProjectPage() {
         .then(({ data: p }: any) => setAllowed(canUseProjects(p)))
     })
   }, [])
+
+  const DRAFT_KEY = 'tsk_project_draft'
+  const [restored, setRestored] = useState(false)
+  useEffect(() => {
+    try {
+      const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
+      if (d && Array.isArray(d.items) && d.items.length) {
+        setTitle(d.title || ''); setRegion(d.region || ''); setCity(d.city || ''); setProjectNotes(d.projectNotes || '')
+        setDeliveryRequired(d.deliveryRequired !== false); setDeliveryLocation(d.deliveryLocation || '')
+        setItems(d.items); if (d.hours) setHours(d.hours)
+        if (typeof d.hideIdentity === 'boolean') setHideIdentity(d.hideIdentity)
+        if (typeof d.vatRequired === 'boolean') setVatRequired(d.vatRequired)
+        if (Array.isArray(d.targetTiers)) setTargetTiers(d.targetTiers)
+        if (typeof d.verifiedOnly === 'boolean') setVerifiedOnly(d.verifiedOnly)
+        setStep('items')
+      }
+    } catch {}
+    setRestored(true)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!restored) return
+    try {
+      if (!items.length) { localStorage.removeItem(DRAFT_KEY); return }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, region, city, projectNotes, deliveryRequired, deliveryLocation, hours, hideIdentity, vatRequired, targetTiers, verifiedOnly,
+        items: items.map((it: any) => ({ ...it, specFile: null })) }))
+    } catch {}
+  }, [restored, title, region, city, projectNotes, deliveryRequired, deliveryLocation, items, hours, hideIdentity, vatRequired, targetTiers, verifiedOnly])
 
   // تحليل الـ BOQ
   async function handleBOQUpload(file: File) {
@@ -204,7 +275,7 @@ export default function NewProjectPage() {
   function addFromCatalog(p: { name: string; sector: Sector }) {
     setItems(prev => prev.some((it: any) => it.product_name === p.name) ? prev : [...prev, {
       id: `item-${Date.now()}-${prev.length}`, product_name: p.name, sector: p.sector, quantity: '',
-      unit: getDefaultUnit(p.name, p.sector) || 'عدد', specification: '', sub_category: detectSubCategory(p.name, p.sector) || null,
+      unit: getDefaultUnit(p.name, p.sector) || 'عدد', specification: '', specs: {}, sub_category: detectSubCategory(p.name, p.sector) || null,
       needs_classification: !detectSubCategory(p.name, p.sector), selected: true, needsQty: true,
     }])
     setDraft(null)
@@ -228,7 +299,7 @@ export default function NewProjectPage() {
     setItems(prev => [...prev, {
       id: `item-${Date.now()}`, product_name: name, sector,
       quantity: draft.quantity, unit: draft.unit || getDefaultUnit(name, sector as Sector) || 'عدد',
-      specification: draft.specification, sub_category: choice?.sub ?? null, section: choice?.section, needs_classification: !choice, selected: true, needsQty: !(parseFloat(draft.quantity) > 0),
+      specification: draft.specification, specs: draft.specs || {}, custom: !g.catalog, sub_category: choice?.sub ?? null, section: choice?.section, needs_classification: !choice, selected: true, needsQty: !(parseFloat(draft.quantity) > 0),
     }])
     setDraft(null)
     setStep('items')
@@ -311,9 +382,10 @@ export default function NewProjectPage() {
           {draftUnits.map((u: any) => <option key={u} value={u}>{u}</option>)}
         </select>
       </div>
+      {draftName && <ItemSpecFields name={draftName} sector={draftSector} specs={draft.specs} locale={locale} onChange={(v: any) => setDraft((d: any) => ({ ...d, specs: v }))} />}
       <input value={draft.specification} onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, specification: v })) }}
-        className={`input-field ${draftName && specsRequired(draftName, draftSector) && !(draft.specification || '').trim() ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
-        placeholder={draftName && specsRequired(draftName, draftSector)
+        className={`input-field ${draftName && missingSpecs(draftName, draftSector, draft.specs, draft.specification).includes('*') ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
+        placeholder={draftName && specsRequired(draftName, draftSector) && !getProductSpecs(draftName).some(f => f.key !== 'unit')
           ? L('Specification (required): size, length, grade…', 'تفصیل (ضروری)', 'المواصفة (مطلوبة): المقاس، الطول، الدرجة…')
           : L('Specification (optional): size, grade, brand…', 'تفصیل (اختیاری)', 'المواصفة (اختياري): المقاس، الدرجة، الماركة…')} />
       <button type="button" disabled={!draftName} onClick={commitDraft}
@@ -335,7 +407,7 @@ export default function NewProjectPage() {
       if (!ok) return
     }
     // materials priced by size/grade need a written spec or a spec file (owner 2026-10-27)
-    const noSpec = classifiedItems.filter((i: any) => specsRequired(i.product_name, i.sector) && !(i.specification || '').trim() && !i.specFile)
+    const noSpec = classifiedItems.filter((i: any) => missingSpecs(i.product_name, i.sector, i.specs, i.specification || '', !!i.specFile).length > 0)
     if (noSpec.length) { alert(`اكتب مواصفات ${noSpec.length === 1 ? '«' + noSpec[0].product_name + '»' : arItems(noSpec.length)} (المقاس، الطول، الدرجة…) ليتمكن الموردون من التسعير.`); setEditingIndex(items.indexOf(noSpec[0])); return }
     const noQty = classifiedItems.filter((i: any) => !(parseFloat(i.quantity) > 0))
     if (noQty.length) { alert(`أدخل كمية ${noQty.length === 1 ? '«' + noQty[0].product_name + '»' : arItems(noQty.length)} قبل الإرسال.`); return }
@@ -378,7 +450,7 @@ export default function NewProjectPage() {
       if (projErr) throw new Error(projErr.message)
 
       // إنشاء RFQ لكل بند وربطه بالمشروع
-      const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString()
+      const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString()
       const failed: string[] = []
       for (const item of selectedItems) {
         // رفع ملف مواصفات البند إن وجد
@@ -400,19 +472,24 @@ export default function NewProjectPage() {
         const qn = Number(item.quantity)
         const quantity = Number.isFinite(qn) && qn > 0 ? qn : 1
 
+        const st = specTextOf(item.product_name, item.specs)
+        const fullSpec = [st, (item.specification || '').trim()].filter(Boolean).join(' — ') || null
+        const specsObj: Record<string, string> = {}
+        for (const [k, v] of Object.entries(item.specs || {})) if (String(v || '').trim()) specsObj[k] = String(v).trim()
         const { data: rfq, error: rfqErr } = await supabase.from('rfqs').insert({
           contractor_id: user.id,
           sector: item.sector,
           sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector),
           product_name: item.product_name,
-          specification: item.specification || null,
+          specification: fullSpec,
           quantity,
           unit: item.unit || 'عدد',
+          items: [{ sector: item.sector, product_name: item.product_name, sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector), specification: fullSpec, quantity, unit: item.unit || 'عدد', specsObj, custom: !!item.custom, spec_file_url: itemSpecUrl || null, spec_file_name: itemSpecUrl ? 'مواصفات مرفقة' : null }],
           region, city: city || null,
           delivery_required: deliveryRequired,
           delivery_location: deliveryRequired ? (deliveryLocation || null) : null,
-          vat_invoice_required: true,
-          hide_identity: true,
+          vat_invoice_required: vatRequired,
+          hide_identity: hideIdentity,
           target_tiers: targetTiers.length > 0 ? targetTiers : null,
           verified_only: verifiedOnly,
           nearby_only: nearbyOnly,
@@ -429,13 +506,14 @@ export default function NewProjectPage() {
           sector: item.sector,
           quantity,
           unit: item.unit,
-          specification: item.specification || null,
+          specification: fullSpec,
           status: 'sent',
         })
         if (linkErr) failed.push(item.product_name)
       }
 
       if (failed.length) alert(`تعذّر إرسال ${arItems(failed.length)}: ${failed.join('، ')}. حاول مجدداً لهذه البنود.`)
+      try { localStorage.removeItem(DRAFT_KEY) } catch {}
       window.location.href = `/contractor/project/${project.id}`
     } catch (err) {
       alert((err as any).message)
@@ -759,8 +837,8 @@ export default function NewProjectPage() {
                               onChange={(v: any) => setItems(prev => prev.map((it: any) => it.id === item.id ? { ...it, sector: v.sector, sub_category: v.sub, section: v.section, needs_classification: !choiceDone(v) } : it))} />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
-                            <input type="number" value={item.quantity}
-                              onChange={(e: any) => updateItem(item.id, 'quantity', e.target.value)}
+                            <input type="text" inputMode="decimal" value={item.quantity}
+                              onChange={(e: any) => updateItem(item.id, 'quantity', e.target.value.replace(/[٠-٩]/g, (x: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, ''))}
                               className="input-field text-sm" placeholder={locale === 'en' ? 'Qty' : 'الكمية'} />
                             <select value={item.unit}
                               onChange={(e: any) => updateItem(item.id, 'unit', e.target.value)}
@@ -769,9 +847,13 @@ export default function NewProjectPage() {
                             </select>
                           </div>
                           <div className="sm:col-span-2">
+                            <ItemSpecFields name={item.product_name} sector={item.sector} specs={item.specs} locale={locale} onChange={(v: any) => updateItem(item.id, 'specs', v)} />
+                          </div>
+                          <div className="sm:col-span-2">
                             <input value={item.specification || ''}
                               onChange={(e: any) => updateItem(item.id, 'specification', e.target.value)}
-                              className="input-field text-sm" placeholder={locale === 'en' ? 'Specification (optional)' : 'المواصفة (اختياري)'} />
+                              className={`input-field text-sm ${missingSpecs(item.product_name, item.sector, item.specs, item.specification || '', !!item.specFile).includes('*') ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
+                              placeholder={specsRequired(item.product_name, item.sector) && !getProductSpecs(item.product_name).some(f => f.key !== 'unit') ? L('Size and specs (required): length, width, thickness, grade…', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): الطول، العرض، السماكة، الدرجة…') : L('More specs or notes (optional)', 'مزید تفصیل (اختیاری)', 'مواصفات إضافية أو ملاحظات (اختياري)')} />
                             {item.specFromDoc && (item.specFromDoc !== (item.specification || '')) && (
                               <div className="mt-1.5 text-[11px] bg-[#D4A543]/5 border border-[#D4A543]/30 rounded-lg p-2 flex items-start gap-2">
                                 <span className="text-[#9D7425] font-bold shrink-0"><Glyph e="📄" /> {locale === 'en' ? 'Spec doc:' : 'من الوثيقة:'}</span>
@@ -816,9 +898,12 @@ export default function NewProjectPage() {
                       ) : (
                         // View Mode
                         <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-3 min-w-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {item.product_name && <img src={productImageUrl(item.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, item.sub_category)} className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />}
                           <div className="min-w-0">
                             <div className="font-semibold text-sm truncate" style={{ color: '#0B2438' }}>
-                              {item.product_name || <span className="text-gray-400 italic">{locale === 'en' ? 'Unnamed item' : 'بند بدون اسم'}</span>}
+                              {(item.product_name && getProductLabel(item.product_name, locale)) || <span className="text-gray-400 italic">{locale === 'en' ? 'Unnamed item' : 'بند بدون اسم'}</span>}
                             </div>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                               {item.sub_category ? (
@@ -835,7 +920,12 @@ export default function NewProjectPage() {
                                 </button>
                               )}
                               {item.quantity && <span className="text-xs text-gray-500"><Glyph e="📦" /> {item.quantity} {item.unit}</span>}
-                              {item.specification && <span className="text-xs text-gray-400 truncate max-w-[200px]"><Glyph e="⚙" /> {item.specification}</span>}
+                              {(specTextOf(item.product_name, item.specs) || item.specification) && <span className="text-xs text-gray-500 truncate max-w-[260px]"><Glyph e="⚙" /> {[specTextOf(item.product_name, item.specs), item.specification].filter(Boolean).join(' — ')}</span>}
+                              {missingSpecs(item.product_name, item.sector, item.specs, item.specification || '', !!item.specFile).length > 0 && (
+                                <button type="button" onClick={() => setEditingIndex(i)} className="badge text-[10px] bg-[#D4A543]/15 text-[#9D7425] font-bold hover:bg-[#D4A543]/25">
+                                  {L('Complete the specs', 'تفصیل مکمل کریں', 'أكمل المواصفات')}
+                                </button>
+                              )}
                               {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
                             </div>
                             {(item.needsQty || !(parseFloat(item.quantity) > 0)) && (
@@ -849,6 +939,7 @@ export default function NewProjectPage() {
                                 <span className="text-xs font-bold text-[#9D7425]">{L('How many do you need?', 'کتنی مقدار چاہیے؟', 'كم الكمية التي تحتاجها؟')}</span>
                               </div>
                             )}
+                          </div>
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
                             <button type="button" onClick={() => setEditingIndex(i)}
@@ -920,6 +1011,26 @@ export default function NewProjectPage() {
                   <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
                 </div>
               </div>
+            </div>
+
+            <div className="mb-4 pb-4 border-b border-gray-100 space-y-3">
+              <div>
+                <div className="text-sm font-bold text-[#0B2438] mb-2">{L('When do you need the prices?', 'قیمتیں کب چاہئیں؟', 'متى تحتاج الأسعار؟')}</div>
+                <div className="flex flex-wrap gap-2">
+                  {([[24, L('Tomorrow', 'کل', 'غداً')], [48, L('2 days', '2 دن', 'يومان')], [72, L('3 days', '3 دن', '3 أيام')], [168, L('A week', 'ایک ہفتہ', 'أسبوع')]] as [number, string][]).map(([h, lab]) => (
+                    <button key={h} type="button" onClick={() => setHours(h)} aria-pressed={hours === h}
+                      className={`px-3.5 py-1.5 rounded-full border text-sm font-bold ${hours === h ? 'bg-[#0B2438] text-white border-[#0B2438]' : 'bg-white text-gray-600 border-gray-200'}`}>{lab}</button>
+                  ))}
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                <input type="checkbox" checked={hideIdentity} onChange={(e: any) => setHideIdentity(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
+                {L('Hide my name until I choose a supplier', 'سپلائر چننے تک نام چھپائیں', 'إخفاء اسمي حتى أختار المورد')}
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                <input type="checkbox" checked={vatRequired} onChange={(e: any) => setVatRequired(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
+                {L('I need a VAT tax invoice', 'مجھے VAT ٹیکس انوائس چاہیے', 'أحتاج فاتورة ضريبية')}
+              </label>
             </div>
 
             <div className="flex items-center justify-between mb-4">
