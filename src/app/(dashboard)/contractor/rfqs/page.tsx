@@ -18,7 +18,8 @@ import Glyph from '@/components/shared/Glyph'
 // pictures), offers received, deadline and status — filterable and searchable; a card opens the
 // request page with its offers.
 
-type Filter = 'all' | 'open' | 'closed' | 'ended'
+// «cancelled» (owner 2026-10-27): requests the buyer cancelled, kept apart to review or re-request
+type Filter = 'all' | 'open' | 'closed' | 'ended' | 'cancelled'
 
 export default function MyRequestsPage() {
   const { locale, dir } = useTranslation()
@@ -28,6 +29,10 @@ export default function MyRequestsPage() {
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
   const [deleting, setDeleting] = useState(false)
+  // select mode: tick requests (or all shown) and cancel them in one go
+  const [selecting, setSelecting] = useState(false)
+  const [sel, setSel] = useState<Set<string>>(new Set())
+  const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
     (async () => {
@@ -41,17 +46,18 @@ export default function MyRequestsPage() {
   }, [])
 
   const stateOf = (r: any): Exclude<Filter, 'all'> =>
-    r.status === 'closed' ? 'closed' : (r.status === 'open' && !isExpired(r.expires_at)) ? 'open' : 'ended'
+    r.status === 'cancelled' ? 'cancelled' : r.status === 'closed' ? 'closed' : (r.status === 'open' && !isExpired(r.expires_at)) ? 'open' : 'ended'
 
   const counts = useMemo(() => ({
-    all: rfqs.length,
+    all: rfqs.filter(r => stateOf(r) !== 'cancelled').length,
+    cancelled: rfqs.filter(r => stateOf(r) === 'cancelled').length,
     open: rfqs.filter(r => stateOf(r) === 'open').length,
     closed: rfqs.filter(r => stateOf(r) === 'closed').length,
     ended: rfqs.filter(r => stateOf(r) === 'ended').length,
   }), [rfqs]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const shown = rfqs.filter(r => {
-    if (filter !== 'all' && stateOf(r) !== filter) return false
+    if (filter === 'all' ? stateOf(r) === 'cancelled' : stateOf(r) !== filter) return false
     const t = q.trim()
     if (!t) return true
     const items = Array.isArray(r.items) ? r.items : []
@@ -86,6 +92,31 @@ export default function MyRequestsPage() {
     if (left) alert(L(`${left} request(s) were kept because they have a deal.`, `${left} درخواستیں رکھی گئیں۔`, `أُبقي ${left} من الطلبات لأنها تتضمّن صفقة.`))
   }
 
+  // a request can be cancelled unless it's already a deal (closed / accepted offer / awarded item)
+  const cancellable = (r: any) => stateOf(r) === 'open' || stateOf(r) === 'ended'
+  function toggle(id: string) { setSel(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n }) }
+  async function cancelSelected() {
+    const pick = rfqs.filter(r => sel.has(r.id) && cancellable(r))
+    if (!pick.length) return
+    if (!confirm(L(`Cancel ${pick.length} request(s)? They move to «Cancelled», where you can review or request them again.`, `${pick.length} درخواستیں منسوخ کریں؟`,
+      `إلغاء ${pick.length === 1 ? 'الطلب المحدد' : pick.length + ' طلبات'}؟ تنتقل إلى «الملغاة» ويمكنك مراجعتها أو طلبها مرة أخرى.`))) return
+    setCancelling(true)
+    const sb = createClient()
+    const ids = pick.map(r => r.id)
+    const [{ data: acc }, { data: aw }] = await Promise.all([
+      sb.from('offers').select('rfq_id').in('rfq_id', ids).eq('status', 'accepted'),
+      sb.from('rfq_item_awards').select('rfq_id').in('rfq_id', ids),
+    ])
+    const keep = new Set([...(acc || []), ...(aw || [])].map((x: any) => x.rfq_id))
+    const go = ids.filter(id => !keep.has(id))
+    const { error } = go.length ? await sb.from('rfqs').update({ status: 'cancelled' }).in('id', go) : { error: null }
+    setCancelling(false)
+    if (error) { alert(L('Could not cancel. Try again.', 'منسوخ نہیں ہو سکا۔', 'تعذّر الإلغاء. حاول مرة أخرى.')); return }
+    setRfqs(prev => prev.map(r => go.includes(r.id) ? { ...r, status: 'cancelled' } : r))
+    setSel(new Set()); setSelecting(false)
+    if (keep.size) alert(L(`${keep.size} request(s) were kept because they have a deal.`, `${keep.size} درخواستیں رکھی گئیں۔`, `أُبقي ${keep.size} من الطلبات لأنها تتضمّن صفقة.`))
+  }
+
   const badge = (r: any) => {
     const s = stateOf(r)
     if (s === 'closed') return { t: L('Deal done', 'سودا مکمل', 'تمّ اختيار العرض'), c: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
@@ -100,8 +131,8 @@ export default function MyRequestsPage() {
       <div className="max-w-5xl mx-auto space-y-4">
         <RequestsTabs active="requests" locale={locale} />
         <div className="flex flex-wrap items-center gap-2">
-          {([['all', L('All', 'سب', 'الكل')], ['open', L('Open', 'کھلی', 'مفتوحة')], ['closed', L('Deal done', 'مکمل', 'تمّ اختيار العرض')], ['ended', L('Ended', 'ختم', 'منتهية')]] as [Filter, string][]).map(([k, label]) => (
-            <button key={k} type="button" onClick={() => setFilter(k)}
+          {([['all', L('All', 'سب', 'الكل')], ['open', L('Open', 'کھلی', 'مفتوحة')], ['closed', L('Deal done', 'مکمل', 'تمّ اختيار العرض')], ['ended', L('Ended', 'ختم', 'منتهية')], ['cancelled', L('Cancelled', 'منسوخ', 'الملغاة')]] as [Filter, string][]).map(([k, label]) => (
+            <button key={k} type="button" onClick={() => { setFilter(k); setSel(new Set()) }}
               className={`px-3.5 py-2 rounded-xl text-sm font-bold border transition-all ${filter === k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600'}`}
               style={filter === k ? { background: '#0B2438' } : undefined}>
               {label} <span className="opacity-70">({counts[k]})</span>
@@ -113,6 +144,24 @@ export default function MyRequestsPage() {
               <Glyph e="🗑" /> {deleting ? L('Deleting…', 'حذف ہو رہا ہے…', 'جارٍ الحذف…') : L(`Delete all (${counts.ended})`, `سب حذف کریں (${counts.ended})`, `حذف الكل (${counts.ended})`)}
             </button>
           )}
+          {filter !== 'cancelled' && filter !== 'closed' && shown.some(cancellable) && (!selecting ? (
+            <button type="button" onClick={() => setSelecting(true)}
+              className="px-3.5 py-2 rounded-xl text-sm font-bold border border-gray-200 bg-white text-gray-700 hover:border-[#0B2438]">
+              {L('Select', 'منتخب کریں', 'تحديد')}
+            </button>
+          ) : (<>
+            <button type="button" onClick={() => setSel(prev => prev.size === shown.filter(cancellable).length ? new Set() : new Set(shown.filter(cancellable).map(r => r.id)))}
+              className="px-3.5 py-2 rounded-xl text-sm font-bold border border-gray-200 bg-white text-gray-700">
+              {sel.size === shown.filter(cancellable).length ? L('Clear all', 'سب ہٹائیں', 'إلغاء التحديد') : L('Select all', 'سب منتخب', 'تحديد الكل')}
+            </button>
+            <button type="button" onClick={cancelSelected} disabled={!sel.size || cancelling}
+              className="px-3.5 py-2 rounded-xl text-sm font-bold border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-40">
+              {cancelling ? L('Cancelling…', 'منسوخ ہو رہا ہے…', 'جارٍ الإلغاء…') : L(`Cancel selected (${sel.size})`, `منتخب منسوخ کریں (${sel.size})`, `إلغاء المحدد (${sel.size})`)}
+            </button>
+            <button type="button" onClick={() => { setSelecting(false); setSel(new Set()) }} className="px-2 py-2 text-sm font-bold text-gray-500 hover:underline">
+              {L('Done', 'ختم', 'تم')}
+            </button>
+          </>))}
           <input value={q} onChange={e => setQ(e.target.value)} className="input-field max-w-xs ms-auto"
             placeholder={L('Search by number or material…', 'نمبر یا سامان سے تلاش…', 'ابحث برقم الطلب أو المادة…')} />
           <Link href="/contractor/rfq/quick" className="btn-orange px-4 py-2.5 rounded-xl font-bold text-sm">+ {L('New request', 'نئی درخواست', 'طلب جديد')}</Link>
@@ -133,12 +182,18 @@ export default function MyRequestsPage() {
               const offers = Number(r.offer_count || 0)
               return (
                 <Link key={r.id} href={`/contractor/rfq/${r.id}`}
-                  className="block bg-white rounded-2xl p-4 sm:p-5 border border-gray-100 shadow-sm hover:border-[#D4A543]/50 hover:shadow transition-all">
+                  onClick={(e: any) => { if (selecting) { e.preventDefault(); if (cancellable(r)) toggle(r.id) } }}
+                  className={`block bg-white rounded-2xl p-4 sm:p-5 border shadow-sm hover:shadow transition-all ${sel.has(r.id) ? 'border-[#0B2438] ring-2 ring-[#0B2438]/15' : 'border-gray-100 hover:border-[#D4A543]/50'} ${selecting && !cancellable(r) ? 'opacity-50' : ''}`}>
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div>
+                    <div className="flex items-start gap-3">
+                      {selecting && cancellable(r) && (
+                        <span aria-hidden className={`mt-1 w-5 h-5 rounded-md border-2 grid place-items-center text-[11px] font-bold shrink-0 ${sel.has(r.id) ? 'bg-[#0B2438] border-[#0B2438] text-white' : 'border-gray-300 bg-white'}`}>{sel.has(r.id) ? '✓' : ''}</span>
+                      )}
+                      <div>
                       <div className="text-xs font-bold text-[#9D7425] font-mono" dir="ltr">{rfqRef(r)}</div>
                       <div className="font-extrabold text-navy" dir="auto">{r.title || L(`${items.length} material(s)`, `${items.length} اشیاء`, items.length === 1 ? 'مادة واحدة' : `${items.length} مواد`)}</div>
                       <div className="text-xs text-gray-400 mt-0.5">{rfqDate(r, locale)}{r.city || r.region ? ` · ${r.city || r.region}` : ''}</div>
+                      </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${b.c}`}>{b.t}</span>
@@ -162,6 +217,14 @@ export default function MyRequestsPage() {
                     ))}
                     {items.length > 6 && <span className="self-center text-xs text-gray-400">+{items.length - 6}</span>}
                   </div>
+                  {stateOf(r) === 'cancelled' && (
+                    <div className="mt-3 flex justify-end">
+                      <span role="link" onClick={(e: any) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/contractor/rfq/quick?from=${r.id}` }}
+                        className="px-4 py-2 rounded-xl text-sm font-bold text-white cursor-pointer" style={{ background: '#0F6E56' }}>
+                        {L('Request again', 'دوبارہ منگوائیں', 'اطلب مرة أخرى')}
+                      </span>
+                    </div>
+                  )}
                 </Link>
               )
             })}
