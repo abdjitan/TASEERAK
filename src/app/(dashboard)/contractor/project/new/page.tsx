@@ -9,7 +9,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { TIERS, TIER_INFO, tierLabel, tierHint, normTier } from '@/lib/sellers'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, type Sector } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, type Sector } from '@/types'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import CatalogPicker from '@/components/shared/CatalogPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -312,7 +312,10 @@ export default function NewProjectPage() {
         </select>
       </div>
       <input value={draft.specification} onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, specification: v })) }}
-        className="input-field" placeholder={L('Specification (optional): size, grade, brand…', 'تفصیل (اختیاری)', 'المواصفة (اختياري): المقاس، الدرجة، الماركة…')} />
+        className={`input-field ${draftName && specsRequired(draftName, draftSector) && !(draft.specification || '').trim() ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
+        placeholder={draftName && specsRequired(draftName, draftSector)
+          ? L('Specification (required): size, length, grade…', 'تفصیل (ضروری)', 'المواصفة (مطلوبة): المقاس، الطول، الدرجة…')
+          : L('Specification (optional): size, grade, brand…', 'تفصیل (اختیاری)', 'المواصفة (اختياري): المقاس، الدرجة، الماركة…')} />
       <button type="button" disabled={!draftName} onClick={commitDraft}
         className="w-full py-3 rounded-xl text-white font-bold disabled:opacity-40" style={{ background: '#0F6E56' }}>
         {L('Add to the list', 'فہرست میں شامل کریں', 'أضف إلى القائمة')}
@@ -331,6 +334,9 @@ export default function NewProjectPage() {
       const ok = confirm(`يوجد ${arItems(unclassifiedCount)} غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)
       if (!ok) return
     }
+    // materials priced by size/grade need a written spec or a spec file (owner 2026-10-27)
+    const noSpec = classifiedItems.filter((i: any) => specsRequired(i.product_name, i.sector) && !(i.specification || '').trim() && !i.specFile)
+    if (noSpec.length) { alert(`اكتب مواصفات ${noSpec.length === 1 ? '«' + noSpec[0].product_name + '»' : arItems(noSpec.length)} (المقاس، الطول، الدرجة…) ليتمكن الموردون من التسعير.`); setEditingIndex(items.indexOf(noSpec[0])); return }
     const noQty = classifiedItems.filter((i: any) => !(parseFloat(i.quantity) > 0))
     if (noQty.length) { alert(`أدخل كمية ${noQty.length === 1 ? '«' + noQty[0].product_name + '»' : arItems(noQty.length)} قبل الإرسال.`); return }
     if (classifiedItems.length === 0) { alert('لا توجد بنود مصنّفة للإرسال — اختر تصنيف البنود أولاً.'); return }

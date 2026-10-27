@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, type Sector } from '@/types'
+import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -350,6 +350,16 @@ export default function QuickRequestPage() {
     if (!lines.length) { setError(L('Add at least one item.', 'کم از کم ایک چیز شامل کریں۔', 'أضف مادة واحدة على الأقل.')); return false }
     const bad = lines.find(l => !l.product_name.trim() || !(parseFloat(l.quantity) > 0) || !l.unit)
     if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر يحتاج إلى اسم وكمية ووحدة.')); return false }
+    // materials priced by size/grade need their specs (owner 2026-10-27)
+    const noSpec = lines.find(l => missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length)
+    if (noSpec) {
+      const m = missingSpecs(noSpec.product_name, noSpec.sector as any, noSpec.specs, noSpec.details, !!noSpec.fileId)
+      setSpecsOpen(noSpec.key); updateLine(noSpec.key, { done: false })
+      setError(m[0] === '*'
+        ? L(`Write the size/specs of «${l2n(noSpec)}» so suppliers can price it.`, `«${l2n(noSpec)}» کا سائز/تفصیل لکھیں۔`, `اكتب مقاس «${l2n(noSpec)}» ومواصفاته ليتمكن الموردون من تسعيره.`)
+        : L(`Choose the specs of «${l2n(noSpec)}» (${m.join(', ')}) so suppliers can price it.`, `«${l2n(noSpec)}» کی تفصیلات منتخب کریں (${m.join('، ')})۔`, `اختر مواصفات «${l2n(noSpec)}» (${m.join('، ')}) ليتمكن الموردون من تسعيره.`))
+      return false
+    }
     // an item written by hand needs at least its main section (owner 2026-10-24)
     const lost = lines.find(l => !CATALOG_NAMES.has(l.product_name.trim()) && (l.spec ? !choiceDone(l.spec) : !detectSubCategory(l.product_name, l.sector as any)))
     if (lost) { setError(L(`Choose the section of «${l2n(lost)}» so it reaches the right suppliers.`, `«${l2n(lost)}» کا شعبہ منتخب کریں۔`, `اختر قسم «${l2n(lost)}» ليصل إلى الموردين المختصين.`)); return false }
@@ -612,19 +622,30 @@ export default function QuickRequestPage() {
                       {Array.from(new Set([...(unitChoicesFor(l.product_name, l.sector as any) || UNITS), ...(l.unit ? [l.unit] : [])])).map(u => <option key={u} value={u}>{unitLabel(u)}</option>)}
                     </select>
                   </div>
-                  <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })} className="input-field text-sm"
-                    placeholder={L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
+                  {(() => {
+                    const needWritten = specsRequired(l.product_name, l.sector as any) && !getProductSpecs(l.product_name).some(f => f.key !== 'unit')
+                    const miss = needWritten && !l.details.trim() && !l.fileId
+                    return (
+                      <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })}
+                        className={`input-field text-sm ${miss ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
+                        placeholder={needWritten
+                          ? L('Size and specs (required): e.g. length, width, thickness, grade', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): مثل الطول والعرض والسماكة والدرجة')
+                          : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
+                    )
+                  })()}
                   {(() => {
                     const fields = getProductSpecs(l.product_name).filter(f => f.key !== 'unit')
                     const n = fields.filter(f => (l.specs?.[f.key] || '').trim()).length
-                    const open = specsOpen === l.key
+                    const req = fields.length > 0 && specsRequired(l.product_name, l.sector as any)
+                    const missing = req && n < fields.length
+                    const open = specsOpen === l.key || missing
                     return (
                       <>
                         <div className="flex flex-wrap items-center gap-2">
                           {fields.length > 0 && (
                             <button type="button" onClick={() => setSpecsOpen(open ? null : l.key)} aria-expanded={open}
-                              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${n ? 'border-[#0F6E56] text-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 text-gray-600'}`}>
-                              <Glyph e="⚙" /> {L('Specifications', 'تفصیلات', 'المواصفات')}{n ? ` (${n})` : ''} {open ? '▴' : '▾'}
+                              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${missing ? 'border-[#D4A543] text-[#9D7425] bg-[#D4A543]/10' : n ? 'border-[#0F6E56] text-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 text-gray-600'}`}>
+                              <Glyph e="⚙" /> {L('Specifications', 'تفصیلات', 'المواصفات')}{req ? L(' (required)', ' (ضروری)', ' (مطلوبة)') : ''}{n ? ` (${n})` : ''} {open ? '▴' : '▾'}
                             </button>
                           )}
                           <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
@@ -644,9 +665,9 @@ export default function QuickRequestPage() {
                               const setV = (val: string) => updateLine(l.key, { specs: { ...(l.specs || {}), [f.key]: val } })
                               return (
                                 <label key={f.key} className="block">
-                                  <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{locale === 'ar' ? f.ar : f.en}</span>
-                                  <select value={custom ? '__other' : v} onChange={e => setV(e.target.value === '__other' ? ' ' : e.target.value)} className="input-field text-sm">
-                                    <option value="">{L('Any', 'کوئی بھی', 'أي')}</option>
+                                  <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{locale === 'ar' ? f.ar : f.en}{req ? ' *' : ''}</span>
+                                  <select value={custom ? '__other' : v} onChange={e => setV(e.target.value === '__other' ? ' ' : e.target.value)} className={`input-field text-sm ${req && !v.trim() ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
+                                    <option value="">{req ? L('Choose', 'منتخب کریں', 'اختر') : L('Any', 'کوئی بھی', 'أي')}</option>
                                     {f.options.map(o => <option key={o} value={o}>{getOptionLabel(o, locale)}</option>)}
                                     <option value="__other">{L('Other…', 'دیگر…', 'أخرى…')}</option>
                                   </select>
@@ -669,9 +690,9 @@ export default function QuickRequestPage() {
                     </label>
                   )}
                   <button type="button" onClick={() => { setSpecsOpen(null); updateLine(l.key, { done: true }) }}
-                    disabled={!(l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit)}
+                    disabled={!(l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) || missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length > 0}
                     className="w-full py-2 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0F6E56' }}>
-                    ✓ {parseFloat(l.quantity) > 0 ? L('Save', 'محفوظ کریں', 'حفظ') : L('Enter the quantity to save', 'محفوظ کرنے کے لیے مقدار لکھیں', 'أدخل الكمية للحفظ')}
+                    ✓ {!(parseFloat(l.quantity) > 0) ? L('Enter the quantity to save', 'محفوظ کرنے کے لیے مقدار لکھیں', 'أدخل الكمية للحفظ') : missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length ? L('Enter the specs to save', 'محفوظ کرنے کے لیے تفصیل', 'أدخل المواصفات للحفظ') : L('Save', 'محفوظ کریں', 'حفظ')}
                   </button>
                 </div>
               )

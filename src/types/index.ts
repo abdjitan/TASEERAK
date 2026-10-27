@@ -4582,6 +4582,28 @@ export function getProductSpecs(productName: string): SpecField[] {
   return PRODUCT_SPECS[(productName || '').trim()] || []
 }
 
+// Materials priced by size / grade / section: the supplier can't quote them without the specs
+// (owner 2026-10-27, e.g. a precast lintel without its length and width). For these, every spec
+// field of the product is required; a product without spec fields needs a written spec instead.
+export const SPEC_REQUIRED_SUBS = new Set<string>([
+  'precast', 'readymix', 'rebar', 'steel_mesh', 'steel_sections', 'structural_steel', 'blocks',
+  'formwork_ply', 'formwork_timber', 'formwork_steel', 'scaffold_structure', 'shoring_props', 'roadbase', 'aggregates',
+  'tiles', 'marble', 'wood_floor', 'gypsum', 'drywall_metal', 'false_ceiling', 'aluminum', 'curtain_wall', 'wood_doors', 'fire_doors',
+  'lv_cables', 'mv_cables', 'store_wires', 'conduits', 'breakers', 'panels',
+  'drainage_pipes', 'water_supply', 'fire_fighting', 'ductwork', 'store_fasteners',
+])
+export function specsRequired(productName: string, sector: Sector): boolean {
+  const sub = detectSubCategory((productName || '').trim(), sector)
+  return !!sub && SPEC_REQUIRED_SUBS.has(sub)
+}
+/** What's still missing before this line can be priced: spec field labels, or '*' = a written spec. */
+export function missingSpecs(productName: string, sector: Sector, specs: Record<string, string> | undefined, written: string, hasFile = false): string[] {
+  if (!specsRequired(productName, sector)) return []
+  const fields = getProductSpecs(productName).filter(f => f.key !== 'unit')
+  if (!fields.length) return (written || '').trim() || hasFile ? [] : ['*']
+  return fields.filter(f => !(specs?.[f.key] || '').trim()).map(f => f.ar)
+}
+
 // تجميع التخصصات الفرعية (SUB_CATEGORIES) حسب المجموعة — لصفحة تسعير المورد
 // (نفس فكرة getGroupedProducts لكن على تصنيف المورد).
 export interface SubCatGroup { group: string; ar: string; en: string; ur: string; icon: string; subs: { key: string; ar: string; en: string; ur: string; icon: string }[] }
