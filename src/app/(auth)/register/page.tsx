@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { TERMS_VERSION } from '@/lib/legal'
 import { createClient } from '@/lib/supabase/client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -163,6 +164,7 @@ export default function RegisterPage() {
         phone: data.phone,
         preferred_language: locale,
         ...(data.role === 'supplier' ? { seller_kind: sellerKind } : {}),
+        terms_version: TERMS_VERSION, client: 'web',
       }
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email, password: data.password,
