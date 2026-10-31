@@ -42,6 +42,7 @@ type Line = {
   specs?: Record<string, string> // chosen specification values (PRODUCT_SPECS keys, without 'unit')
   fileId?: string                // attached drawing/spec file, kept in IndexedDB until sending
   fileName?: string
+  moreFiles?: { id: string; name: string }[] // owner 2026-10-31: more than one file/photo per line (up to 5 in all)
   spec?: { sector: string; sub: string | null; section?: string } // a «not in the list» item filed under a specialty by the buyer
 }
 type Photo = {
@@ -211,7 +212,7 @@ export default function QuickRequestPage() {
   }, [restored, userId, done, text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, tier, pickup, geo, address, photos])
 
   function startOver() {
-    deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[]])
+    deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[], ...lines.flatMap(l => (l.moreFiles || []).map(m => m.id))])
     if (userId) clearLocalDraft('quick:' + userId)
     setLines([]); setPhotos([]); setText(''); setNotes(''); setError('')
   }
@@ -303,8 +304,9 @@ export default function QuickRequestPage() {
     putDraftBlob(id, file)
     setLines(prev => prev.map(l => {
       if (l.key !== key) return l
-      if (l.fileId) deleteDraftBlobs([l.fileId])
-      return { ...l, fileId: id, fileName: file.name }
+      if (!l.fileId) return { ...l, fileId: id, fileName: file.name }
+      if ((l.moreFiles || []).length >= 4) { deleteDraftBlobs([id]); return l }
+      return { ...l, moreFiles: [...(l.moreFiles || []), { id, name: file.name }] }
     }))
   }
 
@@ -326,6 +328,7 @@ export default function QuickRequestPage() {
     const l = lines.find(x => x.key === key)
     setLines(prev => prev.filter(x => x.key !== key))
     if (l?.fileId) deleteDraftBlobs([l.fileId])
+    if (l?.moreFiles?.length) deleteDraftBlobs(l.moreFiles.map(m => m.id))
     if (l?.photoId) { deleteDraftBlobs([l.photoId]); setPhotos(prev => prev.filter(p => p.id !== l.photoId)) }
   }
 
@@ -390,6 +393,15 @@ export default function QuickRequestPage() {
             fileUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
           }
         }
+        const attachments: { url: string; name: string }[] = []
+        for (const [k, mf] of (l.moreFiles || []).entries()) {
+          const blob = await getDraftBlob(mf.id)
+          if (!blob) continue
+          const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
+          const { data: up } = await supabase.storage.from('licenses').upload(`${userId}/spec-${Date.now()}-${i}-${k + 2}.${ext}`, blob, { upsert: false, contentType: blob.type })
+          if (!up) { setError(L(`Could not upload «${mf.name}». Try again, or remove it.`, `«${mf.name}» اپ لوڈ نہیں ہو سکی۔`, `تعذّر رفع «${mf.name}». حاول مرة أخرى، أو احذفه.`)); return }
+          attachments.push({ url: supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl, name: mf.name })
+        }
         if (ph && ph.share) {
           const ext = ph.file.type === 'image/png' ? 'png' : ph.file.type === 'image/webp' ? 'webp' : 'jpg'
           const path = `${userId}/photo-${Date.now()}-${i}.${ext}`
@@ -411,6 +423,7 @@ export default function QuickRequestPage() {
           spec_file_url: fileUrl || photoUrl,
           spec_file_name: fileUrl ? (l.fileName || L('Attachment', 'فائل', 'مرفق')) : photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
           photo_url: photoUrl || (fileUrl && /\.(jpe?g|png|webp)$/i.test(l.fileName || '') ? fileUrl : null),
+          ...(attachments.length ? { attachments } : {}),
           quick: true,
           // a line written by hand (not a catalog product): admins hear about it when an offer is chosen (174)
           custom: !CATALOG_NAMES.has(l.product_name.trim()),
@@ -437,7 +450,7 @@ export default function QuickRequestPage() {
           : L('Could not send. Try again.', 'نہیں بھیج سکے۔', 'تعذّر إرسال الطلب. حاول مرة أخرى.'))
         return
       }
-      deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[]])
+      deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[], ...lines.flatMap(l => (l.moreFiles || []).map(m => m.id))])
       clearLocalDraft('quick:' + userId)
       // Teach the search: the words the buyer wrote → the material name that was sent.
       for (const l of lines) {
@@ -517,8 +530,8 @@ export default function QuickRequestPage() {
             </button>
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
               onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
-            <input ref={specFileRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" className="hidden"
-              onChange={e => { if (fileFor) attachFile(fileFor, e.target.files?.[0]); e.target.value = '' }} />
+            <input ref={specFileRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple className="hidden"
+              onChange={e => { if (fileFor) Array.from(e.target.files || []).forEach(f => attachFile(fileFor, f)); e.target.value = '' }} />
           </div>
         </div>
 
@@ -654,8 +667,18 @@ export default function QuickRequestPage() {
                             <Glyph e="📎" /> {l.fileId ? (l.fileName || L('File attached', 'فائل منسلک', 'ملف مرفق')) : L('Attach a drawing or file', 'ڈرائنگ یا فائل', 'أرفق مخططاً أو ملفاً')}
                           </button>
                           {l.fileId && (
-                            <button type="button" onClick={() => { deleteDraftBlobs([l.fileId!]); updateLine(l.key, { fileId: undefined, fileName: undefined }) }}
+                            <button type="button" onClick={() => { deleteDraftBlobs([l.fileId!]); const [nx, ...rest] = l.moreFiles || []; updateLine(l.key, nx ? { fileId: nx.id, fileName: nx.name, moreFiles: rest } : { fileId: undefined, fileName: undefined }) }}
                               className="text-[11px] text-gray-400 hover:text-red-500" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}>×</button>
+                          )}
+                          {(l.moreFiles || []).map(mf => (
+                            <span key={mf.id} className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-purple-300 text-purple-700 bg-purple-50 max-w-[12rem]">
+                              <span className="truncate"><Glyph e="📎" /> {mf.name}</span>
+                              <button type="button" onClick={() => { deleteDraftBlobs([mf.id]); updateLine(l.key, { moreFiles: (l.moreFiles || []).filter(x => x.id !== mf.id) }) }} className="text-gray-400 hover:text-red-500" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}>×</button>
+                            </span>
+                          ))}
+                          {l.fileId && (l.moreFiles || []).length < 4 && (
+                            <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
+                              className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-dashed border-gray-300 text-gray-600">+ {L('Another file or photo', 'ایک اور فائل', 'ملف أو صورة أخرى')}</button>
                           )}
                         </div>
                         {open && fields.length > 0 && (
