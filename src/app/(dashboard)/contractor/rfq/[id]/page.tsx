@@ -322,7 +322,8 @@ export default function RFQDetailPage() {
       unit: editUnit || rfq.unit,
     }
     // a one-item request also carries the line in items[]: the supplier page reads it from there (review 2026-10-28)
-    if (Array.isArray(rfq.items) && rfq.items.length === 1) {
+    const lineChanged = patch.product_name !== rfq.product_name || Number(patch.quantity) !== Number(rfq.quantity) || patch.unit !== rfq.unit || (editSpec || '').trim() !== (rfq.specification || '').trim()
+    if (lineChanged && Array.isArray(rfq.items) && rfq.items.length === 1) {
       patch.items = [{ ...rfq.items[0], product_name: patch.product_name, quantity: patch.quantity, unit: patch.unit, specification: (editSpec || '').trim() || null }]
     }
     // one transaction on the server (175): offers are dropped only on a material change, and only
