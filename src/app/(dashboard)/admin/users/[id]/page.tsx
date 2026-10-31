@@ -108,10 +108,11 @@ export default function AdminUserDetail() {
 
   async function openDoc(val: string, bucket = 'verification') {
     if (!val) return
-    if (val.startsWith('http')) { window.open(val, '_blank'); return }
+    // only a real https link or a signed storage link ever opens (a stored «javascript:» value never runs)
+    if (val.toLowerCase().startsWith('https://')) { window.open(val, '_blank', 'noopener,noreferrer'); return }
     const c = createClient()
     const { data } = await c.storage.from(bucket).createSignedUrl(val, 3600)
-    window.open(data?.signedUrl || val, '_blank')
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
   }
 
   const dt = (d: any) => d ? new Date(d).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn') : '—'

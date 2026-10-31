@@ -349,10 +349,10 @@ export default function AdminPanel() {
   // legacy values stored as full public URLs still open directly.
   async function openDoc(val: string) {
     if (!val) return
-    if (val.startsWith('http')) { window.open(val, '_blank'); return }
+    if (val.toLowerCase().startsWith('https://')) { window.open(val, '_blank', 'noopener,noreferrer'); return } // never a «javascript:» value
     const supabase = createClient()
     const { data } = await supabase.storage.from('verification').createSignedUrl(val, 3600)
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank', 'noopener,noreferrer')
   }
 
   if (loading) return <PageLoader />
