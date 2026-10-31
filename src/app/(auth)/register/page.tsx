@@ -349,9 +349,9 @@ export default function RegisterPage() {
               <input type="checkbox" checked={agreedToTerms} onChange={(e: any) => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#0B2438] flex-shrink-0" />
               <span className="text-xs text-gray-600 leading-relaxed">
                 {t.agreePre}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#D4A543' }}>{t.terms}</a>
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#9D7425' }}>{t.terms}</a>
                 {t.and}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#D4A543' }}>{t.privacy}</a>
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#9D7425' }}>{t.privacy}</a>
               </span>
             </label>
 

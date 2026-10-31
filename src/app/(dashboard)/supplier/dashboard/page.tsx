@@ -403,7 +403,7 @@ export default function SupplierDashboard() {
                   <div className="font-bold" style={{ color: '#0B2438' }}>{L('Set your exact specialties for precise matching!', 'درست مماثلت کے لیے اپنی مہارتیں مقرر کریں!', 'حدّد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!')}</div>
                   <div className="text-sm text-gray-500 mt-0.5">{L('e.g. only "Bricks" or only "Marble" — get only relevant requests', 'مثلاً صرف "اینٹ" یا صرف "سنگ مرمر"', 'مثلاً: محل طوب فقط، أو محل رخام فقط — تصلك الطلبات المطابقة لتخصصك')}</div>
                 </div>
-                <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#D4A543' }}>{L('Setup →', 'ترتیب دیں ←', 'إعداد ←')}</div>
+                <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#9D7425' }}>{L('Setup →', 'ترتیب دیں ←', 'إعداد ←')}</div>
               </div>
             </Link>
           ) })
@@ -678,7 +678,7 @@ export default function SupplierDashboard() {
                             )}
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
                             {rfq.sub_category && (
-                              <span className="badge text-[10px] bg-[#D4A543]/10 text-[#D4A543] font-semibold">
+                              <span className="badge text-[10px] bg-[#D4A543]/10 text-[#9D7425] font-semibold">
                                 <Glyph e="🎯" /> {getSubCategoryLabel(rfq.sector, rfq.sub_category, locale)}
                               </span>
                             )}
@@ -763,7 +763,7 @@ export default function SupplierDashboard() {
                       {offer.rfq?.region && <span><Glyph e="📍" /> {getRegionLabel(offer.rfq.region, locale)}</span>}
                       {sentBy(offer) && <span className="font-semibold text-gray-500">{sentBy(offer)}</span>}
                     </div>
-                    <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#D4A543' }}>
+                    <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#9D7425' }}>
                       {offer.status === 'accepted'
                         ? (locale === 'en' ? 'View deal & invoice →' : locale === 'ur' ? 'ڈیل دیکھیں →' : 'افتح الصفقة والفاتورة ←')
                         : (locale === 'en' ? 'View / edit offer →' : locale === 'ur' ? 'پیشکش دیکھیں →' : 'افتح العرض والتفاصيل ←')}

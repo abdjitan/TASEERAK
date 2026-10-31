@@ -245,7 +245,7 @@ export default function MarketPricePage() {
                       <td className="px-4 py-3 text-xs text-gray-500">{p.unit}</td>
                       <td className="px-4 py-3 text-sm text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
-                        <div className="text-base font-bold" style={{ color: '#D4A543' }}>{p.avg?.toLocaleString('en-US')} {T.sar}</div>
+                        <div className="text-base font-bold" style={{ color: '#9D7425' }}>{p.avg?.toLocaleString('en-US')} {T.sar}</div>
                       </td>
                       <td className="px-4 py-3 text-sm text-red-500 font-semibold">{p.max?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
@@ -270,7 +270,7 @@ export default function MarketPricePage() {
                       <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                     </div>
                     <div className="text-left">
-                      <div className="text-lg font-bold" style={{ color: '#D4A543' }}>{p.avg?.toLocaleString('en-US')}</div>
+                      <div className="text-lg font-bold" style={{ color: '#9D7425' }}>{p.avg?.toLocaleString('en-US')}</div>
                       <div className="text-[10px] text-gray-400">{T.sar} / {p.unit}</div>
                     </div>
                   </div>
@@ -280,7 +280,7 @@ export default function MarketPricePage() {
                       <div className="text-gray-400 text-[10px]">{T.minPrice}</div>
                     </div>
                     <div className="rounded-lg p-2" style={{ background: '#D4A54315' }}>
-                      <div className="font-bold" style={{ color: '#D4A543' }}>{p.avg?.toLocaleString('en-US')}</div>
+                      <div className="font-bold" style={{ color: '#9D7425' }}>{p.avg?.toLocaleString('en-US')}</div>
                       <div className="text-gray-400 text-[10px]">{T.avgPrice}</div>
                     </div>
                     <div className="bg-red-50 rounded-lg p-2">

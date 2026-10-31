@@ -108,7 +108,7 @@ export default function ProjectResultsPage() {
               )}
             </div>
             <div className="text-left">
-              <div className="text-2xl font-bold" style={{ color: '#D4A543' }}>
+              <div className="text-2xl font-bold" style={{ color: '#9D7425' }}>
                 {totalAcceptedCost > 0 ? totalAcceptedCost.toLocaleString('en-US') + ' ر.س' : '—'}
               </div>
               <div className="text-xs text-gray-400">{locale === 'en' ? 'Total Accepted' : 'إجمالي المقبول'}</div>
@@ -233,7 +233,7 @@ export default function ProjectResultsPage() {
                         </div>
                       ) : (
                         <div className="text-center">
-                          <div className="text-xl font-bold" style={{ color: '#D4A543' }}>{offers.length}</div>
+                          <div className="text-xl font-bold" style={{ color: '#9D7425' }}>{offers.length}</div>
                           <div className="text-[10px] text-gray-400">{locale === 'en' ? 'offers' : 'عرض'}</div>
                         </div>
                       )}
@@ -391,7 +391,7 @@ export default function ProjectResultsPage() {
               })}
               <div className="border-t border-emerald-200 pt-2 flex justify-between font-bold">
                 <span style={{ color: '#0B2438' }}>{locale === 'en' ? 'Total' : 'الإجمالي'}</span>
-                <span style={{ color: '#D4A543' }}>{totalAcceptedCost.toLocaleString('en-US')} ر.س</span>
+                <span style={{ color: '#9D7425' }}>{totalAcceptedCost.toLocaleString('en-US')} ر.س</span>
               </div>
             </div>
           </div>

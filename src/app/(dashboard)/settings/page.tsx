@@ -870,10 +870,10 @@ export default function SettingsPage() {
                         locale === lang.key ? 'border-[#D4A543] bg-[#D4A543]/5' : 'border-gray-200 hover:border-gray-300'
                       }`}>
                       <div className="text-4xl mb-3">{lang.flag}</div>
-                      <div className={`font-bold text-sm ${locale === lang.key ? 'text-[#D4A543]' : 'text-gray-800'}`}>{lang.name}</div>
+                      <div className={`font-bold text-sm ${locale === lang.key ? 'text-[#9D7425]' : 'text-gray-800'}`}>{lang.name}</div>
                       <div className="text-xs text-gray-400 mt-1">{lang.nameLocal}</div>
                       {locale === lang.key && (
-                        <div className="mt-2 text-xs font-bold" style={{ color: '#D4A543' }}>✓ {t.langSaved}</div>
+                        <div className="mt-2 text-xs font-bold" style={{ color: '#9D7425' }}>✓ {t.langSaved}</div>
                       )}
                     </button>
                   ))}

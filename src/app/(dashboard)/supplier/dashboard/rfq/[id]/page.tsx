@@ -1154,7 +1154,7 @@ export default function SupplierRFQPage() {
                   ))}
                 </div>
                 <button type="button" onClick={addAttribute}
-                  className="mt-2 text-xs font-semibold" style={{ color: '#D4A543' }}>{T.addAttr}</button>
+                  className="mt-2 text-xs font-semibold" style={{ color: '#9D7425' }}>{T.addAttr}</button>
               </div>
               )}
 
@@ -1361,7 +1361,7 @@ export default function SupplierRFQPage() {
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#D4A543' }}>
+                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#9D7425' }}>
                   + {L('Add item', 'شامل کریں', 'إضافة بند')}
                 </button>
                 </div>

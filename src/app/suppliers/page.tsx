@@ -73,7 +73,7 @@ export default async function SuppliersLeaderboard() {
                 <h2 className="text-sm font-bold mb-1" style={{ color: '#0B2438' }}>موردون في دليلنا</h2>
                 <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
                   موردون معروفون في السوق لم يسجّلوا بعد. هل أحدها نشاطك؟{' '}
-                  <Link href="/register" className="underline font-semibold" style={{ color: '#D4A543' }}>سجّله مجاناً</Link>{' '}
+                  <Link href="/register" className="underline font-semibold" style={{ color: '#9D7425' }}>سجّله مجاناً</Link>{' '}
                   لاستقبال طلبات التسعير.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

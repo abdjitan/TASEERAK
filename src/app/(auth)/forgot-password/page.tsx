@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
                 </button>
               </form>
               <p className="text-center text-sm text-gray-500 mt-5">
-                <a href="/login" className="font-medium hover:underline" style={{ color: '#D4A543' }}>{t.back}</a>
+                <a href="/login" className="font-medium hover:underline" style={{ color: '#9D7425' }}>{t.back}</a>
               </p>
             </>
           )}

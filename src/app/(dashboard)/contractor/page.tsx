@@ -332,7 +332,7 @@ export default function ContractorDashboard() {
               <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2438' }}>
                 <AppIcon name="pricing" tone="warning" variant="line" size={20} /> {locale === 'en' ? 'Market pulse' : 'نبض السوق'}
               </h2>
-              <Link href="/market" className="text-xs font-semibold" style={{ color: '#D4A543' }}>{locale === 'en' ? 'Full index →' : 'البورصة كاملة ←'}</Link>
+              <Link href="/market" className="text-xs font-semibold" style={{ color: '#9D7425' }}>{locale === 'en' ? 'Full index →' : 'البورصة كاملة ←'}</Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {marketTop.map((p: any, i: any) => (
@@ -454,7 +454,7 @@ export default function ContractorDashboard() {
                   <div className="text-[10px] text-gray-500">{locale === 'en' ? 'Deals done' : 'صفقات مكتملة'}</div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-2.5">
-                  <div className="text-lg font-bold" style={{ color: '#D4A543' }}>{rfqsThisWeek}</div>
+                  <div className="text-lg font-bold" style={{ color: '#9D7425' }}>{rfqsThisWeek}</div>
                   <div className="text-[10px] text-gray-500">{locale === 'en' ? 'This week' : 'هذا الأسبوع'}</div>
                 </div>
               </div>
@@ -469,7 +469,7 @@ export default function ContractorDashboard() {
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
                 <Glyph e="📋" /> {locale === 'en' ? 'My projects' : locale === 'ur' ? 'میرے پراجیکٹس' : 'مشاريعي'}
               </h2>
-              <Link href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#D4A543' }}>
+              <Link href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#9D7425' }}>
                 + {locale === 'en' ? 'New Project' : 'مشروع جديد'}
               </Link>
             </div>
@@ -484,7 +484,7 @@ export default function ContractorDashboard() {
                       <div className="text-xs text-gray-400"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</div>
                     </div>
                   </div>
-                  <div className="text-xs font-semibold" style={{ color: '#D4A543' }}>
+                  <div className="text-xs font-semibold" style={{ color: '#9D7425' }}>
                     {locale === 'en' ? 'View Results →' : 'النتائج ←'}
                   </div>
                 </Link>
@@ -665,7 +665,7 @@ export default function ContractorDashboard() {
                     {rfq.created_at && <span><Glyph e="🗓" /> {formatDateTime(rfq.created_at)}</span>}
                     {rfq.expires_at && <span><Glyph e="⏰" /> {formatDateTime(rfq.expires_at)}</span>}
                     {rfq.specification && <span className="truncate max-w-[200px]"><Glyph e="⚙" /> {rfq.specification}</span>}
-                    <span className="mr-auto" style={{ color: '#D4A543' }}>{t.viewDetails}</span>
+                    <span className="mr-auto" style={{ color: '#9D7425' }}>{t.viewDetails}</span>
                   </div>
                   {/* عدّاد وقت بصري ينقص حتى انتهاء المهلة */}
                   {rfq.status === 'open' && rfq.expires_at && rfq.created_at && !isExpired(rfq.expires_at) && (() => {
