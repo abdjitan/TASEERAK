@@ -72,7 +72,11 @@ export default function RFQDetailPage() {
   const [aiCmp, setAiCmp] = useState<any>(null) // نتيجة تحليل العروض بالذكاء الاصطناعي
   const [cmpLoading, setCmpLoading] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [awardSort, setAwardSort] = useState('cheapest') // cheapest | fastest — ترتيب عروض كل مادة
+  const [awardSort, setAwardSort] = useState('cheapest') // cheapest | rated | fastest | nearest — ترتيب عروض كل مادة
+  // owner 2026-10-31: the buyer sees the best 3 offers (by the chosen order); «عرض كل العروض» shows the rest
+  const TOP_N = 3
+  const [showAllOffers, setShowAllOffers] = useState(false)
+  const [allBidsFor, setAllBidsFor] = useState<Record<number, boolean>>({})
   const [onlyVerified, setOnlyVerified] = useState(false)
   const [tierFilter, setTierFilter] = useState('') // '' | company | shop | independent
   const [loading, setLoading] = useState(true)
@@ -354,7 +358,7 @@ export default function RFQDetailPage() {
     .sort((a: any, b: any) => {
       if (sortBy === 'price_desc') return offerComparable(b) - offerComparable(a)
       if (sortBy === 'delivery') return (a.delivery_days || 99999) - (b.delivery_days || 99999)
-      if (sortBy === 'rating') return (b.supplier?.rating_avg || 0) - (a.supplier?.rating_avg || 0)
+      if (sortBy === 'rating') return (supplierScore(b.supplier, supplierStats[b.supplier_id]) - supplierScore(a.supplier, supplierStats[a.supplier_id])) || (offerComparable(a) - offerComparable(b))
       return offerComparable(a) - offerComparable(b) // price_asc (default) — VAT-inclusive basis (B4)
     })
 
@@ -588,7 +592,7 @@ export default function RFQDetailPage() {
               </div>
               {activeOffers.length > 0 && (
                 <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 text-xs font-semibold">
-                  {[{ k: 'cheapest', l: `${L('Cheapest', 'سب سے سستا', 'الأرخص')}` }, { k: 'fastest', l: `${L('Fastest', 'سب سے تیز', 'الأسرع')}` }, ...(canSortNearest ? [{ k: 'nearest', l: `${L('Nearest', 'سب سے قریب', 'الأقرب')}` }] : [])].map((o: any) => (
+                  {[{ k: 'cheapest', l: `${L('Cheapest', 'سب سے سستا', 'الأرخص')}` }, { k: 'rated', l: `${L('Top rated', 'بہترین ریٹنگ', 'الأعلى تقييماً')}` }, { k: 'fastest', l: `${L('Fastest', 'سب سے تیز', 'الأسرع')}` }, ...(canSortNearest ? [{ k: 'nearest', l: `${L('Nearest', 'سب سے قریب', 'الأقرب')}` }] : [])].map((o: any) => (
                     <button key={o.k} type="button" onClick={() => setAwardSort(o.k)}
                       className={`px-3 py-1.5 rounded-lg transition-all ${awardSort === o.k ? 'bg-white shadow-sm text-[#0B2438]' : 'text-gray-500'}`}>{o.l}</button>
                   ))}
@@ -615,7 +619,10 @@ export default function RFQDetailPage() {
                     const entry = list.find((ip: any) => ip.item_index === idx) || list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
                     return entry ? { offer: o, entry } : null
                   }).filter(Boolean).sort((a: any, b: any) => {
-                    if (awardSort === 'fastest') {
+                    if (awardSort === 'rated') {
+                      const d = supplierScore(b.offer.supplier, supplierStats[b.offer.supplier_id]) - supplierScore(a.offer.supplier, supplierStats[a.offer.supplier_id])
+                      if (d) return d
+                    } else if (awardSort === 'fastest') {
                       const ad = (a.entry.delivery_days ?? a.offer.delivery_days ?? 99999)
                       const bd = (b.entry.delivery_days ?? b.offer.delivery_days ?? 99999)
                       if (ad !== bd) return ad - bd
@@ -640,7 +647,7 @@ export default function RFQDetailPage() {
                         <div className="px-4 py-3 text-xs text-gray-400">{L('No supplier has priced this material yet', 'ابھی کسی سپلائر نے اس مال کی قیمت نہیں دی', 'لا يوجد مورد سعّر هذه المادة بعد')}</div>
                       ) : (
                         <div className="divide-y divide-gray-50">
-                          {bids.map((b: any, r: any) => {
+                          {bids.filter((b: any, r: number) => allBidsFor[idx] || r < TOP_N || (award && award.offer_id === b.offer.id)).map((b: any, r: any) => {
                             const isAwarded = award && award.offer_id === b.offer.id
                             return (
                               <div key={b.offer.id} className={`px-4 py-2.5 flex items-center justify-between gap-2 ${isAwarded ? 'bg-emerald-50' : ''}`}>
@@ -704,6 +711,12 @@ export default function RFQDetailPage() {
                               </div>
                             )
                           })}
+                          {bids.length > TOP_N && (
+                            <button type="button" onClick={() => setAllBidsFor(m => ({ ...m, [idx]: !m[idx] }))}
+                              className="w-full px-4 py-2 text-xs font-bold text-[#9D7425] hover:bg-[#D4A543]/5">
+                              {allBidsFor[idx] ? L('Show the best 3 only', 'صرف بہترین 3', 'اعرض أفضل 3 فقط') : L(`Show all offers (${bids.length})`, `تمام آفرز (${bids.length})`, `عرض كل العروض (${bids.length})`)}
+                            </button>
+                          )}
                         </div>
                       )}
                       {award && rfq.status === 'open' && (
@@ -782,12 +795,13 @@ export default function RFQDetailPage() {
         </div>
         {offers.length > 1 && (
           <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <select value={sortBy} onChange={(e: any) => setSortBy(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white font-semibold text-gray-700">
-              <option value="price_asc">{L('Price: low to high', 'قیمت: کم سے زیادہ', 'السعر: الأقل أولاً')}</option>
-              <option value="price_desc">{L('Price: high to low', 'قیمت: زیادہ سے کم', 'السعر: الأعلى أولاً')}</option>
-              <option value="delivery">{L('Delivery: fastest', 'ڈیلیوری: سب سے تیز', 'التوصيل: الأسرع')}</option>
-              <option value="rating">{L('Rating: highest', 'ریٹنگ: سب سے زیادہ', 'التقييم: الأعلى')}</option>
-            </select>
+            <span className="text-xs font-bold text-gray-600">{L('Best 3 by:', 'بہترین 3:', 'أفضل 3 حسب:')}</span>
+            <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 text-xs font-semibold">
+              {([['price_asc', L('Cheapest', 'سب سے سستا', 'الأرخص')], ['rating', L('Top rated', 'بہترین ریٹنگ', 'الأعلى تقييماً')], ['delivery', L('Fastest', 'سب سے تیز', 'الأسرع')]] as [string, string][]).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setSortBy(k)} aria-pressed={sortBy === k}
+                  className={`px-3 py-1.5 rounded-lg transition-all ${sortBy === k ? 'bg-white shadow-sm text-[#0B2438]' : 'text-gray-500'}`}>{l}</button>
+              ))}
+            </div>
             <select value={tierFilter} onChange={(e: any) => setTierFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white text-gray-700">
               <option value="">{L('All suppliers', 'تمام سپلائرز', 'كل الموردين')}</option>
               {TIERS.map(tr => <option key={tr} value={tr}>{tierLabel(tr, locale)}</option>)}
@@ -836,7 +850,7 @@ export default function RFQDetailPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {displayedOffers.map((offer: any, i: any) => (
+            {displayedOffers.slice(0, showAllOffers ? undefined : TOP_N).map((offer: any, i: any) => (
               <div key={offer.id} className={`bg-white rounded-xl p-5 border shadow-sm transition-all ${
                 offer.status === 'accepted' ? 'border-green-300 bg-green-50' :
                 offer.status === 'rejected' ? 'border-gray-200 opacity-50' : 'border-gray-100 hover:border-blue-200'
@@ -1047,6 +1061,12 @@ export default function RFQDetailPage() {
                 )}
               </div>
             ))}
+            {displayedOffers.length > TOP_N && (
+              <button type="button" onClick={() => setShowAllOffers(v => !v)}
+                className="w-full py-3 rounded-xl border-2 border-dashed border-[#D4A543]/60 text-sm font-bold text-[#9D7425] hover:bg-[#D4A543]/5">
+                {showAllOffers ? L('Show the best 3 only', 'صرف بہترین 3', 'اعرض أفضل 3 فقط') : L(`Show all offers (${displayedOffers.length})`, `تمام آفرز (${displayedOffers.length})`, `عرض كل العروض (${displayedOffers.length})`)}
+              </button>
+            )}
           </div>
         )}
         </>)}
