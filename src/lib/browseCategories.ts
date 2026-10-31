@@ -86,15 +86,37 @@ const MERGE: Partial<Record<BrowseSection, Record<string, string>>> = {
 }
 const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: string; ur: string }>>> = {
   furniture: {
+    room_other: { ar: 'الأثاث الثابت والخزائن المدمجة', en: 'Fitted furniture & built-in wardrobes', ur: 'فٹڈ فرنیچر اور الماریاں' },
     joinery: { ar: 'أثاث وخزائن وستائر حسب الطلب', en: 'Custom furniture, wardrobes & curtains', ur: 'آرڈر پر فرنیچر اور پردے' },
     lighting: { ar: 'ثريات وإنارة ديكور', en: 'Chandeliers & decorative lighting', ur: 'جھومر اور سجاوٹی روشنی' },
   },
   building: {
     infrastructure: { ar: 'الأساسات والخوازيق', en: 'Foundations & piles', ur: 'بنیادیں اور پائلز' },
     building_insulation: { ar: 'العزل الحراري', en: 'Thermal insulation', ur: 'حرارتی انسولیشن' },
+    // names that match their contents (catalog review 2026-10-31)
+    rawmaterials: { ar: 'الركام ومواد الردم والأساس', en: 'Aggregates, fill & sub-base', ur: 'بجری، بھرائی اور بیس' },
+    formwork: { ar: 'الطوبار والشدّات', en: 'Formwork & shuttering', ur: 'شٹرنگ اور فارم ورک' },
   },
-  plumbing: { plumbing_supplies: { ar: 'لوازم وأدوات السباكة', en: 'Plumbing supplies & tools', ur: 'پلمبنگ کا سامان' } },
-  tools: { scaffolding: { ar: 'السقالات ومنصات الرفع', en: 'Scaffolding & access platforms', ur: 'سکیفولڈنگ اور لفٹ پلیٹ فارم' } },
+  finishing: {
+    paint_facade: { ar: 'الدهانات واللياسة والمواد اللاصقة', en: 'Paints, plaster & adhesives', ur: 'پینٹ، پلستر اور چپکنے والے مواد' },
+    ceiling_decor: { ar: 'الجبس والأسقف المستعارة', en: 'Gypsum & false ceilings', ur: 'جپسم اور فالس سیلنگ' },
+    doors_windows: { ar: 'الأبواب والشبابيك', en: 'Doors & windows', ur: 'دروازے اور کھڑکیاں' },
+    facade_systems: { ar: 'الواجهات والزجاج', en: 'Facades & glass', ur: 'فیساڈ اور شیشہ' },
+  },
+  electrical: {
+    panels_switches: { ar: 'اللوحات والقواطع والمولدات', en: 'Panels, breakers & generators', ur: 'پینل، بریکر اور جنریٹر' },
+    store_electrical: { ar: 'مستلزمات كهرباء بسيطة', en: 'Basic electrical supplies', ur: 'بجلی کا عام سامان' },
+  },
+  hvac_fire: { mech_insulation: { ar: 'عزل الأنابيب ومجاري الهواء', en: 'Pipe & duct insulation', ur: 'پائپ اور ڈکٹ انسولیشن' } },
+  machinery: { concrete_machinery: { ar: 'معدات الخرسانة والتسليح', en: 'Concrete & rebar machinery', ur: 'کنکریٹ اور سریا مشینری' } },
+  plumbing: {
+    plumbing_supplies: { ar: 'الأدوات الصحية ولوازم السباكة', en: 'Sanitary ware & plumbing supplies', ur: 'سینیٹری اور پلمبنگ کا سامان' },
+    plumbing: { ar: 'التمديدات والمضخات والخزانات', en: 'Pipes, pumps & tanks', ur: 'پائپ، پمپ اور ٹینک' },
+  },
+  tools: {
+    scaffolding: { ar: 'السقالات ومنصات الرفع', en: 'Scaffolding & access platforms', ur: 'سکیفولڈنگ اور لفٹ پلیٹ فارم' },
+    workshop_equip: { ar: 'معدات اللحام وغسالات الضغط', en: 'Welding equipment & pressure washers', ur: 'ویلڈنگ اور پریشر واشر' },
+  },
   insulation: {
     building_insulation: { ar: 'العزل الحراري والمائي', en: 'Thermal & water insulation', ur: 'حرارتی اور واٹر پروفنگ' },
     store_paint: { ar: 'لواصق وسيليكون ورغوة', en: 'Adhesives, silicone & foam', ur: 'گلو، سلیکون اور فوم' },
@@ -153,7 +175,7 @@ function getTradeGroups(section: BrowseSection): SectionGroup[] {
       for (const name of g.items) {
         const sub = detectSubCategory(name, sector)
         if (sectionOfSub(sub, g.group) !== section) continue
-        const chem = section === 'building' && sector === 'civil' && sub === 'construction_chemicals' ? CHEM_GROUPS.find(c => c.re.test(name))
+        const chem = section === 'building' && sector === 'civil' && sub === 'construction_chemicals' ? (/ميكروسيليكا|silica fume/i.test(name) ? CHEM_GROUPS.find(c => c.key === 'chem_admix') : CHEM_GROUPS.find(c => c.re.test(name))) // microsilica is a concrete additive
           : section === 'building' && sub === 'waterproofing' ? WATERPROOF_GROUP : undefined
         const key = chem ? chem.key : (MERGE[section]?.[g.group] || g.group)
         if (chem && !out[key]) { out[key] = { group: key, icon: chem.icon, ar: chem.ar, en: chem.en, ur: chem.ur, items: [] }; order.push(key) }

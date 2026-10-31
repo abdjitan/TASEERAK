@@ -7398,3 +7398,190 @@ export interface SubRequestFormData {
   requires_warranty: boolean
   validity_hours: 24 | 48 | 72 | 168
 }
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Catalog review fixes (owner 2026-10-31: «راجع كل الأقسام ما يكون في غلط زي العزل»). Applied once
+// at load, so the long lists above stay as they were and this block is the one place to read:
+//   CATALOG_REMOVE   duplicates (the same product under two names) — the kept name is noted
+//   CATALOG_RENAME   wrong/unclear names → the correct one (old names still translate for old requests)
+//   CATALOG_ROUTE    product → [sector, specialty] when it went to the wrong suppliers
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+const CATALOG_REMOVE = [
+  // building: steel + waterproofing + chemicals + bulk
+  'قطاع مربع SHS (Steel Square Tube)', 'قطاعات مستطيلة RHS', 'بيم حديد أي بيم (IPE جسور)', 'صفائح فولاذية',
+  'عزل بولي يوريثان سائل للأسطح', 'عزل سيماني مرن مكونين (2K)', 'عزل كريستالي للخرسانة (Crystalline)',
+  'مستحلب بيتوميني معدّل بالمطاط (RBE)', 'غشاء عزل ذاتي اللصق (Self-adhesive Membrane)', 'شريط مانع تسرب (ووتر ستوب)',
+  'قماش بوليستر تسليح للعزل السائل', 'طلاء عزل أسطح أكريليك مرن عاكس للحرارة', 'لفائف عزل PVC/TPO للأسطح', 'بيتومين أولي (Primer)',
+  'مادة ربط SBR (لاتكس للمونة)', 'بوندنج إيبوكسي لربط الخرسانة القديمة بالجديدة (Epoxy Bonding Agent)', 'كبسولات تثبيت كيميائية (Resin Capsule Anchors)',
+  'مونة حقن هايبرد/فينيل إستر سريعة (Hybrid / Vinylester Injection Mortar)', 'راتنج حقن بولي يوريثان للتسريبات', 'برايمر مانع التسرب للأسطح المسامية',
+  'حصى مرشحة Sub-base', 'مواد ردم وتسوية', 'عازل مائي سيماني Cementitious Render',
+  // finishing
+  'لاصق بلاط أسمنتي عادي C1 (سيراميك)', 'لاصق بلاط C2TE (بورسلان ومناطق رطبة)', 'لاصق بلاط مرن C2TE S1 (فورمات كبير وخارجي)',
+  'لاصق رخام وحجر أبيض (أسمنتي)', 'ترويبة محسّنة CG2WA (مقاومة للماء والاحتكاك)', 'عازل ترويبة شفاف (Grout Sealer)', 'عزل مائي للحمامات تحت البلاط (جاهز)',
+  'زاوية ركن معدنية للجبس (كورنر بيد)', 'شريط تسليح فواصل الجبس', 'منظف الفوم والمسدس (أسيتون بخاخ)',
+  'لاصق مونتاج (تثبيت بدون مسامير)', 'معجون إيبوكسي للإصلاح (عصا)', 'لواح خشبية صوتية Acoustic Timber',
+  // electrical
+  'محول كهربائي 11kV/400V', 'محطة توليد طارئة Generator Hookup Panel', 'نظام DALI تحكم إضاءة', 'حساس حركة (سنسور إضاءة تلقائي)',
+  'حساس حركة للإنارة', 'شريط لحام كهرب', 'أنابيب كهربائية PVC', 'أنابيب كهربائية معدنية',
+  // plumbing / HVAC
+  'حوض مطبخ', 'أنابيب مياه مبردة فولاذية Sch40', 'أنابيب مياه مبردة مدفونة Pre-insulated', 'وعاء تمدد Expansion Vessel', 'أنابيب CPVC',
+  // machinery / outdoor
+  'كمبروسر هواء', 'رصف بلاط خارجي', 'طبقة أسفلتية', 'نظام ري شبكة خارجية',
+]
+const CATALOG_RENAME: Record<string, string> = {
+  'سلالم رياضية Raker Beams': 'جسور مدرجات مائلة (Raker Beams)',
+  'أوتاد خرسانية': 'خوازيق خرسانية',
+  'أوتاد حديد مجوف': 'خوازيق حديد أنبوبية (Steel Pipe Piles)',
+  'جبصين': 'جبس (بودرة لياسة)',
+  'باب دوار Rolling Shutter': 'باب رول (شتر) Rolling Shutter',
+  'لواح صوتية PET Panels': 'ألواح صوتية PET Panels',
+  'لواح GRC خارجية': 'ألواح GRC خارجية',
+  'لواح GRC': 'ألواح GRC',
+  'لواح خشب صوتية Acoustic': 'ألواح خشب صوتية Acoustic',
+  'لواح خشب MDF': 'ألواح خشب MDF',
+  'لواح خشبية مثقبة': 'ألواح خشبية مثقبة',
+  'فرشة مسطحة Screed Heavy Duty': 'سكريد أرضيات للأحمال الثقيلة',
+  'فرشة مسطحة Self-Levelling': 'سكريد ذاتي التسوية (Self-Levelling)',
+  'قرنيوص فينيل Vinyl Skirting': 'وزرة فينيل (Vinyl Skirting)',
+  'مطاط Entrance Matting': 'ممسحة مداخل مطاطية (Entrance Matting)',
+  'محول صغير': 'محوّل أفياش (أدابتر)',
+  'ماسورة EMT مرنة ووصلاتها (Flexible Metal Conduit & EMT Connectors)': 'ماسورة معدنية مرنة (FMC) ووصلاتها',
+  'أنابيب معزولة مسبقاً Pre-Insulated (تبريد منطقي)': 'أنابيب معزولة مسبقاً Pre-Insulated (تبريد المناطق)',
+  'مجمد حرارة Heat Exchanger': 'مبادل حراري Heat Exchanger',
+  'موازنات حريق Fire Damper': 'خانق حريق Fire Damper',
+  'كباس باب (قفل مقبض دائري)': 'قفل أكرة دائري (مقبض كروي بقفل)',
+  'مقبض باب اكبح (لوحة)': 'مقبض باب على لوحة',
+  'مقبض باب مع كباس (اكبح كامل بقفل)': 'مقبض باب على لوحة مع قفل',
+  'دفاية باب (لوحة حماية)': 'لوح حماية أسفل الباب (كِك بليت)',
+  'حزام أمان': 'حزام أمان للعمل على المرتفعات (هارنس)',
+  'بطارية': 'بطاريات جافة (AA/AAA)',
+  'مشبك أرضي (جريتنج) ملحوم': 'جريتنج حديد ملحوم (شبك أرضيات)',
+  'أسقف جبس مطلي Acoustic Plaster': 'لياسة صوتية (Acoustic Plaster)',
+  'أسقف مكشوفة مطلية': 'دهان أسقف مكشوفة',
+}
+const CATALOG_ROUTE: Record<string, [Sector, string]> = {
+  // building
+  'خوازيق خرسانية': ['civil', 'piling'],
+  'خوازيق حديد أنبوبية (Steel Pipe Piles)': ['civil', 'piling'],
+  'شدّات وطوبار أسقف (سلابات)': ['civil', 'formwork_steel'],
+  'سياج حديد ملحوم مطلي بودرة (بانل جاهز)': ['civil', 'fencing'],
+  'خشب أبيض لين للبناء والنجارة (White Wood / Spruce)': ['civil', 'formwork_ply'],
+  'مانع تسرب مائي للأسطح (سطل)': ['civil', 'waterproofing'],
+  'عزل مائي سائل تحت البلاط للحمامات (Under-tile Liquid Membrane)': ['civil', 'waterproofing'],
+  'شريط زوايا مطاطي لعزل الحمامات': ['civil', 'waterproofing'],
+  // finishing
+  'أرفف خشبية': ['architectural', 'custom_furniture'],
+  'بلاط رخام طبيعي': ['architectural', 'marble'],
+  'قائم معدني للجبس بورد (Stud)': ['architectural', 'drywall_metal'],
+  'ألواح أسمنت بورد (فايبر سمنت)': ['architectural', 'gypsum'],
+  'قواطع حمامات HPL': ['architectural', 'cubicles'],
+  'ألواح صوتية PET Panels': ['architectural', 'acoustic_panels'],
+  'لياسة صوتية (Acoustic Plaster)': ['architectural', 'acoustic_panels'],
+  'معجون جدران': ['architectural', 'paint'],
+  'معجون جدران جاهز (أكريليك – سطل)': ['architectural', 'paint'],
+  'كلادينج ألمنيوم كومبوزيت ACM': ['architectural', 'grc_facade'],
+  'ألواح GRC خارجية': ['architectural', 'grc_facade'],
+  'ورق جدران': ['architectural', 'curtains'],
+  'سجاد وزوالي': ['architectural', 'special_floor'],
+  'دهان أسقف مكشوفة': ['architectural', 'paint'],
+  // electrical
+  'لوحة متوسط جهد MV Switchgear': ['electrical', 'transformers'],
+  'لوحة محطة 11kV Switchgear': ['electrical', 'transformers'],
+  'صينية كابل Tray 100×100': ['electrical', 'conduits'],
+  'صينية كابل Tray 300×75': ['electrical', 'conduits'],
+  'صينية كابل Tray 600×100': ['electrical', 'conduits'],
+  'نظام WiFi Wireless Access Point': ['electrical', 'data_network'],
+  'كابل ألياف بصرية': ['electrical', 'data_network'],
+  'سلك تأريض': ['electrical', 'earthing'],
+  'شريط نحاس تأريض': ['electrical', 'earthing'],
+  'محول (درايفر) ليد': ['electrical', 'led_strips'],
+  'ATS نقل تلقائي 1000A': ['electrical', 'panels'],
+  'ATS نقل تلقائي 500A': ['electrical', 'panels'],
+  'كشاف LED بانل 600×600': ['electrical', 'indoor_lighting'],
+  'كشاف LED بانل 300×1200': ['electrical', 'indoor_lighting'],
+  'كشاف LED سطحي': ['electrical', 'indoor_lighting'],
+  'كشاف LED متدلي': ['electrical', 'indoor_lighting'],
+  'كشاف LED صناعي High Bay': ['electrical', 'indoor_lighting'],
+  'إضاءة شريطية LED': ['electrical', 'led_strips'],
+  'إنتركم (جرس باب مرئي)': ['electrical', 'access_control'],
+  'محرك بوابة كهربائي': ['electrical', 'access_control'],
+  'أباجورة': ['supply_store', 'store_lighting'],
+  'فرشاة سلك (كأس / دائرية)': ['supply_store', 'store_bits'],
+  'فوم عازل': ['supply_store', 'store_adhesives'],
+  'فيشر': ['supply_store', 'store_fasteners'],
+  'مفتاح ربط': ['supply_store', 'store_hand_tools'],
+  'لوحة تحكم حريق': ['electrical', 'fire_alarm'],
+  // plumbing
+  'مرحاض WC مع خزان': ['architectural', 'sanitary_ware'],
+  'مرحاض WC ذوي احتياجات خاصة': ['architectural', 'sanitary_ware'],
+  'مغسلة Wash Basin': ['architectural', 'sanitary_ware'],
+  'مجلى Kitchen Sink': ['architectural', 'sanitary_ware'],
+  'حوض استحمام': ['architectural', 'sanitary_ware'],
+  'مبولة Urinal': ['architectural', 'sanitary_ware'],
+  'سيفون مغسلة': ['mechanical', 'traps_drains'],
+  'صمامات كرة نحاس': ['mechanical', 'valves_fittings'],
+  'صمامات كرة ستانلس': ['mechanical', 'valves_fittings'],
+  'صمامات بوابة': ['mechanical', 'valves_fittings'],
+  'صمامات فراشة flanged': ['mechanical', 'valves_fittings'],
+  'صمامات فحص': ['mechanical', 'valves_fittings'],
+  'صمامات تخفيض ضغط PRV': ['mechanical', 'valves_fittings'],
+  'صمامات PICV تحكم ضغط': ['mechanical', 'valves_fittings'],
+  'صمامات موتورية 2-Port': ['mechanical', 'valves_fittings'],
+  'صمامات موتورية 3-Port': ['mechanical', 'valves_fittings'],
+  'صمامات تصريف': ['mechanical', 'valves_fittings'],
+  'صمام تحكم منطقة Zone Control Valve': ['mechanical', 'valves_fittings'],
+  'مصافي ألمنيوم (أرضية/ركنية/دش/سطح)': ['mechanical', 'traps_drains'],
+  'أنابيب HDPE صرف صحي داخلي': ['mechanical', 'drainage_pipes'],
+  'أنابيب حديد مرن Ductile Iron مياه رئيسية': ['mechanical', 'water_supply'],
+  'أنابيب حديد زهر Cast Iron صرف صامت': ['mechanical', 'silent_drainage'],
+  'مصرف سقف Roof Drain 100mm': ['mechanical', 'storm_drainage'],
+  'حوض ترسيب مياه أمطار': ['mechanical', 'storm_drainage'],
+  'أنابيب HDPE صرف أمطار (SDR11)': ['mechanical', 'storm_drainage'],
+  'مضخة تغذية كيماوي Dosing': ['mechanical', 'water_treatment'],
+  'مرشحات مياه': ['mechanical', 'water_treatment'],
+  'خطوط تغذية وقود': ['electrical', 'transformers'],
+  'خزان وقود ديزل يومي': ['electrical', 'transformers'],
+  'مضخة نقل وقود': ['electrical', 'transformers'],
+  'وحدة تصفية وقود': ['electrical', 'transformers'],
+  'مفصلة أوتوماتيك (زنبرك)': ['supply_store', 'store_hinges'],
+  'كوبلن مواسير كهرباء (وصلة كوندويت)': ['supply_store', 'store_elec_access'],
+  // HVAC & fire
+  'عوازل مجاري هواء فايبر جلاس': ['mechanical', 'duct_insulation'],
+  'دكت مرن': ['mechanical', 'ductwork'],
+  'مراوح هواء طرد مركزي': ['mechanical', 'ventilation_fans'],
+  'ستائر هواء': ['mechanical', 'ventilation_fans'],
+  'سخانات مياه مركزية': ['mechanical', 'tanks_heaters'],
+  'مضخات مياه مركزية': ['mechanical', 'pumps'],
+  'طفاية حريق': ['mechanical', 'fire_cabinets'],
+  // outdoor
+  'رصف حجر طبيعي': ['civil', 'hardscape'],
+  'شبك جبيونات (قفص جباينة حجري)': ['civil', 'fencing'],
+  'شبك سداسي (شبك دجاج/تربة)': ['civil', 'fencing'],
+  'جريتنج حديد ملحوم (شبك أرضيات)': ['civil', 'fencing'],
+  'طلب سقالة كاملة (توريد + تصميم)': ['equipment', 'scaffolding_equip'],
+  'ألعاب أطفال خارجية': ['civil', 'planters'],
+}
+;(function applyCatalogFixes() {
+  const removed = new Set(CATALOG_REMOVE)
+  // a renamed product keeps the specialty its old name had (a new name can miss the old keywords)
+  for (const [oldName, newName] of Object.entries(CATALOG_RENAME)) {
+    const sec = (Object.keys(SECTOR_PRODUCTS) as Sector[]).find(x => SECTOR_PRODUCTS[x].includes(oldName))
+    const sub = sec ? detectSubCategory(oldName, sec) : null
+    if (sub && !PRODUCT_SUB[newName]) PRODUCT_SUB[newName] = sub
+  }
+  for (const s of Object.keys(SECTOR_PRODUCTS) as Sector[]) {
+    SECTOR_PRODUCTS[s] = SECTOR_PRODUCTS[s].filter(p => !removed.has(p)).map(p => CATALOG_RENAME[p] || p)
+  }
+  for (const [oldName, newName] of Object.entries(CATALOG_RENAME)) {
+    if (PRODUCT_TRANSLATIONS[oldName] && !PRODUCT_TRANSLATIONS[newName]) PRODUCT_TRANSLATIONS[newName] = PRODUCT_TRANSLATIONS[oldName]
+    if (PRODUCT_SPECS[oldName] && !PRODUCT_SPECS[newName]) PRODUCT_SPECS[newName] = PRODUCT_SPECS[oldName]
+    if (PRODUCT_SUB[oldName] && !PRODUCT_SUB[newName]) PRODUCT_SUB[newName] = PRODUCT_SUB[oldName]
+  }
+  for (const [name, [sector, sub]] of Object.entries(CATALOG_ROUTE)) {
+    for (const s of Object.keys(SECTOR_PRODUCTS) as Sector[]) if (s !== sector) SECTOR_PRODUCTS[s] = SECTOR_PRODUCTS[s].filter(p => p !== name)
+    if (!SECTOR_PRODUCTS[sector].includes(name)) SECTOR_PRODUCTS[sector].push(name)
+    PRODUCT_SUB[name] = sub
+  }
+})()
+/** for the image tool and audits: renamed products keep their old picture */
+export const CATALOG_RENAMED = CATALOG_RENAME
