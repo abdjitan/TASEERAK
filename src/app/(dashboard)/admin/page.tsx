@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import UsageStats from '@/components/admin/UsageStats'
 import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
@@ -768,6 +769,7 @@ export default function AdminPanel() {
           )
         ) : tab === 'analytics' ? (
           <div className="space-y-6">
+            <UsageStats />
             {/* وضع الإطلاق المجاني — التحكّم ببدء تحصيل رسوم الاشتراك */}
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="font-bold text-sm mb-1" style={{ color: '#0B2438' }}><Glyph e="🎉" /> فترة الإطلاق المجانية</div>
