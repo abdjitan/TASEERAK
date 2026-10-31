@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, type Sector } from '@/types'
+import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, brandApplies, withBrand, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -35,6 +35,7 @@ type Line = {
   quantity: string
   unit: string
   details: string
+  brand?: string // «الماركة أو اسم المنتج» (optional)
   photoId?: string
   done?: boolean   // «حفظ» pressed: shown as a compact row until tapped again
   original?: string // what the buyer wrote, when it differs from the Arabic name suppliers see
@@ -416,7 +417,8 @@ export default function QuickRequestPage() {
           sector: l.sector,
           product_name: l.product_name.trim(),
           sub_category: l.spec ? l.spec.sub : detectSubCategory(`${l.product_name} ${st}`, l.sector as any),
-          specification: [st, l.details.trim()].filter(Boolean).join(' — ') || null,
+          specification: withBrand([st, l.details.trim()].filter(Boolean).join(' — '), l.brand),
+          ...((l.brand || '').trim() ? { brand: l.brand!.trim().slice(0, 80) } : {}),
           quantity: parseFloat(l.quantity),
           unit: l.unit,
           supplier_tiers: null, in_stock: false, max_days: null, specsObj,
@@ -639,13 +641,17 @@ export default function QuickRequestPage() {
                   {(() => {
                     const needWritten = specsRequired(l.product_name, l.sector as any) && !getProductSpecs(l.product_name).some(f => f.key !== 'unit')
                     const miss = needWritten && !l.details.trim() && !l.fileId
-                    return (
+                    return (<>
+                      {brandApplies(l.product_name, l.sector as any) && (
+                        <input value={l.brand || ''} onChange={e => updateLine(l.key, { brand: e.target.value.slice(0, 80) })} className="input-field text-sm"
+                          placeholder={L('Brand or product name (optional), e.g. Fosroc Renderoc', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)، مثل: فوسروك رندروك')} />
+                      )}
                       <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })}
                         className={`input-field text-sm ${miss ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
                         placeholder={needWritten
                           ? L('Size and specs (required): e.g. length, width, thickness, grade', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): مثل الطول والعرض والسماكة والدرجة')
                           : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
-                    )
+                    </>)
                   })()}
                   {(() => {
                     const fields = getProductSpecs(l.product_name).filter(f => f.key !== 'unit')

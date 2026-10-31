@@ -9,7 +9,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { TIERS, tierLabel, tierHint, normTier } from '@/lib/sellers'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, missingSpecs, getProductSpecs, getOptionLabel, type Sector } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, missingSpecs, getProductSpecs, getOptionLabel, brandApplies, withBrand, type Sector } from '@/types'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import CatalogPicker from '@/components/shared/CatalogPicker'
@@ -295,7 +295,7 @@ export default function NewProjectPage() {
     setItems(prev => [...prev, {
       id: `item-${Date.now()}`, product_name: name, sector,
       quantity: draft.quantity, unit: draft.unit || getDefaultUnit(name, sector as Sector) || 'عدد',
-      specification: draft.specification, specs: draft.specs || {}, custom: !g.catalog, sub_category: choice?.sub ?? null, section: choice?.section, needs_classification: !choice, selected: true, done: parseFloat(draft.quantity) > 0 && missingSpecs(name, sector as Sector, draft.specs, draft.specification || '').length === 0,
+      specification: draft.specification, brand: draft.brand || '', specs: draft.specs || {}, custom: !g.catalog, sub_category: choice?.sub ?? null, section: choice?.section, needs_classification: !choice, selected: true, done: parseFloat(draft.quantity) > 0 && missingSpecs(name, sector as Sector, draft.specs, draft.specification || '').length === 0,
     }])
     setDraft(null)
     setStep('items')
@@ -379,6 +379,10 @@ export default function NewProjectPage() {
         </select>
       </div>
       {draftName && <ItemSpecFields name={draftName} sector={draftSector} specs={draft.specs} locale={locale} onChange={(v: any) => setDraft((d: any) => ({ ...d, specs: v }))} />}
+      {draftName && brandApplies(draftName, draftSector) && (
+        <input value={draft.brand || ''} onChange={(e: any) => { const v = e.target.value.slice(0, 80); setDraft((d: any) => ({ ...d, brand: v })) }} className="input-field"
+          placeholder={L('Brand or product name (optional), e.g. Fosroc Renderoc', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)، مثل: فوسروك رندروك')} />
+      )}
       <input value={draft.specification} onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, specification: v })) }}
         className={`input-field ${draftName && missingSpecs(draftName, draftSector, draft.specs, draft.specification).includes('*') ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
         placeholder={draftName && specsRequired(draftName, draftSector) && !getProductSpecs(draftName).some(f => f.key !== 'unit')
@@ -467,7 +471,8 @@ export default function NewProjectPage() {
           sector: item.sector,
           product_name: item.product_name,
           sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector) || null,
-          specification: [st, (item.specification || '').trim()].filter(Boolean).join(' — ') || null,
+          specification: withBrand([st, (item.specification || '').trim()].filter(Boolean).join(' — '), item.brand),
+          ...((item.brand || '').trim() ? { brand: String(item.brand).trim().slice(0, 80) } : {}),
           quantity: Number(item.quantity),
           unit: item.unit || 'عدد',
           supplier_tiers: null, in_stock: false, max_days: null, specsObj,
@@ -934,6 +939,10 @@ export default function NewProjectPage() {
                                     </select>
                                   </div>
                                   <ItemSpecFields name={item.product_name} sector={item.sector} specs={item.specs} locale={locale} onChange={(v: any) => updateItem(item.id, 'specs', v)} />
+                                  {brandApplies(item.product_name, item.sector) && (
+                                    <input value={item.brand || ''} onChange={(e: any) => updateItem(item.id, 'brand', e.target.value.slice(0, 80))} className="input-field text-sm"
+                                      placeholder={L('Brand or product name (optional)', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)، مثل: فوسروك رندروك')} />
+                                  )}
                                   <input value={item.specification || ''} onChange={(e: any) => updateItem(item.id, 'specification', e.target.value)}
                                     className={`input-field text-sm ${needWritten ? 'border-[#D4A543] bg-white' : ''}`}
                                     placeholder={needWritten ? L('Size and specs (required): length, width, thickness, grade…', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): الطول، العرض، السماكة، الدرجة…') : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />

@@ -4594,6 +4594,21 @@ export const SPEC_REQUIRED_SUBS = new Set<string>([
   'lv_cables', 'mv_cables', 'store_wires', 'conduits', 'breakers', 'panels',
   'drainage_pipes', 'water_supply', 'fire_fighting', 'ductwork', 'store_fasteners',
 ])
+// «الماركة أو اسم المنتج» (owner 2026-10-31: e.g. grout → «فوسروك رندروك»; optional, but it makes
+// pricing easier). Asked for every material except machinery hire and bulk site materials.
+const NO_BRAND_SUBS = new Set(['earthworks', 'roadbase', 'aggregates', 'piling'])
+export function brandApplies(productName: string, sector: Sector): boolean {
+  if (sector === 'equipment') return false
+  const sub = detectSubCategory((productName || '').trim(), sector)
+  return !(sub && NO_BRAND_SUBS.has(sub))
+}
+/** «الماركة: X — …» at the head of the specification text, so every screen (and older apps) shows it */
+export function withBrand(spec: string | null | undefined, brand: string | null | undefined): string | null {
+  const b = (brand || '').trim()
+  const s = (spec || '').trim()
+  return [b ? `الماركة: ${b}` : '', s].filter(Boolean).join(' — ') || null
+}
+
 export function specsRequired(productName: string, sector: Sector): boolean {
   const sub = detectSubCategory((productName || '').trim(), sector)
   return !!sub && SPEC_REQUIRED_SUBS.has(sub)
