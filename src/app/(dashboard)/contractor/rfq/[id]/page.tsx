@@ -321,6 +321,10 @@ export default function RFQDetailPage() {
       quantity: parseFloat(String(editQty)) || rfq.quantity,
       unit: editUnit || rfq.unit,
     }
+    // a one-item request also carries the line in items[]: the supplier page reads it from there (review 2026-10-28)
+    if (Array.isArray(rfq.items) && rfq.items.length === 1) {
+      patch.items = [{ ...rfq.items[0], product_name: patch.product_name, quantity: patch.quantity, unit: patch.unit, specification: (editSpec || '').trim() || null }]
+    }
     // one transaction on the server (175): offers are dropped only on a material change, and only
     // if the request update succeeds too (the suppliers are told to price again)
     const { data: res, error } = await supabase.rpc('edit_rfq', { p_rfq_id: id, p_patch: patch })
@@ -336,7 +340,8 @@ export default function RFQDetailPage() {
   async function cancelRfq() {
     if (!confirm(L('Are you sure you want to cancel this request?', 'کیا آپ واقعی یہ درخواست منسوخ کرنا چاہتے ہیں؟', 'هل أنت متأكد من إلغاء هذا الطلب؟'))) return
     const supabase = createClient()
-    await supabase.from('rfqs').update({ status: 'cancelled' }).eq('id', id)
+    const { error } = await supabase.from('rfqs').update({ status: 'cancelled' }).eq('id', id)
+    if (error) { alert(L('Could not cancel — a request with a chosen offer cannot be cancelled.', 'منسوخ نہیں ہو سکا۔', 'تعذّر الإلغاء — لا يمكن إلغاء طلب اختير فيه عرض.')); return }
     router.push('/contractor')
   }
 
