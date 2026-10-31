@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { getProductLabel, detectSubCategory, type Sector } from '@/types'
+import { getProductLabel, detectSubCategory, getSubCategoryLabel, type Sector } from '@/types'
 import { BROWSE_SECTIONS, getSectionGroups, type BrowseSection, subsOfSection } from '@/lib/browseCategories'
 import { searchProducts, normQuery } from '@/lib/productSearch'
 import { createClient } from '@/lib/supabase/client'
@@ -50,7 +50,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   locale: string
   initialQuery?: string
   initialSection?: BrowseSection | null
-  onPick: (item: { name: string; sector: Sector; section?: BrowseSection }) => void
+  onPick: (item: { name: string; sector: Sector; section?: BrowseSection; sub?: string }) => void
   onRemove?: (key: string) => void   // a second tap on a picked material takes it off the list
   picked?: Picked[]
   inline?: boolean
@@ -60,6 +60,9 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   const [section, setSection] = useState<BrowseSection | null>(initialSection)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [own, setOwn] = useState('')   // «طلبك غير موجود؟» inside a section
+  // the same inside an open group (owner 2026-10-31: «طلبك غير موجود» in «الخرسانة والإسمنت» → only those suppliers)
+  const [ownG, setOwnG] = useState('')
+  const [ownSub, setOwnSub] = useState('')
 
   // Exact/prefix/synonym matches score >= ~10; loose typo matches (بلك → بلدوزر) ~6. Show only
   // the confident ones unless that leaves almost nothing.
@@ -101,7 +104,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   const pickT = (o: any) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
   const isAdded = (name: string) => picked.some(p => p.name === name)
   // Teach the search: what the person typed → the product they chose (fire and forget).
-  function choose(item: { name: string; sector: Sector; section?: BrowseSection }) {
+  function choose(item: { name: string; sector: Sector; section?: BrowseSection; sub?: string }) {
     // already in the list → a tap removes it (the ✓ goes, the line leaves the list)
     const already = [...picked].reverse().find(p => p.name === item.name)
     if (already && onRemove) { onRemove(already.key); return }
@@ -258,8 +261,36 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                   <span className="text-gray-400">{open ? '▴' : '▾'}</span>
                 </button>
                 {open && (
-                  <div className={`${tileGrid} p-2 pt-0`}>
+                  <div className="p-2 pt-0 space-y-2">
+                  <div className={tileGrid}>
                     {g.items.map(it => tile(it.name, it.sector, `${it.sector}:${it.name}`))}
+                  </div>
+                  {(() => {
+                    // the group's specialties (most items first): the line goes to that specialty's suppliers
+                    const cnt: Record<string, { sector: Sector; sub: string; n: number }> = {}
+                    for (const it of g.items) { const sb = detectSubCategory(it.name, it.sector); if (!sb) continue; const k = it.sector + ':' + sb; cnt[k] = cnt[k] || { sector: it.sector, sub: sb, n: 0 }; cnt[k].n++ }
+                    const subs = Object.values(cnt).sort((a, b) => b.n - a.n)
+                    if (!subs.length) return null
+                    const chosen = subs.find(x => x.sector + ':' + x.sub === ownSub) || subs[0]
+                    const add = () => { if (!ownG.trim()) return; choose({ name: ownG.trim().slice(0, 120), sector: chosen.sector, sub: chosen.sub }); setOwnG('') }
+                    return (
+                      <div className="rounded-xl border border-dashed border-[#D4A543]/70 bg-[#D4A543]/[.06] p-2.5 space-y-2">
+                        <div className="text-[13px] font-bold text-[#0B2438]">{L(`Not listed in «${pickT(g)}»? Write it`, `«${pickT(g)}» میں نہیں؟ نام لکھیں`, `طلبك غير موجود في «${pickT(g)}»؟ اكتب اسم المادة`)}</div>
+                        <div className="flex flex-wrap gap-2">
+                          <input value={ownG} onChange={e => setOwnG(e.target.value)} className="input-field flex-1 min-w-[10rem]"
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add() } }} placeholder={L('Material name', 'سامان کا نام', 'اسم المادة')} />
+                          {subs.length > 1 && (
+                            <select value={chosen.sector + ':' + chosen.sub} onChange={e => setOwnSub(e.target.value)} className="input-field w-auto max-w-full text-sm"
+                              aria-label={L('Specialty', 'شعبہ', 'التخصص')}>
+                              {subs.map(x => <option key={x.sector + ':' + x.sub} value={x.sector + ':' + x.sub}>{getSubCategoryLabel(x.sector, x.sub, locale)}</option>)}
+                            </select>
+                          )}
+                          <button type="button" disabled={!ownG.trim()} onClick={add}
+                            className="shrink-0 px-4 py-2 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: '#D4A543' }}>+ {L('Add', 'شامل کریں', 'أضف')}</button>
+                        </div>
+                      </div>
+                    )
+                  })()}
                   </div>
                 )}
               </div>

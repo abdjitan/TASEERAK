@@ -268,11 +268,11 @@ export default function NewProjectPage() {
   const [draft, setDraft] = useState<any>(null)
   const [showCatalog, setShowCatalog] = useState(false)
   // a material picked from the catalog popup goes straight into the list, already classified
-  function addFromCatalog(p: { name: string; sector: Sector; section?: string }) {
+  function addFromCatalog(p: { name: string; sector: Sector; section?: string; sub?: string }) {
     setItems(prev => prev.some((it: any) => it.product_name === p.name) ? prev : [...prev, {
       id: `item-${Date.now()}-${prev.length}`, product_name: p.name, sector: p.sector, quantity: '',
-      unit: getDefaultUnit(p.name, p.sector) || 'عدد', specification: '', specs: {}, sub_category: p.section ? null : (detectSubCategory(p.name, p.sector) || null), section: p.section, custom: !!p.section,
-      needs_classification: !p.section && !detectSubCategory(p.name, p.sector), selected: true, done: false,
+      unit: getDefaultUnit(p.name, p.sector) || 'عدد', specification: '', specs: {}, sub_category: p.sub || (p.section ? null : (detectSubCategory(p.name, p.sector) || null)), section: p.section, custom: !!(p.section || p.sub),
+      needs_classification: !p.sub && !p.section && !detectSubCategory(p.name, p.sector), selected: true, done: false,
     }])
     setDraft(null)
     setStep('items')

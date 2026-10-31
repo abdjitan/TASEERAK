@@ -293,8 +293,8 @@ export default function QuickRequestPage() {
   }
 
   // a material written inside a catalog section (not listed) goes to all of that section's suppliers
-  function addFromCatalog({ name, sector, section }: { name: string; sector: Sector; section?: string }) {
-    setLines(prev => [...prev, { key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '', ...(section ? { spec: { sector, sub: null, section } } : {}) }])
+  function addFromCatalog({ name, sector, section, sub }: { name: string; sector: Sector; section?: string; sub?: string }) {
+    setLines(prev => [...prev, { key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '', ...(sub ? { spec: { sector, sub } } : section ? { spec: { sector, sub: null, section } } : {}) }])
   }
 
   // 📎 a drawing or specification file for one line (PDF or image, up to 10 MB)
