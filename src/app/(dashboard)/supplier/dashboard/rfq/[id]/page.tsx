@@ -36,6 +36,9 @@ export default function SupplierRFQPage() {
   const [verified, setVerified] = useState(true) // تفاؤلي؛ يُضبط من الملف. القفل الحقيقي على مستوى القاعدة (RLS)
   const [rfq, setRfq] = useState<any>(null)
   const [existingOffer, setExistingOffer] = useState<any>(null)
+  // a multi-item request awarded per item: which of my items were chosen (review 2026-10-28 — the
+  // supplier saw the whole offer as accepted when only some items were awarded to him)
+  const [myAwards, setMyAwards] = useState<{ idx: Set<number>; total: number } | null>(null)
   // market average per material + unit (accepted prices, get_market_prices); 3+ prices so no single rival shows
   const [market, setMarket] = useState<Record<string, { avg: number; n: number }>>({})
   useEffect(() => {
@@ -218,6 +221,8 @@ export default function SupplierRFQPage() {
 
       if (offerData) {
         setExistingOffer(offerData)
+        const { data: aw } = await supabase.from('rfq_item_awards').select('item_index, total').eq('offer_id', offerData.id)
+        if (aw && aw.length) setMyAwards({ idx: new Set(aw.map((a: any) => Number(a.item_index))), total: aw.reduce((t: number, a: any) => t + (Number(a.total) || 0), 0) })
         if (offerData.status === 'accepted') {
           const { data: rev } = await supabase.from('reviews').select('id').eq('reviewer_id', offerData.supplier_id).eq('offer_id', offerData.id).limit(1)
           if (rev && rev.length) setCDone(true)
@@ -719,7 +724,10 @@ export default function SupplierRFQPage() {
                 ? L('Pricing closed — another offer was accepted', 'پرائسنگ بند — دوسری پیشکش قبول ہوگئی', 'انتهى التسعير — تم اعتماد عرض آخر')
                 : ((T.alreadyTitle as any)[existingOffer.status] || T.alreadyTitle.pending)}
             </h3>
-            <p className="text-sm text-gray-600">{existingOffer.total_price?.toLocaleString('en-US')} {SAR}{existingOffer.status === 'rejected' && rfq.status === 'closed' ? ` — ${L('thanks for participating', 'شرکت کا شکریہ', 'شكراً لمشاركتك')}` : ''}</p>
+            {myAwards && Array.isArray(existingOffer.item_prices) && myAwards.idx.size < existingOffer.item_prices.length && (
+              <p className="text-sm font-bold text-emerald-800 mb-1">{L(`Chosen for ${myAwards.idx.size} of ${existingOffer.item_prices.length} items — supply only those`, `${existingOffer.item_prices.length} میں سے ${myAwards.idx.size} اشیاء کے لیے منتخب — صرف وہی سپلائی کریں`, `اختيرت في ${myAwards.idx.size} من ${existingOffer.item_prices.length} مواد — ورّد هذه المواد فقط`)}</p>
+            )}
+            <p className="text-sm text-gray-600">{(myAwards && Array.isArray(existingOffer.item_prices) && myAwards.idx.size < existingOffer.item_prices.length ? myAwards.total : existingOffer.total_price)?.toLocaleString('en-US')} {SAR}{existingOffer.status === 'rejected' && rfq.status === 'closed' ? ` — ${L('thanks for participating', 'شرکت کا شکریہ', 'شكراً لمشاركتك')}` : ''}</p>
 
             {isMember && existingOffer.submitted_by && (
               <p className="text-xs font-semibold text-gray-500 mt-1">{existingOffer.submitted_by === user?.id ? L('Sent by you', 'آپ نے بھیجی', 'أرسلتَه أنت') : L('Sent by a colleague from your company', 'آپ کی کمپنی کے ساتھی نے بھیجی', 'أرسله زميل من فريق شركتك')}</p>
@@ -732,15 +740,23 @@ export default function SupplierRFQPage() {
                   <span><Glyph e="🧾" /> {L('Items you priced', 'جن چیزوں کی آپ نے قیمت دی', 'المواد التي سعّرتها')} ({existingOffer.item_prices.length})</span>
                   <span>{L('Price', 'قیمت', 'السعر')}</span>
                 </div>
-                {existingOffer.item_prices.map((it: any, idx: number) => (
-                  <div key={idx} className="px-3 py-2.5 border-t border-gray-100 flex items-center justify-between gap-3">
+                {existingOffer.item_prices.map((it: any, idx: number) => {
+                  const ix = Number(it.item_index ?? idx)
+                  const won = myAwards ? myAwards.idx.has(ix) : null
+                  return (
+                  <div key={idx} className={`px-3 py-2.5 border-t border-gray-100 flex items-center justify-between gap-3 ${won === false ? 'opacity-50' : ''}`}>
                     <span className="text-sm text-gray-800 font-medium truncate">
                       <AutoTr text={getProductLabel(it.product_name, locale)} locale={locale} />
                       <span className="text-gray-400 text-xs font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}{it.delivery_days ? ` · ${L(`delivery in ${it.delivery_days}d`, `${it.delivery_days} دن میں ڈیلیوری`, `التوصيل خلال ${Number(it.delivery_days) === 1 ? 'يوم واحد' : Number(it.delivery_days) === 2 ? 'يومين' : Number(it.delivery_days) <= 10 ? `${it.delivery_days} أيام` : `${it.delivery_days} يوماً`}`)}` : ''})</span>
                     </span>
-                    <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#0B2438' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
+                    <span className="flex items-center gap-2 shrink-0">
+                      {won === true && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{L('Chosen', 'منتخب', 'اختيرت')} ✓</span>}
+                      {won === false && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{L('Not chosen', 'منتخب نہیں', 'لم تُختر')}</span>}
+                      <span className={`font-bold text-sm whitespace-nowrap ${won === false ? 'line-through' : ''}`} style={{ color: '#0B2438' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
+                    </span>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )}
 

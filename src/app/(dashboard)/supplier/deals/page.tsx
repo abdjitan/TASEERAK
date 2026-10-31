@@ -34,7 +34,14 @@ export default function SupplierDealsPage() {
         .eq('status', 'accepted')
         .order('accepted_at', { ascending: false })
         .limit(200)
-      setDeals(data || [])
+      // a multi-item request awarded per item: the deal is only the awarded items, not the whole offer
+      const ids = (data || []).map((d: any) => d.id)
+      const awarded: Record<string, number> = {}
+      if (ids.length) {
+        const { data: aw } = await supabase.from('rfq_item_awards').select('offer_id, total').in('offer_id', ids)
+        for (const a of aw || []) awarded[a.offer_id] = (awarded[a.offer_id] || 0) + (Number(a.total) || 0)
+      }
+      setDeals((data || []).map((d: any) => awarded[d.id] != null ? { ...d, total_price: awarded[d.id] } : d))
       setLoading(false)
     }
     load()
