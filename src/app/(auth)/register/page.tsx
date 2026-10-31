@@ -21,6 +21,15 @@ import { captureRef } from '@/lib/referral'
 // بقية البيانات (الموقع، القطاعات، التخصصات، التصنيف، السجل التجاري، المستندات)
 // تُعبّأ لاحقاً داخل التطبيق عبر «أكمل ملفك» (/onboarding). كل تلك الأعمدة nullable،
 // و handle_new_user يبني الملف من الميتاداتا الجزئية ويتجاهل الناقص.
+// validation messages in the reader's language (review 2026-10-28: they showed in Arabic only)
+const VMSG: Record<string, { ar: string; en: string; ur: string }> = {
+  'الاسم مطلوب': { ar: 'الاسم مطلوب', en: 'Name is required', ur: 'نام ضروری ہے' },
+  'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05': { ar: 'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05', en: 'Mobile number: 10 digits starting with 05', ur: 'موبائل نمبر: 05 سے شروع، 10 ہندسے' },
+  'البريد الإلكتروني غير صحيح': { ar: 'البريد الإلكتروني غير صحيح', en: 'Email address is not valid', ur: 'ای میل درست نہیں' },
+  'كلمة المرور يجب أن تكون 8 أحرف على الأقل': { ar: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل', en: 'Password must be at least 8 characters', ur: 'پاس ورڈ کم از کم 8 حروف' },
+}
+const vmsg = (m: string | undefined, locale: string) => (m && VMSG[m] ? (VMSG[m] as any)[locale] || m : m)
+
 const schema = z.object({
   role: z.enum(['contractor', 'supplier'] as const, { required_error: 'اختر نوع الحساب' }),
   full_name: z.string().min(3, 'الاسم مطلوب'),
@@ -46,7 +55,7 @@ const TR = {
     phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف على الأقل',
     create: 'إنشاء الحساب ←', creating: 'جارٍ الإنشاء...', haveAccount: 'لديك حساب؟', login: 'تسجيل الدخول',
     chooseType: 'اختر نوع الحساب أولاً', phoneTaken: 'رقم الجوال مسجّل مسبقاً — استخدم رقماً آخر.',
-    emailTaken: 'هذا الإيميل مسجّل مسبقاً — ', signInInstead: 'سجّل الدخول.',
+    emailTaken: 'هذا البريد الإلكتروني مسجّل مسبقاً — ', signInInstead: 'سجّل الدخول.',
     agreePre: 'أوافق على ', terms: 'الشروط والأحكام', and: ' و', privacy: 'سياسة الخصوصية',
     agreeErr: 'يجب الموافقة على الشروط وسياسة الخصوصية',
     captchaErr: 'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.',
@@ -301,13 +310,13 @@ export default function RegisterPage() {
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">{t.fullName} *</label>
                 <input {...register('full_name')} className="input-field" placeholder={locale === 'en' ? 'Mohammed Al-Otaibi' : 'محمد العتيبي'} />
-                {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
+                {errors.full_name && <p className="text-red-500 text-xs mt-1">{vmsg(errors.full_name.message, locale)}</p>}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
                 <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel" inputMode="numeric" maxLength={10} dir="ltr"
                   onInput={(e: any) => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(false) }} />
-                {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+                {errors.phone && <p className="text-red-500 text-xs mt-1">{vmsg(errors.phone.message, locale)}</p>}
               </div>
             </div>
             {phoneDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2"><Glyph e="⚠" /> {t.phoneTaken}</p>}
@@ -315,7 +324,7 @@ export default function RegisterPage() {
             {selectedType === 'supplier' && sellerKind === 'company' && <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-400 font-normal">— {t.companyHint}</span></label>
               <input {...register('company_name_ar')} className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : 'مؤسسة الصخر لمواد البناء'} />
-              {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{errors.company_name_ar.message}</p>}
+              {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{vmsg(errors.company_name_ar.message, locale)}</p>}
             </div>}
 
             <div className="grid sm:grid-cols-2 gap-3">
@@ -323,14 +332,14 @@ export default function RegisterPage() {
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
               <input {...register('email', { onBlur: (e) => checkEmailDup(e.target.value), onChange: () => { if (emailDup) setEmailDup(false) } })}
                 className="input-field" placeholder="name@example.com" type="email" />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+              {errors.email && <p className="text-red-500 text-xs mt-1">{vmsg(errors.email.message, locale)}</p>}
               {emailDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<a href="/login" className="underline font-bold">{t.signInInstead}</a></p>}
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
               <input {...register('password')} className="input-field" type="password" placeholder={t.passwordPh} />
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              {errors.password && <p className="text-red-500 text-xs mt-1">{vmsg(errors.password.message, locale)}</p>}
             </div>
             </div>
 

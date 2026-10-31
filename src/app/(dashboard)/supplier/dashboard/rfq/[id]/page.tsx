@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { friendlyError } from '@/lib/friendlyError'
 import { arCount } from '@/lib/text'
 import AutoTr from '@/components/shared/AutoTr'
 import PageLoader from '@/components/shared/PageLoader'
@@ -121,7 +122,7 @@ export default function SupplierRFQPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('cancel_my_offer', { p_offer_id: existingOffer.id })
     setCancelling(false)
-    if (error) { setError(error.message || L('Could not cancel the offer — please try again.', 'آفر منسوخ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر إلغاء العرض — حاول مرة ثانية.')); return }
+    if (error) { setError(friendlyError(error.message, L('Could not cancel the offer — please try again.', 'آفر منسوخ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر إلغاء العرض — حاول مرة ثانية.'), locale)); return }
     window.location.reload()
   }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { friendlyError } from '@/lib/friendlyError'
 import { createClient } from '@/lib/supabase/client'
 import { waLink } from '@/lib/wa'
 import { fileHref } from '@/lib/fileHref'
@@ -45,7 +46,7 @@ export default function DealProtection({
     const j = await res.json().catch(() => ({}))
     if (!res.ok || !j.ok) { setInvErr(j?.message || L('Could not upload the file. Please try again.', 'فائل اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔', 'تعذّر رفع الملف. حاول مرة أخرى.')); setBusy(''); return }
     const { data, error } = await createClient().rpc('attach_supplier_invoice', { p_offer_id: offer.id, p_url: j.url, p_name: j.name || file.name })
-    if (error) setInvErr(error.message || L('Could not attach the invoice.', 'انوائس منسلک نہیں ہو سکی۔', 'تعذّر إرفاق الفاتورة.'))
+    if (error) setInvErr(friendlyError(error.message, L('Could not attach the invoice.', 'انوائس منسلک نہیں ہو سکی۔', 'تعذّر إرفاق الفاتورة.'), locale))
     else if (data) setOffer({ ...offer, ...(data as any) })
     setBusy('')
   }
@@ -57,7 +58,7 @@ export default function DealProtection({
     setBusy(label)
     const supabase = createClient()
     const { data, error } = await supabase.rpc(fn, params)
-    if (error) { alert(L('Could not complete the action: ', 'کارروائی مکمل نہیں ہو سکی: ', 'تعذّر إتمام العملية: ') + (error.message || L('Unexpected error', 'غیر متوقع خرابی', 'خطأ غير متوقع'))); setBusy(''); return }
+    if (error) { alert(L('Could not complete the action: ', 'کارروائی مکمل نہیں ہو سکی: ', 'تعذّر إتمام العملية: ') + friendlyError(error.message, L('Unexpected error', 'غیر متوقع خرابی', 'خطأ غير متوقع'), locale)); setBusy(''); return }
     if (data) setOffer({ ...offer, ...(data as any) })
     setBusy('')
   }

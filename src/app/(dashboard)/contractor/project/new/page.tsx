@@ -1,6 +1,7 @@
 'use client'
 
 import { canUseProjects } from '@/lib/plans'
+import { friendlyError } from '@/lib/friendlyError'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
@@ -512,7 +513,7 @@ export default function NewProjectPage() {
       try { localStorage.removeItem(DRAFT_KEY) } catch {}
       window.location.href = `/contractor/rfq/${rfq.id}`
     } catch (err) {
-      alert((err as any).message)
+      alert(friendlyError((err as any)?.message, L('Could not send the project — please try again.', 'پراجیکٹ نہیں بھیجا جا سکا — دوبارہ کوشش کریں۔', 'تعذّر إرسال المشروع — حاول مرة أخرى.'), locale))
     } finally { setLoading(false) }
   }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { friendlyError } from '@/lib/friendlyError'
 import AutoTr from '@/components/shared/AutoTr'
 import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
@@ -135,7 +136,7 @@ export default function RFQDetailPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('extend_rfq_deadline', { p_rfq_id: id, p_new_expires: next.toISOString() })
     setExtending(false)
-    if (error) { alert(error.message || L('Could not extend the deadline — please try again.', 'مہلت نہیں بڑھائی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر تمديد المهلة — حاول مرة ثانية.')); return }
+    if (error) { alert(friendlyError(error.message, L('Could not extend the deadline — please try again.', 'مہلت نہیں بڑھائی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر تمديد المهلة — حاول مرة ثانية.'), locale)); return }
     // تحديث فوري بدون إعادة تحميل الصفحة
     setRfq((prev: any) => ({ ...prev, expires_at: next.toISOString() }))
     setShowExtend(false)
@@ -329,7 +330,7 @@ export default function RFQDetailPage() {
     // one transaction on the server (175): offers are dropped only on a material change, and only
     // if the request update succeeds too (the suppliers are told to price again)
     const { data: res, error } = await supabase.rpc('edit_rfq', { p_rfq_id: id, p_patch: patch })
-    if (error) { alert(error.message || L('Could not save — please try again.', 'محفوظ نہیں ہو سکا — دوبارہ کوشش کریں۔', 'تعذّر الحفظ — حاول مرة ثانية.')); return }
+    if (error) { alert(friendlyError(error.message, L('Could not save — please try again.', 'محفوظ نہیں ہو سکا — دوبارہ کوشش کریں۔', 'تعذّر الحفظ — حاول مرة ثانية.'), locale)); return }
     const dropped = Number((res as any)?.offers_deleted || 0) > 0
 
     setRfq({ ...rfq, ...patch, ...(dropped ? { offer_count: 0 } : {}) })
