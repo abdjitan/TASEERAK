@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { arCount } from '@/lib/text'
 import AutoTr from '@/components/shared/AutoTr'
 import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
@@ -725,7 +726,7 @@ export default function SupplierRFQPage() {
                 : ((T.alreadyTitle as any)[existingOffer.status] || T.alreadyTitle.pending)}
             </h3>
             {myAwards && Array.isArray(existingOffer.item_prices) && myAwards.idx.size < existingOffer.item_prices.length && (
-              <p className="text-sm font-bold text-emerald-800 mb-1">{L(`Chosen for ${myAwards.idx.size} of ${existingOffer.item_prices.length} items — supply only those`, `${existingOffer.item_prices.length} میں سے ${myAwards.idx.size} اشیاء کے لیے منتخب — صرف وہی سپلائی کریں`, `اختيرت في ${myAwards.idx.size} من ${existingOffer.item_prices.length} مواد — ورّد هذه المواد فقط`)}</p>
+              <p className="text-sm font-bold text-emerald-800 mb-1">{L(`Chosen for ${myAwards.idx.size} of ${existingOffer.item_prices.length} items — supply only those`, `${existingOffer.item_prices.length} میں سے ${myAwards.idx.size} اشیاء کے لیے منتخب — صرف وہی سپلائی کریں`, `اختيرت في ${myAwards.idx.size} من ${arCount(existingOffer.item_prices.length, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')} — ورّد هذه المواد فقط`)}</p>
             )}
             <p className="text-sm text-gray-600">{(myAwards && Array.isArray(existingOffer.item_prices) && myAwards.idx.size < existingOffer.item_prices.length ? myAwards.total : existingOffer.total_price)?.toLocaleString('en-US')} {SAR}{existingOffer.status === 'rejected' && rfq.status === 'closed' ? ` — ${L('thanks for participating', 'شرکت کا شکریہ', 'شكراً لمشاركتك')}` : ''}</p>
 
