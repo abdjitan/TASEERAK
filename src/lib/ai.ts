@@ -21,7 +21,7 @@ export function aiProvider(): 'anthropic' | 'gemini' | 'groq' | null {
 }
 
 export const AI_ENABLED = !!(anthropicKey() || geminiKey() || groqKey())
-export const DEFAULT_AI_MODEL = process.env.AI_MODEL || 'claude-opus-4-8'
+export const DEFAULT_AI_MODEL = process.env.AI_MODEL || 'claude-haiku-5-5' // cheapest by default (review 2026-10-28); set AI_MODEL to override
 // نماذج Gemini المجانية للمحاولة بالترتيب (قابلة للتهيئة عبر GEMINI_MODEL كقائمة مفصولة بفواصل)
 const GEMINI_MODEL_FALLBACKS = 'gemini-3.8-flash,gemini-flash-latest,gemini-2.5-flash'
 

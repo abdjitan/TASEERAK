@@ -827,7 +827,7 @@ export default function QuickRequestPage() {
       {/* owner 2026-10-17: the send bar is always there once there is an item; the review dialog
           and validate() still catch incomplete lines */}
       {lines.length > 0 && (
-        <div className="fixed inset-x-0 bottom-0 bg-white border-t border-gray-200 px-4 pt-3 z-30" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="fixed inset-x-0 bottom-[calc(3.9rem_+_env(safe-area-inset-bottom))] lg:bottom-0 bg-white border-t border-gray-200 px-4 pt-3 z-30" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
           <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3 lg:pe-24">
             <span className="text-sm text-gray-500">{lines.length} {L('items', 'اشیاء', 'مواد')}</span>
             <button type="button" onClick={review} disabled={sending || photos.some(p => p.status === 'identifying')}

@@ -22,6 +22,8 @@ import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { PAYMENT_TERMS } from '@/lib/paymentTerms'
+// Arabic-Indic / Persian digits and «٫» from Arabic and Urdu keyboards → 12.5 (type=number refused them silently)
+const latinNum = (v: string) => String(v ?? '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٫,]/g, '.').replace(/[^0-9.]/g, '')
 
 export default function SupplierRFQPage() {
   const { id } = useParams()
@@ -807,7 +809,7 @@ export default function SupplierRFQPage() {
                 {existingOffer.reduction_note && <div className="text-xs text-gray-600 mb-1">«{existingOffer.reduction_note}»</div>}
                 <div className="text-[11px] text-gray-500 mb-3">{L('Reply by:', 'جواب کی آخری مہلت:', 'المهلة للرد:')} {new Date(existingOffer.reduction_deadline).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn')}</div>
                 <div className="flex gap-2">
-                  <input type="number" value={newPrice} onChange={(e: any) => setNewPrice(e.target.value)} className="input-field flex-1" placeholder={L(`Less than ${existingOffer.total_price?.toLocaleString('en-US')} SAR`, `${existingOffer.total_price?.toLocaleString('en-US')} SAR سے کم`, `أقل من ${existingOffer.total_price?.toLocaleString('en-US')} ر.س`)} min="0" step="any" />
+                  <input type="text" inputMode="decimal" value={newPrice} onChange={(e: any) => setNewPrice(latinNum(e.target.value))} className="input-field flex-1" placeholder={L(`Less than ${existingOffer.total_price?.toLocaleString('en-US')} SAR`, `${existingOffer.total_price?.toLocaleString('en-US')} SAR سے کم`, `أقل من ${existingOffer.total_price?.toLocaleString('en-US')} ر.س`)} />
                   <button type="button" onClick={submitReduction} disabled={reducing} className="px-4 rounded-xl font-semibold text-white text-sm disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>{reducing ? '...' : L('Send new price', 'نئی قیمت بھیجیں', 'إرسال السعر الجديد')}</button>
                 </div>
               </div>
@@ -961,12 +963,12 @@ export default function SupplierRFQPage() {
                           <div className="mt-3 flex flex-wrap items-center gap-2">
                             <div className="relative flex-1 min-w-[11rem]">
                               {sameUnit(form, i) ? (
-                                <input type="number" inputMode="decimal" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
+                                <input type="text" inputMode="decimal" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, latinNum(e.target.value))}
                                   data-unit-price enterKeyHint="next" onKeyDown={(e: any) => { if (e.key !== 'Enter') return; e.preventDefault(); const all = Array.from(document.querySelectorAll('input[data-unit-price]')) as HTMLInputElement[]; const nx = all[all.indexOf(e.currentTarget) + 1]; if (nx) nx.focus(); else e.currentTarget.blur() }}
                                   aria-label={L(`Unit price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} فی یونٹ قیمت`, `سعر الوحدة لـ ${getProductLabel(it.product_name, locale)}`)}
                                   className="input-field font-bold pe-20" placeholder={L(`Price per ${getUnitLabel(it.unit, locale)}`, `فی ${getUnitLabel(it.unit, locale)} قیمت`, `سعر ${getUnitLabel(it.unit, locale) || 'الوحدة'} الواحد`)} min="0" step="any" />
                               ) : (
-                                <input type="number" inputMode="decimal" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
+                                <input type="text" inputMode="decimal" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, latinNum(e.target.value))}
                                   aria-label={L(`Total price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} کی کل قیمت`, `السعر الإجمالي لـ ${getProductLabel(it.product_name, locale)}`)}
                                   className="input-field font-bold pe-14" placeholder={L(`Total for ${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)}`, `${qty.toLocaleString('en-US')} ${getUnitLabel(it.unit, locale)} کی کل قیمت`, `إجمالي ${qty.toLocaleString('en-US')} ${it.unit}`)} min="0" step="any" />
                               )}
@@ -1019,11 +1021,11 @@ export default function SupplierRFQPage() {
                                 <div className="col-span-3">
                                   {sameUnit(form, i) ? (<>
                                     <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Or the total directly', 'یا کل رقم', 'أو الإجمالي مباشرة')}</label>
-                                    <input type="number" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, e.target.value)}
+                                    <input type="text" inputMode="decimal" value={form.line_total || ''} onChange={(e: any) => setItemTotal(i, latinNum(e.target.value))}
                                       className="input-field text-sm" placeholder={L('Total', 'کل', 'الإجمالي')} min="0" step="any" />
                                   </>) : (<>
                                     <label className="block text-[11px] font-bold text-gray-400 mb-1">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</label>
-                                    <input type="number" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, e.target.value)}
+                                    <input type="text" inputMode="decimal" value={form.unit_price || ''} onChange={(e: any) => setItemUnit(i, latinNum(e.target.value))}
                                       className="input-field text-sm" placeholder={L('Price / ', 'قیمت / ', 'السعر / ') + (form.priceUnit || it.unit)} min="0" step="any" />
                                   </>)}
                                 </div>
@@ -1048,7 +1050,7 @@ export default function SupplierRFQPage() {
                               </div>
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1">⏱ {L('Delivery time (days)', 'ڈیلیوری کا وقت (دن)', 'مدة التوصيل (أيام)')}</label>
-                                <input type="number" value={form.delivery_days || ''} onChange={(e: any) => setItemField(i, 'delivery_days', e.target.value)} className="input-field text-sm" placeholder="3" min="0" />
+                                <input type="text" inputMode="decimal" value={form.delivery_days || ''} onChange={(e: any) => setItemField(i, 'delivery_days', latinNum(e.target.value))} className="input-field text-sm" placeholder="3" />
                               </div>
                               <div>
                                 <label className="block text-xs font-bold text-gray-500 mb-1"><Glyph e="🛡" /> {L('Warranty (optional)', 'وارنٹی (اختیاری)', 'الضمان (اختياري)')}</label>
@@ -1088,19 +1090,19 @@ export default function SupplierRFQPage() {
                 <>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">{L('Goods Price (SAR)', 'سامان کی قیمت (SAR)', 'سعر البضاعة (ر.س)')} *</label>
-                    <input type="number" value={totalPrice} onChange={(e: any) => handleTotalChange(e.target.value)}
+                    <input type="text" inputMode="decimal" value={totalPrice} onChange={(e: any) => handleTotalChange(latinNum(e.target.value))}
                       className="input-field" placeholder="0.00" required min="0" step="any" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.unitPrice}</label>
-                      <input type="number" value={unitPrice} onChange={(e: any) => setUnitPrice(e.target.value)}
+                      <input type="text" inputMode="decimal" value={unitPrice} onChange={(e: any) => setUnitPrice(latinNum(e.target.value))}
                         className="input-field bg-gray-50" placeholder={L('Auto', 'خودکار', 'تلقائي')} min="0" step="any" />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-1.5">{T.deliveryDays}</label>
-                      <input type="number" value={deliveryDays} onChange={(e: any) => setDeliveryDays(e.target.value)}
+                      <input type="text" inputMode="decimal" value={deliveryDays} onChange={(e: any) => setDeliveryDays(latinNum(e.target.value))}
                         className="input-field" placeholder="3" min="0" />
                     </div>
                   </div>
@@ -1241,7 +1243,7 @@ export default function SupplierRFQPage() {
                           className={`px-3 py-2 rounded-xl border-2 text-sm font-bold ${delivMode === k ? 'border-[#0F6E56] bg-[#0F6E56]/5 text-[#0F6E56]' : 'border-gray-200 bg-white text-gray-600'}`}>{label}</button>
                       ))}
                       {delivMode === 'amount' && (
-                        <input type="number" value={delivAmount} onChange={(e: any) => setDelivAmount(e.target.value)} min="0" step="any"
+                        <input type="text" inputMode="decimal" value={delivAmount} onChange={(e: any) => setDelivAmount(latinNum(e.target.value))}
                           className="input-field text-sm w-32" placeholder={L('SAR', 'ریال', 'ر.س')} aria-label={L('Delivery amount', 'ڈیلیوری رقم', 'مبلغ التوصيل')} />
                       )}
                     </div>
@@ -1332,7 +1334,7 @@ export default function SupplierRFQPage() {
                     <div key={i} className="flex gap-2">
                       <input value={ex.label} onChange={(e: any) => updateExtra(i, 'label', e.target.value)}
                         className="input-field text-sm flex-1" placeholder={L('Item (e.g. Delivery)', 'آئٹم (مثلاً ڈیلیوری)', 'البند (مثال: توصيل)')} />
-                      <input type="number" value={ex.amount} onChange={(e: any) => updateExtra(i, 'amount', e.target.value)}
+                      <input type="text" inputMode="decimal" value={ex.amount} onChange={(e: any) => updateExtra(i, 'amount', latinNum(e.target.value))}
                         className="input-field text-sm w-24" placeholder={L('Amount', 'رقم', 'المبلغ')} min="0" step="any" />
                       {extras.length > 1 && (
                         <button type="button" onClick={() => removeExtra(i)}
