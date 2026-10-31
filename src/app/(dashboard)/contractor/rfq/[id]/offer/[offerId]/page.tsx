@@ -354,7 +354,12 @@ export default function OfferDetailPage() {
               </>
             )}
             <div className="flex gap-2">
+              {/* a multi-item request is awarded per item on the request page (177: accept_offer refuses it) */}
+              {Array.isArray(rfq.items) && rfq.items.length > 1 ? (
+                <a href={`/contractor/rfq/${rfq.id}`} className="flex-1 py-3 rounded-xl font-bold text-white text-sm text-center" style={{ background: '#0F6E56' }}>{L('Award items on the request page', 'درخواست کے صفحے پر ہر چیز منتخب کریں', 'اختر الأفضل لكل مادة من صفحة الطلب')} ←</a>
+              ) : (
               <button onClick={acceptOffer} disabled={acting} className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>✓ {(reqDone || offer.reduction_deadline) ? L('Accept original price', 'اصل قیمت قبول کریں', 'قبول السعر الأصلي') : L('Accept offer', 'آفر قبول کریں', 'قبول العرض')}</button>
+              )}
               <button onClick={rejectOffer} disabled={acting} className="px-6 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600">✕ {L('Reject', 'رد کریں', 'رفض')}</button>
             </div>
           </div>
