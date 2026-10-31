@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import AutoTr from '@/components/shared/AutoTr'
 import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -264,7 +265,7 @@ export default function OfferDetailPage() {
                     <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</div>
                   </div>
                   {/* مواصفات المادة من المورد */}
-                  {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5"><Glyph e="📝" /> {it.specification || it.notes}</p>}
+                  {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5"><Glyph e="📝" /> <AutoTr text={it.specification || it.notes} locale={locale} /></p>}
                   {it.warranty && <p className="text-[11px] font-semibold text-[#0F6E56] mt-1"><Glyph e="🛡" /> {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</p>}
                   {it.attachment_url && (
                     <a href={fileHref(it.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#9D7425] underline mt-1.5">
@@ -305,7 +306,7 @@ export default function OfferDetailPage() {
               ))}
             </div>
           )}
-          {offer.notes && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-2"><Glyph e="📝" /> {offer.notes}</p>}
+          {offer.notes && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-2"><Glyph e="📝" /> <AutoTr text={offer.notes} locale={locale} /></p>}
           {offer.attachment_url && (
             <a href={fileHref(offer.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-[#9D7425] underline mt-1">
               <Glyph e="📎" /> {offer.attachment_name || L('Offer attachment', 'آفر کی فائل', 'مرفق العرض')}

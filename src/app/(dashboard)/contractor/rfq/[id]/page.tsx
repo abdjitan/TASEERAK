@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import AutoTr from '@/components/shared/AutoTr'
 import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -689,7 +690,7 @@ export default function RFQDetailPage() {
                                     {b.offer.payment_terms ? <span><Glyph e="💳" /> {paymentTermsLabel(b.offer.payment_terms, locale)}</span> : null}
                                     {b.offer.supplier?.city && <span><Glyph e="📍" /> {b.offer.supplier.city}</span>}
                                     {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title={L('Distance from the delivery location', 'ڈیلیوری کی جگہ سے فاصلہ', 'المسافة من موقع التوصيل')}><Glyph e="📏" /> {km < 1 ? '<1' : Math.round(km)} {L('km', 'کلومیٹر', 'كم')}</span> : null })()}
-                                    {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[150px]"><Glyph e="⚙" /> {b.entry.specification}</span>}
+                                    {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[220px]"><Glyph e="⚙" /> <AutoTr text={b.entry.specification} locale={locale} /></span>}
                                     {b.entry.warranty && <span className="text-[#0F6E56] font-semibold"><Glyph e="🛡" /> {b.entry.warranty}</span>}
                                     {b.entry.attachment_url && <a href={fileHref(b.entry.attachment_url)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} className="text-purple-500 hover:underline"><Glyph e="📎" /> {L('Catalog', 'کیٹلاگ', 'كتالوج')}</a>}
                                     <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} title={L('View all details', 'تمام تفصیل دیکھیں', 'عرض كل التفاصيل')} className="inline-flex items-center gap-1 font-bold text-[11px] px-2.5 py-1 rounded-full transition-all hover:shadow-sm" style={{ color: '#fff', background: '#D4A543' }}><Glyph e="👁" /> {L('Details', 'تفصیل', 'التفاصيل')}</Link>
@@ -974,7 +975,7 @@ export default function RFQDetailPage() {
                   )
                 })()}
 
-                {offer.notes && <p className="text-xs text-gray-400 bg-gray-50 p-2 rounded-lg mb-2">{offer.notes}</p>}
+                {offer.notes && <p className="text-xs text-gray-400 bg-gray-50 p-2 rounded-lg mb-2"><AutoTr text={offer.notes} locale={locale} /></p>}
 
                 {/* خصائص المنتج */}
                 {offer.attributes && Object.keys(offer.attributes).length > 0 && (

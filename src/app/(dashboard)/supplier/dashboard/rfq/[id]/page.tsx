@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import AutoTr from '@/components/shared/AutoTr'
 import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -668,7 +669,7 @@ export default function SupplierRFQPage() {
                       <tr key={i} className="border-b border-gray-50 align-top">
                         <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                         <td className="py-2.5 px-3">
-                          <div className="font-bold text-[15px] text-[#0B2438] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span>{getProductLabel(it.product_name, locale)}</span></div>
+                          <div className="font-bold text-[15px] text-[#0B2438] flex items-center gap-2"><img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))} className="w-9 h-9 object-contain rounded bg-white border border-gray-100 shrink-0" /><span><AutoTr text={getProductLabel(it.product_name, locale)} locale={locale} /></span></div>
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(sectors as any)[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700"><Glyph e="⚡" /> {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
@@ -685,7 +686,7 @@ export default function SupplierRFQPage() {
                           )}
                         </td>
                         <td className="py-3 px-3 font-bold text-[15px] text-[#9D7425] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
-                        <td className="py-3 px-3 text-sm text-gray-700 leading-relaxed">{it.specification || '—'}</td>
+                        <td className="py-3 px-3 text-sm text-gray-700 leading-relaxed">{it.specification ? <AutoTr text={it.specification} locale={locale} /> : '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -723,7 +724,7 @@ export default function SupplierRFQPage() {
                 {existingOffer.item_prices.map((it: any, idx: number) => (
                   <div key={idx} className="px-3 py-2.5 border-t border-gray-100 flex items-center justify-between gap-3">
                     <span className="text-sm text-gray-800 font-medium truncate">
-                      {getProductLabel(it.product_name, locale)}
+                      <AutoTr text={getProductLabel(it.product_name, locale)} locale={locale} />
                       <span className="text-gray-400 text-xs font-normal"> ({(Number(it.quantity) || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}{it.delivery_days ? ` · ${L(`delivery in ${it.delivery_days}d`, `${it.delivery_days} دن میں ڈیلیوری`, `التوصيل خلال ${Number(it.delivery_days) === 1 ? 'يوم واحد' : Number(it.delivery_days) === 2 ? 'يومين' : Number(it.delivery_days) <= 10 ? `${it.delivery_days} أيام` : `${it.delivery_days} يوماً`}`)}` : ''})</span>
                     </span>
                     <span className="font-bold text-sm whitespace-nowrap" style={{ color: '#0B2438' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
@@ -879,7 +880,7 @@ export default function SupplierRFQPage() {
                                 <div className="min-w-0">
                                   <div className="font-bold text-[15px] leading-snug" style={{ color: '#0B2438' }}>
                                     {line > 0 && <span className="inline-grid place-items-center w-5 h-5 rounded-full text-[11px] text-white me-1.5 align-middle" style={{ background: '#0F6E56' }}>✓</span>}
-                                    {getProductLabel(it.product_name, locale)}
+                                    <AutoTr text={getProductLabel(it.product_name, locale)} locale={locale} />
                                   </div>
                                   {it.sub_category && <div className="text-xs text-gray-500 mt-0.5">{getSubCategoryLabel(it.sector, it.sub_category, locale)}</div>}
                                 </div>
@@ -900,7 +901,7 @@ export default function SupplierRFQPage() {
                           {/* what the buyer asked for: specs and photo, prominent so the price matches */}
                           {it.specification && (
                             <div className="mt-3 rounded-xl p-2.5 border text-sm text-gray-800 leading-relaxed" style={{ background: '#D4A5430a', borderColor: '#D4A54344' }}>
-                              <span className="text-xs font-bold me-1" style={{ color: '#9D7425' }}><Glyph e="📋" /> {L('Buyer specs:', 'خریدار کی تفصیل:', 'مواصفات المشتري:')}</span>{it.specification}
+                              <span className="text-xs font-bold me-1" style={{ color: '#9D7425' }}><Glyph e="📋" /> {L('Buyer specs:', 'خریدار کی تفصیل:', 'مواصفات المشتري:')}</span><AutoTr text={it.specification} locale={locale} />
                             </div>
                           )}
                           {it.photo_url && (
@@ -1180,7 +1181,7 @@ export default function SupplierRFQPage() {
               )}
             </div>
             {rfq.specification && (!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold"><Glyph e="⚙" /> {T.spec}</span><br/><strong>{rfq.specification}</strong></div>}
-            {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold"><Glyph e="📝" /> {T.notes}</span><br/>{cleanNotes}</div>}
+            {cleanNotes && <div className="bg-[#f4f6f9] rounded-lg p-3 col-span-2"><span className="text-gray-500 text-[12px] font-semibold"><Glyph e="📝" /> {T.notes}</span><br/><AutoTr text={cleanNotes} locale={locale} /></div>}
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold"><Glyph e="🗓" /> {L('Posted', 'درخواست کی تاریخ', 'تاريخ الطلب')}</span><br/><strong className="text-sm">{formatDateTime(rfq.created_at)}</strong></div>
             {rfq.expires_at && (
               <div className="rounded-lg p-3" style={{ background: urgencyStyle(deadlineUrgency(rfq.expires_at)).bg, border: `1px solid ${urgencyStyle(deadlineUrgency(rfq.expires_at)).border}` }}>
