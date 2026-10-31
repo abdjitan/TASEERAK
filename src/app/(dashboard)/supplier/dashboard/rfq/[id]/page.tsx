@@ -34,6 +34,15 @@ export default function SupplierRFQPage() {
   const [verified, setVerified] = useState(true) // تفاؤلي؛ يُضبط من الملف. القفل الحقيقي على مستوى القاعدة (RLS)
   const [rfq, setRfq] = useState<any>(null)
   const [existingOffer, setExistingOffer] = useState<any>(null)
+  // market average per material + unit (accepted prices, get_market_prices); 3+ prices so no single rival shows
+  const [market, setMarket] = useState<Record<string, { avg: number; n: number }>>({})
+  useEffect(() => {
+    createClient().rpc('get_market_prices').then(({ data }: any) => {
+      const m: Record<string, { avg: number; n: number }> = {}
+      for (const r of (data || [])) if (Number(r.offer_count) >= 3 && Number(r.avg_price) > 0) m[`${r.product_name}__${r.unit || ''}`] = { avg: Number(r.avg_price), n: Number(r.offer_count) }
+      setMarket(m)
+    }, () => {})
+  }, [])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -978,6 +987,21 @@ export default function SupplierRFQPage() {
                               {form.autofilled && <span className="text-gray-400"> · {L('from your price list', 'آپ کی قیمتوں کی فہرست سے', 'من قائمة أسعارك')}</span>}
                             </p>
                           )}
+                          {(() => {
+                            // «سعرك أعلى/أقل من متوسط السوق» (owner 2026-10-31); only from 3 accepted prices up
+                            const mk = market[`${it.product_name}__${it.unit || ''}`]
+                            const up = +form.unit_price || 0
+                            if (!mk || !(up > 0) || !sameUnit(form, i)) return null
+                            const d = Math.round(((up - mk.avg) / mk.avg) * 100)
+                            const avg = `(${mk.avg.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${SAR})`
+                            if (Math.abs(d) < 3) return <p className="text-[12px] mt-1 text-gray-500">{L('In line with the market average', 'مارکیٹ اوسط کے مطابق', 'سعرك قريب من متوسط السوق')} {avg}</p>
+                            return (
+                              <p className={`text-[12px] mt-1 font-semibold ${d > 0 ? 'text-amber-700' : 'text-emerald-700'}`}>
+                                {d > 0 ? L(`Your price is ${d}% above the market average`, `آپ کی قیمت مارکیٹ اوسط سے ${d}% زیادہ ہے`, `سعرك أعلى من متوسط السوق بـ ${d}%`) : L(`Your price is ${-d}% below the market average`, `آپ کی قیمت مارکیٹ اوسط سے ${-d}% کم ہے`, `سعرك أقل من متوسط السوق بـ ${-d}%`)}
+                                <span className="text-gray-400 font-normal"> {avg}</span>
+                              </p>
+                            )
+                          })()}
                           </>)}
 
                           {more && (
