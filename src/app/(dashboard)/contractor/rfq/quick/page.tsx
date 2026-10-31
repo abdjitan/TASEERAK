@@ -70,10 +70,13 @@ function lineFromItem(it: any): Line {
   delete specs.unit
   const st = specText(it.product_name || '', specs)
   let details = String(it.specification || '')
+  // the brand goes back to its own field; drop its «الماركة: X — » prefix so a resend doesn't repeat it
+  const brand = String(it.brand || '').trim()
+  if (brand && details.startsWith(`الماركة: ${brand}`)) details = details.slice(`الماركة: ${brand}`.length).replace(/^\s*—\s*/, '')
   if (st && details.startsWith(st)) details = details.slice(st.length).replace(/^\s*—\s*/, '')
   return {
     key: uid(), product_name: it.product_name || '', sector: it.sector || 'supply_store',
-    quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details, specs,
+    quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details, specs, ...(brand ? { brand } : {}),
     done: !!(it.product_name && Number(it.quantity) > 0 && it.unit),
   }
 }
