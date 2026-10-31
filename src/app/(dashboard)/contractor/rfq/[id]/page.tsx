@@ -253,7 +253,7 @@ export default function RFQDetailPage() {
   function cheapestFor(it: any, idx: number, offersList: any[]) {
     const bids = offersList.map((o: any) => {
       const list = Array.isArray(o.item_prices) ? o.item_prices : []
-      const entry = list.find((ip: any) => ip.item_index === idx) || list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
+      const entry = list.find((ip: any) => ip.item_index === idx) || (list.some((ip: any) => ip.item_index != null) ? undefined : list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))) // by name only for old offers without line numbers (two «حديد تسليح» lines must not share a price)
       return entry ? { offer: o, entry } : null
     }).filter(Boolean) as any[]
     bids.sort((a: any, b: any) => lineComparable(a.entry.total, a.offer) - lineComparable(b.entry.total, b.offer))
@@ -618,7 +618,7 @@ export default function RFQDetailPage() {
                 {rfq.items.map((it: any, idx: any) => {
                   const bids = activeOffers.map((o: any) => {
                     const list = Array.isArray(o.item_prices) ? o.item_prices : []
-                    const entry = list.find((ip: any) => ip.item_index === idx) || list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))
+                    const entry = list.find((ip: any) => ip.item_index === idx) || (list.some((ip: any) => ip.item_index != null) ? undefined : list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null)))) // by name only for old offers without line numbers (two «حديد تسليح» lines must not share a price)
                     return entry ? { offer: o, entry } : null
                   }).filter(Boolean).sort((a: any, b: any) => {
                     if (awardSort === 'rated') {
