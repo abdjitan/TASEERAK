@@ -118,7 +118,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     steel_mesh: { ar: 'شبك حديد وإكسسوارات', en: 'Steel Mesh & Accessories', ur: 'میش', icon: '🕸', group: 'steel',
       keywords: ['شبكة حديد','mesh','fabric','رابيتز','شبك لياسة','زوايا حماية'] },
     // ═══ البنية التحتية والتدعيم ═══
-    waterproofing: { ar: 'عوازل مائية وحرارية للأساسات', en: 'Foundation Waterproofing', ur: 'واٹر پروفنگ', icon: '🛡', group: 'infrastructure',
+    waterproofing: { ar: 'العزل المائي', en: 'Waterproofing', ur: 'واٹر پروفنگ', icon: '🛡', group: 'infrastructure',
       keywords: ['عازل','عزل','عزل مائي','waterproof','bitumen','بيتومين','بيتوميني','membrane','غشاء','رطوبة','أساسات','tanking','tank','بطانة','سيماني','سائل','primer','protection','خيش','فيلم','بولي','polyethylene','dpm','مانع تسرب الفواصل','شريط مانع تسرب','قماش جيوتكستايل'] },
     piling: { ar: 'أوتاد وخوازيق الأساسات', en: 'Piling & Foundations', ur: 'پائلنگ', icon: '🛠', group: 'infrastructure',
       keywords: ['أوتاد','اوتاد','pile','piling','خازوق','وتد خرساني'] },
@@ -237,7 +237,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     bath_accessories: { ar: 'إكسسوارات حمامات ومطابخ', en: 'Bath & Kitchen Accessories', ur: 'لوازمات', icon: '🛁', group: 'sanitary_finish',
       keywords: ['إكسسوارات حمام','accessories','مطبخ','kitchen','مرايا','حوامل','مرآة','مراية','كابينة شاور زجاج','كابينة شاور'] },
     // ═══ العزل الحراري والمائي ═══
-    thermal_insulation: { ar: 'عوازل حرارية ومائية', en: 'Thermal & Moisture Insulation', ur: 'انسولیشن', icon: '🧊', group: 'building_insulation',
+    thermal_insulation: { ar: 'العزل الحراري', en: 'Thermal Insulation', ur: 'انسولیشن', icon: '🧊', group: 'building_insulation',
       keywords: ['عازل حراري','XPS','EPS عازل','صوف صخري','rock wool','rockwool','فوم عازل','عازل رطوبة','عازل مائي','waterproofing membrane','polystyrene','بولي ستايرين','عزل أسطح','رش فوم بولي يوريثان للأسطح','صوف زجاجي','لفائف عزل'] },
     // ═══ الأعمال المعدنية والمصاعد ═══
     metal_features: { ar: 'درابزين وسلالم ومشربيات', en: 'Balustrades, Stairs & Screens', ur: 'دھاتی کام', icon: '🛗', group: 'arch_metalwork',
@@ -441,6 +441,8 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
 // Products added from the 2026-10-19 research have a fixed sub-category (their names are long and
 // would need many keywords); keywords still route everything else and free text.
 export const PRODUCT_SUB: Record<string, string> = {
+  'عازل رطوبة للأسطح والجدران': 'waterproofing',
+  'عازل حراري مجاري هواء': 'duct_insulation',
   'انكر وتد (Wedge Anchor / Through Bolt)': 'store_fasteners',
   'انكر دروب إن (Drop-in Anchor)': 'store_fasteners',
   'انكر كُم (Sleeve Anchor)': 'store_fasteners',
@@ -6340,7 +6342,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'غشاء بيتوميني لفائف (Bituminous Membrane)', 'بطانة خزانات سائلة (Tank Lining)',
     'بيتومين أولي (Primer)', 'لوح حماية بيتوميني (Protection Board)',
     'مواد لاصقة وكيماويات (Adhesives & Sealants)',
-    'فيلم بولي ايثيلين',
+    'فيلم بولي ايثيلين', 'عازل رطوبة للأسطح والجدران',
     // ═══ الأعمال الخاصة - BOQ 2 Stadium ═══
     'سلالم رياضية Raker Beams',
     // ═══ الصلب الهيكلي الدائري - BOQ 2 ═══
@@ -6449,8 +6451,8 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'أسقف صوتية مبطنة', 'أسقف مكشوفة مطلية',
     // ═══ العزل (BOQ: 13-THERMAL AND MOISTURE) ═══
     'عازل XPS للأسطح', 'صوف صخري Rock Wool',
-    'فوم عازل حراري', 'عازل رطوبة للأسطح والجدران',
-    'مواد عازلة صوتية Acoustic', 'عازل حراري مجاري هواء',
+    'فوم عازل حراري',
+    'مواد عازلة صوتية Acoustic',
     // ═══ الأبواب والنوافذ (BOQ: 14-H DOORS AND WINDOWS) ═══
     'أبواب خشب داخلية', 'أبواب خشب مع إطار معدني',
     'أبواب حديد مقاومة حريق 45 دقيقة',
@@ -6619,7 +6621,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'قناة تثبيت يونيسترت (Strut Channel)', 'صامولة زنبركية للقناة (Channel Spring Nut)', 'زوايا ووصلات قناة التثبيت (Channel Brackets & Connectors)', 'ذراع حامل كابولي (Cantilever Bracket)',
     'قاعدة تثبيت قناة/قضيب (Channel Base Plate / Rod Hanger)', 'علاقة مواسير مبطنة بالمطاط (Rubber-lined Pipe Clamp)', 'كلامب مواسير ثقيل للأحمال (Heavy-duty Pipe Clamp)', 'علاقة كلفيس/حلقة لمواسير الحريق والرشاشات (Clevis / Ring Hanger)',
     'كلامب كمرة (Beam Clamp)', 'حامل انزلاقي/أسطواني للمواسير الساخنة (Pipe Slide / Roller Support)', 'غراء مواسير CPVC (مياه حارة)', 'منظف وبرايمر مواسير PVC قبل اللحام',
-    'غراء عزل الدكت (لاصق الصوف والفوم)', 'لاصق عزل الأنابيب المطاطي (أرمافلكس)', 'شريط ألمنيوم مقوى FSK لعزل الدكت', 'مواسير صرف PP صامتة بحلقة مطاطية (PP Silent Push-fit)',
+    'عازل حراري مجاري هواء', 'غراء عزل الدكت (لاصق الصوف والفوم)', 'لاصق عزل الأنابيب المطاطي (أرمافلكس)', 'شريط ألمنيوم مقوى FSK لعزل الدكت', 'مواسير صرف PP صامتة بحلقة مطاطية (PP Silent Push-fit)',
     'مصيدة صرف P (P-Trap) uPVC', 'محبس أرضي مجمّع (Collector Floor Gully)', 'سدادة/كوع تفتيش وتنظيف (Cleanout / Access Fitting)', 'غطاء تهوية للسطح (Roof Vent Cap)',
     'وصلات صرف uPVC (واي/مخفّض/تي صحي/وصلة إصلاح)', 'مواسير uPVC ضغط سكجول 80 (Sch 80)', 'محبس دفن PPR (Concealed Stop Valve)', 'خلاط دفن (Concealed Mixer Valve)',
     'وصلات PPR بسن نحاسي داخلي/خارجي (PPR Brass Adaptor)', 'قوس تعدية PPR (Crossover)', 'سدادة اختبار ضغط PPR (Test Plug)', 'مجموعة تثبيت حائط للسخان والغسالة (Wall-mount Group)',

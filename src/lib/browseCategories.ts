@@ -90,8 +90,8 @@ const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: stri
     lighting: { ar: 'ثريات وإنارة ديكور', en: 'Chandeliers & decorative lighting', ur: 'جھومر اور سجاوٹی روشنی' },
   },
   building: {
-    infrastructure: { ar: 'الأساسات وعزل الأساسات', en: 'Foundations & foundation waterproofing', ur: 'بنیادیں اور واٹر پروفنگ' },
-    building_insulation: { ar: 'العزل الحراري والمائي', en: 'Thermal & water insulation', ur: 'حرارتی اور واٹر پروفنگ' },
+    infrastructure: { ar: 'الأساسات والخوازيق', en: 'Foundations & piles', ur: 'بنیادیں اور پائلز' },
+    building_insulation: { ar: 'العزل الحراري', en: 'Thermal insulation', ur: 'حرارتی انسولیشن' },
   },
   plumbing: { plumbing_supplies: { ar: 'لوازم وأدوات السباكة', en: 'Plumbing supplies & tools', ur: 'پلمبنگ کا سامان' } },
   tools: { scaffolding: { ar: 'السقالات ومنصات الرفع', en: 'Scaffolding & access platforms', ur: 'سکیفولڈنگ اور لفٹ پلیٹ فارم' } },
@@ -141,7 +141,9 @@ const CHEM_GROUPS: { key: string; ar: string; en: string; ur: string; icon: stri
   { key: 'chem_repair', ar: 'الجراوت والإصلاح والتثبيت', en: 'Grouts, repair & anchoring', ur: 'گراؤٹ، مرمت اور اینکرنگ', icon: '🧰', re: /جراوت|مونة|إصلاح|اصلاح|حقن|كربون|إيبوكسي|ايبوكسي|انكر|أنكر|مثبت|تثبيت|ترميم|ميكرو|لاصق|خرسانة دقيقة|تسوية/ },
   { key: 'chem_admix', ar: 'إضافات ومعالجة الخرسانة', en: 'Concrete admixtures & curing', ur: 'کنکریٹ ایڈمکسچر اور کیورنگ', icon: '🧪', re: /./ },
 ]
-const BUILDING_ORDER = ['concrete', 'steel', 'masonry', 'rawmaterials', 'formwork', 'scaffolding', 'infrastructure', 'building_insulation', 'chem_admix', 'chem_repair', 'chem_seal', 'chem_fire', 'store_fasteners']
+// «العزل المائي» is its own group (owner 2026-10-31: «العزل» only, not «عزل الأساسات»; piles stay under «الأساسات»)
+const WATERPROOF_GROUP = { key: 'waterproofing', ar: 'العزل المائي', en: 'Waterproofing', ur: 'واٹر پروفنگ', icon: '🛡' }
+const BUILDING_ORDER = ['concrete', 'steel', 'masonry', 'rawmaterials', 'formwork', 'scaffolding', 'waterproofing', 'building_insulation', 'infrastructure', 'chem_admix', 'chem_repair', 'chem_seal', 'chem_fire', 'store_fasteners']
 
 function getTradeGroups(section: BrowseSection): SectionGroup[] {
   const out: Record<string, SectionGroup> = {}
@@ -151,7 +153,8 @@ function getTradeGroups(section: BrowseSection): SectionGroup[] {
       for (const name of g.items) {
         const sub = detectSubCategory(name, sector)
         if (sectionOfSub(sub, g.group) !== section) continue
-        const chem = section === 'building' && sector === 'civil' && sub === 'construction_chemicals' ? CHEM_GROUPS.find(c => c.re.test(name)) : undefined
+        const chem = section === 'building' && sector === 'civil' && sub === 'construction_chemicals' ? CHEM_GROUPS.find(c => c.re.test(name))
+          : section === 'building' && sub === 'waterproofing' ? WATERPROOF_GROUP : undefined
         const key = chem ? chem.key : (MERGE[section]?.[g.group] || g.group)
         if (chem && !out[key]) { out[key] = { group: key, icon: chem.icon, ar: chem.ar, en: chem.en, ur: chem.ur, items: [] }; order.push(key) }
         if (!out[key]) {

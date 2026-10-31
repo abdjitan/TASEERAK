@@ -55,7 +55,7 @@ const MAP: Record<string, string> = {
   // browse sections
   furniture: 'sofa',
   // display groups of construction chemicals (browseCategories CHEM_GROUPS)
-  chem_admix: 'layers', chem_repair: 'wrench', chem_seal: 'droplet', chem_fire: 'shield',
+  chem_admix: 'layers', chem_repair: 'wrench', chem_seal: 'droplet', chem_fire: 'shield', waterproofing: 'droplet',
 }
 
 export default function CatIcon({ k, className = 'w-5 h-5' }: { k: string; className?: string }) {
