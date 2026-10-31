@@ -176,7 +176,7 @@ function setLang(lang) {
   document.querySelectorAll(".lang button, .foot-bottom .langs span").forEach(b => {
     b.classList.toggle("on", b.dataset.lang === lang);
   });
-  localStorage.setItem("taseerak_lang", lang);
+  try { localStorage.setItem("taseerak_lang", lang); localStorage.setItem("taseerak_locale", lang); } catch (e) {}
 }
 
 /* ============================================================
@@ -507,7 +507,8 @@ function initObservers() {
    Boot
    ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
-  setLang(localStorage.getItem("taseerak_lang") || "ar");
+  var saved = "ar"; try { saved = localStorage.getItem("taseerak_locale") || localStorage.getItem("taseerak_lang") || "ar"; } catch (e) {}
+  setLang(saved);
 
   document.querySelectorAll(".lang button, .foot-bottom .langs span").forEach(b => {
     b.addEventListener("click", () => setLang(b.dataset.lang));

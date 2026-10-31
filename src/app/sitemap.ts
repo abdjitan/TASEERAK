@@ -12,8 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
   return [
     { url: base, lastModified: now, changeFrequency: 'weekly', priority: 1 },
-    { url: `${base}/prices`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
-    { url: `${base}/suppliers`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    // /prices and /suppliers come back when the price board has data (FEATURES.priceBoard)
     { url: `${base}/register`, lastModified: now, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${base}/deal-protection`, lastModified: now, changeFrequency: 'yearly', priority: 0.4 },

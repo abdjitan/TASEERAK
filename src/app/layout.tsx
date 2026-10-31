@@ -12,6 +12,15 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'تسعيرك' },
   // أيقونة شاشة iOS الرئيسية (بلا شفافية) — src/app/icon.png يولّد favicon تلقائياً
   icons: { apple: '/apple-touch-icon.png' },
+  // link previews (WhatsApp, X, LinkedIn): title, text and a 1200×630 picture
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://taseerak.vercel.app')),
+  openGraph: {
+    type: 'website', locale: 'ar_SA', siteName: 'تسعيرك',
+    title: 'تسعيرك — اطلب سعر أي مادة بناء من عدة موردين',
+    description: 'اكتب ما تحتاجه أو صوّره، ويصلك أكثر من عرض سعر من موردين في منطقتك. مجاناً.',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'تسعيرك' }],
+  },
+  twitter: { card: 'summary_large_image', title: 'تسعيرك — اطلب سعر أي مادة بناء من عدة موردين', images: ['/og.png'] },
 }
 
 export const viewport = {

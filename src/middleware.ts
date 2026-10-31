@@ -30,6 +30,8 @@ const PROTECTED = [
   '/messages',
   '/notifications',
   '/verification',
+  '/suggestions',
+  '/invite-friends',
 ]
 
 /** Only users with role = 'admin' can access these */

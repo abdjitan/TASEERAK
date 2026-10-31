@@ -3,7 +3,9 @@ import { createHash } from 'crypto'
 import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
 import { aiJson } from '@/lib/ai'
 import { normQuery } from '@/lib/productSearch'
-import { getProductSpecs } from '@/types'
+import { getProductSpecs, SECTOR_PRODUCTS } from '@/types'
+
+const CATALOG = new Set<string>(Object.values(SECTOR_PRODUCTS).flat() as string[])
 import { normalizeText } from '@/lib/normalize'
 
 export const runtime = 'nodejs'
@@ -90,7 +92,8 @@ export async function POST(req: NextRequest) {
             needed: (Array.isArray(row.needed) ? row.needed : []).map((x: any) => clean(x, 40)).filter(Boolean).slice(0, 4),
           }
           cache.set(keys[idx], result)
-          await admin.from('ai_item_notes').upsert({ key: keys[idx], product_name: String(items[idx].product_name || '').slice(0, 200), result }, { onConflict: 'key' })
+          const shareable = group.every(({ it }) => CATALOG.has(String(it.product_name || '').trim()) && !String(it.specification || '').trim())
+          if (shareable) await admin.from('ai_item_notes').upsert({ key: keys[idx], product_name: String(items[idx].product_name || '').slice(0, 200), result }, { onConflict: 'key' })
         }
       }
       await Promise.all(groups.map(g => ask(g).catch(() => {})))
