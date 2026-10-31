@@ -1,6 +1,7 @@
 'use client'
 
 import { canUseProjects } from '@/lib/plans'
+import { useCatalogSpecs } from '@/lib/useCatalogSpecs'
 import { friendlyError } from '@/lib/friendlyError'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -84,6 +85,7 @@ const SECTOR_ICONS = { civil: <Glyph e="🏗" />, architectural: <Glyph e="🏛"
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 export default function NewProjectPage() {
+  useCatalogSpecs() // spec fields and order units (loaded on demand)
   const { locale, dir } = useTranslation()
   const [user, setUser] = useState<any>(null)
   const [allowed, setAllowed] = useState<boolean | null>(null) // null = still checking

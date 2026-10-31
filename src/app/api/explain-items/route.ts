@@ -3,7 +3,7 @@ import { createHash } from 'crypto'
 import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
 import { aiJson } from '@/lib/ai'
 import { normQuery } from '@/lib/productSearch'
-import { getProductSpecs, SECTOR_PRODUCTS } from '@/types'
+import { getProductSpecs, SECTOR_PRODUCTS, loadCatalogSpecs } from '@/types'
 
 const CATALOG = new Set<string>(Object.values(SECTOR_PRODUCTS).flat() as string[])
 import { normalizeText } from '@/lib/normalize'
@@ -52,6 +52,7 @@ function missingFields(it: any): string[] {
 }
 
 export async function POST(req: NextRequest) {
+  await loadCatalogSpecs()
   const { supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   const { rfq_id } = await req.json().catch(() => ({}))

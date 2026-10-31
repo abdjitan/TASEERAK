@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { loadProductTranslations } from '@/types'
 import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
 import { aiWebJson } from '@/lib/ai'
 import { searchProducts, normQuery } from '@/lib/productSearch'
@@ -22,6 +23,7 @@ const SYSTEM = `أنت خبير في مواد البناء والتشطيبات 
 إن لم تكن مادة يمكن شراؤها (كلام عام أو غير مفهوم) فأعد understood=false.`
 
 export async function POST(req: NextRequest) {
+  await loadProductTranslations() // English names in the catalog search
   const { supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   const body = await req.json().catch(() => ({}))

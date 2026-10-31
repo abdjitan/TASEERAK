@@ -1,5 +1,6 @@
 'use client'
 
+import { loadProductTranslations, productTranslationsLoaded } from '@/types'
 import {
   createContext, useContext, useState,
   useEffect, useCallback, type ReactNode,
@@ -51,6 +52,12 @@ const I18nContext = createContext<I18nContextType>({
 // ─── Provider ────────────────────────────────────────────
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE)
+  // English/Urdu product names load on demand (Arabic readers never download them); re-render when ready
+  const [, setTrTick] = useState(0)
+  useEffect(() => {
+    if (locale === 'ar' || productTranslationsLoaded()) return
+    loadProductTranslations().then(() => setTrTick(n => n + 1), () => {})
+  }, [locale])
 
   // Load saved locale on mount
   useEffect(() => {

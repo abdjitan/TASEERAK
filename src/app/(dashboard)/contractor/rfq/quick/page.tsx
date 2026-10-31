@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useCatalogSpecs } from '@/lib/useCatalogSpecs'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
@@ -82,6 +83,7 @@ function lineFromItem(it: any): Line {
 }
 
 export default function QuickRequestPage() {
+  useCatalogSpecs() // spec fields and order units (loaded on demand)
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [userId, setUserId] = useState('')

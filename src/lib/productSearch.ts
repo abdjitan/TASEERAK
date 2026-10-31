@@ -8,7 +8,7 @@
 //   - English / Urdu names and sub-category names + keywords
 // Every query word must match something (AND); if nothing matches, it retries with any word (OR)
 // so the user still sees the closest items instead of an empty list.
-import { SECTOR_PRODUCTS, SUB_CATEGORIES, detectSubCategory, getProductLabel, type Sector } from '@/types'
+import { SECTOR_PRODUCTS, SUB_CATEGORIES, detectSubCategory, getProductLabel, loadProductTranslations, productTranslationsLoaded, type Sector } from '@/types'
 import { normalizeText } from '@/lib/normalize'
 
 // Each line is one group of words people use for the same thing (Saudi trade + common typos).
@@ -185,6 +185,8 @@ function expandSynonyms(text: string): string[] {
 }
 
 function buildIndex(): Doc[] {
+  // the English/Urdu names load on demand; build now with what we have, rebuild when they arrive
+  if (!productTranslationsLoaded()) loadProductTranslations().then(() => { INDEX = null }, () => {})
   const docs: Doc[] = []
   for (const sector of Object.keys(SECTOR_PRODUCTS) as Sector[]) {
     for (const name of SECTOR_PRODUCTS[sector]) {
