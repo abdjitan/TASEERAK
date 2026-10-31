@@ -186,6 +186,7 @@ export default function DealProtection({
 
       {/* Dispute */}
       <div className="mt-4 pt-4 border-t border-gray-100">
+        <a href="/deal-protection" target="_blank" rel="noopener noreferrer" className="block text-[11px] font-bold text-[#9D7425] hover:underline mb-2"><Glyph e="🛡" /> {L('How we protect your deal', 'ہم سودے کی حفاظت کیسے کرتے ہیں', 'كيف نحمي صفقتك؟')}</a>
         {offer.dispute_status === 'open' ? (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm">
             <div className="font-bold text-red-700"><Glyph e="⚠" /> {L('Open dispute', 'شکایت زیرِ کارروائی', 'نزاع مفتوح')}</div>

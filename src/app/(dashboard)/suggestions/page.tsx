@@ -22,6 +22,9 @@ export default function SuggestionsPage() {
   const [body, setBody] = useState('')
   const [sending, setSending] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  // published suggestions everyone can vote on (181)
+  const [board, setBoard] = useState<any[]>([])
+  const [voting, setVoting] = useState('')
 
   async function load() {
     const supabase = createClient()
@@ -32,6 +35,8 @@ export default function SuggestionsPage() {
       supabase.from('suggestions').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(50),
     ])
     setRole(prof?.role || 'contractor'); setList(data || []); setLoading(false)
+    const { data: pub } = await supabase.rpc('list_public_suggestions')
+    setBoard(pub || [])
   }
   useEffect(() => { load() }, [])
 
@@ -48,6 +53,14 @@ export default function SuggestionsPage() {
     }
     setBody(''); setMsg({ ok: true, text: L('Thank you — the team will read it.', 'شکریہ — ٹیم اسے پڑھے گی۔', 'شكراً لك، سيطّلع عليه فريق تسعيرك.') })
     load()
+  }
+
+  async function vote(id: string) {
+    setVoting(id)
+    const { data, error } = await createClient().rpc('toggle_suggestion_vote', { p_id: id })
+    setVoting('')
+    if (error) return
+    setBoard(prev => prev.map(b => b.id === id ? { ...b, votes: Number(data) || 0, my_vote: !b.my_vote } : b))
   }
 
   if (loading) return <PageLoader />
@@ -77,6 +90,30 @@ export default function SuggestionsPage() {
             {sending ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send suggestion', 'تجویز بھیجیں', 'أرسل الاقتراح')}
           </button>
         </form>
+
+        {board.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{L('Vote on what we build next', 'اگلی سہولت کے لیے ووٹ دیں', 'صوّت على ما نبنيه تالياً')}</h2>
+            {board.map(b => {
+              const st = SUGGESTION_STATUS[b.status] || SUGGESTION_STATUS.new
+              return (
+                <div key={b.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-start gap-3">
+                  <button type="button" onClick={() => vote(b.id)} disabled={voting === b.id} aria-pressed={!!b.my_vote}
+                    aria-label={b.my_vote ? L('Remove my vote', 'ووٹ واپس لیں', 'ألغِ صوتي') : L('Vote', 'ووٹ دیں', 'صوّت')}
+                    className={`shrink-0 w-14 rounded-xl border-2 py-1.5 text-center transition-colors disabled:opacity-50 ${b.my_vote ? 'border-[#0F6E56] bg-[#0F6E56] text-white' : 'border-gray-200 text-[#0B2438] hover:border-[#0F6E56]'}`}>
+                    <div className="text-sm leading-none">▲</div>
+                    <div className="text-base font-extrabold leading-tight">{b.votes}</div>
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ color: st.tone, background: st.tone + '14' }}>{pick(st)}</span>
+                    <p className="text-sm text-gray-700 mt-1.5 whitespace-pre-line">{b.body}</p>
+                    {b.admin_note && <p className="text-xs mt-1.5 text-gray-500"><b style={{ color: '#0B2438' }}>{L('Taseerak team:', 'تسعیرک ٹیم:', 'فريق تسعيرك:')}</b> {b.admin_note}</p>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {list.length > 0 && (
           <div className="space-y-2">

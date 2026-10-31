@@ -22,6 +22,7 @@ export default function AdminSuggestionsPage() {
   // «مواد خارج الكتالوج»: hand-written request lines a buyer chose an offer for (migration 174)
   const [tab, setTab] = useState<'suggestions' | 'gaps'>('suggestions')
   const [gaps, setGaps] = useState<any[]>([])
+  const [votes, setVotes] = useState<Record<string, number>>({})
 
   async function load() {
     const supabase = createClient()
@@ -35,6 +36,8 @@ export default function AdminSuggestionsPage() {
     const { data } = await supabase.from('suggestions').select('*').order('created_at', { ascending: false }).limit(300)
     const list = data || []
     setRows(list)
+    const { data: vs } = await supabase.rpc('admin_suggestion_votes')
+    const vm: Record<string, number> = {}; for (const v of vs || []) vm[v.suggestion_id] = Number(v.votes); setVotes(vm)
     const ids = [...new Set(list.map((r: any) => r.user_id))]
     if (ids.length) {
       const { data: ps } = await supabase.from('profiles').select('id, full_name, company_name_ar, role').in('id', ids)
@@ -52,6 +55,15 @@ export default function AdminSuggestionsPage() {
     setBusy('')
     if (error) { setErr('تعذّر الحفظ — حاول مرة ثانية.'); return }
     setRows(prev => prev.map(x => x.id === r.id ? { ...x, status, admin_note: note } : x))
+  }
+
+  // «انشر للتصويت»: everyone sees the text (never the author) and can vote on it
+  async function togglePublic(r: any) {
+    setBusy(r.id); setErr('')
+    const { error } = await createClient().from('suggestions').update({ is_public: !r.is_public }).eq('id', r.id)
+    setBusy('')
+    if (error) { setErr('تعذّر الحفظ — حاول مرة ثانية.'); return }
+    setRows(prev => prev.map(x => x.id === r.id ? { ...x, is_public: !r.is_public } : x))
   }
 
   async function setGap(id: string, status: string) {
@@ -113,7 +125,7 @@ export default function AdminSuggestionsPage() {
             <div key={r.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
                 <span className="font-bold text-gray-600">{k.ar} · {p ? (p.company_name_ar || p.full_name || '—') : '—'} ({p?.role === 'supplier' ? 'مورد' : 'مشترٍ'}) · {formatDateTime(r.created_at)}</span>
-                <span className="font-bold px-2 py-0.5 rounded-full" style={{ color: st.tone, background: st.tone + '14' }}>{st.ar}</span>
+                <span className="flex items-center gap-2">{r.is_public && <span className="font-bold text-[#0F6E56]">▲ {votes[r.id] || 0} صوت</span>}<span className="font-bold px-2 py-0.5 rounded-full" style={{ color: st.tone, background: st.tone + '14' }}>{st.ar}</span></span>
               </div>
               <p className="text-sm text-gray-800 whitespace-pre-line">{r.body}</p>
               <textarea value={notes[r.id] ?? r.admin_note ?? ''} onChange={(e: any) => setNotes(n => ({ ...n, [r.id]: e.target.value }))} rows={2} maxLength={1000}
@@ -123,6 +135,8 @@ export default function AdminSuggestionsPage() {
                   <button key={s} type="button" disabled={busy === r.id || r.status === s} onClick={() => setStatus(r, s)}
                     className="px-3 py-1.5 rounded-xl text-xs font-bold border border-gray-200 hover:border-[#0B2438] disabled:opacity-40">{l}</button>
                 ))}
+                <button type="button" disabled={busy === r.id} onClick={() => togglePublic(r)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${r.is_public ? 'border-[#0F6E56] text-[#0F6E56]' : 'border-gray-200'} disabled:opacity-40`}>{r.is_public ? 'منشور للتصويت ✓ (إخفاء)' : 'انشر للتصويت'}</button>
               </div>
             </div>
           )
