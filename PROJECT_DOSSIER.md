@@ -5,7 +5,7 @@
 > (or human reviewer) so it understands the entire product — the idea, the
 > architecture, the database, the AI layer, the design system, every feature, and
 > the open questions — without reading the repo. Code excerpts are representative,
-> not exhaustive (full source: `github.com/abdjitan/TASEERAK`, root = `buildora/`).
+> not exhaustive (full source: `github.com/abdjitan/TASEERAK`, repo root = the app; updated 2026-10-31).
 >
 > **كيف تستخدمه:** انسخ هذا الملف كامل والصقه عند أي ذكاء اصطناعي ثاني واطلب منه
 > مراجعة المنتج/المعمارية/الأمان/تجربة المستخدم. آخر قسم فيه أسئلة جاهزة توجّه المراجعة.
@@ -142,8 +142,8 @@ purchase orders**. Order page renders an itemized PO + a **ZATCA-compliant tax i
 
 | Layer | Choice |
 |---|---|
-| Framework | **Next.js 14** (App Router), TypeScript (`// @ts-nocheck` on pages) |
-| Styling | **Tailwind CSS**, Cairo font, **RTL-first** |
+| Framework | **Next.js 15** (App Router) + React 19, TypeScript **strict** (no `@ts-nocheck`) |
+| Styling | **Tailwind CSS**, IBM Plex Sans Arabic (+ Inter), **RTL-first** |
 | Backend | **Supabase**: Postgres + Auth + Row-Level Security + Realtime + Storage |
 | Hosting | **Vercel** (push to `main` → auto-deploy) |
 | i18n | `useTranslation()` → `locale ∈ {ar,en,ur}`, `dir` (ar/ur = rtl) |
@@ -166,7 +166,7 @@ purchase orders**. Order page renders an itemized PO + a **ZATCA-compliant tax i
 ## 4) Design system
 
 **Brand palette**
-- Navy `#1B2D5B` (primary), Orange `#F5831F` (accent/CTA), Green `#0F6E56` (success/money).
+- Navy `#071827` / `#0B2438` / `#102E45`, Gold `#D4A543` / `#F5C55B` (text on gold = navy), Green `#0F6E56` (success/money). Redesign live since 2026-10-14; no emoji in the UI.
 - Neutrals on `#f4f6f9` canvas; rounded-2xl cards, soft shadows, frosted topbar, 272px
   navy-gradient sidebar with off-canvas drawer on mobile.
 
@@ -443,10 +443,10 @@ bids.sort((a,b) => {
 4. **Security:** review the `SECURITY DEFINER` + RLS model and the ZATCA invoice flow — any holes?
 5. **Trust & growth:** what would most increase supplier liquidity and contractor trust at launch
    in the Saudi market specifically?
-6. **Tech debt:** given Next.js 14 + Supabase + a hand-curated taxonomy, where will this
+6. **Tech debt:** given Next.js 15 + Supabase + a hand-curated taxonomy, where will this
    architecture break first as volume grows, and what should I refactor early?
 
 ---
 
-*Generated as a living snapshot of the Taseerak codebase. Stack: Next.js 14 · Supabase ·
+*Generated as a living snapshot of the Taseerak codebase. Stack: Next.js 15 · Supabase ·
 Vercel · multi-provider AI. Arabic-first, RTL, PDPL-aware.*
