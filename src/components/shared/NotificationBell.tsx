@@ -1,25 +1,22 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { noEmoji } from '@/lib/text'
+import { noEmoji, timeAgo } from '@/lib/text'
+import { useTranslation } from '@/i18n'
+import AutoTr from '@/components/shared/AutoTr'
 import { useRouter } from 'next/navigation'
 import { useNotifications } from '@/hooks/useNotifications'
 import Glyph from '@/components/shared/Glyph'
-
-function timeAgo(d: any) {
-  const mins = Math.floor((Date.now() - new Date(d).getTime()) / 60000)
-  if (mins < 1) return 'الآن'
-  if (mins < 60) return `قبل ${mins} د`
-  const h = Math.floor(mins / 60)
-  if (h < 24) return `قبل ${h} س`
-  return `قبل ${Math.floor(h / 24)} يوم`
-}
 
 export default function NotificationBell({ userId }: { userId?: string }) {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications(userId)
   const [open, setOpen] = useState(false)
   const ref = useRef<any>(null)
   const router = useRouter()
+  // in the reader's language (review 2026-10-28: the bell was Arabic only); notification texts are
+  // written in Arabic by the database and shown translated for English/Urdu readers
+  const { locale } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   useEffect(() => {
     function onClick(e: any) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
@@ -29,7 +26,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
 
   return (
     <div className="relative" ref={ref}>
-      <button onClick={() => setOpen(!open)} className="relative p-2 rounded-lg hover:bg-gray-100 transition-all" aria-label="الإشعارات">
+      <button onClick={() => setOpen(!open)} className="relative p-2 rounded-lg hover:bg-gray-100 transition-all" aria-label={L('Notifications', 'اطلاعات', 'الإشعارات')}>
         <span className="text-lg"><Glyph e="🔔" /></span>
         {unreadCount > 0 && (
           <span className="absolute -top-0.5 -left-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
@@ -41,12 +38,12 @@ export default function NotificationBell({ userId }: { userId?: string }) {
       {open && (
         <div className="absolute left-0 mt-2 w-80 max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden" dir="rtl">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span className="font-bold text-sm" style={{ color: '#0B2438' }}>الإشعارات</span>
-            {unreadCount > 0 && <button onClick={markAllAsRead} className="text-xs text-[#9D7425] hover:underline">تعليم الكل كمقروء</button>}
+            <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Notifications', 'اطلاعات', 'الإشعارات')}</span>
+            {unreadCount > 0 && <button onClick={markAllAsRead} className="text-xs text-[#9D7425] hover:underline">{L('Mark all as read', 'سب کو پڑھا ہوا کریں', 'تعليم الكل كمقروء')}</button>}
           </div>
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center text-sm text-gray-400">لا توجد إشعارات</div>
+              <div className="p-8 text-center text-sm text-gray-400">{L('No notifications', 'کوئی اطلاع نہیں', 'لا توجد إشعارات')}</div>
             ) : notifications.map((n: any) => (
               <button key={n.id}
                 onClick={() => { markAsRead(n.id); const url = n.data?.url; setOpen(false); if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') && !url.includes('\\')) router.push(url) }}
@@ -54,9 +51,9 @@ export default function NotificationBell({ userId }: { userId?: string }) {
                 <div className="flex items-start gap-2">
                   {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-gray-800">{noEmoji(n.title)}</div>
-                    {n.body && <div className="text-xs text-gray-500 mt-0.5">{noEmoji(n.body)}</div>}
-                    <div className="text-[10px] text-gray-400 mt-1">{timeAgo(n.created_at)}</div>
+                    <div className="text-sm font-semibold text-gray-800"><AutoTr text={noEmoji(n.title)} locale={locale} /></div>
+                    {n.body && <div className="text-xs text-gray-500 mt-0.5"><AutoTr text={noEmoji(n.body)} locale={locale} /></div>}
+                    <div className="text-[10px] text-gray-400 mt-1">{timeAgo(n.created_at, locale)}</div>
                   </div>
                 </div>
               </button>
@@ -64,7 +61,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
           </div>
           <button onClick={() => { setOpen(false); router.push('/notifications') }}
             className="w-full text-center text-xs font-bold text-[#9D7425] py-2.5 border-t border-gray-100 hover:bg-gray-50">
-            عرض كل الإشعارات ←
+            {L('See all notifications →', 'تمام اطلاعات دیکھیں ←', 'عرض كل الإشعارات ←')}
           </button>
         </div>
       )}

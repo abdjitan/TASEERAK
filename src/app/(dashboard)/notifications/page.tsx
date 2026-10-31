@@ -9,6 +9,7 @@ import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
+import AutoTr from '@/components/shared/AutoTr'
 
 // صفحة الإشعارات الكاملة — كانت متاحة فقط عبر قائمة الجرس المنسدلة.
 export default function NotificationsPage() {
@@ -41,12 +42,12 @@ export default function NotificationsPage() {
   }
 
   return (
-    <AppShell title={locale === 'en' ? 'Notifications' : 'الإشعارات'} nav={getNav(role, locale, '/notifications')} dir={dir}>
+    <AppShell title={locale === 'en' ? 'Notifications' : locale === 'ur' ? 'اطلاعات' : 'الإشعارات'} nav={getNav(role, locale, '/notifications')} dir={dir}>
       <div className="max-w-2xl mx-auto">
         {notifs.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
             <div className="text-5xl mb-3"><Glyph e="🔔" /></div>
-            <p className="text-gray-500">{locale === 'en' ? 'No notifications yet.' : 'لا إشعارات بعد.'}</p>
+            <p className="text-gray-500">{locale === 'en' ? 'No notifications yet.' : locale === 'ur' ? 'ابھی کوئی اطلاع نہیں۔' : 'لا إشعارات بعد.'}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -56,8 +57,8 @@ export default function NotificationsPage() {
                 <div className="flex items-start gap-2">
                   {!n.is_read && <span className="w-2 h-2 rounded-full bg-[#D4A543] mt-1.5 shrink-0" />}
                   <div className="min-w-0 flex-1">
-                    <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{noEmoji(n.title)}</div>
-                    {n.body && <div className="text-xs text-gray-500 mt-0.5">{noEmoji(n.body)}</div>}
+                    <div className="font-bold text-sm" style={{ color: '#0B2438' }}><AutoTr text={noEmoji(n.title)} locale={locale} /></div>
+                    {n.body && <div className="text-xs text-gray-500 mt-0.5"><AutoTr text={noEmoji(n.body)} locale={locale} /></div>}
                     <div className="text-[10px] text-gray-400 mt-1">{new Date(n.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</div>
                   </div>
                 </div>
