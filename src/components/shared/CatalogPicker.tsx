@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { getProductLabel, detectSubCategory, type Sector } from '@/types'
-import { BROWSE_SECTIONS, getSectionGroups, type BrowseSection } from '@/lib/browseCategories'
+import { BROWSE_SECTIONS, getSectionGroups, type BrowseSection, subsOfSection } from '@/lib/browseCategories'
 import { searchProducts, normQuery } from '@/lib/productSearch'
 import { createClient } from '@/lib/supabase/client'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
@@ -50,7 +50,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   locale: string
   initialQuery?: string
   initialSection?: BrowseSection | null
-  onPick: (item: { name: string; sector: Sector }) => void
+  onPick: (item: { name: string; sector: Sector; section?: BrowseSection }) => void
   onRemove?: (key: string) => void   // a second tap on a picked material takes it off the list
   picked?: Picked[]
   inline?: boolean
@@ -59,6 +59,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   const [q, setQ] = useState(initialQuery)
   const [section, setSection] = useState<BrowseSection | null>(initialSection)
   const [openGroup, setOpenGroup] = useState<string | null>(null)
+  const [own, setOwn] = useState('')   // «طلبك غير موجود؟» inside a section
 
   // Exact/prefix/synonym matches score >= ~10; loose typo matches (بلك → بلدوزر) ~6. Show only
   // the confident ones unless that leaves almost nothing.
@@ -100,7 +101,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   const pickT = (o: any) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
   const isAdded = (name: string) => picked.some(p => p.name === name)
   // Teach the search: what the person typed → the product they chose (fire and forget).
-  function choose(item: { name: string; sector: Sector }) {
+  function choose(item: { name: string; sector: Sector; section?: BrowseSection }) {
     // already in the list → a tap removes it (the ✓ goes, the line leaves the list)
     const already = [...picked].reverse().find(p => p.name === item.name)
     if (already && onRemove) { onRemove(already.key); return }
@@ -264,10 +265,31 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
               </div>
             )
           })}
+          {/* owner 2026-10-31: in every section — the material isn't listed? write it, and the request
+              goes to all of this section's suppliers */}
+          <div className="rounded-xl border border-dashed border-[#D4A543]/70 bg-[#D4A543]/[.06] p-3 space-y-2">
+            <div className="text-sm font-bold text-[#0B2438]">{L(`Not listed? Write the material and we send it to all «${pickT(current)}» suppliers`, `فہرست میں نہیں؟ نام لکھیں، «${pickT(current)}» کے سب سپلائرز کو جائے گا`, `طلبك غير موجود؟ اكتب اسم المادة ونرسلها لكل موردي «${pickT(current)}»`)}</div>
+            <div className="flex gap-2">
+              <input value={own} onChange={e => setOwn(e.target.value)} className="input-field flex-1 min-w-0"
+                onKeyDown={e => { if (e.key === 'Enter' && own.trim()) { e.preventDefault(); choose({ name: own.trim().slice(0, 120), sector: sectionSector(section!), section: section! }); setOwn('') } }}
+                placeholder={L('Material name', 'سامان کا نام', 'اسم المادة')} />
+              <button type="button" disabled={!own.trim()} onClick={() => { choose({ name: own.trim().slice(0, 120), sector: sectionSector(section!), section: section! }); setOwn('') }}
+                className="shrink-0 px-4 py-2 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: '#D4A543' }}>
+                + {L('Add', 'شامل کریں', 'أضف')}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
   )
+}
+
+// the sector most of a section's specialties belong to (routing for «اكتب اسم المادة» in that section)
+function sectionSector(section: BrowseSection): Sector {
+  const n: Record<string, number> = {}
+  for (const s of subsOfSection(section)) n[s.sector] = (n[s.sector] || 0) + 1
+  return (Object.entries(n).sort((a, b) => b[1] - a[1])[0]?.[0] || 'supply_store') as Sector
 }
 
 export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove, initialQuery = '', initialSection = null }: {

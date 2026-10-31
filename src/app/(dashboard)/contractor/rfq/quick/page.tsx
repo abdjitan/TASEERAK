@@ -287,8 +287,9 @@ export default function QuickRequestPage() {
       .catch(() => setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'failed' } : p)))
   }
 
-  function addFromCatalog({ name, sector }: { name: string; sector: Sector }) {
-    setLines(prev => [...prev, { key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '' }])
+  // a material written inside a catalog section (not listed) goes to all of that section's suppliers
+  function addFromCatalog({ name, sector, section }: { name: string; sector: Sector; section?: string }) {
+    setLines(prev => [...prev, { key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '', ...(section ? { spec: { sector, sub: null, section } } : {}) }])
   }
 
   // 📎 a drawing or specification file for one line (PDF or image, up to 10 MB)
