@@ -12,7 +12,7 @@ import { TERMS_VERSION, OPERATOR } from '@/lib/legal'
 const C: Record<string, any> = {
   ar: {
     title: 'الشروط والأحكام',
-    updated: `آخر تحديث: 27 أكتوبر 2026 · الإصدار ${TERMS_VERSION}`,
+    updated: `آخر تحديث: 1 نوفمبر 2026 · الإصدار ${TERMS_VERSION}`,
     home: 'الرئيسية',
     intro: `تُشغَّل منصة «تسعيرك» خلال مرحلتها التجريبية باسم «${OPERATOR.ar}»، وللتواصل: ${OPERATOR.email}. باستخدامك المنصة أو إنشاء حساب فيها فإنك توافق على هذه الشروط وعلى سياسة الخصوصية. إن لم توافق عليها فلا تستخدم المنصة.`,
     betaTitle: 'نسخة تجريبية مجانية',
@@ -29,7 +29,7 @@ const C: Record<string, any> = {
       ['9. الملكية الفكرية والمحتوى', 'حقوق المنصة وتصميمها وشعارها وبرمجياتها محفوظة لتسعيرك. يحتفظ المستخدم بحقوق ما يرفعه، ويمنح المنصة إذناً باستخدامه وعرضه بالقدر اللازم لتقديم الخدمة.'],
       ['10. حدود المسؤولية', 'تُقدَّم المنصة خلال المرحلة التجريبية «كما هي». لا تتحمل المنصة مسؤولية تصرفات المستخدمين أو جودة المواد أو التسليم أو السداد، ولا الأضرار غير المباشرة أو فوات الربح. ولا يُقصد بأي بند في هذه الشروط استبعاد مسؤولية لا يجوز استبعادها وفق أنظمة المملكة العربية السعودية، ومنها المسؤولية عن الغش أو الخطأ الجسيم من جانب المنصة نفسها.'],
       ['11. التعليق والإنهاء وحذف الحساب', 'يحق للمنصة تعليق أو إيقاف الحساب الذي يخالف هذه الشروط، مع إبلاغ صاحبه بالسبب ما لم يمنع ذلك مانع نظامي. ويمكنك حذف حسابك في أي وقت من الإعدادات أو من صفحة «حذف الحساب».'],
-      ['12. البيانات الشخصية', 'نعالج بياناتك وفق سياسة الخصوصية ونظام حماية البيانات الشخصية. اطّلع على سياسة الخصوصية لمعرفة البيانات التي نجمعها وحقوقك.'],
+      ['12. البيانات الشخصية', 'نعالج بياناتك وفق سياسة الخصوصية ونظام حماية البيانات الشخصية. اطّلع على سياسة الخصوصية لمعرفة البيانات التي نجمعها وحقوقك. وطلب التسعير الذي ينتهي دون صفقة يُحذف مع عروضه ومحادثاته وملفاته بعد 60 يوماً من انتهائه، بعد إشعارك قبلها بـ7 أيام.'],
       ['13. التعديلات', 'قد نحدّث هذه الشروط. نُبلغك بالتعديلات الجوهرية داخل المنصة أو بالبريد الإلكتروني، وقد نطلب موافقتك على الإصدار الجديد قبل متابعة الاستخدام.'],
       ['14. النظام الواجب التطبيق', 'تخضع هذه الشروط لأنظمة المملكة العربية السعودية، وتختص الجهات القضائية في المملكة بالنظر في أي نزاع ينشأ عنها.'],
     ],
@@ -37,7 +37,7 @@ const C: Record<string, any> = {
   },
   en: {
     title: 'Terms & Conditions',
-    updated: `Last updated: 27 October 2026 · Version ${TERMS_VERSION}`,
+    updated: `Last updated: 1 November 2026 · Version ${TERMS_VERSION}`,
     home: 'Home',
     intro: `During its beta, the Taseerak platform is operated as "${OPERATOR.en}". Contact: ${OPERATOR.email}. By using the platform or creating an account you agree to these Terms and to the Privacy Policy. If you do not agree, do not use the platform.`,
     betaTitle: 'Free beta',
@@ -54,7 +54,7 @@ const C: Record<string, any> = {
       ['9. Intellectual property and content', 'The platform, its design, logo and software belong to Taseerak. Users keep the rights to what they upload and grant the platform permission to use and display it as needed to provide the service.'],
       ['10. Limitation of liability', 'During the beta the platform is provided "as is". The platform is not liable for users\' conduct, material quality, delivery or payment, nor for indirect losses or lost profits. Nothing in these Terms excludes liability that cannot be excluded under the laws of Saudi Arabia, including liability for fraud or gross negligence by the platform itself.'],
       ['11. Suspension, termination and account deletion', 'The platform may suspend or stop an account that breaches these Terms and will inform its owner of the reason unless legally prevented. You can delete your account at any time from Settings or from the "Delete account" page.'],
-      ['12. Personal data', 'We process your data under the Privacy Policy and the Personal Data Protection Law (PDPL). See the Privacy Policy for what we collect and your rights.'],
+      ['12. Personal data', 'We process your data under the Privacy Policy and the Personal Data Protection Law (PDPL). See the Privacy Policy for what we collect and your rights. A price request that ends without a deal is deleted with its offers, conversations and files 60 days after it ended, after notifying you 7 days before.'],
       ['13. Changes', 'We may update these Terms. We will notify you of material changes in the platform or by email, and may ask you to accept the new version before continuing.'],
       ['14. Governing law', 'These Terms are governed by the laws of the Kingdom of Saudi Arabia, and the Saudi courts have jurisdiction over any dispute arising from them.'],
     ],
@@ -62,7 +62,7 @@ const C: Record<string, any> = {
   },
   ur: {
     title: 'شرائط و ضوابط',
-    updated: `آخری تازہ کاری: 27 اکتوبر 2026 · ورژن ${TERMS_VERSION}`,
+    updated: `آخری تازہ کاری: 1 نومبر 2026 · ورژن ${TERMS_VERSION}`,
     home: 'مرکزی صفحہ',
     intro: `آزمائشی مرحلے کے دوران تسعیرک پلیٹ فارم «${OPERATOR.ur}» کے نام سے چلایا جاتا ہے۔ رابطہ: ${OPERATOR.email}۔ پلیٹ فارم استعمال کرنے یا اکاؤنٹ بنانے سے آپ ان شرائط اور رازداری کی پالیسی سے اتفاق کرتے ہیں۔ اگر آپ متفق نہیں تو پلیٹ فارم استعمال نہ کریں۔`,
     betaTitle: 'مفت آزمائشی ورژن',
@@ -79,7 +79,7 @@ const C: Record<string, any> = {
       ['9. دانشورانہ املاک اور مواد', 'پلیٹ فارم، اس کا ڈیزائن، لوگو اور سافٹ ویئر تسعیرک کی ملکیت ہیں۔ صارف اپنے اپ لوڈ کردہ مواد کے حقوق رکھتا ہے اور سروس فراہم کرنے کے لیے ضروری حد تک اس کے استعمال اور ظاہر کرنے کی اجازت دیتا ہے۔'],
       ['10. ذمہ داری کی حد', 'آزمائشی مرحلے میں پلیٹ فارم «جیسا ہے» فراہم کیا جاتا ہے۔ پلیٹ فارم صارفین کے طرزِ عمل، مواد کے معیار، ترسیل یا ادائیگی، اور بالواسطہ نقصان یا منافع کے نقصان کا ذمہ دار نہیں۔ ان شرائط کی کوئی شق ایسی ذمہ داری ختم نہیں کرتی جو سعودی قوانین کے تحت ختم نہیں کی جا سکتی، بشمول پلیٹ فارم کی اپنی دھوکہ دہی یا سنگین غفلت۔'],
       ['11. معطلی، اختتام اور اکاؤنٹ حذف کرنا', 'شرائط کی خلاف ورزی کرنے والا اکاؤنٹ معطل یا بند کیا جا سکتا ہے اور قانونی رکاوٹ نہ ہو تو مالک کو وجہ بتائی جائے گی۔ آپ کسی بھی وقت ترتیبات سے یا «اکاؤنٹ حذف کریں» صفحے سے اپنا اکاؤنٹ حذف کر سکتے ہیں۔'],
-      ['12. ذاتی ڈیٹا', 'ہم آپ کا ڈیٹا رازداری کی پالیسی اور ذاتی ڈیٹا کے تحفظ کے قانون (PDPL) کے مطابق پراسیس کرتے ہیں۔ جمع کیے جانے والے ڈیٹا اور اپنے حقوق کے لیے رازداری کی پالیسی دیکھیں۔'],
+      ['12. ذاتی ڈیٹا', 'ہم آپ کا ڈیٹا رازداری کی پالیسی اور ذاتی ڈیٹا کے تحفظ کے قانون (PDPL) کے مطابق پراسیس کرتے ہیں۔ جمع کیے جانے والے ڈیٹا اور اپنے حقوق کے لیے رازداری کی پالیسی دیکھیں۔ جو قیمت کی درخواست بغیر سودے کے ختم ہو وہ اپنی پیشکشوں، گفتگو اور فائلوں سمیت ختم ہونے کے 60 دن بعد حذف ہو جاتی ہے، اور آپ کو 7 دن پہلے اطلاع دی جاتی ہے۔'],
       ['13. تبدیلیاں', 'ہم ان شرائط کو اپ ڈیٹ کر سکتے ہیں۔ اہم تبدیلیوں کی اطلاع پلیٹ فارم میں یا ای میل سے دی جائے گی، اور جاری رکھنے سے پہلے نئے ورژن کی منظوری مانگی جا سکتی ہے۔'],
       ['14. قابلِ اطلاق قانون', 'یہ شرائط سعودی عرب کے قوانین کے تابع ہیں، اور ان سے پیدا ہونے والے کسی تنازع پر سعودی عدالتوں کو اختیار حاصل ہے۔'],
     ],
