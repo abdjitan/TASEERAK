@@ -37,7 +37,7 @@ export default function TaxonomyProvider({ children }: { children: React.ReactNo
           supabase.rpc('get_taxonomy'), supabase.rpc('get_learned_synonyms'),
           supabase.from('materials').select('name, sector, sub_category').eq('is_active', true).limit(2000),
         ])
-        if (Array.isArray(mats)) {
+        if (Array.isArray(mats) && mats.length > 0) { // signed out = empty by RLS: keep the cache
           if (hydrateApprovedMaterials(mats) > 0) resetProductSearchIndex()
           try { window.localStorage.setItem(MATERIALS_KEY, JSON.stringify(mats)) } catch {}
         }
