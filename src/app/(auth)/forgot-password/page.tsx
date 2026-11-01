@@ -65,12 +65,12 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden" dir={dir}
       style={{ background: 'linear-gradient(135deg, #0B1D3A 0%, #0B2438 50%, #102E45 100%)' }}>
-      <div className="absolute top-4 left-4 z-20"><LanguageSwitcher variant="minimal" /></div>
-      <a href="/" className="absolute top-4 right-4 z-20 text-sm font-medium text-white/70 hover:text-white transition-colors">{t.home}</a>
+      <div className="absolute top-4 end-4 z-20"><LanguageSwitcher variant="minimal" /></div>
+      <a href="/" className="absolute top-4 start-4 z-20 text-sm font-medium text-white/70 hover:text-white transition-colors">{t.home}</a>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-mobile-lockup mx-auto mb-4" />
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup mx-auto mb-4" />
           <Logo theme="dark" size="lg" className="justify-center" variant="wordmark" />
         </div>
 
@@ -88,19 +88,19 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-gray-500 mb-6">{t.sub}</p>
               {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
               <form onSubmit={handleSubmit}>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-4" placeholder="info@company.com" required disabled={loading} />
+                <label htmlFor="fp-email" className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
+                <input id="fp-email" type="email" autoComplete="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-4" placeholder="info@company.com" required disabled={loading} />
                 <div className="flex justify-center mb-5">
                   <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
                 </div>
                 <button type="submit" disabled={loading}
-                  className="w-full py-3.5 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"
+                  className="w-full py-3.5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"
                   style={{ background: '#D4A543' }}>
                   {loading ? t.sending : t.send}
                 </button>
               </form>
               <p className="text-center text-sm text-gray-500 mt-5">
-                <Link href="/login" className="font-medium hover:underline" style={{ color: '#9D7425' }}>{t.back}</Link>
+                <Link href="/login" className="font-medium hover:underline" style={{ color: '#8F6820' }}>{t.back}</Link>
               </p>
             </>
           )}

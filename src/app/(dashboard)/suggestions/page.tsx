@@ -71,7 +71,7 @@ export default function SuggestionsPage() {
       <div className="max-w-xl mx-auto space-y-5">
         <form onSubmit={send} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 space-y-4">
           <div className="flex items-start gap-3">
-            <span className="w-11 h-11 rounded-xl grid place-items-center shrink-0" style={{ background: '#D4A54322', color: '#9D7425' }}><Lightbulb className="w-5 h-5" /></span>
+            <span className="w-11 h-11 rounded-xl grid place-items-center shrink-0" style={{ background: '#D4A54322', color: '#8F6820' }}><Lightbulb className="w-5 h-5" /></span>
             <div>
               <h1 className="text-lg font-extrabold" style={{ color: '#0B2438' }}>{L('Help us improve Taseerak', 'تسعیرک کو بہتر بنانے میں مدد کریں', 'ساعدنا في تحسين تسعيرك')}</h1>
               <p className="text-sm text-gray-500 mt-1">{L('A feature you need, a material we don’t have, or a problem you met — tell us.', 'کوئی سہولت، غائب مواد یا مسئلہ — ہمیں بتائیں۔', 'ميزة تحتاجها، أو مادة غير موجودة، أو مشكلة واجهتك — أخبرنا بها.')}</p>

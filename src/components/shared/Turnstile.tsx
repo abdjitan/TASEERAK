@@ -91,7 +91,7 @@ const Turnstile = forwardRef(function Turnstile(
       <div ref={containerRef} dir={dir} style={{ minHeight: 65 }} />
       {/* the error code is logged, not shown: Turnstile retries itself and usually succeeds right after */}
       {stuck && (
-        <p dir={dir} style={{ fontSize: 12, textAlign: 'center', marginTop: 6, color: '#9D7425', fontWeight: 600 }}>
+        <p dir={dir} style={{ fontSize: 12, textAlign: 'center', marginTop: 6, color: '#8F6820', fontWeight: 600 }}>
           {lang.startsWith('en') ? 'The security check did not finish. ' : lang.startsWith('ur') ? 'سیکیورٹی چیک مکمل نہیں ہوا۔ ' : 'لم يكتمل فحص الأمان. '}
           <button type="button" onClick={retry} style={{ textDecoration: 'underline', fontWeight: 700 }}>{lang.startsWith('en') ? 'Try again' : lang.startsWith('ur') ? 'دوبارہ کوشش کریں' : 'حاول مرة أخرى'}</button>
         </p>

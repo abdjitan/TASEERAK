@@ -17,7 +17,7 @@ export default function PublicFooter() {
           <span className="text-gray-300">·</span>
           <Link href="/terms" className="hover:text-[#0B2438]">الشروط</Link>
         </div>
-        <p className="text-[10px] text-gray-300 mt-4">© {new Date().getFullYear()} تسعيرك. جميع الحقوق محفوظة.</p>
+        <p className="text-[10px] text-gray-500 mt-4">© {new Date().getFullYear()} تسعيرك. جميع الحقوق محفوظة.</p>
       </div>
     </footer>
   )

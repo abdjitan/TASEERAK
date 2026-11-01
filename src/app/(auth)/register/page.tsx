@@ -16,6 +16,8 @@ import { SELLER_KINDS, rememberedSignupKind } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { captureRef } from '@/lib/referral'
+import { friendlyError } from '@/lib/friendlyError'
+import { toLatinDigits } from '@/lib/phone'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
 // نجمع الحد الأدنى فقط: الدور + الاسم + اسم الشركة + الجوال + البريد + كلمة المرور.
@@ -24,6 +26,7 @@ import { captureRef } from '@/lib/referral'
 // و handle_new_user يبني الملف من الميتاداتا الجزئية ويتجاهل الناقص.
 // validation messages in the reader's language (review 2026-10-28: they showed in Arabic only)
 const VMSG: Record<string, { ar: string; en: string; ur: string }> = {
+  'اختر نوع الحساب': { ar: 'اختر نوع الحساب', en: 'Choose an account type', ur: 'اکاؤنٹ کی قسم منتخب کریں' },
   'الاسم مطلوب': { ar: 'الاسم مطلوب', en: 'Name is required', ur: 'نام ضروری ہے' },
   'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05': { ar: 'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05', en: 'Mobile number: 10 digits starting with 05', ur: 'موبائل نمبر: 05 سے شروع، 10 ہندسے' },
   'البريد الإلكتروني غير صحيح': { ar: 'البريد الإلكتروني غير صحيح', en: 'Email address is not valid', ur: 'ای میل درست نہیں' },
@@ -59,7 +62,7 @@ const TR = {
     emailTaken: 'هذا البريد الإلكتروني مسجّل مسبقاً — ', signInInstead: 'سجّل الدخول.',
     agreePre: 'أوافق على ', terms: 'الشروط والأحكام', and: ' و', privacy: 'سياسة الخصوصية',
     agreeErr: 'يجب الموافقة على الشروط وسياسة الخصوصية',
-    captchaErr: 'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.',
+    captchaErr: 'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.',
     verifyTitle: 'فعّل بريدك الإلكتروني', verifyBody: 'أرسلنا رابط تأكيد إلى بريدك الإلكتروني. افتحه لتفعيل حسابك، ثم سجّل الدخول.',
     verifyNext: 'بعد الدخول ستكمل بياناتك (الموقع، القطاعات، والتوثيق) بخطوات سهلة.',
     goSignIn: 'الذهاب لتسجيل الدخول', home: 'الرئيسية',
@@ -189,7 +192,7 @@ export default function RegisterPage() {
     } catch (err: any) {
       captchaRef.current?.reset(); setCaptchaToken('')
       const msg = err?.message || ''
-      setFormError(/captcha/i.test(msg) ? t.captchaErr : /database error|duplicate|unique/i.test(msg) ? t.phoneTaken : (msg || 'حدث خطأ أثناء التسجيل'))
+      setFormError(/captcha/i.test(msg) ? t.captchaErr : /database error|duplicate|unique/i.test(msg) ? t.phoneTaken : friendlyError(msg, locale === 'en' ? 'Something went wrong while signing up. Please try again.' : locale === 'ur' ? 'رجسٹریشن کے دوران خرابی ہوئی، دوبارہ کوشش کریں۔' : 'حدث خطأ أثناء التسجيل، حاول مرة أخرى.', locale))
     } finally { setSubmitting(false) }
   }
 
@@ -197,13 +200,13 @@ export default function RegisterPage() {
   if (emailSent) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-canvas" dir={dir}>
-        <div className="absolute top-4 left-4"><LanguageSwitcher variant="minimal" /></div>
-        <a href="/" className="absolute top-4 right-4 text-sm font-medium text-gray-500 hover:text-navy transition-colors">{t.home}</a>
+        <div className="absolute top-4 end-4"><LanguageSwitcher variant="minimal" /></div>
+        <a href="/" className="absolute top-4 start-4 text-sm font-medium text-gray-500 hover:text-navy transition-colors">{t.home}</a>
         <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
           <div className="text-5xl mb-4"><Glyph e="📬" /></div>
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
-          <p className="text-xs text-gray-400 mb-6">{t.verifyNext}</p>
+          <p className="text-xs text-gray-500 mb-6">{t.verifyNext}</p>
           <Link href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.goSignIn}</Link>
         </div>
       </div>
@@ -221,7 +224,7 @@ export default function RegisterPage() {
       <div className="auth-brand-panel hidden lg:flex lg:w-[42%] relative overflow-hidden flex-col justify-between p-12 text-white">
         <a href="/" className="flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-brand-lockup" />
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-brand-lockup" />
         </a>
         <div className="max-w-md">
           <h2 className="text-3xl xl:text-[40px] font-extrabold leading-[1.25] mb-4">{t.brandH}</h2>
@@ -256,7 +259,7 @@ export default function RegisterPage() {
           <div className="auth-form-card w-full max-w-[600px] bg-white rounded-2xl p-6 sm:p-9 shadow-sm border border-line">
             <div className="flex lg:hidden items-center justify-center mb-5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-mobile-lockup" />
+              <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
             </div>
             <div className="mb-6">
               <h1 className="text-2xl font-extrabold text-navy">{selectedType ? t.title : t.pickTitle}</h1>
@@ -281,13 +284,13 @@ export default function RegisterPage() {
             <div>
               <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-gray-50 px-4 py-3">
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="w-9 h-9 rounded-xl grid place-items-center text-white shrink-0" style={{ background: '#D4A543' }}>{roleCards.find(r => r.type === selectedType)?.svg}</span>
+                  <span className="w-9 h-9 rounded-xl grid place-items-center text-[#071827] shrink-0" style={{ background: '#D4A543' }}>{roleCards.find(r => r.type === selectedType)?.svg}</span>
                   <div className="min-w-0">
                     <div className="text-[11px] text-gray-500">{t.accountType}</div>
                     <div className="font-bold text-navy text-sm truncate">{roleCards.find(r => r.type === selectedType)?.title}</div>
                   </div>
                 </div>
-                <button type="button" onClick={() => { setSelectedType(null); setValue('role', undefined as any) }} className="text-xs font-bold hover:underline shrink-0" style={{ color: '#9D7425' }}>{t.change}</button>
+                <button type="button" onClick={() => { setSelectedType(null); setValue('role', undefined as any) }} className="text-xs font-bold hover:underline shrink-0" style={{ color: '#8F6820' }}>{t.change}</button>
               </div>
               {selectedType === 'supplier' && (<>
                 <p className="text-sm font-bold text-navy mt-4 mb-2">{locale === 'en' ? 'How do you sell? *' : locale === 'ur' ? 'آپ کیسے بیچتے ہیں؟ *' : 'ما نوع نشاطك؟ *'}</p>
@@ -309,37 +312,37 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">{t.fullName} *</label>
-                <input {...register('full_name')} className="input-field" placeholder={locale === 'en' ? 'Mohammed Al-Otaibi' : 'محمد العتيبي'} />
+                <label htmlFor="reg-name" className="block text-xs font-semibold text-gray-600 mb-1">{t.fullName} *</label>
+                <input id="reg-name" {...register('full_name')} autoComplete="name" className="input-field" placeholder={locale === 'en' ? 'Mohammed Al-Otaibi' : locale === 'ur' ? 'محمد العتیبی' : 'محمد العتيبي'} />
                 {errors.full_name && <p className="text-red-500 text-xs mt-1">{vmsg(errors.full_name.message, locale)}</p>}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
-                <input {...register('phone')} className="input-field" placeholder="05XXXXXXXX" type="tel" inputMode="numeric" maxLength={10} dir="ltr"
-                  onInput={(e: any) => { const v = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(false) }} />
+                <label htmlFor="reg-phone" className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
+                <input id="reg-phone" {...register('phone')} autoComplete="tel-national" className="input-field" placeholder="05XXXXXXXX" type="tel" inputMode="numeric" maxLength={10} dir="ltr"
+                  onInput={(e: any) => { const v = toLatinDigits(e.currentTarget.value).replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(false) }} />
                 {errors.phone && <p className="text-red-500 text-xs mt-1">{vmsg(errors.phone.message, locale)}</p>}
               </div>
             </div>
             {phoneDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2"><Glyph e="⚠" /> {t.phoneTaken}</p>}
 
             {selectedType === 'supplier' && sellerKind === 'company' && <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-400 font-normal">— {t.companyHint}</span></label>
-              <input {...register('company_name_ar')} className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : 'مؤسسة الصخر لمواد البناء'} />
+              <label htmlFor="reg-company" className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-500 font-normal">— {t.companyHint}</span></label>
+              <input id="reg-company" {...register('company_name_ar')} autoComplete="organization" className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : locale === 'ur' ? 'الصخر بلڈنگ میٹریلز' : 'مؤسسة الصخر لمواد البناء'} />
               {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{vmsg(errors.company_name_ar.message, locale)}</p>}
             </div>}
 
             <div className="grid sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
-              <input {...register('email', { onBlur: (e) => checkEmailDup(e.target.value), onChange: () => { if (emailDup) setEmailDup(false) } })}
+              <label htmlFor="reg-email" className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
+              <input id="reg-email" autoComplete="email" dir="ltr" {...register('email', { onBlur: (e) => checkEmailDup(e.target.value), onChange: () => { if (emailDup) setEmailDup(false) } })}
                 className="input-field" placeholder="name@example.com" type="email" />
               {errors.email && <p className="text-red-500 text-xs mt-1">{vmsg(errors.email.message, locale)}</p>}
               {emailDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<Link href="/login" className="underline font-bold">{t.signInInstead}</Link></p>}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
-              <input {...register('password')} className="input-field" type="password" placeholder={t.passwordPh} />
+              <label htmlFor="reg-password" className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
+              <input id="reg-password" {...register('password')} autoComplete="new-password" className="input-field" type="password" placeholder={t.passwordPh} />
               {errors.password && <p className="text-red-500 text-xs mt-1">{vmsg(errors.password.message, locale)}</p>}
             </div>
             </div>
@@ -350,9 +353,9 @@ export default function RegisterPage() {
               <input type="checkbox" checked={agreedToTerms} onChange={(e: any) => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#0B2438] flex-shrink-0" />
               <span className="text-xs text-gray-600 leading-relaxed">
                 {t.agreePre}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#9D7425' }}>{t.terms}</a>
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{t.terms}</a>
                 {t.and}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#9D7425' }}>{t.privacy}</a>
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{t.privacy}</a>
               </span>
             </label>
 
@@ -370,7 +373,7 @@ export default function RegisterPage() {
 
             {/* company accounts with several procurement staff are set up with us, not here */}
             <p className="mt-6 pt-5 border-t border-line text-xs text-gray-500 text-center">
-              {t.corpQ} <a href="mailto:info@taseerak.com?subject=%D8%AD%D8%B3%D8%A7%D8%A8%20%D8%B4%D8%B1%D9%83%D8%A9" className="font-bold hover:underline" style={{ color: '#9D7425' }}>{t.corpA}</a>
+              {t.corpQ} <a href="mailto:info@taseerak.com?subject=%D8%AD%D8%B3%D8%A7%D8%A8%20%D8%B4%D8%B1%D9%83%D8%A9" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{t.corpA}</a>
             </p>
           </div>
         </div>

@@ -10,7 +10,6 @@ import { FEATURES } from '@/lib/features'
 import { toast } from 'sonner'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
-import NotificationBell from '@/components/shared/NotificationBell'
 import { useTranslation } from '@/i18n'
 import { getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel } from '@/types'
 import { rfqDisplayName } from '@/lib/rfqName'
@@ -22,7 +21,7 @@ import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTim
 import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind } from '@/lib/sellers'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
-import { daysText } from '@/lib/text'
+import { daysText, arMaterials } from '@/lib/text'
 
 const txt = {
   ar: {
@@ -133,7 +132,7 @@ export default function SupplierDashboard() {
       // the company id goes out at once instead of one after another (was 11 sequential requests).
       const [
         { data: p }, { data: cfg }, { data: sectorRows }, { data: specRows },
-        { data: myBranches }, { data: dismissals }, { data: offers }, { count: lpCount },
+        { data: myBranches }, { data: dismissals }, { data: offersRaw }, { count: lpCount },
       ] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', actId).single(),
         supabase.from('app_config').select('launch_free_until').maybeSingle(),
@@ -141,13 +140,22 @@ export default function SupplierDashboard() {
         supabase.from('profile_specialties').select('specialty').eq('profile_id', actId),
         supabase.from('branches').select('region').eq('supplier_id', actId),
         supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', actId),
-        supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status, ref_no, items, created_at)').eq('supplier_id', actId).order('created_at', { ascending: false }),
+        supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status, ref_no, items, created_at)').eq('supplier_id', actId).order('created_at', { ascending: false }).limit(200),
         supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', actId),
       ])
+      // a multi-item request awarded per item: the deal is only the awarded items, not the whole
+      // offer (same as /supplier/deals) — revenue, monthly sales, average deal and the offer cards
+      const accIds = (offersRaw || []).filter((o: any) => o.status === 'accepted').map((o: any) => o.id)
+      const awarded: Record<string, number> = {}
+      if (accIds.length) {
+        const { data: aw } = await supabase.from('rfq_item_awards').select('offer_id, total').in('offer_id', accIds)
+        for (const a of aw || []) awarded[a.offer_id] = (awarded[a.offer_id] || 0) + (Number(a.total) || 0)
+      }
+      const offers = (offersRaw || []).map((o: any) => awarded[o.id] != null ? { ...o, total_price: awarded[o.id] } : o)
       setProfile(p)
       if (p) rememberSellerKind(sellerKindOf(p.provider_type))
       setLaunchUntil(cfg?.launch_free_until || null)
-      setMyOffers(offers || [])
+      setMyOffers(offers)
       setPricesCount(lpCount ?? 0)
 
       // جلب قطاعات المورد المتخصص فيها
@@ -161,23 +169,14 @@ export default function SupplierDashboard() {
       // فلترة الطلبات حسب تصنيف المورد
       const minVal = p?.min_order_value || 0
 
-      let rfqQuery = supabase.from('rfqs')
-        .select('*, contractor:profiles_public(company_name_ar, company_name_en, contractor_grade)')
-        .eq('status', 'open')
-        .order('created_at', { ascending: false })
-        .limit(150) // bound the feed (region/sector already filtered server-side); newest first
-
-      // ✅ فلترة بالقطاع — يشمل أي قطاع من مواد الطلب (طلبات متعددة القطاعات)
-      if (mySectors.length > 0) {
-        rfqQuery = rfqQuery.overlaps('sectors', mySectors)
-      }
-
-      // الحد الأدنى للقيمة — فقط لو المورد حدد minimum
-      if (minVal > 0) {
-        rfqQuery = rfqQuery.or(`estimated_value.gte.${minVal},estimated_value.is.null`)
-      }
-
-      const { data: rfqsRaw } = await rfqQuery
+      // The feed comes from get_supplier_feed (185): sectors, minimum value, verified-only, supplier
+      // type, regions, dismissed and deadline are applied on the server before the limit, and the
+      // rows carry no contractor_id (buyer privacy). The checks below stay as a second filter.
+      const { data: rfqsRaw } = await supabase.rpc('get_supplier_feed', {
+        p_sectors: mySectors.length > 0 ? mySectors : null,
+        p_min_value: minVal > 0 ? minVal : 0,
+        p_limit: 150,
+      })
 
       // ✅ مطابقة بند-بند: يظهر الطلب لو يقدر يورّد مادة واحدة على الأقل
       // (قطاعها ضمن قطاعاته + تخصصها ضمن تخصصاته أو بدون تخصص محدد)
@@ -368,7 +367,7 @@ export default function SupplierDashboard() {
               <div className="flex items-start gap-3">
                 <span className="text-3xl shrink-0"><Glyph e="🔒" /></span>
                 <div className="flex-1">
-                  <div className="font-extrabold text-sm" style={{ color: '#9D7425' }}><Glyph e="⚠" /> {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
+                  <div className="font-extrabold text-sm" style={{ color: '#8F6820' }}><Glyph e="⚠" /> {L('Complete your profile to receive requests', 'درخواستیں وصول کرنے کے لیے اپنی پروفائل مکمل کریں', 'أكمل ملفك لاستلام الطلبات')}</div>
                   <div className="text-[13px] text-gray-600 mt-1 leading-relaxed">{L("Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests. One minute is enough.", 'اپنے مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی مماثل درخواست موصول نہیں ہوگی۔', 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين، ولن تصلك أي طلبات مطابقة. دقيقة واحدة تكفي.')}</div>
                   <span className="inline-block mt-2.5 text-sm font-bold text-[#071827] px-4 py-2 rounded-xl" style={{ background: '#D4A543' }}>{L('Complete now →', 'ابھی مکمل کریں ←', 'أكمل ملفك الآن ←')}</span>
                 </div>
@@ -403,7 +402,7 @@ export default function SupplierDashboard() {
                   <div className="font-bold" style={{ color: '#0B2438' }}>{L('Set your exact specialties for precise matching!', 'درست مماثلت کے لیے اپنی مہارتیں مقرر کریں!', 'حدّد تخصصاتك الدقيقة لتصلك الطلبات المطابقة تماماً!')}</div>
                   <div className="text-sm text-gray-500 mt-0.5">{L('e.g. only "Bricks" or only "Marble" — get only relevant requests', 'مثلاً صرف "اینٹ" یا صرف "سنگ مرمر"', 'مثلاً: محل طوب فقط، أو محل رخام فقط — تصلك الطلبات المطابقة لتخصصك')}</div>
                 </div>
-                <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#9D7425' }}>{L('Setup →', 'ترتیب دیں ←', 'إعداد ←')}</div>
+                <div className="text-sm font-semibold whitespace-nowrap" style={{ color: '#8F6820' }}>{L('Setup →', 'ترتیب دیں ←', 'إعداد ←')}</div>
               </div>
             </Link>
           ) })
@@ -522,7 +521,7 @@ export default function SupplierDashboard() {
                 <div className="sm:col-span-2 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="text-xs font-bold mb-2" style={{ color: '#0B2438' }}>{L('Strengthen your profile:', 'اپنی پروفائل مضبوط کریں:', 'عزّز ملفك:')}</div>
                   <div className="flex flex-wrap gap-2">
-                    {missing.map((c: any) => <Link key={c.href} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#D4A543', color: '#9D7425' }}>+ {c.label}</Link>)}
+                    {missing.map((c: any) => <Link key={c.href} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#D4A543', color: '#8F6820' }}>+ {c.label}</Link>)}
                   </div>
                 </div>
               )}
@@ -575,7 +574,7 @@ export default function SupplierDashboard() {
                   <h2 className="font-extrabold text-[#0B2438]">{L('Your sales', 'آپ کی فروخت', 'مبيعاتك')}</h2>
                   <p className="text-xs text-gray-500">{L('Your offers and this month vs last month', 'آپ کی پیشکشیں اور اس ماہ کا موازنہ', 'نتائج عروضك، وهذا الشهر مقارنة بالشهر الماضي')}</p>
                 </div>
-                <Link href="/supplier/analytics" className="text-xs font-bold text-[#9D7425] hover:underline">{L('Full performance', 'مکمل کارکردگی', 'أداؤك بالتفصيل')} ←</Link>
+                <Link href="/supplier/analytics" className="text-xs font-bold text-[#8F6820] hover:underline">{L('Full performance', 'مکمل کارکردگی', 'أداؤك بالتفصيل')} ←</Link>
               </div>
               <div className="grid sm:grid-cols-[minmax(0,220px)_1fr] gap-5 items-center">
                 {/* donut: how many offers won, waiting, not chosen; win rate in the middle */}
@@ -651,7 +650,7 @@ export default function SupplierDashboard() {
               ].map((f: any) => (
                 <button key={f.key} onClick={() => setRfqFilter(f.key)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${rfqFilter === f.key ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
-                  style={rfqFilter === f.key ? { background: f.key === 'expiring' ? '#d97706' : '#0B2438' } : {}}>
+                  style={rfqFilter === f.key ? { background: f.key === 'expiring' ? '#B45309' : '#0B2438' } : {}}>
                   {f.icon} {f.label}
                 </button>
               ))}
@@ -677,8 +676,8 @@ export default function SupplierDashboard() {
                               <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}><Glyph e="🟢" /> {L('New', 'نیا', 'جديد')}</span>
                             )}
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
-                            {rfq.sub_category && (
-                              <span className="badge text-[10px] bg-[#D4A543]/10 text-[#9D7425] font-semibold">
+                            {rfq.sub_category && !(Array.isArray(rfq.items) && rfq.items.length > 1) && (
+                              <span className="badge text-[10px] bg-[#D4A543]/10 text-[#8F6820] font-semibold">
                                 <Glyph e="🎯" /> {getSubCategoryLabel(rfq.sector, rfq.sub_category, locale)}
                               </span>
                             )}
@@ -696,10 +695,12 @@ export default function SupplierDashboard() {
                         : <div className="text-[#071827] text-xs font-semibold px-4 py-2 rounded-xl whitespace-nowrap" style={{ background: '#D4A543' }}>{t.submitOffer}</div>}
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-400 font-medium flex-wrap">
-                      <span><Glyph e="📦" /> {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>
+                      {Array.isArray(rfq.items) && rfq.items.length > 1
+                        ? (() => { const n = Number(rfq._myItemCount) || rfq.items.length; return <span><Glyph e="📦" /> {L(`${n} ${n === 1 ? 'material' : 'materials'} in your specialty`, `آپ کی مہارت میں ${n} اشیاء`, `${arMaterials(n)} ضمن تخصصك`)}</span> })()
+                        : <span><Glyph e="📦" /> {rfq.quantity} {getUnitLabel(rfq.unit, locale)}</span>}
                       <span><Glyph e="📍" /> {getRegionLabel(rfq.region, locale)}</span>
                       {rfq.created_at && <span><Glyph e="🗓" /> {formatDateTime(rfq.created_at)}</span>}
-                      {rfq.specification && <span className="truncate max-w-[180px]"><Glyph e="⚙" /> {rfq.specification}</span>}
+                      {rfq.specification && !(Array.isArray(rfq.items) && rfq.items.length > 1) && <span className="truncate max-w-[180px]"><Glyph e="⚙" /> {rfq.specification}</span>}
                       <span><Glyph e="💬" /> {rfq.offer_count || 0} {t.offer}</span>
                       {rfq.expires_at && (() => {
                         const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
@@ -754,7 +755,7 @@ export default function SupplierDashboard() {
                           <span className="block mt-1 badge text-[10px] font-bold" style={{ background: '#fff7ed', color: '#c2410c' }}><Glyph e="📉" /> {L('Buyer asked for a lower price', 'خریدار نے کم قیمت مانگی', 'طلب المشتري خصماً')}</span>
                         )}
                         {offer.status === 'pending' && (offer.info_request || '').trim() && (
-                          <span className="block mt-1 badge text-[10px] font-bold" style={{ background: '#D4A54318', color: '#9D7425' }}><Glyph e="❓" /> {L('Buyer has a question', 'خریدار کا سوال', 'سؤال من المشتري')}</span>
+                          <span className="block mt-1 badge text-[10px] font-bold" style={{ background: '#D4A54318', color: '#8F6820' }}><Glyph e="❓" /> {L('Buyer has a question', 'خریدار کا سوال', 'سؤال من المشتري')}</span>
                         )}
                       </div>
                     </div>
@@ -763,7 +764,7 @@ export default function SupplierDashboard() {
                       {offer.rfq?.region && <span><Glyph e="📍" /> {getRegionLabel(offer.rfq.region, locale)}</span>}
                       {sentBy(offer) && <span className="font-semibold text-gray-500">{sentBy(offer)}</span>}
                     </div>
-                    <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#9D7425' }}>
+                    <div className="mt-2.5 text-[11px] font-bold flex items-center gap-1" style={{ color: '#8F6820' }}>
                       {offer.status === 'accepted'
                         ? (locale === 'en' ? 'View deal & invoice →' : locale === 'ur' ? 'ڈیل دیکھیں →' : 'افتح الصفقة والفاتورة ←')
                         : (locale === 'en' ? 'View / edit offer →' : locale === 'ur' ? 'پیشکش دیکھیں →' : 'افتح العرض والتفاصيل ←')}

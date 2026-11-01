@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRouteUser } from '@/lib/supabase/server'
-import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
+import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
+import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { keywordClassify } from '@/lib/classify'
 import { SECTOR_LABELS } from '@/types'
 
@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
 
   // ---- Layer 2: AI (Claude Haiku) — refines the gray cases when a key is set ----
   // Runs when Layer 1 is unsure ('review') or flags a conflict ('mismatch').
-  if (process.env.ANTHROPIC_API_KEY && result.verdict !== 'match') {
+  // Skipped (keyword verdict kept) once the daily ceiling across all users is reached.
+  if (process.env.ANTHROPIC_API_KEY && result.verdict !== 'match' && !(await overGlobalDailyLimit('classify-supplier', 300))) {
     try {
       const ai = await classifyWithClaude({
         companyNameAr: profile.company_name_ar,
@@ -78,7 +79,12 @@ export async function POST(req: NextRequest) {
     auto_classified_at: new Date().toISOString(),
   }
 
-  await supabase.from('profiles').update(update).eq('id', targetId)
+  // The profile lock trigger resets auto_classification* on writes by the user's own client, so the
+  // verdict is written with the service role (ownership / admin was checked above). NOTE: the lock
+  // trigger (enforce_profile_field_locks) only skips is_admin() / app.bypass_locks, so it also needs
+  // a service-role exemption (or a bypassing RPC) in the database for this write to stick.
+  const { error: saveErr } = await createAdminSupabaseClient().from('profiles').update(update).eq('id', targetId)
+  if (saveErr) console.error('classify-supplier save error:', saveErr.message)
 
   // ---- Auto-verify a clear, confident match (only while still pending) ----
   // Verification fields are locked against client/authenticated writes, so we
@@ -106,7 +112,7 @@ async function classifyWithClaude(input: {
   chosenTier?: string | null
 }) {
   const { default: Anthropic } = await import('@anthropic-ai/sdk')
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 12_000, maxRetries: 0 })
 
   const sectorList = ALLOWED_SECTORS.map(s => `${s} (${(SECTOR_LABELS as any)[s] || s})`).join(', ')
 

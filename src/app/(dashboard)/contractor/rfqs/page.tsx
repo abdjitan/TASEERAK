@@ -13,7 +13,7 @@ import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { rfqRef, rfqDate } from '@/lib/rfqName'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 import Glyph from '@/components/shared/Glyph'
-import { arCount } from '@/lib/text'
+import { arCount, arMaterials } from '@/lib/text'
 
 // «طلباتي»: every request of the buyer with its details — reference, date, materials (with
 // pictures), offers received, deadline and status — filterable and searchable; a card opens the
@@ -81,16 +81,16 @@ export default function MyRequestsPage() {
       sb.from('rfq_item_awards').select('rfq_id').in('rfq_id', ids),
     ])
     const keep = new Set([...(acc || []), ...(aw || [])].map((x: any) => x.rfq_id))
-    const gone: string[] = []
-    for (const id of ids) {
-      if (keep.has(id)) continue
-      const { error } = await sb.rpc('delete_rfq', { p_rfq_id: id })
-      if (!error) gone.push(id)
-    }
+    const go = ids.filter(id => !keep.has(id))
+    // all at once (was one by one); each result is checked so a failure is reported, not hidden
+    const res = await Promise.all(go.map(id => sb.rpc('delete_rfq', { p_rfq_id: id }).then(({ error }: any) => !error, () => false)))
+    const gone = go.filter((_, k) => res[k])
+    const failed = go.length - gone.length
     setRfqs(prev => prev.filter(r => !gone.includes(r.id)))
     setDeleting(false)
-    const left = ids.length - gone.length
-    if (left) alert(L(`${left} request(s) were kept because they have a deal.`, `${left} درخواستیں رکھی گئیں۔`, `أُبقي ${left} من الطلبات لأنها تتضمّن صفقة.`))
+    const kept = keep.size
+    if (failed) alert(L(`${failed} request(s) could not be deleted. Check your connection and try again.`, `${failed} درخواستیں حذف نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔`, `تعذّر حذف ${failed} من الطلبات. تحقّق من الاتصال وحاول مرة أخرى.`))
+    if (kept) alert(L(`${kept} request(s) were kept because they have a deal.`, `${kept} درخواستیں رکھی گئیں کیونکہ ان میں سودا ہو چکا ہے۔`, `أُبقي ${kept} من الطلبات لأنها تتضمّن صفقة.`))
   }
 
   // a request can be cancelled unless it's already a deal (closed / accepted offer / awarded item)
@@ -191,15 +191,15 @@ export default function MyRequestsPage() {
                         <span aria-hidden className={`mt-1 w-5 h-5 rounded-md border-2 grid place-items-center text-[11px] font-bold shrink-0 ${sel.has(r.id) ? 'bg-[#0B2438] border-[#0B2438] text-white' : 'border-gray-300 bg-white'}`}>{sel.has(r.id) ? '✓' : ''}</span>
                       )}
                       <div>
-                      <div className="text-xs font-bold text-[#9D7425] font-mono" dir="ltr">{rfqRef(r)}</div>
-                      <div className="font-extrabold text-navy" dir="auto">{r.title || L(`${items.length} material(s)`, `${items.length} اشیاء`, items.length === 1 ? 'مادة واحدة' : `${items.length} مواد`)}</div>
+                      <div className="text-xs font-bold text-[#8F6820] font-mono" dir="ltr">{rfqRef(r)}</div>
+                      <div className="font-extrabold text-navy" dir="auto">{r.title || L(`${items.length} material(s)`, `${items.length} اشیاء`, arMaterials(items.length))}</div>
                       <div className="text-xs text-gray-400 mt-0.5">{rfqDate(r, locale)}{r.city || r.region ? ` · ${r.city || r.region}` : ''}</div>
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${b.c}`}>{b.t}</span>
-                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${offers ? 'bg-[#D4A543]/10 text-[#9D7425] border-[#D4A543]/30' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
-                        {offers ? L(`${offers} offer(s)`, `${offers} آفرز`, offers === 1 ? 'عرض واحد' : `${offers} عروض`) : L('No offers yet', 'ابھی کوئی آفر نہیں', 'لا عروض بعد')}
+                      <span className={`text-xs font-bold px-2.5 py-1 rounded-full border ${offers ? 'bg-[#D4A543]/10 text-[#8F6820] border-[#D4A543]/30' : 'bg-gray-50 text-gray-400 border-gray-200'}`}>
+                        {offers ? L(`${offers} offer(s)`, `${offers} آفرز`, arCount(offers, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً')) : L('No offers yet', 'ابھی کوئی آفر نہیں', 'لا عروض بعد')}
                       </span>
                       {u && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: u.bg, color: u.fg, border: `1px solid ${u.border}` }}><Glyph e="⏰" /> {formatTimeLeft(r.expires_at, locale)}</span>}
                     </div>

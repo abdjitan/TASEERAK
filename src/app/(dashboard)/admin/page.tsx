@@ -168,7 +168,7 @@ export default function AdminPanel() {
       const text = [matName, matEdit.description].filter(Boolean).join(' — ')
       const res = await fetch('/api/match-material', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) })
       const d = await res.json()
-      if (d?.sector) { setMatSector(d.sector); if (d.group) setMatGroup(d.group); if (d.product_name) setMatName(d.product_name) }
+      if (d?.sector) { setMatSector(d.sector); if (d.sub_category) setMatGroup(d.sub_category); if (d.product_name) setMatName(d.product_name) }
       setMatAiMsg(d?.sub_category_label ? `✓ اقتراح: ${(SECTOR_LABELS as any)[d.sector] || d.sector} ← ${d.group_label}${d.source === 'ai' ? '' : ' (كلمات مفتاحية)'}` : 'لم نتمكن من الاقتراح — صنّف يدوياً')
     } catch { setMatAiMsg('تعذّر الاقتراح، حاول مجدداً') }
     finally { setMatAi(false) }
@@ -630,7 +630,7 @@ export default function AdminPanel() {
                         {c.admin_note && <div className="mt-2 text-[11px] text-gray-500"><Glyph e="📝" /> ملاحظة الإدارة: {c.admin_note}</div>}
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
                           <button type="button" onClick={() => openDoc(c.file_path)}
-                            className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5 transition-all">
+                            className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#8F6820] hover:bg-[#D4A543]/5 transition-all">
                             <Glyph e="📋" /> سجل صاحب الطلب
                           </button>
                           {holder?.cr_url && (
@@ -746,7 +746,7 @@ export default function AdminPanel() {
                           <span className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 font-semibold">{newL}</span>
                         </div>
                         {r.reason && <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-600"><Glyph e="📝" /> {r.reason}</div>}
-                        {safeHttpUrl(r.document_url) && <a href={safeHttpUrl(r.document_url)} target="_blank" rel="noreferrer" className="text-xs underline text-[#9D7425] mt-1 inline-block"><Glyph e="📎" /> مستند مرفق</a>}
+                        {safeHttpUrl(r.document_url) && <a href={safeHttpUrl(r.document_url)} target="_blank" rel="noreferrer" className="text-xs underline text-[#8F6820] mt-1 inline-block"><Glyph e="📎" /> مستند مرفق</a>}
                         <div className="text-[11px] text-gray-400 mt-1.5"><Glyph e="📅" /> {dt(r.created_at)}{r.admin_note ? ` · ملاحظة الإدارة: ${r.admin_note}` : ''}</div>
                       </div>
                       {r.status === 'pending' && (
@@ -915,7 +915,7 @@ export default function AdminPanel() {
                               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                                 {(r.target_tiers || []).map((t: string) => <span key={t} className="badge text-[10px] bg-purple-100 text-purple-700">{tierLabel(t, 'ar')}</span>)}
                                 {r.verified_only && <span className="badge text-[10px] bg-emerald-100 text-emerald-700">موثقون فقط</span>}
-                                {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-[#9D7425]">القريبون فقط</span>}
+                                {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-[#8F6820]">القريبون فقط</span>}
                               </div>
                             )}
                             {r.specification && <p className="text-xs text-gray-500 mt-1.5"><Glyph e="📋" /> {r.specification}</p>}
@@ -944,7 +944,7 @@ export default function AdminPanel() {
                                   <div className="text-gray-500 mt-1">رسوم إضافية: {o.extra_charges.map((e: any) => `${e.label || e.name || 'بند'}: ${sar(e.amount ?? e.value)}`).join(' · ')}</div>
                                 )}
                                 {o.notes && <div className="text-gray-400 mt-1"><Glyph e="📝" /> {o.notes}</div>}
-                                {o.attachment_url && <button onClick={() => openBoq(o.attachment_url)} className="text-[#9D7425] hover:underline mt-1"><Glyph e="📎" /> {o.attachment_name || 'مرفق'}</button>}
+                                {o.attachment_url && <button onClick={() => openBoq(o.attachment_url)} className="text-[#8F6820] hover:underline mt-1"><Glyph e="📎" /> {o.attachment_name || 'مرفق'}</button>}
                                 <div className="text-[10px] text-gray-400 mt-1">{dt(o.created_at)}{o.accepted_at ? ` · قُبل: ${dt(o.accepted_at)}` : ''}</div>
                               </div>
                             ))}
@@ -979,7 +979,7 @@ export default function AdminPanel() {
                             <div className="text-[10px] text-gray-400 mt-1.5">أُنشئ: {dt(p.created_at)}</div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {p.boq_url && <button onClick={() => openBoq(p.boq_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5"><Glyph e="📄" /> BOQ</button>}
+                            {p.boq_url && <button onClick={() => openBoq(p.boq_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#8F6820] hover:bg-[#D4A543]/5"><Glyph e="📄" /> BOQ</button>}
                             {items.length > 0 && <button onClick={() => setExpandedProject(open ? null : p.id)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">{open ? '▲ إخفاء' : '▼ البنود'}</button>}
                           </div>
                         </div>
@@ -1031,7 +1031,7 @@ export default function AdminPanel() {
                         </span>
                       </div>
                       {r.description && <p className="text-sm text-gray-500 mt-1"><Glyph e="📝" /> {r.description}</p>}
-                      {r.spec_file_url && <a href={fileHref(r.spec_file_url)} target="_blank" rel="noreferrer" className="text-xs text-[#9D7425] underline mt-0.5 inline-block"><Glyph e="📎" /> مرفق تفاصيل المنتج ←</a>}
+                      {r.spec_file_url && <a href={fileHref(r.spec_file_url)} target="_blank" rel="noreferrer" className="text-xs text-[#8F6820] underline mt-0.5 inline-block"><Glyph e="📎" /> مرفق تفاصيل المنتج ←</a>}
                       {r.admin_note && <p className="text-xs text-[#0F6E56] bg-emerald-50 rounded-lg px-2 py-1 mt-1 inline-block">ملاحظة الإدارة: {r.admin_note}</p>}
                       <div className="text-[11px] text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
@@ -1167,13 +1167,13 @@ export default function AdminPanel() {
                     {/* License Links */}
                     {u.license_url && (
                       <button type="button" onClick={() => openDoc(u.license_url)}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5 transition-all">
+                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#8F6820] hover:bg-[#D4A543]/5 transition-all">
                         <Glyph e="📄" /> الرخصة
                       </button>
                     )}
                     {u.cr_url && (
                       <button type="button" onClick={() => openDoc(u.cr_url)}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5 transition-all">
+                        className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#8F6820] hover:bg-[#D4A543]/5 transition-all">
                         <Glyph e="📋" /> السجل
                       </button>
                     )}
@@ -1406,10 +1406,15 @@ export default function AdminPanel() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">المجموعة</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5">التخصص</label>
+                {/* the value is the specialty key (sub_category), grouped for reading: suppliers are routed by it */}
                 <select value={matGroup} onChange={(e: any) => setMatGroup(e.target.value)} className="input-field text-sm">
                   <option value="">— اختر —</option>
-                  {getGroupedSubCategories(matSector as any).map((g: any) => <option key={g.group} value={g.group}>{g.ar}</option>)}
+                  {getGroupedSubCategories(matSector as any).map((g: any) => (
+                    <optgroup key={g.group} label={g.ar}>
+                      {g.subs.map((s: any) => <option key={s.key} value={s.key}>{s.ar}</option>)}
+                    </optgroup>
+                  ))}
                 </select>
               </div>
             </div>

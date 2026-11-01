@@ -7,7 +7,7 @@ export const SUGGESTION_KINDS = [
 ] as const
 export const SUGGESTION_STATUS: Record<string, { ar: string; en: string; ur: string; tone: string }> = {
   new: { ar: 'جديد', en: 'New', ur: 'نیا', tone: '#6b7280' },
-  planned: { ar: 'قيد التنفيذ', en: 'Planned', ur: 'زیرِ عمل', tone: '#9D7425' },
+  planned: { ar: 'قيد التنفيذ', en: 'Planned', ur: 'زیرِ عمل', tone: '#8F6820' },
   done: { ar: 'تمّ', en: 'Done', ur: 'مکمل', tone: '#0F6E56' },
   declined: { ar: 'لن يُنفّذ حالياً', en: 'Not now', ur: 'فی الحال نہیں', tone: '#b42318' },
 }

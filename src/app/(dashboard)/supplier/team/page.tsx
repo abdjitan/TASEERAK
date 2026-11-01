@@ -8,6 +8,7 @@ import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
+import { arCount } from '@/lib/text'
 
 // Company team: the owner (or an admin member) invites sales staff with a one-time link. A
 // member signs in with their own account and quotes on behalf of the company; their offers
@@ -93,7 +94,7 @@ export default function SupplierTeamPage() {
           <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center">
             <div className="text-4xl mb-2"><Glyph e="🏢" /></div>
             <p className="text-sm text-gray-600">{L('Teams are available for company and shop accounts.', 'ٹیم صرف کمپنی اکاؤنٹس کے لیے ہے۔', 'فريق العمل متاح لحسابات الشركات والمحلات.')}</p>
-            <Link href="/settings" className="inline-block mt-3 text-sm font-bold text-[#9D7425] hover:underline">{L('Change account type in settings', 'ترتیبات میں تبدیل کریں', 'غيّر نوع الحساب من الإعدادات')}</Link>
+            <Link href="/settings" className="inline-block mt-3 text-sm font-bold text-[#8F6820] hover:underline">{L('Change account type in settings', 'ترتیبات میں تبدیل کریں', 'غيّر نوع الحساب من الإعدادات')}</Link>
           </div>
         )}
 
@@ -153,7 +154,7 @@ export default function SupplierTeamPage() {
                     <div key={m.user_id} className="flex items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
                         <div className="font-semibold text-sm text-gray-800 truncate">{m.name || '—'}</div>
-                        <div className="text-[11px] text-gray-400">{roleLabel(m.role)}{m.phone ? ` · ${m.phone}` : ''} · {m.offers} {L('offers', 'آفرز', 'عرض')}</div>
+                        <div className="text-[11px] text-gray-400">{roleLabel(m.role)}{m.phone ? ` · ${m.phone}` : ''} · {L(`${m.offers} offers`, `${m.offers} آفرز`, (Number(m.offers) || 0) === 0 ? 'لا عروض' : arCount(Number(m.offers), 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</div>
                       </div>
                       {team.can_manage && (
                         <button type="button" onClick={() => remove(m.user_id, false)} disabled={busy === m.user_id} className="text-xs font-bold text-red-500 shrink-0">{L('Remove', 'ہٹائیں', 'إزالة')}</button>

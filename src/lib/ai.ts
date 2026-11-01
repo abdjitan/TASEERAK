@@ -24,6 +24,9 @@ export const AI_ENABLED = !!(anthropicKey() || geminiKey() || groqKey())
 export const DEFAULT_AI_MODEL = process.env.AI_MODEL || 'claude-haiku-5-5' // cheapest by default (review 2026-10-28); set AI_MODEL to override
 // نماذج Gemini المجانية للمحاولة بالترتيب (قابلة للتهيئة عبر GEMINI_MODEL كقائمة مفصولة بفواصل)
 const GEMINI_MODEL_FALLBACKS = 'gemini-3.8-flash,gemini-flash-latest,gemini-2.5-flash'
+// Per-call cap for every provider request: routes stop at 30-60 s, so a hung provider must give
+// up early enough for the next one in the chain to answer. A timeout throws and falls through.
+const AI_CALL_TIMEOUT_MS = 12_000
 
 export interface AiJsonOpts { system: string; user: string; schema: any; model?: string; maxTokens?: number; preferFree?: boolean }
 
@@ -42,7 +45,7 @@ async function geminiGenerate(system: string, contents: any[], maxTokens: number
       generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3 },
     }
     if (jsonMode) body.generationConfig.responseMimeType = 'application/json'
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey() }, body: JSON.stringify(body) })
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey() }, body: JSON.stringify(body), signal: AbortSignal.timeout(AI_CALL_TIMEOUT_MS) })
     if (!r.ok) {
       const t = await r.text().catch(() => '')
       lastErr = 'Gemini ' + r.status + ' (' + model + '): ' + t.slice(0, 250)
@@ -71,6 +74,7 @@ async function groqGenerate(system: string, messages: any[], maxTokens: number, 
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + groqKey() },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(AI_CALL_TIMEOUT_MS),
   })
   if (!r.ok) { const t = await r.text().catch(() => ''); throw new Error('Groq ' + r.status + ' (' + model + '): ' + t.slice(0, 250)) }
   const j = await r.json()
@@ -82,7 +86,7 @@ async function groqGenerate(system: string, messages: any[], maxTokens: number, 
 // ── Anthropic عبر SDK ──
 async function anthropicMessages(system: string, messages: any[], maxTokens: number, model: string, schema?: any): Promise<string | null> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk')
-  const client = new Anthropic({ apiKey: anthropicKey() })
+  const client = new Anthropic({ apiKey: anthropicKey(), timeout: AI_CALL_TIMEOUT_MS, maxRetries: 0 })
   const req: any = { model, max_tokens: maxTokens, system, messages }
   if (schema) req.output_config = { format: { type: 'json_schema', schema } }
   const resp = await client.messages.create(req)
@@ -218,6 +222,7 @@ export async function aiWebJson<T = any>(opts: { system: string; user: string; i
           tools: [{ google_search: {} }],
           generationConfig: { temperature: 0.2, maxOutputTokens: opts.maxTokens || 900 },
         }),
+        signal: AbortSignal.timeout(AI_CALL_TIMEOUT_MS),
       })
       if (!r.ok) { console.error('aiWebJson', model, r.status, (await r.text().catch(() => '')).slice(0, 200)); continue }
       const j = await r.json()

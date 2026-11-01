@@ -72,7 +72,7 @@ export default function ContractorDealsPage() {
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
             <div className="text-5xl mb-3"><Glyph e="📦" /></div>
             <p className="text-gray-500">{locale === 'en' ? 'No deals yet — accept an offer to start one.' : 'لا صفقات بعد — اقبل عرضاً لتبدأ صفقة.'}</p>
-            <Link href="/contractor" className="inline-block mt-4 text-sm font-bold text-[#9D7425] hover:underline">{locale === 'en' ? 'Go to your requests →' : 'اذهب لطلباتك ←'}</Link>
+            <Link href="/contractor" className="inline-block mt-4 text-sm font-bold text-[#8F6820] hover:underline">{locale === 'en' ? 'Go to your requests →' : 'اذهب لطلباتك ←'}</Link>
           </div>
         ) : (
           <div className="space-y-3">

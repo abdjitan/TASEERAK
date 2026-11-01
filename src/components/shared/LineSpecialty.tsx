@@ -66,7 +66,7 @@ export default function LineSpecialty({ name, sector, value, onChange, locale }:
             ? L('Which specialty?', 'کون سا شعبہ؟', 'اختر التخصص')
             : L('Which section is it from? (so it reaches the right suppliers)', 'کس شعبے کا ہے؟', 'من أي قسم هذه المادة؟ (ليصل طلبك للمورد المختص)')}
         </p>
-        <button type="button" onClick={() => (section ? setSection(null) : (choiceDone(value) || guessSub) ? setOpen(false) : undefined)} className="text-sm font-bold text-[#9D7425] hover:underline shrink-0">
+        <button type="button" onClick={() => (section ? setSection(null) : (choiceDone(value) || guessSub) ? setOpen(false) : undefined)} className="text-sm font-bold text-[#8F6820] hover:underline shrink-0">
           {section ? L('← Sections', '← شعبے', 'الأقسام ←') : L('Close', 'بند', 'إغلاق')}
         </button>
       </div>

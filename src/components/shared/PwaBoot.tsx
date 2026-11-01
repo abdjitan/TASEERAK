@@ -114,7 +114,7 @@ export default function PwaBoot() {
               </button>
             </div>
           </div>
-          <button type="button" onClick={dismiss} aria-label="close" className="text-gray-300 hover:text-gray-500 shrink-0 text-lg leading-none">×</button>
+          <button type="button" onClick={dismiss} aria-label={locale === 'en' ? 'Close' : locale === 'ur' ? 'بند کریں' : 'إغلاق'} className="text-gray-300 hover:text-gray-500 shrink-0 text-lg leading-none">×</button>
         </div>
       </div>
     </div>

@@ -140,9 +140,9 @@ export default function DiscoverSuppliersPage() {
 
   async function runJobs(jobs: { zone: string; pack: string; query: string }[]) {
     const todo = redo ? jobs : jobs.filter(j => !done.has(doneKey(j.zone, j.query)))
-    if (todo.length === 0) { setBatchLog(l => ['✓ كل هالدفعة اتشغّلت قبل. فعّل «إعادة» إذا بدك تعيدها.', ...l]); return }
+    if (todo.length === 0) { setBatchLog(l => ['✓ سبق تشغيل هذه الدفعة كاملة. فعّل «إعادة» إن أردت تشغيلها مجدداً.', ...l]); return }
     const est = (todo.length * 2 * USD_PER_PAGE).toFixed(2)
-    if (!window.confirm(`رح نشغّل ${todo.length} بحث على Google (تقريباً ${todo.length * 2} صفحة ≈ $${est}). نكمل؟`)) return
+    if (!window.confirm(`سيُنفَّذ ${todo.length} من عمليات البحث على Google (نحو ${todo.length * 2} صفحة ≈ ${est}). هل تريد المتابعة؟`)) return
     stopRef.current = false
     setRunning(true)
     let ins = 0
@@ -183,7 +183,7 @@ export default function DiscoverSuppliersPage() {
     const { data, error } = await supabase.rpc('mark_discovered_invited', { p_id: row.id, p_cooldown_days: INVITE_COOLDOWN_DAYS })
     if (error) { setMsg(row.id, 'تعذّر التسجيل'); return false }
     if (!data?.ok) {
-      const why: Record<string, string> = { cooldown: `انبعتله خلال آخر ${INVITE_COOLDOWN_DAYS} يوم`, opted_out: 'طلب الإيقاف', registered: 'مسجّل أصلاً', not_found: 'غير موجود' }
+      const why: Record<string, string> = { cooldown: `أُرسلت إليه دعوة خلال آخر ${INVITE_COOLDOWN_DAYS} يوماً`, opted_out: 'طلب الإيقاف', registered: 'مسجّل أصلاً', not_found: 'غير موجود' }
       setMsg(row.id, why[data?.reason] || 'مرفوض'); return false
     }
     setRows(rs => rs.map((r: any) => r.id === row.id ? { ...r, invited: true, invited_at: new Date().toISOString(), invite_count: (r.invite_count || 0) + 1 } : r))
@@ -216,7 +216,8 @@ export default function DiscoverSuppliersPage() {
     }
     if (all.length === 0) return
     const header = ['الاسم', 'الباقة', 'القطاع', 'الحي', 'المدينة', 'الجوال', 'جوال؟', 'الموقع الإلكتروني', 'العنوان', 'التقييم', 'المراجعات', 'نوع Google', 'دُعي', 'تاريخ الدعوة', 'سجّل', 'أوقف', 'رابط الخريطة']
-    const esc = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    // scraped shop names/addresses go into Excel: a cell starting with = + - @ would run as a formula
+    const esc = (v: any) => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return `"${s.replace(/"/g, '""')}"` }
     const lines = all.map((r: any) => [
       r.name, packLabel(r.pack), r.sector, r.district, r.city, r.phone_norm ? '0' + r.phone_norm : '', r.is_mobile ? 'نعم' : '',
       r.website, r.address, r.google_rating, r.google_reviews, r.google_type, r.invited ? 'نعم' : '',
@@ -256,7 +257,7 @@ export default function DiscoverSuppliersPage() {
       }
     }
     const dr = tot.dropped
-    setImportMsg(`✓ ${tot.received} صف: جديد ${tot.inserted} · مكرر (نفس المحل) ${tot.updated + (dr.dup_in_file || 0)} · مكرر بنفس الجوال ${tot.dupPhone} · مستبعد (مش مورد) ${dr.irrelevant || 0} · خارج السعودية ${dr.foreign || 0}`)
+    setImportMsg(`✓ ${tot.received} صف: جديد ${tot.inserted} · مكرر (نفس المحل) ${tot.updated + (dr.dup_in_file || 0)} · مكرر بنفس الجوال ${tot.dupPhone} · مستبعد (ليس مورداً) ${dr.irrelevant || 0} · خارج السعودية ${dr.foreign || 0}`)
     setImportBusy(false)
     loadStats()
   }
@@ -285,7 +286,7 @@ export default function DiscoverSuppliersPage() {
         {stats && (
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 my-4">
             {[
-              ['المحلات', stats.total, NAVY], ['عندهم جوال', stats.mobile, GREEN], ['انبعتلهم', stats.invited, ORANGE],
+              ['المحلات', stats.total, NAVY], ['لديهم رقم جوال', stats.mobile, GREEN], ['أُرسلت إليهم دعوات', stats.invited, ORANGE],
               ['سجّلوا', stats.registered, GREEN], ['بحاجة مراجعة', stats.review, '#6b7280'], ['صفحات Google', pagesSent, '#6b7280'],
             ].map(([l, v, c]: any) => (
               <div key={l} className="bg-white rounded-xl border border-gray-100 p-2.5 text-center">
@@ -308,7 +309,7 @@ export default function DiscoverSuppliersPage() {
         {tab === 'batches' && (
           <div>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3 text-xs text-amber-800 leading-relaxed">
-              كل خانة = نوع محلات بمنطقة. الرقم <b>x/y</b> = كلمات البحث اللي اشتغلت، و<b>+n</b> = محلات جديدة انضافت.
+              كل خانة = نوع محلات بمنطقة. الرقم <b>x/y</b> = كلمات البحث التي نُفّذت، و<b>+n</b> = المحلات الجديدة المضافة.
               البحث عبر Google Places API الرسمي فقط؛ كل صفحة نتائج ≈ ${USD_PER_PAGE}. المكرر (نفس المحل أو نفس الجوال) ما بينضاف مرتين.
             </div>
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -317,7 +318,7 @@ export default function DiscoverSuppliersPage() {
               <button disabled={running} onClick={() => runJobs(jobsFor(zones.map(z => z.name), packIds))}
                 className="px-3 py-2 rounded-xl text-xs font-bold border border-gray-300 text-gray-700 disabled:opacity-50">▶ شغّل كل المدينة</button>
               {running && <button onClick={() => { stopRef.current = true }} className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-red-500">■ أوقف</button>}
-              <label className="flex items-center gap-1 text-xs text-gray-600"><input type="checkbox" checked={redo} onChange={(e: any) => setRedo(e.target.checked)} /> إعادة البحث اللي اشتغل قبل</label>
+              <label className="flex items-center gap-1 text-xs text-gray-600"><input type="checkbox" checked={redo} onChange={(e: any) => setRedo(e.target.checked)} /> إعادة البحث الذي نُفّذ سابقاً</label>
               {progress && <span className="text-xs font-semibold" style={{ color: ORANGE }}>{progress.i}/{progress.n} — {progress.label}</span>}
             </div>
 
@@ -428,7 +429,7 @@ export default function DiscoverSuppliersPage() {
                       {wa && !row.claimed_by && !row.opted_out
                         ? <button onClick={() => inviteWhatsApp(row)} disabled={!!recent}
                             className="flex-1 text-center py-2 rounded-xl font-bold text-white text-xs disabled:opacity-40" style={{ background: '#25D366' }}
-                            title={recent ? `انبعتله خلال آخر ${INVITE_COOLDOWN_DAYS} يوم` : ''}><Glyph e="💬" /> دعوة واتساب</button>
+                            title={recent ? `أُرسلت إليه دعوة خلال آخر ${INVITE_COOLDOWN_DAYS} يوماً` : ''}><Glyph e="💬" /> دعوة واتساب</button>
                         : <span className="flex-1 text-center py-2 rounded-xl text-xs text-gray-400 border border-gray-200">{row.claimed_by ? 'مسجّل' : row.opted_out ? 'طلب الإيقاف' : 'لا يوجد جوال'}</span>}
                       {!row.claimed_by && !row.opted_out && !recent &&
                         <button onClick={() => markInvited(row)} className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600" title="زيارة ميدانية أو اتصال"><Glyph e="🚶" /> دُعي يدوياً</button>}
@@ -442,11 +443,11 @@ export default function DiscoverSuppliersPage() {
                         {SUPPLIER_PACKS.map(p => <option key={p.id} value={p.id}>{p.icon} {p.ar}</option>)}
                       </select>
                       {row.relevance !== 'supplier' && row.relevance != null &&
-                        <button onClick={() => updateRow(row, { relevance: 'supplier', is_listed: true }, '✓ صار مورد')} className="underline text-emerald-700">✓ مورد</button>}
+                        <button onClick={() => updateRow(row, { relevance: 'supplier', is_listed: true }, '✓ صُنِّف مورداً')} className="underline text-emerald-700">✓ مورد</button>}
                       {row.relevance !== 'excluded' &&
-                        <button onClick={() => updateRow(row, { relevance: 'excluded', is_listed: false }, 'استُبعد')} className="underline text-gray-500">✗ مش مورد</button>}
+                        <button onClick={() => updateRow(row, { relevance: 'excluded', is_listed: false }, 'استُبعد')} className="underline text-gray-500">✗ ليس مورداً</button>}
                       {!row.opted_out
-                        ? <button onClick={() => updateRow(row, { opted_out: true }, 'ما رح نراسله')} className="underline text-red-500">رد «إيقاف»</button>
+                        ? <button onClick={() => updateRow(row, { opted_out: true }, 'لن نراسله')} className="underline text-red-500">رد «إيقاف»</button>
                         : <button onClick={() => updateRow(row, { opted_out: false }, 'رجع للقائمة')} className="underline text-gray-500">إلغاء الإيقاف</button>}
                       {rowMsg[row.id] && <span className="font-semibold text-emerald-700">{rowMsg[row.id]}</span>}
                     </div>
@@ -506,8 +507,8 @@ export default function DiscoverSuppliersPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 max-w-2xl">
             <h3 className="font-bold mb-1" style={{ color: NAVY }}>استيراد ملف مسح سابق (Excel / CSV)</h3>
             <p className="text-xs text-gray-500 mb-3 leading-relaxed">
-              الأعمدة المتوقعة: {Object.keys(IMPORT_HEADERS).join('، ')}. كل صف بيمرّ على نفس التصنيف ومنع التكرار
-              (رابط الخريطة ← رقم الجوال)، والمحلات اللي مش موردين أو خارج السعودية بتنشال تلقائياً. فيك تستورد نفس الملف أكتر من مرة بأمان.
+              الأعمدة المتوقعة: {Object.keys(IMPORT_HEADERS).join('، ')}. كل صف يمرّ بالتصنيف نفسه ومنع التكرار
+              (رابط الخريطة ← رقم الجوال)، وتُستبعد تلقائياً المحلات التي ليست موردين أو التي تقع خارج السعودية. يمكنك استيراد الملف نفسه أكثر من مرة بأمان.
             </p>
             <input type="file" accept=".xlsx,.xls,.csv" multiple disabled={importBusy} onChange={(e: any) => importFiles(e.target.files)} className="text-sm" />
             {importMsg && <div className="mt-3 text-sm bg-gray-50 border border-gray-200 rounded-lg p-2.5">{importMsg}</div>}

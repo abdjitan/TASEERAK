@@ -56,7 +56,7 @@ export default function SupplierPackPicker({
             style={on ? { borderColor: '#0F6E56', background: 'rgba(15,110,86,0.07)' } : { borderColor: '#e5e7eb' }}>
             {(() => { const I = PACK_ICON[p.id] || Package; return (
               <span className="grid place-items-center w-9 h-9 rounded-lg mb-2" aria-hidden="true"
-                style={on ? { background: '#0F6E56', color: '#fff' } : { background: 'rgba(212,165,67,.14)', color: '#9D7425' }}>
+                style={on ? { background: '#0F6E56', color: '#fff' } : { background: 'rgba(212,165,67,.14)', color: '#8F6820' }}>
                 <I className="w-[18px] h-[18px]" strokeWidth={1.9} />
               </span>) })()}
             <div className="font-bold text-sm text-navy leading-snug">{L(p)}</div>

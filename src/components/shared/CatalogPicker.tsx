@@ -195,7 +195,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                 : L('We could not identify it. Add it as you wrote it, and suppliers will price it.', 'ہم پہچان نہیں سکے۔ جیسا لکھا ہے ویسا شامل کریں۔', 'لم نتعرّف عليها. أضفها كما كتبتها، وسيسعّرها الموردون.')}
             </p>
             <button type="button" onClick={() => choose({ name: q.trim().slice(0, 120), sector: 'supply_store' as Sector })}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold border-2 border-[#D4A543] text-[#9D7425]">
+              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold border-2 border-[#D4A543] text-[#8F6820]">
               + {L(`Add «${q.trim()}» as written`, `«${q.trim()}» جیسا لکھا شامل کریں`, `أضف «${q.trim()}» كما كتبتها`)}
             </button>
           </>)}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { friendlyError } from '@/lib/friendlyError'
 import { arCount } from '@/lib/text'
 import AutoTr from '@/components/shared/AutoTr'
@@ -213,12 +213,33 @@ export default function SupplierRFQPage() {
           const key = `${pr.product_name}__${pr.unit || ''}`
           priceMap[key] = Number(pr.price) // a price kept in «أسعاري» wins over the remembered one
         }
-        setItemForms(filtered.map((it: any) => {
+        // a remembered price is only a suggestion: the line counts as priced once the seller taps
+        // «استخدم سعرك السابق» or types a price (audit 2026-11-01: stale prices were sent unseen)
+        const freshForms = filtered.map((it: any) => {
           const sp = priceMap[`${it.product_name}__${it.unit || ''}`]
-          if (sp > 0) { const q = Number(it.quantity) || 0; return { unit_price: String(sp), line_total: q > 0 ? String(+(sp * q).toFixed(2)) : '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '', autofilled: true } }
-          return { unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '' }
-        }))
+          return { unit_price: '', line_total: '', saved: false, specs: '', file: null, priceDetails: false, delivery_days: '', ...(sp > 0 ? { suggest: sp } : {}) }
+        })
+        // a draft of this offer kept on this device (long requests): restored while no offer was sent
+        let restored = false
+        if (!offerData) {
+          try {
+            const d = JSON.parse(localStorage.getItem(`tsk_offer_draft_${actId}_${id}`) || 'null')
+            if (d && Array.isArray(d.itemForms) && d.itemForms.length === freshForms.length) {
+              setItemForms(d.itemForms.map((f: any, k: number) => ({ ...freshForms[k], ...f, file: null })))
+              setSkipped(new Set((d.skipped || []).map(Number)))
+              applyDraft(d)
+              restored = true
+            }
+          } catch {}
+        }
+        if (!restored) setItemForms(freshForms)
+        setDraftRestored(restored)
         setOpenItem(null)
+      } else if (!offerData) {
+        try {
+          const d = JSON.parse(localStorage.getItem(`tsk_offer_draft_${actId}_${id}`) || 'null')
+          if (d && d.single) { applyDraft(d); setDraftRestored(true) }
+        } catch {}
       }
 
       if (offerData) {
@@ -277,7 +298,7 @@ export default function SupplierRFQPage() {
         if (idx !== i) return f
         const q = myItems[i]?.quantity || 0
         const lt = (sameUnit(f, i) && val !== '') ? (q > 0 ? String(+((parseFloat(val) || 0) * q).toFixed(2)) : f.line_total) : f.line_total
-        return { ...f, unit_price: val, line_total: lt, saved: false }
+        return { ...f, unit_price: val, line_total: lt, saved: false, fromPrev: false }
       })
       recomputeGoods(next)
       return next
@@ -285,7 +306,7 @@ export default function SupplierRFQPage() {
   }
   // a remembered per-unit price no longer fits once the unit changes (as in the app)
   function setItemPriceUnit(i: any, val: any) {
-    setItemForms(prev => prev.map((f: any, idx: any) => idx === i ? { ...f, priceUnit: val, saved: false, ...(f.autofilled ? { unit_price: '', line_total: '', autofilled: false } : {}) } : f))
+    setItemForms(prev => prev.map((f: any, idx: any) => idx === i ? { ...f, priceUnit: val, saved: false, ...(f.fromPrev ? { unit_price: '', line_total: '', fromPrev: false } : {}) } : f))
   }
   function setItemTotal(i: any, val: any) {
     setItemForms(prev => {
@@ -293,11 +314,16 @@ export default function SupplierRFQPage() {
         if (idx !== i) return f
         const q = myItems[i]?.quantity || 0
         const up = (sameUnit(f, i) && val !== '') ? (q > 0 ? String(+((parseFloat(val) || 0) / q).toFixed(4)) : f.unit_price) : f.unit_price
-        return { ...f, line_total: val, unit_price: up, saved: false }
+        return { ...f, line_total: val, unit_price: up, saved: false, fromPrev: false }
       })
       recomputeGoods(next)
       return next
     })
+  }
+  // one tap: take the remembered price (it only counts as priced from here)
+  function takePrevPrice(i: any, sp: number) {
+    setItemUnit(i, String(sp))
+    setItemField(i, 'fromPrev', true)
   }
   function setItemField(i: any, field: any, val: any) {
     setItemForms(prev => prev.map((f: any, idx: any) => idx === i ? { ...f, [field]: val } : f))
@@ -352,6 +378,8 @@ export default function SupplierRFQPage() {
     const goods = parseFloat(totalPrice) || 0
     const exSum = extras.reduce((s: any, e: any) => s + (parseFloat(e.amount) || 0), 0) + (delivMode === 'amount' ? (parseFloat(delivAmount) || 0) : 0)
     const entered = goods + exSum
+    // not VAT-registered: the typed price is final, no VAT inside it or on top of it
+    if (noVat) return { entered, net: entered, vat: 0, gross: entered }
     const net = vatIncluded ? entered / 1.15 : entered
     const vat = net * 0.15
     return { entered, net, vat, gross: net + vat }
@@ -359,6 +387,46 @@ export default function SupplierRFQPage() {
   function addExtra() { setExtras(prev => [...prev, { label: '', amount: '' }]) }
   function updateExtra(i: any, field: any, val: any) { setExtras(prev => prev.map((e: any, idx: any) => idx === i ? { ...e, [field]: val } : e)) }
   function removeExtra(i: any) { setExtras(prev => prev.filter((_: any, idx: any) => idx !== i)) }
+
+  // Offer draft on this device (audit 2026-11-01: a long offer was lost on a reload or a call).
+  // Saved ~500 ms after the last change once the seller edits something; cleared on send.
+  const [draftRestored, setDraftRestored] = useState(false)
+  const draftKey = actingId && id ? `tsk_offer_draft_${actingId}_${id}` : ''
+  function applyDraft(d: any) {
+    if (typeof d.totalPrice === 'string') setTotalPrice(d.totalPrice)
+    if (typeof d.unitPrice === 'string') setUnitPrice(d.unitPrice)
+    if (typeof d.deliveryDays === 'string') setDeliveryDays(d.deliveryDays)
+    if (typeof d.notes === 'string') setNotes(d.notes)
+    if (typeof d.priceValidity === 'string' && d.priceValidity) setPriceValidity(d.priceValidity)
+    if (typeof d.sourceType === 'string' && d.sourceType) setSourceType(d.sourceType)
+    if (typeof d.availability === 'string' && d.availability) setAvailability(d.availability)
+    if (typeof d.singleWarranty === 'string') setSingleWarranty(d.singleWarranty)
+    if (Array.isArray(d.attributes) && d.attributes.length) setAttributes(d.attributes)
+    if (Array.isArray(d.extras) && d.extras.length) setExtras(d.extras)
+    if (d.delivMode === 'included' || d.delivMode === 'free' || d.delivMode === 'amount') setDelivMode(d.delivMode)
+    if (typeof d.delivAmount === 'string') setDelivAmount(d.delivAmount)
+    if (typeof d.payTerms === 'string' || d.payTerms === null) setPayTerms(d.payTerms ?? null)
+  }
+  const draftJson = JSON.stringify({
+    single: !isMultiItem,
+    itemForms: itemForms.map((f: any) => { const { file: _file, ...rest } = f || {}; return rest }),
+    skipped: [...skipped], totalPrice, unitPrice, deliveryDays, notes, priceValidity, sourceType, availability,
+    singleWarranty, attributes, extras, delivMode, delivAmount, payTerms,
+  })
+  const draftBase = useRef<string | null>(null)
+  useEffect(() => {
+    if (loading || !draftKey || existingOffer || success) return
+    if (draftBase.current === null) { draftBase.current = draftJson; return } // the state as loaded
+    if (draftJson === draftBase.current) return
+    const t = setTimeout(() => { try { localStorage.setItem(draftKey, draftJson) } catch {} }, 500)
+    return () => clearTimeout(t)
+  }, [draftJson, draftKey, loading, existingOffer, success])
+
+  // a send error is shown at the top of the form: bring it into view on phones
+  useEffect(() => {
+    if (!error || typeof window === 'undefined' || window.innerWidth >= 1024) return
+    document.getElementById('offer-error-top')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [error])
 
   async function handleSubmit(e: any) {
     e.preventDefault()
@@ -470,7 +538,7 @@ export default function SupplierRFQPage() {
       supplier_id: actingId || user.id,
       total_price: finalTotal,
       price_valid_until: new Date(Date.now() + (parseInt(priceValidity) || 3) * 86400000).toISOString(),
-      vat_included: vatIncluded === true,
+      vat_included: noVat ? false : vatIncluded === true,
       vat_status: noVat ? 'not_registered' : 'registered',
       item_prices: itemPricesPayload,
       unit_price: isMultiItem ? null : (unitPrice ? parseFloat(unitPrice) : null),
@@ -511,6 +579,7 @@ export default function SupplierRFQPage() {
       const keys = Object.keys(mem); if (keys.length > 400) for (const x of keys.slice(0, keys.length - 400)) delete mem[x]
       localStorage.setItem(k, JSON.stringify(mem))
     } catch {}
+    try { localStorage.removeItem(`tsk_offer_draft_${actingId || user.id}_${id}`) } catch {}
     setSuccess(true); setSubmitting(false)
   }
 
@@ -656,14 +725,14 @@ export default function SupplierRFQPage() {
           <div className="flex items-start justify-between gap-2">
             {/* عنوان عام — لا نُظهر للمورد الاسم الذي اختاره المشتري للطلب */}
             <div>
-              <div className="text-xs font-bold text-[#9D7425] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
+              <div className="text-xs font-bold text-[#8F6820] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
               <h2 className="text-lg font-bold" style={{ color: '#0B2438' }}>
                 {rfqDesc({ ...rfq, title: null }, locale, rfqIsMulti ? (myItems.length || undefined) : 1)}
               </h2>
             </div>
             <button type="button" onClick={async () => {
               const supabase = createClient()
-              const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: user?.id })
+              const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: actingId || user?.id })
               if (error || !data) { setError(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }
               router.push(`/messages?c=${data}`)
             }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#0B2438' }}><Glyph e="💬" /> {L('Message buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>
@@ -699,11 +768,11 @@ export default function SupplierRFQPage() {
                           {it.photo_url && (
                             <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 group" title={L('Material photo from the buyer', 'خریدار کی طرف سے مال کی تصویر', 'صورة المادة من المشتري')}>
                               <img src={fileHref(it.photo_url)} alt={L('Material photo', 'مال کی تصویر', 'صورة المادة')} loading="lazy" className="w-24 h-24 object-cover rounded-lg border border-gray-200 group-hover:border-[#D4A543]" />
-                              <span className="text-[11px] font-bold text-[#9D7425]"><Glyph e="📷" /> {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
+                              <span className="text-[11px] font-bold text-[#8F6820]"><Glyph e="📷" /> {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
                             </a>
                           )}
                         </td>
-                        <td className="py-3 px-3 font-bold text-[15px] text-[#9D7425] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
+                        <td className="py-3 px-3 font-bold text-[15px] text-[#8F6820] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
                         <td className="py-3 px-3 text-sm text-gray-700 leading-relaxed">{it.specification ? <AutoTr text={it.specification} locale={locale} /> : '—'}</td>
                       </tr>
                     ))}
@@ -779,7 +848,9 @@ export default function SupplierRFQPage() {
             {/* تقييم المورّد للمشتري (متبادل) — بعد قبول الصفقة */}
             {existingOffer.status === 'accepted' && (
               <div className="mt-4 border-t border-emerald-200 pt-4 text-right">
-                {cDone ? (
+                {!existingOffer.received_at && !cDone ? (
+                  <div className="text-xs text-gray-500"><Glyph e="⭐" /> {L('You can rate the buyer once they confirm receiving the goods.', 'خریدار کے مال کی وصولی کنفرم کرنے کے بعد آپ اس کی ریٹنگ دے سکیں گے۔', 'يُتاح تقييم المشتري بعد أن يؤكّد استلام البضاعة.')}</div>
+                ) : cDone ? (
                   <div className="text-sm font-bold" style={{ color: '#0F6E56' }}><Glyph e="⭐" /> {L('Thanks for rating the buyer', 'خریدار کی ریٹنگ دینے کا شکریہ', 'شكراً لتقييمك المشتري')}</div>
                 ) : (
                   <div>
@@ -806,13 +877,13 @@ export default function SupplierRFQPage() {
             )}
 
             {/* نافذة الـ١٥ دقيقة: تعديل/إلغاء العرض بعد إرساله */}
-            {canEditOffer && (
+            {canEditOffer && !expired && (
               <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-right">
                 {isMember && existingOffer.submitted_by && existingOffer.submitted_by !== user?.id && (
                   <div className="text-xs font-bold text-amber-800 mb-2">{L('This is a colleague\'s offer — check with them before editing or cancelling it.', 'یہ ساتھی کی آفر ہے — بدلنے یا منسوخ کرنے سے پہلے ان سے بات کریں۔', 'هذا عرض زميلك؛ تواصل معه قبل تعديله أو إلغائه.')}</div>
                 )}
                 <div className="text-xs text-gray-600 mb-2 leading-relaxed">
-                  ⏱ <strong>{L(`You have ${editMinsLeft} minutes`, `آپ کے پاس ${editMinsLeft} منٹ ہیں`, `لديك ${editMinsLeft} دقيقة`)}</strong> {L('to edit or cancel your offer. Cancelling deletes the current offer so you can price again (add a material you missed or change prices). After that, the offer stays fixed until the buyer decides.', 'اپنی آفر میں ترمیم یا منسوخی کے لیے۔ منسوخ کرنے سے موجودہ آفر حذف ہو جائے گی اور آپ دوبارہ قیمت دے سکیں گے (بھولا ہوا مال شامل کریں یا قیمتیں بدلیں)۔ وقت ختم ہونے کے بعد آفر خریدار کے فیصلے تک ویسی ہی رہے گی۔', 'لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتستطيع التسعير من جديد (إضافة مادة نسيتها أو تعديل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.')}
+                  ⏱ <strong>{L(`You have ${editMinsLeft} minutes`, `آپ کے پاس ${editMinsLeft} منٹ ہیں`, `لديك ${arCount(editMinsLeft, 'دقيقة واحدة', 'دقيقتان', 'دقائق', 'دقيقة')}`)}</strong> {L('to edit or cancel your offer. Cancelling deletes the current offer so you can price again (add a material you missed or change prices). After that, the offer stays fixed until the buyer decides.', 'اپنی آفر میں ترمیم یا منسوخی کے لیے۔ منسوخ کرنے سے موجودہ آفر حذف ہو جائے گی اور آپ دوبارہ قیمت دے سکیں گے (بھولا ہوا مال شامل کریں یا قیمتیں بدلیں)۔ وقت ختم ہونے کے بعد آفر خریدار کے فیصلے تک ویسی ہی رہے گی۔', 'لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتستطيع التسعير من جديد (إضافة مادة نسيتها أو تعديل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.')}
                 </div>
                 <button type="button" onClick={cancelOffer} disabled={cancelling}
                   className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#b91c1c' }}>
@@ -835,7 +906,7 @@ export default function SupplierRFQPage() {
 
             {existingOffer.info_request && (
               <div className="mt-4 bg-[#D4A543]/5 border border-blue-200 rounded-xl p-4 text-right">
-                <div className="font-bold text-[#9D7425] mb-1"><Glyph e="❓" /> {L('The buyer is asking for more information', 'خریدار مزید معلومات مانگ رہا ہے', 'المشتري يطلب معلومات إضافية')}</div>
+                <div className="font-bold text-[#8F6820] mb-1"><Glyph e="❓" /> {L('The buyer is asking for more information', 'خریدار مزید معلومات مانگ رہا ہے', 'المشتري يطلب معلومات إضافية')}</div>
                 <div className="text-sm text-gray-700 bg-white rounded-lg p-2.5 mb-2">{existingOffer.info_request}</div>
                 {existingOffer.info_response ? (
                   <div className="text-sm bg-emerald-50 rounded-lg p-2.5"><span className="text-emerald-600 text-[11px]">{L('Your reply:', 'آپ کا جواب:', 'ردّك:')}</span><div>{existingOffer.info_response}</div></div>
@@ -872,7 +943,13 @@ export default function SupplierRFQPage() {
         ) : (
           <form id="offer-form" onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
             <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{T.submitOffer}</h3>
-            {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4">{error}</div>}
+            {error && <div id="offer-error-top" role="alert" className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 scroll-mt-24">{error}</div>}
+            {draftRestored && (
+              <div className="flex items-center justify-between gap-2 bg-[#0F6E56]/5 border border-[#0F6E56]/20 text-[#0F6E56] text-xs font-semibold rounded-xl px-3 py-2 mb-4" aria-live="polite">
+                <span><Glyph e="📝" /> {L('Your draft was restored.', 'آپ کا مسودہ بحال کر دیا گیا۔', 'استُعيدت مسودتك.')}</span>
+                <button type="button" onClick={() => setDraftRestored(false)} className="text-gray-400 hover:text-gray-600" aria-label={L('Close', 'بند کریں', 'إغلاق')}>×</button>
+              </div>
+            )}
             <div className="space-y-4">
               {isMultiItem && myItems.length === 0 ? (
                 <div className="text-center py-6">
@@ -889,7 +966,7 @@ export default function SupplierRFQPage() {
                     <span className="text-xs font-bold text-gray-500">{pricedCount}/{myItems.length}</span>
                   </div>
                   <p className="text-xs text-gray-400 mb-3">
-                    {L('Enter the price per unit of each material, including VAT — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت ٹیکس سمیت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة شاملاً الضريبة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')}
+                    {noVat ? L('Enter the price per unit of each material — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.') : L('Enter the price per unit of each material, including VAT — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت ٹیکس سمیت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة شاملاً الضريبة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')}
                   </p>
                   <div className="space-y-3">
                     {myItems.map((it: any, i: any) => {
@@ -915,7 +992,7 @@ export default function SupplierRFQPage() {
                                 </div>
                                 <div className="text-end shrink-0">
                                   <div className="text-[11px] text-gray-400">{L('Quantity', 'مقدار', 'الكمية')}</div>
-                                  <div className="font-extrabold text-[15px] text-[#9D7425] whitespace-nowrap">{qty.toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</div>
+                                  <div className="font-extrabold text-[15px] text-[#8F6820] whitespace-nowrap">{qty.toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</div>
                                 </div>
                               </div>
                               <div className="flex flex-wrap gap-1 mt-1.5">
@@ -930,14 +1007,14 @@ export default function SupplierRFQPage() {
                           {/* what the buyer asked for: specs and photo, prominent so the price matches */}
                           {it.specification && (
                             <div className="mt-3 rounded-xl p-2.5 border text-sm text-gray-800 leading-relaxed" style={{ background: '#D4A5430a', borderColor: '#D4A54344' }}>
-                              <span className="text-xs font-bold me-1" style={{ color: '#9D7425' }}><Glyph e="📋" /> {L('Buyer specs:', 'خریدار کی تفصیل:', 'مواصفات المشتري:')}</span><AutoTr text={it.specification} locale={locale} />
+                              <span className="text-xs font-bold me-1" style={{ color: '#8F6820' }}><Glyph e="📋" /> {L('Buyer specs:', 'خریدار کی تفصیل:', 'مواصفات المشتري:')}</span><AutoTr text={it.specification} locale={locale} />
                             </div>
                           )}
                           {it.photo_url && (
                             <a href={fileHref(it.photo_url)} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-2 group" title={L('Material photo from the buyer', 'خریدار کی طرف سے مال کی تصویر', 'صورة المادة من المشتري')}>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={fileHref(it.photo_url)} alt={L('Material photo', 'مال کی تصویر', 'صورة المادة')} loading="lazy" className="w-20 h-20 object-cover rounded-lg border border-gray-200 group-hover:border-[#D4A543]" />
-                              <span className="text-[11px] font-bold text-[#9D7425]"><Glyph e="📷" /> {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
+                              <span className="text-[11px] font-bold text-[#8F6820]"><Glyph e="📷" /> {L('Photo from the buyer', 'خریدار کی تصویر', 'صورة من المشتري')}<br /><span className="font-normal text-gray-500">{L('Price this exact item', 'بالکل یہی مال کی قیمت لگائیں', 'سعّر المادة نفسها')}</span></span>
                             </a>
                           )}
 
@@ -975,7 +1052,7 @@ export default function SupplierRFQPage() {
                           {skipped.has(i) ? (
                             <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-gray-50 border border-dashed border-gray-300 px-3 py-2.5">
                               <span className="text-xs font-bold text-gray-500">{L("You don't carry this item — it won't be in your offer", 'یہ آئٹم آپ کے پاس نہیں — پیشکش میں شامل نہیں', 'لا توفّر هذه المادة — لن تدخل في عرضك')}</span>
-                              <button type="button" onClick={() => setSkipped(prev => { const n = new Set(prev); n.delete(i); return n })} className="text-xs font-bold text-[#9D7425] hover:underline">{L('Undo', 'واپس', 'تراجع')}</button>
+                              <button type="button" onClick={() => setSkipped(prev => { const n = new Set(prev); n.delete(i); return n })} className="text-xs font-bold text-[#8F6820] hover:underline">{L('Undo', 'واپس', 'تراجع')}</button>
                             </div>
                           ) : (<>
                           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -993,7 +1070,7 @@ export default function SupplierRFQPage() {
                               <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">{sameUnit(form, i) ? `${SAR} / ${getUnitLabel(it.unit, locale)}` : SAR}</span>
                             </div>
                             <button type="button" onClick={() => setOpenItem(more ? null : i)} aria-expanded={more}
-                              className={`text-xs font-bold px-3 py-2.5 rounded-xl border transition-all ${more || detailCount ? 'border-[#D4A543]/50 text-[#9D7425] bg-[#D4A543]/5' : 'border-gray-200 text-gray-600 hover:border-[#D4A543]/50'}`}>
+                              className={`text-xs font-bold px-3 py-2.5 rounded-xl border transition-all ${more || detailCount ? 'border-[#D4A543]/50 text-[#8F6820] bg-[#D4A543]/5' : 'border-gray-200 text-gray-600 hover:border-[#D4A543]/50'}`}>
                               {more ? '▴' : '▾'} {L('Details', 'تفصیلات', 'التفاصيل')}{detailCount ? ` (${detailCount})` : ''}
                             </button>
                             <button type="button" onClick={() => { setItemUnit(i, ''); setItemTotal(i, ''); setOpenItem(null); setSkipped(prev => new Set(prev).add(i)) }}
@@ -1004,8 +1081,14 @@ export default function SupplierRFQPage() {
                           {line > 0 && qty > 0 && sameUnit(form, i) && (
                             <p className="text-[12px] text-gray-600 mt-1">
                               {L('Total', 'کل', 'الإجمالي')}: <b className="text-[#0B2438]">{line.toLocaleString('en-US')} {SAR}</b> <span className="text-gray-400">({qty.toLocaleString('en-US')} × {(+form.unit_price || 0).toLocaleString('en-US')})</span>
-                              {form.autofilled && <span className="text-gray-400"> · {L('from your price list', 'آپ کی قیمتوں کی فہرست سے', 'من قائمة أسعارك')}</span>}
+                              {form.fromPrev && <span className="text-gray-400"> · {L('your previous price', 'آپ کی پچھلی قیمت', 'سعرك السابق')}</span>}
                             </p>
+                          )}
+                          {!(line > 0) && Number(form.suggest) > 0 && sameUnit(form, i) && (
+                            <button type="button" onClick={() => takePrevPrice(i, Number(form.suggest))}
+                              className="mt-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-[#D4A543]/50 text-[#8F6820] bg-[#D4A543]/5 hover:bg-[#D4A543]/10">
+                              {L(`Use your previous price (${Number(form.suggest).toLocaleString('en-US')} ${SAR})`, `اپنی پچھلی قیمت استعمال کریں (${Number(form.suggest).toLocaleString('en-US')} ${SAR})`, `استخدم سعرك السابق (${Number(form.suggest).toLocaleString('en-US')} ${SAR})`)}
+                            </button>
                           )}
                           {(() => {
                             // «سعرك أعلى/أقل من متوسط السوق» (owner 2026-10-31); only from 3 accepted prices up
@@ -1154,7 +1237,7 @@ export default function SupplierRFQPage() {
                   ))}
                 </div>
                 <button type="button" onClick={addAttribute}
-                  className="mt-2 text-xs font-semibold" style={{ color: '#9D7425' }}>{T.addAttr}</button>
+                  className="mt-2 text-xs font-semibold" style={{ color: '#8F6820' }}>{T.addAttr}</button>
               </div>
               )}
 
@@ -1240,8 +1323,8 @@ export default function SupplierRFQPage() {
             <a href={fileHref(specFileUrl)} target="_blank" rel="noopener noreferrer"
               className="mt-3 flex items-center gap-2 bg-[#D4A543]/5 border border-blue-200 rounded-xl p-3 hover:bg-blue-100 transition-all">
               <span className="text-xl"><Glyph e="📎" /></span>
-              <span className="text-sm font-semibold text-[#9D7425] flex-1">{T.attachedFile}</span>
-              <span className="text-xs text-[#9D7425]">{T.viewFile} ←</span>
+              <span className="text-sm font-semibold text-[#8F6820] flex-1">{T.attachedFile}</span>
+              <span className="text-xs text-[#8F6820]">{T.viewFile} ←</span>
             </a>
           )}
           </div>
@@ -1276,12 +1359,14 @@ export default function SupplierRFQPage() {
                   <div className="border-t border-gray-100 pt-4">
                     {/* خيار شمول الضريبة — إلزامي وصريح، بلا قيمة افتراضية (لا يظهر للبائع المستقل غير المسجّل ضريبياً) */}
                     <p className="mb-3 text-sm font-semibold rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
-                      <Glyph e="🧾" /> {L('Enter your prices including 15% VAT. This is what the buyer pays.', 'اپنی قیمتیں 15% ٹیکس سمیت درج کریں۔ یہی رقم خریدار ادا کرے گا۔', 'أدخل أسعارك شاملةً ضريبة القيمة المضافة (15%)، فهذا ما يدفعه المشتري.')}
+                      <Glyph e="🧾" /> {noVat
+                        ? L('You are not registered for VAT; the price you enter is final and no VAT is added to it.', 'آپ ویٹ (VAT) میں رجسٹرڈ نہیں ہیں؛ آپ کی درج کردہ قیمت حتمی ہے اور اس پر کوئی ٹیکس نہیں لگے گا۔', 'أنت غير مسجّل في ضريبة القيمة المضافة؛ السعر الذي تدخله نهائي ولا تُضاف إليه ضريبة.')
+                        : L('Enter your prices including 15% VAT. This is what the buyer pays.', 'اپنی قیمتیں 15% ٹیکس سمیت درج کریں۔ یہی رقم خریدار ادا کرے گا۔', 'أدخل أسعارك شاملةً ضريبة القيمة المضافة (15%)، فهذا ما يدفعه المشتري.')}
                     </p>
                     {/* تفصيل الإجمالي */}
                     {entered > 0 && noVat && (
                       <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm flex items-center justify-between">
-                        <span className="font-bold" style={{ color: '#0F6E56' }}>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span>
+                        <span className="font-bold" style={{ color: '#0F6E56' }}>{L('Total', 'کل رقم', 'الإجمالي')}</span>
                         <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>{fmt(entered)} {SAR}</span>
                       </div>
                     )}
@@ -1361,7 +1446,7 @@ export default function SupplierRFQPage() {
                     </div>
                   ))}
                 </div>
-                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#9D7425' }}>
+                <button type="button" onClick={addExtra} className="mt-2 text-xs font-semibold" style={{ color: '#8F6820' }}>
                   + {L('Add item', 'شامل کریں', 'إضافة بند')}
                 </button>
                 </div>
@@ -1398,7 +1483,7 @@ export default function SupplierRFQPage() {
               <div>
                 <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {L('Price valid for', 'قیمت کتنی دیر کے لیے درست ہے', 'مدة صلاحية السعر')}</label>
                 <div className="flex flex-wrap gap-2">
-                  {[{ v: '1', l: L('24h', '24 گھنٹے', '٢٤ ساعة') }, { v: '3', l: L('3 days', '3 دن', '٣ أيام') }, { v: '7', l: L('1 week', '1 ہفتہ', 'أسبوع') }, { v: '30', l: L('1 month', '1 مہینہ', 'شهر') }].map((o) => (
+                  {[{ v: '1', l: L('24h', '24 گھنٹے', '24 ساعة') }, { v: '3', l: L('3 days', '3 دن', '3 أيام') }, { v: '7', l: L('1 week', '1 ہفتہ', 'أسبوع') }, { v: '30', l: L('1 month', '1 مہینہ', 'شهر') }].map((o) => (
                     <button type="button" key={o.v} onClick={() => setPriceValidity(o.v)}
                       className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${priceValidity === o.v ? 'text-[#071827] border-transparent' : 'border-gray-200 text-gray-600 hover:border-[#D4A543]/40'}`}
                       style={priceValidity === o.v ? { background: '#D4A543' } : {}}>{o.l}</button>
@@ -1423,7 +1508,9 @@ export default function SupplierRFQPage() {
             <div className="mt-5 space-y-3">
               {!blockReason && gross > 0 && (
                 <div className="rounded-xl px-3 py-2.5 text-sm font-bold text-center border" style={{ background: '#0F6E560D', borderColor: '#0F6E5633', color: '#0F6E56' }} aria-live="polite">
-                  {L(`The buyer will see: ${fmtG} SAR incl. VAT`, `خریدار دیکھے گا: ${fmtG} ریال ٹیکس سمیت`, `سيرى المشتري: ${fmtG} ر.س شاملاً الضريبة`)}
+                  {noVat
+                    ? L(`The buyer will see: ${fmtG} SAR (seller not VAT-registered)`, `خریدار دیکھے گا: ${fmtG} ریال (ٹیکس میں غیر رجسٹرڈ فروخت کنندہ)`, `سيرى المشتري: ${fmtG} ر.س (بائع غير مسجّل ضريبياً)`)
+                    : L(`The buyer will see: ${fmtG} SAR incl. VAT`, `خریدار دیکھے گا: ${fmtG} ریال ٹیکس سمیت`, `سيرى المشتري: ${fmtG} ر.س شاملاً الضريبة`)}
                 </div>
               )}
               <button type="submit" form="offer-form" disabled={submitting || !!blockReason} aria-describedby={blockReason ? 'offer-block-reason' : undefined}
@@ -1457,7 +1544,8 @@ export default function SupplierRFQPage() {
             <div className="rounded-2xl bg-white shadow-lg border border-gray-200 p-2.5 flex items-center gap-3">
               <div className="flex-1 min-w-0 text-[12px] leading-tight">
                 {isMultiItem && <div className="font-bold" style={{ color: pricedCount ? '#0F6E56' : '#6b7280' }}>{L(`${pricedCount} of ${myItems.length} priced`, `${myItems.length} میں سے ${pricedCount}`, `سعّرت ${pricedCount} من ${myItems.length}`)}</div>}
-                {br ? <div className="text-amber-700 font-semibold truncate">{br}</div>
+                {error && !submitting ? <div role="alert" className="text-red-600 font-semibold line-clamp-2">{error}</div>
+                  : br ? <div className="text-amber-700 font-semibold truncate">{br}</div>
                   : <div className="font-extrabold text-[14px]" style={{ color: '#0B2438' }}>{(+gross.toFixed(2)).toLocaleString('en-US')} {SAR}</div>}
               </div>
               <button type="submit" form="offer-form" disabled={submitting || !!br}

@@ -117,7 +117,7 @@ export default function DealProtection({
             <div className="text-xs text-gray-400">{offer.supplier_delivered_at ? `✓ ${L('Supplier confirmed delivery', 'سپلائر نے ڈیلیوری کنفرم کر دی', 'أكّد المورد التسليم')} — ${new Date(offer.supplier_delivered_at).toLocaleString(dloc)}` : L('Waiting for the supplier to confirm', 'سپلائر کی تصدیق کا انتظار ہے', 'بانتظار تأكيد المورد')}</div>
           </div>
           {!offer.supplier_delivered_at && isSupplier && (
-            <button onClick={() => callRpc('confirm_delivery', { p_offer_id: offer.id }, 'deliver')} disabled={busy === 'deliver'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>✓ {L('I confirm delivery', 'میں نے ڈیلیوری کر دی', 'أكّدت التسليم')}</button>
+            <button onClick={() => { if (confirm(L('Have you delivered all the goods of this order to the buyer?\n\nThis confirmation is recorded with its date and cannot be undone.', 'کیا آپ نے اس آرڈر کا سارا مال خریدار کو پہنچا دیا ہے؟\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔', 'هل سلّمت جميع بضاعة هذا الطلب إلى المشتري؟\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.'))) callRpc('confirm_delivery', { p_offer_id: offer.id }, 'deliver') }} disabled={busy === 'deliver'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>✓ {L('Confirm delivery', 'ڈیلیوری کی تصدیق کریں', 'تأكيد التسليم')}</button>
           )}
         </div>
 
@@ -126,6 +126,9 @@ export default function DealProtection({
           <div className="text-sm">
             <div className="font-semibold text-gray-700">{L('Receipt confirmation', 'وصولی کا ریکارڈ', 'تأكيد الاستلام')}</div>
             <div className="text-xs text-gray-400">{offer.received_at ? `✓ ${L('Recorded — the buyer confirmed receipt', 'ریکارڈ ہو گیا — خریدار نے وصولی کنفرم کر دی', 'موثّق — أكّد المشتري الاستلام')} ${new Date(offer.received_at).toLocaleString(dloc)}` : L('Waiting for the buyer to confirm receipt of the goods', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے', 'بانتظار تأكيد المشتري لاستلام البضاعة')}</div>
+            {!offer.received_at && isContractor && (
+              <div className="text-[11px] text-gray-500 mt-0.5">{L('Confirming means the material arrived as you ordered it.', 'تصدیق کا مطلب ہے کہ مال آپ کے آرڈر کے مطابق پہنچ گیا ہے۔', 'تأكيدك يعني أن المادة وصلت كما طلبت.')}</div>
+            )}
           </div>
           {!offer.received_at && isContractor && (
             <div className="flex items-center gap-2 shrink-0">
@@ -176,10 +179,10 @@ export default function DealProtection({
           </div>
           <div className="flex gap-2 flex-shrink-0">
             {offer.payment_status !== 'paid' && isContractor && (
-              <button onClick={() => callRpc('mark_paid', { p_offer_id: offer.id }, 'paid')} disabled={busy === 'paid'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>✓ {L('I confirm payment', 'میں نے ادائیگی کر دی', 'أكّدت الدفع')}</button>
+              <button onClick={() => { if (confirm(L('Have you paid the supplier the amount of this order?\n\nThis confirmation is recorded with its date and cannot be undone.', 'کیا آپ نے اس آرڈر کی رقم سپلائر کو ادا کر دی ہے؟\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔', 'هل دفعت للمورد مبلغ هذا الطلب؟\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.'))) callRpc('mark_paid', { p_offer_id: offer.id }, 'paid') }} disabled={busy === 'paid'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>✓ {L('Confirm payment', 'ادائیگی کی تصدیق کریں', 'تأكيد الدفع')}</button>
             )}
             {offer.payment_status === 'paid' && !offer.payment_confirmed_at && isSupplier && (
-              <button onClick={() => callRpc('confirm_payment', { p_offer_id: offer.id }, 'paycfm')} disabled={busy === 'paycfm'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ {L('I confirm payment received', 'ادائیگی وصول ہو گئی', 'أكّدت استلام الدفعة')}</button>
+              <button onClick={() => { if (confirm(L('Have you received the full payment for this order from the buyer?\n\nThis confirmation is recorded with its date and cannot be undone.', 'کیا آپ کو خریدار سے اس آرڈر کی پوری رقم مل گئی ہے؟\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔', 'هل استلمت من المشتري كامل مبلغ هذا الطلب؟\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.'))) callRpc('confirm_payment', { p_offer_id: offer.id }, 'paycfm') }} disabled={busy === 'paycfm'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>✓ {L('Confirm payment received', 'ادائیگی کی وصولی کی تصدیق کریں', 'تأكيد استلام الدفعة')}</button>
             )}
           </div>
         </div>
@@ -187,7 +190,7 @@ export default function DealProtection({
 
       {/* Dispute */}
       <div className="mt-4 pt-4 border-t border-gray-100">
-        <a href="/deal-protection" target="_blank" rel="noopener noreferrer" className="block text-[11px] font-bold text-[#9D7425] hover:underline mb-2"><Glyph e="🛡" /> {L('How we protect your deal', 'ہم سودے کی حفاظت کیسے کرتے ہیں', 'كيف نحمي صفقتك؟')}</a>
+        <a href="/deal-protection" target="_blank" rel="noopener noreferrer" className="block text-[11px] font-bold text-[#8F6820] hover:underline mb-2"><Glyph e="🛡" /> {L('How we protect your deal', 'ہم سودے کی حفاظت کیسے کرتے ہیں', 'كيف نحمي صفقتك؟')}</a>
         {offer.dispute_status === 'open' ? (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm">
             <div className="font-bold text-red-700"><Glyph e="⚠" /> {L('Open dispute', 'شکایت زیرِ کارروائی', 'نزاع مفتوح')}</div>

@@ -74,9 +74,10 @@ export default function AdminUserDetail() {
   async function setStatus(status: 'verified' | 'rejected', reason?: string) {
     setBusy(status)
     const c = createClient()
-    const upd: any = { verification_status: status }
-    if (reason) upd.rejection_reason = reason
-    await c.from('profiles').update(upd).eq('id', id)
+    // through the reviewed RPC: it checks the CR document, notifies the person and writes the audit log
+    // (a direct profiles update did none of that — admin audit H1)
+    const { error } = await c.rpc('admin_review_verification', { p_user_id: id, p_decision: status, p_reason: reason || null })
+    if (error) { setMsg('تعذّر: ' + error.message); setBusy(''); return }
     setMsg(status === 'verified' ? '✓ تم التوثيق' : '✓ تم الرفض')
     setRejecting(false); setRejectReason('')
     await loadAll(); setBusy(''); clearMsg()
@@ -84,12 +85,20 @@ export default function AdminUserDetail() {
   async function setField(field: string, value: any) {
     setBusy(field)
     const c = createClient()
-    await c.from('profiles').update({ [field]: value }).eq('id', id)
+    const { error } = await c.from('profiles').update({ [field]: value }).eq('id', id)
+    if (error) { setMsg('تعذّر الحفظ: ' + error.message); setBusy(''); return }
     setMsg('✓ تم الحفظ')
     await loadAll(); setBusy(''); clearMsg()
   }
   async function toggleActive() {
-    await setField('is_active', !(p?.is_active !== false))
+    const next = !(p?.is_active !== false)
+    if (!confirm(next ? 'إعادة تفعيل هذا الحساب والسماح له بتسجيل الدخول؟' : 'إيقاف هذا الحساب؟ لن يتمكّن صاحبه من تسجيل الدخول حتى يُعاد تفعيله.')) return
+    // is_active alone hid the account but did not stop sign-in: also ban/unban in Auth (admin function)
+    try {
+      const { data, error } = await createClient().functions.invoke('admin', { body: { action: 'set_banned', userId: id, banned: !next } })
+      if (error || !data?.ok) { setMsg('تعذّر تغيير حالة الدخول: ' + (data?.error || error?.message || '')); return }
+    } catch (e: any) { setMsg('تعذّر تغيير حالة الدخول: ' + (e?.message || '')); return }
+    await setField('is_active', next)
   }
   async function changePassword() {
     setPwMsg('')
@@ -122,7 +131,7 @@ export default function AdminUserDetail() {
   if (loading || !ok) return <PageLoader />
   if (!p) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9]" dir="rtl">
-      <div className="text-center"><div className="text-5xl mb-3"><Glyph e="🔍" /></div><div className="font-bold" style={{ color: '#0B2438' }}>الحساب غير موجود</div><Link href="/admin" className="text-sm text-[#9D7425] hover:underline mt-2 inline-block">← رجوع للوحة</Link></div>
+      <div className="text-center"><div className="text-5xl mb-3"><Glyph e="🔍" /></div><div className="font-bold" style={{ color: '#0B2438' }}>الحساب غير موجود</div><Link href="/admin" className="text-sm text-[#8F6820] hover:underline mt-2 inline-block">← رجوع للوحة</Link></div>
     </div>
   )
 
@@ -230,7 +239,7 @@ export default function AdminUserDetail() {
             <Field label="الرمز البريدي / الرقم الإضافي">{[p.postal_code, p.additional_number].filter(Boolean).join(' — ') || '—'}</Field>
             <Field label="العنوان الوطني المختصر"><span className="font-mono" dir="ltr">{p.national_short_address || '—'}</span></Field>
             {p.latitude && p.longitude && (
-              <Field label="الإحداثيات"><a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" className="text-[#9D7425] hover:underline"><Glyph e="🗺" /> فتح على الخريطة</a></Field>
+              <Field label="الإحداثيات"><a href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`} target="_blank" rel="noreferrer" className="text-[#8F6820] hover:underline"><Glyph e="🗺" /> فتح على الخريطة</a></Field>
             )}
           </Section>
 
@@ -293,8 +302,8 @@ export default function AdminUserDetail() {
             {p.rejection_reason && <Field label="سبب الرفض"><span className="text-red-600">{p.rejection_reason}</span></Field>}
             <Field label="مصدر التحقق">{p.cr_verification_source || '—'}{p.cr_verified_at ? ` (${dt(p.cr_verified_at)})` : ''}</Field>
             <div className="flex gap-2 mt-2 flex-wrap">
-              {p.license_url && <button onClick={() => openDoc(p.license_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5"><Glyph e="📄" /> الرخصة</button>}
-              {p.cr_url && <button onClick={() => openDoc(p.cr_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#9D7425] hover:bg-[#D4A543]/5"><Glyph e="📋" /> السجل</button>}
+              {p.license_url && <button onClick={() => openDoc(p.license_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#8F6820] hover:bg-[#D4A543]/5"><Glyph e="📄" /> الرخصة</button>}
+              {p.cr_url && <button onClick={() => openDoc(p.cr_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#8F6820] hover:bg-[#D4A543]/5"><Glyph e="📋" /> السجل</button>}
               {!p.license_url && !p.cr_url && <span className="text-xs text-gray-400">لا توجد مستندات مرفوعة</span>}
             </div>
           </Section>

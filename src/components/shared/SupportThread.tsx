@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslation } from '@/i18n'
 
 /**
  * Internal support chat for ONE user's thread.
@@ -15,6 +16,8 @@ export default function SupportThread({ userId, viewerRole }: { userId: string; 
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const endRef = useRef<any>(null)
+  const { locale, dir } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   async function load() {
     const c = createClient()
@@ -46,23 +49,25 @@ export default function SupportThread({ userId, viewerRole }: { userId: string; 
   }
 
   return (
-    <div className="flex flex-col" dir="rtl">
+    <div className="flex flex-col" dir={dir}>
       <div className="space-y-2 max-h-80 overflow-y-auto p-1">
         {loading ? (
-          <div className="text-sm text-gray-400 text-center py-6">جارٍ التحميل...</div>
+          <div className="text-sm text-gray-400 text-center py-6">{L('Loading…', 'لوڈ ہو رہا ہے…', 'جارٍ التحميل…')}</div>
         ) : messages.length === 0 ? (
           <div className="text-sm text-gray-400 text-center py-6">
-            {viewerRole === 'user' ? 'لا توجد رسائل — اكتب لنا إذا واجهت أي مشكلة وسيرد فريق الإدارة.' : 'لا توجد رسائل بعد.'}
+            {viewerRole === 'user'
+              ? L('No messages yet. Write to us if you run into any problem and the support team will reply.', 'ابھی کوئی پیغام نہیں۔ کوئی مسئلہ ہو تو ہمیں لکھیں، انتظامیہ کی ٹیم جواب دے گی۔', 'لا توجد رسائل. اكتب لنا إذا واجهت أي مشكلة وسيردّ فريق الإدارة.')
+              : L('No messages yet.', 'ابھی کوئی پیغام نہیں۔', 'لا توجد رسائل بعد.')}
           </div>
         ) : messages.map((m: any) => {
           const mine = m.sender === viewerRole
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}
+              <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white rounded-ee-sm' : 'bg-gray-100 text-gray-800 rounded-es-sm'}`}
                 style={mine ? { background: '#0B2438' } : {}}>
-                <div className="text-[10px] opacity-60 mb-0.5">{m.sender === 'admin' ? 'الإدارة' : 'المستخدم'}</div>
+                <div className="text-[10px] opacity-60 mb-0.5">{mine ? L('You', 'آپ', 'أنت') : m.sender === 'admin' ? L('Support team', 'انتظامیہ', 'الإدارة') : L('User', 'صارف', 'المستخدم')}</div>
                 <div className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</div>
-                <div className="text-[9px] opacity-50 mt-1 text-left" dir="ltr">{new Date(m.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</div>
+                <div className="text-[9px] opacity-50 mt-1 text-end"><span dir="ltr">{new Date(m.created_at).toLocaleString(locale === 'en' ? 'en-GB' : 'ar-SA-u-ca-gregory-nu-latn')}</span></div>
               </div>
             </div>
           )
@@ -71,10 +76,10 @@ export default function SupportThread({ userId, viewerRole }: { userId: string; 
       </div>
 
       <form onSubmit={send} className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-        <input value={text} onChange={e => setText(e.target.value)} className="input-field flex-1" placeholder="اكتب رسالتك..." />
+        <input value={text} onChange={e => setText(e.target.value)} className="input-field flex-1" placeholder={L('Write your message…', 'اپنا پیغام لکھیں…', 'اكتب رسالتك…')} aria-label={L('Message', 'پیغام', 'الرسالة')} />
         <button type="submit" disabled={sending || !text.trim()}
           className="px-5 py-2.5 rounded-xl font-semibold text-[#071827] text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#D4A543' }}>
-          {sending ? '...' : 'إرسال'}
+          {sending ? '…' : L('Send', 'بھیجیں', 'إرسال')}
         </button>
       </form>
     </div>

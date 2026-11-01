@@ -18,6 +18,8 @@ import { CONTRACTOR_FEATURES } from '@/lib/features'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { normalizeCrInput, crTakenText, crClaimHref } from '@/lib/cr'
+import { toLatinDigits } from '@/lib/phone'
+import { friendlyError } from '@/lib/friendlyError'
 
 const txt = {
   ar: {
@@ -113,6 +115,8 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('profile')
+  const [emailOn, setEmailOn] = useState(true)
+  const [emailBusy, setEmailBusy] = useState(false)
   // فتح تبويب محدّد عبر ?tab= (مثلاً من «أكمل التوثيق» في «أكمل ملفك» → ?tab=docs)
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('tab')
@@ -176,6 +180,7 @@ export default function SettingsPage() {
         setCrNumber(p.commercial_registration || '')
         setDistrict(p.district || '')
         setPrefLang(p.preferred_language || 'ar')
+        setEmailOn(p.email_notifications !== false)
         setSupplierTier(p.supplier_tier || 'shop')
         setMinOrderValue(p.min_order_value ? String(p.min_order_value) : '')
         setContractorGrade(p.contractor_grade || '')
@@ -227,11 +232,17 @@ export default function SettingsPage() {
 
   async function saveProfile(e: any) {
     e.preventDefault()
+    // VAT number (ZATCA): 15 digits starting and ending with 3; a wrong one marks every offer as VAT-registered
+    const vat = toLatinDigits(vatNumber).replace(/\s/g, '')
+    if (vat && !/^3\d{13}3$/.test(vat)) {
+      setProfileMsg(L('The VAT number must be 15 digits, starting and ending with 3.', 'VAT نمبر 15 ہندسوں کا ہونا چاہیے، جو 3 سے شروع اور 3 پر ختم ہو۔', 'رقم ضريبة القيمة المضافة يتكوّن من 15 رقماً يبدأ بـ 3 وينتهي بـ 3.'))
+      return
+    }
     setProfileSaving(true); setProfileMsg('')
     const supabase = createClient()
     // Note: name (company_name_*) and classification (supplier_tier / contractor_grade)
     // are LOCKED — they change only via an approved request, enforced by a DB trigger.
-    const updateData: any = { phone, region, city, vat_number: vatNumber || null, district: district || null, preferred_language: prefLang }
+    const updateData: any = { phone, region, city, vat_number: vat || null, district: district || null, preferred_language: prefLang }
     // اسم الشركة قابل للتعديل حتى التوثيق (المُشغّل يقفله بعده)
     if (!(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') && companyAr.trim()) {
       updateData.company_name_ar = companyAr.trim()
@@ -281,7 +292,7 @@ export default function SettingsPage() {
       if (crErr) {
         setDocsSaving(false)
         if ((crErr as any).hint === 'CR_TAKEN') { setCrTaken(crDigits); return }
-        setDocsMsg(crErr.message || t.error); return
+        setDocsMsg(friendlyError(crErr.message, t.error, locale)); return
       }
       setProfile((p: any) => ({ ...p, commercial_registration: crDigits || null }))
       if (!licenseFile && !crFile) {
@@ -562,6 +573,24 @@ export default function SettingsPage() {
                     <EnablePush variant="card" />
                   </div>
 
+                  {/* Email notifications: important updates only (offers, deals, reminders); the person can stop them */}
+                  <div className="border-t border-gray-100 pt-5">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" className="mt-1 w-4 h-4 accent-[#0B2438]" checked={emailOn} disabled={emailBusy}
+                        onChange={async e => {
+                          const on = e.target.checked
+                          setEmailBusy(true); setEmailOn(on)
+                          const { error } = await createClient().rpc('set_email_notifications', { p_on: on })
+                          if (error) setEmailOn(!on)
+                          setEmailBusy(false)
+                        }} />
+                      <span>
+                        <span className="block text-sm font-bold text-gray-700">{L('Email notifications', 'ای میل اطلاعات', 'إشعارات البريد الإلكتروني')}</span>
+                        <span className="block text-xs text-gray-500 mt-0.5">{L('Important updates only: new offers and requests, deal steps and reminders. Messages arrive as one short notice at most every 3 hours.', 'صرف اہم اپ ڈیٹس: نئی پیشکشیں اور درخواستیں، سودے کے مراحل اور یاد دہانیاں۔ پیغامات کی اطلاع زیادہ سے زیادہ ہر 3 گھنٹے میں ایک بار۔', 'التحديثات المهمة فقط: العروض والطلبات الجديدة، ومراحل الصفقة، والتذكيرات. وتصل الرسائل في تنبيه واحد مختصر كل 3 ساعات على الأكثر.')}</span>
+                      </span>
+                    </label>
+                  </div>
+
                   {/* Seller kind + company activity (the buyer-facing tier is derived from it) */}
                   {profile?.role === 'supplier' && (
                     <div className="border-t border-gray-100 pt-5">
@@ -712,7 +741,7 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
                         <button type="button" onClick={() => openDoc(profile.license_url)}
-                          className="text-xs text-[#9D7425] hover:underline font-semibold">{t.viewDoc}</button>
+                          className="text-xs text-[#8F6820] hover:underline font-semibold">{t.viewDoc}</button>
                       </div>
                     )}
                     <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
@@ -755,7 +784,7 @@ export default function SettingsPage() {
                     {crCheck && (
                       <div className={`text-xs rounded-lg p-2.5 mt-3 flex items-start gap-2 ${
                         crCheck.verified ? 'bg-emerald-100 text-emerald-800'
-                        : crCheck.mode === 'manual' ? 'bg-[#D4A543]/5 text-[#9D7425] border border-blue-200'
+                        : crCheck.mode === 'manual' ? 'bg-[#D4A543]/5 text-[#8F6820] border border-blue-200'
                         : 'bg-amber-50 text-amber-700 border border-amber-200'
                       }`}>
                         <span>{crCheck.verified ? <Glyph e="🛡" /> : crCheck.mode === 'manual' ? 'ℹ️' : <Glyph e="⚠" />}</span>
@@ -809,7 +838,7 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
                         <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
                         <button type="button" onClick={() => openDoc(profile.cr_url)}
-                          className="text-xs text-[#9D7425] hover:underline font-semibold">{t.viewDoc}</button>
+                          className="text-xs text-[#8F6820] hover:underline font-semibold">{t.viewDoc}</button>
                       </div>
                     )}
                     <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
@@ -870,10 +899,10 @@ export default function SettingsPage() {
                         locale === lang.key ? 'border-[#D4A543] bg-[#D4A543]/5' : 'border-gray-200 hover:border-gray-300'
                       }`}>
                       <div className="text-4xl mb-3">{lang.flag}</div>
-                      <div className={`font-bold text-sm ${locale === lang.key ? 'text-[#9D7425]' : 'text-gray-800'}`}>{lang.name}</div>
+                      <div className={`font-bold text-sm ${locale === lang.key ? 'text-[#8F6820]' : 'text-gray-800'}`}>{lang.name}</div>
                       <div className="text-xs text-gray-400 mt-1">{lang.nameLocal}</div>
                       {locale === lang.key && (
-                        <div className="mt-2 text-xs font-bold" style={{ color: '#9D7425' }}>✓ {t.langSaved}</div>
+                        <div className="mt-2 text-xs font-bold" style={{ color: '#8F6820' }}>✓ {t.langSaved}</div>
                       )}
                     </button>
                   ))}

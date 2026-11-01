@@ -111,10 +111,12 @@ export default function OfferDetailPage() {
   }
 
   async function rejectOffer() {
-    if (!confirm(L('Reject this offer?', 'یہ آفر رد کریں؟', 'رفض هذا العرض؟'))) return
+    // rejecting also removes any material you selected from this supplier (DB trigger, migration 183)
+    if (!confirm(L('Reject this offer? Any material you selected from this supplier will be unselected.', 'یہ آفر رد کریں؟ اس سپلائر سے منتخب کیا گیا سامان بھی غیر منتخب ہو جائے گا۔', 'رفض هذا العرض؟ سيُلغى اختيار أي مادة اخترتها من هذا المورد.'))) return
     setActing(true)
     const supabase = createClient()
-    await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
+    const { error } = await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
+    if (error) { setActing(false); alert(L('Could not reject the offer. Refresh and try again.', 'آفر رد نہیں ہو سکی۔ صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر رفض العرض. حدّث الصفحة وحاول مرة أخرى.')); return }
     router.push(`/contractor/rfq/${id}`)
   }
 
@@ -122,7 +124,7 @@ export default function OfferDetailPage() {
   if (!offer || !rfq) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9] text-center">
       <div><div className="text-5xl mb-3"><Glyph e="🔍" /></div><p className="font-bold" style={{ color: '#0B2438' }}>{L('Offer not found', 'آفر نہیں ملی', 'العرض غير موجود')}</p>
-        <Link href={`/contractor/rfq/${id}`} className="text-sm text-[#9D7425] underline mt-2 inline-block">← {L('Back to request', 'درخواست پر واپس', 'رجوع للطلب')}</Link></div>
+        <Link href={`/contractor/rfq/${id}`} className="text-sm text-[#8F6820] underline mt-2 inline-block">← {L('Back to request', 'درخواست پر واپس', 'رجوع للطلب')}</Link></div>
     </div>
   )
 
@@ -156,7 +158,7 @@ export default function OfferDetailPage() {
           <div className="w-11 h-11 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}><Glyph e="📋" /></div>
           <div>
             <h1 className="text-xl font-bold" style={{ color: '#0B2438' }}>{L('Offer details', 'آفر کی تفصیل', 'تفاصيل العرض')}</h1>
-            <p className="text-gray-500 text-sm"><span className="font-mono font-bold text-[#9D7425]" dir="auto">{rfqRefLine(rfq, locale)}</span> · {rfqDesc(rfq, locale)}</p>
+            <p className="text-gray-500 text-sm"><span className="font-mono font-bold text-[#8F6820]" dir="auto">{rfqRefLine(rfq, locale)}</span> · {rfqDesc(rfq, locale)}</p>
           </div>
           <span className={`badge text-[11px] mr-auto ${statusBadge.c}`}>{statusBadge.t}</span>
         </div>
@@ -202,7 +204,7 @@ export default function OfferDetailPage() {
           <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}><Glyph e="🏪" /> {L('Supplier', 'سپلائر', 'المورد')}</h2>
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="font-bold text-gray-900">{s.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</span>
-            {s.supplier_tier && <span className="badge text-[10px] bg-[#D4A543]/5 text-[#9D7425]"><SellerIcon name={tierIcon(s.supplier_tier)} /> {tierText}</span>}
+            {s.supplier_tier && <span className="badge text-[10px] bg-[#D4A543]/5 text-[#8F6820]"><SellerIcon name={tierIcon(s.supplier_tier)} /> {tierText}</span>}
             {s.verification_status === 'verified' && (
               <span className="badge text-[10px]" style={s.cr_verification_source === 'wathq' ? { background: '#0F6E56', color: '#fff' } : { background: '#E1F5EE', color: '#0F6E56' }}>
                 {s.cr_verification_source === 'wathq' ? `${L('Verified via Wathq', 'واثق کے ذریعے تصدیق شدہ', 'موثّق عبر واثق')}` : `✓ ${L('Verified', 'تصدیق شدہ', 'موثّق')}`}
@@ -268,7 +270,7 @@ export default function OfferDetailPage() {
                   {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5"><Glyph e="📝" /> <AutoTr text={it.specification || it.notes} locale={locale} /></p>}
                   {it.warranty && <p className="text-[11px] font-semibold text-[#0F6E56] mt-1"><Glyph e="🛡" /> {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</p>}
                   {it.attachment_url && (
-                    <a href={fileHref(it.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#9D7425] underline mt-1.5">
+                    <a href={fileHref(it.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-[#8F6820] underline mt-1.5">
                       <Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}
                     </a>
                   )}
@@ -302,13 +304,13 @@ export default function OfferDetailPage() {
           {offer.attributes && Object.keys(offer.attributes).length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {Object.entries(offer.attributes).map(([k, v]) => (
-                <span key={k} className="text-[11px] bg-[#D4A543]/5 text-[#9D7425] px-2 py-1 rounded-lg"><strong>{k}:</strong> {String(v)}</span>
+                <span key={k} className="text-[11px] bg-[#D4A543]/5 text-[#8F6820] px-2 py-1 rounded-lg"><strong>{k}:</strong> {String(v)}</span>
               ))}
             </div>
           )}
           {offer.notes && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-2"><Glyph e="📝" /> <AutoTr text={offer.notes} locale={locale} /></p>}
           {offer.attachment_url && (
-            <a href={fileHref(offer.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-[#9D7425] underline mt-1">
+            <a href={fileHref(offer.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-[#8F6820] underline mt-1">
               <Glyph e="📎" /> {offer.attachment_name || L('Offer attachment', 'آفر کی فائل', 'مرفق العرض')}
             </a>
           )}

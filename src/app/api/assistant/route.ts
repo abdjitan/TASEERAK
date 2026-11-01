@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteUser } from '@/lib/supabase/server'
-import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
+import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiText, AI_ENABLED } from '@/lib/ai'
 
 export const runtime = 'nodejs'
@@ -20,6 +20,8 @@ export async function POST(req: NextRequest) {
   const { supabase: supabase, user } = await getRouteUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (await overHourlyLimit(supabase, 'assistant', user.id, 60)) return NextResponse.json({ error: RATE_LIMITED_AR }, { status: 429 })
+  // ceiling across all users per day, so many accounts together can't run up the AI bill
+  if (await overGlobalDailyLimit('assistant', 2000)) return NextResponse.json({ error: RATE_LIMITED_AR, error_en: 'Too many requests right now, please try again later.' }, { status: 429 })
 
   if (!AI_ENABLED) {
     return NextResponse.json({ reply: 'المساعد الذكي غير مُفعّل حالياً. يتم تفعيله قريباً 🤖' })

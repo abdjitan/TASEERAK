@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteUser } from '@/lib/supabase/server'
 import { aiJson, AI_ENABLED } from '@/lib/ai'
+import { overGlobalDailyLimit } from '@/lib/rateLimit'
 import { SUB_CATEGORIES, detectSubCategory } from '@/types'
 import { getTaxonomyRows, detectSubCategoryDb, type TaxRow } from '@/lib/serverTaxonomy'
 import { checkParsableUpload } from '@/lib/serverUpload'
@@ -35,6 +36,8 @@ function validSub(sector: string, sub: string | null | undefined): boolean {
 
 async function enrichWithAI(items: any[]): Promise<any[] | null> {
   if (!AI_ENABLED || items.length === 0) return null
+  // ceiling across all users per day: over it, the BOQ is still read, only without AI enrichment
+  if (await overGlobalDailyLimit('parse-boq', 300)) return null
   try {
     const batch = items.slice(0, 120) // حدّ معقول للتكلفة/السرعة
     const payload = batch.map((it, i) => ({ i, desc: it.product_name, unit: it.unit, qty: it.quantity }))

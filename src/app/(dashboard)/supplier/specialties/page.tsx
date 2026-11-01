@@ -175,6 +175,12 @@ export default function SpecialtiesPage() {
 
   async function handleSave() {
     if (isMember) return
+    // no sector at all: the seller would receive no requests (audit 2026-11-01) — ask first
+    if (mySectors.length === 0 && !confirm(locale === 'en'
+      ? 'You have not chosen any sector, so no requests will reach you. Save anyway?'
+      : locale === 'ur'
+        ? 'آپ نے کوئی شعبہ منتخب نہیں کیا، اس لیے آپ کو کوئی درخواست نہیں ملے گی۔ پھر بھی محفوظ کریں؟'
+        : 'لم تختر أي قطاع، ولن تصلك أي طلبات تسعير. هل تريد الحفظ على أي حال؟')) return
     setSaving(true); setMsg(''); setMsgErr(false)
     const supabase = createClient()
 
@@ -196,12 +202,19 @@ export default function SpecialtiesPage() {
     const supabase = createClient()
     let spec_file_url = null
     if (suggestFile) {
+      let upFailed = false
       try {
         const ext = suggestFile.name.split('.').pop()
         const path = `material-requests/${user.id}/${Date.now()}.${ext}`
-        const { data: up } = await supabase.storage.from('licenses').upload(path, suggestFile, { upsert: true })
-        if (up) { const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path); spec_file_url = publicUrl }
-      } catch {}
+        const { data: up, error: upErr } = await supabase.storage.from('licenses').upload(path, suggestFile, { upsert: true })
+        if (up && !upErr) { const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path); spec_file_url = publicUrl }
+        else upFailed = true
+      } catch { upFailed = true }
+      if (upFailed) {
+        setSuggestSubmitting(false)
+        setSuggestMsg(locale === 'en' ? 'Could not upload the file — try again, or remove it and send without it.' : locale === 'ur' ? 'فائل اپ لوڈ نہیں ہو سکی — دوبارہ کوشش کریں، یا فائل ہٹا کر بغیر اس کے بھیجیں۔' : 'تعذّر رفع الملف — حاول مجدداً، أو أزله وأرسل الاقتراح بدونه.')
+        return
+      }
     }
     const { data, error } = await supabase.from('material_requests').insert({
       supplier_id: user.id,
@@ -271,7 +284,7 @@ export default function SpecialtiesPage() {
             />
           </>) : (
             <button type="button" onClick={() => setShowDetailed(true)}
-              className="w-full text-sm font-bold py-3 rounded-xl border border-dashed border-gray-300 text-gray-600 hover:border-[#D4A543] hover:text-[#9D7425]">
+              className="w-full text-sm font-bold py-3 rounded-xl border border-dashed border-gray-300 text-gray-600 hover:border-[#D4A543] hover:text-[#8F6820]">
               {locale === 'en' ? 'Fine-tune exact specialties (optional) ▾' : locale === 'ur' ? 'تفصیلی مہارتیں (اختیاری) ▾' : 'تخصيص دقيق للتخصصات (اختياري) ▾'}
             </button>
           )}
@@ -345,7 +358,7 @@ export default function SpecialtiesPage() {
         </div>
 
         {/* Save */}
-        <div className="sticky bottom-4 mt-6">
+        <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 mt-6 z-10">
           {msg && <div role={msgErr ? 'alert' : undefined} className={`text-sm rounded-xl p-3 mb-3 text-center border ${msgErr ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>{msg}</div>}
           {isMember ? (
             <div className="rounded-xl p-3 text-sm text-center bg-white border border-gray-200 text-gray-600 shadow">

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteUser } from '@/lib/supabase/server'
-import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
+import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiJson } from '@/lib/ai'
 
 export const runtime = 'nodejs'
@@ -59,6 +59,8 @@ export async function POST(req: NextRequest) {
     })),
   }
 
+  // ceiling across all users per day, so many accounts together can't run up the AI bill
+  if (await overGlobalDailyLimit('compare-offers', 500)) return NextResponse.json({ error: RATE_LIMITED_AR, error_en: 'Too many requests right now, please try again later.' }, { status: 429 })
   const ai = await aiJson({
     maxTokens: 1500,
     system: `أنت مستشار مشتريات محايد في منصة سعودية لتسعير مواد البناء. قارن عروض الموردين لطلب تسعير واحد.

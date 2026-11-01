@@ -23,6 +23,8 @@ const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: 
 export default function ProjectResultsPage() {
   const { id } = useParams()
   const { locale, dir } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  const SAR = L('SAR', 'ریال', 'ر.س')
   const [project, setProject] = useState<any>(null)
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -70,7 +72,7 @@ export default function ProjectResultsPage() {
     // transaction (same as the single-RFQ flow) — prevents double-accept and
     // leaving rival offers "pending".
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
-    if (error) { alert('تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة وحاول مرة ثانية.'); return }
+    if (error) { alert(L('Could not accept the offer — it may already be accepted. Refresh the page and try again.', 'پیشکش قبول نہیں ہو سکی — شاید پہلے ہی قبول ہو چکی ہے۔ صفحہ تازہ کر کے دوبارہ کوشش کریں۔', 'تعذّر قبول العرض — قد يكون قُبل مسبقاً. حدّث الصفحة وحاول مرة أخرى.')); return }
     setSelectedOffers((prev: any) => ({ ...prev, [itemId]: offerId }))
     window.location.reload()
   }
@@ -102,16 +104,16 @@ export default function ProjectResultsPage() {
               </div>
               {project?.boq_url && (
                 <a href={fileHref(project.boq_url)} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 mt-2 text-xs text-[#9D7425] hover:underline">
-                  <Glyph e="📊" /> {locale === 'en' ? 'View Original BOQ' : 'عرض BOQ الأصلي'}
+                  className="inline-flex items-center gap-1 mt-2 text-xs text-[#8F6820] hover:underline">
+                  <Glyph e="📊" /> {L('View Original BOQ', 'اصل BOQ دیکھیں', 'عرض BOQ الأصلي')}
                 </a>
               )}
             </div>
             <div className="text-left">
-              <div className="text-2xl font-bold" style={{ color: '#9D7425' }}>
-                {totalAcceptedCost > 0 ? totalAcceptedCost.toLocaleString('en-US') + ' ر.س' : '—'}
+              <div className="text-2xl font-bold" style={{ color: '#8F6820' }}>
+                {totalAcceptedCost > 0 ? totalAcceptedCost.toLocaleString('en-US') + ' ' + SAR : '—'}
               </div>
-              <div className="text-xs text-gray-400">{locale === 'en' ? 'Total Accepted' : 'إجمالي المقبول'}</div>
+              <div className="text-xs text-gray-400">{L('Total Accepted', 'کل منظور شدہ', 'إجمالي المقبول')}</div>
             </div>
           </div>
         </div>
@@ -119,10 +121,10 @@ export default function ProjectResultsPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 stagger">
           {[
-            { label: locale === 'en' ? 'Total Items' : 'إجمالي البنود', value: totalItems, icon: <Glyph e="📦" />, bg: '#0B2438' },
-            { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: totalOffers, icon: <Glyph e="💬" />, bg: '#D4A543' },
-            { label: locale === 'en' ? 'Accepted' : 'مقبولة', value: acceptedItems, icon: <Glyph e="✅" />, bg: '#0F6E56' },
-            { label: locale === 'en' ? 'Pending' : 'قيد المراجعة', value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#7c3aed' },
+            { label: L('Total Items', 'کل آئٹمز', 'إجمالي البنود'), value: totalItems, icon: <Glyph e="📦" />, bg: '#0B2438' },
+            { label: L('Total Offers', 'کل پیشکشیں', 'إجمالي العروض'), value: totalOffers, icon: <Glyph e="💬" />, bg: '#D4A543' },
+            { label: L('Accepted', 'منظور شدہ', 'مقبولة'), value: acceptedItems, icon: <Glyph e="✅" />, bg: '#0F6E56' },
+            { label: L('Pending', 'زیرِ جائزہ', 'قيد المراجعة'), value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#7c3aed' },
           ].map(({ label, value, icon, bg }) => (
             <div key={label} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white mx-auto mb-2" style={{ background: bg }}>{icon}</div>
@@ -138,10 +140,10 @@ export default function ProjectResultsPage() {
             {/* Status filter */}
             <div className="flex gap-2 overflow-x-auto pb-1">
               {[
-                { key: 'all', label: locale === 'en' ? 'All' : 'الكل', icon: <Glyph e="📋" /> },
-                { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: <Glyph e="💬" /> },
-                { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: <Glyph e="⏳" /> },
-                { key: 'accepted', label: locale === 'en' ? 'Accepted' : 'تم القبول', icon: <Glyph e="✅" /> },
+                { key: 'all', label: L('All', 'سب', 'الكل'), icon: <Glyph e="📋" /> },
+                { key: 'has_offers', label: L('Has Offers', 'قیمت موصول', 'وصل تسعير'), icon: <Glyph e="💬" /> },
+                { key: 'pending', label: L('Awaiting', 'پیشکشوں کا انتظار', 'بانتظار العروض'), icon: <Glyph e="⏳" /> },
+                { key: 'accepted', label: L('Accepted', 'منظور شدہ', 'تم القبول'), icon: <Glyph e="✅" /> },
               ].map((f: any) => {
                 const count = f.key === 'all' ? items.length
                   : f.key === 'has_offers' ? items.filter((i: any) => (i.rfq?.offers?.length || 0) > 0 && !i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
@@ -162,11 +164,11 @@ export default function ProjectResultsPage() {
             <div className="flex gap-2">
               <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
                 className="input-field text-xs flex-shrink-0 w-auto py-2">
-                <option value="all">{locale === 'en' ? 'All Sectors' : 'كل القطاعات'}</option>
+                <option value="all">{L('All Sectors', 'تمام شعبے', 'كل القطاعات')}</option>
                 {Object.keys(SECTOR_LABELS).map((s: any) => <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>)}
               </select>
               <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-                className="input-field text-xs flex-1 py-2" placeholder={`${locale === 'en' ? 'Search material...' : 'ابحث عن مادة...'}`} />
+                className="input-field text-xs flex-1 py-2" placeholder={`${L('Search material...', 'مواد تلاش کریں...', 'ابحث عن مادة...')}`} />
             </div>
           </div>
         </div>
@@ -190,7 +192,7 @@ export default function ProjectResultsPage() {
             if (filtered.length === 0) return (
               <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
                 <div className="text-5xl mb-4"><Glyph e="🔍" /></div>
-                <p className="text-gray-500">{locale === 'en' ? 'No matching items' : 'لا توجد بنود مطابقة للفلتر'}</p>
+                <p className="text-gray-500">{L('No matching items', 'کوئی مماثل آئٹم نہیں', 'لا توجد بنود مطابقة للفلتر')}</p>
               </div>
             )
             return filtered.map((item: any) => {
@@ -228,13 +230,13 @@ export default function ProjectResultsPage() {
                     <div className="text-left flex-shrink-0">
                       {acceptedOffer ? (
                         <div>
-                          <div className="text-base font-bold text-emerald-600">{acceptedOffer.total_price?.toLocaleString('en-US')} ر.س</div>
-                          <div className="badge badge-green text-[10px]">✓ {locale === 'en' ? 'Accepted' : 'مقبول'}</div>
+                          <div className="text-base font-bold text-emerald-600">{acceptedOffer.total_price?.toLocaleString('en-US')} {SAR}</div>
+                          <div className="badge badge-green text-[10px]">✓ {L('Accepted', 'منظور شدہ', 'مقبول')}</div>
                         </div>
                       ) : (
                         <div className="text-center">
-                          <div className="text-xl font-bold" style={{ color: '#9D7425' }}>{offers.length}</div>
-                          <div className="text-[10px] text-gray-400">{locale === 'en' ? 'offers' : 'عرض'}</div>
+                          <div className="text-xl font-bold" style={{ color: '#8F6820' }}>{offers.length}</div>
+                          <div className="text-[10px] text-gray-400">{L('offers', 'پیشکشیں', 'عرض')}</div>
                         </div>
                       )}
                     </div>
@@ -247,14 +249,14 @@ export default function ProjectResultsPage() {
                     <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="text-sm">
-                          <span className="text-gray-500">{locale === 'en' ? 'Supplier: ' : 'المورد: '}</span>
+                          <span className="text-gray-500">{L('Supplier: ', 'سپلائر: ', 'المورد: ')}</span>
                           <strong style={{ color: '#0B2438' }}>{acceptedOffer.supplier?.company_name_ar}</strong>
                           {contactsById[acceptedOffer.supplier_id] && <span className="text-xs text-gray-400 mr-2"><Glyph e="📞" /> {contactsById[acceptedOffer.supplier_id]}</span>}
                         </div>
                         <Link href={`/contractor/orders/${acceptedOffer.id}`}
                           className="text-xs font-bold text-white px-4 py-2 rounded-lg transition-all hover:shadow"
                           style={{ background: '#0F6E56' }}>
-                          <Glyph e="📄" /> {locale === 'en' ? 'View Purchase Order' : 'عرض أمر الشراء'} ←
+                          <Glyph e="📄" /> {L('View Purchase Order', 'پرچیز آرڈر دیکھیں', 'عرض أمر الشراء')} ←
                         </Link>
                       </div>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -286,7 +288,7 @@ export default function ProjectResultsPage() {
                   <div className="p-4 sm:p-5">
                     {!acceptedOffer && (
                       <div className="text-xs font-bold text-gray-500 mb-3">
-                        <Glyph e="🏆" /> {locale === 'en' ? 'Top 3 Cheapest Offers' : 'أفضل 3 عروض سعراً'}
+                        <Glyph e="🏆" /> {L('Top 3 Cheapest Offers', 'سب سے سستی 3 پیشکشیں', 'أفضل 3 عروض سعراً')}
                       </div>
                     )}
 
@@ -315,7 +317,7 @@ export default function ProjectResultsPage() {
                                     </span>
                                   )}
                                   {offer.supplier?.rating_avg > 0 && <span><Glyph e="⭐" /> {offer.supplier.rating_avg}</span>}
-                                  {offer.delivery_days && <span><Glyph e="📦" /> {offer.delivery_days} {locale === 'en' ? 'days' : 'يوم'}</span>}
+                                  {offer.delivery_days && <span><Glyph e="📦" /> {offer.delivery_days} {L('days', 'دن', 'يوم')}</span>}
                                   {/* 🔒 الرقم لا يظهر قبل القبول */}
                                 </div>
                               </div>
@@ -323,16 +325,16 @@ export default function ProjectResultsPage() {
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <div className="text-right">
                                 <div className="font-bold text-sm" style={{ color: rank === 0 && !acceptedOffer ? '#D4A543' : '#0B2438' }}>
-                                  {offer.total_price?.toLocaleString('en-US')} ر.س
+                                  {offer.total_price?.toLocaleString('en-US')} {SAR}
                                 </div>
                                 {offer.unit_price && (
                                   <div className="text-[10px] text-gray-400">{offer.unit_price?.toLocaleString('en-US')} / {item.unit}</div>
                                 )}
                                 {offer.extra_charges && offer.extra_charges.length > 0 && (
                                   <div className="text-[10px] text-amber-600"
-                                    title={offer.extra_charges.map((e: any) => `${e.label}: ${Number(e.amount).toLocaleString('en-US')} ر.س`).join('  •  ')}>
-                                    {locale === 'en' ? 'incl. ' : 'شامل '}
-                                    {offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US')} {locale === 'en' ? 'extras' : 'إضافات'} ⓘ
+                                    title={offer.extra_charges.map((e: any) => `${e.label}: ${Number(e.amount).toLocaleString('en-US')} ${SAR}`).join('  •  ')}>
+                                    {L('incl. ', 'شامل ', 'شامل ')}
+                                    {offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US')} {L('extras', 'اضافی', 'إضافات')} ⓘ
                                   </div>
                                 )}
                               </div>
@@ -342,7 +344,7 @@ export default function ProjectResultsPage() {
                                 <button onClick={() => acceptOffer(offer.id, item.rfq_id, item.id)}
                                   className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white transition-all hover:shadow"
                                   style={{ background: '#0F6E56' }}>
-                                  {locale === 'en' ? 'Accept' : 'قبول'}
+                                  {L('Accept', 'قبول کریں', 'قبول')}
                                 </button>
                               )}
                             </div>
@@ -357,14 +359,14 @@ export default function ProjectResultsPage() {
                       <button onClick={() => setShowAllOffers((prev: any) => ({ ...prev, [item.id]: !showAll }))}
                         className="mt-2 text-xs font-semibold w-full text-center py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
                         {showAll
-                          ? (locale === 'en' ? `▲ Show top 3 only` : '▲ عرض أفضل 3 فقط')
-                          : (locale === 'en' ? `▼ Show all ${offers.length} offers` : `▼ عرض كل ${offers.length} عرض`)}
+                          ? (L(`▲ Show top 3 only`, `▲ صرف بہترین 3 دکھائیں`, '▲ عرض أفضل 3 فقط'))
+                          : (L(`▼ Show all ${offers.length} offers`, `▼ تمام ${offers.length} پیشکشیں دکھائیں`, `▼ عرض كل ${offers.length} عرض`))}
                       </button>
                     )}
                   </div>
                 ) : (
                   <div className="p-4 text-center text-sm text-gray-400">
-                    <Glyph e="⏳" /> {locale === 'en' ? 'Waiting for offers...' : 'في انتظار العروض...'}
+                    <Glyph e="⏳" /> {L('Waiting for offers...', 'پیشکشوں کا انتظار ہے...', 'في انتظار العروض...')}
                   </div>
                 )}
               </div>
@@ -377,7 +379,7 @@ export default function ProjectResultsPage() {
         {acceptedItems > 0 && (
           <div className="mt-5 bg-emerald-50 rounded-2xl p-5 border border-emerald-200">
             <h3 className="font-bold text-emerald-800 mb-3">
-              <Glyph e="📊" /> {locale === 'en' ? 'Project Cost Summary' : 'ملخص تكلفة المشروع'}
+              <Glyph e="📊" /> {L('Project Cost Summary', 'پراجیکٹ کی لاگت کا خلاصہ', 'ملخص تكلفة المشروع')}
             </h3>
             <div className="space-y-2">
               {items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).map((item: any) => {
@@ -385,13 +387,13 @@ export default function ProjectResultsPage() {
                 return (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-gray-600 truncate ml-4">{getProductLabel(item.product_name, locale)}</span>
-                    <span className="font-semibold text-emerald-700 flex-shrink-0">{acc.total_price?.toLocaleString('en-US')} ر.س</span>
+                    <span className="font-semibold text-emerald-700 flex-shrink-0">{acc.total_price?.toLocaleString('en-US')} {SAR}</span>
                   </div>
                 )
               })}
               <div className="border-t border-emerald-200 pt-2 flex justify-between font-bold">
-                <span style={{ color: '#0B2438' }}>{locale === 'en' ? 'Total' : 'الإجمالي'}</span>
-                <span style={{ color: '#9D7425' }}>{totalAcceptedCost.toLocaleString('en-US')} ر.س</span>
+                <span style={{ color: '#0B2438' }}>{L('Total', 'کل', 'الإجمالي')}</span>
+                <span style={{ color: '#8F6820' }}>{totalAcceptedCost.toLocaleString('en-US')} {SAR}</span>
               </div>
             </div>
           </div>

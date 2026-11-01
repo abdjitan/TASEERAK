@@ -14,7 +14,7 @@ import { pendingTeamInvite } from '@/lib/sellers'
 import { captureRef } from '@/lib/referral'
 
 const txt = {
-  ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساب جديد', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد لمواد البناء', s_auth:'جارٍ تسجيل الدخول…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'جارٍ فتح حسابك…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، يتنافس عليه أفضل الموردين.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'يظهر توثيق كل مورد وتقييمات المشترين له', l2:'قارن العروض واختر الأرخص لكل مادة', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (أنا لست روبوت) ثم إعادة المحاولة.' },
+  ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساباً جديداً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© ٢٠٢٦ تسعيرك · منصة التسعير والتوريد لمواد البناء', s_auth:'جارٍ تسجيل الدخول…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'جارٍ فتح حسابك…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، يتنافس عليه أفضل الموردين.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'يظهر توثيق كل مورد وتقييمات المشترين له', l2:'قارن العروض واختر الأرخص لكل مادة', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.' },
   en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Procurement platform for construction materials', s_auth:'Signing in…', s_role:'Step 2/3: reading your role…', s_go:'Opening your account…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, competed for by the best suppliers.', brandP:'Sign in and track your RFQs and offers in one place — from request to purchase order.', l1:'See each supplier’s verification and buyer ratings', l2:'Compare offers and pick the cheapest per item', l3:'Upload a BOQ and auto-route it', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home', captchaErr:'Please complete the “I am human” check and try again.' },
   ur: { welcome:'خوش آمدید', sub:'اپنے اکاؤنٹ تک جاری رکھنے کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'نیا اکاؤنٹ بنائیں', error:'غلط ای میل یا پاسورڈ', copyright:'© ۲۰۲۶ تسعیرک · تعمیراتی سامان کا پلیٹ فارم', s_auth:'سائن ان ہو رہا ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'آپ کا اکاؤنٹ کھل رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔', brandH:'ایک درخواست، بہترین سپلائرز کا مقابلہ۔', brandP:'سائن ان کریں اور اپنی درخواستیں اور پیشکشیں ایک جگہ دیکھیں۔', l1:'ہر سپلائر کی تصدیق اور ریٹنگ دیکھیں', l2:'آفرز کا موازنہ کریں، ہر چیز کی سستی قیمت چنیں', l3:'BOQ اپ لوڈ کریں اور خودکار تقسیم', remember:'مجھے یاد رکھیں', forgot:'پاسورڈ بھول گئے؟', or:'یا', home:'ہوم', captchaErr:'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔' },
 }
@@ -147,7 +147,7 @@ function LoginForm() {
         </div>
         <div className="relative z-10 flex items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-brand-lockup" />
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-brand-lockup" />
         </div>
         <div className="relative z-10 max-w-md">
           <h2 className="text-3xl xl:text-[40px] font-extrabold leading-[1.25] mb-4">{t.brandH}</h2>
@@ -179,7 +179,7 @@ function LoginForm() {
           <div className="auth-form-card w-full max-w-[480px] animate-slide-up">
             <div className="flex lg:hidden items-center justify-center mb-7">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="auth-mobile-lockup" />
+              <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
             </div>
 
             <h1 className="text-[26px] font-extrabold text-navy mb-1">{mode === 'phone' ? L('Sign in or create an account', 'سائن اِن کریں یا اکاؤنٹ بنائیں', 'ادخل أو أنشئ حسابك') : t.welcome}</h1>
@@ -202,8 +202,9 @@ function LoginForm() {
                     <label htmlFor="login-password" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.password}</label>
                     <div className="relative">
                       <input id="login-password" type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="input-field pe-11" placeholder="••••••••" autoComplete="current-password" required disabled={loading} />
-                      <button type="button" onClick={() => setShowPass(s => !s)} aria-label="إظهار كلمة المرور"
-                        className="absolute inset-y-0 end-3 my-auto h-5 w-5 text-ink-3 hover:text-orange-dark transition-colors">
+                      <button type="button" onClick={() => setShowPass(s => !s)} aria-pressed={showPass}
+                        aria-label={showPass ? L('Hide password', 'پاسورڈ چھپائیں', 'إخفاء كلمة المرور') : L('Show password', 'پاسورڈ دکھائیں', 'إظهار كلمة المرور')}
+                        className="absolute inset-y-0 end-1 my-auto h-10 w-10 grid place-items-center rounded-lg text-ink-3 hover:text-orange-dark transition-colors">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
                       </button>
                     </div>

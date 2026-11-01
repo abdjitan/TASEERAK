@@ -15,7 +15,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
   const router = useRouter()
   // in the reader's language (review 2026-10-28: the bell was Arabic only); notification texts are
   // written in Arabic by the database and shown translated for English/Urdu readers
-  const { locale } = useTranslation()
+  const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   useEffect(() => {
@@ -29,17 +29,17 @@ export default function NotificationBell({ userId }: { userId?: string }) {
       <button onClick={() => setOpen(!open)} className="relative p-2 rounded-lg hover:bg-gray-100 transition-all" aria-label={L('Notifications', 'اطلاعات', 'الإشعارات')}>
         <span className="text-lg"><Glyph e="🔔" /></span>
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -left-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+          <span className="absolute -top-0.5 -end-0.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute left-0 mt-2 w-80 max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden" dir="rtl">
+        <div className="absolute end-0 mt-2 w-80 max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden" dir={dir}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{L('Notifications', 'اطلاعات', 'الإشعارات')}</span>
-            {unreadCount > 0 && <button onClick={markAllAsRead} className="text-xs text-[#9D7425] hover:underline">{L('Mark all as read', 'سب کو پڑھا ہوا کریں', 'تعليم الكل كمقروء')}</button>}
+            {unreadCount > 0 && <button onClick={markAllAsRead} className="text-xs text-[#8F6820] hover:underline">{L('Mark all as read', 'سب کو پڑھا ہوا کریں', 'تعليم الكل كمقروء')}</button>}
           </div>
           <div className="max-h-96 overflow-y-auto">
             {notifications.length === 0 ? (
@@ -47,7 +47,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
             ) : notifications.map((n: any) => (
               <button key={n.id}
                 onClick={() => { markAsRead(n.id); const url = n.data?.url; setOpen(false); if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') && !url.includes('\\')) router.push(url) }}
-                className={`w-full text-right px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-all ${n.is_read ? '' : 'bg-[#D4A543]/10'}`}>
+                className={`w-full text-start px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-all ${n.is_read ? '' : 'bg-[#D4A543]/10'}`}>
                 <div className="flex items-start gap-2">
                   {!n.is_read && <span className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />}
                   <div className="min-w-0 flex-1">
@@ -60,7 +60,7 @@ export default function NotificationBell({ userId }: { userId?: string }) {
             ))}
           </div>
           <button onClick={() => { setOpen(false); router.push('/notifications') }}
-            className="w-full text-center text-xs font-bold text-[#9D7425] py-2.5 border-t border-gray-100 hover:bg-gray-50">
+            className="w-full text-center text-xs font-bold text-[#8F6820] py-2.5 border-t border-gray-100 hover:bg-gray-50">
             {L('See all notifications →', 'تمام اطلاعات دیکھیں ←', 'عرض كل الإشعارات ←')}
           </button>
         </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteUser } from '@/lib/supabase/server'
-import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
+import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiJson } from '@/lib/ai'
 import { suggestCatalog } from '@/lib/catalogSuggest'
 import { ensureLearnedSynonyms } from '@/lib/learnedServer'
@@ -104,7 +104,8 @@ export async function POST(req: NextRequest) {
   const text = String(body?.text || '').slice(0, MAX_TEXT).trim()
   if (!text) return NextResponse.json({ items: [] })
 
-  const ai = await aiJson<{ items: any[] }>({
+  // ceiling across all users per day: over it, the list is still read by the rule-based parser
+  const ai = await overGlobalDailyLimit('quick-parse', 2000) ? null : await aiJson<{ items: any[] }>({
     system: SYSTEM,
     user: `<list>\n${text}\n</list>`,
     schema: SCHEMA,

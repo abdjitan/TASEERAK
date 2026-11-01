@@ -115,7 +115,7 @@ export default function AdminInvitesPage() {
                   </button>
                   {c.stage === 'escalated' && (
                     <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-[#D4A543] bg-[#FBF5E6] px-3 py-2 text-sm">
-                      <span className="font-bold text-[#9D7425]">سبب التحويل:</span>
+                      <span className="font-bold text-[#8F6820]">سبب التحويل:</span>
                       <span className="text-gray-700">{c.escalation_reason || 'حوّلها الرد الآلي إليك'}</span>
                       <a href={`https://wa.me/${c.phone}`} target="_blank" rel="noopener noreferrer" className="ms-auto rounded-lg px-3 py-1 text-xs font-bold text-[#071827]" style={{ background: '#D4A543' }}>افتح المحادثة في واتساب</a>
                     </div>

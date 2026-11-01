@@ -74,25 +74,54 @@ Deno.serve(async (req) => {
       } catch (_) { /* app push best-effort */ }
     }
 
-    // ── Email (best-effort; activates once notify_config.resend_api_key is set) ──
-    if (cfg.resend_api_key) {
+    // ── Email (ops audit 2026-11-01): only what people want by email, spaced out, never when they
+    // switched it off (profiles.email_notifications). Chat messages become one «لديك رسائل جديدة»
+    // (never the text: it can carry contact details); team copies and admin alerts are not emailed.
+    if (cfg.resend_api_key && !(n.data && (n.data.team_copy || n.data.uncovered))) {
       try {
-        const { data: au } = await supabase.auth.admin.getUserById(n.user_id)
-        const to = au?.user?.email
-        if (to && !to.endsWith('@deleted.invalid')) {
-          const res = await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${cfg.resend_api_key}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: `تسعيرك <${cfg.from_email || 'no-reply@taseerak.com'}>`,
-              to,
-              subject: n.title,
-              html: `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;max-width:520px;margin:auto"><h2 style="color:#0B2438">${escapeHtml(n.title)}</h2><p style="color:#444">${escapeHtml(n.body || '')}</p><a href="${Deno.env.get('SITE_URL') || 'https://taseerak.vercel.app'}${url}" style="display:inline-block;background:#D4A543;color:#071827;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:bold">افتح تسعيرك</a></div>`,
-            }),
-          })
-          emailed = res.ok
+        // type → minimum minutes between two emails of that kind to the same person
+        const GAP: Record<string, number> = {
+          new_rfq: 60, rfq_offer: 30, new_message: 180, offer_accepted: 0, offer_rejected: 0, rfq_expiring: 0,
+          reminder_deliver: 0, reminder_receipt: 0, account_verified: 0, verification_rejected: 0, cr_claim: 0,
         }
-      } catch (_) { /* email best-effort */ }
+        const gap = GAP[n.type]
+        const { data: prof } = gap === undefined ? { data: null as any }
+          : await supabase.from('profiles').select('email_notifications, preferred_language').eq('id', n.user_id).maybeSingle()
+        if (prof && prof.email_notifications !== false) {
+          const { data: last } = await supabase.from('email_sends').select('sent_at').eq('user_id', n.user_id).eq('kind', n.type).maybeSingle()
+          const due = !last || gap === 0 || (Date.now() - new Date(last.sent_at).getTime()) >= gap * 60000
+          const { data: au } = due ? await supabase.auth.admin.getUserById(n.user_id) : { data: null as any }
+          const to = au?.user?.email
+          if (due && to && !to.endsWith('@deleted.invalid')) {
+            const lang = prof.preferred_language === 'en' ? 'en' : prof.preferred_language === 'ur' ? 'ur' : 'ar'
+            const T = (en: string, ur: string, ar: string) => (lang === 'en' ? en : lang === 'ur' ? ur : ar)
+            const site = Deno.env.get('SITE_URL') || 'https://taseerak.vercel.app'
+            const settings = `${site}/settings`
+            const isMsg = n.type === 'new_message'
+            const title: string = isMsg ? T('You have new messages on Taseerak', 'تسعیرک پر آپ کے نئے پیغامات ہیں', 'لديك رسائل جديدة في تسعيرك') : n.title
+            const body: string = isMsg ? T('Open Taseerak to read and reply.', 'پڑھنے اور جواب دینے کے لیے تسعیرک کھولیں۔', 'افتح تسعيرك لقراءتها والرد عليها.') : (n.body || '')
+            const open = T('Open Taseerak', 'تسعیرک کھولیں', 'افتح تسعيرك')
+            const stop = T('Stop these emails', 'یہ ای میلز بند کریں', 'إيقاف هذه الرسائل')
+            const res = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${cfg.resend_api_key}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: `تسعيرك <${cfg.from_email || 'no-reply@taseerak.com'}>`,
+                to,
+                subject: title,
+                headers: { 'List-Unsubscribe': `<${settings}>` },
+                text: `${title}\n\n${body}\n\n${open}: ${site}${url}\n\n${stop}: ${settings}`,
+                html: `<div dir="${lang === 'en' ? 'ltr' : 'rtl'}" style="font-family:Tahoma,Arial,sans-serif;max-width:520px;margin:auto"><h2 style="color:#0B2438">${escapeHtml(title)}</h2><p style="color:#444">${escapeHtml(body)}</p><a href="${site}${url}" style="display:inline-block;background:#D4A543;color:#071827;padding:10px 18px;border-radius:10px;text-decoration:none;font-weight:bold">${open}</a><p style="margin-top:28px;font-size:12px"><a href="${settings}" style="color:#999">${stop}</a></p></div>`,
+              }),
+            })
+            emailed = res.ok
+            if (res.ok) await supabase.from('email_sends').upsert({ user_id: n.user_id, kind: n.type, sent_at: new Date().toISOString() })
+            else await supabase.from('system_errors_log').insert({ context: 'notify:email', message: `${res.status} ${(await res.text().catch(() => '')).slice(0, 400)}`, user_id: n.user_id })
+          }
+        }
+      } catch (e: any) {
+        try { await supabase.from('system_errors_log').insert({ context: 'notify:email', message: String(e?.message || e).slice(0, 500), user_id: n.user_id }) } catch (_) { /* ignore */ }
+      }
     }
 
     return json({ ok: true, sent, removed, appSent, appRemoved, emailed }, 200)

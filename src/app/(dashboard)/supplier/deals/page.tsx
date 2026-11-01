@@ -10,6 +10,7 @@ import { getNav } from '@/lib/nav'
 import { dealStage } from '@/lib/dealStage'
 import { rfqDisplayName } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
+import { arCount } from '@/lib/text'
 
 // «صفقاتي» للمورّد — الصفقات المُرساة عليه (عروضه المقبولة) مع مرحلتها، وترتبط بصفحة إدارة
 // الصفقة (حماية الصفقة: تسليم/استلام/دفع). الهوية تُكشف بعد الترسية فقط.
@@ -77,7 +78,7 @@ export default function SupplierDealsPage() {
               className={`px-3 py-1.5 rounded-xl text-sm font-semibold border transition-all ${filter === f.k ? 'text-white border-transparent' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
               style={filter === f.k ? { background: f.k === 'disputed' ? '#DC2626' : '#0F6E56' } : {}}>{f.l}</button>
           ))}
-          <span className="text-xs text-gray-400 ms-auto">{shown.length} {locale === 'en' ? 'deals' : locale === 'ur' ? 'ڈیلز' : 'صفقة'}</span>
+          <span className="text-xs text-gray-400 ms-auto">{locale === 'en' ? `${shown.length} deals` : locale === 'ur' ? `${shown.length} ڈیلز` : shown.length === 0 ? 'لا صفقات' : arCount(shown.length, 'صفقة واحدة', 'صفقتان', 'صفقات', 'صفقة')}</span>
         </div>
 
         {shown.length === 0 ? (

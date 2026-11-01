@@ -136,6 +136,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // 1.2) Own CR only (audit: any signed-in user could look up any company). The settings page
+    // sends the CR saved on the profile; the mobile documents screen may check a CR before it is
+    // saved, so an empty profile CR is still allowed (logged). Admins may look up any CR.
+    const { data: me } = await rl.from('profiles').select('role, commercial_registration').eq('id', user.id).single()
+    const ownCr = String(me?.commercial_registration || '').replace(/\D/g, '')
+    if (me?.role !== 'admin' && ownCr && ownCr !== cr) {
+      return NextResponse.json({ ok: false, error: 'FORBIDDEN', message: 'يمكنك التحقق من سجلّك التجاري المسجّل في حسابك فقط.' }, { status: 403 })
+    }
+    if (me?.role !== 'admin' && !ownCr) console.warn('verify-cr: lookup before a CR is saved on the profile', user.id)
+
     // 1.5) DEMO MODE (set WATHQ_DEMO=1) — fake data, no subscription needed
     const DEMO = process.env.WATHQ_DEMO === '1' || process.env.WATHQ_DEMO === 'true'
     if (!WATHQ_LIVE && DEMO) {
@@ -202,7 +212,7 @@ export async function POST(req: NextRequest) {
     let nameEn: string | null = null
     try {
       const enRes = await fetch(`${WATHQ_BASE}${WATHQ_CR_PATH}${cr}?language=en`, {
-        headers: { apiKey: WATHQ_KEY, Accept: 'application/json' }, cache: 'no-store',
+        headers: { apiKey: WATHQ_KEY, Accept: 'application/json' }, cache: 'no-store', signal: AbortSignal.timeout(8000),
       })
       if (enRes.ok) { const ej: any = await enRes.json(); if (ej?.name && /[A-Za-z]/.test(ej.name)) nameEn = ej.name }
     } catch {}

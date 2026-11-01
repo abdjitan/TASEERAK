@@ -73,7 +73,7 @@ export default function MarketHero({ locale }: { locale: string }) {
         </div>
         <div className="relative z-20 mt-5">
         <form onSubmit={go} className="flex items-center gap-2 rounded-2xl bg-white p-1.5 shadow-lg" role="search">
-          <Search className="w-5 h-5 text-[#9D7425] shrink-0 ms-3" aria-hidden />
+          <Search className="w-5 h-5 text-[#8F6820] shrink-0 ms-3" aria-hidden />
           <input value={q} onChange={e => { setQ(e.target.value); setOpen(true); setActive(-1) }}
             onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 150)} onKeyDown={onKey}
             role="combobox" aria-expanded={showList} aria-controls="hero-suggest" aria-autocomplete="list" autoComplete="off"
@@ -83,7 +83,7 @@ export default function MarketHero({ locale }: { locale: string }) {
           {/* owner 2026-10-24: one main button below; the photo is a camera inside the search (like a lens) */}
           <Link href="/contractor/rfq/quick?start=photo" title={touch ? L('Take or upload a photo of your product', 'تصویر لیں یا اپلوڈ کریں', 'صوّر منتجك أو ارفع صورته') : L('Search by a photo of your product', 'تصویر سے تلاش کریں', 'ابحث بصورة منتجك')}
             aria-label={touch ? L('Take or upload a photo of your product', 'تصویر لیں یا اپلوڈ کریں', 'صوّر منتجك أو ارفع صورته') : L('Search by a photo of your product', 'تصویر سے تلاش کریں', 'ابحث بصورة منتجك')}
-            className="shrink-0 grid place-items-center w-11 h-11 rounded-xl text-[#9D7425] hover:bg-[#F7F1E3] transition-colors">
+            className="shrink-0 grid place-items-center w-11 h-11 rounded-xl text-[#8F6820] hover:bg-[#F7F1E3] transition-colors">
             <Camera className="w-5 h-5" aria-hidden />
           </Link>
           <button type="submit" className="shrink-0 rounded-xl px-4 sm:px-6 py-2.5 text-sm font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
@@ -96,7 +96,7 @@ export default function MarketHero({ locale }: { locale: string }) {
               <li key={h.name} id={`hero-suggest-${i}`} role="option" aria-selected={i === active}>
                 <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => open_(h.name)} onMouseEnter={() => setActive(i)}
                   className={`flex w-full items-center gap-3 px-4 py-2.5 text-start text-[15px] ${i === active ? 'bg-[#F7F1E3]' : 'hover:bg-[#F7F1E3]'}`}>
-                  <Search className="w-4 h-4 text-[#9D7425] shrink-0" aria-hidden />
+                  <Search className="w-4 h-4 text-[#8F6820] shrink-0" aria-hidden />
                   <span className="truncate">{getProductLabel(h.name, locale)}</span>
                 </button>
               </li>
@@ -140,7 +140,7 @@ export default function MarketHero({ locale }: { locale: string }) {
           <h3 className="text-lg font-extrabold text-[#0B2438]">{L('Start with what you need', 'جو چاہیے وہاں سے شروع کریں', 'ابدأ من الشيء الذي تحتاجه')}</h3>
           <p className="text-xs text-[#48596E]">{L('For your home, a renovation or a whole project', 'گھر، مرمت یا پورے پراجیکٹ کے لیے', 'للبيت أو التجديد أو مشروع كامل')}</p>
         </div>
-        <Link href="/contractor/rfq/quick" className="text-sm font-bold text-[#9D7425] hover:underline whitespace-nowrap">{L('All categories', 'تمام زمرے', 'كل التصنيفات')} ←</Link>
+        <Link href="/contractor/rfq/quick" className="text-sm font-bold text-[#8F6820] hover:underline whitespace-nowrap">{L('All categories', 'تمام زمرے', 'كل التصنيفات')} ←</Link>
       </div>
       <div className="mt-3 grid grid-cols-3 lg:grid-cols-9 gap-2 sm:gap-3">
         {CATS.map(c => (

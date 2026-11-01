@@ -6,7 +6,7 @@ module.exports = {
       colors: {
         // Brand (matches the new design system tokens)
         navy: { DEFAULT: '#0B2438', dark: '#071827', deep: '#050B12', soft: '#102E45', light: '#102E45' },
-        orange: { DEFAULT: '#D4A543', dark: '#9D7425', soft: '#F5C55B', light: '#FFCF70' },
+        orange: { DEFAULT: '#D4A543', dark: '#8F6820', soft: '#F5C55B', light: '#FFCF70' },
         // Cool-tinted neutrals
         ink: { DEFAULT: '#10243B', 2: '#48596E', 3: '#728196' },
         line: '#D9E0E8',

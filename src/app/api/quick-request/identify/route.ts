@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
-import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
+import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiVisionJson, aiWebJson, AI_VISION_ENABLED } from '@/lib/ai'
 import { suggestCatalog } from '@/lib/catalogSuggest'
 import { ensureLearnedSynonyms } from '@/lib/learnedServer'
@@ -61,6 +61,8 @@ export async function POST(req: NextRequest) {
   if (!mime) return NextResponse.json({ error: 'bad_type' }, { status: 400 })
 
   if (!AI_VISION_ENABLED) return NextResponse.json({ suggestion: null, ai: false })
+  // ceiling across all users per day, so many accounts together can't run up the AI bill
+  if (await overGlobalDailyLimit('quick-identify', 800)) return NextResponse.json({ error: RATE_LIMITED_AR, error_en: 'Too many requests right now, please try again later.' }, { status: 429 })
 
   const r = await aiVisionJson<any>({
     system: SYSTEM,

@@ -66,7 +66,7 @@ export default function AutoTr({ text, locale, className }: { text: string | nul
     <span className={className} dir="auto">
       {orig ? src : tr}{' '}
       <button type="button" onClick={e => { e.preventDefault(); e.stopPropagation(); setOrig(o => !o) }}
-        className="text-[10px] font-bold text-[#9D7425] hover:underline align-middle whitespace-nowrap">
+        className="text-[10px] font-bold text-[#8F6820] hover:underline align-middle whitespace-nowrap">
         {orig ? L('Translation', 'ترجمہ', 'الترجمة') : L('Translated · original', 'ترجمہ · اصل', 'مترجم · الأصل')}
       </button>
     </span>

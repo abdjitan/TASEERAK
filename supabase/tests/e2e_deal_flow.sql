@@ -278,5 +278,59 @@ begin
      and (item_prices->0->>'unit_price')::numeric = 20;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL reduction did not rescale item prices'; end if;
 
+  -- 13. audit 2026-11-01 (migration 183)
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  -- terms frozen once offers exist
+  begin
+    update rfqs set region = 'مكة المكرمة', city = 'جدة' where id = v_rfq;
+    bad := bad + 1; log := log || ' FAIL terms changed after pricing';
+  exception when others then ok := ok + 1; end;
+  -- a request with a selection can't be cancelled
+  perform public.award_rfq_item(v_rfq, 0, v_offer);
+  begin
+    update rfqs set status = 'cancelled' where id = v_rfq;
+    bad := bad + 1; log := log || ' FAIL cancelled a request with a selection';
+  exception when others then ok := ok + 1; end;
+  -- rejecting the offer drops its selection
+  update offers set status = 'rejected' where id = v_offer;
+  reset role;
+  select count(*) into n from rfq_item_awards where offer_id = v_offer;
+  if n = 0 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL rejected offer kept its selection'; end if;
+  -- verified-only / supplier-type targeting enforced on the offer
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city, expires_at, status, verified_only, target_tiers)
+  values (buyer, 'civil', 'أسمنت', array['civil'],
+          '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":10,"unit":"كيس"}]'::jsonb,
+          10, 'كيس', 'الرياض', 'الرياض', now() + interval '2 days', 'open', true, array['company'])
+  returning id into v_rfq;
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  begin
+    insert into offers (rfq_id, supplier_id, total_price, source_type) values (v_rfq, sup, 250, 'shop');
+    bad := bad + 1; log := log || ' FAIL shop quoted on a verified-companies-only request';
+  exception when others then ok := ok + 1; end;
+  -- the employee answers an info request and cancels for the company (acting_uid)
+  perform set_config('request.jwt.claims', json_build_object('sub', company, 'role', 'authenticated')::text, true);
+  insert into offers (rfq_id, supplier_id, total_price, source_type, item_prices)
+  values (v_rfq, company, 240, 'own_stock', '[{"item_index":0,"product_name":"أسمنت","quantity":10,"unit":"كيس","unit_price":24,"total":240}]'::jsonb)
+  returning id into v_offer2;
+  perform set_config('request.jwt.claims', json_build_object('sub', emp, 'role', 'authenticated')::text, true);
+  begin
+    perform public.respond_offer_info(v_offer2, 'متوفر في المستودع');
+    ok := ok + 1;
+  exception when others then bad := bad + 1; log := log || ' FAIL employee reply: ' || sqlerrm; end;
+  -- the buyer confirms receipt even if the supplier never pressed «تأكيد التسليم»
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  perform public.award_rfq_item(v_rfq, 0, v_offer2);
+  perform public.finalize_rfq_awards(v_rfq);
+  begin
+    perform public.confirm_receipt(v_offer2);
+    ok := ok + 1;
+  exception when others then bad := bad + 1; log := log || ' FAIL receipt before delivery click: ' || sqlerrm; end;
+  reset role;
+  select count(*) into n from offers where id = v_offer2 and received_at is not null and supplier_delivered_at is not null;
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL receipt did not record delivery'; end if;
+
   raise exception 'E2E: % passed, % failed |%', ok, bad, log;
 end $$;

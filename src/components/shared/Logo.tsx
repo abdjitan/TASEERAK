@@ -27,7 +27,7 @@ export default function Logo({
   const isArabic = locale === 'ar'
 
   const Icon = () => (
-    <img src={src} alt="تسعيرك" width={s.icon} height={s.icon}
+    <img src={src} alt="تسعيرك — Taseerak" width={s.icon} height={s.icon}
       style={{ objectFit: 'contain', display: 'block' }} />
   )
 

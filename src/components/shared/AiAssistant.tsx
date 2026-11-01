@@ -19,7 +19,7 @@ export default function AiAssistant() {
     ? { title: 'Taseerak Assistant', ph: 'Ask me anything…', hi: 'Hi! How can I help with your procurement today?', send: 'Send' }
     : locale === 'ur'
     ? { title: 'تسعیرک اسسٹنٹ', ph: 'کچھ پوچھیں…', hi: 'سلام! آج آپ کی خریداری میں کیسے مدد کروں؟', send: 'بھیجیں' }
-    : { title: 'مساعد تسعيرك', ph: 'اسألني أي شيء…', hi: 'أهلاً! كيف أقدر أساعدك في مشترياتك اليوم؟', send: 'إرسال' }
+    : { title: 'مساعد تسعيرك', ph: 'اسألني أي شيء…', hi: 'أهلاً! كيف يمكنني مساعدتك في مشترياتك اليوم؟', send: 'إرسال' }
 
   async function send() {
     const text = input.trim()
@@ -34,7 +34,7 @@ export default function AiAssistant() {
       const d = await res.json()
       setMsgs([...next, { role: 'assistant', content: d.reply || '…' }])
     } catch {
-      setMsgs([...next, { role: 'assistant', content: 'تعذّر الاتصال، حاول مجدداً.' }])
+      setMsgs([...next, { role: 'assistant', content: locale === 'en' ? 'Could not connect — please try again.' : locale === 'ur' ? 'رابطہ نہیں ہو سکا، دوبارہ کوشش کریں۔' : 'تعذّر الاتصال، حاول مجدداً.' }])
     } finally { setLoading(false) }
   }
 
@@ -57,7 +57,7 @@ export default function AiAssistant() {
           <div className="px-4 py-3 text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
             <span className="text-lg"><Glyph e="✨" /></span>
             <span className="font-bold text-sm flex-1">{T.title}</span>
-            <button onClick={() => setOpen(false)} className="text-white/80 hover:text-white text-lg leading-none">✕</button>
+            <button onClick={() => setOpen(false)} aria-label={locale === 'en' ? 'Close' : locale === 'ur' ? 'بند کریں' : 'إغلاق'} className="text-white/80 hover:text-white text-lg leading-none">✕</button>
           </div>
 
           {/* الرسائل */}
@@ -92,7 +92,7 @@ export default function AiAssistant() {
               placeholder={T.ph}
               className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-[#7C3AED] max-h-28" />
             <button onClick={send} disabled={loading || !input.trim()}
-              className="shrink-0 w-10 h-10 rounded-xl grid place-items-center text-white disabled:opacity-50"
+              className="shrink-0 w-10 h-10 rounded-xl grid place-items-center text-[#071827] disabled:opacity-50"
               style={{ background: '#D4A543' }} aria-label={T.send}>➤</button>
           </div>
         </div>

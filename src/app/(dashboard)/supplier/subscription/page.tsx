@@ -73,7 +73,7 @@ export default function SubscriptionPage() {
               {p.featured && <span className="self-start text-[10px] font-extrabold text-[#071827] px-2.5 py-1 rounded-full mb-2" style={{ background: '#D4A543' }}>{locale === 'en' ? 'Most popular' : 'الأكثر ملاءمة'}</span>}
               <div className="text-xs text-gray-400">{p.tagline}</div>
               <div className="text-lg font-extrabold mt-0.5" style={{ color: '#0B2438' }}>{p.name}</div>
-              <div className="text-sm font-extrabold my-2" style={{ color: '#9D7425' }}>{p.price}</div>
+              <div className="text-sm font-extrabold my-2" style={{ color: '#8F6820' }}>{p.price}</div>
               <ul className="space-y-1.5 text-sm text-gray-600 flex-1 mt-1">
                 {p.benefits.map((b) => <li key={b} className="flex gap-2"><span className="text-[#0F6E56] font-bold shrink-0">✓</span><span>{b}</span></li>)}
               </ul>

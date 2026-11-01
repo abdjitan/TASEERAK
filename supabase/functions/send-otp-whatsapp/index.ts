@@ -30,9 +30,11 @@ Deno.serve(async (req) => {
     return fail(401, 'bad signature')
   }
 
-  const phone = String(data?.user?.phone || '').replace(/[^0-9]/g, '')
+  const phone = String(data?.user?.phone || '').replace(/[^0-9]/g, '').replace(/^00/, '')
   const otp = String(data?.sms?.otp || '')
   if (!phone || !otp) return fail(400, 'missing phone or otp')
+  // Saudi mobile numbers only (966 5x xxx xxxx): stops cost-pumping to premium / foreign numbers.
+  if (!/^9665\d{8}$/.test(phone)) return fail(400, 'يُقبل رقم جوال سعودي فقط (يبدأ بـ 05).')
 
   const token = Deno.env.get('WHATSAPP_TOKEN')
   const phoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID')
@@ -40,13 +42,20 @@ Deno.serve(async (req) => {
   if (!token || !phoneId || !template) return fail(500, 'whatsapp not configured')
 
   // Per-number throttle: stops WhatsApp cost-pumping / spamming one number (service role is
-  // allowed any bucket in check_rate_limit).
+  // allowed any bucket in check_rate_limit), plus a ceiling across all numbers per day.
+  // Fails closed: no code is sent when the limit check errors.
   try {
     const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } })
-    const { data: allowed } = await db.rpc('check_rate_limit', { p_bucket: 'otp:' + phone, p_max: 5, p_window_seconds: 3600 })
-    if (allowed === false) return fail(429, 'طلبت رموزاً كثيرة لهذا الرقم. حاول بعد ساعة.')
+    const { data: allowed, error: rlErr } = await db.rpc('check_rate_limit', { p_bucket: 'otp:' + phone, p_max: 5, p_window_seconds: 3600 })
+    if (rlErr) throw rlErr
+    if (allowed !== true) return fail(429, 'طلبت رموزاً كثيرة لهذا الرقم. حاول بعد ساعة.')
+    const day = new Date().toISOString().slice(0, 10)
+    const { data: allowedAll, error: gErr } = await db.rpc('check_rate_limit', { p_bucket: 'otp:global:' + day, p_max: 500, p_window_seconds: 86400 })
+    if (gErr) throw gErr
+    if (allowedAll !== true) return fail(429, 'الخدمة مزدحمة حالياً. حاول لاحقاً.')
   } catch (e) {
-    console.error('otp rate limit check failed', String(e))
+    console.error('otp rate limit check failed', String((e as any)?.message || e))
+    return fail(503, 'تعذّر إرسال الرمز الآن. حاول بعد قليل.')
   }
 
   const lang = await pickLanguage(phone, data?.user?.id)

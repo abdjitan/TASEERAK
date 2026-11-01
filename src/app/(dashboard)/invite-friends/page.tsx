@@ -63,7 +63,7 @@ export default function InviteFriendsPage() {
       <div className="max-w-xl mx-auto space-y-5">
         <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100">
           <div className="flex items-start gap-3">
-            <span className="w-11 h-11 rounded-xl grid place-items-center shrink-0" style={{ background: '#D4A54322', color: '#9D7425' }}><UserPlus className="w-5 h-5" /></span>
+            <span className="w-11 h-11 rounded-xl grid place-items-center shrink-0" style={{ background: '#D4A54322', color: '#8F6820' }}><UserPlus className="w-5 h-5" /></span>
             <div>
               <h1 className="text-lg font-extrabold" style={{ color: '#0B2438' }}>{L('Invite someone you know', 'کسی جاننے والے کو دعوت دیں', 'ادعُ من تعرفه')}</h1>
               <p className="text-sm text-gray-500 mt-1 leading-relaxed">

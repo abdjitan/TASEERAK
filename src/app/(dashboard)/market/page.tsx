@@ -10,6 +10,7 @@ import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { timeAgo } from '@/lib/text'
 
 const txt = {
   ar: {
@@ -41,6 +42,7 @@ const txt = {
 export default function MarketPricePage() {
   const { locale, dir } = useTranslation()
   const T = txt[locale] || txt.ar
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   const [priceData, setPriceData] = useState<any[]>([])
   const [livePrices, setLivePrices] = useState<any[]>([])
@@ -48,18 +50,6 @@ export default function MarketPricePage() {
   const [selectedSector, setSelectedSector] = useState('all')
   const [search, setSearch] = useState('')
   const [userRole, setUserRole] = useState('')
-
-  function timeAgo(date: any) {
-    const diff = Date.now() - new Date(date).getTime()
-    const mins = Math.floor(diff / 60000)
-    const ar = locale === 'ar'
-    if (mins < 1) return ar ? 'الآن' : 'now'
-    if (mins < 60) return ar ? `قبل ${mins} دقيقة` : `${mins}m ago`
-    const hours = Math.floor(mins / 60)
-    if (hours < 24) return ar ? `قبل ${hours} ساعة` : `${hours}h ago`
-    const days = Math.floor(hours / 24)
-    return ar ? `قبل ${days} يوم` : `${days}d ago`
-  }
 
   useEffect(() => {
     async function load() {
@@ -153,7 +143,7 @@ export default function MarketPricePage() {
                           <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{p.product_name}</div>
                           <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                         </div>
-                        {p.supplier?.supplier_tier === 'manufacturer' && <span className="text-[#0B2438]" title="مصنع"><SellerIcon name="factory" /></span>}
+                        {p.supplier?.supplier_tier === 'manufacturer' && <span className="text-[#0B2438]" title={L('Factory', 'فیکٹری', 'مصنع')}><SellerIcon name="factory" /></span>}
                       </div>
                       <div className="flex items-end justify-between">
                         <div>
@@ -164,10 +154,10 @@ export default function MarketPricePage() {
                               {p.price?.toLocaleString('en-US')}
                             </span>
                           </div>
-                          <div className="text-[10px] text-gray-400">ر.س / {p.unit}{pct ? ` · ${trend === 'up' ? '+' : '-'}${pct}%` : ''}</div>
+                          <div className="text-[10px] text-gray-400">{T.sar} / {p.unit}{pct ? ` · ${trend === 'up' ? '+' : '-'}${pct}%` : ''}</div>
                         </div>
-                        <div className="text-left">
-                          <div className="text-[10px] text-gray-400"><Glyph e="🕐" /> {timeAgo(p.updated_at)}</div>
+                        <div className="text-end">
+                          <div className="text-[10px] text-gray-400"><Glyph e="🕐" /> {timeAgo(p.updated_at, locale)}</div>
                           {p.region && <div className="text-[10px] text-gray-400"><Glyph e="📍" /> {p.region}</div>}
                         </div>
                       </div>
@@ -185,12 +175,12 @@ export default function MarketPricePage() {
         {priceData.length > 0 && (
           <div className="grid grid-cols-3 gap-3 mb-6 stagger">
             {[
-              { label: locale === 'en' ? 'Materials Tracked' : 'مادة مرصودة', value: priceData.length, icon: <Glyph e="📦" />, bg: '#0B2438' },
-              { label: locale === 'en' ? 'Total Offers' : 'إجمالي العروض', value: priceData.reduce((s, p) => s + p.count, 0), icon: <Glyph e="💬" />, bg: '#D4A543' },
-              { label: locale === 'en' ? 'Sectors' : 'قطاعات', value: Object.keys(SECTOR_LABELS).length, icon: <Glyph e="🏗" />, bg: '#0F6E56' },
-            ].map(({ label, value, icon, bg }) => (
+              { label: L('Materials tracked', 'زیرِ نگرانی اشیاء', 'المواد المرصودة'), value: priceData.length, icon: <Glyph e="📦" />, bg: '#0B2438', fg: '#fff' },
+              { label: L('Total offers', 'کل آفرز', 'إجمالي العروض'), value: priceData.reduce((s, p) => s + p.count, 0), icon: <Glyph e="💬" />, bg: '#D4A543', fg: '#071827' },
+              { label: L('Sectors', 'شعبے', 'القطاعات'), value: Object.keys(SECTOR_LABELS).length, icon: <Glyph e="🏗" />, bg: '#0F6E56', fg: '#fff' },
+            ].map(({ label, value, icon, bg, fg }) => (
               <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm text-center">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg text-white mx-auto mb-2" style={{ background: bg }}>{icon}</div>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg mx-auto mb-2" style={{ background: bg, color: fg }}>{icon}</div>
                 <div className="text-2xl font-bold" style={{ color: '#0B2438' }}>{value}</div>
                 <div className="text-xs text-gray-500 mt-0.5">{label}</div>
               </div>
@@ -202,7 +192,7 @@ export default function MarketPricePage() {
         <div className="flex flex-col sm:flex-row gap-3 mb-5">
           <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
             {sectors.map(s => (
-              <button key={s} onClick={() => setSelectedSector(s)}
+              <button key={s} onClick={() => setSelectedSector(s)} aria-pressed={selectedSector === s}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
                   selectedSector === s ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'
                 }`} style={selectedSector === s ? { background: '#0B2438' } : {}}>
@@ -211,12 +201,12 @@ export default function MarketPricePage() {
             ))}
           </div>
           <input value={search} onChange={e => setSearch(e.target.value)}
-            className="input-field sm:max-w-xs text-sm" placeholder={`${locale === 'en' ? 'Search material...' : 'ابحث عن مادة...'}`} />
+            className="input-field sm:max-w-xs text-sm" type="search" placeholder={L('Search material…', 'مواد تلاش کریں…', 'ابحث عن مادة…')} aria-label={L('Search material', 'مواد تلاش کریں', 'ابحث عن مادة')} />
         </div>
 
         {/* Price Table */}
         {loading ? (
-          <div className="text-center py-20 animate-pulse text-gray-500">{locale === 'en' ? 'Loading...' : 'جارٍ التحميل...'}</div>
+          <div className="text-center py-20 animate-pulse text-gray-500">{L('Loading…', 'لوڈ ہو رہا ہے…', 'جارٍ التحميل…')}</div>
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center animate-fade-in">
             <div className="text-6xl mb-4 animate-float"><Glyph e="📊" /></div>
@@ -231,7 +221,7 @@ export default function MarketPricePage() {
                 <thead>
                   <tr className="border-b border-gray-100" style={{ background: '#0B2438' }}>
                     {[T.material, T.sector, T.unit, T.minPrice, T.avgPrice, T.maxPrice, T.offers].map(h => (
-                      <th key={h} className="text-right px-4 py-3 text-xs font-bold text-white">{h}</th>
+                      <th key={h} className="text-start px-4 py-3 text-xs font-bold text-white">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -245,7 +235,7 @@ export default function MarketPricePage() {
                       <td className="px-4 py-3 text-xs text-gray-500">{p.unit}</td>
                       <td className="px-4 py-3 text-sm text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
-                        <div className="text-base font-bold" style={{ color: '#9D7425' }}>{p.avg?.toLocaleString('en-US')} {T.sar}</div>
+                        <div className="text-base font-bold" style={{ color: '#8F6820' }}>{p.avg?.toLocaleString('en-US')} {T.sar}</div>
                       </td>
                       <td className="px-4 py-3 text-sm text-red-500 font-semibold">{p.max?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
@@ -269,8 +259,8 @@ export default function MarketPricePage() {
                       <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{p.name}</div>
                       <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                     </div>
-                    <div className="text-left">
-                      <div className="text-lg font-bold" style={{ color: '#9D7425' }}>{p.avg?.toLocaleString('en-US')}</div>
+                    <div className="text-end">
+                      <div className="text-lg font-bold" style={{ color: '#8F6820' }}>{p.avg?.toLocaleString('en-US')}</div>
                       <div className="text-[10px] text-gray-400">{T.sar} / {p.unit}</div>
                     </div>
                   </div>
@@ -280,7 +270,7 @@ export default function MarketPricePage() {
                       <div className="text-gray-400 text-[10px]">{T.minPrice}</div>
                     </div>
                     <div className="rounded-lg p-2" style={{ background: '#D4A54315' }}>
-                      <div className="font-bold" style={{ color: '#9D7425' }}>{p.avg?.toLocaleString('en-US')}</div>
+                      <div className="font-bold" style={{ color: '#8F6820' }}>{p.avg?.toLocaleString('en-US')}</div>
                       <div className="text-gray-400 text-[10px]">{T.avgPrice}</div>
                     </div>
                     <div className="bg-red-50 rounded-lg p-2">

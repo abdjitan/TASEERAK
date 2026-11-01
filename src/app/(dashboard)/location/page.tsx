@@ -11,6 +11,7 @@ import { getNav } from '@/lib/nav'
 import LocationPicker from '@/components/shared/LocationPicker'
 import { REGIONS } from '@/types'
 import Glyph from '@/components/shared/Glyph'
+import { friendlyError } from '@/lib/friendlyError'
 
 const txt = {
   ar: {
@@ -111,7 +112,7 @@ export default function LocationPage() {
       longitude: lng,
     }).eq('id', user.id)
     setSaving(false)
-    setMsg(error ? `خطأ: ${error.message}` : T.saved)
+    setMsg(error ? friendlyError(error.message, locale === 'en' ? 'Could not save, please try again.' : locale === 'ur' ? 'محفوظ نہیں ہو سکا، دوبارہ کوشش کریں۔' : 'تعذّر الحفظ، حاول مرة أخرى.', locale) : T.saved)
     setTimeout(() => setMsg(''), 6000)
   }
 
@@ -194,10 +195,10 @@ export default function LocationPage() {
         </div>
 
         {/* Save */}
-        <div className="sticky bottom-4">
+        <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4">
           {msg && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl p-3 mb-3 text-center">{msg}</div>}
           <button onClick={handleSave} disabled={saving}
-            className="w-full py-4 rounded-xl font-bold text-white text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
+            className="w-full py-4 rounded-xl font-bold text-[#071827] text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
             style={{ background: '#D4A543' }}>
             {saving ? T.saving : T.save}
           </button>

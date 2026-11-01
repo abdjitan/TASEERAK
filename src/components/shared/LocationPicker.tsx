@@ -121,7 +121,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar' }: Lo
           <div className="flex items-center justify-between mb-2">
             <div className="text-xs font-semibold text-emerald-700">✓ {T.set}</div>
             <a href={`https://www.google.com/maps?q=${lat},${lng}`} target="_blank" rel="noopener noreferrer"
-              className="text-xs font-semibold hover:underline" style={{ color: '#9D7425' }}>
+              className="text-xs font-semibold hover:underline" style={{ color: '#8F6820' }}>
               {T.openGoogle} ←
             </a>
           </div>

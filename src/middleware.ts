@@ -234,6 +234,6 @@ export const config = {
   matcher: [
     '/contractor/:path*', '/supplier/:path*', '/settings/:path*', '/admin/:path*', '/location/:path*',
     '/market/:path*', '/onboarding/:path*', '/welcome/:path*', '/messages/:path*', '/notifications/:path*',
-    '/verification/:path*', '/login', '/register',
+    '/verification/:path*', '/suggestions/:path*', '/invite-friends/:path*', '/login', '/register',
   ],
 }

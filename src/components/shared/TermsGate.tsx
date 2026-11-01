@@ -58,9 +58,9 @@ export default function TermsGate() {
           <input type="checkbox" checked={checked} onChange={(e: any) => setChecked(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#0B2438] flex-shrink-0" />
           <span>
             {L('I agree to the ', 'میں متفق ہوں ', 'أوافق على ')}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#9D7425' }}>{L('Terms', 'شرائط', 'الشروط والأحكام')}</a>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{L('Terms', 'شرائط', 'الشروط والأحكام')}</a>
             {L(' and the ', ' اور ', ' و')}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#9D7425' }}>{L('Privacy Policy', 'رازداری کی پالیسی', 'سياسة الخصوصية')}</a>
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{L('Privacy Policy', 'رازداری کی پالیسی', 'سياسة الخصوصية')}</a>
           </span>
         </label>
         <button type="button" onClick={accept} disabled={!checked || saving}

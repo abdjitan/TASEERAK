@@ -4,20 +4,29 @@
 //
 // Actions (POST JSON):
 //   { action: 'list_emails' }                              -> { emails: { [userId]: {email, phone, ...} } }
-//   { action: 'set_password', userId, newPassword }        -> { ok: true }
+//   { action: 'set_password', userId, newPassword }        -> { ok: true }   (never on an admin account)
+//   { action: 'set_banned', userId, banned }               -> { ok: true }   (blocks / restores sign-in)
+// Both write an audit_logs row. Error texts are generic; details stay in the function log.
 //
 // Deployed via the Supabase MCP. Re-deploy after editing this file.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// Browsers may call this only from the site (and local dev); the origin is echoed only when allowed.
+const ALLOWED_ORIGINS = ['https://taseerak.vercel.app', 'http://localhost:3100']
+const corsFor = (req: Request) => {
+  const origin = req.headers.get('Origin') || ''
+  return {
+    'Access-Control-Allow-Origin': ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    Vary: 'Origin',
+  }
 }
-const json = (obj: unknown, status = 200) =>
-  new Response(JSON.stringify(obj), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
 Deno.serve(async (req) => {
+  const cors = corsFor(req)
+  const json = (obj: unknown, status = 200) =>
+    new Response(JSON.stringify(obj), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
     const url = Deno.env.get('SUPABASE_URL')!
@@ -62,18 +71,41 @@ Deno.serve(async (req) => {
       return json({ emails })
     }
 
-    // Set a new password for any account.
+    const audit = (action: string, entityId: string, detail: Record<string, unknown>) =>
+      admin.from('audit_logs').insert({ actor_id: user.id, action, entity: 'profile', entity_id: entityId, detail })
+        .then(({ error }) => { if (error) console.error('audit_logs insert failed', action, error.message) })
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+    // Set a new password for a (non-admin) account.
     if (body.action === 'set_password') {
       const userId = String(body.userId || '')
       const newPassword = String(body.newPassword || '')
-      if (!userId || newPassword.length < 8) return json({ error: 'invalid input (password min 8 chars)' }, 400)
+      if (!UUID_RE.test(userId) || newPassword.length < 8) return json({ error: 'invalid input (password min 8 chars)' }, 400)
+      const { data: target } = await admin.from('profiles').select('role').eq('id', userId).maybeSingle()
+      // An admin account's password is never set from here (one admin could take over another).
+      if (target?.role === 'admin') return json({ error: 'forbidden' }, 403)
       const { error } = await admin.auth.admin.updateUserById(userId, { password: newPassword })
-      if (error) return json({ error: error.message }, 400)
+      if (error) { console.error('set_password failed', error.message); return json({ error: 'could not update the password' }, 400) }
+      await audit('admin_set_password', userId, {})
+      return json({ ok: true })
+    }
+
+    // Block / restore sign-in for an account (deactivating a user in the panel).
+    if (body.action === 'set_banned') {
+      const userId = String(body.userId || '')
+      const banned = body.banned === true
+      if (!UUID_RE.test(userId) || typeof body.banned !== 'boolean') return json({ error: 'invalid input' }, 400)
+      const { data: target } = await admin.from('profiles').select('role').eq('id', userId).maybeSingle()
+      if (userId === user.id || target?.role === 'admin') return json({ error: 'forbidden' }, 403)
+      const { error } = await admin.auth.admin.updateUserById(userId, { ban_duration: banned ? '876000h' : 'none' })
+      if (error) { console.error('set_banned failed', error.message); return json({ error: 'could not update the account' }, 400) }
+      await audit(banned ? 'admin_ban_user' : 'admin_unban_user', userId, { banned })
       return json({ ok: true })
     }
 
     return json({ error: 'unknown action' }, 400)
   } catch (e) {
-    return json({ error: String((e as Error)?.message || e) }, 500)
+    console.error('admin function error', String((e as Error)?.message || e))
+    return json({ error: 'server error' }, 500)
   }
 })

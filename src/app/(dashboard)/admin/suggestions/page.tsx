@@ -95,7 +95,7 @@ export default function AdminSuggestionsPage() {
                 <div className="min-w-0">
                   <div className="font-bold text-sm text-[#0B2438]">{g.product_name}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{g.sector || '—'} · {g.sub_category || 'بلا تخصص'} · {g.quantity ?? '—'} {g.unit || ''} · {g.rfq?.ref_no ? 'RFQ-' + g.rfq.ref_no : ''} · {formatDateTime(g.created_at)}</div>
-                  {g.photo_url && <a href={fileHref(g.photo_url)} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[#9D7425] hover:underline">صورة المادة ←</a>}
+                  {g.photo_url && <a href={fileHref(g.photo_url)} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[#8F6820] hover:underline">صورة المادة ←</a>}
                 </div>
                 <div className="flex gap-2 shrink-0">
                   {g.status === 'new' ? (<>

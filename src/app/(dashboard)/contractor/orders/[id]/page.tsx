@@ -49,33 +49,23 @@ export default function OrderDetailPage() {
       if (!offerData) { setLoading(false); return }
       setOffer(offerData)
 
-      const { data: rfqData } = await supabase
-        .from('rfqs').select('*').eq('id', offerData.rfq_id).single()
-      setRfq(rfqData)
-
-      const { data: supplierData } = await supabase
-        .from('profiles').select('*').eq('id', offerData.supplier_id).single()
-      setSupplier(supplierData)
-
-      // ترسية بند-بند: المواد المُرساة على هذا المورد في هذا الطلب
-      const { data: awardRows } = await supabase
-        .from('rfq_item_awards').select('*')
-        .eq('rfq_id', offerData.rfq_id).eq('supplier_id', offerData.supplier_id)
-        .order('item_index')
-      setAwards(awardRows || [])
-
+      // one round for everything that only needs the offer (was 6 sequential requests, ~1 s each on mobile)
+      setMyId(session.user.id)
+      const [{ data: rfqData }, { data: supplierData }, { data: awardRows }, { data: rev }] = await Promise.all([
+        supabase.from('rfqs').select('*').eq('id', offerData.rfq_id).single(),
+        supabase.from('profiles').select('*').eq('id', offerData.supplier_id).single(),
+        // ترسية بند-بند: المواد المُرساة على هذا المورد في هذا الطلب
+        supabase.from('rfq_item_awards').select('*')
+          .eq('rfq_id', offerData.rfq_id).eq('supplier_id', offerData.supplier_id).order('item_index'),
+        supabase.from('reviews').select('*').eq('offer_id', id).eq('reviewer_id', session.user.id).maybeSingle(),
+      ])
+      setRfq(rfqData); setSupplier(supplierData); setAwards(awardRows || [])
+      if (rev) setExistingReview(rev)
       if (rfqData) {
         const { data: contractorData } = await supabase
           .from('profiles').select('*').eq('id', rfqData.contractor_id).single()
         setContractor(contractorData)
       }
-
-      // current user + any existing review for this order
-      setMyId(session.user.id)
-      const { data: rev } = await supabase
-        .from('reviews').select('*')
-        .eq('offer_id', id).eq('reviewer_id', session.user.id).maybeSingle()
-      if (rev) setExistingReview(rev)
 
       setLoading(false)
     }
@@ -155,6 +145,17 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
+        {/* the deal steps (delivery, receipt, «أبلغ عن مشكلة») live on the offer page — link to them */}
+        {offer?.status === 'accepted' && rfq?.contractor_id === myId && (
+          <Link href={`/contractor/rfq/${offer.rfq_id}/offer/${offer.id}`}
+            className="print:hidden flex items-center justify-between gap-3 rounded-xl border border-[#0F6E56]/30 bg-[#0F6E56]/5 px-4 py-3 text-sm">
+            <span className="font-semibold text-[#0F6E56]"><Glyph e="🛡" /> {offer.received_at
+              ? L('Deal record: receipt confirmed. View the deal steps', 'سودے کا ریکارڈ: وصولی کی تصدیق ہو گئی۔ مراحل دیکھیں', 'سجلّ الصفقة: تم تأكيد الاستلام. اعرض مراحل الصفقة')
+              : L('Track the deal: confirm receipt or report a problem', 'سودے کی پیروی: وصولی کی تصدیق کریں یا مسئلہ رپورٹ کریں', 'متابعة الصفقة: أكّد الاستلام أو أبلغ عن مشكلة')}</span>
+            <span className="text-[#0F6E56]">{dir === 'rtl' ? '←' : '→'}</span>
+          </Link>
+        )}
+
         {/* Purchase Order Document */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-2 print:shadow-none print:border-none print:rounded-none">
 
@@ -204,7 +205,7 @@ export default function OrderDetailPage() {
               {supplier?.latitude && supplier?.longitude && (
                 <a href={`https://www.google.com/maps?q=${supplier.latitude},${supplier.longitude}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="inline-block text-xs text-[#9D7425] hover:underline mt-1 print:hidden">
+                  className="inline-block text-xs text-[#8F6820] hover:underline mt-1 print:hidden">
                   <Glyph e="🗺" /> {L('View location on map', 'نقشے پر مقام دیکھیں', 'عرض الموقع على الخريطة')} ←
                 </a>
               )}
@@ -228,7 +229,7 @@ export default function OrderDetailPage() {
               )}
               {offer?.attachment_url && (
                 <a href={fileHref(offer.attachment_url)} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#9D7425] hover:underline print:hidden">
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-[#8F6820] hover:underline print:hidden">
                   <Glyph e="📎" /> {offer.attachment_name || L('Product catalog', 'پروڈکٹ کیٹلاگ', 'كتالوج المنتج')} ←
                 </a>
               )}
@@ -256,7 +257,7 @@ export default function OrderDetailPage() {
                       <div className="font-semibold text-gray-900">{getProductLabel(it.product_name, locale)}</div>
                       {(it.specification || it.notes) && <div className="text-xs text-gray-400 mt-0.5">{it.specification || it.notes}</div>}
                       {it.attachment_url && (
-                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#9D7425] hover:underline print:hidden"><Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
+                        <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#8F6820] hover:underline print:hidden"><Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
                       )}
                     </td>
                     <td className="py-4 text-sm text-gray-600">{it.sector ? ((locale !== 'ar' && SECTOR_I18N[locale]?.[it.sector]) || (SECTOR_LABELS as any)[it.sector] || it.sector) : '—'}</td>
@@ -285,7 +286,7 @@ export default function OrderDetailPage() {
                 </>)}
                 <div className="border-t border-gray-200 pt-2 flex justify-between">
                   <span className="font-bold text-gray-900">{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span>
-                  <span className="font-bold text-[#9D7425] text-lg">{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span>
+                  <span className="font-bold text-[#8F6820] text-lg">{dealGross.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span>
                 </div>
               </div>
             </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { noEmoji, timeAgo as timeAgoText } from '@/lib/text'
+import { noEmoji, timeAgo as timeAgoText, arCount, arMaterials } from '@/lib/text'
 import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
@@ -94,6 +94,7 @@ export default function ContractorDashboard() {
   const { locale, dir } = useTranslation()
   const t = txt[locale] || txt.ar
   const sectors = (sectorLabels as any)[locale] || sectorLabels.ar
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -183,10 +184,10 @@ export default function ContractorDashboard() {
   const rfqsThisWeek = rfqs.filter((r: any) => r.created_at && (now - new Date(r.created_at).getTime()) < 7 * 864e5).length
   const awaitingReply = rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) > 0).length
   const completion = [
-    { ok: !!(profile?.region && profile?.city), label: locale === 'en' ? 'Location' : 'الموقع', href: '/settings' },
-    { ok: !!profile?.phone, label: locale === 'en' ? 'Phone' : 'رقم الجوال', href: '/settings' },
-    { ok: !!(profile?.latitude || profile?.national_short_address), label: locale === 'en' ? 'Map pin' : 'الموقع على الخريطة', href: '/location' },
-    { ok: rfqs.length > 0, label: locale === 'en' ? 'First RFQ' : 'أول طلب تسعير', href: '/contractor/rfq/quick' },
+    { ok: !!(profile?.region && profile?.city), label: L('Location', 'مقام', 'الموقع'), href: '/settings' },
+    { ok: !!profile?.phone, label: L('Phone', 'فون نمبر', 'رقم الجوال'), href: '/settings' },
+    { ok: !!(profile?.latitude || profile?.national_short_address), label: L('Map pin', 'نقشے پر مقام', 'الموقع على الخريطة'), href: '/location' },
+    { ok: rfqs.length > 0, label: L('First RFQ', 'پہلی قیمت کی درخواست', 'أول طلب تسعير'), href: '/contractor/rfq/quick' },
   ]
   const compDone = completion.filter((c: any) => c.ok).length
   const compPct = Math.round((compDone / completion.length) * 100)
@@ -205,9 +206,9 @@ export default function ContractorDashboard() {
       default: return { name: 'active', tone: 'neutral' }
     }
   }
-  const gameBadge = rfqs.length >= 10 ? { t: locale === 'en' ? 'Pro Buyer' : 'مشترٍ محترف', e: <Glyph e="🏆" /> }
-    : rfqs.length >= 3 ? { t: locale === 'en' ? 'Active Buyer' : 'مشترٍ نشط', e: <Glyph e="⭐" /> }
-    : { t: locale === 'en' ? 'Getting Started' : 'بداية موفقة', e: <Glyph e="🌱" /> }
+  const gameBadge = rfqs.length >= 10 ? { t: L('Pro Buyer', 'ماہر خریدار', 'مشترٍ محترف'), e: <Glyph e="🏆" /> }
+    : rfqs.length >= 3 ? { t: L('Active Buyer', 'فعال خریدار', 'مشترٍ نشط'), e: <Glyph e="⭐" /> }
+    : { t: L('Getting Started', 'اچھا آغاز', 'بداية موفقة'), e: <Glyph e="🌱" /> }
 
   const statusLabel = (status: any) => {
     if (status === 'open') return t.open
@@ -219,7 +220,7 @@ export default function ContractorDashboard() {
   const nav = getNav('contractor', locale, '/contractor') // the shared menu (طلباتي، صفقاتي، الرسائل…)
   const headerActions = profile?.verification_status !== 'rejected' ? (
     <>
-      {canUseProjects(profile) && <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /> {locale === 'en' ? 'Project' : 'مشروع'}</Link>}
+      {canUseProjects(profile) && <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /> {L('Project', 'پراجیکٹ', 'مشروع')}</Link>}
       <Link href="/contractor/rfq/quick" className="btn-orange text-xs px-4 py-2">{t.newRfq}</Link>
     </>
   ) : null
@@ -239,12 +240,12 @@ export default function ContractorDashboard() {
         <MarketHero locale={locale} />
         {/* أكمل ملفك — يظهر بعد التسجيل المبسّط حتى تُعبّأ البيانات */}
         {!profile?.region && (
-          <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 text-white hover:shadow-lg transition-shadow" style={{ background: 'linear-gradient(120deg,#D4A543,#9D7425)' }}>
+          <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 text-[#071827] hover:shadow-lg transition-shadow" style={{ background: 'linear-gradient(120deg,#D4A543,#8F6820)' }}>
             <div>
               <div className="font-extrabold text-sm"><Glyph e="👋" /> {locale === 'en' ? 'Complete your profile' : locale === 'ur' ? 'اپنی پروفائل مکمل کریں' : 'أكمل ملفك'}</div>
-              <div className="text-[12px] text-orange-50 mt-0.5">{locale === 'en' ? 'Add your location and sectors to get the best offers.' : locale === 'ur' ? 'بہترین آفرز کے لیے اپنا مقام اور شعبے شامل کریں۔' : 'أضف موقعك وقطاعاتك لتصلك أفضل العروض.'}</div>
+              <div className="text-[12px] text-[#071827]/80 mt-0.5">{locale === 'en' ? 'Add your location and sectors to get the best offers.' : locale === 'ur' ? 'بہترین آفرز کے لیے اپنا مقام اور شعبے شامل کریں۔' : 'أضف موقعك وقطاعاتك لتصلك أفضل العروض.'}</div>
             </div>
-            <span className="shrink-0 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5">{locale === 'en' ? 'Complete →' : 'أكمل ←'}</span>
+            <span className="shrink-0 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5">{L('Complete →', 'مکمل کریں ←', 'أكمل ←')}</span>
           </Link>
         )}
         <EnablePush variant="nudge" />
@@ -293,7 +294,7 @@ export default function ContractorDashboard() {
 
         <div className="mb-5 animate-fade-in">
           <h1 className="text-2xl font-bold" style={{ color: '#0B2438' }}>
-            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || (locale === 'en' ? 'Buyer' : 'مشترٍ')} <Glyph e="👋" />
+            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || L('Buyer', 'خریدار', 'مشترٍ')} <Glyph e="👋" />
           </h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>
@@ -316,9 +317,9 @@ export default function ContractorDashboard() {
               style={{ background: down ? '#ecfdf5' : '#fef2f2', borderColor: down ? '#a7f3d0' : '#fecaca' }}>
               <span className="text-xl">{down ? <Glyph e="📉" /> : <Glyph e="📈" />}</span>
               <span className="flex-1 text-sm font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>
-                {locale === 'en'
-                  ? `${best.name} ${down ? 'down' : 'up'} ${Math.abs(best.pct)}% vs last month`
-                  : `سعر ${best.name} ${down ? 'انخفض' : 'ارتفع'} ${Math.abs(best.pct)}% عن الشهر الماضي`}
+                {L(`${best.name} ${down ? 'down' : 'up'} ${Math.abs(best.pct)}% vs last month`,
+                  `${best.name} کی قیمت پچھلے مہینے کے مقابلے میں ${Math.abs(best.pct)}% ${down ? 'کم ہوئی' : 'بڑھی'}`,
+                  `سعر ${best.name} ${down ? 'انخفض' : 'ارتفع'} ${Math.abs(best.pct)}% مقارنةً بالشهر الماضي`)}
               </span>
               <span className="text-xs font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>←</span>
             </Link>
@@ -330,9 +331,9 @@ export default function ContractorDashboard() {
           <div className="mb-5 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2438' }}>
-                <AppIcon name="pricing" tone="warning" variant="line" size={20} /> {locale === 'en' ? 'Market pulse' : 'نبض السوق'}
+                <AppIcon name="pricing" tone="warning" variant="line" size={20} /> {L('Market pulse', 'مارکیٹ کی نبض', 'نبض السوق')}
               </h2>
-              <Link href="/market" className="text-xs font-semibold" style={{ color: '#9D7425' }}>{locale === 'en' ? 'Full index →' : 'البورصة كاملة ←'}</Link>
+              <Link href="/market" className="text-xs font-semibold" style={{ color: '#8F6820' }}>{L('Full index →', 'مکمل انڈیکس ←', 'المؤشر كاملاً ←')}</Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {marketTop.map((p: any, i: any) => (
@@ -342,17 +343,17 @@ export default function ContractorDashboard() {
                     {Math.round(Number(p.avg_price)).toLocaleString('en-US')} <span className="text-[10px] text-gray-400 font-normal">ر.س/{p.unit || ''}</span>
                   </div>
                   <div className="text-[10px] text-gray-400 mt-0.5">
-                    {Math.round(Number(p.min_price)).toLocaleString('en-US')}–{Math.round(Number(p.max_price)).toLocaleString('en-US')} · {p.offer_count} {locale === 'en' ? 'offers' : 'عرض'}
+                    {Math.round(Number(p.min_price)).toLocaleString('en-US')}–{Math.round(Number(p.max_price)).toLocaleString('en-US')} · {L(`${p.offer_count} offers`, `${p.offer_count} آفرز`, arCount(Number(p.offer_count) || 0, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}
                   </div>
                   {(() => {
                     const tr = marketTrend[`${p.product_name}|${p.sector}`]
                     if (!tr || !(Number(tr.prev_avg) > 0) || !(Number(tr.recent_avg) > 0)) return null
                     const pct = Math.round(((Number(tr.recent_avg) - Number(tr.prev_avg)) / Number(tr.prev_avg)) * 100)
-                    if (pct === 0) return <div className="text-[10px] mt-1 font-semibold text-gray-400">{locale === 'en' ? '◆ stable vs last month' : '◆ ثابت عن الشهر الماضي'}</div>
+                    if (pct === 0) return <div className="text-[10px] mt-1 font-semibold text-gray-400">{L('◆ stable vs last month', '◆ پچھلے مہینے جتنی', '◆ ثابت مقارنةً بالشهر الماضي')}</div>
                     const up = pct > 0 // ارتفاع السعر = أحمر (غير مناسب للمشتري)، انخفاض = أخضر
                     return (
                       <div className="text-[10px] mt-1 font-bold" style={{ color: up ? '#dc2626' : '#0F6E56' }}>
-                        {up ? '▲' : '▼'} {Math.abs(pct)}% {locale === 'en' ? 'vs last month' : 'عن الشهر الماضي'}
+                        {up ? '▲' : '▼'} {Math.abs(pct)}% {L('vs last month', 'پچھلے مہینے کے مقابلے میں', 'مقارنةً بالشهر الماضي')}
                       </div>
                     )
                   })()}
@@ -369,7 +370,9 @@ export default function ContractorDashboard() {
             style={{ background: 'linear-gradient(135deg,#D4A54312,#0B243808)', borderColor: '#D4A54344' }}>
             <span className="w-10 h-10 rounded-xl grid place-items-center text-[#071827] shrink-0 animate-pulse" style={{ background: '#D4A543' }}><Glyph e="🔔" /></span>
             <span className="flex-1 text-sm font-bold" style={{ color: '#0B2438' }}>
-              {awaitingReply} {locale === 'en' ? 'request(s) received new offers — compare now' : 'طلبات وصلها عروض جديدة — قارنها الآن'}
+              {L(awaitingReply === 1 ? '1 request received new offers — compare now' : `${awaitingReply} requests received new offers — compare now`,
+                `${awaitingReply} درخواستوں پر نئی آفرز آئی ہیں — ابھی موازنہ کریں`,
+                `${arCount(awaitingReply, 'طلب واحد وصلته', 'طلبان وصلتهما', 'طلبات وصلتها', 'طلباً وصلته')} عروض جديدة — قارِنها الآن`)}
             </span>
             <span className="font-bold text-sm" style={{ color: '#D4A543' }}>←</span>
           </button>
@@ -389,7 +392,7 @@ export default function ContractorDashboard() {
             </div>
             <div className="flex flex-wrap gap-2">
               {completion.filter((c: any) => !c.ok).map((c: any) => (
-                <Link key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#D4A543', color: '#9D7425' }}>+ {c.label}</Link>
+                <Link key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#D4A543', color: '#8F6820' }}>+ {c.label}</Link>
               ))}
             </div>
           </div>
@@ -398,10 +401,10 @@ export default function ContractorDashboard() {
         {/* Stats — قابلة للضغط: تفلتر القائمة وتنزّل لها */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
-            { label: t.activeRfqs, value: active.length, name: 'active', tone: 'brand', f: 'pending', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${locale === 'en' ? 'this week' : 'هذا الأسبوع'}` : '' },
-            { label: t.totalOffers, value: totalOffers, name: 'offers', tone: 'warning', f: 'has_offers', sub: awaitingReply > 0 ? `${awaitingReply} ${locale === 'en' ? 'awaiting you' : 'بانتظار ردك'}` : '' },
+            { label: t.activeRfqs, value: active.length, name: 'active', tone: 'brand', f: 'pending', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${L('this week', 'اس ہفتے', 'هذا الأسبوع')}` : '' },
+            { label: t.totalOffers, value: totalOffers, name: 'offers', tone: 'warning', f: 'has_offers', sub: awaitingReply > 0 ? `${awaitingReply} ${L('awaiting you', 'آپ کے منتظر', 'بانتظار ردّك')}` : '' },
             { label: t.completed, value: closed.length, name: 'completed', tone: 'success', f: 'closed', sub: '' },
-            { label: t.total, value: rfqs.length, name: 'all', tone: 'info', f: 'all', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${locale === 'en' ? 'new' : 'جديد'}` : '' },
+            { label: t.total, value: rfqs.length, name: 'all', tone: 'info', f: 'all', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${L('new', 'نئی', 'جديد')}` : '' },
           ].map(({ label, value, name, tone, f, sub }) => (
             <button key={label} type="button" onClick={() => { setFilter(f); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
               className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${filter === f ? 'border-[#D4A543] ring-1 ring-[#D4A543]/30' : 'border-gray-100'}`}>
@@ -420,10 +423,10 @@ export default function ContractorDashboard() {
           <div className="grid lg:grid-cols-3 gap-4 mb-8 animate-fade-in">
             <div className="lg:col-span-2 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
               <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#0B2438' }}>
-                <AppIcon name="active" tone="brand" variant="line" size={20} /> {locale === 'en' ? 'Recent activity' : 'آخر النشاطات'}
+                <AppIcon name="active" tone="brand" variant="line" size={20} /> {L('Recent activity', 'حالیہ سرگرمی', 'آخر النشاطات')}
               </h2>
               {activity.length === 0 ? (
-                <p className="text-xs text-gray-400 py-6 text-center">{locale === 'en' ? 'No activity yet — it will appear here as offers arrive.' : 'لا يوجد نشاط بعد — سيظهر هنا فور وصول العروض.'}</p>
+                <p className="text-xs text-gray-400 py-6 text-center">{L('No activity yet. It will appear here as offers arrive.', 'ابھی کوئی سرگرمی نہیں۔ آفرز آتے ہی یہاں نظر آئے گی۔', 'لا يوجد نشاط بعد، وسيظهر هنا فور وصول العروض.')}</p>
               ) : (
                 <div className="space-y-3">
                   {activity.map((a: any) => {
@@ -443,7 +446,7 @@ export default function ContractorDashboard() {
               )}
             </div>
             <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
-              <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{locale === 'en' ? 'Your progress' : 'إنجازاتك'}</h2>
+              <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('Your progress', 'آپ کی پیش رفت', 'إنجازاتك')}</h2>
               {FEATURES.gamification && <div className="rounded-xl p-3 mb-3 text-center" style={{ background: 'linear-gradient(135deg,#D4A54312,#0B243808)' }}>
                 <div className="text-3xl">{gameBadge.e}</div>
                 <div className="text-xs font-bold mt-1" style={{ color: '#0B2438' }}>{gameBadge.t}</div>
@@ -451,11 +454,11 @@ export default function ContractorDashboard() {
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="bg-gray-50 rounded-xl p-2.5">
                   <div className="text-lg font-bold" style={{ color: '#0F6E56' }}>{closed.length}</div>
-                  <div className="text-[10px] text-gray-500">{locale === 'en' ? 'Deals done' : 'صفقات مكتملة'}</div>
+                  <div className="text-[10px] text-gray-500">{L('Deals done', 'مکمل سودے', 'صفقات مكتملة')}</div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-2.5">
-                  <div className="text-lg font-bold" style={{ color: '#9D7425' }}>{rfqsThisWeek}</div>
-                  <div className="text-[10px] text-gray-500">{locale === 'en' ? 'This week' : 'هذا الأسبوع'}</div>
+                  <div className="text-lg font-bold" style={{ color: '#8F6820' }}>{rfqsThisWeek}</div>
+                  <div className="text-[10px] text-gray-500">{L('This week', 'اس ہفتے', 'هذا الأسبوع')}</div>
                 </div>
               </div>
             </div>
@@ -469,8 +472,8 @@ export default function ContractorDashboard() {
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
                 <Glyph e="📋" /> {locale === 'en' ? 'My projects' : locale === 'ur' ? 'میرے پراجیکٹس' : 'مشاريعي'}
               </h2>
-              <Link href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#9D7425' }}>
-                + {locale === 'en' ? 'New Project' : 'مشروع جديد'}
+              <Link href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#8F6820' }}>
+                + {L('New Project', 'نیا پراجیکٹ', 'مشروع جديد')}
               </Link>
             </div>
             <div className="space-y-2 stagger">
@@ -484,8 +487,8 @@ export default function ContractorDashboard() {
                       <div className="text-xs text-gray-400"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</div>
                     </div>
                   </div>
-                  <div className="text-xs font-semibold" style={{ color: '#9D7425' }}>
-                    {locale === 'en' ? 'View Results →' : 'النتائج ←'}
+                  <div className="text-xs font-semibold" style={{ color: '#8F6820' }}>
+                    {L('View Results →', 'نتائج دیکھیں ←', 'عرض النتائج ←')}
                   </div>
                 </Link>
               ))}
@@ -496,17 +499,17 @@ export default function ContractorDashboard() {
         {/* Drafts — saved, not yet published (invisible to suppliers) */}
         {drafts.length > 0 && (
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6 animate-slide-up">
-            <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#0B2438' }}><Glyph e="📝" /> {locale === 'en' ? 'Drafts' : 'مسودّات'} <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{drafts.length}</span></h2>
+            <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#0B2438' }}><Glyph e="📝" /> {L('Drafts', 'مسودے', 'المسودّات')} <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{drafts.length}</span></h2>
             <div className="space-y-2">
               {drafts.map((d: any) => (
                 <div key={d.id} className="flex items-center justify-between gap-2 border border-gray-100 rounded-xl px-3 py-2.5 hover:border-[#D4A543]/40 transition-colors">
                   <div className="min-w-0">
-                    <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{d.title || (locale === 'en' ? 'Untitled draft' : 'مسودة بلا اسم')}</div>
-                    <div className="text-[11px] text-gray-400">{(d.data?.items?.length || 0)} {locale === 'en' ? 'items' : 'مادة'} · {new Date(d.updated_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</div>
+                    <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{d.title || L('Untitled draft', 'بے نام مسودہ', 'مسودة بلا اسم')}</div>
+                    <div className="text-[11px] text-gray-400">{L(`${d.data?.items?.length || 0} items`, `${d.data?.items?.length || 0} اشیاء`, arMaterials(d.data?.items?.length || 0))} · {new Date(d.updated_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-[#071827]" style={{ background: '#D4A543' }}>{locale === 'en' ? 'Continue' : 'إكمال'} ←</Link>
-                    <button onClick={async () => { if (!confirm(locale === 'en' ? 'Delete this draft?' : 'حذف المسودة؟')) return; await createClient().from('rfq_drafts').delete().eq('id', d.id); setDrafts(drafts.filter((x: any) => x.id !== d.id)) }} className="text-sm text-red-400 hover:text-red-600 w-9 h-9 grid place-items-center rounded-lg"><Glyph e="🗑" /></button>
+                    <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-[#071827]" style={{ background: '#D4A543' }}>{L('Continue', 'جاری رکھیں', 'إكمال')} ←</Link>
+                    <button onClick={async () => { if (!confirm(L('Delete this draft?', 'یہ مسودہ حذف کریں؟', 'حذف المسودة؟'))) return; await createClient().from('rfq_drafts').delete().eq('id', d.id); setDrafts(drafts.filter((x: any) => x.id !== d.id)) }} aria-label={L('Delete draft', 'مسودہ حذف کریں', 'حذف المسودة')} className="text-sm text-red-400 hover:text-red-600 w-10 h-10 grid place-items-center rounded-lg"><Glyph e="🗑" /></button>
                   </div>
                 </div>
               ))}
@@ -534,17 +537,17 @@ export default function ContractorDashboard() {
               <div className="flex flex-col gap-3">
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {[
-                    { key: 'all', label: locale === 'en' ? 'All' : 'الكل', icon: <Glyph e="📋" /> },
-                    { key: 'has_offers', label: locale === 'en' ? 'Has Offers' : 'وصل تسعير', icon: <Glyph e="💬" /> },
-                    { key: 'pending', label: locale === 'en' ? 'Awaiting' : 'بانتظار العروض', icon: <Glyph e="⏳" /> },
-                    { key: 'closed', label: locale === 'en' ? 'Completed' : 'مكتملة', icon: <Glyph e="✅" /> },
+                    { key: 'all', label: L('All', 'سب', 'الكل'), icon: <Glyph e="📋" /> },
+                    { key: 'has_offers', label: L('Has Offers', 'آفرز موصول', 'وصلتها عروض'), icon: <Glyph e="💬" /> },
+                    { key: 'pending', label: L('Awaiting', 'آفرز کے منتظر', 'بانتظار العروض'), icon: <Glyph e="⏳" /> },
+                    { key: 'closed', label: L('Completed', 'مکمل', 'مكتملة'), icon: <Glyph e="✅" /> },
                   ].map((f: any) => {
                     const count = f.key === 'all' ? rfqs.length
                       : f.key === 'has_offers' ? rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) > 0).length
                       : f.key === 'pending' ? rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) === 0).length
                       : rfqs.filter((r: any) => r.status === 'closed').length
                     return (
-                      <button key={f.key} onClick={() => setFilter(f.key)}
+                      <button key={f.key} onClick={() => setFilter(f.key)} aria-pressed={filter === f.key}
                         className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                           filter === f.key ? 'text-white' : 'bg-gray-50 text-gray-600 border border-gray-200'
                         }`} style={filter === f.key ? { background: '#0B2438' } : {}}>
@@ -557,17 +560,17 @@ export default function ContractorDashboard() {
                 {/* على الجوال: البحث بسطر كامل تحت الفلاتر حتى لا تسحقه القوائم الطويلة */}
                 <div className="flex flex-wrap gap-2">
                   <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
-                    className="input-field text-xs flex-shrink-0 w-auto py-2">
-                    <option value="all">{locale === 'en' ? 'All Sectors' : 'كل القطاعات'}</option>
+                    className="input-field text-xs flex-shrink-0 w-auto py-2" aria-label={L('Sector', 'شعبہ', 'القطاع')}>
+                    <option value="all">{L('All Sectors', 'تمام شعبے', 'كل القطاعات')}</option>
                     {Object.keys(sectors).map((s: any) => <option key={s} value={s}>{sectors[s]}</option>)}
                   </select>
                   <select value={sortBy} onChange={(e: any) => setSortBy(e.target.value)}
-                    className="input-field text-xs flex-shrink-0 w-auto py-2">
-                    <option value="newest">{locale === 'en' ? '🆕 Newest' : '🆕 الأحدث'}</option>
-                    <option value="expiry">{locale === 'en' ? 'Closest to expiry' : 'الأقرب انتهاءً'}</option>
+                    className="input-field text-xs flex-shrink-0 w-auto py-2" aria-label={L('Sort by', 'ترتیب', 'الترتيب')}>
+                    <option value="newest">{L('Newest', 'تازہ ترین', 'الأحدث')}</option>
+                    <option value="expiry">{L('Closest to expiry', 'جلد ختم ہونے والی', 'الأقرب انتهاءً')}</option>
                   </select>
                   <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-                    className="input-field text-xs flex-1 min-w-[160px] py-2" placeholder={`${locale === 'en' ? 'Search...' : 'ابحث عن طلب...'}`} />
+                    className="input-field text-xs flex-1 min-w-[160px] py-2" type="search" placeholder={L('Search requests…', 'درخواست تلاش کریں…', 'ابحث عن طلب…')} aria-label={L('Search requests', 'درخواستیں تلاش کریں', 'البحث في الطلبات')} />
                 </div>
               </div>
             </div>
@@ -591,7 +594,7 @@ export default function ContractorDashboard() {
                 }
                 if (filtered.length === 0) return (
                   <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center text-gray-400 text-sm">
-                    <Glyph e="🔍" /> {locale === 'en' ? 'No matching requests' : 'لا توجد طلبات مطابقة'}
+                    <Glyph e="🔍" /> {L('No matching requests', 'کوئی مطابق درخواست نہیں', 'لا توجد طلبات مطابقة')}
                   </div>
                 )
                 return filtered.map((rfq: any) => (
@@ -604,7 +607,7 @@ export default function ContractorDashboard() {
                   {/* شارة "جديد" للطلبات اللي وصلها عروض */}
                   {rfq.status === 'open' && (rfq.offer_count || 0) > 0 && (
                     <div className="absolute -top-2 ltr:-right-2 rtl:-left-2 z-10">
-                      <span className="inline-flex items-center gap-1 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg animate-pulse"
+                      <span className="inline-flex items-center gap-1 text-[#071827] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg animate-pulse"
                         style={{ background: '#D4A543' }}>
                         <Glyph e="🔔" /> {locale === 'en' ? 'New Offers!' : locale === 'ur' ? 'نئی پیشکشیں!' : 'عروض جديدة!'}
                       </span>
@@ -631,7 +634,7 @@ export default function ContractorDashboard() {
                             const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
                             return (
                               <span className="badge text-[10px]" style={{ background: st.bg, color: st.fg }}>
-                                {isExpired(rfq.expires_at) ? (locale === 'en' ? 'ended' : 'انتهت') : `${formatTimeLeft(rfq.expires_at, locale)}`}
+                                {isExpired(rfq.expires_at) ? L('ended', 'ختم', 'انتهت') : `${formatTimeLeft(rfq.expires_at, locale)}`}
                               </span>
                             )
                           })()}
@@ -645,17 +648,21 @@ export default function ContractorDashboard() {
                       const allDone = stages.every((s: any) => s.done)
                       const st = disputed || (allDone ? stages[0] : stages.slice().sort((a: any, b: any) => a.step - b.step)[0])
                       const n = deals[rfq.id].length
-                      const lbl = st.key === 'disputed' ? 'نزاع' : allDone ? '✓ مكتملة' : st.step >= 3 ? 'بانتظار الدفع' : st.step >= 2 ? 'تم التوصيل' : 'جاري التوصيل'
+                      const lbl = st.key === 'disputed' ? L('Dispute', 'تنازع', 'نزاع')
+                        : allDone ? '✓ ' + L('Completed', 'مکمل', 'مكتملة')
+                        : st.step >= 3 ? L('Awaiting payment', 'ادائیگی کا انتظار', 'بانتظار الدفع')
+                        : st.step >= 2 ? L('Delivered', 'ڈیلیور ہو گیا', 'تم التسليم')
+                        : L('Being delivered', 'ڈیلیوری جاری ہے', 'جارٍ التوصيل')
                       return (<div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}><div className="text-lg leading-none"><Glyph e={st.emoji} /></div><div className="text-[10px] font-bold leading-tight mt-0.5">{lbl}{n > 1 ? ` (${n})` : ''}</div></div>)
                     })() : (rfq.offer_count || 0) > 0 ? (
                       <div className="text-center rounded-xl px-4 py-2 text-[#071827] shrink-0" style={{ background: '#D4A543' }}>
                         <div className="text-xl font-bold">{rfq.offer_count}</div>
-                        <div className="text-[10px] text-white/85">{t.offers}</div>
+                        <div className="text-[10px] text-[#071827]/80">{L(rfq.offer_count === 1 ? 'offer' : 'offers', 'پیشکش', rfq.offer_count === 2 ? 'عرضان' : rfq.offer_count >= 3 && rfq.offer_count <= 10 ? 'عروض' : rfq.offer_count > 10 ? 'عرضاً' : 'عرض')}</div>
                       </div>
                     ) : (
                       <div className="text-center rounded-xl px-3 py-2 bg-gray-100 text-gray-400 shrink-0 min-w-[78px]">
                         <div className="text-base leading-none mb-0.5"><Glyph e="⏳" /></div>
-                        <div className="text-[10px] font-semibold leading-tight">{locale === 'en' ? 'Awaiting offers' : 'بانتظار العروض'}</div>
+                        <div className="text-[10px] font-semibold leading-tight">{L('Awaiting offers', 'آفرز کا انتظار', 'بانتظار العروض')}</div>
                       </div>
                     )}
                   </div>
@@ -665,7 +672,7 @@ export default function ContractorDashboard() {
                     {rfq.created_at && <span><Glyph e="🗓" /> {formatDateTime(rfq.created_at)}</span>}
                     {rfq.expires_at && <span><Glyph e="⏰" /> {formatDateTime(rfq.expires_at)}</span>}
                     {rfq.specification && <span className="truncate max-w-[200px]"><Glyph e="⚙" /> {rfq.specification}</span>}
-                    <span className="mr-auto" style={{ color: '#9D7425' }}>{t.viewDetails}</span>
+                    <span className="ms-auto" style={{ color: '#8F6820' }}>{t.viewDetails}</span>
                   </div>
                   {/* عدّاد وقت بصري ينقص حتى انتهاء المهلة */}
                   {rfq.status === 'open' && rfq.expires_at && rfq.created_at && !isExpired(rfq.expires_at) && (() => {

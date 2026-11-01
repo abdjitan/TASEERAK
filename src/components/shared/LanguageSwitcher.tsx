@@ -15,6 +15,8 @@ interface Props {
 
 export default function LanguageSwitcher({ variant = 'nav' }: Props) {
   const { locale, setLocale, t } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  const langAria = (l: Locale) => `${L('Language', 'زبان', 'اللغة')}: ${locales[l].name}`
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -35,7 +37,10 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
             key={l}
             onClick={() => setLocale(l)}
             title={locales[l].name}
-            className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center transition-all ${
+            aria-label={langAria(l)}
+            aria-pressed={locale === l}
+            lang={locales[l].lang}
+            className={`w-10 h-10 rounded-lg text-sm flex items-center justify-center transition-all ${
               locale === l
                 ? 'bg-[#0B2438] text-white'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
@@ -55,6 +60,9 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
           <button
             key={l}
             onClick={() => setLocale(l)}
+            aria-label={langAria(l)}
+            aria-pressed={locale === l}
+            lang={locales[l].lang}
             className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
               locale === l
                 ? 'border-[#D4A543] bg-[#D4A543]/5'
@@ -64,7 +72,7 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
             <span className="text-2xl">{FLAGS[l]}</span>
             <span className="text-sm font-semibold text-gray-900">{locales[l].name}</span>
             {locale === l && (
-              <span className="text-xs text-[#9D7425] font-medium">✓ محدد</span>
+              <span className="text-xs text-[#8F6820] font-medium">✓ {L('Selected', 'منتخب', 'محدَّدة')}</span>
             )}
           </button>
         ))}
@@ -77,6 +85,8 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
+        aria-label={langAria(locale)}
+        aria-expanded={open}
         className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-[#D4A543]/50 bg-white transition-all text-sm"
       >
         <span>{FLAGS[locale]}</span>
@@ -95,15 +105,17 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
             <button
               key={l}
               onClick={() => { setLocale(l); setOpen(false) }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-left ${
+              aria-pressed={locale === l}
+              lang={locales[l].lang}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-start ${
                 locale === l
-                  ? 'bg-[#D4A543]/5 text-[#9D7425] font-semibold'
+                  ? 'bg-[#D4A543]/5 text-[#8F6820] font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'
               }`}
             >
               <span className="text-base">{FLAGS[l]}</span>
               <span>{locales[l].name}</span>
-              {locale === l && <span className="mr-auto text-blue-500 text-xs">✓</span>}
+              {locale === l && <span className="ms-auto text-blue-500 text-xs">✓</span>}
             </button>
           ))}
         </div>

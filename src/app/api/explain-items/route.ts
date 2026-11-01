@@ -7,6 +7,8 @@ import { getProductSpecs, SECTOR_PRODUCTS, loadCatalogSpecs } from '@/types'
 
 const CATALOG = new Set<string>(Object.values(SECTOR_PRODUCTS).flat() as string[])
 import { normalizeText } from '@/lib/normalize'
+import { stripContacts } from '@/lib/aiOutputClean'
+import { overGlobalDailyLimit } from '@/lib/rateLimit'
 
 export const runtime = 'nodejs'
 export const maxDuration = 30
@@ -33,11 +35,8 @@ const SCHEMA = {
 
 const n = (s: any) => normalizeText(String(s || ''))
 
-// Notes are shared between suppliers: never let them carry a link or a phone number.
-const clean = (s: any, max: number) => String(s || '')
-  .replace(/(https?:\/\/|www\.)\S+/gi, '')
-  .replace(/[+＋]?[\d٠-٩][\d٠-٩\s\-().]{6,}[\d٠-٩]/g, '')
-  .replace(/\s{2,}/g, ' ').trim().slice(0, max)
+// Notes are shared between suppliers: never let them carry a link, e-mail or phone number.
+const clean = stripContacts
 
 // Catalog fields the buyer left open (free, no AI). Optional fields and the order unit don't count.
 function missingFields(it: any): string[] {
@@ -73,7 +72,8 @@ export async function POST(req: NextRequest) {
   const todo = items.map((it, i) => ({ it, i })).filter(({ i }) => !cache.has(keys[i]))
   if (todo.length) {
     const { data: okRate } = await supabase.rpc('check_rate_limit', { p_bucket: `explain:${user.id}`, p_max: 60, p_window_seconds: 3600 })
-    if (okRate === true) { // fails closed: no AI call when the limit check errors
+    // fails closed: no AI call when the limit check errors; plus a ceiling across all users per day
+    if (okRate === true && !(await overGlobalDailyLimit('explain-items', 1500))) {
       // The notes are cached for every supplier, so one line's buyer text must never reach another
       // line's note (audit M9): lines without a description go together in one call; each line
       // with a description is asked alone (up to 6 per request), so its text only shapes its own

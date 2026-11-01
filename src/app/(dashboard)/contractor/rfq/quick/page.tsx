@@ -15,6 +15,7 @@ import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { normQuery } from '@/lib/productSearch'
 import { loadLocalDraft, saveLocalDraft, clearLocalDraft, putDraftBlob, getDraftBlob, deleteDraftBlobs } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
+import { arCount, arMaterials } from '@/lib/text'
 import { TIERS, tierLabel, tierHint } from '@/lib/sellers'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 
@@ -121,12 +122,20 @@ export default function QuickRequestPage() {
   // From the buyer home: open the guide already searching (?q=) or on a section (?section=)
   const [startQ, setStartQ] = useState('')
   const [startSection, setStartSection] = useState<string | null>(null)
+  const [startPhoto, setStartPhoto] = useState(false) // ?start=photo: a big «take or choose a photo» button on top
+  // «متى تحتاج التسليم؟» → items[].max_days for every line (null = not urgent)
+  const [needDays, setNeedDays] = useState<number | null>(null)
+  // one id per request: a retry after a lost response (weak network) re-sends the same id, so the
+  // database refuses the duplicate (primary key) instead of creating a second request
+  const rfqIdRef = useRef<string>('')
+  const sendingRef = useRef(false)
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search)
     // «لم تجد طلبك؟» from the home search: start with that text as a line (the buyer picks its specialty)
     const sl = (qs.get('line') || '').trim().slice(0, 80)
     if (sl) setLines(prev => prev.some(l => l.product_name === sl) ? prev : [...prev, { key: uid(), product_name: sl, sector: 'supply_store', quantity: '', unit: 'حبة', details: '' }])
-    if (qs.get('start') === 'photo') setTimeout(() => { document.getElementById('quick-photo')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); fileRef.current?.click() }, 400)
+    // browsers block opening the file picker without a tap, so show a big button instead
+    if (qs.get('start') === 'photo') setStartPhoto(true)
     const sq = (qs.get('q') || '').slice(0, 80), ss = qs.get('section')
     if (sq) setStartQ(sq)
     if (ss && /^[a-z_]{3,20}$/.test(ss)) setStartSection(ss)
@@ -157,6 +166,8 @@ export default function QuickRequestPage() {
             const its: any[] = Array.isArray(r.items) && r.items.length ? r.items
               : r.product_name ? [{ sector: r.sector, product_name: r.product_name, specification: r.specification, quantity: r.quantity, unit: r.unit }] : []
             setLines(its.map(lineFromItem))
+            const md = Number(its.find((x: any) => Number(x?.max_days) > 0)?.max_days)
+            if (md > 0) setNeedDays(md)
             if (r.region && r.region !== 'كل المناطق') { setRegion(r.region); setCity(r.city || '') }
             setNotes(r.notes || ''); setHideIdentity(r.hide_identity ?? true)
             setVatRequired(!!r.vat_invoice_required); setVerifiedOnly(!!r.verified_only); setTier(Array.isArray(r.target_tiers) && r.target_tiers.length === 1 ? r.target_tiers[0] : 'all'); setPickup(r.delivery_required === false)
@@ -184,6 +195,8 @@ export default function QuickRequestPage() {
         if (typeof d.text === 'string' && d.text) setText(t => t || d.text)
         if (d.region) { setRegion(d.region); setCity(d.city || '') }
         if (d.hours) setHours(d.hours)
+        if (typeof d.needDays === 'number') setNeedDays(d.needDays)
+        if (typeof d.rfqId === 'string') rfqIdRef.current = d.rfqId
         if (typeof d.notes === 'string') setNotes(d.notes)
         if (typeof d.hideIdentity === 'boolean') setHideIdentity(d.hideIdentity)
         if (typeof d.vatRequired === 'boolean') setVatRequired(d.vatRequired)
@@ -211,16 +224,16 @@ export default function QuickRequestPage() {
   useEffect(() => {
     if (!restored || !userId || done) return
     const t = setTimeout(() => saveLocalDraft('quick:' + userId, {
-      text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, tier, pickup, geo, address,
+      text, lines, region, city, hours, needDays, rfqId: rfqIdRef.current, notes, hideIdentity, vatRequired, verifiedOnly, tier, pickup, geo, address,
       photos: photos.map(p => ({ id: p.id, name: p.file.name, type: p.file.type, status: p.status, share: p.share, confidence: p.confidence, localName: p.localName })),
     }), 300)
     return () => clearTimeout(t)
-  }, [restored, userId, done, text, lines, region, city, hours, notes, hideIdentity, vatRequired, verifiedOnly, tier, pickup, geo, address, photos])
+  }, [restored, userId, done, text, lines, region, city, hours, needDays, notes, hideIdentity, vatRequired, verifiedOnly, tier, pickup, geo, address, photos])
 
   function startOver() {
     deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[], ...lines.flatMap(l => (l.moreFiles || []).map(m => m.id))])
     if (userId) clearLocalDraft('quick:' + userId)
-    setLines([]); setPhotos([]); setText(''); setNotes(''); setError('')
+    setLines([]); setPhotos([]); setText(''); setNotes(''); setError(''); rfqIdRef.current = ''
   }
 
   // 🎤 Speech to text (browser built-in). The transcript is appended to the text box.
@@ -284,7 +297,11 @@ export default function QuickRequestPage() {
 
   function identify(id: string, file: File) {
     const fd = new FormData(); fd.append('image', file); fd.append('locale', locale)
-    fetch('/api/quick-request/identify', { method: 'POST', body: fd })
+    // a stuck request must not hold the send button forever: give up after 45 s (the line can be retried)
+    const ac = typeof AbortController !== 'undefined' ? new AbortController() : null
+    const timer = ac ? setTimeout(() => ac.abort(), 45000) : null
+    fetch('/api/quick-request/identify', { method: 'POST', body: fd, signal: ac?.signal })
+      .finally(() => { if (timer) clearTimeout(timer) })
       .then(r => r.json())
       .then(j => {
         const s = j?.suggestion
@@ -292,6 +309,12 @@ export default function QuickRequestPage() {
         if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', unit: s.unit || l.unit, suggestion: s.catalog_suggestion || null } : l))
       })
       .catch(() => setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'failed' } : p)))
+  }
+  function retryIdentify(id: string) {
+    const ph = photos.find(p => p.id === id)
+    if (!ph) return
+    setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'identifying' } : p))
+    identify(id, ph.file)
   }
 
   // a material written inside a catalog section (not listed) goes to all of that section's suppliers
@@ -338,7 +361,24 @@ export default function QuickRequestPage() {
     if (l?.photoId) { deleteDraftBlobs([l.photoId]); setPhotos(prev => prev.filter(p => p.id !== l.photoId)) }
   }
 
-  const ready = lines.length > 0 && lines.every(l => l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) && !!region
+  // a photo line whose recognition failed and still has no name does not block the request: it is
+  // left out (shown as such) until the buyer retries, names it or removes it
+  const photoFailed = (l: Line) => !!l.photoId && !l.product_name.trim() && photos.find(p => p.id === l.photoId)?.status === 'failed'
+  const sendable = lines.filter(l => !photoFailed(l))
+  const skipped = lines.length - sendable.length
+  const identifying = photos.some(p => p.status === 'identifying')
+  const lineOk = (l: Line) => !!(l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit)
+  const ready = sendable.length > 0 && sendable.every(lineOk) && !!region && (pickup || !!geo || !!address.trim())
+  // why the request cannot go yet (shown next to the send button)
+  const sendHint = sending ? ''
+    : identifying ? L('Recognising the photos…', 'تصاویر پہچانی جا رہی ہیں…', 'جارٍ التعرّف على الصور…')
+    : !sendable.length ? L('Add at least one item', 'کم از کم ایک چیز شامل کریں', 'أضف مادة واحدة على الأقل')
+    : sendable.some(l => !l.product_name.trim()) ? L('Write the name of every item', 'ہر چیز کا نام لکھیں', 'اكتب اسم كل مادة')
+    : sendable.some(l => !(parseFloat(l.quantity) > 0)) ? L('Enter the quantity of every item', 'ہر چیز کی مقدار لکھیں', 'أدخل كمية كل مادة')
+    : sendable.some(l => !l.unit) ? L('Choose the unit of every item', 'ہر چیز کی یونٹ منتخب کریں', 'اختر وحدة كل مادة')
+    : !region ? L('Choose the region', 'علاقہ منتخب کریں', 'حدّد المنطقة')
+    : !pickup && !geo && !address.trim() ? L('Set the delivery location', 'ڈیلیوری کا مقام بتائیں', 'حدّد موقع التوصيل')
+    : ''
 
   // MSA counting: يوم واحد، يومان، 3–10 أيام; ساعات for under a day
   const durationLabel = (h: number) => {
@@ -357,11 +397,11 @@ export default function QuickRequestPage() {
   const l2n = (l: Line) => l.product_name.trim().slice(0, 40)
   function validate(): boolean {
     setError('')
-    if (!lines.length) { setError(L('Add at least one item.', 'کم از کم ایک چیز شامل کریں۔', 'أضف مادة واحدة على الأقل.')); return false }
-    const bad = lines.find(l => !l.product_name.trim() || !(parseFloat(l.quantity) > 0) || !l.unit)
+    if (!sendable.length) { setError(L('Add at least one item.', 'کم از کم ایک چیز شامل کریں۔', 'أضف مادة واحدة على الأقل.')); return false }
+    const bad = sendable.find(l => !lineOk(l))
     if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر يحتاج إلى اسم وكمية ووحدة.')); return false }
     // materials priced by size/grade need their specs (owner 2026-10-27)
-    const noSpec = lines.find(l => missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length)
+    const noSpec = sendable.find(l => missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length)
     if (noSpec) {
       const m = missingSpecs(noSpec.product_name, noSpec.sector as any, noSpec.specs, noSpec.details, !!noSpec.fileId)
       setSpecsOpen(noSpec.key); updateLine(noSpec.key, { done: false })
@@ -371,7 +411,7 @@ export default function QuickRequestPage() {
       return false
     }
     // an item written by hand needs at least its main section (owner 2026-10-24)
-    const lost = lines.find(l => !CATALOG_NAMES.has(l.product_name.trim()) && (l.spec ? !choiceDone(l.spec) : !detectSubCategory(l.product_name, l.sector as any)))
+    const lost = sendable.find(l => !CATALOG_NAMES.has(l.product_name.trim()) && (l.spec ? !choiceDone(l.spec) : !detectSubCategory(l.product_name, l.sector as any)))
     if (lost) { setError(L(`Choose the section of «${l2n(lost)}» so it reaches the right suppliers.`, `«${l2n(lost)}» کا شعبہ منتخب کریں۔`, `اختر قسم «${l2n(lost)}» ليصل إلى الموردين المختصين.`)); return false }
     if (!region) { setError(L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختر منطقتك.')); return false }
     if (!pickup && !geo && !address.trim()) { setError(L('Set the delivery location: detect it, paste a Google Maps link, or write the address.', 'ڈیلیوری کا مقام بتائیں۔', 'حدّد موقع التوصيل: بتحديد موقعك، أو بلصق رابط خرائط Google، أو بكتابة العنوان.')); return false }
@@ -379,14 +419,21 @@ export default function QuickRequestPage() {
   }
 
   async function send() {
+    if (sendingRef.current) return // a second tap while the first send is still going
     if (!validate()) { setConfirming(false); return }
     setConfirming(false)
+    sendingRef.current = true
     setSending(true)
     const supabase = createClient()
+    if (!rfqIdRef.current) {
+      rfqIdRef.current = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID()
+        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16) })
+      if (userId) { const d = loadLocalDraft<any>('quick:' + userId); if (d) saveLocalDraft('quick:' + userId, { ...d, rfqId: rfqIdRef.current }) }
+    }
     try {
       const items: any[] = []
-      for (let i = 0; i < lines.length; i++) {
-        const l = lines[i]
+      for (let i = 0; i < sendable.length; i++) {
+        const l = sendable[i]
         const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
         let photoUrl: string | null = null
         let fileUrl: string | null = null
@@ -426,7 +473,7 @@ export default function QuickRequestPage() {
           ...((l.brand || '').trim() ? { brand: l.brand!.trim().slice(0, 80) } : {}),
           quantity: parseFloat(l.quantity),
           unit: l.unit,
-          supplier_tiers: null, in_stock: false, max_days: null, specsObj,
+          supplier_tiers: null, in_stock: false, max_days: needDays, specsObj,
           spec_file_url: fileUrl || photoUrl,
           spec_file_name: fileUrl ? (l.fileName || L('Attachment', 'فائل', 'مرفق')) : photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
           photo_url: photoUrl || (fileUrl && /\.(jpe?g|png|webp)$/i.test(l.fileName || '') ? fileUrl : null),
@@ -438,6 +485,7 @@ export default function QuickRequestPage() {
       }
       const first = items[0]
       const { error: insErr } = await supabase.from('rfqs').insert({
+        id: rfqIdRef.current,
         contractor_id: userId, sector: first.sector,
         product_name: items.length > 1 ? `${first.product_name} +${items.length - 1} ${L('more', 'مزید', 'أصناف أخرى')}` : first.product_name,
         sectors: Array.from(new Set(items.map(it => it.sector))),
@@ -451,7 +499,9 @@ export default function QuickRequestPage() {
         notes: notes.trim() || null,
         expires_at: new Date(Date.now() + hours * 3600 * 1000).toISOString(),
       })
-      if (insErr) {
+      // 23505 on the primary key: this same request already went through on an earlier try
+      const already = !!insErr && (insErr as any).code === '23505' && /rfqs_pkey/.test(insErr.message || '')
+      if (insErr && !already) {
         setError((insErr.message || '').includes('rfq_daily_limit')
           ? L('Daily request limit reached. Try again later.', 'روزانہ حد پوری ہو گئی۔', 'وصلت إلى الحد اليومي للطلبات. حاول لاحقاً.')
           : L('Could not send. Try again.', 'نہیں بھیج سکے۔', 'تعذّر إرسال الطلب. حاول مرة أخرى.'))
@@ -459,8 +509,9 @@ export default function QuickRequestPage() {
       }
       deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[], ...lines.flatMap(l => (l.moreFiles || []).map(m => m.id))])
       clearLocalDraft('quick:' + userId)
+      rfqIdRef.current = ''
       // Teach the search: the words the buyer wrote → the material name that was sent.
-      for (const l of lines) {
+      for (const l of sendable) {
         if (l.original && l.original.trim() && l.original.trim() !== l.product_name.trim()) {
           try { supabase.rpc('log_search_event', { p_query: l.original.trim(), p_query_norm: normQuery(l.original), p_action: 'picked', p_picked: l.product_name.trim(), p_sector: l.sector, p_source: 'quick_text' }).then(() => {}, () => {}) } catch {}
         }
@@ -469,7 +520,7 @@ export default function QuickRequestPage() {
       setDone(true)
     } catch {
       setError(L('Network problem — your request was not sent. It is still saved here; try again.', 'نیٹ ورک کا مسئلہ — درخواست نہیں گئی۔ دوبارہ کوشش کریں۔', 'حدثت مشكلة في الاتصال ولم يُرسل الطلب. ما زال محفوظاً هنا؛ حاول مرة أخرى.'))
-    } finally { setSending(false) }
+    } finally { setSending(false); sendingRef.current = false }
   }
 
   // Lines keep the Arabic catalog name/unit (that is what routes the request and what suppliers
@@ -513,6 +564,14 @@ export default function QuickRequestPage() {
           <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, upload a photo or pick it from the catalog. We will organise it into a list.', 'لکھیں، بولیں، تصویر لیں یا فہرست سے منتخب کریں۔', 'اكتبها، أو تحدّث بها، أو ارفع صورتها، أو اخترها من دليل المواد، وسنرتّبها لك في طلبك.')}</p>
         </div>
 
+        {startPhoto && (
+          <button type="button" id="quick-photo" onClick={() => { setStartPhoto(false); fileRef.current?.click() }}
+            className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl font-extrabold text-lg text-[#071827] shadow-sm"
+            style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+            <Glyph e="📷" /> {L('Take a photo or choose one', 'تصویر لیں یا منتخب کریں', 'التقط صورة أو اختر صورة')}
+          </button>
+        )}
+
         {/* Input: text + mic + photo */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
           <label htmlFor="quick-text" className="block text-sm font-bold text-navy">{L('Write or paste your list', 'اپنی فہرست لکھیں', 'اكتب أو الصق قائمتك')}</label>
@@ -526,7 +585,7 @@ export default function QuickRequestPage() {
             {canListen && (
               <button type="button" onClick={toggleMic} aria-pressed={listening}
                 className={`px-4 py-2.5 rounded-xl font-bold border transition-all ${listening ? 'bg-red-50 border-red-300 text-red-600 animate-pulse' : 'bg-white border-gray-200 text-gray-700'}`}>
-                {listening ? '⏺ ' + L('Listening… tap to stop', 'سن رہے ہیں…', 'جارٍ الاستماع… اضغط للإيقاف') : '' + L('Say it', 'بولیں', 'تحدّث')}
+                <Glyph e="⏺" /> {listening ? L('Listening… tap to stop', 'سن رہے ہیں… روکنے کے لیے دبائیں', 'جارٍ الاستماع… اضغط للإيقاف') : L('Say it', 'بولیں', 'تحدّث')}
               </button>
             )}
             <button type="button" onClick={() => fileRef.current?.click()} className="px-4 py-2.5 rounded-xl font-bold border bg-white border-gray-200 text-gray-700">
@@ -583,7 +642,7 @@ export default function QuickRequestPage() {
                       <span className="min-w-0 flex-1">
                         <span className="block font-bold text-sm text-navy truncate" dir="auto">{nameLabel(l.product_name)}</span>
                         <span className="block text-xs text-gray-500 truncate" dir="auto">
-                          <b className="text-[#9D7425]">{l.quantity} {unitLabel(l.unit)}</b>
+                          <b className="text-[#8F6820]">{l.quantity} {unitLabel(l.unit)}</b>
                           {Object.values(l.specs || {}).filter(v => (v || '').trim()).length ? ' · ' + Object.values(l.specs || {}).filter(v => (v || '').trim()).join('، ') : ''}
                           {l.details.trim() ? ' · ' + l.details.trim() : ''}
                           {l.fileId ? ' · ' : ''}
@@ -591,7 +650,7 @@ export default function QuickRequestPage() {
                       </span>
                       <span className="text-xs font-bold text-gray-400 shrink-0">✎ {L('Edit', 'ترمیم', 'تعديل')}</span>
                     </button>
-                    <button type="button" onClick={() => removeLine(l.key)} className="text-gray-400 hover:text-red-500 text-lg leading-none px-1" aria-label={L('Remove', 'ہٹائیں', 'احذف')}>×</button>
+                    <button type="button" onClick={() => removeLine(l.key)} className="min-w-10 min-h-10 grid place-items-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 text-xl leading-none shrink-0" aria-label={L('Remove', 'ہٹائیں', 'حذف')}>×</button>
                   </div>
                 ) :
                 <div key={l.key} className="rounded-xl border border-gray-200 p-3 space-y-2">
@@ -610,9 +669,15 @@ export default function QuickRequestPage() {
                           {locale !== 'ar' && ph.localName && <span className="block font-semibold text-gray-700" dir="auto">= {ph.localName}</span>}
                         </p>
                       )}
-                      {ph && ph.status === 'failed' && (
-                        <p className="text-[11px] text-gray-500">{L('Could not recognise it. Write the name, or just send the photo to suppliers.', 'پہچان نہیں سکے۔', 'تعذّر التعرّف عليها. اكتب اسمها، أو أرسل الصورة للموردين ليتعرّفوا عليها.')}</p>
-                      )}
+                      {ph && ph.status === 'failed' && (l.product_name.trim()
+                        ? <p className="text-[11px] text-gray-500">{L('Could not recognise the photo; check the name you wrote.', 'تصویر پہچانی نہیں جا سکی؛ لکھا ہوا نام چیک کریں۔', 'تعذّر التعرّف على الصورة؛ تأكّد من الاسم الذي كتبته.')}</p>
+                        : <div className="rounded-lg border border-[#D4A543]/50 bg-[#D4A543]/10 p-2 space-y-1.5" role="status">
+                            <p className="text-xs font-bold text-[#8F6820]"><Glyph e="⚠" /> {L('The photo could not be read — retry or remove the line, or write the item name. The rest of your request can still be sent.', 'تصویر پڑھی نہیں جا سکی — دوبارہ کوشش کریں یا لائن ہٹا دیں، یا چیز کا نام لکھیں۔ باقی درخواست بھیجی جا سکتی ہے۔', 'تعذّر رفع الصورة — أعد المحاولة أو احذف السطر، أو اكتب اسم المادة. يمكنك إرسال بقية الطلب.')}</p>
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => retryIdentify(ph.id)} className="min-h-10 px-3 rounded-lg border border-[#0F6E56] text-[#0F6E56] bg-white text-xs font-bold"><Glyph e="🔁" /> {L('Retry', 'دوبارہ کوشش کریں', 'أعد المحاولة')}</button>
+                              <button type="button" onClick={() => removeLine(l.key)} className="min-h-10 px-3 rounded-lg border border-red-200 text-red-600 bg-white text-xs font-bold"><Glyph e="🗑" /> {L('Remove the line', 'لائن ہٹائیں', 'احذف السطر')}</button>
+                            </div>
+                          </div>)}
                       {l.suggestion && l.suggestion.name !== l.product_name && (
                         <button type="button" onClick={() => updateLine(l.key, { product_name: l.suggestion!.name, sector: l.suggestion!.sector, suggestion: null })}
                           className="text-[11px] font-bold px-2 py-1 rounded-lg border border-dashed hover:bg-[#0F6E56]/5" style={{ borderColor: '#0F6E56', color: '#0F6E56' }}>
@@ -625,14 +690,14 @@ export default function QuickRequestPage() {
                               onChange={v => updateLine(l.key, { spec: v, sector: v.sector })} />
                             {!l.photoId && !(l.fileId && /\.(jpe?g|png|webp)$/i.test(l.fileName || '')) && (
                               <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
-                                className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#D4A543] text-[#9D7425] bg-[#D4A543]/10">
+                                className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10">
                                 <Glyph e="📷" /> {L('Add a photo so suppliers understand your request', 'تصویر لگائیں تاکہ سپلائرز آپ کی درخواست سمجھیں', 'أضف صورة ليفهم الموردون طلبك')}
                               </button>
                             )}
                           </div>
                         : <div className="text-[11px] text-gray-400">{sectorLabel(l.sector)}</div>}
                     </div>
-                    <button type="button" onClick={() => removeLine(l.key)} className="text-gray-400 hover:text-red-500 text-lg leading-none px-1" aria-label={L('Remove', 'ہٹائیں', 'احذف')}>×</button>
+                    <button type="button" onClick={() => removeLine(l.key)} className="min-w-10 min-h-10 grid place-items-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 text-xl leading-none shrink-0" aria-label={L('Remove', 'ہٹائیں', 'حذف')}>×</button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <input type="text" inputMode="decimal" value={l.quantity} onChange={e => updateLine(l.key, { quantity: toLatinNumber(e.target.value) })}
@@ -669,7 +734,7 @@ export default function QuickRequestPage() {
                         <div className="flex flex-wrap items-center gap-2">
                           {fields.length > 0 && (
                             <button type="button" onClick={() => setSpecsOpen(open ? null : l.key)} aria-expanded={open}
-                              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${missing ? 'border-[#D4A543] text-[#9D7425] bg-[#D4A543]/10' : n ? 'border-[#0F6E56] text-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 text-gray-600'}`}>
+                              className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${missing ? 'border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10' : n ? 'border-[#0F6E56] text-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 text-gray-600'}`}>
                               <Glyph e="⚙" /> {L('Specifications', 'تفصیلات', 'المواصفات')}{req ? L(' (required)', ' (ضروری)', ' (مطلوبة)') : ''}{n ? ` (${n})` : ''} {open ? '▴' : '▾'}
                             </button>
                           )}
@@ -679,12 +744,12 @@ export default function QuickRequestPage() {
                           </button>
                           {l.fileId && (
                             <button type="button" onClick={() => { deleteDraftBlobs([l.fileId!]); const [nx, ...rest] = l.moreFiles || []; updateLine(l.key, nx ? { fileId: nx.id, fileName: nx.name, moreFiles: rest } : { fileId: undefined, fileName: undefined }) }}
-                              className="text-[11px] text-gray-400 hover:text-red-500" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}>×</button>
+                              className="min-w-10 min-h-10 grid place-items-center rounded-lg text-base text-gray-400 hover:text-red-500 hover:bg-red-50" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}>×</button>
                           )}
                           {(l.moreFiles || []).map(mf => (
                             <span key={mf.id} className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-purple-300 text-purple-700 bg-purple-50 max-w-[12rem]">
                               <span className="truncate"><Glyph e="📎" /> {mf.name}</span>
-                              <button type="button" onClick={() => { deleteDraftBlobs([mf.id]); updateLine(l.key, { moreFiles: (l.moreFiles || []).filter(x => x.id !== mf.id) }) }} className="text-gray-400 hover:text-red-500" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}>×</button>
+                              <button type="button" onClick={() => { deleteDraftBlobs([mf.id]); updateLine(l.key, { moreFiles: (l.moreFiles || []).filter(x => x.id !== mf.id) }) }} className="min-w-10 min-h-10 -my-2 grid place-items-center text-base text-gray-400 hover:text-red-500" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}>×</button>
                             </span>
                           ))}
                           {l.fileId && (l.moreFiles || []).length < 4 && (
@@ -733,7 +798,7 @@ export default function QuickRequestPage() {
               )
             })}
             <button type="button" onClick={addMore}
-              className="lg:hidden w-full py-3 rounded-xl border-2 border-dashed border-[#D4A543]/50 text-[#9D7425] font-bold text-sm hover:bg-[#D4A543]/5 transition-all">
+              className="lg:hidden w-full py-3 rounded-xl border-2 border-dashed border-[#D4A543]/50 text-[#8F6820] font-bold text-sm hover:bg-[#D4A543]/5 transition-all">
               + {L('Add another material', 'ایک اور سامان شامل کریں', 'أضف مادة أخرى')}
             </button>
           </div>
@@ -783,7 +848,7 @@ export default function QuickRequestPage() {
             {/* when the buyer needs the prices — visible, with a same-day option (persona: the villa contractor) */}
             <div>
               <div className="text-xs font-bold text-gray-600 mb-1.5">{L('When do you need the prices?', 'قیمتیں کب تک چاہئیں؟', 'متى تحتاج الأسعار؟')}</div>
-              <div role="radiogroup" className="flex flex-wrap gap-1.5">
+              <div role="radiogroup" aria-label={L('When do you need the prices?', 'قیمتیں کب تک چاہئیں؟', 'متى تحتاج الأسعار؟')} className="flex flex-wrap gap-1.5">
                 {([[6, L('Today', 'آج', 'اليوم')], [24, L('Tomorrow', 'کل', 'غداً')], [48, L('2 days', '2 دن', 'يومان')], [72, L('3 days', '3 دن', '3 أيام')], [168, L('A week', 'ایک ہفتہ', 'أسبوع')]] as [number, string][]).map(([h, lab]) => (
                   <button key={h} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)}
                     className={`px-3 py-1.5 rounded-full border text-xs font-bold ${hours === h ? 'bg-[#0B2438] text-white border-[#0B2438]' : 'bg-white text-gray-600 border-gray-200'}`}>{lab}</button>
@@ -794,6 +859,16 @@ export default function QuickRequestPage() {
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
               <div className="text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')}</div>
               <div className="mt-3 space-y-3">
+                <div>
+                  <div className="text-sm font-bold text-[#0B2438] mb-2">{L('When do you need delivery?', 'ڈیلیوری کب چاہیے؟', 'متى تحتاج التسليم؟')}</div>
+                  <div role="radiogroup" aria-label={L('When do you need delivery?', 'ڈیلیوری کب چاہیے؟', 'متى تحتاج التسليم؟')} className="flex flex-wrap gap-1.5">
+                    {([[1, L('Within a day', 'ایک دن میں', 'خلال يوم')], [3, L('Within 3 days', '3 دن میں', 'خلال 3 أيام')], [7, L('Within a week', 'ایک ہفتے میں', 'خلال أسبوع')], [null, L('Not urgent', 'جلدی نہیں', 'غير مستعجل')]] as [number | null, string][]).map(([d, lab]) => (
+                      <button key={String(d)} type="button" role="radio" aria-checked={needDays === d} onClick={() => setNeedDays(d)}
+                        className={`px-3 py-1.5 rounded-full border text-xs font-bold ${needDays === d ? 'bg-[#0B2438] text-white border-[#0B2438]' : 'bg-white text-gray-600 border-gray-200'}`}>{lab}</button>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-gray-500 mt-1">{L('Suppliers see it on every item, so they quote only what they can deliver in time.', 'سپلائرز اسے ہر چیز پر دیکھتے ہیں تاکہ وہی قیمت دیں جو وقت پر پہنچا سکیں۔', 'يظهر للموردين على كل مادة ليسعّروا ما يستطيعون تسليمه في الوقت المطلوب.')}</p>
+                </div>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-sm" placeholder={L('Notes for suppliers (optional)', 'نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
                 <div>
                   <div className="text-sm font-bold text-[#0B2438] mb-2">{L('Who should price it?', 'کون قیمت دے؟', 'من تريد أن يسعّر لك؟')}</div>
@@ -831,8 +906,12 @@ export default function QuickRequestPage() {
       {lines.length > 0 && (
         <div className="fixed inset-x-0 bottom-[calc(3.9rem_+_env(safe-area-inset-bottom))] lg:bottom-0 bg-white border-t border-gray-200 px-4 pt-3 z-30" style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
           <div className="max-w-[1700px] mx-auto flex items-center justify-between gap-3 lg:pe-24">
-            <span className="text-sm text-gray-500">{lines.length} {L('items', 'اشیاء', 'مواد')}</span>
-            <button type="button" onClick={review} disabled={sending || photos.some(p => p.status === 'identifying')}
+            <div className="min-w-0">
+              <span className="block text-sm text-gray-500">{locale === 'ar' ? arMaterials(sendable.length) : `${sendable.length} ${L('items', 'اشیاء', '')}`}</span>
+              {sendHint && <span className="block text-xs font-bold text-[#8F6820] truncate" role="status">{sendHint}</span>}
+              {!sendHint && skipped > 0 && <span className="block text-xs text-gray-500 truncate">{L(`${skipped} unnamed photo line(s) will be left out`, `بغیر نام کی ${skipped} تصویری لائنیں شامل نہیں ہوں گی`, `لن يُرسل ${skipped === 1 ? 'سطر الصورة غير المسمّى' : arCount(skipped, 'سطر واحد', 'سطران', 'أسطر', 'سطراً') + ' من الصور غير المسمّاة'}`)}</span>}
+            </div>
+            <button type="button" onClick={review} disabled={sending || identifying || !sendable.length}
               className="btn-orange px-6 py-3 rounded-xl font-extrabold disabled:opacity-50">
               {sending ? L('Sending…', 'بھیج رہے ہیں…', 'جارٍ الإرسال…') : ready ? L('Send for prices', 'قیمت منگوائیں', 'أرسل طلب التسعير') : L('Complete the lines', 'لائنیں مکمل کریں', 'أكمل البيانات')}
             </button>
@@ -849,15 +928,15 @@ export default function QuickRequestPage() {
             </div>
             <div className="p-5 overflow-y-auto space-y-4 text-sm">
               <div>
-                <div className="text-xs font-bold text-gray-500 mb-2">{L('Materials', 'سامان', 'المواد')} ({lines.length})</div>
+                <div className="text-xs font-bold text-gray-500 mb-2">{L('Materials', 'سامان', 'المواد')} ({sendable.length})</div>
                 <ol className="space-y-2">
-                  {lines.map((l, i) => {
+                  {sendable.map((l, i) => {
                     const sp = Object.values(l.specs || {}).filter(v => (v || '').trim())
                     return (
                       <li key={l.key} className="rounded-xl bg-gray-50 border border-gray-100 p-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <span className="font-bold text-navy" dir="auto">{i + 1}. {nameLabel(l.product_name)}</span>
-                          <span className="font-bold text-[#9D7425] whitespace-nowrap">{l.quantity} {unitLabel(l.unit)}</span>
+                          <span className="font-bold text-[#8F6820] whitespace-nowrap">{l.quantity} {unitLabel(l.unit)}</span>
                         </div>
                         {(sp.length > 0 || l.details.trim() || l.fileId) && (
                           <div className="text-xs text-gray-500 mt-1" dir="auto">
@@ -883,6 +962,10 @@ export default function QuickRequestPage() {
                 </>)}
                 <dt className="text-gray-500">{L('Prices within', 'قیمتیں', 'مهلة التسعير')}</dt>
                 <dd className="font-semibold">{durationLabel(hours)}</dd>
+                {needDays != null && (<>
+                  <dt className="text-gray-500">{L('Delivery needed', 'ڈیلیوری', 'التسليم')}</dt>
+                  <dd className="font-semibold">{needDays === 1 ? L('Within a day', 'ایک دن میں', 'خلال يوم') : needDays === 7 ? L('Within a week', 'ایک ہفتے میں', 'خلال أسبوع') : L(`Within ${needDays} days`, `${needDays} دن میں`, `خلال ${needDays} ${needDays <= 10 ? 'أيام' : 'يوماً'}`)}</dd>
+                </>)}
                 {notes.trim() && (<>
                   <dt className="text-gray-500">{L('Notes', 'نوٹس', 'ملاحظات')}</dt>
                   <dd className="font-semibold whitespace-pre-wrap" dir="auto">{notes.trim()}</dd>

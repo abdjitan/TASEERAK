@@ -369,7 +369,7 @@ export default function OnboardingPage() {
                       onChange={(n: any) => { setSectors(n.sectors); setSpecialties(n.specialties) }} />
                   </div>
                   <details className="group">
-                    <summary className="cursor-pointer text-xs font-bold text-[#9D7425] select-none">{locale === 'en' ? 'Fine-tune materials (optional)' : locale === 'ur' ? 'تفصیل سے منتخب کریں (اختیاری)' : 'تعديل المواد بالتفصيل (اختياري)'} {specialties.length > 0 && `· ${specialties.length}`}</summary>
+                    <summary className="cursor-pointer text-xs font-bold text-[#8F6820] select-none">{locale === 'en' ? 'Fine-tune materials (optional)' : locale === 'ur' ? 'تفصیل سے منتخب کریں (اختیاری)' : 'تعديل المواد بالتفصيل (اختياري)'} {specialties.length > 0 && `· ${specialties.length}`}</summary>
                     <div className="mt-3">
                   <SpecialtyPicker
                     sectors={sectors} specialties={specialties}

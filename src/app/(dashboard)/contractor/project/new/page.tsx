@@ -19,6 +19,10 @@ import CatalogPicker from '@/components/shared/CatalogPicker'
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arItems, arMaterials } from '@/lib/text'
 import CatIcon from '@/components/shared/CatIcon'
+import { toLatinDigits } from '@/lib/phone'
+
+// «١٢٫٥» / «۱۲» → «12.5» / «12» (Arabic and Urdu keyboards type these digits and decimal marks)
+const toQty = (v: string) => toLatinDigits(v).replace(/٫/g, '.').replace(/[^0-9.]/g, '')
 
 // تجميع بنود الـ BOQ حسب المجموعة (مثل قوائم التسعير) — يحتفظ بالفهرس الأصلي لكل بند
 function getGroupedItems(items: any[], locale: string) {
@@ -30,7 +34,7 @@ function getGroupedItems(items: any[], locale: string) {
       const gl = gkey === '_unclassified' ? null : (GROUP_LABELS as any)[gkey]
       groups[gkey] = {
         key: gkey,
-        label: gkey === '_unclassified' ? (locale === 'en' ? 'Unclassified' : 'غير مصنّف') : (gl ? (locale === 'en' ? gl.en : gl.ar) : gkey),
+        label: gkey === '_unclassified' ? (locale === 'en' ? 'Unclassified' : locale === 'ur' ? 'غیر درجہ بند' : 'غير مصنّف') : (gl ? (gl[locale] || gl.ar) : gkey),
         icon: gkey === '_unclassified' ? <Glyph e="⚠" /> : (gl?.icon || '<Glyph e="📦" />'),
         defaultOpen: gkey === '_unclassified',
         entries: [],
@@ -107,13 +111,13 @@ export default function NewProjectPage() {
   const toggleGroup = (k: string) => setOpenGroups(o => ({ ...o, [k]: !(o[k] ?? (k === '_unclassified')) }))
   // تحديد الموقع تلقائياً → يملأ المنطقة والمدينة وعنوان التوصيل
   function geolocate() {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) { setGeoMsg(locale === 'en' ? 'Geolocation not supported' : 'المتصفح لا يدعم تحديد الموقع'); return }
-    setGeoMsg(locale === 'en' ? 'Locating…' : 'جارٍ تحديد الموقع…')
+    if (typeof navigator === 'undefined' || !navigator.geolocation) { setGeoMsg(L('Geolocation not supported', 'براؤزر مقام معلوم کرنے کی سہولت نہیں دیتا', 'المتصفح لا يدعم تحديد الموقع')); return }
+    setGeoMsg(L('Locating…', 'مقام معلوم کیا جا رہا ہے…', 'جارٍ تحديد الموقع…'))
     navigator.geolocation.getCurrentPosition(
       async (pos: any) => {
         const { latitude, longitude } = pos.coords
         const link = `https://maps.google.com/?q=${latitude},${longitude}`
-        setGeoMsg(locale === 'en' ? 'Reading city…' : 'جارٍ قراءة المدينة…')
+        setGeoMsg(L('Reading city…', 'شہر پڑھا جا رہا ہے…', 'جارٍ قراءة المدينة…'))
         try {
           const r = await fetch(`/api/reverse-geocode?lat=${latitude}&lng=${longitude}`)
           const d = await r.json()
@@ -131,15 +135,15 @@ export default function NewProjectPage() {
             } else { cityName = d.city || d.region || '' }
             setDeliveryRequired(true)
             setDeliveryLocation(d.formatted || link)
-            setGeoMsg(`${locale === 'en' ? 'Location set ✓' : 'تم تحديد موقعك ✓'}${cityName ? ` — ${cityName}` : ''}`)
+            setGeoMsg(`${L('Location set ✓', 'مقام طے ہو گیا ✓', 'تم تحديد موقعك ✓')}${cityName ? ` — ${cityName}` : ''}`)
             return
           }
         } catch {}
         setDeliveryRequired(true)
         setDeliveryLocation(link)
-        setGeoMsg(locale === 'en' ? 'Location pin saved ✓' : 'تم حفظ موقعك ✓')
+        setGeoMsg(L('Location pin saved ✓', 'مقام محفوظ ہو گیا ✓', 'تم حفظ موقعك ✓'))
       },
-      () => setGeoMsg(locale === 'en' ? 'Location access denied' : 'تم رفض الوصول للموقع — فعّله من إعدادات المتصفح'),
+      () => setGeoMsg(L('Location access denied', 'مقام تک رسائی مسترد — براؤزر کی ترتیبات سے اجازت دیں', 'تم رفض الوصول للموقع — فعّله من إعدادات المتصفح')),
       { enableHighAccuracy: true, timeout: 10000 },
     )
   }
@@ -158,9 +162,9 @@ export default function NewProjectPage() {
 
   // يقرأ المواصفات + البنود ويملأ تفاصيل كل بند من المستند
   async function matchSpecs() {
-    if (!specsFile) { setSpecMsg('ارفع ملف المواصفات أولاً'); return }
+    if (!specsFile) { setSpecMsg(L('Upload the specification file first', 'پہلے اسپیسیفکیشن فائل اپ لوڈ کریں', 'ارفع ملف المواصفات أولاً')); return }
     const targets = items.filter((i: any) => i.product_name)
-    if (targets.length === 0) { setSpecMsg('أضف بنوداً (أو ارفع BOQ) أولاً'); return }
+    if (targets.length === 0) { setSpecMsg(L('Add items (or upload a BOQ) first', 'پہلے آئٹمز شامل کریں (یا BOQ اپ لوڈ کریں)', 'أضف بنوداً (أو ارفع جدول الكميات) أولاً')); return }
     setMatchingSpecs(true); setSpecMsg('')
     try {
       const fd = new FormData()
@@ -168,7 +172,7 @@ export default function NewProjectPage() {
       fd.append('items', JSON.stringify(targets.map((i: any) => ({ ref: i.id, product_name: i.product_name, sector: i.sector }))))
       const res = await fetch('/api/match-spec', { method: 'POST', body: fd })
       const data = await res.json()
-      if (!data.ok) { setSpecMsg((data.needsGemini ? 'ملف PDF/صورة يحتاج تفعيل Gemini من الإدارة أو حوّله لـExcel/نص — ' : '') + (data.message || 'تعذّرت مطابقة المواصفات')); return }
+      if (!data.ok) { setSpecMsg((data.needsGemini ? L('A PDF/image needs the admin to enable Gemini, or convert it to Excel/text — ', 'PDF/تصویر کے لیے ایڈمن کو Gemini فعال کرنا ہوگا، یا اسے Excel/متن میں بدلیں — ', 'ملف PDF أو الصورة يحتاج إلى تفعيل Gemini من الإدارة، أو حوّله إلى Excel أو نص — ') : '') + (data.message || L('Could not match the specifications', 'اسپیسیفکیشن نہیں ملائی جا سکیں', 'تعذّرت مطابقة المواصفات'))); return }
       let filled = 0, diff = 0
       setItems(prev => prev.map((it: any) => {
         const s = data.specs?.[it.id]
@@ -179,13 +183,13 @@ export default function NewProjectPage() {
         if ((it.specification || '').trim() !== doc) { diff++; return { ...it, specFromDoc: doc } }
         return { ...it, specFromDoc: doc }
       }))
-      const parts = [`✓ طوبق ${data.matched} من ${arItems(data.total)}`]
-      if (filled) parts.push(`عُبّئ ${filled}`)
-      if (diff) parts.push(`${diff} تختلف عن BOQ — راجعها`)
-      if (data.truncated) parts.push('المواصفات كبيرة واقتُطعت، قسّم الملف')
+      const parts = [L(`✓ Matched ${data.matched} of ${data.total} items`, `✓ ${data.total} میں سے ${data.matched} آئٹمز ملائے گئے`, `✓ طوبق ${data.matched} من ${arItems(data.total)}`)]
+      if (filled) parts.push(L(`${filled} filled`, `${filled} بھرے گئے`, `عُبّئ ${filled}`))
+      if (diff) parts.push(L(`${diff} differ from the BOQ — review them`, `${diff} BOQ سے مختلف ہیں — جائزہ لیں`, `${diff} تختلف عن جدول الكميات — راجعها`))
+      if (data.truncated) parts.push(L('The specifications are large and were cut; split the file', 'اسپیسیفکیشن بڑی تھیں اور کاٹ دی گئیں؛ فائل تقسیم کریں', 'المواصفات كبيرة واقتُطع جزء منها، قسّم الملف'))
       setSpecMsg(parts.join(' · '))
     } catch {
-      setSpecMsg('تعذّر الاتصال — حاول ثانية')
+      setSpecMsg(L('Connection problem — try again', 'کنکشن کا مسئلہ — دوبارہ کوشش کریں', 'تعذّر الاتصال — حاول مرة أخرى'))
     } finally { setMatchingSpecs(false) }
   }
 
@@ -201,6 +205,7 @@ export default function NewProjectPage() {
   const [hideIdentity, setHideIdentity] = useState(true)
   const [vatRequired, setVatRequired] = useState(true)
   const [nearbyOnly, setNearbyOnly] = useState(false)
+  const submittingRef = useRef(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -260,10 +265,10 @@ export default function NewProjectPage() {
         }))
         setStep('items')
       } else {
-        setParseError(locale === 'en' ? 'No items found in the BOQ' : 'لم يتم استخراج بنود من الملف')
+        setParseError(L('No items found in the BOQ', 'فائل سے کوئی آئٹم نہیں نکلا', 'لم يتم استخراج بنود من الملف'))
       }
     } catch (err) {
-      setParseError((err as any).message || (locale === 'en' ? 'Failed to parse BOQ' : 'فشل تحليل الملف'))
+      setParseError((err as any).message || (L('Failed to parse BOQ', 'فائل کا تجزیہ نہیں ہو سکا', 'فشل تحليل الملف')))
     } finally { setParsing(false) }
   }
 
@@ -361,7 +366,7 @@ export default function NewProjectPage() {
           className="input-field" placeholder={L('Material name: type and pick from the list, or write it your way', 'مواد کا نام', 'اسم المادة: اكتب واختر من القائمة، أو اكتبها كما تريد')} />
         <datalist id="boq-catalog">{catalogNames.map(n => <option key={n} value={n} />)}</datalist>
         <button type="button" onClick={() => setShowCatalog(true)}
-          className="mt-2 w-full sm:w-auto px-4 py-2.5 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#9D7425] hover:bg-[#D4A543]/20">
+          className="mt-2 w-full sm:w-auto px-4 py-2.5 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#8F6820] hover:bg-[#D4A543]/20">
           {L("Can't find it? Browse the materials guide by section", 'نہیں ملا؟ شعبوں سے فہرست دیکھیں', 'لم تجدها؟ تصفّح دليل المواد حسب الأقسام')}
         </button>
         {draftG?.catalog && (
@@ -374,7 +379,7 @@ export default function NewProjectPage() {
       )}
       <div className="grid grid-cols-2 gap-3">
         <input type="text" inputMode="decimal" value={draft.quantity}
-          onChange={(e: any) => { const v = e.target.value.replace(/[٠-٩]/g, (x: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, ''); setDraft((d: any) => ({ ...d, quantity: v })) }}
+          onChange={(e: any) => { const v = toQty(e.target.value); setDraft((d: any) => ({ ...d, quantity: v })) }}
           className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
         <select value={draftDefUnit}
           onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, unit: v })) }} className="input-field">
@@ -401,21 +406,25 @@ export default function NewProjectPage() {
 
   // إرسال المشروع
   async function handleSubmit() {
+    if (submittingRef.current) return // a second tap while the first send is still going
     if (!user || !title || !region) return
     if (deliveryRequired && !deliveryLocation) return
     // سياسة عدم الإزعاج: البنود غير المصنّفة لا تُرسل إطلاقاً (حتى لا تصل لموردين خارج تخصصهم).
     // نرسل المصنّفة فقط، ونبقي غير المصنّفة لدى المقاول ليصنّفها لاحقاً.
     const classifiedItems = items.filter((i: any) => i.selected && i.product_name && !i.needs_classification)
     if (unclassifiedCount > 0) {
-      const ok = confirm(`يوجد ${arItems(unclassifiedCount)} غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)
+      const ok = confirm(L(`${unclassifiedCount} item(s) are not classified and will not be sent (classification routes each item to the right specialist instead of disturbing everyone).\n\nSend only the classified items (${classifiedItems.length})?`,
+        `${unclassifiedCount} آئٹمز غیر درجہ بند ہیں اور نہیں بھیجے جائیں گے (درجہ بندی ہر آئٹم کو متعلقہ سپلائر تک پہنچاتی ہے)۔\n\nصرف درجہ بند آئٹمز (${classifiedItems.length}) بھیجیں؟`,
+        `يوجد ${arItems(unclassifiedCount)} غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`))
       if (!ok) return
     }
     // materials priced by size/grade need a written spec or a spec file (owner 2026-10-27)
     const noSpec = classifiedItems.filter((i: any) => missingSpecs(i.product_name, i.sector, i.specs, i.specification || '', !!i.specFile).length > 0)
-    if (noSpec.length) { alert(`اكتب مواصفات ${noSpec.length === 1 ? '«' + noSpec[0].product_name + '»' : arItems(noSpec.length)} (المقاس، الطول، الدرجة…) ليتمكن الموردون من التسعير.`); setEditingIndex(items.indexOf(noSpec[0])); return }
+    if (noSpec.length) { const nm = noSpec.length === 1 ? '«' + getProductLabel(noSpec[0].product_name, locale) + '»' : ''; alert(L(`Write the specs of ${nm || noSpec.length + ' items'} (size, length, grade…) so suppliers can price them.`, `${nm || noSpec.length + ' آئٹمز'} کی تفصیل لکھیں (سائز، لمبائی، گریڈ…) تاکہ سپلائرز قیمت دے سکیں۔`, `اكتب مواصفات ${nm || arItems(noSpec.length)} (المقاس، الطول، الدرجة…) ليتمكن الموردون من التسعير.`)); setEditingIndex(items.indexOf(noSpec[0])); return }
     const noQty = classifiedItems.filter((i: any) => !(parseFloat(i.quantity) > 0))
-    if (noQty.length) { alert(`أدخل كمية ${noQty.length === 1 ? '«' + noQty[0].product_name + '»' : arItems(noQty.length)} قبل الإرسال.`); return }
-    if (classifiedItems.length === 0) { alert('لا توجد بنود مصنّفة للإرسال — اختر تصنيف البنود أولاً.'); return }
+    if (noQty.length) { const nm = noQty.length === 1 ? '«' + getProductLabel(noQty[0].product_name, locale) + '»' : ''; alert(L(`Enter the quantity of ${nm || noQty.length + ' items'} before sending.`, `بھیجنے سے پہلے ${nm || noQty.length + ' آئٹمز'} کی مقدار لکھیں۔`, `أدخل كمية ${nm || arItems(noQty.length)} قبل الإرسال.`)); return }
+    if (classifiedItems.length === 0) { alert(L('There are no classified items to send — choose the items\' categories first.', 'بھیجنے کے لیے کوئی درجہ بند آئٹم نہیں — پہلے آئٹمز کا زمرہ منتخب کریں۔', 'لا توجد بنود مصنّفة للإرسال — اختر تصنيف البنود أولاً.')); return }
+    submittingRef.current = true
     setLoading(true)
     const supabase = createClient()
 
@@ -465,7 +474,7 @@ export default function NewProjectPage() {
           const ext = item.specFile.name.split('.').pop()
           const path = `${user.id}/spec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`
           const { data: up } = await supabase.storage.from('licenses').upload(path, item.specFile, { upsert: true })
-          if (!up) { alert(`تعذّر رفع ملف مواصفات «${item.product_name}». تحقّق من الاتصال وحاول مرة أخرى، أو احذف الملف.`); return }
+          if (!up) { alert(L(`Could not upload the spec file of «${item.product_name}». Check your connection and try again, or remove the file.`, `«${item.product_name}» کی اسپیسیفکیشن فائل اپ لوڈ نہیں ہو سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں، یا فائل ہٹا دیں۔`, `تعذّر رفع ملف مواصفات «${item.product_name}». تحقّق من الاتصال وحاول مرة أخرى، أو احذف الملف.`)); return }
           itemSpecUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
         }
         const st = specTextOf(item.product_name, item.specs)
@@ -505,7 +514,9 @@ export default function NewProjectPage() {
         expires_at: expiresAt,
       }).select('id').single()
       if (rfqErr || !rfq) {
-        alert((rfqErr?.message || '').includes('rfq_daily_limit') ? 'وصلت إلى الحد اليومي للطلبات. حاول لاحقاً.' : 'تعذّر إرسال المشروع. حاول مرة أخرى.')
+        alert((rfqErr?.message || '').includes('rfq_daily_limit')
+          ? L('Daily request limit reached. Try again later.', 'روزانہ درخواستوں کی حد پوری ہو گئی۔ بعد میں کوشش کریں۔', 'وصلت إلى الحد اليومي للطلبات. حاول لاحقاً.')
+          : L('Could not send the project. Try again.', 'پراجیکٹ نہیں بھیجا جا سکا۔ دوبارہ کوشش کریں۔', 'تعذّر إرسال المشروع. حاول مرة أخرى.'))
         return
       }
       // the project keeps its list of items, all pointing at the one request
@@ -517,7 +528,7 @@ export default function NewProjectPage() {
       window.location.href = `/contractor/rfq/${rfq.id}`
     } catch (err) {
       alert(friendlyError((err as any)?.message, L('Could not send the project — please try again.', 'پراجیکٹ نہیں بھیجا جا سکا — دوبارہ کوشش کریں۔', 'تعذّر إرسال المشروع — حاول مرة أخرى.'), locale))
-    } finally { setLoading(false) }
+    } finally { setLoading(false); submittingRef.current = false }
   }
 
   const selectedCount = items.filter((i: any) => i.selected && i.product_name).length
@@ -532,7 +543,7 @@ export default function NewProjectPage() {
       <div className="max-w-5xl mx-auto">
         {allowed === false && (
           <div className="bg-white rounded-2xl border border-[#D4A543]/40 p-6 sm:p-8 text-center shadow-sm">
-            <div className="text-4xl text-[#9D7425] mb-3"><Glyph e="🏗" /></div>
+            <div className="text-4xl text-[#8F6820] mb-3"><Glyph e="🏗" /></div>
             <h1 className="text-xl font-extrabold text-[#0B2438] mb-2">{L('Projects are for companies', 'پراجیکٹس کمپنیوں کے لیے ہیں', 'المشاريع متاحة لحسابات الشركات')}</h1>
             <p className="text-sm text-gray-600 leading-relaxed max-w-lg mx-auto mb-5">
               {L('Uploading a full bill of quantities and getting one purchase order per supplier is available to companies with a verified commercial registration, and to individuals on the higher plan.',
@@ -560,52 +571,53 @@ export default function NewProjectPage() {
         {/* Step 1: Setup */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
           <h2 className="font-bold mb-4" style={{ color: '#0B2438' }}>
-            {locale === 'en' ? '1. Project Info' : '1. بيانات المشروع'}
+            {L('1. Project Info', '1. پراجیکٹ کی معلومات', '1. بيانات المشروع')}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                {locale === 'en' ? 'Project Name *' : 'اسم المشروع *'}
+                {L('Project Name *', 'پراجیکٹ کا نام *', 'اسم المشروع *')}
               </label>
               <input value={title} onChange={(e: any) => setTitle(e.target.value)}
-                className="input-field" placeholder={locale === 'en' ? 'e.g. Building A — Residential Project' : 'مثال: مبنى A — مشروع سكني'} required />
+                className="input-field" placeholder={L('e.g. Building A — Residential Project', 'مثلاً: عمارت A — رہائشی پراجیکٹ', 'مثال: مبنى A — مشروع سكني')} required />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Region *' : 'المنطقة *'}</label>
+              <label className="block text-xs font-bold text-gray-500 mb-1.5">{L('Region *', 'علاقہ *', 'المنطقة *')}</label>
               <select value={region} onChange={(e: any) => { setRegion(e.target.value); setCity('') }} className="input-field" required>
-                <option value="">{locale === 'en' ? 'Select region' : 'اختر المنطقة'}</option>
+                <option value="">{L('Select region', 'علاقہ منتخب کریں', 'اختر المنطقة')}</option>
                 {REGIONS.map((r: any) => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'City' : 'المدينة'}</label>
+              <label className="block text-xs font-bold text-gray-500 mb-1.5">{L('City', 'شہر', 'المدينة')}</label>
               <select value={city} onChange={(e: any) => setCity(e.target.value)} className="input-field" disabled={!region}>
-                <option value="">{!region ? (locale === 'en' ? 'Select region first' : 'اختر المنطقة أولاً') : (locale === 'en' ? 'Select city' : 'اختر المدينة')}</option>
+                <option value="">{!region ? (L('Select region first', 'پہلے علاقہ منتخب کریں', 'اختر المنطقة أولاً')) : (L('Select city', 'شہر منتخب کریں', 'اختر المدينة'))}</option>
                 {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
               </select>
             </div>
             <div className="sm:col-span-2 -mt-1">
               <button type="button" onClick={geolocate}
                 className="text-xs font-bold px-3 py-2 rounded-xl border border-[#0F6E56] text-[#0F6E56] hover:bg-[#0F6E56]/5 transition-colors">
-                <Glyph e="📍" /> {locale === 'en' ? 'Auto-detect my location' : 'حدّد موقعي تلقائياً'}
+                <Glyph e="📍" /> {L('Auto-detect my location', 'میرا مقام خود معلوم کریں', 'حدّد موقعي تلقائياً')}
               </button>
               {geoMsg && <span className="text-[11px] text-gray-500 ms-2">{geoMsg}</span>}
             </div>
             <div className="sm:col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-amber-800"><Glyph e="🚚" /> {locale === 'en' ? 'Delivery required (for the whole project)' : 'التوصيل مطلوب (لكل المشروع)'}</div>
-                <div onClick={() => setDeliveryRequired(!deliveryRequired)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${deliveryRequired ? 'justify-end' : 'justify-start'}`}
+                <div className="text-sm font-semibold text-amber-800"><Glyph e="🚚" /> {L('Delivery required (for the whole project)', 'ڈیلیوری درکار ہے (پورے پراجیکٹ کے لیے)', 'التوصيل مطلوب (لكل المشروع)')}</div>
+                <button type="button" role="switch" aria-checked={deliveryRequired} aria-label={L('Delivery required', 'ڈیلیوری درکار ہے', 'التوصيل مطلوب')}
+                  onClick={() => setDeliveryRequired(!deliveryRequired)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${deliveryRequired ? 'justify-end' : 'justify-start'}`}
                   style={{ background: deliveryRequired ? '#0F6E56' : '#e5e7eb' }}>
-                  <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
-                </div>
+                  <span className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                </button>
               </div>
               {deliveryRequired && (
                 <div className="mt-2">
                   <input value={deliveryLocation} onChange={(e: any) => setDeliveryLocation(e.target.value)}
                     className="input-field"
-                    placeholder={locale === 'en' ? 'Delivery location: district / site address *' : 'موقع التوصيل: الحي / عنوان الموقع *'} />
+                    placeholder={L('Delivery location: district / site address *', 'ڈیلیوری کا مقام: محلہ / سائٹ کا پتہ *', 'موقع التوصيل: الحي / عنوان الموقع *')} />
                   <p className="text-[11px] text-amber-700 mt-1">
-                    {locale === 'en' ? 'Helps suppliers calculate shipping cost.' : 'يساعد الموردين على حساب تكلفة الشحن.'}
+                    {L('Helps suppliers calculate shipping cost.', 'اس سے سپلائرز کو ترسیل کا خرچ نکالنے میں مدد ملتی ہے۔', 'يساعد الموردين على حساب تكلفة الشحن.')}
                   </p>
                 </div>
               )}
@@ -616,11 +628,10 @@ export default function NewProjectPage() {
         {/* BOQ Upload */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
           <h2 className="font-bold mb-1" style={{ color: '#0B2438' }}>
-            {locale === 'en' ? '2. Upload BOQ or Add Manually' : '2. رفع BOQ أو إضافة يدوية'}
+            {L('2. Upload BOQ or Add Manually', '2. BOQ اپ لوڈ کریں یا خود شامل کریں', '2. رفع BOQ أو إضافة يدوية')}
           </h2>
           <p className="text-xs text-gray-400 mb-4">
-            {locale === 'en' ? 'Excel BOQ will be auto-analyzed to extract all materials with quantities'
-            : 'ملف Excel سيتم تحليله تلقائياً لاستخراج المواد والكميات'}
+            {L('Excel BOQ will be auto-analyzed to extract all materials with quantities', 'Excel فائل کا خودکار تجزیہ کر کے تمام مواد اور مقداریں نکالی جائیں گی', 'ملف Excel سيتم تحليله تلقائياً لاستخراج المواد والكميات')}
           </p>
 
           {/* BOQ Upload Zone */}
@@ -633,27 +644,27 @@ export default function NewProjectPage() {
               <div className="text-center">
                 <div className="text-4xl mb-3 animate-pulse"><Glyph e="⏳" /></div>
                 <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>
-                  {locale === 'en' ? 'Analyzing BOQ...' : 'جارٍ تحليل الـ BOQ...'}
+                  {L('Analyzing BOQ...', 'BOQ کا تجزیہ ہو رہا ہے...', 'جارٍ تحليل الـ BOQ...')}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">
-                  {locale === 'en' ? 'Extracting materials and quantities' : 'استخراج المواد والكميات'}
+                  {L('Extracting materials and quantities', 'مواد اور مقداریں نکالی جا رہی ہیں', 'استخراج المواد والكميات')}
                 </div>
               </div>
             ) : boqFile ? (
               <div className="text-center">
                 <div className="text-4xl mb-2"><Glyph e="✅" /></div>
                 <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{boqFile.name}</div>
-                <div className="text-xs text-gray-400 mt-1">{locale === 'en' ? `${items.length} items extracted` : `تم استخراج ${arItems(items.length)}`}</div>
+                <div className="text-xs text-gray-400 mt-1">{L(`${items.length} items extracted`, `${items.length} آئٹمز نکالے گئے`, `تم استخراج ${arItems(items.length)}`)}</div>
                 <button type="button" onClick={(e: any) => { e.preventDefault(); setBoqFile(null); setItems([]) }}
                   className="mt-2 text-xs text-red-500 hover:underline">
-                  {locale === 'en' ? 'Remove' : 'إزالة الملف'}
+                  {L('Remove', 'ہٹائیں', 'إزالة الملف')}
                 </button>
               </div>
             ) : (
               <div className="text-center">
                 <div className="text-5xl mb-3"><Glyph e="📊" /></div>
                 <div className="font-semibold text-sm text-gray-700">
-                  {locale === 'en' ? 'Drop Excel BOQ here or click to upload' : 'اسحب ملف BOQ هنا أو اضغط للرفع'}
+                  {L('Drop Excel BOQ here or click to upload', 'Excel BOQ یہاں چھوڑیں یا اپ لوڈ کے لیے دبائیں', 'اسحب ملف BOQ هنا أو اضغط للرفع')}
                 </div>
                 <div className="text-xs text-gray-400 mt-1">Excel (.xlsx, .xls)</div>
               </div>
@@ -669,53 +680,53 @@ export default function NewProjectPage() {
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base"><Glyph e="📑" /></span>
               <h3 className="font-bold text-sm" style={{ color: '#0B2438' }}>
-                {locale === 'en' ? 'Project specifications (optional)' : 'مواصفات المشروع (اختياري)'}
+                {L('Project specifications (optional)', 'پراجیکٹ کی تفصیلات (اختیاری)', 'مواصفات المشروع (اختياري)')}
               </h3>
             </div>
             <p className="text-[11px] text-gray-500 mb-3">
-              {locale === 'en'
-                ? 'Upload the spec document — the AI reads it with the BOQ, resolves item codes (e.g. DRS-701) and fills each item\'s full details.'
-                : 'ارفع مستند المواصفات — يقرأه الذكاء مع الـBOQ، يربط رموز البنود (مثل DRS-701) ويملأ تفاصيل كل بند الكاملة.'}
+              {L('Upload the spec document — the AI reads it with the BOQ, resolves item codes (e.g. DRS-701) and fills each item\'s full details.',
+                'اسپیسیفکیشن دستاویز اپ لوڈ کریں — AI اسے BOQ کے ساتھ پڑھ کر آئٹم کوڈ (جیسے DRS-701) ملاتا ہے اور ہر آئٹم کی مکمل تفصیل بھرتا ہے۔',
+                'ارفع مستند المواصفات — يقرأه الذكاء مع الـBOQ، يربط رموز البنود (مثل DRS-701) ويملأ تفاصيل كل بند الكاملة.')}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               {specsFile ? (
                 <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
                   <span className="text-base"><Glyph e="📄" /></span>
                   <span className="text-xs font-semibold truncate max-w-[200px]" style={{ color: '#0B2438' }}>{specsFile.name}</span>
-                  <button type="button" onClick={() => { setSpecsFile(null); setSpecMsg('') }} className="text-xs text-red-500 hover:underline">{locale === 'en' ? 'Remove' : 'إزالة'}</button>
+                  <button type="button" onClick={() => { setSpecsFile(null); setSpecMsg('') }} className="text-xs text-red-500 hover:underline">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                 </div>
               ) : (
                 <label className="flex items-center gap-2 border-2 border-dashed border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-[#0B2438]/40 transition-all">
                   <input ref={specsRef} type="file" className="hidden" accept=".pdf,.xlsx,.xls,.csv,.txt,.png,.jpg,.jpeg"
                     onChange={(e: any) => { const f = e.target.files?.[0]; if (f) { setSpecsFile(f); setSpecMsg('') } }} />
                   <span className="text-base"><Glyph e="📤" /></span>
-                  <span className="text-xs text-gray-600">{locale === 'en' ? 'Upload spec (PDF, Excel, image...)' : 'ارفع المواصفات (PDF، Excel، صورة...)'}</span>
+                  <span className="text-xs text-gray-600">{L('Upload spec (PDF, Excel, image...)', 'اسپیسیفکیشن اپ لوڈ کریں (PDF، Excel، تصویر...)', 'ارفع المواصفات (PDF، Excel، صورة...)')}</span>
                 </label>
               )}
               <button type="button" onClick={matchSpecs} disabled={matchingSpecs || !specsFile || items.length === 0}
                 className="text-xs font-bold text-white px-4 py-2 rounded-lg disabled:opacity-40 transition-all hover:shadow"
                 style={{ background: '#0B2438' }}>
-                {matchingSpecs ? (locale === 'en' ? 'Reading...' : 'جارٍ القراءة...') : (locale === 'en' ? 'Read & match specs' : 'اقرأ المواصفات وطابقها')}
+                {matchingSpecs ? (L('Reading...', 'پڑھ رہے ہیں...', 'جارٍ القراءة...')) : (L('Read & match specs', 'اسپیسیفکیشن پڑھیں اور ملائیں', 'اقرأ المواصفات وطابقها'))}
               </button>
             </div>
             {specMsg && (
               <div className={`text-xs mt-2 font-semibold ${specMsg.startsWith('✓') ? 'text-emerald-600' : 'text-amber-600'}`}>{specMsg}</div>
             )}
             {items.length === 0 && specsFile && (
-              <div className="text-[11px] text-gray-400 mt-1">{locale === 'en' ? 'Add BOQ items first, then match.' : 'ارفع BOQ أو أضف بنوداً أولاً، ثم اضغط المطابقة.'}</div>
+              <div className="text-[11px] text-gray-400 mt-1">{L('Add BOQ items first, then match.', 'پہلے BOQ اپ لوڈ کریں یا آئٹمز شامل کریں، پھر ملائیں۔', 'ارفع BOQ أو أضف بنوداً أولاً، ثم اضغط المطابقة.')}</div>
             )}
           </div>
 
           <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 h-px bg-gray-200" />
-            <span className="text-xs text-gray-400">{locale === 'en' ? 'OR add manually' : 'أو أضف يدوياً'}</span>
+            <span className="text-xs text-gray-400">{L('OR add manually', 'یا خود شامل کریں', 'أو أضف يدوياً')}</span>
             <div className="flex-1 h-px bg-gray-200" />
           </div>
 
           {draft && items.length === 0 ? draftPanel : (
           <button type="button" onClick={addItem}
             className="w-full py-3 rounded-xl border-2 border-dashed border-gray-200 text-sm font-semibold text-gray-500 hover:border-[#0B2438] hover:text-[#0B2438] transition-all">
-            + {locale === 'en' ? 'Add Material' : 'إضافة مادة'}
+            + {L('Add Material', 'مواد شامل کریں', 'إضافة مادة')}
           </button>)}
         </div>
 
@@ -724,10 +735,10 @@ export default function NewProjectPage() {
           <div className="space-y-3 mb-5">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-sm flex items-center gap-2" style={{ color: '#0B2438' }}>
-                {locale === 'en' ? `Materials (${items.length})` : `المواد (${items.length})`}
+                {L(`Materials (${items.length})`, `مواد (${items.length})`, `المواد (${items.length})`)}
                 {aiUsed && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
-                    <Glyph e="✨" /> {locale === 'en' ? 'AI-analyzed' : 'حُلّل بالذكاء الاصطناعي'}
+                    <Glyph e="✨" /> {L('AI-analyzed', 'AI سے تجزیہ شدہ', 'حُلّل بالذكاء الاصطناعي')}
                   </span>
                 )}
               </h2>
@@ -738,10 +749,10 @@ export default function NewProjectPage() {
               <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
                 <span className="text-lg"><Glyph e="⚠" /></span>
                 <div className="text-xs text-red-700 leading-relaxed">
-                  <strong>{unclassifiedCount} {locale === 'en' ? 'item(s) are not classified.' : 'بند غير مصنّف.'}</strong>{' '}
-                  {locale === 'en'
-                    ? 'Items without a category from the lists go to all suppliers in the sector instead of the right specialist. Open each one (Edit) and pick its category — or classify them in bulk below.'
-                    : 'البنود بدون تصنيف من القوائم تُرسل لكل موردي القطاع بدل المورد المتخصص. افتح كل بند (زر «تعديل») واختر تصنيفه — أو صنّفها جماعياً بالأسفل.'}
+                  <strong>{locale === 'ar' ? arItems(unclassifiedCount) + ' غير مصنّف.' : `${unclassifiedCount} ${L('item(s) are not classified.', 'آئٹمز کی درجہ بندی نہیں ہوئی۔', '')}`}</strong>{' '}
+                  {L('Unclassified items are not sent: classification is what routes each item to the right specialist. Open each one (Edit) and pick its category — or classify them in bulk below.',
+                    'غیر درجہ بند آئٹمز نہیں بھیجے جاتے: درجہ بندی ہی ہر آئٹم کو متعلقہ ماہر سپلائر تک پہنچاتی ہے۔ ہر آئٹم کھول کر (ترمیم) اس کا زمرہ منتخب کریں — یا نیچے اجتماعی درجہ بندی کریں۔',
+                    'البنود غير المصنّفة لا تُرسل، فالتصنيف هو ما يوصل كل بند إلى المورد المتخصص. افتح كل بند (زر «تعديل») واختر تصنيفه — أو صنّفها جماعياً بالأسفل.')}
                 </div>
               </div>
             )}
@@ -749,21 +760,21 @@ export default function NewProjectPage() {
             {/* تصنيف جماعي: طبّق تصنيفاً على كل غير المصنّف في قطاع واحد بضغطة */}
             {unclassifiedCount > 0 && (
               <div className="bg-white border border-gray-200 rounded-xl p-3">
-                <div className="text-xs font-bold text-gray-600 mb-2"><Glyph e="⚡" /> {locale === 'en' ? 'Bulk classify the unclassified' : 'تصنيف جماعي لغير المصنّف'}</div>
+                <div className="text-xs font-bold text-gray-600 mb-2"><Glyph e="⚡" /> {L('Bulk classify the unclassified', 'غیر درجہ بند آئٹمز کی اجتماعی درجہ بندی', 'تصنيف جماعي لغير المصنّف')}</div>
                 <div className="flex flex-wrap items-end gap-2">
                   <div className="min-w-[150px]">
-                    <label className="block text-[10px] text-gray-400 mb-0.5">{locale === 'en' ? 'Sector' : 'القطاع'}</label>
+                    <label className="block text-[10px] text-gray-400 mb-0.5">{L('Sector', 'شعبہ', 'القطاع')}</label>
                     <select value={bulkSector} onChange={e => { setBulkSector(e.target.value); setBulkSub('') }} className="input-field text-sm py-1.5">
-                      <option value="">{locale === 'en' ? '— pick —' : '— اختر —'}</option>
+                      <option value="">{L('— pick —', '— منتخب کریں —', '— اختر —')}</option>
                       {unclassifiedSectors.map((s: string) => (
                         <option key={s} value={s}>{(SECTOR_LABELS as any)[s] || s} ({unclassifiedBySector[s]})</option>
                       ))}
                     </select>
                   </div>
                   <div className="min-w-[180px] flex-1">
-                    <label className="block text-[10px] text-gray-400 mb-0.5">{locale === 'en' ? 'Category' : 'التصنيف'}</label>
+                    <label className="block text-[10px] text-gray-400 mb-0.5">{L('Category', 'زمرہ', 'التصنيف')}</label>
                     <select value={bulkSub} onChange={e => setBulkSub(e.target.value)} disabled={!bulkSector} className="input-field text-sm py-1.5 disabled:opacity-50">
-                      <option value="">{locale === 'en' ? 'Pick a category' : 'اختر التصنيف'}</option>
+                      <option value="">{L('Pick a category', 'زمرہ منتخب کریں', 'اختر التصنيف')}</option>
                       {bulkSector && Object.entries((SUB_CATEGORIES as any)[bulkSector] || {}).map(([k, v]: any) => (
                         <option key={k} value={k}>{getSubCategoryLabel(bulkSector as any, k, locale)}</option>
                       ))}
@@ -771,7 +782,7 @@ export default function NewProjectPage() {
                   </div>
                   <button type="button" onClick={bulkApplyCategory} disabled={!bulkSector || !bulkSub}
                     className="text-xs font-bold text-white px-4 py-2 rounded-lg disabled:opacity-40" style={{ background: '#0B2438' }}>
-                    {locale === 'en' ? 'Apply to all' : 'طبّق على الكل'}
+                    {L('Apply to all', 'سب پر لاگو کریں', 'طبّق على الكل')}
                   </button>
                 </div>
               </div>
@@ -781,15 +792,15 @@ export default function NewProjectPage() {
             <div className="flex gap-2">
               <button type="button" onClick={() => setItems(prev => prev.map((i: any) => ({ ...i, selected: true })))}
                 className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-                {locale === 'en' ? '✓ Select All' : 'تحديد الكل'}
+                {L('✓ Select All', '✓ سب منتخب کریں', 'تحديد الكل')}
               </button>
               <button type="button" onClick={() => setItems(prev => prev.map((i: any) => ({ ...i, selected: false })))}
                 className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
-                {locale === 'en' ? '✗ Deselect All' : 'إلغاء الكل'}
+                {L('✗ Deselect All', '✗ سب ہٹائیں', 'إلغاء الكل')}
               </button>
               <button type="button" onClick={addItem}
                 className="text-xs px-3 py-1.5 rounded-lg text-white" style={{ background: '#0B2438' }}>
-                + {locale === 'en' ? 'Add a material' : 'أضف مادة'}
+                + {L('Add a material', 'مواد شامل کریں', 'أضف مادة')}
               </button>
             </div>
             {draft && items.length > 0 && draftPanel}
@@ -828,7 +839,7 @@ export default function NewProjectPage() {
                           <div className="sm:col-span-2">
                             <input value={getProductLabel(item.product_name, locale)}
                               onChange={(e: any) => { const v = e.target.value; setItems(prev => prev.map((it: any) => it.id === item.id ? { ...it, product_name: v, specs: {} } : it)) }}
-                              className="input-field text-sm" placeholder={locale === 'en' ? 'Material name *' : 'اسم المادة *'} />
+                              className="input-field text-sm" placeholder={L('Material name *', 'مواد کا نام *', 'اسم المادة *')} />
                           </div>
                           {/* التخصص — يحدّد المورد المتخصص الذي يستقبل البند */}
                           <div className="sm:col-span-2">
@@ -838,8 +849,8 @@ export default function NewProjectPage() {
                           </div>
                           <div className="grid grid-cols-2 gap-2">
                             <input type="text" inputMode="decimal" value={item.quantity}
-                              onChange={(e: any) => updateItem(item.id, 'quantity', e.target.value.replace(/[٠-٩]/g, (x: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, ''))}
-                              className="input-field text-sm" placeholder={locale === 'en' ? 'Qty' : 'الكمية'} />
+                              onChange={(e: any) => updateItem(item.id, 'quantity', toQty(e.target.value))}
+                              className="input-field text-sm" placeholder={L('Qty', 'مقدار', 'الكمية')} />
                             <select value={item.unit}
                               onChange={(e: any) => updateItem(item.id, 'unit', e.target.value)}
                               className="input-field text-sm">
@@ -856,17 +867,17 @@ export default function NewProjectPage() {
                               placeholder={specsRequired(item.product_name, item.sector) && !getProductSpecs(item.product_name).some(f => f.key !== 'unit') ? L('Size and specs (required): length, width, thickness, grade…', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): الطول، العرض، السماكة، الدرجة…') : L('More specs or notes (optional)', 'مزید تفصیل (اختیاری)', 'مواصفات إضافية أو ملاحظات (اختياري)')} />
                             {item.specFromDoc && (item.specFromDoc !== (item.specification || '')) && (
                               <div className="mt-1.5 text-[11px] bg-[#D4A543]/5 border border-[#D4A543]/30 rounded-lg p-2 flex items-start gap-2">
-                                <span className="text-[#9D7425] font-bold shrink-0"><Glyph e="📄" /> {locale === 'en' ? 'Spec doc:' : 'من الوثيقة:'}</span>
+                                <span className="text-[#8F6820] font-bold shrink-0"><Glyph e="📄" /> {L('Spec doc:', 'دستاویز سے:', 'من الوثيقة:')}</span>
                                 <span className="text-gray-600 flex-1 min-w-0">{item.specFromDoc}</span>
                                 <button type="button" onClick={() => updateItem(item.id, 'specification', item.specFromDoc)}
-                                  className="text-[#0F6E56] font-bold shrink-0 hover:underline">{locale === 'en' ? 'Use' : 'استبدل'}</button>
+                                  className="text-[#0F6E56] font-bold shrink-0 hover:underline">{L('Use', 'استعمال کریں', 'استبدل')}</button>
                               </div>
                             )}
                           </div>
                           {/* رفع ملف مواصفات للبند */}
                           <div className="sm:col-span-2">
                             <label className="block text-xs font-bold text-gray-500 mb-1">
-                              {locale === 'en' ? 'Spec file (optional)' : 'ملف مواصفات للبند (اختياري)'}
+                              {L('Spec file (optional)', 'آئٹم کی اسپیسیفکیشن فائل (اختیاری)', 'ملف مواصفات للبند (اختياري)')}
                             </label>
                             {item.specFile ? (
                               <div className="flex items-center gap-2 bg-[#0B2438]/5 rounded-lg p-2 border border-[#0B2438]/20">
@@ -874,7 +885,7 @@ export default function NewProjectPage() {
                                 <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#0B2438' }}>{item.specFile.name}</span>
                                 <button type="button" onClick={() => updateItem(item.id, 'specFile', null)}
                                   className="text-xs text-red-500 hover:underline">
-                                  {locale === 'en' ? 'Remove' : 'إزالة'}
+                                  {L('Remove', 'ہٹائیں', 'إزالة')}
                                 </button>
                               </div>
                             ) : (
@@ -883,7 +894,7 @@ export default function NewProjectPage() {
                                   onChange={(e: any) => updateItem(item.id, 'specFile', e.target.files?.[0] ?? null)} />
                                 <span className="text-base"><Glyph e="📄" /></span>
                                 <span className="text-xs text-gray-500">
-                                  {locale === 'en' ? 'Upload drawing/spec (PDF, DWG, Image...)' : 'ارفع رسمة أو مواصفة (PDF، DWG، صورة...)'}
+                                  {L('Upload drawing/spec (PDF, DWG, Image...)', 'ڈرائنگ یا اسپیسیفکیشن اپ لوڈ کریں (PDF، DWG، تصویر...)', 'ارفع رسمة أو مواصفة (PDF، DWG، صورة...)')}
                                 </span>
                               </label>
                             )}
@@ -891,7 +902,7 @@ export default function NewProjectPage() {
                           <div className="sm:col-span-2 flex gap-2">
                             <button type="button" onClick={() => setEditingIndex(null)}
                               className="text-xs px-4 py-2 rounded-lg text-white font-semibold" style={{ background: '#0F6E56' }}>
-                              ✓ {locale === 'en' ? 'Done' : 'حفظ'}
+                              ✓ {L('Done', 'محفوظ کریں', 'حفظ')}
                             </button>
                           </div>
                         </div>
@@ -903,7 +914,7 @@ export default function NewProjectPage() {
                           {item.product_name && <img src={productImageUrl(item.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, item.sub_category)} className="w-12 h-12 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />}
                           <div className="min-w-0">
                             <div className="font-semibold text-sm truncate" style={{ color: '#0B2438' }}>
-                              {(item.product_name && getProductLabel(item.product_name, locale)) || <span className="text-gray-400 italic">{locale === 'en' ? 'Unnamed item' : 'بند بدون اسم'}</span>}
+                              {(item.product_name && getProductLabel(item.product_name, locale)) || <span className="text-gray-400 italic">{L('Unnamed item', 'بغیر نام کا آئٹم', 'بند بدون اسم')}</span>}
                             </div>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                               {item.sub_category ? (
@@ -916,17 +927,17 @@ export default function NewProjectPage() {
                               {item.needs_classification && (
                                 <button type="button" onClick={() => setEditingIndex(i)}
                                   className="badge text-[10px] bg-red-100 text-red-600 font-bold hover:bg-red-200">
-                                  <Glyph e="⚠" /> {locale === 'en' ? 'Choose its specialty' : 'اختر تخصصها'}
+                                  <Glyph e="⚠" /> {L('Choose its specialty', 'اس کا شعبہ منتخب کریں', 'اختر تخصصها')}
                                 </button>
                               )}
                               {item.quantity && <span className="text-xs text-gray-500"><Glyph e="📦" /> {item.quantity} {item.unit}</span>}
                               {(specTextOf(item.product_name, item.specs) || item.specification) && <span className="text-xs text-gray-500 truncate max-w-[260px]"><Glyph e="⚙" /> {[specTextOf(item.product_name, item.specs), item.specification].filter(Boolean).join(' — ')}</span>}
                               {missingSpecs(item.product_name, item.sector, item.specs, item.specification || '', !!item.specFile).length > 0 && (
-                                <button type="button" onClick={() => setEditingIndex(i)} className="badge text-[10px] bg-[#D4A543]/15 text-[#9D7425] font-bold hover:bg-[#D4A543]/25">
+                                <button type="button" onClick={() => setEditingIndex(i)} className="badge text-[10px] bg-[#D4A543]/15 text-[#8F6820] font-bold hover:bg-[#D4A543]/25">
                                   {L('Complete the specs', 'تفصیل مکمل کریں', 'أكمل المواصفات')}
                                 </button>
                               )}
-                              {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {locale === 'en' ? 'File attached' : 'مرفق ملف'}</span>}
+                              {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {L('File attached', 'فائل منسلک', 'مرفق ملف')}</span>}
                             </div>
                             {(item.done === false || !(parseFloat(item.quantity) > 0)) && (() => {
                               const miss = missingSpecs(item.product_name, item.sector, item.specs, item.specification || '', !!item.specFile)
@@ -936,7 +947,7 @@ export default function NewProjectPage() {
                                 <div className="mt-3 space-y-2 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/[.04] p-3">
                                   <div className="grid grid-cols-2 gap-2">
                                     <input type="text" inputMode="decimal" value={item.quantity || ''} autoFocus={i === items.length - 1}
-                                      onChange={(e: any) => updateItem(item.id, 'quantity', e.target.value.replace(/[٠-٩]/g, (x: string) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(x))).replace(/[^0-9.]/g, ''))}
+                                      onChange={(e: any) => updateItem(item.id, 'quantity', toQty(e.target.value))}
                                       className={`input-field text-sm ${parseFloat(item.quantity) > 0 ? '' : 'border-[#D4A543] bg-white'}`} placeholder={L('Quantity', 'مقدار', 'الكمية')} />
                                     <select value={item.unit} onChange={(e: any) => updateItem(item.id, 'unit', e.target.value)} className="input-field text-sm">
                                       {Array.from(new Set([...(unitChoicesFor(item.product_name, item.sector) || UNIT_OPTIONS), ...(item.unit ? [item.unit] : [])])).map((u: any) => <option key={u} value={u}>{u}</option>)}
@@ -960,10 +971,10 @@ export default function NewProjectPage() {
                           </div>
                           </div>
                           <div className="flex gap-1 flex-shrink-0">
-                            <button type="button" onClick={() => setEditingIndex(i)}
-                              className="text-xs px-2 py-1 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"><Glyph e="✏" /></button>
-                            <button type="button" onClick={() => removeItem(item.id)}
-                              className="text-xs px-2 py-1 rounded-lg border border-red-200 text-red-500 hover:bg-red-50"><Glyph e="🗑" /></button>
+                            <button type="button" onClick={() => setEditingIndex(i)} aria-label={L('Edit', 'ترمیم', 'تعديل')}
+                              className="text-xs min-w-10 min-h-10 grid place-items-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"><Glyph e="✏" /></button>
+                            <button type="button" onClick={() => removeItem(item.id)} aria-label={L('Remove', 'ہٹائیں', 'حذف')}
+                              className="text-xs min-w-10 min-h-10 grid place-items-center rounded-lg border border-red-200 text-red-500 hover:bg-red-50"><Glyph e="🗑" /></button>
                           </div>
                         </div>
                       )}
@@ -1003,20 +1014,22 @@ export default function NewProjectPage() {
                   <div className="text-sm font-semibold text-gray-800">{L('Verified (trusted) suppliers only', 'صرف تصدیق شدہ', 'الموردون الموثّقون والمعتمدون فقط')}</div>
                   <div className="text-xs text-gray-400">{locale === 'en' ? 'Receive offers from verified suppliers only ✓' : locale === 'ur' ? 'صرف تصدیق شدہ سپلائرز سے ✓' : 'استقبل عروضاً من الموثّقين فقط ✓'}</div>
                 </div>
-                <div onClick={() => setVerifiedOnly(!verifiedOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${verifiedOnly ? 'justify-end' : 'justify-start'}`}
+                <button type="button" role="switch" aria-checked={verifiedOnly} aria-label={L('Verified suppliers only', 'صرف تصدیق شدہ سپلائرز', 'الموردون الموثّقون فقط')}
+                  onClick={() => setVerifiedOnly(!verifiedOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${verifiedOnly ? 'justify-end' : 'justify-start'}`}
                   style={{ background: verifiedOnly ? '#0F6E56' : '#e5e7eb' }}>
-                  <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
-                </div>
+                  <span className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                </button>
               </div>
               <div className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5 mt-2">
                 <div>
                   <div className="text-sm font-semibold text-gray-800"><Glyph e="📍" /> {locale === 'en' ? 'Nearby only (same region)' : locale === 'ur' ? 'صرف قریب (اسی علاقہ)' : 'القريبون فقط (نفس المنطقة)'}</div>
                   <div className="text-xs text-gray-400">{locale === 'en' ? 'Only suppliers in your region' : locale === 'ur' ? 'صرف آپ کے علاقے کے سپلائرز' : 'موردو منطقتك فقط — شحن أقرب وأرخص'}</div>
                 </div>
-                <div onClick={() => setNearbyOnly(!nearbyOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${nearbyOnly ? 'justify-end' : 'justify-start'}`}
+                <button type="button" role="switch" aria-checked={nearbyOnly} aria-label={L('Nearby only', 'صرف قریبی', 'القريبون فقط')}
+                  onClick={() => setNearbyOnly(!nearbyOnly)} className={`w-11 h-6 rounded-full cursor-pointer flex items-center px-1 shrink-0 transition-all ${nearbyOnly ? 'justify-end' : 'justify-start'}`}
                   style={{ background: nearbyOnly ? '#0B2438' : '#e5e7eb' }}>
-                  <div className="w-4 h-4 bg-white rounded-full shadow-sm" />
-                </div>
+                  <span className="w-4 h-4 bg-white rounded-full shadow-sm" />
+                </button>
               </div>
             </div>
 
@@ -1043,10 +1056,10 @@ export default function NewProjectPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="font-bold" style={{ color: '#0B2438' }}>
-                  {locale === 'en' ? 'Ready to Send?' : 'جاهز للإرسال؟'}
+                  {L('Ready to Send?', 'بھیجنے کے لیے تیار؟', 'جاهز للإرسال؟')}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {locale === 'en' ? `${selectedCount} materials in one request to the specialist suppliers` : `${arMaterials(selectedCount)} في طلب واحد للموردين المختصين`}
+                  {L(`${selectedCount} materials in one request to the specialist suppliers`, `${selectedCount} مواد ایک درخواست میں متعلقہ سپلائرز کو`, `${arMaterials(selectedCount)} في طلب واحد للموردين المختصين`)}
                 </p>
               </div>
             </div>
@@ -1058,9 +1071,9 @@ export default function NewProjectPage() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                  {locale === 'en' ? 'Sending to suppliers...' : 'جارٍ الإرسال للموردين...'}
+                  {L('Sending to suppliers...', 'سپلائرز کو بھیجا جا رہا ہے...', 'جارٍ الإرسال للموردين...')}
                 </span>
-              ) : locale === 'en' ? `Send ${selectedCount} Materials to Suppliers →` : `إرسال ${arMaterials(selectedCount)} للموردين المتخصصين ←`}
+              ) : L(`Send ${selectedCount} Materials to Suppliers →`, `${selectedCount} مواد سپلائرز کو بھیجیں ←`, `إرسال ${arMaterials(selectedCount)} للموردين المتخصصين ←`)}
             </button>
           </div>
         )}

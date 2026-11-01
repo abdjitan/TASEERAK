@@ -70,7 +70,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
         {anyFilter && (
           <div className="flex items-center justify-between mt-3 text-xs">
             <span className="text-gray-500">{filtered.length} نتيجة</span>
-            <button onClick={clear} className="text-[#9D7425] font-bold hover:underline">مسح الفلاتر ✕</button>
+            <button onClick={clear} className="text-[#8F6820] font-bold hover:underline">مسح الفلاتر ✕</button>
           </div>
         )}
       </div>

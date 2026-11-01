@@ -62,10 +62,12 @@ export default function AppShell({
   useEffect(() => {
     const supabase = createClient()
     let ch: any
+    let cancelled = false
+    let onRead: (() => void) | null = null
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       const uid = userId || session?.user?.id
-      if (!uid) return
+      if (!uid || cancelled) return
       claimPendingRef(supabase) // a new account opened from an invite link: link it to the inviter once
       const refresh = async () => {
         const { count } = await supabase.from('messages').select('id', { count: 'exact', head: true }).is('read_at', null).neq('sender_id', uid)
@@ -74,11 +76,22 @@ export default function AppShell({
       }
       if (unreadCache.uid === uid && Date.now() - unreadCache.at < 60_000) setUnreadMsgs(unreadCache.n)
       else await refresh()
+      if (cancelled) return
+      // Only this person's conversations (send_message bumps last_message_at) — the old listener
+      // heard every message on the platform and recounted for each (perf audit 2026-11-01).
+      // Reading messages is announced by the messages page with a 'tsk:msgs-read' event.
       ch = supabase.channel(`appshell-msgs-${uid}`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => { refresh() })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `contractor_id=eq.${uid}` }, () => { refresh() })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `supplier_id=eq.${uid}` }, () => { refresh() })
         .subscribe()
+      onRead = () => { refresh() }
+      window.addEventListener('tsk:msgs-read', onRead)
     })()
-    return () => { if (ch) supabase.removeChannel(ch) }
+    return () => {
+      cancelled = true
+      if (ch) supabase.removeChannel(ch)
+      if (onRead) window.removeEventListener('tsk:msgs-read', onRead)
+    }
   }, [userId])
   // Warm every menu page in the background once the shell is idle, so even the first visit to a
   // page doesn't wait for its code and server payload (the mobile drawer links are off-screen, so

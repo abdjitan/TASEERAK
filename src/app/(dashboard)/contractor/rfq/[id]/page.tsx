@@ -21,7 +21,8 @@ import { TIERS, tierLabel, normTier, sourceLabel, availabilityLabel, isDirectSou
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
-import { daysText } from '@/lib/text'
+import { daysText, arCount } from '@/lib/text'
+import { toLatinDigits as toLatinNumber } from '@/lib/phone'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
@@ -157,10 +158,9 @@ export default function RFQDetailPage() {
           .eq('rfq_id', id).order('total_price', { ascending: true }),
         // ترسية بند-بند (إن وُجدت)
         supabase.from('rfq_item_awards').select('*').eq('rfq_id', id),
-        // متوسط السوق من عروض مشابهة — recent offers only, filtered by product below
-        supabase.from('offers').select('unit_price, rfq:rfqs(product_name, sector)')
-          .not('unit_price', 'is', null).not('status', 'eq', 'rejected')
-          .order('created_at', { ascending: false }).limit(500),
+        // متوسط السوق: get_market_prices (accepted deals, ≥3 samples) — the offers table only shows
+        // the buyer their own offers (RLS), so reading 500 rows here gave an empty "market"
+        supabase.rpc('get_market_prices'),
         // the precise delivery location lives in rfq_private (owner / admin / winning supplier only, H2)
         supabase.from('rfq_private').select('delivery_location, delivery_geo').eq('rfq_id', id).maybeSingle(),
       ])
@@ -174,11 +174,8 @@ export default function RFQDetailPage() {
       setOffers(offersData || [])
       const am: any = {}; (awardRows || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
       if (rfqData) {
-        const similar = (similarOffers || []).filter((o: any) => o.rfq?.product_name === rfqData.product_name)
-        if (similar.length >= 2) {
-          const avg = similar.reduce((s: any, o: any) => s + o.unit_price, 0) / similar.length
-          setMarketAvg(Math.round(avg))
-        }
+        const mp = ((similarOffers as any[]) || []).find((m: any) => m.product_name === rfqData.product_name && (!m.unit || m.unit === rfqData.unit))
+        if (mp && Number(mp.avg_price) > 0) setMarketAvg(Math.round(Number(mp.avg_price)))
       }
       setLoading(false)
 
@@ -265,14 +262,11 @@ export default function RFQDetailPage() {
   async function awardCheapestAll(offersList: any[]) {
     setPickingAll(true)
     const supabase = createClient()
-    let failed = 0
-    for (let idx = 0; idx < (rfq?.items || []).length; idx++) {
-      if (awards[idx]) continue
-      const best = cheapestFor(rfq.items[idx], idx, offersList)
-      if (!best) continue
-      const { error } = await supabase.rpc('award_rfq_item', { p_rfq_id: id, p_item_index: idx, p_offer_id: best.offer.id })
-      if (error) failed++
-    }
+    const picks = (rfq?.items || []).map((it: any, idx: number) => (awards[idx] ? null : { idx, best: cheapestFor(it, idx, offersList) }))
+      .filter((p: any) => p && p.best)
+    const results = await Promise.all(picks.map((p: any) =>
+      supabase.rpc('award_rfq_item', { p_rfq_id: id, p_item_index: p.idx, p_offer_id: p.best.offer.id })))
+    const failed = results.filter((r: any) => r.error).length
     setPickingAll(false)
     await reloadAwards()
     if (failed) alert(L('Some items could not be selected — refresh and try again.', 'کچھ اشیاء منتخب نہ ہو سکیں — ریفریش کریں۔', 'تعذّر اختيار بعض المواد — حدّث الصفحة وحاول مجدداً.'))
@@ -280,8 +274,9 @@ export default function RFQDetailPage() {
   async function unawardItem(itemIndex: any) {
     setAwarding(`${itemIndex}:x`)
     const supabase = createClient()
-    await supabase.rpc('unaward_rfq_item', { p_rfq_id: id, p_item_index: itemIndex })
+    const { error } = await supabase.rpc('unaward_rfq_item', { p_rfq_id: id, p_item_index: itemIndex })
     setAwarding(null)
+    if (error) alert(L('Could not undo the selection — the request may already be confirmed. Refresh the page.', 'انتخاب واپس نہیں ہو سکا — شاید درخواست پہلے ہی کنفرم ہو چکی ہے۔ صفحہ ریفریش کریں۔', 'تعذّر إلغاء الاختيار — ربما أُكِّد الطلب مسبقاً. حدّث الصفحة.'))
     await reloadAwards()
   }
   // تأكيد الترسية: قبول الموردين الفائزين + إصدار أوامر الشراء + إغلاق الطلب
@@ -299,11 +294,12 @@ export default function RFQDetailPage() {
   const [showEditWarning, setShowEditWarning] = useState(false)
 
   // only a material change (name, quantity, unit, spec) cancels the offers; notes alone keep them
-  const editIsMaterial = () =>
+  const multiItems = () => Array.isArray(rfq?.items) && rfq.items.length > 1
+  const editIsMaterial = () => !multiItems() && (
     ((editName || '').trim() || rfq.product_name) !== rfq.product_name
-    || (parseFloat(String(editQty)) || rfq.quantity) !== Number(rfq.quantity)
+    || (parseFloat(toLatinNumber(String(editQty)).replace('٫', '.')) || rfq.quantity) !== Number(rfq.quantity)
     || (editUnit || rfq.unit) !== rfq.unit
-    || (editSpec || '') !== (rfq.specification || '')
+    || (editSpec || '') !== (rfq.specification || ''))
 
   function handleEditSave() {
     if (offers.length > 0 && editIsMaterial()) {
@@ -315,11 +311,11 @@ export default function RFQDetailPage() {
 
   async function doSaveEdit() {
     const supabase = createClient()
-    const patch: any = {
+    const patch: any = multiItems() ? { notes: editNotes } : {
       notes: editNotes,
       specification: editSpec,
       product_name: (editName || '').trim() || rfq.product_name,
-      quantity: parseFloat(String(editQty)) || rfq.quantity,
+      quantity: parseFloat(toLatinNumber(String(editQty)).replace('٫', '.')) || rfq.quantity,
       unit: editUnit || rfq.unit,
     }
     // a one-item request also carries the line in items[]: the supplier page reads it from there (review 2026-10-28)
@@ -391,24 +387,24 @@ export default function RFQDetailPage() {
           )
           if (offers.length === 0 && reached > 0) return (
             <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-800">
-              <Glyph e="📨" /> {L(`Your request reached ${reached} supplier(s) — waiting for their offers.`, `آپ کی درخواست ${reached} سپلائرز تک پہنچی — پیشکشوں کا انتظار ہے۔`, reached === 1 ? 'وصل طلبك إلى مورد واحد — بانتظار عرضه.' : `وصل طلبك إلى ${reached} موردين — بانتظار عروضهم.`)}
+              <Glyph e="📨" /> {L(`Your request reached ${reached} supplier(s) — waiting for their offers.`, `آپ کی درخواست ${reached} سپلائرز تک پہنچی — پیشکشوں کا انتظار ہے۔`, reached === 1 ? 'وصل طلبك إلى مورد واحد — بانتظار عرضه.' : `وصل طلبك إلى ${arCount(reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')} — بانتظار عروضهم.`)}
             </div>
           )
           return null
         })()}
         <div className="flex items-center justify-between mb-4">
           <Link href="/contractor/rfqs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">← {L('Back to my requests', 'میری درخواستوں پر واپس', 'العودة إلى طلباتي')}</Link>
-          <Link href={`/contractor/rfq/quick?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#9D7425] hover:underline"><Glyph e="🔁" /> {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>
+          <Link href={`/contractor/rfq/quick?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#8F6820] hover:underline"><Glyph e="🔁" /> {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>
         </div>
 
         {/* RFQ Card */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-xs font-bold text-[#9D7425] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
+              <div className="text-xs font-bold text-[#8F6820] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
               <h2 className="text-xl font-bold text-gray-900">{rfqDesc(rfq, locale)}</h2>
               <div className="flex items-center gap-2 mt-1">
-                <span className="bg-blue-100 text-[#9D7425] text-xs px-2 py-0.5 rounded-full font-semibold">
+                <span className="bg-blue-100 text-[#8F6820] text-xs px-2 py-0.5 rounded-full font-semibold">
                   {Array.isArray(rfq.sectors) && rfq.sectors.length > 1
                     ? rfq.sectors.map((s: string) => secLabel(s)).join(' + ')
                     : secLabel(rfq.sector)}
@@ -463,7 +459,7 @@ export default function RFQDetailPage() {
                     }
                     setEditing(!editing)
                   }}
-                  className="text-xs text-[#9D7425] border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-[#D4A543]/5 transition-colors">
+                  className="text-xs text-[#8F6820] border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-[#D4A543]/5 transition-colors">
                   <Glyph e="✏" /> {L('Edit', 'ترمیم', 'تعديل')}
                 </button>
                 <button onClick={cancelRfq}
@@ -485,7 +481,7 @@ export default function RFQDetailPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Quantity', 'مقدار (تعداد)', 'الكمية (العدد)')}</label>
-                      <input type="number" min="0" step="any" value={editQty} onChange={(e: any) => setEditQty(e.target.value)} className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
+                      <input type="text" inputMode="decimal" value={editQty} onChange={(e: any) => setEditQty(e.target.value)} className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Unit', 'یونٹ', 'الوحدة')}</label>
@@ -497,10 +493,12 @@ export default function RFQDetailPage() {
                   </div>
                 </>
               )}
+              {!multiItems() && (
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Specifications', 'اسپیسیفکیشن', 'المواصفات')}</label>
                 <input value={editSpec} onChange={(e: any) => setEditSpec(e.target.value)} className="input-field" placeholder={L('Specifications', 'اسپیسیفکیشن', 'المواصفات')} />
               </div>
+              )}
               <div>
                 <label className="block text-xs font-semibold text-gray-600 mb-1">{L('Notes', 'نوٹس', 'ملاحظات')}</label>
                 <textarea value={editNotes} onChange={(e: any) => setEditNotes(e.target.value)} className="input-field" rows={3} placeholder={L('Notes', 'نوٹس', 'ملاحظات')} />
@@ -560,7 +558,7 @@ export default function RFQDetailPage() {
                               {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 font-bold text-[#9D7425] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
+                          <td className="py-2.5 px-3 font-bold text-[#8F6820] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
                           <td className="py-2.5 px-3 text-xs text-gray-500">{it.specification || '—'}</td>
                         </tr>
                       ))}
@@ -676,7 +674,7 @@ export default function RFQDetailPage() {
                                     {(b.entry.source_type || b.offer.source_type) && !isDirectSource(b.entry.source_type || b.offer.source_type) && (
                                       <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700"><SellerIcon name={sourceIcon(b.entry.source_type || b.offer.source_type)} /> {sourceLabel(b.entry.source_type || b.offer.source_type, locale)}</span>
                                     )}
-                                    <button type="button" onClick={() => setOpenBid(openBid === `${idx}:${b.offer.id}` ? null : `${idx}:${b.offer.id}`)} className="text-[11px] font-bold text-[#9D7425] hover:underline">
+                                    <button type="button" onClick={() => setOpenBid(openBid === `${idx}:${b.offer.id}` ? null : `${idx}:${b.offer.id}`)} className="text-[11px] font-bold text-[#8F6820] hover:underline">
                                       {openBid === `${idx}:${b.offer.id}` ? '▴' : '▾'} {L('Details', 'تفصیلات', 'التفاصيل')}
                                     </button>
                                   </div>
@@ -722,7 +720,7 @@ export default function RFQDetailPage() {
                           })}
                           {bids.length > TOP_N && (
                             <button type="button" onClick={() => setAllBidsFor(m => ({ ...m, [idx]: !m[idx] }))}
-                              className="w-full px-4 py-2 text-xs font-bold text-[#9D7425] hover:bg-[#D4A543]/5">
+                              className="w-full px-4 py-2 text-xs font-bold text-[#8F6820] hover:bg-[#D4A543]/5">
                               {allBidsFor[idx] ? L('Show the best 3 only', 'صرف بہترین 3', 'اعرض أفضل 3 فقط') : L(`Show all offers (${bids.length})`, `تمام آفرز (${bids.length})`, `عرض كل العروض (${bids.length})`)}
                             </button>
                           )}
@@ -772,7 +770,7 @@ export default function RFQDetailPage() {
                         </div>
                       ))}
                       <div className="flex items-center justify-between font-extrabold mt-2 pt-1">
-                        <span>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span><span style={{ color: '#9D7425' }}>{money(grand)} {SAR}</span>
+                        <span>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span><span style={{ color: '#8F6820' }}>{money(grand)} {SAR}</span>
                       </div>
                       <div className="text-[11px] text-blue-200 text-end">{L('Before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')} {money(grandNet)} {SAR} · {L('VAT 15%', 'ٹیکس 15%', 'الضريبة 15%')} {money(grand - grandNet)} {SAR}</div>
                       {finalized ? (
@@ -866,7 +864,7 @@ export default function RFQDetailPage() {
               }`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-[#9D7425]">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-[#8F6820]">
                       {i + 1}
                     </div>
                     <div>
@@ -875,7 +873,7 @@ export default function RFQDetailPage() {
                         {offer.supplier?.supplier_tier && (
                           <span className={`badge text-[10px] ${
                             normTier(offer.supplier.supplier_tier) === 'company' ? 'bg-purple-100 text-purple-700' :
-                            normTier(offer.supplier.supplier_tier) === 'shop' ? 'bg-blue-100 text-[#9D7425]' : 'bg-gray-100 text-gray-600'
+                            normTier(offer.supplier.supplier_tier) === 'shop' ? 'bg-blue-100 text-[#8F6820]' : 'bg-gray-100 text-gray-600'
                           }`}>
                             <><SellerIcon name={tierIcon(offer.supplier.supplier_tier)} /> {tierLabel(offer.supplier.supplier_tier, locale)}</>
                           </span>
@@ -917,7 +915,7 @@ export default function RFQDetailPage() {
                               <span className="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-semibold"><Glyph e="⚡" /> {L(`Replies within ~${st.avg_response_hours}h`, `تقریباً ${st.avg_response_hours} گھنٹے میں جواب دیتا ہے`, `يردّ خلال ~${st.avg_response_hours} س`)}</span>
                             )}
                             {st.won_rate != null && (
-                              <span className="text-[10px] bg-[#D4A543]/5 text-[#9D7425] px-2 py-0.5 rounded-full font-semibold"><Glyph e="🤝" /> {L('Win rate', 'ایوارڈ کی شرح', 'نسبة اختيار العروض')} {st.won_rate}%</span>
+                              <span className="text-[10px] bg-[#D4A543]/5 text-[#8F6820] px-2 py-0.5 rounded-full font-semibold"><Glyph e="🤝" /> {L('Win rate', 'ایوارڈ کی شرح', 'نسبة اختيار العروض')} {st.won_rate}%</span>
                             )}
                             <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"><Glyph e="📨" /> {st.total_offers} {L('past offers', 'پچھلی آفرز', 'عرض سابق')}</span>
                           </div>
@@ -988,7 +986,7 @@ export default function RFQDetailPage() {
                 {offer.attributes && Object.keys(offer.attributes).length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {Object.entries(offer.attributes).map(([k, v]: any) => (
-                      <span key={k} className="text-[10px] bg-[#D4A543]/5 text-[#9D7425] px-2 py-1 rounded-lg">
+                      <span key={k} className="text-[10px] bg-[#D4A543]/5 text-[#8F6820] px-2 py-1 rounded-lg">
                         <strong>{k}:</strong> {v}
                       </span>
                     ))}
@@ -1072,7 +1070,7 @@ export default function RFQDetailPage() {
             ))}
             {displayedOffers.length > TOP_N && (
               <button type="button" onClick={() => setShowAllOffers(v => !v)}
-                className="w-full py-3 rounded-xl border-2 border-dashed border-[#D4A543]/60 text-sm font-bold text-[#9D7425] hover:bg-[#D4A543]/5">
+                className="w-full py-3 rounded-xl border-2 border-dashed border-[#D4A543]/60 text-sm font-bold text-[#8F6820] hover:bg-[#D4A543]/5">
                 {showAllOffers ? L('Show the best 3 only', 'صرف بہترین 3', 'اعرض أفضل 3 فقط') : L(`Show all offers (${displayedOffers.length})`, `تمام آفرز (${displayedOffers.length})`, `عرض كل العروض (${displayedOffers.length})`)}
               </button>
             )}

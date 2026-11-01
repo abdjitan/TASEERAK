@@ -22,6 +22,7 @@ export default function SupplierBranchesPage() {
   // a company team member sees the company's branches; only the owner can change them (RLS)
   const [readOnly, setReadOnly] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState('')
 
   const [name, setName] = useState('')
   const [region, setRegion] = useState('')
@@ -50,19 +51,24 @@ export default function SupplierBranchesPage() {
   async function save(e: any) {
     e.preventDefault()
     if (!name || !region) return
-    setSaving(true)
+    setSaving(true); setErr('')
     const supabase = createClient()
-    await supabase.from('branches').insert({
+    const { error } = await supabase.from('branches').insert({
       supplier_id: user.id, name, region, city: city || null, district: district || null,
       phone: phone || null, address: address || null,
     })
-    setSaving(false); reset(); load()
+    setSaving(false)
+    // keep what was typed when the save fails
+    if (error) { setErr(L('Could not save the branch — please try again.', 'شاخ محفوظ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حفظ الفرع، حاول مرة أخرى.')); return }
+    reset(); load()
   }
 
   async function remove(id: any) {
     if (!confirm(L('Delete this branch?', 'یہ شاخ حذف کریں؟', 'حذف هذا الفرع؟'))) return
+    setErr('')
     const supabase = createClient()
-    await supabase.from('branches').delete().eq('id', id)
+    const { error } = await supabase.from('branches').delete().eq('id', id)
+    if (error) { setErr(L('Could not delete the branch — please try again.', 'شاخ حذف نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حذف الفرع، حاول مرة أخرى.')); return }
     load()
   }
 
@@ -85,6 +91,7 @@ export default function SupplierBranchesPage() {
           <Glyph e="💡" /> {L('Example: with branches in Riyadh, Jeddah and Dammam, add all three — you will receive price requests from buyers in all of them.', 'مثال: اگر ریاض، جدہ اور دمام میں شاخیں ہیں تو تینوں شامل کریں — ان سب علاقوں کے خریداروں کی درخواستیں آپ کو ملیں گی۔', 'مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المشترين في جميع هذه المناطق.')}
         </div>
 
+        {err && <div role="alert" className="mb-5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3">{err}</div>}
         {readOnly && (
           <p className="mb-5 text-xs rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-gray-600">{L('These are your company\'s branches. The account owner adds and edits them.', 'یہ آپ کی کمپنی کی شاخیں ہیں۔ اکاؤنٹ کا مالک انہیں شامل اور تبدیل کرتا ہے۔', 'هذه فروع شركتك. يضيفها ويعدّلها مالك الحساب.')}</p>
         )}

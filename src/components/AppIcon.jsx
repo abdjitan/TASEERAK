@@ -6,7 +6,7 @@
 export const PALETTE = {
   brand:   { solid: "#0B2438", strong: "#16244a", soft: "rgba(11,36,56,0.10)" },
   success: { solid: "#0F6E56", strong: "#0c5946", soft: "rgba(15,110,86,0.12)" },
-  warning: { solid: "#D4A543", strong: "#9D7425", soft: "rgba(212,165,67,0.12)" },
+  warning: { solid: "#D4A543", strong: "#8F6820", soft: "rgba(212,165,67,0.12)" },
   info:    { solid: "#4F46E5", strong: "#4338CA", soft: "rgba(79,70,229,0.12)" },
   danger:  { solid: "#E11D48", strong: "#BE123C", soft: "rgba(225,29,72,0.12)" },
   neutral: { solid: "#334155", strong: "#1E293B", soft: "rgba(30,41,59,0.10)" },

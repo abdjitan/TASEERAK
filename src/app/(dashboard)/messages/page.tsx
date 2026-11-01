@@ -70,22 +70,25 @@ function Messages() {
     ;(async () => {
       // Fetch the conversation directly — do NOT read the possibly-stale `convos` closure,
       // which made an awarded chat wrongly show the "20-message limit" lock (B9).
-      const { data: conv } = await supabase.from('conversations').select('rfq_id, supplier_id').eq('id', activeId).single()
-      const { data } = await supabase.from('messages').select('*').eq('conversation_id', activeId).order('created_at')
+      // conversation + its latest 200 messages together, then the award check in one round (perf audit)
+      const [{ data: conv }, { data }] = await Promise.all([
+        supabase.from('conversations').select('rfq_id, supplier_id').eq('id', activeId).single(),
+        supabase.from('messages').select('*').eq('conversation_id', activeId).order('created_at', { ascending: false }).limit(200),
+      ])
       if (cancelled) return // guard against out-of-order resolution → no cross-conversation bleed
-      setMsgs(data || [])
+      setMsgs((data || []).slice().reverse())
       let aw = false
       if (conv?.rfq_id && conv?.supplier_id) {
-        const { data: aws } = await supabase.from('rfq_item_awards').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).limit(1)
-        if (aws && aws.length) aw = true
-        else {
-          const { data: ofs } = await supabase.from('offers').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).eq('status', 'accepted').limit(1)
-          if (ofs && ofs.length) aw = true
-        }
+        const [{ data: aws }, { data: ofs }] = await Promise.all([
+          supabase.from('rfq_item_awards').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).limit(1),
+          supabase.from('offers').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).eq('status', 'accepted').limit(1),
+        ])
+        aw = !!((aws && aws.length) || (ofs && ofs.length))
       }
       if (cancelled) return
       setAwarded(aw)
       await supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('conversation_id', activeId).neq('sender_id', me).is('read_at', null)
+      window.dispatchEvent(new Event('tsk:msgs-read')) // the menu badge recounts
       if (cancelled) return // don't open a channel for a conversation we already switched away from
       ch = supabase.channel(`conv-${activeId}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeId}` }, (payload) => {
@@ -98,7 +101,7 @@ function Messages() {
             }
             return [...prev, payload.new]
           })
-          if (payload.new.sender_id !== me) supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id)
+          if (payload.new.sender_id !== me) supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id).then(() => window.dispatchEvent(new Event('tsk:msgs-read')))
         })
         .subscribe()
     })()
@@ -163,7 +166,7 @@ function Messages() {
                 <span className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{counterpart(c)}</span>
                 <span className="text-[10px] text-gray-400 shrink-0">{fmtTime(c.last_message_at, locale)}</span>
               </div>
-              {ctx(c) && <div className="text-[11px] text-[#9D7425] truncate"><Glyph e="📦" /> {ctx(c)}</div>}
+              {ctx(c) && <div className="text-[11px] text-[#8F6820] truncate"><Glyph e="📦" /> {ctx(c)}</div>}
               {c.last_message && <div className="text-xs text-gray-500 truncate mt-0.5">{c.last_message}</div>}
             </button>
           ))}

@@ -10,6 +10,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, SUB_CATEGORIES, getGroupedSubCategories } from '@/types'
 import Glyph from '@/components/shared/Glyph'
+import { timeAgo as timeAgoText } from '@/lib/text'
 
 const txt = {
   ar: {
@@ -50,16 +51,6 @@ const txt = {
   },
 }
 
-function timeAgo(date: any, T: any) {
-  const diff = Date.now() - new Date(date).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return T.justNow
-  if (mins < 60) return `${T.ago} ${mins} ${T.minsAgo}`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${T.ago} ${hours} ${T.hoursAgo}`
-  const days = Math.floor(hours / 24)
-  return `${T.ago} ${days} ${T.daysAgo}`
-}
 
 export default function SupplierPricesPage() {
   const { locale, dir } = useTranslation()
@@ -84,6 +75,7 @@ export default function SupplierPricesPage() {
   // تصفّح متدرّج + بحث للسلع (نفس شكل صفحة طلب التسعير)
   const subGroups = useMemo(() => (sector ? getGroupedSubCategories(sector as any) : []), [sector])
   const activeSubGroup = subGroups.find(g => g.group === pgroup)
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const subLabel = (x: any) => (locale === 'en' ? x.en : locale === 'ur' ? x.ur : x.ar)
   const allSubs = useMemo(() => subGroups.flatMap(g => g.subs), [subGroups])
   const psq = psearch.trim().toLowerCase()
@@ -172,12 +164,12 @@ export default function SupplierPricesPage() {
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-gray-500 mb-1">{T.product}</label>
                 {!sector ? (
-                  <input disabled className="input-field" placeholder={locale === 'en' ? 'Select a sector first' : 'اختر القطاع أولاً'} />
+                  <input disabled className="input-field" placeholder={L('Select a sector first', 'پہلے شعبہ منتخب کریں', 'اختر القطاع أولاً')} />
                 ) : productOther ? (
                   <div className="flex gap-2">
                     <input value={product} onChange={e => setProduct(e.target.value)} className="input-field flex-1"
-                      placeholder={locale === 'en' ? 'Item name' : 'اسم السلعة'} required />
-                    <button type="button" onClick={() => { setProductOther(false); setProduct('') }} className="text-xs text-gray-500 whitespace-nowrap px-2">{locale === 'en' ? '↩ List' : '↩ القائمة'}</button>
+                      placeholder={L('Item name', 'چیز کا نام', 'اسم السلعة')} required />
+                    <button type="button" onClick={() => { setProductOther(false); setProduct('') }} className="text-xs text-gray-500 whitespace-nowrap px-2"><Glyph e="↩" /> {L('List', 'فہرست', 'القائمة')}</button>
                   </div>
                 ) : (
                   <div className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
@@ -185,7 +177,7 @@ export default function SupplierPricesPage() {
                     <div className="relative mb-3">
                       <span className="absolute inset-y-0 start-3 my-auto h-5 w-5 text-gray-400 grid place-items-center"><Glyph e="🔍" /></span>
                       <input type="text" value={psearch} onChange={e => setPsearch(e.target.value)} className="input-field ps-10 bg-white"
-                        placeholder={locale === 'en' ? 'Search an item…' : 'ابحث عن سلعة…'} />
+                        placeholder={L('Search an item…', 'کوئی چیز تلاش کریں…', 'ابحث عن سلعة…')} aria-label={L('Search an item', 'کوئی چیز تلاش کریں', 'ابحث عن سلعة')} />
                     </div>
 
                     {psq ? (
@@ -193,16 +185,16 @@ export default function SupplierPricesPage() {
                         {subResults.length ? subResults.map(x => (
                           <button key={x.key} type="button" onClick={() => setProduct(x.ar)}
                             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${product === x.ar ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                            style={product === x.ar ? { background: '#0B2438' } : {}}>{x.icon} {subLabel(x)}</button>
-                        )) : <p className="text-xs text-gray-400">{locale === 'en' ? 'No match — type it manually.' : 'لا نتائج — اكتبها يدوياً.'}</p>}
+                            style={product === x.ar ? { background: '#0B2438' } : {}}><Glyph e={x.icon} /> {subLabel(x)}</button>
+                        )) : <p className="text-xs text-gray-400">{L('No match. Type it manually.', 'کوئی نتیجہ نہیں، خود لکھیں۔', 'لا نتائج، اكتبها يدوياً.')}</p>}
                       </div>
                     ) : (
                       <>
                         <div className="flex flex-wrap gap-2 mb-2">
                           {subGroups.map(g => (
                             <button key={g.group} type="button" onClick={() => setPgroup(g.group)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${pgroup === g.group ? 'border-[#D4A543] bg-[#D4A543]/5 text-[#9D7425]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                              <span className="me-1">{g.icon}</span>{subLabel(g)} <span className="opacity-60">({g.subs.length})</span>
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${pgroup === g.group ? 'border-[#D4A543] bg-[#D4A543]/5 text-[#8F6820]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                              <span className="me-1"><Glyph e={g.icon} /></span>{subLabel(g)} <span className="opacity-60">({g.subs.length})</span>
                             </button>
                           ))}
                         </div>
@@ -211,7 +203,7 @@ export default function SupplierPricesPage() {
                             {activeSubGroup.subs.map(x => (
                               <button key={x.key} type="button" onClick={() => setProduct(x.ar)}
                                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${product === x.ar ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
-                                style={product === x.ar ? { background: '#0B2438' } : {}}>{x.icon} {subLabel(x)}</button>
+                                style={product === x.ar ? { background: '#0B2438' } : {}}><Glyph e={x.icon} /> {subLabel(x)}</button>
                             ))}
                           </div>
                         )}
@@ -219,8 +211,8 @@ export default function SupplierPricesPage() {
                     )}
 
                     <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                      <span className="text-xs text-gray-500">{product ? <>✓ <span className="font-bold text-[#0B2438]">{product}</span></> : (locale === 'en' ? 'Pick an item above' : 'اختر سلعة من الأعلى')}</span>
-                      <button type="button" onClick={() => { setProductOther(true) }} className="text-xs font-semibold text-[#9D7425]">{locale === 'en' ? '✎ Type manually' : '✎ اكتب يدوياً'}</button>
+                      <span className="text-xs text-gray-500">{product ? <>✓ <span className="font-bold text-[#0B2438]">{product}</span></> : L('Pick an item above', 'اوپر سے کوئی چیز منتخب کریں', 'اختر سلعة من الأعلى')}</span>
+                      <button type="button" onClick={() => { setProductOther(true) }} className="text-xs font-semibold text-[#8F6820]"><Glyph e="✏" /> {L('Type manually', 'خود لکھیں', 'اكتب يدوياً')}</button>
                     </div>
                   </div>
                 )}
@@ -247,11 +239,11 @@ export default function SupplierPricesPage() {
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={saving}
-                className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl font-semibold text-[#071827] text-sm disabled:opacity-50"
                 style={{ background: '#D4A543' }}>
                 {saving ? T.saving : T.save}
               </button>
-              <button type="button" onClick={() => setShowForm(false)}
+              <button type="button" onClick={() => setShowForm(false)} aria-label={L('Close', 'بند کریں', 'إغلاق')}
                 className="px-5 py-2.5 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600">✕</button>
             </div>
           </form>
@@ -277,10 +269,10 @@ export default function SupplierPricesPage() {
                       <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-400">
                         <span className="badge badge-blue text-[10px]">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
                         {p.region && <span><Glyph e="📍" /> {p.region}</span>}
-                        <span><Glyph e="🕐" /> {T.lastUpdate}: {timeAgo(p.updated_at, T)}</span>
+                        <span><Glyph e="🕐" /> {T.lastUpdate}: {timeAgoText(p.updated_at, locale)}</span>
                       </div>
                     </div>
-                    <div className="text-left flex-shrink-0">
+                    <div className="text-end flex-shrink-0">
                       <div className="flex items-center gap-1">
                         {trend === 'up' && <span className="text-red-500 text-xs">▲</span>}
                         {trend === 'down' && <span className="text-emerald-500 text-xs">▼</span>}
@@ -291,14 +283,14 @@ export default function SupplierPricesPage() {
                   </div>
                   {/* Quick update */}
                   <div className="flex gap-2 mt-3 pt-3 border-t border-gray-50">
-                    <input type="number" placeholder={p.price} className="input-field text-sm flex-1 !py-2"
+                    <input type="number" placeholder={p.price} aria-label={L('New price', 'نئی قیمت', 'السعر الجديد')} className="input-field text-sm flex-1 !py-2"
                       onKeyDown={e => { if (e.key === 'Enter') { updatePrice(p.id, p.price, e.currentTarget.value); e.currentTarget.value = '' } }}
                       id={`upd-${p.id}`} step="any" min="0" />
                     <button onClick={() => { const v = (document.getElementById(`upd-${p.id}`) as any)?.value; updatePrice(p.id, p.price, v) }}
                       className="px-4 py-2 rounded-lg text-xs font-semibold text-white" style={{ background: '#0F6E56' }}>
                       {T.update}
                     </button>
-                    <button onClick={() => deletePrice(p.id)}
+                    <button onClick={() => deletePrice(p.id)} aria-label={L('Delete price', 'قیمت حذف کریں', 'حذف السعر')}
                       className="px-3 py-2 rounded-lg text-xs border border-red-200 text-red-500 hover:bg-red-50"><Glyph e="🗑" /></button>
                   </div>
                 </div>

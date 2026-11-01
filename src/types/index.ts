@@ -905,6 +905,21 @@ export function hydrateTaxonomy(rows: any[]): void {
   }
 }
 
+/** Materials the admin approved from «طلب إضافة مادة» (table `materials`): added to the in-memory
+ *  catalog with their specialty, so they show in the pickers and the search without a redeploy. */
+export function hydrateApprovedMaterials(rows: any[]): number {
+  if (!Array.isArray(rows)) return 0
+  let added = 0
+  for (const r of rows) {
+    const name = String(r?.name || '').trim()
+    const sec = r?.sector as Sector
+    if (!name || !SECTOR_PRODUCTS[sec]) continue
+    if (r.sub_category && SUB_CATEGORIES[sec]?.[r.sub_category] && !PRODUCT_SUB[name]) PRODUCT_SUB[name] = r.sub_category
+    if (!SECTOR_PRODUCTS[sec].includes(name)) { SECTOR_PRODUCTS[sec].push(name); added++ }
+  }
+  return added
+}
+
 // وحدة القياس الافتراضية لكل تخصص فرعي — تُملأ تلقائياً عند اختيار المادة
 const SUB_UNITS: Record<string, string> = {
   // مدني
