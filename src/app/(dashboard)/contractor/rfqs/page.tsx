@@ -27,6 +27,8 @@ export default function MyRequestsPage() {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [loading, setLoading] = useState(true)
   const [rfqs, setRfqs] = useState<any[]>([])
+  // a request with a selected material is never deleted (192), so it gets no deletion date
+  const purgeOf = (r: any) => (Number(r?.rfq_item_awards?.[0]?.count) > 0 ? null : rfqPurgeInfo(r, locale))
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
   const [deleting, setDeleting] = useState(false)
@@ -40,7 +42,7 @@ export default function MyRequestsPage() {
       const sb = createClient()
       const { data: { session } } = await sb.auth.getSession()
       if (!session) { window.location.href = '/login?next=/contractor/rfqs'; return }
-      const { data } = await sb.from('rfqs').select('*').eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(300)
+      const { data } = await sb.from('rfqs').select('*, rfq_item_awards(count)').eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(300)
       setRfqs(data || [])
       setLoading(false)
     })()
@@ -168,8 +170,8 @@ export default function MyRequestsPage() {
           <Link href="/contractor/rfq/quick" className="btn-orange px-4 py-2.5 rounded-xl font-bold text-sm">+ {L('New request', 'نئی درخواست', 'طلب جديد')}</Link>
         </div>
 
-        {(filter === 'ended' || filter === 'cancelled') && shown.some(r => rfqPurgeInfo(r, locale)) && (
-          <p className="text-xs text-gray-500">{rfqPurgeInfo(shown.find(r => rfqPurgeInfo(r, locale)), locale)?.hint}</p>
+        {(filter === 'ended' || filter === 'cancelled') && shown.some(r => purgeOf(r)) && (
+          <p className="text-xs text-gray-500">{purgeOf(shown.find(r => purgeOf(r)))?.hint}</p>
         )}
         {shown.length === 0 ? (
           <div className="bg-white rounded-2xl p-10 text-center border border-gray-100 text-gray-400">
@@ -185,7 +187,7 @@ export default function MyRequestsPage() {
               const u = open && r.expires_at ? urgencyStyle(deadlineUrgency(r.expires_at)) : null
               const offers = Number(r.offer_count || 0)
               // ended without a deal → deleted after the retention period (closed = deal here: offers aren't loaded)
-              const purge = rfqPurgeInfo(r, locale)
+              const purge = purgeOf(r)
               return (
                 <Link key={r.id} href={`/contractor/rfq/${r.id}`}
                   onClick={(e: any) => { if (selecting) { e.preventDefault(); if (cancellable(r)) toggle(r.id) } }}
