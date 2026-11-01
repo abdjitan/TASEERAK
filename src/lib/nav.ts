@@ -19,6 +19,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/admin/discover', icon: '🔍', label: L('Discover suppliers', 'سپلائرز تلاش', 'اكتشاف موردين'), section: sec, mobile: 2 },
       { href: '/admin/taxonomy', icon: '🗂️', label: L('Taxonomy', 'درجہ بندی', 'شجرة التصنيفات'), section: sec, mobile: 3 },
       { href: '/admin/learning', icon: '🧠', label: L('Search learning', 'سرچ لرننگ', 'تعلّم البحث'), section: sec },
+      { href: '/admin/ai-lab', icon: createElement(Glyph, { e: '🤖' }), label: L('AI lab', 'AI لیب', 'مختبر الذكاء الاصطناعي'), section: sec },
       { href: '/admin/suggestions', icon: '💡', label: L('Suggestions', 'تجاویز', 'اقتراحات المستخدمين'), section: sec },
       { href: '/admin/invites', icon: '💬', label: L('Supplier invites', 'سپلائر دعوتیں', 'دعوات الموردين'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },

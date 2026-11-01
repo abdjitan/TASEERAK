@@ -56,6 +56,7 @@ type Photo = {
   share: boolean
   confidence?: string
   localName?: string // the AI's name in the buyer's language (the line itself keeps the Arabic trade name)
+  question?: string // one short question from the AI when it is not sure what the photo shows
 }
 
 let seq = 0
@@ -268,6 +269,8 @@ export default function QuickRequestPage() {
         key: uid(), product_name: it.product_name, sector: it.sector,
         quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details: it.details || '',
         suggestion: it.suggestion || null,
+        // spec fields recognised in what was written («حديد 12 ملم» → القطر: 12 مم)
+        ...(it.specs && Object.keys(it.specs).length ? { specs: it.specs } : {}),
         original: it.input_name && it.input_name !== it.product_name ? it.input_name : undefined,
       }))
       setLines(prev => [...prev, ...add])
@@ -305,8 +308,13 @@ export default function QuickRequestPage() {
       .then(r => r.json())
       .then(j => {
         const s = j?.suggestion
-        setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence, localName: s?.local_name || undefined } : p))
-        if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? { ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', unit: s.unit || l.unit, suggestion: s.catalog_suggestion || null } : l))
+        setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence, localName: s?.local_name || undefined, question: s?.question || undefined } : p))
+        if (s) setLines(prev => prev.map(l => l.photoId === id && !l.product_name ? {
+          ...l, product_name: s.product_name, sector: s.sector, details: s.details || '', unit: s.unit || l.unit, suggestion: s.catalog_suggestion || null,
+          // read off the label: spec fields of the catalog item, and the brand
+          ...(s.specs && Object.keys(s.specs).length ? { specs: s.specs } : {}),
+          ...(s.brand && !l.brand ? { brand: String(s.brand).slice(0, 80) } : {}),
+        } : l))
       })
       .catch(() => setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'failed' } : p)))
   }
@@ -438,7 +446,8 @@ export default function QuickRequestPage() {
         let photoUrl: string | null = null
         let fileUrl: string | null = null
         if (l.fileId) {
-          const blob = await getDraftBlob(l.fileId)
+          const rawBlob = await getDraftBlob(l.fileId)
+          const blob = rawBlob && await (await import('@/lib/compressImage')).compressImage(rawBlob) // lighter photos
           if (blob) {
             const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
             const { data: up } = await supabase.storage.from('licenses').upload(`${userId}/spec-${Date.now()}-${i}.${ext}`, blob, { upsert: false, contentType: blob.type })
@@ -448,7 +457,8 @@ export default function QuickRequestPage() {
         }
         const attachments: { url: string; name: string }[] = []
         for (const [k, mf] of (l.moreFiles || []).entries()) {
-          const blob = await getDraftBlob(mf.id)
+          const rawBlob = await getDraftBlob(mf.id)
+          const blob = rawBlob && await (await import('@/lib/compressImage')).compressImage(rawBlob)
           if (!blob) continue
           const ext = blob.type === 'application/pdf' ? 'pdf' : blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : 'jpg'
           const { data: up } = await supabase.storage.from('licenses').upload(`${userId}/spec-${Date.now()}-${i}-${k + 2}.${ext}`, blob, { upsert: false, contentType: blob.type })
@@ -456,9 +466,10 @@ export default function QuickRequestPage() {
           attachments.push({ url: supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl, name: mf.name })
         }
         if (ph && ph.share) {
-          const ext = ph.file.type === 'image/png' ? 'png' : ph.file.type === 'image/webp' ? 'webp' : 'jpg'
+          const phFile = await (await import('@/lib/compressImage')).compressImage(ph.file)
+          const ext = phFile.type === 'image/png' ? 'png' : phFile.type === 'image/webp' ? 'webp' : 'jpg'
           const path = `${userId}/photo-${Date.now()}-${i}.${ext}`
-          const { data: up } = await supabase.storage.from('licenses').upload(path, ph.file, { upsert: false, contentType: ph.file.type })
+          const { data: up } = await supabase.storage.from('licenses').upload(path, phFile, { upsert: false, contentType: phFile.type })
           if (!up) { setError(L(`Could not upload the photo of «${nameLabel(l.product_name)}». Try again, or untick «send the photo».`, `«${nameLabel(l.product_name)}» کی تصویر اپ لوڈ نہیں ہو سکی۔`, `تعذّر رفع صورة «${nameLabel(l.product_name)}». حاول مرة أخرى، أو ألغِ خيار إرسال الصورة.`)); return }
           photoUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
         }
@@ -667,6 +678,7 @@ export default function QuickRequestPage() {
                       {ph && ph.status === 'done' && (
                         <p className="text-[11px] text-gray-500"><Glyph e="🤖" /> {L('Suggested from the photo, please check it', 'تصویر سے تجویز، چیک کریں', 'اقتراح من الصورة، تأكّد منه')}{ph.confidence === 'low' ? ' · ' + L('not sure', 'یقینی نہیں', 'غير متأكد') : ''}
                           {locale !== 'ar' && ph.localName && <span className="block font-semibold text-gray-700" dir="auto">= {ph.localName}</span>}
+                          {ph.question && ph.confidence !== 'high' && <span className="block font-semibold text-[#8F6820]" dir="auto"><Glyph e="❓" /> {ph.question}</span>}
                         </p>
                       )}
                       {ph && ph.status === 'failed' && (l.product_name.trim()

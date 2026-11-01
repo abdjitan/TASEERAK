@@ -27,6 +27,28 @@ export async function getTaxonomyRows(): Promise<TaxRow[]> {
   }
 }
 
+/**
+ * Like detectSubCategoryDb, with the evidence: keyword score of the winner and of the runner-up.
+ * The BOQ reader skips the AI for a line whose specialty is clear (score ≥ 2 and ahead by ≥ 1).
+ */
+export function scoreSubCategoryDb(text: string, sector: string, rows: TaxRow[]): { key: string | null; score: number; runnerUp: number } {
+  const fixed = PRODUCT_SUB[(text || '').trim()]
+  if (fixed && rows.some(r => r.sector === sector && r.sub_key === fixed)) return { key: fixed, score: 9, runnerUp: 0 }
+  const norm = normalizeText(text)
+  let best: string | null = null
+  let max = 0, second = 0
+  for (const r of rows) {
+    if (r.sector !== sector) continue
+    let score = 0
+    for (const kw of r.keywords) {
+      const nkw = normalizeText(kw)
+      if (nkw.length > 0 && norm.includes(nkw)) score++
+    }
+    if (score > max) { second = max; max = score; best = r.sub_key } else if (score > second) second = score
+  }
+  return { key: best, score: max, runnerUp: second }
+}
+
 // نفس خوارزمية detectSubCategory لكن على كلمات الـDB (أعلى نتيجة تفوز).
 export function detectSubCategoryDb(text: string, sector: string, rows: TaxRow[]): string | null {
   // a catalog product with a fixed sub-category (PRODUCT_SUB) keeps it, as on the client

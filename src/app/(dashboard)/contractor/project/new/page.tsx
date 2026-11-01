@@ -86,6 +86,19 @@ function ItemSpecFields({ name, sector, specs, onChange, locale }: { name: strin
   )
 }
 
+// Why a BOQ line read from the file needs a look (flags from /api/parse-boq)
+function boqFlagText(flags: any, L: (en: string, ur: string, ar: string) => string): string[] {
+  const f: string[] = Array.isArray(flags) ? flags : []
+  const out: string[] = []
+  if (f.includes('qty_missing')) out.push(L('no quantity in the file', 'فائل میں مقدار نہیں', 'لا توجد كمية في الملف'))
+  if (f.includes('qty_rate_amount_mismatch')) out.push(L('quantity × rate ≠ amount', 'مقدار × ریٹ ≠ رقم', 'الكمية × السعر لا تساوي الإجمالي'))
+  if (f.includes('qty_from_amount')) out.push(L('quantity worked out from amount ÷ rate', 'مقدار رقم ÷ ریٹ سے', 'الكمية محسوبة من الإجمالي ÷ السعر'))
+  if (f.includes('unit_missing') || f.includes('unit_unrecognized')) out.push(L('check the unit', 'یونٹ چیک کریں', 'تحقّق من الوحدة'))
+  if (f.includes('from_scan')) out.push(L('read from a scan', 'اسکین سے پڑھا گیا', 'مقروء من ملف ممسوح'))
+  if (f.includes('merged')) out.push(L('repeated lines added together', 'دہرائی گئی لائنیں جمع کی گئیں', 'جُمعت كميات البند المكرر'))
+  return out
+}
+
 const SECTOR_ICONS = { civil: <Glyph e="🏗" />, architectural: <Glyph e="🏛" />, electrical: <Glyph e="⚡" />, mechanical: <Glyph e="⚙" />, equipment: <Glyph e="🚜" />, supply_store: <Glyph e="🏪" /> }
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
@@ -169,7 +182,8 @@ export default function NewProjectPage() {
     try {
       const fd = new FormData()
       fd.append('file', specsFile)
-      fd.append('items', JSON.stringify(targets.map((i: any) => ({ ref: i.id, product_name: i.product_name, sector: i.sector }))))
+      // code = the BOQ item number (e.g. DRS-701), specification = the BOQ wording, so conflicts with the spec can be flagged
+      fd.append('items', JSON.stringify(targets.map((i: any) => ({ ref: i.id, code: i.ref || '', product_name: i.product_name, specification: i.description || i.specification || '', sector: i.sector }))))
       const res = await fetch('/api/match-spec', { method: 'POST', body: fd })
       const data = await res.json()
       if (!data.ok) { setSpecMsg((data.needsGemini ? L('A PDF/image needs the admin to enable Gemini, or convert it to Excel/text — ', 'PDF/تصویر کے لیے ایڈمن کو Gemini فعال کرنا ہوگا، یا اسے Excel/متن میں بدلیں — ', 'ملف PDF أو الصورة يحتاج إلى تفعيل Gemini من الإدارة، أو حوّله إلى Excel أو نص — ') : '') + (data.message || L('Could not match the specifications', 'اسپیسیفکیشن نہیں ملائی جا سکیں', 'تعذّرت مطابقة المواصفات'))); return }
@@ -177,6 +191,9 @@ export default function NewProjectPage() {
       setItems(prev => prev.map((it: any) => {
         const s = data.specs?.[it.id]
         if (!s || !s.trim()) return it
+        // where the BOQ line contradicts the specification (e.g. C30 in the BOQ, C35 in the spec)
+        const conflicts: string[] = Array.isArray(data.details?.[it.id]?.conflicts) ? data.details[it.id].conflicts.slice(0, 4) : []
+        it = { ...it, specConflicts: conflicts }
         const doc = s.trim()
         // لا نكتب فوق مواصفة موجودة — نُبقيها للمقارنة (specFromDoc). البند الفارغ يُعبَّأ مباشرة.
         if (!(it.specification || '').trim()) { filled++; return { ...it, specification: doc, specFromDoc: doc } }
@@ -186,6 +203,7 @@ export default function NewProjectPage() {
       const parts = [L(`✓ Matched ${data.matched} of ${data.total} items`, `✓ ${data.total} میں سے ${data.matched} آئٹمز ملائے گئے`, `✓ طوبق ${data.matched} من ${arItems(data.total)}`)]
       if (filled) parts.push(L(`${filled} filled`, `${filled} بھرے گئے`, `عُبّئ ${filled}`))
       if (diff) parts.push(L(`${diff} differ from the BOQ — review them`, `${diff} BOQ سے مختلف ہیں — جائزہ لیں`, `${diff} تختلف عن جدول الكميات — راجعها`))
+      if (data.with_conflicts) parts.push(L(`${data.with_conflicts} contradict the specification`, `${data.with_conflicts} اسپیسیفکیشن سے متصادم`, `${data.with_conflicts} تتعارض مع المواصفات`))
       if (data.truncated) parts.push(L('The specifications are large and were cut; split the file', 'اسپیسیفکیشن بڑی تھیں اور کاٹ دی گئیں؛ فائل تقسیم کریں', 'المواصفات كبيرة واقتُطع جزء منها، قسّم الملف'))
       setSpecMsg(parts.join(' · '))
     } catch {
@@ -261,7 +279,8 @@ export default function NewProjectPage() {
           // التخصص يأتي مُصنّفاً من الخادم (من القوائم الرسمية). نتأكد أنه مفتاح صحيح وإلا = غير مصنّف.
           const sub = (item.sub_category && (SUB_CATEGORIES as any)[item.sector]?.[item.sub_category]) ? item.sub_category : null
           // غير مصنّف لو بلا تخصص، أو لو الذكاء أبلغ ثقة منخفضة (يبقى الاقتراح ظاهراً في القائمة ليؤكّده المقاول)
-          return { ...item, id: `item-${i}`, selected: true, done: parseFloat(item.quantity) > 0 && missingSpecs(item.product_name, item.sector, {}, item.specification || '').length === 0, sub_category: sub, needs_classification: !sub || !!item.needs_classification || !!item.low_confidence }
+          // specs = spec fields recognised in the BOQ wording; needs_review = a quantity/unit/total that did not add up
+          return { ...item, specs: item.specs || {}, id: `item-${i}`, selected: true, done: parseFloat(item.quantity) > 0 && !item.needs_review && missingSpecs(item.product_name, item.sector, item.specs || {}, item.specification || '').length === 0, sub_category: sub, needs_classification: !sub || !!item.needs_classification || !!item.low_confidence }
         }))
         setStep('items')
       } else {
@@ -445,8 +464,9 @@ export default function NewProjectPage() {
       // رفع مستند المواصفات إن وجد (للسجل) — نلحق رابطه بملاحظات المشروع
       let specUrl = null
       if (specsFile) {
-        const path = `${user.id}/spec-doc-${Date.now()}.${specsFile.name.split('.').pop()}`
-        const { data } = await supabase.storage.from('licenses').upload(path, specsFile, { upsert: true })
+        const specsUp = await (await import('@/lib/compressImage')).compressImage(specsFile, { maxSide: 2000 }) // lighter scans/photos
+        const path = `${user.id}/spec-doc-${Date.now()}.${specsUp.name.split('.').pop()}`
+        const { data } = await supabase.storage.from('licenses').upload(path, specsUp, { upsert: true })
         if (data) {
           const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(data.path)
           specUrl = publicUrl
@@ -471,9 +491,10 @@ export default function NewProjectPage() {
         // رفع ملف مواصفات البند إن وجد
         let itemSpecUrl: string | null = null
         if (item.specFile) {
-          const ext = item.specFile.name.split('.').pop()
+          const specUp = await (await import('@/lib/compressImage')).compressImage(item.specFile)
+          const ext = specUp.name.split('.').pop()
           const path = `${user.id}/spec-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`
-          const { data: up } = await supabase.storage.from('licenses').upload(path, item.specFile, { upsert: true })
+          const { data: up } = await supabase.storage.from('licenses').upload(path, specUp, { upsert: true })
           if (!up) { alert(L(`Could not upload the spec file of «${item.product_name}». Check your connection and try again, or remove the file.`, `«${item.product_name}» کی اسپیسیفکیشن فائل اپ لوڈ نہیں ہو سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں، یا فائل ہٹا دیں۔`, `تعذّر رفع ملف مواصفات «${item.product_name}». تحقّق من الاتصال وحاول مرة أخرى، أو احذف الملف.`)); return }
           itemSpecUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
         }
@@ -631,14 +652,14 @@ export default function NewProjectPage() {
             {L('2. Upload BOQ or Add Manually', '2. BOQ اپ لوڈ کریں یا خود شامل کریں', '2. رفع BOQ أو إضافة يدوية')}
           </h2>
           <p className="text-xs text-gray-400 mb-4">
-            {L('Excel BOQ will be auto-analyzed to extract all materials with quantities', 'Excel فائل کا خودکار تجزیہ کر کے تمام مواد اور مقداریں نکالی جائیں گی', 'ملف Excel سيتم تحليله تلقائياً لاستخراج المواد والكميات')}
+            {L('The BOQ (Excel, CSV, PDF or a photo) is analysed automatically to extract all materials with quantities', 'BOQ (Excel، CSV، PDF یا تصویر) کا خودکار تجزیہ کر کے تمام مواد اور مقداریں نکالی جائیں گی', 'يُحلَّل جدول الكميات (Excel أو CSV أو PDF أو صورة) تلقائياً لاستخراج المواد والكميات')}
           </p>
 
           {/* BOQ Upload Zone */}
           <label className={`flex flex-col items-center justify-center border-2 border-dashed rounded-2xl p-8 cursor-pointer transition-all mb-4 ${
             boqFile ? 'border-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 hover:border-[#D4A543]/50'
           }`} onClick={() => fileRef.current?.click()}>
-            <input ref={fileRef} type="file" className="hidden" accept=".xlsx,.xls"
+            <input ref={fileRef} type="file" className="hidden" accept=".xlsx,.xls,.csv,.pdf,.jpg,.jpeg,.png,.webp"
               onChange={(e: any) => { if (e.target.files?.[0]) handleBOQUpload(e.target.files[0]) }} />
             {parsing ? (
               <div className="text-center">
@@ -666,7 +687,7 @@ export default function NewProjectPage() {
                 <div className="font-semibold text-sm text-gray-700">
                   {L('Drop Excel BOQ here or click to upload', 'Excel BOQ یہاں چھوڑیں یا اپ لوڈ کے لیے دبائیں', 'اسحب ملف BOQ هنا أو اضغط للرفع')}
                 </div>
-                <div className="text-xs text-gray-400 mt-1">Excel (.xlsx, .xls)</div>
+                <div className="text-xs text-gray-400 mt-1">Excel (.xlsx, .xls) · CSV · PDF · {L('photo', 'تصویر', 'صورة')}</div>
               </div>
             )}
           </label>
@@ -938,7 +959,17 @@ export default function NewProjectPage() {
                                 </button>
                               )}
                               {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {L('File attached', 'فائل منسلک', 'مرفق ملف')}</span>}
+                              {item.needs_review && !item.done && (
+                                <span className="badge text-[10px] bg-[#D4A543]/15 text-[#8F6820] font-bold" title={boqFlagText(item.flags, L).join(' · ')}>
+                                  <Glyph e="⚠" /> {L('Needs review', 'جائزہ ضروری', 'يحتاج مراجعة')}{boqFlagText(item.flags, L).length ? ': ' + boqFlagText(item.flags, L)[0] : ''}
+                                </span>
+                              )}
                             </div>
+                            {Array.isArray(item.specConflicts) && item.specConflicts.length > 0 && (
+                              <div className="mt-1.5 text-[11px] text-red-700 bg-red-50 border border-red-100 rounded-lg px-2 py-1" dir="rtl">
+                                <Glyph e="⚠" /> {L('Contradicts the specification:', 'اسپیسیفکیشن سے متصادم:', 'يتعارض مع المواصفات:')} {item.specConflicts.join(' · ')}
+                              </div>
+                            )}
                             {(item.done === false || !(parseFloat(item.quantity) > 0)) && (() => {
                               const miss = missingSpecs(item.product_name, item.sector, item.specs, item.specification || '', !!item.specFile)
                               const needWritten = miss.includes('*')
