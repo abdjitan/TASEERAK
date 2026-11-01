@@ -310,6 +310,9 @@ begin
     insert into offers (rfq_id, supplier_id, total_price, source_type) values (v_rfq, sup, 250, 'shop');
     bad := bad + 1; log := log || ' FAIL shop quoted on a verified-companies-only request';
   exception when others then ok := ok + 1; end;
+  -- 186: a supplier who neither quoted nor chatted can't read the request row (contractor_id)
+  select count(*) into n from rfqs where id = v_rfq;
+  if n = 0 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL non-party reads the rfqs row'; end if;
   -- the employee answers an info request and cancels for the company (acting_uid)
   perform set_config('request.jwt.claims', json_build_object('sub', company, 'role', 'authenticated')::text, true);
   insert into offers (rfq_id, supplier_id, total_price, source_type, item_prices)

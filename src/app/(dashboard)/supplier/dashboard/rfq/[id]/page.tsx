@@ -558,7 +558,13 @@ export default function SupplierRFQPage() {
         ? L('Your company already sent an offer for this request (a colleague may have just priced it). Reopen the page to see it.', 'آپ کی کمپنی اس درخواست پر پہلے ہی آفر بھیج چکی ہے (شاید کسی ساتھی نے ابھی بھیجی)۔ دیکھنے کے لیے صفحہ دوبارہ کھولیں۔', 'أرسلت شركتك عرضاً لهذا الطلب (ربما سعّره زميلك للتو). أعد فتح الصفحة لتراه.')
         : (insertError.message || '').includes('offer_rate_limited')
         ? (locale === 'en' ? 'Too many offers in the last hour. Verify your account to remove the limit, or try again later.' : locale === 'ur' ? 'ایک گھنٹے میں بہت زیادہ آفرز۔ حد ختم کرنے کے لیے اکاؤنٹ کی تصدیق کریں، یا بعد میں کوشش کریں۔' : 'تجاوزت عدد العروض المسموح في الساعة. وثّق حسابك لإزالة الحد، أو حاول لاحقاً.')
-        : L('Could not send the offer — please try again.', 'آفر نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال العرض — حاول مرة ثانية.'))
+        : (insertError.message || '').includes('الموثّقين فقط')
+        ? L('This request is for verified suppliers only.', 'یہ درخواست صرف تصدیق شدہ سپلائرز کے لیے ہے۔', 'هذا الطلب للموردين الموثّقين فقط.')
+        : (insertError.message || '').includes('نوع آخر من الموردين')
+        ? L('This request is aimed at another type of supplier.', 'یہ درخواست دوسری قسم کے سپلائرز کے لیے ہے۔', 'هذا الطلب موجّه لنوع آخر من الموردين.')
+        : (insertError.message || '').includes('خارج نطاق مناطق تغطيتك')
+        ? L('This request is outside the regions you cover.', 'یہ درخواست آپ کے علاقوں سے باہر ہے۔', 'هذا الطلب خارج نطاق مناطق تغطيتك.')
+        : L('Could not send the offer — please try again.', 'آفر نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال العرض — حاول مرة أخرى.'))
       console.error('offer insert', insertError)
       setSubmitting(false); return
     }
@@ -588,6 +594,7 @@ export default function SupplierRFQPage() {
     await supabase.from('rfq_dismissals').insert({
       rfq_id: id, supplier_id: actingId || user.id, reason: dismissReason || null,
     })
+    try { localStorage.removeItem(`tsk_offer_draft_${actingId || user.id}_${id}`) } catch {}
     setDismissed(true)
     setShowDismiss(false)
   }
@@ -730,12 +737,12 @@ export default function SupplierRFQPage() {
                 {rfqDesc({ ...rfq, title: null }, locale, rfqIsMulti ? (myItems.length || undefined) : 1)}
               </h2>
             </div>
-            <button type="button" onClick={async () => {
+            {!isMember && <button type="button" onClick={async () => {
               const supabase = createClient()
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: actingId || user?.id })
               if (error || !data) { setError(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }
               router.push(`/messages?c=${data}`)
-            }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#0B2438' }}><Glyph e="💬" /> {L('Message buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>
+            }} className="text-xs px-3 py-1.5 rounded-xl font-semibold text-white shrink-0" style={{ background: '#0B2438' }}><Glyph e="💬" /> {L('Message buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>}
           </div>
           {/* the materials table is for the read-only states; while pricing, the cards below show them */}
           {!pricingOpen && (<>
