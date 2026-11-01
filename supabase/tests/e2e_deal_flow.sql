@@ -385,5 +385,25 @@ begin
   select count(*) into n from offers where id = v_offer and not extras_pending and (extra_charges->0->>'amount')::numeric = 120;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL confirmed delivery fee not saved'; end if;
 
+  -- 192: retention — a request that ended without a deal 70 days ago is deleted (offers, chat) and
+  -- archived anonymously; a request with a deal is kept
+  reset role;
+  insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city, expires_at, status)
+  values (buyer, 'civil', 'أسمنت', array['civil'],
+          '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":10,"unit":"كيس"}]'::jsonb,
+          10, 'كيس', 'الرياض', 'الرياض', now() + interval '1 day', 'open')
+  returning id into v_rfq;
+  insert into offers (rfq_id, supplier_id, total_price, source_type) values (v_rfq, sup, 100, 'shop') returning id into v_offer;
+  insert into conversations (rfq_id, contractor_id, supplier_id) values (v_rfq, buyer, sup) returning id into v_conv;
+  perform set_config('app.deal_write', 'on', true);
+  update rfqs set status = 'expired', expires_at = now() - interval '70 days', closed_at = now() - interval '70 days' where id = v_rfq;
+  perform public.purge_rfqs(array[v_rfq, v_offer2]);   -- v_offer2 is a deal's offer id, not a request: ignored
+  select count(*) into n from rfqs where id = v_rfq;
+  if n = 0 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL expired request not purged'; end if;
+  select count(*) into n from rfq_archive where rfq_id = v_rfq and offers_count = 1;
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL purged request not archived'; end if;
+  select count(*) into n from offers where id = v_offer2 and status = 'accepted';
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL a deal was touched by the purge'; end if;
+
   raise exception 'E2E: % passed, % failed |%', ok, bad, log;
 end $$;
