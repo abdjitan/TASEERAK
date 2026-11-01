@@ -16,6 +16,8 @@ import { claimPendingRef } from '@/lib/referral'
 
 // Unread-messages badge cache shared by every AppShell mount (see the effect below).
 const unreadCache = { uid: '', n: 0, at: 0 }
+// Last touch_last_seen call (heartbeat below), so page changes do not re-send it every time.
+const lastSeenTouch = { at: 0 }
 
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
 export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number; only?: 'company' }
@@ -93,6 +95,26 @@ export default function AppShell({
       if (onRead) window.removeEventListener('tsk:msgs-read', onRead)
     }
   }, [userId])
+  // «Online» heartbeat for the owner dashboard: touch_last_seen now and every 2 minutes while the
+  // tab is visible (paused when hidden). Throttled across page changes by the module cache.
+  useEffect(() => {
+    const supabase = createClient()
+    let timer: any
+    let stopped = false
+    const touch = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - lastSeenTouch.at < 60_000) return
+      lastSeenTouch.at = Date.now()
+      supabase.rpc('touch_last_seen').then(() => {}, () => {})
+    }
+    const start = () => { clearInterval(timer); touch(); timer = setInterval(touch, 120_000) }
+    const onVis = () => { if (document.visibilityState === 'hidden') clearInterval(timer); else start() }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (stopped || !session) return
+      start()
+      document.addEventListener('visibilitychange', onVis)
+    }, () => {})
+    return () => { stopped = true; clearInterval(timer); document.removeEventListener('visibilitychange', onVis) }
+  }, [])
   // Warm every menu page in the background once the shell is idle, so even the first visit to a
   // page doesn't wait for its code and server payload (the mobile drawer links are off-screen, so
   // <Link prefetch> alone would not fetch them).

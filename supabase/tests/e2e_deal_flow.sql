@@ -334,6 +334,23 @@ begin
   reset role;
   select count(*) into n from offers where id = v_offer2 and received_at is not null and supplier_delivered_at is not null;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL receipt did not record delivery'; end if;
+  -- 189: the confirmed deal (not the selection) writes the price history, once
+  select count(*) into n from market_price_snapshots where offer_id = v_offer2;
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL price history rows=' || n; end if;
+  -- 190: adding a material from another sector re-routes the request
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city, expires_at, status)
+  values (buyer, 'civil', 'أسمنت', array['civil'],
+          '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":10,"unit":"كيس"}]'::jsonb,
+          10, 'كيس', 'الرياض', 'الرياض', now() + interval '2 days', 'open')
+  returning id into v_rfq;
+  perform public.edit_rfq(v_rfq, jsonb_build_object('items',
+    '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":10,"unit":"كيس"},
+      {"sector":"electrical","product_name":"كيبل كهرباء","sub_category":"cables","quantity":100,"unit":"م.ط"}]'::jsonb));
+  reset role;
+  select count(*) into n from rfqs where id = v_rfq and sectors @> array['civil', 'electrical'];
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL edit did not re-route sectors'; end if;
 
   raise exception 'E2E: % passed, % failed |%', ok, bad, log;
 end $$;

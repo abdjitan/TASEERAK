@@ -219,7 +219,7 @@ export default function RFQDetailPage() {
     if (!confirm(L(
       `Accept the offer from ${who} for ${total} SAR incl. VAT?\nThe other offers will be declined and a purchase order is created.`,
       `${who} کی آفر ${total} ریال (VAT سمیت) میں قبول کریں؟\nباقی آفرز رد ہو جائیں گی اور پرچیز آرڈر بنے گا۔`,
-      `قبول عرض ${who} بمبلغ ${total} ر.س شاملاً الضريبة؟\nستُرفض العروض الأخرى ويُنشأ أمر شراء.`))) return
+      `قبول عرض ${who} بمبلغ ${total} ر.س (يشمل ضريبة القيمة المضافة 15%)؟\nستُرفض العروض الأخرى ويُنشأ أمر شراء.`))) return
     const supabase = createClient()
     // Atomic: accept + reject others + close RFQ in one transaction (prevents double-accept).
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
@@ -770,7 +770,7 @@ export default function RFQDetailPage() {
                         </div>
                       ))}
                       <div className="flex items-center justify-between font-extrabold mt-2 pt-1">
-                        <span>{L('Total incl. VAT', 'کل رقم ٹیکس سمیت', 'الإجمالي شامل الضريبة')}</span><span style={{ color: '#8F6820' }}>{money(grand)} {SAR}</span>
+                        <span>{L('Total incl. 15% VAT', 'کل رقم (15% VAT سمیت)', 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)')}</span><span style={{ color: '#8F6820' }}>{money(grand)} {SAR}</span>
                       </div>
                       <div className="text-[11px] text-blue-200 text-end">{L('Before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')} {money(grandNet)} {SAR} · {L('VAT 15%', 'ٹیکس 15%', 'الضريبة 15%')} {money(grand - grandNet)} {SAR}</div>
                       {finalized ? (

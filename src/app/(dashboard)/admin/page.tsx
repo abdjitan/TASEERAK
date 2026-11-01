@@ -446,6 +446,7 @@ export default function AdminPanel() {
 
   const adminNav = [
     { href: '/admin', label: 'لوحة الإدارة', icon: <Glyph e="🛡" />, active: true },
+    { href: '/admin/overview', label: 'لوحة المالك', icon: <Glyph e="📊" /> },
     { href: '/admin/discover', label: 'اكتشاف موردين', icon: <Glyph e="🔍" /> },
   ]
 
@@ -456,6 +457,18 @@ export default function AdminPanel() {
           <h1 className="text-2xl font-bold" style={{ color: '#0B2438' }}>لوحة الإدارة</h1>
           <p className="text-gray-500 mt-1 text-sm">إدارة المستخدمين والتحقق من الرخص</p>
         </div>
+
+        {/* Owner dashboard entry (admin_overview) */}
+        <Link href="/admin/overview" className="mb-6 flex items-center justify-between gap-3 rounded-2xl p-4 sm:p-5 text-white shadow-sm hover:shadow-md transition-shadow" style={{ background: 'linear-gradient(135deg,#071827 0%,#0B2438 60%,#102E45 100%)' }}>
+          <span className="flex items-center gap-3 min-w-0">
+            <span className="w-11 h-11 shrink-0 rounded-xl grid place-items-center text-xl" style={{ background: '#D4A543', color: '#0B2438' }}><Glyph e="📊" /></span>
+            <span className="min-w-0">
+              <span className="block font-extrabold text-base">لوحة المالك</span>
+              <span className="block text-xs text-blue-100/70 truncate">المستخدمون والصفقات وسيولة السوق والمتصلون الآن وصحة النظام</span>
+            </span>
+          </span>
+          <span className="shrink-0 text-sm font-bold px-3 py-1.5 rounded-xl" style={{ background: '#D4A543', color: '#0B2438' }}>افتح اللوحة</span>
+        </Link>
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 stagger">

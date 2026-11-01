@@ -973,7 +973,7 @@ export default function SupplierRFQPage() {
                     <span className="text-xs font-bold text-gray-500">{pricedCount}/{myItems.length}</span>
                   </div>
                   <p className="text-xs text-gray-400 mb-3">
-                    {noVat ? L('Enter the price per unit of each material — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.') : L('Enter the price per unit of each material, including VAT — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت ٹیکس سمیت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة شاملاً الضريبة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')}
+                    {noVat ? L('Enter the price per unit of each material — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.') : L('Enter the price per unit of each material, including VAT — the total is calculated. You do not have to price them all; open «Details» for another unit, delivery time, warranty or a catalog.', 'ہر مال کی فی یونٹ قیمت ٹیکس سمیت درج کریں، کل رقم خود بنے گی۔ سب کی قیمت دینا ضروری نہیں؛ دوسرے یونٹ، ڈیلیوری، وارنٹی یا کیٹلاگ کے لیے «تفصیلات» کھولیں۔', 'أدخل سعر الوحدة لكل مادة شاملاً ضريبة القيمة المضافة 15% ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل. افتح «التفاصيل» لوحدة أخرى أو مدة التوصيل أو الضمان أو الكتالوج.')}
                   </p>
                   <div className="space-y-3">
                     {myItems.map((it: any, i: any) => {
@@ -1388,7 +1388,7 @@ export default function SupplierRFQPage() {
                           <span className="font-semibold">+ {fmt(vat)} {SAR}</span>
                         </div>
                         <div className="flex items-center justify-between border-t border-[#0F6E56]/20 pt-1.5">
-                          <span className="font-bold" style={{ color: '#0F6E56' }}>{L('Grand Total (incl. VAT)', 'کل رقم (ٹیکس سمیت)', 'الإجمالي شامل الضريبة')}</span>
+                          <span className="font-bold" style={{ color: '#0F6E56' }}>{L('Grand total (incl. 15% VAT)', 'کل رقم (15% VAT سمیت)', 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)')}</span>
                           <span className="text-lg font-extrabold" style={{ color: '#0F6E56' }}>{fmt(gross)} {SAR}</span>
                         </div>
                       </div>
@@ -1517,7 +1517,7 @@ export default function SupplierRFQPage() {
                 <div className="rounded-xl px-3 py-2.5 text-sm font-bold text-center border" style={{ background: '#0F6E560D', borderColor: '#0F6E5633', color: '#0F6E56' }} aria-live="polite">
                   {noVat
                     ? L(`The buyer will see: ${fmtG} SAR (seller not VAT-registered)`, `خریدار دیکھے گا: ${fmtG} ریال (ٹیکس میں غیر رجسٹرڈ فروخت کنندہ)`, `سيرى المشتري: ${fmtG} ر.س (بائع غير مسجّل ضريبياً)`)
-                    : L(`The buyer will see: ${fmtG} SAR incl. VAT`, `خریدار دیکھے گا: ${fmtG} ریال ٹیکس سمیت`, `سيرى المشتري: ${fmtG} ر.س شاملاً الضريبة`)}
+                    : L(`The buyer will see: ${fmtG} SAR incl. 15% VAT`, `خریدار دیکھے گا: ${fmtG} ریال (15% VAT سمیت)`, `سيرى المشتري: ${fmtG} ر.س (يشمل ضريبة القيمة المضافة 15%)`)}
                 </div>
               )}
               <button type="submit" form="offer-form" disabled={submitting || !!blockReason} aria-describedby={blockReason ? 'offer-block-reason' : undefined}

@@ -26,7 +26,9 @@ export const vatStatusOf = (o: any): VatStatus =>
 // Does a platform document split 15% VAT out of this offer's amounts? Only for registered sellers.
 export const showsVatBreakdown = (o: any) => vatStatusOf(o) === 'registered'
 
-// The tag under a price for the buyer. Owner decision 2026-10-17: every price reads «شامل الضريبة».
-export function vatTag(_o: any, locale: string): string {
-  return locale === 'en' ? 'incl. VAT' : locale === 'ur' ? 'ٹیکس سمیت' : 'شامل الضريبة'
+// The tag under a price for the buyer. Owner 2026-11-01: «يشمل ضريبة القيمة المضافة 15%»; a seller
+// without a VAT number adds no VAT, and the tag says so instead of claiming VAT is inside.
+export function vatTag(o: any, locale: string): string {
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'no VAT (seller not VAT-registered)' : locale === 'ur' ? 'بغیر VAT (سپلائر VAT میں رجسٹرڈ نہیں)' : 'بلا ضريبة (المورد غير مسجّل ضريبياً)'
+  return locale === 'en' ? 'incl. 15% VAT' : locale === 'ur' ? '15% VAT سمیت' : 'يشمل ضريبة القيمة المضافة 15%'
 }

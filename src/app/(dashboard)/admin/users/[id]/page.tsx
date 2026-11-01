@@ -180,6 +180,7 @@ export default function AdminUserDetail() {
             <div className="flex items-center gap-2 flex-wrap justify-end">
               {!isVerified && <button onClick={() => setStatus('verified')} disabled={busy === 'verified'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>{busy === 'verified' ? '...' : '✓ موافقة'}</button>}
               {p.verification_status !== 'rejected' && <button onClick={() => setRejecting(!rejecting)} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600">✕ رفض</button>}
+              <Link href={`/admin/users/${id}/support`} className="text-xs px-3 py-2 rounded-xl border font-semibold hover:bg-amber-50" style={{ borderColor: '#D4A543', color: '#8F6820' }}><Glyph e="👁" /> عرض الحساب للدعم</Link>
               <button onClick={() => setShowPw(!showPw)} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50"><Glyph e="🔑" /> كلمة المرور</button>
               <button onClick={toggleActive} disabled={busy === 'is_active'} className={`text-xs px-3 py-2 rounded-xl border disabled:opacity-50 ${active ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'}`}>
                 {active ? 'إيقاف الحساب' : '✓ تفعيل الحساب'}

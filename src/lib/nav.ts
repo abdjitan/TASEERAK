@@ -1,6 +1,8 @@
 import type { ShellNavItem } from '@/components/shared/AppShell'
 import RequestsTabs from '@/components/buyer/RequestsTabs'
 import { FEATURES } from '@/lib/features'
+import { createElement, type ReactNode } from 'react'
+import Glyph from '@/components/shared/Glyph'
 
 // Build the dashboard sidebar nav for a role. Used by every page that sits on
 // AppShell so the navigation is consistent across the app.
@@ -8,11 +10,12 @@ export function getNav(role: string | undefined, locale: string, active: string)
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const secTools = L('Tools', 'اوزار', 'الأدوات')
   const secAccount = L('Account', 'اکاؤنٹ', 'الحساب')
-  let items: { href: string; icon: string; label: string; section?: string; mobile?: number; only?: 'company'; off?: boolean }[]
+  let items: { href: string; icon: string | ReactNode; label: string; section?: string; mobile?: number; only?: 'company'; off?: boolean }[]
   if (role === 'admin') {
     const sec = L('Admin', 'ایڈمن', 'الإدارة')
     items = [
       { href: '/admin', icon: '🛡️', label: L('Dashboard', 'ڈیش بورڈ', 'لوحة الإدارة'), section: sec, mobile: 1 },
+      { href: '/admin/overview', icon: createElement(Glyph, { e: '📊' }), label: L('Owner dashboard', 'مالک ڈیش بورڈ', 'لوحة المالك'), section: sec },
       { href: '/admin/discover', icon: '🔍', label: L('Discover suppliers', 'سپلائرز تلاش', 'اكتشاف موردين'), section: sec, mobile: 2 },
       { href: '/admin/taxonomy', icon: '🗂️', label: L('Taxonomy', 'درجہ بندی', 'شجرة التصنيفات'), section: sec, mobile: 3 },
       { href: '/admin/learning', icon: '🧠', label: L('Search learning', 'سرچ لرننگ', 'تعلّم البحث'), section: sec },
