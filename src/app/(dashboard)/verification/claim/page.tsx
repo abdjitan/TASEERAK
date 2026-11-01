@@ -8,6 +8,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
 import { normalizeCrInput } from '@/lib/cr'
+import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
 
 // «هذا السجل مستخدم في حساب آخر»: the claimant uploads his CR and asks for it (171).
 // The current holder is told (with the claimant's name only) and the admin decides.
@@ -55,7 +56,7 @@ export default function CrClaimPage() {
     if (!name.trim()) { setMsg(L('Enter your name or the business name.', 'اپنا یا ادارے کا نام لکھیں۔', 'اكتب اسمك أو اسم المنشأة.')); return }
     if (!file) { setMsg(L('Upload a copy of the commercial registration.', 'تجارتی رجسٹریشن کی کاپی اپ لوڈ کریں۔', 'ارفع صورة السجل التجاري.')); return }
     setSaving(true)
-    const fd = new FormData(); fd.append('file', file); fd.append('kind', 'claim')
+    const fd = new FormData(); fd.append('file', await compressImage(file, { maxSide: DOC_MAX_SIDE })); fd.append('kind', 'claim')
     const res = await fetch('/api/upload-verification', { method: 'POST', body: fd })
     const j = await res.json().catch(() => ({}))
     if (!res.ok || !j.ok) { setSaving(false); setMsg(j?.message || L('Upload failed.', 'اپ لوڈ ناکام ہو گیا۔', 'تعذّر رفع الملف.')); return }

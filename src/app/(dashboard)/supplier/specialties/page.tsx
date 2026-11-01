@@ -15,6 +15,7 @@ import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
 import { storedSellerKind } from '@/lib/sellers'
 import Glyph from '@/components/shared/Glyph'
+import { compressImage } from '@/lib/compressImage'
 
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
@@ -204,9 +205,10 @@ export default function SpecialtiesPage() {
     if (suggestFile) {
       let upFailed = false
       try {
-        const ext = suggestFile.name.split('.').pop()
+        const upFile = await compressImage(suggestFile) // lighter photos; other files pass through
+        const ext = upFile.name.split('.').pop()
         const path = `material-requests/${user.id}/${Date.now()}.${ext}`
-        const { data: up, error: upErr } = await supabase.storage.from('licenses').upload(path, suggestFile, { upsert: true })
+        const { data: up, error: upErr } = await supabase.storage.from('licenses').upload(path, upFile, { upsert: true })
         if (up && !upErr) { const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(up.path); spec_file_url = publicUrl }
         else upFailed = true
       } catch { upFailed = true }

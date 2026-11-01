@@ -7,6 +7,7 @@ import { waLink } from '@/lib/wa'
 import { fileHref } from '@/lib/fileHref'
 import { useTranslation } from '@/i18n'
 import Glyph from '@/components/shared/Glyph'
+import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
 
 // 🛡 حماية الصفقة — محضر استلام + تأكيد دفع + نزاع (للطرفين).
 // مكوّن مشترك يُعرض في صفحة تفاصيل الصفقة لكلٍّ من المشتري والمورد (كلٌّ يرى أزراره).
@@ -41,7 +42,7 @@ export default function DealProtection({
   async function uploadInvoice(file: File | null | undefined) {
     if (!file) return
     setInvErr(''); setBusy('invoice')
-    const fd = new FormData(); fd.append('file', file)
+    const fd = new FormData(); fd.append('file', await compressImage(file, { maxSide: DOC_MAX_SIDE })) // invoice: keep text legible
     const res = await fetch('/api/upload-attachment', { method: 'POST', body: fd })
     const j = await res.json().catch(() => ({}))
     if (!res.ok || !j.ok) { setInvErr(j?.message || L('Could not upload the file. Please try again.', 'فائل اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔', 'تعذّر رفع الملف. حاول مرة أخرى.')); setBusy(''); return }

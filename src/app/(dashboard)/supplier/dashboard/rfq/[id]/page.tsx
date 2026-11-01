@@ -25,6 +25,7 @@ import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import PartialExtrasConfirm from '@/components/shared/PartialExtrasConfirm'
 import { PAYMENT_TERMS } from '@/lib/paymentTerms'
+import { compressImage } from '@/lib/compressImage'
 // Arabic-Indic / Persian digits and «٫» from Arabic and Urdu keyboards → 12.5 (type=number refused them silently)
 const latinNum = (v: string) => String(v ?? '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٫,]/g, '.').replace(/[^0-9.]/g, '')
 
@@ -469,7 +470,7 @@ export default function SupplierRFQPage() {
       if (!safe.ok) { setError(safe.error || ''); setSubmitting(false); return }
       // Authoritative server-side validation + upload (the magic-byte check here
       // can't be bypassed from the browser).
-      const fd = new FormData(); fd.append('file', attachFile)
+      const fd = new FormData(); fd.append('file', await compressImage(attachFile)) // lighter photos
       const res = await fetch('/api/upload-attachment', { method: 'POST', body: fd })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j.ok) {
@@ -504,7 +505,7 @@ export default function SupplierRFQPage() {
         if (form.file) {
           const safe = await validateUploadFile(form.file)
           if (!safe.ok) { setError(`${L('Catalog', 'کیٹلاگ', 'كتالوج')} «${locale === 'ar' ? it.product_name : getProductLabel(it.product_name, locale)}»: ${safe.error}`); setSubmitting(false); return }
-          const ifd = new FormData(); ifd.append('file', form.file)
+          const ifd = new FormData(); ifd.append('file', await compressImage(form.file))
           const ires = await fetch('/api/upload-attachment', { method: 'POST', body: ifd })
           const ij = await ires.json().catch(() => ({}))
           if (!ires.ok || !ij.ok) {

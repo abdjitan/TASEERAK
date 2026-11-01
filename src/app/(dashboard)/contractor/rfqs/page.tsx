@@ -11,7 +11,7 @@ import { getNav } from '@/lib/nav'
 import { getProductLabel, getUnitLabel } from '@/types'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { rfqRef, rfqDate } from '@/lib/rfqName'
-import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
+import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, rfqPurgeInfo } from '@/lib/deadline'
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arMaterials } from '@/lib/text'
 
@@ -168,6 +168,9 @@ export default function MyRequestsPage() {
           <Link href="/contractor/rfq/quick" className="btn-orange px-4 py-2.5 rounded-xl font-bold text-sm">+ {L('New request', 'نئی درخواست', 'طلب جديد')}</Link>
         </div>
 
+        {(filter === 'ended' || filter === 'cancelled') && shown.some(r => rfqPurgeInfo(r, locale)) && (
+          <p className="text-xs text-gray-500">{rfqPurgeInfo(shown.find(r => rfqPurgeInfo(r, locale)), locale)?.hint}</p>
+        )}
         {shown.length === 0 ? (
           <div className="bg-white rounded-2xl p-10 text-center border border-gray-100 text-gray-400">
             <div className="text-4xl mb-2"><Glyph e="🧾" /></div>
@@ -181,6 +184,8 @@ export default function MyRequestsPage() {
               const open = stateOf(r) === 'open'
               const u = open && r.expires_at ? urgencyStyle(deadlineUrgency(r.expires_at)) : null
               const offers = Number(r.offer_count || 0)
+              // ended without a deal → deleted after the retention period (closed = deal here: offers aren't loaded)
+              const purge = rfqPurgeInfo(r, locale)
               return (
                 <Link key={r.id} href={`/contractor/rfq/${r.id}`}
                   onClick={(e: any) => { if (selecting) { e.preventDefault(); if (cancellable(r)) toggle(r.id) } }}
@@ -202,6 +207,7 @@ export default function MyRequestsPage() {
                         {offers ? L(`${offers} offer(s)`, `${offers} آفرز`, arCount(offers, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً')) : L('No offers yet', 'ابھی کوئی آفر نہیں', 'لا عروض بعد')}
                       </span>
                       {u && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: u.bg, color: u.fg, border: `1px solid ${u.border}` }}><Glyph e="⏰" /> {formatTimeLeft(r.expires_at, locale)}</span>}
+                      {purge && <span title={purge.hint} className={`text-xs font-bold px-2.5 py-1 rounded-full border ${purge.soon ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}><Glyph e="🗑" /> {purge.label}</span>}
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">

@@ -14,7 +14,7 @@ import { offerComparable, lineComparable, vatTag, showsVatBreakdown } from '@/li
 import { fileHref } from '@/lib/fileHref'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
+import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, rfqPurgeInfo } from '@/lib/deadline'
 import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
 import { dealStage } from '@/lib/dealStage'
 import { TIERS, tierLabel, normTier, sourceLabel, availabilityLabel, isDirectSource, sourceIcon, availabilityIcon, tierIcon } from '@/lib/sellers'
@@ -423,6 +423,11 @@ export default function RFQDetailPage() {
                       {isExpired(rfq.expires_at) ? `${L('Deadline passed', 'مہلت ختم', 'انتهت المهلة')}` : `${formatTimeLeft(rfq.expires_at, locale)}`}
                     </span>
                   )
+                })()}
+                {(() => {
+                  // ended without a deal → deleted after the retention period (migration 192)
+                  const pi = !acceptedOffer && !Object.keys(awards || {}).length ? rfqPurgeInfo(rfq, locale, true) : null
+                  return pi && <span title={pi.hint} className={`text-xs px-2 py-0.5 rounded-full font-semibold ${pi.soon ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{pi.label}</span>
                 })()}
               </div>
               <div className="text-[11px] text-gray-400 mt-1.5">

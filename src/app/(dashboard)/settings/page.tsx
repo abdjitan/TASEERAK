@@ -20,6 +20,7 @@ import Glyph from '@/components/shared/Glyph'
 import { normalizeCrInput, crTakenText, crClaimHref } from '@/lib/cr'
 import { toLatinDigits } from '@/lib/phone'
 import { friendlyError } from '@/lib/friendlyError'
+import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
 
 const txt = {
   ar: {
@@ -308,7 +309,7 @@ export default function SettingsPage() {
 
     // رفع عبر مسار خادمي يفحص المحتوى (magic-byte) قبل التخزين — لا رفع مباشر من المتصفح
     async function up(file: any, kind: string): Promise<string | null> {
-      const fd = new FormData(); fd.append('file', file); fd.append('kind', kind)
+      const fd = new FormData(); fd.append('file', await compressImage(file, { maxSide: DOC_MAX_SIDE })); fd.append('kind', kind)
       const res = await fetch('/api/upload-verification', { method: 'POST', body: fd })
       const j = await res.json().catch(() => ({}))
       if (!res.ok || !j.ok) { setDocsMsg(j?.message || t.error); return null }
