@@ -741,7 +741,7 @@ export default function RFQDetailPage() {
                   Object.values(awards).forEach((a: any) => {
                     if (!bySupplier[a.supplier_id]) {
                       const off = offers.find((o: any) => o.id === a.offer_id)
-                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد'), phone: awardedContacts[a.supplier_id], offerId: a.offer_id, noVat: !!off && !showsVatBreakdown(off), vatIncluded: !!off?.vat_included, net: 0, gross: 0, count: 0 }
+                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد'), phone: awardedContacts[a.supplier_id], offerId: a.offer_id, off, noVat: !!off && !showsVatBreakdown(off), vatIncluded: !!off?.vat_included, net: 0, gross: 0, count: 0 }
                     }
                     // Same basis as the cards above: amounts shown VAT-inclusive (15%).
                     const line = Number(a.total) || 0
@@ -751,6 +751,17 @@ export default function RFQDetailPage() {
                     v.count += 1
                   })
                   const list: any[] = Object.values(bySupplier)
+                  // delivery / other charges (191): all of a supplier's priced lines chosen → they count in the
+                  // total; only some → the supplier confirms the charges for those lines after confirmation
+                  for (const v of list) {
+                    const ex = (Array.isArray(v.off?.extra_charges) ? v.off.extra_charges : []).reduce((t: number, e: any) => t + (Number(e.amount) || 0), 0)
+                    const priced = (Array.isArray(v.off?.item_prices) ? v.off.item_prices : []).filter((e: any) => Number(e.total) > 0).length
+                    if (ex > 0 && v.count >= priced) {
+                      v.net += v.noVat ? ex : v.vatIncluded ? ex / 1.15 : ex
+                      v.gross += v.noVat ? ex : v.vatIncluded ? ex : ex * 1.15
+                      v.exIncluded = ex
+                    } else if (ex > 0) v.exPending = ex
+                  }
                   const grand = list.reduce((s: any, v: any) => s + v.gross, 0)
                   const grandNet = list.reduce((s: any, v: any) => s + v.net, 0)
                   const money = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 0 })
@@ -766,7 +777,11 @@ export default function RFQDetailPage() {
                               ? <Link href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}><Glyph e="📄" /> {L('Purchase order', 'پرچیز آرڈر', 'أمر الشراء')} ←</Link>
                               : v.phone && <a href={waLink(v.phone, L('Regarding a materials award on Taseerak', 'تسعیرک پر مال کے ایوارڈ کے بارے میں', 'بخصوص اختيار عروض مواد من منصة تسعيرك')) || undefined} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}><Glyph e="💬" /> {L('Contact', 'رابطہ', 'تواصل')}</a>}
                           </span>
-                          <span className="font-bold whitespace-nowrap">{money(v.gross)} {SAR}</span>
+                          <span className="text-end">
+                            <span className="font-bold whitespace-nowrap block">{money(v.gross)} {SAR}</span>
+                            {v.exIncluded > 0 && <span className="text-[10px] text-blue-200 block">{L(`incl. charges ${money(v.exIncluded)}`, `چارجز ${money(v.exIncluded)} سمیت`, `شامل رسوم ${money(v.exIncluded)}`)}</span>}
+                            {v.exPending > 0 && <span className="text-[10px] text-amber-200 block">{L(`+ charges up to ${money(v.exPending)}, confirmed by the supplier`, `+ چارجز زیادہ سے زیادہ ${money(v.exPending)}، سپلائر تصدیق کرے گا`, `+ رسوم حتى ${money(v.exPending)} يؤكّدها المورد`)}</span>}
+                          </span>
                         </div>
                       ))}
                       <div className="flex items-center justify-between font-extrabold mt-2 pt-1">

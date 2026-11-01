@@ -352,5 +352,38 @@ begin
   select count(*) into n from rfqs where id = v_rfq and sectors @> array['civil', 'electrical'];
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL edit did not re-route sectors'; end if;
 
+  -- 191: partial award with a delivery fee → the supplier confirms (lower, never higher)
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city, expires_at, status)
+  values (buyer, 'civil', 'أسمنت', array['civil'],
+          '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":10,"unit":"كيس"},
+            {"sector":"civil","product_name":"بلك","sub_category":"blocks","quantity":100,"unit":"حبة"}]'::jsonb,
+          10, 'كيس', 'الرياض', 'الرياض', now() + interval '2 days', 'open')
+  returning id into v_rfq;
+  perform set_config('request.jwt.claims', json_build_object('sub', company, 'role', 'authenticated')::text, true);
+  insert into offers (rfq_id, supplier_id, total_price, source_type, item_prices, extra_charges)
+  values (v_rfq, company, 800, 'own_stock',
+          '[{"item_index":0,"product_name":"أسمنت","quantity":10,"unit":"كيس","unit_price":25,"total":250},
+            {"item_index":1,"product_name":"بلك","quantity":100,"unit":"حبة","unit_price":2.5,"total":250}]'::jsonb,
+          '[{"label":"توصيل","amount":300}]'::jsonb)
+  returning id into v_offer;
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  perform public.award_rfq_item(v_rfq, 0, v_offer);
+  perform public.finalize_rfq_awards(v_rfq);
+  reset role;
+  select count(*) into n from offers where id = v_offer and extras_pending;
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL partial award did not hold the delivery fee'; end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', company, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.confirm_partial_extras(v_offer, '[{"label":"توصيل","amount":500}]'::jsonb);
+    bad := bad + 1; log := log || ' FAIL delivery fee raised on confirm';
+  exception when others then ok := ok + 1; end;
+  perform public.confirm_partial_extras(v_offer, '[{"label":"توصيل","amount":120}]'::jsonb);
+  reset role;
+  select count(*) into n from offers where id = v_offer and not extras_pending and (extra_charges->0->>'amount')::numeric = 120;
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL confirmed delivery fee not saved'; end if;
+
   raise exception 'E2E: % passed, % failed |%', ok, bad, log;
 end $$;

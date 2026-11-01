@@ -23,6 +23,7 @@ import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf, WARRANTY_OPTIONS
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import PartialExtrasConfirm from '@/components/shared/PartialExtrasConfirm'
 import { PAYMENT_TERMS } from '@/lib/paymentTerms'
 // Arabic-Indic / Persian digits and «٫» from Arabic and Urdu keyboards → 12.5 (type=number refused them silently)
 const latinNum = (v: string) => String(v ?? '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٫,]/g, '.').replace(/[^0-9.]/g, '')
@@ -836,6 +837,11 @@ export default function SupplierRFQPage() {
                   )
                 })}
               </div>
+            )}
+
+            {/* partial award: confirm or lower the delivery / other charges for the materials won (191) */}
+            {existingOffer.status === 'accepted' && existingOffer.extras_pending && !isMember && (
+              <PartialExtrasConfirm offer={existingOffer} locale={locale} wonCount={myAwards?.idx.size} onDone={(o: any) => setExistingOffer(o)} />
             )}
 
             {/* 🛡 حماية الصفقة — إدارة الصفقة وتتبّعها (المورّد) */}

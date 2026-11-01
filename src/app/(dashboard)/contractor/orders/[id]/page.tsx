@@ -109,7 +109,9 @@ export default function OrderDetailPage() {
   const ipRaw = hasAwards
     ? awards.map((a: any) => ({ product_name: a.item_key, sector: rfq?.items?.[a.item_index]?.sector, quantity: a.quantity, unit: a.unit, unit_price: a.unit_price, total: a.total, specification: rfq?.items?.[a.item_index]?.specification, warranty: (Array.isArray(offer.item_prices) ? offer.item_prices : []).find((e: any) => e.item_index === a.item_index)?.warranty }))
     : (Array.isArray(offer.item_prices) ? offer.item_prices : [])
-  const _ex = Array.isArray(offer.extra_charges) ? offer.extra_charges : []
+  // a partial award's delivery/other charges wait for the supplier's confirmation (191): not billed yet
+  const extrasPending = !!offer.extras_pending
+  const _ex = !extrasPending && Array.isArray(offer.extra_charges) ? offer.extra_charges : []
   const vatIncl = !!offer.vat_included
   // a seller without a VAT number (offers.vat_status): amounts are final, no VAT is split out or added
   const vatBreak = showsVatBreakdown(offer)
@@ -144,6 +146,12 @@ export default function OrderDetailPage() {
             </button>
           </div>
         </div>
+
+        {extrasPending && (
+          <div className="print:hidden rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+            <Glyph e="🚚" /> {L('You chose only some of this supplier’s materials, so they are confirming the delivery and other charges for them. The order total will include them once confirmed; you will be notified.', 'آپ نے اس سپلائر کا کچھ سامان ہی چنا ہے، اس لیے وہ ان کے ڈیلیوری اور دیگر چارجز کی تصدیق کر رہا ہے۔ تصدیق کے بعد یہ آرڈر کی کل رقم میں شامل ہوں گے اور آپ کو اطلاع ملے گی۔', 'اخترت بعض مواد هذا المورد فقط، لذا يؤكّد رسوم التوصيل والرسوم الإضافية لها. ستُضاف إلى إجمالي الأمر بعد تأكيده، وستصلك رسالة بذلك.')}
+          </div>
+        )}
 
         {/* the deal steps (delivery, receipt, «أبلغ عن مشكلة») live on the offer page — link to them */}
         {offer?.status === 'accepted' && rfq?.contractor_id === myId && (
