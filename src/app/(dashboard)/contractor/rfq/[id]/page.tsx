@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, UNIT_OPTIONS, getProductLabel, getUnitLabel } from '@/types'
 import { useTranslation } from '@/i18n'
 import { waLink } from '@/lib/wa'
-import { offerComparable, lineComparable, vatTag } from '@/lib/vat'
+import { offerComparable, lineComparable, vatTag, showsVatBreakdown } from '@/lib/vat'
 import { fileHref } from '@/lib/fileHref'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -217,9 +217,9 @@ export default function RFQDetailPage() {
     const who = o?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
     const total = o ? offerComparable(o).toLocaleString('en-US', { maximumFractionDigits: 0 }) : ''
     if (!confirm(L(
-      `Accept the offer from ${who} for ${total} SAR incl. VAT?\nThe other offers will be declined and a purchase order is created.`,
-      `${who} کی آفر ${total} ریال (VAT سمیت) میں قبول کریں؟\nباقی آفرز رد ہو جائیں گی اور پرچیز آرڈر بنے گا۔`,
-      `قبول عرض ${who} بمبلغ ${total} ر.س (يشمل ضريبة القيمة المضافة 15%)؟\nستُرفض العروض الأخرى ويُنشأ أمر شراء.`))) return
+      `Accept the offer from ${who} for ${total} SAR (${vatTag(o, 'en')})?\nThe other offers will be declined and a purchase order is created.`,
+      `${who} کی آفر ${total} ریال (${vatTag(o, 'ur')}) میں قبول کریں؟\nباقی آفرز رد ہو جائیں گی اور پرچیز آرڈر بنے گا۔`,
+      `قبول عرض ${who} بمبلغ ${total} ر.س (${vatTag(o, 'ar')})؟\nستُرفض العروض الأخرى ويُنشأ أمر شراء.`))) return
     const supabase = createClient()
     // Atomic: accept + reject others + close RFQ in one transaction (prevents double-accept).
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
@@ -703,7 +703,7 @@ export default function RFQDetailPage() {
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
                                   <div className="text-end leading-tight">
-                                    <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{(b.offer.vat_included ? Number(b.entry.total) : Number(b.entry.total) * 1.15).toLocaleString('en-US', { maximumFractionDigits: 0 })} {SAR}</div>
+                                    <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{lineComparable(b.entry.total, b.offer).toLocaleString('en-US', { maximumFractionDigits: 0 })} {SAR}</div>
                                     <div className="text-[10px] text-gray-400">{vatTag(b.offer, locale)}</div>
                                   </div>
                                   {isAwarded ? (
@@ -741,13 +741,13 @@ export default function RFQDetailPage() {
                   Object.values(awards).forEach((a: any) => {
                     if (!bySupplier[a.supplier_id]) {
                       const off = offers.find((o: any) => o.id === a.offer_id)
-                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد'), phone: awardedContacts[a.supplier_id], offerId: a.offer_id, vatIncluded: !!off?.vat_included, net: 0, gross: 0, count: 0 }
+                      bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد'), phone: awardedContacts[a.supplier_id], offerId: a.offer_id, noVat: !!off && !showsVatBreakdown(off), vatIncluded: !!off?.vat_included, net: 0, gross: 0, count: 0 }
                     }
                     // Same basis as the cards above: amounts shown VAT-inclusive (15%).
                     const line = Number(a.total) || 0
                     const v = bySupplier[a.supplier_id]
-                    v.net += v.vatIncluded ? line / 1.15 : line
-                    v.gross += v.vatIncluded ? line : line * 1.15
+                    v.net += v.noVat ? line : v.vatIncluded ? line / 1.15 : line
+                    v.gross += v.noVat ? line : v.vatIncluded ? line : line * 1.15
                     v.count += 1
                   })
                   const list: any[] = Object.values(bySupplier)
@@ -770,7 +770,7 @@ export default function RFQDetailPage() {
                         </div>
                       ))}
                       <div className="flex items-center justify-between font-extrabold mt-2 pt-1">
-                        <span>{L('Total incl. 15% VAT', 'کل رقم (15% VAT سمیت)', 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)')}</span><span style={{ color: '#8F6820' }}>{money(grand)} {SAR}</span>
+                        <span>{list.some((v: any) => v.noVat) ? L('Total', 'کل', 'الإجمالي') : L('Total incl. 15% VAT', 'کل رقم (15% VAT سمیت)', 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)')}</span><span style={{ color: '#8F6820' }}>{money(grand)} {SAR}</span>
                       </div>
                       <div className="text-[11px] text-blue-200 text-end">{L('Before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')} {money(grandNet)} {SAR} · {L('VAT 15%', 'ٹیکس 15%', 'الضريبة 15%')} {money(grand - grandNet)} {SAR}</div>
                       {finalized ? (

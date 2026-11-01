@@ -538,7 +538,7 @@ export default function SupplierRFQPage() {
       supplier_id: actingId || user.id,
       total_price: finalTotal,
       price_valid_until: new Date(Date.now() + (parseInt(priceValidity) || 3) * 86400000).toISOString(),
-      vat_included: noVat ? false : vatIncluded === true,
+      vat_included: noVat ? true : vatIncluded === true, // not registered: the price is final, nothing is added
       vat_status: noVat ? 'not_registered' : 'registered',
       item_prices: itemPricesPayload,
       unit_price: isMultiItem ? null : (unitPrice ? parseFloat(unitPrice) : null),

@@ -19,7 +19,7 @@ import { tierLabel, sourceLabel, availabilityLabel, isDirectSource, sourceIcon, 
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
-import { vatStatusOf } from '@/lib/vat'
+import { vatStatusOf, totalLabel } from '@/lib/vat'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -291,12 +291,12 @@ export default function OfferDetailPage() {
               const fmt = (n: any) => (+n.toFixed(2)).toLocaleString('en-US')
               // a seller without a VAT number: one final amount, no VAT line (Saudi VAT rules)
               if (vatStatusOf(offer) !== 'registered') return (
-                <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>{L('Total incl. 15% VAT', 'کل رقم (15% VAT سمیت)', 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)')}</span><span>{fmt(entered)} {SAR}</span></div>
+                <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>{totalLabel(offer, locale)}</span><span>{fmt(entered)} {SAR}</span></div>
               )
               return (<>
                 <div className="flex justify-between text-gray-600 border-t border-amber-200 mt-1.5 pt-1.5"><span>{L('Net (before VAT)', 'خالص (ٹیکس سے پہلے)', 'الصافي (قبل الضريبة)')}</span><span>{fmt(net)} {SAR}</span></div>
                 <div className="flex justify-between text-gray-600"><span>{L('VAT 15%', 'ویٹ (VAT) 15%', 'ضريبة القيمة المضافة 15%')}</span><span>+ {fmt(vat)} {SAR}</span></div>
-                <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>{L('Total incl. 15% VAT', 'کل رقم (15% VAT سمیت)', 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)')}</span><span>{fmt(net + vat)} {SAR}</span></div>
+                <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>{totalLabel(offer, locale)}</span><span>{fmt(net + vat)} {SAR}</span></div>
               </>)
             })()}
           </div>
