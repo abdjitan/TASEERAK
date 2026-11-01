@@ -147,7 +147,7 @@ function Messages() {
 
   return (
     <AppShell title={L('Messages', 'پیغامات', 'الرسائل')} nav={getNav(role, locale, '/messages')} dir={dir}>
-      <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-4 h-[calc(100vh-130px)]">
+      <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-4 h-[calc(100dvh-130px-4.5rem-env(safe-area-inset-bottom))] lg:h-[calc(100dvh-130px)]">
         {/* قائمة المحادثات */}
         <aside className={`lg:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-y-auto ${activeId ? 'hidden lg:block' : ''}`}>
           <div className="p-4 border-b border-gray-100 font-bold text-sm flex items-center gap-2" style={{ color: '#0B2438' }}>
