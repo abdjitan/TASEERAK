@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
@@ -115,7 +116,7 @@ export default function DeleteAccountPage() {
           ) : signedIn === false ? (
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <p className="text-sm text-gray-600">{t.signedOut}</p>
-              <a href="/login?next=/account/delete" className="px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{t.login}</a>
+              <Link href="/login?next=/account/delete" className="px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{t.login}</Link>
             </div>
           ) : signedIn ? (
             <div className="space-y-3">

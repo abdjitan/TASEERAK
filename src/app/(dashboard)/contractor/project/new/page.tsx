@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { canUseProjects } from '@/lib/plans'
 import { useCatalogSpecs } from '@/lib/useCatalogSpecs'
 import { friendlyError } from '@/lib/friendlyError'
@@ -539,8 +540,8 @@ export default function NewProjectPage() {
                 'رفع جدول كميات كامل والحصول على أمر شراء لكل مورد ميزة لحسابات الشركات الموثّقة بالسجل التجاري، وللأفراد ضمن الباقة الأعلى.')}
             </p>
             <div className="flex flex-wrap justify-center gap-2">
-              <a href="/settings" className="px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{L('Verify my commercial registration', 'تجارتی رجسٹریشن کی تصدیق', 'وثّق سجلك التجاري')}</a>
-              <a href="/contractor/rfq/quick" className="px-5 py-2.5 rounded-xl font-bold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Send a normal price request', 'عام قیمت کی درخواست', 'أرسل طلب تسعير عادياً')}</a>
+              <Link href="/settings" className="px-5 py-2.5 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{L('Verify my commercial registration', 'تجارتی رجسٹریشن کی تصدیق', 'وثّق سجلك التجاري')}</Link>
+              <Link href="/contractor/rfq/quick" className="px-5 py-2.5 rounded-xl font-bold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Send a normal price request', 'عام قیمت کی درخواست', 'أرسل طلب تسعير عادياً')}</Link>
             </div>
           </div>
         )}

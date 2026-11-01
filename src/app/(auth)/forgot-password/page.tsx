@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
@@ -79,7 +80,7 @@ export default function ForgotPasswordPage() {
               <div className="text-5xl mb-4"><Glyph e="📬" /></div>
               <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.sentTitle}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.sentSub}</p>
-              <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.back}</a>
+              <Link href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.back}</Link>
             </div>
           ) : (
             <>
@@ -99,7 +100,7 @@ export default function ForgotPasswordPage() {
                 </button>
               </form>
               <p className="text-center text-sm text-gray-500 mt-5">
-                <a href="/login" className="font-medium hover:underline" style={{ color: '#9D7425' }}>{t.back}</a>
+                <Link href="/login" className="font-medium hover:underline" style={{ color: '#9D7425' }}>{t.back}</Link>
               </p>
             </>
           )}

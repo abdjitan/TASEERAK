@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -208,7 +209,7 @@ function LoginForm() {
                     </div>
                   </div>
                   <div className="flex justify-end">
-                    <a href="/forgot-password" className="text-[13px] font-bold text-orange-dark hover:underline">{t.forgot}</a>
+                    <Link href="/forgot-password" className="text-[13px] font-bold text-orange-dark hover:underline">{t.forgot}</Link>
                   </div>
                   <div className="flex justify-center">
                     <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />

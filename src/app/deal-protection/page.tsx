@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -79,7 +80,7 @@ export default function DealProtectionPage() {
             </section>
           ))}
         </div>
-        <p className="text-center text-xs text-gray-500 mt-8"><a href="/terms" className="underline hover:text-gray-700">{t.terms}</a></p>
+        <p className="text-center text-xs text-gray-500 mt-8"><Link href="/terms" className="underline hover:text-gray-700">{t.terms}</Link></p>
         <p className="text-center text-xs text-gray-400 mt-4">© 2026 تسعيرك — Taseerak</p>
       </div>
     </div>

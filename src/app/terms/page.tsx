@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -126,7 +127,7 @@ export default function TermsPage() {
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-10">
-          <a href="/privacy" className="hover:underline">{t.privacyLink}</a> · © 2026 تسعيرك — Taseerak
+          <Link href="/privacy" className="hover:underline">{t.privacyLink}</Link> · © 2026 تسعيرك — Taseerak
         </p>
       </div>
     </div>

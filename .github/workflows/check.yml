@@ -1,0 +1,22 @@
+# Every push and pull request: the type check and the linter must pass (review 2026-10-28: no CI).
+# The database tests (supabase/tests/*.sql) need the live DB and stay a manual step before DB changes.
+name: check
+on:
+  push:
+    branches: [main, redesign]
+  pull_request:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Type check
+        run: node node_modules/typescript/bin/tsc --noEmit --skipLibCheck
+      - name: Lint
+        run: npx next lint --quiet

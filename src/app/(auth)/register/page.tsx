@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { TERMS_VERSION } from '@/lib/legal'
 import { createClient } from '@/lib/supabase/client'
@@ -203,7 +204,7 @@ export default function RegisterPage() {
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
           <p className="text-xs text-gray-400 mb-6">{t.verifyNext}</p>
-          <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.goSignIn}</a>
+          <Link href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.goSignIn}</Link>
         </div>
       </div>
     )
@@ -246,7 +247,7 @@ export default function RegisterPage() {
             {t.home}
           </a>
           <div className="flex items-center gap-4">
-            <a href="/login" className="text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</a>
+            <Link href="/login" className="text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</Link>
             <LanguageSwitcher variant="minimal" />
           </div>
         </div>
@@ -333,7 +334,7 @@ export default function RegisterPage() {
               <input {...register('email', { onBlur: (e) => checkEmailDup(e.target.value), onChange: () => { if (emailDup) setEmailDup(false) } })}
                 className="input-field" placeholder="name@example.com" type="email" />
               {errors.email && <p className="text-red-500 text-xs mt-1">{vmsg(errors.email.message, locale)}</p>}
-              {emailDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<a href="/login" className="underline font-bold">{t.signInInstead}</a></p>}
+              {emailDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<Link href="/login" className="underline font-bold">{t.signInInstead}</Link></p>}
             </div>
 
             <div>
