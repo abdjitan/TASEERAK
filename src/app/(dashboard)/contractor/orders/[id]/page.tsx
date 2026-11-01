@@ -147,7 +147,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {extrasPending && (
+        {extrasPending && rfq?.contractor_id === myId && (
           <div className="print:hidden rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
             <Glyph e="🚚" /> {L('You chose only some of this supplier’s materials, so they are confirming the delivery and other charges for them. The order total will include them once confirmed; you will be notified.', 'آپ نے اس سپلائر کا کچھ سامان ہی چنا ہے، اس لیے وہ ان کے ڈیلیوری اور دیگر چارجز کی تصدیق کر رہا ہے۔ تصدیق کے بعد یہ آرڈر کی کل رقم میں شامل ہوں گے اور آپ کو اطلاع ملے گی۔', 'اخترت بعض مواد هذا المورد فقط، لذا يؤكّد رسوم التوصيل والرسوم الإضافية لها. ستُضاف إلى إجمالي الأمر بعد تأكيده، وستصلك رسالة بذلك.')}
           </div>
