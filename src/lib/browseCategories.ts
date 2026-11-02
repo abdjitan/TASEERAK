@@ -7,6 +7,8 @@ import { SECTOR_PRODUCTS, SUB_CATEGORIES, GROUP_LABELS, getGroupedProducts, dete
 // not touched. Every sub-category maps to exactly one section; a section shows its groups and
 // products with the same images and search.
 
+// 'insulation' is no longer a section (merged into building 2026-10-19); kept in the type so older
+// callers (mobile app, section photos) still compile.
 export type BrowseSection =
   | 'building' | 'finishing' | 'furniture' | 'electrical' | 'plumbing' | 'hvac_fire' | 'insulation' | 'tools' | 'machinery' | 'outdoor'
 
@@ -47,7 +49,9 @@ const BY_GROUP: Record<string, BrowseSection> = {
   cabling: 'electrical', panels_switches: 'electrical', lighting: 'electrical', low_current: 'electrical', solar: 'electrical',
   hvac: 'hvac_fire', firefighting: 'hvac_fire',
   plumbing: 'plumbing', plumbing_supplies: 'plumbing',
-  heavy_equipment: 'machinery', concrete_machinery: 'machinery', light_equipment: 'machinery', access_equipment: 'tools', workshop_equip: 'tools',
+  heavy_equipment: 'machinery', concrete_machinery: 'machinery', light_equipment: 'machinery', workshop_equip: 'tools',
+  access_equipment: 'building', // 2026-11-02: scaffolding showed in building AND tools; it is kept in building
+  earthing_grp: 'electrical',
   store_plumbing: 'plumbing', store_electrical: 'electrical', store_tools: 'tools', store_fasteners: 'building', // owner 2026-10-19: nails, screws and anchors sit with building materials
  
   store_safety: 'tools', store_paint: 'finishing', store_hardware: 'tools',
@@ -80,25 +84,47 @@ export type SectionGroup = { group: string; icon: string; ar: string; en: string
 // Display only: each product keeps its sector and sub-category.
 const MERGE: Partial<Record<BrowseSection, Record<string, string>>> = {
   plumbing: { store_plumbing: 'plumbing_supplies', sanitary_finish: 'plumbing' },
-  tools: { access_equipment: 'scaffolding' },
+  building: { access_equipment: 'scaffolding' },
   finishing: { store_paint: 'paint_facade' },
-  insulation: { mech_insulation: 'building_insulation' },
+}
+// Oversized groups split by specialty (catalog review 2026-11-02, display only): sub-category key →
+// display group of that section. Checked before MERGE; labels in LABEL below, order in SECTION_ORDER.
+const SUB_GROUP: Partial<Record<BrowseSection, Record<string, string>>> = {
+  plumbing: {
+    sanitary_ware: 'plb_sanitary', bath_accessories: 'plb_sanitary', faucets_mixers: 'plb_sanitary', shower_accessories: 'plb_sanitary', store_faucets: 'plb_sanitary',
+    water_supply: 'plb_pipes', pressure_pipes: 'plb_pipes', drainage_pipes: 'plb_pipes', silent_drainage: 'plb_pipes', storm_drainage: 'plb_pipes', central_gas: 'plb_pipes',
+    valves_fittings: 'plb_valves', copper_fittings: 'plb_valves',
+    pumps: 'plb_equipment', tanks_heaters: 'plb_equipment', water_treatment: 'plb_equipment', fuel_systems: 'plb_equipment',
+    traps_drains: 'plb_small', flex_hoses: 'plb_small', plumbing_consumables: 'plb_small', floats_tanks: 'plb_small', store_valves: 'plb_small', store_hoses: 'plb_small',
+  },
+  finishing: {
+    paint: 'fin_paint', store_paint: 'fin_paint', plaster: 'fin_plaster', store_adhesives: 'fin_adhesives',
+  },
+  tools: { store_hand_tools: 'tools_hand', store_power_tools: 'tools_power', store_bits: 'tools_bits' },
+  outdoor: {
+    hardscape: 'out_hardscape', fencing: 'out_fencing', shades_screens: 'out_shades', pools: 'out_pools', fountains: 'out_pools',
+    irrigation: 'out_irrigation', turf: 'out_planting', planters: 'out_planting', playground: 'out_planting',
+  },
+}
+const SECTION_ORDER: Partial<Record<BrowseSection, string[]>> = {
+  plumbing: ['plb_sanitary', 'plb_pipes', 'plb_valves', 'plb_equipment', 'plb_small'],
+  finishing: ['floors_walls', 'ceiling_decor', 'fin_plaster', 'fin_paint', 'fin_adhesives', 'doors_windows', 'facade_systems', 'arch_metalwork', 'joinery', 'acoustic'],
+  tools: ['tools_hand', 'tools_power', 'tools_bits', 'store_hardware', 'store_safety', 'workshop_equip'],
+  outdoor: ['out_hardscape', 'out_fencing', 'out_shades', 'out_pools', 'out_planting', 'out_irrigation', 'drainage_grp'],
 }
 const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: string; ur: string }>>> = {
-  furniture: {
-    room_other: { ar: 'الأثاث الثابت والخزائن المدمجة', en: 'Fitted furniture & built-in wardrobes', ur: 'فٹڈ فرنیچر اور الماریاں' },
-    joinery: { ar: 'أثاث وخزائن وستائر حسب الطلب', en: 'Custom furniture, wardrobes & curtains', ur: 'آرڈر پر فرنیچر اور پردے' },
-    lighting: { ar: 'ثريات وإنارة ديكور', en: 'Chandeliers & decorative lighting', ur: 'جھومر اور سجاوٹی روشنی' },
-  },
   building: {
     infrastructure: { ar: 'الأساسات والخوازيق', en: 'Foundations & piles', ur: 'بنیادیں اور پائلز' },
     building_insulation: { ar: 'العزل الحراري', en: 'Thermal insulation', ur: 'حرارتی انسولیشن' },
     // names that match their contents (catalog review 2026-10-31)
     rawmaterials: { ar: 'الركام ومواد الردم والأساس', en: 'Aggregates, fill & sub-base', ur: 'بجری، بھرائی اور بیس' },
-    formwork: { ar: 'الطوبار والشدّات', en: 'Formwork & shuttering', ur: 'شٹرنگ اور فارم ورک' },
+    scaffolding: { ar: 'السقالات والدعامات', en: 'Scaffolding & shoring', ur: 'سکیفولڈنگ' },
+    formwork: { ar: 'الطوبار والشدّات (خشبية ومعدنية)', en: 'Formwork & shuttering (timber & steel)', ur: 'شٹرنگ اور فارم ورک (لکڑی اور اسٹیل)' },
   },
   finishing: {
-    paint_facade: { ar: 'الدهانات واللياسة والمواد اللاصقة', en: 'Paints, plaster & adhesives', ur: 'پینٹ، پلستر اور چپکنے والے مواد' },
+    fin_paint: { ar: 'الدهانات', en: 'Paints', ur: 'پینٹ' },
+    fin_plaster: { ar: 'اللياسة ومواد التحضير', en: 'Plaster & surface preparation', ur: 'پلستر اور سطح کی تیاری' },
+    fin_adhesives: { ar: 'لواصق وسيليكون وفوم', en: 'Adhesives, silicone & foam', ur: 'گلو، سلیکون اور فوم' },
     ceiling_decor: { ar: 'الجبس والأسقف المستعارة', en: 'Gypsum & false ceilings', ur: 'جپسم اور فالس سیلنگ' },
     doors_windows: { ar: 'الأبواب والشبابيك', en: 'Doors & windows', ur: 'دروازے اور کھڑکیاں' },
     facade_systems: { ar: 'الواجهات والزجاج', en: 'Facades & glass', ur: 'فیساڈ اور شیشہ' },
@@ -110,43 +136,65 @@ const LABEL: Partial<Record<BrowseSection, Record<string, { ar: string; en: stri
   hvac_fire: { mech_insulation: { ar: 'عزل الأنابيب ومجاري الهواء', en: 'Pipe & duct insulation', ur: 'پائپ اور ڈکٹ انسولیشن' } },
   machinery: { concrete_machinery: { ar: 'معدات الخرسانة والتسليح', en: 'Concrete & rebar machinery', ur: 'کنکریٹ اور سریا مشینری' } },
   plumbing: {
-    plumbing_supplies: { ar: 'الأدوات الصحية ولوازم السباكة', en: 'Sanitary ware & plumbing supplies', ur: 'سینیٹری اور پلمبنگ کا سامان' },
-    plumbing: { ar: 'التمديدات والمضخات والخزانات', en: 'Pipes, pumps & tanks', ur: 'پائپ، پمپ اور ٹینک' },
+    plb_sanitary: { ar: 'الأدوات الصحية', en: 'Sanitary ware & mixers', ur: 'سینیٹری کا سامان' },
+    plb_pipes: { ar: 'المواسير', en: 'Pipes', ur: 'پائپ' },
+    plb_valves: { ar: 'الوصلات والمحابس والحوامل', en: 'Fittings, valves & supports', ur: 'فٹنگز، والو اور سپورٹ' },
+    plb_equipment: { ar: 'المضخات والخزانات والسخانات والمعالجة', en: 'Pumps, tanks, heaters & treatment', ur: 'پمپ، ٹینک، ہیٹر اور ٹریٹمنٹ' },
+    plb_small: { ar: 'لوازم سباكة صغيرة', en: 'Small plumbing supplies', ur: 'پلمبنگ کا چھوٹا سامان' },
   },
   tools: {
-    scaffolding: { ar: 'السقالات ومنصات الرفع', en: 'Scaffolding & access platforms', ur: 'سکیفولڈنگ اور لفٹ پلیٹ فارم' },
+    tools_hand: { ar: 'عدد يدوية', en: 'Hand tools', ur: 'ہاتھ کے اوزار' },
+    tools_power: { ar: 'عدد كهربائية', en: 'Power tools', ur: 'بجلی کے اوزار' },
+    tools_bits: { ar: 'ريش وأقراص وشفرات', en: 'Bits, discs & blades', ur: 'بٹ، ڈسک اور بلیڈ' },
     workshop_equip: { ar: 'معدات اللحام وغسالات الضغط', en: 'Welding equipment & pressure washers', ur: 'ویلڈنگ اور پریشر واشر' },
   },
-  insulation: {
-    building_insulation: { ar: 'العزل الحراري والمائي', en: 'Thermal & water insulation', ur: 'حرارتی اور واٹر پروفنگ' },
-    store_paint: { ar: 'لواصق وسيليكون ورغوة', en: 'Adhesives, silicone & foam', ur: 'گلو، سلیکون اور فوم' },
+  outdoor: {
+    out_hardscape: { ar: 'الرصف والإنترلوك والأسفلت', en: 'Paving, interlock & asphalt', ur: 'پیونگ، انٹرلاک اور اسفالٹ' },
+    out_fencing: { ar: 'الأسوار والشبك والبوابات', en: 'Fencing, mesh & gates', ur: 'باڑ، جالی اور گیٹ' },
+    out_shades: { ar: 'المظلات والسواتر', en: 'Shades & screens', ur: 'سائبان اور اسکرین' },
+    out_pools: { ar: 'المسابح والنوافير', en: 'Pools & fountains', ur: 'سوئمنگ پول اور فوارے' },
+    out_planting: { ar: 'العشب والزراعة وألعاب الأطفال', en: 'Turf, planting & playgrounds', ur: 'گھاس، شجرکاری اور کھیل کا سامان' },
+    out_irrigation: { ar: 'الري', en: 'Irrigation', ur: 'آبپاشی' },
   },
 }
 
 // The furniture section is browsed by ROOM (what a home buyer thinks in), not by trade group.
 // First matching rule wins; anything unmatched lands in «أثاث وديكور متنوّع».
-const ROOMS: { key: string; ar: string; en: string; ur: string; icon: string; re: RegExp }[] = [
-  { key: 'room_any', ar: 'قطع حسب الطلب (أي نوع)', en: 'Made to order (any type)', ur: 'آرڈر پر (کوئی بھی قسم)', icon: '✨', re: /أي نوع/ },
-  { key: 'room_kids', ar: 'غرف الأطفال', en: "Kids' rooms", ur: 'بچوں کے کمرے', icon: '🧸', re: /أطفال|اطفال|دورين/ },
-  { key: 'room_bed', ar: 'غرف النوم', en: 'Bedrooms', ur: 'بیڈروم', icon: '🛏', re: /غرفة نوم|سرير|خزانة ملابس|دولاب|مراتب|فرشات|تسريحة|كومودينو/ },
-  { key: 'room_living', ar: 'غرف المعيشة والمجالس', en: 'Living rooms & majlis', ur: 'لونگ روم اور مجلس', icon: '🛋', re: /كنب|مجلس|طاولة قهوة|طاولات جانبية|وحدة تلفزيون|مشب|سجاد|زوالي|موكيت/ },
-  { key: 'room_dining', ar: 'السفرة والطعام', en: 'Dining', ur: 'ڈائننگ', icon: '🍽', re: /طعام|سفرة|بوفيه/ },
-  { key: 'room_kitchen', ar: 'المطابخ', en: 'Kitchens', ur: 'کچن', icon: '🍳', re: /مطبخ|المطبخ/ },
-  { key: 'room_office', ar: 'المكاتب والمكتبات', en: 'Offices & bookcases', ur: 'دفاتر اور لائبریری', icon: '🗄', re: /مكتب|مكتبة|رفوف معدنية|ملفات/ },
-  { key: 'room_walls', ar: 'الجدران والديكور', en: 'Walls & decor', ur: 'دیواریں اور سجاوٹ', icon: '🖼', re: /جدار|لوحات|تحف|رفوف حائط|قواطع ديكور|أحذية|جزامة/ },
-  { key: 'room_curtains', ar: 'الستائر', en: 'Curtains & blinds', ur: 'پردے', icon: '🪟', re: /ستائر|ستارة|الستائر/ },
-  { key: 'room_bath', ar: 'الحمّامات', en: 'Bathrooms', ur: 'باتھ روم', icon: '🛁', re: /مغسلة|فانيتي|حمّام|حمام/ },
-  { key: 'room_outdoor', ar: 'الأثاث الخارجي', en: 'Outdoor furniture', ur: 'بیرونی فرنیچر', icon: '⛱', re: /خارجي|حدائق/ },
+// Rooms with one or two items were merged (catalog review 2026-11-02): kids → bedrooms, bathrooms →
+// kitchens, outdoor furniture → living rooms. A rule's key is the room it fills (labels in ROOM_LABELS).
+const ROOM_LABELS: Record<string, { ar: string; en: string; ur: string; icon: string }> = {
+  room_any: { ar: 'قطع حسب الطلب (أي نوع)', en: 'Made to order (any type)', ur: 'آرڈر پر (کوئی بھی قسم)', icon: '✨' },
+  room_living: { ar: 'المجالس والمعيشة والجلسات الخارجية', en: 'Living rooms, majlis & outdoor seating', ur: 'لونگ روم، مجلس اور بیرونی نشست', icon: '🛋' },
+  room_bed: { ar: 'غرف النوم وغرف الأطفال', en: "Bedrooms & kids' rooms", ur: 'بیڈروم اور بچوں کے کمرے', icon: '🛏' },
+  room_dining: { ar: 'السفرة والطعام', en: 'Dining', ur: 'ڈائننگ', icon: '🍽' },
+  room_kitchen: { ar: 'المطابخ والحمّامات', en: 'Kitchens & bathrooms', ur: 'کچن اور باتھ روم', icon: '🍳' },
+  room_office: { ar: 'المكاتب والمكتبات', en: 'Offices & bookcases', ur: 'دفاتر اور لائبریری', icon: '🗄' },
+  room_walls: { ar: 'الجدران والديكور والخزائن المدمجة', en: 'Walls, decor & built-ins', ur: 'دیواریں، سجاوٹ اور بلٹ اِن', icon: '🖼' },
+  room_curtains: { ar: 'الستائر', en: 'Curtains & blinds', ur: 'پردے', icon: '🪟' },
+}
+const ROOMS: { key: string; re: RegExp }[] = [
+  { key: 'room_any', re: /أي نوع/ },
+  { key: 'room_bed', re: /أطفال|اطفال|دورين/ },
+  { key: 'room_bed', re: /غرفة نوم|سرير|خزانة ملابس|دولاب|مراتب|فرشات|تسريحة|كومودينو/ },
+  { key: 'room_living', re: /كنب|مجلس|طاولة قهوة|طاولات جانبية|وحدة تلفزيون|سجاد|زوالي|موكيت/ },
+  { key: 'room_dining', re: /طعام|سفرة|بوفيه/ },
+  { key: 'room_kitchen', re: /مطبخ|المطبخ/ },
+  { key: 'room_office', re: /مكتب|مكتبة|رفوف معدنية|ملفات/ },
+  { key: 'room_walls', re: /جدار|جدران|لوحات|تحف|مشب|رفوف حائط|أرفف|خزائن حائط|Built-in|قواطع ديكور|أحذية|جزامة/ },
+  { key: 'room_curtains', re: /ستائر|ستارة|الستائر/ },
+  { key: 'room_kitchen', re: /مغسلة|فانيتي|حمّام|حمام/ },
+  { key: 'room_living', re: /خارجي|حدائق/ },
 ]
 function byRoom(groups: SectionGroup[]): SectionGroup[] {
   const out: Record<string, SectionGroup> = {}
   const other: SectionGroup = { group: 'room_other', icon: '🛋', ar: 'أثاث وديكور متنوّع', en: 'More furniture & decor', ur: 'مزید فرنیچر', items: [] }
   for (const g of groups) for (const it of g.items) {
     const r = ROOMS.find(x => x.re.test(it.name))
-    const bucket = r ? (out[r.key] ||= { group: r.key, icon: r.icon, ar: r.ar, en: r.en, ur: r.ur, items: [] }) : other
+    const lab = r && ROOM_LABELS[r.key]
+    const bucket = r && lab ? (out[r.key] ||= { group: r.key, icon: lab.icon, ar: lab.ar, en: lab.en, ur: lab.ur, items: [] }) : other
     if (!bucket.items.some(i => i.name === it.name)) bucket.items.push(it)
   }
-  const SHOW = ['room_any', 'room_living', 'room_bed', 'room_kids', 'room_dining', 'room_kitchen', 'room_office', 'room_walls', 'room_curtains', 'room_bath', 'room_outdoor']
+  const SHOW = ['room_any', 'room_living', 'room_bed', 'room_dining', 'room_kitchen', 'room_office', 'room_walls', 'room_curtains']
   return [...SHOW.map(k => out[k]).filter(Boolean), ...(other.items.length ? [other] : [])]
 }
 
@@ -165,7 +213,7 @@ const CHEM_GROUPS: { key: string; ar: string; en: string; ur: string; icon: stri
 ]
 // «العزل المائي» is its own group (owner 2026-10-31: «العزل» only, not «عزل الأساسات»; piles stay under «الأساسات»)
 const WATERPROOF_GROUP = { key: 'waterproofing', ar: 'العزل المائي', en: 'Waterproofing', ur: 'واٹر پروفنگ', icon: '🛡' }
-const BUILDING_ORDER = ['concrete', 'steel', 'masonry', 'rawmaterials', 'formwork', 'scaffolding', 'waterproofing', 'building_insulation', 'infrastructure', 'chem_admix', 'chem_repair', 'chem_seal', 'chem_fire', 'store_fasteners']
+SECTION_ORDER.building = ['concrete', 'steel', 'masonry', 'rawmaterials', 'formwork', 'scaffolding', 'waterproofing', 'building_insulation', 'infrastructure', 'chem_admix', 'chem_repair', 'chem_seal', 'chem_fire', 'store_fasteners']
 
 function getTradeGroups(section: BrowseSection): SectionGroup[] {
   const out: Record<string, SectionGroup> = {}
@@ -177,7 +225,7 @@ function getTradeGroups(section: BrowseSection): SectionGroup[] {
         if (sectionOfSub(sub, g.group) !== section) continue
         const chem = section === 'building' && sector === 'civil' && sub === 'construction_chemicals' ? (/ميكروسيليكا|silica fume/i.test(name) ? CHEM_GROUPS.find(c => c.key === 'chem_admix') : CHEM_GROUPS.find(c => c.re.test(name))) // microsilica is a concrete additive
           : section === 'building' && sub === 'waterproofing' ? WATERPROOF_GROUP : undefined
-        const key = chem ? chem.key : (MERGE[section]?.[g.group] || g.group)
+        const key = chem ? chem.key : ((sub && SUB_GROUP[section]?.[sub]) || MERGE[section]?.[g.group] || g.group)
         if (chem && !out[key]) { out[key] = { group: key, icon: chem.icon, ar: chem.ar, en: chem.en, ur: chem.ur, items: [] }; order.push(key) }
         if (!out[key]) {
           const base: any = (GROUP_LABELS as any)[key] || g
@@ -189,7 +237,8 @@ function getTradeGroups(section: BrowseSection): SectionGroup[] {
       }
     }
   }
-  if (section === 'building') order.sort((a, b) => (BUILDING_ORDER.indexOf(a) + 1 || 99) - (BUILDING_ORDER.indexOf(b) + 1 || 99))
+  const so = SECTION_ORDER[section]
+  if (so) order.sort((a, b) => (so.indexOf(a) + 1 || 99) - (so.indexOf(b) + 1 || 99))
   return order.map(k => out[k])
 }
 

@@ -52,10 +52,10 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   concrete: { ar: 'الخرسانة والإسمنت', en: 'Concrete & Cement', ur: 'کنکریٹ اور سیمنٹ', icon: '🏭' },
   masonry: { ar: 'الطوب والبلوك', en: 'Blocks & Bricks', ur: 'بلاک اور اینٹیں', icon: '🧱' },
   steel: { ar: 'الحديد والإنشاءات المعدنية', en: 'Steel & Metalwork', ur: 'اسٹیل', icon: '🔩' },
-  rawmaterials: { ar: 'مواد الدفان والركام', en: 'Backfill & Aggregate', ur: 'بھرائی اور ایگریگیٹ', icon: '⛰' },
+  rawmaterials: { ar: 'مواد الردم والركام', en: 'Fill & Aggregate', ur: 'بھرائی اور ایگریگیٹ', icon: '⛰' },
   infrastructure: { ar: 'العزل والأساسات والمعالجات', en: 'Insulation, Foundations & Treatments', ur: 'انسولیشن اور بنیادیں', icon: '🛡' },
   drainage_grp: { ar: 'الصرف والأنابيب الخارجية', en: 'Drainage & External Pipes', ur: 'نکاسی اور پائپ', icon: '🚧' },
-  formwork: { ar: 'الطوبار والشدّات الخشبية', en: 'Formwork & Shuttering', ur: 'فارم ورک', icon: '🪵' },
+  formwork: { ar: 'الطوبار والشدّات الخشبية والمعدنية', en: 'Formwork & Shuttering (Timber & Steel)', ur: 'فارم ورک (لکڑی اور اسٹیل)', icon: '🪵' },
   scaffolding: { ar: 'السقالات والدعامات', en: 'Scaffolding & Shoring', ur: 'سکیفولڈنگ', icon: '🏗' },
   landscape: { ar: 'التنسيق والأعمال الخارجية', en: 'Landscape & Hardscape', ur: 'لینڈ اسکیپ', icon: '🌳' },
   // معماري
@@ -66,7 +66,7 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   facade_systems: { ar: 'الواجهات', en: 'Facades', ur: 'فیسڈ', icon: '🏢' },
   joinery: { ar: 'النجارة والأثاث الثابت', en: 'Joinery & Millwork', ur: 'جوائنری', icon: '🪑' },
   acoustic: { ar: 'العزل الصوتي', en: 'Acoustic Systems', ur: 'صوتی نظام', icon: '🔊' },
-  building_insulation: { ar: 'العزل الحراري والمائي', en: 'Thermal & Moisture Insulation', ur: 'انسولیشن', icon: '🧊' },
+  building_insulation: { ar: 'العزل الحراري', en: 'Thermal Insulation', ur: 'حرارتی انسولیشن', icon: '🧊' },
   arch_metalwork: { ar: 'الأعمال المعدنية والمصاعد', en: 'Metalwork & Elevators', ur: 'دھاتی کام', icon: '🛗' },
   sanitary_finish: { ar: 'الأدوات الصحية والتشطيبات', en: 'Sanitary Ware & Finishes', ur: 'سینیٹری', icon: '🛁' },
   // ميكانيك
@@ -74,13 +74,14 @@ export const GROUP_LABELS: Record<string, { ar: string; en: string; ur: string; 
   plumbing: { ar: 'السباكة والتغذية والصرف', en: 'Plumbing & Drainage', ur: 'پلمبنگ', icon: '🚰' },
   plumbing_supplies: { ar: 'لوازم وإكسسوارات السباكة', en: 'Plumbing Supplies & Fittings', ur: 'پلمبنگ سامان', icon: '🔧' },
   firefighting: { ar: 'مكافحة الحريق', en: 'Fire Fighting', ur: 'فائر فائٹنگ', icon: '🧯' },
-  mech_insulation: { ar: 'العزل الحراري الميكانيكي', en: 'Mechanical Insulation', ur: 'مکینیکل انسولیشن', icon: '♨️' },
+  mech_insulation: { ar: 'عزل الأنابيب ومجاري الهواء', en: 'Pipe & Duct Insulation', ur: 'پائپ اور ڈکٹ انسولیشن', icon: '♨️' },
   // كهرباء
   cabling: { ar: 'التمديدات والكابلات', en: 'Cabling & Wiring', ur: 'کیبلنگ', icon: '🔌' },
   panels_switches: { ar: 'اللوحات والمفاتيح', en: 'Panels & Switches', ur: 'پینل', icon: '🎛' },
   lighting: { ar: 'أنظمة الإنارة', en: 'Lighting Systems', ur: 'روشنی', icon: '💡' },
   low_current: { ar: 'أنظمة التيار الخفيف', en: 'Low Current Systems', ur: 'لو کرنٹ', icon: '📹' },
   solar: { ar: 'الطاقة الشمسية', en: 'Solar Energy', ur: 'شمسی توانائی', icon: '☀' },
+  earthing_grp: { ar: 'التأريض والحماية من الصواعق', en: 'Earthing & Lightning Protection', ur: 'ارتھنگ اور آسمانی بجلی سے تحفظ', icon: '⚡' },
   // آليات ومعدات (قطاع مستقل — تأجير/بيع)
   heavy_equipment: { ar: 'آليات ثقيلة (حفر/رفع/نقل)', en: 'Heavy Machinery', ur: 'بھاری مشینری', icon: '🚜' },
   light_equipment: { ar: 'معدات خفيفة (مولدات/دكاكات)', en: 'Light Equipment', ur: 'ہلکی مشینری', icon: '⚙️' },
@@ -111,7 +112,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ الحديد والإنشاءات المعدنية ═══
     rebar: { ar: 'حديد تسليح', en: 'Rebar / Reinforcement', ur: 'سریا', icon: '🔩', group: 'steel',
       keywords: ['حديد تسليح','تسليح','rebar','reinforc','سابك','الراجحي','بسكويت','سلك تربيط','reinforcement','deformed bar','steel bar'] },
-    structural_steel: { ar: 'حديد تجاري وقطاعات', en: 'Steel Profiles & Beams', ur: 'ساختی اسٹیل', icon: '🏗', group: 'steel',
+    structural_steel: { ar: 'جسور وقطاعات إنشائية ثقيلة (HEA/HEB/IPE/UPN)', en: 'Heavy Structural Beams & Sections (HEA/HEB/IPE/UPN)', ur: 'ساختی اسٹیل', icon: '🏗', group: 'steel',
       keywords: ['هيكلي','صلب','HEB','HEA','IPE','قطاع','structural steel','section','hollow','channel','صفائح','beam','تجاري'] },
     steel_sections: { ar: 'قطاعات وصاج حديد (زوايا/مواسير/صاج)', en: 'Steel Sections, Tubes & Sheets', ur: 'اسٹیل سیکشن', icon: '🔩', group: 'steel',
       keywords: ['زاوية حديد','أنجل','angle','فلات بار','flat bar','ماسورة حديد','مربع حديد','مستطيل حديد','صاج','مضلع','شكمة','chequered','صاج مجلفن','GI sheet','hollow section','صلب مجوف','مدادات حديد مجلفنة'] },
@@ -125,9 +126,9 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     construction_chemicals: { ar: 'مواد كيميائية للبناء', en: 'Construction Chemicals', ur: 'کیمیکل', icon: '🧪', group: 'infrastructure',
       keywords: ['جراوت','grout','إضافات','additive','سيليكون إنشائي','epoxy','معالجة خرسانة','curing','كيماوي','مبيد النمل الأبيض','مادة معالجة الخرسانة','مادة ربط الخرسانة','مثبت كيميائي','حشوة فواصل التمدد','لاصق بلوك','مونة رقيقة','مونة إصلاح الخرسانة','سيليكون','silicone','مانع تسرب','sealant','ماستك','فوم بولي','مقاوم للحريق','معجون حريق','fire putty','water plug','بوليمر','بولي سلفايد','بولي يوريثان','لملء الفراغات','weather seal','chemical anchor','anchor bolt resin','curing compound','admixture'] },
     drainage: { ar: 'صرف خارجي وبنية تحتية', en: 'External Drainage', ur: 'نکاسی', icon: '🚧', group: 'drainage_grp',
-      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف'] },
+      keywords: ['صرف أمطار','storm','drainage','منهول','manhole','تفتيش','ductile','دكتايل','حديد مرن','RCP','خرسانية مسلحة','صرف','مصارف','مصرف','بيارة','خزان صرف صحي','septic'] },
     // ═══ الكسارات والمواد الأولية وأعمال الموقع ═══
-    aggregates: { ar: 'رمل وبحص وبودرة', en: 'Sand, Gravel & Powder', ur: 'ریت اور بجری', icon: '⛰', group: 'rawmaterials',
+    aggregates: { ar: 'رمل وحصى وبودرة', en: 'Sand, Gravel & Powder', ur: 'ریت اور بجری', icon: '⛰', group: 'rawmaterials',
       keywords: ['رمل','بطحاء','حصى','بحص','زلط','ركام','كسارة','sand','gravel','aggregate','بودرة','crusher','حجر طبيعي خام','حجر خام'] },
     roadbase: { ar: 'طبقات الأساس والإحلال (Sub-base/Base)', en: 'Road Base & Fill Layers', ur: 'روڈ بیس', icon: '🛣', group: 'rawmaterials',
       keywords: ['طبقة أساس','base course','تحت الأساس','sub-base','subbase','إحلال','ردم إنشائي','مصنّف','A-1-a','A-1-b','CBR','حصى مرشحة','ركام مدمج'] },
@@ -161,15 +162,18 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     fountains: { ar: 'نوافير وبرك مائية', en: 'Fountains & Water Features', ur: 'فوارے', icon: '⛲', group: 'landscape',
       keywords: ['نافورة','fountain','بركة','pool','water feature','شلال','waterfall','مسطح مائي'] },
     hardscape: { ar: 'إنترلوك وبردورات وتبليط خارجي', en: 'Interlock, Kerbs & Paving', ur: 'پیونگ', icon: '🧱', group: 'landscape',
-      keywords: ['إنترلوك','interlock','بردورة','كيرب','kerb','curb','تبليط','paving','بلاط خارجي','حجر صناعي','رصف','tactile','إسفلت','asphalt','أسفلتية','طبقة أسفلتية','حصى زينة وأحجار ديكور','حصى زينة','ألعاب أطفال خارجية','مطبات صناعية','مطبات','أرضيات خشب خارجية'] },
+      keywords: ['إنترلوك','interlock','بردورة','كيرب','kerb','curb','تبليط','paving','بلاط خارجي','حجر صناعي','رصف','tactile','إسفلت','asphalt','أسفلتية','طبقة أسفلتية','حصى زينة وأحجار ديكور','حصى زينة','مطبات صناعية','مطبات','أرضيات خشب خارجية'] },
     planters: { ar: 'أحواض زراعة وعناصر تنسيق', en: 'Planters & Landscape Elements', ur: 'پلانٹر', icon: '🪴', group: 'landscape',
       keywords: ['حوض زراعة','planter','تربة','soil','مشتل','plant','شجر','tree','نباتات','pergola','مظلة حديقة','تشجير','زراعة','زرع'] },
     fencing: { ar: 'تسييج وشِباك وبوابات', en: 'Fencing, Mesh & Gates', ur: 'باڑ', icon: '🚧', group: 'landscape',
-      keywords: ['تسييج','سياج','شبك تسييج','شبك مربعات','جبيونات','بوابة سياج','سلك ربط','أعمدة تسييج','شبك تمدد','تشيلنك','fence','fencing','gabion', 'سلك شائك', 'شبوك', 'شائك', 'كونسيرتينا', 'حلاقي', 'razor', 'barbed'] },
+      keywords: ['تسييج','سياج','شبك تسييج','شبك مربعات','جبيونات','بوابة سياج','سلك ربط','أعمدة تسييج','شبك تمدد','تشيلنك','تشين لينك','جابيون','fence','fencing','gabion', 'سلك شائك', 'شبوك', 'شائك', 'كونسيرتينا', 'حلاقي', 'razor', 'barbed'] },
+    // 2026-11-02 review: playground equipment is its own trade (not interlock / planters)
+    playground: { ar: 'ألعاب الأطفال والملاعب الخارجية', en: 'Playground Equipment', ur: 'کھیل کے میدان کا سامان', icon: '🛝', group: 'landscape',
+      keywords: ['ألعاب أطفال','العاب اطفال','ألعاب حدائق','مراجيح','أرجوحة','زحليقة','playground','swing set'] },
   },
   architectural: {
     // ═══ الأرضيات والحوائط ═══
-    tiles: { ar: 'بلاط وبورسلان وسيراميك وتيرازو', en: 'Tiles, Porcelain & Terrazzo', ur: 'ٹائلز اور ٹیرازو', icon: '🔲', group: 'floors_walls',
+    tiles: { ar: 'بلاط وبورسلين وسيراميك وتيرازو', en: 'Tiles, Porcelain & Terrazzo', ur: 'ٹائلز اور ٹیرازو', icon: '🔲', group: 'floors_walls',
       keywords: ['بلاط','سيراميك','بورسلين','بورسلان','tile','ceramic','porcelain','موزاييك','mosaic','تيرازو','terrazzo'] },
     marble: { ar: 'رخام وجرانيت وحجر', en: 'Marble, Granite & Stone', ur: 'سنگ مرمر', icon: '💎', group: 'floors_walls',
       keywords: ['رخام','جرانيت','marble','granite','حجر طبيعي','natural stone','حجر صناعي','engineered stone','بازلت','basalt'] },
@@ -182,7 +186,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ الدهانات والديكورات الخارجية ═══
     paint: { ar: 'دهانات ودهان أرضيات إيبوكسي', en: 'Paints & Epoxy Floor Coatings', ur: 'پینٹ اور ایپوکسی فرش کوٹنگ', icon: '🎨', group: 'paint_facade',
       keywords: ['دهان','دهانات','paint','جوتن','jotun','الجزيرة','أكريليك','acrylic','زيتي','ورق جدران','wallpaper','إيبوكسي','epoxy','دهان أرضيات','دهان إيبوكسي','floor coating','ورنيش وصبغة خشب'] },
-    grc_facade: { ar: 'GRC وكسوة الواجهات', en: 'GRC & Facade Cladding', ur: 'جی آر سی', icon: '🏛', group: 'paint_facade',
+    grc_facade: { ar: 'GRC وكسوة الواجهات', en: 'GRC & Facade Cladding', ur: 'جی آر سی', icon: '🏛', group: 'facade_systems',
       keywords: ['GRC','GRG','جي آر سي','بروفايل واجهات','رشات خارجية','كسوة','facade','render'] },
     plaster: { ar: 'لياسة وبياض ومواد التحضير', en: 'Plaster & Render', ur: 'پلستر', icon: '🧱', group: 'paint_facade',
       keywords: ['لياسة','بياض','plaster','شبك لياسة','زاوية لياسة','مونة','طرطشة','تخشين','بطانة'] },
@@ -258,7 +262,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['لوحة','لوحات','panel','MDB','SMDB','SDB','DB','distribution board','busbar','bus bar','هارمونيك','harmonic','عداد كهرباء فرعي'] },
     breakers: { ar: 'قواطع كهربائية', en: 'Circuit Breakers', ur: 'بریکر', icon: '🔘', group: 'panels_switches',
       keywords: ['قاطع','قواطع','breaker','MCB','MCCB','RCCB','ACB','فيوز'] },
-    switches: { ar: 'مفاتيح وأفياش وعلب', en: 'Switches & Sockets', ur: 'سوئچ', icon: '🔲', group: 'panels_switches',
+    switches: { ar: 'مفاتيح ومقابس وعلب', en: 'Switches & Sockets', ur: 'سوئچ', icon: '🔲', group: 'panels_switches',
       keywords: ['مفاتيح','أفياش','switch','socket','علب','أبراز','outlet','مقابس','مقبس','floor box','مقبس طابق','مفتاح فصل'] },
     wiring_devices: { ar: 'أجهزة توصيل وتحكم (ديمر/USB/داتا)', en: 'Wiring Devices & Controls', ur: 'وائرنگ ڈیوائسز', icon: '🎚', group: 'panels_switches',
       keywords: ['ديمر','dimmer','بريزة','USB','RJ45','بريزة شبكة','بريزة تلفزيون','coax','حساس حركة','PIR','presence','تايمر','timer','جرس باب','doorbell','ثرموستات','thermostat','كونتاكتور','ريليه','حامي جهد كهربائي','شاحن سيارات كهربائية'] },
@@ -275,7 +279,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['طاقة شمسية','الطاقة الشمسية','ألواح شمسية','الألواح الشمسية','شمسي','سولار','انفرتر طاقة','ليثيوم','منظم شحن','solar','pv'] },
     decor_lighting: { ar: 'إنارة ديكور وثريات', en: 'Decorative Lighting & Chandeliers', ur: 'سجاوٹی روشنی', icon: '✨', group: 'lighting',
       keywords: ['ثريا','ثريات','نجفة','نجف','أباجورة','أبليك','إنارة ديكور','إنارة معلقة','معلقة ديكور','إنارة أرضية','chandelier','pendant','lamp','wall light','floor lamp','إنارة سقف مودرن','إنارة مرآة وحمّام','مصباح طاولة ومكتب LED','مصباح طاولة','لمبات ديكور فيلامنت'] },
-    earthing: { ar: 'تأريض وحماية برق', en: 'Earthing & Lightning', ur: 'ارتھنگ', icon: '🛡', group: 'lighting',
+    earthing: { ar: 'التأريض والحماية من الصواعق', en: 'Earthing & Lightning Protection', ur: 'ارتھنگ', icon: '🛡', group: 'earthing_grp',
       keywords: ['تأريض','earthing','earth','حماية برق','lightning','أقطاب','rod'] },
     // ═══ أنظمة التيار الخفيف ═══
     smart_home: { ar: 'المنزل الذكي', en: 'Smart Home', ur: 'اسمارٹ ہوم', icon: '📱', group: 'low_current',
@@ -299,7 +303,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['مكيف','سبليت','split','دكت','package','مركزي','تشيلر','chiller','VRF','VRV','AHU','FCU','برج تبريد','cooling tower','مبادل حراري','heat exchanger','مكثف','condenser','مجمد حرارة','مواسير نحاس تكييف','غاز تبريد'] },
     ductwork: { ar: 'مجاري هواء ومخارج', en: 'Ductwork & Grilles', ur: 'ڈکٹ', icon: '🌬', group: 'hvac',
       keywords: ['مجاري هواء','duct','دكت','مخارج هواء','فتحات هواء','موزعات هواء','موزعات','ستائر هواء','air curtain','grille','ديفيوزر','diffuser'] },
-    duct_insulation: { ar: 'عزل مجاري الهواء (دكت)', en: 'Duct Insulation', ur: 'ڈکٹ انسولیشن', icon: '🧥', group: 'hvac',
+    duct_insulation: { ar: 'عزل مجاري الهواء (دكت)', en: 'Duct Insulation', ur: 'ڈکٹ انسولیشن', icon: '🧥', group: 'mech_insulation',
       keywords: ['عزل دكت','عزل مجاري','صوف صخري','rockwool','صوف زجاجي','fiberglass','عزل فوم','rubber insulation','armaflex','nitrile','كانفس','canvas','mastic','foster','ماستيك'] },
     hvac_dampers: { ar: 'خانقات هواء (حريق/دخان/VCD)', en: 'Dampers (Fire/Smoke/VCD)', ur: 'ڈیمپرز', icon: '🛡', group: 'hvac',
       keywords: ['خانق','damper','fire damper','خانق حريق','smoke damper','خانق دخان','VCD','volume control','خانق حجم','motorized damper'] },
@@ -311,7 +315,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     central_gas: { ar: 'الغاز المركزي', en: 'Central Gas Systems', ur: 'سینٹرل گیس', icon: '🔥', group: 'plumbing',
       keywords: ['غاز مركزي','الغاز المركزي','مواسير غاز','تمديدات غاز','خزان غاز','منظم غاز','كاشف تسرب','lpg'] },
     water_supply: { ar: 'أنابيب تغذية (PPR)', en: 'Water Supply Pipes (PPR)', ur: 'پانی سپلائی', icon: '🚰', group: 'plumbing',
-      keywords: ['PPR','تغذية','مياه باردة','مياه حارة','CPVC','PEX','نحاس مياه','مياه مبردة','chilled water','GI','مجلفن','galvanized','GRP','فايبرجلاس','معزولة مسبقا','pre-insulated','pre insulated','HDPE','مياه شرب','عداد مياه','water meter'] },
+      keywords: ['PPR','تغذية','مياه باردة','مياه حارة','مياه شرب'] },
     drainage_pipes: { ar: 'مواسير صرف (PVC/UPVC)', en: 'Drainage Pipes (PVC)', ur: 'نکاسی پائپ', icon: '🚽', group: 'plumbing',
       keywords: ['صرف صحي','uPVC','PVC','sanitary','soil','waste','قسامات','أكواع','مصرف','حديد زهر','cast iron','زهر','فصال دهون','grease','interceptor','صرف خارجي','صرف أمطار','أمطار','stormwater','RCP','خرساني','ductile','حديد مرن','مياه رئيسية','منهول','manhole','غرف تفتيش','مصارف خطية'] },
     silent_drainage: { ar: 'صرف صامت (أكوستيك)', en: 'Silent / Acoustic Drainage', ur: 'سائلنٹ ڈرینج', icon: '🔇', group: 'plumbing',
@@ -323,7 +327,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     pumps: { ar: 'مضخات مياه', en: 'Water Pumps', ur: 'پمپ', icon: '⚙️', group: 'plumbing',
       keywords: ['مضخة','pump','رفع','تدوير','ضغط','booster','صمام','valve','وعاء تمدد','expansion vessel'] },
     tanks_heaters: { ar: 'خزانات وسخانات مياه', en: 'Tanks & Water Heaters', ur: 'ٹینک', icon: '🪣', group: 'plumbing',
-      keywords: ['خزان','tank','GRP','فايبرجلاس','بولي','سخان','heater','RO','تحلية','مرشح', 'تصفية وقود', 'وحدة وقود','خزان صرف صحي'] },
+      keywords: ['خزان','tank','GRP','فايبرجلاس','بولي','سخان','heater','RO','تحلية','مرشح'] },
     // ═══ لوازم وإكسسوارات السباكة (محلات صغيرة) ═══
     faucets_mixers: { ar: 'خلاطات وأدوات صحية', en: 'Faucets & Sanitary Fixtures', ur: 'نل', icon: '🚿', group: 'plumbing_supplies',
       keywords: ['خلاط','صنبور','حنفية','مخلط','faucet','mixer','tap','بطارية مغسلة','خلاط مطبخ','مغسلة','حوض','مجلى','مبولة','wash basin','sink','urinal','كرسي حمام','مرحاض','WC'] },
@@ -357,6 +361,13 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['عزل مياه مثلجة','chilled water insulation','عزل أنابيب','عازل أنابيب','عازل أنابيب مياه مبردة','fibreglass','fiberglass عزل','pipe insulation','armaflex','nitrile','elastomeric','صوف صخري أنابيب','عزل حراري أنابيب','عازل حراري أنابيب','عازل مطاطي للأنابيب','أرمافلكس'] },
     cladding_jacketing: { ar: 'تغليف وكلادينج ألمنيوم', en: 'Aluminum Cladding / Jacketing', ur: 'کلیڈنگ', icon: '🛢', group: 'mech_insulation',
       keywords: ['cladding','كلادينج','جاكيت','jacketing','ألمنيوم أنابيب','aluminum jacket','تغليف أنابيب','foil','رقائق ألمنيوم'] },
+    // 2026-11-02 review: pressure/mains pipes split from PPR; chilled-water pipes go with HVAC; fuel systems
+    pressure_pipes: { ar: 'مواسير ضغط ومياه رئيسية (نحاس/CPVC/PEX/HDPE/حديد)', en: 'Pressure & Mains Pipes (Copper/CPVC/PEX/HDPE/Steel)', ur: 'پریشر اور مین پائپ', icon: '🚰', group: 'plumbing',
+      keywords: ['CPVC','PEX','نحاس مياه','أنابيب نحاس','HDPE','مياه رئيسية','عداد مياه','water meter','حديد مجلفن','galvanized','أنابيب GRP','uPVC ضغط','سكجول 80','pressure pipe'] },
+    chilled_water_pipes: { ar: 'أنابيب المياه المثلجة (تكييف مركزي)', en: 'Chilled Water Piping', ur: 'چلڈ واٹر پائپ', icon: '❄️', group: 'hvac',
+      keywords: ['مياه مبردة','مياه مثلجة','chilled water','معزولة مسبقا','pre-insulated','pre insulated','تبريد المناطق','district cooling'] },
+    fuel_systems: { ar: 'خزانات وتمديدات الوقود (ديزل)', en: 'Fuel Tanks & Lines (Diesel)', ur: 'فیول ٹینک اور لائنیں', icon: '⛽', group: 'plumbing',
+      keywords: ['وقود','fuel','خزان وقود','خزان ديزل','day tank','تصفية وقود'] },
   },
   equipment: {
     // ═══ آليات ثقيلة (حفر/رفع/نقل) ═══
@@ -368,13 +379,13 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['شاحنة','truck','قلاب','dump','نقل','transport','صهريج','tanker','مقطورة','trailer','حاوية مخلفات بناء'] },
     // ═══ معدات خرسانة وصب ═══
     concrete_equip: { ar: 'خلاطات ومضخات خرسانة', en: 'Concrete Mixers & Pumps', ur: 'کنکریٹ مشین', icon: '🏭', group: 'concrete_machinery',
-      keywords: ['خلاطة','mixer','مضخة خرسانة','concrete pump','هزاز','vibrator','صب خرسانة','baching','محطة خلط','ماكينة قص الخرسانة والأسفلت','ماكينة تنعيم الخرسانة'] },
+      keywords: ['خلاطة','mixer','مضخة خرسانة','concrete pump','هزاز','vibrator','صب خرسانة','baching','محطة خلط'] },
     // ═══ معدات خفيفة (مولدات/دكاكات) ═══
     compaction: { ar: 'معدات دك ورص', en: 'Compaction Equipment', ur: 'کمپیکشن', icon: '🛞', group: 'light_equipment',
       keywords: ['دكاكة','compactor','رصاصة','plate','هراس','roller','رص','مدماك','دك تربة'] },
     generators_equip: { ar: 'مولدات وكمبروسرات', en: 'Generators & Compressors', ur: 'جنریٹر', icon: '⚙️', group: 'light_equipment',
-      keywords: ['مولد','generator','كمبروسر','compressor','ضاغط هواء','مكينة','محرك','engine','دينمو','دورات مياه متنقلة','دورات مياه'] },
-    pumps_equip: { ar: 'طرمبات ومضخات نزح', en: 'Dewatering Pumps', ur: 'پمپ', icon: '💧', group: 'light_equipment',
+      keywords: ['مولد','generator','كمبروسر','compressor','ضاغط هواء','مكينة','محرك','engine','دينمو'] },
+    pumps_equip: { ar: 'مضخات نزح', en: 'Dewatering Pumps', ur: 'پمپ', icon: '💧', group: 'light_equipment',
       keywords: ['طرمبة','مضخة نزح','dewatering','submersible','غطاسة','شفط مياه'] },
     // ═══ سقالات ومنصات رفع ═══
     scaffolding_equip: { ar: 'سقالات ومنصات', en: 'Scaffolding & Platforms', ur: 'سکیفولڈنگ', icon: '🪜', group: 'access_equipment',
@@ -384,6 +395,11 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
       keywords: ['لحام','welding','إلكترود','سلك لحام','بلازما','plasma','قناع لحام','منظم غاز','عربة أسطوانات','آرك','تيج','ميغ','MIG','TIG'] },
     pressure_wash: { ar: 'غسالات ضغط عالي', en: 'High-Pressure Washers', ur: 'پریشر واشر', icon: '💦', group: 'workshop_equip',
       keywords: ['غسالة ضغط','ضغط عالي','pressure washer','كارشر','بخاخ ضغط', 'لانس', 'بندقية رش', 'فوهة رش', 'فرشاة تنظيف', 'أسطح دوارة', 'غسالة'] },
+    // 2026-11-02 review: rebar/finishing machines are not mixers or pumps; site services (portable toilets)
+    concrete_finishing: { ar: 'معدات التسليح وتشطيب الخرسانة', en: 'Rebar & Concrete Finishing Machines', ur: 'سریا اور کنکریٹ فنشنگ مشینیں', icon: '🛠', group: 'concrete_machinery',
+      keywords: ['ثني حديد','قص حديد التسليح','rebar bender','rebar cutter','قص الخرسانة','concrete cutter','floor saw','تنعيم الخرسانة','هليكوبتر','power trowel'] },
+    site_services: { ar: 'خدمات الموقع (دورات مياه متنقلة)', en: 'Site Services (Portable Toilets)', ur: 'سائٹ سروسز (موبائل ٹوائلٹ)', icon: '🚻', group: 'light_equipment',
+      keywords: ['دورات مياه متنقلة','دورة مياه متنقلة','حمامات متنقلة','portable toilet'] },
   },
   supply_store: {
     // ═══ أدوات سباكة بسيطة ═══
@@ -396,7 +412,7 @@ export const SUB_CATEGORIES: Record<Sector, Record<string, SubCategory>> = {
     // ═══ أدوات كهرباء بسيطة ═══
     store_wires: { ar: 'أسلاك وكابلات بسيطة', en: 'Wires & Cables', ur: 'تار', icon: '🔌', group: 'store_electrical',
       keywords: ['سلك','wire','كابل بسيط','أسلاك','تمديد','مدد كهرب'] },
-    store_switches: { ar: 'مفاتيح وأفياش (محلات الكهرباء)', en: 'Switches & sockets (electrical shops)', ur: 'سوئچ', icon: '🔲', group: 'store_electrical',
+    store_switches: { ar: 'مفاتيح ومقابس (محلات الكهرباء)', en: 'Switches & sockets (electrical shops)', ur: 'سوئچ', icon: '🔲', group: 'store_electrical',
       keywords: ['مفتاح','أفياش','بريزة','socket','switch','علبة كهرب','مقبس','أباجورة','outlet'] },
     store_lighting: { ar: 'لمبات وإنارة بسيطة', en: 'Bulbs & Lighting', ur: 'بلب', icon: '💡', group: 'store_electrical',
       keywords: ['لمبة','بلب','bulb','إنارة','سبوت','spot','led','مصباح','كشاف صغير','نجفة'] },
@@ -927,7 +943,7 @@ const SUB_UNITS: Record<string, string> = {
   rebar: 'طن', structural_steel: 'طن', steel_mesh: 'عدد',
   waterproofing: 'م²', piling: 'م.ط', construction_chemicals: 'عدد',
   drainage: 'م.ط', aggregates: 'م³', earthworks: 'م³',
-  formwork_ply: 'لوحة', formwork_timber: 'عدد', formwork_steel: 'عدد',
+  formwork_ply: 'لوح', formwork_timber: 'عدد', formwork_steel: 'عدد',
   scaffold_structure: 'عدد', scaffold_jacks: 'عدد', shoring_props: 'عدد',
   turf: 'م²', irrigation: 'عدد', fountains: 'عدد', hardscape: 'م²', planters: 'عدد',
   // معماري
@@ -965,6 +981,11 @@ const SUB_UNITS: Record<string, string> = {
   store_hand_tools: 'عدد', store_power_tools: 'عدد', store_bits: 'عدد',
   store_fasteners: 'عدد', store_safety: 'عدد', store_consumables: 'عدد',
   store_paint: 'عدد', store_adhesives: 'عدد',
+  // 2026-11-02 review: specialties that had no default unit (126 catalog items showed a blank unit)
+  steel_sections: 'طول (6م)', drywall_metal: 'حبة (3م)', wiring_devices: 'عدد', led_strips: 'م.ط',
+  store_elec_consumables: 'علبة', welding_cutting: 'عدد', pressure_wash: 'عدد', fencing: 'لفة',
+  store_hinges: 'عدد', store_locks: 'عدد', store_closers: 'عدد', store_handles: 'عدد', roadbase: 'م³', plaster: 'كيس',
+  playground: 'عدد', pressure_pipes: 'م.ط', chilled_water_pipes: 'م.ط', fuel_systems: 'عدد', concrete_finishing: 'يوم', site_services: 'يوم',
 }
 
 
@@ -1016,25 +1037,183 @@ const SUB_UNIT_OPTIONS: Record<string, string[]> = {
   store_hand_tools: PIECE, store_power_tools: PIECE, store_bits: PIECE,
   store_fasteners: ['علبة', 'عدد', 'كغ', 'كرتون'], store_safety: ['عدد', 'طقم', 'كرتون'], store_consumables: ['عدد', 'لفة', 'كرتون'],
   store_paint: ['جالون', 'لتر', 'سطل', 'عدد'], store_adhesives: ['عدد', 'علبة', 'كرتون'],
+  // 2026-11-02 review
+  steel_sections: ['طول (6م)', 'طن'], drywall_metal: ['حبة (3م)', 'حزمة'], wiring_devices: ['عدد', 'كرتون'],
+  led_strips: ['م.ط', 'لفة', 'عدد'], store_elec_consumables: ['علبة', 'لفة', 'عدد'], welding_cutting: ['عدد', 'طقم'],
+  pressure_wash: ['عدد'], fencing: ['لفة', 'م.ط', 'عدد'], store_hinges: ['عدد', 'زوج', 'طقم'],
+  store_locks: PIECE, store_closers: PIECE, store_handles: PIECE, roadbase: ['م³', 'نقلة', 'طن'], plaster: ['كيس', 'سطل', 'م²'],
+  playground: PIECE, pressure_pipes: PIPE, chilled_water_pipes: PIPE, fuel_systems: ['عدد', 'م.ط'],
+  concrete_finishing: ['يوم', 'شهر', 'عدد'], site_services: ['يوم', 'شهر', 'عدد'],
 }
 
-// وحدة القياس الافتراضية لمادة: أولوية لوحدة المواصفات إن وُجدت، ثم وحدة التخصص الفرعي
+// One spelling per unit (catalog review 2026-11-02): older spec lists spell some units long-hand
+// («م² (متر مربع)», «متر طولي», «رول», «أنبوب (خرطوش 280–300 مل)»). Applied wherever a unit is
+// offered or pre-filled; units already stored on requests keep their text. Kilograms stay «كغ»,
+// the spelling the order-text/BOQ readers (src/lib/ai/units.ts, src/lib/boqParse.ts) produce.
+const UNIT_SPELLING: Record<string, string> = {
+  'م² (متر مربع)': 'م²', 'متر مربع': 'م²', 'متر مكعب (م³)': 'م³', 'م³ (متر مكعب)': 'م³', 'متر مكعب': 'م³',
+  'متر طولي': 'م.ط', 'كيلو': 'كغ', 'كجم': 'كغ', 'كيلوغرام': 'كغ', 'رول': 'لفة', 'خرطوشة': 'خرطوش', 'بالألف حبة': 'ألف حبة',
+}
+export function normalizeUnitSpelling(unit: string): string {
+  const t = (unit || '').trim()
+  if (UNIT_SPELLING[t]) return UNIT_SPELLING[t]
+  if (/^أنبوب \(خرطوش/.test(t)) return 'خرطوش'
+  if (/^رول\s/.test(t)) return t.replace(/^رول/, 'لفة')
+  if (/^متر طولي\s/.test(t)) return t.replace(/^متر طولي/, 'م.ط')
+  return t
+}
+
+// Product-level order units (catalog review 2026-11-02): consulted FIRST by getDefaultUnit,
+// unitOptionsFor and unitChoicesFor, for products whose specialty unit (or old spec list) is wrong for
+// them. Keyed by the current catalog name; an old (renamed) name is looked up through catalogName().
+export const PRODUCT_UNIT: Record<string, string[]> = {
+  // building
+  'فواصل تسليح (بسكوت خرساني)': ['كيس', 'ألف حبة'],
+  'كرسي حمل حديد التسليح (Bar Chair)': ['كيس', 'عدد'],
+  'فاصل عجلة بلاستيكي للأعمدة والجدران (Wheel Spacer)': ['كيس', 'عدد'],
+  'غرف جاهزة (كرفانات)': ['عدد'],
+  'صاج أسود ألواح (صاج حار هوت رولد)': ['لوح', 'طن'],
+  'صاج مضلع (شكمة / تير دروب)': ['لوح', 'طن'],
+  'صاج مجلفن (GI جلفنة ساخنة)': ['لوح', 'طن'],
+  'صاج ستانلس ستيل': ['لوح', 'طن'],
+  'مواسير ستانلس ستيل': ['طول (6م)', 'م.ط'],
+  'جريتنج حديد ملحوم (شبك أرضيات)': ['م²', 'لوح'],
+  'عزل بولي يوريا بالرش (Polyurea Spray Membrane)': ['طقم', 'م²'],
+  'بطانة خزانات سائلة (Tank Lining)': ['طقم'],
+  'مبيد النمل الأبيض (معالجة التربة)': ['جالون', 'لتر'],
+  'لاصق بلوك (مونة رقيقة)': ['كيس'],
+  'حشوة فواصل التمدد (فلر بورد)': ['لوح'],
+  'ألياف ماكرو صناعية (Macro Synthetic Fibres)': ['كيس', 'كغ'],
+  'ألياف حديدية (Steel Fibres)': ['كيس', 'كغ'],
+  'برغي تمدد (رول بلت)': ['علبة', 'حبة'],
+  'وردات (حلقات معدنية)': ['كغ', 'علبة'],
+  'براغي جبس بورد (دراي وول)': ['علبة'],
+  'خوابير بلاستيك': ['علبة'],
+  // finishing
+  'زوايا وبروفايلات البلاط': ['حبة', 'م.ط'],
+  'ترويبة إيبوكسي': ['طقم'],
+  'معجون جبس تلبيس الفواصل (Joint Compound)': ['سطل', 'كيس'],
+  'وزرة فينيل (Vinyl Skirting)': ['م.ط'],
+  'كرانيش جبس وبولي يوريثان': ['م.ط'],
+  'شريط تسليح الفواصل (Jointing Tape)': ['لفة'],
+  'شريط عازل تحت القوائم (Acoustic Isolation Strip)': ['لفة'],
+  'معلاق سقف قابل للضبط (Ceiling Hanger)': ['حبة', 'علبة'],
+  'وصلة تعشيق قوائم (Stud Connector / Splice)': ['حبة', 'علبة'],
+  'معجون جدران بودرة': ['كيس'],
+  'دهانات ديكورية (مخمل/رخامي)': ['جالون', 'سطل'],
+  'دهان أسقف مكشوفة (للخرسانة والمعدن)': ['جالون'],
+  'دهان داخلي أكريليك': ['جالون'],
+  'تنر': ['جالون', 'لتر'],
+  'غراء فوري (سوبر جلو)': ['علبة', 'حبة'],
+  'لاصق هايبرد عالي الالتصاق (High Tack)': ['خرطوش'],
+  'لاصق ستايروفوم وكرانيش بوليسترين': ['علبة'],
+  'فوم منخفض التمدد للأبواب والنوافذ': ['علبة'],
+  'ألواح فورمايكا HPL وأكريليك': ['لوح'],
+  'خشب ماسيف للنجارة (زان/بلوط)': ['م³'],
+  'قشرة خشب طبيعي': ['م²'],
+  'قواطع حمامات HPL': ['عدد'],
+  'كبائن دورات مياه Toilet Cubicles': ['عدد'],
+  'لوحات إرشادية Signage': ['عدد'],
+  'مجاري وحوامل الستائر': ['م.ط'],
+  'حماية حديد للنوافذ': ['م²'],
+  'مشربيات': ['م²'],
+  'قطاعات ألمنيوم خام': ['طول (6م)', 'كغ'],
+  'ألواح ألمنيوم خام': ['لوح', 'كغ'],
+  // electrical
+  'أقطاب تأريض Earth Rod': ['حبة'],
+  'كابل بيانات CAT6': ['لفة', 'م.ط'],
+  'كابل ألياف بصرية': ['م.ط'],
+  'شاشة عرض إعلانية 55 بوصة': ['عدد'],
+  'هياكل تثبيت الألواح الشمسية': ['طقم'],
+  'كابلات وموصلات طاقة شمسية': ['م.ط', 'لفة'],
+  'سلك سحب أسلاك (فيش تيب)': ['حبة'],
+  'كابل تمديد': ['عدد'],
+  'محول (درايفر) ليد': ['عدد'],
+  'كنترول RGB لشريط الليد': ['عدد'],
+  'موصلات شريط ليد': ['عدد', 'علبة'],
+  'شريط عزل كهربائي PVC': ['لفة', 'علبة'],
+  'شريط تلوين وترميز الكابلات': ['لفة'],
+  'أربطة كابلات نايلون (تايات)': ['كيس', 'علبة'],
+  'جلبة كابل (كبس/جلاند)': ['عدد', 'كيس'],
+  // plumbing, HVAC, fuel
+  'خطوط تغذية وقود': ['م.ط'],
+  'مواسير وتمديدات غاز': ['م.ط'],
+  'غرف تفتيش خرسانية': ['عدد'],
+  'أغطية منهول حديد': ['عدد'],
+  'مصرف سقف Roof Drain 100mm': ['عدد'],
+  'فصال دهون Grease Interceptor': ['عدد'],
+  'حوض ترسيب مياه أمطار': ['عدد'],
+  'عداد مياه 100mm': ['عدد'],
+  'خرطوم حديقة مع بكرة (Garden Hose & Reel)': ['طقم'],
+  'خرطوم هواء وغاز ضغط عالٍ (Air & Gas Hose)': ['م.ط', 'لفة'],
+  'مواسير نحاس تكييف': ['لفة', 'م.ط'],
+  'غاز تبريد (فريون)': ['أسطوانة', 'كغ'],
+  'دكت مرن': ['م.ط'],
+  // tools, welding, safety
+  'إلكترود لحام (بارة لحام)': ['كرتون', 'كغ'],
+  'سلك لحام ميغ (بكرة سلك)': ['بكرة', 'كغ'],
+  'سلك لحام تيج (بارة أرجون)': ['علبة', 'كغ'],
+  'كيبل لحام (نحاس)': ['م.ط', 'لفة'],
+  'ألواح حماية الأرضيات أثناء التشطيب (Floor Protection Board)': ['لوح', 'م²'],
+  'شريط تحذيري': ['لفة'],
+  'قفازات عمل': ['زوج', 'كرتون'],
+  'حذاء سلامة': ['زوج'],
+  'قفازات لحام جلد': ['زوج'],
+  'شبكة أمان للمباني': ['م²', 'لفة'],
+  'حبل': ['لفة', 'م.ط'],
+  'سلسلة بلاستيكية للحواجز (Barrier Chain)': ['م.ط', 'لفة'],
+  'شبك حاجز بلاستيكي (Barrier Mesh)': ['لفة'],
+  // machinery
+  'حاوية مخلفات بناء': ['نقلة', 'عدد'],
+  'خزان صرف صحي (بيارة)': ['عدد'],
+  'محطة خلط': ['شهر', 'مقطوعية'],
+  'مولد كهرباء ديزل متنقل (للإيجار)': ['يوم', 'شهر'],
+  // outdoor
+  'كيماويات المسابح (كلور)': ['كغ', 'دلو'],
+  'بلاط وحواف المسابح': ['م²', 'م.ط'],
+  'حصى زينة وأحجار ديكور': ['طن', 'م³', 'كيس'],
+  'مطبات صناعية': ['م.ط', 'عدد'],
+  'أنابيب ري HDPE خارجية': ['م.ط', 'لفة'],
+  'شتلات وأشجار زينة': ['عدد', 'مقطوعية'],
+  'تربة زراعية سطحية': ['م³', 'نقلة'],
+  'سياج حديد ملحوم مطلي بودرة (بانل جاهز)': ['عدد'],
+  'بوابة سياج جاهزة': ['عدد'],
+  'أعمدة تسييج (قوائم شبك)': ['عدد'],
+  'شبك جبيونات (قفص جابيون حجري)': ['عدد'],
+  'سياج موقع مؤقت (حواجز موقع متنقلة)': ['عدد'],
+  'شبك تمدد إكسباندد (حديد ممدد)': ['م²', 'لوح'],
+  'سلك ربط وأربطة تثبيت الشبك': ['لفة', 'كغ'],
+  'كباس باب سياج': ['عدد'],
+  'مفصلات باب سياج': ['زوج', 'عدد'],
+}
+function productUnitOverride(productName: string): string[] | null {
+  const n = (productName || '').trim()
+  return PRODUCT_UNIT[n] || PRODUCT_UNIT[catalogName(n)] || null
+}
+
+// وحدة القياس الافتراضية لمادة: أولوية لوحدة المادة (PRODUCT_UNIT) ثم وحدة المواصفات ثم وحدة التخصص الفرعي
 // Order units for pieces vs area (shared by the site and the mobile app, 2026-10-15):
 // furniture, decor and light fittings are bought by the piece or set; curtains, rugs, wallpaper,
 // parquet and turf by area/length. Everything else keeps PRODUCT_SPECS units then the general list.
 const PIECE_SUBS = new Set(['custom_furniture', 'fitted_furniture', 'office_furniture', 'decor_lighting', 'kitchen_appliances', 'cubicles'])
 const PIECE_RE = /طاولة|كرسي|كنب|أريكة|خزانة|سرير|دولاب|مكتب|ثري|أباجور|مصباح|مرآة|طقم|غرفة|بوفيه|(^|\s)رف|تسريحة|كومود|مجلس|ديكور|لوحة فنية/
 const AREA_RE = /ستار|ستائر|سجاد|موكيت|ورق جدران|باركيه|عشب|زوالي/
+// the two name tests only apply where they were meant to (2026-11-02: «مفتاح ستارة», «ستائر هواء»,
+// the rebar «Bar Chair» (كرسي) and «حصى زينة وأحجار ديكور» were caught by them)
+const AREA_SUBS = new Set(['curtains', 'special_floor', 'wood_floor', 'turf', 'custom_furniture', 'paint'])
+const NO_PIECE_RE_SECTORS = new Set<string>(['civil', 'equipment'])
 /** Allowed order units for a product, or null when the general list applies. */
 export function unitOptionsFor(productName: string, sector: Sector): string[] | null {
   const n = (productName || '').trim()
   if (!n) return null
-  if (AREA_RE.test(n)) return ['م²', 'متر', 'عدد']
+  const fixed = productUnitOverride(n)
+  if (fixed) return [...fixed]
   const sub = detectSubCategory(n, sector)
-  if ((sub && PIECE_SUBS.has(sub)) || PIECE_RE.test(n)) return ['عدد', 'طقم']
+  if ((!sub || AREA_SUBS.has(sub)) && AREA_RE.test(n)) return ['م²', 'متر', 'عدد']
+  if ((sub && PIECE_SUBS.has(sub)) || (!NO_PIECE_RE_SECTORS.has(sector) && PIECE_RE.test(n))) return ['عدد', 'طقم']
   if (sub && SUB_UNIT_OPTIONS[sub]) {
     const def = SUB_UNITS[sub]
-    return Array.from(new Set([...(def ? [def] : []), ...SUB_UNIT_OPTIONS[sub]]))
+    return Array.from(new Set([...(def ? [def] : []), ...SUB_UNIT_OPTIONS[sub]].map(normalizeUnitSpelling)))
   }
   return null
 }
@@ -1043,27 +1222,30 @@ export function unitOptionsFor(productName: string, sector: Sector): string[] | 
 // has one (or none), that one first, then its specialty's logical units (owner 2026-10-24: a block
 // must offer «حبة / طبلية», not only «حبة»).
 export function unitChoicesFor(productName: string, sector: Sector): string[] | null {
+  const fixed = productUnitOverride(productName)
+  if (fixed) return [...fixed]
   // older spec lists spell some units long-hand; show one spelling
-  const SAME: Record<string, string> = { 'متر مربع': 'م²', 'متر مكعب': 'م³', 'بالألف حبة': 'ألف حبة' }
-  const own = ((PRODUCT_SPECS[(productName || '').trim()] || []).find(f => f.key === 'unit')?.options || []).map(u => SAME[u] || u)
+  const own = Array.from(new Set(((PRODUCT_SPECS[(productName || '').trim()] || []).find(f => f.key === 'unit')?.options || []).map(normalizeUnitSpelling)))
   const logical = unitOptionsFor(productName, sector)
-  if (!logical) return own.length ? Array.from(new Set(own)) : null
+  if (!logical) return own.length ? own : null
   // a product with its own list keeps it, adding the specialty's units only when the two lists
   // share a unit (same kind of product — guards against a mis-detected specialty, e.g. طوبار ⊃ طوب)
-  if (own.length >= 2 && !own.some(u => logical.includes(u))) return Array.from(new Set(own))
+  if (own.length >= 2 && !own.some(u => logical.includes(u))) return own
   return Array.from(new Set([...own, ...logical]))
 }
 
 export function getDefaultUnit(productName: string, sector: Sector): string {
+  const fixed = productUnitOverride(productName)
+  if (fixed) return fixed[0]
   const specs = PRODUCT_SPECS[(productName || '').trim()]
   if (specs) {
     const u = specs.find(f => f.key === 'unit')
-    if (u && u.options.length) return u.options[0]
+    if (u && u.options.length) return normalizeUnitSpelling(u.options[0])
   }
   const only = unitOptionsFor(productName, sector)
   if (only) return only[0]
   const sub = detectSubCategory(productName, sector)
-  return (sub && SUB_UNITS[sub]) || ''
+  return normalizeUnitSpelling((sub && SUB_UNITS[sub]) || '')
 }
 
 // جلب label التخصص الفرعي بأي لغة
@@ -1090,7 +1272,7 @@ const GROUP_ORDER: Record<string, number> = {}
   // ميكانيك
   'plumbing', 'plumbing_supplies', 'hvac', 'firefighting', 'mech_insulation',
   // كهرباء
-  'cabling', 'panels_switches', 'lighting', 'low_current', 'solar',
+  'cabling', 'panels_switches', 'lighting', 'earthing_grp', 'low_current', 'solar',
   // آليات ومعدات
   'heavy_equipment', 'concrete_machinery', 'light_equipment', 'access_equipment', 'workshop_equip',
   // محل توريد
@@ -1224,7 +1406,7 @@ export const SPEC_REQUIRED_SUBS = new Set<string>([
   'formwork_ply', 'formwork_timber', 'formwork_steel', 'scaffold_structure', 'shoring_props', 'roadbase', 'aggregates',
   'tiles', 'marble', 'wood_floor', 'gypsum', 'drywall_metal', 'false_ceiling', 'aluminum', 'curtain_wall', 'wood_doors', 'fire_doors',
   'lv_cables', 'mv_cables', 'store_wires', 'conduits', 'breakers', 'panels',
-  'drainage_pipes', 'water_supply', 'fire_fighting', 'ductwork', 'store_fasteners',
+  'drainage_pipes', 'water_supply', 'pressure_pipes', 'chilled_water_pipes', 'fire_fighting', 'ductwork', 'store_fasteners',
 ])
 // «الماركة أو اسم المنتج» (owner 2026-10-31: e.g. grout → «فوسروك رندروك»; optional, but it makes
 // pricing easier). Asked for every material except machinery hire and bulk site materials.
@@ -1365,6 +1547,16 @@ const UNIT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
   'سطل': { en: 'pail', ur: 'بالٹی' },
   'طبلية': { en: 'pallet', ur: 'پیلیٹ' },
   'ألف حبة': { en: '1,000 pcs', ur: 'ہزار عدد' },
+  // 2026-11-02 catalog review units
+  'طول (6م)': { en: 'length (6 m)', ur: 'لمبائی (6 میٹر)' },
+  'حبة (3م)': { en: 'piece (3 m)', ur: 'عدد (3 میٹر)' },
+  'حزمة': { en: 'bundle', ur: 'گٹھا' },
+  'بكرة': { en: 'spool', ur: 'اسپول' },
+  'زوج': { en: 'pair', ur: 'جوڑا' },
+  'خرطوش': { en: 'cartridge', ur: 'کارٹرج' },
+  'أسطوانة': { en: 'cylinder', ur: 'سلنڈر' },
+  'دلو': { en: 'bucket', ur: 'ڈول' },
+  'كجم': { en: 'kg', ur: 'کلو' },
 }
 export function getUnitLabel(unit: string | null | undefined, locale: string): string {
   if (!unit) return ''
@@ -2585,7 +2777,7 @@ const CATALOG_ROUTE: Record<string, [Sector, string]> = {
   'لياسة صوتية (Acoustic Plaster)': ['architectural', 'acoustic_panels'],
   'معجون جدران': ['architectural', 'paint'],
   'معجون جدران جاهز (أكريليك – سطل)': ['architectural', 'paint'],
-  'كلادينج ألمنيوم كومبوزيت ACM': ['architectural', 'grc_facade'],
+  'كلادينج ألمنيوم كومبوزيت ACM': ['architectural', 'rainscreen'], // 2026-11-02: aluminium cladding, not GRC
   'ألواح GRC خارجية': ['architectural', 'grc_facade'],
   'ورق جدران': ['architectural', 'curtains'],
   'سجاد وزوالي': ['architectural', 'special_floor'],
@@ -2638,22 +2830,22 @@ const CATALOG_ROUTE: Record<string, [Sector, string]> = {
   'صمام تحكم منطقة Zone Control Valve': ['mechanical', 'valves_fittings'],
   'مصافي ألمنيوم (أرضية/ركنية/دش/سطح)': ['mechanical', 'traps_drains'],
   'أنابيب HDPE صرف صحي داخلي': ['mechanical', 'drainage_pipes'],
-  'أنابيب حديد مرن Ductile Iron مياه رئيسية': ['mechanical', 'water_supply'],
   'أنابيب حديد زهر Cast Iron صرف صامت': ['mechanical', 'silent_drainage'],
   'مصرف سقف Roof Drain 100mm': ['mechanical', 'storm_drainage'],
   'حوض ترسيب مياه أمطار': ['mechanical', 'storm_drainage'],
   'أنابيب HDPE صرف أمطار (SDR11)': ['mechanical', 'storm_drainage'],
   'مضخة تغذية كيماوي Dosing': ['mechanical', 'water_treatment'],
   'مرشحات مياه': ['mechanical', 'water_treatment'],
-  'خطوط تغذية وقود': ['electrical', 'transformers'],
-  'خزان وقود ديزل يومي': ['electrical', 'transformers'],
-  'مضخة نقل وقود': ['electrical', 'transformers'],
-  'وحدة تصفية وقود': ['electrical', 'transformers'],
+  // 2026-11-02: fuel items are mechanical (own specialty), not transformers/generators
+  'خطوط تغذية وقود': ['mechanical', 'fuel_systems'],
+  'خزان وقود ديزل يومي': ['mechanical', 'fuel_systems'],
+  'مضخة نقل وقود': ['mechanical', 'fuel_systems'],
+  'وحدة تصفية وقود': ['mechanical', 'fuel_systems'],
   'مفصلة أوتوماتيك (زنبرك)': ['supply_store', 'store_hinges'],
   'كوبلن مواسير كهرباء (وصلة كوندويت)': ['supply_store', 'store_elec_access'],
   // HVAC & fire
   'عوازل مجاري هواء فايبر جلاس': ['mechanical', 'duct_insulation'],
-  'دكت مرن': ['mechanical', 'ductwork'],
+  'دكت مرن': ['mechanical', 'flexible_ducts'],
   'مراوح هواء طرد مركزي': ['mechanical', 'ventilation_fans'],
   'ستائر هواء': ['mechanical', 'ventilation_fans'],
   'سخانات مياه مركزية': ['mechanical', 'tanks_heaters'],
@@ -2663,37 +2855,296 @@ const CATALOG_ROUTE: Record<string, [Sector, string]> = {
   'رصف حجر طبيعي': ['civil', 'hardscape'],
   'شبك جبيونات (قفص جباينة حجري)': ['civil', 'fencing'],
   'شبك سداسي (شبك دجاج/تربة)': ['civil', 'fencing'],
-  'جريتنج حديد ملحوم (شبك أرضيات)': ['civil', 'fencing'],
+  'جريتنج حديد ملحوم (شبك أرضيات)': ['civil', 'steel_sections'], // 2026-11-02: steelwork, not fencing
   'طلب سقالة كاملة (توريد + تصميم)': ['equipment', 'scaffolding_equip'],
-  'ألعاب أطفال خارجية': ['civil', 'planters'],
+  'ألعاب أطفال خارجية': ['civil', 'playground'],
+}
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+// Catalog review 2026-11-02 (catalog-audit/review_2026-11-02.json, fix list A–E). Merged into the maps
+// above when they are applied, so this is the one place to read for this review. Requests already in
+// the database keep their stored names: a renamed name still finds its specialty (PRODUCT_SUB is
+// copied back to the old name and its keywords still match), and catalogName() maps it to the new one.
+// Renames change the picture slug: catalog-audit/renames_2026-11-02.json lists old → new slugs.
+// ─────────────────────────────────────────────────────────────────────────────────────────────
+const REVIEW_1102_REMOVE = [
+  // building — generic duplicates of a more precise item that stays
+  'زلط', 'خشب بناء للشدّات', 'ألواح بليود (طوبار) Plywood', 'شريط زوايا مطاطي لعزل الحمامات',
+  'عزل مائي سائل (Liquid Membrane)', 'عزل مائي سيماني (Cementitious)', 'غشاء بيتوميني لفائف (Bituminous Membrane)',
+  'عازل رطوبة للأسطح والجدران', 'مانع تسرب مائي للأسطح والشقوق',
+  'إضافات الخرسانة (ملدن/مسرع/مؤخر)', 'مادة معالجة الخرسانة (كيورنج)', 'مادة ربط الخرسانة (بوندنج)',
+  'جراوت غير قابل للانكماش', 'مثبت كيميائي (كيميكال أنكر)', 'مونة إصلاح الخرسانة', 'مواد لاصقة وكيماويات (Adhesives & Sealants)',
+  'مانع تسرب الفواصل (ماستك)', 'مونة حقن كيميائية إيبوكسي (Injection Epoxy Mortar)',
+  'جبس (بودرة لياسة)', // = «جبس تلبيس بودرة (بلاستر)»
+  // finishing
+  'غراء وترويبة بلاط', 'لاصق بلاط محسّن C2T (بورسلان)', 'لاصق بلاط المسابح', 'موكيت', 'أرضية إيبوكسي',
+  'سيليكون', 'فوم عازل', 'لاصق قوي', 'صمغ', 'ألواح MDF وخشب مضغوط (Wood Boards)',
+  // electrical
+  'لوحة UPS', 'لوحة ATS نقل تلقائي', 'لوحة متوسط جهد MV Switchgear', 'علبة توزيع كهرباء (بوكس)', 'إضاءة شريطية LED',
+  // plumbing, HVAC, fire (the plumbing-shop copy of each fitting stays)
+  'وصلة كوع PVC', 'وصلة تي PVC', 'كوبلن', 'خرطوم سخان مرن', 'طفاية سيفون', 'عازل حراري مجاري هواء',
+  'خلاط مياه Mixer', 'صنبور مياه', 'أنابيب PPR PN20', 'أنابيب خرسانية صرف خارجي', 'مواد منع انتشار الحريق (فاير ستوب)',
+  // tools, safety, machinery, outdoor
+  'كماشة', 'مفك عادي', 'مفك صليبة', 'ريشة همر', 'قرص قص', 'قرص تجليخ', 'بخاخ متعدد الأغراض (مزيل صدأ ومزلّق)', 'شريط لاصق',
+  'سقالات معدنية', 'جاكات تدعيم', 'شبكة ري خارجية',
+]
+const REVIEW_1102_RENAME: Record<string, string> = {
+  // building
+  'أسمنت': 'أسمنت بورتلاندي عادي (OPC)',
+  'خرسانة مسبقة الصب': 'عناصر خرسانية مسبقة الصب (حدد النوع)',
+  'حديد تسليح سلك': 'لفائف حديد تسليح (Wire Rod)',
+  'بلوك خرساني خلوي خفيف (AAC Block / سيبوريكس)': 'بلوك خرساني خلوي (سيبوريكس)',
+  'عزل سيماني مرن ثنائي المكون (Flexible Cementitious Waterproofing)': 'عزل أسمنتي مرن ثنائي المكون (Flexible Cementitious Waterproofing)',
+  'عزل سيماني صلب (Rigid Cementitious Slurry)': 'عزل أسمنتي صلب (Rigid Cementitious Slurry)',
+  'براغي': 'براغي (حدد النوع والمقاس)',
+  'صواميل': 'صواميل (حدد النوع والمقاس)',
+  'رول بلت': 'برغي تمدد (رول بلت)',
+  'أنكر بولت': 'مسامير تأسيس (أنكر بولت J/L) لقواعد الأعمدة',
+  'فيشر': 'خابور بلاستيك (فيشر)',
+  'خوابير تثبيت': 'خوابير بلاستيك',
+  // one spelling: «أنكر»
+  'انكر كيميائي كبسولة (Chemical Capsule Anchor)': 'أنكر كيميائي كبسولة (Chemical Capsule Anchor)',
+  'جلبة شبكية للانكر الكيميائي في الطوب المفرغ (Mesh / Sieve Sleeve)': 'جلبة شبكية للأنكر الكيميائي في الطوب المفرغ (Mesh / Sieve Sleeve)',
+  'انكر وتد (Wedge Anchor / Through Bolt)': 'أنكر وتد (Wedge Anchor / Through Bolt)',
+  'انكر دروب إن (Drop-in Anchor)': 'أنكر دروب إن (Drop-in Anchor)',
+  'انكر كُم (Sleeve Anchor)': 'أنكر كُم (Sleeve Anchor)',
+  'انكر ثقيل للأحمال (Heavy-duty Anchor)': 'أنكر ثقيل للأحمال (Heavy-duty Anchor)',
+  'انكر سقف بمسمار للتعليق (Ceiling Nail Anchor)': 'أنكر سقف بمسمار للتعليق (Ceiling Nail Anchor)',
+  'قضيب انكر كيميائي مع صامولة ووردة (Chemical Anchor Rod / Stud)': 'قضيب أنكر كيميائي مع صامولة ووردة (Chemical Anchor Rod / Stud)',
+  'وردة تعبئة للانكرات (Filling / Dynamic Washer)': 'وردة تعبئة للأنكرات (Filling / Dynamic Washer)',
+  'قناة انكر مصبوبة في الخرسانة (Cast-in Anchor Channel)': 'قناة أنكر مصبوبة في الخرسانة (Cast-in Anchor Channel)',
+  'مسدس حقن الانكر الكيميائي (Injection Dispenser)': 'مسدس حقن الأنكر الكيميائي (Injection Dispenser)',
+  'فوهة خلط للانكر الكيميائي (Static Mixer Nozzle)': 'فوهة خلط للأنكر الكيميائي (Static Mixer Nozzle)',
+  'فرشاة ومنفاخ تنظيف ثقوب الانكر (Hole Cleaning Brush & Blow-out Pump)': 'فرشاة ومنفاخ تنظيف ثقوب الأنكر (Hole Cleaning Brush & Blow-out Pump)',
+  // finishing
+  'سجاد وزوالي': 'سجاد',
+  'فينيل ورقي Vinyl Sheet': 'فينيل رولات (Vinyl Sheet)',
+  'معجون جبس تلييس الفواصل (Joint Compound)': 'معجون جبس تلبيس الفواصل (Joint Compound)',
+  'معجون جدران': 'معجون جدران بودرة',
+  'أرضية راتنج إيبوكسي مع قرنيص': 'أرضية راتنج إيبوكسي مع وزرة',
+  'دهان أسقف مكشوفة': 'دهان أسقف مكشوفة (للخرسانة والمعدن)',
+  'دهان داخلي': 'دهان داخلي أكريليك',
+  'ريشة بلاط وبورسلان ماسية (Diamond Tile Drill Bit)': 'ريشة بلاط وبورسلين ماسية (Diamond Tile Drill Bit)',
+  // electrical
+  'Bus Bar 1000A 4P': 'مجرى قضبان توزيع (Busbar Trunking) 1000A 4P',
+  'Bus Bar 1600A 4P': 'مجرى قضبان توزيع (Busbar Trunking) 1600A 4P',
+  'Bus Bar 2500A 4P': 'مجرى قضبان توزيع (Busbar Trunking) 2500A 4P',
+  'مولد طارئ 400V Hook-up Panel': 'لوحة توصيل مولد طارئ 400V (Generator Hook-up Panel)',
+  'كشاف ملعب Sports Light S1': 'كشاف ملاعب 500 واط',
+  'كشاف ملعب Sports Light S2': 'كشاف ملاعب 1000 واط',
+  'شاشة LED إعلانية LED Screen 55"': 'شاشة عرض إعلانية 55 بوصة',
+  'مشترك كهرباء (موزع أفياش)': 'مقبس متعدد (مشترك)',
+  'بريزة': 'مقبس كهربائي (بريزة)',
+  'شريط عزل كهربائي (تيب لحام)': 'شريط عزل كهربائي PVC',
+  'وصلة توصيل واغو (كلامة)': 'موصل أسلاك سريع (واغو)',
+  // plumbing, HVAC, fire
+  'معالجة مياه كيماوي': 'مواد كيميائية لمعالجة المياه',
+  'مضخة jockey حريق': 'مضخة حريق مساعدة (Jockey)',
+  'مضخة sump صرف': 'مضخة غاطسة لبئر التجميع (Sump)',
+  'خزان مياه GRP 434م³': 'خزان مياه GRP مقطعي كبير (حسب السعة)',
+  'محبس أرضي مجمّع (Collector Floor Gully)': 'بالوعة أرضية مجمّعة (Collector Floor Gully)',
+  'صمامات فراشة flanged': 'صمامات فراشة بفلانشات',
+  'سيفون كرسي': 'سيفون مرحاض',
+  'طفاية سيفون كرسي': 'طفاية سيفون مرحاض',
+  'مجاري هواء جلفنايز 0.7mm': 'مجاري هواء مجلفنة 0.7mm',
+  'مجاري هواء جلفنايز 0.8mm': 'مجاري هواء مجلفنة 0.8mm',
+  'مجاري هواء جلفنايز 1.0mm': 'مجاري هواء مجلفنة 1.0mm',
+  'مجاري هواء جلفنايز 1.2mm': 'مجاري هواء مجلفنة 1.2mm',
+  'عازل مطاطي للأنابيب (أرمافلكس)': 'عازل مطاطي رغوي للأنابيب',
+  'عازل أنابيب مياه مبردة Fibreglass 1/2"': 'عازل أنابيب مياه مبردة صوف زجاجي 1/2"',
+  'عازل أنابيب مياه مبردة Fibreglass 1"': 'عازل أنابيب مياه مبردة صوف زجاجي 1"',
+  // tools, hardware, machinery, outdoor
+  'طلب سقالة كاملة (توريد + تصميم)': 'سقالة كاملة (توريد وتصميم وتركيب)',
+  'خرطوم ضغط عالي (وايت) للغسالة': 'خرطوم ضغط عالي للغسالة',
+  'شفرة منشار حديد (بشر)': 'شفرة منشار حديد',
+  'مطرقة تكسير كهربائية (هيلتي)': 'مطرقة تكسير كهربائية',
+  'زرادية': 'كمّاشة (زرادية)',
+  'صاروخ تجليخ': 'جلّاخة زاوية كهربائية (صاروخ)',
+  'مجرى درج تلسكوبي رمان بلي': 'مجرى درج تلسكوبي بكريات (رمان بلي)',
+  'زر (بزلة) خزانة': 'مقبض زر للخزائن (بزلة)',
+  'مفصلة أرضية (كباس أرضي)': 'محور أرضي للباب (بيفوت)',
+  'مقبض كرة باب': 'مقبض باب بدون قفل',
+  'بوب كات (لودر صغير)': 'لودر انزلاقي صغير (سكِد ستير)',
+  'شيول لودر': 'لودر (شيول)',
+  'طرمبة غطاسة': 'مضخة غاطسة للمياه العكرة',
+  'تربة زراعية Topsoil': 'تربة زراعية سطحية',
+  'تشجير وزراعة': 'شتلات وأشجار زينة',
+  'شبك تسييج تشيلنك (نسيج ماسي)': 'شبك تسييج تشين لينك (نسيج ماسي)',
+  'شبك جبيونات (قفص جباينة حجري)': 'شبك جبيونات (قفص جابيون حجري)',
+}
+// one name, two products: the same name sat in two sectors for two different things
+const REVIEW_1102_RENAME_IN: Partial<Record<Sector, Record<string, string>>> = {
+  electrical: { 'مولد كهرباء ديزل': 'مولد كهرباء احتياطي ثابت (Standby)' },
+  equipment: { 'مولد كهرباء ديزل': 'مولد كهرباء ديزل متنقل (للإيجار)' },
+}
+// two products in one line → one line each (same sector and specialty as the old line)
+const REVIEW_1102_SPLIT: Record<string, string[]> = {
+  'صاج وأنابيب ستانلس ستيل': ['صاج ستانلس ستيل', 'مواسير ستانلس ستيل'],
+  'ألياف ماكرو إنشائية (Macro Synthetic / Steel Fibres)': ['ألياف ماكرو صناعية (Macro Synthetic Fibres)', 'ألياف حديدية (Steel Fibres)'],
+  'قطاعات وألواح ألمنيوم خام': ['قطاعات ألمنيوم خام', 'ألواح ألمنيوم خام'],
+  'مفاتيح وبرازيز Switches & Sockets 13A': ['مقابس 13A', 'مفاتيح إنارة'],
+  'بطانية حريق وصندوق طفاية': ['بطانية حريق', 'صندوق طفاية حريق'],
+  'مفتاح مواسير وقطّاعة مواسير (Pipe Wrench & Cutter)': ['مفتاح مواسير (Pipe Wrench)', 'قطّاعة مواسير (Pipe Cutter)'],
+  'كريك (مجرفة) ومكنسة شارع (Shovel & Street Broom)': ['مجرفة (كريك)', 'مكنسة شارع (Street Broom)'],
+  'منشار يدوي خشب وقوس منشار حديد (Hand Saw & Hacksaw)': ['منشار يدوي للخشب (Hand Saw)', 'قوس منشار حديد (Hacksaw)'],
+  'زاوية نجار وقدمة قياس (Square & Caliper)': ['زاوية نجار (Carpenter Square)', 'قدمة قياس (Caliper)'],
+  'منشار كهربائي (دائري/أركت)': ['منشار كهربائي دائري', 'منشار أركت كهربائي'],
+  'برميل وسلسلة وحاجز بلاستيكي مروري (Traffic Drum, Chain & Barrier Mesh)': ['برميل مروري (Traffic Drum)', 'سلسلة بلاستيكية للحواجز (Barrier Chain)', 'شبك حاجز بلاستيكي (Barrier Mesh)'],
+  'كباس باب سياج ومفصلات': ['كباس باب سياج', 'مفصلات باب سياج'],
+}
+const REVIEW_1102_TR: Record<string, { en: string; ur: string }> = {
+  'مولد كهرباء احتياطي ثابت (Standby)': { en: 'Standby generator (fixed)', ur: 'اسٹینڈ بائی جنریٹر (مستقل)' },
+  'مولد كهرباء ديزل متنقل (للإيجار)': { en: 'Mobile diesel generator (rental)', ur: 'موبائل ڈیزل جنریٹر (کرایہ)' },
+  'صاج ستانلس ستيل': { en: 'Stainless steel sheet', ur: 'اسٹین لیس اسٹیل شیٹ' },
+  'مواسير ستانلس ستيل': { en: 'Stainless steel pipes', ur: 'اسٹین لیس اسٹیل پائپ' },
+  'ألياف ماكرو صناعية (Macro Synthetic Fibres)': { en: 'Macro synthetic fibres', ur: 'میکرو سنتھیٹک فائبر' },
+  'ألياف حديدية (Steel Fibres)': { en: 'Steel fibres', ur: 'اسٹیل فائبر' },
+  'قطاعات ألمنيوم خام': { en: 'Raw aluminium profiles', ur: 'خام ایلومینیم سیکشن' },
+  'ألواح ألمنيوم خام': { en: 'Raw aluminium sheets', ur: 'خام ایلومینیم شیٹ' },
+  'مقابس 13A': { en: '13A sockets', ur: '13A ساکٹ' },
+  'مفاتيح إنارة': { en: 'Light switches', ur: 'لائٹ سوئچ' },
+  'بطانية حريق': { en: 'Fire blanket', ur: 'فائر بلینکٹ' },
+  'صندوق طفاية حريق': { en: 'Fire extinguisher cabinet', ur: 'فائر ایکسٹنگوئشر باکس' },
+  'مفتاح مواسير (Pipe Wrench)': { en: 'Pipe wrench', ur: 'پائپ رنچ' },
+  'قطّاعة مواسير (Pipe Cutter)': { en: 'Pipe cutter', ur: 'پائپ کٹر' },
+  'مجرفة (كريك)': { en: 'Shovel', ur: 'بیلچہ' },
+  'مكنسة شارع (Street Broom)': { en: 'Street broom', ur: 'سڑک کا جھاڑو' },
+  'منشار يدوي للخشب (Hand Saw)': { en: 'Hand saw', ur: 'ہاتھ آری' },
+  'قوس منشار حديد (Hacksaw)': { en: 'Hacksaw', ur: 'ہیکسا' },
+  'زاوية نجار (Carpenter Square)': { en: "Carpenter's square", ur: 'بڑھئی کا گونیا' },
+  'قدمة قياس (Caliper)': { en: 'Caliper', ur: 'کیلیپر' },
+  'منشار كهربائي دائري': { en: 'Electric circular saw', ur: 'برقی سرکلر آری' },
+  'منشار أركت كهربائي': { en: 'Electric jigsaw', ur: 'برقی جگ سا' },
+  'برميل مروري (Traffic Drum)': { en: 'Traffic drum', ur: 'ٹریفک ڈرم' },
+  'سلسلة بلاستيكية للحواجز (Barrier Chain)': { en: 'Plastic barrier chain', ur: 'پلاسٹک بیریئر زنجیر' },
+  'شبك حاجز بلاستيكي (Barrier Mesh)': { en: 'Plastic barrier mesh', ur: 'پلاسٹک بیریئر جالی' },
+  'كباس باب سياج': { en: 'Fence gate closer', ur: 'باڑ گیٹ کلوزر' },
+  'مفصلات باب سياج': { en: 'Fence gate hinges', ur: 'باڑ گیٹ قبضے' },
+}
+// spec fields a renamed product must not inherit from its old name
+const REVIEW_1102_SPEC_DROP: Record<string, string[]> = {
+  'دهان أسقف مكشوفة (للخرسانة والمعدن)': ['tile_size'], // it was listed with the false ceilings
+  'أسمنت بورتلاندي عادي (OPC)': ['type'],               // the line is OPC now; SRC/white/PPC have their own lines
+}
+const REVIEW_1102_ROUTE: Record<string, [Sector, string]> = {
+  // the 15 plumbing-shop items listed in mechanical AND supply_store showed once: keep the shop copy
+  'خلاط مغسلة': ['supply_store', 'store_faucets'], 'خلاط مطبخ': ['supply_store', 'store_faucets'],
+  'خلاط دش': ['supply_store', 'store_faucets'], 'صنبور حديقة': ['supply_store', 'store_faucets'],
+  'رأس دش': ['supply_store', 'store_faucets'],
+  'محبس زاوية': ['supply_store', 'store_valves'], 'محبس عمومي': ['supply_store', 'store_valves'],
+  'سيفون مرحاض': ['supply_store', 'store_valves'], 'مصفاة أرضية': ['supply_store', 'store_valves'],
+  'وصلة مرنة': ['supply_store', 'store_valves'], 'جلدة محبس': ['supply_store', 'store_valves'],
+  'خرطوم شطاف': ['supply_store', 'store_hoses'], 'شريط تفلون': ['supply_store', 'store_hoses'],
+  'معجون سباكة': ['supply_store', 'store_hoses'], 'عوامة خزان': ['supply_store', 'store_hoses'],
+  // building
+  'جسور مدرجات مائلة (Raker Beams)': ['civil', 'precast'],
+  'زوايا وقطاعات حديد': ['civil', 'steel_sections'],
+  'مبيد النمل الأبيض (معالجة التربة)': ['civil', 'waterproofing'], // soil treatment at the foundation stage, not a concrete admixture
+  // finishing
+  'ألواح خشب صوتية Acoustic': ['architectural', 'acoustic_timber'],
+  'صاج ألمنيوم مضلّع/منقوش (Aluminium Chequered Plate)': ['architectural', 'metal_features'],
+  'صاج ألمنيوم مزخرف ستوكو (Stucco Embossed Sheet)': ['architectural', 'metal_features'],
+  'مظلة سيارات': ['civil', 'shades_screens'],
+  'لوحات إرشادية Signage': ['architectural', 'custom_furniture'], // made by decor/sign workshops; shows under «الجدران والديكور»
+  // plumbing → civil external drainage
+  'أنابيب خرسانية مسلحة RCP': ['civil', 'drainage'], 'غرف تفتيش خرسانية': ['civil', 'drainage'],
+  'أغطية منهول حديد': ['civil', 'drainage'], 'مصارف خطية': ['civil', 'drainage'],
+  'خزان صرف صحي (بيارة)': ['civil', 'drainage'],
+  // pressure / mains pipes (not PPR) and chilled-water pipes (HVAC)
+  'مواسير uPVC ضغط سكجول 80 (Sch 80)': ['mechanical', 'pressure_pipes'],
+  'أنابيب نحاس مياه باردة': ['mechanical', 'pressure_pipes'], 'أنابيب نحاس مياه حارة': ['mechanical', 'pressure_pipes'],
+  'أنابيب CPVC مياه حارة': ['mechanical', 'pressure_pipes'], 'أنابيب PEX': ['mechanical', 'pressure_pipes'],
+  'أنابيب HDPE PN16 مياه شرب': ['mechanical', 'pressure_pipes'], 'أنابيب HDPE PN10 مياه شرب': ['mechanical', 'pressure_pipes'],
+  'أنابيب حديد مجلفن GI': ['mechanical', 'pressure_pipes'], 'أنابيب GRP فايبرجلاس': ['mechanical', 'pressure_pipes'],
+  'أنابيب حديد مرن Ductile Iron مياه رئيسية': ['mechanical', 'pressure_pipes'], 'عداد مياه 100mm': ['mechanical', 'pressure_pipes'],
+  'أنابيب فولاذية مياه مبردة Schedule 40': ['mechanical', 'chilled_water_pipes'],
+  'أنابيب مياه مبردة Chilled Water': ['mechanical', 'chilled_water_pipes'],
+  'أنابيب معزولة مسبقاً Pre-Insulated (تبريد المناطق)': ['mechanical', 'chilled_water_pipes'],
+  'خزان وقود ديزل تحت أرضي': ['mechanical', 'fuel_systems'],
+  // HVAC & fire
+  'مضخة إطفاء حريق Fire Pump': ['mechanical', 'fire_pumps'],
+  'مضخة حريق مساعدة (Jockey)': ['mechanical', 'fire_pumps'],
+  // tools & machinery
+  'خرطوم هواء وغاز ضغط عالٍ (Air & Gas Hose)': ['equipment', 'welding_cutting'],
+  'ماكينة ثني حديد التسليح (Rebar Bender)': ['equipment', 'concrete_finishing'],
+  'ماكينة قص حديد التسليح (Rebar Cutter)': ['equipment', 'concrete_finishing'],
+  'ماكينة قص الخرسانة والأسفلت': ['equipment', 'concrete_finishing'],
+  'ماكينة تنعيم الخرسانة (هليكوبتر)': ['equipment', 'concrete_finishing'],
+  'دورات مياه متنقلة': ['equipment', 'site_services'],
+}
+// specialties with no catalog product (2026-11-02): off in the pickers (DB: taxonomy.is_active = false, migration 195)
+export const INACTIVE_SUBS: [Sector, string][] = [
+  ['electrical', 'mv_cables'], ['civil', 'scaffold_jacks'], ['mechanical', 'fire_valves'], ['mechanical', 'cladding_jacketing'],
+  ['architectural', 'louvers'], // its only product (car shade) belongs to «المظلات والسواتر»
+]
+
+/** The current catalog name of a product (follows CATALOG_RENAME), e.g. for a name stored on an old request. */
+export function catalogName(name: string): string {
+  let n = (name || '').trim()
+  for (let i = 0; i < 5 && CATALOG_RENAME[n]; i++) n = CATALOG_RENAME[n]
+  return n
 }
 ;(function applyCatalogFixes() {
+  CATALOG_REMOVE.push(...REVIEW_1102_REMOVE)
+  Object.assign(CATALOG_RENAME, REVIEW_1102_RENAME)
+  Object.assign(CATALOG_ROUTE, REVIEW_1102_ROUTE)
+  const sectors = Object.keys(SECTOR_PRODUCTS) as Sector[]
   const removed = new Set(CATALOG_REMOVE)
-  // a renamed product keeps the specialty its old name had (a new name can miss the old keywords)
-  for (const [oldName, newName] of Object.entries(CATALOG_RENAME)) {
-    const sec = (Object.keys(SECTOR_PRODUCTS) as Sector[]).find(x => SECTOR_PRODUCTS[x].includes(oldName))
+  const gone = (p: string) => removed.has(p) || removed.has(catalogName(p))
+  // a renamed (or split) product keeps the specialty its old name had (a new name can miss the old keywords)
+  for (const oldName of Object.keys(CATALOG_RENAME)) {
+    const newName = catalogName(oldName)
+    const sec = sectors.find(x => SECTOR_PRODUCTS[x].includes(oldName))
     const sub = sec ? detectSubCategory(oldName, sec) : null
     if (sub && !PRODUCT_SUB[newName]) PRODUCT_SUB[newName] = sub
   }
-  for (const s of Object.keys(SECTOR_PRODUCTS) as Sector[]) {
-    SECTOR_PRODUCTS[s] = SECTOR_PRODUCTS[s].filter(p => !removed.has(p)).map(p => CATALOG_RENAME[p] || p)
+  for (const s of sectors) {
+    const own = REVIEW_1102_RENAME_IN[s] || {}
+    for (const [oldName, newName] of Object.entries(own)) {
+      const sub = SECTOR_PRODUCTS[s].includes(oldName) ? detectSubCategory(oldName, s) : null
+      if (sub && !PRODUCT_SUB[newName]) PRODUCT_SUB[newName] = sub
+    }
+    for (const p of SECTOR_PRODUCTS[s]) {
+      const parts = REVIEW_1102_SPLIT[p]
+      const sub = parts ? detectSubCategory(p, s) : null
+      if (parts && sub) for (const part of parts) if (!PRODUCT_SUB[part]) PRODUCT_SUB[part] = sub
+    }
+    SECTOR_PRODUCTS[s] = Array.from(new Set(SECTOR_PRODUCTS[s].filter(p => !gone(p))
+      .flatMap(p => REVIEW_1102_SPLIT[p] || [own[p] || catalogName(p)])))
   }
-  for (const [oldName, newName] of Object.entries(CATALOG_RENAME)) {
+  for (const oldName of Object.keys(CATALOG_RENAME)) {
+    const newName = catalogName(oldName)
     if (PRODUCT_SUB[oldName] && !PRODUCT_SUB[newName]) PRODUCT_SUB[newName] = PRODUCT_SUB[oldName]
   }
   applyRenamedExtras()
-  for (const [name, [sector, sub]] of Object.entries(CATALOG_ROUTE)) {
-    for (const s of Object.keys(SECTOR_PRODUCTS) as Sector[]) if (s !== sector) SECTOR_PRODUCTS[s] = SECTOR_PRODUCTS[s].filter(p => p !== name)
+  for (const [routed, [sector, sub]] of Object.entries(CATALOG_ROUTE)) {
+    const name = catalogName(routed)
+    if (gone(routed)) continue // a removed product must not come back through its old route
+    for (const s of sectors) if (s !== sector) SECTOR_PRODUCTS[s] = SECTOR_PRODUCTS[s].filter(p => p !== name)
     if (!SECTOR_PRODUCTS[sector].includes(name)) SECTOR_PRODUCTS[sector].push(name)
     PRODUCT_SUB[name] = sub
   }
+  // old names (stored on earlier requests) route like the product they became
+  for (const oldName of Object.keys(CATALOG_RENAME)) {
+    const sub = PRODUCT_SUB[catalogName(oldName)]
+    if (sub && !PRODUCT_SUB[oldName]) PRODUCT_SUB[oldName] = sub
+  }
+  for (const [s, key] of INACTIVE_SUBS) delete (SUB_CATEGORIES[s] as any)[key]
 })()
 /** a renamed product keeps its translations and spec fields (run at load and after each lazy load) */
 function applyRenamedExtras() {
-  for (const [oldName, newName] of Object.entries(CATALOG_RENAME)) {
+  for (const [name, tr] of Object.entries(REVIEW_1102_TR)) PRODUCT_TRANSLATIONS[name] = tr
+  const pairs: [string, string][] = Object.keys(CATALOG_RENAME).map(o => [o, catalogName(o)] as [string, string])
+  for (const own of Object.values(REVIEW_1102_RENAME_IN)) pairs.push(...Object.entries(own || {}))
+  for (const [oldName, newName] of pairs) {
     if (PRODUCT_TRANSLATIONS[oldName] && !PRODUCT_TRANSLATIONS[newName]) PRODUCT_TRANSLATIONS[newName] = PRODUCT_TRANSLATIONS[oldName]
     if (PRODUCT_SPECS[oldName] && !PRODUCT_SPECS[newName]) PRODUCT_SPECS[newName] = PRODUCT_SPECS[oldName]
   }
+  for (const [name, keys] of Object.entries(REVIEW_1102_SPEC_DROP)) {
+    if (PRODUCT_SPECS[name]) PRODUCT_SPECS[name] = PRODUCT_SPECS[name].filter(f => !keys.includes(f.key))
+  }
 }
-/** for the image tool and audits: renamed products keep their old picture */
+/** for the image tool and audits: renamed products (old name → new name; old pictures are copied to the new slug) */
 export const CATALOG_RENAMED = CATALOG_RENAME
+/** for audits: one old line → several products (2026-11-02) */
+export const CATALOG_SPLIT = REVIEW_1102_SPLIT
+export const CATALOG_RENAMED_IN_SECTOR = REVIEW_1102_RENAME_IN
