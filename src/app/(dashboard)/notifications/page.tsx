@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { noEmoji } from '@/lib/text'
+import { useCallback, useEffect, useState } from 'react'
+import { noEmoji, dateLocale } from '@/lib/text'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
+import LoadError from '@/components/shared/LoadError'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
 import AutoTr from '@/components/shared/AutoTr'
@@ -18,21 +19,28 @@ export default function NotificationsPage() {
   const [role, setRole] = useState('contractor')
   const [notifs, setNotifs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
 
-  useEffect(() => {
-    async function load() {
+  const load = useCallback(async () => {
+    setLoading(true); setLoadFailed(false)
+    try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       const { data: p } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
       setRole(p?.role || 'contractor')
-      const { data } = await supabase.from('notifications').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(200)
+      const { data, error } = await supabase.from('notifications').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(200)
+      if (error) throw error
       setNotifs(data || [])
       await supabase.from('notifications').update({ is_read: true }).eq('user_id', session.user.id).eq('is_read', false)
+    } catch (e) {
+      console.error('[notifications] load failed:', e)
+      setLoadFailed(true)
+    } finally {
       setLoading(false)
     }
-    load()
   }, [])
+  useEffect(() => { load() }, [load])
 
   if (loading) return <PageLoader />
 
@@ -44,7 +52,9 @@ export default function NotificationsPage() {
   return (
     <AppShell title={locale === 'en' ? 'Notifications' : locale === 'ur' ? 'اطلاعات' : 'الإشعارات'} nav={getNav(role, locale, '/notifications')} dir={dir}>
       <div className="max-w-2xl mx-auto">
-        {notifs.length === 0 ? (
+        {loadFailed ? (
+          <LoadError onRetry={load} />
+        ) : notifs.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
             <div className="text-5xl mb-3"><Glyph e="🔔" /></div>
             <p className="text-gray-500">{locale === 'en' ? 'No notifications yet.' : locale === 'ur' ? 'ابھی کوئی اطلاع نہیں۔' : 'لا إشعارات بعد.'}</p>
@@ -59,7 +69,7 @@ export default function NotificationsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="font-bold text-sm" style={{ color: '#0B2438' }}><AutoTr text={noEmoji(n.title)} locale={locale} /></div>
                     {n.body && <div className="text-xs text-gray-500 mt-0.5"><AutoTr text={noEmoji(n.body)} locale={locale} /></div>}
-                    <div className="text-[10px] text-gray-400 mt-1">{new Date(n.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</div>
+                    <div className="text-[10px] text-gray-400 mt-1">{new Date(n.created_at).toLocaleString(dateLocale(locale))}</div>
                   </div>
                 </div>
               </button>

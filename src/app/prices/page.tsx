@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { FEATURES } from '@/lib/features'
 import Link from 'next/link'
 import { createPublicClient } from '@/lib/supabase/server'
 import { SECTOR_LABELS } from '@/types'
@@ -12,6 +13,8 @@ export const metadata: Metadata = {
   title: 'أسعار مواد البناء في السعودية اليوم | تسعيرك',
   description: 'مؤشّر أسعار مواد البناء في السعودية — متوسّط أسعار الحديد والأسمنت والخرسانة والبلاط والمواد الكهربائية والميكانيكية، محسوبة من صفقات حقيقية على منصة تسعيرك.',
   alternates: { canonical: '/prices' },
+  // «قريباً» while the price board is off: keep the placeholder out of search results
+  ...(FEATURES.priceBoard ? {} : { robots: { index: false, follow: true } }),
 }
 
 function fmt(n: any) {

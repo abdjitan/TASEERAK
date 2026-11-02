@@ -95,10 +95,15 @@ export default function OrderDetailPage() {
   if (loading) return <PageLoader />
 
   if (!offer || !rfq) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="text-gray-500">{L('Order not found', 'آرڈر نہیں ملا', 'الطلب غير موجود')}</div>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4" dir={dir}>
+      <div className="text-center">
+        <div className="text-gray-500 mb-3">{L('Purchase order not found', 'پرچیز آرڈر نہیں ملا', 'أمر الشراء غير موجود')}</div>
+        <Link href="/contractor/orders" className="inline-block px-5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('My deals', 'میری ڈیلز', 'صفقاتي')}</Link>
+      </div>
     </div>
   )
+
+  const FWD = dir === 'rtl' ? '←' : '→', BACK = dir === 'rtl' ? '→' : '←'
 
   const poNumber = `PO-${offer.id.slice(0, 8).toUpperCase()}`
   // Gregorian calendar pinned to KSA time so the printed date matches the QR (B3)
@@ -132,7 +137,7 @@ export default function OrderDetailPage() {
 
         {/* Actions - hidden in print */}
         <div className="flex items-center justify-between mt-4 print:hidden">
-          <Link href="/contractor" className="text-sm text-gray-500 hover:text-gray-700">← {L('Back to dashboard', 'ڈیش بورڈ پر واپس', 'رجوع للوحة التحكم')}</Link>
+          <Link href="/contractor" className="text-sm text-gray-500 hover:text-gray-700"><span aria-hidden="true">{BACK}</span> {L('Back to dashboard', 'ڈیش بورڈ پر واپس', 'رجوع للوحة التحكم')}</Link>
           <div className="flex items-center gap-2">
             {offer?.rfq_id && (
               <Link href={`/contractor/rfq/quick?from=${offer.rfq_id}`}
@@ -174,7 +179,7 @@ export default function OrderDetailPage() {
                 <h1 className="text-2xl font-bold">{L('Purchase Order', 'پرچیز آرڈر', 'أمر شراء')}</h1>
                 {locale !== 'en' && <p className="text-[#F5C55B] text-sm mt-1">Purchase Order</p>}
               </div>
-              <div className="text-left">
+              <div className="text-end">
                 <div className="text-sm text-[#F5C55B]">{L('Order no.', 'آرڈر نمبر', 'رقم الأمر')}</div>
                 <div className="text-xl font-bold font-mono">{poNumber}</div>
                 <div className="text-sm text-[#F5C55B] mt-1">{L('Date:', 'تاریخ:', 'التاريخ:')} {date}</div>
@@ -214,7 +219,7 @@ export default function OrderDetailPage() {
                 <a href={`https://www.google.com/maps?q=${supplier.latitude},${supplier.longitude}`}
                   target="_blank" rel="noopener noreferrer"
                   className="inline-block text-xs text-[#8F6820] hover:underline mt-1 print:hidden">
-                  <Glyph e="🗺" /> {L('View location on map', 'نقشے پر مقام دیکھیں', 'عرض الموقع على الخريطة')} ←
+                  <Glyph e="🗺" /> {L('View location on map', 'نقشے پر مقام دیکھیں', 'عرض الموقع على الخريطة')} <span aria-hidden="true">{FWD}</span>
                 </a>
               )}
             </div>
@@ -238,7 +243,7 @@ export default function OrderDetailPage() {
               {offer?.attachment_url && (
                 <a href={fileHref(offer.attachment_url)} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 text-sm font-semibold text-[#8F6820] hover:underline print:hidden">
-                  <Glyph e="📎" /> {offer.attachment_name || L('Product catalog', 'پروڈکٹ کیٹلاگ', 'كتالوج المنتج')} ←
+                  <Glyph e="📎" /> {offer.attachment_name || L('Product catalog', 'پروڈکٹ کیٹلاگ', 'كتالوج المنتج')} <span aria-hidden="true">{FWD}</span>
                 </a>
               )}
             </div>
@@ -249,12 +254,12 @@ export default function OrderDetailPage() {
             <table className="w-full min-w-[560px]">
               <thead>
                 <tr className="border-b-2 border-gray-200">
-                  <th className="text-right text-xs font-bold text-gray-500 pb-3 w-8">#</th>
-                  <th className="text-right text-xs font-bold text-gray-500 pb-3">{L('Item', 'آئٹم', 'الصنف')}</th>
-                  <th className="text-right text-xs font-bold text-gray-500 pb-3">{L('Sector', 'شعبہ', 'القطاع')}</th>
-                  <th className="text-right text-xs font-bold text-gray-500 pb-3">{L('Quantity', 'مقدار', 'الكمية')}</th>
-                  <th className="text-right text-xs font-bold text-gray-500 pb-3">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</th>
-                  <th className="text-right text-xs font-bold text-gray-500 pb-3">{vatBreak ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : totalLabel(offer, locale)}</th>
+                  <th className="text-start text-xs font-bold text-gray-500 pb-3 w-8">#</th>
+                  <th className="text-start text-xs font-bold text-gray-500 pb-3">{L('Item', 'آئٹم', 'الصنف')}</th>
+                  <th className="text-start text-xs font-bold text-gray-500 pb-3">{L('Sector', 'شعبہ', 'القطاع')}</th>
+                  <th className="text-start text-xs font-bold text-gray-500 pb-3">{L('Quantity', 'مقدار', 'الكمية')}</th>
+                  <th className="text-start text-xs font-bold text-gray-500 pb-3">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</th>
+                  <th className="text-start text-xs font-bold text-gray-500 pb-3">{vatBreak ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : totalLabel(offer, locale)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -373,7 +378,7 @@ export default function OrderDetailPage() {
           </div>
           <div className="p-4 sm:p-6 overflow-x-auto">
             <table className="w-full min-w-[480px] text-sm mb-4">
-              <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-right pb-2">{L('Item', 'آئٹم', 'الصنف')}</th><th className="text-right pb-2">{L('Quantity', 'مقدار', 'الكمية')}</th><th className="text-right pb-2">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</th><th className="text-right pb-2">{vatBreak ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : totalLabel(offer, locale)}</th></tr></thead>
+              <thead><tr className="border-b border-gray-200 text-xs text-gray-500"><th className="text-start pb-2">{L('Item', 'آئٹم', 'الصنف')}</th><th className="text-start pb-2">{L('Quantity', 'مقدار', 'الكمية')}</th><th className="text-start pb-2">{L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')}</th><th className="text-start pb-2">{vatBreak ? L('Total (before VAT)', 'کل (ٹیکس سے پہلے)', 'الإجمالي (قبل الضريبة)') : totalLabel(offer, locale)}</th></tr></thead>
               <tbody>
                 {rows.map((it: any, idx: any) => (
                   <tr key={idx} className="border-b border-gray-50">
@@ -403,7 +408,7 @@ export default function OrderDetailPage() {
               <a href={fileHref(offer.supplier_invoice_url)} target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm hover:shadow-sm">
                 <span className="font-bold text-emerald-800"><Glyph e="📄" /> {L('Official invoice from the supplier', 'سپلائر کی باضابطہ انوائس', 'الفاتورة الرسمية من المورد')}</span>
-                <span className="text-xs text-emerald-700">{new Date(offer.supplier_invoice_at).toLocaleDateString(dloc)} · {L('Download', 'ڈاؤن لوڈ', 'تنزيل')} ←</span>
+                <span className="text-xs text-emerald-700">{new Date(offer.supplier_invoice_at).toLocaleDateString(dloc)} · {L('Download', 'ڈاؤن لوڈ', 'تنزيل')} <span aria-hidden="true">{FWD}</span></span>
               </a>
             ) : (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-3 text-xs text-gray-500 leading-relaxed">
@@ -433,6 +438,7 @@ export default function OrderDetailPage() {
                 <div className="flex items-center gap-1 mb-3">
                   {[1, 2, 3, 4, 5].map((n: any) => (
                     <button key={n} type="button"
+                      aria-label={L(`${n} of 5 stars`, `5 میں سے ${n} ستارے`, `${n} من 5 نجوم`)} aria-pressed={rating === n}
                       onClick={() => setRating(n)}
                       onMouseEnter={() => setHoverRating(n)}
                       onMouseLeave={() => setHoverRating(0)}

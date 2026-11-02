@@ -56,8 +56,18 @@ export default function OfferDetailPage() {
   async function cancelReduction() {
     if (!confirm(L('Cancel the reduction request and go back to the original price?', 'کمی کی درخواست منسوخ کر کے اصل قیمت پر واپس جائیں؟', 'إلغاء طلب التخفيض والعودة للسعر الأصلي؟'))) return
     setActing(true)
-    const supabase = createClient()
-    await supabase.from('offers').update({ reduction_deadline: null, reduction_note: null }).eq('id', offerId)
+    let failed = false
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('offers').update({ reduction_deadline: null, reduction_note: null }).eq('id', offerId)
+      failed = !!error
+      if (error) console.error('cancel reduction', error)
+    } catch (e) { failed = true; console.error('cancel reduction failed', e) }
+    if (failed) {
+      setActing(false)
+      alert(L('Could not cancel the reduction request — please try again.', 'کمی کی درخواست منسوخ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر إلغاء طلب التخفيض — حاول مرة أخرى.'))
+      return
+    }
     window.location.reload()
   }
 
@@ -147,7 +157,7 @@ export default function OfferDetailPage() {
 
   const Row = ({ label, value }: any) => value ? (
     <div className="flex justify-between gap-3 py-2 border-b border-gray-50 text-sm">
-      <span className="text-gray-500">{label}</span><span className="font-semibold text-gray-800 text-left">{value}</span>
+      <span className="text-gray-500">{label}</span><span className="font-semibold text-gray-800 text-end">{value}</span>
     </div>
   ) : null
 

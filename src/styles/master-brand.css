@@ -373,6 +373,10 @@ a { text-decoration: none; }
   background: #fff;
   box-shadow: 0 22px 58px rgba(7,24,39,.08);
 }
+/* small phones: room for the 300px security check without a sideways scroll (was 398px wide at 375px) */
+@media (max-width: 400px) {
+  .auth-form-card { padding: 22px 14px; border-radius: 18px; }
+}
 .register-screen { background: #F5F7FA; }
 .register-screen > header { background: rgba(7,24,39,.97) !important; border-color: #263746 !important; }
 .register-screen > header a, .register-screen > header span { color: #fff; }

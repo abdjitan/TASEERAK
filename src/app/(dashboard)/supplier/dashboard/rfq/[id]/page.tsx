@@ -33,6 +33,7 @@ export default function SupplierRFQPage() {
   const { id } = useParams()
   const router = useRouter()
   const { locale, dir } = useTranslation()
+  const FWD = dir === 'rtl' ? '←' : '→'
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const SAR = L('SAR', 'ریال', 'ر.س')
   const [user, setUser] = useState<any>(null)
@@ -101,6 +102,8 @@ export default function SupplierRFQPage() {
   // dismiss modal
   const [showDismiss, setShowDismiss] = useState(false)
   const [dismissReason, setDismissReason] = useState('')
+  const [dismissing, setDismissing] = useState(false)
+  const [dismissError, setDismissError] = useState('')
 
   // رد على طلب تخفيض السعر من المشتري
   const [newPrice, setNewPrice] = useState('')
@@ -456,6 +459,7 @@ export default function SupplierRFQPage() {
     }
     setSubmitting(true)
     setError('')
+    try { // uploads, compression and the insert can throw on a dropped connection: always release the button
 
     const validAttrs = attributes.filter((a: any) => a.key && a.value)
     const attrObj = validAttrs.reduce((acc: any, a: any) => { acc[a.key] = a.value; return acc }, {})
@@ -588,22 +592,43 @@ export default function SupplierRFQPage() {
       localStorage.setItem(k, JSON.stringify(mem))
     } catch {}
     try { localStorage.removeItem(`tsk_offer_draft_${actingId || user.id}_${id}`) } catch {}
-    setSuccess(true); setSubmitting(false)
+    setSuccess(true)
+    } catch (err) {
+      console.error('offer submit failed', err)
+      setError(L('Could not send because of the connection. Your draft is saved; try again.', 'کنکشن کی وجہ سے نہیں بھیجا جا سکا۔ آپ کا مسودہ محفوظ ہے، دوبارہ کوشش کریں۔', 'تعذّر الإرسال بسبب الاتصال. مسودتك محفوظة، حاول مرة أخرى.'))
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function handleDismiss() {
-    const supabase = createClient()
-    await supabase.from('rfq_dismissals').insert({
-      rfq_id: id, supplier_id: actingId || user.id, reason: dismissReason || null,
-    })
-    try { localStorage.removeItem(`tsk_offer_draft_${actingId || user.id}_${id}`) } catch {}
-    setDismissed(true)
-    setShowDismiss(false)
+    if (dismissing) return
+    setDismissing(true); setDismissError('')
+    try {
+      const supabase = createClient()
+      const { error: dErr } = await supabase.from('rfq_dismissals').insert({
+        rfq_id: id, supplier_id: actingId || user.id, reason: dismissReason || null,
+      })
+      // already dismissed (unique row) counts as done
+      if (dErr && (dErr as any).code !== '23505') {
+        console.error('rfq dismiss', dErr)
+        setDismissError(L('Could not hide this request — please try again.', 'یہ درخواست چھپائی نہیں جا سکی — دوبارہ کوشش کریں۔', 'تعذّر تجاهل هذا الطلب — حاول مرة أخرى.'))
+        return
+      }
+      try { localStorage.removeItem(`tsk_offer_draft_${actingId || user.id}_${id}`) } catch {}
+      setDismissed(true)
+      setShowDismiss(false)
+    } catch (err) {
+      console.error('rfq dismiss failed', err)
+      setDismissError(L('Could not hide this request because of the connection — try again.', 'کنکشن کی وجہ سے درخواست چھپائی نہیں جا سکی — دوبارہ کوشش کریں۔', 'تعذّر تجاهل الطلب بسبب الاتصال — حاول مرة أخرى.'))
+    } finally {
+      setDismissing(false)
+    }
   }
 
   const T = {
     ar: {
-      back: '← رجوع', details: 'تفاصيل الطلب', sector: 'القطاع', qty: 'الكمية',
+      back: '→ رجوع', details: 'تفاصيل الطلب', sector: 'القطاع', qty: 'الكمية',
       location: 'الموقع', contractor: 'المشتري', spec: 'المواصفات', notes: 'ملاحظات',
       delivery: 'التوصيل', vat: 'فاتورة ضريبية', required: 'مطلوب', notRequired: 'غير مطلوب',
       submitOffer: 'تقديم عرض سعر', totalPrice: 'السعر الإجمالي (ر.س)', unitPrice: 'سعر الوحدة (ر.س)',
@@ -647,17 +672,17 @@ export default function SupplierRFQPage() {
       closed: 'This request is closed', closedSub: 'No new offers accepted',
     },
     ur: {
-      back: '← واپس', details: 'درخواست کی تفصیلات', sector: 'شعبہ', qty: 'مقدار',
+      back: '→ واپس', details: 'درخواست کی تفصیلات', sector: 'شعبہ', qty: 'مقدار',
       location: 'مقام', contractor: 'خریدار', spec: 'تفصیلات', notes: 'نوٹس',
       delivery: 'ڈیلیوری', vat: 'ٹیکس رسید', required: 'ضروری', notRequired: 'غیر ضروری',
       submitOffer: 'قیمت پیش کریں', totalPrice: 'کل قیمت (SAR)', unitPrice: 'فی یونٹ قیمت (SAR)',
-      verifyFirst: 'پیشکش دینے کے لیے پروفائل مکمل کریں', verifyFirstSub: 'اپنا مقام اور مہارتیں منتخب کریں اور ای میل کی تصدیق کریں، پھر واپس آ کر قیمت دیں۔ تصدیق اختیاری ہے۔', verifyFirstCta: 'پروفائل مکمل کریں →',
+      verifyFirst: 'پیشکش دینے کے لیے پروفائل مکمل کریں', verifyFirstSub: 'اپنا مقام اور مہارتیں منتخب کریں اور ای میل کی تصدیق کریں، پھر واپس آ کر قیمت دیں۔ تصدیق اختیاری ہے۔', verifyFirstCta: 'پروفائل مکمل کریں ←',
       deliveryDays: 'ڈیلیوری وقت (دن)', attributes: 'پروڈکٹ کی خصوصیات',
       attrHint: 'خصوصیات شامل کریں: برانڈ، ملک، وارنٹی...',
       attrKey: 'خصوصیت', attrValue: 'قیمت', addAttr: '+ خصوصیت شامل کریں',
       attachTitle: 'فائل منسلک کریں (کیٹلاگ)', attachHint: 'PDF، تصویر، Excel',
       attachBtn: 'کیٹلاگ یا فائل اپلوڈ کریں', removeAttach: 'ہٹائیں',
-      offerNotes: 'اضافی نوٹس', send: 'پیشکش بھیجیں →', sending: 'بھیجا جا رہا ہے...',
+      offerNotes: 'اضافی نوٹس', send: 'پیشکش بھیجیں ←', sending: 'بھیجا جا رہا ہے...',
       dismiss: 'یہ درخواست میرے لیے نہیں', dismissTitle: 'یہ درخواست نظر انداز کریں؟',
       dismissSub: 'یہ درخواست دوبارہ نظر نہیں آئے گی', dismissReason: 'وجہ (اختیاری)',
       confirmDismiss: 'تصدیق کریں', cancel: 'منسوخ',
@@ -693,7 +718,7 @@ export default function SupplierRFQPage() {
           <p className="text-sm text-gray-500 mb-6">{success ? T.successSub : T.dismissedSub}</p>
           {success && nextRfq && (
             <a href={`/supplier/dashboard/rfq/${nextRfq}`} className="block mb-2.5 py-3 rounded-xl font-extrabold text-[#071827] text-center" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
-              {L('Price the next request', 'اگلی درخواست کی قیمت', 'سعّر الطلب التالي')} ←
+              {L('Price the next request', 'اگلی درخواست کی قیمت', 'سعّر الطلب التالي')} <span aria-hidden="true">{FWD}</span>
             </a>
           )}
           <Link href="/supplier/dashboard" className="block py-3 rounded-xl font-semibold text-white text-center" style={{ background: '#0B2438' }}>
@@ -815,7 +840,7 @@ export default function SupplierRFQPage() {
 
             {/* المواد التي سعّرتها — كل مادة وسعرها (واضحة للمورد) */}
             {Array.isArray(existingOffer.item_prices) && existingOffer.item_prices.length > 0 && (
-              <div className="mt-4 text-right border border-gray-200 rounded-xl overflow-hidden bg-white">
+              <div className="mt-4 text-start border border-gray-200 rounded-xl overflow-hidden bg-white">
                 <div className="bg-gray-50 px-3 py-2 text-xs font-bold text-gray-500 flex justify-between">
                   <span><Glyph e="🧾" /> {L('Items you priced', 'جن چیزوں کی آپ نے قیمت دی', 'المواد التي سعّرتها')} ({existingOffer.item_prices.length})</span>
                   <span>{L('Price', 'قیمت', 'السعر')}</span>
@@ -861,7 +886,7 @@ export default function SupplierRFQPage() {
 
             {/* تقييم المورّد للمشتري (متبادل) — بعد قبول الصفقة */}
             {existingOffer.status === 'accepted' && (
-              <div className="mt-4 border-t border-emerald-200 pt-4 text-right">
+              <div className="mt-4 border-t border-emerald-200 pt-4 text-start">
                 {!existingOffer.received_at && !cDone ? (
                   <div className="text-xs text-gray-500"><Glyph e="⭐" /> {L('You can rate the buyer once they confirm receiving the goods.', 'خریدار کے مال کی وصولی کنفرم کرنے کے بعد آپ اس کی ریٹنگ دے سکیں گے۔', 'يُتاح تقييم المشتري بعد أن يؤكّد استلام البضاعة.')}</div>
                 ) : cDone ? (
@@ -892,7 +917,7 @@ export default function SupplierRFQPage() {
 
             {/* نافذة الـ١٥ دقيقة: تعديل/إلغاء العرض بعد إرساله */}
             {canEditOffer && !expired && (
-              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-right">
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-start">
                 {isMember && existingOffer.submitted_by && existingOffer.submitted_by !== user?.id && (
                   <div className="text-xs font-bold text-amber-800 mb-2">{L('This is a colleague\'s offer — check with them before editing or cancelling it.', 'یہ ساتھی کی آفر ہے — بدلنے یا منسوخ کرنے سے پہلے ان سے بات کریں۔', 'هذا عرض زميلك؛ تواصل معه قبل تعديله أو إلغائه.')}</div>
                 )}
@@ -907,7 +932,7 @@ export default function SupplierRFQPage() {
             )}
 
             {existingOffer.status === 'pending' && existingOffer.reduction_deadline && new Date(existingOffer.reduction_deadline) > new Date() && (
-              <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 text-right">
+              <div className="mt-4 bg-orange-50 border border-orange-200 rounded-xl p-4 text-start">
                 <div className="font-bold text-orange-700 mb-1"><Glyph e="📉" /> {L('The buyer is asking for a lower price', 'خریدار قیمت کم کرنے کی درخواست کر رہا ہے', 'المشتري يطلب تخفيض السعر')}</div>
                 {existingOffer.reduction_note && <div className="text-xs text-gray-600 mb-1">«{existingOffer.reduction_note}»</div>}
                 <div className="text-[11px] text-gray-500 mb-3">{L('Reply by:', 'جواب کی آخری مہلت:', 'المهلة للرد:')} {new Date(existingOffer.reduction_deadline).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn')}</div>
@@ -919,7 +944,7 @@ export default function SupplierRFQPage() {
             )}
 
             {existingOffer.info_request && (
-              <div className="mt-4 bg-[#D4A543]/5 border border-blue-200 rounded-xl p-4 text-right">
+              <div className="mt-4 bg-[#D4A543]/5 border border-blue-200 rounded-xl p-4 text-start">
                 <div className="font-bold text-[#8F6820] mb-1"><Glyph e="❓" /> {L('The buyer is asking for more information', 'خریدار مزید معلومات مانگ رہا ہے', 'المشتري يطلب معلومات إضافية')}</div>
                 <div className="text-sm text-gray-700 bg-white rounded-lg p-2.5 mb-2">{existingOffer.info_request}</div>
                 {existingOffer.info_response ? (
@@ -936,7 +961,7 @@ export default function SupplierRFQPage() {
               <Link href={`/contractor/orders/${existingOffer.id}`}
                 className="inline-block mt-4 px-5 py-2.5 rounded-xl font-semibold text-white text-sm transition-all hover:shadow"
                 style={{ background: '#0F6E56' }}>
-                <Glyph e="📄" /> {L('Purchase order / deal statement', 'پرچیز آرڈر / ڈیل کا بیان', 'أمر الشراء / بيان الصفقة')} ←
+                <Glyph e="📄" /> {L('Purchase order / deal statement', 'پرچیز آرڈر / ڈیل کا بیان', 'أمر الشراء / بيان الصفقة')} <span aria-hidden="true">{FWD}</span>
               </Link>
             )}
           </div>
@@ -1338,7 +1363,7 @@ export default function SupplierRFQPage() {
               className="mt-3 flex items-center gap-2 bg-[#D4A543]/5 border border-blue-200 rounded-xl p-3 hover:bg-blue-100 transition-all">
               <span className="text-xl"><Glyph e="📎" /></span>
               <span className="text-sm font-semibold text-[#8F6820] flex-1">{T.attachedFile}</span>
-              <span className="text-xs text-[#8F6820]">{T.viewFile} ←</span>
+              <span className="text-xs text-[#8F6820]">{T.viewFile} <span aria-hidden="true">{FWD}</span></span>
             </a>
           )}
           </div>
@@ -1580,12 +1605,13 @@ export default function SupplierRFQPage() {
             <p className="text-sm text-gray-500 text-center mb-4">{T.dismissSub}</p>
             <textarea value={dismissReason} onChange={(e: any) => setDismissReason(e.target.value)}
               className="input-field mb-4" rows={2} placeholder={T.dismissReason} />
+            {dismissError && <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-2.5 mb-3">{dismissError}</p>}
             <div className="flex gap-3">
-              <button onClick={handleDismiss}
-                className="flex-1 py-3 rounded-xl font-bold text-white text-sm bg-red-500 hover:bg-red-600 transition-all">
+              <button onClick={handleDismiss} disabled={dismissing}
+                className="flex-1 py-3 rounded-xl font-bold text-white text-sm bg-red-500 hover:bg-red-600 transition-all disabled:opacity-60">
                 {T.confirmDismiss}
               </button>
-              <button onClick={() => setShowDismiss(false)}
+              <button onClick={() => { setShowDismiss(false); setDismissError('') }}
                 className="flex-1 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600 hover:bg-gray-50">
                 {T.cancel}
               </button>

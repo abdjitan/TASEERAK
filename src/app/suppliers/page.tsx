@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { FEATURES } from '@/lib/features'
 import Link from 'next/link'
 import { createPublicClient } from '@/lib/supabase/server'
 import { supplierScore } from '@/lib/supplierScore'
@@ -13,6 +14,8 @@ export const metadata: Metadata = {
   title: 'أفضل موردي مواد البناء في السعودية | تسعيرك',
   description: 'لوحة شرف الموردين على منصة تسعيرك — موردون موثّقون لمواد البناء مرتّبون حسب التقييم والموثوقية والصفقات المنجزة في جميع مناطق المملكة.',
   alternates: { canonical: '/suppliers' },
+  // «قريباً» while the price board is off: keep the placeholder out of search results
+  ...(FEATURES.priceBoard ? {} : { robots: { index: false, follow: true } }),
 }
 
 export default async function SuppliersLeaderboard() {

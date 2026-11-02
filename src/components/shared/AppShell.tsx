@@ -244,7 +244,7 @@ export default function AppShell({
               <NavIcon href={n.href} fallback={n.icon} className="w-[21px] h-[21px]" />
               <span className="text-[10px] font-bold truncate max-w-[68px]">{n.label}</span>
               {badge != null && badge !== 0 && (
-                <span className="absolute top-1.5 left-[calc(50%-18px)] min-w-[15px] h-[15px] px-1 grid place-items-center rounded-full text-[8px] font-extrabold" style={{ background: '#D4A543', color: '#050B12' }}>{badge}</span>
+                <span className="absolute top-1.5 end-[calc(50%-18px)] min-w-[15px] h-[15px] px-1 grid place-items-center rounded-full text-[8px] font-extrabold" style={{ background: '#D4A543', color: '#050B12' }}>{badge}</span>
               )}
             </Link>
           )
@@ -252,7 +252,7 @@ export default function AppShell({
         {/* «المزيد» يفتح القائمة الجانبية كاملة — يضمن الوصول لكل الوجهات (الإعدادات إلخ) على الجوّال */}
         <button onClick={() => setOpen(true)}
           className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2"
-          style={{ color: '#64748b' }} aria-label={locale === 'en' ? 'More' : 'المزيد'}>
+          style={{ color: '#64748b' }} aria-label={locale === 'en' ? 'More' : locale === 'ur' ? 'مزید' : 'المزيد'}>
           <span className="text-[19px] leading-none"><Glyph e="☰" /></span>
           <span className="text-[10px] font-bold">{locale === 'en' ? 'More' : locale === 'ur' ? 'مزید' : 'المزيد'}</span>
         </button>

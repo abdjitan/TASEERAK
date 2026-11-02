@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import PageLoader from '@/components/shared/PageLoader'
+import LoadError from '@/components/shared/LoadError'
 import { rfqDisplayName } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
 
@@ -30,6 +31,7 @@ function Messages() {
   const [msgs, setMsgs] = useState<any[]>([])
   const [body, setBody] = useState(sp.get('msg')?.slice(0, 500) || '') // ?msg= pre-fills a question (e.g. «ask the buyer» on a request)
   const [loading, setLoading] = useState(true)
+  const [convosFailed, setConvosFailed] = useState(false)
   const [sending, setSending] = useState(false)
   const [awarded, setAwarded] = useState(true) // افتراضياً نسمح؛ نتحقق عند فتح المحادثة
   const endRef = useRef<any>(null)
@@ -39,14 +41,22 @@ function Messages() {
   const remaining = PREAWARD_MAX - msgs.filter((m: any) => m._status !== 'failed').length
   const blocked = !awarded && remaining <= 0
 
+  // a failed load keeps the list we already have and says so (it must not look like «no conversations»)
   async function loadConvos() {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('conversations')
-      .select('*, contractor:profiles_public!contractor_id(company_name_ar), supplier:profiles_public!supplier_id(company_name_ar), rfq:rfqs(product_name, title, ref_no, items)')
-      .order('last_message_at', { ascending: false })
-    setConvos(data || [])
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('conversations')
+        .select('*, contractor:profiles_public!contractor_id(company_name_ar), supplier:profiles_public!supplier_id(company_name_ar), rfq:rfqs(product_name, title, ref_no, items)')
+        .order('last_message_at', { ascending: false })
+      if (error) throw error
+      setConvos(data || []); setConvosFailed(false)
+    } catch (e) {
+      console.error('[messages] conversations load failed:', e)
+      setConvosFailed(true)
+    }
   }
+  async function retryConvos() { setLoading(true); await loadConvos(); setLoading(false) }
 
   useEffect(() => {
     (async () => {
@@ -157,7 +167,9 @@ function Messages() {
             <Link href={backHref} title={L('Back', 'واپس', 'رجوع')} className="w-7 h-7 grid place-items-center rounded-lg hover:bg-gray-100 text-gray-500 shrink-0">{dir === 'rtl' ? '→' : '←'}</Link>
             <span><Glyph e="💬" /> {L('Conversations', 'گفتگو', 'المحادثات')} ({convos.length})</span>
           </div>
-          {convos.length === 0 ? (
+          {convosFailed && convos.length === 0 ? (
+            <div className="p-3"><LoadError onRetry={retryConvos} className="!p-5 !shadow-none" /></div>
+          ) : convos.length === 0 ? (
             <div className="p-8 text-center text-sm text-gray-400">{L('No conversations yet', 'ابھی کوئی گفتگو نہیں', 'لا توجد محادثات بعد')}</div>
           ) : convos.map(c => (
             <button key={c.id} onClick={() => setActiveId(c.id)}
@@ -212,7 +224,7 @@ function Messages() {
                 </div>
               )}
               <form onSubmit={send} className="p-3 border-t border-gray-100 flex gap-2">
-                <input value={body} onChange={e => setBody(e.target.value)} disabled={blocked} className="input-field flex-1 text-sm disabled:bg-gray-50" placeholder={blocked ? L('Limit reached before award', 'ایوارڈ سے پہلے کی حد پوری ہو گئی', 'انتهى الحد المسموح قبل اختيار العرض') : L('Type a message…', 'پیغام لکھیں…', 'اكتب رسالة…')} />
+                <input value={body} onChange={e => setBody(e.target.value)} disabled={blocked} aria-label={L('Message', 'پیغام', 'نص الرسالة')} className="input-field flex-1 text-sm disabled:bg-gray-50" placeholder={blocked ? L('Limit reached before award', 'ایوارڈ سے پہلے کی حد پوری ہو گئی', 'انتهى الحد المسموح قبل اختيار العرض') : L('Type a message…', 'پیغام لکھیں…', 'اكتب رسالة…')} />
                 <button type="submit" disabled={sending || blocked || !body.trim()} className="px-5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50" style={{ background: '#D4A543' }}>
                   {L('Send', 'بھیجیں', 'إرسال')}
                 </button>

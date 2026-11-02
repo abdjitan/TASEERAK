@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { rememberPostSignupNext } from '@/lib/postSignupNext'
 import { useState, useRef, useEffect } from 'react'
 import { TERMS_VERSION } from '@/lib/legal'
 import { createClient } from '@/lib/supabase/client'
@@ -136,8 +137,11 @@ export default function RegisterPage() {
     captureRef() // «ادعُ من تعرفه»: keep ?ref= before any redirect
     try {
       // Phone + WhatsApp OTP is the main way in; this email form stays for ?email=1.
+      // ?next= (same-origin path): where to land after sign-up + onboarding, e.g. a landing section card
+      rememberPostSignupNext(new URLSearchParams(window.location.search).get('next'))
       if (PHONE_OTP_ENABLED && new URLSearchParams(window.location.search).get('email') !== '1') { window.location.replace('/login'); return }
-      const r = new URLSearchParams(window.location.search).get('role')
+      const r0 = new URLSearchParams(window.location.search).get('role')
+      const r = r0 === 'buyer' ? 'contractor' : r0
       if (r === 'contractor' || r === 'supplier') { setSelectedType(r); setValue('role', r, { shouldValidate: true }) }
       const k = new URLSearchParams(window.location.search).get('kind') || rememberedSignupKind()
       if (k === 'company' || k === 'independent') { setSellerKind(k); setSelectedType('supplier'); setValue('role', 'supplier', { shouldValidate: true }) }

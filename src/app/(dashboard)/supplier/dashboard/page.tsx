@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import EnablePush from '@/components/shared/EnablePush'
 import PageLoader from '@/components/shared/PageLoader'
+import LoadError from '@/components/shared/LoadError'
 import { createClient } from '@/lib/supabase/client'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { FEATURES } from '@/lib/features'
@@ -81,6 +82,7 @@ export default function SupplierDashboard() {
   // company team: who sent each offer (offers.submitted_by → name), so colleagues don't price twice
   const [team, setTeam] = useState<{ me: string; company: string; names: Record<string, string> } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [tab, setTab] = useState('rfqs')
   // ?tab=offers opens «عروضي» (from «عروضي وصفقاتي»)
   useEffect(() => { try { if (new URLSearchParams(window.location.search).get('tab') === 'offers') { setTab('offers'); setTimeout(() => document.getElementById('sup-list')?.scrollIntoView({ block: 'start' }), 400) } } catch {} }, [])
@@ -101,7 +103,9 @@ export default function SupplierDashboard() {
     try { localStorage.setItem('tsk_seen_rfqs_' + user.id, JSON.stringify([...next].slice(-500))) } catch {}
   }
 
-  async function load() {
+  async function load(): Promise<void> {
+    setLoadFailed(false)
+    try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
@@ -131,8 +135,8 @@ export default function SupplierDashboard() {
       // Speed: the database is far from our users (~1 s a request), so everything that only needs
       // the company id goes out at once instead of one after another (was 11 sequential requests).
       const [
-        { data: p }, { data: cfg }, { data: sectorRows }, { data: specRows },
-        { data: myBranches }, { data: dismissals }, { data: offersRaw }, { count: lpCount },
+        { data: p, error: pErr }, { data: cfg }, { data: sectorRows, error: secErr }, { data: specRows, error: specErr },
+        { data: myBranches }, { data: dismissals }, { data: offersRaw, error: offersErr }, { count: lpCount },
       ] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', actId).single(),
         supabase.from('app_config').select('launch_free_until').maybeSingle(),
@@ -143,6 +147,8 @@ export default function SupplierDashboard() {
         supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status, ref_no, items, created_at)').eq('supplier_id', actId).order('created_at', { ascending: false }).limit(200),
         supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', actId),
       ])
+      // a failed read must not look like «no requests / no offers»: keep what is shown and say so
+      if (pErr || secErr || specErr || offersErr) throw (pErr || secErr || specErr || offersErr)
       // a multi-item request awarded per item: the deal is only the awarded items, not the whole
       // offer (same as /supplier/deals) — revenue, monthly sales, average deal and the offer cards
       const accIds = (offersRaw || []).filter((o: any) => o.status === 'accepted').map((o: any) => o.id)
@@ -172,11 +178,12 @@ export default function SupplierDashboard() {
       // The feed comes from get_supplier_feed (185): sectors, minimum value, verified-only, supplier
       // type, regions, dismissed and deadline are applied on the server before the limit, and the
       // rows carry no contractor_id (buyer privacy). The checks below stay as a second filter.
-      const { data: rfqsRaw } = await supabase.rpc('get_supplier_feed', {
+      const { data: rfqsRaw, error: feedErr } = await supabase.rpc('get_supplier_feed', {
         p_sectors: mySectors.length > 0 ? mySectors : null,
         p_min_value: minVal > 0 ? minVal : 0,
         p_limit: 150,
       })
+      if (feedErr) throw feedErr // never cache a failed feed as «no requests»
 
       // ✅ مطابقة بند-بند: يظهر الطلب لو يقدر يورّد مادة واحدة على الأقل
       // (قطاعها ضمن قطاعاته + تخصصها ضمن تخصصاته أو بدون تخصص محدد)
@@ -222,6 +229,11 @@ export default function SupplierDashboard() {
         actId, isMember: actId !== session.user.id, p, launchUntil: cfg?.launch_free_until || null, pricesCount: lpCount ?? 0,
         offers: offers || [], hasSectors: mySectors.length > 0, hasSpecialties: mySpecialties.length > 0, openRfqs: visibleRfqs,
       })
+    } catch (e) {
+      console.error('[supplier/dashboard] load failed:', e)
+      setLoadFailed(true)
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, [])
@@ -655,7 +667,8 @@ export default function SupplierDashboard() {
                 </button>
               ))}
             </div>
-            {displayedRfqs.length === 0 ? (
+            {loadFailed && <LoadError onRetry={() => { load() }} className="mb-4" />}
+            {loadFailed && displayedRfqs.length === 0 ? null : displayedRfqs.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
                 <div className="text-5xl mb-4 animate-float">{rfqFilter === 'expiring' ? <Glyph e="⏰" /> : <Glyph e="📭" />}</div>
                 <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{rfqFilter === 'expiring' ? L('Nothing ending soon', 'کوئی درخواست جلد ختم نہیں ہو رہی', 'لا توجد طلبات تنتهي قريباً') : t.noRfqs}</h3>
@@ -720,7 +733,8 @@ export default function SupplierDashboard() {
 
         {tab === 'offers' && (
           <div className="stagger">
-            {myOffers.length === 0 ? (
+            {loadFailed && <LoadError onRetry={() => { load() }} className="mb-4" />}
+            {loadFailed && myOffers.length === 0 ? null : myOffers.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
                 <div className="text-5xl mb-4 animate-float"><Glyph e="📤" /></div>
                 <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{t.noOffers}</h3>
@@ -745,7 +759,7 @@ export default function SupplierDashboard() {
                           )}
                         </div>
                       </div>
-                      <div className="text-left">
+                      <div className="text-end">
                         <div className="text-lg font-bold" style={{ color: '#0B2438' }}>{offer.total_price?.toLocaleString('en-US')} <span className="text-xs text-gray-400">{t.sar}</span></div>
                         <span className={`badge text-[10px] ${
                           offer.status === 'accepted' ? 'badge-green' : offer.status === 'rejected' ? 'badge-red' : 'badge-amber'

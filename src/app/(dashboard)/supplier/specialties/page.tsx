@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
+import LoadError from '@/components/shared/LoadError'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
@@ -84,6 +85,8 @@ export default function SpecialtiesPage() {
   const [isMember, setIsMember] = useState(false) // team member: sees the company's list, the owner edits it
   const [msgErr, setMsgErr] = useState(false)
   const [loading, setLoading] = useState(true)
+  // after a failed load the picker would look empty: Save stays disabled so it can't wipe the real specialties
+  const [loadFailed, setLoadFailed] = useState(false)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [mySectors, setMySectors] = useState<any[]>([])
@@ -123,21 +126,24 @@ export default function SpecialtiesPage() {
     )
   }
 
-  useEffect(() => {
-    async function load() {
+  async function load() {
+    setLoading(true); setLoadFailed(false)
+    try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
       // a team member works for the company: read the company's specialties, not the personal account's
-      const { data: act } = await supabase.rpc('acting_uid')
+      const { data: act, error: actErr } = await supabase.rpc('acting_uid')
+      if (actErr) throw actErr
       const actId = (act as any) || session.user.id
       setIsMember(actId !== session.user.id)
 
-      const { data: secs } = await supabase.from('profile_sectors').select('sector').eq('profile_id', actId)
+      const { data: secs, error: secErr } = await supabase.from('profile_sectors').select('sector').eq('profile_id', actId)
+      if (secErr) throw secErr
+      const { data: specs, error: specErr } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', actId)
+      if (specErr) throw specErr
       setMySectors((secs || []).map(s => s.sector))
-
-      const { data: specs } = await supabase.from('profile_specialties').select('specialty').eq('profile_id', actId)
       setMySpecialties((specs || []).map(s => s.specialty))
 
       const { data: reqs } = await supabase.from('material_requests')
@@ -151,11 +157,15 @@ export default function SpecialtiesPage() {
       if (actId === session.user.id && prof?.cr_activity && (specs || []).length === 0 && (secs || []).length === 0) {
         analyzeFromCR(prof.cr_activity, prof.company_name_ar, true)
       }
-
+    } catch (e) {
+      console.error('[supplier/specialties] load failed:', e)
+      setLoadFailed(true)
+    } finally {
       setLoading(false)
     }
-    load()
-  }, [])
+  }
+
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleSector(sector: any) {
     setMySectors(prev => {
@@ -175,7 +185,7 @@ export default function SpecialtiesPage() {
   }
 
   async function handleSave() {
-    if (isMember) return
+    if (isMember || loadFailed) return
     // no sector at all: the seller would receive no requests (audit 2026-11-01) — ask first
     if (mySectors.length === 0 && !confirm(locale === 'en'
       ? 'You have not chosen any sector, so no requests will reach you. Save anyway?'
@@ -245,6 +255,11 @@ export default function SpecialtiesPage() {
         </div>
 
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-700">{T.hint}</div>
+
+        {loadFailed && (
+          <LoadError onRetry={load} className="mb-5"
+            message={locale === 'en' ? 'We could not load your saved specialties, so saving is disabled to keep them safe. Check your connection and try again.' : locale === 'ur' ? 'آپ کی محفوظ مہارتیں لوڈ نہیں ہو سکیں، اس لیے انہیں محفوظ رکھنے کے لیے «محفوظ کریں» بند ہے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔' : 'تعذّر تحميل تخصصاتك المحفوظة، لذلك عُطّل الحفظ حمايةً لها. تحقّق من اتصالك ثم أعد المحاولة.'} />
+        )}
 
         {/* تحليل النشاط التجاري — يُحدّد التخصصات تلقائياً من السجل التجاري */}
         {crActivity && (
@@ -367,7 +382,7 @@ export default function SpecialtiesPage() {
               {locale === 'en' ? "These are your company's specialties. The account owner edits them." : locale === 'ur' ? 'یہ آپ کی کمپنی کا سامان ہے۔ اکاؤنٹ کا مالک اسے بدلتا ہے۔' : 'هذه تخصصات شركتك، ويعدّلها مالك الحساب.'}
             </div>
           ) : (
-          <button onClick={handleSave} disabled={saving}
+          <button onClick={handleSave} disabled={saving || loadFailed}
             className="w-full py-4 rounded-xl font-bold text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
             style={{ background: '#D4A543', color: '#071827' }}>
             {saving ? T.saving : `${T.save} (${mySpecialties.length})`}

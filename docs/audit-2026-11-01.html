@@ -1,0 +1,191 @@
+<title>تقرير مراجعة تسعيرك</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one reading column, a status strip up top, then sections by area; each finding is a row with a state chip */
+:root {
+  --bg: #F6F7F9; --surface: #FFFFFF; --ink: #0B2438; --muted: #55657A; --line: #E2E6EC;
+  --gold: #D4A543; --gold-ink: #8F6820; --ok: #0F6E56; --ok-bg: #E7F3EF; --warn: #9A5B00; --warn-bg: #FFF4E0; --risk: #A1281F; --risk-bg: #FCEBE9;
+  --f-body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif; --f-num: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #071827; --surface: #0B2438; --ink: #EEF2F6; --muted: #9FB0C3; --line: #1C3A54;
+  --gold: #F5C55B; --gold-ink: #F5C55B; --ok: #5FD0AE; --ok-bg: #0E3A33; --warn: #F2B866; --warn-bg: #3A2A10; --risk: #F28B80; --risk-bg: #3D1714; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #071827; --surface: #0B2438; --ink: #EEF2F6; --muted: #9FB0C3; --line: #1C3A54;
+  --gold: #F5C55B; --gold-ink: #F5C55B; --ok: #5FD0AE; --ok-bg: #0E3A33; --warn: #F2B866; --warn-bg: #3A2A10; --risk: #F28B80; --risk-bg: #3D1714; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.75; }
+.wrap { max-width: 860px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 28px; }
+header { display: grid; gap: 8px; border-bottom: 3px solid var(--gold); padding-bottom: 18px; }
+.eyebrow { color: var(--gold-ink); font-weight: 700; font-size: 13px; letter-spacing: .02em; }
+h1 { margin: 0; font-size: clamp(24px, 4vw, 32px); line-height: 1.3; text-wrap: balance; }
+h2 { margin: 0 0 10px; font-size: 20px; text-wrap: balance; }
+h3 { margin: 18px 0 6px; font-size: 16px; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+.strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 2px; }
+.stat b { font-family: var(--f-num); font-size: 22px; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 13px; }
+section { display: grid; gap: 6px; }
+ul.rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+ul.rows li { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 10px 14px; border-top: 1px solid var(--line); min-width: 0; }
+ul.rows li:first-child { border-top: 0; }
+.chip { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; margin-top: 3px; }
+.done { color: var(--ok); background: var(--ok-bg); }
+.wait { color: var(--warn); background: var(--warn-bg); }
+.risk { color: var(--risk); background: var(--risk-bg); }
+.note { color: var(--muted); font-size: 13px; }
+code, .num { font-family: var(--f-num); font-size: 13px; direction: ltr; unicode-bidi: isolate; }
+.callout { background: var(--surface); border: 1px solid var(--line); border-inline-start: 4px solid var(--gold); border-radius: 8px; padding: 12px 14px; display: grid; gap: 6px; }
+.ready { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 14px; }
+.rrow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, 160px) 3.2em; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.rrow:first-child { border-top: 0; }
+.rrow b { font-family: var(--f-num); font-variant-numeric: tabular-nums; text-align: end; }
+.bar { height: 8px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ok); border-radius: 99px; }
+.warnrow .bar i { background: var(--risk); }
+.warnrow b { color: var(--risk); }
+@media (max-width: 520px) { .rrow { grid-template-columns: minmax(0,1fr) 3.2em; } .rrow .bar { grid-column: 1 / -1; grid-row: 2; } }
+ol.decide { margin: 0; padding-inline-start: 22px; display: grid; gap: 8px; }
+</style>
+
+<div class="wrap" dir="rtl" lang="ar">
+  <header>
+    <div class="eyebrow">مراجعة شاملة · 1 نوفمبر 2026</div>
+    <h1>تقرير مراجعة تسعيرك</h1>
+    <p class="lead">راجعتُ المشروع من أول نقطة لآخر نقطة: الأمان، ومنطق الصفقة، ورحلة المورد والمشتري بسيناريوهات عملاء، والأداء، والترجمة والوضوح، وتشغيل قاعدة البيانات. وأصلحتُ ما وجدته مباشرة ونشرته، وما يحتاج قرارك مجموع في آخر التقرير.</p>
+  </header>
+
+  <div class="strip" aria-label="ملخص">
+    <div class="stat"><b>7</b><span>مراجعات متخصصة</span></div>
+    <div class="stat"><b>~120</b><span>ملاحظة مُتحقَّق منها</span></div>
+    <div class="stat"><b>9</b><span>تحديثات قاعدة بيانات (182–190)</span></div>
+    <div class="stat"><b>3</b><span>وظائف خادم منشورة</span></div>
+    <div class="stat"><b>54 / 54</b><span>اختبار الصفقة الكامل</span></div>
+  </div>
+
+  <section>
+    <h2>جاهزية الإطلاق لكل المستخدمين</h2>
+    <p class="lead">الجاهزية التقنية نحو <b>90%</b>. والجاهزية الكاملة للإطلاق العام نحو <b>65%</b>، لأن جانب الموردين الحقيقيين لم يبدأ بعد: كل الحسابات الحالية (12) تجريبية، ولا يوجد مورد حقيقي في أيٍّ من التخصصات الـ141، فطلب أي مشترٍ حقيقي اليوم لن يصل إلى أحد.</p>
+    <div class="ready" role="table" aria-label="الجاهزية حسب الجانب">
+      <div class="rrow" role="row"><span role="cell">مسار الصفقة (طلب ← عروض ← اختيار ← أمر شراء ← تسليم ← استلام ← دفع)</span><span class="bar" role="cell"><i style="width:95%"></i></span><b role="cell">95%</b></div>
+      <div class="rrow" role="row"><span role="cell">تجربة المشتري</span><span class="bar" role="cell"><i style="width:90%"></i></span><b role="cell">90%</b></div>
+      <div class="rrow" role="row"><span role="cell">تجربة المورد</span><span class="bar" role="cell"><i style="width:90%"></i></span><b role="cell">90%</b></div>
+      <div class="rrow" role="row"><span role="cell">الأداء والتشغيل والمراقبة</span><span class="bar" role="cell"><i style="width:90%"></i></span><b role="cell">90%</b></div>
+      <div class="rrow" role="row"><span role="cell">لوحة الإدارة والمتابعة</span><span class="bar" role="cell"><i style="width:85%"></i></span><b role="cell">85%</b></div>
+      <div class="rrow" role="row"><span role="cell">الأمان والخصوصية</span><span class="bar" role="cell"><i style="width:85%"></i></span><b role="cell">85%</b></div>
+      <div class="rrow" role="row"><span role="cell">اللغات (العربية كاملة؛ الإنجليزية والأوردية عدا صفحات الإدارة والصفحات العامة)</span><span class="bar" role="cell"><i style="width:85%"></i></span><b role="cell">85%</b></div>
+      <div class="rrow" role="row"><span role="cell">التسجيل (البريد يعمل؛ الجوال وواتساب بانتظار حساب واتساب للأعمال)</span><span class="bar" role="cell"><i style="width:70%"></i></span><b role="cell">70%</b></div>
+      <div class="rrow" role="row"><span role="cell">الجانب القانوني (الشروط والخصوصية جاهزة؛ الكيان ومفتاح واثق الإنتاجي معلّقان)</span><span class="bar" role="cell"><i style="width:60%"></i></span><b role="cell">60%</b></div>
+      <div class="rrow warnrow" role="row"><span role="cell">الموردون الحقيقيون وتغطية التخصصات</span><span class="bar" role="cell"><i style="width:10%"></i></span><b role="cell">10%</b></div>
+    </div>
+    <p class="note">ما يرفع الجاهزية إلى الإطلاق: تسجيل موردين حقيقيين يغطّون أكثر التخصصات طلباً في مدينة البداية، ثم إعدادات لوحة Supabase (CAPTCHA، التحقق بخطوتين للأدمن، حماية كلمات المرور المسرّبة، النسخ الاحتياطي اللحظي)، ومتغيّر <code>ROLE_COOKIE_SECRET</code> في Vercel.</p>
+  </section>
+
+  <section>
+    <h2>لوحة المالك وعرض الحساب للدعم (جديد)</h2>
+    <ul class="rows">
+      <li><span class="chip done">منشور</span><div><b>لوحة المالك</b> من قائمة الإدارة: المسجّلون حسب النوع (مشترون، شركات، محلات، مستقلون)، والمتصلون الآن والنشطون اليوم وخلال أسبوع وشهر، والطلبات والعروض والصفقات ومبالغها (المختارة، المستلَمة، المدفوعة)، ورسم يومي، ومسار التحويل، وسيولة السوق (نسبة الطلبات التي وصلها عرض، وزمن أول عرض)، والصفقات المتأخرة والنزاعات، وأعلى الموردين، والمستخدمين حسب المنطقة، وصحة النظام، وإرسال إعلان داخل التطبيق.</div></li>
+      <li><span class="chip done">منشور</span><div><b>عرض الحساب للدعم:</b> من صفحة أي مستخدم ترى طلباته وعروضه وصفقاته ومحادثاته وإشعاراته وأخطاءه دون كلمة مروره. للقراءة فقط، ويُطلب سبب الاطلاع، ويُسجَّل كل اطلاع، ويُبلَّغ صاحب الحساب افتراضياً (ممارسة موصى بها ومتّسقة مع نظام حماية البيانات).</div></li>
+      <li><span class="chip done">منشور</span><div>الأسعار تُكتب «يشمل ضريبة القيمة المضافة 15%»، وسعر المورد غير المسجّل ضريبياً يُكتب «بلا ضريبة».</div></li>
+      <li><span class="chip done">منشور</span><div>أُنجزت المؤجَّلات التقنية: تسريع 40 سياسة صلاحيات، وسجل أسعار السوق من الصفقات المؤكدة فقط، وإبلاغ موردي المواد المضافة عند تعديل الطلب. اختبار الصفقة الكامل: <span class="num">54 / 54</span>.</div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>أخطر ما وُجد وأُصلح</h2>
+    <ul class="rows">
+      <li><span class="chip done">أُصلح</span><div><b>رسائل بريد مزعجة:</b> كانت كل إشعارات المنصة تُرسل بالبريد، ومنها كل رسالة محادثة بنصها (وقد يحوي رقم جوال). الآن يصل البريد للأمور المهمة فقط، بفواصل زمنية، والمحادثات تنبيه واحد «لديك رسائل جديدة» كل 3 ساعات على الأكثر، مع زر إيقاف في الإعدادات ورابط إلغاء في كل رسالة.</div></li>
+      <li><span class="chip done">أُصلح</span><div><b>المشتري عالق عند الاستلام:</b> لم يكن يستطيع تأكيد الاستلام إن لم يضغط المورد «تأكيد التسليم». الآن يؤكد مباشرة.</div></li>
+      <li><span class="chip done">أُصلح</span><div><b>طلب ملغى ينتج صفقة:</b> كان ممكناً إلغاء طلب فيه اختيار ثم تأكيده من صفحة قديمة. الآن يُمنع الإلغاء مع وجود اختيار، ويُرفض التأكيد على طلب غير مفتوح، وعند الإلغاء تُغلق العروض ويُبلَّغ الموردون.</div></li>
+      <li><span class="chip done">أُصلح</span><div><b>مورد مرفوض يرى موقع التسليم:</b> رفض عرض كان يُبقي اختيار مادته فيرى موقع المشتري. الآن يُلغى الاختيار تلقائياً عند الرفض.</div></li>
+      <li><span class="chip done">أُصلح</span><div><b>«موثّقون فقط» و«نوع المورد» لم يُطبّقا على الخادم:</b> محل غير موثّق كان يستطيع تسعير طلب موجّه للشركات الموثّقة. الآن يرفضه الخادم.</div></li>
+      <li><span class="chip done">أُصلح</span><div><b>تغيير السعر بعد الإرسال:</b> كان المورد يستطيع رفع سعره بصمت قبل انتهاء المهلة. الآن يثبت السعر بعد 15 دقيقة، ولا يتغير إلا عبر «طلب تخفيض». ولا يستطيع المشتري تغيير المنطقة أو شروط التوصيل والضريبة بعد وصول العروض.</div></li>
+      <li><span class="chip done">أُصلح</span><div><b>تعليمات ضريبة متناقضة للبائع غير المسجّل:</b> كان يُطلب منه إدخال السعر «شاملاً 15%» فيخسر في السعر. الآن تظهر له رسالة واضحة أن سعره نهائي بلا ضريبة.</div></li>
+      <li><span class="chip done">أُصلح</span><div><b>هوية المشتري مكشوفة لأي حساب:</b> كان أي مستخدم مسجّل يستطيع قراءة رقم المشتري لكل طلب في منطقته وتجميع مشترياته رغم «إخفاء الهوية». الآن يأتي موجز المورد من دالة خادم لا تُرجع رقم المشتري (في الموقع والتطبيق معاً)، وجدول الطلبات لا يقرؤه إلا صاحبه والأدمن والمورد الذي سعّره أو راسله.</div></li>
+      <li><span class="chip done">أُصلح</span><div><b>لوحة الإدارة:</b> التوثيق صار عبر الدالة المراجَعة (تُبلغ الشخص وتسجّل في السجل)، وإيقاف الحساب صار يمنع الدخول فعلاً، وتغيير كلمة المرور لا يمسّ حسابات الأدمن ويُسجَّل، ونافذة الأدمن مقصورة على الموقع.</div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>منطق الصفقة وقاعدة البيانات</h2>
+    <ul class="rows">
+      <li><span class="chip done">أُصلح</span><div>أعضاء فريق الشركة صاروا يستطيعون الإلغاء خلال 15 دقيقة، والرد على طلب المعلومات، وفتح بلاغ، وتقييم المشتري باسم الشركة.</div></li>
+      <li><span class="chip done">أُصلح</span><div>تقييم المورد للمشتري بعد تأكيد الاستلام فقط، مثل تقييم المشتري للمورد.</div></li>
+      <li><span class="chip done">أُصلح</span><div>الطلبات المفتوحة المنتهية تُغلق تلقائياً يومياً: بعد 3 أيام إن لم يصلها عرض، وبعد 30 يوماً إن وصلتها عروض دون اختيار. <span class="note">(الـ25 طلباً الحالية كلها منتهية المهلة)</span></div></li>
+      <li><span class="chip done">أُصلح</span><div>تذكيرات الصفقة صارت في النهار السعودي فقط (8 صباحاً – 9 مساءً) بدل منتصف الليل.</div></li>
+      <li><span class="chip done">أُصلح</span><div>فهارس ناقصة أُضيفت (التخصصات، البحث، المطالبات، التصويت، التذكيرات).</div></li>
+      <li><span class="chip done">أُصلح</span><div>المواد التي يعتمدها الأدمن من «طلب إضافة مادة» لم تكن تظهر للناس؛ الآن تُضاف للكتالوج والبحث دون نشر، ونافذة الاعتماد تختار التخصص الصحيح لا المجموعة.</div></li>
+      <li><span class="chip done">أُصلح</span><div>اختبار الصفقة الكامل زاد 8 فحوص جديدة لهذه الحالات: <span class="num">E2E: 52 passed, 0 failed</span>.</div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>رحلة المورد (سيناريوهات: محل، وسيط، موظف شركة، عرض 40 مادة)</h2>
+    <ul class="rows">
+      <li><span class="chip done">أُصلح</span><div>مسودة العرض تُحفظ تلقائياً على الجهاز وتُستعاد بعد مكالمة أو إعادة تحميل.</div></li>
+      <li><span class="chip done">أُصلح</span><div>السعر السابق صار اقتراحاً بزر «استخدم سعرك السابق» بدل أن يُعبَّأ ويُرسل دون مراجعة.</div></li>
+      <li><span class="chip done">أُصلح</span><div>أخطاء الإرسال تظهر في الشريط السفلي على الجوال.</div></li>
+      <li><span class="chip done">أُصلح</span><div>إيرادات لوحة المورد صارت من المواد التي فاز بها فعلاً (لا من إجمالي العرض)، وبطاقات الطلبات متعددة المواد تعرض «N مواد ضمن تخصصك».</div></li>
+      <li><span class="chip done">أُصلح</span><div>أزرار الصفقة صارت «تأكيد التسليم / تأكيد الدفع / تأكيد استلام الدفعة» مع سؤال تأكيد، وزر الحفظ في التخصصات والموقع لم يعد مختبئاً خلف القائمة السفلية.</div></li>
+      <li><span class="chip done">أُصلح</span><div>رقم الضريبة يُتحقق منه (15 رقماً يبدأ وينتهي بـ 3)، وأخطاء الفروع لا تُتجاهل.</div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>رحلة المشتري</h2>
+    <ul class="rows">
+      <li><span class="chip done">أُصلح</span><div>صورة فشل التعرف عليها لم تعد توقف الطلب كله؛ يظهر «أعد المحاولة» أو «احذف السطر» ويُرسل الباقي.</div></li>
+      <li><span class="chip done">أُصلح</span><div>خيار «متى تحتاج التسليم؟» (خلال يوم / 3 أيام / أسبوع / غير مستعجل) يصل للموردين.</div></li>
+      <li><span class="chip done">أُصلح</span><div>منع تكرار الطلب عند ضعف الشبكة، وسبب واضح تحت زر الإرسال المعطّل.</div></li>
+      <li><span class="chip done">أُصلح</span><div>تعديل ملاحظات طلب متعدد المواد لم يعد يحذف كل العروض.</div></li>
+      <li><span class="chip done">أُصلح</span><div>صفحة أمر الشراء صارت تُحمَّل في جولة واحدة بدل 6، وفيها رابط «متابعة الصفقة: أكّد الاستلام أو أبلغ عن مشكلة».</div></li>
+      <li><span class="chip done">أُصلح</span><div>الكميات تقبل الأرقام العربية والفاصلة «٫».</div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>الأمان والتكلفة والأداء</h2>
+    <ul class="rows">
+      <li><span class="chip done">أُصلح</span><div>سقف يومي عام لكل خدمات الذكاء الاصطناعي، حتى لا تُستنزف التكلفة بحسابات وهمية.</div></li>
+      <li><span class="chip done">أُصلح</span><div>ذاكرة الترجمة المشتركة ترفض أي ترجمة تضيف رقماً أو رابطاً أو بريداً غير موجود في الأصل.</div></li>
+      <li><span class="chip done">أُصلح</span><div>إرسال رموز واتساب: أرقام سعودية فقط، ويتوقف عند أي خلل، وسقف يومي.</div></li>
+      <li><span class="chip done">أُصلح</span><div>مهلة 12 ثانية لكل مزوّد ذكاء اصطناعي، فينتقل للبديل بدل أن تنتهي الصفحة بخطأ.</div></li>
+      <li><span class="chip done">أُصلح</span><div>عدّاد الرسائل كان يستمع لكل رسائل المنصة؛ الآن لمحادثات المستخدم فقط. وصفحة الرسائل تُحمَّل بالتوازي.</div></li>
+      <li><span class="chip done">أُصلح</span><div>تصدير Excel في أداة الموردين محمي من الصيغ الضارة.</div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>اللغة والوضوح وسهولة الاستخدام</h2>
+    <ul class="rows">
+      <li><span class="chip done">أُصلح</span><div>الأوردية والإنجليزية في الصفحة الرئيسية للمشتري، والمشاريع، والسوق، وأدائي، وأسعاري، والدعم، والتسجيل والدخول.</div></li>
+      <li><span class="chip done">أُصلح</span><div>تباين الألوان: الذهبي الداكن صار أوضح (<span class="num">#8F6820</span>)، والنص على الذهبي كحلي بدل الأبيض، والرمادي الباهت صار مقروءاً.</div></li>
+      <li><span class="chip done">أُصلح</span><div>اتجاه الصفحة في الإنجليزية (القوائم المنسدلة، الجداول، المحادثة)، وأسماء للأزرار والحقول لقارئ الشاشة، وأزرار لا تقل عن 40 بكسل.</div></li>
+      <li><span class="chip done">أُصلح</span><div>العامية في أداة اكتشاف الموردين صارت فصحى، وكذلك تحية المساعد، والأعداد العربية صارت صحيحة («موردَين»، «11 عرضاً»).</div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>مؤجَّل عمداً (لا يؤثر على الإطلاق)</h2>
+    <ul class="rows">
+      <li><span class="chip wait">لاحقاً</span><div>نقل الهيكل الجانبي إلى تخطيط موحّد (يقلل إعادة التحميل بين الصفحات): إعادة هيكلة كبيرة، والبيانات صغيرة حالياً.</div></li>
+      
+      <li><span class="chip wait">لاحقاً</span><div>لوحة الإدارة تقرأ آخر 2000 سجل لكل قائمة: كافٍ حتى نحو 2000 مستخدم.</div></li>
+      <li><span class="chip wait">لاحقاً</span><div>صفحات الإدارة والصفحات العامة (دليل الموردين، الأسعار) بالعربية فقط.</div></li>
+    </ul>
+  </section>
+
+  <section class="callout">
+    <h2>يحتاج قرارك أو يدك</h2>
+    <ol class="decide">
+      <li><b>حذف بيانات قديمة (لم أحذف شيئاً):</b> 200 تذكير مكرر قديم من أكتوبر (قبل إصلاح التكرار)، وسجلات حدود الطلبات التي تحفظ عناوين IP، وسجل المهام المجدولة (436 سطراً). أقترح حذفاً دورياً: حدود الطلبات بعد يومين، والسجل بعد 14 يوماً، والإشعارات المقروءة بعد 180 يوماً. هل أفعّله؟</li>
+      <li><b>رسوم التوصيل عند الاختيار الجزئي:</b> إذا فاز مورد بمادة واحدة من ثلاث، أمر الشراء يحمّل رسوم التوصيل كاملة. أقترح: تُحسب بنسبة المواد المختارة، أو يؤكد المورد الرسوم الجديدة. أيهما تفضّل؟</li>
+      <li><b>من لوحة Vercel:</b> أضف متغيراً باسم <code>ROLE_COOKIE_SECRET</code> بقيمة عشوائية طويلة، حتى لا يُستخدم مفتاح الخدمة لغرضين.</li>
+      <li><b>ملف <code>.env.local</code> على جهازك</b> ما زال يشير لمشروع سيدني القديم، فالتشغيل المحلي لا يعمل. حدّثه من نسختك الاحتياطية (مفاتيح فرانكفورت).</li>
+      <li><b>من لوحة Supabase (قبل الإطلاق):</b> تفعيل CAPTCHA بعد تحديث تطبيق الجوال، والتحقق بخطوتين للأدمن، وحماية كلمات المرور المسرّبة.</li>
+    </ol>
+  </section>
+
+  <p class="note">التفاصيل التقنية الكاملة في سجل التعديلات (<code>60d79d2</code> و<code>a7bb03f</code>، منشوران على الموقع) وفي ملفات قاعدة البيانات 182–186. وأُرسلت لجلسة تطبيق الجوال قائمة بكل ما يلزمه ليطابق الموقع.</p>
+</div>

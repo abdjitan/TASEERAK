@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { noEmoji, timeAgo as timeAgoText, arCount, arMaterials } from '@/lib/text'
+import { noEmoji, timeAgo as timeAgoText, arCount, arMaterials, dateLocale } from '@/lib/text'
 import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
@@ -484,7 +484,7 @@ export default function ContractorDashboard() {
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /></div>
                     <div>
                       <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{p.title}</div>
-                      <div className="text-xs text-gray-400"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</div>
+                      <div className="text-xs text-gray-400"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString(dateLocale(locale))}</div>
                     </div>
                   </div>
                   <div className="text-xs font-semibold" style={{ color: '#8F6820' }}>
@@ -505,11 +505,17 @@ export default function ContractorDashboard() {
                 <div key={d.id} className="flex items-center justify-between gap-2 border border-gray-100 rounded-xl px-3 py-2.5 hover:border-[#D4A543]/40 transition-colors">
                   <div className="min-w-0">
                     <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{d.title || L('Untitled draft', 'بے نام مسودہ', 'مسودة بلا اسم')}</div>
-                    <div className="text-[11px] text-gray-400">{L(`${d.data?.items?.length || 0} items`, `${d.data?.items?.length || 0} اشیاء`, arMaterials(d.data?.items?.length || 0))} · {new Date(d.updated_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</div>
+                    <div className="text-[11px] text-gray-400">{L(`${d.data?.items?.length || 0} items`, `${d.data?.items?.length || 0} اشیاء`, arMaterials(d.data?.items?.length || 0))} · {new Date(d.updated_at).toLocaleDateString(dateLocale(locale))}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-[#071827]" style={{ background: '#D4A543' }}>{L('Continue', 'جاری رکھیں', 'إكمال')} ←</Link>
-                    <button onClick={async () => { if (!confirm(L('Delete this draft?', 'یہ مسودہ حذف کریں؟', 'حذف المسودة؟'))) return; await createClient().from('rfq_drafts').delete().eq('id', d.id); setDrafts(drafts.filter((x: any) => x.id !== d.id)) }} aria-label={L('Delete draft', 'مسودہ حذف کریں', 'حذف المسودة')} className="text-sm text-red-400 hover:text-red-600 w-10 h-10 grid place-items-center rounded-lg"><Glyph e="🗑" /></button>
+                    <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-[#071827]" style={{ background: '#D4A543' }}>{L('Continue', 'جاری رکھیں', 'إكمال')} <span aria-hidden="true" className="inline-block ltr:rotate-180">←</span></Link>
+                    <button onClick={async () => {
+                      if (!confirm(L('Delete this draft?', 'یہ مسودہ حذف کریں؟', 'حذف المسودة؟'))) return
+                      let failed = false
+                      try { const { error } = await createClient().from('rfq_drafts').delete().eq('id', d.id); failed = !!error } catch { failed = true }
+                      if (failed) { alert(L('Could not delete the draft — please try again.', 'مسودہ حذف نہیں ہو سکا — دوبارہ کوشش کریں۔', 'تعذّر حذف المسودة — حاول مرة أخرى.')); return }
+                      setDrafts((prev: any[]) => prev.filter((x: any) => x.id !== d.id))
+                    }} aria-label={L('Delete draft', 'مسودہ حذف کریں', 'حذف المسودة')} className="text-sm text-red-400 hover:text-red-600 w-10 h-10 grid place-items-center rounded-lg"><Glyph e="🗑" /></button>
                   </div>
                 </div>
               ))}

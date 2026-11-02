@@ -35,3 +35,8 @@ export function arCount(n: number, one: string, two: string, few: string, many: 
 }
 export const arItems = (n: number) => arCount(n, 'بند واحد', 'بندان', 'بنود', 'بنداً')
 export const arMaterials = (n: number) => arCount(n, 'مادة واحدة', 'مادتان', 'مواد', 'مادة')
+
+// Intl locale for dates: Gregorian calendar and Latin digits in every language (like the rest of the site)
+export function dateLocale(locale: string): string {
+  return locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
+}

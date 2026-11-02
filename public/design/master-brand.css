@@ -299,3 +299,6 @@ html[dir="ltr"] #taseerak-landing .hero::after {
   background: radial-gradient(ellipse at 28% 58%, rgba(255,196,92,.18), transparent 55%);
   mix-blend-mode: screen;
 }
+
+/* CTA arrow points the reading direction: ← in RTL, → in LTR */
+html[dir="rtl"] #taseerak-landing .dir-arrow { transform: scaleX(-1); }

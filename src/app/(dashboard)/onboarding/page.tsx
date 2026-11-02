@@ -14,6 +14,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGION } from '@/types'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
 import Glyph from '@/components/shared/Glyph'
+import { takePostSignupNext } from '@/lib/postSignupNext'
 
 // ── إعداد ملفك التجاري (Progressive profiling) ────────────────────────────
 // تُعبّأ هنا البيانات المنقولة خارج التسجيل: الموقع + القطاعات + (للمقاول: الدرجة)
@@ -222,7 +223,8 @@ export default function OnboardingPage() {
         try { await fetch('/api/classify-supplier', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) }) } catch {}
         if (failed.length) { showErr(t.matFailed); setSaving(false); return }
       }
-      window.location.href = typeof dest === 'string' ? dest : (role === 'supplier' ? '/supplier/dashboard' : '/contractor')
+      const after = takePostSignupNext() // e.g. /contractor/rfq/quick?section=… from a landing card
+      window.location.href = typeof dest === 'string' ? dest : (role === 'supplier' ? '/supplier/dashboard' : (after && after.startsWith('/contractor') ? after : '/contractor'))
     } catch {
       // خطأ شبكة غير متوقّع: تبقى اختيارات المستخدم كما هي على الشاشة.
       showErr(t.saveFailed); setSaving(false)

@@ -8,6 +8,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { createClient } from '@/lib/supabase/client'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
+import { OPERATOR } from '@/lib/legal'
 
 // Public page required by Google Play / the App Store: how to delete a Taseerak account, what is
 // deleted and what is kept. A signed-in visitor can delete the account here (POST /api/account/delete).
@@ -17,7 +18,8 @@ const C: Record<string, any> = {
     title: 'حذف الحساب', home: 'الرئيسية',
     intro: 'يمكنك حذف حسابك في «تسعيرك» في أي وقت، من الموقع أو من تطبيق الجوال. يتم الحذف فوراً ولا يمكن التراجع عنه.',
     howTitle: 'طريقة الحذف',
-    how: ['من التطبيق: الإعدادات ← حذف حسابي.', 'من الموقع: سجّل الدخول ثم افتح هذه الصفحة واضغط «احذف حسابي نهائياً».', 'إن تعذّر عليك ذلك، راسلنا عبر الدعم في المنصة من البريد المسجّل، وننفّذ الطلب خلال 30 يوماً.'],
+    how: ['من التطبيق: الإعدادات ← حذف حسابي.', 'من الموقع: سجّل الدخول ثم افتح هذه الصفحة واضغط «احذف حسابي نهائياً».', 'إن تعذّر عليك ذلك، أو لم يكن لديك التطبيق، راسلنا من بريدك المسجّل على العنوان أدناه، وننفّذ الطلب خلال 30 يوماً.'],
+    mailTitle: 'البريد الإلكتروني للدعم', mailHint: 'أرسل طلب الحذف من البريد المسجّل في حسابك.',
     delTitle: 'ما الذي يُحذف',
     del: ['اسمك واسم منشأتك ورقم جوالك وعنوانك وموقعك.', 'مستندات التوثيق التي رفعتها (الرخصة والسجل التجاري).', 'المسودات والإشعارات وتخصصاتك وفروعك وأسعارك المنشورة.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول (البريد وكلمة المرور)، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى طلباتك المفتوحة وعروضك التي لم يُبتّ فيها.'],
     keepTitle: 'ما الذي يُحتفظ به ولماذا',
@@ -32,7 +34,8 @@ const C: Record<string, any> = {
     title: 'Delete your account', home: 'Home',
     intro: 'You can delete your Taseerak account at any time, on the website or in the mobile app. Deletion is immediate and cannot be undone.',
     howTitle: 'How to delete',
-    how: ['In the app: Settings → Delete my account.', 'On the website: sign in, open this page and press "Delete my account permanently".', 'If you cannot, message us through in-platform support from your registered email and we will complete it within 30 days.'],
+    how: ['In the app: Settings → Delete my account.', 'On the website: sign in, open this page and press "Delete my account permanently".', 'If you cannot, or you do not have the app, email us from your registered address at the address below and we will complete it within 30 days.'],
+    mailTitle: 'Support email', mailHint: 'Send the deletion request from the email registered on your account.',
     delTitle: 'What is deleted',
     del: ['Your name, business name, phone number, address and location.', 'The verification documents you uploaded (licence and commercial registration).', 'Drafts, notifications, specialties, branches and published prices.', 'Your devices’ notification tokens and your sign-in (email and password), so the account can no longer be used.', 'Your open requests and undecided offers are cancelled.'],
     keepTitle: 'What is kept, and why',
@@ -47,7 +50,8 @@ const C: Record<string, any> = {
     title: 'اکاؤنٹ حذف کریں', home: 'مرکزی صفحہ',
     intro: 'آپ کسی بھی وقت ویب سائٹ یا موبائل ایپ سے اپنا تسعیرک اکاؤنٹ حذف کر سکتے ہیں۔ حذف فوری ہوتا ہے اور واپس نہیں ہو سکتا۔',
     howTitle: 'حذف کرنے کا طریقہ',
-    how: ['ایپ میں: ترتیبات ← میرا اکاؤنٹ حذف کریں۔', 'ویب سائٹ پر: لاگ اِن کریں، یہ صفحہ کھولیں اور «میرا اکاؤنٹ مستقل حذف کریں» دبائیں۔', 'اگر ممکن نہ ہو تو اپنی رجسٹرڈ ای میل سے پلیٹ فارم سپورٹ کو پیغام بھیجیں، ہم 30 دن کے اندر حذف کر دیں گے۔'],
+    how: ['ایپ میں: ترتیبات ← میرا اکاؤنٹ حذف کریں۔', 'ویب سائٹ پر: لاگ اِن کریں، یہ صفحہ کھولیں اور «میرا اکاؤنٹ مستقل حذف کریں» دبائیں۔', 'اگر ممکن نہ ہو یا آپ کے پاس ایپ نہیں ہے تو اپنی رجسٹرڈ ای میل سے نیچے دیے گئے پتے پر لکھیں، ہم 30 دن کے اندر حذف کر دیں گے۔'],
+    mailTitle: 'سپورٹ ای میل', mailHint: 'حذف کی درخواست اپنے اکاؤنٹ میں رجسٹرڈ ای میل سے بھیجیں۔',
     delTitle: 'کیا حذف ہوتا ہے',
     del: ['آپ کا نام، ادارے کا نام، فون نمبر، پتہ اور مقام۔', 'آپ کی اپ لوڈ کردہ تصدیقی دستاویزات (لائسنس اور تجارتی رجسٹریشن)۔', 'ڈرافٹ، اطلاعات، مہارتیں، شاخیں اور شائع شدہ قیمتیں۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن (ای میل اور پاس ورڈ)، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی کھلی درخواستیں اور زیرِ غور پیشکشیں منسوخ ہو جاتی ہیں۔'],
     keepTitle: 'کیا محفوظ رہتا ہے اور کیوں',
@@ -107,6 +111,11 @@ export default function DeleteAccountPage() {
           <p className="text-sm text-gray-700 leading-relaxed">{t.intro}</p>
         </div>
         <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.howTitle}</h2><List items={t.how} /></section>
+        <section className="bg-white rounded-2xl border border-gray-100 p-4">
+          <h2 className="text-sm font-bold mb-1" style={{ color: '#0B2438' }}>{t.mailTitle}</h2>
+          <a href={`mailto:${OPERATOR.email}`} dir="ltr" className="inline-block font-mono text-base font-bold text-[#8F6820] hover:underline select-all break-all">{OPERATOR.email}</a>
+          <p className="text-xs text-gray-500 mt-1">{t.mailHint}</p>
+        </section>
         <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={t.del} /></section>
         <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.keepTitle}</h2><List items={t.keep} /></section>
 

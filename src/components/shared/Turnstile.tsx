@@ -62,6 +62,8 @@ const Turnstile = forwardRef(function Turnstile(
         widgetIdRef.current = ts.render(containerRef.current, {
           sitekey: siteKey,
           theme,
+          // 'flexible' fills the container width (min 300px) instead of a fixed 300px box that overflowed small phones
+          size: 'flexible',
           callback: (token: string) => { gotToken.current = true; setStuck(false); setErrCode(''); onToken && onToken(token) },
           'expired-callback': () => onToken && onToken(''),
           'timeout-callback': () => onToken && onToken(''),
@@ -87,8 +89,8 @@ const Turnstile = forwardRef(function Turnstile(
   }, [siteKey])
 
   return (
-    <div>
-      <div ref={containerRef} dir={dir} style={{ minHeight: 65 }} />
+    <div style={{ width: '100%', maxWidth: '100%' }}>
+      <div ref={containerRef} dir={dir} style={{ minHeight: 65, width: '100%' }} />
       {/* the error code is logged, not shown: Turnstile retries itself and usually succeeds right after */}
       {stuck && (
         <p dir={dir} style={{ fontSize: 12, textAlign: 'center', marginTop: 6, color: '#8F6820', fontWeight: 600 }}>

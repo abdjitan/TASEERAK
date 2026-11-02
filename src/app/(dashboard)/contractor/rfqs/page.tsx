@@ -1,12 +1,13 @@
 'use client'
 
 import RequestsTabs from '@/components/buyer/RequestsTabs'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
+import LoadError from '@/components/shared/LoadError'
 import { getNav } from '@/lib/nav'
 import { getProductLabel, getUnitLabel } from '@/types'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
@@ -27,6 +28,7 @@ export default function MyRequestsPage() {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [loading, setLoading] = useState(true)
   const [rfqs, setRfqs] = useState<any[]>([])
+  const [loadFailed, setLoadFailed] = useState(false)
   // a request with a selected material is never deleted (192), so it gets no deletion date
   const purgeOf = (r: any) => (Number(r?.rfq_item_awards?.[0]?.count) > 0 ? null : rfqPurgeInfo(r, locale))
   const [filter, setFilter] = useState<Filter>('all')
@@ -37,16 +39,23 @@ export default function MyRequestsPage() {
   const [sel, setSel] = useState<Set<string>>(new Set())
   const [cancelling, setCancelling] = useState(false)
 
-  useEffect(() => {
-    (async () => {
+  const load = useCallback(async () => {
+    setLoading(true); setLoadFailed(false)
+    try {
       const sb = createClient()
       const { data: { session } } = await sb.auth.getSession()
       if (!session) { window.location.href = '/login?next=/contractor/rfqs'; return }
-      const { data } = await sb.from('rfqs').select('*, rfq_item_awards(count)').eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(300)
+      const { data, error } = await sb.from('rfqs').select('*, rfq_item_awards(count)').eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(300)
+      if (error) throw error
       setRfqs(data || [])
+    } catch (e) {
+      console.error('[contractor/rfqs] load failed:', e)
+      setLoadFailed(true)
+    } finally {
       setLoading(false)
-    })()
+    }
   }, [])
+  useEffect(() => { load() }, [load])
 
   const stateOf = (r: any): Exclude<Filter, 'all'> =>
     r.status === 'cancelled' ? 'cancelled' : r.status === 'closed' ? 'closed' : (r.status === 'open' && !isExpired(r.expires_at)) ? 'open' : 'ended'
@@ -61,11 +70,12 @@ export default function MyRequestsPage() {
 
   const shown = rfqs.filter(r => {
     if (filter === 'all' ? stateOf(r) === 'cancelled' : stateOf(r) !== filter) return false
-    const t = q.trim()
+    const t = q.trim().toLowerCase()
     if (!t) return true
     const items = Array.isArray(r.items) ? r.items : []
-    return rfqRef(r).includes(t) || String(r.title || '').includes(t) || String(r.product_name || '').includes(t)
-      || items.some((it: any) => String(it.product_name || '').includes(t))
+    const has = (v: any) => String(v || '').toLowerCase().includes(t)
+    return has(rfqRef(r)) || has(r.title) || has(r.product_name)
+      || items.some((it: any) => has(it.product_name) || has(getProductLabel(it.product_name, locale)))
   })
 
   // Delete every ended request at once. A request with an accepted offer or an awarded item is a
@@ -165,7 +175,8 @@ export default function MyRequestsPage() {
               {L('Done', 'ختم', 'تم')}
             </button>
           </>))}
-          <input value={q} onChange={e => setQ(e.target.value)} className="input-field max-w-xs ms-auto"
+          <input value={q} onChange={e => setQ(e.target.value)} className="input-field max-w-xs ms-auto" type="search"
+            aria-label={L('Search requests', 'درخواستیں تلاش کریں', 'البحث في الطلبات')}
             placeholder={L('Search by number or material…', 'نمبر یا سامان سے تلاش…', 'ابحث برقم الطلب أو المادة…')} />
           <Link href="/contractor/rfq/quick" className="btn-orange px-4 py-2.5 rounded-xl font-bold text-sm">+ {L('New request', 'نئی درخواست', 'طلب جديد')}</Link>
         </div>
@@ -173,7 +184,9 @@ export default function MyRequestsPage() {
         {(filter === 'ended' || filter === 'cancelled') && shown.some(r => purgeOf(r)) && (
           <p className="text-xs text-gray-500">{purgeOf(shown.find(r => purgeOf(r)))?.hint}</p>
         )}
-        {shown.length === 0 ? (
+        {loadFailed ? (
+          <LoadError onRetry={load} />
+        ) : shown.length === 0 ? (
           <div className="bg-white rounded-2xl p-10 text-center border border-gray-100 text-gray-400">
             <div className="text-4xl mb-2"><Glyph e="🧾" /></div>
             {rfqs.length === 0 ? L('No requests yet.', 'ابھی کوئی درخواست نہیں۔', 'لا توجد طلبات بعد.') : L('Nothing matches.', 'کچھ نہیں ملا۔', 'لا توجد طلبات مطابقة.')}

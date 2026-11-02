@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Toaster } from 'sonner'
 import { LanguageProvider } from '@/i18n'
 import PwaBoot from '@/components/shared/PwaBoot'
+import { siteUrl } from '@/lib/siteUrl'
 import '@/styles/globals.css'
 import '@/styles/master-brand.css'
 
@@ -10,10 +11,15 @@ export const metadata: Metadata = {
   description: 'منصة ذكية تربط المشترين بالموردين في جميع قطاعات البناء والإنشاء',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'تسعيرك' },
-  // أيقونة شاشة iOS الرئيسية (بلا شفافية) — src/app/icon.png يولّد favicon تلقائياً
-  icons: { apple: '/apple-touch-icon.png' },
+  // explicit icons: setting `icons` here replaces the file-based src/app/icon.png, so the favicon is
+  // listed too (public/favicon.ico is a copy of public/icons/icon-192.png, for crawlers asking /favicon.ico)
+  icons: {
+    icon: [{ url: '/icons/icon-192.png', type: 'image/png', sizes: '192x192' }],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
   // link previews (WhatsApp, X, LinkedIn): title, text and a 1200×630 picture
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'https://taseerak.vercel.app')),
+  metadataBase: new URL(siteUrl()),
   openGraph: {
     type: 'website', locale: 'ar_SA', siteName: 'تسعيرك',
     title: 'تسعيرك — اطلب سعر أي مادة بناء من عدة موردين',

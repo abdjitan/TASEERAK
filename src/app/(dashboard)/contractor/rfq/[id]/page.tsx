@@ -71,6 +71,8 @@ export default function RFQDetailPage() {
   const secLabel = (k: string) => (locale !== 'ar' && SECTOR_I18N[locale]?.[k]) || (SECTOR_LABELS as any)[k] || k
   const [rfq, setRfq] = useState<any>(null)
   const [offers, setOffers] = useState<any[]>([])
+  const [acceptingId, setAcceptingId] = useState<string | null>(null) // stops a double «قبول العرض»
+  const FWD = dir === 'rtl' ? '←' : '→', BACK = dir === 'rtl' ? '→' : '←'
   const [sortBy, setSortBy] = useState('price_asc') // price_asc | price_desc | delivery | rating
   const [aiCmp, setAiCmp] = useState<any>(null) // نتيجة تحليل العروض بالذكاء الاصطناعي
   const [cmpLoading, setCmpLoading] = useState(false)
@@ -213,6 +215,7 @@ export default function RFQDetailPage() {
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function acceptOffer(offerId: any) {
+    if (acceptingId) return
     const o = offers.find((x: any) => x.id === offerId)
     const who = o?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
     const total = o ? offerComparable(o).toLocaleString('en-US', { maximumFractionDigits: 0 }) : ''
@@ -220,10 +223,14 @@ export default function RFQDetailPage() {
       `Accept the offer from ${who} for ${total} SAR (${vatTag(o, 'en')})?\nThe other offers will be declined and a purchase order is created.`,
       `${who} کی آفر ${total} ریال (${vatTag(o, 'ur')}) میں قبول کریں؟\nباقی آفرز رد ہو جائیں گی اور پرچیز آرڈر بنے گا۔`,
       `قبول عرض ${who} بمبلغ ${total} ر.س (${vatTag(o, 'ar')})؟\nستُرفض العروض الأخرى ويُنشأ أمر شراء.`))) return
-    const supabase = createClient()
-    // Atomic: accept + reject others + close RFQ in one transaction (prevents double-accept).
-    const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
-    if (error) { alert(L('Could not accept the offer — it may already be accepted. Refresh the page and try again.', 'آفر قبول نہیں ہو سکی — شاید پہلے ہی قبول ہو چکی ہے۔ صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة وحاول مرة ثانية.')); return }
+    setAcceptingId(offerId)
+    let error: any = null
+    try {
+      const supabase = createClient()
+      // Atomic: accept + reject others + close RFQ in one transaction (prevents double-accept).
+      ;({ error } = await supabase.rpc('accept_offer', { p_offer_id: offerId }))
+    } catch (e) { error = e }
+    if (error) { setAcceptingId(null); alert(L('Could not accept the offer — it may already be accepted. Refresh the page and try again.', 'آفر قبول نہیں ہو سکی — شاید پہلے ہی قبول ہو چکی ہے۔ صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة وحاول مرة ثانية.')); return }
     router.push(`/contractor/orders/${offerId}`)
   }
 
@@ -344,7 +351,14 @@ export default function RFQDetailPage() {
   }
 
   if (loading) return <PageLoader />
-  if (!rfq) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="text-gray-500">{L('Request not found', 'درخواست نہیں ملی', 'الطلب غير موجود')}</div></div>
+  if (!rfq) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4" dir={dir}>
+      <div className="text-center">
+        <div className="text-gray-500 mb-3">{L('Request not found', 'درخواست نہیں ملی', 'الطلب غير موجود')}</div>
+        <Link href="/contractor/rfqs" className="inline-block px-5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
+      </div>
+    </div>
+  )
 
   const acceptedOffer = offers.find((o: any) => o.status === 'accepted')
   // طلب متعدّد المواد → الترسية تتم بند-بند (أفضل مورد لكل مادة)
@@ -393,7 +407,7 @@ export default function RFQDetailPage() {
           return null
         })()}
         <div className="flex items-center justify-between mb-4">
-          <Link href="/contractor/rfqs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">← {L('Back to my requests', 'میری درخواستوں پر واپس', 'العودة إلى طلباتي')}</Link>
+          <Link href="/contractor/rfqs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"><span aria-hidden="true">{BACK}</span> {L('Back to my requests', 'میری درخواستوں پر واپس', 'العودة إلى طلباتي')}</Link>
           <Link href={`/contractor/rfq/quick?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#8F6820] hover:underline"><Glyph e="🔁" /> {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>
         </div>
 
@@ -779,7 +793,7 @@ export default function RFQDetailPage() {
                         <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-white/10 gap-2">
                           <span className="flex items-center gap-2 flex-wrap">{v.name} <span className="text-blue-200 text-xs">({v.count} {L('materials', 'مال', 'مادة')})</span>
                             {finalized
-                              ? <Link href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}><Glyph e="📄" /> {L('Purchase order', 'پرچیز آرڈر', 'أمر الشراء')} ←</Link>
+                              ? <Link href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}><Glyph e="📄" /> {L('Purchase order', 'پرچیز آرڈر', 'أمر الشراء')} <span aria-hidden="true">{FWD}</span></Link>
                               : v.phone && <a href={waLink(v.phone, L('Regarding a materials award on Taseerak', 'تسعیرک پر مال کے ایوارڈ کے بارے میں', 'بخصوص اختيار عروض مواد من منصة تسعيرك')) || undefined} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}><Glyph e="💬" /> {L('Contact', 'رابطہ', 'تواصل')}</a>}
                           </span>
                           <span className="text-end">
@@ -945,7 +959,7 @@ export default function RFQDetailPage() {
                           عبر الدردشة الداخلية وطلب التخفيض داخل المنصة (منع الالتفاف). */}
                     </div>
                   </div>
-                  <div className="text-left">
+                  <div className="text-end">
                     <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{offerComparable(offer).toLocaleString('en-US', { maximumFractionDigits: 0 })}</div>
                     <div className="text-xs text-gray-400">{SAR} · {vatTag(offer, locale)}</div>
                     {!offer.vat_included && <div className="text-[11px] text-gray-400">{L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')} {Number(offer.total_price || 0).toLocaleString('en-US')}</div>}
@@ -1037,16 +1051,16 @@ export default function RFQDetailPage() {
 
                 <Link href={`/contractor/rfq/${id}/offer/${offer.id}`}
                   className="block text-center text-xs font-semibold py-2.5 rounded-lg border border-gray-200 text-gray-700 hover:border-[#0B2438] hover:text-[#0B2438] transition-all mb-2">
-                  <Glyph e="📄" /> {L('View all details', 'تمام تفصیل دیکھیں', 'عرض كل التفاصيل')} ←
+                  <Glyph e="📄" /> {L('View all details', 'تمام تفصیل دیکھیں', 'عرض كل التفاصيل')} <span aria-hidden="true">{FWD}</span>
                 </Link>
 
                 {offer.status === 'pending' && rfq.status === 'open' && (
                   <div className="flex gap-2">
-                    <button onClick={() => acceptOffer(offer.id)}
-                      className="flex-1 bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
-                      ✓ {L('Accept offer', 'آفر قبول کریں', 'قبول العرض')}
+                    <button onClick={() => acceptOffer(offer.id)} disabled={!!acceptingId} aria-busy={acceptingId === offer.id}
+                      className="flex-1 bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                      {acceptingId === offer.id ? L('Accepting…', 'قبول ہو رہی ہے…', 'جارٍ القبول…') : <>✓ {L('Accept offer', 'آفر قبول کریں', 'قبول العرض')}</>}
                     </button>
-                    <button onClick={() => rejectOffer(offer.id)}
+                    <button onClick={() => rejectOffer(offer.id)} disabled={!!acceptingId}
                       className="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors">
                       ✕ {L('Reject', 'رد کریں', 'رفض')}
                     </button>

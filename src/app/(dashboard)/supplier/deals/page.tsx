@@ -99,7 +99,7 @@ export default function SupplierDealsPage() {
                     <div className="text-xs text-gray-400 mt-0.5 truncate"><Glyph e="👤" /> {d.rfq?.contractor?.company_name_ar || '—'} · {Number(d.total_price || 0).toLocaleString('en-US')} {locale === 'en' ? 'SAR' : locale === 'ur' ? 'ریال' : 'ر.س'}</div>
                     {d.invoice_number && <div className="text-[11px] text-gray-400 font-mono mt-0.5" dir="ltr">{d.invoice_number}</div>}
                   </div>
-                  <div className="text-center rounded-xl px-3 py-2 shrink-0 w-[132px]" style={{ background: st.tone + '14', color: st.tone }}>
+                  <div className="text-center rounded-xl px-3 py-2 shrink min-w-[92px] max-w-[132px]" style={{ background: st.tone + '14', color: st.tone }}>
                     <div className="text-lg leading-none"><Glyph e={st.emoji} /></div>
                     <div className="text-[11px] font-bold leading-tight mt-0.5">{st.label}</div>
                   </div>
