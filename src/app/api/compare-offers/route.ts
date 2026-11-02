@@ -42,9 +42,12 @@ export async function POST(req: NextRequest) {
   // Supplier names are supplier-controlled text: never put them in the prompt (prompt injection,
   // OWASP LLM01). The model sees neutral labels; names are mapped back server-side below.
   const labelOf = (i: number) => 'مورد ' + String.fromCharCode(65 + (i % 26)) + (i >= 26 ? Math.floor(i / 26) : '')
+  // «مع التركيب»: tell the model which offers include installation for the lines that asked for it
+  const installAsked = Array.isArray(rfq.items) ? rfq.items.filter((it: any) => it?.with_install).length : 0
   const payload = {
     request: rfq.product_name || 'طلب تسعير',
     items_count: Array.isArray(rfq.items) ? rfq.items.length : 1,
+    ...(installAsked ? { items_asked_with_installation: installAsked } : {}),
     offers: active.map((o, i) => ({
       offer_id: o.id,
       supplier: labelOf(i),
@@ -56,6 +59,7 @@ export async function POST(req: NextRequest) {
       supplier_type: tierAr[(o.supplier as any)?.supplier_tier] || (o.supplier as any)?.supplier_tier || null,
       verified: (o.supplier as any)?.verification_status === 'verified',
       city: (o.supplier as any)?.city || null,
+      ...(installAsked ? { items_priced_with_installation: (Array.isArray(o.item_prices) ? o.item_prices : []).filter((e: any) => e?.install_offered === true).length } : {}),
     })),
   }
 
@@ -65,6 +69,7 @@ export async function POST(req: NextRequest) {
     maxTokens: 1500,
     system: `أنت مستشار مشتريات محايد في منصة سعودية لتسعير مواد البناء. قارن عروض الموردين لطلب تسعير واحد.
 وازن بين: السعر الإجمالي (ر.س)، مدة التوريد (أيام)، تقييم المورد، نوعه (مصنع/تاجر/محلي)، توثيقه، وشمول السعر للضريبة.
+إن طلب المشتري بعض المواد مع التركيب، فالعرض الذي يشمل التركيب يتضمّن سعره في الإجمالي؛ لا تقارن عرضاً بتركيب بعرض بدونه على السعر وحده.
 أعد:
 - summary: ملخّص موجز للمقارنة بالعربية.
 - best_offer_id: معرّف أفضل عرض من القائمة (الأفضل قيمةً عموماً، ليس الأرخص دائماً).

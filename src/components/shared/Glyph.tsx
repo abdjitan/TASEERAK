@@ -7,7 +7,7 @@ import {
   ShieldCheck, TrendingDown, HelpCircle, FileText, PenLine, HardHat, Truck, Home, CreditCard, Lightbulb,
   Menu, Scale, Globe, Sprout, Medal, Factory, Eye, Wallet, Ruler, Files, Mail, Mailbox, Repeat, KeyRound, Feather,
   Printer, FolderOpen, Map, Flag, Footprints, Bot, Handshake, Brain, Puzzle, BrickWall, Landmark, Tractor, Store, Plus, Pencil,
-  Timer, Info, Download, Play, Pause, Undo2, Mic,
+  Timer, Info, Download, Play, Pause, Undo2, Mic, Wrench,
 } from 'lucide-react'
 
 const MAP: Record<string, [any, string?]> = {
@@ -28,7 +28,7 @@ const MAP: Record<string, [any, string?]> = {
   '🙍': [User], '🚩': [Flag, 'text-red-500'], '🚶': [Footprints], '🤖': [Bot], '🤝': [Handshake], '🧠': [Brain], '🧩': [Puzzle],
   '🧱': [BrickWall], '🏛': [Landmark], '🚜': [Tractor], '🏪': [Store],
   '✉': [Mail], '❔': [HelpCircle], '✨': [Sparkles, 'text-[#D4A543]'], '➕': [Plus], '✏': [Pencil],
-  '⏱': [Timer], 'ℹ': [Info], '⬆': [Upload], '⬇': [Download], '▶': [Play], '⏸': [Pause], '↩': [Undo2], '⏺': [Mic], '🆕': [Sparkles],
+  '⏱': [Timer], 'ℹ': [Info], '⬆': [Upload], '⬇': [Download], '▶': [Play], '⏸': [Pause], '↩': [Undo2], '⏺': [Mic], '🆕': [Sparkles], '🔧': [Wrench],
   '🥇': [Medal, 'text-[#D4AF37]'], '🥈': [Medal, 'text-[#9CA3AF]'], '🥉': [Medal, 'text-[#CD7F32]'],
 }
 

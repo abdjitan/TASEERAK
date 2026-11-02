@@ -12,6 +12,7 @@ import { rfqRef } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { showsVatBreakdown, totalLabel } from '@/lib/vat'
+import { installTotalOf } from '@/lib/installation'
 import { daysText } from '@/lib/text'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
@@ -112,7 +113,7 @@ export default function OrderDetailPage() {
   // وإلا كل بنود العرض (طلب متعدّد المواد) — تُعرض كأسطر في أمر الشراء والفاتورة.
   const hasAwards = Array.isArray(awards) && awards.length > 0
   const ipRaw = hasAwards
-    ? awards.map((a: any) => ({ product_name: a.item_key, sector: rfq?.items?.[a.item_index]?.sector, quantity: a.quantity, unit: a.unit, unit_price: a.unit_price, total: a.total, specification: rfq?.items?.[a.item_index]?.specification, warranty: (Array.isArray(offer.item_prices) ? offer.item_prices : []).find((e: any) => e.item_index === a.item_index)?.warranty }))
+    ? awards.map((a: any) => ({ product_name: a.item_key, sector: rfq?.items?.[a.item_index]?.sector, quantity: a.quantity, unit: a.unit, unit_price: a.unit_price, total: a.total, specification: rfq?.items?.[a.item_index]?.specification, warranty: (Array.isArray(offer.item_prices) ? offer.item_prices : []).find((e: any) => e.item_index === a.item_index)?.warranty, install: installTotalOf((Array.isArray(offer.item_prices) ? offer.item_prices : []).find((e: any) => e.item_index === a.item_index)) }))
     : (Array.isArray(offer.item_prices) ? offer.item_prices : [])
   // a partial award's delivery/other charges wait for the supplier's confirmation (191): not billed yet
   const extrasPending = !!offer.extras_pending
@@ -123,8 +124,14 @@ export default function OrderDetailPage() {
   const toNet = (n: any) => (vatBreak && vatIncl ? (Number(n) || 0) / 1.15 : (Number(n) || 0))
   // ZATCA: every displayed line is ex-VAT so the amount column sums to the pre-VAT subtotal, and
   // extra charges (delivery/installation/fees) show as their own line items — not hidden in the total (B1).
+  // «مع التركيب»: a line whose price includes installation shows the material and the installation
+  // as two rows (installation = install_total; material = the line's total minus it). Sum unchanged.
   const rows: any[] = (ipRaw.length > 0
-    ? ipRaw.map((it: any) => ({ product_name: it.product_name, warranty: it.warranty || null, sector: it.sector, specification: it.specification, notes: it.notes, attachment_url: it.attachment_url, attachment_name: it.attachment_name, quantity: it.quantity, unit: it.unit, unitNet: Number(it.unit_price) > 0 ? toNet(it.unit_price) : null, net: toNet(it.total) }))
+    ? ipRaw.flatMap((it: any) => {
+        const inst = Math.min(Number(it.total) || 0, it.install != null ? Number(it.install) || 0 : installTotalOf(it))
+        const row = { product_name: it.product_name, warranty: it.warranty || null, sector: it.sector, specification: it.specification, notes: it.notes, attachment_url: it.attachment_url, attachment_name: it.attachment_name, quantity: it.quantity, unit: it.unit, unitNet: Number(it.unit_price) > 0 ? toNet(it.unit_price) : null, net: toNet((Number(it.total) || 0) - inst) }
+        return inst > 0 ? [row, { product_name: it.product_name, installOf: it.product_name, sector: it.sector, quantity: '', unit: '', unitNet: null, net: toNet(inst) }] : [row]
+      })
     : [{ product_name: rfq.product_name, sector: rfq.sector, specification: rfq.specification, quantity: rfq.quantity, unit: rfq.unit, unitNet: offer.unit_price ? toNet(offer.unit_price) : null, net: toNet(offer.total_price) }])
   for (const e of _ex) rows.push({ product_name: e.label || L('Extra charges', 'اضافی چارجز', 'رسوم إضافية'), sector: null, quantity: '', unit: '', unitNet: null, net: toNet(e.amount), isExtra: true })
   const dealNet = rows.reduce((s: number, r: any) => s + (Number(r.net) || 0), 0)
@@ -267,7 +274,7 @@ export default function OrderDetailPage() {
                   <tr key={idx} className="border-b border-gray-100">
                     <td className="py-4 text-sm text-gray-500">{idx + 1}</td>
                     <td className="py-4">
-                      <div className="font-semibold text-gray-900">{getProductLabel(it.product_name, locale)}</div>
+                      <div className="font-semibold text-gray-900">{it.installOf ? `${L('Installation', 'تنصیب', 'تركيب')}: ${getProductLabel(it.installOf, locale)}` : getProductLabel(it.product_name, locale)}</div>
                       {(it.specification || it.notes) && <div className="text-xs text-gray-400 mt-0.5">{it.specification || it.notes}</div>}
                       {it.attachment_url && (
                         <a href={fileHref(it.attachment_url)} target="_blank" rel="noopener noreferrer" className="text-xs text-[#8F6820] hover:underline print:hidden"><Glyph e="📎" /> {it.attachment_name || L('Specs file', 'اسپیسیفکیشن فائل', 'ملف المواصفات')}</a>
@@ -382,7 +389,7 @@ export default function OrderDetailPage() {
               <tbody>
                 {rows.map((it: any, idx: any) => (
                   <tr key={idx} className="border-b border-gray-50">
-                    <td className="py-2 font-semibold text-gray-900">{getProductLabel(it.product_name, locale)}{it.warranty ? <span className="block text-[11px] font-normal text-gray-500"><Glyph e="🛡" /> {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</span> : null}</td>
+                    <td className="py-2 font-semibold text-gray-900">{it.installOf ? `${L('Installation', 'تنصیب', 'تركيب')}: ${getProductLabel(it.installOf, locale)}` : getProductLabel(it.product_name, locale)}{it.warranty ? <span className="block text-[11px] font-normal text-gray-500"><Glyph e="🛡" /> {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</span> : null}</td>
                     <td className="py-2 text-gray-600">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
                     <td className="py-2 text-gray-600">{Number(it.unitNet) > 0 ? Number(it.unitNet).toLocaleString('en-US', { maximumFractionDigits: 2 }) : '—'}</td>
                     <td className="py-2 font-bold text-gray-900">{Number(it.net).toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</td>

@@ -11,6 +11,7 @@ import { SECTOR_LABELS, UNIT_OPTIONS, getProductLabel, getUnitLabel } from '@/ty
 import { useTranslation } from '@/i18n'
 import { waLink } from '@/lib/wa'
 import { offerComparable, lineComparable, vatTag, showsVatBreakdown } from '@/lib/vat'
+import { installTotalOf } from '@/lib/installation'
 import { fileHref } from '@/lib/fileHref'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -262,6 +263,12 @@ export default function RFQDetailPage() {
       return entry ? { offer: o, entry } : null
     }).filter(Boolean) as any[]
     bids.sort((a: any, b: any) => lineComparable(a.entry.total, a.offer) - lineComparable(b.entry.total, b.offer))
+    // «مع التركيب»: a line that asked for installation takes the cheapest bid that includes it;
+    // only when no bid includes it does it fall back to the cheapest without (fellBack)
+    if (it?.with_install && bids.length) {
+      const withInst = bids.find((b: any) => b.entry.install_offered === true)
+      return withInst ? { ...withInst, fellBack: false } : { ...bids[0], fellBack: true }
+    }
     return bids[0] || null
   }
   const [pickingAll, setPickingAll] = useState(false)
@@ -277,6 +284,13 @@ export default function RFQDetailPage() {
     setPickingAll(false)
     await reloadAwards()
     if (failed) alert(L('Some items could not be selected — refresh and try again.', 'کچھ اشیاء منتخب نہ ہو سکیں — ریفریش کریں۔', 'تعذّر اختيار بعض المواد — حدّث الصفحة وحاول مجدداً.'))
+    // lines that asked for installation but got no bid with it: say so, the buyer may arrange it
+    const noInst = picks.filter((p: any, k: number) => p.best.fellBack && !results[k]?.error)
+      .map((p: any) => getProductLabel(rfq?.items?.[p.idx]?.product_name || '', locale))
+    if (noInst.length) alert(L(
+      `No supplier included installation for: ${noInst.join(', ')}. The cheapest offer without installation was selected for these.`,
+      `ان اشیاء کے لیے کسی سپلائر نے تنصیب شامل نہیں کی: ${noInst.join('، ')}۔ ان کے لیے تنصیب کے بغیر سب سے سستی آفر منتخب کی گئی۔`,
+      `لم يشمل أي مورد التركيب في: ${noInst.join('، ')}. اختير لها أرخص عرض بدون تركيب.`))
   }
   async function unawardItem(itemIndex: any) {
     setAwarding(`${itemIndex}:x`)
@@ -666,9 +680,21 @@ export default function RFQDetailPage() {
                         <div className="min-w-0">
                           <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{getProductLabel(it.product_name, locale)}</span>
                           <span className="text-xs text-gray-400"> · {Number(it.quantity).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</span>
+                          {it.with_install && <span className="text-xs font-bold text-[#0F6E56]"> · <Glyph e="🔧" /> {L('with installation', 'تنصیب سمیت', 'مع التركيب')}</span>}
                         </div>
                         {award ? <span className="badge badge-green text-[10px] whitespace-nowrap">✓ {L('Selected', 'منتخب', 'تم الاختيار')}</span> : <span className="text-[11px] text-gray-400 whitespace-nowrap">{bids.length} {L('offers', 'آفرز', 'عرض')}</span>}
                       </div>
+                      {it.with_install && bids.length > 0 && (() => {
+                        const n = bids.filter((b: any) => b.entry.install_offered === true).length
+                        if (n === bids.length) return null
+                        return (
+                          <div className="px-4 py-1.5 text-[11px] font-semibold text-amber-800 bg-amber-50 border-b border-amber-100">
+                            <Glyph e="🔧" /> {n === 0
+                              ? L('You asked for installation; no offer on this item includes it.', 'آپ نے تنصیب مانگی تھی؛ اس آئٹم کی کسی آفر میں تنصیب شامل نہیں۔', 'طلبت التركيب، ولا يشمله أي عرض على هذه المادة.')
+                              : L('Some offers include installation and some do not — compare like with like.', 'کچھ آفرز میں تنصیب شامل ہے اور کچھ میں نہیں — یکساں آفرز کا موازنہ کریں۔', 'بعض العروض تشمل التركيب وبعضها لا يشمله — قارن بين العروض المتماثلة.')}
+                          </div>
+                        )
+                      })()}
                       {bids.length === 0 ? (
                         <div className="px-4 py-3 text-xs text-gray-400">{L('No supplier has priced this material yet', 'ابھی کسی سپلائر نے اس مال کی قیمت نہیں دی', 'لا يوجد مورد سعّر هذه المادة بعد')}</div>
                       ) : (
@@ -687,6 +713,9 @@ export default function RFQDetailPage() {
                                   {/* the card keeps the essentials; a sourced price is never shown as direct, so a non-direct
                                       source stays visible, the rest (tier, availability, score, approvals) is under «التفاصيل» */}
                                   <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                                    {it.with_install && (b.entry.install_offered === true
+                                      ? <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-[#0F6E56]/10 text-[#0F6E56]"><Glyph e="🔧" /> {L('Includes installation', 'تنصیب شامل', 'يشمل التركيب')}{installTotalOf(b.entry) > 0 ? ` (${lineComparable(installTotalOf(b.entry), b.offer).toLocaleString('en-US', { maximumFractionDigits: 0 })} ${SAR})` : ` (${L('in the price', 'قیمت میں', 'ضمن السعر')})`}</span>
+                                      : <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{L('Without installation', 'تنصیب کے بغیر', 'بدون تركيب')}</span>)}
                                     {b.offer.supplier && b.offer.supplier.verification_status !== 'verified' && b.offer.supplier.cr_verification_source !== 'wathq' && (
                                       <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{L('Not verified yet', 'ابھی تصدیق نہیں ہوئی', 'غير موثّق بعد')}</span>
                                     )}
@@ -992,6 +1021,8 @@ export default function RFQDetailPage() {
                         <span className="text-gray-700 truncate">
                           {it.attachment_url && <span title={L('Has a catalog', 'کیٹلاگ موجود ہے', 'يوجد كتالوج')}><Glyph e="📎" /> </span>}
                           {getProductLabel(it.product_name, locale)} <span className="text-gray-400">({Number(it.unit_price) > 0 ? `${Number(it.unit_price).toLocaleString('en-US')} × ` : ''}{(Number(it.quantity) || 0).toLocaleString('en-US')} {getUnitLabel(it.unit, locale)})</span>
+                          {it.install_offered === true && <span className="text-[#0F6E56] font-semibold"> · {L('incl. installation', 'تنصیب سمیت', 'يشمل التركيب')}{installTotalOf(it) > 0 ? ` ${installTotalOf(it).toLocaleString('en-US')}` : ''}</span>}
+                          {it.install_offered === false && <span className="text-gray-400"> · {L('without installation', 'تنصیب کے بغیر', 'بدون تركيب')}</span>}
                         </span>
                         <span className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
                       </div>

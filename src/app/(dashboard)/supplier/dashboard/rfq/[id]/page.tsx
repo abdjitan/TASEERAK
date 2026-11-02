@@ -21,6 +21,7 @@ import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf, WARRANTY_OPTIONS } from '@/lib/sellers'
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
+import { installTotalOf } from '@/lib/installation'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import PartialExtrasConfirm from '@/components/shared/PartialExtrasConfirm'
@@ -288,8 +289,26 @@ export default function SupplierRFQPage() {
   const rfqIsMulti = Array.isArray(rfq?.items) && rfq.items.length > 0
   const isMultiItem = rfqIsMulti
   // الإجمالي = مجموع سعر كل مادة (line_total) — المورد حر يدخله مباشرة أو يحسبه من سعر الوحدة
+  // «مع التركيب»: the installation amount of a priced line the buyer asked to be installed
+  // (0 when «لا أقدّم التركيب» or not entered). Same VAT basis as the material price.
+  function installPart(f: any, it: any): number {
+    if (!it?.with_install || f?.no_install || !(parseFloat(f?.line_total) > 0)) return 0
+    return Math.max(0, parseFloat(f?.install_total) || 0)
+  }
+  // a priced line that asked for installation needs an answer: an amount (0 = included) or «لا أقدّم التركيب»
+  function installAnswered(f: any, it: any): boolean {
+    if (!it?.with_install || !(parseFloat(f?.line_total) > 0) || f?.no_install) return true
+    return String(f?.install_total ?? '').trim() !== '' && parseFloat(f.install_total) >= 0
+  }
+  function setItemInstall(i: any, patch: any) {
+    setItemForms(prev => {
+      const next = prev.map((f: any, idx: any) => idx === i ? { ...f, ...patch, saved: false } : f)
+      recomputeGoods(next)
+      return next
+    })
+  }
   function recomputeGoods(forms: any) {
-    const sum = (myItems || []).reduce((s, it, idx) => s + (parseFloat(forms[idx]?.line_total) || 0), 0)
+    const sum = (myItems || []).reduce((s, it, idx) => s + (parseFloat(forms[idx]?.line_total) || 0) + installPart(forms[idx], it), 0)
     setTotalPrice(sum ? String(+sum.toFixed(2)) : '')
   }
   // الوحدة التي يسعّر بها المورد تطابق الوحدة المطلوبة؟ (إن لم يحدّد وحدة خاصة)
@@ -449,6 +468,10 @@ export default function SupplierRFQPage() {
       setError(L('Name each extra amount (e.g. installation).', 'ہر اضافی رقم کا نام لکھیں (جیسے: تنصیب)۔', 'اكتب اسم كل مبلغ إضافي (مثل: تركيب).'))
       return
     }
+    if (isMultiItem && myItems.some((it: any, i: number) => !installAnswered(itemForms[i], it))) {
+      setError(L('Enter the installation price, or choose «I don\'t install», for each item the buyer asked to be installed.', 'جن اشیاء کی خریدار نے تنصیب مانگی ہے، ان کی تنصیب کی قیمت درج کریں یا «میں تنصیب نہیں کرتا» منتخب کریں۔', 'أدخل سعر التركيب، أو اختر «لا أقدّم التركيب»، لكل مادة طلب المشتري تركيبها.'))
+      return
+    }
     if (rfq?.delivery_required && (!delivMode || (delivMode === 'amount' && !(parseFloat(delivAmount) > 0)))) {
       setError(L('Say how you charge the delivery the buyer requested.', 'خریدار نے ڈیلیوری مانگی ہے — بتائیں اس کی لاگت کیسے ہوگی۔', 'حدّد تكلفة التوصيل الذي طلبه المشتري.'))
       return
@@ -520,10 +543,15 @@ export default function SupplierRFQPage() {
         }
         const up = parseFloat(form.unit_price) || 0
         const lineTotal = parseFloat(form.line_total) || (up * (it.quantity || 0))
+        // «مع التركيب»: total = material + installation, so awards/comparisons/orders keep using total
+        const inst = it.with_install ? +installPart(form, it).toFixed(2) : 0
+        const installFields = it.with_install
+          ? { install_offered: !form.no_install, install_total: form.no_install ? 0 : inst, material_total: +lineTotal.toFixed(2) }
+          : {}
         itemPricesPayload.push({
           item_index: it.item_index, product_name: it.product_name, sub_category: it.sub_category || null, sector: it.sector,
           unit: (form.priceUnit && form.priceUnit.trim()) || it.unit, quantity: it.quantity,
-          unit_price: up || null, total: +lineTotal.toFixed(2),
+          unit_price: up || null, total: +(lineTotal + inst).toFixed(2), ...installFields,
           delivery_days: parseInt(form.delivery_days) || null,
           warranty: (form.warranty || '').trim() || null,
           specification: (form.specs || '').trim() || null,
@@ -742,6 +770,8 @@ export default function SupplierRFQPage() {
                   : L('Enter the price to send.', 'بھیجنے کے لیے قیمت درج کریں۔', 'أدخل السعر لتتمكّن من الإرسال.'))
                 : extras.some((ex: any) => parseFloat(ex.amount) > 0 && !String(ex.label || '').trim())
                   ? L('Name each extra amount (e.g. installation).', 'ہر اضافی رقم کا نام لکھیں (جیسے: تنصیب)۔', 'اكتب اسم كل مبلغ إضافي (مثل: تركيب).')
+                : isMultiItem && myItems.some((it: any, i: number) => !installAnswered(itemForms[i], it))
+                  ? L('Enter the installation price (or «I don\'t install») to send.', 'بھیجنے کے لیے تنصیب کی قیمت درج کریں (یا «میں تنصیب نہیں کرتا»)۔', 'أدخل سعر التركيب (أو «لا أقدّم التركيب») لتتمكّن من الإرسال.')
                 : rfq.delivery_required && (!delivMode || (delivMode === 'amount' && !(parseFloat(delivAmount) > 0)))
                   ? L('Choose the delivery cost to send.', 'بھیجنے کے لیے ڈیلیوری کی لاگت منتخب کریں۔', 'حدّد تكلفة التوصيل لتتمكّن من الإرسال.')
                 : vatIncluded === null
@@ -857,6 +887,8 @@ export default function SupplierRFQPage() {
                     <span className="flex items-center gap-2 shrink-0">
                       {won === true && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{L('Chosen', 'منتخب', 'اختيرت')} ✓</span>}
                       {won === false && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{L('Not chosen', 'منتخب نہیں', 'لم تُختر')}</span>}
+                      {it.install_offered === true && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#0F6E56]/10 text-[#0F6E56] whitespace-nowrap"><Glyph e="🔧" /> {L(`incl. installation ${installTotalOf(it).toLocaleString('en-US')}`, `تنصیب سمیت ${installTotalOf(it).toLocaleString('en-US')}`, `يشمل التركيب ${installTotalOf(it).toLocaleString('en-US')}`)}</span>}
+                      {it.install_offered === false && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 whitespace-nowrap">{L('without installation', 'تنصیب کے بغیر', 'بدون تركيب')}</span>}
                       <span className={`font-bold text-sm whitespace-nowrap ${won === false ? 'line-through' : ''}`} style={{ color: '#0B2438' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
                     </span>
                   </div>
@@ -1144,6 +1176,33 @@ export default function SupplierRFQPage() {
                               </p>
                             )
                           })()}
+                          {it.with_install && (
+                            <div className={`mt-3 rounded-xl border p-2.5 space-y-2 ${line > 0 && !installAnswered(form, it) ? 'border-[#D4A543] bg-[#D4A543]/5' : 'border-[#0F6E56]/30 bg-[#0F6E56]/[0.03]'}`}>
+                              <p className="text-xs font-bold text-[#0F6E56]"><Glyph e="🔧" /> {L('The buyer asked for the price with installation', 'خریدار نے تنصیب سمیت قیمت مانگی ہے', 'طلب المشتري السعر مع التركيب')}</p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                {!form.no_install && (
+                                  <div className="relative flex-1 min-w-[11rem]">
+                                    <input type="text" inputMode="decimal" value={form.install_total ?? ''} onChange={(e: any) => setItemInstall(i, { install_total: latinNum(e.target.value) })}
+                                      aria-label={L(`Installation price for ${getProductLabel(it.product_name, locale)}`, `${getProductLabel(it.product_name, locale)} کی تنصیب کی قیمت`, `سعر تركيب ${getProductLabel(it.product_name, locale)}`)}
+                                      className="input-field text-sm font-bold pe-14" placeholder={L('Installation price for the item', 'اس آئٹم کی تنصیب کی قیمت', 'سعر التركيب للبند')} />
+                                    <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">{SAR}</span>
+                                  </div>
+                                )}
+                                <label className="flex items-center gap-2 text-xs font-bold text-gray-600 cursor-pointer select-none">
+                                  <input type="checkbox" checked={!!form.no_install} onChange={(e: any) => setItemInstall(i, { no_install: e.target.checked, ...(e.target.checked ? { install_total: '' } : {}) })} className="w-4 h-4 accent-[#0F6E56]" />
+                                  {L("I don't install", 'میں تنصیب نہیں کرتا', 'لا أقدّم التركيب')}
+                                </label>
+                              </div>
+                              <p className="text-[11px] text-gray-500">
+                                {form.no_install
+                                  ? L('Your offer will show this item without installation.', 'آپ کی پیشکش میں یہ آئٹم تنصیب کے بغیر دکھے گا۔', 'سيظهر عرضك لهذه المادة بدون تركيب.')
+                                  : noVat
+                                    ? L('The installation amount for the whole quantity; 0 if it is included in the price.', 'پوری مقدار کی تنصیب کی رقم؛ قیمت میں شامل ہو تو 0۔', 'مبلغ التركيب للكمية كاملة؛ اكتب 0 إن كان مشمولاً في السعر.')
+                                    : L('The installation amount for the whole quantity, including 15% VAT; 0 if it is included in the price.', 'پوری مقدار کی تنصیب کی رقم، 15% VAT سمیت؛ قیمت میں شامل ہو تو 0۔', 'مبلغ التركيب للكمية كاملة شاملاً ضريبة القيمة المضافة 15%؛ اكتب 0 إن كان مشمولاً في السعر.')}
+                                {line > 0 && installPart(form, it) > 0 && <> · {L('Item total', 'آئٹم کل', 'إجمالي البند')}: <b className="text-[#0B2438]">{(line + installPart(form, it)).toLocaleString('en-US')} {SAR}</b></>}
+                              </p>
+                            </div>
+                          )}
                           </>)}
 
                           {more && (

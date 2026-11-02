@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { canUseProjects } from '@/lib/plans'
+import { isInstallable } from '@/lib/installation'
 import { useCatalogSpecs } from '@/lib/useCatalogSpecs'
 import { friendlyError } from '@/lib/friendlyError'
 import { useState, useEffect, useRef, useMemo } from 'react'
@@ -507,6 +508,7 @@ export default function NewProjectPage() {
           sub_category: item.sub_category || detectSubCategory(item.product_name, item.sector) || null,
           specification: withBrand([st, (item.specification || '').trim()].filter(Boolean).join(' — '), item.brand),
           ...((item.brand || '').trim() ? { brand: String(item.brand).trim().slice(0, 80) } : {}),
+          ...(item.with_install && isInstallable(item.sector, item.sub_category || detectSubCategory(item.product_name, item.sector)) ? { with_install: true } : {}),
           quantity: Number(item.quantity),
           unit: item.unit || 'عدد',
           supplier_tiers: null, in_stock: false, max_days: null, specsObj,
@@ -959,6 +961,12 @@ export default function NewProjectPage() {
                                 </button>
                               )}
                               {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {L('File attached', 'فائل منسلک', 'مرفق ملف')}</span>}
+                              {isInstallable(item.sector, item.sub_category || detectSubCategory(item.product_name, item.sector)) && (
+                                <label className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-lg border cursor-pointer select-none ${item.with_install ? 'border-[#0F6E56] text-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 text-gray-600'}`}>
+                                  <input type="checkbox" checked={!!item.with_install} onChange={(e: any) => updateItem(item.id, 'with_install', e.target.checked)} className="w-3.5 h-3.5 accent-[#0F6E56]" />
+                                  <Glyph e="🔧" /> {L('Ask for the price with installation', 'تنصیب سمیت قیمت مانگیں', 'اطلب السعر مع التركيب')}
+                                </label>
+                              )}
                               {item.needs_review && !item.done && (
                                 <span className="badge text-[10px] bg-[#D4A543]/15 text-[#8F6820] font-bold" title={boqFlagText(item.flags, L).join(' · ')}>
                                   <Glyph e="⚠" /> {L('Needs review', 'جائزہ ضروری', 'يحتاج مراجعة')}{boqFlagText(item.flags, L).length ? ': ' + boqFlagText(item.flags, L)[0] : ''}

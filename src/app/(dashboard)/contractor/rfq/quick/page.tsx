@@ -18,6 +18,7 @@ import Glyph from '@/components/shared/Glyph'
 import { arCount, arMaterials } from '@/lib/text'
 import { TIERS, tierLabel, tierHint } from '@/lib/sellers'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
+import { isInstallable } from '@/lib/installation'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
 // it into lines the buyer can fix, then send. Each line can open its specifications (PRODUCT_SPECS)
@@ -47,6 +48,7 @@ type Line = {
   fileName?: string
   moreFiles?: { id: string; name: string }[] // owner 2026-10-31: more than one file/photo per line (up to 5 in all)
   spec?: { sector: string; sub: string | null; section?: string } // a «not in the list» item filed under a specialty by the buyer
+  with_install?: boolean // «اطلب السعر مع التركيب» (only on an installable specialty, src/lib/installation.ts)
 }
 type Photo = {
   id: string
@@ -67,6 +69,10 @@ function specText(name: string, specs?: Record<string, string>) {
   if (!specs) return ''
   return getProductSpecs(name).filter(f => f.key !== 'unit' && (specs[f.key] || '').trim()).map(f => `${f.ar}: ${specs[f.key].trim()}`).join('، ')
 }
+// The line's specialty (the buyer's choice for a «not in the list» item, else detected).
+const lineSub = (l: Line) => l.spec ? l.spec.sub : detectSubCategory(`${l.product_name} ${specText(l.product_name, l.specs)}`, l.sector as any)
+// «مع التركيب» applies only while the line's specialty is installable.
+const wantsInstall = (l: Line) => !!l.with_install && isInstallable(l.sector, lineSub(l))
 // A saved request item (rfqs.items / rfq_drafts) back into an editable line.
 function lineFromItem(it: any): Line {
   const specs: Record<string, string> = it.specsObj && typeof it.specsObj === 'object' ? { ...it.specsObj } : {}
@@ -80,6 +86,7 @@ function lineFromItem(it: any): Line {
   return {
     key: uid(), product_name: it.product_name || '', sector: it.sector || 'supply_store',
     quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details, specs, ...(brand ? { brand } : {}),
+    ...(it.with_install ? { with_install: true } : {}),
     done: !!(it.product_name && Number(it.quantity) > 0 && it.unit),
   }
 }
@@ -479,9 +486,10 @@ export default function QuickRequestPage() {
         items.push({
           sector: l.sector,
           product_name: l.product_name.trim(),
-          sub_category: l.spec ? l.spec.sub : detectSubCategory(`${l.product_name} ${st}`, l.sector as any),
+          sub_category: lineSub(l),
           specification: withBrand([st, l.details.trim()].filter(Boolean).join(' — '), l.brand),
           ...((l.brand || '').trim() ? { brand: l.brand!.trim().slice(0, 80) } : {}),
+          ...(wantsInstall(l) ? { with_install: true } : {}),
           quantity: parseFloat(l.quantity),
           unit: l.unit,
           supplier_tiers: null, in_stock: false, max_days: needDays, specsObj,
@@ -656,6 +664,7 @@ export default function QuickRequestPage() {
                           <b className="text-[#8F6820]">{l.quantity} {unitLabel(l.unit)}</b>
                           {Object.values(l.specs || {}).filter(v => (v || '').trim()).length ? ' · ' + Object.values(l.specs || {}).filter(v => (v || '').trim()).join('، ') : ''}
                           {l.details.trim() ? ' · ' + l.details.trim() : ''}
+                          {wantsInstall(l) ? ' · ' + L('with installation', 'تنصیب سمیت', 'مع التركيب') : ''}
                           {l.fileId ? ' · ' : ''}
                         </span>
                       </span>
@@ -795,6 +804,12 @@ export default function QuickRequestPage() {
                       </>
                     )
                   })()}
+                  {isInstallable(l.sector, lineSub(l)) && (
+                    <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
+                      <input type="checkbox" checked={!!l.with_install} onChange={e => updateLine(l.key, { with_install: e.target.checked || undefined })} className="w-4 h-4 accent-[#0F6E56]" />
+                      <Glyph e="🔧" /> {L('Ask for the price with installation', 'تنصیب سمیت قیمت مانگیں', 'اطلب السعر مع التركيب')}
+                    </label>
+                  )}
                   {ph && (
                     <label className="flex items-center gap-2 text-xs text-gray-700 cursor-pointer select-none">
                       <input type="checkbox" checked={ph.share} onChange={e => setPhotos(prev => prev.map(p => p.id === ph.id ? { ...p, share: e.target.checked } : p))} className="w-4 h-4 accent-[#0F6E56]" />
@@ -954,6 +969,9 @@ export default function QuickRequestPage() {
                           <div className="text-xs text-gray-500 mt-1" dir="auto">
                             {[sp.join('، '), l.details.trim(), l.fileId ? '' + (l.fileName || L('Attachment', 'فائل', 'مرفق')) : ''].filter(Boolean).join(' · ')}
                           </div>
+                        )}
+                        {wantsInstall(l) && (
+                          <div className="text-xs font-bold text-[#0F6E56] mt-1"><Glyph e="🔧" /> {L('Price requested with installation', 'تنصیب سمیت قیمت مطلوب', 'السعر مطلوب مع التركيب')}</div>
                         )}
                       </li>
                     )

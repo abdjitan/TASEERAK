@@ -20,6 +20,7 @@ import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { vatStatusOf, totalLabel } from '@/lib/vat'
+import { installTotalOf, materialTotalOf } from '@/lib/installation'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -276,6 +277,14 @@ export default function OfferDetailPage() {
                     </div>
                     <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</div>
                   </div>
+                  {/* «مع التركيب»: the line total split into material + installation */}
+                  {it.install_offered === true && (
+                    <div className="mt-1.5 rounded-lg bg-[#0F6E56]/5 px-2 py-1.5 text-[11px] space-y-0.5">
+                      <div className="flex justify-between gap-2 text-gray-600"><span>{L('Material', 'سامان', 'المادة')}</span><span>{materialTotalOf(it).toLocaleString('en-US')} {SAR}</span></div>
+                      <div className="flex justify-between gap-2 font-semibold text-[#0F6E56]"><span><Glyph e="🔧" /> {L('Installation', 'تنصیب', 'التركيب')}</span><span>{installTotalOf(it) > 0 ? `${installTotalOf(it).toLocaleString('en-US')} ${SAR}` : L('included in the price', 'قیمت میں شامل', 'مشمول في السعر')}</span></div>
+                    </div>
+                  )}
+                  {it.install_offered === false && <p className="text-[11px] font-semibold text-gray-500 mt-1">{L('Without installation (the supplier does not install)', 'تنصیب کے بغیر (سپلائر تنصیب نہیں کرتا)', 'بدون تركيب (المورد لا يقدّم التركيب)')}</p>}
                   {/* مواصفات المادة من المورد */}
                   {(it.specification || it.notes) && <p className="text-[11px] text-gray-500 bg-gray-50 rounded-lg p-1.5 mt-1.5"><Glyph e="📝" /> <AutoTr text={it.specification || it.notes} locale={locale} /></p>}
                   {it.warranty && <p className="text-[11px] font-semibold text-[#0F6E56] mt-1"><Glyph e="🛡" /> {L('Warranty:', 'وارنٹی:', 'الضمان:')} {it.warranty}</p>}

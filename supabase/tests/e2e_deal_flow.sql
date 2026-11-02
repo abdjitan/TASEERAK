@@ -385,6 +385,15 @@ begin
   select count(*) into n from offers where id = v_offer and not extras_pending and (extra_charges->0->>'amount')::numeric = 120;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL confirmed delivery fee not saved'; end if;
 
+  -- 196: a line's installation amount can't be negative
+  perform set_config('request.jwt.claims', json_build_object('sub', company, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  begin
+    update offers set item_prices = '[{"item_index":0,"product_name":"أسمنت","unit_price":25,"total":250,"material_total":260,"install_total":-10,"install_offered":true}]'::jsonb where id = v_offer;
+    bad := bad + 1; log := log || ' FAIL negative install price accepted';
+  exception when others then ok := ok + 1; end;
+  reset role;
+
   -- 192: retention — a request that ended without a deal 70 days ago is deleted (offers, chat) and
   -- archived anonymously; a request with a deal is kept
   reset role;
