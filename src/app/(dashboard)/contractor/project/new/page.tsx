@@ -238,6 +238,8 @@ export default function NewProjectPage() {
 
   const DRAFT_KEY = 'tsk_project_draft'
   const [restored, setRestored] = useState(false)
+  // set when the draft came from «مسار العطاء»: the tender is marked sent and linked to this project
+  const [tenderId, setTenderId] = useState<string | null>(null)
   useEffect(() => {
     try {
       const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null')
@@ -249,6 +251,7 @@ export default function NewProjectPage() {
         if (typeof d.vatRequired === 'boolean') setVatRequired(d.vatRequired)
         if (Array.isArray(d.targetTiers)) setTargetTiers(d.targetTiers)
         if (typeof d.verifiedOnly === 'boolean') setVerifiedOnly(d.verifiedOnly)
+        if (typeof d.tender_id === 'string') setTenderId(d.tender_id)
         setStep('items')
       }
     } catch {}
@@ -258,10 +261,10 @@ export default function NewProjectPage() {
     if (!restored) return
     try {
       if (!items.length) { localStorage.removeItem(DRAFT_KEY); return }
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, region, city, projectNotes, deliveryRequired, deliveryLocation, hours, hideIdentity, vatRequired, targetTiers, verifiedOnly,
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, region, city, projectNotes, deliveryRequired, deliveryLocation, hours, hideIdentity, vatRequired, targetTiers, verifiedOnly, tender_id: tenderId,
         items: items.map((it: any) => ({ ...it, specFile: null })) }))
     } catch {}
-  }, [restored, title, region, city, projectNotes, deliveryRequired, deliveryLocation, items, hours, hideIdentity, vatRequired, targetTiers, verifiedOnly])
+  }, [restored, title, region, city, projectNotes, deliveryRequired, deliveryLocation, items, hours, hideIdentity, vatRequired, targetTiers, verifiedOnly, tenderId])
 
   // تحليل الـ BOQ
   async function handleBOQUpload(file: File) {
@@ -547,6 +550,8 @@ export default function NewProjectPage() {
         project_rfq_id: project.id, rfq_id: rfq.id, product_name: it.product_name, sector: it.sector,
         quantity: it.quantity, unit: it.unit, specification: it.specification, status: 'sent',
       })))
+      // from «مسار العطاء»: the tender is now sent and points at this project
+      if (tenderId) { try { await supabase.from('tenders').update({ status: 'sent', project_rfq_id: project.id }).eq('id', tenderId) } catch {} }
       try { localStorage.removeItem(DRAFT_KEY) } catch {}
       window.location.href = `/contractor/rfq/${rfq.id}`
     } catch (err) {
@@ -589,6 +594,13 @@ export default function NewProjectPage() {
             : locale === 'ur' ? 'BOQ اپلوڈ کریں یا مواد خود شامل کریں'
             : 'ارفع ملف BOQ أو أضف المواد يدوياً — نرسل كل مادة للمورد المتخصص'}
           </p>
+          {tenderId ? (
+            <p className="mt-2 text-xs font-bold text-[#0F6E56]"><Glyph e="📑" /> {L('These items come from your tender review (approved items only).', 'یہ آئٹمز آپ کے ٹینڈر جائزے سے ہیں۔', 'هذه البنود من مراجعة العطاء (المعتمدة فقط).')} <Link href={`/contractor/tender/${tenderId}`} className="underline">{L('Back to the tender', 'ٹینڈر پر واپس', 'العودة إلى العطاء')}</Link></p>
+          ) : (
+            <Link href="/contractor/tender/new" className="mt-2 inline-block text-xs font-bold text-[#8F6820] hover:underline">
+              <Glyph e="📑" /> {L('A full tender with drawings and specifications? Use the tender workspace, which checks every number against its source', 'ڈرائنگز اور تفصیلات کے ساتھ پورا ٹینڈر؟ ٹینڈر ورک اسپیس استعمال کریں', 'لديك عطاء كامل بمخططات ومواصفات؟ استخدم «مسار العطاء» الذي يطابق كل رقم مع مصدره')}
+            </Link>
+          )}
         </div>
 
         {/* Step 1: Setup */}

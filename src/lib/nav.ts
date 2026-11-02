@@ -50,6 +50,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/contractor/rfq/quick', icon: '📝', label: L('Price request', 'قیمت کی درخواست', 'طلب تسعير'), section: sec, mobile: 3 },
       { href: '/contractor/rfqs', icon: '🧾', label: L('My requests and deals', 'درخواستیں اور ڈیلز', 'طلباتي وصفقاتي'), section: sec, mobile: 2 },
       { href: '/contractor/project/new', icon: '📋', label: L('Project', 'پراجیکٹ', 'مشروع'), section: sec },
+      { href: '/contractor/tender', icon: '📑', label: L('Tender pricing', 'ٹینڈر قیمت', 'مسار العطاء'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
