@@ -4,7 +4,11 @@
 const fs = require('fs');
 const path = require('path');
 const XLSX = require('xlsx');
-const { opener, direct, followUp, fill, varsFor } = require('./messages');
+const { opener, direct, fill, varsFor } = require('./messages');
+// Never contacted again (legal rules): numbers that replied «إلغاء» or got their one message.
+// suppression.txt = one local mobile number per line (05XXXXXXXX), gitignored.
+const SUPPRESS_FILE = path.join(__dirname, 'suppression.txt');
+const suppressed = new Set(fs.existsSync(SUPPRESS_FILE) ? fs.readFileSync(SUPPRESS_FILE, 'utf8').split(/\s+/).map(x => x.replace(/\D/g, '').replace(/^966/, '0')).filter(Boolean) : []);
 
 const src = process.argv[2];
 const QUOTA = { 'البناء والإنشاءات': 20, 'السباكة والمياه': 15, 'الكهرباء والإنارة': 15 };
@@ -32,6 +36,7 @@ for (const sec of Object.keys(QUOTA)) {
   for (const r of rows) {
     const phone = String(r['الجوال'] || '').replace(/\D/g, '');
     const rating = +r['التقييم'] || 0, reviews = +r['المراجعات'] || 0;
+    if (suppressed.has(phone)) continue;
     if (r['المدينة'] !== 'الرياض' || r['واتساب؟'] !== 'نعم' || !/^05\d{8}$/.test(phone)) continue;
     if (rating < 4.2 || reviews < 20 || reviews > 3000) continue;
     if (SKIP_TYPES.has(r['نوع المحل'])) continue;
@@ -62,7 +67,7 @@ for (const [sec, quota] of Object.entries(QUOTA)) {
 const intl = p => '966' + p.slice(1);
 const chat = p => `https://wa.me/${intl(p)}`;
 // kind: 'opener' (Arabic invitation), 'follow' (one reminder), or en/ur/ar (full details, language already known).
-const textFor = (kind, shop) => kind === 'opener' ? fill(opener, varsFor('ar', shop)) : kind === 'follow' ? fill(followUp, varsFor('ar', shop)) : fill(direct[kind], varsFor(kind, shop));
+const textFor = (kind, shop) => kind === 'opener' ? fill(opener, varsFor('ar', shop)) : fill(direct[kind], varsFor(kind, shop));
 const wa = (p, kind, shop) => `${chat(p)}?text=${encodeURIComponent(textFor(kind, shop))}`;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -89,8 +94,9 @@ const how = [
   [require('./links').links.bot_live ? '2. الدعوة بالعربية، وآخر سطر فيها: 2 للإنجليزية و3 للأردية. كل الردود بعد ذلك يرسلها الرد الآلي (bot)، ولا يحتاج أحد أن يرد بنفسه.' : '2. الرد الآلي لم يُربط بعد، لذلك الدعوة فيها رابط التسجيل مباشرة، وآخر سطر رابط صفحة فيها الإنجليزية والأردية. لا يلزمك الرد على أحد.'],
   ['3. مع الدعوة أرفق posters/poster-ar.png (رمز QR فيها يفتح صفحة الدعوة).'],
   ['4. حدّث عمود «الحالة» هنا: أُرسل / ردّ / سجّل / سعّر طلبًا / رفض / لا تراسله.'],
-  ['5. متابعة واحدة فقط بعد 3 أيام لمن لم يرد (نصها في messages.js)، ومن رفض لا يُراسل مرة أخرى.'],
-  ['6. قبل الإرسال: صحّح الروابط في links.json ثم أعد تشغيل pick-first-batch.js.'],
+  ['5. رسالة واحدة فقط لكل محل: لا متابعة ولا تذكير. من ردّ «إلغاء» يُضاف رقمه فورًا إلى suppression.txt، وكذلك كل من أُرسلت له الدعوة، فلا يظهر في أي دفعة قادمة.'],
+  ['6. من 30 إلى 50 رسالة في اليوم كحد أقصى، باسم المحل. راقب «تقييم الجودة» للرقم في WhatsApp Manager، وأوقف الإرسال إذا انخفض أو كثرت حالات الحظر.'],
+  ['7. قبل الإرسال: صحّح الروابط في links.json ثم أعد تشغيل pick-first-batch.js.'],
   [''],
   ['المعايير: الرياض، لديه واتساب، تقييم 4.2+، من 20 إلى 3000 مراجعة، اسم المحل يدل على تخصصه، استبعاد المولات والسلاسل الكبيرة وورش الصيانة، 4 محلات كحد أقصى لكل نوع.'],
   ['راجع الاسم والخريطة قبل الإرسال: التصنيف آلي من بيانات Google وقد يخطئ.'],
@@ -105,7 +111,7 @@ const rowsHtml = picked.map((s, i) => {
   const name = s.r['الاسم'];
   const b = (kind, label, main) => `<a class="b${main ? ' main' : ''}" href="${esc(wa(s.phone, kind, name))}" target="_blank" rel="noopener" data-id="${i + 1}">${label}</a>`;
   return `<tr id="r${i + 1}"><td>${i + 1}</td><td><b>${esc(name)}</b><div class="m">${esc(s.type)} · ${esc(s.r['الحي'] || '')} · ${s.r['التقييم']} (${s.r['المراجعات']})</div></td>
-<td class="btns">${b('opener', 'الدعوة', true)}${b('follow', 'متابعة', false)}<span class="sep">لغة معروفة:</span>${b('en', 'English', false)}${b('ur', 'اردو', false)}${s.r['رابط الخريطة'] ? `<a class="b" href="${esc(s.r['رابط الخريطة'])}" target="_blank" rel="noopener">الخريطة</a>` : ''}</td>
+<td class="btns">${b('opener', 'الدعوة', true)}<span class="sep">لغة معروفة:</span>${b('en', 'English', false)}${b('ur', 'اردو', false)}${s.r['رابط الخريطة'] ? `<a class="b" href="${esc(s.r['رابط الخريطة'])}" target="_blank" rel="noopener">الخريطة</a>` : ''}</td>
 <td><label><input type="checkbox" data-sent="${i + 1}"> أُرسلت</label></td></tr>`;
 }).join('\n');
 const sheet = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -125,7 +131,7 @@ td{padding:10px;border-bottom:1px solid #E3E8ED;vertical-align:middle;font-size:
 tr.sent{opacity:.45}
 </style></head><body>
 <header><h1>دعوات الموردين: الدفعة الأولى (${picked.length} محلًا)</h1>
-<p>الزر يفتح واتساب والرسالة جاهزة، ولا يُرسَل شيء إلا عندما تضغط إرسال بنفسك. أول رسالة: «الدعوة» بالعربية مع posters/poster-ar.png. ${require("./links").links.bot_live ? "كل الردود بعدها يرسلها الرد الآلي." : "الرد الآلي لم يُربط بعد: الرسالة فيها رابط التسجيل وصفحة اللغات، فلا يلزمك الرد."} «متابعة» مرة واحدة بعد 3 أيام لمن لم يرد. علامة «أُرسلت» تُحفظ في هذا المتصفح فقط.</p></header>
+<p>الزر يفتح واتساب والرسالة جاهزة، ولا يُرسَل شيء إلا عندما تضغط إرسال بنفسك. أول رسالة: «الدعوة» بالعربية مع posters/poster-ar.png. ${require("./links").links.bot_live ? "كل الردود بعدها يرسلها الرد الآلي." : "الرد الآلي لم يُربط بعد: الرسالة فيها رابط التسجيل وصفحة اللغات، فلا يلزمك الرد."} رسالة واحدة لكل محل، من 30 إلى 50 في اليوم. من ردّ «إلغاء» أضف رقمه إلى suppression.txt. علامة «أُرسلت» تُحفظ في هذا المتصفح فقط.</p></header>
 <main><table>${rowsHtml}</table></main>
 <script>
 const KEY='taseerak-invite-sent';

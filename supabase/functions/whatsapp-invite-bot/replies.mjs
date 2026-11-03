@@ -27,6 +27,7 @@ export function normalize(s) {
 const has = (t, words) => words.some(w => new RegExp(`(^|\\s)${w}(\\s|$)`).test(t));
 
 const YES = ['نعم', 'ايوه', 'ايوا', 'اي', 'اكيد', 'تمام', 'موافق', 'ابغى', 'ابي', 'سجلني', 'yes', 'yeah', 'yep', 'ok', 'okay', 'sure', 'interested', 'ہاں', 'ہان', 'جی', 'جی ہاں', 'ٹھیک', 'ٹھیک ہے', 'theek'].map(normalize);
+const OPTOUT = ['إلغاء', 'الغاء', 'إلغاء الاشتراك', 'stop', 'unsubscribe', 'cancel', 'منسوخ', 'بند کرو'].map(normalize);
 const LANG = Object.fromEntries(Object.entries({ '1': 'ar', '2': 'en', '3': 'ur', 'عربي': 'ar', 'arabic': 'ar', 'english': 'en', 'انجليزي': 'en', 'urdu': 'ur', 'اردو': 'ur', 'اوردو': 'ur' }).map(([k, v]) => [normalize(k), v]));
 
 // opts.ai: true when the AI is switched on (ANTHROPIC_API_KEY set). Then «yes» also goes to the
@@ -36,6 +37,11 @@ export function decide(text, state = {}, texts, opts = {}) {
   const t = normalize(text);
   const L = st.lang;
   const fixed = (replies, patch = {}) => ({ replies, nextState: { ...st, ...patch }, ai: false });
+
+  // Opt-out (legal rules, 2026-11-03): confirm once, mark declined; the number goes to suppression
+  // and is never messaged again. Only when the opt-out word is the whole message. Checked first,
+  // so it is honoured even in a chat the owner took over.
+  if (OPTOUT.includes(t)) return fixed([{ text: texts.optOut[L] }], { stage: 'declined', optedOut: true });
 
   // The owner typed in this chat himself, or the AI passed it to him (escalated, for 24 hours):
   // the bot stays out of the conversation. The webhook lifts «escalated» after 24 hours.

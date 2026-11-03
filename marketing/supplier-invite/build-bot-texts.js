@@ -32,6 +32,12 @@ After registering, choose your specialties and matching requests will reach you 
     en: 'Thank you for your message. Please type your question as text and we will reply right away.',
     ur: 'آپ کے پیغام کا شکریہ۔ براہِ کرم اپنا سوال لکھ کر بھیجیں، ہم فوراً جواب دیں گے۔',
   },
+  // Reply to «إلغاء» / stop: confirm once, then never message again (legal rules, 2026-11-03).
+  optOut: {
+    ar: 'تم، لن نراسلكم مرة أخرى. شكرًا لوقتكم.',
+    en: 'Done, we will not message you again. Thank you for your time.',
+    ur: 'ٹھیک ہے، ہم آپ کو دوبارہ پیغام نہیں بھیجیں گے۔ آپ کے وقت کا شکریہ۔',
+  },
   // Used only if the AI call fails or declines.
   fallback: {
     ar: `شكرًا لرسالتكم. تجدون التفاصيل كاملة هنا: ${base}/invite?lang=ar`,

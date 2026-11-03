@@ -1,14 +1,16 @@
-// Supplier invitation texts (WhatsApp). The owner sends `opener` and `followUp` by hand; every
+// Supplier invitation texts (WhatsApp). The owner sends `opener` by hand, ONE message per contact; every
 // answer after that comes from the bot (bot/replies.mjs + bot/ai.mjs), never from a person.
 // Flow: 1) `opener` (Arabic only, no link) + posters/poster-ar.png; its last line offers English (2) and Urdu (3)
 //       2) the shop answers -> bot: 2 / 3 -> `reply.en` / `reply.ur` + poster; «نعم» -> registration link;
 //          anything else -> AI answer
-//       3) no answer after 3 days -> `followUp` once.
+//       3) no answer -> never message again (legal rules, 2026-11-03). «إلغاء» -> suppression list.
 // `direct[lang]` is for a shop whose language is already known (skip the opener).
 // Placeholders: {shop} {invite} {apps}. WhatsApp formatting: *bold*. Arabic is MSA.
 const { links, base, inviteUrl } = require('./links');
 
 const ESCAPE = 'For English reply *2* · اردو کے لیے *3* لکھیں';
+// Legal rules (2026-11-03): every invitation ends with a clear opt-out, honoured at once.
+const OPTOUT = 'إن كنتم لا ترغبون في تلقي رسائل منا، فردّوا بكلمة «إلغاء».';
 
 const opener = `السلام عليكم ورحمة الله وبركاته،
 تحية طيبة لفريق *{shop}*.
@@ -17,13 +19,13 @@ const opener = `السلام عليكم ورحمة الله وبركاته،
 
 ▪ مجاني خلال الإطلاق، دون عمولة أو اشتراك
 ▪ أسعاركم يراها صاحب الطلب فقط، ولا يراها المنافسون
-▪ المسجلون الأوائل تصلهم الطلبات الأولى
 
 *ردّوا بكلمة «نعم» ونساعدكم في التسجيل خلال دقيقتين.*
 
 فريق تسعيرك
 
-${ESCAPE}`;
+${ESCAPE}
+${OPTOUT}`;
 
 // Manual mode (links.json bot_live=false): nobody answers replies yet, so the invitation carries the
 // registration link itself, and the invite page (with its own AR / EN / UR buttons) covers the other
@@ -35,14 +37,14 @@ const openerManual = `السلام عليكم ورحمة الله وبركاته
 
 ▪ مجاني خلال الإطلاق، دون عمولة أو اشتراك
 ▪ أسعاركم يراها صاحب الطلب فقط، ولا يراها المنافسون
-▪ المسجلون الأوائل تصلهم الطلبات الأولى
 
 *التسجيل مجاني ويأخذ دقيقتين:*
 {register}
 
 فريق تسعيرك
 
-English · اردو: {inviteAny}`;
+English · اردو: {inviteAny}
+${OPTOUT}`;
 
 const reply = {
   ar: `شكرًا لكم. هذه تفاصيل *تسعيرك*:
@@ -56,7 +58,6 @@ const reply = {
 ▪ مجاني بالكامل خلال الإطلاق، دون عمولة أو اشتراك
 ▪ أسعاركم يراها صاحب الطلب فقط، ولا يراها المنافسون
 ▪ أمر الشراء والفاتورة ومتابعة التسليم في مكان واحد
-▪ المسجلون الأوائل في الرياض تصلهم الطلبات الأولى
 
 *الأسهل: ردّوا بكلمة «نعم» ونساعدكم في التسجيل خلال دقيقتين.*
 
@@ -76,7 +77,6 @@ const reply = {
 ▪ Completely free during launch: no commission, no subscription
 ▪ Only the requester sees your prices, never your competitors
 ▪ Purchase orders, invoices and delivery tracking in one place
-▪ Early suppliers in Riyadh receive the first requests
 
 *Easiest: reply «yes» and we will register you in two minutes.*
 
@@ -96,7 +96,6 @@ The Taseerak team`,
 ▪ لانچ کے دوران مکمل مفت: نہ کمیشن، نہ سبسکرپشن
 ▪ آپ کی قیمتیں صرف درخواست بھیجنے والا دیکھتا ہے، حریف نہیں
 ▪ پرچیز آرڈر، انوائس اور ڈیلیوری کی فالو اپ ایک ہی جگہ
-▪ ریاض میں پہلے رجسٹر ہونے والوں کو پہلی درخواستیں ملیں گی
 
 *سب سے آسان: «ہاں» لکھ کر جواب دیں، ہم دو منٹ میں رجسٹر کر دیں گے۔*
 
@@ -112,18 +111,10 @@ const greet = {
   en: 'Assalamu alaikum, warm greetings to the *{shop}* team.\nWe are pleased to invite you to join *Taseerak*, the Saudi platform where contractors send construction price requests directly to specialised suppliers.',
   ur: 'السلام علیکم، *{shop}* کی ٹیم کو خوش آمدید۔\nہم آپ کو *تسعیرک* میں شامل ہونے کی دعوت دیتے ہیں، یہ ایک سعودی پلیٹ فارم ہے جہاں ٹھیکیدار تعمیراتی سامان کی قیمت کی درخواستیں براہِ راست سپلائرز کو بھیجتے ہیں۔',
 };
-const direct = Object.fromEntries(Object.keys(reply).map(l => [l, `${greet[l]}\n\n${reply[l].split('\n').slice(2).join('\n')}`]));
+const OPTOUT_L = { ar: OPTOUT, en: 'If you prefer not to receive messages from us, reply «cancel».', ur: 'اگر آپ ہمارے پیغامات نہیں چاہتے تو «منسوخ» لکھ کر جواب دیں۔' };
+const direct = Object.fromEntries(Object.keys(reply).map(l => [l, `${greet[l]}\n\n${reply[l].split('\n').slice(2).join('\n')}\n\n${OPTOUT_L[l]}`]));
 
-// One gentle follow-up after 3 days with no answer to the opener. Never a second one.
-const followUp = `السلام عليكم، نذكّركم بدعوة *تسعيرك*: طلبات تسعير مواد البناء تصل إلى جوالكم مجانًا.
-للتسجيل أو لأي سؤال ردّوا بكلمة «نعم».
 
-${ESCAPE}`;
-
-const followUpManual = `السلام عليكم، نذكّركم بدعوة *تسعيرك*: طلبات تسعير مواد البناء تصل إلى جوالكم مجانًا.
-التسجيل في دقيقتين: {register}
-
-English · اردو: {inviteAny}`;
 
 const APPS = {
   ar: `\nأندرويد: ${links.android}\nآيفون: ${links.ios}`,
@@ -140,4 +131,4 @@ function varsFor(lang, shop) {
   return { shop, invite: inviteUrl(lang), register: `${base}/register?role=supplier`, inviteAny: inviteUrl(), apps: links.apps_live && APPS[lang] ? APPS[lang] : '' };
 }
 
-module.exports = { opener: links.bot_live ? opener : openerManual, reply, direct, followUp: links.bot_live ? followUp : followUpManual, fill, varsFor };
+module.exports = { opener: links.bot_live ? opener : openerManual, reply, direct, fill, varsFor };

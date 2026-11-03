@@ -45,6 +45,14 @@ check('paused chat -> no reply, no AI', r.replies.length === 0 && r.ai === false
 r = decide('كم العمولة؟', { stage: 'escalated' }, texts, { ai: true });
 check('escalated chat -> silent until the owner answers', r.replies.length === 0 && r.ai === false);
 
+// Opt-out: honoured at once, even in a paused chat it is the whole message.
+for (const [m, lang] of [['إلغاء', 'ar'], ['الغاء', 'ar'], ['STOP', 'en'], ['cancel', 'en'], ['منسوخ', 'ur']]) {
+  r = decide(m, { lang }, texts, { ai: true });
+  check(`opt-out: ${m}`, !r.ai && r.nextState.stage === 'declined' && r.nextState.optedOut === true && r.replies[0].text === texts.optOut[lang]);
+}
+r = decide('كيف ألغي الطلب؟', {}, texts, { ai: true });
+check('«ألغي» inside a question is not an opt-out', r.ai === true);
+
 // Old opt-out wording is gone from what the owner sends.
 const msgs = readFileSync(new URL('../messages.js', import.meta.url), 'utf8');
 check('follow-up no longer offers «not again»', !/لن نرسل مرة أخرى/.test(msgs));
