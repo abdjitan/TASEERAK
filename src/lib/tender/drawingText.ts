@@ -1,6 +1,7 @@
 // What a vector drawing sheet says, read from its text runs (no AI, no OCR):
 //  • title block: drawing number, title, project, scale, revision, date, paper size;
-//  • rooms: name + room code («L00-EC-26») + area («577.432 m²»);
+//  • rooms: name + room code («L00-EC-26») + area («577.432 m²»), each with the finish tags
+//    (FL/PT/CLG/TRM/SCR/WPS) printed nearest to it (assignFinishTags, by position and scale);
 //  • tags: how many times each element code («DRS-254-T13», «BLK-305») is printed on the plan;
 //  • keynote legend («FL-303 - RESIN FLOOR FINISH - EPOXY») and wall-type legend
 //    («BLK - 305 - BLOCKWORK»); abbreviations («DRS - DOORS», «EC = ENERGY CENTRE»);
@@ -136,16 +137,18 @@ export function readDrawingPage(page: PdfPageText, file: string): DrawingSummary
     revision = below?.s || null
   }
   const paper = (scaleAlt?.s.match(/@(A\d)/i)?.[1] || null)
+  const scale = scaleIt ? scaleIt.s.replace(/\s+/g, ' ') : (scaleAlt ? scaleAlt.s.split('@')[0] : null)
+  const unassigned_finish = assignFinishTags(roomsU, tags, page, metresPerPoint(scale))
   return {
     file, page: page.n,
     sheet_no,
     title: tl ? valueBelow(items, tl) : null,
     project: pl ? valueBelow(items, pl, 3) : null,
-    scale: scaleIt ? scaleIt.s.replace(/\s+/g, ' ') : (scaleAlt ? scaleAlt.s.split('@')[0] : null),
+    scale,
     revision,
     date: dateIt?.s || null,
     paper: paper ? paper.toUpperCase() : null,
-    rooms: roomsU, tags, legend, abbreviations, notes, u_values,
+    rooms: roomsU, unassigned_finish, tags, legend, abbreviations, notes, u_values,
   }
 }
 
@@ -161,3 +164,66 @@ export function readDrawings(files: { name: string; pages: PdfPageText[] }[]): D
 
 /** The family of a code: «DRS-254-T13» → «DRS». */
 export const familyOf = (code: string) => code.split('-')[0]
+
+// ── finish tags ↔ rooms ─────────────────────────────────────────────────────────────────────
+/** Finish families placed per room: floors, paint, ceilings, skirting, screeds, waterproofing. */
+export const FINISH_FAMILIES = ['FL', 'PT', 'CLG', 'TRM', 'SCR', 'WPS']
+export const isFinishCode = (code: string) => FINISH_FAMILIES.includes(familyOf(code))
+
+/** Metres on site per PDF point (1/72 in) from «1 : 100» / «1:100»; null when the scale is unknown. */
+export function metresPerPoint(scale: string | null): number | null {
+  const m = scale?.match(/^1\s*:\s*(\d{1,4})$/)
+  const n = m ? Number(m[1]) : 0
+  return n > 0 ? (0.0254 / 72) * n : null
+}
+
+/**
+ * Each finish tag goes to the room whose label is nearest, weighted by the room's size: a room of
+ * A m² at the sheet scale spans about √A metres, so a tag 300 pt from the label of a 3,000 m² hall
+ * can be inside it while 300 pt from a 3 m² WC cannot. Reach = √A converted to points (at least
+ * 60 pt, at most 40% of the sheet diagonal); rooms farther than their reach are not candidates, and
+ * a tag with no candidate stays unassigned. Among candidates the lowest distance / √reach wins (plain
+ * distance / reach lets one huge hall swallow the tags of the small rooms around its label).
+ * Confidence is «high» when the tag sits well inside the best room (≤ 0.6 of its reach) and no other
+ * room comes close (second score ≥ 1.5× the best); otherwise «low». Without a scale everything is low.
+ * Walls are vector lines without text, so this is a proximity guess, never a geometric proof.
+ * Mutates the rooms (tags / confidence / low_tags) and returns the unassigned tags.
+ */
+export function assignFinishTags(rooms: DrawingRoom[], tags: DrawingTag[], page: { w: number; h: number }, mpp: number | null): Record<string, number> {
+  const diag = Math.hypot(page.w || 0, page.h || 0) || 4000
+  const reachOf = (r: DrawingRoom) => {
+    const raw = mpp && r.area ? Math.sqrt(r.area) / mpp : diag * 0.06
+    return Math.min(Math.max(raw, 60), diag * 0.4)
+  }
+  const placed = rooms.filter(r => r.area != null && r.area > 0)
+  const reach = placed.map(reachOf)
+  const unassigned: Record<string, number> = {}
+  for (const t of tags) {
+    if (!isFinishCode(t.code)) continue
+    for (const p of t.positions) {
+      const cand = placed.map((r, i) => {
+        const dist = Math.hypot(p.x - r.x, p.y - r.y)
+        return { r, ratio: dist / reach[i], score: dist / Math.sqrt(reach[i]) }
+      }).filter(c => c.ratio <= 1).sort((a, b) => a.score - b.score)
+      if (!cand.length) { unassigned[t.code] = (unassigned[t.code] || 0) + 1; continue }
+      const best = cand[0], second = cand[1]
+      const high = !!mpp && best.ratio <= 0.6 && (!second || second.score >= best.score * 1.5)
+      const r = best.r
+      r.tags = r.tags || {}
+      r.tags[t.code] = (r.tags[t.code] || 0) + 1
+      if (!high) { r.low_tags = Array.from(new Set([...(r.low_tags || []), t.code])); r.confidence = 'low' }
+      else if (!r.confidence) r.confidence = 'high'
+    }
+  }
+  return unassigned
+}
+
+/** «ENERGY CENTRE PLAN 00 - 1/4 ENLARGED PLAN» → { level: «ENERGY CENTRE PLAN 00 ENLARGED PLAN», n: 1, of: 4 }. */
+export function sheetPartOf(title: string | null | undefined): { level: string; n: number; of: number } | null {
+  const m = (title || '').match(/(?:^|[\s-])(\d{1,2})\s*\/\s*(\d{1,2})(?=\s|$)/)
+  if (!m) return null
+  const n = Number(m[1]), of = Number(m[2])
+  if (of < 2 || of > 30 || n < 1 || n > of) return null
+  const level = (title || '').replace(m[0], ' ').replace(/[^A-Za-z0-9]+/g, ' ').trim().toUpperCase()
+  return { level, n, of }
+}

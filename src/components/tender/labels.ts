@@ -32,5 +32,22 @@ export const SEVERITY_TONE: Record<string, string> = {
   info: 'bg-gray-50 text-gray-600 border-gray-200',
 }
 
-export const fmtNum = (n: number | null | undefined) => (n == null ? '—' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 3 }))
+/** «مقارنة المساحات» status (a difference is «needs review», never an error). */
+export function areaStatusLabel(s: string, L: Lfn): string {
+  if (s === 'ok') return L('Matches (±5%)', 'مطابق (±5%)', 'مطابق (±5%)')
+  if (s === 'review') return L('Needs review', 'جائزہ درکار', 'يحتاج مراجعة')
+  if (s === 'partial') return L('Partial sheets', 'جزوی شیٹس', 'لوحات جزئية')
+  if (s === 'walls') return L('Walls (not compared)', 'دیواریں (موازنہ نہیں)', 'جدران (لا تُقارن)')
+  return L('No room found', 'کوئی کمرہ نہیں ملا', 'لم تُحدَّد غرفة')
+}
+
+export const AREA_TONE: Record<string, string> = {
+  ok: 'bg-[#0F6E56]/10 text-[#0F6E56]',
+  review: 'bg-sky-50 text-sky-800',
+  partial: 'bg-[#D4A543]/15 text-[#8F6820]',
+  walls: 'bg-gray-100 text-gray-600',
+  no_rooms: 'bg-gray-100 text-gray-600',
+}
+
+export const fmtNum =(n: number | null | undefined) => (n == null ? '—' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 3 }))
 export const fmtSize = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`)

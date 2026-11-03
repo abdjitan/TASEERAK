@@ -95,7 +95,14 @@ export type BoqReadStats = {
   by_kind: Record<ItemKind, number>
 }
 
-export type DrawingRoom = { name: string; code: string | null; area: number | null; x: number; y: number }
+export type DrawingRoom = {
+  name: string; code: string | null; area: number | null; x: number; y: number
+  /** finish tags (FL/PT/CLG/TRM/SCR/WPS) printed inside / nearest this room: code → times */
+  tags?: Record<string, number>
+  /** 'low' when at least one tag was assigned with low confidence (listed in low_tags) */
+  confidence?: 'high' | 'low'
+  low_tags?: string[]
+}
 export type DrawingTag = { code: string; count: number; positions: { x: number; y: number }[] }
 
 export type DrawingSummary = {
@@ -109,6 +116,8 @@ export type DrawingSummary = {
   date: string | null
   paper: string | null
   rooms: DrawingRoom[]
+  /** finish tags no room could be assigned to (too far from every room label): code → times */
+  unassigned_finish?: Record<string, number>
   tags: DrawingTag[]
   legend: Record<string, string>         // keynote / wall-type code → description
   abbreviations: Record<string, string>  // «DRS» → «DOORS»

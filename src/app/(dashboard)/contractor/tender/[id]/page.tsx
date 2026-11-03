@@ -19,7 +19,8 @@ import { buildSpecIndex } from '@/lib/tender/specIndex'
 import { rowToItem, slimFlags, draftItemFromRow } from '@/lib/tender/rows'
 import { catalogCandidates } from '@/lib/ai/catalogGround'
 import type { DrawingSummary, SpecIndex, PdfPageText, TenderFlag } from '@/lib/tender/types'
-import { makeL, kindLabel, KIND_TONE, severityLabel, SEVERITY_TONE, fmtNum } from '@/components/tender/labels'
+import { makeL, kindLabel, KIND_TONE, severityLabel, SEVERITY_TONE, fmtNum, areaStatusLabel, AREA_TONE } from '@/components/tender/labels'
+import type { AreaCheckRow } from '@/lib/tender/checks'
 
 const PROJECT_DRAFT_KEY = 'tsk_project_draft' // the project page's draft (restored on open)
 const PAGE = 150
@@ -217,6 +218,13 @@ export default function TenderReviewPage() {
   const selItem = sel ? items.find(i => i.key === sel.item_key) : null
   const selLinks = sel ? fast.codeLinks.filter(l => (sel.codes || []).includes(l.code)) : []
   const selSpec = useMemo(() => (selItem && specs.length ? specHitsFor(selItem, specs).slice(0, 3) : []), [selItem, specs])
+  const selArea = sel ? fast.areaChecks.filter(a => a.boq_items.includes(sel.item_key)) : []
+  const pct = (n: number | null) => (n == null ? '—' : `${n > 0 ? '+' : ''}${n}%`)
+  const roomsOf = (a: AreaCheckRow) => a.rooms.map(r => `${r.code || ''} ${r.name} ${fmtNum(r.area)}${r.low ? '?' : ''}`.trim()).join(' · ')
+  const areaNote = (a: AreaCheckRow) => a.status === 'partial'
+    ? a.partial.map(p => L(`Partial: ${p.have} of ${p.of} sheets of this level uploaded`, `جزوی: اس لیول کی ${p.of} میں سے ${p.have} شیٹس`, `جزئية: رُفعت ${p.have} من ${p.of} لوحات من هذا المستوى`)).join(' · ')
+    : a.status === 'walls' ? L('Paint is on walls: floor area is not comparable.', 'پینٹ دیواروں پر: فرش کا رقبہ موازنہ کے قابل نہیں۔', 'الدهان على الجدران: مساحة الأرضية لا تصلح للمقارنة.')
+    : ''
   const thumbFor = (file: string, page: number) => {
     const d = drawings.find(x => x.file === file && x.page === page)
     return d?.thumb_path ? thumbs[d.thumb_path] : undefined
@@ -280,6 +288,43 @@ export default function TenderReviewPage() {
                   </li>
                 ))}
               </ul>
+            </details>
+          )}
+
+          {fast.areaChecks.length > 0 && (
+            <details className="bg-white rounded-2xl border border-gray-200 p-3">
+              <summary className="text-sm font-bold text-[#0B2438] cursor-pointer">
+                {L(`Area comparison (${fast.areaChecks.length}): room areas on the drawings vs BOQ m²`, `رقبے کا موازنہ (${fast.areaChecks.length})`, `مقارنة المساحات (${fast.areaChecks.length}): مساحات الغرف في المخططات مقابل م² في الجدول`)}
+              </summary>
+              <p className="text-[11px] text-gray-500 mt-1">{L('Rooms are matched to finish tags by position on the sheet (a «?» marks a low-confidence room). A difference needs review; it is not an error.', 'کمروں کو شیٹ پر مقام سے ملایا گیا ہے («?» = کم یقین)۔ فرق جائزہ مانگتا ہے، غلطی نہیں۔', 'تُنسب الغرف إلى رموز التشطيب حسب موقعها في اللوحة (علامة «?» تعني نسبة غير مؤكدة). الفرق يحتاج مراجعة وليس خطأً.')}</p>
+              <div className="overflow-x-auto mt-2">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="text-gray-500 text-start">
+                      <th className="p-1.5 text-start">{L('Code', 'کوڈ', 'الرمز')}</th>
+                      <th className="p-1.5 text-start">{L('Legend', 'لیجنڈ', 'وصف المفتاح')}</th>
+                      <th className="p-1.5 text-start">{L('BOQ m²', 'BOQ م²', 'الجدول م²')}</th>
+                      <th className="p-1.5 text-start">{L('Drawings m²', 'ڈرائنگز م²', 'المخططات م²')}</th>
+                      <th className="p-1.5 text-start">{L('Difference', 'فرق', 'الفرق')}</th>
+                      <th className="p-1.5 text-start">{L('Status', 'حالت', 'الحالة')}</th>
+                      <th className="p-1.5 text-start">{L('Rooms / sheets', 'کمرے / شیٹس', 'الغرف / اللوحات')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fast.areaChecks.map(a => (
+                      <tr key={a.code} className="border-t border-gray-100 align-top">
+                        <td className="p-1.5 font-mono font-bold text-[#0B2438]" dir="ltr">{a.code}</td>
+                        <td className="p-1.5" dir="ltr">{a.legend || '—'}</td>
+                        <td className="p-1.5" dir="ltr">{fmtNum(a.boq_qty)}</td>
+                        <td className="p-1.5" dir="ltr">{fmtNum(a.drawing_area)}</td>
+                        <td className="p-1.5" dir="ltr">{a.status === 'walls' ? '—' : pct(a.diff_pct)}</td>
+                        <td className="p-1.5"><span className={`px-1.5 py-0.5 rounded-md font-bold whitespace-nowrap ${AREA_TONE[a.status] || ''}`}>{areaStatusLabel(a.status, L)}</span>{areaNote(a) && <span className="block text-[11px] text-gray-500 mt-0.5">{areaNote(a)}</span>}</td>
+                        <td className="p-1.5 text-gray-600"><span dir="ltr">{roomsOf(a) || '—'}</span><span className="block text-[11px] text-gray-400 break-all" dir="ltr">{a.sheets.join(' · ')}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </details>
           )}
 
@@ -399,6 +444,25 @@ export default function TenderReviewPage() {
                         <div key={i} className="rounded-xl bg-gray-50 p-2.5 text-xs mb-1.5" dir="ltr">
                           <div className="font-semibold text-[#0B2438]">{h.section.id} {h.section.title} <span className="text-gray-500 font-normal">· {h.file} p{h.quotes[0]?.page || h.section.page_from}</span></div>
                           {h.quotes.map((q, k) => <div key={k} className="text-gray-700 mt-1">«{q.text}» <span className="text-gray-400">p{q.page}</span></div>)}
+                        </div>
+                      ))}
+                    </section>
+                  )}
+
+                  {/* area comparison */}
+                  {selArea.length > 0 && (
+                    <section>
+                      <h3 className="text-xs font-bold text-[#0B2438] mb-1"><Glyph e="🗺" /> {L('Area comparison', 'رقبے کا موازنہ', 'مقارنة المساحات')}</h3>
+                      {selArea.map(a => (
+                        <div key={a.code} className="rounded-xl bg-gray-50 p-2.5 text-xs mb-1.5 space-y-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <b className="font-mono" dir="ltr">{a.code}</b>
+                            <span className={`px-1.5 py-0.5 rounded-md font-bold ${AREA_TONE[a.status] || ''}`}>{areaStatusLabel(a.status, L)}</span>
+                          </div>
+                          {a.status !== 'walls' && <div>{L(`BOQ ${fmtNum(a.boq_qty)} m² · drawings ${fmtNum(a.drawing_area)} m² (${pct(a.diff_pct)})`, `BOQ ${fmtNum(a.boq_qty)} م² · ڈرائنگز ${fmtNum(a.drawing_area)} م² (${pct(a.diff_pct)})`, `في الجدول ${fmtNum(a.boq_qty)} م² · في المخططات ${fmtNum(a.drawing_area)} م² (${pct(a.diff_pct)})`)}{a.boq_items.length > 1 ? L(` · sum of ${a.boq_items.length} items`, ` · ${a.boq_items.length} آئٹمز کا مجموعہ`, ` · مجموع ${a.boq_items.length} بنود`) : ''}</div>}
+                          {areaNote(a) && <div className="text-gray-500">{areaNote(a)}</div>}
+                          <div className="text-gray-600" dir="ltr">{roomsOf(a) || '—'}</div>
+                          <div className="text-[11px] text-gray-400 break-all" dir="ltr">{a.sheets.join(' · ')}</div>
                         </div>
                       ))}
                     </section>

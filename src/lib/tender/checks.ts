@@ -4,7 +4,7 @@
 // look (e.g. a tag count, since a tag can be printed twice or sit on a sheet not uploaded); info.
 import type { TenderItem, DrawingSummary, SpecIndex, SpecHit, PdfPageText, TenderFlag, SourceRef } from './types'
 import { findSpec } from './specIndex'
-import { familyOf } from './drawingText'
+import { familyOf, isFinishCode, sheetPartOf } from './drawingText'
 
 const boqSrc = (it: TenderItem): SourceRef => ({ kind: 'boq', sheet: it.sheet, row: it.row, ref: it.ref || undefined, quote: it.description.slice(0, 240) })
 const drawSrc = (d: DrawingSummary, code?: string, quote?: string): SourceRef => ({ kind: 'drawing', file: d.file, sheet: d.sheet_no || undefined, page: d.page, ref: code, quote })
@@ -36,7 +36,28 @@ export type CheckResult = {
   byItem: Record<string, TenderFlag[]>
   codeLinks: { code: string; boq_items: string[]; boq_qty: number | null; drawing_count: number; on_drawings: { sheet: string | null; page: number; file: string; count: number }[]; legend: string | null }[]
   specLinks: Record<string, { id: string; title: string; page: number; quote: string; file: string }[]>
+  areaChecks: AreaCheckRow[]
 }
+
+/** Floor-type finish (FL/CLG/SCR/WPS/TRM) in m² on the BOQ vs room areas tagged with it on the sheets. */
+export type AreaCheckRow = {
+  code: string
+  legend: string | null
+  /** ok = within ±5%; review = outside, needs a human look; partial = not all sheets of the level uploaded;
+   *  walls = paint (applies to walls, floor area is not comparable); no_rooms = tagged but no room found */
+  status: 'ok' | 'review' | 'partial' | 'walls' | 'no_rooms'
+  boq_qty: number | null
+  boq_items: string[]
+  basis: 'code' | 'legend' | null       // how the BOQ items were found
+  drawing_area: number
+  diff_pct: number | null               // (drawings − BOQ) / BOQ × 100
+  rooms: { code: string | null; name: string; area: number; sheets: string[]; low: boolean }[]
+  sheets: string[]
+  unassigned: number                    // tags of this code no room could be assigned to
+  partial: { level: string; have: number; of: number }[]
+}
+
+export const AREA_TOLERANCE_PCT = 5
 
 /** Spec sections for an item: its named section («23 21 13») first, then its code, then its words. */
 export function specHitsFor(it: TenderItem, specs: { index: SpecIndex; pages: PdfPageText[] }[]): (SpecHit & { file: string })[] {
@@ -142,14 +163,113 @@ export function runChecks({ items, drawings = [], specs = [] }: CheckInput): Che
     }
   }
 
-  // 4) specification: every material should have a section
+  // 4) room areas on the drawings vs m² finish quantities
+  const ac = areaCheck(items, drawings)
+  flags.push(...ac.flags)
+
+  // 5) specification: every material should have a section
   const sc = specCheck(items, specs)
   flags.push(...sc.flags)
   const specLinks = sc.links
 
   const byItem: Record<string, TenderFlag[]> = {}
   for (const f of flags) if (f.item_key) (byItem[f.item_key] = byItem[f.item_key] || []).push(f)
-  return { flags, byItem, codeLinks, specLinks }
+  return { flags, byItem, codeLinks, specLinks, areaChecks: ac.rows }
+}
+
+/**
+ * «مقارنة المساحات»: for every finish code tagged in rooms on the sheets, the BOQ m² quantity
+ * (items carrying the code, else items whose wording contains every word of the legend text) vs the
+ * sum of the areas of the distinct rooms tagged with it (a room on two sheets counts once).
+ * Paint (PT) is on walls: only the rooms are listed. When a sheet's title says «1/4», «2/4»… and not
+ * all parts of that level are uploaded, the numbers are shown as «partial», not compared.
+ * A difference is never an error: it is «needs review» (room areas are net floor areas; a BOQ may
+ * add upstands, coves, other levels or rooms on sheets not uploaded).
+ */
+export function areaCheck(items: TenderItem[], drawings: DrawingSummary[]): { rows: AreaCheckRow[]; flags: TenderFlag[] } {
+  const rows: AreaCheckRow[] = []
+  const flags: TenderFlag[] = []
+  if (!drawings.some(d => (d.rooms || []).some(r => r.tags && Object.keys(r.tags).length))) return { rows, flags }
+  const sheetOf = (d: DrawingSummary) => d.sheet_no || `${d.file} p${d.page}`
+  // which parts of each level are uploaded
+  const levels = new Map<string, { of: number; have: Set<number> }>()
+  for (const d of drawings) {
+    const p = sheetPartOf(d.title)
+    if (!p) continue
+    const l = levels.get(p.level) || { of: p.of, have: new Set<number>() }
+    l.of = Math.max(l.of, p.of); l.have.add(p.n); levels.set(p.level, l)
+  }
+  // code → distinct rooms (by room code, else name + area) and the sheets they are on
+  type Acc = { rooms: Map<string, AreaCheckRow['rooms'][number]>; sheets: Set<string>; drawings: Set<DrawingSummary>; unassigned: number; legend: string | null }
+  const byCode = new Map<string, Acc>()
+  const accOf = (code: string) => { let a = byCode.get(code); if (!a) { a = { rooms: new Map(), sheets: new Set(), drawings: new Set(), unassigned: 0, legend: null }; byCode.set(code, a) } return a }
+  for (const d of drawings) {
+    for (const r of d.rooms || []) for (const code of Object.keys(r.tags || {})) {
+      if (!isFinishCode(code) || !r.area) continue
+      const a = accOf(code)
+      const k = r.code || `${r.name}|${r.area}`
+      const room = a.rooms.get(k) || { code: r.code, name: r.name, area: r.area, sheets: [], low: false }
+      if (!room.sheets.includes(sheetOf(d))) room.sheets.push(sheetOf(d))
+      if ((r.low_tags || []).includes(code)) room.low = true
+      a.rooms.set(k, room); a.sheets.add(sheetOf(d)); a.drawings.add(d)
+    }
+    for (const [code, n] of Object.entries(d.unassigned_finish || {})) { const a = accOf(code); a.unassigned += n; a.sheets.add(sheetOf(d)); a.drawings.add(d) }
+  }
+  for (const d of drawings) for (const [code, text] of Object.entries(d.legend || {})) { const a = byCode.get(code); if (a && !a.legend) a.legend = text }
+
+  const m2 = items.filter(i => i.kind !== 'header' && i.unit === 'م²')
+  for (const [code, a] of Array.from(byCode.entries()).sort((x, y) => x[0].localeCompare(y[0]))) {
+    let basis: AreaCheckRow['basis'] = null
+    let list = m2.filter(i => i.codes.some(c => c === code || c.replace(/-T\d+$/, '') === code))
+    if (list.length) basis = 'code'
+    else if (a.legend) {
+      const lw = Array.from(new Set(normWords(a.legend)))
+      if (lw.length >= 2) {
+        list = m2.filter(i => { const bw = new Set(normWords(i.description)); return lw.every(w => bw.has(w)) })
+        if (list.length) basis = 'legend'
+      }
+    }
+    const paint = familyOf(code) === 'PT'
+    if (!list.length && !paint) continue // only finishes that have an m² BOQ item
+    const withQty = list.filter(i => i.qty != null)
+    const boqQty = withQty.length ? withQty.reduce((s, i) => s + (i.qty || 0), 0) : null
+    const rooms = Array.from(a.rooms.values()).sort((x, y) => y.area - x.area)
+    const area = Math.round(rooms.reduce((s, r) => s + r.area, 0) * 1000) / 1000
+    const partial: AreaCheckRow['partial'] = []
+    for (const d of Array.from(a.drawings)) {
+      const p = sheetPartOf(d.title)
+      const l = p ? levels.get(p.level) : null
+      if (p && l && l.have.size < l.of && !partial.some(x => x.level === p.level)) partial.push({ level: p.level, have: l.have.size, of: l.of })
+    }
+    const diff = boqQty ? Math.round(((area - boqQty) / boqQty) * 1000) / 10 : null
+    const status: AreaCheckRow['status'] = paint ? 'walls' : !rooms.length ? 'no_rooms' : partial.length ? 'partial'
+      : diff != null && Math.abs(diff) <= AREA_TOLERANCE_PCT ? 'ok' : 'review'
+    const row: AreaCheckRow = { code, legend: a.legend, status, boq_qty: boqQty, boq_items: list.map(i => i.key), basis, drawing_area: area, diff_pct: diff, rooms, sheets: Array.from(a.sheets), unassigned: a.unassigned, partial }
+    rows.push(row)
+
+    // flags on the BOQ items (paint: none; ok: none)
+    if (status === 'walls' || status === 'ok' || !list.length) continue
+    const roomsTxt = rooms.slice(0, 8).map(r => `${r.code || r.name} ${fmt(r.area)}`).join('، ') + (rooms.length > 8 ? '…' : '')
+    const roomsEn = rooms.slice(0, 8).map(r => `${r.code || r.name} ${fmt(r.area)}`).join(', ') + (rooms.length > 8 ? '…' : '')
+    const lowN = rooms.filter(r => r.low).length
+    const sheetsTxt = row.sheets.join('، ')
+    const partTxt = partial.map(p => `${p.have} من ${p.of}`).join('، ')
+    const wps = familyOf(code) === 'WPS'
+    let ar: string, en: string
+    if (status === 'partial') {
+      ar = `مقارنة المساحات للرمز ${code}: جزئية، رُفعت ${partTxt} لوحات من هذا المستوى. في الجدول ${fmt(boqQty || 0)} م²، وفي اللوحات المرفوعة ${fmt(area)} م² (${roomsTxt}).`
+      en = `Area check ${code}: partial, ${partial.map(p => `${p.have} of ${p.of}`).join(', ')} sheets of this level uploaded. BOQ ${fmt(boqQty || 0)} m², uploaded sheets ${fmt(area)} m² (${roomsEn}).`
+    } else if (status === 'no_rooms') {
+      ar = `الرمز ${code} ظاهر في المخططات (${sheetsTxt}) ولم يُنسب إلى غرفة بعينها: قارن المساحة يدوياً.`
+      en = `Code ${code} is on the drawings (${row.sheets.join(', ')}) but no room could be assigned: compare the area by hand.`
+    } else {
+      ar = `مقارنة المساحات للرمز ${code}: في الجدول ${fmt(boqQty || 0)} م²${list.length > 1 ? ` (مجموع ${list.length} بنود)` : ''}، ومساحات الغرف الموسومة به ${fmt(area)} م² (${diff != null ? `${diff > 0 ? '+' : ''}${diff}%` : '—'}). الغرف: ${roomsTxt}. اللوحات: ${sheetsTxt}.${lowN ? ` نسبة ${lowN} من الغرف إلى الرمز غير مؤكدة.` : ''}${wps ? ' العزل المائي قد يشمل الجدران والقوائم فلا يساوي مساحة الأرضية.' : ''} يحتاج مراجعة، وليس بالضرورة خطأ.`
+      en = `Area check ${code}: BOQ ${fmt(boqQty || 0)} m²${list.length > 1 ? ` (sum of ${list.length} items)` : ''}, tagged room areas ${fmt(area)} m² (${diff != null ? `${diff > 0 ? '+' : ''}${diff}%` : '—'}). Rooms: ${roomsEn}. Sheets: ${row.sheets.join(', ')}.${lowN ? ` ${lowN} room assignment(s) are low-confidence.` : ''}${wps ? ' Waterproofing may include walls and upstands, so it need not equal the floor area.' : ''} Needs review, not necessarily an error.`
+    }
+    const srcs: SourceRef[] = Array.from(a.drawings).map(d => drawSrc(d, code, `${code}: ${rooms.filter(r => r.sheets.includes(sheetOf(d))).map(r => `${r.code || r.name} ${fmt(r.area)} m²`).join(', ')}`))
+    for (const it of list) flags.push({ code: 'area_check', severity: status === 'review' ? 'review' : 'info', item_key: it.key, ar, en, sources: [boqSrc(it), ...srcs] })
+  }
+  return { rows, flags }
 }
 
 /** Spec links + «no section» flags (separate so a page can run it once and the fast checks often). */
