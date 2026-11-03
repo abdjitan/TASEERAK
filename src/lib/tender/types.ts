@@ -140,6 +140,8 @@ export type SpecIndex = {
   file: string
   pages: number
   sections: SpecSection[]
+  /** code coordination matrix rows: «FL-303 Resin Floor Finish - Epoxy 096723 AFD» → its CSI section */
+  codes?: Record<string, { csi: string; title: string; page: number }>
 }
 
 export type SpecHit = {

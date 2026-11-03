@@ -63,9 +63,19 @@ export const AREA_TOLERANCE_PCT = 5
 export function specHitsFor(it: TenderItem, specs: { index: SpecIndex; pages: PdfPageText[] }[]): (SpecHit & { file: string })[] {
   const run = (q: string, n: number, min = 0) => specs.flatMap(s => findSpec(s.index, s.pages, q, n).filter(h => h.score >= min).map(h => ({ ...h, file: s.index.file })))
   let hits = it.spec_refs.flatMap(r => run(r, 1))
+  // a code the coordination matrix (CCM) maps to a section: «FL-303» → 09 67 23
+  if (!hits.length) {
+    const csi = Array.from(new Set(it.codes.flatMap(c => {
+      const base = c.replace(/-T\d{1,2}$/, '')
+      return specs.map(s => (s.index.codes?.[c] || s.index.codes?.[base])?.csi).filter((x): x is string => !!x)
+    })))
+    hits = csi.flatMap(n => run(n, 1))
+  }
   if (!hits.length) hits = it.codes.flatMap(c => run(c, 2))
   if (!hits.length) hits = run(`${it.item_text} ${it.lead_in || ''}`.slice(0, 200), 2, 12)
-  return hits.sort((a, b) => b.score - a.score)
+  // the same section from two revisions of one book (or printed twice) is one link
+  const seen = new Set<string>()
+  return hits.sort((a, b) => b.score - a.score).filter(h => { const k = h.section.id + '|' + h.section.title.toUpperCase(); if (seen.has(k)) return false; seen.add(k); return true })
 }
 
 export function runChecks({ items, drawings = [], specs = [] }: CheckInput): CheckResult {
@@ -276,7 +286,7 @@ export function areaCheck(items: TenderItem[], drawings: DrawingSummary[]): { ro
 export function specCheck(items: TenderItem[], specs: { index: SpecIndex; pages: PdfPageText[] }[]): { links: CheckResult['specLinks']; flags: TenderFlag[] } {
   const links: CheckResult['specLinks'] = {}
   const flags: TenderFlag[] = []
-  const usable = specs.filter(s => s.index.sections.length)
+  const usable = specs.filter(s => s.index.sections.length || s.index.codes)
   if (!usable.length) return { links, flags }
   for (const it of items) {
     if (it.kind !== 'material') continue

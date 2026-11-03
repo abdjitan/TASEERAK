@@ -293,6 +293,7 @@ export default function NewTenderPage() {
                         {j.data.emptyPages.length > 0 && <span className="text-amber-700"> {L(`${j.data.emptyPages.length} pages have no text (scans): not read.`, `${j.data.emptyPages.length} صفحات میں متن نہیں۔`, `${j.data.emptyPages.length} صفحة بلا نص (ممسوحة ضوئياً) لم تُقرأ.`)}</span>}
                       </p>
                       {j.kind === 'spec' && j.index && <p>{L(`${j.index.sections.filter(s => s.level === 0).length} sections, ${j.index.sections.length} headings found.`, `${j.index.sections.length} سرخیاں ملیں۔`, `وُجد ${j.index.sections.filter(s => s.level === 0).length} قسماً و${j.index.sections.length} عنواناً.`)}</p>}
+                      {j.kind === 'spec' && j.index?.codes && <p className="text-[#0F6E56] font-semibold">{L(`Code coordination matrix: ${Object.keys(j.index.codes).length} codes linked to their sections.`, `کوڈ میٹرکس: ${Object.keys(j.index.codes).length} کوڈ اپنے سیکشن سے منسلک۔`, `جدول تنسيق الرموز: رُبط ${Object.keys(j.index.codes).length} رمزاً بأقسام المواصفات.`)}</p>}
                       {j.kind === 'drawing' && (j.drawings || []).map(d => (
                         <p key={d.page}>
                           <b>{d.sheet_no || L(`Page ${d.page}`, `صفحہ ${d.page}`, `الصفحة ${d.page}`)}</b>{d.title ? ` — ${d.title}` : ''}
