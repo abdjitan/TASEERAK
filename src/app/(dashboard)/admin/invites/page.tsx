@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import PageLoader from '@/components/shared/PageLoader'
+import InviteSendPanel from './SendPanel'
 
 // Supplier invitations on WhatsApp (migrations 165-166, edge function whatsapp-invite-bot).
 // The owner sends invitations by hand; the bot answers every reply. Read only: nobody replies from
@@ -89,6 +90,8 @@ export default function AdminInvitesPage() {
           </div>
           <p className="text-xs text-gray-400 mt-2">{aiReplies} ردًّا ذكيًّا هذا الشهر. عند بلوغ الحد يرد الآلي بالنصوص الثابتة حتى بداية الشهر التالي.</p>
         </div>
+
+        <InviteSendPanel />
 
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
           <div className="flex flex-wrap items-center gap-2">
