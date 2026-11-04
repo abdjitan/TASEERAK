@@ -4,6 +4,10 @@
 
 **اسم القالب:** `supplier_invite` · **الفئة (Category):** Marketing · **اللغات:** `ar` (الأساسي)، `en`، `ur`.
 
+**اللغة بـ WhatsApp Manager:** اختار بالضبط **Arabic** (`ar`) و**English** (`en`، مش «English (US)») و**Urdu** (`ur`).
+- إذا اخترت لغة ثانية، متل English (US) = `en_US`، حط بـ Supabase secret اسمه `INVITE_LANG_CODES` = `{"en":"en_US"}`.
+- لازم يكون الكود متطابق تماماً، وإلا Meta بترفض الإرسال.
+
 بالفئة Marketing بتدفع على كل رسالة. التقدير تحت.
 
 ## المكوّنات (نفسها بالثلاث لغات)

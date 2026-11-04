@@ -5,7 +5,8 @@
 // approved_usd >= rows × PRICE_PER_INVITE_USD. dry_run lists who would be sent to, sending nothing.
 // Body: { rows: [{ phone, shop_name, lang? }], dry_run?: boolean, approved_usd?: number }
 // Secrets: WA_INVITE_TOKEN, WA_INVITE_PHONE_NUMBER_ID. Optional: INVITE_TEMPLATE (supplier_invite),
-// INVITE_ASSET_BASE (https://taseerak.vercel.app), PRICE_PER_INVITE_USD (0.06), WA_GRAPH_VERSION.
+// INVITE_ASSET_BASE (https://taseerak.vercel.app), PRICE_PER_INVITE_USD (0.06), WA_GRAPH_VERSION,
+// INVITE_LANG_CODES (JSON, e.g. {"en":"en_US"}: the codes the owner picked in WhatsApp Manager).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const GRAPH = Deno.env.get('WA_GRAPH_VERSION') || 'v21.0'
@@ -13,6 +14,8 @@ const TEMPLATE = Deno.env.get('INVITE_TEMPLATE') || 'supplier_invite'
 const ASSET_BASE = Deno.env.get('INVITE_ASSET_BASE') || 'https://taseerak.vercel.app'
 const PRICE = Number(Deno.env.get('PRICE_PER_INVITE_USD') || '0.06')
 const MAX_ROWS = 50
+// Template language codes exactly as created in WhatsApp Manager (e.g. English may be en_US).
+const LANG_CODES: Record<string, string> = { ar: 'ar', en: 'en', ur: 'ur', ...(() => { try { return JSON.parse(Deno.env.get('INVITE_LANG_CODES') || '{}') } catch { return {} } })() }
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 
 Deno.serve(async (req) => {
@@ -36,6 +39,9 @@ Deno.serve(async (req) => {
     const token = Deno.env.get('WA_INVITE_TOKEN'), phoneId = Deno.env.get('WA_INVITE_PHONE_NUMBER_ID')
     if (!dryRun && (!token || !phoneId)) return json({ error: 'wa_secrets_missing' }, 400)
 
+    // A send that died mid-way (timeout, crash) must not block its number or the daily cap.
+    if (!dryRun) await sb.from('invite_sends').update({ status: 'failed', error: 'stale_reserved' }).eq('status', 'reserved').lt('created_at', new Date(Date.now() - 10 * 60e3).toISOString())
+
     const results: any[] = []
     const seen = new Set<string>()
     let ok = 0
@@ -52,29 +58,34 @@ Deno.serve(async (req) => {
       if (error) { results.push({ phone, shop, status: 'skipped', reason: reasonOf(error.message) }); continue }
       if (dryRun) { ok++; results.push({ phone, shop, lang, status: 'would_send' }); continue }
 
-      const res = await fetch(`https://graph.facebook.com/${GRAPH}/${phoneId}/messages`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp', to: phone, type: 'template',
-          template: {
-            name: TEMPLATE, language: { code: lang },
-            components: [
-              { type: 'header', parameters: [{ type: 'image', image: { link: `${ASSET_BASE}/invite/assets/poster-${lang}.png` } }] },
-              { type: 'body', parameters: [{ type: 'text', text: shop }] },
-            ],
-          },
-        }),
-      })
-      const out = await res.json().catch(() => ({}))
-      if (res.ok && out?.messages?.[0]?.id) {
+      // A network error or timeout marks this row failed instead of leaving it reserved.
+      let res: Response | null = null, out: any = {}, thrown = ''
+      try {
+        res = await fetch(`https://graph.facebook.com/${GRAPH}/${phoneId}/messages`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp', to: phone, type: 'template',
+            template: {
+              name: TEMPLATE, language: { code: LANG_CODES[lang] || lang },
+              components: [
+                { type: 'header', parameters: [{ type: 'image', image: { link: `${ASSET_BASE}/invite/assets/poster-${lang}.png` } }] },
+                { type: 'body', parameters: [{ type: 'text', text: shop }] },
+              ],
+            },
+          }),
+          signal: AbortSignal.timeout(15000),
+        })
+        out = await res.json().catch(() => ({}))
+      } catch (e: any) { thrown = String(e?.message || e) }
+      if (res?.ok && out?.messages?.[0]?.id) {
         ok++
         await sb.from('invite_sends').update({ status: 'sent', wa_message_id: out.messages[0].id }).eq('id', id)
         // Opens the chat for the reply bot; never overwrites an existing stage.
         await sb.from('invite_chats').upsert({ phone, shop_name: shop, lang, stage: 'invited' }, { onConflict: 'phone', ignoreDuplicates: true })
         results.push({ phone, shop, status: 'sent' })
       } else {
-        const err = String(out?.error?.message || res.status).slice(0, 300)
+        const err = String(thrown || out?.error?.message || res?.status || 'unknown').slice(0, 300)
         await sb.from('invite_sends').update({ status: 'failed', error: err }).eq('id', id)
         results.push({ phone, shop, status: 'failed', reason: err })
       }
