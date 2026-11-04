@@ -10,3 +10,6 @@ invite-page/assets/
 
 # Suppression list (phone numbers that must never be contacted again).
 suppression.txt
+
+# API send list (phone numbers).
+*.csv

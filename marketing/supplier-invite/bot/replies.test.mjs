@@ -53,6 +53,12 @@ for (const [m, lang] of [['إلغاء', 'ar'], ['الغاء', 'ar'], ['STOP', 'e
 r = decide('كيف ألغي الطلب؟', {}, texts, { ai: true });
 check('«ألغي» inside a question is not an opt-out', r.ai === true);
 
+// Template quick-reply buttons (supplier_invite): register / English / Urdu.
+for (const [m, lang, want] of [['سجّلني', 'ar', 'yes'], ['Register me', 'en', 'yes'], ['رجسٹر کریں', 'ur', 'yes'], ['English', 'ar', 'en'], ['اردو', 'ar', 'ur']]) {
+  r = decide(m, { lang }, texts, { ai: false });
+  check(`button: ${m}`, want === 'yes' ? r.nextState.stage === 'interested' : r.nextState.lang === want);
+}
+
 // Old opt-out wording is gone from what the owner sends.
 const msgs = readFileSync(new URL('../messages.js', import.meta.url), 'utf8');
 check('follow-up no longer offers «not again»', !/لن نرسل مرة أخرى/.test(msgs));

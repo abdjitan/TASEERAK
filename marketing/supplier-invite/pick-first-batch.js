@@ -64,6 +64,13 @@ for (const [sec, quota] of Object.entries(QUOTA)) {
 }
 
 
+// Pilot of PILOT_SIZE (legal session): top up from the best remaining shops when a section is short.
+const PILOT_SIZE = 50;
+for (const x of shops.slice().sort((a, b) => b.score - a.score)) {
+  if (picked.length >= PILOT_SIZE) break;
+  if (!seenPhone.has(x.phone) && !picked.includes(x)) { seenPhone.add(x.phone); picked.push(x); }
+}
+
 const intl = p => '966' + p.slice(1);
 const chat = p => `https://wa.me/${intl(p)}`;
 // kind: 'opener' (Arabic invitation), 'follow' (one reminder), or en/ur/ar (full details, language already known).
@@ -90,7 +97,7 @@ out.Workbook = { Views: [{ RTL: true }] };
 XLSX.utils.book_append_sheet(out, ws, 'الدفعة الأولى');
 const how = [
   ['طريقة الاستخدام'],
-  ['1. لا يُرسَل شيء تلقائيًا. افتح send-sheet.html (بجانب هذا الملف) في المتصفح: زر «الدعوة» يفتح واتساب والرسالة العربية جاهزة، وأنت من يضغط إرسال.'],
+  ['1. الإرسال صار من رقم تسعيرك على WhatsApp Cloud API بقالب معتمد (supplier_invite)، لا من جوالك: هذا الملف للمتابعة فقط، والقائمة المرسلة في pilot-50.csv.'],
   [require('./links').links.bot_live ? '2. الدعوة بالعربية، وآخر سطر فيها: 2 للإنجليزية و3 للأردية. كل الردود بعد ذلك يرسلها الرد الآلي (bot)، ولا يحتاج أحد أن يرد بنفسه.' : '2. الرد الآلي لم يُربط بعد، لذلك الدعوة فيها رابط التسجيل مباشرة، وآخر سطر رابط صفحة فيها الإنجليزية والأردية. لا يلزمك الرد على أحد.'],
   ['3. مع الدعوة أرفق posters/poster-ar.png (رمز QR فيها يفتح صفحة الدعوة).'],
   ['4. حدّث عمود «الحالة» هنا: أُرسل / ردّ / سجّل / سعّر طلبًا / رفض / لا تراسله.'],
@@ -106,42 +113,13 @@ ws2['!cols'] = [{ wch: 120 }];
 XLSX.utils.book_append_sheet(out, ws2, 'طريقة الاستخدام');
 XLSX.writeFile(out, path.join(__dirname, 'first-batch-50.xlsx'));
 
-// 2) send-sheet.html = one row per shop with buttons that open WhatsApp with the message ready.
-const rowsHtml = picked.map((s, i) => {
-  const name = s.r['الاسم'];
-  const b = (kind, label, main) => `<a class="b${main ? ' main' : ''}" href="${esc(wa(s.phone, kind, name))}" target="_blank" rel="noopener" data-id="${i + 1}">${label}</a>`;
-  return `<tr id="r${i + 1}"><td>${i + 1}</td><td><b>${esc(name)}</b><div class="m">${esc(s.type)} · ${esc(s.r['الحي'] || '')} · ${s.r['التقييم']} (${s.r['المراجعات']})</div></td>
-<td class="btns">${b('opener', 'الدعوة', true)}<span class="sep">لغة معروفة:</span>${b('en', 'English', false)}${b('ur', 'اردو', false)}${s.r['رابط الخريطة'] ? `<a class="b" href="${esc(s.r['رابط الخريطة'])}" target="_blank" rel="noopener">الخريطة</a>` : ''}</td>
-<td><label><input type="checkbox" data-sent="${i + 1}"> أُرسلت</label></td></tr>`;
-}).join('\n');
-const sheet = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>دعوات الموردين: الدفعة الأولى</title>
-<style>
-body{margin:0;background:#F3F5F7;font-family:'IBM Plex Sans Arabic',Tahoma,Arial,sans-serif;color:#1B2733}
-header{background:#071827;color:#fff;padding:18px 20px;border-bottom:3px solid #D4A543}
-header h1{margin:0;font-size:20px;color:#F5C55B} header p{margin:6px 0 0;font-size:13px;color:#C9D4DE}
-main{padding:16px;max-width:1100px;margin:auto}
-table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden}
-td{padding:10px;border-bottom:1px solid #E3E8ED;vertical-align:middle;font-size:14px}
-.m{font-size:12px;color:#5B6B7A;margin-top:3px}
-.btns{white-space:nowrap}
-.b{display:inline-block;margin:2px;padding:6px 10px;border:1px solid #D4A543;border-radius:8px;color:#071827;text-decoration:none;font-size:13px}
-.b.main{background:#D4A543;font-weight:700}
-.sep{font-size:11px;color:#5B6B7A;margin:0 6px}
-tr.sent{opacity:.45}
-</style></head><body>
-<header><h1>دعوات الموردين: الدفعة الأولى (${picked.length} محلًا)</h1>
-<p>الزر يفتح واتساب والرسالة جاهزة، ولا يُرسَل شيء إلا عندما تضغط إرسال بنفسك. أول رسالة: «الدعوة» بالعربية مع posters/poster-ar.png. ${require("./links").links.bot_live ? "كل الردود بعدها يرسلها الرد الآلي." : "الرد الآلي لم يُربط بعد: الرسالة فيها رابط التسجيل وصفحة اللغات، فلا يلزمك الرد."} رسالة واحدة لكل محل، من 30 إلى 50 في اليوم. من ردّ «إلغاء» أضف رقمه إلى suppression.txt. علامة «أُرسلت» تُحفظ في هذا المتصفح فقط.</p></header>
-<main><table>${rowsHtml}</table></main>
-<script>
-const KEY='taseerak-invite-sent';
-let sent={};try{sent=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(sent))}catch(e){}};
-document.querySelectorAll('[data-sent]').forEach(cb=>{const id=cb.dataset.sent;cb.checked=!!sent[id];
-  document.getElementById('r'+id).classList.toggle('sent',cb.checked);
-  cb.addEventListener('change',()=>{sent[id]=cb.checked;save();document.getElementById('r'+id).classList.toggle('sent',cb.checked)})});
-</script></body></html>`;
-fs.writeFileSync(path.join(__dirname, 'send-sheet.html'), sheet, 'utf8');
+// 2) pilot-50.csv = the list the API sender uses (template supplier_invite, {{1}} = shop name).
+// No wa.me send sheet any more: those links send from the owner's personal WhatsApp.
+const csvCell = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+const csv = ['phone_e164,shop_name,lang,section,shop_type', ...picked.map(x => [intl(x.phone), x.r['الاسم'], 'ar', x.sec, x.type].map(csvCell).join(','))].join('\n');
+fs.writeFileSync(path.join(__dirname, 'pilot-50.csv'), '\ufeff' + csv + '\n', 'utf8');
+const oldSheet = path.join(__dirname, 'send-sheet.html');
+if (fs.existsSync(oldSheet)) fs.unlinkSync(oldSheet);
 
 console.log('candidates', shops.length, 'picked', picked.length);
 console.log('longest link chars', Math.max(...picked.map(s => wa(s.phone, 'ur', s.r['الاسم']).length)));
