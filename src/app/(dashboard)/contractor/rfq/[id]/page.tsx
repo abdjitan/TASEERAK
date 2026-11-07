@@ -7,7 +7,8 @@ import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS, UNIT_OPTIONS, getProductLabel, getUnitLabel } from '@/types'
+import { SECTOR_LABELS, UNIT_OPTIONS, getProductLabel, getUnitLabel, detectSubCategory } from '@/types'
+import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { useTranslation } from '@/i18n'
 import { waLink } from '@/lib/wa'
 import { offerComparable, lineComparable, vatTag, showsVatBreakdown } from '@/lib/vat'
@@ -582,6 +583,11 @@ export default function RFQDetailPage() {
                         <tr key={i} className="border-b border-gray-50 align-top">
                           <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                           <td className="py-2.5 px-3">
+                            <div className="flex items-start gap-2.5">
+                            {it.product_name
+                              ? <img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))} className="w-11 h-11 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />
+                              : <span className="w-11 h-11 rounded-lg bg-gray-50 border border-gray-100 shrink-0 grid place-items-center text-gray-400"><Glyph e="📦" /></span>}
+                            <div className="min-w-0">
                             <div className="font-semibold text-[#0B2438]">{getProductLabel(it.product_name, locale)}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{secLabel(it.sector)}</span>
@@ -590,6 +596,8 @@ export default function RFQDetailPage() {
                               {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{L('d', ' دن', 'ي')}</span>}
                               {it.spec_file_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline"><Glyph e="📎" /> {L('File', 'فائل', 'ملف')}</a>}
                               {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
+                            </div>
+                            </div>
                             </div>
                           </td>
                           <td className="py-2.5 px-3 font-bold text-[#8F6820] whitespace-nowrap">{it.quantity} {getUnitLabel(it.unit, locale)}</td>
