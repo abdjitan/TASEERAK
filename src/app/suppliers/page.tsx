@@ -90,7 +90,7 @@ export default async function SuppliersLeaderboard() {
                           {l.google_rating != null && <span><Glyph e="⭐" /> {l.google_rating}{l.google_reviews ? ` (${l.google_reviews})` : ''}</span>}
                         </div>
                       </div>
-                      <span className="text-[10px] font-semibold text-gray-400 whitespace-nowrap border border-gray-200 rounded-lg px-2 py-1">غير مسجّل</span>
+                      <span className="text-[10px] font-semibold text-gray-400 whitespace-nowrap border border-gray-200 rounded-lg px-2 py-1">لم ينضمّ بعد</span>
                     </div>
                   ))}
                 </div>
