@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Notification } from '@/types'
+import { realtimeTopic } from '@/lib/realtimeTopic'
 
 export function useNotifications(userId?: string) {
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -15,7 +16,7 @@ export function useNotifications(userId?: string) {
     fetchNotifications()
 
     const channel = supabase
-      .channel(`notifications-${userId}`)
+      .channel(realtimeTopic(`notifications-${userId}`))
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'notifications',
         filter: `user_id=eq.${userId}`,

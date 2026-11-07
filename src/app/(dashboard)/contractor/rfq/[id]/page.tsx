@@ -25,6 +25,7 @@ import Glyph from '@/components/shared/Glyph'
 import { daysText, arCount } from '@/lib/text'
 import { toLatinDigits as toLatinNumber } from '@/lib/phone'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
+import { realtimeTopic } from '@/lib/realtimeTopic'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -203,7 +204,7 @@ export default function RFQDetailPage() {
     let ch: any
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
-      ch = supabase.channel(`rfq-live-${id}-${session.user.id}`)
+      ch = supabase.channel(realtimeTopic(`rfq-live-${id}-${session.user.id}`))
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, (payload: any) => {
           const n = payload.new
           if (!n || !JSON.stringify(n.data || {}).includes(String(id))) return

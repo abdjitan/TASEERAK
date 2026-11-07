@@ -23,6 +23,7 @@ import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind } from '@/lib/
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { daysText, arMaterials } from '@/lib/text'
+import { realtimeTopic } from '@/lib/realtimeTopic'
 
 const txt = {
   ar: {
@@ -247,7 +248,7 @@ export default function SupplierDashboard() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
       ch = supabase
-        .channel(`sup-noti-${session.user.id}`)
+        .channel(realtimeTopic(`sup-noti-${session.user.id}`))
         .on('postgres_changes', {
           event: 'INSERT', schema: 'public', table: 'notifications',
           filter: `user_id=eq.${session.user.id}`,

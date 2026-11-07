@@ -13,6 +13,7 @@ import NavIcon from '@/components/shared/NavIcon'
 import Glyph from '@/components/shared/Glyph'
 import { storedSellerKind } from '@/lib/sellers'
 import { claimPendingRef } from '@/lib/referral'
+import { realtimeTopic } from '@/lib/realtimeTopic'
 
 // Unread-messages badge cache shared by every AppShell mount (see the effect below).
 const unreadCache = { uid: '', n: 0, at: 0 }
@@ -82,7 +83,7 @@ export default function AppShell({
       // Only this person's conversations (send_message bumps last_message_at) — the old listener
       // heard every message on the platform and recounted for each (perf audit 2026-11-01).
       // Reading messages is announced by the messages page with a 'tsk:msgs-read' event.
-      ch = supabase.channel(`appshell-msgs-${uid}`)
+      ch = supabase.channel(realtimeTopic(`appshell-msgs-${uid}`))
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `contractor_id=eq.${uid}` }, () => { refresh() })
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'conversations', filter: `supplier_id=eq.${uid}` }, () => { refresh() })
         .subscribe()

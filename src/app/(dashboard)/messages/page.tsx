@@ -11,6 +11,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import LoadError from '@/components/shared/LoadError'
 import { rfqDisplayName } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
+import { realtimeTopic } from '@/lib/realtimeTopic'
 
 function fmtTime(d: any, locale: string = 'ar') {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -114,7 +115,7 @@ function Messages() {
       await supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('conversation_id', activeId).neq('sender_id', me).is('read_at', null)
       window.dispatchEvent(new Event('tsk:msgs-read')) // the menu badge recounts
       if (cancelled) return // don't open a channel for a conversation we already switched away from
-      ch = supabase.channel(`conv-${activeId}`)
+      ch = supabase.channel(realtimeTopic(`conv-${activeId}`))
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeId}` }, (payload) => {
           setMsgs(prev => {
             if (prev.some(m => m.id === payload.new.id)) return prev
