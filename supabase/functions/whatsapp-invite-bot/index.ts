@@ -15,7 +15,7 @@ import { askClaude, costUsd } from './ai.mjs'
 import texts from './texts.json' with { type: 'json' }
 
 const GRAPH = Deno.env.get('WA_GRAPH_VERSION') || 'v21.0'
-const BASE = Deno.env.get('INVITE_BASE_URL') || 'https://Taseerak.com'
+const BASE = Deno.env.get('INVITE_BASE_URL') || 'https://taseerak.com'
 const AI_CAP_USD = Number(Deno.env.get('AI_CAP_USD') || '5')
 // Owner messages that open a chat for the bot (the invitation and the one follow-up, messages.js).
 const INVITE_PREFIXES = ['السلام عليكم ورحمة الله وبركاته،\nتحية طيبة لفريق', 'السلام عليكم، نذكّركم بدعوة']

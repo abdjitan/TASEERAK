@@ -8,8 +8,8 @@ const path = require('path');
 const sharp = require('sharp');
 
 const dir = __dirname;
+const { links, base } = require('./links');
 const root = path.join(dir, '..', '..');
-const links = JSON.parse(fs.readFileSync(path.join(dir, 'links.json'), 'utf8'));
 const out = path.join(dir, 'invite-page');
 const assets = path.join(out, 'assets');
 fs.mkdirSync(assets, { recursive: true });
@@ -72,7 +72,7 @@ const T = {
 <meta name="description" content="طلبات تسعير مواد البناء تصل إلى جوالك مباشرة. Construction price requests, straight to your phone.">
 <meta property="og:title" content="تسعيرك | Taseerak | تسعیرک">
 <meta property="og:description" content="دعوة خاصة للموردين في الرياض · A special invitation for Riyadh suppliers">
-<meta property="og:image" content="${links.live_site}/invite/assets/hero.jpg">
+<meta property="og:image" content="${base}/invite/assets/hero.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;600;700&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap" rel="stylesheet">
 <style>

@@ -5,13 +5,13 @@
 // approved_usd >= rows × PRICE_PER_INVITE_USD. dry_run lists who would be sent to, sending nothing.
 // Body: { rows: [{ phone, shop_name, lang? }], dry_run?: boolean, approved_usd?: number }
 // Secrets: WA_INVITE_TOKEN, WA_INVITE_PHONE_NUMBER_ID. Optional: INVITE_TEMPLATE (supplier_invite),
-// INVITE_ASSET_BASE (https://taseerak.vercel.app), PRICE_PER_INVITE_USD (0.06), WA_GRAPH_VERSION,
+// INVITE_ASSET_BASE (https://taseerak.com), PRICE_PER_INVITE_USD (0.06), WA_GRAPH_VERSION,
 // INVITE_LANG_CODES (JSON, e.g. {"en":"en_US"}: the codes the owner picked in WhatsApp Manager).
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const GRAPH = Deno.env.get('WA_GRAPH_VERSION') || 'v21.0'
 const TEMPLATE = Deno.env.get('INVITE_TEMPLATE') || 'supplier_invite'
-const ASSET_BASE = Deno.env.get('INVITE_ASSET_BASE') || 'https://taseerak.vercel.app'
+const ASSET_BASE = Deno.env.get('INVITE_ASSET_BASE') || 'https://taseerak.com'
 const PRICE = Number(Deno.env.get('PRICE_PER_INVITE_USD') || '0.06')
 const MAX_ROWS = 50
 // Template language codes exactly as created in WhatsApp Manager (e.g. English may be en_US).

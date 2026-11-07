@@ -5,7 +5,7 @@
   "ios": "https://apps.apple.com/app/taseerak/id0000000000",
   "email_from": "info@taseerak.com",
   "whatsapp_business": "+9665XXXXXXXX",
-  "domain_live": false,
+  "domain_live": true,
   "apps_live": false,
   "live_site": "https://taseerak.vercel.app",
   "bot_live": false
