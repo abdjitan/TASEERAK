@@ -27,6 +27,8 @@ export const metadata: Metadata = {
     images: [{ url: '/og.png', width: 1200, height: 630, alt: 'تسعيرك' }],
   },
   twitter: { card: 'summary_large_image', title: 'تسعيرك — اطلب سعر أي مادة بناء من عدة موردين', images: ['/og.png'] },
+  // Meta Business domain verification for taseerak.com (portfolio Taseerak), needed for WhatsApp onboarding
+  verification: { other: { 'facebook-domain-verification': 'a34z2iuod4ip26619mz0zppc87owbw' } },
 }
 
 export const viewport = {
