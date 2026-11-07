@@ -49,6 +49,7 @@ const TR = {
     profileFailed: 'تعذّر حفظ الموقع والبيانات الأساسية. تحقّق من اتصالك ثم حاول مرة أخرى.',
     matFailed: 'حُفظ ملفك، لكن تعذّر إرسال بعض المواد المقترحة. اضغط «حفظ» مرة أخرى لإعادة إرسالها.',
     kindFailed: 'تعذّر تطبيق نوع الحساب تلقائياً، يُرجى اختياره يدوياً أدناه.',
+    bizName: 'اسم المحل أو النشاط التجاري', bizHint: 'يظهر للمشترين على عروضك', bizPh: 'مثال: مؤسسة الصخر لمواد البناء', needBiz: 'اكتب اسم المحل أو النشاط التجاري', needSpec: 'اختر نوعاً واحداً على الأقل مما تبيعه حتى تصلك الطلبات',
   },
   en: {
     title: 'Set up your business profile', subC: 'Add your location and work areas to get the best offers', subS: 'Add your location and specialties to appear to buyers and receive matching requests',
@@ -70,6 +71,7 @@ const TR = {
     profileFailed: 'Could not save your location and basic details. Check your connection and try again.',
     matFailed: 'Your profile was saved, but some suggested materials could not be sent. Press Save again to resend them.',
     kindFailed: 'Could not apply your account type automatically; please pick it below.',
+    bizName: 'Shop or business name', bizHint: 'Shown to buyers on your offers', bizPh: 'e.g. Al-Sakhr Building Materials', needBiz: 'Write your shop or business name', needSpec: 'Pick at least one thing you sell so requests can reach you',
   },
   ur: {
     title: 'اپنی کاروباری پروفائل ترتیب دیں', subC: 'بہترین آفرز کے لیے اپنا مقام اور کام کے شعبے شامل کریں', subS: 'خریداروں کو نظر آنے اور مماثل درخواستیں وصول کرنے کے لیے مقام اور مہارتیں شامل کریں',
@@ -91,6 +93,7 @@ const TR = {
     profileFailed: 'مقام اور بنیادی معلومات محفوظ نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔',
     matFailed: 'پروفائل محفوظ ہو گئی، لیکن کچھ تجویز کردہ مواد نہیں بھیجے جا سکے۔ دوبارہ بھیجنے کے لیے پھر سے محفوظ کریں۔',
     kindFailed: 'اکاؤنٹ کی قسم خود بخود لاگو نہیں ہو سکی، براہ کرم نیچے منتخب کریں۔',
+    bizName: 'دکان یا کاروبار کا نام', bizHint: 'خریدار آپ کی آفر پر یہی نام دیکھیں گے', bizPh: 'مثلاً الصخر بلڈنگ میٹریلز', needBiz: 'دکان یا کاروبار کا نام لکھیں', needSpec: 'درخواستیں پانے کے لیے کم از کم ایک چیز منتخب کریں جو آپ بیچتے ہیں',
   },
 }
 
@@ -117,6 +120,9 @@ export default function OnboardingPage() {
   // فرد / وكيل أسعار / سمسار: ما عنده محل ولا سجل — ثقته من التقييمات، فما نسأله تصنيف ولا توثيق
   const isIndividual = ['individual', 'price_agent', 'broker'].includes(providerType)
   const [minOrderValue, setMinOrderValue] = useState('')
+  // business name for a company seller: the WhatsApp sign-up only asks for the person's name
+  const [bizName, setBizName] = useState('')
+  const [bizOrig, setBizOrig] = useState('')
   const [contractorGrade, setContractorGrade] = useState<'A' | 'B' | 'C' | 'D' | ''>('')
   const [extraMaterials, setExtraMaterials] = useState<{ sector: string; name: string }[]>([])
   const [extraMaterialInput, setExtraMaterialInput] = useState('')
@@ -135,7 +141,7 @@ export default function OnboardingPage() {
       if (!session) { window.location.href = '/login'; return }
       setUid(session.user.id)
       const metaRole = (session.user.user_metadata as any)?.role
-      const { data: p, error: pErr } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type').eq('id', session.user.id).single()
+      const { data: p, error: pErr } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type, full_name, company_name_ar').eq('id', session.user.id).single()
       if (pErr) { setLoadFailed(true); showErr(t.loadFailed) }
       setRole(((p?.role || metaRole) === 'supplier') ? 'supplier' : 'contractor')
       if (p) {
@@ -143,6 +149,9 @@ export default function OnboardingPage() {
         setLat(p.latitude ?? null); setLng(p.longitude ?? null)
         if (p.supplier_tier) setSupplierTier(p.supplier_tier)
         setProviderType(p.provider_type || '')
+        const cn = (p.company_name_ar || '').trim()
+        const own = !cn || cn === 'شركة جديدة' || cn === (p.full_name || '').trim()
+        setBizName(own ? '' : cn); setBizOrig(own ? '' : cn)
         // Invitation links (/join/company, /join/seller) pass the kind at signup: apply it once.
         const metaKind = (session.user.user_metadata as any)?.seller_kind || rememberedSignupKind()
         try { localStorage.removeItem(SIGNUP_KIND_KEY) } catch {}
@@ -187,6 +196,8 @@ export default function OnboardingPage() {
     if (!region || !city) { showErr(t.needLoc); return }
     // القطاعات إلزامية للمورّد فقط؛ المشتري يكفيه الموقع (التوجيه يتم من مواد الطلب).
     if (role === 'supplier' && sectors.length === 0) { showErr(t.needSector); return }
+    if (role === 'supplier' && specialties.length === 0) { showErr(t.needSpec); return }
+    if (role === 'supplier' && !isIndividual && bizName.trim().length < 2) { showErr(t.needBiz); return }
     // نتحقّق من البيانات قبل أي كتابة: قطاعات معروفة فقط (عمود enum) وبلا تكرار.
     const validSectors = Array.from(new Set(sectors.filter(s => Object.prototype.hasOwnProperty.call(SECTOR_LABELS, s))))
     const validSpecialties = Array.from(new Set(specialties.filter(k => typeof k === 'string' && k.trim() !== '')))
@@ -196,6 +207,7 @@ export default function OnboardingPage() {
     try {
       const update: any = { region, city, district: district || null, preferred_language: locale }
       if (lat != null && lng != null) { update.latitude = lat; update.longitude = lng }
+      if (role === 'supplier' && !isIndividual && bizName.trim() && bizName.trim() !== bizOrig) update.company_name_ar = bizName.trim().slice(0, 120)
       if (role === 'supplier') update.min_order_value = Number.isFinite(minOrder) && minOrder > 0 ? minOrder : 0
       if (role === 'contractor') update.contractor_grade = contractorGrade || null
       const { error: upErr } = await supabase.from('profiles').update(update).eq('id', uid)
@@ -239,7 +251,7 @@ export default function OnboardingPage() {
     ? [{ label: t.stepLocation, done: !!(region && city) }, { label: t.stepSectors, done: sectors.length > 0 }, { label: t.stepSpecialties, done: specialties.length > 0 }]
     : [{ label: t.stepLocation, done: !!(region && city) }] // المشتري: الموقع فقط مطلوب، والقطاعات اختيارية
   const pct = Math.round((steps.filter(s => s.done).length / steps.length) * 100)
-  const canSave = !loadFailed && !!(region && city) && (role !== 'supplier' || sectors.length > 0)
+  const canSave = !loadFailed && !!(region && city) && (role !== 'supplier' || (sectors.length > 0 && specialties.length > 0 && (isIndividual || bizName.trim().length >= 2)))
   // اكتمال كل المطلوب أعلاه (يفتح خطوة التوثيق للمورّد)
   const profileComplete = canSave && (role !== 'supplier' || specialties.length > 0)
   const ringC = 2 * Math.PI * 24
@@ -278,8 +290,8 @@ export default function OnboardingPage() {
       <header className="bg-white/90 backdrop-blur border-b border-line sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <a href={roleHome} className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-xl bg-white border border-line grid place-items-center"><img src="/logo.png" alt="تسعيرك" className="w-7 h-7 object-contain" /></span>
-            <span className="font-extrabold text-navy text-lg">تسعير<span className="text-orange">ك</span></span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-9 w-auto" />
           </a>
           <div className="flex items-center gap-3">
             <LanguageSwitcher variant="minimal" />
@@ -420,6 +432,8 @@ export default function OnboardingPage() {
                   onChange={(pt: string, tr: string | null) => { setProviderType(pt); setSupplierTier(tr) }} />
                 {!isIndividual && (
                   <>
+                    <label htmlFor="ob-biz" className="block text-xs font-bold text-navy mb-1 mt-4">{t.bizName} * <span className="text-gray-500 font-normal">— {t.bizHint}</span></label>
+                    <input id="ob-biz" value={bizName} onChange={(e: any) => setBizName(e.target.value)} autoComplete="organization" maxLength={120} className="input-field" placeholder={t.bizPh} />
                     <label className="block text-xs font-bold text-gray-500 mb-1 mt-4">{t.minOrder}</label>
                     <input type="number" value={minOrderValue} onChange={(e: any) => setMinOrderValue(e.target.value)} className="input-field" placeholder={t.minOrderPh} min="0" />
                     <p className="text-[10px] text-gray-400 mt-1">{t.minOrderHint}</p>

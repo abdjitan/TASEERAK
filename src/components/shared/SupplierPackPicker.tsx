@@ -3,7 +3,7 @@
 import { SUB_CATEGORIES } from '@/types'
 import {
   BrickWall, Zap, ShowerHead, PaintRoller, Wrench, Factory, Building2, Truck, Snowflake, DoorOpen, FireExtinguisher, Cctv,
-  Layers, Trees, Sofa, Lightbulb, Sun, CookingPot, Briefcase, Landmark, Waves, Warehouse, Droplets, ArrowUpDown, Package,
+  Layers, Trees, Sofa, Lightbulb, Sun, CookingPot, Briefcase, Landmark, Waves, Warehouse, Droplets, ArrowUpDown, Package, HardHat, Hammer,
 } from 'lucide-react'
 import { SUPPLIER_PACKS, packSectors, packSpecialties, isPackSelected, type SupplierPack } from '@/lib/supplierPacks'
 
@@ -14,6 +14,7 @@ const PACK_ICON: Record<string, any> = {
   fire_safety: FireExtinguisher, low_current: Cctv, formwork_scaffold: Layers, landscape: Trees, furniture: Sofa,
   lighting_decor: Lightbulb, solar: Sun, kitchens_appliances: CookingPot, office_furniture: Briefcase, facades: Landmark,
   pools_shades: Waves, prefab: Warehouse, water_gas: Droplets, elevators: ArrowUpDown,
+  infrastructure: HardHat, site_equipment: Hammer,
 }
 
 // "What do you sell?" — tap one or more cards; each card selects all the sectors and

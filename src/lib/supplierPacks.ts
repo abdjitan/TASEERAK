@@ -44,7 +44,7 @@ export const SUPPLIER_PACKS: SupplierPack[] = [
     id: 'finishing', icon: '🎨', ar: 'دهانات وتشطيبات', en: 'Paints & finishing', ur: 'پینٹ اور فنشنگ',
     hint: { ar: 'دهان، جبس، بلاط، باركيه', en: 'Paint, gypsum, tiles, flooring', ur: 'پینٹ، جپسم، ٹائلز' },
     specialties: {
-      architectural: ['paint', 'plaster', 'gypsum', 'drywall_metal', 'false_ceiling', 'tiles', 'marble', 'tile_adhesive', 'wood_floor', 'thermal_insulation'],
+      architectural: ['paint', 'plaster', 'gypsum', 'drywall_metal', 'false_ceiling', 'tiles', 'marble', 'tile_adhesive', 'wood_floor', 'thermal_insulation', 'special_floor'],
       supply_store: ['store_paint', 'store_adhesives'],
     },
   },
@@ -108,7 +108,7 @@ export const SUPPLIER_PACKS: SupplierPack[] = [
   {
     id: 'landscape', icon: '🌳', ar: 'تنسيق حدائق وأعمال خارجية', en: 'Landscape & external works', ur: 'لینڈ اسکیپ',
     hint: { ar: 'عشب، ري، إنترلوك، صرف خارجي', en: 'Turf, irrigation, interlock, drainage', ur: 'گھاس، آبپاشی، انٹرلاک' },
-    specialties: { civil: ['turf', 'irrigation', 'fountains', 'hardscape', 'planters', 'fencing', 'drainage'] },
+    specialties: { civil: ['turf', 'irrigation', 'fountains', 'hardscape', 'planters', 'fencing', 'drainage', 'playground'] },
   },
   {
     id: 'furniture', icon: '🛋', ar: 'أثاث وورش نجارة', en: 'Furniture & joinery workshops', ur: 'فرنیچر اور بڑھئی ورکشاپ',
@@ -164,6 +164,24 @@ export const SUPPLIER_PACKS: SupplierPack[] = [
     specialties: { architectural: ['vertical_transport'] },
   },
 ]
+
+// Added 2026-11-07 (registration review): the specialties no pack covered.
+SUPPLIER_PACKS.push(
+  {
+    id: 'infrastructure', icon: '🏗', ar: 'بنية تحتية ومشاريع كبرى', en: 'Infrastructure & large projects', ur: 'انفراسٹرکچر اور بڑے منصوبے',
+    hint: { ar: 'خوازيق، طبقات أساس، محولات، مواسير ضغط ووقود', en: 'Piles, road base, transformers, pressure and fuel pipes', ur: 'پائل، روڈ بیس، ٹرانسفارمر، پریشر پائپ' },
+    specialties: {
+      civil: ['piling', 'roadbase'],
+      electrical: ['transformers'],
+      mechanical: ['pressure_pipes', 'chilled_water_pipes', 'fuel_systems'],
+    },
+  },
+  {
+    id: 'site_equipment', icon: '🛠', ar: 'معدات وخدمات المواقع', en: 'Site equipment & services', ur: 'سائٹ کا سامان اور خدمات',
+    hint: { ar: 'لحام وقص، غسالات ضغط، تشطيب خرسانة، دورات مياه متنقلة', en: 'Welding, pressure washers, concrete finishing, portable toilets', ur: 'ویلڈنگ، پریشر واشر، کنکریٹ فنشنگ' },
+    specialties: { equipment: ['welding_cutting', 'pressure_wash', 'concrete_finishing', 'site_services'] },
+  },
+)
 
 export function packSectors(p: SupplierPack): string[] {
   return Object.keys(p.specialties)
