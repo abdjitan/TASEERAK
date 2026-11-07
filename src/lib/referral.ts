@@ -23,6 +23,6 @@ export async function claimPendingRef(supabase: any) {
 
 // The link a person shares; `role` pre-selects the account type on the signup page.
 export function inviteLink(code: string, role: 'supplier' | 'contractor') {
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://taseerak.vercel.app'
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://taseerak.com'
   return `${origin}/register?role=${role}&ref=${encodeURIComponent(code)}`
 }
