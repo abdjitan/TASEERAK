@@ -2634,18 +2634,18 @@ export const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة'] },
   ] },
   { products: ['بلوك خرساني خلوي خفيف (AAC Block / سيبوريكس)'], spec: [
-    { key: 's1', ar: 'سماكة', en: 'سماكة', options: ['10', '15', '20', '25سم'] },
-    { key: 's2', ar: 'كثافة', en: 'كثافة', options: ['450', '550', '650كغ', 'م³'] },
+    { key: 's1', ar: 'المقاس (عرض × ارتفاع × طول)', en: 'Size (W × H × L)', options: ['10×20×60 سم', '15×20×60 سم', '20×20×60 سم', '25×20×60 سم', 'حسب الطلب'] },
+    { key: 's2', ar: 'الكثافة', en: 'Density', options: ['450 كغ/م³', '550 كغ/م³', '650 كغ/م³'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['م³'] },
   ] },
   { products: ['بلوك أسمنتي مصمت (Solid Concrete Block)'], spec: [
-    { key: 's1', ar: 'عرض', en: 'عرض', options: ['10', '15', '20سم'] },
-    { key: 's2', ar: 'وجه', en: 'وجه', options: ['عادي', 'فير فيس'] },
+    { key: 's1', ar: 'المقاس (عرض × ارتفاع × طول)', en: 'Size (W × H × L)', options: ['10×20×40 سم', '15×20×40 سم', '20×20×40 سم', 'حسب الطلب'] },
+    { key: 's2', ar: 'الوجه', en: 'Face', options: ['عادي', 'فير فيس'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة'] },
   ] },
   { products: ['طوب أحمر حامل للأحمال (Load-bearing Clay Brick)'], spec: [
-    { key: 's1', ar: 'نوع', en: 'نوع', options: ['عادي', 'معزول ثقيل'] },
-    { key: 's2', ar: 'عرض', en: 'عرض', options: ['10', '15', '20سم'] },
+    { key: 's1', ar: 'النوع', en: 'Type', options: ['عادي', 'معزول ثقيل'] },
+    { key: 's2', ar: 'المقاس (عرض × ارتفاع × طول)', en: 'Size (W × H × L)', options: ['10×20×40 سم', '15×20×40 سم', '20×20×40 سم', 'حسب الطلب'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['حبة'] },
   ] },
   { products: ['طوب أحمر لحماية المواسير (Pipe-protector Brick)'], spec: [
