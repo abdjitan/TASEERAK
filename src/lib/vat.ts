@@ -31,12 +31,12 @@ export const showsVatBreakdown = (o: any) => vatStatusOf(o) === 'registered'
 // The tag under a price for the buyer. Owner 2026-11-01: «يشمل ضريبة القيمة المضافة 15%»; a seller
 // without a VAT number adds no VAT, and the tag says so instead of claiming VAT is inside.
 export function vatTag(o: any, locale: string): string {
-  if (!showsVatBreakdown(o)) return locale === 'en' ? 'no VAT (seller not VAT-registered)' : locale === 'ur' ? 'بغیر VAT (سپلائر VAT میں رجسٹرڈ نہیں)' : 'بلا ضريبة (المورد غير مسجّل ضريبياً)'
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'final price, VAT included' : locale === 'ur' ? 'حتمی قیمت، ٹیکس شامل' : 'سعر نهائي شامل الضريبة'
   return locale === 'en' ? 'incl. 15% VAT' : locale === 'ur' ? '15% VAT سمیت' : 'يشمل ضريبة القيمة المضافة 15%'
 }
 
 // The label of an offer's grand total: «يشمل ضريبة القيمة المضافة 15%» only when the seller charges it.
 export function totalLabel(o: any, locale: string): string {
-  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Total (no VAT, seller not VAT-registered)' : locale === 'ur' ? 'کل (بغیر VAT، سپلائر رجسٹرڈ نہیں)' : 'الإجمالي (بلا ضريبة، المورد غير مسجّل ضريبياً)'
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Total (final, VAT included)' : locale === 'ur' ? 'کل (حتمی، ٹیکس شامل)' : 'الإجمالي (نهائي شامل الضريبة)'
   return locale === 'en' ? 'Total incl. 15% VAT' : locale === 'ur' ? 'کل رقم (15% VAT سمیت)' : 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)'
 }

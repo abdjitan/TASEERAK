@@ -1458,7 +1458,7 @@ export default function SupplierRFQPage() {
                     {/* خيار شمول الضريبة — إلزامي وصريح، بلا قيمة افتراضية (لا يظهر للبائع المستقل غير المسجّل ضريبياً) */}
                     <p className="mb-3 text-sm font-semibold rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
                       <Glyph e="🧾" /> {noVat
-                        ? L('You are not registered for VAT; the price you enter is final and no VAT is added to it.', 'آپ ویٹ (VAT) میں رجسٹرڈ نہیں ہیں؛ آپ کی درج کردہ قیمت حتمی ہے اور اس پر کوئی ٹیکس نہیں لگے گا۔', 'أنت غير مسجّل في ضريبة القيمة المضافة؛ السعر الذي تدخله نهائي ولا تُضاف إليه ضريبة.')
+                        ? L('Enter your final price including VAT; nothing is added to it.', 'اپنی حتمی قیمت ٹیکس سمیت درج کریں؛ اس پر کچھ اضافہ نہیں ہوگا۔', 'أدخل سعرك النهائي شاملاً الضريبة؛ لا يُضاف إليه أي مبلغ.')
                         : L('Enter your prices including 15% VAT. This is what the buyer pays.', 'اپنی قیمتیں 15% ٹیکس سمیت درج کریں۔ یہی رقم خریدار ادا کرے گا۔', 'أدخل أسعارك شاملةً ضريبة القيمة المضافة (15%)، فهذا ما يدفعه المشتري.')}
                     </p>
                     {/* تفصيل الإجمالي */}
@@ -1607,7 +1607,7 @@ export default function SupplierRFQPage() {
               {!blockReason && gross > 0 && (
                 <div className="rounded-xl px-3 py-2.5 text-sm font-bold text-center border" style={{ background: '#0F6E560D', borderColor: '#0F6E5633', color: '#0F6E56' }} aria-live="polite">
                   {noVat
-                    ? L(`The buyer will see: ${fmtG} SAR (seller not VAT-registered)`, `خریدار دیکھے گا: ${fmtG} ریال (ٹیکس میں غیر رجسٹرڈ فروخت کنندہ)`, `سيرى المشتري: ${fmtG} ر.س (بائع غير مسجّل ضريبياً)`)
+                    ? L(`The buyer will see: ${fmtG} SAR (final, VAT included)`, `خریدار دیکھے گا: ${fmtG} ریال (حتمی، ٹیکس شامل)`, `سيرى المشتري: ${fmtG} ر.س (شامل الضريبة)`)
                     : L(`The buyer will see: ${fmtG} SAR incl. 15% VAT`, `خریدار دیکھے گا: ${fmtG} ریال (15% VAT سمیت)`, `سيرى المشتري: ${fmtG} ر.س (يشمل ضريبة القيمة المضافة 15%)`)}
                 </div>
               )}
