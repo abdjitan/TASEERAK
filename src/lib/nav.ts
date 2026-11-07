@@ -21,6 +21,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/admin/learning', icon: '🧠', label: L('Search learning', 'سرچ لرننگ', 'تعلّم البحث'), section: sec },
       { href: '/admin/ai-lab', icon: createElement(Glyph, { e: '🤖' }), label: L('AI lab', 'AI لیب', 'مختبر الذكاء الاصطناعي'), section: sec },
       { href: '/admin/suggestions', icon: '💡', label: L('Suggestions', 'تجاویز', 'اقتراحات المستخدمين'), section: sec },
+      { href: '/admin/reports', icon: '🚩', label: L('User reports', 'رپورٹس', 'البلاغات'), section: sec },
       { href: '/admin/invites', icon: '💬', label: L('Supplier invites', 'سپلائر دعوتیں', 'دعوات الموردين'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },

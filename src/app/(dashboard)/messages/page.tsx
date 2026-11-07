@@ -35,11 +35,22 @@ function Messages() {
   const [sending, setSending] = useState(false)
   const [awarded, setAwarded] = useState(true) // افتراضياً نسمح؛ نتحقق عند فتح المحادثة
   const endRef = useRef<any>(null)
+  // report / block (migration 201): {other_id, i_blocked, blocked_me}
+  const [bstate, setBstate] = useState<any>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [reason, setReason] = useState('spam')
+  const [details, setDetails] = useState('')
+  const [reportMsgId, setReportMsgId] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [notice, setNotice] = useState('')
 
   const PREAWARD_MAX = 20
   // الرسائل الفاشلة لا تُحتسب ضمن الحد (لم تُرسَل فعلاً)
   const remaining = PREAWARD_MAX - msgs.filter((m: any) => m._status !== 'failed').length
-  const blocked = !awarded && remaining <= 0
+  const limitReached = !awarded && remaining <= 0
+  const chatBlocked = !!(bstate?.i_blocked || bstate?.blocked_me)
+  const blocked = limitReached || chatBlocked
 
   // a failed load keeps the list we already have and says so (it must not look like «no conversations»)
   async function loadConvos() {
@@ -97,6 +108,9 @@ function Messages() {
       }
       if (cancelled) return
       setAwarded(aw)
+      const { data: bs } = await supabase.rpc('conversation_block_state', { p_conversation: activeId })
+      if (cancelled) return
+      setBstate(bs || null)
       await supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('conversation_id', activeId).neq('sender_id', me).is('read_at', null)
       window.dispatchEvent(new Event('tsk:msgs-read')) // the menu badge recounts
       if (cancelled) return // don't open a channel for a conversation we already switched away from
@@ -149,6 +163,46 @@ function Messages() {
 
   function retry(m: any) { deliver(m.body, m.id) }
 
+  useEffect(() => { setMenuOpen(false); setReportOpen(false); setNotice(''); setBstate(null) }, [activeId])
+
+  async function toggleBlock() {
+    if (!bstate?.other_id) return
+    setMenuOpen(false)
+    if (!bstate.i_blocked && !window.confirm(L('Block this user? Neither of you will be able to send messages in this conversation.', 'اس صارف کو بلاک کریں؟ اس گفتگو میں کوئی بھی پیغام نہیں بھیج سکے گا۔', 'حظر هذا المستخدم؟ لن يتمكّن أيٌّ منكما من إرسال الرسائل في هذه المحادثة.'))) return
+    setBusy(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc(bstate.i_blocked ? 'unblock_user' : 'block_user', { p_user: bstate.other_id })
+    setBusy(false)
+    if (error) { setNotice(L('Could not update, try again.', 'اپ ڈیٹ نہیں ہوا، دوبارہ کوشش کریں۔', 'تعذّر التنفيذ، حاول مرة أخرى.')); return }
+    const wasBlocked = bstate.i_blocked
+    setBstate({ ...bstate, i_blocked: !wasBlocked })
+    setNotice(wasBlocked ? L('User unblocked.', 'صارف ان بلاک ہو گیا۔', 'أُلغي الحظر.') : L('User blocked.', 'صارف بلاک ہو گیا۔', 'تم حظر المستخدم.'))
+  }
+
+  function openReport(msgId: string | null = null) {
+    setMenuOpen(false); setReportMsgId(msgId); setReason('spam'); setDetails(''); setReportOpen(true)
+  }
+
+  async function submitReport(e: any) {
+    e.preventDefault()
+    if (!bstate?.other_id) return
+    setBusy(true)
+    const supabase = createClient()
+    const { error } = await supabase.rpc('report_user', { p_user: bstate.other_id, p_conversation: activeId, p_reason: reason, p_message_id: reportMsgId, p_details: details || null })
+    setBusy(false)
+    if (error) { setNotice(error.message?.includes('الحد اليومي') ? error.message : L('Could not send the report, try again.', 'رپورٹ نہیں بھیجی جا سکی، دوبارہ کوشش کریں۔', 'تعذّر إرسال البلاغ، حاول مرة أخرى.')); return }
+    setReportOpen(false)
+    setNotice(L('Report sent. Our team will review it. You can also block this user from the menu.', 'رپورٹ بھیج دی گئی۔ ہماری ٹیم اس کا جائزہ لے گی۔ آپ مینو سے صارف کو بلاک بھی کر سکتے ہیں۔', 'أُرسل البلاغ وسيراجعه فريقنا. يمكنك أيضاً حظر هذا المستخدم من القائمة.'))
+  }
+
+  const REASONS: Array<[string, string]> = [
+    ['spam', L('Spam or unwanted messages', 'اسپام یا ناپسندیدہ پیغامات', 'رسائل مزعجة أو غير مرغوبة')],
+    ['abuse', L('Abuse or harassment', 'بدسلوکی یا ہراسانی', 'إساءة أو تحرش')],
+    ['fraud', L('Fraud or scam', 'دھوکہ دہی', 'احتيال')],
+    ['inappropriate', L('Inappropriate content', 'نامناسب مواد', 'محتوى غير لائق')],
+    ['other', L('Other', 'دیگر', 'أخرى')],
+  ]
+
   const active = convos.find((c: any) => c.id === activeId)
   // The contractor's name is masked (profiles_public) for suppliers, so say "مشترٍ" rather than a blank.
   const counterpart = (c: any) => c?.contractor_id === me ? (c?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد')) : (c?.contractor?.company_name_ar || L('Buyer', 'خریدار', 'مشترٍ'))
@@ -196,7 +250,35 @@ function Messages() {
                   <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{counterpart(active)}</div>
                   {ctx(active) && <div className="text-[11px] text-gray-400 truncate"><Glyph e="📦" /> {ctx(active)}</div>}
                 </div>
+                {bstate?.other_id && (
+                  <div className="relative ms-auto">
+                    <button type="button" onClick={() => setMenuOpen(o => !o)} disabled={busy} aria-label={L('More options', 'مزید اختیارات', 'خيارات أخرى')}
+                      className="w-8 h-8 grid place-items-center rounded-lg hover:bg-gray-100 text-gray-500 text-lg leading-none">⋮</button>
+                    {menuOpen && (
+                      <div className="absolute end-0 top-9 z-20 w-44 bg-white border border-gray-100 rounded-xl shadow-lg py-1 text-sm">
+                        <button type="button" onClick={() => openReport(null)} className="w-full text-start px-3 py-2 hover:bg-gray-50">{L('Report user', 'صارف کی رپورٹ کریں', 'الإبلاغ عن المستخدم')}</button>
+                        <button type="button" onClick={toggleBlock} className="w-full text-start px-3 py-2 hover:bg-gray-50 text-red-600">
+                          {bstate.i_blocked ? L('Unblock user', 'ان بلاک کریں', 'إلغاء الحظر') : L('Block user', 'بلاک کریں', 'حظر المستخدم')}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
+              {notice && <div className="px-3 py-2 text-xs bg-amber-50 text-amber-800 border-b border-amber-100 flex justify-between gap-2"><span>{notice}</span><button type="button" onClick={() => setNotice('')} className="text-amber-600">×</button></div>}
+              {reportOpen && (
+                <form onSubmit={submitReport} className="p-3 border-b border-gray-100 bg-gray-50 space-y-2 text-sm">
+                  <div className="font-bold" style={{ color: '#0B2438' }}>{reportMsgId ? L('Report this message', 'اس پیغام کی رپورٹ کریں', 'الإبلاغ عن هذه الرسالة') : L('Report user', 'صارف کی رپورٹ کریں', 'الإبلاغ عن المستخدم')}</div>
+                  {REASONS.map(([k, label]) => (
+                    <label key={k} className="flex items-center gap-2 cursor-pointer"><input type="radio" name="reason" checked={reason === k} onChange={() => setReason(k)} /> {label}</label>
+                  ))}
+                  <textarea value={details} onChange={e => setDetails(e.target.value.slice(0, 1000))} rows={2} className="input-field text-sm w-full" placeholder={L('Details (optional)', 'تفصیل (اختیاری)', 'تفاصيل (اختياري)')} />
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={busy} className="px-4 py-2 rounded-xl font-bold text-white text-xs disabled:opacity-50" style={{ background: '#0B2438' }}>{L('Send report', 'رپورٹ بھیجیں', 'إرسال البلاغ')}</button>
+                    <button type="button" onClick={() => setReportOpen(false)} className="px-4 py-2 rounded-xl text-xs text-gray-600 border border-gray-200">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
+                  </div>
+                </form>
+              )}
               <div className="flex-1 overflow-y-auto p-4 space-y-2" style={{ background: '#f7f8fa' }}>
                 {msgs.map(m => {
                   const mine = m.sender_id === me
@@ -208,7 +290,7 @@ function Messages() {
                           {m._status === 'pending' ? `${L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…')}`
                             : m._status === 'failed'
                               ? <button type="button" onClick={() => retry(m)} className="underline font-semibold text-white"><Glyph e="⚠" /> {L('Failed to send — retry', 'نہیں بھیجا جا سکا — دوبارہ کوشش کریں', 'فشل الإرسال — إعادة المحاولة')} ↻</button>
-                              : <>{fmtTime(m.created_at, locale)}{mine ? ' ✓' : ''}</>}
+                              : <>{fmtTime(m.created_at, locale)}{mine ? ' ✓' : ''}{!mine && bstate?.other_id && typeof m.id === 'string' && !m.id.startsWith('temp-') && <button type="button" onClick={() => openReport(m.id)} className="ms-2 underline hover:text-red-500">{L('Report', 'رپورٹ', 'إبلاغ')}</button>}</>}
                         </div>
                       </div>
                     </div>
@@ -216,15 +298,22 @@ function Messages() {
                 })}
                 <div ref={endRef} />
               </div>
-              {!awarded && (
-                <div className={`px-3 pt-2 text-[10px] ${blocked ? 'text-red-500' : 'text-gray-400'}`}>
-                  {blocked
+              {chatBlocked && (
+                <div className="px-3 pt-2 text-[11px] text-red-500">
+                  {bstate?.i_blocked
+                    ? L('You blocked this user. Unblock from the menu to message again.', 'آپ نے اس صارف کو بلاک کیا ہے۔ دوبارہ پیغام کے لیے مینو سے ان بلاک کریں۔', 'لقد حظرت هذا المستخدم. ألغِ الحظر من القائمة لمراسلته مجدداً.')
+                    : L('You can no longer send messages in this conversation.', 'آپ اس گفتگو میں مزید پیغام نہیں بھیج سکتے۔', 'لم يعد بإمكانك إرسال رسائل في هذه المحادثة.')}
+                </div>
+              )}
+              {!awarded && !chatBlocked && (
+                <div className={`px-3 pt-2 text-[10px] ${limitReached ? 'text-red-500' : 'text-gray-400'}`}>
+                  {limitReached
                     ? `${L('You have reached the message limit before award. Full contact opens once the deal is done.', 'ایوارڈ سے پہلے پیغامات کی حد پوری ہو گئی۔ ڈیل مکمل ہونے کے بعد مکمل رابطہ کھل جائے گا۔', 'بلغت الحد الأقصى للرسائل قبل اختيار العرض. يكتمل التواصل بعد إتمام الصفقة.')}`
                     : L(`Messaging before award is limited — ${remaining} messages left`, `ایوارڈ سے پہلے پیغامات محدود ہیں — ${remaining} پیغامات باقی`, `التواصل قبل اختيار العرض محدود — متبقٍّ ${remaining} رسالة`)}
                 </div>
               )}
               <form onSubmit={send} className="p-3 border-t border-gray-100 flex gap-2">
-                <input value={body} onChange={e => setBody(e.target.value)} disabled={blocked} aria-label={L('Message', 'پیغام', 'نص الرسالة')} className="input-field flex-1 text-sm disabled:bg-gray-50" placeholder={blocked ? L('Limit reached before award', 'ایوارڈ سے پہلے کی حد پوری ہو گئی', 'انتهى الحد المسموح قبل اختيار العرض') : L('Type a message…', 'پیغام لکھیں…', 'اكتب رسالة…')} />
+                <input value={body} onChange={e => setBody(e.target.value)} disabled={blocked} aria-label={L('Message', 'پیغام', 'نص الرسالة')} className="input-field flex-1 text-sm disabled:bg-gray-50" placeholder={chatBlocked ? L('Messaging is blocked', 'پیغام رسانی بند ہے', 'المراسلة محظورة') : blocked ? L('Limit reached before award', 'ایوارڈ سے پہلے کی حد پوری ہو گئی', 'انتهى الحد المسموح قبل اختيار العرض') : L('Type a message…', 'پیغام لکھیں…', 'اكتب رسالة…')} />
                 <button type="submit" disabled={sending || blocked || !body.trim()} className="px-5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50" style={{ background: '#D4A543' }}>
                   {L('Send', 'بھیجیں', 'إرسال')}
                 </button>
