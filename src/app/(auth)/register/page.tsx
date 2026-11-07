@@ -18,6 +18,7 @@ import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { captureRef } from '@/lib/referral'
 import { friendlyError } from '@/lib/friendlyError'
+import { passwordProblems, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 import { toLatinDigits } from '@/lib/phone'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
@@ -31,6 +32,7 @@ const VMSG: Record<string, { ar: string; en: string; ur: string }> = {
   'الاسم مطلوب': { ar: 'الاسم مطلوب', en: 'Name is required', ur: 'نام ضروری ہے' },
   'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05': { ar: 'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05', en: 'Mobile number: 10 digits starting with 05', ur: 'موبائل نمبر: 05 سے شروع، 10 ہندسے' },
   'البريد الإلكتروني غير صحيح': { ar: 'البريد الإلكتروني غير صحيح', en: 'Email address is not valid', ur: 'ای میل درست نہیں' },
+  'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، وحرف إنجليزي كبير، وحرف صغير، ورقم': { ar: PASS_RULES_SUMMARY.ar, en: PASS_RULES_SUMMARY.en, ur: PASS_RULES_SUMMARY.ur },
   'كلمة المرور يجب أن تكون 8 أحرف على الأقل': { ar: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل', en: 'Password must be at least 8 characters', ur: 'پاس ورڈ کم از کم 8 حروف' },
 }
 const vmsg = (m: string | undefined, locale: string) => (m && VMSG[m] ? (VMSG[m] as any)[locale] || m : m)
@@ -42,7 +44,7 @@ const schema = z.object({
   company_name_ar: z.string().optional(),
   phone: z.string().regex(/^05[0-9]{8}$/, 'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
-  password: z.string().min(8, 'كلمة المرور يجب أن تكون 8 أحرف على الأقل'),
+  password: z.string().refine(v => passwordProblems(v).length === 0, 'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، وحرف إنجليزي كبير، وحرف صغير، ورقم'),
 })
 type FormData = z.infer<typeof schema>
 
@@ -57,7 +59,7 @@ const TR = {
     l1: 'أرسل قائمة موادك مرة واحدة، وتصلك عروض عدة موردين', l2: 'قارن واختر الأرخص لكل مادة', l3: 'مجاني خلال الإطلاق، بلا عمولة',
     corpQ: 'شركة لديها فريق مشتريات؟', corpA: 'نجهّز لك حساباً للشركة يضم موظفيك — تواصل معنا',
     copyright: '© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء',
-    phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف على الأقل',
+    phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف: كبير وصغير ورقم',
     create: 'إنشاء الحساب ←', creating: 'جارٍ الإنشاء...', haveAccount: 'لديك حساب؟', login: 'تسجيل الدخول',
     chooseType: 'اختر نوع الحساب أولاً', phoneTaken: 'رقم الجوال مسجّل مسبقاً — استخدم رقماً آخر.',
     emailTaken: 'هذا البريد الإلكتروني مسجّل مسبقاً — ', signInInstead: 'سجّل الدخول.',
@@ -78,7 +80,7 @@ const TR = {
     l1: 'Send your list once and get quotes from several suppliers', l2: 'Compare and pick the cheapest for each item', l3: 'Free during launch, no commission',
     corpQ: 'A company with a procurement team?', corpA: 'We set up a company account for your staff — contact us',
     copyright: '© 2026 Taseerak · Procurement platform for construction materials',
-    phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: 'At least 8 characters',
+    phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: '8+ chars: Aa + number',
     create: 'Create account →', creating: 'Creating...', haveAccount: 'Have an account?', login: 'Sign In',
     chooseType: 'Choose your account type first', phoneTaken: 'This phone is already registered — use another.',
     emailTaken: 'This email is already registered — ', signInInstead: 'sign in.',
@@ -99,7 +101,7 @@ const TR = {
     l1: 'اپنی فہرست ایک بار بھیجیں، کئی سپلائرز کی آفرز پائیں', l2: 'موازنہ کریں اور ہر چیز کی سستی قیمت چنیں', l3: 'لانچ کے دوران مفت، کوئی کمیشن نہیں',
     corpQ: 'خریداری ٹیم والی کمپنی؟', corpA: 'ہم آپ کے عملے کے لیے کمپنی اکاؤنٹ بناتے ہیں — رابطہ کریں',
     copyright: '© 2026 تسعیرک · تعمیراتی سامان کی قیمتوں کا پلیٹ فارم',
-    phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: 'کم از کم 8 حروف',
+    phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: '8 حروف: Aa + ہندسہ',
     create: 'اکاؤنٹ بنائیں →', creating: 'بن رہا ہے...', haveAccount: 'اکاؤنٹ ہے؟', login: 'سائن ان',
     chooseType: 'پہلے اکاؤنٹ کی قسم منتخب کریں', phoneTaken: 'یہ فون پہلے سے رجسٹرڈ ہے — دوسرا استعمال کریں۔',
     emailTaken: 'یہ ای میل پہلے سے رجسٹرڈ ہے — ', signInInstead: 'سائن اِن کریں۔',

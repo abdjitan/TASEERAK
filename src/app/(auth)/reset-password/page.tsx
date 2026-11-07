@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Glyph from '@/components/shared/Glyph'
+import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 
 const txt = {
   ar: {
@@ -72,13 +73,14 @@ export default function ResetPasswordPage() {
 
   async function handleSubmit(e: any) {
     e.preventDefault()
-    if (password.length < 8) { setError(t.short); return }
+    const lc = (locale === 'en' || locale === 'ur' ? locale : 'ar') as 'ar' | 'en' | 'ur'
+    if (passwordProblems(password).length) { setError(PASS_RULES_SUMMARY[lc]); return }
     if (password !== confirm) { setError(t.mismatch); return }
     setLoading(true); setError('')
     try {
       const supabase = createClient()
       const { error: err } = await supabase.auth.updateUser({ password })
-      if (err) { setError(t.err); setLoading(false); return }
+      if (err) { setError(passwordAuthError(err, locale)); setLoading(false); return }
       setDone(true)
     } catch { setError(t.err) }
     setLoading(false)
@@ -121,6 +123,11 @@ export default function ResetPasswordPage() {
                   <div>
                     <label htmlFor="rp-pass" className="block text-xs font-bold text-gray-500 mb-1.5">{t.pass}</label>
                     <input id="rp-pass" type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} className="input-field" placeholder="••••••••" required disabled={loading} />
+                    <ul className="mt-2 space-y-1 text-xs">
+                      {passRuleList(password, locale).map(r => (
+                        <li key={r.rule} className={r.ok ? 'text-emerald-600' : 'text-gray-400'}>{r.ok ? '✓' : '○'} {r.text}</li>
+                      ))}
+                    </ul>
                   </div>
                   <div>
                     <label htmlFor="rp-confirm" className="block text-xs font-bold text-gray-500 mb-1.5">{t.confirm}</label>

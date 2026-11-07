@@ -20,6 +20,7 @@ import Glyph from '@/components/shared/Glyph'
 import { normalizeCrInput, crTakenText, crClaimHref } from '@/lib/cr'
 import { toLatinDigits } from '@/lib/phone'
 import { friendlyError } from '@/lib/friendlyError'
+import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
 
 const txt = {
@@ -137,6 +138,7 @@ export default function SettingsPage() {
   const [profileSaving, setProfileSaving] = useState(false)
 
   // Password fields
+  const [curPass, setCurPass] = useState('')
   const [newPass, setNewPass] = useState('')
   const [confirmPass, setConfirmPass] = useState('')
   const [passMsg, setPassMsg] = useState('')
@@ -262,15 +264,19 @@ export default function SettingsPage() {
   async function changePassword(e: any) {
     e.preventDefault()
     setPassMsg('')
-    if (newPass.length < 8) { setPassMsg(t.passMin); return }
+    const lc = (locale === 'en' || locale === 'ur' ? locale : 'ar') as 'ar' | 'en' | 'ur'
+    if (!curPass) { setPassMsg(passwordAuthError({ code: 'current_password_required' }, lc)); return }
+    if (passwordProblems(newPass).length) { setPassMsg(PASS_RULES_SUMMARY[lc]); return }
     if (newPass !== confirmPass) { setPassMsg(t.passMatch); return }
+    if (newPass === curPass) { setPassMsg(passwordAuthError({ code: 'same_password' }, lc)); return }
     setPassSaving(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.updateUser({ password: newPass })
+    // The project requires the current password on update (Supabase Auth "secure password change").
+    const { error } = await supabase.auth.updateUser({ password: newPass, current_password: curPass })
     setPassSaving(false)
-    if (error) { setPassMsg(t.error); return }
+    if (error) { setPassMsg(passwordAuthError(error, lc)); return }
     setPassMsg(t.passChanged)
-    setNewPass(''); setConfirmPass('')
+    setCurPass(''); setNewPass(''); setConfirmPass('')
     setTimeout(() => setPassMsg(''), 3000)
   }
 
@@ -686,13 +692,24 @@ export default function SettingsPage() {
 
                 <form onSubmit={changePassword} className="space-y-5 max-w-md">
                   <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
-                    <Glyph e="💡" /> {locale === 'en' ? 'Enter your new password and confirm it below' : locale === 'ur' ? 'نیچے اپنا نیا پاسورڈ درج کریں اور تصدیق کریں' : 'أدخل كلمة المرور الجديدة وأكدها'}
+                    <Glyph e="💡" /> {locale === 'en' ? 'Enter your current password, then the new one twice' : locale === 'ur' ? 'موجودہ پاسورڈ درج کریں، پھر نیا پاسورڈ دو بار' : 'أدخل كلمة المرور الحالية، ثم الجديدة مرتين'}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.currentPass}</label>
+                    <input type="password" value={curPass} onChange={e => setCurPass(e.target.value)} autoComplete="current-password"
+                      className="input-field" placeholder="••••••••" required />
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.newPass}</label>
-                    <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)}
+                    <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} autoComplete="new-password"
                       className="input-field" placeholder="••••••••" required minLength={8} />
+                    <ul className="mt-2 space-y-1 text-xs">
+                      {passRuleList(newPass, locale).map(r => (
+                        <li key={r.rule} className={r.ok ? 'text-emerald-600' : 'text-gray-400'}>{r.ok ? '✓' : '○'} {r.text}</li>
+                      ))}
+                    </ul>
                   </div>
 
                   <div>
