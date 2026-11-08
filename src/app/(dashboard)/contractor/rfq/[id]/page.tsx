@@ -584,9 +584,11 @@ export default function RFQDetailPage() {
                           <td className="py-2.5 px-3 text-gray-400">{i + 1}</td>
                           <td className="py-2.5 px-3">
                             <div className="flex items-start gap-2.5">
-                            {it.product_name
-                              ? <img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))} className="w-11 h-11 rounded-lg object-contain bg-gray-50 border border-gray-100 shrink-0" />
-                              : <span className="w-11 h-11 rounded-lg bg-gray-50 border border-gray-100 shrink-0 grid place-items-center text-gray-400"><Glyph e="📦" /></span>}
+                            {/* package icon underneath; the photo covers it, and when no photo loads (imgFallback hides it) the icon shows, as in the app */}
+                            <span className="relative w-11 h-11 rounded-lg bg-gray-50 border border-gray-100 shrink-0 grid place-items-center text-gray-400 overflow-hidden">
+                              <Glyph e="📦" />
+                              {it.product_name && <img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))} className="absolute inset-0 w-full h-full object-contain bg-gray-50" />}
+                            </span>
                             <div className="min-w-0">
                             <div className="font-semibold text-[#0B2438]">{getProductLabel(it.product_name, locale)}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
