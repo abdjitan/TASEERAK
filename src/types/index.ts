@@ -877,23 +877,46 @@ export const PRODUCT_SUB: Record<string, string> = {
   'بخاخ دهان تخطيط وتعليم المواقع (Marking Spray Paint)': 'store_paint',
 }
 
+// Speed (mobile perf report 2026-11-08: ~0.9 ms a call on Hermes, called per row per render, and
+// getSectionGroups re-ran it over ~1,200 products): the keywords are normalized once per sector and
+// results are cached by sector|name. Both caches are dropped whenever the taxonomy or the product
+// list changes (hydrateTaxonomy / hydrateApprovedMaterials bump taxonomyVersion()).
+let TAX_VERSION = 0
+export function taxonomyVersion(): number { return TAX_VERSION }
+export function invalidateTaxonomyCaches(): void { TAX_VERSION++; NORM_KW.clear(); DETECT_CACHE.clear() }
+const NORM_KW = new Map<string, [string, string[]][]>()
+const DETECT_CACHE = new Map<string, string | null>()
+function normalizedKeywords(sector: Sector): [string, string[]][] {
+  let list = NORM_KW.get(sector)
+  if (!list) {
+    // الحارس length>0 ضروري: norm.includes('') يُرجع true دائماً
+    list = Object.entries(SUB_CATEGORIES[sector] || {}).map(([key, sub]) =>
+      [key, (sub.keywords || []).map(kw => normalizeText(kw)).filter(k => k.length > 0)] as [string, string[]])
+    NORM_KW.set(sector, list)
+  }
+  return list
+}
+
 export function detectSubCategory(productName: string, sector: Sector): string | null {
-  const norm = normalizeText(productName)
   const subs = SUB_CATEGORIES[sector]
   if (!subs) return null
-  const fixed = PRODUCT_SUB[(productName || '').trim()]
-  if (fixed && subs[fixed]) return fixed
+  const ck = sector + '|' + (productName || '')
+  const hit = DETECT_CACHE.get(ck)
+  if (hit !== undefined) return hit
   let bestMatch: string | null = null
-  let maxScore = 0
-  for (const [key, sub] of Object.entries(subs)) {
-    let score = 0
-    for (const kw of sub.keywords) {
-      const nkw = normalizeText(kw)
-      // الحارس .length>0 ضروري: norm.includes('') يُرجع true دائماً
-      if (nkw.length > 0 && norm.includes(nkw)) score++
+  const fixed = PRODUCT_SUB[(productName || '').trim()]
+  if (fixed && subs[fixed]) bestMatch = fixed
+  else {
+    const norm = normalizeText(productName)
+    let maxScore = 0
+    for (const [key, kws] of normalizedKeywords(sector)) {
+      let score = 0
+      for (const nkw of kws) if (norm.includes(nkw)) score++
+      if (score > maxScore) { maxScore = score; bestMatch = key }
     }
-    if (score > maxScore) { maxScore = score; bestMatch = key }
   }
+  if (DETECT_CACHE.size > 20000) DETECT_CACHE.clear() // free-text names (BOQ, search) must not grow it forever
+  DETECT_CACHE.set(ck, bestMatch)
   return bestMatch
 }
 
@@ -904,6 +927,7 @@ export function detectSubCategory(productName: string, sector: Sector): string |
 // يُستدعى من TaxonomyProvider على المتصفح (يطفّر كائناً مفرداً على مستوى الموديول).
 export function hydrateTaxonomy(rows: any[]): void {
   if (!Array.isArray(rows)) return
+  invalidateTaxonomyCaches()
   for (const r of rows) {
     if (!r || !r.sector || !r.sub_key) continue
     if (r.is_active === false) continue
@@ -925,6 +949,7 @@ export function hydrateTaxonomy(rows: any[]): void {
  *  catalog with their specialty, so they show in the pickers and the search without a redeploy. */
 export function hydrateApprovedMaterials(rows: any[]): number {
   if (!Array.isArray(rows)) return 0
+  invalidateTaxonomyCaches()
   let added = 0
   for (const r of rows) {
     const name = String(r?.name || '').trim()

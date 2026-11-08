@@ -1,4 +1,4 @@
-import { SECTOR_PRODUCTS, SUB_CATEGORIES, GROUP_LABELS, getGroupedProducts, detectSubCategory, type Sector } from '@/types'
+import { SECTOR_PRODUCTS, SUB_CATEGORIES, GROUP_LABELS, getGroupedProducts, detectSubCategory, taxonomyVersion, type Sector } from '@/types'
 
 // User-facing browse sections (owner decision 2026-10-12, from the "universal categories" study).
 //
@@ -198,9 +198,15 @@ function byRoom(groups: SectionGroup[]): SectionGroup[] {
   return [...SHOW.map(k => out[k]).filter(Boolean), ...(other.items.length ? [other] : [])]
 }
 
+// Cached per section (it walks every product): rebuilt when the taxonomy or product list changes.
+const SECTION_GROUPS_CACHE = new Map<string, { v: number; groups: SectionGroup[] }>()
 export function getSectionGroups(section: BrowseSection): SectionGroup[] {
-  if (section === 'furniture') return byRoom(getTradeGroups(section))
-  return getTradeGroups(section)
+  const v = taxonomyVersion()
+  const hit = SECTION_GROUPS_CACHE.get(section)
+  if (hit && hit.v === v) return hit.groups
+  const groups = section === 'furniture' ? byRoom(getTradeGroups(section)) : getTradeGroups(section)
+  SECTION_GROUPS_CACHE.set(section, { v, groups })
+  return groups
 }
 
 // «مواد كيميائية للبناء» holds ~108 products: inside «البناء والإنشاءات» it shows as four groups
