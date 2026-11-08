@@ -45,6 +45,12 @@ export default function AppShell({
   const [kind, setKind] = useState<string | null>(null)
   useEffect(() => { setKind(storedSellerKind()) }, [])
   const nav = navIn.filter(n => !(n.only === 'company' && kind === 'independent'))
+  // Remember which menu this device shows, so PageLoader can draw the same frame on shared pages
+  // (messages, settings…) while their data loads. Key = ROLE_HINT_KEY in PageLoader.
+  const roleHint = navIn.some(n => n.href.startsWith('/admin')) ? 'admin'
+    : navIn.some(n => n.href.startsWith('/supplier')) ? 'supplier'
+    : navIn.some(n => n.href.startsWith('/contractor')) ? 'contractor' : null
+  useEffect(() => { if (roleHint) try { localStorage.setItem('tsk_role_hint', roleHint) } catch {} }, [roleHint])
   const [open, setOpen] = useState(false)
   // desktop: the sidebar can be folded away (☰ in the top bar) to give the page more room
   const [collapsed, setCollapsed] = useState(false)
