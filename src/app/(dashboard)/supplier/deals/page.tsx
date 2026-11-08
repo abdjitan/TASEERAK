@@ -11,6 +11,7 @@ import { dealStage } from '@/lib/dealStage'
 import { rfqDisplayName } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
 import { arCount } from '@/lib/text'
+import { readPageCache, writePageCache } from '@/lib/pageCache'
 
 // «صفقاتي» للمورّد — الصفقات المُرساة عليه (عروضه المقبولة) مع مرحلتها، وترتبط بصفحة إدارة
 // الصفقة (حماية الصفقة: تسليم/استلام/دفع). الهوية تُكشف بعد الترسية فقط.
@@ -26,6 +27,9 @@ export default function SupplierDealsPage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
+      const ck = 'sdeals_' + session.user.id // last list at once (page cache), refreshed below
+      const snap = readPageCache(ck)
+      if (snap) { setDeals(snap); setLoading(false) }
       const { data: actRaw } = await supabase.rpc('acting_uid') // a team member sees the company's deals
       const actId: string = (actRaw as any) || session.user.id
       const { data } = await supabase
@@ -42,7 +46,9 @@ export default function SupplierDealsPage() {
         const { data: aw } = await supabase.from('rfq_item_awards').select('offer_id, total').in('offer_id', ids)
         for (const a of aw || []) awarded[a.offer_id] = (awarded[a.offer_id] || 0) + (Number(a.total) || 0)
       }
-      setDeals((data || []).map((d: any) => awarded[d.id] != null ? { ...d, total_price: awarded[d.id] } : d))
+      const list = (data || []).map((d: any) => awarded[d.id] != null ? { ...d, total_price: awarded[d.id] } : d)
+      if (data || !snap) setDeals(list) // a failed query keeps the cached list
+      if (data) writePageCache(ck, list)
       setLoading(false)
     }
     load()

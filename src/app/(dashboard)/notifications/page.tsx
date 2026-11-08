@@ -11,6 +11,7 @@ import LoadError from '@/components/shared/LoadError'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
 import AutoTr from '@/components/shared/AutoTr'
+import { readPageCache, writePageCache } from '@/lib/pageCache'
 
 // صفحة الإشعارات الكاملة — كانت متاحة فقط عبر قائمة الجرس المنسدلة.
 export default function NotificationsPage() {
@@ -22,20 +23,25 @@ export default function NotificationsPage() {
   const [loadFailed, setLoadFailed] = useState(false)
 
   const load = useCallback(async () => {
-    setLoading(true); setLoadFailed(false)
+    setLoadFailed(false)
+    let shown = false
     try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
+      const ck = 'notifs_' + session.user.id // last list at once (page cache), refreshed below
+      const snap = readPageCache(ck)
+      if (snap) { setRole(snap.role); setNotifs(snap.list || []); setLoading(false); shown = true } else setLoading(true)
       const { data: p } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
       setRole(p?.role || 'contractor')
       const { data, error } = await supabase.from('notifications').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false }).limit(200)
       if (error) throw error
       setNotifs(data || [])
+      writePageCache(ck, { role: p?.role || 'contractor', list: data || [] })
       await supabase.from('notifications').update({ is_read: true }).eq('user_id', session.user.id).eq('is_read', false)
     } catch (e) {
       console.error('[notifications] load failed:', e)
-      setLoadFailed(true)
+      if (!shown) setLoadFailed(true)
     } finally {
       setLoading(false)
     }

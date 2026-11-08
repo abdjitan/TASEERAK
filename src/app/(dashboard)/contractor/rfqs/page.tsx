@@ -15,6 +15,7 @@ import { rfqRef, rfqDate } from '@/lib/rfqName'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, rfqPurgeInfo } from '@/lib/deadline'
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arMaterials } from '@/lib/text'
+import { readPageCache, writePageCache } from '@/lib/pageCache'
 
 // «طلباتي»: every request of the buyer with its details — reference, date, materials (with
 // pictures), offers received, deadline and status — filterable and searchable; a card opens the
@@ -40,17 +41,22 @@ export default function MyRequestsPage() {
   const [cancelling, setCancelling] = useState(false)
 
   const load = useCallback(async () => {
-    setLoading(true); setLoadFailed(false)
+    setLoadFailed(false)
+    let shown = false
     try {
       const sb = createClient()
       const { data: { session } } = await sb.auth.getSession()
       if (!session) { window.location.href = '/login?next=/contractor/rfqs'; return }
+      // show the last list at once (page cache), then refresh it below
+      const snap = readPageCache('rfqs_' + session.user.id)
+      if (snap) { setRfqs(snap); setLoading(false); shown = true } else setLoading(true)
       const { data, error } = await sb.from('rfqs').select('*, rfq_item_awards(count)').eq('contractor_id', session.user.id).order('created_at', { ascending: false }).limit(300)
       if (error) throw error
       setRfqs(data || [])
+      writePageCache('rfqs_' + session.user.id, data || [])
     } catch (e) {
       console.error('[contractor/rfqs] load failed:', e)
-      setLoadFailed(true)
+      if (!shown) setLoadFailed(true)
     } finally {
       setLoading(false)
     }

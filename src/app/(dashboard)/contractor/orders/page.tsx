@@ -13,6 +13,7 @@ import { dealStage } from '@/lib/dealStage'
 import { offerComparable, vatTag } from '@/lib/vat'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { readPageCache, writePageCache } from '@/lib/pageCache'
 
 // «صفقاتي» للمقاول — تجمع كل الصفقات المُرساة (العروض المقبولة) في مكان واحد مع مرحلتها
 // ورقم الفاتورة، وترتبط بأمر الشراء/الفاتورة. كانت دورة الصفقة تُفتح فقط من الطلب الأصلي.
@@ -26,11 +27,15 @@ export default function ContractorDealsPage() {
   const [search, setSearch] = useState('')
 
   const load = useCallback(async () => {
-    setLoading(true); setLoadFailed(false)
+    setLoadFailed(false)
+    let shown = false
     try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
+      const ck = 'corders_' + session.user.id // last list at once (page cache), refreshed below
+      const snap = readPageCache(ck)
+      if (snap) { setDeals(snap); setLoading(false); shown = true } else setLoading(true)
       // RLS يعيد فقط العروض المقبولة على طلبات هذا المقاول
       const { data, error } = await supabase
         .from('offers')
@@ -47,10 +52,12 @@ export default function ContractorDealsPage() {
         if (awErr) throw awErr
         for (const a of aw || []) awarded[a.offer_id] = (awarded[a.offer_id] || 0) + (Number(a.total) || 0)
       }
-      setDeals((data || []).map((d: any) => awarded[d.id] != null ? { ...d, total_price: awarded[d.id] } : d))
+      const list = (data || []).map((d: any) => awarded[d.id] != null ? { ...d, total_price: awarded[d.id] } : d)
+      setDeals(list)
+      writePageCache(ck, list)
     } catch (e) {
       console.error('[contractor/orders] load failed:', e)
-      setLoadFailed(true)
+      if (!shown) setLoadFailed(true)
     } finally {
       setLoading(false)
     }
