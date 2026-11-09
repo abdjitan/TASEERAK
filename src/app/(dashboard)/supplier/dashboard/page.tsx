@@ -424,7 +424,9 @@ export default function SupplierDashboard() {
               <span className="text-2xl"><Glyph e="⏳" /></span>
               <div>
                 <div className="font-bold text-amber-700 mb-1">{L('Account Under Review', 'اکاؤنٹ زیر جائزہ', 'حسابك قيد المراجعة')}</div>
-                <div className="text-sm text-amber-600">{L('Your account is being reviewed. This usually takes up to 24 hours.', 'آپ کے اکاؤنٹ کا جائزہ لیا جا رہا ہے۔ اس میں عموماً 24 گھنٹے لگتے ہیں۔', 'تجري مراجعة بياناتك ورخصة عملك، وتستغرق المراجعة عادةً 24 ساعة.')}</div>
+                <div className="text-sm text-amber-600">{sellerKindOf(profile?.provider_type) === 'independent'
+                  ? L('We are reviewing your details. This usually takes up to 24 hours.', 'ہم آپ کی تفصیلات کا جائزہ لے رہے ہیں۔ اس میں عموماً 24 گھنٹے لگتے ہیں۔', 'نراجع بياناتك، وعادةً يستغرق ذلك 24 ساعة.')
+                  : L('Your account is being reviewed. This usually takes up to 24 hours.', 'آپ کے اکاؤنٹ کا جائزہ لیا جا رہا ہے۔ اس میں عموماً 24 گھنٹے لگتے ہیں۔', 'تجري مراجعة بياناتك ورخصة عملك، وتستغرق المراجعة عادةً 24 ساعة.')}</div>
               </div>
             </div>
           ) })
@@ -498,14 +500,18 @@ export default function SupplierDashboard() {
 
         {/* نقاط اكتمال الملف + خطوات رفعها — مخفية على الجوال افتراضياً كي تظهر الطلبات أولاً */}
         {!isMember && (() => {
-          const checks = [
-            { ok: profile?.verification_status === 'verified', w: 35, label: L('Verify your CR', 'اپنا سی آر تصدیق کریں', 'وثّق سجلّك التجاري'), href: '/settings' },
+          // independent sellers have no CR: drop that step and scale the rest to 100 (as in the app)
+          const isIndependent = sellerKindOf(profile?.provider_type) === 'independent'
+          const allChecks = [
+            { cr: true, ok: profile?.verification_status === 'verified', w: 35, label: L('Verify your CR', 'اپنا سی آر تصدیق کریں', 'وثّق سجلّك التجاري'), href: '/settings' },
             { ok: hasSpecialties, w: 25, label: L('Add specialties', 'مہارتیں شامل کریں', 'أضف تخصصاتك'), href: '/supplier/specialties' },
             { ok: !!(profile?.latitude || profile?.national_short_address), w: 20, label: L('Add map location', 'نقشے پر مقام شامل کریں', 'حدّد موقعك'), href: '/location' },
             // التقييم يأتي من المشتري بعد إتمام صفقة — نوجّه إلى الصفقات لا إلى التخصصات
             { ok: (profile?.rating_avg || 0) > 0, w: 20, label: L('Complete a deal to get your first rating', 'پہلی ریٹنگ کے لیے ایک ڈیل مکمل کریں', 'أتمّ صفقة لتحصل على أول تقييم'), href: '/supplier/deals' },
           ]
-          const score = checks.reduce((s: any, c: any) => s + (c.ok ? c.w : 0), 0)
+          const checks = allChecks.filter((c: any) => !(isIndependent && c.cr))
+          const totalW = checks.reduce((s: number, c: any) => s + c.w, 0) || 1
+          const score = Math.round(checks.reduce((s: number, c: any) => s + (c.ok ? c.w : 0), 0) / totalW * 100)
           const missing = checks.filter((c: any) => !c.ok)
           const col = score >= 70 ? '#0F6E56' : score >= 40 ? '#D4A543' : '#dc2626'
           return (
