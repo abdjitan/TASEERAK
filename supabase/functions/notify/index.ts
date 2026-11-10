@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
               method: 'POST',
               headers: { Authorization: `Bearer ${cfg.resend_api_key}`, 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                from: `تسعيرك <${cfg.from_email || 'no-reply@taseerak.com'}>`,
+                from: `Taseerak <${cfg.from_email || 'no-reply@taseerak.com'}>`,
                 to,
                 subject: title,
                 headers: { 'List-Unsubscribe': `<${settings}>` },
