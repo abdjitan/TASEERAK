@@ -69,6 +69,8 @@ export default function RFQDetailPage() {
   const router = useRouter()
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  // non-direct price: one phrase, not two labels side by side (owner read them as contradicting; app parity)
+  const srcPhrase = (k: any) => L(`Sourced price: ${sourceLabel(k, locale)}`, `منتقل قیمت: ${sourceLabel(k, locale)}`, `سعر منقول ${sourceLabel(k, locale)}`)
   const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
   const SAR = L('SAR', 'SAR', 'ر.س')
   const secLabel = (k: string) => (locale !== 'ar' && SECTOR_I18N[locale]?.[k]) || (SECTOR_LABELS as any)[k] || k
@@ -651,10 +653,13 @@ export default function RFQDetailPage() {
               )}
             </div>
             {activeOffers.length > 0 && rfq.status === 'open' && (rfq.items || []).some((it: any, idx: number) => !awards[idx] && cheapestFor(it, idx, activeOffers)) && (
+              <div className="mb-3">
               <button type="button" onClick={() => awardCheapestAll(activeOffers)} disabled={pickingAll}
-                className="w-full mb-3 py-3 rounded-xl font-extrabold text-sm text-[#071827] disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
-                {pickingAll ? L('Selecting…', 'منتخب ہو رہا ہے…', 'جارٍ الاختيار…') : L('Pick the cheapest for every item — you can change any line after', 'ہر چیز کے لیے سب سے سستی منتخب کریں', 'اختر الأرخص لكل المواد — ويمكنك تغيير أي مادة بعدها')}
+                className="w-full py-3 rounded-xl font-extrabold text-sm text-[#071827] disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                {pickingAll ? L('Selecting…', 'منتخب ہو رہا ہے…', 'جارٍ الاختيار…') : L('Pick the cheapest for every item', 'ہر چیز کی سب سے سستی منتخب کریں', 'اختر الأرخص لكل المواد')}
               </button>
+              <p className="text-[11px] text-gray-500 text-center mt-1">{L('You can change any item after.', 'بعد میں آپ کوئی بھی چیز بدل سکتے ہیں۔', 'ويمكنك تغيير أي مادة بعدها.')}</p>
+              </div>
             )}
             {activeOffers.length === 0 ? (
               <div className="bg-white rounded-xl p-8 border border-gray-100 text-center">
@@ -731,7 +736,7 @@ export default function RFQDetailPage() {
                                       <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{L('Not verified yet', 'ابھی تصدیق نہیں ہوئی', 'غير موثّق بعد')}</span>
                                     )}
                                     {(b.entry.source_type || b.offer.source_type) && !isDirectSource(b.entry.source_type || b.offer.source_type) && (
-                                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700"><SellerIcon name={sourceIcon(b.entry.source_type || b.offer.source_type)} /> {sourceLabel(b.entry.source_type || b.offer.source_type, locale)}</span>
+                                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700"><SellerIcon name={sourceIcon(b.entry.source_type || b.offer.source_type)} /> {srcPhrase(b.entry.source_type || b.offer.source_type)}</span>
                                     )}
                                     <button type="button" onClick={() => setOpenBid(openBid === `${idx}:${b.offer.id}` ? null : `${idx}:${b.offer.id}`)} className="text-[11px] font-bold text-[#8F6820] hover:underline">
                                       {openBid === `${idx}:${b.offer.id}` ? '▴' : '▾'} {L('Details', 'تفصیلات', 'التفاصيل')}
@@ -956,7 +961,7 @@ export default function RFQDetailPage() {
                         {offer.source_type && (
                           <span className={`badge text-[10px] ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
                             title={isDirectSource(offer.source_type) ? L('Direct price from the seller', 'بیچنے والے سے براہ راست قیمت', 'سعر مباشر من البائع') : L('Price sourced elsewhere, not from the seller stock', 'یہ قیمت کسی دوسرے ذریعے سے ہے، بیچنے والے کے اسٹاک سے نہیں', 'سعر منقول من مصدر آخر وليس من مخزون البائع')}>
-                            {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct from seller', 'بیچنے والے سے براہ راست', 'مباشر من البائع')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {sourceLabel(offer.source_type, locale)}</>}
+                            {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct from seller', 'بیچنے والے سے براہ راست', 'مباشر من البائع')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {srcPhrase(offer.source_type)}</>}
                           </span>
                         )}
                         {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(offer.availability)} /> {availabilityLabel(offer.availability, locale)}</></span>}
