@@ -1,6 +1,11 @@
 # قوالب واتساب — تسعيرك (مسودة للتقديم إلى Meta)
 
-> الحالة: مسودة جاهزة، لم تُقدَّم بعد. تُقدَّم بعد إكمال ربط الواتساب (طريقة الدفع + التوكن الدائم).
+> الحالة (2026-11-10): **قُدّمت كلها عبر API** وهي PENDING لدى Meta: rfq_new_request، buyer_offers_received، buyer_deadline_ended،
+> supplier_awarded، new_message (UTILITY، ar/en/ur) + supplier_invite (MARKETING، صورة + 3 أزرار). `supplier_new_rfq` (ar) أعادت Meta
+> تصنيفه MARKETING بسبب «قدّم سعرك الآن»، فاستُبدل بـ `rfq_new_request` (نص معاملاتي، {{1}} رقم الطلب، {{2}} المواد، {{3}} المدينة، {{4}} المهلة).
+> `supplier_awarded`: {{1}} رقم الطلب، {{2}} عدد المواد. `new_message` زرّه `https://taseerak.com/messages?c={{1}}`.
+> **رمز الدخول (Authentication) مرفوض حتى توثيق النشاط التجاري** (خطأ 2388185، health_status 141010).
+> الفحص: edge function `wa-health` (service-role فقط) تعرض حالة القوالب.
 > الحساب: WABA 1825652205148156، الرقم +1 213 561 4366.
 > كل الرسائل **إشعار + زر يفتح التطبيق** (لا قبول/رفض داخل الواتساب): القرار يتم داخل تسعيرك.
 
