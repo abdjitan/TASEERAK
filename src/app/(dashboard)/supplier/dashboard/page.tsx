@@ -610,7 +610,7 @@ export default function SupplierDashboard() {
                       offset += len; return el
                     })}
                     <text x="80" y="80" textAnchor="middle" className="fill-[#0B2438]" style={{ fontSize: 28, fontWeight: 800 }}>{decided ? winRate + '%' : '—'}</text>
-                    <text x="80" y="102" textAnchor="middle" className="fill-gray-500" style={{ fontSize: 12 }}>{L('win rate', 'کامیابی', 'نسبة الفوز')}</text>
+                    <text x="80" y="102" textAnchor="middle" className="fill-gray-500" style={{ fontSize: 12 }}>{decided ? L(`won ${accepted} of ${decided}`, `${decided} میں سے ${accepted} جیتے`, `فزت بـ ${accepted} من ${decided}`) : L('win rate', 'کامیابی', 'نسبة الفوز')}</text>
                   </svg>
                   <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-2 text-[12px] text-gray-600">
                     {parts.map(p => (
