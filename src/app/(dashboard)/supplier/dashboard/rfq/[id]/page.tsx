@@ -777,8 +777,16 @@ export default function SupplierRFQPage() {
                 : vatIncluded === null
                   ? L('Choose whether your price includes VAT to send.', 'بھیجنے کے لیے منتخب کریں کہ قیمت میں ویٹ شامل ہے یا نہیں۔', 'حدّد هل يشمل سعرك الضريبة لتتمكّن من الإرسال.')
                   : !sourceType
-                    ? L('Choose where this price comes from to send.', 'بھیجنے کے لیے قیمت کا ذریعہ منتخب کریں۔', 'حدّد مصدر السعر لتتمكّن من الإرسال.')
+                    ? L('Choose where this price comes from — tap here.', 'قیمت کا ذریعہ منتخب کریں — یہاں دبائیں۔', 'حدّد مصدر السعر — اضغط هنا')
                     : ''
+  }
+  // the price-source chips: scroll there and flash them (owner couldn't find where to set it)
+  function goToSource() {
+    const el = document.getElementById('price-source')
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const box = el.parentElement as HTMLElement | null
+    if (box) { box.style.outline = '2px solid #D4A543'; box.style.borderRadius = '12px'; setTimeout(() => { box.style.outline = '' }, 1800) }
   }
   return (
     <AppShell title={L('Submit Offer', 'پیشکش', 'تقديم عرض')} nav={getNav('supplier', locale, '/supplier/dashboard')} dir={dir}>
@@ -1053,18 +1061,14 @@ export default function SupplierRFQPage() {
                             <img src={productImageUrl(it.product_name)} alt="" loading="lazy" onError={(e: any) => imgFallback(e, it.sub_category || detectSubCategory(it.product_name, it.sector))}
                               className="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-xl bg-gray-50 border border-gray-100 shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <div className="font-bold text-[15px] leading-snug" style={{ color: '#0B2438' }}>
-                                    {line > 0 && <span className="inline-grid place-items-center w-5 h-5 rounded-full text-[11px] text-white me-1.5 align-middle" style={{ background: '#0F6E56' }}>✓</span>}
-                                    <AutoTr text={getProductLabel(it.product_name, locale)} locale={locale} />
-                                  </div>
-                                  {it.sub_category && <div className="text-xs text-gray-500 mt-0.5">{getSubCategoryLabel(it.sector, it.sub_category, locale)}</div>}
+                              {/* quantity on its own line under the name: long names get the full width (app parity 32817a2) */}
+                              <div className="min-w-0">
+                                <div className="font-bold text-[15px] leading-snug" style={{ color: '#0B2438' }}>
+                                  {line > 0 && <span className="inline-grid place-items-center w-5 h-5 rounded-full text-[11px] text-white me-1.5 align-middle" style={{ background: '#0F6E56' }}>✓</span>}
+                                  <AutoTr text={getProductLabel(it.product_name, locale)} locale={locale} />
                                 </div>
-                                <div className="text-end shrink-0">
-                                  <div className="text-[11px] text-gray-400">{L('Quantity', 'مقدار', 'الكمية')}</div>
-                                  <div className="font-extrabold text-[15px] text-[#8F6820] whitespace-nowrap">{qty.toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</div>
-                                </div>
+                                <div className="text-[13px] mt-0.5 text-gray-500">{L('Quantity', 'مقدار', 'الكمية')}: <span className="font-extrabold text-[#8F6820] whitespace-nowrap">{qty.toLocaleString('en-US')} {getUnitLabel(it.unit, locale)}</span></div>
+                                {it.sub_category && <div className="text-xs text-gray-500 mt-0.5">{getSubCategoryLabel(it.sector, it.sub_category, locale)}</div>}
                               </div>
                               <div className="flex flex-wrap gap-1 mt-1.5">
                                 {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700"><Glyph e="⚡" /> {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
@@ -1490,7 +1494,7 @@ export default function SupplierRFQPage() {
               {isIndependent && (
               <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3">
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1.5">
+                  <label id="price-source" className="block text-xs font-bold text-gray-600 mb-1.5">
                     {L('Where does this price come from?', 'یہ قیمت کہاں سے ہے؟', 'من أين هذا السعر؟')}
                     {isIndependent && <span className="text-red-500"> *</span>}
                   </label>
@@ -1550,7 +1554,7 @@ export default function SupplierRFQPage() {
                 </div>
                 {!isIndependent && (
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1.5">
+                  <label id="price-source" className="block text-xs font-bold text-gray-600 mb-1.5">
                     {L('Where does this price come from?', 'یہ قیمت کہاں سے ہے؟', 'من أين هذا السعر؟')}
                     {isIndependent && <span className="text-red-500"> *</span>}
                   </label>
@@ -1617,7 +1621,9 @@ export default function SupplierRFQPage() {
                 {submitting ? T.sending : T.send}
               </button>
               {blockReason && !submitting && (
-                <p id="offer-block-reason" className="text-xs text-center font-semibold text-amber-700" aria-live="polite"><Glyph e="⚠" /> {blockReason}</p>
+                (blockReason && !sourceType && blockReason.includes(L('tap here', 'یہاں دبائیں', 'اضغط هنا')))
+                  ? <button type="button" id="offer-block-reason" onClick={goToSource} className="block w-full text-xs text-center font-semibold text-amber-700 underline underline-offset-2" aria-live="polite"><Glyph e="⚠" /> {blockReason}</button>
+                  : <p id="offer-block-reason" className="text-xs text-center font-semibold text-amber-700" aria-live="polite"><Glyph e="⚠" /> {blockReason}</p>
               )}
               {error && <p role="alert" className="text-xs text-center font-semibold text-red-600">{error}</p>}
               <p className="text-[12px] text-center text-gray-500">{L('You can edit or cancel the offer within 15 minutes of sending.', 'بھیجنے کے 15 منٹ تک آپ آفر بدل یا منسوخ کر سکتے ہیں۔', 'يمكنك تعديل العرض أو إلغاؤه خلال 15 دقيقة من إرساله.')}</p>
@@ -1643,7 +1649,9 @@ export default function SupplierRFQPage() {
               <div className="flex-1 min-w-0 text-[12px] leading-tight">
                 {isMultiItem && <div className="font-bold" style={{ color: pricedCount ? '#0F6E56' : '#6b7280' }}>{L(`${pricedCount} of ${myItems.length} priced`, `${myItems.length} میں سے ${pricedCount}`, `سعّرت ${pricedCount} من ${myItems.length}`)}</div>}
                 {error && !submitting ? <div role="alert" className="text-red-600 font-semibold line-clamp-2">{error}</div>
-                  : br ? <div className="text-amber-700 font-semibold truncate">{br}</div>
+                  : br ? (!sourceType && br.includes(L('tap here', 'یہاں دبائیں', 'اضغط هنا'))
+                    ? <button type="button" onClick={goToSource} className="block max-w-full text-amber-700 font-semibold truncate underline underline-offset-2">{br}</button>
+                    : <div className="text-amber-700 font-semibold truncate">{br}</div>)
                   : <div className="font-extrabold text-[14px]" style={{ color: '#0B2438' }}>{(+gross.toFixed(2)).toLocaleString('en-US')} {SAR}</div>}
               </div>
               <button type="submit" form="offer-form" disabled={submitting || !!br}

@@ -3,7 +3,7 @@
 // (owner 2026-10-31). Only text that looks like another language is sent to /api/translate; the
 // requests of one page are batched, and results are remembered on the device. «الأصل» shows the
 // original. Falls back to the original text on any failure.
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 type Lang = 'ar' | 'en' | 'ur'
 const URDU = /[ٹڈڑںےۓگھ]/
@@ -46,6 +46,23 @@ function request(text: string, to: Lang): Promise<void> {
   })
 }
 
+// Arabic text with Latin runs, e.g. «لاصق (Rapid Stone White Adhesive)»: each Latin run (with its brackets) is
+// wrapped in <bdi> (unicode-bidi: isolate) so a line break doesn't scatter its words and brackets (app parity 32817a2).
+const LATIN_RUN = /\(?[A-Za-z][A-Za-z0-9\s.,'&\/+\-]*[A-Za-z0-9.]\)?|\([A-Za-z]\)/g
+function isolateLatin(s: string): ReactNode {
+  if (!/[؀-ۿ]/.test(s) || !/[A-Za-z]/.test(s)) return s
+  const out: ReactNode[] = []
+  let last = 0, m: RegExpExecArray | null, k = 0
+  LATIN_RUN.lastIndex = 0
+  while ((m = LATIN_RUN.exec(s))) {
+    if (m.index > last) out.push(s.slice(last, m.index))
+    out.push(<bdi key={k++}>{m[0]}</bdi>)
+    last = m.index + m[0].length
+  }
+  if (last < s.length) out.push(s.slice(last))
+  return out
+}
+
 export default function AutoTr({ text, locale, className }: { text: string | null | undefined; locale: string; className?: string }) {
   const to = (['ar', 'en', 'ur'].includes(locale) ? locale : 'ar') as Lang
   const src = (text || '').trim()
@@ -60,11 +77,11 @@ export default function AutoTr({ text, locale, className }: { text: string | nul
   }, [src, to, need])
   if (!src) return null
   const tr = need ? mem.get(key(to, src)) : undefined
-  if (!tr || tr === src) return <span className={className} dir="auto">{src}</span>
+  if (!tr || tr === src) return <span className={className} dir="auto">{isolateLatin(src)}</span>
   const L = (en: string, ur: string, ar: string) => (to === 'en' ? en : to === 'ur' ? ur : ar)
   return (
     <span className={className} dir="auto">
-      {orig ? src : tr}{' '}
+      {isolateLatin(orig ? src : tr)}{' '}
       <button type="button" onClick={e => { e.preventDefault(); e.stopPropagation(); setOrig(o => !o) }}
         className="text-[10px] font-bold text-[#8F6820] hover:underline align-middle whitespace-nowrap">
         {orig ? L('Translation', 'ترجمہ', 'الترجمة') : L('Translated · original', 'ترجمہ · اصل', 'مترجم · الأصل')}
