@@ -513,6 +513,8 @@ export default function SupplierDashboard() {
           const totalW = checks.reduce((s: number, c: any) => s + c.w, 0) || 1
           const score = Math.round(checks.reduce((s: number, c: any) => s + (c.ok ? c.w : 0), 0) / totalW * 100)
           const missing = checks.filter((c: any) => !c.ok)
+          // profile complete: nothing left to do, so the card goes away (owner request, app parity 5b2c5c6)
+          if (score >= 100) return null
           const col = score >= 70 ? '#0F6E56' : score >= 40 ? '#D4A543' : '#dc2626'
           return (
             <>
