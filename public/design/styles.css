@@ -259,7 +259,7 @@ ul { list-style: none; }
 }
 .float-chip svg { width: 20px; height: 20px; }
 .float-chip.c1 { top: -18px; inset-inline-end: -14px; animation: floatY 5s ease-in-out infinite; }
-.float-chip.c2 { bottom: 30px; inset-inline-start: -34px; animation: floatY 7s ease-in-out .5s infinite; }
+.float-chip.c2 { bottom: -26px; inset-inline-start: -34px; animation: floatY 7s ease-in-out .5s infinite; }
 .float-chip .ck { color: var(--mech); }
 
 /* marquee logos */
