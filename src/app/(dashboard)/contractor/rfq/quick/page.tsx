@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { parseBudget, saveRfqBudgets, type ItemBudget } from '@/lib/budget'
+import BudgetField from '@/components/rfq/BudgetField'
 import { useCatalogSpecs } from '@/lib/useCatalogSpecs'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -49,6 +51,8 @@ type Line = {
   moreFiles?: { id: string; name: string }[] // owner 2026-10-31: more than one file/photo per line (up to 5 in all)
   spec?: { sector: string; sub: string | null; section?: string } // a «not in the list» item filed under a specialty by the buyer
   with_install?: boolean // «اطلب السعر مع التركيب» (only on an installable specialty, src/lib/installation.ts)
+  budget?: string         // R23: «ميزانيتي للوحدة قبل الضريبة (اختياري)», SAR; saved to rfq_item_budgets, never in items
+  budgetVisible?: boolean // shown to suppliers only when ticked (off by default)
 }
 type Photo = {
   id: string
@@ -526,6 +530,10 @@ export default function QuickRequestPage() {
           : L('Could not send. Try again.', 'نہیں بھیج سکے۔', 'تعذّر إرسال الطلب. حاول مرة أخرى.'))
         return
       }
+      // R23: per-item budgets go to their own owner-only table (index = position in items)
+      const budgets = sendable.map((l, i) => ({ item_index: i, budget_unit_price: parseBudget(l.budget), budget_visible: !!l.budgetVisible }))
+        .filter(b => b.budget_unit_price != null) as ItemBudget[]
+      if (budgets.length) await saveRfqBudgets(supabase, rfqIdRef.current, budgets)
       deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[], ...lines.flatMap(l => (l.moreFiles || []).map(m => m.id))])
       clearLocalDraft('quick:' + userId)
       rfqIdRef.current = ''
@@ -742,6 +750,8 @@ export default function QuickRequestPage() {
                         placeholder={needWritten
                           ? L('Size and specs (required): e.g. length, width, thickness, grade', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): مثل الطول والعرض والسماكة والدرجة')
                           : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
+                      <BudgetField value={l.budget || ''} visible={!!l.budgetVisible} unit={l.unit ? unitLabel(l.unit) : ''} locale={locale}
+                        onChange={(budget, budgetVisible) => updateLine(l.key, { budget, budgetVisible })} />
                     </>)
                   })()}
                   {(() => {

@@ -1,5 +1,6 @@
 'use client'
 
+import { loadVisibleBudgets } from '@/lib/budget'
 import { useEffect, useRef, useState } from 'react'
 import { friendlyError } from '@/lib/friendlyError'
 import { arCount } from '@/lib/text'
@@ -41,6 +42,7 @@ export default function SupplierRFQPage() {
   const [actingId, setActingId] = useState('') // الشركة لعضو الفريق، وإلا المستخدم نفسه
   const [verified, setVerified] = useState(true) // تفاؤلي؛ يُضبط من الملف. القفل الحقيقي على مستوى القاعدة (RLS)
   const [rfq, setRfq] = useState<any>(null)
+  const [buyerBudgets, setBuyerBudgets] = useState<Record<number, number>>({}) // R23: only budgets the buyer chose to show (before VAT)
   const [existingOffer, setExistingOffer] = useState<any>(null)
   // a multi-item request awarded per item: which of my items were chosen (review 2026-10-28 — the
   // supplier saw the whole offer as accepted when only some items were awarded to him)
@@ -169,6 +171,7 @@ export default function SupplierRFQPage() {
       setActingId(actId)
       if (!rfqData) { setRfq(null); setLoading(false); return }
       setRfq(rfqData)
+      loadVisibleBudgets(supabase, id as string).then(setBuyerBudgets)
       setContractorInfo(Array.isArray(cInfo) ? cInfo[0] : cInfo)
       fetch('/api/explain-items', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rfq_id: id }) })
         .then(r => r.json()).then(j => {
@@ -1153,6 +1156,20 @@ export default function SupplierRFQPage() {
                               {L("Don't carry", 'دستیاب نہیں', 'لا أوفّرها')}
                             </button>
                           </div>
+                          {buyerBudgets[it.item_index] > 0 && (() => {
+                            // R23: the buyer chose to show a cap (before VAT). Pricing above it is allowed; soft warning only.
+                            const b = buyerBudgets[it.item_index]
+                            const up = +form.unit_price || 0
+                            const upPre = noVat ? up : (vatIncluded ? up / 1.15 : up)
+                            const over = sameUnit(form, i) && up > 0 && upPre - b > 0.005
+                            return (
+                              <div className="mt-1.5 text-[12px] leading-relaxed">
+                                <span className="font-semibold text-gray-700">{L('Buyer budget', 'خریدار کا بجٹ', 'ميزانية المشتري')}: {L('up to', 'تک', 'حتى')} {b.toLocaleString('en-US')} {SAR} / {getUnitLabel(it.unit, locale)}</span>{' '}
+                                <span className="text-gray-400">({L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')}{!noVat ? ` · ≈ ${(b * 1.15).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}` : ''})</span>
+                                {over && <div className="text-amber-700 font-semibold mt-0.5">{L('Your price is above the buyer budget. You can still send it.', 'آپ کی قیمت خریدار کے بجٹ سے زیادہ ہے۔ آپ پھر بھی بھیج سکتے ہیں۔', 'سعرك أعلى من ميزانية المشتري، ويمكنك إرساله مع ذلك.')}</div>}
+                              </div>
+                            )
+                          })()}
                           {line > 0 && qty > 0 && sameUnit(form, i) && (
                             <p className="text-[12px] text-gray-600 mt-1">
                               {L('Total', 'کل', 'الإجمالي')}: <b className="text-[#0B2438]">{line.toLocaleString('en-US')} {SAR}</b> <span className="text-gray-400">({qty.toLocaleString('en-US')} × {(+form.unit_price || 0).toLocaleString('en-US')})</span>

@@ -27,6 +27,8 @@ import { daysText, arCount } from '@/lib/text'
 import { toLatinDigits as toLatinNumber } from '@/lib/phone'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { realtimeTopic } from '@/lib/realtimeTopic'
+import { loadOwnerBudgets, saveRfqBudgets, parseBudget, preVatUnit, overBudget, type ItemBudget } from '@/lib/budget'
+import BudgetField from '@/components/rfq/BudgetField'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -107,6 +109,9 @@ export default function RFQDetailPage() {
   const [marketAvg, setMarketAvg] = useState<any>(null) // متوسط السوق
   const [supplierStats, setSupplierStats] = useState<any>({}) // سجل أداء كل مورد
   const [awards, setAwards] = useState<any>({}) // ترسية بند-بند: item_index → صف الترسية
+  const [budgets, setBudgets] = useState<Record<number, ItemBudget>>({}) // R23: buyer budget per unit (before VAT), owner-only
+  const [budgetEdit, setBudgetEdit] = useState<{ idx: number; v: string; vis: boolean } | null>(null)
+  const [budgetSaving, setBudgetSaving] = useState(false)
   const [awardedContacts, setAwardedContacts] = useState<any>({}) // supplier_id → رقم تواصل (يُكشف بعد الترسية فقط)
 
   async function reloadAwards() {
@@ -180,6 +185,7 @@ export default function RFQDetailPage() {
       setEditUnit(rfqData?.unit || '')
       setOffers(offersData || [])
       const am: any = {}; (awardRows || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
+      loadOwnerBudgets(supabase, id as string).then(setBudgets)
       if (rfqData) {
         const mp = ((similarOffers as any[]) || []).find((m: any) => m.product_name === rfqData.product_name && (!m.unit || m.unit === rfqData.unit))
         if (mp && Number(mp.avg_price) > 0) setMarketAvg(Math.round(Number(mp.avg_price)))
@@ -258,6 +264,19 @@ export default function RFQDetailPage() {
     setAwarding(null)
     if (error) { alert(L('Could not award — refresh the page and try again.', 'ایوارڈ نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر اختيار العرض — حدّث الصفحة وحاول مجدداً.')); return }
     await reloadAwards()
+  }
+  // R23: save one item's budget (the RPC replaces the whole list, so send all of them)
+  async function saveBudget() {
+    if (!budgetEdit) return
+    const next: Record<number, ItemBudget> = { ...budgets }
+    const p = parseBudget(budgetEdit.v)
+    if (p == null) delete next[budgetEdit.idx]
+    else next[budgetEdit.idx] = { item_index: budgetEdit.idx, budget_unit_price: p, budget_visible: budgetEdit.vis }
+    setBudgetSaving(true)
+    const ok = await saveRfqBudgets(createClient(), id as string, Object.values(next))
+    setBudgetSaving(false)
+    if (!ok) { alert(L('Could not save — please try again.', 'محفوظ نہیں ہو سکا — دوبارہ کوشش کریں۔', 'تعذّر الحفظ — حاول مرة ثانية.')); return }
+    setBudgets(next); setBudgetEdit(null)
   }
   // the cheapest offer for one item (same matching and comparable price as the matrix below)
   function cheapestFor(it: any, idx: number, offersList: any[]) {
@@ -700,6 +719,34 @@ export default function RFQDetailPage() {
                         </div>
                         {award ? <span className="badge badge-green text-[10px] whitespace-nowrap">✓ {L('Selected', 'منتخب', 'تم الاختيار')}</span> : <span className="text-[11px] text-gray-400 whitespace-nowrap">{bids.length} {L('offers', 'آفرز', 'عرض')}</span>}
                       </div>
+                      {(() => {
+                        const bg = budgets[idx]
+                        const be = budgetEdit
+                        if (be && be.idx === idx) return (
+                          <div className="px-4 py-2 border-b border-gray-100 space-y-2">
+                            <BudgetField value={be.v} visible={be.vis} unit={getUnitLabel(it.unit, locale)} locale={locale}
+                              onChange={(v, vis) => setBudgetEdit({ idx, v, vis })} />
+                            <div className="flex gap-2">
+                              <button type="button" onClick={saveBudget} disabled={budgetSaving} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>{budgetSaving ? '...' : L('Save', 'محفوظ کریں', 'حفظ')}</button>
+                              <button type="button" onClick={() => setBudgetEdit(null)} className="text-xs px-3 py-1.5 rounded-lg font-semibold text-gray-600 border border-gray-200">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
+                            </div>
+                          </div>
+                        )
+                        if (!bg && rfq.status !== 'open') return null
+                        return (
+                          <div className="px-4 py-1.5 border-b border-gray-100 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+                            {bg ? (<>
+                              <span className="font-semibold text-gray-700">{L('Your budget', 'آپ کا بجٹ', 'ميزانيتك')}: {L('up to', 'تک', 'حتى')} {bg.budget_unit_price.toLocaleString('en-US')} {SAR} / {getUnitLabel(it.unit, locale)} <span className="text-gray-400 font-normal">({L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')})</span></span>
+                              <span className={`px-1.5 py-0.5 rounded-full font-bold ${bg.budget_visible ? 'bg-amber-50 text-amber-700' : 'bg-gray-100 text-gray-500'}`}>{bg.budget_visible ? L('Shown to suppliers', 'سپلائرز کو نظر آتا ہے', 'ظاهرة للموردين') : L('Only you see it', 'صرف آپ دیکھتے ہیں', 'تراها أنت فقط')}</span>
+                            </>) : null}
+                            {rfq.status === 'open' && (
+                              <button type="button" onClick={() => setBudgetEdit({ idx, v: bg ? String(bg.budget_unit_price) : '', vis: !!bg?.budget_visible })} className="font-bold text-[#8F6820] hover:underline">
+                                {bg ? L('Edit', 'ترمیم', 'تعديل') : '+ ' + L('My budget per unit (optional)', 'فی یونٹ میرا بجٹ (اختیاری)', 'ميزانيتي للوحدة (اختياري)')}
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })()}
                       {it.with_install && bids.length > 0 && (() => {
                         const n = bids.filter((b: any) => b.entry.install_offered === true).length
                         if (n === bids.length) return null
@@ -769,6 +816,15 @@ export default function RFQDetailPage() {
                                   <div className="text-end leading-tight">
                                     <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{lineComparable(b.entry.total, b.offer).toLocaleString('en-US', { maximumFractionDigits: 0 })} {SAR}</div>
                                     <div className="text-[10px] text-gray-400">{vatTag(b.offer, locale)}</div>
+                                    {budgets[idx] && (() => {
+                                      const q = Number(b.entry.quantity ?? it.quantity) || 1
+                                      const unit = Number(b.entry.unit_price) > 0 ? Number(b.entry.unit_price) : Number(b.entry.total || 0) / q
+                                      if (!(unit > 0)) return null
+                                      const over = overBudget(preVatUnit(unit, b.offer), budgets[idx].budget_unit_price, q)
+                                      return over > 0
+                                        ? <div className="text-[10px] font-bold text-red-600">{L(`Over your budget by ${over.toLocaleString('en-US', { maximumFractionDigits: 0 })} SAR`, `آپ کے بجٹ سے ${over.toLocaleString('en-US', { maximumFractionDigits: 0 })} ریال زیادہ`, `أعلى من ميزانيتك بـ ${over.toLocaleString('en-US', { maximumFractionDigits: 0 })} ر.س`)}</div>
+                                        : <div className="text-[10px] font-bold text-[#0F6E56]">✓ {L('Within your budget', 'آپ کے بجٹ میں', 'ضمن ميزانيتك')}</div>
+                                    })()}
                                   </div>
                                   {isAwarded ? (
                                     <span className="badge badge-green text-[10px] whitespace-nowrap">{L('Selected', 'منتخب', 'تم الاختيار')} ✓</span>
