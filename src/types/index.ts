@@ -2060,7 +2060,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'مصرف أرضي Floor Drain 100x100',
     'مصرف سقف Roof Drain 100mm',
     // ═══ لوازم سباكة بسيطة (محلات صغيرة) ═══
-    'خلاط مغسلة', 'خلاط مطبخ', 'خلاط دش', 'صنبور حديقة',
+    'خلاط مغسلة', 'خلاط مطبخ', 'خلاط دش', 'خلاط شطاف', 'صنبور حديقة',
     'محبس زاوية', 'محبس عمومي', 'وصلة كوع PVC', 'وصلة تي PVC',
     'كوبلن نحاس', 'لوازم نحاسية', 'سيفون كرسي', 'سيفون مغسلة',
     'مصفاة أرضية', 'خرطوم سخان مرن', 'خرطوم شطاف', 'وصلة مرنة',
@@ -2169,7 +2169,7 @@ export const SECTOR_PRODUCTS: Record<Sector, string[]> = {
     'أقماع وحواجز مرورية', 'شريط تحذيري', 'شبكة أمان للمباني', 'أفرول عمل', 'حقيبة إسعافات أولية', 'سدادات وواقيات الأذن',
     'عربة يد (عربانة)',
     // ═══ سباكة بسيطة ═══
-    'خلاط مغسلة', 'خلاط مطبخ', 'خلاط دش', 'صنبور حديقة',
+    'خلاط مغسلة', 'خلاط مطبخ', 'خلاط دش', 'خلاط شطاف', 'صنبور حديقة',
     'محبس زاوية', 'محبس عمومي', 'كوع PVC', 'تي PVC', 'كوبلن',
     'سيفون كرسي', 'سيفون مغسلة', 'مصفاة أرضية',
     'خرطوم سخان', 'خرطوم شطاف', 'وصلة مرنة',
@@ -3076,7 +3076,7 @@ const REVIEW_1102_SPEC_DROP: Record<string, string[]> = {
 const REVIEW_1102_ROUTE: Record<string, [Sector, string]> = {
   // the 15 plumbing-shop items listed in mechanical AND supply_store showed once: keep the shop copy
   'خلاط مغسلة': ['supply_store', 'store_faucets'], 'خلاط مطبخ': ['supply_store', 'store_faucets'],
-  'خلاط دش': ['supply_store', 'store_faucets'], 'صنبور حديقة': ['supply_store', 'store_faucets'],
+  'خلاط دش': ['supply_store', 'store_faucets'], 'خلاط شطاف': ['supply_store', 'store_faucets'], 'صنبور حديقة': ['supply_store', 'store_faucets'],
   'رأس دش': ['supply_store', 'store_faucets'],
   'محبس زاوية': ['supply_store', 'store_valves'], 'محبس عمومي': ['supply_store', 'store_valves'],
   'سيفون مرحاض': ['supply_store', 'store_valves'], 'مصفاة أرضية': ['supply_store', 'store_valves'],

@@ -1197,7 +1197,7 @@ export const SPEC_GROUPS: Array<{ products: string[]; spec: SpecField[] }> = [
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد','طقم كامل'] },
   ] },
   // الخلاطات والصنابير ورؤوس الدش
-  { products: ['صنبور مياه','خلاط مياه Mixer','خلاط مغسلة','خلاط مطبخ','خلاط دش','صنبور حديقة','رأس دش','دش مطري'], spec: [
+  { products: ['صنبور مياه','خلاط مياه Mixer','خلاط مغسلة','خلاط مطبخ','خلاط دش','خلاط شطاف','صنبور حديقة','رأس دش','دش مطري'], spec: [
     { key: 'finish', ar: 'التشطيب', en: 'Finish', options: ['كروم (Chrome)','أبيض','ذهبي','أسود مطفي','نحاسي'] },
     { key: 'brand', ar: 'العلامة (اختياري)', en: 'Brand (optional)', options: ['أي علامة معتمدة','جروهي (Grohe)','هانزجروهي (Hansgrohe)','الحمراني','مستورد'] },
     { key: 'unit', ar: 'وحدة الطلب', en: 'Order unit', options: ['عدد'] },

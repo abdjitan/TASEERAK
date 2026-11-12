@@ -1414,6 +1414,7 @@ export const PRODUCT_TRANSLATIONS_DATA: Record<string, { en: string; ur: string 
   'خلاط مغسلة': { en: 'Basin Mixer', ur: 'بیسن مکسر' },
   'خلاط مطبخ': { en: 'Kitchen Mixer', ur: 'کچن مکسر' },
   'خلاط دش': { en: 'Shower Mixer', ur: 'شاور مکسر' },
+  'خلاط شطاف': { en: 'Bidet Shower Mixer', ur: 'شطاف مکسر' },
   'صنبور حديقة': { en: 'Garden Tap', ur: 'گارڈن نل' },
   'محبس زاوية': { en: 'Angle Valve', ur: 'اینگل والو' },
   'محبس عمومي': { en: 'Gate Valve', ur: 'گیٹ والو' },
