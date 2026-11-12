@@ -50,7 +50,7 @@ type FormData = z.infer<typeof schema>
 
 const TR = {
   ar: {
-    title: 'أنشئ حسابك', sub: 'دقيقة واحدة وتبدأ بطلب الأسعار',
+    title: 'أنشئ حسابك', sub: 'دقيقة واحدة وتبدأ',
     supTitle: 'سجّل كمورد', supSub: 'بيانات نشاطك الأساسية الآن، والموقع والأقسام والتوثيق بعد الدخول',
     toSupplier: 'صاحب محل أو مورد مواد؟', toSupplierCta: 'سجّل كمورد',
     toBuyer: 'تحتاج أسعاراً لمشروعك؟', toBuyerCta: 'سجّل لطلب الأسعار',
@@ -74,7 +74,7 @@ const TR = {
     goSignIn: 'الذهاب لتسجيل الدخول', home: 'الرئيسية',
   },
   en: {
-    title: 'Create your account', sub: 'One minute and you can start requesting prices',
+    title: 'Create your account', sub: 'One minute and you are in',
     supTitle: 'Register as a supplier', supSub: 'Your basic business details now; location, categories and verification after signing in',
     toSupplier: 'Own a shop or supply materials?', toSupplierCta: 'Register as a supplier',
     toBuyer: 'Need prices for your project?', toBuyerCta: 'Sign up to request prices',
@@ -98,7 +98,7 @@ const TR = {
     goSignIn: 'Go to sign in', home: 'Home',
   },
   ur: {
-    title: 'اپنا اکاؤنٹ بنائیں', sub: 'ایک منٹ اور آپ قیمتیں منگوانا شروع کر سکتے ہیں',
+    title: 'اپنا اکاؤنٹ بنائیں', sub: 'ایک منٹ اور آپ اندر ہیں',
     supTitle: 'سپلائر کے طور پر رجسٹر کریں', supSub: 'ابھی کاروبار کی بنیادی تفصیلات؛ مقام، شعبے اور تصدیق سائن اِن کے بعد',
     toSupplier: 'دکان ہے یا سامان سپلائی کرتے ہیں؟', toSupplierCta: 'سپلائر کے طور پر رجسٹر کریں',
     toBuyer: 'اپنے پروجیکٹ کے لیے قیمتیں چاہییں؟', toBuyerCta: 'قیمتیں منگوانے کے لیے رجسٹر کریں',
