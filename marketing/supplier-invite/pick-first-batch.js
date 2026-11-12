@@ -23,7 +23,11 @@ const NAME_OK = {
 };
 
 // Reviewed by hand on 2026-10-17: toner shop, metal workshop, appliance/AC shops, gas installer.
-const EXCLUDE = /TONERS|تشكيل المعادن|الشويرد|ذرة أكسجين|دخيلكم للغاز|مندي/i;
+// 2026-11-12 review: custom carpenter, wooden trays, appliance store, air treatment are not material suppliers.
+const EXCLUDE = /TONERS|تشكيل المعادن|الشويرد|ذرة أكسجين|دخيلكم للغاز|مندي|نجار|صواني|للأجهزة الكهربائية|معالجة هواء/i;
+// Water-filter shops dominate the plumbing list; keep a few so pipes and sanitary ware get the seats.
+const FILTER_SHOP = /تحلي|فلات?ر/;
+const MAX_FILTER_SHOPS = 3;
 
 // Workshops and AV shops are not material suppliers for a first batch.
 const SKIP_TYPES = new Set(['حدادة وورش حديد', 'شبكات وصوتيات وشاشات', 'كاميرات وأنظمة أمنية']);
@@ -58,6 +62,7 @@ for (const [sec, quota] of Object.entries(QUOTA)) {
     for (const t of types) {
       const s = byType[t][round];
       if (!s || seenPhone.has(s.phone) || n >= quota) continue;
+      if (FILTER_SHOP.test(s.r['الاسم']) && picked.filter(p => FILTER_SHOP.test(p.r['الاسم'])).length >= MAX_FILTER_SHOPS) continue;
       seenPhone.add(s.phone); picked.push(s); n++;
     }
   }
@@ -68,9 +73,45 @@ for (const [sec, quota] of Object.entries(QUOTA)) {
 const PILOT_SIZE = 50;
 for (const x of shops.slice().sort((a, b) => b.score - a.score)) {
   if (picked.length >= PILOT_SIZE) break;
+  if (FILTER_SHOP.test(x.r['الاسم']) && picked.filter(p => FILTER_SHOP.test(p.r['الاسم'])).length >= MAX_FILTER_SHOPS) continue;
   if (!seenPhone.has(x.phone) && !picked.includes(x)) { seenPhone.add(x.phone); picked.push(x); }
 }
 
+// The template greets «تحية طيبة لفريق {{1}}»: Google names carry English duplicates, branches and
+// product lists, so {{1}} gets the shop's own Arabic name, at most 40 characters, cut at a word.
+const AR = /[؀-ۿ]/;
+// Reviewed by hand (2026-11-12): names the rules below would still shorten badly.
+const NAME_FIX = {
+  'فلاتر تحلية المياة.دار الحرملية للمضخات وتحلية المياة': 'دار الحرملية للمضخات وتحلية المياه',
+  'للسباكة والكهرباء شركة ضفيره المطيري للمقاوللات': 'شركة ضفيرة المطيري',
+  'شهاب القمة كهرباء انارة ادوات صحية سباكة طاقة شمسية': 'شهاب القمة',
+  'شركة معاذ المتحدة للتجارة لبيع مواد البناء أسمنت بلك رمل بلط': 'شركة معاذ المتحدة للتجارة',
+  'مؤسسة الهدل للتجاره فرع لبن مبسط مواد بناء رمل اسمنت جميع مواد البناء': 'مؤسسة الهدل للتجارة',
+  'Aljehath Trading (شركة الجهات الأصلية للتجارة)(Original Entities Building Materials Trading Est.)': 'شركة الجهات الأصلية للتجارة',
+  'شركة مصنع الجداول للمضخات الزراعية وقطع غيارها': 'شركة مصنع الجداول للمضخات الزراعية',
+  'شركة نقاء السلسبيل لفلاتر المياه وأجهزة ومحطات معالجة وتحليه المياه': 'شركة نقاء السلسبيل لفلاتر المياه',
+  'مؤسسه بيت الخزانات (إحدي فروع مؤسسة الحسيني التجارية)': 'مؤسسة بيت الخزانات',
+  'مؤسسة حمد عبدالعزيز المهيدب للادوات الصحية': 'مؤسسة حمد عبدالعزيز المهيدب',
+  'الضوء الوهاج للإنارة و الكهرباء فرع الياسمين BRG LIGHTING': 'الضوء الوهاج للإنارة والكهرباء',
+  'مبسط موادبناءاسمنت ورمل وبلاط سهم الطرق': 'سهم الطرق لمواد البناء',
+  'هاتش للأدوات الصحية شارع التخصصي': 'هاتش للأدوات الصحية',
+  'بدائع لبنان (الخزان)': 'بدائع لبنان',
+};
+// Latin brand + Arabic name in one string («SMCO Lighting سمكو اضاءة»): keep the Arabic words.
+const latinPrefix = n => (AR.test(n) && /^[A-Za-z]/.test(n)) ? n.replace(/^[A-Za-z0-9 .&'-]+/, '').trim() : n;
+function shortName(name) {
+  const raw = String(name || '').replace(/[‎‏‪-‮]/g, '').replace(/\s+/g, ' ').trim();
+  if (NAME_FIX[raw]) return NAME_FIX[raw];
+  let n = raw;
+  // Drop bracketed English duplicates when the name has Arabic.
+  if (AR.test(n)) n = n.replace(/\([^)]*[A-Za-z][^)]*\)/g, ' ');
+  // Split off English halves, branches and product lists: « | », « – », « - », «،», «,», «/».
+  const parts = n.split(/\s*[|–—]\s*|\s+-\s*|\s*-\s+|[،,/]/).map(x => x.trim()).filter(Boolean);
+  n = (AR.test(n) ? parts.find(x => AR.test(x)) : parts[0]) || n;
+  n = latinPrefix(n.replace(/[()]/g, ' ').replace(/\s+/g, ' ').trim()).replace(/\s+فرع\s.*$/, '');
+  if (n.length > 40) n = n.slice(0, 41).replace(/\s+\S*$/, '');
+  return n;
+}
 const intl = p => '966' + p.slice(1);
 const chat = p => `https://wa.me/${intl(p)}`;
 // kind: 'opener' (Arabic invitation), 'follow' (one reminder), or en/ur/ar (full details, language already known).
@@ -116,7 +157,7 @@ XLSX.writeFile(out, path.join(__dirname, 'first-batch-50.xlsx'));
 // 2) pilot-50.csv = the list the API sender uses (template supplier_invite, {{1}} = shop name).
 // No wa.me send sheet any more: those links send from the owner's personal WhatsApp.
 const csvCell = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-const csv = ['phone_e164,shop_name,lang,section,shop_type', ...picked.map(x => [intl(x.phone), x.r['الاسم'], 'ar', x.sec, x.type].map(csvCell).join(','))].join('\n');
+const csv = ['phone_e164,shop_name,lang,section,shop_type', ...picked.map(x => [intl(x.phone), shortName(x.r['الاسم']), 'ar', x.sec, x.type].map(csvCell).join(','))].join('\n');
 fs.writeFileSync(path.join(__dirname, 'pilot-50.csv'), '\ufeff' + csv + '\n', 'utf8');
 const oldSheet = path.join(__dirname, 'send-sheet.html');
 if (fs.existsSync(oldSheet)) fs.unlinkSync(oldSheet);
