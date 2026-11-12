@@ -66,7 +66,7 @@ export default async function SuppliersLeaderboard() {
             <div className="text-4xl mb-3"><Glyph e="🏗" /></div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
             <p className="text-sm text-gray-400">سيظهر هنا أفضل الموردين بمجرد بدء الصفقات على المنصّة.</p>
-            <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>سجّل كمورّد</Link>
+            <Link href="/register?role=supplier" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>سجّل كمورّد</Link>
           </div>
         ) : (
           <>
@@ -76,7 +76,7 @@ export default async function SuppliersLeaderboard() {
                 <h2 className="text-sm font-bold mb-1" style={{ color: '#0B2438' }}>موردون في دليلنا</h2>
                 <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
                   موردون معروفون في السوق لم يسجّلوا بعد. هل أحدها نشاطك؟{' '}
-                  <Link href="/register" className="underline font-semibold" style={{ color: '#8F6820' }}>سجّله مجاناً</Link>{' '}
+                  <Link href="/register?role=supplier" className="underline font-semibold" style={{ color: '#8F6820' }}>سجّله مجاناً</Link>{' '}
                   لاستقبال طلبات التسعير.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type JSX } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -35,21 +35,6 @@ export default function WelcomePage() {
       setReady(true)
     })()
   }, [])
-
-  const CARDS: { k: Intent; title: string; sub: string; icon: JSX.Element }[] = [
-    {
-      k: 'buyer',
-      title: L('I need prices', 'مجھے قیمتیں چاہییں', 'أبحث عن أسعار'),
-      sub: L('Request material prices from nearby suppliers and compare quotes.', 'قریبی سپلائرز سے قیمتیں منگوائیں اور موازنہ کریں۔', 'اطلب أسعار المواد من الموردين القريبين وقارن العروض.'),
-      icon: <path d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" />,
-    },
-    {
-      k: 'provider',
-      title: L('I provide material prices', 'میں سامان کی قیمتیں دیتا ہوں', 'أقدّم أسعار المواد'),
-      sub: L('Company, shop, factory or independent seller: receive requests near you and quote.', 'قریبی درخواستیں وصول کریں اور قیمت دیں۔', 'شركة أو محل أو مصنع أو بائع مستقل: تصلك الطلبات القريبة منك وتسعّرها.'),
-      icon: <path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6" />,
-    },
-  ]
 
   async function save() {
     setError('')
@@ -93,22 +78,24 @@ export default function WelcomePage() {
 
           <div className="space-y-3">
             <p className="text-[13px] font-bold text-ink-2">{L('What do you want to do?', 'آپ کیا کرنا چاہتے ہیں؟', 'ماذا تريد أن تفعل؟')}</p>
-            {CARDS.map((c) => {
-              const on = intent === c.k
-              return (
-                <button key={c.k} type="button" onClick={() => setIntent(c.k)} aria-pressed={on}
-                  className={`w-full text-start flex items-start gap-3 p-4 rounded-2xl border-2 transition-all ${on ? 'border-orange bg-orange-50/60 shadow-sm' : 'bg-white hover:border-gray-300'}`}
-                  style={on ? undefined : { borderColor: 'var(--line)' }}>
-                  <span className={`w-11 h-11 rounded-xl grid place-items-center shrink-0 ${on ? 'bg-orange text-white' : 'bg-gray-100 text-navy'}`}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">{c.icon}</svg>
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block font-extrabold text-navy">{c.title}</span>
-                    <span className="block text-[13px] text-ink-2 mt-0.5 leading-relaxed">{c.sub}</span>
-                  </span>
-                </button>
-              )
-            })}
+            {/* buyer-first (owner 2026-11-12, app parity 087454f): one big gold card for buyers, a small row for suppliers */}
+            <button type="button" onClick={() => setIntent('buyer')} aria-pressed={intent === 'buyer'}
+              className={`w-full text-start flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${intent === 'buyer' ? 'shadow-md' : 'hover:shadow-sm'}`}
+              style={{ background: intent === 'buyer' ? '#D4A543' : '#FFF8E8', borderColor: '#D4A543', color: '#071827' }}>
+              <span className="w-12 h-12 rounded-xl grid place-items-center shrink-0" style={{ background: '#071827', color: '#F5C55B' }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" /></svg>
+              </span>
+              <span className="min-w-0">
+                <span className="block font-extrabold text-lg">{intent === 'buyer' ? '✓ ' : ''}{L('Request prices', 'قیمتیں منگوائیں', 'اطلب الأسعار')}</span>
+                <span className="block text-[13px] mt-0.5 leading-relaxed opacity-80">{L('Request material prices from suppliers and compare quotes.', 'سپلائرز سے سامان کی قیمتیں منگوائیں اور پیشکشوں کا موازنہ کریں۔', 'اطلب أسعار المواد من الموردين وقارن العروض.')}</span>
+              </span>
+            </button>
+            <button type="button" onClick={() => setIntent('provider')} aria-pressed={intent === 'provider'}
+              className={`w-full text-start px-4 py-3 rounded-xl border text-sm transition-all ${intent === 'provider' ? 'border-navy bg-navy/5' : 'bg-white hover:border-gray-300'}`}
+              style={intent === 'provider' ? undefined : { borderColor: 'var(--line)' }}>
+              <span className="text-ink-2">{intent === 'provider' ? '✓ ' : ''}{L('Own a shop or supply materials?', 'دکان ہے یا سامان سپلائی کرتے ہیں؟', 'صاحب محل أو مورد مواد؟')}</span>{' '}
+              <span className="font-extrabold" style={{ color: '#8F6820' }}>{L('Register as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</span>
+            </button>
           </div>
 
           {intent === 'provider' && (

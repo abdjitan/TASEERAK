@@ -50,7 +50,10 @@ type FormData = z.infer<typeof schema>
 
 const TR = {
   ar: {
-    title: 'أنشئ حسابك', sub: 'دقيقة واحدة للبدء — تُكمل بياناتك بعد الدخول',
+    title: 'أنشئ حسابك', sub: 'دقيقة واحدة وتبدأ بطلب الأسعار',
+    supTitle: 'سجّل كمورد', supSub: 'بيانات نشاطك الأساسية الآن، والموقع والأقسام والتوثيق بعد الدخول',
+    toSupplier: 'صاحب محل أو مورد مواد؟', toSupplierCta: 'سجّل كمورد',
+    toBuyer: 'تحتاج أسعاراً لمشروعك؟', toBuyerCta: 'سجّل لطلب الأسعار',
     supplier: 'أقدّم أسعار المواد', supplierDesc: 'شركة أو محل أو مصنع أو بائع مستقل',
     contractor: 'أبحث عن أسعار', contractorDesc: 'اطلب أسعار المواد من الموردين وقارن العروض',
     accountType: 'نوع الحساب', fullName: 'الاسم الكامل', pickTitle: 'كيف ستستخدم تسعيرك؟', pickSub: 'اختر نوع حسابك للمتابعة', change: 'تغيير',
@@ -71,7 +74,10 @@ const TR = {
     goSignIn: 'الذهاب لتسجيل الدخول', home: 'الرئيسية',
   },
   en: {
-    title: 'Create your account', sub: 'One minute to start — finish your details after signing in',
+    title: 'Create your account', sub: 'One minute and you can start requesting prices',
+    supTitle: 'Register as a supplier', supSub: 'Your basic business details now; location, categories and verification after signing in',
+    toSupplier: 'Own a shop or supply materials?', toSupplierCta: 'Register as a supplier',
+    toBuyer: 'Need prices for your project?', toBuyerCta: 'Sign up to request prices',
     supplier: 'I provide prices', supplierDesc: 'Company, shop, factory or independent seller',
     contractor: 'I need prices', contractorDesc: 'Request material prices from suppliers and compare quotes',
     accountType: 'Account type', fullName: 'Full name', pickTitle: 'How will you use Taseerak?', pickSub: 'Choose your account type to continue', change: 'Change',
@@ -92,7 +98,10 @@ const TR = {
     goSignIn: 'Go to sign in', home: 'Home',
   },
   ur: {
-    title: 'اپنا اکاؤنٹ بنائیں', sub: 'شروع کرنے کے لیے ایک منٹ — تفصیلات سائن اِن کے بعد مکمل کریں',
+    title: 'اپنا اکاؤنٹ بنائیں', sub: 'ایک منٹ اور آپ قیمتیں منگوانا شروع کر سکتے ہیں',
+    supTitle: 'سپلائر کے طور پر رجسٹر کریں', supSub: 'ابھی کاروبار کی بنیادی تفصیلات؛ مقام، شعبے اور تصدیق سائن اِن کے بعد',
+    toSupplier: 'دکان ہے یا سامان سپلائی کرتے ہیں؟', toSupplierCta: 'سپلائر کے طور پر رجسٹر کریں',
+    toBuyer: 'اپنے پروجیکٹ کے لیے قیمتیں چاہییں؟', toBuyerCta: 'قیمتیں منگوانے کے لیے رجسٹر کریں',
     supplier: 'میں قیمتیں دیتا ہوں', supplierDesc: 'کمپنی، دکان، فیکٹری یا آزاد فروخت کنندہ',
     contractor: 'مجھے قیمتیں چاہییں', contractorDesc: 'قیمتیں منگوائیں اور موازنہ کریں',
     accountType: 'اکاؤنٹ کی قسم', fullName: 'پورا نام', pickTitle: 'آپ تسعیرک کیسے استعمال کریں گے؟', pickSub: 'جاری رکھنے کے لیے اکاؤنٹ کی قسم منتخب کریں', change: 'تبدیل کریں',
@@ -119,7 +128,9 @@ export default function RegisterPage() {
   const t = TR[locale] || TR.ar
   const supabase = createClient()
 
-  const [selectedType, setSelectedType] = useState<'contractor' | 'supplier' | null>(null)
+  // buyer-first (owner 2026-11-12, app parity 087454f): a plain /register is a buyer signup;
+  // ?role=supplier or ?kind= makes it a supplier signup. A switch row near the bottom flips it.
+  const [selectedType, setSelectedType] = useState<'contractor' | 'supplier'>('contractor')
   const [sellerKind, setSellerKind] = useState<'company' | 'independent' | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
@@ -131,8 +142,12 @@ export default function RegisterPage() {
   const [emailDup, setEmailDup] = useState(false)
 
   const { register, handleSubmit, watch, setValue, trigger, setError, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema), mode: 'onChange',
+    resolver: zodResolver(schema), mode: 'onChange', defaultValues: { role: 'contractor' },
   })
+  const switchTo = (r: 'contractor' | 'supplier') => {
+    setSelectedType(r); setValue('role', r, { shouldValidate: true }); setFormError('')
+    if (r === 'supplier' && !sellerKind) { const k = rememberedSignupKind(); if (k === 'company' || k === 'independent') setSellerKind(k) }
+  }
 
   // اختيار مسبق للدور من الرابط (?role=contractor|supplier) — لروابط الدعوة/الهبوط الموجّهة
   useEffect(() => {
@@ -142,11 +157,12 @@ export default function RegisterPage() {
       // ?next= (same-origin path): where to land after sign-up + onboarding, e.g. a landing section card
       rememberPostSignupNext(new URLSearchParams(window.location.search).get('next'))
       if (PHONE_OTP_ENABLED && new URLSearchParams(window.location.search).get('email') !== '1') { window.location.replace('/login'); return }
-      const r0 = new URLSearchParams(window.location.search).get('role')
-      const r = r0 === 'buyer' ? 'contractor' : r0
-      if (r === 'contractor' || r === 'supplier') { setSelectedType(r); setValue('role', r, { shouldValidate: true }) }
-      const k = new URLSearchParams(window.location.search).get('kind') || rememberedSignupKind()
-      if (k === 'company' || k === 'independent') { setSellerKind(k); setSelectedType('supplier'); setValue('role', 'supplier', { shouldValidate: true }) }
+      const qs = new URLSearchParams(window.location.search)
+      const k = qs.get('kind')
+      if (qs.get('role') === 'supplier' || k === 'company' || k === 'independent') {
+        switchTo('supplier')
+        if (k === 'company' || k === 'independent') setSellerKind(k)
+      }
     } catch {}
   }, [])
 
@@ -219,11 +235,6 @@ export default function RegisterPage() {
     )
   }
 
-  const roleCards = [
-    { type: 'contractor', title: t.contractor, desc: t.contractorDesc, svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M3 21V8l6-5 6 5v13" /><path d="M15 21V11l6 4v6" /></svg> },
-    { type: 'supplier', title: t.supplier, desc: t.supplierDesc, svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" /><circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" /></svg> },
-  ]
-
   return (
     <div className="auth-screen min-h-screen flex" dir={dir}>
       {/* ===== Brand panel (wide screens), same as the login page ===== */}
@@ -268,38 +279,14 @@ export default function RegisterPage() {
               <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
             </div>
             <div className="mb-6">
-              <h1 className="text-2xl font-extrabold text-navy">{selectedType ? t.title : t.pickTitle}</h1>
-              <p className="text-ink-2 mt-1.5 text-sm">{selectedType ? t.sub : t.pickSub}</p>
+              <h1 className="text-2xl font-extrabold text-navy">{selectedType === 'supplier' ? t.supTitle : t.title}</h1>
+              <p className="text-ink-2 mt-1.5 text-sm">{selectedType === 'supplier' ? t.supSub : t.sub}</p>
             </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-start">
-            {!selectedType ? (
-              /* step 1 — buyer or supplier */
-              <div className="grid sm:grid-cols-2 gap-4">
-                {roleCards.map(({ type, title, desc, svg }) => (
-                  <button key={type} type="button" onClick={() => { setSelectedType(type as any); setValue('role', type as any, { shouldValidate: true }); setFormError('') }}
-                    className="p-6 rounded-2xl border-2 border-gray-200 bg-white text-center transition-all hover:border-[#D4A543] hover:bg-[#D4A543]/5 hover:shadow-md min-h-[180px]">
-                    <div className="w-14 h-14 rounded-2xl grid place-items-center mx-auto mb-3 text-white" style={{ background: '#0B2438' }}>{svg}</div>
-                    <div className="font-extrabold text-navy text-base">{title}</div>
-                    <div className="text-xs text-gray-500 mt-1 leading-relaxed">{desc}</div>
-                  </button>
-                ))}
-              </div>
-            ) : (<>
-            {/* step 2 — the chosen type, changeable */}
+            {selectedType === 'supplier' && (
             <div>
-              <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-gray-50 px-4 py-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="w-9 h-9 rounded-xl grid place-items-center text-[#071827] shrink-0" style={{ background: '#D4A543' }}>{roleCards.find(r => r.type === selectedType)?.svg}</span>
-                  <div className="min-w-0">
-                    <div className="text-[11px] text-gray-500">{t.accountType}</div>
-                    <div className="font-bold text-navy text-sm truncate">{roleCards.find(r => r.type === selectedType)?.title}</div>
-                  </div>
-                </div>
-                <button type="button" onClick={() => { setSelectedType(null); setValue('role', undefined as any) }} className="text-xs font-bold hover:underline shrink-0" style={{ color: '#8F6820' }}>{t.change}</button>
-              </div>
-              {selectedType === 'supplier' && (<>
-                <p className="text-sm font-bold text-navy mt-4 mb-2">{locale === 'en' ? 'How do you sell? *' : locale === 'ur' ? 'آپ کیسے بیچتے ہیں؟ *' : 'ما نوع نشاطك؟ *'}</p>
+                <p className="text-sm font-bold text-navy mb-2">{locale === 'en' ? 'How do you sell? *' : locale === 'ur' ? 'آپ کیسے بیچتے ہیں؟ *' : 'ما نوع نشاطك؟ *'}</p>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {(['company', 'independent'] as const).map(k => {
                     const on = sellerKind === k
@@ -313,8 +300,8 @@ export default function RegisterPage() {
                     )
                   })}
                 </div>
-              </>)}
             </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -369,18 +356,25 @@ export default function RegisterPage() {
               <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
             </div>
 
-            <button type="submit" disabled={submitting || !agreedToTerms || !selectedType}
-              onClick={async () => { if (!selectedType) { setFormError(t.chooseType); return } await trigger() }}
+            <button type="submit" disabled={submitting || !agreedToTerms}
+              onClick={async () => { await trigger() }}
               className="btn-orange w-full disabled:opacity-50">
               {submitting ? t.creating : t.create}
             </button>
-            </>)}
           </form>
 
+            {/* switch buyer ⇄ supplier, then «have an account?» */}
+            <button type="button" onClick={() => switchTo(selectedType === 'supplier' ? 'contractor' : 'supplier')}
+              className="mt-5 w-full rounded-xl border border-line bg-gray-50 hover:bg-gray-100 px-4 py-3 text-sm text-ink-2 transition-colors">
+              {selectedType === 'supplier' ? t.toBuyer : t.toSupplier}{' '}
+              <span className="font-extrabold" style={{ color: '#8F6820' }}>{selectedType === 'supplier' ? t.toBuyerCta : t.toSupplierCta}</span>
+            </button>
+            <p className="mt-3 text-sm text-ink-2 text-center">{t.haveAccount} <Link href="/login" className="font-extrabold text-orange-dark hover:underline">{t.login}</Link></p>
+
             {/* company accounts with several procurement staff are set up with us, not here */}
-            <p className="mt-6 pt-5 border-t border-line text-xs text-gray-500 text-center">
+            {selectedType === 'contractor' && <p className="mt-5 pt-4 border-t border-line text-xs text-gray-500 text-center">
               {t.corpQ} <a href="mailto:info@taseerak.com?subject=%D8%AD%D8%B3%D8%A7%D8%A8%20%D8%B4%D8%B1%D9%83%D8%A9" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{t.corpA}</a>
-            </p>
+            </p>}
           </div>
         </div>
       </div>
