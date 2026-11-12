@@ -12,7 +12,7 @@ import { TERMS_VERSION, OPERATOR } from '@/lib/legal'
 const C: Record<string, any> = {
   ar: {
     title: 'الشروط والأحكام',
-    updated: `آخر تحديث: 1 نوفمبر 2026 · الإصدار ${TERMS_VERSION}`,
+    updated: `آخر تحديث: 12 نوفمبر 2026 · الإصدار ${TERMS_VERSION}`,
     home: 'الرئيسية',
     intro: `تُشغَّل منصة «تسعيرك» خلال مرحلتها التجريبية باسم «${OPERATOR.ar}»، وللتواصل: ${OPERATOR.email}. باستخدامك المنصة أو إنشاء حساب فيها فإنك توافق على هذه الشروط وعلى سياسة الخصوصية. إن لم توافق عليها فلا تستخدم المنصة.`,
     betaTitle: 'نسخة تجريبية مجانية',
@@ -25,7 +25,7 @@ const C: Record<string, any> = {
       ['5. الطلبات والعروض والأسعار', 'يتحمّل كل مستخدم مسؤولية ما ينشره من طلبات وعروض وأسعار وكميات ومدد توريد. تُدخل الأسعار وتُعرض شاملة ضريبة القيمة المضافة حيث تنطبق. لا تضمن المنصة دقة العروض أو توفر المواد أو التزام أي طرف بها.'],
       ['6. التحقق وعلامة «موثّق»', 'قد تراجع المنصة مستندات المنشآت (مثل السجل التجاري) يدوياً، وقد تستعين بقراءة آلية للمستند للمساعدة في المراجعة. علامة «موثّق» تعني أن المستندات رُوجعت، ولا تعني ضمان جودة المنتجات أو الالتزام بالتوريد. يحق للمنصة سحب العلامة إذا تبيّن عدم صحة المستندات.'],
       ['7. الصفقات والدفع والتسليم', 'يتم الاتفاق والدفع والتسليم مباشرة بين المشتري والمورد وعلى مسؤوليتهما، وعليهما التحقق من بعضهما قبل التعامل. أي نزاع بشأن الجودة أو التسليم أو السداد يكون بين طرفيه، ويمكن للمنصة أن تساعد في التواصل بينهما دون أن تكون ملزمة بحلّه.'],
-      ['8. الاستخدامات المحظورة', 'يُمنع: إدخال بيانات كاذبة أو مستندات غير صحيحة، وإنشاء حسابات وهمية أو متعددة للمنشأة نفسها، وانتحال صفة الغير، واستخدام سجل تجاري لا يخصّك، وعرض مواد محظورة نظاماً، والإساءة إلى المستخدمين، ونسخ بيانات المنصة آلياً، ومحاولة اختراقها أو تعطيلها.'],
+      ['8. الاستخدامات المحظورة', 'يُمنع: إدخال بيانات كاذبة أو مستندات غير صحيحة، وإنشاء حسابات وهمية أو متعددة للمنشأة نفسها، وانتحال صفة الغير، واستخدام سجل تجاري لا يخصّك، وعرض مواد محظورة نظاماً، ونسخ بيانات المنصة آلياً، ومحاولة اختراقها أو تعطيلها. ويُمنع في الرسائل والطلبات والعروض وكل ما يُنشر على المنصة: الإساءة أو التحرّش أو التهديد، والمحتوى الذي يحضّ على الكراهية أو العنف، والمحتوى الجنسي، والرسائل المزعجة أو الإعلانية غير المرغوب فيها، والاحتيال أو محاولته، وكل محتوى يخالف الأنظمة أو الآداب العامة. لا تتسامح المنصة مع هذا المحتوى: يمكنك الإبلاغ عن أي مستخدم أو حظره من المحادثة، وتراجع الإدارة البلاغات، وتحذف المحتوى المخالف، وتعلّق حساب صاحبه أو توقفه.'],
       ['9. الملكية الفكرية والمحتوى', 'حقوق المنصة وتصميمها وشعارها وبرمجياتها محفوظة لتسعيرك. يحتفظ المستخدم بحقوق ما يرفعه، ويمنح المنصة إذناً باستخدامه وعرضه بالقدر اللازم لتقديم الخدمة.'],
       ['10. حدود المسؤولية', 'تُقدَّم المنصة خلال المرحلة التجريبية «كما هي». لا تتحمل المنصة مسؤولية تصرفات المستخدمين أو جودة المواد أو التسليم أو السداد، ولا الأضرار غير المباشرة أو فوات الربح. ولا يُقصد بأي بند في هذه الشروط استبعاد مسؤولية لا يجوز استبعادها وفق أنظمة المملكة العربية السعودية، ومنها المسؤولية عن الغش أو الخطأ الجسيم من جانب المنصة نفسها.'],
       ['11. التعليق والإنهاء وحذف الحساب', 'يحق للمنصة تعليق أو إيقاف الحساب الذي يخالف هذه الشروط، مع إبلاغ صاحبه بالسبب ما لم يمنع ذلك مانع نظامي. ويمكنك حذف حسابك في أي وقت من الإعدادات أو من صفحة «حذف الحساب».'],
@@ -37,7 +37,7 @@ const C: Record<string, any> = {
   },
   en: {
     title: 'Terms & Conditions',
-    updated: `Last updated: 1 November 2026 · Version ${TERMS_VERSION}`,
+    updated: `Last updated: 12 November 2026 · Version ${TERMS_VERSION}`,
     home: 'Home',
     intro: `During its beta, the Taseerak platform is operated as "${OPERATOR.en}". Contact: ${OPERATOR.email}. By using the platform or creating an account you agree to these Terms and to the Privacy Policy. If you do not agree, do not use the platform.`,
     betaTitle: 'Free beta',
@@ -50,7 +50,7 @@ const C: Record<string, any> = {
       ['5. Requests, offers and prices', 'Each user is responsible for the requests, offers, prices, quantities and delivery times they publish. Prices are entered and shown inclusive of VAT where applicable. The platform does not guarantee the accuracy of offers, the availability of materials, or any party\'s commitment to them.'],
       ['6. Verification and the "Verified" badge', 'The platform may review business documents (such as the commercial registration) manually and may use an automated reading of the document to assist the review. The "Verified" badge means the documents were reviewed; it does not guarantee product quality or delivery. The platform may withdraw the badge if documents prove incorrect.'],
       ['7. Deals, payment and delivery', 'Agreement, payment and delivery take place directly between buyer and supplier at their own responsibility, and each should check the other before dealing. Any dispute over quality, delivery or payment is between the parties; the platform may help them communicate but is not obliged to resolve it.'],
-      ['8. Prohibited use', 'It is prohibited to: enter false data or documents, create fake or multiple accounts for the same business, impersonate others, use a commercial registration that is not yours, list materials prohibited by law, abuse other users, scrape the platform, or attempt to hack or disrupt it.'],
+      ['8. Prohibited use', 'It is prohibited to: enter false data or documents, create fake or multiple accounts for the same business, impersonate others, use a commercial registration that is not yours, list materials prohibited by law, scrape the platform, or attempt to hack or disrupt it. In messages, requests, offers and anything else posted on the platform it is also prohibited to post abuse, harassment or threats, content promoting hatred or violence, sexual content, spam or unsolicited advertising, fraud or attempted fraud, or any content that breaks the law or public decency. The platform has zero tolerance for such content: you can report or block any user from the chat, the admin reviews reports, removes violating content, and suspends or closes the account responsible.'],
       ['9. Intellectual property and content', 'The platform, its design, logo and software belong to Taseerak. Users keep the rights to what they upload and grant the platform permission to use and display it as needed to provide the service.'],
       ['10. Limitation of liability', 'During the beta the platform is provided "as is". The platform is not liable for users\' conduct, material quality, delivery or payment, nor for indirect losses or lost profits. Nothing in these Terms excludes liability that cannot be excluded under the laws of Saudi Arabia, including liability for fraud or gross negligence by the platform itself.'],
       ['11. Suspension, termination and account deletion', 'The platform may suspend or stop an account that breaches these Terms and will inform its owner of the reason unless legally prevented. You can delete your account at any time from Settings or from the "Delete account" page.'],
@@ -62,7 +62,7 @@ const C: Record<string, any> = {
   },
   ur: {
     title: 'شرائط و ضوابط',
-    updated: `آخری تازہ کاری: 1 نومبر 2026 · ورژن ${TERMS_VERSION}`,
+    updated: `آخری تازہ کاری: 12 نومبر 2026 · ورژن ${TERMS_VERSION}`,
     home: 'مرکزی صفحہ',
     intro: `آزمائشی مرحلے کے دوران تسعیرک پلیٹ فارم «${OPERATOR.ur}» کے نام سے چلایا جاتا ہے۔ رابطہ: ${OPERATOR.email}۔ پلیٹ فارم استعمال کرنے یا اکاؤنٹ بنانے سے آپ ان شرائط اور رازداری کی پالیسی سے اتفاق کرتے ہیں۔ اگر آپ متفق نہیں تو پلیٹ فارم استعمال نہ کریں۔`,
     betaTitle: 'مفت آزمائشی ورژن',
@@ -75,7 +75,7 @@ const C: Record<string, any> = {
       ['5. درخواستیں، پیشکشیں اور قیمتیں', 'ہر صارف اپنی شائع کردہ درخواستوں، پیشکشوں، قیمتوں، مقداروں اور ترسیل کی مدت کا ذمہ دار ہے۔ قیمتیں جہاں لاگو ہو ویلیو ایڈڈ ٹیکس سمیت درج اور ظاہر کی جاتی ہیں۔ پلیٹ فارم پیشکشوں کی درستگی، مواد کی دستیابی یا کسی فریق کی پابندی کی ضمانت نہیں دیتا۔'],
       ['6. تصدیق اور «تصدیق شدہ» نشان', 'پلیٹ فارم اداروں کی دستاویزات (جیسے تجارتی رجسٹریشن) کا دستی جائزہ لے سکتا ہے اور جائزے میں مدد کے لیے دستاویز کی خودکار قراءت استعمال کر سکتا ہے۔ «تصدیق شدہ» نشان کا مطلب ہے کہ دستاویزات دیکھی گئیں؛ یہ معیار یا ترسیل کی ضمانت نہیں۔ دستاویزات غلط ثابت ہوں تو نشان واپس لیا جا سکتا ہے۔'],
       ['7. سودے، ادائیگی اور ترسیل', 'معاہدہ، ادائیگی اور ترسیل براہِ راست خریدار اور سپلائر کے درمیان اور انہی کی ذمہ داری پر ہوتے ہیں، اور دونوں کو لین دین سے پہلے ایک دوسرے کی جانچ کرنی چاہیے۔ معیار، ترسیل یا ادائیگی کا تنازع فریقین کے درمیان ہے؛ پلیٹ فارم رابطے میں مدد کر سکتا ہے مگر اسے حل کرنے کا پابند نہیں۔'],
-      ['8. ممنوعہ استعمال', 'منع ہے: جھوٹا ڈیٹا یا دستاویزات دینا، ایک ہی ادارے کے جعلی یا متعدد اکاؤنٹ بنانا، کسی کی نقالی کرنا، کسی اور کی تجارتی رجسٹریشن استعمال کرنا، قانوناً ممنوعہ مواد پیش کرنا، صارفین سے بدسلوکی، پلیٹ فارم کا ڈیٹا خودکار طور پر نقل کرنا، یا اسے ہیک یا معطل کرنے کی کوشش۔'],
+      ['8. ممنوعہ استعمال', 'منع ہے: جھوٹا ڈیٹا یا دستاویزات دینا، ایک ہی ادارے کے جعلی یا متعدد اکاؤنٹ بنانا، کسی کی نقالی کرنا، کسی اور کی تجارتی رجسٹریشن استعمال کرنا، قانوناً ممنوعہ مواد پیش کرنا، پلیٹ فارم کا ڈیٹا خودکار طور پر نقل کرنا، یا اسے ہیک یا معطل کرنے کی کوشش۔ پیغامات، درخواستوں، پیشکشوں اور پلیٹ فارم پر شائع ہونے والی ہر چیز میں یہ بھی منع ہے: بدسلوکی، ہراسانی یا دھمکی، نفرت یا تشدد پر اکسانے والا مواد، جنسی مواد، ناپسندیدہ یا اشتہاری پیغامات (اسپام)، دھوکہ دہی یا اس کی کوشش، اور قانون یا عوامی اخلاق کے خلاف کوئی بھی مواد۔ پلیٹ فارم ایسے مواد کو برداشت نہیں کرتا: آپ گفتگو سے کسی بھی صارف کی شکایت کر سکتے ہیں یا اسے بلاک کر سکتے ہیں، انتظامیہ شکایات کا جائزہ لیتی ہے، خلاف ورزی والا مواد ہٹاتی ہے، اور ذمہ دار اکاؤنٹ معطل یا بند کرتی ہے۔'],
       ['9. دانشورانہ املاک اور مواد', 'پلیٹ فارم، اس کا ڈیزائن، لوگو اور سافٹ ویئر تسعیرک کی ملکیت ہیں۔ صارف اپنے اپ لوڈ کردہ مواد کے حقوق رکھتا ہے اور سروس فراہم کرنے کے لیے ضروری حد تک اس کے استعمال اور ظاہر کرنے کی اجازت دیتا ہے۔'],
       ['10. ذمہ داری کی حد', 'آزمائشی مرحلے میں پلیٹ فارم «جیسا ہے» فراہم کیا جاتا ہے۔ پلیٹ فارم صارفین کے طرزِ عمل، مواد کے معیار، ترسیل یا ادائیگی، اور بالواسطہ نقصان یا منافع کے نقصان کا ذمہ دار نہیں۔ ان شرائط کی کوئی شق ایسی ذمہ داری ختم نہیں کرتی جو سعودی قوانین کے تحت ختم نہیں کی جا سکتی، بشمول پلیٹ فارم کی اپنی دھوکہ دہی یا سنگین غفلت۔'],
       ['11. معطلی، اختتام اور اکاؤنٹ حذف کرنا', 'شرائط کی خلاف ورزی کرنے والا اکاؤنٹ معطل یا بند کیا جا سکتا ہے اور قانونی رکاوٹ نہ ہو تو مالک کو وجہ بتائی جائے گی۔ آپ کسی بھی وقت ترتیبات سے یا «اکاؤنٹ حذف کریں» صفحے سے اپنا اکاؤنٹ حذف کر سکتے ہیں۔'],
