@@ -9,7 +9,9 @@ Deno.serve(async (req) => {
   try {
     if (req.method !== 'POST') return json({ error: 'method' }, 405)
     const secret = req.headers.get('x-notify-secret') || ''
-    const { notification_id } = await req.json().catch(() => ({}))
+    // channel 'whatsapp' = the delayed WhatsApp step from process_whatsapp_queue (migration 206):
+    // sent only if the person still hasn't read it; otherwise the free channels (push / email) now.
+    const { notification_id, channel } = await req.json().catch(() => ({}))
     if (!notification_id) return json({ error: 'bad request' }, 400)
 
     const supabase = createClient(
@@ -23,6 +25,18 @@ Deno.serve(async (req) => {
 
     const { data: n } = await supabase.from('notifications').select('*').eq('id', notification_id).single()
     if (!n || !n.user_id) return json({ ok: true, skip: 'no-notification' }, 200)
+
+    if (channel === 'whatsapp') {
+      let whatsapp = 'skip:disabled'
+      if (cfg.whatsapp_enabled) {
+        try { whatsapp = await sendWhatsApp(supabase, n, true) } catch (e: any) {
+          whatsapp = 'error'
+          try { await supabase.from('system_errors_log').insert({ context: 'notify:whatsapp', message: String(e?.message || e).slice(0, 500), user_id: n.user_id }) } catch (_) { /* ignore */ }
+        }
+      }
+      await supabase.from('notifications').update({ wa_status: whatsapp === 'sent' ? 'sent' : 'skipped' }).eq('id', n.id)
+      return json({ ok: true, whatsapp }, 200)
+    }
 
     // Same-origin path only: an url like "@evil.com/x" or "//evil.com" must not become a link.
     const rawUrl = (n.data && typeof n.data.url === 'string') ? n.data.url : '/'
@@ -124,18 +138,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── WhatsApp (owner 2026-11-14): the approved UTILITY templates from the Taseerak number.
-    // Off until notify_config.whatsapp_enabled; never when the person switched it off
-    // (profiles.whatsapp_notifications); team copies and admin alerts are not sent.
-    let whatsapp: string | null = null
-    if (cfg.whatsapp_enabled && !(n.data && (n.data.team_copy || n.data.uncovered))) {
-      try { whatsapp = await sendWhatsApp(supabase, n) } catch (e: any) {
-        whatsapp = 'error'
-        try { await supabase.from('system_errors_log').insert({ context: 'notify:whatsapp', message: String(e?.message || e).slice(0, 500), user_id: n.user_id }) } catch (_) { /* ignore */ }
-      }
-    }
-
-    return json({ ok: true, sent, removed, appSent, appRemoved, emailed, whatsapp }, 200)
+    // WhatsApp is not sent here: process_whatsapp_queue (206) calls back with channel 'whatsapp'
+    // after notify_config.wa_delay minutes, only for notifications still unread.
+    return json({ ok: true, sent, removed, appSent, appRemoved, emailed, whatsapp: n.wa_status === 'pending' ? 'queued-later' : null }, 200)
   } catch (e: any) {
     return json({ error: String(e?.message || e) }, 500)
   }
@@ -173,9 +178,23 @@ function p(v: unknown, max = 60): string {
   return (t.length > max ? t.slice(0, max - 1) + '…' : t) || '-'
 }
 
-async function sendWhatsApp(supabase: any, n: any): Promise<string> {
+async function sendWhatsApp(supabase: any, n: any, delayed = false): Promise<string> {
   const spec = WA[n.type]
   if (!spec) return 'skip:type'
+  if (n.data && (n.data.team_copy || n.data.uncovered)) return 'skip:internal'
+  if (delayed) {
+    // already seen through a free channel? (the bell / notifications page / opening the page it points to)
+    if (n.is_read) return 'skip:read'
+    const dd = n.data || {}
+    if (n.type === 'new_message' && dd.conversation_id) {
+      const { data: c } = await supabase.from('conversations').select('contractor_id, contractor_unread, supplier_unread').eq('id', dd.conversation_id).maybeSingle()
+      if (c && Number(c.contractor_id === n.user_id ? c.contractor_unread : c.supplier_unread) === 0) return 'skip:read'
+    }
+    if (n.type === 'new_rfq' && dd.rfq_id) {
+      const { count } = await supabase.from('offers').select('id', { count: 'exact', head: true }).eq('rfq_id', dd.rfq_id).eq('supplier_id', n.user_id)
+      if ((count || 0) > 0) return 'skip:already-priced'
+    }
+  }
   const token = Deno.env.get('WHATSAPP_TOKEN') || ''
   const phoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || ''
   if (!token || !phoneId) return 'skip:config'

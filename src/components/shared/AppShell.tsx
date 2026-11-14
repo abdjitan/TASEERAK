@@ -2,7 +2,7 @@
 
 import { useState, useEffect, ReactNode } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import NotificationBell from '@/components/shared/NotificationBell'
 import AiAssistant from '@/components/shared/AiAssistant'
@@ -44,6 +44,14 @@ export default function AppShell({
   // An independent seller has no branches or team: company-only items leave the menu.
   const [kind, setKind] = useState<string | null>(null)
   useEffect(() => { setKind(storedSellerKind()) }, [])
+  // Opening the page a notification points to counts as reading it, so its delayed WhatsApp
+  // is not sent (owner 2026-11-14, migration 206).
+  const pathname = usePathname()
+  useEffect(() => {
+    if (!pathname) return
+    const full = pathname + (typeof window !== 'undefined' ? window.location.search : '')
+    createClient().rpc('mark_notifications_read_for_url', { p_path: pathname, p_full: full }).then(() => {}, () => {})
+  }, [pathname])
   const nav = navIn.filter(n => !(n.only === 'company' && kind === 'independent'))
   // Remember which menu this device shows, so PageLoader can draw the same frame on shared pages
   // (messages, settings…) while their data loads. Key = ROLE_HINT_KEY in PageLoader.
