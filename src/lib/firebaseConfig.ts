@@ -3,10 +3,10 @@
 // domains, reCAPTCHA and the SMS region allow-list in the Firebase console), so they may live in code.
 // Set them through NEXT_PUBLIC_FIREBASE_* in Vercel, or fill the fallbacks once the project exists.
 export const FIREBASE_CONFIG = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyALQaTZ4-IpBQWENGUUhLCJPdq1Jq9dEx8',
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'hardy-ally-498808-t4.firebaseapp.com',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'hardy-ally-498808-t4',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:731289298316:web:489837dcba16fc8ee4a2a9',
 }
 
 export const firebaseReady = () => !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.authDomain && FIREBASE_CONFIG.projectId)

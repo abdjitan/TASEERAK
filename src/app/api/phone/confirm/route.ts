@@ -23,7 +23,8 @@ export async function POST(req: Request) {
 
   // Google validates the token (signature, expiry, project) and returns the verified phone number.
   const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(FIREBASE_CONFIG.apiKey)}`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }),
+    // Referer: the browser key may be restricted to our site's referrers
+    method: 'POST', headers: { 'Content-Type': 'application/json', Referer: 'https://taseerak.com/' }, body: JSON.stringify({ idToken }),
   })
   const j: any = await r.json().catch(() => ({}))
   const fu = j?.users?.[0]
