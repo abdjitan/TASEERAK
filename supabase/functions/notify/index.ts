@@ -124,7 +124,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ ok: true, sent, removed, appSent, appRemoved, emailed }, 200)
+    // ── WhatsApp (owner 2026-11-14): the approved UTILITY templates from the Taseerak number.
+    // Off until notify_config.whatsapp_enabled; never when the person switched it off
+    // (profiles.whatsapp_notifications); team copies and admin alerts are not sent.
+    let whatsapp: string | null = null
+    if (cfg.whatsapp_enabled && !(n.data && (n.data.team_copy || n.data.uncovered))) {
+      try { whatsapp = await sendWhatsApp(supabase, n) } catch (e: any) {
+        whatsapp = 'error'
+        try { await supabase.from('system_errors_log').insert({ context: 'notify:whatsapp', message: String(e?.message || e).slice(0, 500), user_id: n.user_id }) } catch (_) { /* ignore */ }
+      }
+    }
+
+    return json({ ok: true, sent, removed, appSent, appRemoved, emailed, whatsapp }, 200)
   } catch (e: any) {
     return json({ error: String(e?.message || e) }, 500)
   }
@@ -135,4 +146,119 @@ function json(obj: unknown, status = 200) {
 }
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) => (({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]))
+}
+
+// ─────────────────────────────── WhatsApp ───────────────────────────────
+// type → template (approved in WABA 1825652205148156, languages ar/en/ur) and the minutes between
+// two sends of that kind for the same thread (rfq / conversation); the thread id fills the URL button.
+const WA: Record<string, { template: string; gap: number }> = {
+  new_rfq: { template: 'rfq_new_request', gap: 0 },
+  rfq_offer: { template: 'buyer_offers_received', gap: 180 },
+  offer_accepted: { template: 'supplier_awarded', gap: 30 },
+  new_message: { template: 'new_message', gap: 120 },
+}
+
+/** Saudi/international number → digits with country code, or null. */
+function waPhone(raw: string | null | undefined): string | null {
+  let d = String(raw || '').replace(/[٠-٩]/g, (c) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(c))).replace(/\D/g, '')
+  if (d.startsWith('00')) d = d.slice(2)
+  if (/^05\d{8}$/.test(d)) d = '966' + d.slice(1)
+  else if (/^5\d{8}$/.test(d)) d = '966' + d
+  return /^\d{11,15}$/.test(d) ? d : null
+}
+
+/** A template text parameter: no new lines/tabs, no long space runs, never empty. */
+function p(v: unknown, max = 60): string {
+  const t = String(v ?? '').replace(/[\n\r\t]+/g, ' ').replace(/\s{2,}/g, ' ').trim()
+  return (t.length > max ? t.slice(0, max - 1) + '…' : t) || '-'
+}
+
+async function sendWhatsApp(supabase: any, n: any): Promise<string> {
+  const spec = WA[n.type]
+  if (!spec) return 'skip:type'
+  const token = Deno.env.get('WHATSAPP_TOKEN') || ''
+  const phoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || ''
+  if (!token || !phoneId) return 'skip:config'
+  const d = n.data || {}
+  const threadId: string = n.type === 'new_message' ? (d.conversation_id || '') : (d.rfq_id || '')
+  if (!threadId) return 'skip:no-thread' // e.g. an offer «info request» message has no conversation page
+
+  const { data: prof } = await supabase.from('profiles').select('phone, contact_phone, whatsapp_notifications, preferred_language').eq('id', n.user_id).maybeSingle()
+  if (!prof || prof.whatsapp_notifications === false) return 'skip:off'
+  const to = waPhone(prof.phone) || waPhone(prof.contact_phone)
+  if (!to) return 'skip:no-phone'
+
+  const { data: last } = await supabase.from('whatsapp_sends').select('sent_at').eq('user_id', n.user_id).eq('kind', n.type).eq('ref', threadId).maybeSingle()
+  if (last && spec.gap === 0) return 'skip:sent' // one per request
+  if (last && Date.now() - new Date(last.sent_at).getTime() < spec.gap * 60000) return 'skip:throttled'
+
+  const lang = prof.preferred_language === 'en' ? 'en' : prof.preferred_language === 'ur' ? 'ur' : 'ar'
+  const rfqId: string = d.rfq_id || ''
+  const { data: rfq } = rfqId
+    ? await supabase.from('rfqs').select('ref_no, items, product_name, city, region, expires_at').eq('id', rfqId).maybeSingle()
+    : { data: null }
+  const ref = rfq?.ref_no ? `RFQ-${rfq.ref_no}` : (rfqId ? rfqId.slice(0, 8) : '-')
+
+  let body: string[] = []
+  if (n.type === 'new_rfq') {
+    if (!rfq) return 'skip:no-rfq'
+    const items: any[] = Array.isArray(rfq.items) && rfq.items.length ? rfq.items : [{ product_name: rfq.product_name }]
+    const first = String(items[0]?.product_name || rfq.product_name || '')
+    const extra = items.length - 1
+    const more = extra > 0 ? (lang === 'en' ? ` +${extra} more` : lang === 'ur' ? ` +${extra} مزید` : ` و${extra} أخرى`) : ''
+    const when = rfq.expires_at ? new Date(rfq.expires_at).toLocaleString(
+      lang === 'en' ? 'en-GB' : lang === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn',
+      { timeZone: 'Asia/Riyadh', weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) : '-'
+    body = [ref, p(first, 50 - more.length) + more, p(rfq.city || rfq.region), p(when)]
+  } else if (n.type === 'rfq_offer') {
+    const { data: offs } = await supabase.from('offers').select('total_price, vat_included, vat_status, status').eq('rfq_id', rfqId)
+    const live = (offs || []).filter((o: any) => !['withdrawn', 'cancelled', 'deleted'].includes(String(o.status || '')))
+    // what the buyer pays (same rule as src/lib/vat.ts offerComparable)
+    const totals = live.map((o: any) => {
+      const t = Number(o.total_price) || 0
+      return o.vat_status === 'not_registered' || o.vat_included ? t : t * 1.15
+    }).filter((t: number) => t > 0)
+    const low = totals.length ? Math.min(...totals) : 0
+    body = [ref, String(Math.max(live.length, 1)), low ? low.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-']
+  } else if (n.type === 'offer_accepted') {
+    const { count } = await supabase.from('rfq_item_awards').select('item_index', { count: 'exact', head: true }).eq('rfq_id', rfqId).eq('offer_id', d.offer_id || '')
+    body = [ref, String(count || 1)]
+  } else if (n.type === 'new_message') {
+    let r = ref
+    if (!rfqId) {
+      const { data: c } = await supabase.from('conversations').select('rfq_id').eq('id', threadId).maybeSingle()
+      if (c?.rfq_id) {
+        const { data: rr } = await supabase.from('rfqs').select('ref_no').eq('id', c.rfq_id).maybeSingle()
+        if (rr?.ref_no) r = `RFQ-${rr.ref_no}`
+      }
+    }
+    if (r === '-') r = lang === 'en' ? 'your conversation' : lang === 'ur' ? 'آپ کی گفتگو' : 'محادثتك'
+    body = [r]
+  }
+
+  const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp', to, type: 'template',
+      template: {
+        name: spec.template, language: { code: lang },
+        components: [
+          { type: 'body', parameters: body.map((t) => ({ type: 'text', text: p(t) })) },
+          { type: 'button', sub_type: 'url', index: '0', parameters: [{ type: 'text', text: threadId }] },
+        ],
+      },
+    }),
+  })
+  const out: any = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    const msg = `${res.status} ${JSON.stringify(out?.error || out).slice(0, 400)}`.split(token).join('[token]')
+    await supabase.from('system_errors_log').insert({ context: 'notify:whatsapp', message: `${spec.template}/${lang}: ${msg}`, user_id: n.user_id })
+    return 'failed'
+  }
+  await supabase.from('whatsapp_sends').upsert({
+    user_id: n.user_id, kind: n.type, ref: threadId, sent_at: new Date().toISOString(),
+    template: spec.template, wa_message_id: out?.messages?.[0]?.id || null,
+  })
+  return 'sent'
 }

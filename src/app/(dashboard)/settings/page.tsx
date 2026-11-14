@@ -119,6 +119,8 @@ export default function SettingsPage() {
   const [tab, setTab] = useState('profile')
   const [emailOn, setEmailOn] = useState(true)
   const [emailBusy, setEmailBusy] = useState(false)
+  const [waOn, setWaOn] = useState(true)
+  const [waBusy, setWaBusy] = useState(false)
   // فتح تبويب محدّد عبر ?tab= (مثلاً من «أكمل التوثيق» في «أكمل ملفك» → ?tab=docs)
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('tab')
@@ -184,6 +186,7 @@ export default function SettingsPage() {
         setDistrict(p.district || '')
         setPrefLang(p.preferred_language || 'ar')
         setEmailOn(p.email_notifications !== false)
+        setWaOn(p.whatsapp_notifications !== false)
         setSupplierTier(p.supplier_tier || 'shop')
         setMinOrderValue(p.min_order_value ? String(p.min_order_value) : '')
         setContractorGrade(p.contractor_grade || '')
@@ -594,6 +597,24 @@ export default function SettingsPage() {
                       <span>
                         <span className="block text-sm font-bold text-gray-700">{L('Email notifications', 'ای میل اطلاعات', 'إشعارات البريد الإلكتروني')}</span>
                         <span className="block text-xs text-gray-500 mt-0.5">{L('Important updates only: new offers and requests, deal steps and reminders. Messages arrive as one short notice at most every 3 hours.', 'صرف اہم اپ ڈیٹس: نئی پیشکشیں اور درخواستیں، سودے کے مراحل اور یاد دہانیاں۔ پیغامات کی اطلاع زیادہ سے زیادہ ہر 3 گھنٹے میں ایک بار۔', 'التحديثات المهمة فقط: العروض والطلبات الجديدة، ومراحل الصفقة، والتذكيرات. وتصل الرسائل في تنبيه واحد مختصر كل 3 ساعات على الأكثر.')}</span>
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* WhatsApp notifications (owner 2026-11-14): approved templates from the Taseerak number to the saved mobile */}
+                  <div className="border-t border-gray-100 pt-5">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" className="mt-1 w-4 h-4 accent-[#0B2438]" checked={waOn} disabled={waBusy}
+                        onChange={async e => {
+                          const on = e.target.checked
+                          setWaBusy(true); setWaOn(on)
+                          const { error } = await createClient().rpc('set_whatsapp_notifications', { p_on: on })
+                          if (error) setWaOn(!on)
+                          setWaBusy(false)
+                        }} />
+                      <span>
+                        <span className="block text-sm font-bold text-gray-700">{L('WhatsApp notifications', 'واٹس ایپ اطلاعات', 'إشعارات واتساب')}</span>
+                        <span className="block text-xs text-gray-500 mt-0.5">{L('From the Taseerak number to your saved mobile: new matching requests, received offers, awards and new messages (at most one notice per conversation every 2 hours).', 'تسعیرک کے نمبر سے آپ کے محفوظ موبائل پر: نئی درخواستیں، موصول پیشکشیں، ایوارڈ اور نئے پیغامات (ہر گفتگو پر زیادہ سے زیادہ ہر 2 گھنٹے میں ایک اطلاع)۔', 'من رقم تسعيرك إلى جوالك المسجّل: الطلبات المطابقة الجديدة، والعروض الواصلة، والترسية، والرسائل الجديدة (تنبيه واحد لكل محادثة كل ساعتين على الأكثر).')}</span>
                       </span>
                     </label>
                   </div>
