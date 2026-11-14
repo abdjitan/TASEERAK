@@ -41,6 +41,11 @@ Deno.serve(async (req) => {
       const v = change?.value || {}
       if (change?.field === 'smb_message_echoes' || (v.messages && v.messages.length)) forward = true
       for (const s of v.statuses || []) EdgeRuntime.waitUntil(onStatus(sb, s).catch((e) => console.error('wa-webhook status', e)))
+      if (change?.field === 'messages') {
+        const names: Record<string, string> = {}
+        for (const c of v.contacts || []) if (c?.wa_id) names[String(c.wa_id)] = String(c?.profile?.name || '')
+        for (const m of v.messages || []) EdgeRuntime.waitUntil(onInbound(sb, m, names).catch((e) => console.error('wa-webhook inbound', e)))
+      }
     }
   }
   if (forward) {
@@ -51,6 +56,32 @@ Deno.serve(async (req) => {
   }
   return new Response('ok', { status: 200 })
 })
+
+// Someone wrote to the Taseerak number: keep the message (admins read it, migration 209) and send
+// one free welcome reply per number per 24 h. Invited shops (invite_chats) are the invite bot's.
+const WELCOME = 'أهلاً بك في تسعيرك.\n\nهذا الرقم مخصّص لإشعارات المنصة.\n• لطلب أسعار مواد البناء أو للتسجيل كمورد: https://taseerak.com\n• للمساعدة: راسلنا من «الدعم والرسائل» داخل حسابك، أو على info@taseerak.com\n\nWelcome to Taseerak. This number sends platform notifications. Visit https://taseerak.com or email info@taseerak.com for help.'
+
+async function onInbound(sb: any, m: any, names: Record<string, string>) {
+  const phone = String(m?.from || '').replace(/\D/g, '')
+  if (!phone) return
+  const text = m?.text?.body || m?.button?.text || m?.interactive?.button_reply?.title || m?.interactive?.list_reply?.title || null
+  const name = names[phone] || null
+  await sb.from('wa_inbound_messages').upsert({ phone, name, type: m?.type || null, text: text ? String(text).slice(0, 2000) : null, wa_message_id: m?.id || null }, { onConflict: 'wa_message_id', ignoreDuplicates: true })
+  const { data: invited } = await sb.from('invite_chats').select('phone').eq('phone', phone).maybeSingle()
+  const { data: c } = await sb.from('wa_inbound_contacts').select('last_auto_reply_at').eq('phone', phone).maybeSingle()
+  const now = new Date()
+  const due = !invited && (!c?.last_auto_reply_at || now.getTime() - new Date(c.last_auto_reply_at).getTime() > 24 * 3600 * 1000)
+  await sb.from('wa_inbound_contacts').upsert({ phone, ...(name ? { name } : {}), last_message_at: now.toISOString(), ...(due ? { last_auto_reply_at: now.toISOString() } : {}) }, { onConflict: 'phone' })
+  if (!due) return
+  const token = Deno.env.get('WHATSAPP_TOKEN') || ''
+  const phoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || ''
+  if (!token || !phoneId) return
+  const res = await fetch(`https://graph.facebook.com/${GRAPH}/${phoneId}/messages`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messaging_product: 'whatsapp', to: phone, type: 'text', text: { body: WELCOME, preview_url: false } }),
+  })
+  if (!res.ok) await sb.from('system_errors_log').insert({ context: 'wa-webhook:welcome', message: `${res.status} ${(await res.text().catch(() => '')).slice(0, 300)}`.split(token).join('[token]') })
+}
 
 async function onStatus(sb: any, s: any) {
   const id = s?.id
