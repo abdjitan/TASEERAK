@@ -19,6 +19,7 @@ import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { normalizeCrInput, crTakenText, crClaimHref } from '@/lib/cr'
 import { toLatinDigits } from '@/lib/phone'
+import PhoneVerify from '@/components/shared/PhoneVerify'
 import { friendlyError } from '@/lib/friendlyError'
 import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
@@ -512,6 +513,10 @@ export default function SettingsPage() {
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.phone}</label>
                     <input value={phone} onChange={e => setPhone(e.target.value)}
                       className="input-field" placeholder="+966 5X XXX XXXX" />
+                    <PhoneVerify initialPhone={phone} locale={locale}
+                      verified={!!profile?.phone_verified_at && (phone || '').replace(/D/g, '') === String(profile?.phone || '').replace(/D/g, '')}
+                      waVerified={!!profile?.whatsapp_verified_at}
+                      onDone={(ph: string) => { setPhone(ph); setProfile({ ...profile, phone: ph, phone_verified_at: new Date().toISOString() }) }} />
                     {profile?.role === 'supplier' && (
                       <p className="text-[10px] text-gray-400 mt-1"><Glyph e="🔒" /> {L('This WhatsApp number is for the platform and alerts only — buyers do not see it.', 'یہ واٹس ایپ نمبر صرف پلیٹ فارم اور اطلاعات کے لیے ہے — خریدار اسے نہیں دیکھتا۔', 'رقم الواتساب للمنصة والإشعارات فقط — لا يظهر للمشتري.')}</p>
                     )}

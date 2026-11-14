@@ -8,6 +8,8 @@
 // future injection can't pull in an external payload. 'unsafe-inline' stays until nonces
 // (Next's inline runtime + the inlined landing page); 'unsafe-eval' only for `next dev`.
 const scriptSrc = ["'self'", "'unsafe-inline'", 'https://challenges.cloudflare.com', 'https://vercel.live',
+  // phone verification (Firebase phone auth): Google reCAPTCHA + the auth helper scripts
+  'https://www.google.com', 'https://www.gstatic.com', 'https://apis.google.com', 'https://www.recaptcha.net',
   ...(process.env.NODE_ENV === 'development' ? ["'unsafe-eval'"] : [])].join(' ')
 const securityHeaders = [
   { key: 'Content-Security-Policy', value: `frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; script-src ${scriptSrc}` },
