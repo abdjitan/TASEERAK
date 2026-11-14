@@ -106,6 +106,7 @@ export default function ContractorDashboard() {
   const [marketTop, setMarketTop] = useState<any[]>([])
   const [marketTrend, setMarketTrend] = useState<Record<string, any>>({})
   const [loading, setLoading] = useState(true)
+  const [mySavings, setMySavings] = useState<any>(null) // «وفّرت X ريال» across all requests (210)
   const [filter, setFilter] = useState('all') // all | has_offers | pending | closed
   const [sectorFilter, setSectorFilter] = useState('all')
   const [search, setSearch] = useState('')
@@ -137,6 +138,7 @@ export default function ContractorDashboard() {
         safe(supabase.rpc('get_market_prices')),
         safe(supabase.rpc('get_market_price_trend')),
       ])
+      safe(supabase.rpc('my_savings')).then((x: any) => setMySavings(x?.data || null))
       setProfile(p)
       setRfqs(r || [])
       setDrafts(dr || [])
@@ -376,6 +378,19 @@ export default function ContractorDashboard() {
             </span>
             <span className="font-bold text-sm" style={{ color: '#D4A543' }}>←</span>
           </button>
+        )}
+
+        {/* «وفّرت X ريال» — total compared with the highest quote per awarded item (owner 2026-11-14) */}
+        {mySavings && Number(mySavings.saved) >= 1 && (
+          <div className="w-full mb-5 rounded-2xl p-4 flex items-center gap-3 border animate-fade-in" style={{ background: '#E7F4EF', borderColor: '#0F6E5633' }}>
+            <span className="w-10 h-10 rounded-xl grid place-items-center text-white font-extrabold shrink-0" style={{ background: '#0F6E56' }}>✓</span>
+            <span className="flex-1 min-w-0">
+              <span className="block font-extrabold text-[15px]" style={{ color: '#0F6E56' }}>
+                {L(`You have saved ${Number(mySavings.saved).toLocaleString('en-US')} SAR with Taseerak`, `آپ نے تسعیرک سے ${Number(mySavings.saved).toLocaleString('en-US')} ریال بچائے`, `وفّرت ${Number(mySavings.saved).toLocaleString('en-US')} ر.س مع تسعيرك`)}
+              </span>
+              <span className="block text-[12px] text-gray-600">{L(`Across ${mySavings.requests} request(s), compared with the highest quote for each material.`, `${mySavings.requests} درخواستوں میں، ہر مواد کی سب سے زیادہ قیمت کے مقابلے میں۔`, `في ${mySavings.requests} ${Number(mySavings.requests) === 1 ? 'طلب' : 'طلبات'}، مقارنةً بأعلى عرض لكل مادة.`)}</span>
+            </span>
+          </div>
         )}
 
         {/* ويدجت اكتمال الحساب */}

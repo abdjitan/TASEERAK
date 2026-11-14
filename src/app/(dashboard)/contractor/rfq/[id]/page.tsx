@@ -112,12 +112,19 @@ export default function RFQDetailPage() {
   const [budgets, setBudgets] = useState<Record<number, ItemBudget>>({}) // R23: buyer budget per unit (before VAT), owner-only
   const [budgetEdit, setBudgetEdit] = useState<{ idx: number; v: string; vis: boolean } | null>(null)
   const [budgetSaving, setBudgetSaving] = useState(false)
+  const [savings, setSavings] = useState<{ saved: number; items: number } | null>(null) // «وفّرت X ريال» vs the highest quote per item (210)
+  const loadSavings = async () => {
+    const { data } = await createClient().rpc('rfq_item_savings', { p_rfq_id: id })
+    const rows = (data || []) as any[]
+    setSavings({ saved: rows.reduce((t, r) => t + (Number(r.saved) || 0), 0), items: rows.filter((r) => Number(r.saved) > 0).length })
+  }
   const [awardedContacts, setAwardedContacts] = useState<any>({}) // supplier_id → رقم تواصل (يُكشف بعد الترسية فقط)
 
   async function reloadAwards() {
     const supabase = createClient()
     const { data } = await supabase.from('rfq_item_awards').select('*').eq('rfq_id', id)
     const am: any = {}; (data || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
+    loadSavings()
   }
 
   async function runCompare() {
@@ -186,6 +193,7 @@ export default function RFQDetailPage() {
       setOffers(offersData || [])
       const am: any = {}; (awardRows || []).forEach((a: any) => { am[a.item_index] = a }); setAwards(am)
       loadOwnerBudgets(supabase, id as string).then(setBudgets)
+      if ((awardRows || []).length) loadSavings()
       if (rfqData) {
         const mp = ((similarOffers as any[]) || []).find((m: any) => m.product_name === rfqData.product_name && (!m.unit || m.unit === rfqData.unit))
         if (mp && Number(mp.avg_price) > 0) setMarketAvg(Math.round(Number(mp.avg_price)))
@@ -854,6 +862,17 @@ export default function RFQDetailPage() {
                     </div>
                   )
                 })}
+
+                {/* «وفّرت X ريال» — compared with the highest quote for each awarded item (owner 2026-11-14) */}
+                {Object.keys(awards).length > 0 && savings && savings.saved >= 1 && (
+                  <div className="rounded-xl px-4 py-3 border flex items-center gap-3" style={{ background: '#E7F4EF', borderColor: '#0F6E5633' }}>
+                    <span className="w-9 h-9 rounded-full grid place-items-center shrink-0 text-white font-extrabold" style={{ background: '#0F6E56' }}>✓</span>
+                    <div className="min-w-0">
+                      <div className="font-extrabold text-[15px]" style={{ color: '#0F6E56' }}>{L(`You saved ${Math.round(savings.saved).toLocaleString('en-US')} SAR`, `آپ نے ${Math.round(savings.saved).toLocaleString('en-US')} ریال بچائے`, `وفّرت ${Math.round(savings.saved).toLocaleString('en-US')} ر.س`)}</div>
+                      <div className="text-[12px] text-gray-600">{L('Compared with the highest quote for each material you awarded (VAT included).', 'ہر منتخب مواد کی سب سے زیادہ قیمت کے مقابلے میں (VAT سمیت)۔', 'مقارنةً بأعلى عرض لكل مادة اخترتها (شامل الضريبة).')}</div>
+                    </div>
+                  </div>
+                )}
 
                 {/* ملخص الترسية حسب المورد */}
                 {Object.keys(awards).length > 0 && (() => {

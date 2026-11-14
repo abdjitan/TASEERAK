@@ -16,6 +16,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
     items = [
       { href: '/admin', icon: '🛡️', label: L('Dashboard', 'ڈیش بورڈ', 'لوحة الإدارة'), section: sec, mobile: 1 },
       { href: '/admin/overview', icon: createElement(Glyph, { e: '📊' }), label: L('Owner dashboard', 'مالک ڈیش بورڈ', 'لوحة المالك'), section: sec },
+      { href: '/admin/report', icon: createElement(Glyph, { e: '📄' }), label: L('Performance report', 'کارکردگی رپورٹ', 'تقرير الأداء'), section: sec },
       { href: '/admin/discover', icon: '🔍', label: L('Discover suppliers', 'سپلائرز تلاش', 'اكتشاف موردين'), section: sec, mobile: 2 },
       { href: '/admin/taxonomy', icon: '🗂️', label: L('Taxonomy', 'درجہ بندی', 'شجرة التصنيفات'), section: sec, mobile: 3 },
       { href: '/admin/learning', icon: '🧠', label: L('Search learning', 'سرچ لرننگ', 'تعلّم البحث'), section: sec },
