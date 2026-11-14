@@ -3,10 +3,12 @@
 import { NextResponse } from 'next/server'
 import { randomBytes } from 'crypto'
 import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
+import { firebaseReady } from '@/lib/firebaseConfig'
 
 export async function POST() {
   const { user } = await getRouteUser()
   if (!user) return NextResponse.json({ error: 'auth' }, { status: 401 })
+  if (!firebaseReady()) return NextResponse.json({ error: 'not_configured' }, { status: 503 })
   const admin = createAdminSupabaseClient()
   // tidy: old links of this user
   await admin.from('phone_handoffs').delete().eq('user_id', user.id)
