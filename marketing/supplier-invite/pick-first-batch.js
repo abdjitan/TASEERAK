@@ -23,8 +23,9 @@ const NAME_OK = {
 };
 
 // Reviewed by hand on 2026-10-17: toner shop, metal workshop, appliance/AC shops, gas installer.
+// 2026-11-14: Al-Harmaliya is a filter shop filed under sand/gravel.
 // 2026-11-12 review: custom carpenter, wooden trays, appliance store, air treatment are not material suppliers.
-const EXCLUDE = /TONERS|تشكيل المعادن|الشويرد|ذرة أكسجين|دخيلكم للغاز|مندي|نجار|صواني|للأجهزة الكهربائية|معالجة هواء/i;
+const EXCLUDE = /TONERS|تشكيل المعادن|الشويرد|ذرة أكسجين|دخيلكم للغاز|مندي|نجار|صواني|للأجهزة الكهربائية|معالجة هواء|الحرملية/i;
 // Water-filter shops dominate the plumbing list; keep a few so pipes and sanitary ware get the seats.
 const FILTER_SHOP = /تحلي|فلات?ر/;
 const MAX_FILTER_SHOPS = 3;
@@ -74,6 +75,7 @@ const PILOT_SIZE = 50;
 for (const x of shops.slice().sort((a, b) => b.score - a.score)) {
   if (picked.length >= PILOT_SIZE) break;
   if (FILTER_SHOP.test(x.r['الاسم']) && picked.filter(p => FILTER_SHOP.test(p.r['الاسم'])).length >= MAX_FILTER_SHOPS) continue;
+  if (picked.filter(p => p.type === x.type).length >= PER_TYPE) continue; // no type takes more than PER_TYPE seats
   if (!seenPhone.has(x.phone) && !picked.includes(x)) { seenPhone.add(x.phone); picked.push(x); }
 }
 

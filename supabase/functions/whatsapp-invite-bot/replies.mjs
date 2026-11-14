@@ -28,7 +28,7 @@ const has = (t, words) => words.some(w => new RegExp(`(^|\\s)${w}(\\s|$)`).test(
 
 const YES = ['نعم', 'ايوه', 'ايوا', 'اي', 'اكيد', 'تمام', 'موافق', 'ابغى', 'ابي', 'سجلني', 'yes', 'yeah', 'yep', 'ok', 'okay', 'sure', 'interested', 'ہاں', 'ہان', 'جی', 'جی ہاں', 'ٹھیک', 'ٹھیک ہے', 'theek', 'register', 'register me', 'رجسٹر کریں', 'رجسٹر'].map(normalize);
 const OPTOUT = ['إلغاء', 'الغاء', 'إلغاء الاشتراك', 'stop', 'unsubscribe', 'cancel', 'منسوخ', 'بند کرو'].map(normalize);
-const LANG = Object.fromEntries(Object.entries({ '1': 'ar', '2': 'en', '3': 'ur', 'عربي': 'ar', 'arabic': 'ar', 'english': 'en', 'انجليزي': 'en', 'urdu': 'ur', 'اردو': 'ur', 'اوردو': 'ur' }).map(([k, v]) => [normalize(k), v]));
+const LANG = Object.fromEntries(Object.entries({ '1': 'ar', '2': 'en', '3': 'ur', 'عربي': 'ar', 'arabic': 'ar', 'english': 'en', 'انجليزي': 'en', 'urdu': 'ur', 'اردو': 'ur', 'اوردو': 'ur', 'details in english': 'en', 'اردو میں تفصیلات': 'ur' }).map(([k, v]) => [normalize(k), v]));
 
 // opts.ai: true when the AI is switched on (ANTHROPIC_API_KEY set). Then «yes» also goes to the
 // AI so the welcome reads like a person; the fixed «yes» text is the fallback when it is off.
