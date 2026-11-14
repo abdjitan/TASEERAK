@@ -8,7 +8,8 @@ import { FIREBASE_CONFIG, firebaseReady, toE164 } from '@/lib/firebaseConfig'
 
 type Step = 'enter' | 'code' | 'checking' | 'done'
 
-export default function PhoneVerify({ initialPhone, locale, verified, waVerified, onDone }: {
+export default function PhoneVerify({ initialPhone, locale, verified, waVerified, onDone, handoff }: {
+  handoff?: string // the mobile app's single-use link (/api/phone/start): no site session on that page
   initialPhone?: string
   locale: string
   verified?: boolean
@@ -16,7 +17,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
   onDone?: (phone: string) => void
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(!!handoff)
   const [phone, setPhone] = useState(initialPhone || '')
   const [code, setCode] = useState('')
   const [step, setStep] = useState<Step>('enter')
@@ -69,16 +70,19 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
     try {
       const cred = await confirmRef.current.confirm(c)
       const idToken = await cred.user.getIdToken()
-      const res = await fetch('/api/phone/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) })
+      const res = await fetch('/api/phone/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken, ...(handoff ? { handoff } : {}) }) })
       const j = await res.json().catch(() => ({}))
       try { const auth = await fb(); const { signOut } = await import('firebase/auth'); await signOut(auth) } catch {}
       if (!res.ok) {
         setError(j?.error === 'phone_taken'
           ? L('This number is already verified on another account.', 'یہ نمبر کسی اور اکاؤنٹ پر تصدیق شدہ ہے۔', 'هذا الرقم موثّق في حساب آخر.')
-          : L('Could not verify. Try again.', 'تصدیق نہیں ہو سکی۔', 'تعذّر التوثيق. حاول مرة أخرى.'))
+          : j?.error === 'link_expired'
+            ? L('This link has expired. Go back to the app and try again.', 'یہ لنک ختم ہو گیا۔ ایپ میں واپس جا کر دوبارہ کوشش کریں۔', 'انتهت صلاحية هذا الرابط. ارجع إلى التطبيق وحاول مرة أخرى.')
+            : L('Could not verify. Try again.', 'تصدیق نہیں ہو سکی۔', 'تعذّر التوثيق. حاول مرة أخرى.'))
         return
       }
       onDone?.(j.phone)
+      if (handoff) { setStep('done'); return } // the app re-reads the profile when the browser closes
       setStep('checking')
       watchWhatsApp()
     } catch (e: any) {
@@ -145,6 +149,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
           {wa === 'yes' ? '✓ ' + L('Mobile verified and WhatsApp confirmed.', 'موبائل اور واٹس ایپ دونوں تصدیق شدہ۔', 'تم توثيق الجوال وتأكيد الواتساب.')
             : wa === 'no' ? L('Mobile verified, but this number has no WhatsApp. Use a WhatsApp number to receive notifications.', 'موبائل تصدیق ہو گیا لیکن اس نمبر پر واٹس ایپ نہیں۔', 'تم توثيق الجوال، لكن هذا الرقم ليس عليه واتساب. استخدم رقماً عليه واتساب لتصلك الإشعارات.')
             : '✓ ' + L('Mobile verified. WhatsApp will be confirmed when our message arrives.', 'موبائل تصدیق ہو گیا۔', 'تم توثيق الجوال، وسيتأكد الواتساب عند وصول رسالتنا.')}
+          {handoff ? ' ' + L('You can go back to the app now.', 'اب آپ ایپ میں واپس جا سکتے ہیں۔', 'يمكنك الآن الرجوع إلى التطبيق.') : ''}
         </p>
       )}
       {error && <p className="text-[12px] font-semibold text-red-600" role="alert">{error}</p>}
