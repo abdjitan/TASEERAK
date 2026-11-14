@@ -29,6 +29,12 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
   const boxId = useRef('recaptcha-' + Math.random().toString(36).slice(2)).current
 
   useEffect(() => { setPhone(initialPhone || '') }, [initialPhone])
+  // the invisible reCAPTCHA lives outside the React tree so switching screens never detaches it
+  useEffect(() => {
+    const el = document.createElement('div'); el.id = boxId
+    document.body.appendChild(el)
+    return () => { try { verifierRef.current?.clear?.() } catch {} ; el.remove() }
+  }, [boxId])
 
   async function fb() {
     const { initializeApp, getApps } = await import('firebase/app')
@@ -52,6 +58,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
       confirmRef.current = await signInWithPhoneNumber(auth, e164, verifierRef.current)
       setStep('code')
     } catch (e: any) {
+      console.error('phone-verify send', e?.code, e?.message)
       const c = String(e?.code || '')
       setError(c.includes('too-many-requests') || c.includes('quota')
         ? L('Too many attempts. Try again later.', 'بہت زیادہ کوششیں۔ بعد میں کوشش کریں۔', 'محاولات كثيرة. حاول لاحقاً.')
@@ -120,15 +127,17 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
   }
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="mt-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg border border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10">
-        {L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'وثّق رقم جوالك')}
-      </button>
+      <>
+        <button type="button" disabled={busy} onClick={() => { setOpen(true); if (toE164(phone)) send() }} className="mt-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg border border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10 disabled:opacity-50">
+          {busy ? '…' : L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'وثّق رقم جوالك')}
+        </button>
+      </>
     )
   }
   return (
     <div className="mt-2 rounded-xl border border-gray-200 bg-gray-50/60 p-3 space-y-2">
-      <div id={boxId} />
-      {step === 'enter' && (<>
+      {step === 'enter' && busy && <p className="text-[12px] text-gray-600">{L('Sending the code…', 'کوڈ بھیجا جا رہا ہے…', 'جارٍ إرسال الرمز…')}</p>}
+      {step === 'enter' && !busy && (<>
         <p className="text-[12px] text-gray-600">{L('We will send a 6-digit code by SMS. Use a number that has WhatsApp: platform notifications arrive there.', 'ہم SMS سے 6 ہندسوں کا کوڈ بھیجیں گے۔ واٹس ایپ والا نمبر استعمال کریں۔', 'سنرسل رمزاً من 6 أرقام برسالة نصية. استخدم رقماً عليه واتساب، فإشعارات المنصة تصل إليه.')}</p>
         <div className="flex gap-2">
           <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" dir="ltr" className="input-field flex-1" placeholder="05XXXXXXXX / +962…" />
