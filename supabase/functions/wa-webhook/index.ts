@@ -6,6 +6,8 @@
 //      messages / echoes → forwarded unchanged to whatsapp-invite-bot (supplier-invite replies).
 //  - POST ?action=check {user_id} with the service-role key (from /api/phone/confirm):
 //      sends the phone_confirmed template to the user's verified phone.
+//  - POST ?action=reply {phone, text, admin_id} with the service-role key (from /api/admin/wa-reply):
+//      an admin answers a support message (free-form, only within 24 h of the customer's last message).
 // Deployed with verify_jwt=false.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -27,6 +29,12 @@ Deno.serve(async (req) => {
     if (!auth || auth !== Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) return new Response('unauthorized', { status: 401 })
     const { user_id } = await req.json().catch(() => ({}))
     return json(await sendCheck(sb, String(user_id || '')))
+  }
+  if (url.searchParams.get('action') === 'reply') {
+    const auth = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
+    if (!auth || auth !== Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')) return new Response('unauthorized', { status: 401 })
+    const b = await req.json().catch(() => ({}))
+    return json(await sendReply(sb, String(b.phone || ''), String(b.text || ''), String(b.admin_id || '')))
   }
 
   const raw = await req.text()
@@ -57,9 +65,10 @@ Deno.serve(async (req) => {
   return new Response('ok', { status: 200 })
 })
 
-// Someone wrote to the Taseerak number: keep the message (admins read it, migration 209) and send
-// one free welcome reply per number per 24 h. Invited shops (invite_chats) are the invite bot's.
-const WELCOME = 'أهلاً بك في تسعيرك.\n\nهذا الرقم مخصّص لإشعارات المنصة.\n• لطلب أسعار مواد البناء أو للتسجيل كمورد: https://taseerak.com\n• للمساعدة: راسلنا من «الدعم والرسائل» داخل حسابك، أو على info@taseerak.com\n\nWelcome to Taseerak. This number sends platform notifications. Visit https://taseerak.com or email info@taseerak.com for help.'
+// Someone wrote to the Taseerak number: keep the message (admins answer it from /admin/whatsapp,
+// migrations 209/218), alert the admins, and send one free welcome reply per number per 24 h.
+// Invited shops (invite_chats) are the invite bot's.
+const WELCOME = 'أهلاً بك في تسعيرك.\n\nوصلت رسالتك إلى فريق الدعم، وسنردّ عليك هنا في أقرب وقت.\n• لطلب أسعار مواد البناء أو للتسجيل كمورد: https://taseerak.com\n\nWelcome to Taseerak. Your message reached our support team; we will reply here soon.'
 
 async function onInbound(sb: any, m: any, names: Record<string, string>) {
   const phone = String(m?.from || '').replace(/\D/g, '')
@@ -68,10 +77,19 @@ async function onInbound(sb: any, m: any, names: Record<string, string>) {
   const name = names[phone] || null
   await sb.from('wa_inbound_messages').upsert({ phone, name, type: m?.type || null, text: text ? String(text).slice(0, 2000) : null, wa_message_id: m?.id || null }, { onConflict: 'wa_message_id', ignoreDuplicates: true })
   const { data: invited } = await sb.from('invite_chats').select('phone').eq('phone', phone).maybeSingle()
-  const { data: c } = await sb.from('wa_inbound_contacts').select('last_auto_reply_at').eq('phone', phone).maybeSingle()
+  const { data: c } = await sb.from('wa_inbound_contacts').select('last_auto_reply_at, last_message_at, unread').eq('phone', phone).maybeSingle()
   const now = new Date()
   const due = !invited && (!c?.last_auto_reply_at || now.getTime() - new Date(c.last_auto_reply_at).getTime() > 24 * 3600 * 1000)
-  await sb.from('wa_inbound_contacts').upsert({ phone, ...(name ? { name } : {}), last_message_at: now.toISOString(), ...(due ? { last_auto_reply_at: now.toISOString() } : {}) }, { onConflict: 'phone' })
+  const quiet = !c?.last_message_at || now.getTime() - new Date(c.last_message_at).getTime() > 30 * 60 * 1000
+  await sb.from('wa_inbound_contacts').upsert({ phone, ...(name ? { name } : {}), last_message_at: now.toISOString(), ...(due ? { last_auto_reply_at: now.toISOString() } : {}), ...(invited ? {} : { unread: Number(c?.unread || 0) + 1 }) }, { onConflict: 'phone' })
+  // tell the admins (in-app only: 'announcement' never goes out on WhatsApp), at most every 30 min per number
+  if (!invited && quiet) {
+    const { data: admins } = await sb.from('profiles').select('id').eq('role', 'admin')
+    for (const a of admins || []) {
+      await sb.from('notifications').insert({ user_id: a.id, type: 'announcement', title: 'رسالة دعم جديدة على واتساب',
+        body: (name || phone) + ': ' + String(text || '(مرفق)').slice(0, 120), data: { url: '/admin/whatsapp?phone=' + phone } })
+    }
+  }
   if (!due) return
   const token = Deno.env.get('WHATSAPP_TOKEN') || ''
   const phoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || ''
@@ -81,6 +99,31 @@ async function onInbound(sb: any, m: any, names: Record<string, string>) {
     body: JSON.stringify({ messaging_product: 'whatsapp', to: phone, type: 'text', text: { body: WELCOME, preview_url: false } }),
   })
   if (!res.ok) await sb.from('system_errors_log').insert({ context: 'wa-webhook:welcome', message: `${res.status} ${(await res.text().catch(() => '')).slice(0, 300)}`.split(token).join('[token]') })
+}
+
+async function sendReply(sb: any, phone: string, text: string, adminId: string) {
+  phone = phone.replace(/\D/g, '')
+  text = text.trim().slice(0, 3000)
+  if (!/^\d{8,15}$/.test(phone) || !text) return { ok: false, error: 'bad request' }
+  const { data: last } = await sb.from('wa_inbound_messages').select('received_at').eq('phone', phone).eq('direction', 'in')
+    .order('received_at', { ascending: false }).limit(1).maybeSingle()
+  if (!last || Date.now() - new Date(last.received_at).getTime() > 24 * 3600 * 1000) return { ok: false, error: 'window' }
+  const token = Deno.env.get('WHATSAPP_TOKEN') || ''
+  const phoneId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || ''
+  if (!token || !phoneId) return { ok: false, error: 'config' }
+  const res = await fetch(`https://graph.facebook.com/${GRAPH}/${phoneId}/messages`, {
+    method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messaging_product: 'whatsapp', to: phone, type: 'text', text: { body: text, preview_url: false } }),
+  })
+  const out: any = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    await sb.from('system_errors_log').insert({ context: 'wa-webhook:reply', message: `${res.status} ${JSON.stringify(out?.error || out).slice(0, 300)}`.split(token).join('[token]') })
+    return { ok: false, error: 'send' }
+  }
+  await sb.from('wa_inbound_messages').insert({ phone, type: 'text', text, direction: 'out',
+    sent_by: /^[0-9a-f-]{36}$/i.test(adminId) ? adminId : null, wa_message_id: out?.messages?.[0]?.id || null })
+  await sb.from('wa_inbound_contacts').update({ unread: 0 }).eq('phone', phone)
+  return { ok: true }
 }
 
 async function onStatus(sb: any, s: any) {

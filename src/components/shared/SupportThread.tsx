@@ -10,9 +10,9 @@ import { useTranslation } from '@/i18n'
  * - viewerRole='user'   → used in the user's settings (writes as المستخدم)
  * Reads/writes public.support_messages (RLS restricts users to their own thread).
  */
-export default function SupportThread({ userId, viewerRole }: { userId: string; viewerRole: 'admin' | 'user' }) {
+export default function SupportThread({ userId, viewerRole, initialText }: { userId: string; viewerRole: 'admin' | 'user'; initialText?: string }) {
   const [messages, setMessages] = useState<any[]>([])
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialText || '')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const endRef = useRef<any>(null)

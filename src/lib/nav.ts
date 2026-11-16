@@ -24,6 +24,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/admin/suggestions', icon: '💡', label: L('Suggestions', 'تجاویز', 'اقتراحات المستخدمين'), section: sec },
       { href: '/admin/reports', icon: '🚩', label: L('User reports', 'رپورٹس', 'البلاغات'), section: sec },
       { href: '/admin/invites', icon: '💬', label: L('Supplier invites', 'سپلائر دعوتیں', 'دعوات الموردين'), section: sec },
+      { href: '/admin/whatsapp', icon: '💬', label: L('WhatsApp support', 'واٹس ایپ سپورٹ', 'واتساب الدعم'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
@@ -43,6 +44,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
       { href: '/invite-friends', icon: '🤝', label: L('Invite someone', 'دعوت دیں', 'ادعُ من تعرفه'), section: secAccount },
       { href: '/suggestions', icon: '💡', label: L('Your suggestions', 'آپ کی تجاویز', 'اقتراحاتك'), section: secAccount },
+      { href: '/support', icon: '💬', label: L('Support', 'سپورٹ', 'الدعم'), section: secAccount },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
   } else {
@@ -58,6 +60,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
       { href: '/invite-friends', icon: '🤝', label: L('Invite someone', 'دعوت دیں', 'ادعُ من تعرفه'), section: secAccount },
       { href: '/suggestions', icon: '💡', label: L('Your suggestions', 'آپ کی تجاویز', 'اقتراحاتك'), section: secAccount },
+      { href: '/support', icon: '💬', label: L('Support', 'سپورٹ', 'الدعم'), section: secAccount },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
   }

@@ -31,7 +31,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
     const { data, error } = await supabase.rpc('set_seller_kind', { p_kind: nextKind, p_activity: activity || null })
     if (error) {
       setErr((error as any).hint === 'KIND_LOCKED'
-        ? L('The account type can’t be changed after it is created. To change it, delete the account and create a new one.', 'اکاؤنٹ بننے کے بعد اس کی قسم نہیں بدلی جا سکتی۔ بدلنے کے لیے اکاؤنٹ حذف کر کے نیا بنائیں۔', 'لا يمكن تغيير نوع الحساب بعد إنشائه. لتغييره احذف الحساب وأنشئ حساباً جديداً.')
+        ? L('The account type can’t be changed directly. Request the change from Support; the admin reviews it.', 'اکاؤنٹ کی قسم براہ راست نہیں بدلی جا سکتی۔ سپورٹ سے درخواست کریں؛ انتظامیہ جائزہ لے گی۔', 'لا يمكن تغيير نوع الحساب مباشرة. اطلب التغيير من الدعم، وتراجعه الإدارة.')
         : L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔', 'تعذّر الحفظ. حاول مرة أخرى.'))
       setBusy(false); return
     }
@@ -59,7 +59,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
         })}
       </div>
       {kindLocked && (
-        <p className="text-[11px] text-gray-500">{L('The account type is fixed. To change it, delete the account and create a new one.', 'اکاؤنٹ کی قسم مقرر ہے۔ بدلنے کے لیے اکاؤنٹ حذف کر کے نیا بنائیں۔', 'نوع الحساب ثابت. لتغييره احذف الحساب وأنشئ حساباً جديداً.')}</p>
+        <p className="text-[11px] text-gray-500">{L('The account type is fixed. To change it, ', 'اکاؤنٹ کی قسم مقرر ہے۔ بدلنے کے لیے ', 'نوع الحساب ثابت. لتغييره ')}<a href="/support?topic=kind" className="font-bold underline text-navy">{L('request it from Support', 'سپورٹ سے درخواست کریں', 'اطلب ذلك من الدعم')}</a>{L(' (admin approval).', ' (انتظامیہ کی منظوری)۔', ' (بموافقة الإدارة).')}</p>
       )}
 
       {kind === 'company' && (
