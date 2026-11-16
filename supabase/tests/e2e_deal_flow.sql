@@ -128,7 +128,7 @@ begin
   select status::text into t from offers where id = v_offer;
   if t = 'accepted' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL award status=' || t; end if;
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
-  if public.get_offer_source(v_offer)->>'name' = 'محل اختبار' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL source shop hidden after deal'; end if;
+  if public.get_offer_source(v_offer)->>'name' is null then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL source shop shown to the buyer after the deal (214)'; end if;
   -- H2: the supplier who won now sees the location
   perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
   set local role authenticated;
@@ -405,17 +405,17 @@ begin
   exception when others then ok := ok + 1; end;
   reset role;
 
-  -- 213: a pricing agent (independent) can't be chosen without a source shop, nor above 5,000 SAR
+  -- 213/214: a pricing agent (independent) can't be chosen without a source shop, nor above his cap (15,000 / 50,000 SAR)
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   set local role authenticated;
   insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city, expires_at, status)
   values (buyer, 'civil', 'أسمنت', array['civil'],
-          '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":300,"unit":"كيس"}]'::jsonb,
-          300, 'كيس', 'الرياض', 'الرياض', now() + interval '2 days', 'open')
+          '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":3000,"unit":"كيس"}]'::jsonb,
+          3000, 'كيس', 'الرياض', 'الرياض', now() + interval '2 days', 'open')
   returning id into v_rfq;
   perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
   insert into offers (rfq_id, supplier_id, total_price, source_type, item_prices)
-  values (v_rfq, sup, 6000, 'shop', '[{"item_index":0,"product_name":"أسمنت","quantity":300,"unit":"كيس","unit_price":20,"total":6000}]'::jsonb)
+  values (v_rfq, sup, 60000, 'shop', '[{"item_index":0,"product_name":"أسمنت","quantity":3000,"unit":"كيس","unit_price":20,"total":60000}]'::jsonb)
   returning id into v_offer;
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   begin
@@ -427,7 +427,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   begin
     perform public.award_rfq_item(v_rfq, 0, v_offer);
-    bad := bad + 1; log := log || ' FAIL agent deal above 5,000 SAR chosen';
+    bad := bad + 1; log := log || ' FAIL agent deal above the cap chosen';
   exception when others then ok := ok + 1; end;
   reset role;
 

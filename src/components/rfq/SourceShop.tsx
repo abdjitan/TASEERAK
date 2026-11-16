@@ -1,6 +1,7 @@
 'use client'
-// «وسيط تسعير» (owner 2026-11-16, migration 213): an independent seller names the shop he buys
-// from. The buyer sees only the area until the deal is made; then the shop's name and phone.
+// «وسيط تسعير» (owner 2026-11-16, migrations 213/214): an independent seller names the shop he
+// buys from. The buyer sees only the area, never the shop (it reaches him only on the shop's tax
+// invoice); the seller and admins see everything.
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -12,6 +13,9 @@ export type SourceValue = { name: string; city: string; area: string; phone: str
 /** Seller side: the fields on the pricing form. */
 export function SourceShopFields({ value, onChange, locale }: { value: SourceValue; onChange: (v: SourceValue) => void; locale: Loc }) {
   const L = tr(locale)
+  // this agent's current deal cap (migration 214): 15,000 → 50,000 after 3 good deals → none after 10
+  const [cap, setCap] = useState<{ cap: number | null; deals: number } | null>(null)
+  useEffect(() => { createClient().rpc('my_agent_deal_cap').then(({ data }: any) => setCap(data || null)) }, [])
   const set = (k: keyof SourceValue) => (e: any) => onChange({ ...value, [k]: e.target.value })
   return (
     <div className="mt-3 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/5 p-3">
@@ -19,9 +23,16 @@ export function SourceShopFields({ value, onChange, locale }: { value: SourceVal
         {L('The shop you will buy from', 'وہ دکان جہاں سے آپ خریدیں گے', 'المحل الذي ستشتري منه')} <span className="text-red-500">*</span>
       </div>
       <p className="text-[11px] text-gray-600 mb-2 leading-relaxed">
-        {L('You are a pricing agent: the buyer sees only the area until the deal is made with you; then the shop’s name and phone are shown. At delivery you attach the shop’s tax invoice in the buyer’s name. A deal with a pricing agent is limited to 5,000 SAR.',
-           'آپ قیمت ایجنٹ ہیں: سودا طے ہونے تک خریدار صرف علاقہ دیکھتا ہے؛ پھر دکان کا نام اور فون دکھایا جاتا ہے۔ ڈیلیوری پر آپ خریدار کے نام دکان کی ٹیکس انوائس لگائیں گے۔ قیمت ایجنٹ کے ساتھ سودا زیادہ سے زیادہ 5,000 ریال کا ہو سکتا ہے۔',
-           'أنت وسيط تسعير: لا يرى المشتري إلا الحي حتى إتمام الصفقة معك، ثم يظهر له اسم المحل ورقمه. وعند التسليم ترفق فاتورة المحل الضريبية باسم المشتري. الحد الأقصى للصفقة مع وسيط تسعير 5,000 ريال.')}
+        {L('You are a pricing agent: the buyer sees only the district, never the shop’s name. Make sure the tax invoice is issued in the buyer’s name, at your quoted price, by a shop with a commercial registration, and attach it at delivery.',
+           'آپ قیمت ایجنٹ ہیں: خریدار صرف علاقہ دیکھتا ہے، دکان کا نام کبھی نہیں۔ یقینی بنائیں کہ ٹیکس انوائس خریدار کے نام، آپ کی آفر کی قیمت پر، کمرشل رجسٹریشن والی دکان سے جاری ہو، اور ڈیلیوری پر اسے منسلک کریں۔',
+           'أنت وسيط تسعير: يرى المشتري الحي فقط، ولا يرى اسم المحل. تأكّد أن الفاتورة الضريبية تصدر باسم المشتري وبنفس سعر عرضك، من محل له سجل تجاري، وأرفقها عند التسليم.')}
+        {cap && (
+          <span className="block mt-1 font-semibold text-[#071827]">
+            {cap.cap == null
+              ? L('Your deals have no amount limit.', 'آپ کے سودوں پر کوئی حد نہیں۔', 'لا حدّ لقيمة صفقاتك.')
+              : L(`Your current limit per deal: ${cap.cap.toLocaleString('en-US')} SAR (it rises after successful deals).`, `فی سودا آپ کی موجودہ حد: ${cap.cap.toLocaleString('en-US')} ریال (کامیاب سودوں کے بعد بڑھتی ہے)۔`, `حدّك الحالي للصفقة: ${cap.cap.toLocaleString('en-US')} ريال (يرتفع بعد الصفقات الناجحة).`)}
+          </span>
+        )}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <input value={value.name} onChange={set('name')} maxLength={120} className="input-field text-sm sm:col-span-2"
@@ -109,9 +120,9 @@ export function SourceShopBadge({ offerId, locale, compact }: { offerId: string;
   return where ? (
     <div className={`${compact ? 'text-[11px]' : 'text-xs'} mt-1 text-gray-500`}>
       {L('Pricing agent · goods from a shop in', 'قیمت ایجنٹ · سامان اس علاقے کی دکان سے', 'وسيط تسعير · البضاعة من محل في')} {where}
-      <span className="text-gray-400"> ({L('shop name shown after the deal', 'دکان کا نام سودے کے بعد', 'يظهر اسم المحل بعد إتمام الصفقة')})</span>
+      <span className="text-gray-400"> · {L('tax invoice from the shop in your name', 'ٹیکس انوائس دکان سے آپ کے نام', 'الفاتورة الضريبية من المحل باسمك')}</span>
     </div>
   ) : (
-    <div className={`${compact ? 'text-[11px]' : 'text-xs'} mt-1 text-gray-500`}>{L('Pricing agent · shop name shown after the deal', 'قیمت ایجنٹ · دکان کا نام سودے کے بعد', 'وسيط تسعير · يظهر اسم المحل بعد إتمام الصفقة')}</div>
+    <div className={`${compact ? 'text-[11px]' : 'text-xs'} mt-1 text-gray-500`}>{L('Pricing agent · tax invoice from the shop in your name', 'قیمت ایجنٹ · ٹیکس انوائس دکان سے آپ کے نام', 'وسيط تسعير · الفاتورة الضريبية من المحل باسمك')}</div>
   )
 }
