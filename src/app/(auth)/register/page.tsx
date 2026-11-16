@@ -20,6 +20,7 @@ import { captureRef } from '@/lib/referral'
 import { friendlyError } from '@/lib/friendlyError'
 import { passwordProblems, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 import { toLatinDigits } from '@/lib/phone'
+import { normalizeCrInput, crTakenText } from '@/lib/cr'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
 // نجمع الحد الأدنى فقط: الدور + الاسم + اسم الشركة + الجوال + البريد + كلمة المرور.
@@ -132,6 +133,21 @@ export default function RegisterPage() {
   // ?role=supplier or ?kind= makes it a supplier signup. A switch row near the bottom flips it.
   const [selectedType, setSelectedType] = useState<'contractor' | 'supplier'>('contractor')
   const [sellerKind, setSellerKind] = useState<'company' | 'independent' | null>(null)
+  // optional CR at sign-up for a company/shop (owner 2026-11-16, migration 216): one CR = one account.
+  // Checked on blur / submit only (cr_exists: yes/no, 10 checks per hour per IP).
+  const [cr, setCr] = useState('')
+  const [crTaken, setCrTaken] = useState(false)
+  const crChecked = useRef('')
+  async function checkCr(v: string): Promise<boolean> {
+    const c = normalizeCrInput(v)
+    if (c.length !== 10) { setCrTaken(false); return false }
+    if (crChecked.current === c) return crTaken
+    const { data, error } = await supabase.rpc('cr_exists', { p_cr: c })
+    if (error) return false // rate-limited / offline: the DB still refuses a duplicate on save
+    crChecked.current = c
+    setCrTaken(data === true)
+    return data === true
+  }
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
@@ -187,6 +203,8 @@ export default function RegisterPage() {
     if (asksBusiness && (data.company_name_ar || '').trim().length < 2) {
       setError('company_name_ar', { message: locale === 'en' ? 'Company or business name is required' : locale === 'ur' ? 'کمپنی یا کاروبار کا نام ضروری ہے' : 'اسم المحل أو النشاط التجاري مطلوب' }); return
     }
+    if (asksBusiness && cr && normalizeCrInput(cr).length !== 10) { setFormError(locale === 'en' ? 'The commercial registration number is 10 digits (or leave it empty for now).' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر 10 ہندسوں کا ہوتا ہے (یا ابھی خالی چھوڑ دیں)۔' : 'رقم السجل التجاري 10 أرقام (أو اتركه فارغاً الآن).'); return }
+    if (asksBusiness && cr && await checkCr(cr)) { setFormError(crTakenText(locale).msg); return }
     if (phoneDup) { setFormError(t.phoneTaken); return }
     if (await checkEmailDup(data.email)) { setFormError(''); return }
     setSubmitting(true); setFormError('')
@@ -199,6 +217,7 @@ export default function RegisterPage() {
         phone: data.phone,
         preferred_language: locale,
         ...(data.role === 'supplier' ? { seller_kind: sellerKind } : {}),
+        ...(asksBusiness && normalizeCrInput(cr).length === 10 ? { commercial_registration: normalizeCrInput(cr) } : {}),
         terms_version: TERMS_VERSION, client: 'web',
       }
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -322,6 +341,15 @@ export default function RegisterPage() {
               <label htmlFor="reg-company" className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-500 font-normal">— {t.companyHint}</span></label>
               <input id="reg-company" {...register('company_name_ar')} autoComplete="organization" className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : locale === 'ur' ? 'الصخر بلڈنگ میٹریلز' : 'مؤسسة الصخر لمواد البناء'} />
               {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{vmsg(errors.company_name_ar.message, locale)}</p>}
+              <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} <span className="text-gray-500 font-normal">— {locale === 'en' ? '10 digits; optional now, needed to verify your business' : locale === 'ur' ? '10 ہندسے؛ ابھی اختیاری، تصدیق کے لیے ضروری' : '10 أرقام؛ اختياري الآن، ومطلوب لتوثيق نشاطك'}</span></label>
+              <input id="reg-cr" value={cr} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="10XXXXXXXX"
+                onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); if (crTaken) setCrTaken(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
+              {crTaken && (
+                <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1">
+                  <Glyph e="⚠" /> {crTakenText(locale).msg}{' '}
+                  {locale === 'en' ? 'If it is yours: clear the number, finish registering, then request verification from your account (Settings → Commercial registration).' : locale === 'ur' ? 'اگر یہ آپ کی ہے: نمبر ہٹا کر رجسٹریشن مکمل کریں، پھر اپنے اکاؤنٹ سے تصدیق کی درخواست دیں (ترتیبات ← تجارتی رجسٹریشن)۔' : 'إن كان سجلّك: احذف الرقم وأكمل التسجيل، ثم اطلب التحقق من حسابك (الإعدادات ← السجل التجاري).'}
+                </p>
+              )}
             </div>}
 
             <div className="grid sm:grid-cols-2 gap-3">
