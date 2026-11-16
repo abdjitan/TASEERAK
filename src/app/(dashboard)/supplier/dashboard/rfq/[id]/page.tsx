@@ -572,7 +572,7 @@ export default function SupplierRFQPage() {
       setSubmitting(false); return
     }
     if (isIndependent && src.name.trim().length < 2) {
-      setError(L('Write the name of the shop you will buy from (the buyer sees it only after the deal).', 'جس دکان سے آپ خریدیں گے اس کا نام لکھیں (خریدار اسے صرف سودے کے بعد دیکھے گا)۔', 'اكتب اسم المحل الذي ستشتري منه (لا يراه المشتري إلا بعد إتمام الصفقة).'))
+      setError(L('Write the name of the shop you will buy from (the buyer does not see it).', 'جس دکان سے آپ خریدیں گے اس کا نام لکھیں (خریدار اسے نہیں دیکھتا)۔', 'اكتب اسم المحل الذي ستشتري منه (لا يراه المشتري).'))
       setSubmitting(false); return
     }
     const { data: newOffer, error: insertError } = await supabase.from('offers').insert({
