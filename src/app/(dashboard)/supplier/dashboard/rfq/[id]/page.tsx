@@ -21,6 +21,7 @@ import { SECTOR_LABELS, getProductLabel, getSubCategoryLabel, getUnitLabel, dete
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf, WARRANTY_OPTIONS } from '@/lib/sellers'
+import { SourceShopFields, SourceShopCard } from '@/components/rfq/SourceShop'
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import { installTotalOf } from '@/lib/installation'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -93,6 +94,8 @@ export default function SupplierRFQPage() {
   const [sourceType, setSourceType] = useState('')
   const [availability, setAvailability] = useState('now')
   const [isIndependent, setIsIndependent] = useState(false)
+  // «وسيط تسعير»: the shop the independent seller buys from (migration 213; hidden from the buyer until the deal)
+  const [src, setSrc] = useState({ name: '', city: '', area: '', phone: '' })
   const [singleWarranty, setSingleWarranty] = useState('') // الضمان لطلب المادة الواحدة (يُحفظ ضمن الخصائص)
   const [validity, setValidity] = useState('')
 
@@ -568,7 +571,11 @@ export default function SupplierRFQPage() {
       setError(L('Choose where this price comes from.', 'قیمت کا ذریعہ منتخب کریں۔', 'حدّد مصدر السعر قبل الإرسال.'))
       setSubmitting(false); return
     }
-    const { error: insertError } = await supabase.from('offers').insert({
+    if (isIndependent && src.name.trim().length < 2) {
+      setError(L('Write the name of the shop you will buy from (the buyer sees it only after the deal).', 'جس دکان سے آپ خریدیں گے اس کا نام لکھیں (خریدار اسے صرف سودے کے بعد دیکھے گا)۔', 'اكتب اسم المحل الذي ستشتري منه (لا يراه المشتري إلا بعد إتمام الصفقة).'))
+      setSubmitting(false); return
+    }
+    const { data: newOffer, error: insertError } = await supabase.from('offers').insert({
       rfq_id: id,
       source_type: sourceType,
       availability: availability || null,
@@ -588,7 +595,7 @@ export default function SupplierRFQPage() {
       payment_terms: payTerms,
       attachment_url: attachUrl,
       attachment_name: attachName,
-    })
+    }).select('id').single()
 
     if (insertError) {
       setError((insertError as any).code === '23505'
@@ -622,6 +629,10 @@ export default function SupplierRFQPage() {
       const keys = Object.keys(mem); if (keys.length > 400) for (const x of keys.slice(0, keys.length - 400)) delete mem[x]
       localStorage.setItem(k, JSON.stringify(mem))
     } catch {}
+    if (isIndependent && newOffer?.id) {
+      const { error: sErr } = await supabase.rpc('set_offer_source', { p_offer_id: newOffer.id, p_shop_name: src.name.trim(), p_shop_city: src.city.trim() || null, p_shop_area: src.area.trim() || null, p_shop_phone: src.phone.trim() || null })
+      if (sErr) console.error('set_offer_source', sErr)
+    }
     try { localStorage.removeItem(`tsk_offer_draft_${actingId || user.id}_${id}`) } catch {}
     setSuccess(true)
     } catch (err) {
@@ -909,6 +920,7 @@ export default function SupplierRFQPage() {
             )}
 
             {/* partial award: confirm or lower the delivery / other charges for the materials won (191) */}
+            {isIndependent && <SourceShopCard offerId={existingOffer.id} editable={existingOffer.status === 'pending'} locale={locale} />}
             {existingOffer.status === 'accepted' && existingOffer.extras_pending && !isMember && (
               <PartialExtrasConfirm offer={existingOffer} locale={locale} wonCount={myAwards?.idx.size} onDone={(o: any) => setExistingOffer(o)} />
             )}
@@ -1525,6 +1537,7 @@ export default function SupplierRFQPage() {
                     ))}
                   </div>
                   <p className="text-[11px] text-gray-400 mt-1">{L('The buyer sees this. A price you collected from someone else is shown as such, never as a direct quote.', 'خریدار یہ دیکھتا ہے۔ جو قیمت آپ کسی اور سے لے کر دیتے ہیں وہ اسی طرح دکھائی جاتی ہے، براہ راست آفر کے طور پر نہیں۔', 'يظهر هذا للمشتري. السعر الذي تنقله من جهة أخرى يُعرض كذلك، ولا يُعرض كعرض مباشر.')}</p>
+                  <SourceShopFields value={src} onChange={setSrc} locale={locale} />
                 </div>
               </div>
               )}

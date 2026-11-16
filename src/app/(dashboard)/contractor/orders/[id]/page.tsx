@@ -14,6 +14,7 @@ import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { showsVatBreakdown, totalLabel } from '@/lib/vat'
 import { installTotalOf } from '@/lib/installation'
 import { daysText } from '@/lib/text'
+import { SourceShopBadge } from '@/components/rfq/SourceShop'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -213,6 +214,7 @@ export default function OrderDetailPage() {
                 <div className="text-sm text-gray-500 mt-1">{L('CR:', 'کمرشل رجسٹریشن:', 'سجل تجاري:')} {supplier.commercial_registration}</div>
               )}
               {supplier?.phone && <div className="text-sm text-gray-500">{L('Mobile:', 'موبائل:', 'جوال:')} {supplier.phone}</div>}
+              {offer?.id && <SourceShopBadge offerId={offer.id} locale={locale} />}
               {(supplier?.city || supplier?.region) && <div className="text-sm text-gray-500">{supplier.city || supplier.region}</div>}
               {supplier?.national_short_address && (
                 <div className="text-sm text-gray-500 font-mono" dir="ltr"><Glyph e="🏛" /> {supplier.national_short_address}</div>
@@ -364,8 +366,8 @@ export default function OrderDetailPage() {
             (من عنده، أو من المحل الذي اشترى منه) ويرفعها في صفحة الصفقة، وتظهر هنا للمشتري. */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-3">
           <div className="p-6 border-b border-gray-100">
-            <h2 className="text-lg font-bold" style={{ color: '#0B2438' }}>{L('Deal statement', 'ڈیل اسٹیٹمنٹ', 'بيان الصفقة')}</h2>
-            <p className="text-xs text-gray-500 mt-1 leading-relaxed">{L('An unofficial document showing the deal amount — not a tax invoice. The official invoice is issued by the supplier and attached below.', 'یہ غیر سرکاری دستاویز ہے جو ڈیل کی رقم دکھاتی ہے، ٹیکس انوائس نہیں ہے۔ باضابطہ انوائس سپلائر جاری کرتا ہے اور نیچے منسلک ہوتی ہے۔', 'مستند غير رسمي يوضّح مبلغ الصفقة، وليس فاتورة ضريبية. الفاتورة الرسمية يصدرها المورد وتُرفق أدناه.')}</p>
+            <h2 className="text-lg font-bold" style={{ color: '#0B2438' }}>{L('Quotation — not a tax invoice', 'کوٹیشن — ٹیکس انوائس نہیں', 'عرض سعر — ليس فاتورة ضريبية')}</h2>
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed">{L('Taseerak’s quotation of the agreed amount — not a tax invoice. The tax invoice is issued by the seller (for a pricing agent: by the source shop, in your name) and attached below.', 'تسعیرک کی کوٹیشن جو طے شدہ رقم دکھاتی ہے، ٹیکس انوائس نہیں۔ ٹیکس انوائس فروخت کنندہ جاری کرتا ہے (قیمت ایجنٹ کی صورت میں ماخذ دکان، آپ کے نام) اور نیچے منسلک ہوتی ہے۔', 'عرض سعر من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها البائع (وفي حال وسيط التسعير: المحل المصدر باسمك) وتُرفق أدناه.')}</p>
             <div className="text-xs text-gray-500 mt-2">{L('Statement no.:', 'اسٹیٹمنٹ نمبر:', 'رقم البيان:')} <span className="font-mono" dir="ltr">{(offer.invoice_number || '').replace(/^INV-/, 'ST-') || `ST-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>
             <div className="text-xs text-gray-500">{L('Date:', 'تاریخ:', 'التاريخ:')} {new Date(offer.accepted_at || offer.created_at).toLocaleString(dloc, { timeZone: 'Asia/Riyadh' })}</div>
           </div>
@@ -414,7 +416,7 @@ export default function OrderDetailPage() {
             {offer.supplier_invoice_url ? (
               <a href={fileHref(offer.supplier_invoice_url)} target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm hover:shadow-sm">
-                <span className="font-bold text-emerald-800"><Glyph e="📄" /> {L('Official invoice from the supplier', 'سپلائر کی باضابطہ انوائس', 'الفاتورة الرسمية من المورد')}</span>
+                <span className="font-bold text-emerald-800"><Glyph e="📄" /> {L('Tax invoice from the seller', 'فروخت کنندہ کی ٹیکس انوائس', 'الفاتورة الضريبية من البائع')}</span>
                 <span className="text-xs text-emerald-700">{new Date(offer.supplier_invoice_at).toLocaleDateString(dloc)} · {L('Download', 'ڈاؤن لوڈ', 'تنزيل')} <span aria-hidden="true">{FWD}</span></span>
               </a>
             ) : (

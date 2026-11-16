@@ -29,6 +29,7 @@ import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { loadOwnerBudgets, saveRfqBudgets, parseBudget, preVatUnit, overBudget, type ItemBudget } from '@/lib/budget'
 import BudgetField from '@/components/rfq/BudgetField'
+import { SourceShopBadge } from '@/components/rfq/SourceShop'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -1040,6 +1041,7 @@ export default function RFQDetailPage() {
                           </span>
                         )}
                         {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(offer.availability)} /> {availabilityLabel(offer.availability, locale)}</></span>}
+                        {normTier(offer.supplier?.supplier_tier) === 'independent' && <div className="basis-full"><SourceShopBadge offerId={offer.id} locale={locale} compact /></div>}
                         {offer.supplier?.verification_status === 'verified' && (
                           <span className="badge text-[10px] inline-flex items-center gap-0.5"
                             style={offer.supplier?.cr_verification_source === 'wathq'

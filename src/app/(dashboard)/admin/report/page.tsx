@@ -177,7 +177,7 @@ export default function OwnerReport() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Kpi label="موردون: شركات" value={fmt(u.supplier_company)} />
             <Kpi label="موردون: محلات" value={fmt(u.supplier_shop)} />
-            <Kpi label="موردون: مستقلون" value={fmt(u.supplier_independent)} />
+            <Kpi label="موردون: وسطاء تسعير" value={fmt(u.supplier_independent)} />
             <Kpi label="مواد في الكتالوج" value={fmt(CATALOG_SIZE)} sub="في 6 قطاعات" />
           </div>
           {isNum(h.no_supplier_specialties) && <p className="text-[12px] text-gray-500 mt-2">تخصصات لم ينضم لها مورد بعد: {fmt(h.no_supplier_specialties)}.</p>}

@@ -21,6 +21,7 @@ import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { vatStatusOf, totalLabel } from '@/lib/vat'
 import { installTotalOf, materialTotalOf } from '@/lib/installation'
+import { SourceShopBadge } from '@/components/rfq/SourceShop'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -230,6 +231,7 @@ export default function OfferDetailPage() {
               </span>
             )}
             {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(offer.availability)} /> {availabilityLabel(offer.availability, locale)}</></span>}
+            <div className="basis-full"><SourceShopBadge offerId={offer.id} locale={locale} /></div>
             {Array.isArray(s.approvals) && s.approvals.map((a: string) => (
               <span key={a} className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}><Glyph e="🏅" /> {L('Approved by', 'منظور شدہ:', 'معتمد لدى')} {approvalLabel(a)}</span>
             ))}

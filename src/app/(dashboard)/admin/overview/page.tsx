@@ -168,7 +168,7 @@ export default function OwnerOverview() {
                 { label: 'مشترون', value: Number(u.buyers) || 0, color: NAVY },
                 { label: 'شركات', value: Number(u.supplier_company) || 0, color: GOLD },
                 { label: 'محلات', value: Number(u.supplier_shop) || 0, color: GREEN },
-                { label: 'بائعون مستقلون', value: Number(u.supplier_independent) || 0, color: '#7A8CA3' },
+                { label: 'وسطاء تسعير', value: Number(u.supplier_independent) || 0, color: '#7A8CA3' },
               ]} />
               <dl className="grid grid-cols-2 gap-2 mt-4 text-xs">
                 {[

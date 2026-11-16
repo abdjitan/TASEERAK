@@ -54,7 +54,7 @@ const TR = {
     supTitle: 'سجّل كمورد', supSub: 'بيانات نشاطك الأساسية الآن، والموقع والأقسام والتوثيق بعد الدخول',
     toSupplier: 'صاحب محل أو مورد مواد؟', toSupplierCta: 'سجّل كمورد',
     toBuyer: 'تحتاج أسعاراً لمشروعك؟', toBuyerCta: 'سجّل لطلب الأسعار',
-    supplier: 'أقدّم أسعار المواد', supplierDesc: 'شركة أو محل أو مصنع أو بائع مستقل',
+    supplier: 'أقدّم أسعار المواد', supplierDesc: 'شركة أو محل أو مصنع أو وسيط تسعير',
     contractor: 'أبحث عن أسعار', contractorDesc: 'اطلب أسعار المواد من الموردين وقارن العروض',
     accountType: 'نوع الحساب', fullName: 'الاسم الكامل', pickTitle: 'كيف ستستخدم تسعيرك؟', pickSub: 'اختر نوع حسابك للمتابعة', change: 'تغيير',
     company: 'اسم المحل أو النشاط التجاري', companyHint: 'يظهر للمشترين على عروضك',
@@ -180,7 +180,7 @@ export default function RegisterPage() {
   }
 
   async function onSubmit(data: FormData) {
-    if (data.role === 'supplier' && !sellerKind) { setFormError(locale === 'en' ? 'Choose: a company / shop, or an independent seller' : locale === 'ur' ? 'منتخب کریں: کمپنی / دکان یا آزاد فروخت کنندہ' : 'اختر نوع نشاطك: شركة أو محل، أو بائع مستقل'); return }
+    if (data.role === 'supplier' && !sellerKind) { setFormError(locale === 'en' ? 'Choose: a company / shop, or a pricing agent' : locale === 'ur' ? 'منتخب کریں: کمپنی / دکان یا قیمت ایجنٹ' : 'اختر نوع نشاطك: شركة أو محل، أو وسيط تسعير'); return }
     if (!agreedToTerms) { setFormError(t.agreeErr); return }
     const soloSeller = data.role === 'supplier' && sellerKind === 'independent'
     const asksBusiness = data.role === 'supplier' && !soloSeller

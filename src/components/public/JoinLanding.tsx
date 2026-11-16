@@ -54,7 +54,7 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-navy leading-snug">
             {company
               ? L('Join Taseerak as a company', 'کمپنی کے طور پر شامل ہوں', 'انضم إلى تسعيرك كشركة أو محل')
-              : L('Join Taseerak as an independent seller', 'آزاد فروخت کنندہ کے طور پر شامل ہوں', 'انضم إلى تسعيرك كبائع مستقل')}
+              : L('Join Taseerak as a pricing agent', 'قیمت ایجنٹ کے طور پر شامل ہوں', 'انضم إلى تسعيرك كوسيط تسعير')}
           </h1>
           <p className="text-ink-2 mt-2 text-sm sm:text-base">
             {company
@@ -82,7 +82,7 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
           </p>
           <p className="text-xs text-gray-400 mt-2">
             {company
-              ? <Link href="/join/seller" className="hover:underline">{L('Independent seller? Join here', 'آزاد فروخت کنندہ؟', 'بائع مستقل؟ سجّل من هنا')}</Link>
+              ? <Link href="/join/seller" className="hover:underline">{L('Pricing agent? Join here', 'قیمت ایجنٹ؟', 'وسيط تسعير؟ سجّل من هنا')}</Link>
               : <Link href="/join/company" className="hover:underline">{L('Representing a company or shop? Join here', 'کمپنی؟ یہاں', 'تمثّل شركة أو محلاً؟ سجّل من هنا')}</Link>}
           </p>
         </div>

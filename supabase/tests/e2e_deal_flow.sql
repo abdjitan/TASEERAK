@@ -77,6 +77,8 @@ begin
   returning id into v_offer;
   select status::text into t from offers where id = v_offer;
   if t = 'pending' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL supplier self-accepted=' || t; end if;
+  -- pricing agent (independent seller) names the source shop (migration 213)
+  perform public.set_offer_source(v_offer, 'محل اختبار', 'الرياض', 'حي الملز', '0500000000');
   -- supplier cannot quote as someone else
   begin
     insert into offers (rfq_id, supplier_id, total_price) values (v_rfq, company, 1);
@@ -118,11 +120,15 @@ begin
   set local role authenticated;
   select count(*) into n from offers where rfq_id = v_rfq;
   if n = 2 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL buyer sees ' || n || ' offers'; end if;
+  r := public.get_offer_source(v_offer);
+  if r->>'area' = 'حي الملز' and r->>'name' is null then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL source shop shown before deal'; end if;
   perform public.award_rfq_item(v_rfq, 0, v_offer);
   perform public.finalize_rfq_awards(v_rfq);
   reset role;
   select status::text into t from offers where id = v_offer;
   if t = 'accepted' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL award status=' || t; end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  if public.get_offer_source(v_offer)->>'name' = 'محل اختبار' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL source shop hidden after deal'; end if;
   -- H2: the supplier who won now sees the location
   perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
   set local role authenticated;
@@ -141,9 +147,13 @@ begin
   perform set_config('app.deal_write', 'off', true);
   perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
   set local role authenticated;
-  perform public.confirm_delivery(v_offer);
+  begin
+    perform public.confirm_delivery(v_offer);
+    bad := bad + 1; log := log || ' FAIL delivery confirmed without invoice';
+  exception when others then ok := ok + 1; end;
   r := public.attach_supplier_invoice(v_offer,
          'https://afqksuduomkdqrcohntk.supabase.co/storage/v1/object/public/licenses/' || sup || '/offer-e2e.pdf', 'فاتورة.pdf');
+  perform public.confirm_delivery(v_offer);
   if r->>'supplier_invoice_name' = 'فاتورة.pdf' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL attach invoice'; end if;
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   if public.can_access_shared_file(sup || '/offer-e2e.pdf') then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL buyer cannot open invoice'; end if;
@@ -245,6 +255,7 @@ begin
   insert into offers (rfq_id, supplier_id, total_price, source_type, item_prices)
   values (v_rfq, sup, 250, 'shop', '[{"item_index":0,"product_name":"أسمنت","quantity":10,"unit":"كيس","unit_price":25,"total":250}]'::jsonb)
   returning id into v_offer;
+  perform public.set_offer_source(v_offer, 'محل اختبار', 'الرياض', null, null);
   -- M2: no reduction was requested → the supplier can't change the price this way
   begin
     perform public.submit_price_reduction(v_offer, 999);
@@ -391,6 +402,32 @@ begin
   begin
     update offers set item_prices = '[{"item_index":0,"product_name":"أسمنت","unit_price":25,"total":250,"material_total":260,"install_total":-10,"install_offered":true}]'::jsonb where id = v_offer;
     bad := bad + 1; log := log || ' FAIL negative install price accepted';
+  exception when others then ok := ok + 1; end;
+  reset role;
+
+  -- 213: a pricing agent (independent) can't be chosen without a source shop, nor above 5,000 SAR
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city, expires_at, status)
+  values (buyer, 'civil', 'أسمنت', array['civil'],
+          '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":300,"unit":"كيس"}]'::jsonb,
+          300, 'كيس', 'الرياض', 'الرياض', now() + interval '2 days', 'open')
+  returning id into v_rfq;
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  insert into offers (rfq_id, supplier_id, total_price, source_type, item_prices)
+  values (v_rfq, sup, 6000, 'shop', '[{"item_index":0,"product_name":"أسمنت","quantity":300,"unit":"كيس","unit_price":20,"total":6000}]'::jsonb)
+  returning id into v_offer;
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  begin
+    perform public.award_rfq_item(v_rfq, 0, v_offer);
+    bad := bad + 1; log := log || ' FAIL agent offer without a source shop chosen';
+  exception when others then ok := ok + 1; end;
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  perform public.set_offer_source(v_offer, 'محل اختبار', null, null, null);
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  begin
+    perform public.award_rfq_item(v_rfq, 0, v_offer);
+    bad := bad + 1; log := log || ' FAIL agent deal above 5,000 SAR chosen';
   exception when others then ok := ok + 1; end;
   reset role;
 

@@ -117,7 +117,10 @@ export default function DealProtection({
             <div className="font-semibold text-gray-700">{L('Delivery of goods', 'مال کی ڈیلیوری', 'تسليم البضاعة')}</div>
             <div className="text-xs text-gray-400">{offer.supplier_delivered_at ? `✓ ${L('Supplier confirmed delivery', 'سپلائر نے ڈیلیوری کنفرم کر دی', 'أكّد المورد التسليم')} — ${new Date(offer.supplier_delivered_at).toLocaleString(dloc)}` : L('Waiting for the supplier to confirm', 'سپلائر کی تصدیق کا انتظار ہے', 'بانتظار تأكيد المورد')}</div>
           </div>
-          {!offer.supplier_delivered_at && isSupplier && (
+          {!offer.supplier_delivered_at && isSupplier && !offer.supplier_invoice_url && (
+            <span className="text-[11px] font-semibold text-amber-700 text-end max-w-[11rem]">{L('Attach the tax invoice below first (the shop’s invoice in the buyer’s name), then confirm delivery.', 'پہلے نیچے ٹیکس انوائس لگائیں (خریدار کے نام دکان کی انوائس)، پھر ڈیلیوری کی تصدیق کریں۔', 'ارفع الفاتورة الضريبية أدناه أولاً (فاتورة المحل باسم المشتري)، ثم أكّد التسليم.')}</span>
+          )}
+          {!offer.supplier_delivered_at && isSupplier && offer.supplier_invoice_url && (
             <button onClick={() => { if (confirm(L('Have you delivered all the goods of this order to the buyer?\n\nThis confirmation is recorded with its date and cannot be undone.', 'کیا آپ نے اس آرڈر کا سارا مال خریدار کو پہنچا دیا ہے؟\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔', 'هل سلّمت جميع بضاعة هذا الطلب إلى المشتري؟\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.'))) callRpc('confirm_delivery', { p_offer_id: offer.id }, 'deliver') }} disabled={busy === 'deliver'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>✓ {L('Confirm delivery', 'ڈیلیوری کی تصدیق کریں', 'تأكيد التسليم')}</button>
           )}
         </div>

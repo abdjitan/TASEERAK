@@ -19,8 +19,8 @@ export const TIER_INFO: Record<SupplierTier, T3 & { icon: string; hint: T3 }> = 
     hint: { ar: 'محلات مواد البناء والمؤسسات التجارية', en: 'Building-material shops and trading businesses', ur: 'تعمیراتی سامان کی دکانیں' },
   },
   independent: {
-    icon: 'user', ar: 'بائعون مستقلون ووسطاء', en: 'Independent sellers & brokers', ur: 'آزاد فروخت کنندگان اور بروکرز',
-    hint: { ar: 'أفراد يوفّرون المواد أو يجمعون الأسعار من السوق', en: 'Individuals who source materials or collect market prices', ur: 'افراد جو مارکیٹ سے سامان یا قیمتیں لاتے ہیں' },
+    icon: 'user', ar: 'وسطاء تسعير', en: 'Pricing agents', ur: 'قیمت ایجنٹ',
+    hint: { ar: 'أفراد يجلبون أسعار المحلات؛ الفاتورة الضريبية من المحل، والصفقة حتى 5,000 ريال', en: 'Individuals who bring shop prices; the tax invoice comes from the shop, deals up to 5,000 SAR', ur: 'افراد جو دکانوں کی قیمتیں لاتے ہیں؛ ٹیکس انوائس دکان سے، سودا 5,000 ریال تک' },
   },
 }
 
@@ -73,8 +73,8 @@ export function sellerKindOf(providerType?: string | null): SellerKind {
 }
 export const SELLER_KINDS: Record<SellerKind, T3 & { icon: string; sub: T3 }> = {
   independent: {
-    icon: 'user', ar: 'أعمل بشكل مستقل', en: 'I work independently', ur: 'میں آزادانہ کام کرتا ہوں',
-    sub: { ar: 'بائع أو وسيط أو وكيل أسعار: توفّر المواد أو تجمع أسعارها من السوق', en: 'Seller, broker or price agent: you source materials or collect market prices', ur: 'فروخت کنندہ، بروکر یا پرائس ایجنٹ' },
+    icon: 'user', ar: 'أعمل وسيط تسعير', en: 'I work as a pricing agent', ur: 'میں قیمت ایجنٹ ہوں',
+    sub: { ar: 'تجلب أسعار المواد من المحلات للمشترين؛ تتم الصفقة بفاتورة المحل الضريبية وحتى 5,000 ريال', en: 'You bring shop prices to buyers; the deal uses the shop’s tax invoice, up to 5,000 SAR', ur: 'آپ دکانوں کی قیمتیں خریداروں تک لاتے ہیں؛ سودا دکان کی ٹیکس انوائس سے، 5,000 ریال تک' },
   },
   company: {
     icon: 'building', ar: 'أمثّل شركة أو محلاً', en: 'I represent a company or shop', ur: 'میں کمپنی یا دکان کی نمائندگی کرتا ہوں',

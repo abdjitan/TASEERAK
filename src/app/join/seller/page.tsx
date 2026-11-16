@@ -1,8 +1,8 @@
 import JoinLanding from '@/components/public/JoinLanding'
 
 export const metadata = {
-  title: 'انضم كبائع مستقل | تسعيرك',
-  description: 'بائع أو وسيط أو وكيل أسعار؟ قدّم أسعار مواد البناء من السوق عبر تسعيرك، بدون محل أو سجل تجاري.',
+  title: 'انضم كوسيط تسعير | تسعيرك',
+  description: 'وسيط تسعير؟ اجلب أسعار مواد البناء من المحلات للمشترين عبر تسعيرك، وتتم الصفقة بفاتورة المحل.',
 }
 
 export default function JoinSellerPage() {

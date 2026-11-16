@@ -34,7 +34,7 @@ const TR = {
     location: 'الموقع', region: 'المنطقة', selectRegion: '-- اختر --', city: 'المدينة', district: 'الحي',
     sectorsTitleC: 'قطاعات عملك', sectorsHintC: 'اختياري: يمكنك تخطّي هذه الخطوة، فطلبك يصل إلى الموردين المناسبين بحسب المواد التي تطلبها.',
     sectorsTitleS: 'تخصصاتك والمواد', sectorsHintS: 'اختر قطاعاتك ثم حدّد ما توردّه بالضبط',
-    classTitle: 'نوع الحساب', classHint: 'هل تمثّل شركة أو محلاً، أم تعمل بشكل مستقل؟ يمكنك تغييره لاحقاً من الإعدادات.',
+    classTitle: 'نوع الحساب', classHint: 'هل تمثّل شركة أو محلاً، أم تعمل وسيط تسعير؟ يمكنك تغييره لاحقاً من الإعدادات.',
     minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات — أو حدّده ليُفلتر الطلبات حسب قدرتك التوريدية.',
     gradeTitle: 'درجة تصنيف شركتك (للمقاولين)', gradeSub: 'من رخصتك (وزارة الشؤون البلدية) — يستخدمها الموردون لفلترة الطلبات حسب حجم المشروع. اختياري.',
     verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'التوثيق اختياري: يضيف شارة «موثّق» إلى عروضك لدى طالبي الأسعار، ويضعك ضمن «شركات ومصانع معتمدة»، فترتفع موثوقيتك وفرصك في الفوز بالطلبات.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وقطاعاتك وتخصصاتك أعلاه لتُفتح خطوة التوثيق.',
@@ -56,7 +56,7 @@ const TR = {
     location: 'Location', region: 'Region', selectRegion: '-- Select --', city: 'City', district: 'District',
     sectorsTitleC: 'Your sectors', sectorsHintC: 'Optional: you can skip this. Your request reaches the right suppliers based on the materials you ask for.',
     sectorsTitleS: 'Specialties & materials', sectorsHintS: 'Select your sectors then pick exactly what you supply',
-    classTitle: 'Account type', classHint: 'Do you represent a company or shop, or work independently? You can change it later in settings.',
+    classTitle: 'Account type', classHint: 'Do you represent a company or shop, or work as a pricing agent? You can change it later in settings.',
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
     gradeTitle: 'Company grade (contractors)', gradeSub: 'From your license (Ministry of Municipal Affairs) — suppliers use it to filter by project size. Optional.',
     verifyTitle: 'Verify your business', verifyBody: 'Optional: verification adds a «Verified» badge to your quotes for buyers, making your shop highly trusted and raising your chance of winning requests.', verifyCta: 'Save & start verification →', verifyLocked: 'Complete your location, sectors and specialties above to unlock verification.',
@@ -78,7 +78,7 @@ const TR = {
     location: 'مقام', region: 'علاقہ', selectRegion: '-- منتخب کریں --', city: 'شہر', district: 'علاقہ',
     sectorsTitleC: 'آپ کے شعبے', sectorsHintC: 'اختیاری: آپ یہ مرحلہ چھوڑ سکتے ہیں۔ آپ کی درخواست مطلوبہ مواد کے مطابق درست سپلائرز تک پہنچتی ہے۔',
     sectorsTitleS: 'مہارتیں اور مواد', sectorsHintS: 'اپنے شعبے منتخب کریں پھر بالکل وہی چنیں جو فراہم کرتے ہیں',
-    classTitle: 'اکاؤنٹ کی قسم', classHint: 'کیا آپ کمپنی یا دکان کی نمائندگی کرتے ہیں یا آزادانہ کام کرتے ہیں؟ بعد میں ترتیبات میں بدل سکتے ہیں۔',
+    classTitle: 'اکاؤنٹ کی قسم', classHint: 'کیا آپ کمپنی یا دکان کی نمائندگی کرتے ہیں یا قیمت ایجنٹ ہیں؟ بعد میں ترتیبات میں بدل سکتے ہیں۔',
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
     gradeTitle: 'کمپنی کا درجہ (ٹھیکیداروں کے لیے)', gradeSub: 'آپ کے لائسنس سے — سپلائرز پروجیکٹ سائز کے مطابق فلٹر کرتے ہیں۔ اختیاری۔',
     verifyTitle: 'اپنے کاروبار کی تصدیق کریں', verifyBody: 'اختیاری: تصدیق آپ کی آفرز پر «تصدیق شدہ» بیج دکھاتی ہے، جس سے خریداروں کا اعتماد بڑھتا ہے۔', verifyCta: 'محفوظ کریں اور تصدیق شروع کریں →', verifyLocked: 'تصدیق کھولنے کے لیے اوپر اپنا مقام، شعبے اور مہارتیں مکمل کریں۔',
@@ -466,7 +466,7 @@ export default function OnboardingPage() {
             {role === 'supplier' && isIndividual && (
               <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56', background: 'rgba(15,110,86,0.06)', border: '1px solid rgba(15,110,86,0.2)' }}>
                 <div className="text-sm font-bold text-navy mb-1"><Glyph e="⭐" /> {locale === 'en' ? 'Your trust comes from ratings' : locale === 'ur' ? 'آپ کا اعتماد ریٹنگ سے بنتا ہے' : 'تُبنى ثقتك من التقييمات'}</div>
-                <p className="text-xs text-gray-600 leading-relaxed">{locale === 'en' ? 'As an individual or price agent you do not need a shop or a commercial registration. After every deal the buyer rates your price accuracy and service, and those ratings show next to your quotes.' : locale === 'ur' ? 'انفرادی یا پرائس ایجنٹ کے طور پر آپ کو دکان یا کمرشل رجسٹریشن کی ضرورت نہیں۔ ہر ڈیل کے بعد خریدار آپ کو ریٹ کرتا ہے۔' : 'بصفتك بائعاً مستقلاً أو وسيطاً لا تحتاج إلى محل أو سجل تجاري. بعد كل صفقة يقيّم المشتري دقة سعرك وخدمتك، وتظهر هذه التقييمات بجانب عروضك.'}</p>
+                <p className="text-xs text-gray-600 leading-relaxed">{locale === 'en' ? 'As a pricing agent you bring shop prices to buyers without a shop of your own. The buyer sees the source shop after the deal, the shop issues the tax invoice in the buyer’s name, and a deal is limited to 5,000 SAR. After every deal the buyer rates your price accuracy and service.' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر آپ اپنی دکان کے بغیر دکانوں کی قیمتیں خریداروں تک لاتے ہیں۔ سودے کے بعد خریدار ماخذ دکان دیکھتا ہے، ٹیکس انوائس دکان خریدار کے نام جاری کرتی ہے، اور سودا 5,000 ریال تک ہوتا ہے۔ ہر ڈیل کے بعد خریدار آپ کو ریٹ کرتا ہے۔' : 'بصفتك وسيط تسعير تجلب أسعار المحلات للمشترين دون أن تملك محلاً. يرى المشتري المحل المصدر بعد إتمام الصفقة، ويُصدر المحل الفاتورة الضريبية باسم المشتري، والحد الأقصى للصفقة 5,000 ريال. بعد كل صفقة يقيّم المشتري دقة سعرك وخدمتك.'}</p>
               </div>
             )}
             {role === 'supplier' && !isIndividual && (
