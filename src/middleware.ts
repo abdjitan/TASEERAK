@@ -219,6 +219,15 @@ export async function middleware(request: NextRequest) {
       // Not an admin — send them home silently
       return redirectTo(new URL('/', request.url))
     }
+    // two-step sign-in (owner 2026-11-16): admin pages need an aal2 session (authenticator code)
+    if (!matches('/admin/mfa')) {
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+      if (aal?.currentLevel !== 'aal2') {
+        const mfaUrl = new URL('/admin/mfa', request.url)
+        mfaUrl.searchParams.set('next', pathname)
+        return redirectTo(mfaUrl)
+      }
+    }
   }
 
   // All checks passed — continue to the requested page

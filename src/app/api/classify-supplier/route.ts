@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
+import { isAdminSession, getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
 import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { keywordClassify } from '@/lib/classify'
 import { SECTOR_LABELS } from '@/types'
@@ -23,8 +23,7 @@ export async function POST(req: NextRequest) {
 
   // Only an admin may classify someone else.
   if (targetId !== user.id) {
-    const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    if (me?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!(await isAdminSession(supabase))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Load the target supplier + their chosen sectors.

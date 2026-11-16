@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRouteUser } from '@/lib/supabase/server'
+import { isAdminSession, getRouteUser } from '@/lib/supabase/server'
 import { overHourlyLimit, overGlobalDailyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { aiJson } from '@/lib/ai'
 
@@ -22,8 +22,7 @@ export async function POST(req: NextRequest) {
   const { data: rfq } = await supabase.from('rfqs').select('id, contractor_id, product_name, items, notes').eq('id', rfqId).single()
   if (!rfq) return NextResponse.json({ error: 'RFQ not found' }, { status: 404 })
   if (rfq.contractor_id !== user.id) {
-    const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-    if (me?.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!(await isAdminSession(supabase))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   const { data: offers } = await supabase

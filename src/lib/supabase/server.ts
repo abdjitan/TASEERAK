@@ -90,3 +90,14 @@ export async function getRouteUser(): Promise<{ supabase: ServerClient; user: an
   const { data: { user } } = await supabase.auth.getUser()
   return { supabase, user }
 }
+
+/** Admin AND passed the two-step sign-in (aal2), checked by the database's is_admin()
+ *  with the caller's own session (owner 2026-11-16, migration 212). */
+export async function isAdminSession(supabase: { rpc: (fn: string) => any }): Promise<boolean> {
+  try {
+    const { data } = await supabase.rpc('is_admin')
+    return data === true
+  } catch {
+    return false
+  }
+}

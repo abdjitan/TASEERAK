@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
+import { getRouteUser, createAdminSupabaseClient, isAdminSession } from '@/lib/supabase/server'
 import { overHourlyLimit, RATE_LIMITED_AR } from '@/lib/rateLimit'
 import { normalizeText } from '@/lib/normalize'
 import { normalizeCrInput } from '@/lib/cr'
@@ -66,8 +66,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const target = body?.target === 'claim' ? 'claim' : 'cr'
   const svc = createAdminSupabaseClient()
-  const { data: me } = await svc.from('profiles').select('role').eq('id', user.id).single()
-  const isAdmin = me?.role === 'admin'
+  const isAdmin = await isAdminSession(supabase)
 
   // Resolve the file and what it is compared with. Non-admins only read their own file.
   let profileId: string = user.id, claimId: string | null = null, filePath = '', expectCr = '', expectName = ''
