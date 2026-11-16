@@ -8,6 +8,8 @@ import SellerIcon from '@/components/shared/SellerIcon'
 // The seller's account kind (independent / company) and, for a company, its activity. Saved
 // immediately through set_seller_kind; the buyer-facing tier is derived by the DB from this and
 // from CR verification, so it is shown here read-only with what it takes to reach "company".
+// The kind itself is fixed once chosen (owner 2026-11-16, migration 215): only the company activity
+// can still change; switching company ↔ pricing agent needs a new account.
 export default function SellerKindPicker({ providerType, supplierTier, locale, onChange }: {
   providerType: string | null | undefined
   supplierTier: string | null | undefined
@@ -21,12 +23,18 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const kind: SellerKind = sellerKindOf(ptype)
+  const kindLocked = !!providerType
 
   async function save(nextKind: SellerKind, activity?: string) {
     setBusy(true); setErr('')
     const supabase = createClient()
     const { data, error } = await supabase.rpc('set_seller_kind', { p_kind: nextKind, p_activity: activity || null })
-    if (error) { setErr(L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔', 'تعذّر الحفظ. حاول مرة أخرى.')); setBusy(false); return }
+    if (error) {
+      setErr((error as any).hint === 'KIND_LOCKED'
+        ? L('The account type can’t be changed after it is created. To change it, delete the account and create a new one.', 'اکاؤنٹ بننے کے بعد اس کی قسم نہیں بدلی جا سکتی۔ بدلنے کے لیے اکاؤنٹ حذف کر کے نیا بنائیں۔', 'لا يمكن تغيير نوع الحساب بعد إنشائه. لتغييره احذف الحساب وأنشئ حساباً جديداً.')
+        : L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔', 'تعذّر الحفظ. حاول مرة أخرى.'))
+      setBusy(false); return
+    }
     const np = String(data || (nextKind === 'independent' ? 'individual' : activity || 'company'))
     const { data: { user } } = await supabase.auth.getUser()
     const { data: p } = user ? await supabase.from('profiles').select('supplier_tier').eq('id', user.id).single() : { data: null }
@@ -37,7 +45,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
   return (
     <div className="space-y-3">
       <div className="grid sm:grid-cols-2 gap-2">
-        {(['company', 'independent'] as SellerKind[]).map(k => {
+        {(['company', 'independent'] as SellerKind[]).filter(k => !kindLocked || k === kind).map(k => {
           const on = kind === k
           const info = SELLER_KINDS[k]
           return (
@@ -50,6 +58,9 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
           )
         })}
       </div>
+      {kindLocked && (
+        <p className="text-[11px] text-gray-500">{L('The account type is fixed. To change it, delete the account and create a new one.', 'اکاؤنٹ کی قسم مقرر ہے۔ بدلنے کے لیے اکاؤنٹ حذف کر کے نیا بنائیں۔', 'نوع الحساب ثابت. لتغييره احذف الحساب وأنشئ حساباً جديداً.')}</p>
+      )}
 
       {kind === 'company' && (
         <div>
