@@ -19,6 +19,7 @@ function AdminMfa() {
   const next = (() => { const n = search.get('next') || '/admin'; return n.startsWith('/admin') && !n.startsWith('/admin/mfa') ? n : '/admin' })()
   const [stage, setStage] = useState<Stage>('loading')
   const [factorId, setFactorId] = useState('')
+  const [factorIds, setFactorIds] = useState<string[]>([])
   const [qr, setQr] = useState('')
   const [secret, setSecret] = useState('')
   const [code, setCode] = useState('')
@@ -36,8 +37,10 @@ function AdminMfa() {
         const { data: u, error } = await supabase.auth.getUser()
         if (error) throw error
         const factors: any[] = (u?.user as any)?.factors || []
-        const verified = factors.find((x: any) => x.factor_type === 'totp' && x.status === 'verified')
-        if (verified) { setFactorId(verified.id); setStage('verify'); return }
+        // newest first; with several (an extra enrolment) the code is tried against each
+        const verified = factors.filter((x: any) => x.factor_type === 'totp' && x.status === 'verified')
+          .sort((a: any, b: any) => String(b.created_at).localeCompare(String(a.created_at)))
+        if (verified.length) { setFactorIds(verified.map((x: any) => x.id)); setFactorId(verified[0].id); setStage('verify'); return }
         // drop half-finished enrolments, then start a new one
         for (const x of factors) if (x.status !== 'verified') await supabase.auth.mfa.unenroll({ factorId: x.id }).catch(() => {})
         const { data: e, error: eErr } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Taseerak admin ' + new Date().toISOString().slice(0, 19) })
@@ -53,7 +56,12 @@ function AdminMfa() {
     const c = code.replace(/\D/g, '')
     if (c.length !== 6) { setErr('اكتب الرمز المكوّن من 6 أرقام.'); return }
     setBusy(true); setErr('')
-    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code: c })
+    let error: any = null
+    for (const id of (factorIds.length ? factorIds : [factorId])) {
+      const r = await supabase.auth.mfa.challengeAndVerify({ factorId: id, code: c })
+      error = r.error
+      if (!error) break
+    }
     setBusy(false)
     if (error) { setErr('الرمز غير صحيح أو انتهت صلاحيته. اكتب الرمز الظاهر الآن في التطبيق.'); setCode(''); return }
     // the session is now aal2: make sure the cookie holds it, then reload so the middleware sees it
