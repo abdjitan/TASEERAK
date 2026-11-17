@@ -31,3 +31,9 @@ export function crTakenText(locale: string): { msg: string; cta: string } {
 
 /** Where the claim screen lives (web route; the mobile app has its own screen). */
 export const crClaimHref = (cr: string) => `/verification/claim?cr=${encodeURIComponent(cr)}`
+
+/** The unified national number (owner 2026-11-17, migration 226): 10 digits starting with 7. */
+export const isUnifiedCr = (v: string): boolean => /^7[0-9]{9}$/.test(v)
+export function crFormatText(locale: string): string {
+  return locale === 'en' ? 'Enter the unified national number: 10 digits starting with 7 (on the commercial registration certificate).' : locale === 'ur' ? 'ادارے کا متحدہ قومی نمبر لکھیں: 7 سے شروع ہونے والے 10 ہندسے (تجارتی رجسٹریشن سرٹیفکیٹ پر)۔' : 'أدخل الرقم الوطني الموحد للمنشأة: 10 أرقام يبدأ بـ7 (تجده في شهادة السجل التجاري).'
+}

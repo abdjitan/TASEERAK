@@ -128,10 +128,10 @@ export async function POST(req: NextRequest) {
     // own CR only; this route never takes a national ID (it let anyone test ID↔company links).
     const nationalId = ''
 
-    // 1) format check (Saudi CR = exactly 10 digits)
-    if (!/^\d{10}$/.test(cr)) {
+    // 1) format check (the unified national number: 10 digits starting with 7, migration 226)
+    if (!/^7\d{9}$/.test(cr)) {
       return NextResponse.json(
-        { ok: false, error: 'INVALID_FORMAT', message: 'رقم السجل التجاري يجب أن يكون 10 أرقام بالضبط' },
+        { ok: false, error: 'INVALID_FORMAT', message: 'أدخل الرقم الوطني الموحد للمنشأة: 10 أرقام يبدأ بـ7 (تجده في شهادة السجل التجاري).' },
         { status: 400 },
       )
     }

@@ -17,7 +17,7 @@ import { REGIONS } from '@/types'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
-import { normalizeCrInput, crTakenText, crClaimHref } from '@/lib/cr'
+import { normalizeCrInput, crTakenText, crClaimHref, isUnifiedCr, crFormatText } from '@/lib/cr'
 import { toLatinDigits } from '@/lib/phone'
 import PhoneVerify from '@/components/shared/PhoneVerify'
 import EmailVerify from '@/components/shared/EmailVerify'
@@ -290,8 +290,8 @@ export default function SettingsPage() {
     const crDigits = normalizeCrInput(crNumber)
     const crChanged = crDigits !== (profile?.commercial_registration || '')
     if (!licenseFile && !crFile && !crChanged) return
-    if (crDigits && !/^[0-9]{10}$/.test(crDigits)) {
-      setDocsMsg(L('The commercial registration number must be exactly 10 digits.', 'تجارتی رجسٹریشن نمبر بالکل 10 ہندسوں کا ہونا چاہیے۔', 'رقم السجل التجاري يجب أن يكون 10 أرقام بالضبط.'))
+    if (crDigits && !isUnifiedCr(crDigits)) {
+      setDocsMsg(crFormatText(locale))
       return
     }
     setDocsSaving(true); setDocsMsg(''); setCrTaken('')
@@ -850,7 +850,7 @@ export default function SettingsPage() {
                   {/* CR number (one CR = one account, enforced in the DB) */}
                   <div>
                     <label className="block text-xs font-bold text-gray-500 mb-2">
-                      {L('Commercial registration number (10 digits)', 'تجارتی رجسٹریشن نمبر (10 ہندسے)', 'رقم السجل التجاري (10 أرقام)')}
+                      {L('Unified national number (10 digits, starts with 7)', 'متحدہ قومی نمبر (7 سے شروع، 10 ہندسے)', 'الرقم الوطني الموحد للمنشأة (10 أرقام يبدأ بـ7)')}
                     </label>
                     <input value={crNumber} inputMode="numeric" dir="ltr" maxLength={14}
                       onChange={(e: any) => { setCrNumber(e.target.value); setCrTaken('') }}

@@ -52,7 +52,7 @@ export default function CrClaimPage() {
     e.preventDefault()
     setMsg('')
     const digits = normalizeCrInput(cr)
-    if (!/^[0-9]{10}$/.test(digits)) { setMsg(L('The CR number must be exactly 10 digits.', 'سی آر نمبر بالکل 10 ہندسوں کا ہونا چاہیے۔', 'رقم السجل التجاري يجب أن يكون 10 أرقام بالضبط.')); return }
+    if (!/^7[0-9]{9}$/.test(digits)) { setMsg(L('Enter the unified national number: 10 digits starting with 7 (on the commercial registration certificate).', 'ادارے کا متحدہ قومی نمبر لکھیں: 7 سے شروع ہونے والے 10 ہندسے (تجارتی رجسٹریشن سرٹیفکیٹ پر)۔', 'أدخل الرقم الوطني الموحد للمنشأة: 10 أرقام يبدأ بـ7 (تجده في شهادة السجل التجاري).')); return }
     if (!name.trim()) { setMsg(L('Enter your name or the business name.', 'اپنا یا ادارے کا نام لکھیں۔', 'اكتب اسمك أو اسم المنشأة.')); return }
     if (!file) { setMsg(L('Upload a copy of the commercial registration.', 'تجارتی رجسٹریشن کی کاپی اپ لوڈ کریں۔', 'ارفع صورة السجل التجاري.')); return }
     setSaving(true)
