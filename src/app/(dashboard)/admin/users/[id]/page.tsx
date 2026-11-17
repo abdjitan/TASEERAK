@@ -12,6 +12,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { APPROVAL_LABELS } from '@/lib/supplierScore'
 import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 import Glyph from '@/components/shared/Glyph'
+import AccountModeration from '@/components/admin/AccountModeration'
 
 const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمّ اختيار العرض', cancelled: '✕ ملغي', expired: 'منتهي' }
 const OFFER_STATUS: Record<string, string> = { pending: 'بانتظار', submitted: 'مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
@@ -30,6 +31,7 @@ export default function AdminUserDetail() {
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState('')
   const [rejecting, setRejecting] = useState(false)
+  const [moderating, setModerating] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [pw, setPw] = useState('')
   const [pwConfirm, setPwConfirm] = useState('')
@@ -182,11 +184,15 @@ export default function AdminUserDetail() {
               {p.verification_status !== 'rejected' && <button onClick={() => setRejecting(!rejecting)} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600">✕ رفض</button>}
               <Link href={`/admin/users/${id}/support`} className="text-xs px-3 py-2 rounded-xl border font-semibold hover:bg-amber-50" style={{ borderColor: '#D4A543', color: '#8F6820' }}><Glyph e="👁" /> عرض الحساب للدعم</Link>
               <button onClick={() => setShowPw(!showPw)} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50"><Glyph e="🔑" /> كلمة المرور</button>
-              <button onClick={toggleActive} disabled={busy === 'is_active'} className={`text-xs px-3 py-2 rounded-xl border disabled:opacity-50 ${active ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'}`}>
-                {active ? 'إيقاف الحساب' : '✓ تفعيل الحساب'}
-              </button>
+              {active
+                ? <button onClick={() => setModerating(!moderating)} className="text-xs px-3 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50">إيقاف / إلغاء الحساب</button>
+                : <button onClick={toggleActive} disabled={busy === 'is_active'} className="text-xs px-3 py-2 rounded-xl border border-emerald-200 text-emerald-600 hover:bg-emerald-50 disabled:opacity-50">✓ تفعيل الحساب</button>}
             </div>
           </div>
+
+          {(moderating || (p.banned_until && new Date(p.banned_until).getTime() > Date.now())) && (
+            <AccountModeration userId={id} bannedUntil={p.banned_until} banReason={p.ban_reason} onChanged={() => loadAll()} />
+          )}
 
           {/* Reject reason */}
           {rejecting && (

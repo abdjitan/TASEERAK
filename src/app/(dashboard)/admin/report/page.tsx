@@ -37,6 +37,7 @@ export default function OwnerReport() {
   const [includeTest, setIncludeTest] = useState(false)
   const [d, setD] = useState<any>(null)
   const [sv, setSv] = useState<any>(null)
+  const [items, setItems] = useState<any>(null) // what buyers bought / sellers offer (224)
   const [err, setErr] = useState('')
 
   useEffect(() => {
@@ -55,12 +56,13 @@ export default function OwnerReport() {
     (async () => {
       setErr('')
       const supabase = createClient()
-      const [a, b] = await Promise.all([
+      const [a, b, c] = await Promise.all([
         supabase.rpc('admin_overview', { p_days: days, p_include_test: includeTest }),
         supabase.rpc('admin_savings_summary', { p_include_test: includeTest }),
+        supabase.rpc('admin_report_items', { p_days: days, p_include_test: includeTest }),
       ])
       if (a.error) { setErr(a.error.message); return }
-      setD(a.data); setSv(b.data || null)
+      setD(a.data); setSv(b.data || null); setItems(c.data || null)
     })()
   }, [ok, days, includeTest])
 
@@ -114,8 +116,8 @@ export default function OwnerReport() {
             <Kpi label="المستخدمون" value={fmt(u.total)} sub={`${fmt(u.buyers)} مشترٍ · ${fmt(u.suppliers)} مورد`} />
             <Kpi label="طلبات التسعير" value={fmt(rq.total)} sub={`${fmt(rq.lines)} مادة مطلوبة`} />
             <Kpi label="عروض الأسعار" value={fmt(of.total)} sub={`${offersPerRequest} عرض لكل طلب`} />
-            <Kpi label="الصفقات" value={fmt(dl.count)} sub={`قيمتها ${sar(dl.value)}`} />
-            <Kpi label="قيمة الصفقات عبر المنصة" value={sar(dl.value)} sub={`متوسط الصفقة ${sar(dl.avg_value)}`} />
+            <Kpi label="الصفقات المؤكَّدة" value={fmt(dl.received)} sub={`أكّد المشتري استلامها · ${fmt(dl.in_progress)} قيد التنفيذ`} />
+            <Kpi label="قيمة الصفقات المؤكَّدة" value={sar(dl.received_value)} sub={`مؤكَّدة من المشترين · متوسط ${sar(Number(dl.received) > 0 ? Math.round(Number(dl.received_value) / Number(dl.received)) : 0)}`} />
             <Kpi label="توفير المشترين" value={sar(sv?.saved)} sub={isNum(sv?.saved_pct) ? `${fmt(sv.saved_pct, 1)}% مقارنةً بأعلى عرض` : 'مقارنةً بأعلى عرض لكل مادة'} />
             <Kpi label="موردون قدّموا عروضاً" value={fmt(fn.suppliers_quoted)} sub={`${fmt(fn.suppliers_won)} فازوا بصفقات`} />
             <Kpi label="حسابات موثّقة" value={fmt(u.verified)} sub={`${fmt(u.email_confirmed)} بريد مؤكَّد`} />
@@ -171,6 +173,36 @@ export default function OwnerReport() {
             <Kpi label="مدفوعة" value={fmt(dl.paid)} sub={sar(dl.paid_value)} />
             <Kpi label="نزاعات مفتوحة" value={fmt(dl.disputes_open)} />
           </div>
+        </Section>
+
+        <Section title="ماذا يشتري المشترون؟">
+          {Array.isArray(items?.bought) && items.bought.length ? (
+            <table className="w-full text-sm border-collapse">
+              <thead><tr className="text-gray-500 text-xs border-b">
+                <th className="text-start py-1.5">المادة</th><th className="text-start">الكمية</th><th className="text-start">صفقات</th><th className="text-start">مؤكَّدة</th><th className="text-start">القيمة</th>
+              </tr></thead>
+              <tbody>{items.bought.map((x: any, i: number) => (
+                <tr key={i} className="border-b border-gray-100">
+                  <td className="py-1.5 font-semibold" style={{ color: NAVY }}>{x.product}</td>
+                  <td>{fmt(x.quantity)} {x.unit || ''}</td><td>{fmt(x.deals)}</td><td>{fmt(x.confirmed)}</td><td>{sar(x.value)}</td>
+                </tr>))}</tbody>
+            </table>
+          ) : <p className="text-sm text-gray-500">لا صفقات في هذه الفترة.</p>}
+        </Section>
+
+        <Section title="ماذا يعرض الموردون؟">
+          {Array.isArray(items?.offered) && items.offered.length ? (
+            <table className="w-full text-sm border-collapse">
+              <thead><tr className="text-gray-500 text-xs border-b">
+                <th className="text-start py-1.5">المادة</th><th className="text-start">عروض</th><th className="text-start">موردون</th><th className="text-start">متوسط سعر الوحدة</th>
+              </tr></thead>
+              <tbody>{items.offered.map((x: any, i: number) => (
+                <tr key={i} className="border-b border-gray-100">
+                  <td className="py-1.5 font-semibold" style={{ color: NAVY }}>{x.product}</td>
+                  <td>{fmt(x.offers)}</td><td>{fmt(x.sellers)}</td><td>{x.avg_unit_price ? sar(x.avg_unit_price) + (x.unit ? ' / ' + x.unit : '') : '—'}</td>
+                </tr>))}</tbody>
+            </table>
+          ) : <p className="text-sm text-gray-500">لا عروض في هذه الفترة.</p>}
         </Section>
 
         <Section title="جانب العرض والكتالوج">

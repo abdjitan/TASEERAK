@@ -31,7 +31,7 @@ export default function PhoneVerifyBanner() {
     return () => { on = false }
   }, [pathname])
 
-  if (!show || pathname.startsWith('/settings') || pathname.startsWith('/admin') || pathname.startsWith('/verify')) return null
+  if (!show || pathname.startsWith('/settings') || pathname.startsWith('/admin') || pathname.startsWith('/verify') || pathname.startsWith('/banned')) return null
   if (show === 'email') return (
     <div className="mb-4 rounded-2xl border border-[#0B2438]/20 bg-[#0B2438]/5 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <div className="text-sm">

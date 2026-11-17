@@ -127,7 +127,7 @@ export default function AdminPanel() {
     const p = () => client.from('profiles').select('*', { count: 'exact', head: true })
     const [ct, cc, cs, cp, cv] = await Promise.all([
       p(), p().eq('role', 'contractor'), p().eq('role', 'supplier'),
-      p().eq('verification_status', 'pending'), p().eq('verification_status', 'verified'),
+      p().eq('verification_status', 'pending').neq('role', 'contractor'), p().eq('verification_status', 'verified'),
     ])
     setStats({
       total: ct.count || 0, contractors: cc.count || 0, suppliers: cs.count || 0,
@@ -438,7 +438,7 @@ export default function AdminPanel() {
     const matchSearch = !search || u.company_name_ar?.includes(search) || u.phone?.includes(search) || emails[u.id]?.email?.includes(search)
     const matchRole = !roleFilter || u.role === roleFilter
     if (!matchSearch || !matchRole) return false
-    if (tab === 'pending') return u.verification_status === 'pending'
+    if (tab === 'pending') return u.verification_status === 'pending' && u.role !== 'contractor'
     if (tab === 'verified') return u.verification_status === 'verified'
     if (tab === 'rejected') return u.verification_status === 'rejected'
     return true

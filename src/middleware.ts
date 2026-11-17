@@ -34,6 +34,7 @@ const PROTECTED = [
   '/invite-friends',
   '/support',
   '/verify',
+  '/banned',
 ]
 
 /** Only users with role = 'admin' can access these */
@@ -155,24 +156,26 @@ export async function middleware(request: NextRequest) {
   // so normal navigation makes no extra query; the database enforces the rule anyway.
   const VERIFY_COOKIE = 'tsk_ver'
   let verifyCookie: string | null = null
-  async function verifiedOf(uid: string): Promise<boolean> {
+  // 'ok' | 'verify' | 'banned' (a suspension, migration 223, is re-checked when the 15-minute cookie expires)
+  async function verifiedOf(uid: string): Promise<'ok' | 'verify' | 'banned'> {
     const c = request.cookies.get(VERIFY_COOKIE)?.value
     if (c && ROLE_SECRET) {
       const [id, sig] = c.split(':')
-      if (id === uid && sig && sameText(sig, await signRole(`ver:${id}`))) return true
+      if (id === uid && sig && sameText(sig, await signRole(`ver:${id}`))) return 'ok'
     }
-    const { data: p } = await supabase.from('profiles').select('role, phone_verified_at, email_verified_at').eq('id', uid).single()
+    const { data: p } = await supabase.from('profiles').select('role, phone_verified_at, email_verified_at, banned_until').eq('id', uid).single()
+    if (p && p.role !== 'admin' && p.banned_until && new Date(p.banned_until).getTime() > Date.now()) return 'banned'
     let ok = !p || p.role === 'admin' || (!!p.phone_verified_at && !!p.email_verified_at)
     if (!ok) {
       const { data: req } = await supabase.rpc('phone_verify_required')
       if (req !== true) ok = true
     }
     if (ok && p && ROLE_SECRET) verifyCookie = `${uid}:${await signRole(`ver:${uid}`)}`
-    return ok
+    return ok ? 'ok' : 'verify'
   }
   const withRole = (res: NextResponse) => {
     if (roleCookie) res.cookies.set(ROLE_COOKIE, roleCookie, { path: '/', maxAge: 600, httpOnly: true, sameSite: 'lax', secure: true })
-    if (verifyCookie) res.cookies.set(VERIFY_COOKIE, verifyCookie, { path: '/', maxAge: 86400, httpOnly: true, sameSite: 'lax', secure: true })
+    if (verifyCookie) res.cookies.set(VERIFY_COOKIE, verifyCookie, { path: '/', maxAge: 900, httpOnly: true, sameSite: 'lax', secure: true })
     return res
   }
 
@@ -212,8 +215,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Rule 2.1: verify the mobile and the email before anything else (not admins) ──
-  if (user && PROTECTED.some(matches) && !matches('/verify') && !matches('/support') && !ADMIN_ONLY.some(matches)) {
-    if (!(await verifiedOf(user.id))) {
+  if (user && PROTECTED.some(matches) && !matches('/verify') && !matches('/support') && !matches('/banned') && !ADMIN_ONLY.some(matches)) {
+    const st = await verifiedOf(user.id)
+    if (st === 'banned') return redirectTo(new URL('/banned', request.url))
+    if (st === 'verify') {
       const v = new URL('/verify', request.url)
       v.searchParams.set('next', pathname)
       return redirectTo(v)
@@ -275,6 +280,6 @@ export const config = {
   matcher: [
     '/contractor/:path*', '/supplier/:path*', '/settings/:path*', '/admin/:path*', '/location/:path*',
     '/market/:path*', '/onboarding/:path*', '/welcome/:path*', '/messages/:path*', '/notifications/:path*',
-    '/verification/:path*', '/suggestions/:path*', '/invite-friends/:path*', '/support/:path*', '/verify/:path*', '/login', '/register',
+    '/verification/:path*', '/suggestions/:path*', '/invite-friends/:path*', '/support/:path*', '/verify/:path*', '/banned/:path*', '/login', '/register',
   ],
 }

@@ -102,7 +102,7 @@ export default function SupportView() {
   const [ok, setOk] = useState(false)
   const [uid, setUid] = useState<string | undefined>()
   const [reason, setReason] = useState('')
-  const [notify, setNotify] = useState(true)
+  const [notify, setNotify] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [v, setV] = useState<any>(null)
@@ -118,14 +118,20 @@ export default function SupportView() {
       if (me?.role !== 'admin') { window.location.href = '/'; return }
       setUid(session.user.id)
       setOk(true)
+      // the owner (super admin) opens directly, no reason to type and the user is not told (owner
+      // 2026-11-17); the open is still logged. Staff accounts will pick a reason when they exist.
+      openWith('اطلاع المالك (المدير العام)', false)
     })()
   }, [])
 
   async function open() {
     setErr('')
     if (reason.trim().length < 5) { setErr('اكتب سبب الاطلاع (5 أحرف على الأقل).'); return }
+    await openWith(reason.trim(), notify)
+  }
+  async function openWith(why: string, tell: boolean) {
     setBusy(true)
-    const { data, error } = await createClient().rpc('admin_user_support_view', { p_user_id: id, p_reason: reason.trim(), p_notify: notify })
+    const { data, error } = await createClient().rpc('admin_user_support_view', { p_user_id: id, p_reason: why, p_notify: tell })
     setBusy(false)
     if (error) { setErr('تعذّر فتح الحساب: ' + error.message); return }
     if (!data?.profile) { setErr('الحساب غير موجود.'); return }
@@ -150,7 +156,7 @@ export default function SupportView() {
           style={{ background: '#FDF4E2', border: '1px solid #E9C979', color: '#7A5410' }}>
           <Glyph e="👁" /> وضع الدعم — قراءة فقط · كل اطلاع مسجَّل
         </div>
-        <Link href={`/admin/users/${id}`} className="text-sm hover:underline inline-block mb-4" style={{ color: '#8F6820' }}>← رجوع لصفحة المستخدم</Link>
+        <Link href={`/admin/users/${id}`} className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-xl border-2 text-sm font-bold bg-white" style={{ borderColor: '#0B2438', color: '#0B2438' }}>→ رجوع لصفحة المستخدم</Link>
 
         {!v ? (
           <div className={`${card} max-w-xl`}>
