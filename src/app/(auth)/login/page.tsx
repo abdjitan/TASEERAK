@@ -25,6 +25,9 @@ function LoginForm() {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const searchParams = useSearchParams()
   const [mode, setMode] = useState<'email' | 'phone'>(PHONE_OTP_ENABLED && searchParams.get('m') !== 'email' ? 'phone' : 'email')
+  // remote switch (app_flags, migration 228): buyer phone sign-in can be turned off at once if SMS breaks
+  const [phoneOn, setPhoneOn] = useState(PHONE_OTP_ENABLED)
+  useEffect(() => { createClient().rpc('app_flags').then(({ data }: any) => { if (data && data.buyer_phone_login === false) { setPhoneOn(false); setMode('email') } }, () => {}) }, [])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -230,7 +233,7 @@ function LoginForm() {
             )}
 
             {/* «أو» only when a second sign-in method follows */}
-            {(mode === 'phone' || PHONE_OTP_ENABLED) ? (
+            {(mode === 'phone' || phoneOn) ? (
               <div className="my-6 flex items-center gap-3 text-ink-3 text-xs">
                 <span className="h-px flex-1" style={{ background: 'var(--line)' }} />{t.or}<span className="h-px flex-1" style={{ background: 'var(--line)' }} />
               </div>
@@ -242,7 +245,7 @@ function LoginForm() {
               </button>
             ) : (
               <div className="space-y-3 text-center">
-                {PHONE_OTP_ENABLED && <button type="button" onClick={() => { setMode('phone'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
+                {phoneOn && <button type="button" onClick={() => { setMode('phone'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
                   {L('Buyer? Use my mobile number', 'خریدار؟ موبائل نمبر استعمال کریں', 'مشتري؟ استخدم رقم جوالي')}
                 </button>}
                 <p className="text-sm text-ink-2">{t.noAccount} <a href="/register" className="font-extrabold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
