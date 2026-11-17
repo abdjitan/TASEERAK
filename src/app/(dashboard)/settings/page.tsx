@@ -20,6 +20,7 @@ import Glyph from '@/components/shared/Glyph'
 import { normalizeCrInput, crTakenText, crClaimHref } from '@/lib/cr'
 import { toLatinDigits } from '@/lib/phone'
 import PhoneVerify from '@/components/shared/PhoneVerify'
+import EmailVerify from '@/components/shared/EmailVerify'
 import { friendlyError } from '@/lib/friendlyError'
 import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
@@ -509,6 +510,11 @@ export default function SettingsPage() {
                     )}
                   </div>
 
+                  <div id="email" className="scroll-mt-24">
+                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{L('Email', 'ای میل', 'البريد الإلكتروني')}</label>
+                    <EmailVerify currentEmail={user?.email} verified={!!profile?.email_verified_at} locale={locale}
+                      onDone={() => setProfile({ ...profile, email_verified_at: new Date().toISOString() })} />
+                  </div>
                   <div id="phone" className="scroll-mt-24">
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.phone}</label>
                     <input value={phone} onChange={e => setPhone(e.target.value)}

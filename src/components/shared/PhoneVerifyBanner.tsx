@@ -11,7 +11,7 @@ import { useTranslation } from '@/i18n'
 export default function PhoneVerifyBanner() {
   const { locale } = useTranslation()
   const pathname = usePathname() || ''
-  const [show, setShow] = useState(false)
+  const [show, setShow] = useState<'' | 'phone' | 'email'>('')
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   useEffect(() => {
@@ -22,14 +22,27 @@ export default function PhoneVerifyBanner() {
       if (!user) return
       const [{ data: req }, { data: p }] = await Promise.all([
         supabase.rpc('phone_verify_required'),
-        supabase.from('profiles').select('role, phone_verified_at').eq('id', user.id).maybeSingle(),
+        supabase.from('profiles').select('role, phone_verified_at, email_verified_at').eq('id', user.id).maybeSingle(),
       ])
-      if (on) setShow(req === true && !!p && p.role !== 'admin' && !p.phone_verified_at)
+      if (!on || !p || p.role === 'admin') return
+      // phone first (it gates quotes and deals), then the email (backup sign-in, invoices)
+      setShow(req === true && !p.phone_verified_at ? 'phone' : !p.email_verified_at ? 'email' : '')
     })()
     return () => { on = false }
   }, [pathname])
 
   if (!show || pathname.startsWith('/settings') || pathname.startsWith('/admin')) return null
+  if (show === 'email') return (
+    <div className="mb-4 rounded-2xl border border-[#0B2438]/20 bg-[#0B2438]/5 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div className="text-sm">
+        <div className="font-bold text-[#071827]">{L('Verify your email', 'اپنی ای میل تصدیق کریں', 'وثّق بريدك الإلكتروني')}</div>
+        <div className="text-xs text-gray-600 mt-0.5">{L('A code arrives by email. It is your backup way to sign in and where documents are sent.', 'کوڈ ای میل پر آئے گا۔ یہ سائن اِن کا متبادل طریقہ ہے اور دستاویزات یہیں بھیجی جاتی ہیں۔', 'يصلك رمز على البريد. هو طريقك الاحتياطي لتسجيل الدخول، وتصلك عليه المستندات.')}</div>
+      </div>
+      <Link href="/settings#email" className="px-4 py-2 rounded-xl bg-[#0B2438] text-white text-sm font-bold whitespace-nowrap">
+        {L('Verify now', 'ابھی تصدیق کریں', 'وثّق الآن')}
+      </Link>
+    </div>
+  )
   return (
     <div className="mb-4 rounded-2xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <div className="text-sm">

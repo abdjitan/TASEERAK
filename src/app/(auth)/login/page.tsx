@@ -9,7 +9,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import PhoneOtpForm from '@/components/auth/PhoneOtpForm'
-import { PHONE_OTP_ENABLED } from '@/lib/features'
+import { BUYER_PHONE_LOGIN as PHONE_OTP_ENABLED } from '@/lib/features'
 import { pendingTeamInvite } from '@/lib/sellers'
 import { captureRef } from '@/lib/referral'
 
@@ -182,8 +182,8 @@ function LoginForm() {
               <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
             </div>
 
-            <h1 className="text-[26px] font-extrabold text-navy mb-1">{mode === 'phone' ? L('Sign in or create an account', 'سائن اِن کریں یا اکاؤنٹ بنائیں', 'ادخل أو أنشئ حسابك') : t.welcome}</h1>
-            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('Just your mobile number. No password.', 'صرف آپ کا موبائل نمبر۔ کوئی پاسورڈ نہیں۔', 'برقم جوالك فقط، بدون كلمة مرور.') : t.sub}</p>
+            <h1 className="text-[26px] font-extrabold text-navy mb-1">{mode === 'phone' ? L('Buyers: sign in or create an account', 'خریدار: سائن اِن کریں یا اکاؤنٹ بنائیں', 'المشترون: ادخل أو أنشئ حسابك') : t.welcome}</h1>
+            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('Just your mobile number, no password. Seller accounts sign in with email.', 'صرف آپ کا موبائل نمبر، کوئی پاسورڈ نہیں۔ سپلائر اکاؤنٹس ای میل سے سائن اِن کرتے ہیں۔', 'برقم جوالك فقط، بدون كلمة مرور. حسابات الموردين تدخل بالبريد الإلكتروني.') : t.sub}</p>
 
             {mode === 'phone' ? (
               <PhoneOtpForm onSignedIn={async () => {
@@ -235,14 +235,14 @@ function LoginForm() {
 
             {mode === 'phone' ? (
               <button type="button" onClick={() => { setMode('email'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
-                {L('Sign in with email', 'ای میل سے سائن اِن کریں', 'الدخول بالبريد الإلكتروني')}
+                {L('Sign in with email (sellers and buyers)', 'ای میل سے سائن اِن کریں (سپلائر اور خریدار)', 'الدخول بالبريد الإلكتروني (للموردين والمشترين)')}
               </button>
             ) : (
               <div className="space-y-3 text-center">
                 {PHONE_OTP_ENABLED && <button type="button" onClick={() => { setMode('phone'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
-                  {L('Use my mobile number (WhatsApp)', 'موبائل نمبر استعمال کریں (واٹس ایپ)', 'استخدم رقم جوالي (واتساب)')}
+                  {L('Buyer? Use my mobile number', 'خریدار؟ موبائل نمبر استعمال کریں', 'مشترٍ؟ استخدم رقم جوالي')}
                 </button>}
-                <p className="text-sm text-ink-2">{t.noAccount} <a href={PHONE_OTP_ENABLED ? '/register?email=1' : '/register'} className="font-extrabold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
+                <p className="text-sm text-ink-2">{t.noAccount} <a href="/register" className="font-extrabold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
               </div>
             )}
           </div>

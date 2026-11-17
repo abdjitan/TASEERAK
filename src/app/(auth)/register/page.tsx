@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
-import { PHONE_OTP_ENABLED } from '@/lib/features'
+import { PHONE_OTP_ENABLED, BUYER_PHONE_LOGIN } from '@/lib/features'
 import { SELLER_KINDS, rememberedSignupKind } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
@@ -337,6 +337,11 @@ export default function RegisterPage() {
             </div>
             {phoneDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2"><Glyph e="⚠" /> {t.phoneTaken}</p>}
 
+            {selectedType === 'contractor' && BUYER_PHONE_LOGIN && (
+              <a href="/login" className="block rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-3 py-2.5 text-sm font-bold text-[#071827]">
+                {locale === 'en' ? 'Faster: sign up with your mobile number only (no password) →' : locale === 'ur' ? 'تیز تر: صرف موبائل نمبر سے رجسٹر کریں (بغیر پاسورڈ) ←' : 'أسرع: سجّل برقم جوالك فقط (بدون كلمة مرور) ←'}
+              </a>
+            )}
             {selectedType === 'supplier' && sellerKind === 'company' && <div>
               <label htmlFor="reg-company" className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-500 font-normal">— {t.companyHint}</span></label>
               <input id="reg-company" {...register('company_name_ar')} autoComplete="organization" className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : locale === 'ur' ? 'الصخر بلڈنگ میٹریلز' : 'مؤسسة الصخر لمواد البناء'} />

@@ -24,3 +24,6 @@ export const FEATURES = {
   /** «الموقع» as its own menu item — still reachable from the profile checklist. */
   locationNav: false,
 }
+
+// Buyer sign-up / sign-in with the mobile (Google SMS code) on the login page (owner 2026-11-17).
+export const BUYER_PHONE_LOGIN = process.env.NEXT_PUBLIC_BUYER_PHONE_LOGIN !== '0'
