@@ -205,8 +205,8 @@ function Messages() {
   ]
 
   const active = convos.find((c: any) => c.id === activeId)
-  // The contractor's name is masked (profiles_public) for suppliers, so say "مشترٍ" rather than a blank.
-  const counterpart = (c: any) => c?.contractor_id === me ? (c?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد')) : (c?.contractor?.company_name_ar || L('Buyer', 'خریدار', 'مشترٍ'))
+  // The contractor's name is masked (profiles_public) for suppliers, so say "مشتري" rather than a blank.
+  const counterpart = (c: any) => c?.contractor_id === me ? (c?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد')) : (c?.contractor?.company_name_ar || L('Buyer', 'خریدار', 'مشتري'))
   const ctx = (c: any) => (c?.rfq ? rfqDisplayName(c.rfq, locale) : '')
 
   const backHref = role === 'supplier' ? '/supplier/dashboard' : role === 'admin' ? '/admin' : '/contractor'

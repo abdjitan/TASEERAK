@@ -256,7 +256,7 @@ export default function AdminPanel() {
   function exportCSV() {
     const rows = filtered.map((u: any) => ({
       الاسم: u.company_name_ar || '', 'الاسم (EN)': u.company_name_en || '',
-      النوع: u.role === 'contractor' ? 'مشترٍ' : 'مورد',
+      النوع: u.role === 'contractor' ? 'مشتري' : 'مورد',
       البريد: emails[u.id]?.email || '', الجوال: u.phone || '',
       المنطقة: u.region || '', المدينة: u.city || '',
       'السجل التجاري': u.commercial_registration || '', 'الرقم الضريبي': u.vat_number || '',
@@ -1048,7 +1048,7 @@ export default function AdminPanel() {
                       {r.admin_note && <p className="text-xs text-[#0F6E56] bg-emerald-50 rounded-lg px-2 py-1 mt-1 inline-block">ملاحظة الإدارة: {r.admin_note}</p>}
                       <div className="text-[11px] text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
-                        {r.requester?.role && ` (${r.requester.role === 'contractor' ? 'مشترٍ' : r.requester.role === 'supplier' ? 'مورد' : r.requester.role})`}
+                        {r.requester?.role && ` (${r.requester.role === 'contractor' ? 'مشتري' : r.requester.role === 'supplier' ? 'مورد' : r.requester.role})`}
                         {r.sub_category && ` · مجموعة: ${r.sub_category}`} · {new Date(r.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}
                       </div>
                     </div>
@@ -1097,7 +1097,7 @@ export default function AdminPanel() {
                       {u.company_name_en && <div className="text-xs text-gray-400">{u.company_name_en}</div>}
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
                         <span className={`badge text-[10px] ${u.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>
-                          {u.role === 'contractor' ? 'مشترٍ' : 'مورد'}
+                          {u.role === 'contractor' ? 'مشتري' : 'مورد'}
                         </span>
                         {u.role === 'contractor' && u.contractor_grade && (
                           <span className="badge text-[10px] bg-indigo-100 text-indigo-700">درجة {u.contractor_grade}</span>

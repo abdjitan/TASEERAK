@@ -62,7 +62,7 @@ begin
   perform public.send_message(v_conv, 'اختبار: هل الأسمنت متوفر؟ اتصل 0551234567');
   reset role;
   select title into t from notifications where user_id = sup and data->>'conversation_id' = v_conv::text order by created_at desc limit 1;
-  if t = 'رسالة جديدة من مشترٍ' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL msg title=' || coalesce(t, 'null'); end if;
+  if t = 'رسالة جديدة من مشتري' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL msg title=' || coalesce(t, 'null'); end if;
   select count(*) into n from messages where conversation_id = v_conv and body like '%0551234567%';
   if n = 0 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL phone not masked pre-award'; end if;
 

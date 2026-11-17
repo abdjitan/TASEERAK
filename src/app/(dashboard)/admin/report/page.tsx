@@ -113,7 +113,7 @@ export default function OwnerReport() {
 
         <Section title="الأرقام الرئيسية">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <Kpi label="المستخدمون" value={fmt(u.total)} sub={`${fmt(u.buyers)} مشترٍ · ${fmt(u.suppliers)} مورد`} />
+            <Kpi label="المستخدمون" value={fmt(u.total)} sub={`${fmt(u.buyers)} مشتري · ${fmt(u.suppliers)} مورد`} />
             <Kpi label="طلبات التسعير" value={fmt(rq.total)} sub={`${fmt(rq.lines)} مادة مطلوبة`} />
             <Kpi label="عروض الأسعار" value={fmt(of.total)} sub={`${offersPerRequest} عرض لكل طلب`} />
             <Kpi label="الصفقات المؤكَّدة" value={fmt(dl.received)} sub={`أكّد المشتري استلامها · ${fmt(dl.in_progress)} قيد التنفيذ`} />

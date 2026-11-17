@@ -124,7 +124,7 @@ export default function AdminSuggestionsPage() {
           return (
             <div key={r.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
-                <span className="font-bold text-gray-600">{k.ar} · {p ? (p.company_name_ar || p.full_name || '—') : '—'} ({p?.role === 'supplier' ? 'مورد' : 'مشترٍ'}) · {formatDateTime(r.created_at)}</span>
+                <span className="font-bold text-gray-600">{k.ar} · {p ? (p.company_name_ar || p.full_name || '—') : '—'} ({p?.role === 'supplier' ? 'مورد' : 'مشتري'}) · {formatDateTime(r.created_at)}</span>
                 <span className="flex items-center gap-2">{r.is_public && <span className="font-bold text-[#0F6E56]">▲ {votes[r.id] || 0} صوت</span>}<span className="font-bold px-2 py-0.5 rounded-full" style={{ color: st.tone, background: st.tone + '14' }}>{st.ar}</span></span>
               </div>
               <p className="text-sm text-gray-800 whitespace-pre-line">{r.body}</p>

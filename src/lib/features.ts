@@ -19,7 +19,7 @@ export const FEATURES = {
   analyticsNav: false,
   /** Subscription plans — everything is free during the launch period. */
   subscription: false,
-  /** Buyer badges («مشترٍ محترف»…). */
+  /** Buyer badges («مشتري محترف»…). */
   gamification: false,
   /** «الموقع» as its own menu item — still reachable from the profile checklist. */
   locationNav: false,

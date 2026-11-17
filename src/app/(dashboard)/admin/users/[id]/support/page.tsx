@@ -17,7 +17,7 @@ import { fmt, sar, ago } from '@/components/admin/OverviewCharts'
 const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمّ اختيار العرض', cancelled: 'ملغي', expired: 'منتهي', draft: 'مسودة' }
 const OFFER_STATUS: Record<string, string> = { pending: 'بانتظار القرار', submitted: 'مُقدَّم', accepted: 'مقبول', rejected: 'مرفوض', withdrawn: 'مسحوب' }
 const VERIFY: Record<string, string> = { verified: 'موثّق', pending: 'بانتظار التوثيق', rejected: 'مرفوض', unverified: 'غير موثّق' }
-const ROLE_AR: Record<string, string> = { contractor: 'مشترٍ', supplier: 'مورد', admin: 'إدارة' }
+const ROLE_AR: Record<string, string> = { contractor: 'مشتري', supplier: 'مورد', admin: 'إدارة' }
 const TABS = [
   { key: 'summary', label: 'الملخص' },
   { key: 'requests', label: 'الطلبات' },
@@ -324,7 +324,7 @@ export default function SupportView() {
                       <span className="font-bold text-sm tabular-nums" style={{ color: '#0B2438' }}>{sar(d.value)}</span>
                     </div>
                     <div className="text-[11px] text-gray-500 mt-1 flex gap-3 flex-wrap">
-                      <span>{d.side === 'supplier' ? 'بائع' : 'مشترٍ'} · الطرف الآخر: {d.other_party || '—'}</span>
+                      <span>{d.side === 'supplier' ? 'بائع' : 'مشتري'} · الطرف الآخر: {d.other_party || '—'}</span>
                       {d.invoice_number && <span className="tabular-nums">فاتورة {d.invoice_number}</span>}
                       {d.payment_status && <span>الدفع: {d.payment_status}</span>}
                     </div>

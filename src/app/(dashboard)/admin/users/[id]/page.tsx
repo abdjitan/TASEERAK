@@ -168,7 +168,7 @@ export default function AdminUserDetail() {
                 <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{p.company_name_ar || '—'}</div>
                 {p.company_name_en && <div className="text-sm text-gray-400">{p.company_name_en}</div>}
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <span className={`badge text-[10px] ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? 'مشترٍ' : p.role === 'supplier' ? 'مورد' : p.role}</span>
+                  <span className={`badge text-[10px] ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? 'مشتري' : p.role === 'supplier' ? 'مورد' : p.role}</span>
                   <span className={`badge text-[10px] ${isVerified ? 'badge-green' : p.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'}`}>
                     {p.role === 'contractor' && p.verification_status !== 'rejected'
                       ? (isVerified ? '✓ مفعّل' : !p.phone_verified_at ? 'بانتظار توثيق الجوال' : !p.email_verified_at ? 'بانتظار توثيق البريد' : '✓ مفعّل')
@@ -253,7 +253,7 @@ export default function AdminUserDetail() {
           </Section>
 
           <Section title="التصنيف" icon={<Glyph e="🏷" />}>
-            <Field label="نوع الحساب">{p.role === 'contractor' ? 'مشترٍ' : 'مورد'}</Field>
+            <Field label="نوع الحساب">{p.role === 'contractor' ? 'مشتري' : 'مورد'}</Field>
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
                 <div className="text-[11px] text-gray-400 mb-1">نوع الحساب · الفئة: <b className="text-purple-700">{tierLabel(p.supplier_tier, 'ar')}</b> <span className="text-gray-300">(تلقائية)</span></div>

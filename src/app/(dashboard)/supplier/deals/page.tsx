@@ -77,7 +77,7 @@ export default function SupplierDealsPage() {
           <span role="tab" aria-selected="true" className="px-5 py-2 rounded-lg text-sm font-bold bg-white shadow-sm text-[#0B2438]">{locale === 'en' ? 'My deals' : locale === 'ur' ? 'میری ڈیلز' : 'صفقاتي'}</span>
         </div>
         <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-          className="input-field mb-3" placeholder={locale === 'en' ? 'Search deals (product, buyer, invoice №)…' : locale === 'ur' ? 'ڈیلز تلاش کریں (مال، خریدار، انوائس نمبر)…' : 'ابحث في الصفقات (منتج، مشترٍ، رقم فاتورة)…'} />
+          className="input-field mb-3" placeholder={locale === 'en' ? 'Search deals (product, buyer, invoice №)…' : locale === 'ur' ? 'ڈیلز تلاش کریں (مال، خریدار، انوائس نمبر)…' : 'ابحث في الصفقات (منتج، مشتري، رقم فاتورة)…'} />
         <div className="flex items-center gap-2 mb-5 flex-wrap">
           {[{ k: 'all', l: locale === 'en' ? 'All' : locale === 'ur' ? 'سب' : 'الكل' }, { k: 'active', l: locale === 'en' ? 'Active' : locale === 'ur' ? 'جاری' : 'جارية' }, { k: 'done', l: locale === 'en' ? 'Completed' : locale === 'ur' ? 'مکمل' : 'مكتملة' }, { k: 'disputed', l: locale === 'en' ? 'Problems' : locale === 'ur' ? 'مسائل' : 'مشكلات' }].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)}
@@ -90,7 +90,7 @@ export default function SupplierDealsPage() {
         {shown.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
             <div className="text-5xl mb-3"><Glyph e="📦" /></div>
-            <p className="text-gray-500">{locale === 'en' ? 'No deals yet — once a buyer accepts one of your offers, the deal appears here.' : locale === 'ur' ? 'ابھی کوئی ڈیل نہیں — جب خریدار آپ کی کوئی پیشکش قبول کرے گا تو ڈیل یہاں نظر آئے گی۔' : 'لا توجد صفقات بعد — عندما يقبل مشترٍ أحد عروضك تظهر الصفقة هنا.'}</p>
+            <p className="text-gray-500">{locale === 'en' ? 'No deals yet — once a buyer accepts one of your offers, the deal appears here.' : locale === 'ur' ? 'ابھی کوئی ڈیل نہیں — جب خریدار آپ کی کوئی پیشکش قبول کرے گا تو ڈیل یہاں نظر آئے گی۔' : 'لا توجد صفقات بعد — عندما يقبل مشتري أحد عروضك تظهر الصفقة هنا.'}</p>
             <Link href="/supplier/dashboard" className="inline-block mt-4 text-sm font-bold text-[#0F6E56] hover:underline">{locale === 'en' ? 'Browse requests →' : locale === 'ur' ? 'درخواستیں دیکھیں ←' : 'تصفّح الطلبات ←'}</Link>
           </div>
         ) : (

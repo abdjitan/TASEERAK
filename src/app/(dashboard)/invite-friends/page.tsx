@@ -69,7 +69,7 @@ export default function InviteFriendsPage() {
               <p className="text-sm text-gray-500 mt-1 leading-relaxed">
                 {L('Send a link to a supplier or a buyer you know. More suppliers mean more prices for every request; more buyers mean more requests for every supplier.',
                   'کسی جاننے والے سپلائر یا خریدار کو لنک بھیجیں۔ زیادہ سپلائرز یعنی ہر درخواست پر زیادہ قیمتیں؛ زیادہ خریدار یعنی ہر سپلائر کو زیادہ درخواستیں۔',
-                  'أرسل رابطاً لمورد أو مشترٍ تعرفه. كلما زاد الموردون زادت الأسعار على كل طلب، وكلما زاد المشترون زادت الطلبات لكل مورد.')}
+                  'أرسل رابطاً لمورد أو مشتري تعرفه. كلما زاد الموردون زادت الأسعار على كل طلب، وكلما زاد المشترون زادت الطلبات لكل مورد.')}
               </p>
             </div>
           </div>

@@ -20,7 +20,7 @@ const METRICS = [
   { key: 'deals', label: 'الصفقات' },
   { key: 'value', label: 'قيمة الصفقات', money: true },
 ] as const
-const ROLE_AR: Record<string, string> = { contractor: 'مشترٍ', supplier: 'مورد', admin: 'إدارة' }
+const ROLE_AR: Record<string, string> = { contractor: 'مشتري', supplier: 'مورد', admin: 'إدارة' }
 
 const card = 'bg-white rounded-2xl p-5 border border-gray-100 shadow-sm'
 
@@ -256,9 +256,9 @@ export default function OwnerOverview() {
               <div className="text-3xl font-extrabold tabular-nums" style={{ color: Number(dl.top_buyer_share_pct) > 50 ? '#B42318' : NAVY }}>
                 {isNum(dl.top_buyer_share_pct) ? `${fmt(dl.top_buyer_share_pct)}%` : '—'}
               </div>
-              <p className="text-xs text-gray-500 mt-1">حصة أكبر مشترٍ من إجمالي قيمة الصفقات.</p>
+              <p className="text-xs text-gray-500 mt-1">حصة أكبر مشتري من إجمالي قيمة الصفقات.</p>
               {Number(dl.top_buyer_share_pct) > 50 && (
-                <p className="mt-3 text-xs rounded-xl p-3 bg-amber-50 border border-amber-200 text-amber-800"><Glyph e="⚠" /> اعتماد كبير على مشترٍ واحد: أكثر من نصف قيمة الصفقات تأتي منه.</p>
+                <p className="mt-3 text-xs rounded-xl p-3 bg-amber-50 border border-amber-200 text-amber-800"><Glyph e="⚠" /> اعتماد كبير على مشتري واحد: أكثر من نصف قيمة الصفقات تأتي منه.</p>
               )}
             </Card>
           </div>

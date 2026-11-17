@@ -208,8 +208,8 @@ export default function ContractorDashboard() {
       default: return { name: 'active', tone: 'neutral' }
     }
   }
-  const gameBadge = rfqs.length >= 10 ? { t: L('Pro Buyer', 'ماہر خریدار', 'مشترٍ محترف'), e: <Glyph e="🏆" /> }
-    : rfqs.length >= 3 ? { t: L('Active Buyer', 'فعال خریدار', 'مشترٍ نشط'), e: <Glyph e="⭐" /> }
+  const gameBadge = rfqs.length >= 10 ? { t: L('Pro Buyer', 'ماہر خریدار', 'مشتري محترف'), e: <Glyph e="🏆" /> }
+    : rfqs.length >= 3 ? { t: L('Active Buyer', 'فعال خریدار', 'مشتري نشط'), e: <Glyph e="⭐" /> }
     : { t: L('Getting Started', 'اچھا آغاز', 'بداية موفقة'), e: <Glyph e="🌱" /> }
 
   const statusLabel = (status: any) => {
@@ -296,7 +296,7 @@ export default function ContractorDashboard() {
 
         <div className="mb-5 animate-fade-in">
           <h1 className="text-2xl font-bold" style={{ color: '#0B2438' }}>
-            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || L('Buyer', 'خریدار', 'مشترٍ')} <Glyph e="👋" />
+            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || L('Buyer', 'خریدار', 'مشتري')} <Glyph e="👋" />
           </h1>
           <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
         </div>

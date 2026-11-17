@@ -40,7 +40,7 @@ const txt = {
     langTitle: 'اختر لغة العرض', langSaved: '✓ تم حفظ اللغة',
     loading: 'جارٍ التحميل...',
     email: 'البريد الإلكتروني', emailNote: 'لا يمكن تغيير البريد الإلكتروني',
-    role: 'نوع الحساب', contractor: 'مشترٍ', supplier: 'مورد',
+    role: 'نوع الحساب', contractor: 'مشتري', supplier: 'مورد',
     verStatus: 'حالة التحقق', pending: 'قيد المراجعة', verified: 'موثق', rejected: 'مرفوض',
     docsTitle: 'المستندات الرسمية', docsSub: 'ارفع مستنداتك لإتمام عملية التحقق',
     licenseLabel: 'رخصة العمل', crLabel: 'السجل التجاري',

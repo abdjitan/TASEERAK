@@ -243,7 +243,7 @@ function LoginForm() {
             ) : (
               <div className="space-y-3 text-center">
                 {PHONE_OTP_ENABLED && <button type="button" onClick={() => { setMode('phone'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
-                  {L('Buyer? Use my mobile number', 'خریدار؟ موبائل نمبر استعمال کریں', 'مشترٍ؟ استخدم رقم جوالي')}
+                  {L('Buyer? Use my mobile number', 'خریدار؟ موبائل نمبر استعمال کریں', 'مشتري؟ استخدم رقم جوالي')}
                 </button>}
                 <p className="text-sm text-ink-2">{t.noAccount} <a href="/register" className="font-extrabold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
               </div>

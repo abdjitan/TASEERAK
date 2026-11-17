@@ -1437,7 +1437,7 @@ export default function SupplierRFQPage() {
                 <strong>{locale === 'en' && contractorInfo.company_name_en ? contractorInfo.company_name_en : contractorInfo.company_name_ar}</strong>
               ) : (
                 <>
-                  <strong className="text-gray-600">{L('Buyer', 'خریدار', 'مشترٍ')} · {rfq.city || rfq.region}</strong>
+                  <strong className="text-gray-600">{L('Buyer', 'خریدار', 'مشتري')} · {rfq.city || rfq.region}</strong>
                   <div className="text-[10px] text-gray-400 mt-0.5"><Glyph e="🔒" /> {L('Buyer identity is revealed once your offer is accepted.', 'آپ کی آفر قبول ہونے پر خریدار کی شناخت ظاہر ہو گی۔', 'تظهر هوية المشتري عند قبول عرضك (إتمام الصفقة).')}</div>
                 </>
               )}
