@@ -17,6 +17,11 @@ declare
   r jsonb; n int; t text; ok int := 0; bad int := 0; log text := '';
 begin
   -- helpers are inline: as(uid) = switch the JWT subject; chk = record a result
+  -- 219: run with phone verification required, the test accounts verified (all rolled back)
+  update notify_config set phone_verify_required = true where id = true;
+  perform set_config('app.bypass_locks', 'on', true);
+  update profiles set phone_verified_at = coalesce(phone_verified_at, now()) where id in (buyer, sup, company, emp);
+  perform set_config('app.bypass_locks', 'off', true);
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   set local role authenticated;
 
@@ -430,6 +435,27 @@ begin
     bad := bad + 1; log := log || ' FAIL agent deal above the cap chosen';
   exception when others then ok := ok + 1; end;
   reset role;
+
+  -- 219: a seller whose mobile isn't verified can't send a quote
+  perform set_config('app.bypass_locks', 'on', true);
+  update profiles set phone_verified_at = null where id = emp;
+  perform set_config('app.bypass_locks', 'off', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  insert into rfqs (contractor_id, sector, product_name, sectors, items, quantity, unit, region, city, expires_at, status)
+  values (buyer, 'civil', 'أسمنت', array['civil'],
+          '[{"sector":"civil","product_name":"أسمنت","sub_category":"cement","quantity":10,"unit":"كيس"}]'::jsonb,
+          10, 'كيس', 'الرياض', 'الرياض', now() + interval '2 days', 'open')
+  returning id into v_rfq;
+  perform set_config('request.jwt.claims', json_build_object('sub', emp, 'role', 'authenticated')::text, true);
+  begin
+    insert into offers (rfq_id, supplier_id, total_price, source_type) values (v_rfq, company, 100, 'own_stock');
+    bad := bad + 1; log := log || ' FAIL unverified phone sent a quote';
+  exception when others then ok := ok + 1; end;
+  reset role;
+  perform set_config('app.bypass_locks', 'on', true);
+  update profiles set phone_verified_at = now() where id = emp;
+  perform set_config('app.bypass_locks', 'off', true);
 
   -- 192: retention — a request that ended without a deal 70 days ago is deleted (offers, chat) and
   -- archived anonymously; a request with a deal is kept

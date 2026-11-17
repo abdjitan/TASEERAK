@@ -30,6 +30,7 @@ import { realtimeTopic } from '@/lib/realtimeTopic'
 import { loadOwnerBudgets, saveRfqBudgets, parseBudget, preVatUnit, overBudget, type ItemBudget } from '@/lib/budget'
 import BudgetField from '@/components/rfq/BudgetField'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
+import { dbMessage } from '@/lib/dbMessage'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -250,7 +251,7 @@ export default function RFQDetailPage() {
       // Atomic: accept + reject others + close RFQ in one transaction (prevents double-accept).
       ;({ error } = await supabase.rpc('accept_offer', { p_offer_id: offerId }))
     } catch (e) { error = e }
-    if (error) { setAcceptingId(null); alert(L('Could not accept the offer — it may already be accepted. Refresh the page and try again.', 'آفر قبول نہیں ہو سکی — شاید پہلے ہی قبول ہو چکی ہے۔ صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة وحاول مرة ثانية.')); return }
+    if (error) { setAcceptingId(null); alert(dbMessage(error, L('Could not accept the offer — it may already be accepted. Refresh the page and try again.', 'آفر قبول نہیں ہو سکی — شاید پہلے ہی قبول ہو چکی ہے۔ صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة وحاول مرة ثانية.'))); return }
     router.push(`/contractor/orders/${offerId}`)
   }
 
@@ -271,7 +272,7 @@ export default function RFQDetailPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('award_rfq_item', { p_rfq_id: id, p_item_index: itemIndex, p_offer_id: offerId })
     setAwarding(null)
-    if (error) { alert(L('Could not award — refresh the page and try again.', 'ایوارڈ نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر اختيار العرض — حدّث الصفحة وحاول مجدداً.')); return }
+    if (error) { alert(dbMessage(error, L('Could not award — refresh the page and try again.', 'ایوارڈ نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر اختيار العرض — حدّث الصفحة وحاول مجدداً.'))); return }
     await reloadAwards()
   }
   // R23: save one item's budget (the RPC replaces the whole list, so send all of them)
@@ -315,7 +316,7 @@ export default function RFQDetailPage() {
     const failed = results.filter((r: any) => r.error).length
     setPickingAll(false)
     await reloadAwards()
-    if (failed) alert(L('Some items could not be selected — refresh and try again.', 'کچھ اشیاء منتخب نہ ہو سکیں — ریفریش کریں۔', 'تعذّر اختيار بعض المواد — حدّث الصفحة وحاول مجدداً.'))
+    if (failed) { const first = results.find((r: any) => r.error)?.error; alert(dbMessage(first, L('Some items could not be selected — refresh and try again.', 'کچھ اشیاء منتخب نہ ہو سکیں — ریفریش کریں۔', 'تعذّر اختيار بعض المواد — حدّث الصفحة وحاول مجدداً.'))) }
     // lines that asked for installation but got no bid with it: say so, the buyer may arrange it
     const noInst = picks.filter((p: any, k: number) => p.best.fellBack && !results[k]?.error)
       .map((p: any) => getProductLabel(rfq?.items?.[p.idx]?.product_name || '', locale))
@@ -340,7 +341,7 @@ export default function RFQDetailPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('finalize_rfq_awards', { p_rfq_id: id })
     setFinalizing(false)
-    if (error) { alert(L('Could not confirm the award — refresh the page and try again.', 'ایوارڈ کنفرم نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر تأكيد اختيار العرض — حدّث الصفحة وحاول مجدداً.')); return }
+    if (error) { alert(dbMessage(error, L('Could not confirm the award — refresh the page and try again.', 'ایوارڈ کنفرم نہیں ہو سکا — صفحہ ریفریش کر کے دوبارہ کوشش کریں۔', 'تعذّر تأكيد اختيار العرض — حدّث الصفحة وحاول مجدداً.'))); return }
     window.location.reload()
   }
 

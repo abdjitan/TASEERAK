@@ -606,6 +606,8 @@ export default function SupplierRFQPage() {
         ? L('This request is for verified suppliers only.', 'یہ درخواست صرف تصدیق شدہ سپلائرز کے لیے ہے۔', 'هذا الطلب للموردين الموثّقين فقط.')
         : (insertError.message || '').includes('نوع آخر من الموردين')
         ? L('This request is aimed at another type of supplier.', 'یہ درخواست دوسری قسم کے سپلائرز کے لیے ہے۔', 'هذا الطلب موجّه لنوع آخر من الموردين.')
+        : (insertError as any).hint === 'PHONE_NOT_VERIFIED' || (insertError.message || '').includes('وثّق رقم جوالك')
+        ? L('Verify your mobile number first (Settings → a code by text message), then send the offer.', 'پہلے اپنا موبائل نمبر تصدیق کریں (ترتیبات ← ٹیکسٹ میسج کوڈ)، پھر آفر بھیجیں۔', 'وثّق رقم جوالك أولاً من الإعدادات (يصلك رمز برسالة نصية)، ثم أرسل العرض.')
         : (insertError.message || '').includes('خارج نطاق مناطق تغطيتك')
         ? L('This request is outside the regions you cover.', 'یہ درخواست آپ کے علاقوں سے باہر ہے۔', 'هذا الطلب خارج نطاق مناطق تغطيتك.')
         : L('Could not send the offer — please try again.', 'آفر نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال العرض — حاول مرة أخرى.'))

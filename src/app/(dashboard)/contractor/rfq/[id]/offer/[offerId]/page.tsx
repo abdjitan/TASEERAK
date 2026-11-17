@@ -22,6 +22,7 @@ import Glyph from '@/components/shared/Glyph'
 import { vatStatusOf, totalLabel } from '@/lib/vat'
 import { installTotalOf, materialTotalOf } from '@/lib/installation'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
+import { dbMessage } from '@/lib/dbMessage'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -118,7 +119,7 @@ export default function OfferDetailPage() {
     setActing(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
-    if (error) { setActing(false); alert(L('Could not accept the offer — it may already be accepted. Refresh the page.', 'آفر قبول نہیں ہو سکی — شاید پہلے ہی قبول ہو چکی ہے۔ صفحہ ریفریش کریں۔', 'تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة.')); return }
+    if (error) { setActing(false); alert(dbMessage(error, L('Could not accept the offer — it may already be accepted. Refresh the page.', 'آفر قبول نہیں ہو سکی — شاید پہلے ہی قبول ہو چکی ہے۔ صفحہ ریفریش کریں۔', 'تعذّر قبول العرض — قد يكون تم قبوله مسبقاً. حدّث الصفحة.'))); return }
     router.push(`/contractor/orders/${offerId}`)
   }
 

@@ -14,6 +14,7 @@ import Glyph from '@/components/shared/Glyph'
 import { storedSellerKind } from '@/lib/sellers'
 import { claimPendingRef } from '@/lib/referral'
 import { realtimeTopic } from '@/lib/realtimeTopic'
+import PhoneVerifyBanner from '@/components/shared/PhoneVerifyBanner'
 
 // Unread-messages badge cache shared by every AppShell mount (see the effect below).
 const unreadCache = { uid: '', n: 0, at: 0 }
@@ -239,7 +240,7 @@ export default function AppShell({
           </div>
         </header>
 
-        <main className="ts-dashboard-main flex-1 p-4 sm:p-6 lg:p-7 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-7">{children}</main>
+        <main className="ts-dashboard-main flex-1 p-4 sm:p-6 lg:p-7 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-7"><PhoneVerifyBanner />{children}</main>
       </div>
 
       {/* ===== Bottom nav (mobile only) — 4 وجهات مُنسّقة (رتبة mobile) + «المزيد» يفتح القائمة الكاملة ===== */}

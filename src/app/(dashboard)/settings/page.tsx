@@ -509,12 +509,12 @@ export default function SettingsPage() {
                     )}
                   </div>
 
-                  <div>
+                  <div id="phone" className="scroll-mt-24">
                     <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.phone}</label>
                     <input value={phone} onChange={e => setPhone(e.target.value)}
                       className="input-field" placeholder="+966 5X XXX XXXX" />
                     <PhoneVerify initialPhone={phone} locale={locale}
-                      verified={!!profile?.phone_verified_at && (phone || '').replace(/D/g, '') === String(profile?.phone || '').replace(/D/g, '')}
+                      verified={!!profile?.phone_verified_at && (phone || '').replace(/\D/g, '') === String(profile?.phone || '').replace(/\D/g, '')}
                       waVerified={!!profile?.whatsapp_verified_at}
                       onDone={(ph: string) => { setPhone(ph); setProfile({ ...profile, phone: ph, phone_verified_at: new Date().toISOString() }) }} />
                     {profile?.role === 'supplier' && (

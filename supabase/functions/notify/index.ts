@@ -202,9 +202,11 @@ async function sendWhatsApp(supabase: any, n: any, delayed = false): Promise<str
   const threadId: string = n.type === 'new_message' ? (d.conversation_id || '') : (d.rfq_id || '')
   if (!threadId) return 'skip:no-thread' // e.g. an offer «info request» message has no conversation page
 
-  const { data: prof } = await supabase.from('profiles').select('phone, contact_phone, whatsapp_notifications, preferred_language').eq('id', n.user_id).maybeSingle()
+  const { data: prof } = await supabase.from('profiles').select('phone, whatsapp_notifications, whatsapp_verified_at, preferred_language').eq('id', n.user_id).maybeSingle()
   if (!prof || prof.whatsapp_notifications === false) return 'skip:off'
-  const to = waPhone(prof.phone) || waPhone(prof.contact_phone)
+  // legal review 2026-11-16: WhatsApp only to a number the user verified (SMS code + WhatsApp delivery check)
+  if (!prof.whatsapp_verified_at) return 'skip:unverified'
+  const to = waPhone(prof.phone)
   if (!to) return 'skip:no-phone'
 
   const { data: last } = await supabase.from('whatsapp_sends').select('sent_at').eq('user_id', n.user_id).eq('kind', n.type).eq('ref', threadId).maybeSingle()
