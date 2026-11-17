@@ -170,7 +170,9 @@ export default function AdminUserDetail() {
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span className={`badge text-[10px] ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? 'مشترٍ' : p.role === 'supplier' ? 'مورد' : p.role}</span>
                   <span className={`badge text-[10px] ${isVerified ? 'badge-green' : p.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'}`}>
-                    {isVerified ? '✓ موثق' : p.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
+                    {p.role === 'contractor' && p.verification_status !== 'rejected'
+                      ? (isVerified ? '✓ مفعّل' : !p.phone_verified_at ? 'بانتظار توثيق الجوال' : !p.email_verified_at ? 'بانتظار توثيق البريد' : '✓ مفعّل')
+                      : isVerified ? '✓ موثق' : p.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
                   </span>
                   {!active && <span className="badge text-[10px] bg-red-100 text-red-700"><Glyph e="⛔" /> موقوف</span>}
                   {p.cr_verification_source === 'wathq' && <span className="badge text-[10px] text-white" style={{ background: '#0F6E56' }}><Glyph e="🛡" /> واثق</span>}
@@ -180,8 +182,8 @@ export default function AdminUserDetail() {
 
             {/* Quick actions */}
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              {!isVerified && <button onClick={() => setStatus('verified')} disabled={busy === 'verified'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>{busy === 'verified' ? '...' : '✓ موافقة'}</button>}
-              {p.verification_status !== 'rejected' && <button onClick={() => setRejecting(!rejecting)} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600">✕ رفض</button>}
+              {p.role !== 'contractor' && !isVerified && <button onClick={() => setStatus('verified')} disabled={busy === 'verified'} className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>{busy === 'verified' ? '...' : '✓ موافقة'}</button>}
+              {p.role !== 'contractor' && p.verification_status !== 'rejected' && <button onClick={() => setRejecting(!rejecting)} className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600">✕ رفض</button>}
               <Link href={`/admin/users/${id}/support`} className="text-xs px-3 py-2 rounded-xl border font-semibold hover:bg-amber-50" style={{ borderColor: '#D4A543', color: '#8F6820' }}><Glyph e="👁" /> عرض الحساب للدعم</Link>
               <button onClick={() => setShowPw(!showPw)} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50"><Glyph e="🔑" /> كلمة المرور</button>
               {active

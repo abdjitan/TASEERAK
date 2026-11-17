@@ -1125,7 +1125,9 @@ export default function AdminPanel() {
                           u.verification_status === 'verified' ? 'badge-green' :
                           u.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'
                         }`}>
-                          {u.verification_status === 'verified' ? '✓ موثق' : u.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
+                          {u.role === 'contractor' && u.verification_status !== 'rejected'
+                            ? (u.verification_status === 'verified' ? '✓ مفعّل' : (!u.phone_verified_at ? 'بانتظار توثيق الجوال' : !u.email_verified_at ? 'بانتظار توثيق البريد' : '✓ مفعّل'))
+                            : u.verification_status === 'verified' ? '✓ موثق' : u.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
                         </span>
                         {u.cr_verification_source === 'wathq' && (
                           <span className="badge text-[10px] inline-flex items-center gap-0.5" style={{ background: '#0F6E56', color: '#fff' }}><Glyph e="🛡" /> واثق</span>
@@ -1266,8 +1268,8 @@ export default function AdminPanel() {
                       </select>
                     )}
 
-                    {/* Approve/Reject */}
-                    {u.verification_status !== 'verified' && (
+                    {/* Approve/Reject: sellers only (buyers activate themselves once mobile + email are verified, 223) */}
+                    {u.role !== 'contractor' && u.verification_status !== 'verified' && (
                       <button onClick={() => updateStatus(u.id, 'verified')}
                         disabled={actionLoading === u.id}
                         className="text-xs px-4 py-2 rounded-xl font-semibold text-white transition-all hover:shadow disabled:opacity-50"
@@ -1275,7 +1277,7 @@ export default function AdminPanel() {
                         {actionLoading === u.id ? '...' : '✓ موافقة'}
                       </button>
                     )}
-                    {u.verification_status !== 'rejected' && (
+                    {u.role !== 'contractor' && u.verification_status !== 'rejected' && (
                       <button onClick={() => { setRejectModal({ id: u.id, name: u.company_name_ar }); setRejectReason('') }}
                         disabled={actionLoading === u.id}
                         className="text-xs px-4 py-2 rounded-xl font-semibold text-white transition-all hover:shadow disabled:opacity-50 bg-red-500 hover:bg-red-600">
