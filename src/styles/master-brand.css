@@ -407,7 +407,7 @@ a { text-decoration: none; }
 }
 .ts-dashboard-topbar {
   position: sticky;
-  overflow: hidden;
+  overflow: visible; /* the notifications dropdown hangs below the bar (was clipped) */
   color: #fff;
   background:
     radial-gradient(ellipse at 75% -90%, rgba(245,197,91,.25), transparent 48%),

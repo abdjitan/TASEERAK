@@ -98,7 +98,8 @@ Deno.serve(async (req) => {
           new_rfq: 60, rfq_offer: 30, new_message: 180, offer_accepted: 0, offer_rejected: 0, rfq_expiring: 0,
           reminder_deliver: 0, reminder_receipt: 0, account_verified: 0, verification_rejected: 0, cr_claim: 0,
         }
-        const gap = GAP[n.type]
+        // admin alerts (migration 225: seller waiting for approval, support message, report, CR objection) are always emailed
+        const gap = n.data && n.data.admin_alert ? 0 : GAP[n.type]
         const { data: prof } = gap === undefined ? { data: null as any }
           : await supabase.from('profiles').select('email_notifications, preferred_language').eq('id', n.user_id).maybeSingle()
         if (prof && prof.email_notifications !== false) {

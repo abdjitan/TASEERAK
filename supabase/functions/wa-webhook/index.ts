@@ -87,7 +87,7 @@ async function onInbound(sb: any, m: any, names: Record<string, string>) {
     const { data: admins } = await sb.from('profiles').select('id').eq('role', 'admin')
     for (const a of admins || []) {
       await sb.from('notifications').insert({ user_id: a.id, type: 'announcement', title: 'رسالة دعم جديدة على واتساب',
-        body: (name || phone) + ': ' + String(text || '(مرفق)').slice(0, 120), data: { url: '/admin/whatsapp?phone=' + phone } })
+        body: (name || phone) + ': ' + String(text || '(مرفق)').slice(0, 120), data: { url: '/admin/whatsapp?phone=' + phone, admin_alert: true } })
     }
   }
   if (!due) return
