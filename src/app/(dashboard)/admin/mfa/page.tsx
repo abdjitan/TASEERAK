@@ -28,15 +28,19 @@ function AdminMfa() {
   useEffect(() => {
     (async () => {
       try {
+        // the cached session can be stale right after a verify (old aal / factor status): refresh first
+        await supabase.auth.refreshSession().catch(() => {})
         const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
         if (aal?.currentLevel === 'aal2') { router.replace(next); return }
-        const { data: f, error } = await supabase.auth.mfa.listFactors()
+        // fresh factors from the server (listFactors reads the cached session user)
+        const { data: u, error } = await supabase.auth.getUser()
         if (error) throw error
-        const verified = (f?.totp || []).find((x: any) => x.status === 'verified')
+        const factors: any[] = (u?.user as any)?.factors || []
+        const verified = factors.find((x: any) => x.factor_type === 'totp' && x.status === 'verified')
         if (verified) { setFactorId(verified.id); setStage('verify'); return }
         // drop half-finished enrolments, then start a new one
-        for (const x of (f?.all || []) as any[]) if (x.status !== 'verified') await supabase.auth.mfa.unenroll({ factorId: x.id })
-        const { data: e, error: eErr } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Taseerak admin ' + new Date().toISOString().slice(0, 10) })
+        for (const x of factors) if (x.status !== 'verified') await supabase.auth.mfa.unenroll({ factorId: x.id }).catch(() => {})
+        const { data: e, error: eErr } = await supabase.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Taseerak admin ' + new Date().toISOString().slice(0, 19) })
         if (eErr) throw eErr
         setFactorId(e.id); setQr(e.totp.qr_code); setSecret(e.totp.secret); setStage('enroll')
       } catch (e: any) {
@@ -52,7 +56,8 @@ function AdminMfa() {
     const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code: c })
     setBusy(false)
     if (error) { setErr('الرمز غير صحيح أو انتهت صلاحيته. اكتب الرمز الظاهر الآن في التطبيق.'); setCode(''); return }
-    // the session is now aal2: reload so the middleware sees the new cookie
+    // the session is now aal2: make sure the cookie holds it, then reload so the middleware sees it
+    await supabase.auth.refreshSession().catch(() => {})
     window.location.assign(next)
   }
 
