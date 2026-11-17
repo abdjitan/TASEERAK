@@ -117,7 +117,10 @@ function LoginForm() {
       if (err) {
         // A used/expired CAPTCHA token can't be reused — refresh it for the retry.
         captchaRef.current?.reset(); setCaptchaToken('')
-        setError(/captcha/i.test(err.message || '') ? t.captchaErr : t.error)
+        setError(/captcha/i.test(err.message || '') ? t.captchaErr
+          : /not confirmed/i.test(err.message || '') || (err as any).code === 'email_not_confirmed'
+            ? L('Confirm your email first: open the link we sent to your inbox (check spam too), then sign in.', 'پہلے اپنی ای میل کی تصدیق کریں: ہمارا بھیجا ہوا لنک کھولیں (اسپام بھی دیکھیں)، پھر سائن اِن کریں۔', 'أكّد بريدك الإلكتروني أولاً من الرابط الذي أرسلناه إليك (تحقّق من مجلد الرسائل غير المرغوب فيها أيضاً)، ثم سجّل الدخول.')
+            : t.error)
         setLoading(false); setStatus(''); setProgress(0); return
       }
       if (!data?.session) { setError(t.error); setLoading(false); setStatus(''); setProgress(0); return }
