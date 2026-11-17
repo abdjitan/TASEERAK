@@ -20,7 +20,7 @@ begin
   -- 219: run with phone verification required, the test accounts verified (all rolled back)
   update notify_config set phone_verify_required = true where id = true;
   perform set_config('app.bypass_locks', 'on', true);
-  update profiles set phone_verified_at = coalesce(phone_verified_at, now()) where id in (buyer, sup, company, emp);
+  update profiles set phone_verified_at = coalesce(phone_verified_at, now()), email_verified_at = coalesce(email_verified_at, now()) where id in (buyer, sup, company, emp);
   perform set_config('app.bypass_locks', 'off', true);
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
   set local role authenticated;

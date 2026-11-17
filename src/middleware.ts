@@ -33,6 +33,7 @@ const PROTECTED = [
   '/suggestions',
   '/invite-friends',
   '/support',
+  '/verify',
 ]
 
 /** Only users with role = 'admin' can access these */
@@ -149,8 +150,29 @@ export async function middleware(request: NextRequest) {
     profileMemo = data || null
     return profileMemo
   }
+  // Verified mobile + email (owner 2026-11-17, migration 222): until both are verified a signed-in
+  // user only reaches /verify (and support). Once verified it is cached in a signed cookie for a day
+  // so normal navigation makes no extra query; the database enforces the rule anyway.
+  const VERIFY_COOKIE = 'tsk_ver'
+  let verifyCookie: string | null = null
+  async function verifiedOf(uid: string): Promise<boolean> {
+    const c = request.cookies.get(VERIFY_COOKIE)?.value
+    if (c && ROLE_SECRET) {
+      const [id, sig] = c.split(':')
+      if (id === uid && sig && sameText(sig, await signRole(`ver:${id}`))) return true
+    }
+    const { data: p } = await supabase.from('profiles').select('role, phone_verified_at, email_verified_at').eq('id', uid).single()
+    let ok = !p || p.role === 'admin' || (!!p.phone_verified_at && !!p.email_verified_at)
+    if (!ok) {
+      const { data: req } = await supabase.rpc('phone_verify_required')
+      if (req !== true) ok = true
+    }
+    if (ok && p && ROLE_SECRET) verifyCookie = `${uid}:${await signRole(`ver:${uid}`)}`
+    return ok
+  }
   const withRole = (res: NextResponse) => {
     if (roleCookie) res.cookies.set(ROLE_COOKIE, roleCookie, { path: '/', maxAge: 600, httpOnly: true, sameSite: 'lax', secure: true })
+    if (verifyCookie) res.cookies.set(VERIFY_COOKIE, verifyCookie, { path: '/', maxAge: 86400, httpOnly: true, sameSite: 'lax', secure: true })
     return res
   }
 
@@ -187,6 +209,15 @@ export async function middleware(request: NextRequest) {
     // Remember where they were going so we can redirect back after login
     loginUrl.searchParams.set('next', pathname)
     return redirectTo(loginUrl)
+  }
+
+  // ── Rule 2.1: verify the mobile and the email before anything else (not admins) ──
+  if (user && PROTECTED.some(matches) && !matches('/verify') && !matches('/support') && !ADMIN_ONLY.some(matches)) {
+    if (!(await verifiedOf(user.id))) {
+      const v = new URL('/verify', request.url)
+      v.searchParams.set('next', pathname)
+      return redirectTo(v)
+    }
   }
 
   // ── Rule 2.2: phone signups pick what they want to do before anything else ──
@@ -244,6 +275,6 @@ export const config = {
   matcher: [
     '/contractor/:path*', '/supplier/:path*', '/settings/:path*', '/admin/:path*', '/location/:path*',
     '/market/:path*', '/onboarding/:path*', '/welcome/:path*', '/messages/:path*', '/notifications/:path*',
-    '/verification/:path*', '/suggestions/:path*', '/invite-friends/:path*', '/support/:path*', '/login', '/register',
+    '/verification/:path*', '/suggestions/:path*', '/invite-friends/:path*', '/support/:path*', '/verify/:path*', '/login', '/register',
   ],
 }
