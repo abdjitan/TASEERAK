@@ -10,6 +10,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminSupabaseClient, createServerSupabaseClient } from '@/lib/supabase/server'
 import { verifiedPhoneFromIdToken } from '@/lib/firebaseVerify'
+import { isAllowedPhone } from '@/lib/firebaseConfig'
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}))
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
     if (acc.role !== 'contractor') return NextResponse.json({ error: 'use_email' }, { status: 409 })
   } else {
     if (mode !== 'signup') return NextResponse.json({ error: 'no_account' }, { status: 404 })
+    if (!isAllowedPhone(phone)) return NextResponse.json({ error: 'country_not_allowed' }, { status: 400 })
     const name = String(body?.full_name || '').trim().slice(0, 80)
     if (name.length < 2) return NextResponse.json({ error: 'name_required' }, { status: 400 })
     if (!body?.terms_version) return NextResponse.json({ error: 'terms_required' }, { status: 400 })

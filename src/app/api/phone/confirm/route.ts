@@ -4,7 +4,7 @@
 // delivered, the number is marked as having WhatsApp (whatsapp_verified_at). Owner 2026-11-14.
 import { NextResponse } from 'next/server'
 import { getRouteUser, createAdminSupabaseClient } from '@/lib/supabase/server'
-import { FIREBASE_CONFIG } from '@/lib/firebaseConfig'
+import { FIREBASE_CONFIG, isAllowedPhone } from '@/lib/firebaseConfig'
 
 export async function POST(req: Request) {
   const { idToken, handoff } = await req.json().catch(() => ({}))
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
   const fu = j?.users?.[0]
   const phone: string = fu?.phoneNumber || ''
   if (!r.ok || !/^\+\d{11,15}$/.test(phone)) return NextResponse.json({ error: 'invalid_code' }, { status: 400 })
+  if (!isAllowedPhone(phone)) return NextResponse.json({ error: 'country_not_allowed' }, { status: 400 })
   // only a code entered just now counts
   if (Date.now() - Number(fu.lastLoginAt || 0) > 15 * 60 * 1000) return NextResponse.json({ error: 'stale' }, { status: 400 })
 

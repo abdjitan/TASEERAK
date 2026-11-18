@@ -11,9 +11,18 @@ export const FIREBASE_CONFIG = {
 
 export const firebaseReady = () => !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.authDomain && FIREBASE_CONFIG.projectId)
 
-/** A typed number → E.164 with "+", or null. Saudi local forms (05…, 5…) become +966…;
- *  other countries must be typed with their code (+962…, 00962…). */
+/** Mobile numbers we accept (owner 2026-11-18): Saudi Arabia +9665…, UAE +9715…, Jordan +9627[789]…. */
+export const ALLOWED_PHONE_RE = /^\+(9665\d{8}|9715\d{8}|9627[789]\d{7})$/
+export const isAllowedPhone = (e164: string | null | undefined): boolean => !!e164 && ALLOWED_PHONE_RE.test(e164)
+
+/** A typed number → E.164 with "+", or null when it is not a mobile from an allowed country.
+ *  Local forms: 05… / 5… = Saudi (+966), 07[789]… = Jordan (+962); the UAE must be typed with +971. */
 export function toE164(input: string): string | null {
+  const e = toE164Any(input)
+  return isAllowedPhone(e) ? e : null
+}
+
+function toE164Any(input: string): string | null {
   let d = String(input || '').replace(/[٠-٩]/g, (c) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(c))).replace(/[۰-۹]/g, (c) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(c)))
   const plus = d.trim().startsWith('+')
   d = d.replace(/\D/g, '')
@@ -22,5 +31,7 @@ export function toE164(input: string): string | null {
   if (/^05\d{8}$/.test(d)) return '+966' + d.slice(1)
   if (/^5\d{8}$/.test(d)) return '+966' + d
   if (/^9665\d{8}$/.test(d)) return '+' + d
+  if (/^07[789]\d{7}$/.test(d)) return '+962' + d.slice(1)
+  if (/^(9715|9627)\d{8}$/.test(d)) return '+' + d
   return null
 }

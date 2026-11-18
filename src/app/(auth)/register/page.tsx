@@ -20,6 +20,7 @@ import { captureRef } from '@/lib/referral'
 import { friendlyError } from '@/lib/friendlyError'
 import { passwordProblems, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 import { toLatinDigits } from '@/lib/phone'
+import { toE164 } from '@/lib/firebaseConfig'
 import { normalizeCrInput, crTakenText, isUnifiedCr, crFormatText } from '@/lib/cr'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
@@ -43,7 +44,8 @@ const schema = z.object({
   full_name: z.string().min(3, 'الاسم مطلوب'),
   // required for buyers and companies; an independent seller trades under their own name (checked in onSubmit)
   company_name_ar: z.string().optional(),
-  phone: z.string().regex(/^05[0-9]{8}$/, 'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05'),
+  // Saudi 05XXXXXXXX (kept as typed), or a UAE/Jordan mobile (owner 2026-11-18)
+  phone: z.string().refine((v) => /^05[0-9]{8}$/.test(v) || !!toE164(v), 'رقم الجوال مطلوب: رقم سعودي يبدأ بـ05، أو رقم إماراتي أو أردني'),
   email: z.string().email('البريد الإلكتروني غير صحيح'),
   password: z.string().refine(v => passwordProblems(v).length === 0, 'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، وحرف إنجليزي كبير، وحرف صغير، ورقم'),
 })
@@ -330,7 +332,7 @@ export default function RegisterPage() {
               </div>
               <div>
                 <label htmlFor="reg-phone" className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
-                <input id="reg-phone" {...register('phone')} autoComplete="tel-national" className="input-field" placeholder="05XXXXXXXX" type="tel" inputMode="numeric" maxLength={10} dir="ltr"
+                <input id="reg-phone" {...register('phone')} autoComplete="tel-national" className="input-field" placeholder="05XXXXXXXX" type="tel" inputMode="tel" maxLength={16} dir="ltr"
                   onInput={(e: any) => { const v = toLatinDigits(e.currentTarget.value).replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(false) }} />
                 {errors.phone && <p className="text-red-500 text-xs mt-1">{vmsg(errors.phone.message, locale)}</p>}
               </div>

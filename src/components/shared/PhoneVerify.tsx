@@ -48,7 +48,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
   async function send() {
     setError('')
     const e164 = toE164(phone)
-    if (!e164) { setError(L('Enter a valid mobile number, e.g. 05XXXXXXXX or +962…', 'درست موبائل نمبر لکھیں، مثلاً 05XXXXXXXX', 'أدخل رقم جوال صحيحاً، مثل 05XXXXXXXX أو +962…')); return }
+    if (!e164) { setError(L('Enter a valid mobile number from Saudi Arabia, the UAE or Jordan, e.g. 05XXXXXXXX, +971 5X… or 07XXXXXXXX', 'سعودی عرب، امارات یا اردن کا درست موبائل نمبر لکھیں، جیسے 05XXXXXXXX، ‎+971 5X…‎ یا 07XXXXXXXX', 'أدخل رقم جوال صحيحاً من السعودية أو الإمارات أو الأردن، مثل 05XXXXXXXX أو ‎+971 5X…‎ أو 07XXXXXXXX')); return }
     if (!firebaseReady()) { setError(L('Phone verification is not available yet.', 'فون کی تصدیق ابھی دستیاب نہیں۔', 'توثيق الجوال غير متاح بعد.')); return }
     setBusy(true)
     try {
@@ -140,7 +140,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
       {step === 'enter' && !busy && (<>
         <p className="text-[12px] text-gray-600">{L('We will send a 6-digit code by SMS. Use a number that has WhatsApp: platform notifications arrive there.', 'ہم SMS سے 6 ہندسوں کا کوڈ بھیجیں گے۔ واٹس ایپ والا نمبر استعمال کریں۔', 'سنرسل رمزاً من 6 أرقام برسالة نصية. استخدم رقماً عليه واتساب، فإشعارات المنصة تصل إليه.')}</p>
         <div className="flex gap-2">
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" dir="ltr" className="input-field flex-1" placeholder="05XXXXXXXX / +962…" />
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" dir="ltr" className="input-field flex-1" placeholder="05XXXXXXXX / +971… / 07…" />
           <button type="button" onClick={send} disabled={busy} className="text-sm px-4 rounded-xl font-bold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>{busy ? '…' : L('Send code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>
         </div>
       </>)}

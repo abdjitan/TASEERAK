@@ -14,7 +14,7 @@ import { TERMS_VERSION } from '@/lib/legal'
 const TX = {
   ar: {
     phone: 'رقم جوالك', phoneHint: 'سيصلك رمز التحقق برسالة نصية (SMS)', send: 'أرسل الرمز', sending: 'جارٍ الإرسال…',
-    badPhone: 'اكتب رقم جوال صحيحاً، مثل 05XXXXXXXX', codeTitle: 'اكتب الرمز', codeSent: 'أرسلنا رمزاً من 6 أرقام برسالة نصية إلى',
+    badPhone: 'أدخل رقم جوال صحيحاً من السعودية أو الإمارات أو الأردن، مثل 05XXXXXXXX أو ‎+971 5X…‎ أو 07XXXXXXXX', codeTitle: 'اكتب الرمز', codeSent: 'أرسلنا رمزاً من 6 أرقام برسالة نصية إلى',
     verify: 'تأكيد والدخول', verifying: 'جارٍ التحقق…', badCode: 'الرمز غير صحيح أو انتهت صلاحيته. اطلب رمزاً جديداً.',
     resend: 'أعد إرسال الرمز', resendIn: 'إعادة الإرسال بعد', sec: 'ث', change: 'تغيير الرقم',
     rate: 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.', sendFail: 'تعذّر إرسال الرمز. تأكد من الرقم ثم أعد المحاولة.',
@@ -24,7 +24,7 @@ const TX = {
   },
   en: {
     phone: 'Your mobile number', phoneHint: 'You will get a code by text message (SMS)', send: 'Send code', sending: 'Sending…',
-    badPhone: 'Enter a valid mobile number, e.g. 05XXXXXXXX', codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code by SMS to',
+    badPhone: 'Enter a valid mobile number from Saudi Arabia, the UAE or Jordan, e.g. 05XXXXXXXX, +971 5X… or 07XXXXXXXX', codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code by SMS to',
     verify: 'Verify and continue', verifying: 'Verifying…', badCode: 'Wrong or expired code. Request a new one.',
     resend: 'Resend code', resendIn: 'Resend in', sec: 's', change: 'Change number',
     rate: 'Too many attempts. Wait a little and try again.', sendFail: 'Could not send the code. Check the number and try again.',
@@ -34,7 +34,7 @@ const TX = {
   },
   ur: {
     phone: 'آپ کا موبائل نمبر', phoneHint: 'تصدیقی کوڈ ٹیکسٹ میسج (SMS) سے آئے گا', send: 'کوڈ بھیجیں', sending: 'بھیجا جا رہا ہے…',
-    badPhone: 'درست موبائل نمبر لکھیں، جیسے 05XXXXXXXX', codeTitle: 'کوڈ درج کریں', codeSent: 'ہم نے SMS سے 6 ہندسوں کا کوڈ بھیجا',
+    badPhone: 'سعودی عرب، امارات یا اردن کا درست موبائل نمبر لکھیں، جیسے 05XXXXXXXX، ‎+971 5X…‎ یا 07XXXXXXXX', codeTitle: 'کوڈ درج کریں', codeSent: 'ہم نے SMS سے 6 ہندسوں کا کوڈ بھیجا',
     verify: 'تصدیق کریں اور جاری رکھیں', verifying: 'تصدیق ہو رہی ہے…', badCode: 'غلط یا ختم شدہ کوڈ۔ نیا کوڈ منگوائیں۔',
     resend: 'کوڈ دوبارہ بھیجیں', resendIn: 'دوبارہ بھیجیں', sec: 's', change: 'نمبر تبدیل کریں',
     rate: 'بہت زیادہ کوششیں۔ تھوڑا انتظار کریں۔', sendFail: 'کوڈ نہیں بھیجا جا سکا۔ نمبر چیک کریں۔',
