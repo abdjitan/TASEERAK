@@ -14,6 +14,7 @@ import { safeHttpUrl } from '@/lib/safeUrl'
 import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
+import { countryAr, outsideSaudi } from '@/lib/countries'
 
 // Free official checks for the manual CR review (no scraping: the admin opens them himself).
 // ZATCA's public VAT-registration check searches by VAT number OR the unified CR number (700…).
@@ -1129,6 +1130,9 @@ export default function AdminPanel() {
                             ? (u.verification_status === 'verified' ? '✓ مفعّل' : (!u.phone_verified_at ? 'بانتظار توثيق الجوال' : !u.email_verified_at ? 'بانتظار توثيق البريد' : '✓ مفعّل'))
                             : u.verification_status === 'verified' ? '✓ موثق' : u.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
                         </span>
+                        {(outsideSaudi(u.signup_country) || outsideSaudi(u.last_country)) && (
+                          <span className="badge text-[10px] bg-orange-100 text-orange-800" title={'التسجيل: ' + countryAr(u.signup_country) + ' · آخر دخول: ' + countryAr(u.last_country)}>خارج السعودية</span>
+                        )}
                         {u.cr_verification_source === 'wathq' && (
                           <span className="badge text-[10px] inline-flex items-center gap-0.5" style={{ background: '#0F6E56', color: '#fff' }}><Glyph e="🛡" /> واثق</span>
                         )}

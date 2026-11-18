@@ -45,6 +45,11 @@ export default function AppShell({
   // An independent seller has no branches or team: company-only items leave the menu.
   const [kind, setKind] = useState<string | null>(null)
   useEffect(() => { setKind(storedSellerKind()) }, [])
+  // where this session connects from (approximate, from the connection; migration 229), once per session
+  useEffect(() => {
+    try { if (sessionStorage.getItem('tsk_loc') === '1') return; sessionStorage.setItem('tsk_loc', '1') } catch { return }
+    fetch('/api/track-location', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client: 'web' }) }).catch(() => {})
+  }, [])
   // Opening the page a notification points to counts as reading it, so its delayed WhatsApp
   // is not sent (owner 2026-11-14, migration 206).
   const pathname = usePathname()

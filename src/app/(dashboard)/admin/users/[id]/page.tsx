@@ -13,6 +13,7 @@ import { APPROVAL_LABELS } from '@/lib/supplierScore'
 import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 import Glyph from '@/components/shared/Glyph'
 import AccountModeration from '@/components/admin/AccountModeration'
+import { countryAr, outsideSaudi } from '@/lib/countries'
 
 const RFQ_STATUS: Record<string, string> = { open: 'مفتوح', closed: 'مغلق', awarded: 'تمّ اختيار العرض', cancelled: '✕ ملغي', expired: 'منتهي' }
 const OFFER_STATUS: Record<string, string> = { pending: 'بانتظار', submitted: 'مُقدّم', accepted: '✓ مقبول', rejected: '✕ مرفوض', withdrawn: '↩ مسحوب' }
@@ -175,6 +176,11 @@ export default function AdminUserDetail() {
                       : isVerified ? '✓ موثق' : p.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
                   </span>
                   {!active && <span className="badge text-[10px] bg-red-100 text-red-700"><Glyph e="⛔" /> موقوف</span>}
+                  {(outsideSaudi(p.signup_country) || outsideSaudi(p.last_country)) && <span className="badge text-[10px] bg-orange-100 text-orange-800"><Glyph e="🌍" /> خارج السعودية</span>}
+                </div>
+                <div className="text-[11px] text-gray-500 mt-1">
+                  التسجيل من: <b>{[p.signup_city, countryAr(p.signup_country)].filter(Boolean).join('، ')}</b>
+                  {p.last_country && <> · آخر دخول من: <b>{[p.last_city, countryAr(p.last_country)].filter(Boolean).join('، ')}</b>{p.last_location_at ? ' (' + new Date(p.last_location_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn') + ')' : ''}</>}
                   {p.cr_verification_source === 'wathq' && <span className="badge text-[10px] text-white" style={{ background: '#0F6E56' }}><Glyph e="🛡" /> واثق</span>}
                 </div>
               </div>
