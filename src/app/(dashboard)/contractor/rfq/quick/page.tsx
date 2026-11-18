@@ -590,6 +590,7 @@ export default function QuickRequestPage() {
         {/* A: how to add (main column on desktop, first on mobile) */}
         <div className="space-y-5 lg:col-start-1 lg:row-start-1">
         <div>
+          <div className="text-xs font-bold text-[#9D7425] mb-1">{L('One request… and the market’s best offers in your hands', 'ایک درخواست… اور مارکیٹ کی بہترین پیشکشیں آپ کے ہاتھ میں', 'طلب واحد… وأفضل عروض السوق بين يديك')}</div>
           <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
           <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, upload a photo or pick it from the catalog. We will organise it into a list.', 'لکھیں، بولیں، تصویر لیں یا فہرست سے منتخب کریں۔', 'اكتبها، أو تحدّث بها، أو ارفع صورتها، أو اخترها من دليل المواد، وسنرتّبها لك في طلبك.')}</p>
         </div>
