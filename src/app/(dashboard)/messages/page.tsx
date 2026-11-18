@@ -12,6 +12,7 @@ import LoadError from '@/components/shared/LoadError'
 import { rfqDisplayName } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
 import { realtimeTopic } from '@/lib/realtimeTopic'
+import { useEnsureVerified } from '@/components/shared/VerifyGate'
 
 function fmtTime(d: any, locale: string = 'ar') {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -23,6 +24,7 @@ function fmtTime(d: any, locale: string = 'ar') {
 
 function Messages() {
   const { locale, dir } = useTranslation()
+  const ensureVerified = useEnsureVerified()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const sp = useSearchParams()
   const [me, setMe] = useState<any>(null)
@@ -138,6 +140,7 @@ function Messages() {
   async function send(e: any) {
     e?.preventDefault()
     const text = body.trim(); if (!text || !activeId) return
+    if (!(await ensureVerified())) return
     setBody('')
     await deliver(text)
   }

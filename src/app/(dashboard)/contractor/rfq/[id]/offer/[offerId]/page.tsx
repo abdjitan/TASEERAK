@@ -23,6 +23,7 @@ import { vatStatusOf, totalLabel } from '@/lib/vat'
 import { installTotalOf, materialTotalOf } from '@/lib/installation'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { dbMessage } from '@/lib/dbMessage'
+import { useEnsureVerified } from '@/components/shared/VerifyGate'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -33,6 +34,7 @@ export default function OfferDetailPage() {
   const { id, offerId } = useParams()
   const router = useRouter()
   const { locale, dir } = useTranslation()
+  const ensureVerified = useEnsureVerified()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
   const SAR = L('SAR', 'SAR', 'ر.س')
@@ -115,6 +117,7 @@ export default function OfferDetailPage() {
   }, [id, offerId])
 
   async function acceptOffer() {
+    if (!(await ensureVerified())) return
     if (!confirm(L('Accept this offer? All other offers will be rejected and the request will close.', 'یہ آفر قبول کریں؟ باقی تمام آفرز رد ہو جائیں گی اور درخواست بند ہو جائے گی۔', 'تأكيد قبول هذا العرض؟ سيتم رفض باقي العروض وإغلاق الطلب.'))) return
     setActing(true)
     const supabase = createClient()
@@ -245,6 +248,7 @@ export default function OfferDetailPage() {
             : <div className="text-[11px] text-gray-400 py-2 border-b border-gray-50 leading-relaxed"><Glyph e="🔒" /> {L('The supplier contact number appears after award (deal done). For now, contact them through the in-app chat.', 'سپلائر کا رابطہ نمبر ایوارڈ (ڈیل مکمل ہونے) کے بعد نظر آئے گا۔ ابھی اندرونی چیٹ سے رابطہ کریں۔', 'رقم تواصل المورد يظهر بعد اختيار العرض (إتمام الصفقة). تواصل معه الآن عبر الدردشة الداخلية.')}</div>}
           <div className="flex gap-2 mt-3 flex-wrap">
             <button type="button" onClick={async () => {
+              if (!(await ensureVerified())) return
               const supabase = createClient()
               const { data, error } = await supabase.rpc('get_or_create_conversation', { p_rfq_id: id, p_supplier_id: offer.supplier_id })
               if (error || !data) { alert(L('Could not open the conversation', 'گفتگو نہیں کھل سکی', 'تعذّر فتح المحادثة')); return }

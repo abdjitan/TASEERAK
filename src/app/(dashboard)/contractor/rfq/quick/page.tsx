@@ -21,6 +21,7 @@ import { arCount, arMaterials } from '@/lib/text'
 import { TIERS, tierLabel, tierHint } from '@/lib/sellers'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import { isInstallable } from '@/lib/installation'
+import { useEnsureVerified } from '@/components/shared/VerifyGate'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
 // it into lines the buyer can fix, then send. Each line can open its specifications (PRODUCT_SPECS)
@@ -98,6 +99,7 @@ function lineFromItem(it: any): Line {
 export default function QuickRequestPage() {
   useCatalogSpecs() // spec fields and order units (loaded on demand)
   const { locale, dir } = useTranslation()
+  const ensureVerified = useEnsureVerified()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [userId, setUserId] = useState('')
   const [text, setText] = useState('')
@@ -441,6 +443,7 @@ export default function QuickRequestPage() {
     if (sendingRef.current) return // a second tap while the first send is still going
     if (!validate()) { setConfirming(false); return }
     setConfirming(false)
+    if (!(await ensureVerified())) return // buyers browse freely; verify the mobile/email here (owner 2026-11-18)
     sendingRef.current = true
     setSending(true)
     const supabase = createClient()

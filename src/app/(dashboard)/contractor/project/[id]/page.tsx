@@ -16,6 +16,7 @@ import { SECTOR_LABELS, getProductLabel } from '@/types'
 import { tierLabel, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
+import { useEnsureVerified } from '@/components/shared/VerifyGate'
 
 const SECTOR_ICONS = { civil: <Glyph e="🏗" />, architectural: <Glyph e="🏛" />, electrical: <Glyph e="⚡" />, mechanical: <Glyph e="⚙" />, equipment: <Glyph e="🚜" />, supply_store: <Glyph e="🏪" /> }
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
@@ -23,6 +24,7 @@ const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: 
 export default function ProjectResultsPage() {
   const { id } = useParams()
   const { locale, dir } = useTranslation()
+  const ensureVerified = useEnsureVerified()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const SAR = L('SAR', 'ریال', 'ر.س')
   const [project, setProject] = useState<any>(null)
@@ -67,6 +69,7 @@ export default function ProjectResultsPage() {
   }, [id])
 
   async function acceptOffer(offerId: any, rfqId: any, itemId: any) {
+    if (!(await ensureVerified())) return
     const supabase = createClient()
     // Atomic: accept + reject the competing offers + close the RFQ in one
     // transaction (same as the single-RFQ flow) — prevents double-accept and

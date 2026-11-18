@@ -21,6 +21,7 @@ import Glyph from '@/components/shared/Glyph'
 import { arCount, arItems, arMaterials } from '@/lib/text'
 import CatIcon from '@/components/shared/CatIcon'
 import { toLatinDigits } from '@/lib/phone'
+import { useEnsureVerified } from '@/components/shared/VerifyGate'
 
 // «١٢٫٥» / «۱۲» → «12.5» / «12» (Arabic and Urdu keyboards type these digits and decimal marks)
 const toQty = (v: string) => toLatinDigits(v).replace(/٫/g, '.').replace(/[^0-9.]/g, '')
@@ -106,6 +107,7 @@ const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: 
 export default function NewProjectPage() {
   useCatalogSpecs() // spec fields and order units (loaded on demand)
   const { locale, dir } = useTranslation()
+  const ensureVerified = useEnsureVerified()
   const [user, setUser] = useState<any>(null)
   const [allowed, setAllowed] = useState<boolean | null>(null) // null = still checking
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -432,6 +434,7 @@ export default function NewProjectPage() {
     if (submittingRef.current) return // a second tap while the first send is still going
     if (!user || !title || !region) return
     if (deliveryRequired && !deliveryLocation) return
+    if (!(await ensureVerified())) return
     // سياسة عدم الإزعاج: البنود غير المصنّفة لا تُرسل إطلاقاً (حتى لا تصل لموردين خارج تخصصهم).
     // نرسل المصنّفة فقط، ونبقي غير المصنّفة لدى المقاول ليصنّفها لاحقاً.
     const classifiedItems = items.filter((i: any) => i.selected && i.product_name && !i.needs_classification)

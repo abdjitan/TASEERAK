@@ -165,7 +165,8 @@ export async function middleware(request: NextRequest) {
     }
     const { data: p } = await supabase.from('profiles').select('role, phone_verified_at, email_verified_at, banned_until').eq('id', uid).single()
     if (p && p.role !== 'admin' && p.banned_until && new Date(p.banned_until).getTime() > Date.now()) return 'banned'
-    let ok = !p || p.role === 'admin' || (!!p.phone_verified_at && !!p.email_verified_at)
+    // buyers browse freely and verify in place when they act (VerifyGate, owner 2026-11-18)
+    let ok = !p || p.role === 'admin' || p.role === 'contractor' || (!!p.phone_verified_at && !!p.email_verified_at)
     if (!ok) {
       const { data: req } = await supabase.rpc('phone_verify_required')
       if (req !== true) ok = true

@@ -31,6 +31,7 @@ import { loadOwnerBudgets, saveRfqBudgets, parseBudget, preVatUnit, overBudget, 
 import BudgetField from '@/components/rfq/BudgetField'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { dbMessage } from '@/lib/dbMessage'
+import { useEnsureVerified } from '@/components/shared/VerifyGate'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -72,6 +73,7 @@ export default function RFQDetailPage() {
   const { id } = useParams()
   const router = useRouter()
   const { locale, dir } = useTranslation()
+  const ensureVerified = useEnsureVerified()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   // non-direct price: one phrase, not two labels side by side (owner read them as contradicting; app parity)
   const srcPhrase = (k: any) => L(`Sourced price: ${sourceLabel(k, locale)}`, `منتقل قیمت: ${sourceLabel(k, locale)}`, `سعر منقول ${sourceLabel(k, locale)}`)
@@ -237,6 +239,7 @@ export default function RFQDetailPage() {
 
   async function acceptOffer(offerId: any) {
     if (acceptingId) return
+    if (!(await ensureVerified())) return
     const o = offers.find((x: any) => x.id === offerId)
     const who = o?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
     const total = o ? offerComparable(o).toLocaleString('en-US', { maximumFractionDigits: 0 }) : ''
@@ -268,6 +271,7 @@ export default function RFQDetailPage() {
   // ترسية بند-بند: ترسية مادة على مورد مُحدّد (أرخص أو من اختيار المشتري)
   const [awarding, setAwarding] = useState<any>(null)
   async function awardItem(itemIndex: any, offerId: any) {
+    if (!(await ensureVerified())) return
     setAwarding(`${itemIndex}:${offerId}`)
     const supabase = createClient()
     const { error } = await supabase.rpc('award_rfq_item', { p_rfq_id: id, p_item_index: itemIndex, p_offer_id: offerId })
@@ -307,6 +311,7 @@ export default function RFQDetailPage() {
   const [pickingAll, setPickingAll] = useState(false)
   const [openBid, setOpenBid] = useState<string | null>(null) // «التفاصيل» of one bid row
   async function awardCheapestAll(offersList: any[]) {
+    if (!(await ensureVerified())) return
     setPickingAll(true)
     const supabase = createClient()
     const picks = (rfq?.items || []).map((it: any, idx: number) => (awards[idx] ? null : { idx, best: cheapestFor(it, idx, offersList) }))
@@ -336,6 +341,7 @@ export default function RFQDetailPage() {
   // تأكيد الترسية: قبول الموردين الفائزين + إصدار أوامر الشراء + إغلاق الطلب
   const [finalizing, setFinalizing] = useState(false)
   async function finalizeAwards() {
+    if (!(await ensureVerified())) return
     if (!confirm(L('Confirm the award? The winning suppliers will be accepted, a purchase order issued for each, and the request closed.', 'ایوارڈ کنفرم کریں؟ جیتنے والے سپلائرز قبول ہوں گے، ہر سپلائر کا پرچیز آرڈر بنے گا، اور درخواست بند ہو جائے گی۔', 'تأكيد اختيار العرض؟ سيتم قبول الموردين الفائزين، إصدار أمر شراء لكل مورد، وإغلاق الطلب.'))) return
     setFinalizing(true)
     const supabase = createClient()
