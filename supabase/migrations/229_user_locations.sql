@@ -3,7 +3,7 @@
 -- connection (Vercel geo headers: country, region, city — no GPS, no raw IP stored).
 --   profiles.signup_country/_city: the first session after sign-up
 --   profiles.last_country/_city/last_location_at: the latest session
---   user_locations: one row per session (kept 180 days) for the admin page
+--   user_locations: one row per session (kept 90 days, migration 230) for the admin page
 -- A sign-up from outside Saudi Arabia alerts the admins (they decide; nothing is blocked).
 alter table public.profiles add column if not exists signup_country text;
 alter table public.profiles add column if not exists signup_city text;
