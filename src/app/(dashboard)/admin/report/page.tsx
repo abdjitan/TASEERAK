@@ -38,6 +38,7 @@ export default function OwnerReport() {
   const [d, setD] = useState<any>(null)
   const [sv, setSv] = useState<any>(null)
   const [items, setItems] = useState<any>(null) // what buyers bought / sellers offer (224)
+  const [ready, setReady] = useState<any>(null) // «جاهزية الاشتراكات» (237), owner only, not printed
   const [err, setErr] = useState('')
 
   useEffect(() => {
@@ -56,13 +57,14 @@ export default function OwnerReport() {
     (async () => {
       setErr('')
       const supabase = createClient()
-      const [a, b, c] = await Promise.all([
+      const [a, b, c, r] = await Promise.all([
         supabase.rpc('admin_overview', { p_days: days, p_include_test: includeTest }),
         supabase.rpc('admin_savings_summary', { p_include_test: includeTest }),
         supabase.rpc('admin_report_items', { p_days: days, p_include_test: includeTest }),
+        supabase.rpc('admin_monetization_readiness', { p_include_test: includeTest }),
       ])
       if (a.error) { setErr(a.error.message); return }
-      setD(a.data); setSv(b.data || null); setItems(c.data || null)
+      setD(a.data); setSv(b.data || null); setItems(c.data || null); setReady(r.data || null)
     })()
   }, [ok, days, includeTest])
 
@@ -110,6 +112,41 @@ export default function OwnerReport() {
             <div>{includeTest ? 'يشمل الحسابات التجريبية' : 'بيانات حقيقية (دون الحسابات التجريبية)'}</div>
           </div>
         </header>
+
+        {ready?.windows?.length > 0 && (() => {
+          const T = ready.targets || {}
+          const [cur, prev] = ready.windows
+          const rows: [string, string, boolean][] = [
+            ['liquid_pct', 'طلبات وصلها 3 عروض أو أكثر خلال 48 ساعة', true],
+            ['requests', 'طلبات التسعير', false],
+            ['active_buyers', 'مشترون نشطون', false],
+            ['returning_pct', 'مشترون عادوا وطلبوا مجدداً', true],
+            ['deals', 'صفقات أكّد المشتري استلامها', false],
+            ['active_suppliers', 'موردون قدّموا عروضاً', false],
+            ['supplier_retention_pct', 'موردون استمروا من الشهر السابق', true],
+          ]
+          const val = (w: any, k: string, p: boolean) => (w && isNum(w[k]) ? (p ? fmt(w[k], 1) + '%' : fmt(w[k])) : '—')
+          const hit = (w: any, k: string) => w && isNum(w[k]) && Number(w[k]) >= Number(T[k])
+          const passed = rows.filter(([k]) => hit(cur, k) && hit(prev, k)).length
+          return (
+            <section className="mt-6 print:hidden rounded-2xl border-2 border-dashed p-4" style={{ borderColor: GOLD }}>
+              <h2 className="text-[15px] font-extrabold mb-1" style={{ color: NAVY }}>جاهزية الاشتراكات (للمالك فقط، لا تُطبع)</h2>
+              <p className="text-[12px] text-gray-500 mb-3">تُفعَّل الاشتراكات حين تتحقق كل الأهداف شهرين متتاليين، وبعد الشركة السعودية وبوابة الدفع واستشارة المحامي. المحقَّق الآن: <b style={{ color: passed === rows.length ? GREEN : DARK_GOLD }}>{passed} من {rows.length}</b></p>
+              <table className="w-full text-sm border-collapse">
+                <thead><tr className="text-gray-500 text-xs border-b">
+                  <th className="text-start py-1.5">المؤشر</th><th className="text-start">الهدف</th><th className="text-start">آخر 30 يوماً</th><th className="text-start">الـ30 يوماً السابقة</th>
+                </tr></thead>
+                <tbody>{rows.map(([k, label, p]) => (
+                  <tr key={k} className="border-b border-gray-100">
+                    <td className="py-1.5 font-semibold" style={{ color: NAVY }}>{label}</td>
+                    <td>{p ? T[k] + '%' : fmt(T[k])}</td>
+                    <td style={{ color: hit(cur, k) ? GREEN : undefined }} className="font-bold">{val(cur, k, p)}{hit(cur, k) ? ' ✓' : ''}</td>
+                    <td style={{ color: hit(prev, k) ? GREEN : undefined }}>{val(prev, k, p)}{hit(prev, k) ? ' ✓' : ''}</td>
+                  </tr>))}</tbody>
+              </table>
+            </section>
+          )
+        })()}
 
         <Section title="الأرقام الرئيسية">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
