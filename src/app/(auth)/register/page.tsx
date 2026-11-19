@@ -333,7 +333,7 @@ export default function RegisterPage() {
               </div>
               <div>
                 <label htmlFor="reg-phone" className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
-                <input id="reg-phone" {...register('phone')} autoComplete="tel-national" className="input-field" placeholder="05XXXXXXXX" type="tel" inputMode="tel" maxLength={16} dir="ltr"
+                <input id="reg-phone" {...register('phone')} autoComplete="tel-national" className="input-field" placeholder={locale === 'en' ? 'Mobile number' : locale === 'ur' ? 'موبائل نمبر' : 'رقم الجوال'} type="tel" inputMode="tel" maxLength={16} dir="ltr"
                   onInput={(e: any) => { const v = toLatinDigits(e.currentTarget.value).replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(false) }} />
                 {errors.phone && <p className="text-red-500 text-xs mt-1">{vmsg(errors.phone.message, locale)}</p>}
               </div>
