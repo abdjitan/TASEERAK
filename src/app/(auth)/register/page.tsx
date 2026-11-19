@@ -33,6 +33,7 @@ const VMSG: Record<string, { ar: string; en: string; ur: string }> = {
   'اختر نوع الحساب': { ar: 'اختر نوع الحساب', en: 'Choose an account type', ur: 'اکاؤنٹ کی قسم منتخب کریں' },
   'الاسم مطلوب': { ar: 'الاسم مطلوب', en: 'Name is required', ur: 'نام ضروری ہے' },
   'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05': { ar: 'رقم الجوال مطلوب — 10 أرقام ويبدأ بـ 05', en: 'Mobile number: 10 digits starting with 05', ur: 'موبائل نمبر: 05 سے شروع، 10 ہندسے' },
+  'رقم الجوال مطلوب: رقم سعودي يبدأ بـ05، أو رقم إماراتي أو أردني': { ar: 'رقم الجوال مطلوب: رقم سعودي يبدأ بـ05، أو رقم إماراتي أو أردني', en: 'Mobile number: a Saudi number starting with 05, or a UAE or Jordanian mobile', ur: 'موبائل نمبر: 05 سے شروع ہونے والا سعودی نمبر، یا اماراتی یا اردنی نمبر' },
   'البريد الإلكتروني غير صحيح': { ar: 'البريد الإلكتروني غير صحيح', en: 'Email address is not valid', ur: 'ای میل درست نہیں' },
   'كلمة المرور يجب أن تحتوي على 8 أحرف على الأقل، وحرف إنجليزي كبير، وحرف صغير، ورقم': { ar: PASS_RULES_SUMMARY.ar, en: PASS_RULES_SUMMARY.en, ur: PASS_RULES_SUMMARY.ur },
   'كلمة المرور يجب أن تكون 8 أحرف على الأقل': { ar: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل', en: 'Password must be at least 8 characters', ur: 'پاس ورڈ کم از کم 8 حروف' },

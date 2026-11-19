@@ -33,7 +33,8 @@ export default function VerifyGateProvider({ children }: { children: React.React
       supabase.from('profiles').select('role, phone, phone_verified_at, whatsapp_verified_at, email_verified_at').eq('id', user.id).maybeSingle(),
       supabase.rpc('phone_verify_required'),
     ])
-    const ok = !prof || prof.role === 'admin' || req !== true || (!!prof.phone_verified_at && !!prof.email_verified_at)
+    // buyers need only the mobile; their email is optional and encouraged by a banner (owner 2026-11-19, migration 234)
+    const ok = !prof || prof.role === 'admin' || req !== true || (!!prof.phone_verified_at && (prof.role === 'contractor' || !!prof.email_verified_at))
     return { ok, prof, mail: user.email || '' }
   }
 
@@ -59,7 +60,7 @@ export default function VerifyGateProvider({ children }: { children: React.React
   }
 
   const phoneOk = !!p?.phone_verified_at
-  const emailOk = !!p?.email_verified_at
+  const emailOk = !!p?.email_verified_at || p?.role === 'contractor'
 
   return (
     <Ctx.Provider value={ensure}>

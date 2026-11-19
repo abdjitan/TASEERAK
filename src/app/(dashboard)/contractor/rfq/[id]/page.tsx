@@ -943,6 +943,10 @@ export default function RFQDetailPage() {
                           {finalizing ? '...' : `✓ ${L('Confirm award and issue purchase orders', 'ایوارڈ کنفرم کریں اور پرچیز آرڈر جاری کریں', 'تأكيد اختيار العروض وإصدار أوامر الشراء')}`}
                         </button>
                       )}
+                      {/* owner 2026-11-19: before choosing, show how payment and delivery work */}
+                      <a href="/deal-protection" target="_blank" rel="noopener" className="block text-center text-[11px] text-blue-200 underline mt-2">
+                        {L('How payment, delivery and deal protection work', 'ادائیگی، ڈیلیوری اور ڈیل کا تحفظ کیسے کام کرتا ہے', 'كيف يتم الدفع والتسليم وحماية الصفقة')}
+                      </a>
                     </div>
                   )
                 })()}

@@ -571,6 +571,22 @@ export default function SupplierRFQPage() {
       setError(L('Choose where this price comes from.', 'قیمت کا ذریعہ منتخب کریں۔', 'حدّد مصدر السعر قبل الإرسال.'))
       setSubmitting(false); return
     }
+    // a pricing agent above his per-deal cap: the buyer can only award items up to the cap (broker_guard, 214)
+    if (isIndependent) {
+      try {
+        const { data: capRow } = await supabase.rpc('my_agent_deal_cap')
+        const cap = (capRow as any)?.cap
+        const g = offerTotals().gross
+        if (cap != null && g > Number(cap)) {
+          const gs = Math.round(g).toLocaleString('en-US'), cs = Number(cap).toLocaleString('en-US')
+          const go = confirm(L(
+            `Your offer total (${gs} SAR) is above your current limit per deal (${cs} SAR). The buyer will only be able to award items worth up to your limit. Send anyway?`,
+            `آپ کی آفر کی کل رقم (${gs} ریال) فی سودا آپ کی موجودہ حد (${cs} ریال) سے زیادہ ہے۔ خریدار صرف آپ کی حد تک کے آئٹمز منتخب کر سکے گا۔ پھر بھی بھیجیں؟`,
+            `إجمالي عرضك (${gs} ريال) أكبر من حدّك الحالي للصفقة (${cs} ريال). لن يستطيع المشتري أن يرسّي عليك إلا بنوداً لا يتجاوز مجموعها حدّك. هل ترسل العرض؟`))
+          if (!go) { setSubmitting(false); return }
+        }
+      } catch { /* the database still enforces the cap at award */ }
+    }
     if (isIndependent && src.name.trim().length < 2) {
       setError(L('Write the name of the shop you will buy from (the buyer does not see it).', 'جس دکان سے آپ خریدیں گے اس کا نام لکھیں (خریدار اسے نہیں دیکھتا)۔', 'اكتب اسم المحل الذي ستشتري منه (لا يراه المشتري).'))
       setSubmitting(false); return
@@ -1496,8 +1512,21 @@ export default function SupplierRFQPage() {
                     <p className="mb-3 text-sm font-semibold rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
                       <Glyph e="🧾" /> {noVat
                         ? L('Enter your final price including VAT; nothing is added to it.', 'اپنی حتمی قیمت ٹیکس سمیت درج کریں؛ اس پر کچھ اضافہ نہیں ہوگا۔', 'أدخل سعرك النهائي شاملاً الضريبة؛ لا يُضاف إليه أي مبلغ.')
-                        : L('Enter your prices including 15% VAT. This is what the buyer pays.', 'اپنی قیمتیں 15% ٹیکس سمیت درج کریں۔ یہی رقم خریدار ادا کرے گا۔', 'أدخل أسعارك شاملةً ضريبة القيمة المضافة (15%)، فهذا ما يدفعه المشتري.')}
+                        : vatIncluded
+                          ? L('Your prices include 15% VAT. This is what the buyer pays.', 'آپ کی قیمتیں 15% ٹیکس سمیت ہیں۔ یہی رقم خریدار ادا کرے گا۔', 'أسعارك شاملة ضريبة القيمة المضافة (15%)، وهذا ما يدفعه المشتري.')
+                          : L('Your prices are before VAT; 15% is added on top for the buyer.', 'آپ کی قیمتیں ٹیکس سے پہلے ہیں؛ خریدار کے لیے 15% اوپر شامل ہوگا۔', 'أسعارك قبل الضريبة، وتُضاف إليها 15% للمشتري.')}
                     </p>
+                    {/* owner 2026-11-19: a VAT-registered seller may type net prices (price lists are often before VAT) */}
+                    {!noVat && (
+                      <div className="mb-3 grid grid-cols-2 gap-2" role="group">
+                        {([true, false] as const).map(v => (
+                          <button key={String(v)} type="button" onClick={() => setVatIncluded(v)} aria-pressed={vatIncluded === v}
+                            className={`rounded-xl border px-3 py-2 text-sm font-bold ${vatIncluded === v ? 'border-[#D4A543] bg-[#D4A543]/15 text-[#071827]' : 'border-gray-200 bg-white text-gray-600'}`}>
+                            {v ? L('Prices include VAT', 'قیمتیں ٹیکس سمیت', 'الأسعار شاملة الضريبة') : L('Prices before VAT', 'قیمتیں ٹیکس سے پہلے', 'الأسعار قبل الضريبة')}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     {/* تفصيل الإجمالي */}
                     {entered > 0 && noVat && (
                       <div className="bg-[#0F6E56]/5 border border-[#0F6E56]/20 rounded-xl p-3 text-sm flex items-center justify-between">

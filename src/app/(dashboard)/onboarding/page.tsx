@@ -9,7 +9,7 @@ import LocationPicker from '@/components/shared/LocationPicker'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
 import SellerKindPicker from '@/components/shared/SellerKindPicker'
-import { rememberedSignupKind, SIGNUP_KIND_KEY } from '@/lib/sellers'
+import { SIGNUP_KIND_KEY } from '@/lib/sellers'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGION } from '@/types'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
@@ -153,7 +153,8 @@ export default function OnboardingPage() {
         const own = !cn || cn === 'شركة جديدة' || cn === (p.full_name || '').trim()
         setBizName(own ? '' : cn); setBizOrig(own ? '' : cn)
         // Invitation links (/join/company, /join/seller) pass the kind at signup: apply it once.
-        const metaKind = (session.user.user_metadata as any)?.seller_kind || rememberedSignupKind()
+        // only the kind the seller tapped on the sign-up form; a device hint (e.g. an old /join visit) just pre-selects nothing (owner 2026-11-19)
+        const metaKind = (session.user.user_metadata as any)?.seller_kind
         try { localStorage.removeItem(SIGNUP_KIND_KEY) } catch {}
         if (p.role === 'supplier' && !p.provider_type && (metaKind === 'company' || metaKind === 'independent')) {
           const { data: np, error: kErr } = await supabase.rpc('set_seller_kind', { p_kind: metaKind, p_activity: null })

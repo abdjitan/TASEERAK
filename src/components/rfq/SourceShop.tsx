@@ -98,7 +98,7 @@ export function SourceShopCard({ offerId, editable, locale }: { offerId: string;
   )
 }
 
-/** Buyer side: area before the deal; shop name + phone once the deal is made. */
+/** Buyer side: the area only. get_offer_source never returns the shop name or phone to the buyer (214), even after the deal. */
 export function SourceShopBadge({ offerId, locale, compact }: { offerId: string; locale: Loc; compact?: boolean }) {
   const L = tr(locale)
   const [d, setD] = useState<any>(null)

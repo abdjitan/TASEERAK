@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, brandApplies, withBrand, type Sector } from '@/types'
+import { SPEC_UNSURE, specUnsureLabel, REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, brandApplies, withBrand, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -424,7 +424,7 @@ export default function QuickRequestPage() {
     // materials priced by size/grade need their specs (owner 2026-10-27)
     const noSpec = sendable.find(l => missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length)
     if (noSpec) {
-      const m = missingSpecs(noSpec.product_name, noSpec.sector as any, noSpec.specs, noSpec.details, !!noSpec.fileId)
+      const m = missingSpecs(noSpec.product_name, noSpec.sector as any, noSpec.specs, noSpec.details, !!noSpec.fileId, locale)
       setSpecsOpen(noSpec.key); updateLine(noSpec.key, { done: false })
       setError(m[0] === '*'
         ? L(`Write the size/specs of «${l2n(noSpec)}» so suppliers can price it.`, `«${l2n(noSpec)}» کا سائز/تفصیل لکھیں۔`, `اكتب مقاس «${l2n(noSpec)}» ومواصفاته ليتمكن الموردون من تسعيره.`)
@@ -435,7 +435,7 @@ export default function QuickRequestPage() {
     const lost = sendable.find(l => !CATALOG_NAMES.has(l.product_name.trim()) && (l.spec ? !choiceDone(l.spec) : !detectSubCategory(l.product_name, l.sector as any)))
     if (lost) { setError(L(`Choose the section of «${l2n(lost)}» so it reaches the right suppliers.`, `«${l2n(lost)}» کا شعبہ منتخب کریں۔`, `اختر قسم «${l2n(lost)}» ليصل إلى الموردين المختصين.`)); return false }
     if (!region) { setError(L('Choose your region.', 'اپنا علاقہ منتخب کریں۔', 'اختر منطقتك.')); return false }
-    if (!pickup && !geo && !address.trim()) { setError(L('Set the delivery location: detect it, paste a Google Maps link, or write the address.', 'ڈیلیوری کا مقام بتائیں۔', 'حدّد موقع التوصيل: بتحديد موقعك، أو بلصق رابط خرائط Google، أو بكتابة العنوان.')); return false }
+    if (!pickup && !geo && !address.trim()) { setError(L('Set the delivery location: detect it, paste a Google Maps link, or write the address.', 'ڈیلیوری کا مقام بتائیں: اپنا مقام منتخب کریں، Google Maps کا لنک پیسٹ کریں، یا پتہ لکھیں۔', 'حدّد موقع التوصيل: بتحديد موقعك، أو بلصق رابط خرائط Google، أو بكتابة العنوان.')); return false }
     return true
   }
 
@@ -529,7 +529,7 @@ export default function QuickRequestPage() {
       const already = !!insErr && (insErr as any).code === '23505' && /rfqs_pkey/.test(insErr.message || '')
       if (insErr && !already) {
         setError((insErr.message || '').includes('rfq_daily_limit')
-          ? L('Daily request limit reached. Try again later.', 'روزانہ حد پوری ہو گئی۔', 'وصلت إلى الحد اليومي للطلبات. حاول لاحقاً.')
+          ? L('Daily request limit reached. Try again later.', 'آپ درخواستوں کی روزانہ حد تک پہنچ گئے ہیں۔ بعد میں دوبارہ کوشش کریں۔', 'وصلت إلى الحد اليومي للطلبات. حاول لاحقاً.')
           : L('Could not send. Try again.', 'نہیں بھیج سکے۔', 'تعذّر إرسال الطلب. حاول مرة أخرى.'))
         return
       }
@@ -574,7 +574,7 @@ export default function QuickRequestPage() {
         <div className="max-w-lg mx-auto bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
           <div className="text-5xl mb-4"><Glyph e="✅" /></div>
           <h2 className="text-2xl font-extrabold text-navy mb-2">{L('Request sent', 'درخواست بھیج دی گئی', 'تم إرسال طلبك')}</h2>
-          <p className="text-gray-500 mb-6">{L('Suppliers near you will send their prices. We will notify you as quotes arrive.', 'قریبی سپلائرز قیمتیں بھیجیں گے۔', 'سيرسل الموردون القريبون منك أسعارهم، وسنُبلغك فور وصول أي عرض.')}</p>
+          <p className="text-gray-500 mb-6">{L('Suppliers near you will send their prices. We will notify you as quotes arrive.', 'آپ کے قریبی سپلائرز اپنی قیمتیں بھیجیں گے، اور کوئی بھی پیشکش آتے ہی ہم آپ کو اطلاع دیں گے۔', 'سيرسل الموردون القريبون منك أسعارهم، وسنُبلغك فور وصول أي عرض.')}</p>
           <div className="flex gap-3">
             <Link href="/contractor" className="flex-1 py-3 rounded-xl font-bold text-white" style={{ background: '#0B2438' }}>{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
             <button type="button" onClick={() => { setDone(false); setLines([]); setPhotos([]); setNotes('') }} className="flex-1 py-3 rounded-xl font-bold border border-gray-200 text-gray-700">{L('New request', 'نئی درخواست', 'طلب جديد')}</button>
@@ -646,7 +646,7 @@ export default function QuickRequestPage() {
         {lines.length === 0 ? (
           <div className="hidden lg:block bg-white rounded-2xl p-6 border border-dashed border-gray-200 text-center text-sm text-gray-400">
             <div className="text-3xl mb-2"><Glyph e="🧾" /></div>
-            {L('Your list is empty. Add materials by writing, speaking, a photo or from the catalog.', 'آپ کی فہرست خالی ہے۔', 'طلبك فارغ. أضف موادك بالكتابة أو الصوت أو الصورة أو من دليل المواد.')}
+            {L('Your list is empty. Add materials by writing, speaking, a photo or from the catalog.', 'آپ کی درخواست خالی ہے۔ اپنا سامان لکھ کر، بول کر، تصویر سے یا سامان کی فہرست سے شامل کریں۔', 'طلبك فارغ. أضف موادك بالكتابة أو الصوت أو الصورة أو من دليل المواد.')}
           </div>
         ) : (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
@@ -752,7 +752,7 @@ export default function QuickRequestPage() {
                       <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })}
                         className={`input-field text-sm ${miss ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
                         placeholder={needWritten
-                          ? L('Size and specs (required): e.g. length, width, thickness, grade', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): مثل الطول والعرض والسماكة والدرجة')
+                          ? L('Size and specs (required): e.g. length, width, thickness, grade', 'سائز اور تفصیل (ضروری): جیسے لمبائی، چوڑائی، موٹائی اور گریڈ', 'المقاس والمواصفات (مطلوب): مثل الطول والعرض والسماكة والدرجة')
                           : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
                       <BudgetField value={l.budget || ''} visible={!!l.budgetVisible} unit={l.unit ? unitLabel(l.unit) : ''} locale={locale}
                         onChange={(budget, budgetVisible) => updateLine(l.key, { budget, budgetVisible })} />
@@ -796,7 +796,7 @@ export default function QuickRequestPage() {
                           <div className="grid sm:grid-cols-2 gap-2 rounded-xl bg-gray-50 p-2.5">
                             {fields.map(f => {
                               const v = l.specs?.[f.key] || ''
-                              const custom = !!v && !f.options.includes(v)
+                              const custom = !!v && !f.options.includes(v) && v !== SPEC_UNSURE
                               const setV = (val: string) => updateLine(l.key, { specs: { ...(l.specs || {}), [f.key]: val } })
                               return (
                                 <label key={f.key} className="block">
@@ -804,6 +804,7 @@ export default function QuickRequestPage() {
                                   <select value={custom ? '__other' : v} onChange={e => setV(e.target.value === '__other' ? ' ' : e.target.value)} className={`input-field text-sm ${req && !v.trim() ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
                                     <option value="">{req ? L('Choose', 'منتخب کریں', 'اختر') : L('Any', 'کوئی بھی', 'أي')}</option>
                                     {f.options.map(o => <option key={o} value={o}>{getOptionLabel(o, locale)}</option>)}
+                                    <option value={SPEC_UNSURE}>{specUnsureLabel(locale)}</option>
                                     <option value="__other">{L('Other…', 'دیگر…', 'أخرى…')}</option>
                                   </select>
                                   {custom && (
@@ -965,7 +966,7 @@ export default function QuickRequestPage() {
             className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
             <div className="p-5 border-b border-gray-100">
               <h2 id="confirm-title" className="font-extrabold text-navy text-lg">{L('Review your request', 'درخواست کا جائزہ لیں', 'راجع طلبك قبل الإرسال')}</h2>
-              <p className="text-xs text-gray-500 mt-1">{L('Check every detail; suppliers price exactly what is here.', 'ہر تفصیل چیک کریں۔', 'تأكّد من كل التفاصيل، فالموردون يسعّرون ما هو مكتوب هنا بالضبط.')}</p>
+              <p className="text-xs text-gray-500 mt-1">{L('Check every detail; suppliers price exactly what is here.', 'ہر تفصیل اچھی طرح چیک کریں، کیونکہ سپلائرز بالکل وہی قیمت لگاتے ہیں جو یہاں لکھا ہے۔', 'تأكّد من كل التفاصيل، فالموردون يسعّرون ما هو مكتوب هنا بالضبط.')}</p>
             </div>
             <div className="p-5 overflow-y-auto space-y-4 text-sm">
               <div>

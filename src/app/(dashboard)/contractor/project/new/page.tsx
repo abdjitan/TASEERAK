@@ -13,7 +13,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { TIERS, tierLabel, tierHint, normTier } from '@/lib/sellers'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, missingSpecs, getProductSpecs, getOptionLabel, brandApplies, withBrand, type Sector } from '@/types'
+import { SPEC_UNSURE, specUnsureLabel, SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, UNIT_OPTIONS, REGIONS, CITIES_BY_REGION, detectSubCategory, getSubCategoryLabel, getProductLabel, SECTOR_PRODUCTS, unitChoicesFor, getDefaultUnit, specsRequired, missingSpecs, getProductSpecs, getOptionLabel, brandApplies, withBrand, type Sector } from '@/types'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import CatalogPicker from '@/components/shared/CatalogPicker'
@@ -68,7 +68,7 @@ function ItemSpecFields({ name, sector, specs, onChange, locale }: { name: strin
       <div className="grid sm:grid-cols-2 gap-2">
         {fields.map(f => {
           const v = specs?.[f.key] || ''
-          const custom = !!v && !f.options.includes(v)
+          const custom = !!v && !f.options.includes(v) && v !== SPEC_UNSURE
           const setV = (val: string) => onChange({ ...(specs || {}), [f.key]: val })
           return (
             <label key={f.key} className="block">
@@ -77,6 +77,7 @@ function ItemSpecFields({ name, sector, specs, onChange, locale }: { name: strin
                 className={`input-field text-sm ${req && !v.trim() ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
                 <option value="">{req ? L('Choose', 'منتخب کریں', 'اختر') : L('Any', 'کوئی بھی', 'أي')}</option>
                 {f.options.map(o => <option key={o} value={o}>{getOptionLabel(o, locale)}</option>)}
+                <option value={SPEC_UNSURE}>{specUnsureLabel(locale)}</option>
                 <option value="__other">{L('Other…', 'دیگر…', 'أخرى…')}</option>
               </select>
               {custom && <input value={v.trim()} onChange={(e: any) => setV(e.target.value || ' ')} className="input-field text-sm mt-1" placeholder={L('Write it', 'لکھیں', 'اكتبها')} />}
@@ -189,7 +190,7 @@ export default function NewProjectPage() {
       fd.append('items', JSON.stringify(targets.map((i: any) => ({ ref: i.id, code: i.ref || '', product_name: i.product_name, specification: i.description || i.specification || '', sector: i.sector }))))
       const res = await fetch('/api/match-spec', { method: 'POST', body: fd })
       const data = await res.json()
-      if (!data.ok) { setSpecMsg((data.needsGemini ? L('A PDF/image needs the admin to enable Gemini, or convert it to Excel/text — ', 'PDF/تصویر کے لیے ایڈمن کو Gemini فعال کرنا ہوگا، یا اسے Excel/متن میں بدلیں — ', 'ملف PDF أو الصورة يحتاج إلى تفعيل Gemini من الإدارة، أو حوّله إلى Excel أو نص — ') : '') + (data.message || L('Could not match the specifications', 'اسپیسیفکیشن نہیں ملائی جا سکیں', 'تعذّرت مطابقة المواصفات'))); return }
+      if (!data.ok) { setSpecMsg((data.needsGemini ? L('Reading PDF files and photos is not available right now; convert it to Excel or text — ', 'PDF اور تصاویر پڑھنا ابھی دستیاب نہیں؛ اسے Excel یا متن میں بدلیں — ', 'قراءة ملفات PDF والصور غير متاحة حالياً؛ حوّله إلى Excel أو نص — ') : '') + (data.message || L('Could not match the specifications', 'اسپیسیفکیشن نہیں ملائی جا سکیں', 'تعذّرت مطابقة المواصفات'))); return }
       let filled = 0, diff = 0
       setItems(prev => prev.map((it: any) => {
         const s = data.specs?.[it.id]
@@ -269,6 +270,22 @@ export default function NewProjectPage() {
   }, [restored, title, region, city, projectNotes, deliveryRequired, deliveryLocation, items, hours, hideIdentity, vatRequired, targetTiers, verifiedOnly, tenderId])
 
   // تحليل الـ BOQ
+  function boqErr(msg: string): string {
+    const m = String(msg || '')
+    const known: [string, string, string][] = [
+      ['يجب تسجيل الدخول', 'Please sign in first.', 'پہلے سائن اِن کریں۔'],
+      ['محاولات كثيرة', 'Too many attempts. Try again shortly, or upload the table as Excel.', 'بہت زیادہ کوششیں۔ تھوڑی دیر بعد دوبارہ کوشش کریں، یا جدول Excel میں اپ لوڈ کریں۔'],
+      ['الصيغ المدعومة', 'Supported formats: Excel (xlsx/xls), CSV, PDF or an image.', 'معاون فارمیٹ: Excel (xlsx/xls)، CSV، PDF یا تصویر۔'],
+      ['لا يطابق نوعه', 'The file content does not match its type, so it was refused.', 'فائل کا مواد اس کی قسم سے میل نہیں کھاتا، اس لیے مسترد کر دی گئی۔'],
+      ['غير مفعّلة', 'Reading PDF files and photos is not available right now. Upload the table as Excel or CSV.', 'PDF فائلیں اور تصاویر پڑھنا ابھی دستیاب نہیں۔ جدول Excel یا CSV میں اپ لوڈ کریں۔'],
+      ['تعذّرت قراءة المستند', 'Could not read the document. Try again, or upload the table as Excel.', 'دستاویز نہیں پڑھی جا سکی۔ دوبارہ کوشش کریں، یا جدول Excel میں اپ لوڈ کریں۔'],
+      ['تعذّرت قراءة الملف', 'Could not read the file. Check its format and try again.', 'فائل نہیں پڑھی جا سکی۔ اس کا فارمیٹ چیک کر کے دوبارہ کوشش کریں۔'],
+    ]
+    if (locale === 'ar') return m
+    const k = known.find(([ar]) => m.includes(ar))
+    return k ? (locale === 'ur' ? k[2] : k[1]) : m
+  }
+
   async function handleBOQUpload(file: File) {
     setBoqFile(file)
     setParsing(true)
@@ -278,7 +295,7 @@ export default function NewProjectPage() {
       fd.append('file', file)
       const res = await fetch('/api/parse-boq', { method: 'POST', body: fd })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error)
+      if (!res.ok) throw new Error(boqErr(data.error))
       if (data.items?.length > 0) {
         setAiUsed(!!data.ai)
         setItems(data.items.map((item: any, i: any) => {

@@ -1500,12 +1500,16 @@ export function specsRequired(productName: string, sector: Sector): boolean {
   const sub = detectSubCategory((productName || '').trim(), sector)
   return !!sub && SPEC_REQUIRED_SUBS.has(sub)
 }
+/** A buyer who doesn't know a size/grade (owner 2026-11-19): stored as the spec value, the supplier proposes one. */
+export const SPEC_UNSURE = 'غير متأكد — يقترحه المورد'
+export const specUnsureLabel = (locale: string) => locale === 'en' ? 'Not sure, let the supplier suggest' : locale === 'ur' ? 'یقین نہیں، سپلائر تجویز کرے' : 'لست متأكداً، يقترحه المورد'
+
 /** What's still missing before this line can be priced: spec field labels, or '*' = a written spec. */
-export function missingSpecs(productName: string, sector: Sector, specs: Record<string, string> | undefined, written: string, hasFile = false): string[] {
+export function missingSpecs(productName: string, sector: Sector, specs: Record<string, string> | undefined, written: string, hasFile = false, locale = 'ar'): string[] {
   if (!specsRequired(productName, sector)) return []
   const fields = getProductSpecs(productName).filter(f => f.key !== 'unit')
   if (!fields.length) return (written || '').trim() || hasFile ? [] : ['*']
-  return fields.filter(f => !(specs?.[f.key] || '').trim()).map(f => f.ar)
+  return fields.filter(f => !(specs?.[f.key] || '').trim()).map(f => (locale === 'ar' ? f.ar : f.en))
 }
 
 // تجميع التخصصات الفرعية (SUB_CATEGORIES) حسب المجموعة — لصفحة تسعير المورد
