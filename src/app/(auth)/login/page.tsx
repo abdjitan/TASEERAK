@@ -188,8 +188,8 @@ function LoginForm() {
               <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
             </div>
 
-            <h1 className="text-[26px] font-extrabold text-navy mb-1">{mode === 'phone' ? L('Buyers: sign in or create an account', 'خریدار: سائن اِن کریں یا اکاؤنٹ بنائیں', 'المشترون: ادخل أو أنشئ حسابك') : t.welcome}</h1>
-            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('Just your mobile number, no password. Seller accounts sign in with email.', 'صرف آپ کا موبائل نمبر، کوئی پاسورڈ نہیں۔ سپلائر اکاؤنٹس ای میل سے سائن اِن کرتے ہیں۔', 'برقم جوالك فقط، بدون كلمة مرور. حسابات الموردين تدخل بالبريد الإلكتروني.') : t.sub}</p>
+            <h1 className="text-[26px] font-extrabold text-navy mb-1">{mode === 'phone' ? L('Sign in', 'سائن اِن', 'تسجيل الدخول') : t.welcome}</h1>
+            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('With your mobile number, no password. New here? An account is created for you.', 'اپنے موبائل نمبر سے، بغیر پاسورڈ۔ نئے ہیں؟ آپ کا اکاؤنٹ بن جائے گا۔', 'برقم جوالك، بدون كلمة مرور. جديد؟ يُنشأ حسابك تلقائياً.') : t.sub}</p>
 
             {mode === 'phone' ? (
               <PhoneOtpForm onSignedIn={async () => {
@@ -241,7 +241,7 @@ function LoginForm() {
 
             {mode === 'phone' ? (
               <button type="button" onClick={() => { setMode('email'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
-                {L('Sign in with email (sellers and buyers)', 'ای میل سے سائن اِن کریں (سپلائر اور خریدار)', 'الدخول بالبريد الإلكتروني (للموردين والمشترين)')}
+                {L('Sign in with email (suppliers)', 'ای میل سے سائن اِن (سپلائرز)', 'الدخول بالبريد الإلكتروني (للموردين)')}
               </button>
             ) : (
               <div className="space-y-3 text-center">
