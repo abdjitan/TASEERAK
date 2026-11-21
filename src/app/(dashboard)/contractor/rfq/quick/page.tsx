@@ -828,7 +828,7 @@ export default function QuickRequestPage() {
                             </div>
                           )}
                           <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
-                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border max-w-[14rem] truncate ${l.fileId ? 'border-purple-300 text-purple-700 bg-purple-50' : 'border-gray-200 text-gray-600'}`}>
+                            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border max-w-[14rem] truncate ${l.fileId ? 'border-[#0B2438]/30 text-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 text-gray-600'}`}>
                             <Glyph e="📎" /> {l.fileId ? (l.fileName || L('File attached', 'فائل منسلک', 'ملف مرفق')) : (simple ? L('Attach a photo', 'تصویر منسلک کریں', 'أرفق صورة') : L('Attach a drawing or file', 'ڈرائنگ یا فائل', 'أرفق مخططاً أو ملفاً'))}
                           </button>
                           {l.fileId && (
@@ -836,7 +836,7 @@ export default function QuickRequestPage() {
                               className="min-w-10 min-h-10 grid place-items-center rounded-lg text-base text-gray-400 hover:text-red-500 hover:bg-red-50" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}>×</button>
                           )}
                           {(l.moreFiles || []).map(mf => (
-                            <span key={mf.id} className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-purple-300 text-purple-700 bg-purple-50 max-w-[12rem]">
+                            <span key={mf.id} className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border border-[#0B2438]/30 text-[#0B2438] bg-[#0B2438]/5 max-w-[12rem]">
                               <span className="truncate"><Glyph e="📎" /> {mf.name}</span>
                               <button type="button" onClick={() => { deleteDraftBlobs([mf.id]); updateLine(l.key, { moreFiles: (l.moreFiles || []).filter(x => x.id !== mf.id) }) }} className="min-w-10 min-h-10 -my-2 grid place-items-center text-base text-gray-400 hover:text-red-500" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}>×</button>
                             </span>
@@ -887,7 +887,7 @@ export default function QuickRequestPage() {
                   )}
                   <button type="button" onClick={() => { setSpecsOpen(null); updateLine(l.key, { done: true }) }}
                     disabled={!(l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) || (!simple && missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length > 0)}
-                    className="w-full py-2 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0F6E56' }}>
+                    className="w-full py-2 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0B2438' }}>
                     ✓ {!(parseFloat(l.quantity) > 0) ? L('Enter the quantity to save', 'محفوظ کرنے کے لیے مقدار لکھیں', 'أدخل الكمية للحفظ') : !simple && missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length ? L('Enter the specs to save', 'محفوظ کرنے کے لیے تفصیل', 'أدخل المواصفات للحفظ') : L('Save', 'محفوظ کریں', 'حفظ')}
                   </button>
                 </div>

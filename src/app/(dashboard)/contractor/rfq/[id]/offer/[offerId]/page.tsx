@@ -181,8 +181,8 @@ export default function OfferDetailPage() {
 
         {offer.status === 'pending' && offer.price_valid_until && (
           new Date(offer.price_valid_until) < new Date()
-            ? <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-2.5 font-semibold">⏱ {L('This offer price has expired — confirm the price with the supplier before accepting.', 'اس آفر کی قیمت کی مدت ختم ہو گئی — قبول کرنے سے پہلے سپلائر سے قیمت کنفرم کریں۔', 'انتهت صلاحية سعر هذا العرض — يُنصح بتأكيد السعر مع المورّد قبل القبول.')}</div>
-            : <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-2.5">⏱ {L('This offer price is guaranteed until', 'اس آفر کی قیمت اس تاریخ تک پکی ہے:', 'سعر هذا العرض مضمون حتى')} {new Date(offer.price_valid_until).toLocaleDateString(dloc)}.</div>
+            ? <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-2.5 font-semibold"><Glyph e="⏱" /> {L('This offer price has expired — confirm the price with the supplier before accepting.', 'اس آفر کی قیمت کی مدت ختم ہو گئی — قبول کرنے سے پہلے سپلائر سے قیمت کنفرم کریں۔', 'انتهت صلاحية سعر هذا العرض — يُنصح بتأكيد السعر مع المورّد قبل القبول.')}</div>
+            : <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl px-4 py-2.5"><Glyph e="⏱" /> {L('This offer price is guaranteed until', 'اس آفر کی قیمت اس تاریخ تک پکی ہے:', 'سعر هذا العرض مضمون حتى')} {new Date(offer.price_valid_until).toLocaleDateString(dloc)}.</div>
         )}
 
         {/* 🛡 حماية الصفقة — إدارة الصفقة وتتبّعها (بعد القبول) */}
@@ -387,7 +387,7 @@ export default function OfferDetailPage() {
               {Array.isArray(rfq.items) && rfq.items.length > 1 ? (
                 <a href={`/contractor/rfq/${rfq.id}`} className="flex-1 py-3 rounded-xl font-bold text-white text-sm text-center" style={{ background: '#0F6E56' }}>{L('Award items on the request page', 'درخواست کے صفحے پر ہر چیز منتخب کریں', 'اختر الأفضل لكل مادة من صفحة الطلب')} ←</a>
               ) : (
-              <button onClick={acceptOffer} disabled={acting} className="flex-1 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>✓ {(reqDone || offer.reduction_deadline) ? L('Accept original price', 'اصل قیمت قبول کریں', 'قبول السعر الأصلي') : L('Accept offer', 'آفر قبول کریں', 'قبول العرض')}</button>
+              <button onClick={acceptOffer} disabled={acting} className="flex-1 py-3 rounded-xl font-extrabold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>✓ {(reqDone || offer.reduction_deadline) ? L('Accept original price', 'اصل قیمت قبول کریں', 'قبول السعر الأصلي') : L('Accept offer', 'آفر قبول کریں', 'قبول العرض')}</button>
               )}
               <button onClick={rejectOffer} disabled={acting} className="px-6 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600">✕ {L('Reject', 'رد کریں', 'رفض')}</button>
             </div>

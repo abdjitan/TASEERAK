@@ -668,7 +668,7 @@ export default function AdminPanel() {
                         {renderCheck(checkFor(c.file_path, c.id))}
                         {open && !checkFor(c.file_path, c.id) && (
                           <button type="button" onClick={() => readCr({ target: 'claim', claimId: c.id }, 'read-' + c.id)} disabled={actionLoading === 'read-' + c.id}
-                            className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 disabled:opacity-50">
+                            className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-[#0B2438]/20 text-[#0B2438] hover:bg-[#0B2438]/5 disabled:opacity-50">
                             <Glyph e="🤖" /> {actionLoading === 'read-' + c.id ? '...' : 'قراءة آلية للمستند'}
                           </button>
                         )}
@@ -936,7 +936,7 @@ export default function AdminPanel() {
                             </div>
                             {(r.target_tiers?.length || r.verified_only || r.nearby_only) && (
                               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
-                                {(r.target_tiers || []).map((t: string) => <span key={t} className="badge text-[10px] bg-purple-100 text-purple-700">{tierLabel(t, 'ar')}</span>)}
+                                {(r.target_tiers || []).map((t: string) => <span key={t} className="badge text-[10px] bg-[#0B2438]/10 text-[#0B2438]">{tierLabel(t, 'ar')}</span>)}
                                 {r.verified_only && <span className="badge text-[10px] bg-emerald-100 text-emerald-700">موثقون فقط</span>}
                                 {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-[#8F6820]">القريبون فقط</span>}
                               </div>
@@ -960,7 +960,7 @@ export default function AdminPanel() {
                                   <span className="font-semibold" style={{ color: '#0B2438' }}><Glyph e="🏪" /> {nameOf(o.supplier_id)}</span>
                                   <span className="badge text-[10px] badge-gray">{OFFER_STATUS[o.status] || o.status}</span>
                                   <span className="text-emerald-700 font-bold">{sar(o.total_price)}</span>
-                                  {o.delivery_days != null && <span className="text-gray-500">⏱ {o.delivery_days} يوم</span>}
+                                  {o.delivery_days != null && <span className="text-gray-500"><Glyph e="⏱" /> {o.delivery_days} يوم</span>}
                                   {o.po_number && <span className="text-gray-400">PO: {o.po_number}</span>}
                                 </div>
                                 {Array.isArray(o.extra_charges) && o.extra_charges.length > 0 && (
@@ -1110,10 +1110,10 @@ export default function AdminPanel() {
                           {u.role === 'contractor' ? 'مشتري' : 'مورد'}
                         </span>
                         {u.role === 'contractor' && u.contractor_grade && (
-                          <span className="badge text-[10px] bg-indigo-100 text-indigo-700">درجة {u.contractor_grade}</span>
+                          <span className="badge text-[10px] bg-[#0B2438]/10 text-[#0B2438]">درجة {u.contractor_grade}</span>
                         )}
                         {u.role === 'supplier' && u.supplier_tier && (
-                          <span className="badge text-[10px] bg-purple-100 text-purple-700">
+                          <span className="badge text-[10px] bg-[#0B2438]/10 text-[#0B2438]">
                             {tierLabel(u.supplier_tier, 'ar')}
                           </span>
                         )}
@@ -1178,7 +1178,7 @@ export default function AdminPanel() {
                           {renderCheck(checkFor(u.cr_url))}
                           {!checkFor(u.cr_url) && (
                             <button type="button" onClick={() => readCr({ target: 'cr', profileId: u.id }, 'read-' + u.id)} disabled={actionLoading === 'read-' + u.id}
-                              className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 disabled:opacity-50">
+                              className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-[#0B2438]/20 text-[#0B2438] hover:bg-[#0B2438]/5 disabled:opacity-50">
                               <Glyph e="🤖" /> {actionLoading === 'read-' + u.id ? '...' : 'قراءة آلية للسجل'}
                             </button>
                           )}
@@ -1223,7 +1223,7 @@ export default function AdminPanel() {
                     {/* 🤖 Re-run auto-classification */}
                     {u.role === 'supplier' && (
                       <button type="button" disabled={actionLoading === u.id} onClick={() => reclassify(u.id)}
-                        className="text-xs px-3 py-1.5 rounded-lg border border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-all disabled:opacity-50">
+                        className="text-xs px-3 py-1.5 rounded-lg border border-[#0B2438]/20 text-[#0B2438] hover:bg-[#0B2438]/5 transition-all disabled:opacity-50">
                         <Glyph e="🤖" /> إعادة فحص
                       </button>
                     )}
@@ -1238,7 +1238,7 @@ export default function AdminPanel() {
                           await loadData()
                         }}
                         title="نوع الحساب (الفئة تُحسب تلقائياً من النوع والتوثيق)"
-                        className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5 cursor-pointer">
+                        className="text-xs border border-[#0B2438]/20 text-[#0B2438] bg-[#0B2438]/5 rounded-lg px-2 py-1.5 cursor-pointer">
                         <option value="individual">وسيط تسعير (فرد)</option>
                         <option value="company">شركة (النشاط غير محدد)</option>
                         {COMPANY_ACTIVITIES.map(a => <option key={a.k} value={a.k}>{a.ar}</option>)}
@@ -1272,7 +1272,7 @@ export default function AdminPanel() {
                           await supabase.from('profiles').update({ contractor_grade: e.target.value || null }).eq('id', u.id)
                           await loadData()
                         }}
-                        className="text-xs border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg px-2 py-1.5 cursor-pointer">
+                        className="text-xs border border-[#0B2438]/20 text-[#0B2438] bg-[#0B2438]/5 rounded-lg px-2 py-1.5 cursor-pointer">
                         <option value="">-- الدرجة --</option>
                         <option value="A">أ — فوق 100M</option>
                         <option value="B">ب — 30–100M</option>

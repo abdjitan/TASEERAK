@@ -529,7 +529,7 @@ export default function RFQDetailPage() {
                   {!showExtend ? (
                     <button onClick={() => setShowExtend(true)}
                       className="text-[11px] font-semibold text-[#0B2438] border border-blue-200 px-2.5 py-1 rounded-lg hover:bg-blue-50 transition-colors">
-                      ⏱ {L('Extend pricing deadline', 'قیمت دینے کی مہلت بڑھائیں', 'تمديد مهلة التسعير')}
+                      <Glyph e="⏱" /> {L('Extend pricing deadline', 'قیمت دینے کی مہلت بڑھائیں', 'تمديد مهلة التسعير')}
                     </button>
                   ) : (
                     <div className="inline-flex items-center gap-1.5 flex-wrap bg-blue-50 border border-blue-200 rounded-lg p-2">
@@ -656,9 +656,9 @@ export default function RFQDetailPage() {
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{secLabel(it.sector)}</span>
                               {(it.supplier_tiers || []).map((tr: string) => <span key={tr} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700"><><SellerIcon name={tierIcon(tr)} /> {tierLabel(tr, locale)}</></span>)}
                               {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700"><Glyph e="⚡" /> {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
-                              {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{L('d', ' دن', 'ي')}</span>}
-                              {it.spec_file_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline"><Glyph e="📎" /> {L('File', 'فائل', 'ملف')}</a>}
-                              {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
+                              {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"><Glyph e="⏱" /> {it.max_days}{L('d', ' دن', 'ي')}</span>}
+                              {it.spec_file_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline"><Glyph e="📎" /> {L('File', 'فائل', 'ملف')}</a>}
+                              {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
                             </div>
                             </div>
                             </div>
@@ -848,7 +848,7 @@ export default function RFQDetailPage() {
                                     {(() => { const km = offerDistanceKm(b.offer, refGeo); return km != null ? <span title={L('Distance from the delivery location', 'ڈیلیوری کی جگہ سے فاصلہ', 'المسافة من موقع التوصيل')}><Glyph e="📏" /> {km < 1 ? '<1' : Math.round(km)} {L('km', 'کلومیٹر', 'كم')}</span> : null })()}
                                     {b.entry.specification && <span title={b.entry.specification} className="truncate max-w-[220px]"><Glyph e="⚙" /> <AutoTr text={b.entry.specification} locale={locale} /></span>}
                                     {b.entry.warranty && <span className="text-[#0F6E56] font-semibold"><Glyph e="🛡" /> {b.entry.warranty}</span>}
-                                    {b.entry.attachment_url && <a href={fileHref(b.entry.attachment_url)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} className="text-purple-500 hover:underline"><Glyph e="📎" /> {L('Catalog', 'کیٹلاگ', 'كتالوج')}</a>}
+                                    {b.entry.attachment_url && <a href={fileHref(b.entry.attachment_url)} target="_blank" rel="noopener noreferrer" onClick={(e: any) => e.stopPropagation()} className="text-[#0B2438] hover:underline"><Glyph e="📎" /> {L('Catalog', 'کیٹلاگ', 'كتالوج')}</a>}
                                     <Link href={`/contractor/rfq/${id}/offer/${b.offer.id}`} title={L('View all details', 'تمام تفصیل دیکھیں', 'عرض كل التفاصيل')} className="inline-flex items-center gap-1 font-bold text-[11px] px-2.5 py-1 rounded-full transition-all hover:shadow-sm" style={{ color: '#fff', background: '#D4A543' }}><Glyph e="👁" /> {L('Details', 'تفصیل', 'التفاصيل')}</Link>
                                   </div>
                                 </div>
@@ -870,7 +870,7 @@ export default function RFQDetailPage() {
                                     <span className="badge badge-green text-[10px] whitespace-nowrap">{L('Selected', 'منتخب', 'تم الاختيار')} ✓</span>
                                   ) : rfq.status === 'open' ? (
                                     <button onClick={() => awardItem(idx, b.offer.id)} disabled={awarding === `${idx}:${b.offer.id}`}
-                                      className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0F6E56' }}>
+                                      className="text-xs px-3 py-1.5 rounded-lg font-bold disabled:opacity-50 whitespace-nowrap" style={{ background: '#D4A543', color: '#071827' }}>
                                       {awarding === `${idx}:${b.offer.id}` ? '...' : L('Award', 'ایوارڈ کریں', 'اختيار العرض')}
                                     </button>
                                   ) : null}
@@ -963,8 +963,8 @@ export default function RFQDetailPage() {
                         <p className="text-[11px] text-emerald-300 mt-3">✓ {L('Awarded — open each supplier purchase order to follow delivery, payment and deal protection.', 'ایوارڈ ہو گیا — ڈیلیوری، ادائیگی اور ڈیل کے تحفظ کے لیے ہر سپلائر کا پرچیز آرڈر کھولیں۔', 'تمّ اختيار العرض — افتح صفقة كل مورد لمتابعة التسليم والدفع وحماية الصفقة.')}</p>
                       ) : (
                         <button type="button" onClick={finalizeAwards} disabled={finalizing}
-                          className="w-full mt-3 py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#0F6E56' }}>
-                          {finalizing ? '...' : `✓ ${L('Confirm award and issue purchase orders', 'ایوارڈ کنفرم کریں اور پرچیز آرڈر جاری کریں', 'تأكيد اختيار العروض')}`}
+                          className="w-full mt-3 py-2.5 rounded-xl font-extrabold text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#D4A543', color: '#071827' }}>
+                          {finalizing ? '...' : `✓ ${L('Confirm the chosen offers', 'منتخب آفرز کی تصدیق کریں', 'تأكيد اختيار العروض')}`}
                         </button>
                       )}
                       {/* owner 2026-11-19: before choosing, show how payment and delivery work */}
@@ -1062,7 +1062,7 @@ export default function RFQDetailPage() {
                         <span className="font-bold text-gray-900">{offer.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</span>
                         {offer.supplier?.supplier_tier && (
                           <span className={`badge text-[10px] ${
-                            normTier(offer.supplier.supplier_tier) === 'company' ? 'bg-purple-100 text-purple-700' :
+                            normTier(offer.supplier.supplier_tier) === 'company' ? 'bg-[#0B2438]/10 text-[#0B2438]' :
                             normTier(offer.supplier.supplier_tier) === 'shop' ? 'bg-blue-100 text-[#8F6820]' : 'bg-gray-100 text-gray-600'
                           }`}>
                             <><SellerIcon name={tierIcon(offer.supplier.supplier_tier)} /> {tierLabel(offer.supplier.supplier_tier, locale)}</>
@@ -1093,8 +1093,8 @@ export default function RFQDetailPage() {
                         {offer.supplier?.rating_avg > 0 && <span><Glyph e="⭐" /> {offer.supplier.rating_avg}</span>}
                         {offer.supplier?.region && <span><Glyph e="📍" /> {offer.supplier.region}</span>}
                         {offer.price_valid_until && (new Date(offer.price_valid_until) < new Date()
-                          ? <span className="text-red-500 font-semibold">⏱ {L('Price expired — confirm with the supplier', 'قیمت کی مدت ختم — سپلائر سے کنفرم کریں', 'انتهت صلاحية السعر — أكّد مع المورّد')}</span>
-                          : <span className="text-emerald-600">⏱ {L('Price valid until', 'قیمت اس تاریخ تک درست ہے:', 'السعر صالح حتى')} {new Date(offer.price_valid_until).toLocaleDateString(dloc)}</span>)}
+                          ? <span className="text-red-500 font-semibold"><Glyph e="⏱" /> {L('Price expired — confirm with the supplier', 'قیمت کی مدت ختم — سپلائر سے کنفرم کریں', 'انتهت صلاحية السعر — أكّد مع المورّد')}</span>
+                          : <span className="text-emerald-600"><Glyph e="⏱" /> {L('Price valid until', 'قیمت اس تاریخ تک درست ہے:', 'السعر صالح حتى')} {new Date(offer.price_valid_until).toLocaleDateString(dloc)}</span>)}
                       </div>
                       {/* بطاقة أداء المورد — سرعة الرد، نسبة الترسية، الخبرة */}
                       {(() => {

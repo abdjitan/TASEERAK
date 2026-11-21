@@ -868,9 +868,9 @@ export default function SupplierRFQPage() {
                           <div className="flex flex-wrap gap-1 mt-1">
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{(sectors as any)[it.sector] || it.sector}</span>
                             {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700"><Glyph e="⚡" /> {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
-                            {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{L('d', ' دن', 'ي')}</span>}
-                            {it.spec_file_url && it.spec_file_url !== it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline"><Glyph e="📎" /> {L('File', 'فائل', 'ملف')}</a>}
-                            {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
+                            {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"><Glyph e="⏱" /> {it.max_days}{L('d', ' دن', 'ي')}</span>}
+                            {it.spec_file_url && it.spec_file_url !== it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline"><Glyph e="📎" /> {L('File', 'فائل', 'ملف')}</a>}
+                            {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
                           </div>
                           {/* صورة المادة من الطلب السريع: المورد يشوف نفس الشي اللي بدّو ياه الزبون */}
                           {it.photo_url && (
@@ -999,7 +999,7 @@ export default function SupplierRFQPage() {
                   <div className="text-xs font-bold text-amber-800 mb-2">{L('This is a colleague\'s offer — check with them before editing or cancelling it.', 'یہ ساتھی کی آفر ہے — بدلنے یا منسوخ کرنے سے پہلے ان سے بات کریں۔', 'هذا عرض زميلك؛ تواصل معه قبل تعديله أو إلغائه.')}</div>
                 )}
                 <div className="text-xs text-gray-600 mb-2 leading-relaxed">
-                  ⏱ <strong>{L(`You have ${editMinsLeft} minutes`, `آپ کے پاس ${editMinsLeft} منٹ ہیں`, `لديك ${arCount(editMinsLeft, 'دقيقة واحدة', 'دقيقتان', 'دقائق', 'دقيقة')}`)}</strong> {L('to edit or cancel your offer. Cancelling deletes the current offer so you can price again (add a material you missed or change prices). After that, the offer stays fixed until the buyer decides.', 'اپنی آفر میں ترمیم یا منسوخی کے لیے۔ منسوخ کرنے سے موجودہ آفر حذف ہو جائے گی اور آپ دوبارہ قیمت دے سکیں گے (بھولا ہوا مال شامل کریں یا قیمتیں بدلیں)۔ وقت ختم ہونے کے بعد آفر خریدار کے فیصلے تک ویسی ہی رہے گی۔', 'لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتستطيع التسعير من جديد (إضافة مادة نسيتها أو تعديل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.')}
+                  <Glyph e="⏱" /> <strong>{L(`You have ${editMinsLeft} minutes`, `آپ کے پاس ${editMinsLeft} منٹ ہیں`, `لديك ${arCount(editMinsLeft, 'دقيقة واحدة', 'دقيقتان', 'دقائق', 'دقيقة')}`)}</strong> {L('to edit or cancel your offer. Cancelling deletes the current offer so you can price again (add a material you missed or change prices). After that, the offer stays fixed until the buyer decides.', 'اپنی آفر میں ترمیم یا منسوخی کے لیے۔ منسوخ کرنے سے موجودہ آفر حذف ہو جائے گی اور آپ دوبارہ قیمت دے سکیں گے (بھولا ہوا مال شامل کریں یا قیمتیں بدلیں)۔ وقت ختم ہونے کے بعد آفر خریدار کے فیصلے تک ویسی ہی رہے گی۔', 'لتعديل أو إلغاء عرضك. الإلغاء يحذف العرض الحالي فتستطيع التسعير من جديد (إضافة مادة نسيتها أو تعديل الأسعار). بعد انتهاء المهلة يبقى العرض ثابتاً حتى قرار المشتري.')}
                 </div>
                 <button type="button" onClick={cancelOffer} disabled={cancelling}
                   className="px-4 py-2 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#b91c1c' }}>
@@ -1116,9 +1116,9 @@ export default function SupplierRFQPage() {
                               </div>
                               <div className="flex flex-wrap gap-1 mt-1.5">
                                 {it.in_stock && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700"><Glyph e="⚡" /> {L('In stock now', 'فوری دستیاب', 'توفّر فوري')}</span>}
-                                {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">⏱ {it.max_days}{L('d', ' دن', 'ي')}</span>}
-                                {it.spec_file_url && it.spec_file_url !== it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline"><Glyph e="📎" /> {it.spec_file_name || L('Buyer file', 'خریدار کی فائل', 'ملف من المشتري')}</a>}
-                                {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-purple-50 text-purple-600 hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
+                                {it.max_days && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"><Glyph e="⏱" /> {it.max_days}{L('d', ' دن', 'ي')}</span>}
+                                {it.spec_file_url && it.spec_file_url !== it.photo_url && <a href={fileHref(it.spec_file_url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline"><Glyph e="📎" /> {it.spec_file_name || L('Buyer file', 'خریدار کی فائل', 'ملف من المشتري')}</a>}
+                                {Array.isArray(it.attachments) && it.attachments.map((a: any, ai: number) => <a key={ai} href={fileHref(a.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] px-1.5 py-0.5 rounded bg-[#0B2438]/5 text-[#0B2438] hover:underline truncate max-w-[10rem]"><Glyph e="📎" /> {a.name || L('File', 'فائل', 'ملف')}</a>)}
                               </div>
                             </div>
                           </div>
@@ -1310,7 +1310,7 @@ export default function SupplierRFQPage() {
                                 <textarea value={form.specs || ''} onChange={(e: any) => setItemField(i, 'specs', e.target.value)} rows={2} className="input-field text-sm" />
                               </div>
                               <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1">⏱ {L('Delivery time (days)', 'ڈیلیوری کا وقت (دن)', 'مدة التوصيل (أيام)')}</label>
+                                <label className="block text-xs font-bold text-gray-500 mb-1"><Glyph e="⏱" /> {L('Delivery time (days)', 'ڈیلیوری کا وقت (دن)', 'مدة التوصيل (أيام)')}</label>
                                 <input type="text" inputMode="decimal" value={form.delivery_days || ''} onChange={(e: any) => setItemField(i, 'delivery_days', latinNum(e.target.value))} className="input-field text-sm" placeholder="3" />
                               </div>
                               <div>
@@ -1655,7 +1655,7 @@ export default function SupplierRFQPage() {
                   </div>
                 </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5">⏱ {L('Price valid for', 'قیمت کتنی دیر کے لیے درست ہے', 'مدة صلاحية السعر')}</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1.5"><Glyph e="⏱" /> {L('Price valid for', 'قیمت کتنی دیر کے لیے درست ہے', 'مدة صلاحية السعر')}</label>
                 <div className="flex flex-wrap gap-2">
                   {[{ v: '1', l: L('24h', '24 گھنٹے', '24 ساعة') }, { v: '3', l: L('3 days', '3 دن', '3 أيام') }, { v: '7', l: L('1 week', '1 ہفتہ', 'أسبوع') }, { v: '30', l: L('1 month', '1 مہینہ', 'شهر') }].map((o) => (
                     <button type="button" key={o.v} onClick={() => setPriceValidity(o.v)}

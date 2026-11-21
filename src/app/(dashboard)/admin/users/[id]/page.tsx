@@ -278,8 +278,8 @@ export default function AdminUserDetail() {
             <Field label="نوع الحساب">{p.role === 'contractor' ? 'مشتري' : 'مورد'}</Field>
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
-                <div className="text-[11px] text-gray-400 mb-1">نوع الحساب · الفئة: <b className="text-purple-700">{tierLabel(p.supplier_tier, 'ar')}</b> <span className="text-gray-300">(تلقائية)</span></div>
-                <select value={p.provider_type || 'company'} onChange={(e: any) => setField('provider_type', e.target.value)} className="text-xs border border-purple-200 text-purple-700 bg-purple-50 rounded-lg px-2 py-1.5">
+                <div className="text-[11px] text-gray-400 mb-1">نوع الحساب · الفئة: <b className="text-[#0B2438]">{tierLabel(p.supplier_tier, 'ar')}</b> <span className="text-gray-300">(تلقائية)</span></div>
+                <select value={p.provider_type || 'company'} onChange={(e: any) => setField('provider_type', e.target.value)} className="text-xs border border-[#0B2438]/20 text-[#0B2438] bg-[#0B2438]/5 rounded-lg px-2 py-1.5">
                   <option value="individual">وسيط تسعير (فرد)</option>
                   <option value="company">شركة (النشاط غير محدد)</option>
                   {COMPANY_ACTIVITIES.map(a => <option key={a.k} value={a.k}>{a.ar}</option>)}
@@ -289,7 +289,7 @@ export default function AdminUserDetail() {
             {p.role === 'contractor' && (
               <div className="py-1.5 border-b border-gray-50">
                 <div className="text-[11px] text-gray-400 mb-1">درجة التصنيف (للمقاولين)</div>
-                <select value={p.contractor_grade || ''} onChange={(e: any) => setField('contractor_grade', e.target.value || null)} className="text-xs border border-indigo-200 text-indigo-700 bg-indigo-50 rounded-lg px-2 py-1.5">
+                <select value={p.contractor_grade || ''} onChange={(e: any) => setField('contractor_grade', e.target.value || null)} className="text-xs border border-[#0B2438]/20 text-[#0B2438] bg-[#0B2438]/5 rounded-lg px-2 py-1.5">
                   <option value="">-- الدرجة --</option><option value="A">أ — فوق 100M</option><option value="B">ب — 30–100M</option><option value="C">ج — 5–30M</option><option value="D">د — أقل من 5M</option>
                 </select>
               </div>
@@ -379,7 +379,7 @@ export default function AdminUserDetail() {
                     <div key={o.id} className="flex items-center justify-between gap-2 text-xs bg-[#f4f6f9] rounded-lg p-2.5 flex-wrap">
                       <span className="font-semibold" style={{ color: '#0B2438' }}>{o.rfqs?.product_name || 'طلب'}</span>
                       <span className="text-emerald-700 font-bold">{sar(o.total_price)}</span>
-                      {o.delivery_days != null && <span className="text-gray-500">⏱ {o.delivery_days} يوم</span>}
+                      {o.delivery_days != null && <span className="text-gray-500"><Glyph e="⏱" /> {o.delivery_days} يوم</span>}
                       <span className="badge text-[10px] badge-gray">{OFFER_STATUS[o.status] || o.status}</span>
                       <span className="text-gray-400">{dt(o.created_at)}</span>
                     </div>
