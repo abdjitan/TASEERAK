@@ -1520,7 +1520,7 @@ export default function SupplierRFQPage() {
                     {/* خيار شمول الضريبة — إلزامي وصريح، بلا قيمة افتراضية (لا يظهر للبائع المستقل غير المسجّل ضريبياً) */}
                     <p className="mb-3 text-sm font-semibold rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
                       <Glyph e="🧾" /> {noVat
-                        ? L('Enter your final price including VAT; nothing is added to it.', 'اپنی حتمی قیمت ٹیکس سمیت درج کریں؛ اس پر کچھ اضافہ نہیں ہوگا۔', 'أدخل سعرك النهائي شاملاً الضريبة؛ لا يُضاف إليه أي مبلغ.')
+                        ? L('Enter the final price the buyer pays; nothing is added to it.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا؛ اس پر کچھ اضافہ نہیں ہوگا۔', 'أدخل السعر النهائي الذي يدفعه المشتري؛ لا يُضاف إليه أي مبلغ.')
                         : vatIncluded
                           ? L('Your prices include 15% VAT. This is what the buyer pays.', 'آپ کی قیمتیں 15% ٹیکس سمیت ہیں۔ یہی رقم خریدار ادا کرے گا۔', 'أسعارك شاملة ضريبة القيمة المضافة (15%)، وهذا ما يدفعه المشتري.')
                           : L('Your prices are before VAT; 15% is added on top for the buyer.', 'آپ کی قیمتیں ٹیکس سے پہلے ہیں؛ خریدار کے لیے 15% اوپر شامل ہوگا۔', 'أسعارك قبل الضريبة، وتُضاف إليها 15% للمشتري.')}

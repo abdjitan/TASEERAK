@@ -30,13 +30,22 @@ export const showsVatBreakdown = (o: any) => vatStatusOf(o) === 'registered'
 
 // The tag under a price for the buyer. Owner 2026-11-01: «يشمل ضريبة القيمة المضافة 15%»; a seller
 // without a VAT number adds no VAT, and the tag says so instead of claiming VAT is inside.
+// Legal review 2026-11-21: a seller without a VAT number must not look as if VAT was charged
+// («شامل الضريبة» was misleading). An independent (pricing agent, §7A) is invoiced by the source
+// shop, which may be VAT-registered, so for them the tag points to the shop's tax invoice instead.
+const INDEPENDENT_TYPES = ['individual', 'broker', 'price_agent']
+export const isIndependentOffer = (o: any) =>
+  o?.supplier?.supplier_tier === 'independent' || INDEPENDENT_TYPES.includes(o?.supplier?.provider_type)
+
 export function vatTag(o: any, locale: string): string {
-  if (!showsVatBreakdown(o)) return locale === 'en' ? 'final price, VAT included' : locale === 'ur' ? 'حتمی قیمت، ٹیکس شامل' : 'سعر نهائي شامل الضريبة'
+  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Final price; the tax invoice is issued by the supplying shop' : locale === 'ur' ? 'حتمی قیمت؛ ٹیکس انوائس سپلائی کرنے والی دکان جاری کرے گی' : 'سعر نهائي، وتصدر الفاتورة الضريبية من المحل المورّد'
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Final price, no VAT added' : locale === 'ur' ? 'حتمی قیمت، اس پر VAT شامل نہیں کیا جاتا' : 'سعر نهائي، لا تُضاف إليه ضريبة القيمة المضافة'
   return locale === 'en' ? 'incl. 15% VAT' : locale === 'ur' ? '15% VAT سمیت' : 'يشمل ضريبة القيمة المضافة 15%'
 }
 
 // The label of an offer's grand total: «يشمل ضريبة القيمة المضافة 15%» only when the seller charges it.
 export function totalLabel(o: any, locale: string): string {
-  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Total (final, VAT included)' : locale === 'ur' ? 'کل (حتمی، ٹیکس شامل)' : 'الإجمالي (نهائي شامل الضريبة)'
+  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Total (final; tax invoice from the supplying shop)' : locale === 'ur' ? 'کل (حتمی؛ ٹیکس انوائس سپلائی کرنے والی دکان سے)' : 'الإجمالي (نهائي، والفاتورة الضريبية من المحل المورّد)'
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Total (final, no VAT)' : locale === 'ur' ? 'کل (حتمی، VAT کے بغیر)' : 'الإجمالي (نهائي، دون ضريبة القيمة المضافة)'
   return locale === 'en' ? 'Total incl. 15% VAT' : locale === 'ur' ? 'کل رقم (15% VAT سمیت)' : 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)'
 }

@@ -39,7 +39,7 @@ export default function ContractorDealsPage() {
       // RLS يعيد فقط العروض المقبولة على طلبات هذا المقاول
       const { data, error } = await supabase
         .from('offers')
-        .select('*, rfq:rfqs(id, product_name, title), supplier:profiles(company_name_ar)')
+        .select('*, rfq:rfqs(id, product_name, title), supplier:profiles(company_name_ar, supplier_tier, provider_type)')
         .eq('status', 'accepted')
         .order('accepted_at', { ascending: false })
         .limit(200)

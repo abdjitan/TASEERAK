@@ -63,7 +63,7 @@ export default function OrderDetailPage() {
           .eq('rfq_id', offerData.rfq_id).eq('supplier_id', offerData.supplier_id).order('item_index'),
         supabase.from('reviews').select('*').eq('offer_id', id).eq('reviewer_id', session.user.id).maybeSingle(),
       ])
-      setRfq(rfqData); setSupplier(supplierData); setAwards(awardRows || [])
+      setRfq(rfqData); setSupplier(supplierData); if (supplierData) setOffer({ ...offerData, supplier: supplierData }); setAwards(awardRows || [])
       if (rev) setExistingReview(rev)
       if (rfqData) {
         const { data: contractorData } = await supabase
