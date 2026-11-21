@@ -590,7 +590,7 @@ export default function SupplierRFQPage() {
       } catch { /* the database still enforces the cap at award */ }
     }
     if (isIndependent && src.name.trim().length < 2) {
-      setError(L('Write the name of the shop you will buy from (the buyer does not see it).', 'جس دکان سے آپ خریدیں گے اس کا نام لکھیں (خریدار اسے نہیں دیکھتا)۔', 'اكتب اسم المحل الذي ستشتري منه (لا يراه المشتري).'))
+      setError(L('Write the name of the shop you will buy from (the buyer sees its name only after the award).', 'جس دکان سے آپ خریدیں گے اس کا نام لکھیں (خریدار اس کا نام صرف سودے کے بعد دیکھتا ہے)۔', 'اكتب اسم المحل الذي ستشتري منه (لا يرى المشتري اسمه إلا بعد الترسية).'))
       setSubmitting(false); return
     }
     const { data: newOffer, error: insertError } = await supabase.from('offers').insert({

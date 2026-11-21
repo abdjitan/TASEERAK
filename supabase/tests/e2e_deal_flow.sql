@@ -133,7 +133,8 @@ begin
   select status::text into t from offers where id = v_offer;
   if t = 'accepted' then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL award status=' || t; end if;
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
-  if public.get_offer_source(v_offer)->>'name' is null then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL source shop shown to the buyer after the deal (214)'; end if;
+  -- 248: after the deal the buyer sees the shop NAME (consumer law), never its phone
+  if public.get_offer_source(v_offer)->>'name' is not null and public.get_offer_source(v_offer)->>'phone' is null then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL source shop name not shown (or phone shown) to the buyer after the deal (248)'; end if;
   -- H2: the supplier who won now sees the location
   perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
   set local role authenticated;

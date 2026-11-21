@@ -1,6 +1,6 @@
 'use client'
 // «وسيط تسعير» (owner 2026-11-16, migrations 213/214): an independent seller names the shop he
-// buys from. The buyer sees only the area, never the shop (it reaches him only on the shop's tax
+// buys from. The buyer sees the area before the deal and the shop name after it (248; never the phone). The shop's tax
 // invoice); the seller and admins see everything.
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -23,9 +23,9 @@ export function SourceShopFields({ value, onChange, locale }: { value: SourceVal
         {L('The shop you will buy from', 'وہ دکان جہاں سے آپ خریدیں گے', 'المحل الذي ستشتري منه')} <span className="text-red-500">*</span>
       </div>
       <p className="text-[11px] text-gray-600 mb-2 leading-relaxed">
-        {L('You are a pricing agent: the buyer sees only the district, never the shop’s name. Make sure the tax invoice is issued in the buyer’s name, at your quoted price, by a shop with a commercial registration, and attach it at delivery.',
-           'آپ قیمت ایجنٹ ہیں: خریدار صرف علاقہ دیکھتا ہے، دکان کا نام کبھی نہیں۔ یقینی بنائیں کہ ٹیکس انوائس خریدار کے نام، آپ کی آفر کی قیمت پر، کمرشل رجسٹریشن والی دکان سے جاری ہو، اور ڈیلیوری پر اسے منسلک کریں۔',
-           'أنت وسيط تسعير: يرى المشتري الحي فقط، ولا يرى اسم المحل. تأكّد أن الفاتورة الضريبية تصدر باسم المشتري وبنفس سعر عرضك، من محل له سجل تجاري، وأرفقها عند التسليم.')}
+        {L('You are a pricing agent: before the award the buyer sees only the district; after the award the buyer sees the shop’s name (never its phone). Make sure the tax invoice is issued in the buyer’s name, at your quoted price, by a shop with a commercial registration, and attach it at delivery.',
+           'آپ قیمت ایجنٹ ہیں: سودا طے ہونے سے پہلے خریدار صرف علاقہ دیکھتا ہے؛ سودے کے بعد دکان کا نام دیکھتا ہے (فون کبھی نہیں)۔ یقینی بنائیں کہ ٹیکس انوائس خریدار کے نام، آپ کی آفر کی قیمت پر، کمرشل رجسٹریشن والی دکان سے جاری ہو، اور ڈیلیوری پر اسے منسلک کریں۔',
+           'أنت وسيط تسعير: قبل الترسية يرى المشتري الحي فقط، وبعد الترسية يرى اسم المحل (دون رقم هاتفه). تأكّد أن الفاتورة الضريبية تصدر باسم المشتري وبنفس سعر عرضك، من محل له سجل تجاري، وأرفقها عند التسليم.')}
         {cap && (
           <span className="block mt-1 font-semibold text-[#071827]">
             {cap.cap == null
