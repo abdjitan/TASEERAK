@@ -241,7 +241,7 @@ function LoginForm() {
 
             {mode === 'phone' ? (
               <button type="button" onClick={() => { setMode('email'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
-                {L('Sign in with email (suppliers)', 'ای میل سے سائن اِن (سپلائرز)', 'الدخول بالبريد الإلكتروني (للموردين)')}
+                {L('Sign in with email', 'ای میل سے سائن اِن کریں', 'الدخول بالبريد الإلكتروني')}
               </button>
             ) : (
               <div className="space-y-3 text-center">
