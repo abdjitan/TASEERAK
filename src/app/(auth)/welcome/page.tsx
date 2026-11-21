@@ -21,6 +21,7 @@ export default function WelcomePage() {
   const [kind, setKind] = useState<SellerKind>('company')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [converted, setConverted] = useState(false) // admin turned this buyer into a supplier (238): no buyer choice
 
   useEffect(() => {
     const supabase = createClient()
@@ -30,6 +31,7 @@ export default function WelcomePage() {
       const { data: p } = await supabase.from('profiles').select('role, role_chosen_at, full_name').eq('id', user.id).single()
       if (p?.role_chosen_at || p?.role === 'admin') { window.location.href = '/onboarding'; return }
       if (p?.full_name) setName(p.full_name)
+      if (p?.role === 'supplier') { setConverted(true); setIntent('provider') }
       const k = new URLSearchParams(window.location.search).get('kind') || rememberedSignupKind()
       if (k === 'company' || k === 'independent') { setIntent('provider'); setKind(k) }
       setReady(true)
@@ -79,7 +81,8 @@ export default function WelcomePage() {
           <div className="space-y-3">
             <p className="text-[13px] font-bold text-ink-2">{L('What do you want to do?', 'آپ کیا کرنا چاہتے ہیں؟', 'ماذا تريد أن تفعل؟')}</p>
             {/* buyer-first (owner 2026-11-12, app parity 087454f): one big gold card for buyers, a small row for suppliers */}
-            <button type="button" onClick={() => setIntent('buyer')} aria-pressed={intent === 'buyer'}
+            {converted && <p className="text-[13px] font-bold text-[#0F6E56]">{L('Your account is now a supplier account. Choose how you work to continue.', 'آپ کا اکاؤنٹ اب سپلائر اکاؤنٹ ہے۔ جاری رکھنے کے لیے اپنا کام کرنے کا طریقہ منتخب کریں۔', 'أصبح حسابك حساب مورد. اختر طريقة عملك للمتابعة.')}</p>}
+            {!converted && <button type="button" onClick={() => setIntent('buyer')} aria-pressed={intent === 'buyer'}
               className={`w-full text-start flex items-center gap-4 p-5 rounded-2xl border-2 transition-all ${intent === 'buyer' ? 'shadow-md' : 'hover:shadow-sm'}`}
               style={{ background: intent === 'buyer' ? '#D4A543' : '#FFF8E8', borderColor: '#D4A543', color: '#071827' }}>
               <span className="w-12 h-12 rounded-xl grid place-items-center shrink-0" style={{ background: '#071827', color: '#F5C55B' }}>
@@ -89,7 +92,7 @@ export default function WelcomePage() {
                 <span className="block font-extrabold text-lg">{intent === 'buyer' ? '✓ ' : ''}{L('Request prices', 'قیمتیں منگوائیں', 'اطلب الأسعار')}</span>
                 <span className="block text-[13px] mt-0.5 leading-relaxed opacity-80">{L('Request material prices from suppliers and compare quotes.', 'سپلائرز سے سامان کی قیمتیں منگوائیں اور پیشکشوں کا موازنہ کریں۔', 'اطلب أسعار المواد من الموردين وقارن العروض.')}</span>
               </span>
-            </button>
+            </button>}
             <button type="button" onClick={() => setIntent('provider')} aria-pressed={intent === 'provider'}
               className={`w-full text-start px-4 py-3 rounded-xl border text-sm transition-all ${intent === 'provider' ? 'border-navy bg-navy/5' : 'bg-white hover:border-gray-300'}`}
               style={intent === 'provider' ? undefined : { borderColor: 'var(--line)' }}>
