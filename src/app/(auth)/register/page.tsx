@@ -187,7 +187,8 @@ export default function RegisterPage() {
 
   // فحص التكرار قبل الإنشاء — الجوال والبريد فريدان (خصوصية: نُرجع boolean فقط بلا اسم)
   async function checkPhoneDup(phone: string) {
-    if (!/^05[0-9]{8}$/.test(phone)) { setPhoneDup(false); return }
+    // any accepted format (05…, +971…, 07…): phone_exists compares the last 9 digits (2026-11-21 fix)
+    if (!/^05[0-9]{8}$/.test(phone) && !toE164(phone)) { setPhoneDup(false); return }
     try { const { data } = await supabase.rpc('phone_exists', { p_phone: phone }); setPhoneDup(data === true) }
     catch { setPhoneDup(false) }
   }
