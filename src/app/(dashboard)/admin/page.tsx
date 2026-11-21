@@ -67,6 +67,8 @@ export default function AdminPanel() {
       setUser(session.user)
       const qTab = new URLSearchParams(window.location.search).get('tab')
       if (qTab) setTab(qTab)
+      const qq = new URLSearchParams(window.location.search).get('q')
+      if (qq) setSearch(qq)
       await loadData(supabase)
       setLoading(false)
     }
@@ -368,7 +370,7 @@ export default function AdminPanel() {
   rfqs.forEach((r: any) => { rfqCountBy[r.contractor_id] = (rfqCountBy[r.contractor_id] || 0) + 1 })
   const offerCountBy: any = {}
   offers.forEach((o: any) => { offerCountBy[o.supplier_id] = (offerCountBy[o.supplier_id] || 0) + 1 })
-  const nameOf = (id: string) => profileById[id]?.company_name_ar || '—'
+  const nameOf = (id: string) => profileById[id]?.company_name_ar || profileById[id]?.full_name || '—'
 
   // Support conversations grouped by user (latest message + unread-from-user count)
   const convByUser: any = {}
@@ -429,9 +431,14 @@ export default function AdminPanel() {
   const dealsList = offers.filter((o: any) => o.status === 'accepted')
   const acceptedOffers = dealsList.length
 
-  const rfqSearch = (r: any) => !search
-    || r.product_name?.includes(search) || r.sector?.includes(search)
-    || nameOf(r.contractor_id)?.includes(search)
+  const rfqSearch = (r: any) => {
+    if (!search) return true
+    const q = search.trim()
+    const num = q.replace(/^rfq-?/i, '').replace(/\D/g, '')
+    if (num && /^\s*(rfq-?)?\d+\s*$/i.test(q)) return String(r.ref_no || '') === num
+    return r.product_name?.includes(q) || r.title?.includes(q) || r.sector?.includes(q) || r.city?.includes(q)
+      || nameOf(r.contractor_id)?.includes(q) || profileById[r.contractor_id]?.full_name?.includes(q)
+  }
   const filteredRfqs = rfqs.filter(rfqSearch)
   const filteredProjects = projects.filter((p: any) => !search || p.title?.includes(search) || nameOf(p.contractor_id)?.includes(search))
 
@@ -529,7 +536,7 @@ export default function AdminPanel() {
               <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-all">⬇ تصدير CSV</button>
             )}
             <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-              className="input-field max-w-xs text-sm" placeholder="بحث بالاسم أو الجوال" />
+              className="input-field max-w-xs text-sm" placeholder={tab === 'rfqs' ? 'بحث برقم الطلب (RFQ-2688) أو الاسم أو المدينة' : 'بحث بالاسم أو الجوال'} />
           </div>
         </div>
 
@@ -911,14 +918,16 @@ export default function AdminPanel() {
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-bold" style={{ color: '#0B2438' }}>{r.product_name}</span>
+                              {r.ref_no && <span className="badge text-[10px] bg-[#D4A543]/20 text-[#8F6820] font-mono" dir="ltr">RFQ-{r.ref_no}</span>}
+                              <span className="font-bold" style={{ color: '#0B2438' }}>{r.title || r.product_name}</span>
+                              <span className="text-[10px] text-gray-400">{r.created_at ? new Date(r.created_at).toLocaleString('ar-SA-u-ca-gregory', { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>
                               {r.sector && <span className="badge text-[10px] badge-gray">{r.sector}</span>}
                               {r.sub_category && <span className="badge text-[10px] badge-gray">{r.sub_category}</span>}
                               <span className="badge text-[10px] badge-navy">{RFQ_STATUS[r.status] || r.status}</span>
                               <span className="badge text-[10px] bg-orange-100 text-orange-700">{rOffers.length} عرض</span>
                             </div>
                             <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1">
-                              <span><Glyph e="🏢" /> المشتري: <b>{nameOf(r.contractor_id)}</b>{r.hide_identity ? ' (هوية مخفية)' : ''}</span>
+                              <span><Glyph e="🏢" /> المشتري: <a href={'/admin/users/' + r.contractor_id} className="font-bold underline">{nameOf(r.contractor_id)}</a>{r.hide_identity ? ' (هوية مخفية)' : ''}</span>
                               <span><Glyph e="📦" /> الكمية: {r.quantity} {r.unit}</span>
                               <span><Glyph e="💰" /> تقديري: {sar(r.estimated_value)}</span>
                               <span><Glyph e="📍" /> {r.region || '—'}{r.city ? ' / ' + r.city : ''}</span>
