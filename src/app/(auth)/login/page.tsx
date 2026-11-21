@@ -189,13 +189,17 @@ function LoginForm() {
             </div>
 
             <h1 className="text-[26px] font-extrabold text-navy mb-1">{mode === 'phone' ? L('Sign in', 'سائن اِن', 'تسجيل الدخول') : t.welcome}</h1>
-            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('With your mobile number, no password. New here? An account is created for you.', 'اپنے موبائل نمبر سے، بغیر پاسورڈ۔ نئے ہیں؟ آپ کا اکاؤنٹ بن جائے گا۔', 'برقم جوالك، بدون كلمة مرور. جديد؟ يُنشأ حسابك تلقائياً.') : t.sub}</p>
+            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('With your mobile number, no password. New here? A buyer account is created for you.', 'اپنے موبائل نمبر سے، بغیر پاسورڈ۔ نئے ہیں؟ آپ کا خریدار اکاؤنٹ بن جائے گا۔', 'برقم جوالك، بدون كلمة مرور. جديد؟ نُنشئ لك حساب مشتري تلقائياً.') : t.sub}</p>
 
             {mode === 'phone' ? (
+              <>
               <PhoneOtpForm onSignedIn={async () => {
                 const { data: { user } } = await createClient().auth.getUser()
                 if (user) await routeSignedIn(user.id)
               }} />
+              {/* owner 2026-11-21: a new seller must not end up as a buyer through the phone sign-up */}
+              <p className="mt-4 text-sm text-center text-ink-2">{L('Seller or pricing agent?', 'فروخت کنندہ یا قیمت ایجنٹ؟', 'بائع أو وسيط تسعير؟')} <a href="/join" className="font-extrabold text-orange-dark hover:underline">{L('Sign up here', 'یہاں رجسٹر کریں', 'سجّل من هنا')}</a></p>
+              </>
             ) : (
               <>
                 {error && <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg><span>{error}</span></div>}
