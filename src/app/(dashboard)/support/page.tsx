@@ -21,7 +21,23 @@ function Support() {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const search = useSearchParams()
   const [userId, setUserId] = useState<string | null>(null)
-  useEffect(() => { createClient().auth.getUser().then(({ data }: any) => setUserId(data?.user?.id || null)) }, [])
+  const [me, setMe] = useState<any>(null) // role + supplier_conversion_requested_at (238)
+  const [convMsg, setConvMsg] = useState('')
+  useEffect(() => {
+    const sb = createClient()
+    sb.auth.getUser().then(async ({ data }: any) => {
+      const uid = data?.user?.id || null
+      setUserId(uid)
+      if (uid) { const { data: p } = await sb.from('profiles').select('role, supplier_conversion_requested_at').eq('id', uid).maybeSingle(); setMe(p) }
+    })
+  }, [])
+  async function askConversion() {
+    if (!confirm(L('Ask to turn your account into a supplier account? Your number and email stay the same; the team reviews the request.', 'اپنے اکاؤنٹ کو سپلائر اکاؤنٹ میں بدلنے کی درخواست کریں؟ آپ کا نمبر اور ای میل وہی رہیں گے؛ ٹیم درخواست کا جائزہ لے گی۔', 'طلب تحويل حسابك إلى حساب مورد؟ يبقى رقمك وبريدك كما هما، ويراجع الفريق الطلب.'))) return
+    const { error } = await createClient().rpc('request_supplier_conversion', { p_note: null })
+    if (error) { setConvMsg(error.message); return }
+    setMe((m: any) => ({ ...(m || {}), supplier_conversion_requested_at: new Date().toISOString() }))
+    setConvMsg('')
+  }
   const topic = search.get('topic')
   const prefill = topic === 'kind'
     ? L('I would like to change my account type (company / pricing agent). Reason: ', 'میں اپنے اکاؤنٹ کی قسم بدلنا چاہتا ہوں (کمپنی / قیمت ایجنٹ)۔ وجہ: ', 'أرغب في تغيير نوع حسابي (شركة / وسيط تسعير). السبب: ')
@@ -43,6 +59,17 @@ function Support() {
         </div>
         <span className="text-sm font-bold text-emerald-900">{L('Open', 'کھولیں', 'فتح')}</span>
       </a>
+
+      {me?.role === 'contractor' && (
+        <div className="rounded-2xl border border-[#D4A543]/50 bg-[#D4A543]/10 p-4">
+          <div className="font-bold text-[#071827]">{L('Turn my account into a supplier account', 'میرا اکاؤنٹ سپلائر اکاؤنٹ میں بدلیں', 'تحويل حسابي إلى مورد')}</div>
+          <div className="text-xs text-gray-600 mt-0.5">{L('Sell on Taseerak with the same number and email. The team reviews the request; any open request or unfinished deal must be completed first.', 'اسی نمبر اور ای میل سے تسعیرک پر فروخت کریں۔ ٹیم درخواست کا جائزہ لے گی؛ کوئی کھلی درخواست یا نامکمل سودا پہلے مکمل ہونا چاہیے۔', 'بع على تسعيرك بنفس رقمك وبريدك. يراجع الفريق الطلب، ويلزم أولاً إنهاء أي طلب تسعير مفتوح أو صفقة لم تكتمل.')}</div>
+          {me?.supplier_conversion_requested_at
+            ? <div className="mt-2 text-sm font-bold text-[#0F6E56]">✓ {L('Request sent. We will notify you when it is approved.', 'درخواست بھیج دی گئی۔ منظوری پر ہم آپ کو اطلاع دیں گے۔', 'تم إرسال الطلب، وسنُبلغك عند الموافقة.')}</div>
+            : <button type="button" onClick={askConversion} className="mt-2 px-4 py-2 rounded-xl bg-[#D4A543] text-[#071827] text-sm font-bold">{L('Request the change', 'درخواست بھیجیں', 'أرسل الطلب')}</button>}
+          {convMsg && <div className="mt-2 text-xs text-red-600">{convMsg}</div>}
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
         <h2 className="text-lg font-bold text-[#0B2438] mb-1">{L('Message the admin team', 'انتظامیہ کو پیغام', 'رسالة إلى الإدارة')}</h2>

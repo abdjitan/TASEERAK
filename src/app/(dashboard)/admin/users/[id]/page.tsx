@@ -202,6 +202,22 @@ export default function AdminUserDetail() {
             <AccountModeration userId={id} bannedUntil={p.banned_until} banReason={p.ban_reason} onChanged={() => loadAll()} />
           )}
 
+            {p.role === 'contractor' && (
+              <div className={`rounded-xl border p-3 text-sm ${p.supplier_conversion_requested_at ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}>
+                <div className="font-bold text-[#0B2438]">تحويل الحساب إلى مورد</div>
+                <div className="text-xs text-gray-600 mt-0.5">{p.supplier_conversion_requested_at
+                  ? 'طلب المستخدم تحويل حسابه إلى مورد بتاريخ ' + new Date(p.supplier_conversion_requested_at).toLocaleDateString('ar-SA-u-ca-gregory') + '.'
+                  : 'لم يطلب المستخدم التحويل.'} يبقى الرقم والبريد نفسيهما، ويُكمل نوع الحساب والتخصصات بعد التحويل.</div>
+                <button type="button" className="mt-2 px-3 py-1.5 rounded-lg text-white text-xs font-bold bg-[#0B2438]"
+                  onClick={async () => {
+                    if (!confirm('تحويل هذا الحساب إلى مورد؟ يُرفض إن كان لديه طلب مفتوح أو صفقة لم يُؤكَّد استلامها.')) return
+                    const { error } = await createClient().rpc('admin_convert_to_supplier', { p_user: id })
+                    if (error) { alert(error.message); return }
+                    loadAll()
+                  }}>تحويل إلى مورد</button>
+              </div>
+            )}
+
           {/* Reject reason */}
           {rejecting && (
             <div className="mt-4 p-4 bg-red-50 rounded-xl border border-red-200">
