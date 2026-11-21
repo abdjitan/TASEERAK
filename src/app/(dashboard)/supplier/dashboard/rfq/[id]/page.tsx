@@ -42,6 +42,7 @@ export default function SupplierRFQPage() {
   const [user, setUser] = useState<any>(null)
   const [actingId, setActingId] = useState('') // الشركة لعضو الفريق، وإلا المستخدم نفسه
   const [verified, setVerified] = useState(true) // تفاؤلي؛ يُضبط من الملف. القفل الحقيقي على مستوى القاعدة (RLS)
+  const [crRequired, setCrRequired] = useState(false) // company/shop without a CR cannot price yet (244)
   const [rfq, setRfq] = useState<any>(null)
   const [buyerBudgets, setBuyerBudgets] = useState<Record<number, number>>({}) // R23: only budgets the buyer chose to show (before VAT)
   const [existingOffer, setExistingOffer] = useState<any>(null)
@@ -170,6 +171,7 @@ export default function SupplierRFQPage() {
         supabase.rpc('get_rfq_contractor', { p_rfq_id: id }),
       ])
       setVerified(canQuote === true)
+      supabase.rpc('my_pricing_gate').then(({ data }: any) => setCrRequired(data?.cr_required === true), () => {})
       const actId: string = (actRaw as any) || session.user.id
       setActingId(actId)
       if (!rfqData) { setRfq(null); setLoading(false); return }
@@ -1046,6 +1048,13 @@ export default function SupplierRFQPage() {
             <h3 className="font-bold" style={{ color: '#0B2438' }}>{expired ? L('Pricing window closed', 'قیمت دینے کی مہلت ختم', 'انتهت مهلة التسعير') : T.closed}</h3>
             <p className="text-sm text-gray-500">{expired ? L('The deadline passed — offers are no longer accepted.', 'مقررہ وقت ختم ہو گیا — اب آفرز قبول نہیں کی جاتیں۔', 'انتهى الوقت المحدد لاستقبال العروض على هذا الطلب.') : T.closedSub}</p>
             {rfq.expires_at && <p className="text-xs text-gray-400 mt-2"><Glyph e="📅" /> {formatDateTime(rfq.expires_at)}</p>}
+          </div>
+        ) : crRequired ? (
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#D4A543]/50 text-center">
+            <div className="text-4xl mb-2"><Glyph e="🛡" /></div>
+            <h3 className="font-bold" style={{ color: '#0B2438' }}>{L('Add your commercial registration to start pricing', 'قیمت لگانا شروع کرنے کے لیے اپنا تجارتی رجسٹریشن شامل کریں', 'أضف سجلك التجاري لتبدأ التسعير')}</h3>
+            <p className="text-sm text-gray-500 mt-1 leading-relaxed">{L('This request matches what you sell. Enter your unified national number (10 digits starting with 7) and you can price right away; the team reviews it afterwards.', 'یہ درخواست آپ کے سامان سے ملتی ہے۔ اپنا متحدہ قومی نمبر (7 سے شروع، 10 ہندسے) درج کریں اور فوراً قیمت لگا سکیں گے؛ ٹیم بعد میں جائزہ لے گی۔', 'هذا الطلب يناسب ما تبيعه. أدخل الرقم الوطني الموحد لمنشأتك (10 أرقام يبدأ بـ7)، وتستطيع التسعير فوراً، ويراجعه الفريق لاحقاً.')}</p>
+            <Link href="/settings" className="inline-block mt-4 px-5 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{L('Add my CR', 'سی آر شامل کریں', 'أضف سجلي التجاري')}</Link>
           </div>
         ) : !verified ? (
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 text-center">
