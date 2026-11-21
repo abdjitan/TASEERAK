@@ -583,18 +583,18 @@ export default function ContractorDashboard() {
                 </div>
                 {/* على الجوال: البحث بسطر كامل تحت الفلاتر حتى لا تسحقه القوائم الطويلة */}
                 <div className="flex flex-wrap gap-2">
-                  <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
+                  {!homeBuyer && <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
                     className="input-field text-xs flex-shrink-0 w-auto py-2" aria-label={L('Sector', 'شعبہ', 'القطاع')}>
-                    <option value="all">{L('All Sectors', 'تمام شعبے', 'كل القطاعات')}</option>
+                    <option value="all">{L('All sections', 'تمام حصے', 'كل الأقسام')}</option>
                     {Object.keys(sectors).map((s: any) => <option key={s} value={s}>{sectors[s]}</option>)}
-                  </select>
+                  </select>}
                   <select value={sortBy} onChange={(e: any) => setSortBy(e.target.value)}
                     className="input-field text-xs flex-shrink-0 w-auto py-2" aria-label={L('Sort by', 'ترتیب', 'الترتيب')}>
                     <option value="newest">{L('Newest', 'تازہ ترین', 'الأحدث')}</option>
                     <option value="expiry">{L('Closest to expiry', 'جلد ختم ہونے والی', 'الأقرب انتهاءً')}</option>
                   </select>
                   <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-                    className="input-field text-xs flex-1 min-w-[160px] py-2" type="search" placeholder={L('Search requests…', 'درخواست تلاش کریں…', 'ابحث عن طلب…')} aria-label={L('Search requests', 'درخواستیں تلاش کریں', 'البحث في الطلبات')} />
+                    className="input-field text-xs basis-full sm:basis-auto sm:flex-1 sm:min-w-[160px] py-2 order-first sm:order-none" type="search" placeholder={L('Search requests…', 'درخواست تلاش کریں…', 'ابحث عن طلب…')} aria-label={L('Search requests', 'درخواستیں تلاش کریں', 'البحث في الطلبات')} />
                 </div>
               </div>
             </div>
