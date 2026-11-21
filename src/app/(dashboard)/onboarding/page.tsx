@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { nearestSaCity } from '@/lib/saCityCoords'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import PageLoader from '@/components/shared/PageLoader'
@@ -119,7 +120,6 @@ export default function OnboardingPage() {
   const [providerType, setProviderType] = useState('')
   // فرد / وكيل أسعار / سمسار: ما عنده محل ولا سجل — ثقته من التقييمات، فما نسأله تصنيف ولا توثيق
   const isIndividual = ['individual', 'price_agent', 'broker'].includes(providerType)
-  const [minOrderValue, setMinOrderValue] = useState('')
   // business name for a company seller: the WhatsApp sign-up only asks for the person's name
   const [bizName, setBizName] = useState('')
   const [bizOrig, setBizOrig] = useState('')
@@ -163,7 +163,6 @@ export default function OnboardingPage() {
           if (kErr) showErr(t.kindFailed)
           else if (np) setProviderType(String(np))
         }
-        if (p.min_order_value) setMinOrderValue(String(p.min_order_value))
         if (p.contractor_grade) setContractorGrade(p.contractor_grade)
       }
       const [{ data: ps, error: psErr }, { data: psp, error: pspErr }] = await Promise.all([
@@ -205,13 +204,15 @@ export default function OnboardingPage() {
     const validSectors = Array.from(new Set(sectors.filter(s => Object.prototype.hasOwnProperty.call(SECTOR_LABELS, s))))
     const validSpecialties = Array.from(new Set(specialties.filter(k => typeof k === 'string' && k.trim() !== '')))
     if (role === 'supplier' && validSectors.length === 0) { showErr(t.needSector); return }
-    const minOrder = minOrderValue ? parseFloat(minOrderValue) : 0
+    if (role === 'supplier' && !isIndividual && (lat == null || lng == null)) {
+      showErr(locale === 'en' ? 'Set your shop location on the map, so buyers near you receive your offers.' : locale === 'ur' ? 'نقشے پر اپنی دکان کا مقام منتخب کریں تاکہ قریبی خریداروں تک آپ پہنچیں۔' : 'حدّد موقع محلك على الخريطة، ليصل إليك المشترون القريبون منك.')
+      return
+    }
     setSaving(true)
     try {
       const update: any = { region, city, district: district || null, preferred_language: locale }
       if (lat != null && lng != null) { update.latitude = lat; update.longitude = lng }
       if (role === 'supplier' && !isIndividual && bizName.trim() && bizName.trim() !== bizOrig) update.company_name_ar = bizName.trim().slice(0, 120)
-      if (role === 'supplier') update.min_order_value = Number.isFinite(minOrder) && minOrder > 0 ? minOrder : 0
       if (role === 'contractor') update.contractor_grade = contractorGrade || null
       const { error: upErr } = await supabase.from('profiles').update(update).eq('id', uid)
       if (upErr) { showErr(t.profileFailed); setSaving(false); return }
@@ -344,9 +345,16 @@ export default function OnboardingPage() {
               <div className="mt-4">
                 <label className="block text-xs font-semibold text-gray-600 mb-1">
                   <Glyph e="📍" /> {locale === 'en' ? 'Your location on the map' : locale === 'ur' ? 'نقشے پر آپ کا مقام' : 'موقعك على الخريطة'}
-                  <span className="font-normal text-gray-400"> ({locale === 'en' ? 'optional, recommended' : locale === 'ur' ? 'اختیاری' : 'اختياري، ويُنصح به'})</span>
+                  {role === 'supplier' && !isIndividual
+                    ? <span className="text-red-500"> *</span>
+                    : <span className="font-normal text-gray-400"> ({locale === 'en' ? 'optional, recommended' : locale === 'ur' ? 'اختیاری' : 'اختياري، ويُنصح به'})</span>}
                 </label>
-                <LocationPicker lat={lat} lng={lng} locale={locale} onChange={(a: number, b: number) => { setLat(a); setLng(b) }} />
+                <LocationPicker lat={lat} lng={lng} locale={locale} onChange={(a: number, b: number) => {
+                  setLat(a); setLng(b)
+                  // owner 2026-11-21: the pin fills the region and city by itself (still editable above)
+                  const near = nearestSaCity(a, b)
+                  if (near) { setRegion(near.region); setCity(near.city) }
+                }} />
               </div>
             </div>
 
@@ -437,9 +445,6 @@ export default function OnboardingPage() {
                   <>
                     <label htmlFor="ob-biz" className="block text-xs font-bold text-navy mb-1 mt-4">{t.bizName} * <span className="text-gray-500 font-normal">— {t.bizHint}</span></label>
                     <input id="ob-biz" value={bizName} onChange={(e: any) => setBizName(e.target.value)} autoComplete="organization" maxLength={120} className="input-field" placeholder={t.bizPh} />
-                    <label className="block text-xs font-bold text-gray-500 mb-1 mt-4">{t.minOrder}</label>
-                    <input type="number" value={minOrderValue} onChange={(e: any) => setMinOrderValue(e.target.value)} className="input-field" placeholder={t.minOrderPh} min="0" />
-                    <p className="text-[10px] text-gray-400 mt-1">{t.minOrderHint}</p>
                   </>
                 )}
               </div>
