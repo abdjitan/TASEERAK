@@ -115,6 +115,8 @@ export default function QuickRequestPage() {
   const [hideIdentity, setHideIdentity] = useState(true)
   const [vatRequired, setVatRequired] = useState(false)
   const [verifiedOnly, setVerifiedOnly] = useState(false)
+  // owner 2026-11-21: who receives the request: the nearest suppliers (245) or the whole region (capped)
+  const [nearbyOnly, setNearbyOnly] = useState(true)
   // who prices it (owner 2026-10-24): all / companies & factories / shops / independents — rfqs.target_tiers
   const [tier, setTier] = useState<'all' | 'company' | 'shop' | 'independent'>('all')
   const [pickup, setPickup] = useState(false) // the buyer collects from the supplier instead of delivery
@@ -520,7 +522,7 @@ export default function QuickRequestPage() {
         region, city: city || null, delivery_required: !pickup, vat_invoice_required: vatRequired,
         delivery_location: pickup ? null : (address.trim().slice(0, 300) || null),
         delivery_geo: pickup || !geo ? null : `${geo.lat},${geo.lng}`,
-        hide_identity: hideIdentity, verified_only: verifiedOnly, nearby_only: false,
+        hide_identity: hideIdentity, verified_only: verifiedOnly, nearby_only: nearbyOnly,
         target_tiers: tier === 'all' ? null : [tier],
         notes: notes.trim() || null,
         expires_at: new Date(Date.now() + hours * 3600 * 1000).toISOString(),
@@ -877,6 +879,21 @@ export default function QuickRequestPage() {
                 {((CITIES_BY_REGION as any)[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
               </select>
             </div>
+            {region && (
+              <div>
+                <div className="text-xs font-bold text-gray-600 mb-1.5">{L('Who should receive your request?', 'آپ کی درخواست کس کو بھیجی جائے؟', 'لمن نرسل طلبك؟')}</div>
+                <div role="radiogroup" className="grid grid-cols-2 gap-2">
+                  {([[true, L('Suppliers nearest to me', 'میرے قریب ترین سپلائرز', 'الموردون الأقرب إليّ'), L('The closest ones that sell your materials', 'آپ کا سامان بیچنے والے قریب ترین', 'الأقرب ممن يبيعون موادك')],
+                     [false, L('The whole region', 'پورا علاقہ', 'كل منطقة ' + region), L('Suppliers across the region', 'علاقے بھر کے سپلائرز', 'موردون من أنحاء المنطقة')]] as const).map(([v, t, sub]) => (
+                    <button key={String(v)} type="button" role="radio" aria-checked={nearbyOnly === v} onClick={() => setNearbyOnly(v)}
+                      className={`text-start rounded-xl border-2 px-3 py-2 ${nearbyOnly === v ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white'}`}>
+                      <span className="block text-sm font-bold text-navy">{nearbyOnly === v ? '✓ ' : ''}{t}</span>
+                      <span className="block text-[11px] text-gray-500">{sub}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {!pickup && (
               <div className="space-y-2">
                 <LocationPicker lat={geo?.lat ?? null} lng={geo?.lng ?? null} locale={locale} onChange={(a: number, b: number) => { setGeo({ lat: a, lng: b }); setGeoFromProfile(false) }} />

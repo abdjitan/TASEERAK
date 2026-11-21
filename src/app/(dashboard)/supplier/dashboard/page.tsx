@@ -181,7 +181,7 @@ export default function SupplierDashboard() {
       // rows carry no contractor_id (buyer privacy). The checks below stay as a second filter.
       const { data: rfqsRaw, error: feedErr } = await supabase.rpc('get_supplier_feed', {
         p_sectors: mySectors.length > 0 ? mySectors : null,
-        p_min_value: minVal > 0 ? minVal : 0,
+        p_min_value: 0, // minimum order value removed (owner 2026-11-21)
         p_limit: 150,
       })
       if (feedErr) throw feedErr // never cache a failed feed as «no requests»
