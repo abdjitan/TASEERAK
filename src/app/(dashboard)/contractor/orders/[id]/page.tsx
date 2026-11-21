@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
+import AppShell from '@/components/shared/AppShell'
+import { getNav } from '@/lib/nav'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -99,7 +101,7 @@ export default function OrderDetailPage() {
   if (!offer || !rfq) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4" dir={dir}>
       <div className="text-center">
-        <div className="text-gray-500 mb-3">{L('Purchase order not found', 'پرچیز آرڈر نہیں ملا', 'أمر الشراء غير موجود')}</div>
+        <div className="text-gray-500 mb-3">{L('Purchase order not found', 'پرچیز آرڈر نہیں ملا', 'الصفقة غير موجودة')}</div>
         <Link href="/contractor/orders" className="inline-block px-5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('My deals', 'میری ڈیلز', 'صفقاتي')}</Link>
       </div>
     </div>
@@ -140,12 +142,13 @@ export default function OrderDetailPage() {
   const dealGross = dealNet + dealVat
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 print:bg-white print:p-0" dir={dir}>
+    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={getNav('contractor', locale, '/contractor/orders')} dir={dir}>
+    <div className="print:bg-white print:p-0" dir={dir}>
       <div className="max-w-3xl mx-auto flex flex-col gap-6">
 
         {/* Actions - hidden in print */}
         <div className="flex items-center justify-between mt-4 print:hidden">
-          <Link href="/contractor" className="text-sm text-gray-500 hover:text-gray-700"><span aria-hidden="true">{BACK}</span> {L('Back to dashboard', 'ڈیش بورڈ پر واپس', 'رجوع للوحة التحكم')}</Link>
+          <Link href="/contractor/orders" className="text-sm text-gray-500 hover:text-gray-700"><span aria-hidden="true">{BACK}</span> {L('My deals', 'میری ڈیلز', 'صفقاتي')}</Link>
           <div className="flex items-center gap-2">
             {offer?.rfq_id && (
               <Link href={`/contractor/rfq/quick?from=${offer.rfq_id}`}
@@ -316,11 +319,11 @@ export default function OrderDetailPage() {
 
           {/* Terms */}
           <div className="p-4 sm:p-8 border-b border-gray-100">
-            <h3 className="text-sm font-bold text-gray-900 mb-3">{L('Supply terms', 'سپلائی کی شرائط', 'شروط التوريد')}</h3>
+            <h3 className="text-sm font-bold text-gray-900 mb-3">{L('Delivery and payment', 'ڈیلیوری اور ادائیگی', 'التسليم والدفع')}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-2">
                 <span>{rfq.delivery_required ? <Glyph e="✅" /> : <Glyph e="❌" />}</span>
-                <span>{rfq.delivery_required ? L('Delivery included', 'ڈیلیوری شامل ہے', 'التوصيل مشمول') : L('Delivery not included', 'ڈیلیوری شامل نہیں', 'التوصيل غير مشمول')}</span>
+                <span>{rfq.delivery_required ? L('Delivery to your site', 'آپ کی جگہ پر ڈیلیوری', 'التوصيل إلى موقعك') : L('Pickup from the supplier', 'سپلائر سے وصولی', 'الاستلام من المورد')}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span>{rfq.vat_invoice_required ? <Glyph e="✅" /> : <Glyph e="❌" />}</span>
@@ -477,5 +480,6 @@ export default function OrderDetailPage() {
         )}
       </div>
     </div>
+    </AppShell>
   )
 }

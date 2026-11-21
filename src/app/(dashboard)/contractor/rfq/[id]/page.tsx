@@ -92,6 +92,7 @@ export default function RFQDetailPage() {
   // owner 2026-10-31: the buyer sees the best 3 offers (by the chosen order); «عرض كل العروض» shows the rest
   const TOP_N = 3
   const [showAllOffers, setShowAllOffers] = useState(false)
+  const [offerMore, setOfferMore] = useState<Record<string, boolean>>({})
   const [allBidsFor, setAllBidsFor] = useState<Record<number, boolean>>({})
   const [onlyVerified, setOnlyVerified] = useState(false)
   const [tierFilter, setTierFilter] = useState('') // '' | company | shop | independent
@@ -344,7 +345,7 @@ export default function RFQDetailPage() {
   const [finalizing, setFinalizing] = useState(false)
   async function finalizeAwards() {
     if (!(await ensureVerified())) return
-    if (!confirm(L('Confirm the award? The winning suppliers will be accepted, a purchase order issued for each, and the request closed.', 'ایوارڈ کنفرم کریں؟ جیتنے والے سپلائرز قبول ہوں گے، ہر سپلائر کا پرچیز آرڈر بنے گا، اور درخواست بند ہو جائے گی۔', 'تأكيد اختيار العرض؟ سيتم قبول الموردين الفائزين، إصدار أمر شراء لكل مورد، وإغلاق الطلب.'))) return
+    if (!confirm(L('Confirm the award? The winning suppliers will be accepted, a purchase order issued for each, and the request closed.', 'ایوارڈ کنفرم کریں؟ جیتنے والے سپلائرز قبول ہوں گے، ہر سپلائر کا پرچیز آرڈر بنے گا، اور درخواست بند ہو جائے گی۔', 'تأكيد اختيار العرض؟ سيتم قبول الموردين الذين اخترتهم، وفتح صفقة مع كل مورد، وإغلاق الطلب.'))) return
     setFinalizing(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('finalize_rfq_awards', { p_rfq_id: id })
@@ -689,7 +690,7 @@ export default function RFQDetailPage() {
             className="block bg-green-50 rounded-2xl p-6 border border-green-200 mb-6 hover:shadow transition-shadow text-center">
             <div className="text-3xl mb-2"><Glyph e="📄" /></div>
             <h3 className="font-bold text-green-800 mb-1">{L('Offer accepted from', 'آفر قبول ہوئی:', 'تم قبول عرض من')} {acceptedOffer.supplier?.company_name_ar}</h3>
-            <p className="text-sm text-green-600">{L('Price:', 'قیمت:', 'السعر:')} {acceptedOffer.total_price?.toLocaleString('en-US')} {SAR} — {L('tap to view the purchase order', 'پرچیز آرڈر دیکھنے کے لیے دبائیں', 'اضغط لعرض أمر الشراء')}</p>
+            <p className="text-sm text-green-600">{L('Price:', 'قیمت:', 'السعر:')} {acceptedOffer.total_price?.toLocaleString('en-US')} {SAR} — {L('tap to view the purchase order', 'پرچیز آرڈر دیکھنے کے لیے دبائیں', 'اضغط لعرض الصفقة')}</p>
           </Link>
         )}
 
@@ -944,7 +945,7 @@ export default function RFQDetailPage() {
                         <div key={i} className="flex items-center justify-between text-sm py-1.5 border-b border-white/10 gap-2">
                           <span className="flex items-center gap-2 flex-wrap">{v.name} <span className="text-blue-200 text-xs">({v.count} {L('materials', 'مال', 'مادة')})</span>
                             {finalized
-                              ? <Link href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}><Glyph e="📄" /> {L('Purchase order', 'پرچیز آرڈر', 'أمر الشراء')} <span aria-hidden="true">{FWD}</span></Link>
+                              ? <Link href={`/contractor/orders/${v.offerId}`} className="text-[10px] px-2 py-0.5 rounded-full font-bold" style={{ background: '#0F6E56' }}><Glyph e="📄" /> {L('Purchase order', 'پرچیز آرڈر', 'الصفقة')} <span aria-hidden="true">{FWD}</span></Link>
                               : v.phone && <a href={waLink(v.phone, L('Regarding a materials award on Taseerak', 'تسعیرک پر مال کے ایوارڈ کے بارے میں', 'بخصوص اختيار عروض مواد من منصة تسعيرك')) || undefined} target="_blank" rel="noreferrer" className="text-[10px] px-2 py-0.5 rounded-full" style={{ background: '#25D366' }}><Glyph e="💬" /> {L('Contact', 'رابطہ', 'تواصل')}</a>}
                           </span>
                           <span className="text-end">
@@ -959,11 +960,11 @@ export default function RFQDetailPage() {
                       </div>
                       <div className="text-[11px] text-blue-200 text-end">{L('Before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')} {money(grandNet)} {SAR} · {L('VAT 15%', 'ٹیکس 15%', 'الضريبة 15%')} {money(grand - grandNet)} {SAR}</div>
                       {finalized ? (
-                        <p className="text-[11px] text-emerald-300 mt-3">✓ {L('Awarded — open each supplier purchase order to follow delivery, payment and deal protection.', 'ایوارڈ ہو گیا — ڈیلیوری، ادائیگی اور ڈیل کے تحفظ کے لیے ہر سپلائر کا پرچیز آرڈر کھولیں۔', 'تمّ اختيار العرض — افتح أمر الشراء لكل مورد لمتابعة التسليم والدفع وحماية الصفقة.')}</p>
+                        <p className="text-[11px] text-emerald-300 mt-3">✓ {L('Awarded — open each supplier purchase order to follow delivery, payment and deal protection.', 'ایوارڈ ہو گیا — ڈیلیوری، ادائیگی اور ڈیل کے تحفظ کے لیے ہر سپلائر کا پرچیز آرڈر کھولیں۔', 'تمّ اختيار العرض — افتح صفقة كل مورد لمتابعة التسليم والدفع وحماية الصفقة.')}</p>
                       ) : (
                         <button type="button" onClick={finalizeAwards} disabled={finalizing}
                           className="w-full mt-3 py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#0F6E56' }}>
-                          {finalizing ? '...' : `✓ ${L('Confirm award and issue purchase orders', 'ایوارڈ کنفرم کریں اور پرچیز آرڈر جاری کریں', 'تأكيد اختيار العروض وإصدار أوامر الشراء')}`}
+                          {finalizing ? '...' : `✓ ${L('Confirm award and issue purchase orders', 'ایوارڈ کنفرم کریں اور پرچیز آرڈر جاری کریں', 'تأكيد اختيار العروض')}`}
                         </button>
                       )}
                       {/* owner 2026-11-19: before choosing, show how payment and delivery work */}
@@ -1068,13 +1069,13 @@ export default function RFQDetailPage() {
                           </span>
                         )}
                         {/* Where the price comes from: a sourced quote is never shown as a direct one */}
-                        {offer.source_type && (
+                        {offer.source_type && (!isDirectSource(offer.source_type) || offerMore[offer.id]) && (
                           <span className={`badge text-[10px] ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
                             title={isDirectSource(offer.source_type) ? L('Direct price from the seller', 'بیچنے والے سے براہ راست قیمت', 'سعر مباشر من البائع') : L('Price sourced elsewhere, not from the seller stock', 'یہ قیمت کسی دوسرے ذریعے سے ہے، بیچنے والے کے اسٹاک سے نہیں', 'سعر منقول من مصدر آخر وليس من مخزون البائع')}>
                             {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct from seller', 'بیچنے والے سے براہ راست', 'مباشر من البائع')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {srcPhrase(offer.source_type)}</>}
                           </span>
                         )}
-                        {offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(offer.availability)} /> {availabilityLabel(offer.availability, locale)}</></span>}
+                        {offerMore[offer.id] && offer.availability && <span className="badge text-[10px] bg-gray-50 text-gray-600"><><SellerIcon name={availabilityIcon(offer.availability)} /> {availabilityLabel(offer.availability, locale)}</></span>}
                         {normTier(offer.supplier?.supplier_tier) === 'independent' && <div className="basis-full"><SourceShopBadge offerId={offer.id} locale={locale} compact /></div>}
                         {offer.supplier?.verification_status === 'verified' && (
                           <span className="badge text-[10px] inline-flex items-center gap-0.5"
@@ -1084,7 +1085,7 @@ export default function RFQDetailPage() {
                             {offer.supplier?.cr_verification_source === 'wathq' ? `${L('Verified via Wathq', 'واثق کے ذریعے تصدیق شدہ', 'موثّق عبر واثق')}` : `✓ ${L('Verified', 'تصدیق شدہ', 'موثّق')}`}
                           </span>
                         )}
-                        {offer.supplier && offer.supplier.verification_status !== 'verified' && offer.supplier.cr_verification_source !== 'wathq' && (
+                        {offerMore[offer.id] && offer.supplier && offer.supplier.verification_status !== 'verified' && offer.supplier.cr_verification_source !== 'wathq' && (
                           <span className="badge text-[10px] bg-gray-100 text-gray-500" title={L('The seller has not verified their CR yet; rely on their ratings and the price source', 'بیچنے والے نے ابھی کمرشل رجسٹریشن کی تصدیق نہیں کی؛ اس کی ریٹنگ اور قیمت کے ذریعے پر بھروسہ کریں', 'لم يوثّق البائع سجله التجاري بعد؛ اعتمد على تقييماته ومصدر السعر')}>{L('Not verified yet', 'ابھی تصدیق نہیں ہوئی', 'غير موثّق بعد')}</span>
                         )}
                       </div>
@@ -1098,6 +1099,11 @@ export default function RFQDetailPage() {
                       {/* بطاقة أداء المورد — سرعة الرد، نسبة الترسية، الخبرة */}
                       {(() => {
                         const st = supplierStats[offer.supplier_id]
+                        if (!offerMore[offer.id]) return (
+                          <button type="button" onClick={() => setOfferMore(p => ({ ...p, [offer.id]: true }))} className="mt-1 text-[11px] font-bold text-[#8F6820] hover:underline">
+                            {L('Seller details', 'بیچنے والے کی تفصیل', 'تفاصيل البائع')} ▾
+                          </button>
+                        )
                         if (!st) return null
                         return (
                           <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
@@ -1251,7 +1257,7 @@ export default function RFQDetailPage() {
                 {offer.status === 'accepted' && (
                   <Link href={`/contractor/orders/${offer.id}`}
                     className="block text-center bg-green-600 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors">
-                    <Glyph e="📄" /> {L('View purchase order', 'پرچیز آرڈر دیکھیں', 'عرض أمر الشراء')}
+                    <Glyph e="📄" /> {L('View purchase order', 'پرچیز آرڈر دیکھیں', 'عرض الصفقة')}
                   </Link>
                 )}
 

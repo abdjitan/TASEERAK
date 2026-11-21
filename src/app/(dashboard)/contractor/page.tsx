@@ -227,6 +227,9 @@ export default function ContractorDashboard() {
     </>
   ) : null
 
+  // UX audit 2026-11-21: a home buyer sees a short home (search + sections, actions, savings, requests)
+  const homeBuyer = profile?.buyer_type === 'individual'
+
   return (
     <AppShell
       title={locale === 'en' ? 'Buyer Dashboard' : locale === 'ur' ? 'خریدار ڈیش بورڈ' : 'لوحة المشتري'}
@@ -303,7 +306,7 @@ export default function ContractorDashboard() {
 
 
         {/* تنبيه سعري — أكبر تغيّر شهري (يخلق قيمة عودة يومية) */}
-        {(() => {
+        {!homeBuyer && (() => {
           let best: { name: string; pct: number } | null = null
           for (const k of Object.keys(marketTrend)) {
             const tr = marketTrend[k]
@@ -394,7 +397,7 @@ export default function ContractorDashboard() {
         )}
 
         {/* ويدجت اكتمال الحساب */}
-        {compPct < 100 && (
+        {!homeBuyer && compPct < 100 && (
           <div className="mb-6 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-bold" style={{ color: '#0B2438' }}>
@@ -434,7 +437,7 @@ export default function ContractorDashboard() {
         </div>
 
         {/* آخر النشاطات + إنجازاتك */}
-        {(activity.length > 0 || rfqs.length > 0) && (
+        {!homeBuyer && (activity.length > 0 || rfqs.length > 0) && (
           <div className="grid lg:grid-cols-3 gap-4 mb-8 animate-fade-in">
             <div className="lg:col-span-2 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
               <h2 className="text-sm font-bold mb-3 flex items-center gap-2" style={{ color: '#0B2438' }}>

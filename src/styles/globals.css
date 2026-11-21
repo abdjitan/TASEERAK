@@ -131,6 +131,7 @@
 [dir="rtl"] { text-align: right; }
 [dir="ltr"] { text-align: left; }
 @media print { .print\:hidden { display:none !important; } body { background:white !important; } }
+@media print { .ts-dashboard-sidebar, .ts-dashboard-topbar, .ts-mobile-nav { display:none !important; } .ts-dashboard > div { margin:0 !important; } .ts-dashboard-main { padding:0 !important; } }
 
 /* Mobile improvements */
 @media (max-width: 640px) {
