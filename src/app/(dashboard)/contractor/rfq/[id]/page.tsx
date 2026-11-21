@@ -100,6 +100,8 @@ export default function RFQDetailPage() {
   const [liveNote, setLiveNote] = useState('')
   // How far the request reached: suppliers per item (counts only, from get_rfq_coverage).
   const [coverage, setCoverage] = useState<any>(null)
+  const [moreBusy, setMoreBusy] = useState(false) // «ابحث عن موردين آخرين»
+  const [moreMsg, setMoreMsg] = useState('')
   useEffect(() => {
     if (!id) return
     createClient().rpc('get_rfq_coverage', { p_rfq: id }).then(({ data }: any) => setCoverage(data || null), () => {})
@@ -459,6 +461,27 @@ export default function RFQDetailPage() {
           )
           return null
         })()}
+        {/* owner 2026-11-21: the buyer can widen the request to more suppliers (246) */}
+        {rfq?.status === 'open' && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
+            <div className="text-sm text-gray-700">{L('Want more offers? We can send your request to more suppliers.', 'مزید پیشکشیں چاہییں؟ ہم آپ کی درخواست مزید سپلائرز کو بھیج سکتے ہیں۔', 'تريد عروضاً أكثر؟ نرسل طلبك إلى موردين آخرين.')}</div>
+            <button type="button" disabled={moreBusy}
+              onClick={async () => {
+                setMoreBusy(true); setMoreMsg('')
+                const { data, error } = await createClient().rpc('request_more_suppliers', { p_rfq_id: id })
+                setMoreBusy(false)
+                if (error) { setMoreMsg(error.message); return }
+                const n = Number((data as any)?.added) || 0
+                setMoreMsg(n > 0
+                  ? L(`Sent to ${n} more supplier(s).`, `مزید ${n} سپلائرز کو بھیج دی گئی۔`, `أُرسل طلبك إلى ${n} موردين إضافيين.`)
+                  : L('No other matching suppliers are available right now; we will keep looking.', 'ابھی کوئی اور موزوں سپلائر دستیاب نہیں؛ ہم تلاش جاری رکھیں گے۔', 'لا يوجد موردون مناسبون آخرون حالياً، وسنواصل البحث.'))
+              }}
+              className="px-4 py-2 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-50" style={{ background: '#D4A543' }}>
+              {moreBusy ? '...' : L('Find more suppliers', 'مزید سپلائرز تلاش کریں', 'ابحث عن موردين آخرين')}
+            </button>
+            {moreMsg && <div className="basis-full text-xs text-gray-600">{moreMsg}</div>}
+          </div>
+        )}
         <div className="flex items-center justify-between mb-4">
           <Link href="/contractor/rfqs" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"><span aria-hidden="true">{BACK}</span> {L('Back to my requests', 'میری درخواستوں پر واپس', 'العودة إلى طلباتي')}</Link>
           <Link href={`/contractor/rfq/quick?from=${id}`} className="inline-flex items-center gap-1 text-sm font-semibold text-[#8F6820] hover:underline"><Glyph e="🔁" /> {L('Reorder', 'دوبارہ آرڈر کریں', 'أعد الطلب')}</Link>
