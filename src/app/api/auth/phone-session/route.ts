@@ -4,7 +4,8 @@
 //  - login: the buyer account that owns this verified number gets a Supabase session.
 //  - signup: no account yet → a buyer account is created (role contractor, phone verified); its auth
 //    email is an internal placeholder until the buyer adds and verifies a real one (/api/email/*).
-// Sellers and admins keep signing in with email + password ('use_email').
+// Sellers may also SIGN IN with their verified mobile (owner 2026-11-21); they still sign up with email
+// (kind, CR) and verify the mobile there. Admins keep email + password + 2FA ('use_email').
 // The session is minted with an admin magic link verified server-side: the web gets the cookie,
 // the app (client: 'app') gets the tokens in the response.
 import { NextResponse } from 'next/server'
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
   let created = false
 
   if (acc) {
-    if (acc.role !== 'contractor') return NextResponse.json({ error: 'use_email' }, { status: 409 })
+    if (acc.role === 'admin') return NextResponse.json({ error: 'use_email' }, { status: 409 })
   } else {
     if (mode !== 'signup') return NextResponse.json({ error: 'no_account' }, { status: 404 })
     if (!isAllowedPhone(phone)) return NextResponse.json({ error: 'country_not_allowed' }, { status: 400 })

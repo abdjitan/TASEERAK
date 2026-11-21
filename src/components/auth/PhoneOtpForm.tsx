@@ -20,7 +20,7 @@ const TX = {
     rate: 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.', sendFail: 'تعذّر إرسال الرمز. تأكد من الرقم ثم أعد المحاولة.',
     newTitle: 'أهلاً بك في تسعيرك', newSub: 'هذا الرقم جديد. اكتب اسمك لإنشاء حساب مشتري.', name: 'الاسم', create: 'إنشاء الحساب والدخول',
     terms1: 'أوافق على', terms: 'الشروط والأحكام', and: 'و', privacy: 'سياسة الخصوصية', badName: 'اكتب اسمك.', needTerms: 'وافق على الشروط وسياسة الخصوصية للمتابعة.',
-    useEmail: 'هذا الرقم مرتبط بحساب مورّد. حسابات الموردين تدخل بالبريد الإلكتروني وكلمة المرور.', failed: 'تعذّر الدخول. حاول مرة أخرى.',
+    useEmail: 'هذا الحساب يدخل بالبريد الإلكتروني وكلمة المرور.', failed: 'تعذّر الدخول. حاول مرة أخرى.',
   },
   en: {
     phone: 'Your mobile number', phoneHint: 'You will get a code by text message (SMS)', send: 'Send code', sending: 'Sending…',
@@ -30,7 +30,7 @@ const TX = {
     rate: 'Too many attempts. Wait a little and try again.', sendFail: 'Could not send the code. Check the number and try again.',
     newTitle: 'Welcome to Taseerak', newSub: 'This number is new. Write your name to create a buyer account.', name: 'Name', create: 'Create account and continue',
     terms1: 'I agree to the', terms: 'Terms', and: 'and', privacy: 'Privacy Policy', badName: 'Write your name.', needTerms: 'Accept the Terms and Privacy Policy to continue.',
-    useEmail: 'This number belongs to a seller account. Seller accounts sign in with email and password.', failed: 'Could not sign in. Try again.',
+    useEmail: 'This account signs in with email and password.', failed: 'Could not sign in. Try again.',
   },
   ur: {
     phone: 'آپ کا موبائل نمبر', phoneHint: 'تصدیقی کوڈ ٹیکسٹ میسج (SMS) سے آئے گا', send: 'کوڈ بھیجیں', sending: 'بھیجا جا رہا ہے…',
@@ -40,7 +40,7 @@ const TX = {
     rate: 'بہت زیادہ کوششیں۔ تھوڑا انتظار کریں۔', sendFail: 'کوڈ نہیں بھیجا جا سکا۔ نمبر چیک کریں۔',
     newTitle: 'تسعیرک میں خوش آمدید', newSub: 'یہ نمبر نیا ہے۔ خریدار اکاؤنٹ بنانے کے لیے اپنا نام لکھیں۔', name: 'نام', create: 'اکاؤنٹ بنائیں اور جاری رکھیں',
     terms1: 'میں متفق ہوں', terms: 'شرائط', and: 'اور', privacy: 'رازداری کی پالیسی', badName: 'اپنا نام لکھیں۔', needTerms: 'جاری رکھنے کے لیے شرائط اور رازداری کی پالیسی قبول کریں۔',
-    useEmail: 'یہ نمبر سپلائر اکاؤنٹ کا ہے۔ سپلائر اکاؤنٹس ای میل اور پاسورڈ سے سائن اِن کرتے ہیں۔', failed: 'سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
+    useEmail: 'یہ اکاؤنٹ ای میل اور پاسورڈ سے سائن اِن کرتا ہے۔', failed: 'سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
   },
 }
 
