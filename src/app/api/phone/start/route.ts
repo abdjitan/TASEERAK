@@ -15,6 +15,9 @@ export async function POST() {
   const token = randomBytes(32).toString('base64url')
   const { error } = await admin.from('phone_handoffs').insert({ token, user_id: user.id, expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() })
   if (error) return NextResponse.json({ error: 'save' }, { status: 500 })
-  const site = process.env.NEXT_PUBLIC_APP_URL || 'https://taseerak.com'
+  // never hand a phone a localhost link (bug 2026-11-22: NEXT_PUBLIC_APP_URL was http://localhost:3000 on Vercel,
+  // so the app's «وثّق رقم جوالك» opened localhost:3000 → ERR_CONNECTION_REFUSED)
+  const env = process.env.NEXT_PUBLIC_APP_URL || ''
+  const site = env && !/localhost|127.0.0.1/.test(env) ? env : 'https://taseerak.com'
   return NextResponse.json({ url: `${site.replace(/\/$/, '')}/phone-verify?h=${token}` })
 }
