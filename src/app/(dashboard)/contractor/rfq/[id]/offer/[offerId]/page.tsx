@@ -140,7 +140,7 @@ export default function OfferDetailPage() {
   if (!offer || !rfq) return (
     <div className="min-h-screen flex items-center justify-center bg-[#f4f6f9] text-center">
       <div><div className="text-5xl mb-3"><Glyph e="🔍" /></div><p className="font-bold" style={{ color: '#0B2438' }}>{L('Offer not found', 'آفر نہیں ملی', 'العرض غير موجود')}</p>
-        <Link href={`/contractor/rfq/${id}`} className="text-sm text-[#8F6820] underline mt-2 inline-block">← {L('Back to request', 'درخواست پر واپس', 'رجوع للطلب')}</Link></div>
+        <Link href={`/contractor/rfq/${id}`} className="text-sm text-[#8F6820] underline mt-2 inline-block">{dir === 'rtl' ? '→' : '←'} {L('Back to request', 'درخواست پر واپس', 'رجوع للطلب')}</Link></div>
     </div>
   )
 

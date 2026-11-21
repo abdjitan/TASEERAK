@@ -16,7 +16,7 @@ import { friendlyError } from '@/lib/friendlyError'
 const txt = {
   ar: {
     title: 'الموقع والعنوان الوطني', sub: 'حدد موقعك لتوثيق حسابك وتسهيل التوصيل',
-    back: '← رجوع', save: 'حفظ الموقع والعنوان', saving: 'جارٍ الحفظ...', saved: '✓ تم الحفظ بنجاح',
+    back: '→ رجوع', save: 'حفظ الموقع والعنوان', saving: 'جارٍ الحفظ...', saved: '✓ تم الحفظ بنجاح',
     nationalAddr: 'العنوان الوطني السعودي', nationalSub: 'حسب نظام العنوان الوطني من البريد السعودي',
     shortAddr: 'الرمز المختصر', shortHint: 'مثال: RUH2343', buildingNo: 'رقم المبنى',
     street: 'اسم الشارع', district: 'الحي', region: 'المنطقة', city: 'المدينة',
@@ -38,7 +38,7 @@ const txt = {
   },
   ur: {
     title: 'مقام اور قومی پتہ', sub: 'اپنے اکاؤنٹ کی تصدیق کے لیے مقام مقرر کریں',
-    back: '← واپس', save: 'محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: '✓ محفوظ ہو گیا',
+    back: '→ واپس', save: 'محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: '✓ محفوظ ہو گیا',
     nationalAddr: 'سعودی قومی پتہ', nationalSub: 'سعودی پوسٹ نیشنل ایڈریس سسٹم کے مطابق',
     shortAddr: 'مختصر پتہ', shortHint: 'مثال: RUH2343', buildingNo: 'عمارت نمبر',
     street: 'گلی کا نام', district: 'ضلع', region: 'علاقہ', city: 'شہر',

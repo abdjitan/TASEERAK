@@ -326,7 +326,7 @@ export default function ContractorDashboard() {
                   `${best.name} کی قیمت پچھلے مہینے کے مقابلے میں ${Math.abs(best.pct)}% ${down ? 'کم ہوئی' : 'بڑھی'}`,
                   `سعر ${best.name} ${down ? 'انخفض' : 'ارتفع'} ${Math.abs(best.pct)}% مقارنةً بالشهر الماضي`)}
               </span>
-              <span className="text-xs font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>←</span>
+              <span className="text-xs font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>{dir === 'rtl' ? '←' : '→'}</span>
             </Link>
           )
         })()}
@@ -379,7 +379,7 @@ export default function ContractorDashboard() {
                 `${awaitingReply} درخواستوں پر نئی آفرز آئی ہیں — ابھی موازنہ کریں`,
                 `${arCount(awaitingReply, 'طلب واحد وصلته', 'طلبان وصلتهما', 'طلبات وصلتها', 'طلباً وصلته')} عروض جديدة — قارِنها الآن`)}
             </span>
-            <span className="font-bold text-sm" style={{ color: '#D4A543' }}>←</span>
+            <span className="font-bold text-sm" style={{ color: '#D4A543' }}>{dir === 'rtl' ? '←' : '→'}</span>
           </button>
         )}
 

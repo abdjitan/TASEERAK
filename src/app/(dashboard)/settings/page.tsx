@@ -27,7 +27,7 @@ import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
 
 const txt = {
   ar: {
-    title: 'إعدادات الحساب', back: '← رجوع', logout: 'خروج',
+    title: 'إعدادات الحساب', back: '→ رجوع', logout: 'خروج',
     profileTab: 'معلومات الشركة', passwordTab: 'كلمة المرور', langTab: 'اللغة', docsTab: 'المستندات',
     companyAr: 'اسم الشركة', companyEn: 'اسم الشركة (إنجليزي)',
     phone: 'رقم الجوال (واتساب)', region: 'المنطقة', city: 'المدينة',
@@ -73,7 +73,7 @@ const txt = {
     rejectedBanner: 'Your account was rejected — please reupload required documents',
   },
   ur: {
-    title: 'اکاؤنٹ کی ترتیبات', back: '← واپس', logout: 'لاگ آؤٹ',
+    title: 'اکاؤنٹ کی ترتیبات', back: '→ واپس', logout: 'لاگ آؤٹ',
     profileTab: 'کمپنی کی معلومات', passwordTab: 'پاسورڈ', langTab: 'زبان', docsTab: 'دستاویزات',
     companyAr: 'کمپنی کا نام', companyEn: 'کمپنی کا نام (انگریزی)',
     phone: 'فون (واٹس ایپ)', region: 'علاقہ', city: 'شہر',

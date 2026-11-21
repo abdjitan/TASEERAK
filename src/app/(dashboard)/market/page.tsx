@@ -18,7 +18,7 @@ const txt = {
     sector: 'القطاع', material: 'المادة', avgPrice: 'متوسط السعر', minPrice: 'أدنى سعر',
     maxPrice: 'أعلى سعر', offers: 'عدد العروض', unit: 'الوحدة', all: 'الكل',
     noData: 'لا توجد بيانات كافية بعد', noDataSub: 'ستظهر الأسعار بعد تراكم العروض في المنصة',
-    back: '← رجوع', logout: 'خروج', sar: 'ر.س',
+    back: '→ رجوع', logout: 'خروج', sar: 'ر.س',
     trend: 'الاتجاه', updated: 'آخر تحديث',
   },
   en: {
@@ -34,7 +34,7 @@ const txt = {
     sector: 'شعبہ', material: 'مواد', avgPrice: 'اوسط قیمت', minPrice: 'کم قیمت',
     maxPrice: 'زیادہ قیمت', offers: 'پیشکشیں', unit: 'اکائی', all: 'سب',
     noData: 'ابھی ڈیٹا نہیں', noDataSub: 'قیمتیں پیشکشوں کے جمع ہونے پر ظاہر ہوں گی',
-    back: '← واپس', logout: 'لاگ آؤٹ', sar: 'ریال',
+    back: '→ واپس', logout: 'لاگ آؤٹ', sar: 'ریال',
     trend: 'رجحان', updated: 'آخری اپ ڈیٹ',
   },
 }

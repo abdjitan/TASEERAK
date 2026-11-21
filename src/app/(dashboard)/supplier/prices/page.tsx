@@ -15,7 +15,7 @@ import { timeAgo as timeAgoText } from '@/lib/text'
 const txt = {
   ar: {
     title: 'أسعاري', sub: 'أسعارك المحفوظة خاصة بك — لا يراها المشترون ولا المنافسون، وتُعبَّأ تلقائياً عند تسعير الطلبات',
-    back: '← رجوع', addPrice: '+ إضافة سلعة', myPrices: 'أسعاري المنشورة',
+    back: '→ رجوع', addPrice: '+ إضافة سلعة', myPrices: 'أسعاري المنشورة',
     product: 'اسم السلعة', sector: 'القطاع', unit: 'الوحدة', price: 'السعر (ر.س)',
     region: 'المنطقة', selectSector: 'اختر القطاع', selectUnit: 'الوحدة', selectRegion: 'كل المناطق',
     save: 'نشر السعر', saving: 'جارٍ النشر...', update: 'تحديث', updated: '✓ تم التحديث',
@@ -39,7 +39,7 @@ const txt = {
   },
   ur: {
     title: 'میری قیمتیں', sub: 'آپ کی محفوظ قیمتیں نجی ہیں — خریدار اور حریف نہیں دیکھتے؛ یہ آفر میں خود بھر جاتی ہیں',
-    back: '← واپس', addPrice: '+ آئٹم شامل کریں', myPrices: 'میری شائع شدہ قیمتیں',
+    back: '→ واپس', addPrice: '+ آئٹم شامل کریں', myPrices: 'میری شائع شدہ قیمتیں',
     product: 'پروڈکٹ کا نام', sector: 'شعبہ', unit: 'یونٹ', price: 'قیمت (ریال)',
     region: 'علاقہ', selectSector: 'شعبہ منتخب کریں', selectUnit: 'یونٹ', selectRegion: 'تمام علاقے',
     save: 'قیمت شائع کریں', saving: 'شائع ہو رہا ہے...', update: 'اپ ڈیٹ', updated: '✓ اپ ڈیٹ ہو گیا',
