@@ -1635,6 +1635,18 @@ const UNIT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
   'دلو': { en: 'bucket', ur: 'ڈول' },
   'كجم': { en: 'kg', ur: 'کلو' },
 }
+// Arabic dropdown wording: abbreviations spelled out (UX audit 2026-11-21). The stored unit stays the short form.
+const AR_UNIT_LONG: Record<string, string> = {
+  'م.ط': 'متر طولي', 'م²': 'متر مربع', 'م³': 'متر مكعب', 'كغ': 'كيلوغرام',
+  'نقلة': 'نقلة (حمولة شاحنة)', 'طبلية': 'طبلية (منصّة كاملة)', 'سيخ': 'سيخ (قضيب)',
+}
+/** Unit name for pickers: Arabic abbreviations spelled out; other locales as getUnitLabel. */
+export function getUnitLabelLong(unit: string | null | undefined, locale: string): string {
+  if (!unit) return ''
+  if (locale === 'ar') return AR_UNIT_LONG[unit.trim()] || unit
+  return getUnitLabel(unit, locale)
+}
+
 export function getUnitLabel(unit: string | null | undefined, locale: string): string {
   if (!unit) return ''
   if (locale === 'ar') return unit

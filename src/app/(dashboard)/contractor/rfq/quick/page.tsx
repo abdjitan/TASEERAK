@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SPEC_UNSURE, specUnsureLabel, REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, brandApplies, withBrand, type Sector } from '@/types'
+import { SPEC_UNSURE, specUnsureLabel, REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, getUnitLabelLong, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, brandApplies, withBrand, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -787,14 +787,14 @@ export default function QuickRequestPage() {
                     <select value={l.unit} onChange={e => updateLine(l.key, { unit: e.target.value })} className="input-field" aria-label={L('Unit', 'یونٹ', 'الوحدة')}>
                       <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>
                       {/* a product with its own order units shows only those; otherwise its specialty's logical units (owner 2026-10-19) */}
-                      {Array.from(new Set([...(unitChoicesFor(l.product_name, l.sector as any) || UNITS), ...(l.unit ? [l.unit] : [])])).map(u => <option key={u} value={u}>{unitLabel(u)}</option>)}
+                      {Array.from(new Set([...(unitChoicesFor(l.product_name, l.sector as any) || UNITS), ...(l.unit ? [l.unit] : [])])).map(u => <option key={u} value={u}>{getUnitLabelLong(u, locale) || u}</option>)}
                     </select>
                   </div>
                   {(() => {
-                    const needWritten = specsRequired(l.product_name, l.sector as any) && !getProductSpecs(l.product_name).some(f => f.key !== 'unit')
+                    const needWritten = !simple && specsRequired(l.product_name, l.sector as any) && !getProductSpecs(l.product_name).some(f => f.key !== 'unit')
                     const miss = needWritten && !l.details.trim() && !l.fileId
                     return (<>
-                      {brandApplies(l.product_name, l.sector as any) && (
+                      {!simple && brandApplies(l.product_name, l.sector as any) && (
                         <input value={l.brand || ''} onChange={e => updateLine(l.key, { brand: e.target.value.slice(0, 80) })} className="input-field text-sm"
                           placeholder={L('Brand or product name (optional), e.g. Fosroc Renderoc', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)، مثل: فوسروك رندروك')} />
                       )}
@@ -803,8 +803,8 @@ export default function QuickRequestPage() {
                         placeholder={needWritten
                           ? L('Size and specs (required): e.g. length, width, thickness, grade', 'سائز اور تفصیل (ضروری): جیسے لمبائی، چوڑائی، موٹائی اور گریڈ', 'المقاس والمواصفات (مطلوب): مثل الطول والعرض والسماكة والدرجة')
                           : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
-                      <BudgetField value={l.budget || ''} visible={!!l.budgetVisible} unit={l.unit ? unitLabel(l.unit) : ''} locale={locale}
-                        onChange={(budget, budgetVisible) => updateLine(l.key, { budget, budgetVisible })} />
+                      {!simple && <BudgetField value={l.budget || ''} visible={!!l.budgetVisible} unit={l.unit ? unitLabel(l.unit) : ''} locale={locale}
+                        onChange={(budget, budgetVisible) => updateLine(l.key, { budget, budgetVisible })} />}
                     </>)
                   })()}
                   {(() => {
@@ -819,7 +819,7 @@ export default function QuickRequestPage() {
                           {fields.length > 0 && (
                             <button type="button" onClick={() => setSpecsOpen(open ? null : l.key)} aria-expanded={open}
                               className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${missing ? 'border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10' : n ? 'border-[#0F6E56] text-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 text-gray-600'}`}>
-                              <Glyph e="⚙" /> {L('Specifications', 'تفصیلات', 'المواصفات')}{req ? L(' (required)', ' (ضروری)', ' (مطلوبة)') : ''}{n ? ` (${n})` : ''} {open ? '▴' : '▾'}
+                              <Glyph e="⚙" /> {simple ? L('More details (optional)', 'مزید تفصیل (اختیاری)', 'تفاصيل إضافية (اختياري)') : L('Specifications', 'تفصیلات', 'المواصفات')}{req ? L(' (required)', ' (ضروری)', ' (مطلوبة)') : ''}{n ? ` (${n})` : ''} {open ? '▴' : '▾'}
                             </button>
                           )}
                           {l.photoWarn && (
@@ -829,7 +829,7 @@ export default function QuickRequestPage() {
                           )}
                           <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
                             className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border max-w-[14rem] truncate ${l.fileId ? 'border-purple-300 text-purple-700 bg-purple-50' : 'border-gray-200 text-gray-600'}`}>
-                            <Glyph e="📎" /> {l.fileId ? (l.fileName || L('File attached', 'فائل منسلک', 'ملف مرفق')) : L('Attach a drawing or file', 'ڈرائنگ یا فائل', 'أرفق مخططاً أو ملفاً')}
+                            <Glyph e="📎" /> {l.fileId ? (l.fileName || L('File attached', 'فائل منسلک', 'ملف مرفق')) : (simple ? L('Attach a photo', 'تصویر منسلک کریں', 'أرفق صورة') : L('Attach a drawing or file', 'ڈرائنگ یا فائل', 'أرفق مخططاً أو ملفاً'))}
                           </button>
                           {l.fileId && (
                             <button type="button" onClick={() => { deleteDraftBlobs([l.fileId!]); const [nx, ...rest] = l.moreFiles || []; updateLine(l.key, nx ? { fileId: nx.id, fileName: nx.name, moreFiles: rest } : { fileId: undefined, fileName: undefined }) }}
@@ -886,9 +886,9 @@ export default function QuickRequestPage() {
                     </label>
                   )}
                   <button type="button" onClick={() => { setSpecsOpen(null); updateLine(l.key, { done: true }) }}
-                    disabled={!(l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) || missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length > 0}
+                    disabled={!(l.product_name.trim() && parseFloat(l.quantity) > 0 && l.unit) || (!simple && missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length > 0)}
                     className="w-full py-2 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0F6E56' }}>
-                    ✓ {!(parseFloat(l.quantity) > 0) ? L('Enter the quantity to save', 'محفوظ کرنے کے لیے مقدار لکھیں', 'أدخل الكمية للحفظ') : missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length ? L('Enter the specs to save', 'محفوظ کرنے کے لیے تفصیل', 'أدخل المواصفات للحفظ') : L('Save', 'محفوظ کریں', 'حفظ')}
+                    ✓ {!(parseFloat(l.quantity) > 0) ? L('Enter the quantity to save', 'محفوظ کرنے کے لیے مقدار لکھیں', 'أدخل الكمية للحفظ') : !simple && missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length ? L('Enter the specs to save', 'محفوظ کرنے کے لیے تفصیل', 'أدخل المواصفات للحفظ') : L('Save', 'محفوظ کریں', 'حفظ')}
                   </button>
                 </div>
               )
@@ -958,13 +958,14 @@ export default function QuickRequestPage() {
             )}
             {/* when the buyer needs the prices — visible, with a same-day option (persona: the villa contractor) */}
             <div>
-              <div className="text-xs font-bold text-gray-600 mb-1.5">{L('When do you need the prices?', 'قیمتیں کب تک چاہئیں؟', 'متى تحتاج الأسعار؟')}</div>
-              <div role="radiogroup" aria-label={L('When do you need the prices?', 'قیمتیں کب تک چاہئیں؟', 'متى تحتاج الأسعار؟')} className="flex flex-wrap gap-1.5">
+              <div className="text-xs font-bold text-gray-600 mb-1.5">{L('How long should suppliers have to send offers?', 'سپلائرز کتنی دیر میں پیشکش بھیجیں؟', 'خلال كم تريد أن تصلك العروض؟')}</div>
+              <div role="radiogroup" aria-label={L('How long should suppliers have to send offers?', 'سپلائرز کتنی دیر میں پیشکش بھیجیں؟', 'خلال كم تريد أن تصلك العروض؟')} className="flex flex-wrap gap-1.5">
                 {([[6, L('Today', 'آج', 'اليوم')], [24, L('Tomorrow', 'کل', 'غداً')], [48, L('2 days', '2 دن', 'يومان')], [72, L('3 days', '3 دن', '3 أيام')], [168, L('A week', 'ایک ہفتہ', 'أسبوع')]] as [number, string][]).map(([h, lab]) => (
                   <button key={h} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)}
                     className={`px-3 py-1.5 rounded-full border text-xs font-bold ${hours === h ? 'bg-[#0B2438] text-white border-[#0B2438]' : 'bg-white text-gray-600 border-gray-200'}`}>{lab}</button>
                 ))}
               </div>
+              <p className="text-[11px] text-gray-500 mt-1">{L('After this the request closes to new offers. The delivery date is a separate choice below.', 'اس کے بعد نئی پیشکشیں بند۔ ڈیلیوری کی تاریخ نیچے الگ ہے۔', 'بعدها يُغلق الطلب أمام العروض الجديدة. موعد وصول المواد خيار منفصل في الأسفل.')}</p>
             </div>
             {/* always visible (owner 2026-10-19: a folded «خيارات إضافية» went unnoticed) */}
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
@@ -973,8 +974,8 @@ export default function QuickRequestPage() {
                 : <div className="text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')}</div>}
               <div className={`mt-3 space-y-3 ${simple && !moreOpen ? 'hidden' : ''}`}>
                 <div>
-                  <div className="text-sm font-bold text-[#0B2438] mb-2">{L('When do you need delivery?', 'ڈیلیوری کب چاہیے؟', 'متى تحتاج التسليم؟')}</div>
-                  <div role="radiogroup" aria-label={L('When do you need delivery?', 'ڈیلیوری کب چاہیے؟', 'متى تحتاج التسليم؟')} className="flex flex-wrap gap-1.5">
+                  <div className="text-sm font-bold text-[#0B2438] mb-2">{L('When should the materials reach you?', 'سامان کب تک پہنچے؟', 'متى تريد أن تصلك المواد؟')}</div>
+                  <div role="radiogroup" aria-label={L('When should the materials reach you?', 'سامان کب تک پہنچے؟', 'متى تريد أن تصلك المواد؟')} className="flex flex-wrap gap-1.5">
                     {([[1, L('Within a day', 'ایک دن میں', 'خلال يوم')], [3, L('Within 3 days', '3 دن میں', 'خلال 3 أيام')], [7, L('Within a week', 'ایک ہفتے میں', 'خلال أسبوع')], [null, L('Not urgent', 'جلدی نہیں', 'غير مستعجل')]] as [number | null, string][]).map(([d, lab]) => (
                       <button key={String(d)} type="button" role="radio" aria-checked={needDays === d} onClick={() => setNeedDays(d)}
                         className={`px-3 py-1.5 rounded-full border text-xs font-bold ${needDays === d ? 'bg-[#0B2438] text-white border-[#0B2438]' : 'bg-white text-gray-600 border-gray-200'}`}>{lab}</button>

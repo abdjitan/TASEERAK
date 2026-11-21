@@ -9,6 +9,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import PhoneOtpForm from '@/components/auth/PhoneOtpForm'
+import { rememberPostSignupNext } from '@/lib/postSignupNext'
 import { BUYER_PHONE_LOGIN as PHONE_OTP_ENABLED } from '@/lib/features'
 import { pendingTeamInvite } from '@/lib/sellers'
 import { captureRef } from '@/lib/referral'
@@ -82,6 +83,7 @@ function LoginForm() {
 
   useEffect(() => {
     captureRef() // an invite link may land here (phone sign-in)
+    rememberPostSignupNext(searchParams.get('next')) // a landing section card → after a phone sign-up + onboarding, open that section
     const supabase = createClient()
     ;(async () => {
       // Validate with getUser() (same check the middleware uses) so the client
