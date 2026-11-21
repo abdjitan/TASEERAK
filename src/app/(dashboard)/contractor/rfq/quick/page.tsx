@@ -117,6 +117,11 @@ export default function QuickRequestPage() {
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   // owner 2026-11-21: who receives the request: the nearest suppliers (245) or the whole region (capped)
   const [nearbyOnly, setNearbyOnly] = useState(true)
+  // owner 2026-11-21 (tester: individuals get lost in the details): 'individual' = simple flow
+  // (specs optional, extra options folded), 'business' = the full flow; asked once, kept on the profile
+  const [buyerType, setBuyerType] = useState<'individual' | 'business' | null | undefined>(undefined)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const simple = buyerType === 'individual'
   // who prices it (owner 2026-10-24): all / companies & factories / shops / independents — rfqs.target_tiers
   const [tier, setTier] = useState<'all' | 'company' | 'shop' | 'independent'>('all')
   const [pickup, setPickup] = useState(false) // the buyer collects from the supplier instead of delivery
@@ -168,7 +173,8 @@ export default function QuickRequestPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login?next=/contractor/rfq/quick'; return }
       setUserId(user.id)
-      const { data: p } = await supabase.from('profiles').select('region, city, latitude, longitude').eq('id', user.id).single()
+      const { data: p } = await supabase.from('profiles').select('region, city, latitude, longitude, buyer_type').eq('id', user.id).single()
+      setBuyerType(p?.buyer_type === 'individual' || p?.buyer_type === 'business' ? p.buyer_type : null)
       if (p?.region) setRegion(p.region)
       if (p?.city) setCity(p.city)
       if (p?.latitude != null && p?.longitude != null) { setGeo({ lat: p.latitude, lng: p.longitude }); setGeoFromProfile(true) }
@@ -424,7 +430,7 @@ export default function QuickRequestPage() {
     const bad = sendable.find(l => !lineOk(l))
     if (bad) { setError(L('Every line needs a name, a quantity and a unit.', 'ہر لائن میں نام، مقدار اور یونٹ چاہیے۔', 'كل سطر يحتاج إلى اسم وكمية ووحدة.')); return false }
     // materials priced by size/grade need their specs (owner 2026-10-27)
-    const noSpec = sendable.find(l => missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length)
+    const noSpec = simple ? undefined : sendable.find(l => missingSpecs(l.product_name, l.sector as any, l.specs, l.details, !!l.fileId).length)
     if (noSpec) {
       const m = missingSpecs(noSpec.product_name, noSpec.sector as any, noSpec.specs, noSpec.details, !!noSpec.fileId, locale)
       setSpecsOpen(noSpec.key); updateLine(noSpec.key, { done: false })
@@ -594,6 +600,27 @@ export default function QuickRequestPage() {
         <div>
           <div className="text-xs font-bold text-[#9D7425] mb-1">{L('One request… and offers from several suppliers in your hands', 'ایک درخواست… اور کئی سپلائرز کی پیشکشیں آپ کے ہاتھ میں', 'طلب واحد… وعروض عدة موردين بين يديك')}</div>
           <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
+          {buyerType && (
+            <div className="mt-1 text-[11px] text-gray-500">{buyerType === 'individual' ? L('Simple request for your home', 'آپ کے گھر کے لیے آسان درخواست', 'طلب بسيط لبيتك') : L('Full request (contractor/company)', 'مکمل درخواست (ٹھیکیدار/کمپنی)', 'طلب كامل (مقاول أو شركة)')} · <button type="button" className="underline" onClick={() => setBuyerType(null)}>{L('change', 'تبدیل کریں', 'تغيير')}</button></div>
+          )}
+          {buyerType === null && (
+            <div className="mt-3 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 p-3">
+              <div className="text-sm font-bold text-navy mb-2">{L('Who are you buying for?', 'آپ کس کے لیے خرید رہے ہیں؟', 'لمن تشتري؟')}</div>
+              <div className="grid grid-cols-2 gap-2">
+                {([['individual', L('My home', 'اپنا گھر', 'لبيتي'), L('Simple request, no technical details', 'آسان درخواست، تکنیکی تفصیلات کے بغیر', 'طلب بسيط بلا تفاصيل فنية')],
+                   ['business', L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'), L('Full options: specs, VAT invoice, quantities table', 'مکمل اختیارات', 'خيارات كاملة: مواصفات وفاتورة ضريبية وجدول كميات')]] as const).map(([v, t, sub]) => (
+                  <button key={v} type="button" className="text-start rounded-xl border-2 border-gray-200 bg-white px-3 py-2 hover:border-[#D4A543]"
+                    onClick={async () => {
+                      setBuyerType(v)
+                      try { const sb = createClient(); const { data: { user } } = await sb.auth.getUser(); if (user) await sb.from('profiles').update({ buyer_type: v }).eq('id', user.id) } catch {}
+                    }}>
+                    <span className="block text-sm font-bold text-navy">{t}</span>
+                    <span className="block text-[11px] text-gray-500">{sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <p className="text-sm text-gray-500 mt-1">{L('Write it, say it, upload a photo or pick it from the catalog. We will organise it into a list.', 'لکھیں، بولیں، تصویر لیں یا فہرست سے منتخب کریں۔', 'اكتبها، أو تحدّث بها، أو ارفع صورتها، أو اخترها من دليل المواد، وسنرتّبها لك في طلبك.')}</p>
         </div>
 
@@ -763,7 +790,7 @@ export default function QuickRequestPage() {
                   {(() => {
                     const fields = getProductSpecs(l.product_name).filter(f => f.key !== 'unit')
                     const n = fields.filter(f => (l.specs?.[f.key] || '').trim()).length
-                    const req = fields.length > 0 && specsRequired(l.product_name, l.sector as any)
+                    const req = !simple && fields.length > 0 && specsRequired(l.product_name, l.sector as any)
                     const missing = req && n < fields.length
                     const open = specsOpen === l.key || missing
                     return (
@@ -916,8 +943,10 @@ export default function QuickRequestPage() {
             </div>
             {/* always visible (owner 2026-10-19: a folded «خيارات إضافية» went unnoticed) */}
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
-              <div className="text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')}</div>
-              <div className="mt-3 space-y-3">
+              {simple
+                ? <button type="button" onClick={() => setMoreOpen(o => !o)} className="w-full text-start text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')} {moreOpen ? '▴' : '▾'}</button>
+                : <div className="text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')}</div>}
+              <div className={`mt-3 space-y-3 ${simple && !moreOpen ? 'hidden' : ''}`}>
                 <div>
                   <div className="text-sm font-bold text-[#0B2438] mb-2">{L('When do you need delivery?', 'ڈیلیوری کب چاہیے؟', 'متى تحتاج التسليم؟')}</div>
                   <div role="radiogroup" aria-label={L('When do you need delivery?', 'ڈیلیوری کب چاہیے؟', 'متى تحتاج التسليم؟')} className="flex flex-wrap gap-1.5">
