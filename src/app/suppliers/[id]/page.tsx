@@ -109,7 +109,7 @@ export default async function SupplierProfilePage(props: { params: Promise<{ id:
           )}
 
           <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-            <p className="text-sm text-gray-500 mb-3">اطلب تسعيرة ينافس عليها {s.company_name_ar || 'هذا المورد'} وغيره من أفضل الموردين.</p>
+            <p className="text-sm text-gray-500 mb-3">اطلب تسعيرة ينافس عليها {s.company_name_ar || 'هذا المورد'} وغيره من الموردين.</p>
             <Link href="/register" className="inline-block px-6 py-3 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>اطلب تسعيرة مجاناً</Link>
           </div>
         </div>
