@@ -49,6 +49,7 @@ type Line = {
   specs?: Record<string, string> // chosen specification values (PRODUCT_SPECS keys, without 'unit')
   fileId?: string                // attached drawing/spec file, kept in IndexedDB until sending
   fileName?: string
+  photoWarn?: string               // tester 2026-11-21: the AI thinks the attached photo is not this material (warning only)
   moreFiles?: { id: string; name: string }[] // owner 2026-10-31: more than one file/photo per line (up to 5 in all)
   spec?: { sector: string; sub: string | null; section?: string } // a «not in the list» item filed under a specialty by the buyer
   with_install?: boolean // «اطلب السعر مع التركيب» (only on an installable specialty, src/lib/installation.ts)
@@ -351,6 +352,23 @@ export default function QuickRequestPage() {
     setLines(prev => [...prev, { key: uid(), product_name: name, sector, quantity: '', unit: getDefaultUnit(name, sector) || 'حبة', details: '', ...(sub ? { spec: { sector, sub } } : section ? { spec: { sector, sub: null, section } } : {}) }])
   }
 
+  // AI check (free tier, warning only) that an attached photo shows the line's material
+  async function checkLinePhoto(key: string, file: File, product: string) {
+    try {
+      const bmp = await createImageBitmap(file)
+      const scale = Math.min(1, 512 / Math.max(bmp.width, bmp.height))
+      const c = document.createElement('canvas'); c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale)
+      c.getContext('2d')!.drawImage(bmp, 0, 0, c.width, c.height)
+      const base64 = c.toDataURL('image/jpeg', 0.7).split(',')[1]
+      const r = await fetch('/api/check-photo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ product, image: { base64, mime: 'image/jpeg' } }) })
+      const j = await r.json().catch(() => null)
+      if (j?.match === false) {
+        const seen = j.seen ? L(` (it looks like: ${j.seen})`, ` (یہ لگتا ہے: ${j.seen})`, ` (تبدو: ${j.seen})`) : ''
+        setLines(prev => prev.map(l => l.key === key ? { ...l, photoWarn: L(`This photo does not look like «${product}»${seen}. Please check it.`, `یہ تصویر «${product}» نہیں لگتی${seen}۔ براہ کرم چیک کریں۔`, `الصورة لا تبدو لـ «${product}»${seen}. تأكّد منها.`) } : l))
+      }
+    } catch { /* no warning when the check cannot run */ }
+  }
+
   // 📎 a drawing or specification file for one line (PDF or image, up to 10 MB)
   function attachFile(key: string, file: File | undefined) {
     if (!file) return
@@ -360,6 +378,8 @@ export default function QuickRequestPage() {
     }
     const id = uid()
     putDraftBlob(id, file)
+    const owner = lines.find(l => l.key === key)
+    if (/^image\//.test(file.type) && owner?.product_name?.trim()) checkLinePhoto(key, file, getProductLabel(owner.product_name, 'ar') || owner.product_name)
     setLines(prev => prev.map(l => {
       if (l.key !== key) return l
       if (!l.fileId) return { ...l, fileId: id, fileName: file.name }
@@ -801,6 +821,11 @@ export default function QuickRequestPage() {
                               className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${missing ? 'border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10' : n ? 'border-[#0F6E56] text-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 text-gray-600'}`}>
                               <Glyph e="⚙" /> {L('Specifications', 'تفصیلات', 'المواصفات')}{req ? L(' (required)', ' (ضروری)', ' (مطلوبة)') : ''}{n ? ` (${n})` : ''} {open ? '▴' : '▾'}
                             </button>
+                          )}
+                          {l.photoWarn && (
+                            <div className="basis-full text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                              <Glyph e="⚠" /> {l.photoWarn} <button type="button" className="underline font-bold" onClick={() => updateLine(l.key, { photoWarn: undefined })}>{L('Keep it', 'رکھیں', 'أبقِها')}</button>
+                            </div>
                           )}
                           <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
                             className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border max-w-[14rem] truncate ${l.fileId ? 'border-purple-300 text-purple-700 bg-purple-50' : 'border-gray-200 text-gray-600'}`}>

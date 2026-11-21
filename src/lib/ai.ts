@@ -109,7 +109,9 @@ async function anthropicMessages(system: string, messages: any[], maxTokens: num
 
 // Providers to try, in order: the configured AI_PROVIDER first, then every other provider that
 // has a key. One dead provider (e.g. a retired Groq model) must not take every AI feature down.
-function providerChain(opts: { vision?: boolean; preferFree?: boolean } = {}): ('anthropic' | 'gemini' | 'groq')[] {
+function providerChain(opts: { vision?: boolean; preferFree?: boolean; freeOnly?: boolean } = {}): ('anthropic' | 'gemini' | 'groq')[] {
+  // freeOnly: never the paid provider (owner 2026-11-21: the photo check must cost nothing)
+  if (opts.freeOnly) { const free: ('gemini' | 'groq')[] = []; if (geminiKey()) free.push('gemini'); if (!opts.vision && groqKey()) free.push('groq'); return free }
   const all: ('anthropic' | 'gemini' | 'groq')[] = []
   // preferFree: free-tier providers first (Gemini, Groq), the paid one only as a last resort.
   if (opts.preferFree) { if (geminiKey()) all.push('gemini'); if (groqKey()) all.push('groq') }
@@ -168,7 +170,7 @@ export async function aiVisionJson<T = any>(opts: AiJsonOpts & { image?: AiImage
   const images = (opts.images?.length ? opts.images : opts.image ? [opts.image] : []).slice(0, 4)
   if (!images.length) return null
   const timeout = opts.timeoutMs || AI_CALL_TIMEOUT_MS
-  for (const prov of providerChain({ vision: true, preferFree: opts.preferFree })) {
+  for (const prov of providerChain({ vision: true, preferFree: opts.preferFree, freeOnly: (opts as any).freeOnly })) {
     const t0 = Date.now()
     try {
       let text: string | null
