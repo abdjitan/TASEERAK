@@ -32,6 +32,7 @@ import BudgetField from '@/components/rfq/BudgetField'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { dbMessage } from '@/lib/dbMessage'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
+import { askConfirm } from '@/lib/askConfirm'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -144,7 +145,7 @@ export default function RFQDetailPage() {
   }
 
   async function deleteRfq() {
-    if (!confirm(L('Delete this request permanently? Its offers will be deleted too.', 'یہ درخواست ہمیشہ کے لیے حذف کریں؟ اس سے جڑی آفرز بھی حذف ہو جائیں گی۔', 'حذف هذا الطلب نهائياً؟ ستُحذف العروض المرتبطة به أيضاً.'))) return
+    if (!(await askConfirm(L('Delete this request permanently? Its offers will be deleted too.', 'یہ درخواست ہمیشہ کے لیے حذف کریں؟ اس سے جڑی آفرز بھی حذف ہو جائیں گی۔', 'حذف هذا الطلب نهائياً؟ ستُحذف العروض المرتبطة به أيضاً.'), { danger: true }))) return
     setDeleting(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('delete_rfq', { p_rfq_id: id })
@@ -246,10 +247,10 @@ export default function RFQDetailPage() {
     const o = offers.find((x: any) => x.id === offerId)
     const who = o?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
     const total = o ? offerComparable(o).toLocaleString('en-US', { maximumFractionDigits: 0 }) : ''
-    if (!confirm(L(
+    if (!(await askConfirm(L(
       `Accept the offer from ${who} for ${total} SAR (${vatTag(o, 'en')})?\nThe other offers will be declined and a purchase order is created.`,
       `${who} کی آفر ${total} ریال (${vatTag(o, 'ur')}) میں قبول کریں؟\nباقی آفرز رد ہو جائیں گی اور پرچیز آرڈر بنے گا۔`,
-      `قبول عرض ${who} بمبلغ ${total} ر.س (${vatTag(o, 'ar')})؟\nستُرفض العروض الأخرى ويُنشأ أمر شراء.`))) return
+      `قبول عرض ${who} بمبلغ ${total} ر.س (${vatTag(o, 'ar')})؟\nستُرفض العروض الأخرى ويُنشأ أمر شراء.`)))) return
     setAcceptingId(offerId)
     let error: any = null
     try {
@@ -264,7 +265,7 @@ export default function RFQDetailPage() {
   async function rejectOffer(offerId: any) {
     const o = offers.find((x: any) => x.id === offerId)
     const who = o?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
-    if (!confirm(L(`Decline the offer from ${who}? This cannot be undone.`, `${who} کی آفر رد کریں؟ یہ واپس نہیں ہو سکتا۔`, `رفض عرض ${who}؟ لا يمكن التراجع عن ذلك.`))) return
+    if (!(await askConfirm(L(`Decline the offer from ${who}? This cannot be undone.`, `${who} کی آفر رد کریں؟ یہ واپس نہیں ہو سکتا۔`, `رفض عرض ${who}؟ لا يمكن التراجع عن ذلك.`), { danger: true }))) return
     const supabase = createClient()
     const { error } = await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
     if (error) { alert(L('Could not decline the offer — please try again.', 'آفر رد نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر رفض العرض — حاول مرة أخرى.')); return }
@@ -345,7 +346,7 @@ export default function RFQDetailPage() {
   const [finalizing, setFinalizing] = useState(false)
   async function finalizeAwards() {
     if (!(await ensureVerified())) return
-    if (!confirm(L('Confirm the award? The winning suppliers will be accepted, a purchase order issued for each, and the request closed.', 'ایوارڈ کنفرم کریں؟ جیتنے والے سپلائرز قبول ہوں گے، ہر سپلائر کا پرچیز آرڈر بنے گا، اور درخواست بند ہو جائے گی۔', 'تأكيد اختيار العرض؟ سيتم قبول الموردين الذين اخترتهم، وفتح صفقة مع كل مورد، وإغلاق الطلب.'))) return
+    if (!(await askConfirm(L('Confirm the award? The winning suppliers will be accepted, a purchase order issued for each, and the request closed.', 'ایوارڈ کنفرم کریں؟ جیتنے والے سپلائرز قبول ہوں گے، ہر سپلائر کا پرچیز آرڈر بنے گا، اور درخواست بند ہو جائے گی۔', 'تأكيد اختيار العرض؟ سيتم قبول الموردين الذين اخترتهم، وفتح صفقة مع كل مورد، وإغلاق الطلب.')))) return
     setFinalizing(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('finalize_rfq_awards', { p_rfq_id: id })
@@ -399,7 +400,7 @@ export default function RFQDetailPage() {
   }
 
   async function cancelRfq() {
-    if (!confirm(L('Are you sure you want to cancel this request?', 'کیا آپ واقعی یہ درخواست منسوخ کرنا چاہتے ہیں؟', 'هل أنت متأكد من إلغاء هذا الطلب؟'))) return
+    if (!(await askConfirm(L('Are you sure you want to cancel this request?', 'کیا آپ واقعی یہ درخواست منسوخ کرنا چاہتے ہیں؟', 'هل أنت متأكد من إلغاء هذا الطلب؟'), { danger: true }))) return
     const supabase = createClient()
     const { error } = await supabase.from('rfqs').update({ status: 'cancelled' }).eq('id', id)
     if (error) { alert(L('Could not cancel — a request with a chosen offer cannot be cancelled.', 'منسوخ نہیں ہو سکا۔', 'تعذّر الإلغاء — لا يمكن إلغاء طلب اختير فيه عرض.')); return }

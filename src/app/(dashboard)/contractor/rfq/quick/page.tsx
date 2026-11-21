@@ -22,6 +22,7 @@ import { TIERS, tierLabel, tierHint } from '@/lib/sellers'
 import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import { isInstallable } from '@/lib/installation'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
+import { askConfirm } from '@/lib/askConfirm'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
 // it into lines the buyer can fix, then send. Each line can open its specifications (PRODUCT_SPECS)
@@ -705,7 +706,7 @@ export default function QuickRequestPage() {
             </div>
             <div className="flex items-center justify-between text-[11px] text-gray-400">
               <span className="inline-flex items-center gap-1.5"><SellerIcon name="checkCircle" className="w-4 h-4 text-[#0F6E56]" />{L('Saved on this device, you can leave and come back', 'اس ڈیوائس پر محفوظ ہے، واپس آ سکتے ہیں', 'محفوظة على جهازك، يمكنك المغادرة والعودة لاحقاً')}</span>
-              <button type="button" onClick={() => { if (window.confirm(L('Clear the whole list?', 'پوری فہرست صاف کریں؟', 'هل تريد مسح القائمة بالكامل؟'))) startOver() }} className="font-bold text-gray-500 hover:text-red-500">
+              <button type="button" onClick={async () => { if ((await askConfirm(L('Clear the whole list?', 'پوری فہرست صاف کریں؟', 'هل تريد مسح القائمة بالكامل؟'), { danger: true }))) startOver() }} className="font-bold text-gray-500 hover:text-red-500">
                 {L('Start over', 'نئے سرے سے', 'ابدأ من جديد')}
               </button>
             </div>

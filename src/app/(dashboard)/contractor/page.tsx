@@ -23,6 +23,7 @@ import { FEATURES } from '@/lib/features'
 import { canUseProjects } from '@/lib/plans'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
+import { askConfirm } from '@/lib/askConfirm'
 
 const txt = {
   ar: {
@@ -528,7 +529,7 @@ export default function ContractorDashboard() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-[#071827]" style={{ background: '#D4A543' }}>{L('Continue', 'جاری رکھیں', 'إكمال')} <span aria-hidden="true" className="inline-block ltr:rotate-180">←</span></Link>
                     <button onClick={async () => {
-                      if (!confirm(L('Delete this draft?', 'یہ مسودہ حذف کریں؟', 'حذف المسودة؟'))) return
+                      if (!(await askConfirm(L('Delete this draft?', 'یہ مسودہ حذف کریں؟', 'حذف المسودة؟'), { danger: true }))) return
                       let failed = false
                       try { const { error } = await createClient().from('rfq_drafts').delete().eq('id', d.id); failed = !!error } catch { failed = true }
                       if (failed) { alert(L('Could not delete the draft — please try again.', 'مسودہ حذف نہیں ہو سکا — دوبارہ کوشش کریں۔', 'تعذّر حذف المسودة — حاول مرة أخرى.')); return }

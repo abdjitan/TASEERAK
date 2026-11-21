@@ -21,6 +21,7 @@ import { catalogCandidates } from '@/lib/ai/catalogGround'
 import type { DrawingSummary, SpecIndex, PdfPageText, TenderFlag } from '@/lib/tender/types'
 import { makeL, kindLabel, KIND_TONE, severityLabel, SEVERITY_TONE, fmtNum, areaStatusLabel, AREA_TONE } from '@/components/tender/labels'
 import type { AreaCheckRow } from '@/lib/tender/checks'
+import { askConfirm } from '@/lib/askConfirm'
 
 const PROJECT_DRAFT_KEY = 'tsk_project_draft' // the project page's draft (restored on open)
 const PAGE = 150
@@ -181,7 +182,7 @@ export default function TenderReviewPage() {
     if (sent) return
     const ids = filtered.filter(r => r.kind === 'material' && !r.approved && isFlagFree(byItem[r.item_key]) && r.sub_category && (Number(r.qty) > 0 || r.lump_sum)).map(r => r.id)
     if (!ids.length) { setMsg(L('No flag-free materials to approve in this view.', 'کوئی صاف آئٹم نہیں۔', 'لا توجد مواد خالية من التنبيهات لاعتمادها في هذا العرض.')); return }
-    if (!confirm(L(`Approve ${ids.length} flag-free material items shown?`, `${ids.length} آئٹمز منظور کریں؟`, `اعتماد ${ids.length} بنداً من المواد الخالية من التنبيهات في هذا العرض؟`))) return
+    if (!(await askConfirm(L(`Approve ${ids.length} flag-free material items shown?`, `${ids.length} آئٹمز منظور کریں؟`, `اعتماد ${ids.length} بنداً من المواد الخالية من التنبيهات في هذا العرض؟`)))) return
     setBusy(true)
     const supabase = createClient()
     const at = new Date().toISOString()
@@ -195,12 +196,12 @@ export default function TenderReviewPage() {
     setMsg(L(`${ids.length} items approved.`, `${ids.length} منظور۔`, `اعتُمد ${ids.length} بنداً.`))
   }
 
-  function sendApproved() {
+  async function sendApproved() {
     if (!approvedMaterials.length) return
     const unrouted = approvedMaterials.filter(r => !r.sub_category).length
-    if (!confirm(L(`Send ${approvedMaterials.length} approved material items to the price request page?${unrouted ? ` (${unrouted} have no specialty yet: choose it there.)` : ''}\n\nWorks, provisional sums and unapproved items are not sent.`,
+    if (!(await askConfirm(L(`Send ${approvedMaterials.length} approved material items to the price request page?${unrouted ? ` (${unrouted} have no specialty yet: choose it there.)` : ''}\n\nWorks, provisional sums and unapproved items are not sent.`,
       `${approvedMaterials.length} منظور آئٹمز قیمت کی درخواست کے صفحے پر بھیجیں؟`,
-      `نقل ${approvedMaterials.length} بنداً معتمداً من المواد إلى صفحة طلب التسعير؟${unrouted ? ` (${unrouted} بلا تخصص بعد: اختره هناك.)` : ''}\n\nلا تُرسل الأعمال ولا المبالغ الاحتياطية ولا البنود غير المعتمدة.`))) return
+      `نقل ${approvedMaterials.length} بنداً معتمداً من المواد إلى صفحة طلب التسعير؟${unrouted ? ` (${unrouted} بلا تخصص بعد: اختره هناك.)` : ''}\n\nلا تُرسل الأعمال ولا المبالغ الاحتياطية ولا البنود غير المعتمدة.`)))) return
     const draft = {
       title: tender.title,
       projectNotes: `مسار العطاء: ${tender.title} — ${approvedMaterials.length} بنداً معتمداً من جدول الكميات`,

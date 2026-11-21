@@ -22,6 +22,7 @@ import { arCount, arItems, arMaterials } from '@/lib/text'
 import CatIcon from '@/components/shared/CatIcon'
 import { toLatinDigits } from '@/lib/phone'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
+import { askConfirm } from '@/lib/askConfirm'
 
 // «١٢٫٥» / «۱۲» → «12.5» / «12» (Arabic and Urdu keyboards type these digits and decimal marks)
 const toQty = (v: string) => toLatinDigits(v).replace(/٫/g, '.').replace(/[^0-9.]/g, '')
@@ -456,9 +457,9 @@ export default function NewProjectPage() {
     // نرسل المصنّفة فقط، ونبقي غير المصنّفة لدى المقاول ليصنّفها لاحقاً.
     const classifiedItems = items.filter((i: any) => i.selected && i.product_name && !i.needs_classification)
     if (unclassifiedCount > 0) {
-      const ok = confirm(L(`${unclassifiedCount} item(s) are not classified and will not be sent (classification routes each item to the right specialist instead of disturbing everyone).\n\nSend only the classified items (${classifiedItems.length})?`,
+      const ok = (await askConfirm(L(`${unclassifiedCount} item(s) are not classified and will not be sent (classification routes each item to the right specialist instead of disturbing everyone).\n\nSend only the classified items (${classifiedItems.length})?`,
         `${unclassifiedCount} آئٹمز غیر درجہ بند ہیں اور نہیں بھیجے جائیں گے (درجہ بندی ہر آئٹم کو متعلقہ سپلائر تک پہنچاتی ہے)۔\n\nصرف درجہ بند آئٹمز (${classifiedItems.length}) بھیجیں؟`,
-        `يوجد ${arItems(unclassifiedCount)} غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`))
+        `يوجد ${arItems(unclassifiedCount)} غير مصنّف — لن يُرسل (التصنيف يضمن وصوله للمورد المتخصص بدل إزعاج الجميع).\n\nإرسال البنود المصنّفة فقط (${classifiedItems.length})؟`)))
       if (!ok) return
     }
     // materials priced by size/grade need a written spec or a spec file (owner 2026-10-27)

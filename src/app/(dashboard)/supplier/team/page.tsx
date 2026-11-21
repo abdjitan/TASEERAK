@@ -9,6 +9,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
 import { arCount } from '@/lib/text'
+import { askConfirm } from '@/lib/askConfirm'
 
 // Company team: the owner (or an admin member) invites sales staff with a one-time link. A
 // member signs in with their own account and quotes on behalf of the company; their offers
@@ -59,7 +60,7 @@ export default function SupplierTeamPage() {
     const q = self
       ? L('Leave this company team?', 'ٹیم چھوڑیں؟', 'هل تريد مغادرة فريق الشركة؟')
       : L('Remove this member from the team?', 'رکن کو ہٹائیں؟', 'هل تريد إزالة هذا العضو من الفريق؟')
-    if (!window.confirm(q)) return
+    if (!(await askConfirm(q))) return
     setBusy(userId)
     const { data } = await createClient().rpc('remove_company_member', { p_user: userId })
     if ((data as any)?.ok && self) { window.location.href = '/welcome'; return }

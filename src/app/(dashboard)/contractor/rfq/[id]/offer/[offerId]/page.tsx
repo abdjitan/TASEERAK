@@ -24,6 +24,7 @@ import { installTotalOf, materialTotalOf } from '@/lib/installation'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { dbMessage } from '@/lib/dbMessage'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
+import { askConfirm } from '@/lib/askConfirm'
 
 const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
@@ -59,7 +60,7 @@ export default function OfferDetailPage() {
   }
 
   async function cancelReduction() {
-    if (!confirm(L('Cancel the reduction request and go back to the original price?', 'کمی کی درخواست منسوخ کر کے اصل قیمت پر واپس جائیں؟', 'إلغاء طلب التخفيض والعودة للسعر الأصلي؟'))) return
+    if (!(await askConfirm(L('Cancel the reduction request and go back to the original price?', 'کمی کی درخواست منسوخ کر کے اصل قیمت پر واپس جائیں؟', 'إلغاء طلب التخفيض والعودة للسعر الأصلي؟'), { danger: true }))) return
     setActing(true)
     let failed = false
     try {
@@ -118,7 +119,7 @@ export default function OfferDetailPage() {
 
   async function acceptOffer() {
     if (!(await ensureVerified())) return
-    if (!confirm(L('Accept this offer? All other offers will be rejected and the request will close.', 'یہ آفر قبول کریں؟ باقی تمام آفرز رد ہو جائیں گی اور درخواست بند ہو جائے گی۔', 'تأكيد قبول هذا العرض؟ سيتم رفض باقي العروض وإغلاق الطلب.'))) return
+    if (!(await askConfirm(L('Accept this offer? All other offers will be rejected and the request will close.', 'یہ آفر قبول کریں؟ باقی تمام آفرز رد ہو جائیں گی اور درخواست بند ہو جائے گی۔', 'تأكيد قبول هذا العرض؟ سيتم رفض باقي العروض وإغلاق الطلب.')))) return
     setActing(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
@@ -128,7 +129,7 @@ export default function OfferDetailPage() {
 
   async function rejectOffer() {
     // rejecting also removes any material you selected from this supplier (DB trigger, migration 183)
-    if (!confirm(L('Reject this offer? Any material you selected from this supplier will be unselected.', 'یہ آفر رد کریں؟ اس سپلائر سے منتخب کیا گیا سامان بھی غیر منتخب ہو جائے گا۔', 'رفض هذا العرض؟ سيُلغى اختيار أي مادة اخترتها من هذا المورد.'))) return
+    if (!(await askConfirm(L('Reject this offer? Any material you selected from this supplier will be unselected.', 'یہ آفر رد کریں؟ اس سپلائر سے منتخب کیا گیا سامان بھی غیر منتخب ہو جائے گا۔', 'رفض هذا العرض؟ سيُلغى اختيار أي مادة اخترتها من هذا المورد.'), { danger: true }))) return
     setActing(true)
     const supabase = createClient()
     const { error } = await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)

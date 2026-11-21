@@ -11,6 +11,7 @@ import { getNav } from '@/lib/nav'
 import { REGIONS, CITIES_BY_REGION, getRegionLabel } from '@/types'
 import DistrictField from '@/components/shared/DistrictField'
 import Glyph from '@/components/shared/Glyph'
+import { askConfirm } from '@/lib/askConfirm'
 
 export default function SupplierBranchesPage() {
   const { dir, locale } = useTranslation()
@@ -64,7 +65,7 @@ export default function SupplierBranchesPage() {
   }
 
   async function remove(id: any) {
-    if (!confirm(L('Delete this branch?', 'یہ شاخ حذف کریں؟', 'حذف هذا الفرع؟'))) return
+    if (!(await askConfirm(L('Delete this branch?', 'یہ شاخ حذف کریں؟', 'حذف هذا الفرع؟'), { danger: true }))) return
     setErr('')
     const supabase = createClient()
     const { error } = await supabase.from('branches').delete().eq('id', id)

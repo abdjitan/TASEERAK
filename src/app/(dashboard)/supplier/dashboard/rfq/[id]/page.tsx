@@ -29,6 +29,7 @@ import Glyph from '@/components/shared/Glyph'
 import PartialExtrasConfirm from '@/components/shared/PartialExtrasConfirm'
 import { PAYMENT_TERMS } from '@/lib/paymentTerms'
 import { compressImage } from '@/lib/compressImage'
+import { askConfirm } from '@/lib/askConfirm'
 // Arabic-Indic / Persian digits and «٫» from Arabic and Urdu keyboards → 12.5 (type=number refused them silently)
 const latinNum = (v: string) => String(v ?? '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٫,]/g, '.').replace(/[^0-9.]/g, '')
 
@@ -129,7 +130,7 @@ export default function SupplierRFQPage() {
   const [cancelling, setCancelling] = useState(false)
   async function cancelOffer() {
     if (!existingOffer) return
-    if (!confirm(L('Your current offer will be cancelled so you can price it again. Continue?', 'آپ کی موجودہ آفر منسوخ ہو جائے گی تاکہ آپ دوبارہ قیمت دے سکیں۔ جاری رکھیں؟', 'سيتم إلغاء عرضك الحالي لتتمكن من إعادة تسعيره من جديد. متابعة؟'))) return
+    if (!(await askConfirm(L('Your current offer will be cancelled so you can price it again. Continue?', 'آپ کی موجودہ آفر منسوخ ہو جائے گی تاکہ آپ دوبارہ قیمت دے سکیں۔ جاری رکھیں؟', 'سيتم إلغاء عرضك الحالي لتتمكن من إعادة تسعيره من جديد. متابعة؟')))) return
     setCancelling(true)
     const supabase = createClient()
     const { error } = await supabase.rpc('cancel_my_offer', { p_offer_id: existingOffer.id })
@@ -581,10 +582,10 @@ export default function SupplierRFQPage() {
         const g = offerTotals().gross
         if (cap != null && g > Number(cap)) {
           const gs = Math.round(g).toLocaleString('en-US'), cs = Number(cap).toLocaleString('en-US')
-          const go = confirm(L(
+          const go = (await askConfirm(L(
             `Your offer total (${gs} SAR) is above your current limit per deal (${cs} SAR). The buyer will only be able to award items worth up to your limit. Send anyway?`,
             `آپ کی آفر کی کل رقم (${gs} ریال) فی سودا آپ کی موجودہ حد (${cs} ریال) سے زیادہ ہے۔ خریدار صرف آپ کی حد تک کے آئٹمز منتخب کر سکے گا۔ پھر بھی بھیجیں؟`,
-            `إجمالي عرضك (${gs} ريال) أكبر من حدّك الحالي للصفقة (${cs} ريال). لن يستطيع المشتري أن يرسّي عليك إلا بنوداً لا يتجاوز مجموعها حدّك. هل ترسل العرض؟`))
+            `إجمالي عرضك (${gs} ريال) أكبر من حدّك الحالي للصفقة (${cs} ريال). لن يستطيع المشتري أن يرسّي عليك إلا بنوداً لا يتجاوز مجموعها حدّك. هل ترسل العرض؟`)))
           if (!go) { setSubmitting(false); return }
         }
       } catch { /* the database still enforces the cap at award */ }

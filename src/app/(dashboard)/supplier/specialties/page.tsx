@@ -17,6 +17,7 @@ import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
 import { storedSellerKind } from '@/lib/sellers'
 import Glyph from '@/components/shared/Glyph'
 import { compressImage } from '@/lib/compressImage'
+import { askConfirm } from '@/lib/askConfirm'
 
 const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
@@ -187,11 +188,11 @@ export default function SpecialtiesPage() {
   async function handleSave() {
     if (isMember || loadFailed) return
     // no sector at all: the seller would receive no requests (audit 2026-11-01) — ask first
-    if (mySectors.length === 0 && !confirm(locale === 'en'
+    if (mySectors.length === 0 && !(await askConfirm(locale === 'en'
       ? 'You have not chosen any sector, so no requests will reach you. Save anyway?'
       : locale === 'ur'
         ? 'آپ نے کوئی شعبہ منتخب نہیں کیا، اس لیے آپ کو کوئی درخواست نہیں ملے گی۔ پھر بھی محفوظ کریں؟'
-        : 'لم تختر أي قطاع، ولن تصلك أي طلبات تسعير. هل تريد الحفظ على أي حال؟')) return
+        : 'لم تختر أي قطاع، ولن تصلك أي طلبات تسعير. هل تريد الحفظ على أي حال؟'))) return
     setSaving(true); setMsg(''); setMsgErr(false)
     const supabase = createClient()
 

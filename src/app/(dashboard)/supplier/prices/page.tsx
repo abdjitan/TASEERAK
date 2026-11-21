@@ -11,6 +11,7 @@ import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, SUB_CATEGORIES, getGroupedSubCategories } from '@/types'
 import Glyph from '@/components/shared/Glyph'
 import { timeAgo as timeAgoText } from '@/lib/text'
+import { askConfirm } from '@/lib/askConfirm'
 
 const txt = {
   ar: {
@@ -118,7 +119,7 @@ export default function SupplierPricesPage() {
   }
 
   async function deletePrice(id: any) {
-    if (!confirm(T.confirmDelete)) return
+    if (!(await askConfirm(T.confirmDelete))) return
     const supabase = createClient()
     await supabase.from('live_prices').delete().eq('id', id)
     load()

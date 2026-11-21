@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { friendlyError } from '@/lib/friendlyError'
 import { toLatinDigits } from '@/lib/phone'
 import Glyph from '@/components/shared/Glyph'
+import { askConfirm } from '@/lib/askConfirm'
 
 export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }: { offer: any; locale: string; wonCount?: number; onDone: (o: any) => void }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -23,7 +24,7 @@ export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }
   async function save() {
     setErr('')
     if (sum > max) { setErr(L(`The charges can't be higher than your original offer (${fmt(max)} SAR).`, `چارجز آپ کی اصل پیشکش (${fmt(max)} ریال) سے زیادہ نہیں ہو سکتے۔`, `لا يمكن أن تزيد الرسوم على عرضك الأصلي (${fmt(max)} ر.س).`)); return }
-    if (!confirm(L(`Confirm ${fmt(sum)} SAR in charges for the materials you won? The buyer will be notified.`, `جیتے گئے سامان کے لیے ${fmt(sum)} ریال چارجز کنفرم کریں؟ خریدار کو اطلاع دی جائے گی۔`, `تأكيد رسوم بقيمة ${fmt(sum)} ر.س للمواد التي فزت بها؟ سيُبلَّغ المشتري.`))) return
+    if (!(await askConfirm(L(`Confirm ${fmt(sum)} SAR in charges for the materials you won? The buyer will be notified.`, `جیتے گئے سامان کے لیے ${fmt(sum)} ریال چارجز کنفرم کریں؟ خریدار کو اطلاع دی جائے گی۔`, `تأكيد رسوم بقيمة ${fmt(sum)} ر.س للمواد التي فزت بها؟ سيُبلَّغ المشتري.`)))) return
     setBusy(true)
     const payload = rows.filter((r: any) => num(r.amount) > 0).map((r: any) => ({ label: r.label.trim() || L('Delivery', 'ڈیلیوری', 'توصيل'), amount: num(r.amount) }))
     const { error } = await createClient().rpc('confirm_partial_extras', { p_offer_id: offer.id, p_extras: payload })

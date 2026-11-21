@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import SupportThread from '@/components/shared/SupportThread'
 import Glyph from '@/components/shared/Glyph'
+import { askConfirm } from '@/lib/askConfirm'
 
 const SUPPORT_WHATSAPP = '12135614366'
 
@@ -32,7 +33,7 @@ function Support() {
     })
   }, [])
   async function askConversion() {
-    if (!confirm(L('Ask to turn your account into a supplier account? Your number and email stay the same; the team reviews the request.', 'اپنے اکاؤنٹ کو سپلائر اکاؤنٹ میں بدلنے کی درخواست کریں؟ آپ کا نمبر اور ای میل وہی رہیں گے؛ ٹیم درخواست کا جائزہ لے گی۔', 'طلب تحويل حسابك إلى حساب مورد؟ يبقى رقمك وبريدك كما هما، ويراجع الفريق الطلب.'))) return
+    if (!(await askConfirm(L('Ask to turn your account into a supplier account? Your number and email stay the same; the team reviews the request.', 'اپنے اکاؤنٹ کو سپلائر اکاؤنٹ میں بدلنے کی درخواست کریں؟ آپ کا نمبر اور ای میل وہی رہیں گے؛ ٹیم درخواست کا جائزہ لے گی۔', 'طلب تحويل حسابك إلى حساب مورد؟ يبقى رقمك وبريدك كما هما، ويراجع الفريق الطلب.')))) return
     const { error } = await createClient().rpc('request_supplier_conversion', { p_note: null })
     if (error) { setConvMsg(error.message); return }
     setMe((m: any) => ({ ...(m || {}), supplier_conversion_requested_at: new Date().toISOString() }))

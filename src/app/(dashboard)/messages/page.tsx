@@ -13,6 +13,7 @@ import { rfqDisplayName } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
+import { askConfirm } from '@/lib/askConfirm'
 
 function fmtTime(d: any, locale: string = 'ar') {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -172,7 +173,7 @@ function Messages() {
   async function toggleBlock() {
     if (!bstate?.other_id) return
     setMenuOpen(false)
-    if (!bstate.i_blocked && !window.confirm(L('Block this user? Neither of you will be able to send messages in this conversation.', 'اس صارف کو بلاک کریں؟ اس گفتگو میں کوئی بھی پیغام نہیں بھیج سکے گا۔', 'حظر هذا المستخدم؟ لن يتمكّن أيٌّ منكما من إرسال الرسائل في هذه المحادثة.'))) return
+    if (!bstate.i_blocked && !(await askConfirm(L('Block this user? Neither of you will be able to send messages in this conversation.', 'اس صارف کو بلاک کریں؟ اس گفتگو میں کوئی بھی پیغام نہیں بھیج سکے گا۔', 'حظر هذا المستخدم؟ لن يتمكّن أيٌّ منكما من إرسال الرسائل في هذه المحادثة.'), { danger: true }))) return
     setBusy(true)
     const supabase = createClient()
     const { error } = await supabase.rpc(bstate.i_blocked ? 'unblock_user' : 'block_user', { p_user: bstate.other_id })

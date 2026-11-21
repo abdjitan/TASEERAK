@@ -16,6 +16,7 @@ import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, rfqPurgeInfo 
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arMaterials } from '@/lib/text'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
+import { askConfirm } from '@/lib/askConfirm'
 
 // «طلباتي»: every request of the buyer with its details — reference, date, materials (with
 // pictures), offers received, deadline and status — filterable and searchable; a card opens the
@@ -89,8 +90,8 @@ export default function MyRequestsPage() {
   async function deleteEnded() {
     const ended = rfqs.filter(r => stateOf(r) === 'ended')
     if (!ended.length) return
-    if (!confirm(L(`Delete all ${ended.length} ended requests? This cannot be undone.`, `تمام ${ended.length} ختم شدہ درخواستیں حذف کریں؟`,
-      `حذف جميع الطلبات المنتهية (${ended.length})؟ لا يمكن التراجع عن ذلك.`))) return
+    if (!(await askConfirm(L(`Delete all ${ended.length} ended requests? This cannot be undone.`, `تمام ${ended.length} ختم شدہ درخواستیں حذف کریں؟`,
+      `حذف جميع الطلبات المنتهية (${ended.length})؟ لا يمكن التراجع عن ذلك.`), { danger: true }))) return
     setDeleting(true)
     const sb = createClient()
     const ids = ended.map(r => r.id)
@@ -117,8 +118,8 @@ export default function MyRequestsPage() {
   async function cancelSelected() {
     const pick = rfqs.filter(r => sel.has(r.id) && cancellable(r))
     if (!pick.length) return
-    if (!confirm(L(`Cancel ${pick.length} request(s)? They move to «Cancelled», where you can review or request them again.`, `${pick.length} درخواستیں منسوخ کریں؟`,
-      `إلغاء ${pick.length === 1 ? 'الطلب المحدد' : arCount(pick.length, 'طلب واحد', 'طلبين', 'طلبات', 'طلباً')}؟ تنتقل إلى «الملغاة» ويمكنك مراجعتها أو طلبها مرة أخرى.`))) return
+    if (!(await askConfirm(L(`Cancel ${pick.length} request(s)? They move to «Cancelled», where you can review or request them again.`, `${pick.length} درخواستیں منسوخ کریں؟`,
+      `إلغاء ${pick.length === 1 ? 'الطلب المحدد' : arCount(pick.length, 'طلب واحد', 'طلبين', 'طلبات', 'طلباً')}؟ تنتقل إلى «الملغاة» ويمكنك مراجعتها أو طلبها مرة أخرى.`), { danger: true }))) return
     setCancelling(true)
     const sb = createClient()
     const ids = pick.map(r => r.id)
