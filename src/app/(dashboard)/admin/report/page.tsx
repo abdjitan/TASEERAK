@@ -39,6 +39,7 @@ export default function OwnerReport() {
   const [sv, setSv] = useState<any>(null)
   const [items, setItems] = useState<any>(null) // what buyers bought / sellers offer (224)
   const [ready, setReady] = useState<any>(null) // «جاهزية الاشتراكات» (237), owner only, not printed
+  const [inv, setInv] = useState<any[]>([]) // /join invite links: opens and sign-ups per batch (241)
   const [err, setErr] = useState('')
 
   useEffect(() => {
@@ -65,6 +66,7 @@ export default function OwnerReport() {
       ])
       if (a.error) { setErr(a.error.message); return }
       setD(a.data); setSv(b.data || null); setItems(c.data || null); setReady(r.data || null)
+      supabase.rpc('admin_invite_stats').then(({ data }: any) => setInv(Array.isArray(data) ? data : []), () => {})
     })()
   }, [ok, days, includeTest])
 
@@ -147,6 +149,21 @@ export default function OwnerReport() {
             </section>
           )
         })()}
+
+        {inv.length > 0 && (
+          <section className="mt-4 print:hidden rounded-2xl border border-gray-200 p-4">
+            <h2 className="text-[15px] font-extrabold mb-2" style={{ color: NAVY }}>روابط دعوة الموردين (taseerak.com/join)</h2>
+            <table className="w-full text-sm border-collapse">
+              <thead><tr className="text-gray-500 text-xs border-b"><th className="text-start py-1.5">الرمز</th><th className="text-start">فتحوا الرابط</th><th className="text-start">سجّلوا</th><th className="text-start">آخر نشاط</th></tr></thead>
+              <tbody>{inv.map((x: any) => (
+                <tr key={x.code} className="border-b border-gray-100">
+                  <td className="py-1.5 font-semibold" style={{ color: NAVY }} dir="ltr">{x.code === 'direct' ? 'بدون رمز' : x.code}</td>
+                  <td>{fmt(x.opens)}</td><td className="font-bold" style={{ color: GREEN }}>{fmt(x.signups)}</td>
+                  <td className="text-xs text-gray-500">{x.last_at ? new Date(x.last_at).toLocaleDateString('ar-SA-u-ca-gregory') : '—'}</td>
+                </tr>))}</tbody>
+            </table>
+          </section>
+        )}
 
         <Section title="الأرقام الرئيسية">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

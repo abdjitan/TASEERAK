@@ -136,6 +136,7 @@ export default function RegisterPage() {
   // ?role=supplier or ?kind= makes it a supplier signup. A switch row near the bottom flips it.
   const [selectedType, setSelectedType] = useState<'contractor' | 'supplier'>('contractor')
   const [sellerKind, setSellerKind] = useState<'company' | 'independent' | null>(null)
+  const [sellerOnly, setSellerOnly] = useState(false) // /join (supplier invite link): no buyer switch (owner 2026-11-21)
   // optional CR at sign-up for a company/shop (owner 2026-11-16, migration 216): one CR = one account.
   // Checked on blur / submit only (cr_exists: yes/no, 10 checks per hour per IP).
   const [cr, setCr] = useState('')
@@ -178,6 +179,7 @@ export default function RegisterPage() {
       if (PHONE_OTP_ENABLED && new URLSearchParams(window.location.search).get('email') !== '1') { window.location.replace('/login'); return }
       const qs = new URLSearchParams(window.location.search)
       const k = qs.get('kind')
+      if (qs.get('only') === '1') setSellerOnly(true)
       if (qs.get('role') === 'supplier' || k === 'company' || k === 'independent') {
         switchTo('supplier')
         if (k === 'company' || k === 'independent') setSellerKind(k)
@@ -210,6 +212,8 @@ export default function RegisterPage() {
     if (asksBusiness && cr && !isUnifiedCr(normalizeCrInput(cr))) { setFormError(crFormatText(locale)); return }
     if (asksBusiness && cr && await checkCr(cr)) { setFormError(crTakenText(locale).msg); return }
     if (phoneDup) { setFormError(t.phoneTaken); return }
+    // check again at submit, whatever the format (owner 2026-11-21): never create an account on a taken number
+    try { const { data: taken } = await supabase.rpc('phone_exists', { p_phone: data.phone }); if (taken === true) { setPhoneDup(true); setFormError(t.phoneTaken); return } } catch {}
     if (await checkEmailDup(data.email)) { setFormError(''); return }
     setSubmitting(true); setFormError('')
     try {
@@ -401,11 +405,11 @@ export default function RegisterPage() {
           </form>
 
             {/* switch buyer ⇄ supplier, then «have an account?» */}
-            <button type="button" onClick={() => switchTo(selectedType === 'supplier' ? 'contractor' : 'supplier')}
+            {!sellerOnly && <button type="button" onClick={() => switchTo(selectedType === 'supplier' ? 'contractor' : 'supplier')}
               className="mt-5 w-full rounded-xl border border-line bg-gray-50 hover:bg-gray-100 px-4 py-3 text-sm text-ink-2 transition-colors">
               {selectedType === 'supplier' ? t.toBuyer : t.toSupplier}{' '}
               <span className="font-extrabold" style={{ color: '#8F6820' }}>{selectedType === 'supplier' ? t.toBuyerCta : t.toSupplierCta}</span>
-            </button>
+            </button>}
             <p className="mt-3 text-sm text-ink-2 text-center">{t.haveAccount} <Link href="/login" className="font-extrabold text-orange-dark hover:underline">{t.login}</Link></p>
 
             {/* company accounts with several procurement staff are set up with us, not here */}

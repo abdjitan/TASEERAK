@@ -156,6 +156,8 @@ export default function OnboardingPage() {
         // only the kind the seller tapped on the sign-up form; a device hint (e.g. an old /join visit) just pre-selects nothing (owner 2026-11-19)
         const metaKind = (session.user.user_metadata as any)?.seller_kind
         try { localStorage.removeItem(SIGNUP_KIND_KEY) } catch {}
+        // a seller who came from the /join invite link: count the sign-up for that batch once (241)
+        if (p.role === 'supplier') { try { const ic = localStorage.getItem('tsk_invite_code'); if (ic) { localStorage.removeItem('tsk_invite_code'); supabase.rpc('claim_invite_signup', { p_code: ic }).then(() => {}, () => {}) } } catch {} }
         if (p.role === 'supplier' && !p.provider_type && (metaKind === 'company' || metaKind === 'independent')) {
           const { data: np, error: kErr } = await supabase.rpc('set_seller_kind', { p_kind: metaKind, p_activity: null })
           if (kErr) showErr(t.kindFailed)
