@@ -127,10 +127,10 @@ export function sourceIcon(k: string | null | undefined): string { return SOURCE
 export function availabilityIcon(k: string | null | undefined): string { return AVAILABILITY.find(x => x.k === k)?.icon || '' }
 
 // ── Warranty (optional, per material) ─────────────────────────────────────────────────────────
-// Stored as Arabic text on each priced line (item_prices[].warranty); '' = not stated.
+// Stored as Arabic text on each priced line (item_prices[].warranty); '' = not stated (shows nothing).
+// No «بدون ضمان» option: an empty field must never read as waiving the legal warranty (consumer law, 2026-11-21).
 export const WARRANTY_OPTIONS: { v: string; ar: string; en: string; ur: string }[] = [
   { v: '', ar: 'غير محدد', en: 'Not specified', ur: 'غیر متعین' },
-  { v: 'بدون ضمان', ar: 'بدون ضمان', en: 'No warranty', ur: 'کوئی وارنٹی نہیں' },
   { v: 'ضمان الوكيل', ar: 'ضمان الوكيل', en: "Manufacturer's warranty", ur: 'مینوفیکچرر وارنٹی' },
   { v: '3 أشهر', ar: '3 أشهر', en: '3 months', ur: '3 ماہ' },
   { v: '6 أشهر', ar: '6 أشهر', en: '6 months', ur: '6 ماہ' },
