@@ -53,7 +53,7 @@ export const HOME_PACKS: HomePack[] = [
     ],
   },
   {
-    id: 'lighting', img: 'lighting', cover: 'إنارة سقف مودرن (بلافونيير)', ar: 'إنارة غرفة', en: 'Light a room', ur: 'کمرے کی روشنی',
+    id: 'lighting', img: 'lighting', cover: 'إنارة سقف مودرن (بلافونيير)', photo: '/images/packs/lighting.webp', ar: 'إنارة غرفة', en: 'Light a room', ur: 'کمرے کی روشنی',
     sub: { ar: 'سبوتات وثريا ومفاتيح', en: 'Spotlights, ceiling light, switches', ur: 'اسپاٹ، چھت کی لائٹ، سوئچ' },
     items: [
       { name: 'إنارة سقف مودرن (بلافونيير)', sector: 'electrical', qty: 1 },
