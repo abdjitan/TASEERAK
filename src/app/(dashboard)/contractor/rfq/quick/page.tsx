@@ -648,7 +648,7 @@ export default function QuickRequestPage() {
             </a>
           )}
           {buyerType && (
-            <div className="mt-1 text-[11px] text-gray-500">{buyerType === 'individual' ? L('Simple request for your home', 'آپ کے گھر کے لیے آسان درخواست', 'طلب بسيط لبيتك') : L('Full request (contractor/company)', 'مکمل درخواست (ٹھیکیدار/کمپنی)', 'طلب كامل (مقاول أو شركة)')} · <button type="button" className="underline" onClick={() => setBuyerType(null)}>{L('change', 'تبدیل کریں', 'تغيير')}</button></div>
+            <div className="mt-1 text-[11px] text-gray-500">{buyerType === 'individual' ? L('Simple request for your home', 'آپ کے گھر کے لیے آسان درخواست', 'طلب بسيط لبيتك') : L('Full request (contractor/company)', 'مکمل درخواست (ٹھیکیدار/کمپنی)', 'طلب كامل (مقاول أو شركة)')}</div>
           )}
           {buyerType === null && (
             <div className="mt-3 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 p-3">
