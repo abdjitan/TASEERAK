@@ -85,7 +85,7 @@ export const HOME_PACKS: HomePack[] = [
     ],
   },
   {
-    id: 'curtains', img: 'furniture', cover: 'ستائر قماش', ar: 'ستائر غرفة', en: 'Curtains for a room', ur: 'کمرے کے پردے',
+    id: 'curtains', img: 'furniture', cover: 'ستائر قماش', photo: '/images/packs/curtains.webp', ar: 'ستائر غرفة', en: 'Curtains for a room', ur: 'کمرے کے پردے',
     sub: { ar: 'ستائر وحوامل', en: 'Curtains and rails', ur: 'پردے اور ریلیں' },
     items: [
       { name: 'ستائر قماش', sector: 'architectural', qty: null, hint: { ar: 'اكتب عرض النوافذ بالمتر', en: 'Write the window width in metres', ur: 'کھڑکی کی چوڑائی میٹر میں لکھیں' } },
