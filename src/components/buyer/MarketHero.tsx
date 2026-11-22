@@ -10,6 +10,7 @@ import { getProductLabel } from '@/types'
 import { BROWSE_SECTIONS } from '@/lib/browseCategories'
 import { createClient } from '@/lib/supabase/client'
 import { sectionRank, bySectionRank, type DemandRow } from '@/lib/sectionOrder'
+import { HOME_PACKS } from '@/lib/homePacks'
 
 // All sections, building first (owner 2026-10-19: show every category photo, building materials first)
 const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub: { ar: string; en: string; ur: string } }[] = [
@@ -136,6 +137,26 @@ export default function MarketHero({ locale, homeBuyer = false }: { locale: stri
           </Link>)}
         </div>
       </section>
+
+      {/* home project packs (owner 2026-11-22): one tap lists the materials of a common home job */}
+      <div className="mt-5">
+        <h3 className="text-lg font-extrabold text-[#0B2438]">{L('Home projects', 'گھر کے پراجیکٹس', 'مشاريع البيت')}</h3>
+        <p className="text-xs text-[#48596E]">{L('A ready list of materials: remove what you don’t need and set the quantities', 'سامان کی تیار فہرست', 'قائمة مواد جاهزة: أزل ما لا تحتاجه وحدّد الكميات')}</p>
+        <div className="mt-2 flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
+          {HOME_PACKS.map(p => (
+            <Link key={p.id} href={`/contractor/rfq/quick?pack=${p.id}`}
+              className="group relative shrink-0 w-36 sm:w-44 h-28 rounded-2xl overflow-hidden bg-[#0B2438] shadow-sm hover:shadow-lg transition-shadow">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/images/sections/${p.img}.webp`} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <span className="absolute inset-0 bg-gradient-to-t from-[#050B12]/90 via-[#071827]/30 to-transparent" aria-hidden />
+              <span className="absolute bottom-2 inset-x-2.5">
+                <span className="block font-extrabold text-[14px] text-white leading-snug">{pick(p)}</span>
+                <span className="block text-[10.5px] text-white/80 leading-snug">{pick(p.sub)}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </div>
 
       {/* every section as a medallion chip (same row as the mobile app) */}
       <div className={`mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 ${homeBuyer ? 'hidden' : ''}`} aria-label={L('Sections', 'حصے', 'الأقسام')}>

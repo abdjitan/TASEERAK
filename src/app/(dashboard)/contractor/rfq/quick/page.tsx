@@ -12,6 +12,8 @@ import { getNav } from '@/lib/nav'
 import { SPEC_UNSURE, specUnsureLabel, REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, getUnitLabelLong, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, brandApplies, withBrand, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import { rememberBuyerType } from '@/lib/buyerType'
+import PackSheet, { type PackLine } from '@/components/buyer/PackSheet'
+import { packById, type HomePack } from '@/lib/homePacks'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
@@ -146,6 +148,7 @@ export default function QuickRequestPage() {
   // From the buyer home: open the guide already searching (?q=) or on a section (?section=)
   const [startQ, setStartQ] = useState('')
   const [startSection, setStartSection] = useState<string | null>(null)
+  const [pack, setPack] = useState<HomePack | null>(null)   // ?pack= home project pack (owner 2026-11-22)
   const [startPhoto, setStartPhoto] = useState(false) // ?start=photo: a big «take or choose a photo» button on top
   // «متى تحتاج التسليم؟» → items[].max_days for every line (null = not urgent)
   const [needDays, setNeedDays] = useState<number | null>(null)
@@ -160,6 +163,8 @@ export default function QuickRequestPage() {
     if (sl) setLines(prev => prev.some(l => l.product_name === sl) ? prev : [...prev, { key: uid(), product_name: sl, sector: 'supply_store', quantity: '', unit: 'حبة', details: '' }])
     // browsers block opening the file picker without a tap, so show a big button instead
     if (qs.get('start') === 'photo') setStartPhoto(true)
+    const pk = packById(qs.get('pack'))
+    if (pk) setPack(pk)
     const sq = (qs.get('q') || '').slice(0, 80), ss = qs.get('section')
     if (sq) setStartQ(sq)
     if (ss && /^[a-z_]{3,20}$/.test(ss)) setStartSection(ss)
@@ -348,6 +353,15 @@ export default function QuickRequestPage() {
     if (!ph) return
     setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: 'identifying' } : p))
     identify(id, ph.file)
+  }
+
+  // a home project pack: every ticked material becomes a line (saved when it has a quantity)
+  function addPack(items: PackLine[]) {
+    setLines(prev => [...prev, ...items.filter(it => !prev.some(l => l.product_name === it.name)).map(it => ({
+      key: uid(), product_name: it.name, sector: it.sector, quantity: it.quantity, unit: it.unit, details: '', done: parseFloat(it.quantity) > 0,
+    }))])
+    setPack(null)
+    setTimeout(() => document.getElementById('request-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200)
   }
 
   // a material written inside a catalog section (not listed) goes to all of that section's suppliers
@@ -1126,6 +1140,7 @@ export default function QuickRequestPage() {
           onRemove={(key: string) => removeLine(key)}
           onPick={addFromCatalog} />
       )}
+      {pack && <PackSheet pack={pack} locale={locale} onAdd={addPack} onClose={() => setPack(null)} />}
     </AppShell>
   )
 }
