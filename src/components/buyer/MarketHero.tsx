@@ -42,7 +42,8 @@ export default function MarketHero({ locale, homeBuyer = false }: { locale: stri
     }, () => {})
   }, [])
   const rank = useMemo(() => sectionRank(homeBuyer, demand), [homeBuyer, demand])
-  const cats = useMemo(() => bySectionRank(CATS, c => c.key, rank), [rank])
+  // a home buyer: no heavy machinery and no duplicate chips row (UX study 2026-11-22)
+  const cats = useMemo(() => bySectionRank(homeBuyer ? CATS.filter(c => c.key !== 'machinery') : CATS, c => c.key, rank), [rank, homeBuyer])
   const chips = useMemo(() => bySectionRank(BROWSE_SECTIONS, b => b.key, rank), [rank])
   const [active, setActive] = useState(-1)
   // Live suggestions while typing («بلو» → بلوك، بلوك عازل…), from the same catalog search the request page uses.
@@ -137,7 +138,7 @@ export default function MarketHero({ locale, homeBuyer = false }: { locale: stri
       </section>
 
       {/* every section as a medallion chip (same row as the mobile app) */}
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" aria-label={L('Sections', 'حصے', 'الأقسام')}>
+      <div className={`mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 ${homeBuyer ? 'hidden' : ''}`} aria-label={L('Sections', 'حصے', 'الأقسام')}>
         {chips.map(b => (
           <Link key={b.key} href={`/contractor/rfq/quick?section=${b.key}`}
             className="shrink-0 inline-flex items-center gap-2 ps-1 pe-3.5 py-1 rounded-full border border-gray-200 bg-white text-[13px] font-bold text-[#0B2438] hover:border-[#D4A543] transition-colors">
@@ -155,7 +156,7 @@ export default function MarketHero({ locale, homeBuyer = false }: { locale: stri
         </div>
         <Link href="/contractor/rfq/quick" className="text-sm font-bold text-[#8F6820] hover:underline whitespace-nowrap">{L('All categories', 'تمام زمرے', 'كل التصنيفات')} ←</Link>
       </div>
-      <div className="mt-3 grid grid-cols-3 lg:grid-cols-9 gap-2 sm:gap-3">
+      <div className={`mt-3 grid gap-2 sm:gap-3 ${homeBuyer ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 lg:grid-cols-9'}`}>
         {cats.map(c => (
           <Link key={c.key} href={`/contractor/rfq/quick?section=${c.key}`}
             className="group relative overflow-hidden rounded-2xl min-h-[112px] sm:min-h-[140px] bg-[#0B2438] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">

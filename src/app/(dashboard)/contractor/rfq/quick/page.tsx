@@ -11,6 +11,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { SPEC_UNSURE, specUnsureLabel, REGIONS, CITIES_BY_REGION, SECTOR_LABELS, SECTOR_PRODUCTS, getProductLabel, getUnitLabel, getUnitLabelLong, unitOptionsFor, unitChoicesFor, detectSubCategory, getDefaultUnit, getProductSpecs, getOptionLabel, missingSpecs, specsRequired, brandApplies, withBrand, type Sector } from '@/types'
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
+import { rememberBuyerType } from '@/lib/buyerType'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
@@ -177,6 +178,7 @@ export default function QuickRequestPage() {
       setUserId(user.id)
       const { data: p } = await supabase.from('profiles').select('region, city, latitude, longitude, buyer_type').eq('id', user.id).single()
       setBuyerType(p?.buyer_type === 'individual' || p?.buyer_type === 'business' ? p.buyer_type : null)
+      rememberBuyerType(p?.buyer_type)
       if (p?.region) setRegion(p.region)
       if (p?.city) setCity(p.city)
       if (p?.latitude != null && p?.longitude != null) { setGeo({ lat: p.latitude, lng: p.longitude }); setGeoFromProfile(true) }
@@ -642,7 +644,7 @@ export default function QuickRequestPage() {
                    ['business', L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'), L('Full options: specs, VAT invoice, quantities table', 'مکمل اختیارات', 'خيارات كاملة: مواصفات وفاتورة ضريبية وجدول كميات')]] as const).map(([v, t, sub]) => (
                   <button key={v} type="button" className="text-start rounded-xl border-2 border-gray-200 bg-white px-3 py-2 hover:border-[#D4A543]"
                     onClick={async () => {
-                      setBuyerType(v)
+                      setBuyerType(v); rememberBuyerType(v)
                       try { const sb = createClient(); const { data: { user } } = await sb.auth.getUser(); if (user) await sb.from('profiles').update({ buyer_type: v }).eq('id', user.id) } catch {}
                     }}>
                     <span className="block text-sm font-bold text-navy">{t}</span>
@@ -698,7 +700,7 @@ export default function QuickRequestPage() {
         {/* Desktop: the catalog fills the main column; phones open it as a sheet */}
         <div id="catalog-inline" className="hidden lg:block lg:col-start-1 lg:row-start-2 lg:mt-5 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
           <h2 className="font-bold text-navy"><Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
-          <CatalogBrowser key={startQ + '|' + (startSection || '')} inline initialQuery={startQ} initialSection={startSection as any} locale={locale} picked={lines.map(l => ({ key: l.key, name: l.product_name }))} onPick={addFromCatalog} onRemove={removeLine} />
+          <CatalogBrowser key={startQ + '|' + (startSection || '')} simple={simple} inline initialQuery={startQ} initialSection={startSection as any} locale={locale} picked={lines.map(l => ({ key: l.key, name: l.product_name }))} onPick={addFromCatalog} onRemove={removeLine} />
         </div>
 
         {/* B: the chosen list + delivery, a side column on desktop (sticky), under the inputs on mobile */}
@@ -1119,7 +1121,7 @@ export default function QuickRequestPage() {
         </div>
       )}
       {showCatalog && (
-        <CatalogPicker locale={locale} onClose={closeCatalog} initialQuery={startQ} initialSection={startSection as any}
+        <CatalogPicker simple={simple} locale={locale} onClose={closeCatalog} initialQuery={startQ} initialSection={startSection as any}
           picked={lines.map(l => ({ key: l.key, name: l.product_name }))}
           onRemove={(key: string) => removeLine(key)}
           onPick={addFromCatalog} />

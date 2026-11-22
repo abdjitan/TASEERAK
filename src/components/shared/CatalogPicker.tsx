@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getProductLabel, detectSubCategory, getSubCategoryLabel, type Sector } from '@/types'
 import { BROWSE_SECTIONS, getSectionGroups, type BrowseSection, subsOfSection } from '@/lib/browseCategories'
+import { bySectionRank, HOME_ORDER } from '@/lib/sectionOrder'
+import { cleanArName } from '@/lib/displayName'
 import { searchProducts, normQuery } from '@/lib/productSearch'
 import { createClient } from '@/lib/supabase/client'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
@@ -46,8 +48,9 @@ function sectionCovers(key: BrowseSection) {
   return coverCache[key]
 }
 
-export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline = false, initialQuery = '', initialSection = null }: {
+export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline = false, initialQuery = '', initialSection = null, simple = false }: {
   locale: string
+  simple?: boolean   // a home buyer: home-first section order, no heavy machinery, Arabic names without English
   initialQuery?: string
   initialSection?: BrowseSection | null
   onPick: (item: { name: string; sector: Sector; section?: BrowseSection; sub?: string }) => void
@@ -58,6 +61,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [q, setQ] = useState(initialQuery)
   const [section, setSection] = useState<BrowseSection | null>(initialSection)
+  const SECTIONS = simple ? bySectionRank(BROWSE_SECTIONS.filter(b => b.key !== 'machinery'), b => b.key, HOME_ORDER) : BROWSE_SECTIONS
   const [openGroup, setOpenGroup] = useState<string | null>(null)
   const [own, setOwn] = useState('')   // «طلبك غير موجود؟» inside a section
   // the same inside an open group (owner 2026-10-31: «طلبك غير موجود» in «الخرسانة والإسمنت» → only those suppliers)
@@ -126,7 +130,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
           <img src={productImageUrl(name)} alt="" loading="lazy" className="w-full h-full object-contain"
             onError={(e: any) => imgFallback(e, detectSubCategory(name, s))} />
         </span>
-        <span className="text-[12px] font-semibold text-gray-800 leading-snug line-clamp-2" dir="auto">{getProductLabel(name, locale)}</span>
+        <span className="text-[12px] font-semibold text-gray-800 leading-snug line-clamp-2" dir="auto">{simple && locale === 'ar' ? cleanArName(name) : getProductLabel(name, locale)}</span>
         {on && <span className="absolute top-1.5 end-1.5 w-5 h-5 rounded-full grid place-items-center text-white text-[11px]" style={{ background: '#0F6E56' }}>✓</span>}
       </button>
     )
@@ -149,7 +153,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
             <img src={sectionIcon('all')} alt="" aria-hidden className="w-7 h-7" />
             {L('All sections', 'تمام حصے', 'كل الأقسام')}
           </button>
-          {BROWSE_SECTIONS.map(b => (
+          {SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
               className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-bold ps-1 pe-3 py-1 rounded-full border ${b.key === section ? 'text-white border-[#D4A543]' : 'border-gray-200 bg-white text-gray-600'}`}
               style={b.key === section ? { background: '#0B2438', boxShadow: '0 0 0 2px rgba(212,165,67,.3)' } : undefined}>
@@ -222,7 +226,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
         )
       ) : !current ? (
         <div className={inline ? 'grid grid-cols-2 md:grid-cols-3 gap-3' : 'grid grid-cols-2 sm:grid-cols-4 gap-2.5'}>
-          {BROWSE_SECTIONS.map(b => (
+          {SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
               className="group relative text-start rounded-2xl overflow-hidden border border-[#0B2438]/10 bg-[#0B2438] min-h-[150px] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
               {SECTION_PHOTO[b.key] ? (
@@ -323,8 +327,9 @@ function sectionSector(section: BrowseSection): Sector {
   return (Object.entries(n).sort((a, b) => b[1] - a[1])[0]?.[0] || 'supply_store') as Sector
 }
 
-export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove, initialQuery = '', initialSection = null }: {
+export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove, initialQuery = '', initialSection = null, simple = false }: {
   locale: string
+  simple?: boolean
   initialQuery?: string
   initialSection?: BrowseSection | null
   onPick: (item: { name: string; sector: Sector }) => void
@@ -346,7 +351,7 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
-          <CatalogBrowser locale={locale} onPick={onPick} onRemove={onRemove} picked={picked} initialQuery={initialQuery} initialSection={initialSection} />
+          <CatalogBrowser locale={locale} onPick={onPick} onRemove={onRemove} picked={picked} initialQuery={initialQuery} initialSection={initialSection} simple={simple} />
         </div>
         {picked.length > 0 && (
           <div className="border-t border-gray-100 bg-gray-50">

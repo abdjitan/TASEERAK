@@ -14,6 +14,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import EnablePush from '@/components/shared/EnablePush'
 import MarketHero from '@/components/buyer/MarketHero'
+import { rememberBuyerType } from '@/lib/buyerType'
 import { AppIcon } from '@/components/AppIcon'
 import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
@@ -38,7 +39,7 @@ const txt = {
     rfqList: 'طلبات التسعير',
     requests: 'طلب',
     noRfqs: 'لا يوجد طلبات بعد',
-    noRfqsSub: 'أرسل أول طلب تسعير وابدأ تلقي عروض من مئات الموردين',
+    noRfqsSub: 'أرسل أول طلب تسعير لتصلك عروض الموردين المختصين بموادك',
     newRfqBtn: '+ طلب تسعير جديد',
     viewDetails: 'عرض التفاصيل ←',
     open: '● مفتوح', closed: '● مغلق', expired: '● منتهي', cancelled: '● ملغي',
@@ -57,7 +58,7 @@ const txt = {
     rfqList: 'RFQ Requests',
     requests: 'requests',
     noRfqs: 'No requests yet',
-    noRfqsSub: 'Send your first RFQ and start receiving offers from hundreds of suppliers',
+    noRfqsSub: 'Send your first price request to get offers from suppliers of your materials',
     newRfqBtn: '+ New RFQ Request',
     viewDetails: 'View Details →',
     open: '● Open', closed: '● Closed', expired: '● Expired', cancelled: '● Cancelled',
@@ -76,7 +77,7 @@ const txt = {
     rfqList: 'قیمت کی درخواستیں',
     requests: 'درخواست',
     noRfqs: 'ابھی تک کوئی درخواست نہیں',
-    noRfqsSub: 'پہلی قیمت کی درخواست بھیجیں اور سینکڑوں سپلائرز سے پیشکشیں وصول کریں',
+    noRfqsSub: 'پہلی قیمت کی درخواست بھیجیں تاکہ متعلقہ سپلائرز سے پیشکشیں ملیں',
     newRfqBtn: '+ نئی درخواست',
     viewDetails: 'تفصیلات دیکھیں →',
     open: '● کھلا', closed: '● بند', expired: '● ختم', cancelled: '● منسوخ',
@@ -176,6 +177,8 @@ export default function ContractorDashboard() {
     window.location.href = '/login'
   }
 
+  // remember the buyer type on this device (the sidebar menu hides project tools for a home buyer)
+  useEffect(() => { if (profile) rememberBuyerType(profile.buyer_type) }, [profile])
   if (loading) return <PageLoader />
 
   const active = rfqs.filter((r: any) => r.status === 'open')
@@ -418,7 +421,7 @@ export default function ContractorDashboard() {
         )}
 
         {/* Stats — قابلة للضغط: تفلتر القائمة وتنزّل لها */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
+        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger ${rfqs.length === 0 ? 'hidden' : ''}`}>
           {[
             { label: t.activeRfqs, value: active.length, name: 'active', tone: 'brand', f: 'pending', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${L('this week', 'اس ہفتے', 'هذا الأسبوع')}` : '' },
             { label: t.totalOffers, value: totalOffers, name: 'offers', tone: 'warning', f: 'has_offers', sub: awaitingReply > 0 ? `${awaitingReply} ${L('awaiting you', 'آپ کے منتظر', 'بانتظار ردّك')}` : '' },

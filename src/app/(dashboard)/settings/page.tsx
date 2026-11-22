@@ -4,6 +4,7 @@ import { sellerKindOf, rememberSellerKind } from '@/lib/sellers'
 import { useState, useEffect } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
+import { rememberBuyerType } from '@/lib/buyerType'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -177,6 +178,7 @@ export default function SettingsPage() {
       const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
       if (p) {
         setProfile(p)
+        if (p.role === 'contractor') rememberBuyerType(p.buyer_type)
         if (p.role === 'supplier') rememberSellerKind(sellerKindOf(p.provider_type))
         setCompanyAr(p.company_name_ar || '')
         setCompanyEn(p.company_name_en || '')
@@ -474,7 +476,7 @@ export default function SettingsPage() {
                     <div className="grid grid-cols-2 gap-2" role="radiogroup">
                       {([['individual', locale === 'en' ? 'My home' : locale === 'ur' ? 'اپنا گھر' : 'لبيتي', locale === 'en' ? 'Simple request and home screen' : locale === 'ur' ? 'آسان درخواست' : 'طلب وصفحة رئيسية أبسط'], ['business', locale === 'en' ? 'Contractor or company' : locale === 'ur' ? 'ٹھیکیدار یا کمپنی' : 'مقاول أو شركة', locale === 'en' ? 'All options' : locale === 'ur' ? 'تمام اختیارات' : 'كل الخيارات']] as const).map(([v, label, sub]) => (
                         <button key={v} type="button" role="radio" aria-checked={profile?.buyer_type === v}
-                          onClick={async () => { const prev = profile?.buyer_type; setProfile((p: any) => ({ ...p, buyer_type: v })); const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id); if (error) setProfile((p: any) => ({ ...p, buyer_type: prev })) }}
+                          onClick={async () => { const prev = profile?.buyer_type; setProfile((p: any) => ({ ...p, buyer_type: v })); rememberBuyerType(v); const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id); if (error) setProfile((p: any) => ({ ...p, buyer_type: prev })) }}
                           className={`text-start rounded-xl border-2 px-3 py-2.5 ${profile?.buyer_type === v ? 'border-[#D4A543] bg-white' : 'border-gray-200 bg-white/60 hover:border-gray-300'}`}>
                           <span className="block text-sm font-bold text-[#0B2438]">{profile?.buyer_type === v ? '✓ ' : ''}{label}</span>
                           <span className="block text-[11px] text-gray-500">{sub}</span>

@@ -6,6 +6,8 @@ import Glyph from '@/components/shared/Glyph'
 
 // Build the dashboard sidebar nav for a role. Used by every page that sits on
 // AppShell so the navigation is consistent across the app.
+import { storedBuyerType } from '@/lib/buyerType'
+
 export function getNav(role: string | undefined, locale: string, active: string): ShellNavItem[] {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const secTools = L('Tools', 'اوزار', 'الأدوات')
@@ -53,8 +55,9 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/contractor', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
       { href: '/contractor/rfq/quick', icon: '📝', label: L('Price request', 'قیمت کی درخواست', 'طلب تسعير'), section: sec, mobile: 3 },
       { href: '/contractor/rfqs', icon: '🧾', label: L('My requests and deals', 'درخواستیں اور ڈیلز', 'طلباتي وصفقاتي'), section: sec, mobile: 2 },
-      { href: '/contractor/project/new', icon: '📋', label: L('Project', 'پراجیکٹ', 'مشروع'), section: sec },
-      { href: '/contractor/tender', icon: '📑', label: L('Tender pricing', 'ٹینڈر قیمت', 'مسار العطاء'), section: sec },
+      // a home buyer («لبيتي») does not see the project tools (UX study 2026-11-22); still reachable by URL
+      { href: '/contractor/project/new', icon: '📋', label: L('Project', 'پراجیکٹ', 'مشروع'), section: sec, off: storedBuyerType() === 'individual' },
+      { href: '/contractor/tender', icon: '📑', label: L('Tender pricing', 'ٹینڈر قیمت', 'مسار العطاء'), section: sec, off: storedBuyerType() === 'individual' },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },

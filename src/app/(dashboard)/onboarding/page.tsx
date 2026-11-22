@@ -108,6 +108,8 @@ export default function OnboardingPage() {
   const [saving, setSaving] = useState(false)
   const [uid, setUid] = useState('')
   const [role, setRole] = useState<'contractor' | 'supplier'>('contractor')
+  // a home buyer («لبيتي»): only the delivery address, no business wording and no sectors (UX study 2026-11-22)
+  const [homeBuyer, setHomeBuyer] = useState(false)
   const [region, setRegion] = useState('')
   const [city, setCity] = useState('')
   const [district, setDistrict] = useState('')
@@ -141,9 +143,10 @@ export default function OnboardingPage() {
       if (!session) { window.location.href = '/login'; return }
       setUid(session.user.id)
       const metaRole = (session.user.user_metadata as any)?.role
-      const { data: p, error: pErr } = await supabase.from('profiles').select('role, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type, full_name, company_name_ar').eq('id', session.user.id).single()
+      const { data: p, error: pErr } = await supabase.from('profiles').select('role, buyer_type, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type, full_name, company_name_ar').eq('id', session.user.id).single()
       if (pErr) { setLoadFailed(true); showErr(t.loadFailed) }
       setRole(((p?.role || metaRole) === 'supplier') ? 'supplier' : 'contractor')
+      setHomeBuyer(p?.buyer_type === 'individual')
       if (p) {
         setRegion(p.region || ''); setCity(p.city || ''); setDistrict(p.district || '')
         setLat(p.latitude ?? null); setLng(p.longitude ?? null)
@@ -306,8 +309,8 @@ export default function OnboardingPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-6 lg:py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-navy">{t.title}</h1>
-          <p className="text-ink-2 mt-1.5 text-sm">{role === 'supplier' ? t.subS : t.subC}</p>
+          <h1 className="text-2xl font-extrabold text-navy">{role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'Your delivery address' : locale === 'ur' ? 'آپ کا ڈیلیوری پتہ' : 'عنوان التوصيل') : t.title}</h1>
+          <p className="text-ink-2 mt-1.5 text-sm">{role === 'supplier' ? t.subS : homeBuyer ? (locale === 'en' ? 'So suppliers near you can price your requests.' : locale === 'ur' ? 'تاکہ قریبی سپلائرز قیمت دے سکیں۔' : 'ليصل طلبك إلى الموردين القريبين منك.') : t.subC}</p>
         </div>
 
         <div className="lg:flex lg:gap-6 lg:items-start">
@@ -358,8 +361,8 @@ export default function OnboardingPage() {
               </div>
             </div>
 
-            {/* القطاعات / التخصصات (مطلوب للمورّد، اختياري للمشتري) */}
-            <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
+            {/* القطاعات / التخصصات (مطلوب للمورّد، اختياري للمشتري؛ مخفي لصاحب البيت) */}
+            <div className={`${cardCls} ${role !== 'supplier' && homeBuyer ? 'hidden' : ''}`} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
               <div className="flex items-center justify-between mb-0.5">
                 <h2 className="text-sm font-bold text-navy"><Glyph e="🧩" /> {role === 'supplier' ? t.sectorsTitleS : t.sectorsTitleC}</h2>
                 {role === 'supplier'
