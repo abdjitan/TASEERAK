@@ -1519,6 +1519,14 @@ export default function SupplierRFQPage() {
                 return (
                   <div className="border-t border-gray-100 pt-4">
                     {/* خيار شمول الضريبة — إلزامي وصريح، بلا قيمة افتراضية (لا يظهر للبائع المستقل غير المسجّل ضريبياً) */}
+                    {/* the buyer asked for a VAT invoice (quick request option): the seller must see it before pricing (fix 2026-11-22: it was stored but never shown here) */}
+                    {rfq?.vat_invoice_required && (
+                      <p className="mb-3 text-sm font-bold rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/20 px-3 py-2 text-[#0B2438]">
+                        <Glyph e="🧾" /> {L('The buyer needs a VAT invoice.', 'خریدار کو VAT انوائس چاہیے۔', 'المشتري يحتاج فاتورة ضريبية.')} <span className="font-semibold">{noVat
+                          ? L('You are not VAT-registered, so you cannot issue one yourself: price only if a VAT-registered shop will issue it.', 'آپ VAT میں رجسٹرڈ نہیں؛ صرف تب قیمت دیں جب رجسٹرڈ دکان انوائس جاری کرے۔', 'أنت غير مسجّل في ضريبة القيمة المضافة فلا تستطيع إصدارها بنفسك؛ سعّر فقط إن كانت ستصدر من محل مسجّل.')
+                          : L('Issue it with your VAT number.', 'اپنے VAT نمبر سے جاری کریں۔', 'أصدرها له برقمك الضريبي.')}</span>
+                      </p>
+                    )}
                     <p className="mb-3 text-sm font-semibold rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-amber-800">
                       <Glyph e="🧾" /> {noVat
                         ? L('Enter the final price the buyer pays; nothing is added to it.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا؛ اس پر کچھ اضافہ نہیں ہوگا۔', 'أدخل السعر النهائي الذي يدفعه المشتري؛ لا يُضاف إليه أي مبلغ.')
