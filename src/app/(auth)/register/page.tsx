@@ -212,6 +212,7 @@ export default function RegisterPage() {
     if (asksBusiness && (data.company_name_ar || '').trim().length < 2) {
       setError('company_name_ar', { message: locale === 'en' ? 'Company or business name is required' : locale === 'ur' ? 'کمپنی یا کاروبار کا نام ضروری ہے' : 'اسم المحل أو النشاط التجاري مطلوب' }); return
     }
+    if (asksBusiness && !cr.trim()) { setFormError(locale === 'en' ? 'A company or shop needs its commercial registration number. No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'الشركة أو المحل تحتاج رقم السجل التجاري. ليس لديك سجل؟ اختر «وسيط تسعير».'); return }
     if (asksBusiness && cr && !isUnifiedCr(normalizeCrInput(cr))) { setFormError(crFormatText(locale)); return }
     if (asksBusiness && cr && await checkCr(cr)) { setFormError(crTakenText(locale).msg); return }
     if (phoneDup) { setFormError(t.phoneTaken); return }
@@ -359,15 +360,21 @@ export default function RegisterPage() {
               <label htmlFor="reg-company" className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-500 font-normal">— {t.companyHint}</span></label>
               <input id="reg-company" {...register('company_name_ar')} autoComplete="organization" className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : locale === 'ur' ? 'الصخر بلڈنگ میٹریلز' : 'مؤسسة الصخر لمواد البناء'} />
               {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{vmsg(errors.company_name_ar.message, locale)}</p>}
-              <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} <span className="text-gray-500 font-normal">— {locale === 'en' ? 'unified number, 10 digits starting with 7; optional now, needed to verify your business' : locale === 'ur' ? 'متحدہ نمبر، 7 سے شروع 10 ہندسے؛ ابھی اختیاری، تصدیق کے لیے ضروری' : 'الرقم الوطني الموحد: 10 أرقام يبدأ بـ7؛ اختياري الآن، ومطلوب لتوثيق نشاطك'}</span></label>
+              <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} <span className="text-red-500">*</span> <span className="text-gray-500 font-normal">— {locale === 'en' ? 'unified number, 10 digits starting with 7' : locale === 'ur' ? 'متحدہ نمبر، 7 سے شروع 10 ہندسے' : 'الرقم الوطني الموحد: 10 أرقام يبدأ بـ 7'}</span></label>
               <input id="reg-cr" value={cr} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX"
                 onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); if (crTaken) setCrTaken(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
               {crTaken && (
                 <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1">
                   <Glyph e="⚠" /> {crTakenText(locale).msg}{' '}
-                  {locale === 'en' ? 'If it is yours: clear the number, finish registering, then request verification from your account (Settings → Commercial registration).' : locale === 'ur' ? 'اگر یہ آپ کی ہے: نمبر ہٹا کر رجسٹریشن مکمل کریں، پھر اپنے اکاؤنٹ سے تصدیق کی درخواست دیں (ترتیبات ← تجارتی رجسٹریشن)۔' : 'إن كان سجلّك: احذف الرقم وأكمل التسجيل، ثم اطلب التحقق من حسابك (الإعدادات ← السجل التجاري).'}
+                  {locale === 'en' ? 'If it is yours, contact Support so we can link it to you.' : locale === 'ur' ? 'اگر یہ آپ کی ہے تو سپورٹ سے رابطہ کریں۔' : 'إن كان سجلّك، تواصل مع الدعم لنربطه بك.'}
                 </p>
               )}
+              <div className="mt-2 rounded-lg border border-[#D4A543]/40 bg-[#D4A543]/5 px-3 py-2 text-xs text-[#071827]">
+                {locale === 'en' ? 'No shop or commercial registration?' : locale === 'ur' ? 'دکان یا تجارتی رجسٹریشن نہیں؟' : 'ليس لديك محل أو سجل تجاري؟'}{' '}
+                <button type="button" className="font-extrabold text-[#8F6820] underline" onClick={() => { setSellerKind('independent'); setCr(''); setCrTaken(false); setFormError('') }}>
+                  {locale === 'en' ? 'Sign up as a pricing agent (no registration needed)' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر رجسٹر کریں (رجسٹریشن کی ضرورت نہیں)' : 'سجّل كوسيط تسعير (بدون سجل تجاري)'}
+                </button>
+              </div>
             </div>}
 
             <div className="grid sm:grid-cols-2 gap-3">

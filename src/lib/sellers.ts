@@ -73,12 +73,12 @@ export function sellerKindOf(providerType?: string | null): SellerKind {
 }
 export const SELLER_KINDS: Record<SellerKind, T3 & { icon: string; sub: T3 }> = {
   independent: {
-    icon: 'user', ar: 'أعمل وسيط تسعير', en: 'I work as a pricing agent', ur: 'میں قیمت ایجنٹ ہوں',
-    sub: { ar: 'تجلب أسعار المواد من المحلات للمشترين؛ تتم الصفقة بفاتورة ضريبية معتمدة من المحل باسم المشتري', en: 'You bring shop prices to buyers; the deal uses a certified tax invoice from the shop in the buyer’s name', ur: 'آپ دکانوں کی قیمتیں خریداروں تک لاتے ہیں؛ سودا دکان کی خریدار کے نام ٹیکس انوائس سے' },
+    icon: 'user', ar: 'وسيط تسعير (بدون سجل تجاري)', en: 'Pricing agent (no commercial registration)', ur: 'قیمت ایجنٹ (تجارتی رجسٹریشن کے بغیر)',
+    sub: { ar: 'ليس لديك محل أو سجل تجاري: تجلب أسعار المواد من المحلات للمشترين، وتتم الصفقة بفاتورة ضريبية من المحل باسم المشتري', en: 'You bring shop prices to buyers; the deal uses a certified tax invoice from the shop in the buyer’s name', ur: 'آپ دکانوں کی قیمتیں خریداروں تک لاتے ہیں؛ سودا دکان کی خریدار کے نام ٹیکس انوائس سے' },
   },
   company: {
-    icon: 'building', ar: 'أمثّل شركة أو محلاً', en: 'I represent a company or shop', ur: 'میں کمپنی یا دکان کی نمائندگی کرتا ہوں',
-    sub: { ar: 'مصنع، أو وكيل وموزّع، أو شركة تجارية، أو محل مواد بناء', en: 'Factory, agent/distributor, trading company or building-materials shop', ur: 'فیکٹری، ڈسٹری بیوٹر، تجارتی کمپنی یا دکان' },
+    icon: 'building', ar: 'شركة أو محل (بسجل تجاري)', en: 'Company or shop (with a commercial registration)', ur: 'کمپنی یا دکان (تجارتی رجسٹریشن کے ساتھ)',
+    sub: { ar: 'لديك سجل تجاري: مصنع، أو وكيل وموزّع، أو شركة تجارية، أو محل مواد بناء', en: 'You have a commercial registration: factory, agent/distributor, trading company or building-materials shop', ur: 'فیکٹری، ڈسٹری بیوٹر، تجارتی کمپنی یا دکان' },
   },
 }
 export const COMPANY_ACTIVITIES: { k: string; icon: string; ar: string; en: string; ur: string }[] = [
