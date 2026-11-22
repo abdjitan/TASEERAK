@@ -33,7 +33,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
         className="bg-white w-full sm:max-w-lg max-h-[92vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden">
         <div className="relative shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={productImageUrl(pack.cover)} alt="" className="w-16 h-16 rounded-xl object-contain bg-gray-50 shrink-0" />
+          <img src={pack.photo || productImageUrl(pack.cover)} alt="" className={`w-16 h-16 rounded-xl bg-gray-50 shrink-0 ${pack.photo ? 'object-cover' : 'object-contain'}`} />
           <div className="min-w-0 flex-1">
             <div className="text-lg font-extrabold text-[#0B2438]">{pick(pack)}</div>
             <div className="text-[12px] text-gray-500">{L('Untick what you don’t need and set the quantities', 'جو نہیں چاہیے اسے ہٹائیں اور مقدار لکھیں', 'أزل ما لا تحتاجه، وحدّد الكميات')}</div>

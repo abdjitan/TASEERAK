@@ -195,7 +195,7 @@ export default function MarketHero({ locale, homeBuyer = false }: { locale: stri
               className="shrink-0 w-36 sm:w-40 rounded-2xl border border-gray-200 bg-white overflow-hidden hover:border-[#D4A543] hover:shadow-md transition-all">
               <span className="block aspect-[4/3] bg-gray-50">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={productImageUrl(p.cover)} alt="" loading="lazy" className="w-full h-full object-contain p-2" />
+                <img src={p.photo || productImageUrl(p.cover)} alt="" loading="lazy" className={p.photo ? 'w-full h-full object-cover' : 'w-full h-full object-contain p-2'} />
               </span>
               <span className="block px-2.5 py-2">
                 <span className="block font-extrabold text-[13.5px] text-[#0B2438] leading-snug">{pick(p)}</span>

@@ -10,6 +10,7 @@ export type HomePack = {
   id: string
   img: string // /images/sections/<img>.webp (sheet header background)
   cover: string // a catalog product whose photo is the pack's card picture (each pack its own)
+  photo?: string // a room photo (public/images/packs/<id>.webp) once the owner supplies it; preferred over cover
   ar: string; en: string; ur: string
   sub: { ar: string; en: string; ur: string }
   items: PackItem[]
@@ -21,7 +22,7 @@ const HOW_MANY = { ar: 'اكتب العدد الذي تحتاجه', en: 'Write h
 
 export const HOME_PACKS: HomePack[] = [
   {
-    id: 'bathroom', img: 'plumbing', cover: 'مغسلة Wash Basin', ar: 'تجديد حمّام', en: 'Bathroom renovation', ur: 'باتھ روم کی تجدید',
+    id: 'bathroom', img: 'plumbing', cover: 'مغسلة Wash Basin', photo: '/images/packs/bathroom.webp', ar: 'تجديد حمّام', en: 'Bathroom renovation', ur: 'باتھ روم کی تجدید',
     sub: { ar: 'أدوات صحية وخلاطات وبلاط', en: 'Fixtures, mixers and tiles', ur: 'سینیٹری، مکسر اور ٹائل' },
     items: [
       { name: 'مرحاض WC مع خزان', sector: 'mechanical', qty: 1 },
