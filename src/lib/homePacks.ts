@@ -66,7 +66,7 @@ export const HOME_PACKS: HomePack[] = [
     ],
   },
   {
-    id: 'ac', img: 'hvac_fire', cover: 'مكيف سبليت', ar: 'تكييف غرفة', en: 'Air-condition a room', ur: 'کمرے کا اے سی',
+    id: 'ac', img: 'hvac_fire', cover: 'مكيف سبليت', photo: '/images/packs/ac.webp', ar: 'تكييف غرفة', en: 'Air-condition a room', ur: 'کمرے کا اے سی',
     sub: { ar: 'مكيف سبليت وتركيبه', en: 'Split AC and its fittings', ur: 'اسپلٹ اے سی اور فٹنگ' },
     items: [
       { name: 'مكيف سبليت', sector: 'mechanical', qty: 1 },
