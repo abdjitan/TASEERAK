@@ -109,7 +109,7 @@ export const HOME_PACKS: HomePack[] = [
   },
   {
     // owner 2026-11-22: turning an office into something elegant: shelves, a new desk, decor
-    id: 'office', img: 'furniture', cover: 'مكتب خشبي حسب الطلب', ar: 'تجهيز مكتب فخم', en: 'An elegant office', ur: 'شاندار دفتر',
+    id: 'office', img: 'furniture', cover: 'مكتب خشبي حسب الطلب', photo: '/images/packs/office.webp', ar: 'تجهيز مكتب فخم', en: 'An elegant office', ur: 'شاندار دفتر',
     sub: { ar: 'مكتب ورفوف وقواطع وديكور', en: 'Desk, shelving, partitions, decor', ur: 'میز، شیلف، پارٹیشن، سجاوٹ' },
     items: [
       { name: 'مكتب خشبي حسب الطلب', sector: 'architectural', qty: 1 },
