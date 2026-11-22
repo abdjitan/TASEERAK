@@ -14,6 +14,7 @@ import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import EnablePush from '@/components/shared/EnablePush'
 import MarketHero from '@/components/buyer/MarketHero'
+import BuyerTypePrompt from '@/components/buyer/BuyerTypePrompt'
 import { rememberBuyerType } from '@/lib/buyerType'
 import { AppIcon } from '@/components/AppIcon'
 import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
@@ -99,6 +100,7 @@ export default function ContractorDashboard() {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   const [user, setUser] = useState<any>(null)
+  const [profileFresh, setProfileFresh] = useState(false)   // the profile came from the DB (not the cached snapshot)
   const [profile, setProfile] = useState<any>(null)
   const [rfqs, setRfqs] = useState<any[]>([])
   const [deals, setDeals] = useState<Record<string, any>>({})
@@ -141,7 +143,7 @@ export default function ContractorDashboard() {
         safe(supabase.rpc('get_market_price_trend')),
       ])
       safe(supabase.rpc('my_savings')).then((x: any) => setMySavings(x?.data || null))
-      setProfile(p)
+      setProfile(p); setProfileFresh(true)
       setRfqs(r || [])
       setDrafts(dr || [])
       setProjects(proj || [])
@@ -246,6 +248,10 @@ export default function ContractorDashboard() {
     >
       <div className="max-w-6xl mx-auto">
         {/* السوق: «ماذا تحتاج اليوم؟» + الأقسام بالصور (التصميم المعتمد) */}
+        {/* owner 2026-11-22: existing buyers choose «لبيتي / مقاول أو شركة» once after the update */}
+        {profileFresh && user && profile?.role === 'contractor' && !profile?.buyer_type && (
+          <BuyerTypePrompt userId={user.id} locale={locale} onChosen={(v) => setProfile((p: any) => ({ ...p, buyer_type: v }))} />
+        )}
         <MarketHero locale={locale} homeBuyer={homeBuyer} />
         {/* أكمل ملفك — يظهر بعد التسجيل المبسّط حتى تُعبّأ البيانات */}
         {!profile?.region && (
