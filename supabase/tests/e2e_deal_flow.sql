@@ -38,7 +38,7 @@ begin
 
   reset role;
   select count(*) into n from notifications where type = 'new_rfq' and data->>'rfq_id' = v_rfq::text
-     and data->>'url' like '/supplier/dashboard/rfq/%' and body like 'RFQ-' || v_ref || ' ·%';
+     and data->>'url' like '/supplier/dashboard/rfq/%' and body like 'طلب رقم ' || v_ref || ' ·%';  -- 259: plain label with the material
   if n > 0 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL suppliers not notified with ref'; end if;
 
   -- H2: the owner still sees the location
