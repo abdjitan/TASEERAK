@@ -3,9 +3,16 @@
 //   حزمة توريدات (مادتان)       ← الوصف: عنوان المشتري، أو اسم المادة، أو «حزمة توريدات (N)»
 // يتخلّص من «أسمنت +2 أصناف أخرى» غير المنطقية (والقاعدة تحفظ الاسم بالصيغة الجديدة، migration 133).
 import { getProductLabel } from '@/types'
+import { storedBuyerType } from '@/lib/buyerType'
+import { cleanArName } from '@/lib/displayName'
 
-export function rfqRef(rfq: any): string {
-  return rfq?.ref_no ? `RFQ-${rfq.ref_no}` : ''
+// a home buyer («لبيتي») on this device: plain words instead of procurement codes (owner 2026-11-22)
+const homeMode = () => storedBuyerType() === 'individual'
+const homeNo = (n: any, locale: string) => locale === 'en' ? `Request no. ${n}` : locale === 'ur' ? `درخواست نمبر ${n}` : `طلب رقم ${n}`
+
+export function rfqRef(rfq: any, locale = 'ar'): string {
+  if (!rfq?.ref_no) return ''
+  return homeMode() ? homeNo(rfq.ref_no, locale) : `RFQ-${rfq.ref_no}`
 }
 
 // عدد المواد بصياغة عربية سليمة (مفرد/مثنى/جمع): 1 مادة واحدة، 2 مادتان، 3-10 مواد، 11+ مادة
@@ -31,6 +38,16 @@ const LEGACY_MORE = /\s\+\d+\s*(أصناف أخرى|more|مزید)\s*$/
 /** What the request is: the buyer's title, the single material, or "supply package (N items)". */
 export function rfqDesc(rfq: any, locale: string, itemCount?: number): string {
   if (rfq?.title && String(rfq.title).trim()) return String(rfq.title).trim()
+  // a home buyer: the request is named by what is in it («سبوت سقف، خلاط مغسلة و٣ أخرى»), not «حزمة توريدات»
+  if (homeMode() && Array.isArray(rfq?.items) && rfq.items.length) {
+    const names = rfq.items.map((it: any) => String(it?.product_name || '')).filter(Boolean)
+      .map((n: string) => locale === 'ar' ? cleanArName(n) : getProductLabel(n, locale))
+    if (names.length) {
+      const head = names.slice(0, 2).join(locale === 'en' ? ', ' : '، ')
+      const more = names.length - 2
+      return more > 0 ? head + (locale === 'en' ? ` and ${more} more` : locale === 'ur' ? ` اور ${more} مزید` : ` و${more} أخرى`) : head
+    }
+  }
   const n = itemCount != null ? itemCount : (Array.isArray(rfq?.items) && rfq.items.length ? rfq.items.length : 1)
   const name = String(rfq?.product_name || '')
   if (n > 1 || LEGACY_MORE.test(name) || name.startsWith('حزمة توريدات')) {
@@ -50,8 +67,8 @@ export function rfqDisplayName(rfq: any, locale: string, itemCount?: number): st
 
 /** "طلب RFQ-1045 · 10/10/2026" — the reference line shown above a request's description. */
 export function rfqRefLine(rfq: any, locale: string): string {
-  const ref = rfqRef(rfq)
+  const ref = rfqRef(rfq, locale)
   const date = rfqDate(rfq, locale)
   const word = locale === 'en' ? 'Request' : locale === 'ur' ? 'درخواست' : 'طلب'
-  return [ref ? `${word} ${ref}` : '', date].filter(Boolean).join(' · ')
+  return [ref ? (homeMode() ? ref : `${word} ${ref}`) : '', date].filter(Boolean).join(' · ')
 }

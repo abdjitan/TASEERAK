@@ -1,9 +1,12 @@
 // Small display helpers.
+import { storedBuyerType } from '@/lib/buyerType'
 
 // Notifications written before 161/163 kept emoji in their titles («🧾 …», «⏰ …», «🎉»); the UI
 // uses line icons only, so emoji are dropped when a stored text is shown.
 export function noEmoji(s: any): string {
-  return String(s ?? '').replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}]/gu, '').replace(/\s{2,}/g, ' ').trim()
+  const t = String(s ?? '').replace(/[\p{Extended_Pictographic}\u{FE0F}\u{200D}\u{20E3}]/gu, '').replace(/\s{2,}/g, ' ').trim()
+  // a home buyer never sees procurement codes (owner 2026-11-22): «RFQ-2688» → «طلب رقم 2688»
+  return storedBuyerType() === 'individual' ? t.replace(/\bRFQ-(\d+)/g, 'طلب رقم $1') : t
 }
 
 // «الآن» / «قبل 5 دقائق» / «قبل ساعتين» / «قبل 3 أيام» (ur: «3 دن پہلے»).

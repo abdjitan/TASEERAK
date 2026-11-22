@@ -11,6 +11,7 @@ import { fileHref } from '@/lib/fileHref'
 import { SECTOR_LABELS, getProductLabel, getUnitLabel } from '@/types'
 import { useTranslation } from '@/i18n'
 import { rfqRef } from '@/lib/rfqName'
+import { storedBuyerType } from '@/lib/buyerType'
 import Glyph from '@/components/shared/Glyph'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { showsVatBreakdown, totalLabel } from '@/lib/vat'
@@ -194,7 +195,7 @@ export default function OrderDetailPage() {
                 <div className="text-sm text-[#F5C55B]">{L('Order no.', 'آرڈر نمبر', 'رقم الأمر')}</div>
                 <div className="text-xl font-bold font-mono">{poNumber}</div>
                 <div className="text-sm text-[#F5C55B] mt-1">{L('Date:', 'تاریخ:', 'التاريخ:')} {date}</div>
-                {rfqRef(rfq) && <div className="text-sm text-[#F5C55B] mt-1">{L('Request:', 'درخواست:', 'الطلب:')} <span className="font-mono" dir="ltr">{rfqRef(rfq)}</span></div>}
+                {rfqRef(rfq) && <div className="text-sm text-[#F5C55B] mt-1">{storedBuyerType() === 'individual' ? rfqRef(rfq, locale) : <>{L('Request:', 'درخواست:', 'الطلب:')} <span className="font-mono" dir="ltr">{rfqRef(rfq)}</span></>}</div>}
               </div>
             </div>
           </div>

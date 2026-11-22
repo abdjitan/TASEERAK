@@ -562,7 +562,7 @@ export default function ContractorDashboard() {
         ) : (
           <div className="animate-fade-in" id="rfq-list" style={{ scrollMarginTop: '70px' }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{t.rfqList}</h2>
+              <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{homeBuyer ? (locale === 'en' ? 'My requests' : locale === 'ur' ? 'میری درخواستیں' : 'طلباتي') : t.rfqList}</h2>
               <span className="text-xs text-gray-400">{rfqs.length} {t.requests}</span>
             </div>
 

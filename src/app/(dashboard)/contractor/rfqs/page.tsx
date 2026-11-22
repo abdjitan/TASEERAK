@@ -11,7 +11,8 @@ import LoadError from '@/components/shared/LoadError'
 import { getNav } from '@/lib/nav'
 import { getProductLabel, getUnitLabel } from '@/types'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
-import { rfqRef, rfqDate } from '@/lib/rfqName'
+import { rfqRef, rfqDate, rfqDesc } from '@/lib/rfqName'
+import { storedBuyerType } from '@/lib/buyerType'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, rfqPurgeInfo } from '@/lib/deadline'
 import Glyph from '@/components/shared/Glyph'
 import { arCount, arMaterials } from '@/lib/text'
@@ -218,8 +219,8 @@ export default function MyRequestsPage() {
                         <span aria-hidden className={`mt-1 w-5 h-5 rounded-md border-2 grid place-items-center text-[11px] font-bold shrink-0 ${sel.has(r.id) ? 'bg-[#0B2438] border-[#0B2438] text-white' : 'border-gray-300 bg-white'}`}>{sel.has(r.id) ? '✓' : ''}</span>
                       )}
                       <div>
-                      <div className="text-xs font-bold text-[#8F6820] font-mono" dir="ltr">{rfqRef(r)}</div>
-                      <div className="font-extrabold text-navy" dir="auto">{r.title || L(`${items.length} material(s)`, `${items.length} اشیاء`, arMaterials(items.length))}</div>
+                      <div className="text-xs font-bold text-[#8F6820]" dir="auto">{rfqRef(r, locale)}</div>
+                      <div className="font-extrabold text-navy" dir="auto">{r.title || (storedBuyerType() === 'individual' ? rfqDesc(r, locale) : L(`${items.length} material(s)`, `${items.length} اشیاء`, arMaterials(items.length)))}</div>
                       <div className="text-xs text-gray-400 mt-0.5">{rfqDate(r, locale)}{r.city || r.region ? ` · ${r.city || r.region}` : ''}</div>
                       </div>
                     </div>
