@@ -228,7 +228,7 @@ export default function ContractorDashboard() {
   const nav = getNav('contractor', locale, '/contractor') // the shared menu (طلباتي، صفقاتي، الرسائل…)
   const headerActions = profile?.verification_status !== 'rejected' ? (
     <>
-      {canUseProjects(profile) && <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /> {L('Project', 'پراجیکٹ', 'مشروع')}</Link>}
+      {canUseProjects(profile) && profile?.buyer_type !== 'individual' && <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /> {L('Project', 'پراجیکٹ', 'مشروع')}</Link>}
       <Link href="/contractor/rfq/quick" className="btn-orange text-xs px-4 py-2">{t.newRfq}</Link>
     </>
   ) : null
@@ -238,7 +238,7 @@ export default function ContractorDashboard() {
 
   return (
     <AppShell
-      title={locale === 'en' ? 'Buyer Dashboard' : locale === 'ur' ? 'خریدار ڈیش بورڈ' : 'لوحة المشتري'}
+      title={homeBuyer ? (locale === 'en' ? 'Home' : locale === 'ur' ? 'ہوم' : 'الرئيسية') : locale === 'en' ? 'Buyer Dashboard' : locale === 'ur' ? 'خریدار ڈیش بورڈ' : 'لوحة المشتري'}
       company={profile?.company_name_ar || profile?.company_name_en}
       userId={user?.id}
       nav={nav}
@@ -494,7 +494,7 @@ export default function ContractorDashboard() {
         )}
 
         {/* Projects */}
-        {projects.length > 0 && canUseProjects(profile) && (
+        {projects.length > 0 && canUseProjects(profile) && !homeBuyer && (
           <div className="mb-6 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>

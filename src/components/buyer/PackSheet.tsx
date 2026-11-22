@@ -31,15 +31,14 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
     <div className="fixed inset-0 z-[70] bg-[#071827]/60 flex items-end sm:items-center justify-center" onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label={pick(pack)} onClick={e => e.stopPropagation()}
         className="bg-white w-full sm:max-w-lg max-h-[92vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden">
-        <div className="relative h-24 shrink-0 bg-[#0B2438]">
+        <div className="relative shrink-0 flex items-center gap-3 px-4 py-3 border-b border-gray-100">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/images/sections/${pack.img}.webp`} alt="" className="absolute inset-0 w-full h-full object-cover opacity-70" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#050B12]/90 to-transparent" />
-          <div className="absolute bottom-2 inset-x-4 text-white">
-            <div className="text-lg font-extrabold">{pick(pack)}</div>
-            <div className="text-[12px] text-white/80">{L('Untick what you don’t need and set the quantities', 'جو نہیں چاہیے اسے ہٹائیں اور مقدار لکھیں', 'أزل ما لا تحتاجه، وحدّد الكميات')}</div>
+          <img src={productImageUrl(pack.cover)} alt="" className="w-16 h-16 rounded-xl object-contain bg-gray-50 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-lg font-extrabold text-[#0B2438]">{pick(pack)}</div>
+            <div className="text-[12px] text-gray-500">{L('Untick what you don’t need and set the quantities', 'جو نہیں چاہیے اسے ہٹائیں اور مقدار لکھیں', 'أزل ما لا تحتاجه، وحدّد الكميات')}</div>
           </div>
-          <button type="button" onClick={onClose} aria-label={L('Close', 'بند', 'إغلاق')} className="absolute top-2 end-2 w-9 h-9 rounded-full bg-black/40 text-white text-lg">×</button>
+          <button type="button" onClick={onClose} aria-label={L('Close', 'بند', 'إغلاق')} className="w-9 h-9 rounded-full bg-gray-100 text-[#0B2438] text-lg shrink-0">×</button>
         </div>
         <ul className="flex-1 overflow-y-auto divide-y divide-gray-100">
           {rows.map((r, i) => (

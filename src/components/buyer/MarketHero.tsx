@@ -11,6 +11,7 @@ import { BROWSE_SECTIONS } from '@/lib/browseCategories'
 import { createClient } from '@/lib/supabase/client'
 import { sectionRank, bySectionRank, type DemandRow } from '@/lib/sectionOrder'
 import { HOME_PACKS } from '@/lib/homePacks'
+import { productImageUrl } from '@/lib/productImage'
 
 // All sections, building first (owner 2026-10-19: show every category photo, building materials first)
 const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub: { ar: string; en: string; ur: string } }[] = [
@@ -138,26 +139,6 @@ export default function MarketHero({ locale, homeBuyer = false }: { locale: stri
         </div>
       </section>
 
-      {/* home project packs (owner 2026-11-22): one tap lists the materials of a common home job */}
-      <div className="mt-5">
-        <h3 className="text-lg font-extrabold text-[#0B2438]">{L('Home projects', 'گھر کے پراجیکٹس', 'مشاريع البيت')}</h3>
-        <p className="text-xs text-[#48596E]">{L('A ready list of materials: remove what you don’t need and set the quantities', 'سامان کی تیار فہرست', 'قائمة مواد جاهزة: أزل ما لا تحتاجه وحدّد الكميات')}</p>
-        <div className="mt-2 flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
-          {HOME_PACKS.map(p => (
-            <Link key={p.id} href={`/contractor/rfq/quick?pack=${p.id}`}
-              className="group relative shrink-0 w-36 sm:w-44 h-28 rounded-2xl overflow-hidden bg-[#0B2438] shadow-sm hover:shadow-lg transition-shadow">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/images/sections/${p.img}.webp`} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-              <span className="absolute inset-0 bg-gradient-to-t from-[#050B12]/90 via-[#071827]/30 to-transparent" aria-hidden />
-              <span className="absolute bottom-2 inset-x-2.5">
-                <span className="block font-extrabold text-[14px] text-white leading-snug">{pick(p)}</span>
-                <span className="block text-[10.5px] text-white/80 leading-snug">{pick(p.sub)}</span>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
       {/* every section as a medallion chip (same row as the mobile app) */}
       <div className={`mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 ${homeBuyer ? 'hidden' : ''}`} aria-label={L('Sections', 'حصے', 'الأقسام')}>
         {chips.map(b => (
@@ -179,6 +160,17 @@ export default function MarketHero({ locale, homeBuyer = false }: { locale: stri
       </div>
       <div className={`mt-3 grid gap-2 sm:gap-3 ${homeBuyer ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 lg:grid-cols-9'}`}>
         {cats.map(c => (
+          homeBuyer ? (
+          <Link key={c.key} href={`/contractor/rfq/quick?section=${c.key}`}
+            className="flex items-center gap-2.5 rounded-2xl border border-gray-200 bg-white p-2.5 hover:border-[#D4A543] hover:shadow-md transition-all">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={`/images/section-icons/${c.key}.webp`} alt="" aria-hidden className="w-12 h-12 shrink-0" />
+            <span className="min-w-0">
+              <span className="block font-extrabold text-[14px] text-[#0B2438] leading-snug">{pick(c)}</span>
+              <span className="block text-[11px] text-gray-500 leading-snug truncate">{pick(c.sub)}</span>
+            </span>
+          </Link>
+          ) : (
           <Link key={c.key} href={`/contractor/rfq/quick?section=${c.key}`}
             className="group relative overflow-hidden rounded-2xl min-h-[112px] sm:min-h-[140px] bg-[#0B2438] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -189,7 +181,29 @@ export default function MarketHero({ locale, homeBuyer = false }: { locale: stri
               <span className="text-[11px] text-white/80">{pick(c.sub)}</span>
             </span>
           </Link>
+          )
         ))}
+      </div>
+
+      {/* ready material lists (owner 2026-11-22): each with its own product photo, under the sections */}
+      <div className="mt-7">
+        <h3 className="text-lg font-extrabold text-[#0B2438]">{homeBuyer ? L('Get your home ready', 'اپنا گھر تیار کریں', 'جهّز بيتك') : L('Ready material lists', 'سامان کی تیار فہرستیں', 'قوائم مواد جاهزة')}</h3>
+        <p className="text-xs text-[#48596E]">{L('Pick a list, remove what you don’t need and set the quantities', 'فہرست چنیں، غیر ضروری ہٹائیں اور مقدار لکھیں', 'اختر قائمة، وأزل ما لا تحتاجه، وحدّد الكميات')}</p>
+        <div className="mt-2 flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
+          {HOME_PACKS.map(p => (
+            <Link key={p.id} href={`/contractor/rfq/quick?pack=${p.id}`}
+              className="shrink-0 w-36 sm:w-40 rounded-2xl border border-gray-200 bg-white overflow-hidden hover:border-[#D4A543] hover:shadow-md transition-all">
+              <span className="block aspect-[4/3] bg-gray-50">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={productImageUrl(p.cover)} alt="" loading="lazy" className="w-full h-full object-contain p-2" />
+              </span>
+              <span className="block px-2.5 py-2">
+                <span className="block font-extrabold text-[13.5px] text-[#0B2438] leading-snug">{pick(p)}</span>
+                <span className="block text-[10.5px] text-gray-500 leading-snug">{pick(p.sub)}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   )
