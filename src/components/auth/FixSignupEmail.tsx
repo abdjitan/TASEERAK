@@ -2,7 +2,6 @@
 // An account whose e-mail is not confirmed yet: resend the link, or correct a mistyped address
 // (owner 2026-11-22: «gmail.comm» left a seller stuck). Uses the e-mail + password typed at sign-up/sign-in.
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { emailTypoSuggestion } from '@/lib/emailTypo'
 
 export default function FixSignupEmail({ email, password, locale, captchaToken, onFixed }: {
@@ -16,9 +15,11 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
 
   async function resend() {
     setBusy(true); setMsg(null)
-    const { error } = await createClient().auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${window.location.origin}/login` } })
+    // through our API (the browser's own resend needs a CAPTCHA); the password proves the account
+    const r = await fetch('/api/auth/fix-signup-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, action: 'resend' }) })
+    const j = await r.json().catch(() => ({}))
     setBusy(false)
-    setMsg(error ? { ok: false, text: L('Could not resend now. Try again in a minute.', 'ابھی دوبارہ نہیں بھیج سکے۔ ایک منٹ بعد کوشش کریں۔', 'تعذّر الإرسال الآن. حاول بعد دقيقة.') }
+    setMsg(!j?.ok ? { ok: false, text: L('Could not resend now. Try again in a minute.', 'ابھی دوبارہ نہیں بھیج سکے۔ ایک منٹ بعد کوشش کریں۔', 'تعذّر الإرسال الآن. حاول بعد دقيقة.') }
       : { ok: true, text: L(`We sent a new link to ${email}.`, `${email} پر نیا لنک بھیج دیا۔`, `أرسلنا رابطاً جديداً إلى ${email}.`) })
   }
 
