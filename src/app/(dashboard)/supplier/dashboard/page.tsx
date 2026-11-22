@@ -698,6 +698,7 @@ export default function SupplierDashboard() {
                               <span className="badge text-[10px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}><Glyph e="🟢" /> {L('New', 'نیا', 'جديد')}</span>
                             )}
                             <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
+                            {rfq.vat_invoice_required && <span className="badge text-[10px] font-semibold bg-[#0B2438]/5 text-[#0B2438]"><Glyph e="🧾" /> {L('VAT invoice', 'VAT انوائس', 'فاتورة ضريبية')}</span>}
                             {rfq.sub_category && !(Array.isArray(rfq.items) && rfq.items.length > 1) && (
                               <span className="badge text-[10px] bg-[#D4A543]/10 text-[#8F6820] font-semibold">
                                 <Glyph e="🎯" /> {getSubCategoryLabel(rfq.sector, rfq.sub_category, locale)}
