@@ -15,7 +15,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import { PHONE_OTP_ENABLED, BUYER_PHONE_LOGIN } from '@/lib/features'
-import { SELLER_KINDS, rememberedSignupKind } from '@/lib/sellers'
+import { SELLER_KINDS } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { captureRef } from '@/lib/referral'
@@ -169,7 +169,7 @@ export default function RegisterPage() {
   })
   const switchTo = (r: 'contractor' | 'supplier') => {
     setSelectedType(r); setValue('role', r, { shouldValidate: true }); setFormError('')
-    if (r === 'supplier' && !sellerKind) { const k = rememberedSignupKind(); if (k === 'company' || k === 'independent') setSellerKind(k) }
+    // (owner 2026-11-22) no pre-selection from an older visit: a seller chooses the kind on its own step
   }
 
   // اختيار مسبق للدور من الرابط (?role=contractor|supplier) — لروابط الدعوة/الهبوط الموجّهة
@@ -317,9 +317,16 @@ export default function RegisterPage() {
             </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-start">
-            {selectedType === 'supplier' && (
+            {selectedType === 'supplier' && sellerKind && (
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-3 py-2">
+                <span className="text-sm font-bold text-navy"><SellerIcon name={SELLER_KINDS[sellerKind].icon} /> {locale === 'en' ? SELLER_KINDS[sellerKind].en : locale === 'ur' ? SELLER_KINDS[sellerKind].ur : SELLER_KINDS[sellerKind].ar}</span>
+                <button type="button" onClick={() => { setSellerKind(null); setFormError('') }} className="text-xs font-bold text-[#8F6820] underline shrink-0">{locale === 'en' ? 'Change' : locale === 'ur' ? 'تبدیل کریں' : 'تغيير'}</button>
+              </div>
+            )}
+            {selectedType === 'supplier' && !sellerKind && (
             <div>
-                <p className="text-sm font-bold text-navy mb-2">{locale === 'en' ? 'How do you sell? *' : locale === 'ur' ? 'آپ کیسے بیچتے ہیں؟ *' : 'ما نوع نشاطك؟ *'}</p>
+                <p className="text-base font-extrabold text-navy mb-1">{locale === 'en' ? 'First: what kind of seller are you?' : locale === 'ur' ? 'پہلے: آپ کس قسم کے بیچنے والے ہیں؟' : 'أولاً: ما نوع حسابك؟'}</p>
+                <p className="text-xs text-gray-500 mb-3">{locale === 'en' ? 'A company or shop needs a commercial registration; a pricing agent does not.' : locale === 'ur' ? 'کمپنی یا دکان کو تجارتی رجسٹریشن چاہیے؛ قیمت ایجنٹ کو نہیں۔' : 'الشركة أو المحل تحتاج سجلاً تجارياً، ووسيط التسعير لا يحتاجه.'}</p>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {(['company', 'independent'] as const).map(k => {
                     const on = sellerKind === k
@@ -336,6 +343,7 @@ export default function RegisterPage() {
             </div>
             )}
 
+            <div className={selectedType === 'supplier' && !sellerKind ? 'hidden' : 'space-y-4'}>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label htmlFor="reg-name" className="block text-xs font-semibold text-gray-600 mb-1">{t.fullName} *</label>
@@ -417,6 +425,7 @@ export default function RegisterPage() {
               className="btn-orange w-full disabled:opacity-50">
               {submitting ? t.creating : t.create}
             </button>
+            </div>
           </form>
 
             {/* switch buyer ⇄ supplier, then «have an account?» */}
