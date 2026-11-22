@@ -89,7 +89,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
         <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
           <div className="text-3xl mb-2"><Glyph e="🔍" /></div>
           <p className="font-bold text-gray-700 mb-1">لا يوجد مورد مطابق</p>
-          <p className="text-sm text-gray-400">جرّب توسيع الفلاتر أو مسحها.</p>
+          <p className="text-sm text-gray-600">جرّب توسيع الفلاتر أو مسحها.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -102,9 +102,9 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{r.company_name_ar || 'مورد'}</span>
-                    {r.verification_status === 'verified' && <span className="badge text-[10px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>✓ موثّق</span>}
+                    {r.verification_status === 'verified' && <span className="badge text-[12px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>✓ موثّق</span>}
                   </div>
-                  <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2 flex-wrap">
+                  <div className="text-[12px] text-gray-600 mt-0.5 flex items-center gap-2 flex-wrap">
                     <span><SellerIcon name={r.supplier_tier ? tierIcon(r.supplier_tier) : 'store'} /> {r.supplier_tier ? tierLabel(r.supplier_tier, 'ar') : 'مورد'}</span>
                     {r.region && <span><Glyph e="📍" /> {r.region}</span>}
                     {rating > 0 && <span><Glyph e="⭐" /> {rating.toFixed(1)}</span>}
@@ -114,14 +114,14 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                   {Array.isArray(r.approvals) && r.approvals.length > 0 && (
                     <div className="flex gap-1 mt-1.5 flex-wrap">
                       {r.approvals.slice(0, 4).map((a: string) => (
-                        <span key={a} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#0B24380d', color: '#0B2438' }}><Glyph e="🏅" /> {approvalLabel(a)}</span>
+                        <span key={a} className="text-[12px] px-1.5 py-0.5 rounded" style={{ background: '#0B24380d', color: '#0B2438' }}><Glyph e="🏅" /> {approvalLabel(a)}</span>
                       ))}
                     </div>
                   )}
                 </div>
                 <div className="shrink-0 text-center">
                   <div className="w-14 h-14 grid place-items-center rounded-full font-extrabold text-lg text-white" style={{ background: scoreColor(r.score) }}>{r.score}</div>
-                  <div className="text-[9px] text-gray-400 mt-1">من ١٠٠</div>
+                  <div className="text-[12px] text-gray-600 mt-1">من ١٠٠</div>
                 </div>
               </Link>
             )

@@ -1,6 +1,6 @@
 'use client'
 
-// «مسار العطاء» — step 1: upload the tender documents. Everything is read IN THE BROWSER:
+// «تسعير مناقصة» (tender pricing) — step 1: upload the tender documents. Everything is read IN THE BROWSER:
 // the BOQ workbook (xlsx), and the PDFs (specifications, drawings) with pdfjs in its web worker,
 // page by page. Only the extracted text is stored (+ a small thumbnail of each drawing page);
 // an original is kept only when it is ≤ 15 MB. Nothing is sent to an AI.
@@ -11,7 +11,14 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import Glyph from '@/components/shared/Glyph'
 import { getNav } from '@/lib/nav'
-import { canUseProjects } from '@/lib/plans'
+import { canUseProjects, PROJECTS_OPEN_TO_ALL } from '@/lib/plans'
+import { arItems, arCount } from '@/lib/text'
+
+// Arabic counted nouns for the reading summary (UX-153: «1 صفحة» → «صفحة واحدة», «11 صفحةً»)
+const arPages = (n: number) => arCount(n, 'صفحة واحدة', 'صفحتان', 'صفحات', 'صفحةً')
+const arSheets = (n: number) => arCount(n, 'ورقة واحدة', 'ورقتان', 'أوراق', 'ورقةً')
+const arCodes = (n: number) => arCount(n, 'رمز واحد', 'رمزان', 'رموز', 'رمزاً')
+const arHeadings = (n: number) => arCount(n, 'عنوان واحد', 'عنوانان', 'عناوين', 'عنواناً')
 import { readBoqWorkbook, readNrmBoq } from '@/lib/tender/boqNrm'
 import { readDrawings } from '@/lib/tender/drawingText'
 import { buildSpecIndex } from '@/lib/tender/specIndex'
@@ -51,15 +58,21 @@ export default function NewTenderPage() {
   const [jobs, setJobs] = useState<PdfJob[]>([])
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
-  const [error, setError] = useState('')
+  const [error, setError] = useState('') // save errors
+  const [boqError, setBoqError] = useState('') // shown in the BOQ section
+  const [boqNotExcel, setBoqNotExcel] = useState(false) // a PDF/photo: point to «إضافة جدول الكميات»
+  const [pdfError, setPdfError] = useState<Record<string, string>>({}) // per PDF section
   const busyRef = useRef(false)
   const stopRef = useRef(false)
+  const leavingRef = useRef(false) // set just before opening the review, so the leave warning stays quiet
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { window.location.href = '/login'; return }
       setUser(data.session.user)
+      // open to everyone during the trial: decided before the profile read, so a failed read never shows a gate
+      if (PROJECTS_OPEN_TO_ALL) { setAllowed(true); return }
       supabase.from('profiles').select('role, verification_status, cr_verified_at, subscription_plan, subscription_expires_at').eq('id', data.session.user.id).single()
         .then(({ data: p }: any) => setAllowed(canUseProjects(p)))
     })
@@ -69,9 +82,13 @@ export default function NewTenderPage() {
   // ── BOQ: read in the browser ──────────────────────────────────────────────────────────────
   async function onBoq(file: File | null) {
     if (!file) return
-    setError('')
-    if (file.size > MAX_BOQ_BYTES) { setError(L('The BOQ file is larger than 15 MB.', 'BOQ فائل 15 MB سے بڑی ہے۔', 'ملف جدول الكميات أكبر من 15 ميجابايت.')); return }
-    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) { setError(L('The BOQ must be an Excel file (xlsx, xls) or CSV.', 'BOQ ایکسل (xlsx, xls) یا CSV ہونی چاہیے۔', 'يجب أن يكون جدول الكميات ملف Excel (xlsx أو xls) أو CSV.')); return }
+    setBoqError(''); setBoqNotExcel(false)
+    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+      setBoqNotExcel(true)
+      setBoqError(L('Tender pricing reads a bill of quantities in Excel (xlsx, xls) or CSV.', 'ٹینڈر قیمت Excel (xlsx, xls) یا CSV میں مقداروں کا جدول پڑھتی ہے۔', 'يقرأ تسعير المناقصة جدول الكميات بصيغة Excel (xlsx أو xls) أو CSV.'))
+      return
+    }
+    if (file.size > MAX_BOQ_BYTES) { setBoqError(L('The BOQ file is larger than 15 MB.', 'BOQ فائل 15 MB سے بڑی ہے۔', 'ملف جدول الكميات أكبر من 15 ميجابايت.')); return }
     setBoq({ file, status: 'reading', items: [], stats: null, sections: 0 })
     try {
       const sheets = await readBoqWorkbook(await file.arrayBuffer())
@@ -86,9 +103,10 @@ export default function NewTenderPage() {
   // ── PDFs: one at a time, page by page ──────────────────────────────────────────────────────
   function addPdfs(list: FileList | null, kind: PdfKind) {
     if (!list) return
+    setPdfError(m => ({ ...m, [kind]: '' }))
     const add: PdfJob[] = []
     for (const f of Array.from(list)) {
-      if (!/\.pdf$/i.test(f.name)) { setError(L('Only PDF files here.', 'یہاں صرف PDF فائلیں۔', 'تُقبل ملفات PDF فقط هنا.')); continue }
+      if (!/\.pdf$/i.test(f.name)) { setPdfError(m => ({ ...m, [kind]: L(`«${f.name}» is not a PDF: only PDF files are accepted here.`, `«${f.name}» PDF نہیں: یہاں صرف PDF فائلیں۔`, `«${f.name}» ليس ملف PDF، وتُقبل ملفات PDF فقط هنا.`) })); continue }
       add.push({ id: uid(), file: f, kind, status: 'queued', done: 0, total: 0 })
     }
     setJobs(j => [...j, ...add])
@@ -113,6 +131,14 @@ export default function NewTenderPage() {
   const doneDrawings = jobs.filter(j => j.kind === 'drawing' && j.status === 'done')
   const doneSpecs = jobs.filter(j => j.kind === 'spec' && j.status === 'done')
   const canSave = !!user && !!title.trim() && boq?.status === 'done' && boq.items.length > 0 && !reading && !saving
+  // leaving while files are read (in this browser) or saved loses that work: ask the browser to warn
+  const hasWork = reading || saving || (!!boq && boq.status === 'done') || jobs.some(j => j.status === 'done')
+  useEffect(() => {
+    if (!hasWork) return
+    const onLeave = (e: BeforeUnloadEvent) => { if (leavingRef.current) return; e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', onLeave)
+    return () => window.removeEventListener('beforeunload', onLeave)
+  }, [hasWork])
 
   // ── save: tender → files (+ extracted JSON, thumbnails) → checked items ────────────────────
   async function save() {
@@ -120,10 +146,12 @@ export default function NewTenderPage() {
     setSaving(true); setError('')
     const supabase = createClient()
     const bucket = supabase.storage.from('tenders')
+    let createdId: string | null = null // removed again if a later step fails (no empty half-saved tender)
     try {
-      setSaveMsg(L('Creating the tender…', 'ٹینڈر بنایا جا رہا ہے…', 'جارٍ إنشاء العطاء…'))
+      setSaveMsg(L('Creating the tender…', 'ٹینڈر بنایا جا رہا ہے…', 'جارٍ إنشاء المناقصة…'))
       const { data: tender, error: tErr } = await supabase.from('tenders').insert({ contractor_id: user.id, title: title.trim().slice(0, 200), status: 'draft' }).select('id').single()
       if (tErr || !tender) throw new Error(tErr?.message || 'tender')
+      createdId = tender.id
       const base = `${user.id}/${tender.id}`
 
       // BOQ original (always ≤ 15 MB here)
@@ -195,12 +223,23 @@ export default function NewTenderPage() {
       const bySev: Record<string, number> = {}
       for (const f of res.flags) bySev[f.severity] = (bySev[f.severity] || 0) + 1
       await supabase.from('tenders').update({ status: 'review', summary: { items: rows.length, by_kind: boq.stats?.by_kind || {}, flags: bySev, drawings: drawings.length, specs: specs.length } }).eq('id', tender.id)
+      leavingRef.current = true
       window.location.href = `/contractor/tender/${tender.id}`
     } catch (e: any) {
       const m = String(e?.message || '')
-      setError(m.includes('tenders_daily_limit') ? L('Daily limit of new tenders reached.', 'نئے ٹینڈرز کی روزانہ حد پوری۔', 'وصلت إلى الحد اليومي للعطاءات الجديدة.')
-        : m.includes('Bucket not found') || m.includes('relation') ? L('The tender workspace is not enabled yet on the server.', 'سرور پر ابھی فعال نہیں۔', 'مسار العطاء غير مفعّل على الخادم بعد.')
-        : L('Could not save the tender. Check your connection and try again.', 'ٹینڈر محفوظ نہیں ہو سکا۔', 'تعذّر حفظ العطاء. تحقّق من الاتصال وحاول مرة أخرى.'))
+      // clean up the half-saved tender (its rows, files and the tender itself); the files read here stay on the page to retry
+      if (createdId) {
+        try {
+          await supabase.from('tender_items').delete().eq('tender_id', createdId)
+          await supabase.from('tender_files').delete().eq('tender_id', createdId)
+          await supabase.from('tenders').delete().eq('id', createdId)
+          const { data: left } = await bucket.list(`${user.id}/${createdId}`, { limit: 1000 })
+          if (left?.length) await bucket.remove(left.map((f: any) => `${user.id}/${createdId}/${f.name}`))
+        } catch { /* best effort */ }
+      }
+      setError(m.includes('tenders_daily_limit') ? L('Daily limit of new tenders reached.', 'نئے ٹینڈرز کی روزانہ حد پوری۔', 'وصلت إلى الحد اليومي للمناقصات الجديدة.')
+        : m.includes('Bucket not found') || m.includes('relation') ? L('Tender pricing is not enabled yet on the server.', 'ٹینڈر قیمت سرور پر ابھی فعال نہیں۔', 'تسعير المناقصات غير مفعّل على الخادم بعد.')
+        : L('Could not save the tender. Your files are still here: check your connection and try again.', 'ٹینڈر محفوظ نہیں ہو سکا۔ آپ کی فائلیں یہیں ہیں: کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر حفظ المناقصة. ملفاتك ما زالت هنا: تحقّق من الاتصال وحاول مرة أخرى.'))
       setSaving(false); setSaveMsg('')
     }
   }
@@ -209,27 +248,32 @@ export default function NewTenderPage() {
   const boqCodes = boq ? new Set(boq.items.flatMap(i => i.codes)).size : 0
 
   return (
-    <AppShell title={L('Tender pricing', 'ٹینڈر قیمت', 'مسار العطاء')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
+    <AppShell title={L('Tender pricing', 'ٹینڈر قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
       <div className="max-w-4xl mx-auto space-y-5">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0B2438]">{L('New tender', 'نیا ٹینڈر', 'عطاء جديد')}</h1>
+          <Link href="/contractor/tender" className="text-xs font-bold text-[#8F6820] hover:underline">{L('All tenders', 'تمام ٹینڈرز', 'كل المناقصات')}</Link>
+          <h1 className="text-xl sm:text-2xl font-bold text-[#0B2438]">{L('New tender', 'نیا ٹینڈر', 'مناقصة جديدة')}</h1>
           <p className="text-sm text-gray-600 mt-1 leading-relaxed">
             {L('Upload the bill of quantities, the specifications and the drawings. They are read in your browser; every number is linked to its source, every inconsistency is flagged, and nothing goes to suppliers until you approve it.',
               'BOQ، تفصیلات اور ڈرائنگز اپلوڈ کریں۔ ہر عدد اپنے ماخذ سے جڑا ہے، ہر تضاد نشان زد ہوتا ہے، اور آپ کی منظوری کے بغیر کچھ سپلائرز کو نہیں جاتا۔',
               'ارفع جدول الكميات والمواصفات والمخططات. تُقرأ الملفات في متصفحك، ويُربط كل رقم بمصدره، ويُنبَّه إلى كل تعارض، ولا يُرسل شيء للموردين قبل اعتمادك.')}
           </p>
+          <p className="text-sm text-gray-600 mt-2">
+            {L('Is your table a PDF or a photo? ', 'آپ کا جدول PDF یا تصویر ہے؟ ', 'الجدول بصيغة PDF أو صورة؟ ')}
+            <Link href="/contractor/project/new" className="font-bold text-[#8F6820] underline">{L('Use «Add a bill of quantities»', '«مقداروں کا جدول شامل کریں» استعمال کریں', 'استخدم «إضافة جدول الكميات»')}</Link>
+          </p>
         </div>
 
         {allowed === false && (
           <div className="bg-white rounded-2xl border border-[#D4A543]/40 p-6 text-center">
-            <p className="text-sm text-gray-700 mb-3">{L('The tender workspace is for verified companies.', 'یہ تصدیق شدہ کمپنیوں کے لیے ہے۔', 'مسار العطاء متاح لحسابات الشركات الموثّقة.')}</p>
+            <p className="text-sm text-gray-700 mb-3">{L('Tender pricing is for verified companies.', 'یہ تصدیق شدہ کمپنیوں کے لیے ہے۔', 'تسعير المناقصات متاح لحسابات الشركات الموثّقة.')}</p>
             <Link href="/settings" className="inline-block px-5 py-2.5 rounded-xl font-bold text-white text-sm bg-[#0B2438]">{L('Verify my commercial registration', 'تجارتی رجسٹریشن کی تصدیق', 'وثّق سجلك التجاري')}</Link>
           </div>
         )}
 
         {allowed !== false && (<>
           <label className="block bg-white rounded-2xl border border-gray-200 p-4">
-            <span className="block text-sm font-bold text-[#0B2438] mb-1.5">{L('Tender name', 'ٹینڈر کا نام', 'اسم العطاء')}</span>
+            <span className="block text-sm font-bold text-[#0B2438] mb-1.5">{L('Tender name', 'ٹینڈر کا نام', 'اسم المناقصة')}</span>
             <input value={title} onChange={(e: any) => setTitle(e.target.value.slice(0, 200))} className="input-field" placeholder={L('e.g. Energy centre — stage 4', 'مثلاً انرجی سینٹر', 'مثال: مركز الطاقة — المرحلة الرابعة')} />
           </label>
 
@@ -237,22 +281,37 @@ export default function NewTenderPage() {
           <section className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h2 className="font-bold text-[#0B2438]"><Glyph e="📋" /> {L('1. Bill of quantities (Excel)', '1. BOQ (ایکسل)', '1. جدول الكميات (Excel)')}</h2>
-              <label className="px-4 py-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#8F6820] cursor-pointer">
+              <label className="min-h-11 inline-flex items-center px-4 py-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#8F6820] cursor-pointer">
                 {boq ? L('Replace', 'تبدیل کریں', 'استبدال') : L('Choose file', 'فائل منتخب کریں', 'اختر الملف')}
-                <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(e: any) => onBoq(e.target.files?.[0] || null)} />
+                <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(e: any) => { onBoq(e.target.files?.[0] || null); e.target.value = '' }} />
               </label>
             </div>
             {!boq && <p className="text-xs text-gray-500">{L('Required. Up to 15 MB.', 'ضروری۔ 15 MB تک۔', 'مطلوب. حتى 15 ميجابايت.')}</p>}
+            {boqError && (
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                {boqError}
+                {boqNotExcel && (
+                  <Link href="/contractor/project/new" className="block mt-1.5 font-bold text-[#0B2438] underline">
+                    {L('For a PDF or a photo, use «Add a bill of quantities» →', 'PDF یا تصویر کے لیے «مقداروں کا جدول شامل کریں» استعمال کریں ←', 'للملف PDF أو الصورة استخدم «إضافة جدول الكميات» ←')}
+                  </Link>
+                )}
+              </div>
+            )}
             {boq && (
               <div className="rounded-xl bg-gray-50 p-3 text-sm">
-                <div className="font-semibold text-gray-800">{boq.file.name} <span className="text-gray-500 font-normal">· {fmtSize(boq.file.size)}</span></div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold text-gray-800 break-all">{boq.file.name} <span className="text-gray-500 font-normal">· {fmtSize(boq.file.size)}</span></div>
+                  {boq.status !== 'reading' && !saving && (
+                    <button type="button" onClick={() => { setBoq(null); setBoqError('') }} className="min-h-10 px-2 text-xs font-bold text-gray-500 hover:underline shrink-0">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
+                  )}
+                </div>
                 {boq.status === 'reading' && <p className="text-gray-600 mt-1">{L('Reading…', 'پڑھا جا رہا ہے…', 'جارٍ القراءة…')}</p>}
                 {boq.status === 'error' && <p className="text-red-600 mt-1">{boq.error}</p>}
                 {boq.status === 'done' && boq.stats && (
                   <div className="mt-2 space-y-1 text-gray-700">
-                    <p>{L(`${boq.stats.sheets_read.length} trade sheets read, ${boq.stats.sheets_skipped.length} skipped (cover, summary, collections).`, `${boq.stats.sheets_read.length} شیٹس پڑھی گئیں، ${boq.stats.sheets_skipped.length} چھوڑی گئیں۔`, `قُرئت ${boq.stats.sheets_read.length} ورقة أعمال، وتُجوهلت ${boq.stats.sheets_skipped.length} (الغلاف والملخص وأوراق التجميع).`)}</p>
-                    <p className="font-semibold">{L(`${boq.items.length} items`, `${boq.items.length} آئٹمز`, `${boq.items.length} بنداً`)}: {(['material', 'works', 'provisional'] as const).map(k => `${kindLabel(k, L)} ${byKind?.[k] || 0}`).join(' · ')}</p>
-                    <p>{L(`${boqCodes} drawing codes, ${boq.sections} headings.`, `${boqCodes} کوڈز، ${boq.sections} سرخیاں۔`, `${boqCodes} رمزاً للمخططات، و${boq.sections} عنواناً.`)}</p>
+                    <p>{L(`${boq.stats.sheets_read.length} trade sheets read, ${boq.stats.sheets_skipped.length} skipped (cover, summary, collections).`, `${boq.stats.sheets_read.length} شیٹس پڑھی گئیں، ${boq.stats.sheets_skipped.length} چھوڑی گئیں۔`, `أوراق الأعمال المقروءة: ${arSheets(boq.stats.sheets_read.length)}، والمتجاهَلة: ${arSheets(boq.stats.sheets_skipped.length)} (الغلاف والملخص وأوراق التجميع).`)}</p>
+                    <p className="font-semibold">{L(`${boq.items.length} items`, `${boq.items.length} آئٹمز`, arItems(boq.items.length))}: {(['material', 'works', 'provisional'] as const).map(k => `${kindLabel(k, L)} ${byKind?.[k] || 0}`).join(' · ')}</p>
+                    <p>{L(`${boqCodes} drawing codes, ${boq.sections} headings.`, `${boqCodes} کوڈز، ${boq.sections} سرخیاں۔`, `رموز المخططات: ${arCodes(boqCodes)}، والعناوين: ${arHeadings(boq.sections)}.`)}</p>
                     {boq.items.length === 0 && <p className="text-red-600">{L('No priced rows found (no «Unit / Qty» header).', 'کوئی آئٹم نہیں ملا۔', 'لم يُعثر على بنود (لا يوجد عنوان «الوحدة / الكمية»).')}</p>}
                   </div>
                 )}
@@ -265,18 +324,19 @@ export default function NewTenderPage() {
             <section key={kind} className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h2 className="font-bold text-[#0B2438]"><Glyph e={kind === 'spec' ? '📑' : '📏'} /> {idx + 2}. {kind === 'spec' ? L('Specifications (PDF)', 'تفصیلات (PDF)', 'المواصفات (PDF)') : L('Drawings (PDF)', 'ڈرائنگز (PDF)', 'المخططات (PDF)')}</h2>
-                <label className="px-4 py-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#8F6820] cursor-pointer">
+                <label className="min-h-11 inline-flex items-center px-4 py-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#8F6820] cursor-pointer">
                   {L('Add files', 'فائلیں شامل کریں', 'أضف ملفات')}
                   <input type="file" accept=".pdf,application/pdf" multiple className="hidden" onChange={(e: any) => { addPdfs(e.target.files, kind); e.target.value = '' }} />
                 </label>
               </div>
               <p className="text-xs text-gray-500">{L('Optional. Any size: large files are read here page by page; files above 15 MB are not uploaded, only their text.', 'اختیاری۔ کوئی بھی سائز۔', 'اختياري. أي حجم: تُقرأ الملفات الكبيرة هنا صفحةً صفحة، وما يزيد على 15 ميجابايت لا يُرفع، بل نصّه المستخرج فقط.')}</p>
+              {pdfError[kind] && <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-sm text-red-700">{pdfError[kind]}</div>}
               {jobs.filter(j => j.kind === kind).map(j => (
                 <div key={j.id} className="rounded-xl bg-gray-50 p-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-gray-800 break-all">{j.file.name} <span className="text-gray-500 font-normal">· {fmtSize(j.file.size)}</span></span>
-                    {(j.status === 'queued' || j.status === 'error') && (
-                      <button type="button" onClick={() => setJobs(js => js.filter(x => x.id !== j.id))} className="text-xs font-bold text-gray-500 hover:underline">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
+                    {j.status !== 'reading' && !saving && (
+                      <button type="button" onClick={() => setJobs(js => js.filter(x => x.id !== j.id))} className="min-h-10 px-2 text-xs font-bold text-gray-500 hover:underline shrink-0">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                     )}
                   </div>
                   {j.status === 'queued' && <p className="text-gray-500 mt-1">{L('Waiting…', 'انتظار…', 'في الانتظار…')}</p>}
@@ -289,15 +349,15 @@ export default function NewTenderPage() {
                   {j.status === 'error' && <p className="text-red-600 mt-1">{j.error}</p>}
                   {j.status === 'done' && j.data && (
                     <div className="mt-1.5 space-y-1 text-gray-700">
-                      <p>{L(`${j.data.numPages} pages read.`, `${j.data.numPages} صفحات پڑھے گئے۔`, `قُرئت ${j.data.numPages} صفحة.`)}
-                        {j.data.emptyPages.length > 0 && <span className="text-amber-700"> {L(`${j.data.emptyPages.length} pages have no text (scans): not read.`, `${j.data.emptyPages.length} صفحات میں متن نہیں۔`, `${j.data.emptyPages.length} صفحة بلا نص (ممسوحة ضوئياً) لم تُقرأ.`)}</span>}
+                      <p>{L(`${j.data.numPages} pages read.`, `${j.data.numPages} صفحات پڑھے گئے۔`, `المقروء: ${arPages(j.data.numPages)}.`)}
+                        {j.data.emptyPages.length > 0 && <span className="text-amber-700"> {L(`${j.data.emptyPages.length} pages have no text (scans): not read.`, `${j.data.emptyPages.length} صفحات میں متن نہیں۔`, `بلا نص (ممسوحة ضوئياً) ولم تُقرأ: ${arPages(j.data.emptyPages.length)}.`)}</span>}
                       </p>
-                      {j.kind === 'spec' && j.index && <p>{L(`${j.index.sections.filter(s => s.level === 0).length} sections, ${j.index.sections.length} headings found.`, `${j.index.sections.length} سرخیاں ملیں۔`, `وُجد ${j.index.sections.filter(s => s.level === 0).length} قسماً و${j.index.sections.length} عنواناً.`)}</p>}
-                      {j.kind === 'spec' && j.index?.codes && <p className="text-[#0F6E56] font-semibold">{L(`Code coordination matrix: ${Object.keys(j.index.codes).length} codes linked to their sections.`, `کوڈ میٹرکس: ${Object.keys(j.index.codes).length} کوڈ اپنے سیکشن سے منسلک۔`, `جدول تنسيق الرموز: رُبط ${Object.keys(j.index.codes).length} رمزاً بأقسام المواصفات.`)}</p>}
+                      {j.kind === 'spec' && j.index && <p>{L(`${j.index.sections.filter(s => s.level === 0).length} sections, ${j.index.sections.length} headings found.`, `${j.index.sections.length} سرخیاں ملیں۔`, `الأقسام: ${j.index.sections.filter(s => s.level === 0).length}، والعناوين: ${arHeadings(j.index.sections.length)}.`)}</p>}
+                      {j.kind === 'spec' && j.index?.codes && <p className="text-[#0F6E56] font-semibold">{L(`Code coordination matrix: ${Object.keys(j.index.codes).length} codes linked to their sections.`, `کوڈ میٹرکس: ${Object.keys(j.index.codes).length} کوڈ اپنے سیکشن سے منسلک۔`, `جدول تنسيق الرموز: رُبط ${arCodes(Object.keys(j.index.codes).length)} بأقسام المواصفات.`)}</p>}
                       {j.kind === 'drawing' && (j.drawings || []).map(d => (
                         <p key={d.page}>
                           <b>{d.sheet_no || L(`Page ${d.page}`, `صفحہ ${d.page}`, `الصفحة ${d.page}`)}</b>{d.title ? ` — ${d.title}` : ''}
-                          {' · '}{L(`${d.rooms.length} rooms, ${d.tags.reduce((s, t) => s + t.count, 0)} tags (${d.tags.length} codes), ${Object.keys(d.legend).length} legend entries`, `${d.rooms.length} کمرے، ${d.tags.length} کوڈز`, `${d.rooms.length} غرفة، ${d.tags.reduce((s, t) => s + t.count, 0)} وسماً (${d.tags.length} رمزاً)، ${Object.keys(d.legend).length} بنداً في المفتاح`)}
+                          {' · '}{L(`${d.rooms.length} rooms, ${d.tags.reduce((s, t) => s + t.count, 0)} tags (${d.tags.length} codes), ${Object.keys(d.legend).length} legend entries`, `${d.rooms.length} کمرے، ${d.tags.length} کوڈز`, `الغرف: ${d.rooms.length}، الوسوم: ${d.tags.reduce((s, t) => s + t.count, 0)} (${arCodes(d.tags.length)})، بنود المفتاح: ${Object.keys(d.legend).length}`)}
                         </p>
                       ))}
                       {j.file.size > MAX_ORIGINAL_BYTES && <p className="text-[#8F6820] font-semibold">{L('Only the extracted text is saved because the file is large; keep the original with you.', 'فائل بڑی ہے، صرف متن محفوظ ہوگا؛ اصل اپنے پاس رکھیں۔', 'حُفظ النص المستخرج فقط لأن الملف كبير؛ احتفظ بالأصل لديك.')}</p>}
@@ -312,11 +372,11 @@ export default function NewTenderPage() {
 
           <div className="bg-white rounded-2xl border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
             <p className="text-sm text-gray-600">
-              {reading ? L('Reading files… you can keep adding files.', 'فائلیں پڑھی جا رہی ہیں…', 'جارٍ قراءة الملفات… يمكنك متابعة إضافة الملفات.')
+              {reading ? L('Reading files… you can keep adding files. Stay on this page: leaving stops the reading.', 'فائلیں پڑھی جا رہی ہیں… اس صفحے پر رہیں: صفحہ چھوڑنے سے پڑھنا رک جائے گا۔', 'جارٍ قراءة الملفات… يمكنك متابعة إضافة الملفات. ابقَ في هذه الصفحة، فمغادرتها توقف القراءة.')
                 : saving ? saveMsg
                 : L(`Ready: BOQ ${boq?.status === 'done' ? '✓' : '—'} · specifications ${doneSpecs.length} · drawings ${doneDrawings.length}`, `تیار: BOQ · تفصیلات ${doneSpecs.length} · ڈرائنگز ${doneDrawings.length}`, `الجاهز: جدول الكميات ${boq?.status === 'done' ? '✓' : '—'} · المواصفات ${doneSpecs.length} · المخططات ${doneDrawings.length}`)}
             </p>
-            <button type="button" disabled={!canSave} onClick={save} className="px-6 py-3 rounded-xl font-bold text-sm text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+            <button type="button" disabled={!canSave} onClick={save} className="min-h-11 px-6 py-3 rounded-xl font-bold text-sm text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
               {saving ? L('Saving…', 'محفوظ…', 'جارٍ الحفظ…') : L('Save and open the review', 'محفوظ کریں اور جائزہ کھولیں', 'احفظ وافتح المراجعة')}
             </button>
           </div>

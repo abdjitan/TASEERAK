@@ -3,6 +3,8 @@ module.exports = {
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
+      // IBM Plex Sans Arabic ships up to 700: heavier weights only faked bold (UX-183)
+      fontWeight: { extrabold: '700', black: '700' },
       colors: {
         // Brand (matches the new design system tokens)
         navy: { DEFAULT: '#0B2438', dark: '#071827', deep: '#050B12', soft: '#102E45', light: '#102E45' },
@@ -12,7 +14,7 @@ module.exports = {
         line: '#D9E0E8',
         canvas: { DEFAULT: '#F5F7FA', 2: '#E8EDF2' },
         // Sector accents
-        sector: { civil: '#0B2438', arch: '#435A70', elec: '#D4A543', mech: '#0F6E56' },
+        sector: { civil: '#0B2438', arch: '#435A70', elec: '#D4A543', mech: '#102E45' },
         // Legacy scales kept for existing pages
         blue: {
           50: '#E6F1FB', 100: '#B5D4F4', 200: '#85B7EB',
@@ -28,7 +30,8 @@ module.exports = {
         cairo: ['IBM Plex Sans Arabic', 'Tajawal', 'Cairo', 'Segoe UI', 'Tahoma', 'sans-serif'],
       },
       borderRadius: {
-        sm: '10px', md: '16px', xl: '12px', '2xl': '16px',
+        // an ordered scale (UX-183): md was 16px, so a rounded-md checkbox looked like a radio
+        sm: '6px', md: '8px', xl: '12px', '2xl': '16px',
         lg2: '22px', xl2: '30px', pill: '100px',
       },
       boxShadow: {

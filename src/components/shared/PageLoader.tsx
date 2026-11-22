@@ -43,7 +43,7 @@ export default function PageLoader() {
   const path = usePathname() || ''
   const [hint, setHint] = useState<string | null>(null)
   useEffect(() => { try { setHint(localStorage.getItem(ROLE_HINT_KEY)) } catch {} }, [])
-  const role = path.startsWith('/onboarding') || path.startsWith('/welcome') ? null : (roleFromPath(path) || hint)
+  const role = path.startsWith('/onboarding') || path.startsWith('/welcome') || path.startsWith('/verify') || path.startsWith('/banned') ? null : (roleFromPath(path) || hint)
 
   if (!role) return <div className="min-h-screen bg-slate-50 p-4 md:p-8" dir={dir}><Skeleton /></div>
   return <AppShell nav={getNav(role, locale, path)} dir={dir}><Skeleton /></AppShell>

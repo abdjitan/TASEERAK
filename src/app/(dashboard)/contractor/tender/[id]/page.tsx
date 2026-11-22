@@ -1,6 +1,6 @@
 'use client'
 
-// «مسار العطاء» — step 2: review. Summary of items and flags, a filterable items table, and per
+// «تسعير مناقصة» (tender pricing) — step 2: review. Summary of items and flags, a filterable items table, and per
 // item a side panel with its sources (BOQ row, spec quotes, drawing sheets with tag counts),
 // edit fields and «اعتماد». Only approved MATERIAL items go to suppliers, through the existing
 // project → price request path (/contractor/project/new receives them as a draft).
@@ -12,7 +12,9 @@ import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import Glyph from '@/components/shared/Glyph'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, SUB_CATEGORIES, SECTOR_PRODUCTS, UNIT_OPTIONS, getSubCategoryLabel, type Sector } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, SECTOR_PRODUCTS, UNIT_OPTIONS, getSubCategoryLabel, getUnitLabel, getProductLabel, type Sector } from '@/types'
+import { toLatinDigits } from '@/lib/phone'
+import { arItems } from '@/lib/text'
 import { runChecks, specCheck, isFlagFree, SEVERITY_ORDER } from '@/lib/tender/checks'
 import { specHitsFor } from '@/lib/tender/checks'
 import { buildSpecIndex } from '@/lib/tender/specIndex'
@@ -25,6 +27,19 @@ import { askConfirm } from '@/lib/askConfirm'
 
 const PROJECT_DRAFT_KEY = 'tsk_project_draft' // the project page's draft (restored on open)
 const PAGE = 150
+// sector names in the three languages (SECTOR_LABELS is Arabic only)
+const SECTOR_L: Record<string, [string, string]> = {
+  civil: ['Civil', 'سول'], architectural: ['Architectural', 'آرکیٹیکچرل'], electrical: ['Electrical', 'الیکٹریکل'],
+  mechanical: ['Mechanical', 'مکینیکل'], equipment: ['Machinery and equipment', 'مشینری اور آلات'], supply_store: ['Supply store', 'سپلائی اسٹور'],
+}
+const sectorName = (s: string, locale: string) => (locale === 'ar' ? (SECTOR_LABELS as any)[s] || s : (SECTOR_L[s]?.[locale === 'ur' ? 1 : 0] || s))
+// «١٢٫٥» / «12,500» → 12.5 / 12500; '' → null; NaN → undefined (refused)
+function parseQty(v: string): number | null | undefined {
+  const t = toLatinDigits(String(v || '')).replace(/٫/g, '.').replace(/[,،\s]/g, '').trim()
+  if (!t) return null
+  if (!/^\d*\.?\d+$/.test(t)) return undefined
+  return Number(t)
+}
 
 export default function TenderReviewPage() {
   const params = useParams() as any
@@ -44,6 +59,7 @@ export default function TenderReviewPage() {
   const [edit, setEdit] = useState<any>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  const [nameLocked, setNameLocked] = useState(true) // a catalog material's name is read-only until «تغيير المادة»
   // filters
   const [fSheet, setFSheet] = useState('')
   const [fKind, setFKind] = useState('material')
@@ -59,7 +75,12 @@ export default function TenderReviewPage() {
       if (!data.session) { window.location.href = '/login'; return }
       setUser(data.session.user)
       const { data: t, error: tErr } = await supabase.from('tenders').select('*').eq('id', id).single()
-      if (tErr || !t) { setLoadError(L('Tender not found.', 'ٹینڈر نہیں ملا۔', 'العطاء غير موجود.')); setLoading(false); return }
+      if (tErr || !t) {
+        // «not found» only when the row is really missing (PGRST116); otherwise the real problem
+        setLoadError(!tErr || tErr.code === 'PGRST116' ? L('This tender was not found. It may have been deleted, or it belongs to another account.', 'یہ ٹینڈر نہیں ملا۔ شاید حذف ہو گیا ہے یا کسی اور اکاؤنٹ کا ہے۔', 'لم يُعثر على هذه المناقصة. ربما حُذفت، أو تخص حساباً آخر.')
+          : L('Could not load the tender. Check your connection and reload the page.', 'ٹینڈر لوڈ نہیں ہو سکا۔ کنکشن چیک کر کے صفحہ دوبارہ لوڈ کریں۔', 'تعذّر تحميل المناقصة. تحقّق من الاتصال وأعد تحميل الصفحة.'))
+        setLoading(false); return
+      }
       setTender(t)
       const { data: f } = await supabase.from('tender_files').select('*').eq('tender_id', id).order('created_at')
       setFiles(f || [])
@@ -124,6 +145,7 @@ export default function TenderReviewPage() {
   const sevCount: Record<string, number> = {}
   for (const f of [...fast.flags, ...specRes.flags]) sevCount[f.severity] = (sevCount[f.severity] || 0) + 1
   const approvedMaterials = rows.filter(r => r.approved && r.kind === 'material')
+  const flaggedMaterials = rows.filter(r => r.kind === 'material' && !isFlagFree(byItem[r.item_key])).length
   const sheets = useMemo(() => Array.from(new Set(rows.map(r => r.sheet))).filter(Boolean), [rows])
 
   const filtered = useMemo(() => {
@@ -146,15 +168,18 @@ export default function TenderReviewPage() {
   useEffect(() => {
     if (!sel) { setEdit(null); return }
     setEdit({ product_name: sel.product_name || '', unit: sel.unit || '', qty: sel.qty == null ? '' : String(sel.qty), kind: sel.kind, specification: sel.specification || '', sector: sel.sector || 'civil', sub_category: sel.sub_category || '' })
+    setNameLocked(true); setMsg('')
   }, [selId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── writes ───────────────────────────────────────────────────────────────────────────────
   const sent = tender?.status === 'sent'
-  async function saveItem(approve?: boolean) {
+  async function saveItem(approve?: boolean, goNext = false) {
     if (!sel || !edit || sent) return
+    const qty = parseQty(edit.qty)
+    // Arabic digits are read as numbers; an unreadable or zero quantity is refused instead of saved as 0
+    if (qty === undefined || qty === 0) { setMsg(L('Enter a quantity greater than zero (or leave it empty).', 'صفر سے زیادہ مقدار لکھیں (یا خالی چھوڑیں)۔', 'أدخل كمية أكبر من صفر (أو اتركها فارغة).')); return }
     setBusy(true); setMsg('')
     const supabase = createClient()
-    const qty = edit.qty === '' ? null : Number(String(edit.qty).replace(/[^0-9.]/g, ''))
     const next: Record<string, any> = {
       product_name: edit.product_name.trim().slice(0, 120) || null, unit: edit.unit || null, qty: qty != null && Number.isFinite(qty) ? qty : null,
       kind: edit.kind, specification: edit.specification.trim().slice(0, 600) || null, sector: edit.sector || null, sub_category: edit.sub_category || null,
@@ -175,14 +200,20 @@ export default function TenderReviewPage() {
     setBusy(false)
     if (error) { setMsg(L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔', 'تعذّر الحفظ. حاول مرة أخرى.')); return }
     setRows(rs => rs.map(r => (r.id === sel.id ? { ...r, ...patch } : r)))
+    // the next item in the current view that still needs approval (approve and move on)
+    if (goNext) {
+      const at = filtered.findIndex(r => r.id === sel.id)
+      const next = filtered.slice(at + 1).find(r => !r.approved && r.kind === 'material') || filtered.find(r => r.id !== sel.id && !r.approved && r.kind === 'material')
+      if (next) { setSelId(next.id); setTimeout(() => setMsg(L('Approved. This is the next item.', 'منظور۔ یہ اگلا آئٹم ہے۔', 'اعتُمد البند، وهذا البند التالي.')), 0); return }
+    }
     setMsg(approve ? L('Approved.', 'منظور۔', 'اعتُمد البند.') : approve === false ? L('Approval removed.', 'منظوری ہٹا دی۔', 'أُلغي الاعتماد.') : L('Saved.', 'محفوظ۔', 'حُفظ.'))
   }
 
   async function bulkApprove() {
     if (sent) return
     const ids = filtered.filter(r => r.kind === 'material' && !r.approved && isFlagFree(byItem[r.item_key]) && r.sub_category && (Number(r.qty) > 0 || r.lump_sum)).map(r => r.id)
-    if (!ids.length) { setMsg(L('No flag-free materials to approve in this view.', 'کوئی صاف آئٹم نہیں۔', 'لا توجد مواد خالية من التنبيهات لاعتمادها في هذا العرض.')); return }
-    if (!(await askConfirm(L(`Approve ${ids.length} flag-free material items shown?`, `${ids.length} آئٹمز منظور کریں؟`, `اعتماد ${ids.length} بنداً من المواد الخالية من التنبيهات في هذا العرض؟`)))) return
+    if (!ids.length) { setMsg(L('No materials without flags (with a specialty and a quantity) to approve in this view.', 'اس منظر میں منظوری کے لیے بغیر انتباہ کوئی مواد نہیں۔', 'لا توجد مواد بلا تنبيهات (ولها تخصص وكمية) لاعتمادها في هذا العرض.')); return }
+    if (!(await askConfirm(L(`Approve ${ids.length} material items without flags shown?`, `${ids.length} آئٹمز منظور کریں؟`, `اعتماد ${arItems(ids.length)} من المواد بلا تنبيهات في هذا العرض؟`)))) return
     setBusy(true)
     const supabase = createClient()
     const at = new Date().toISOString()
@@ -193,24 +224,27 @@ export default function TenderReviewPage() {
     const set = new Set(ids)
     setRows(rs => rs.map(r => (set.has(r.id) ? { ...r, approved: true, approved_at: at } : r)))
     setBusy(false)
-    setMsg(L(`${ids.length} items approved.`, `${ids.length} منظور۔`, `اعتُمد ${ids.length} بنداً.`))
+    setMsg(L(`${ids.length} items approved.`, `${ids.length} منظور۔`, `اعتُمد ${arItems(ids.length)}.`))
   }
 
   async function sendApproved() {
     if (!approvedMaterials.length) return
     const unrouted = approvedMaterials.filter(r => !r.sub_category).length
-    if (!(await askConfirm(L(`Send ${approvedMaterials.length} approved material items to the price request page?${unrouted ? ` (${unrouted} have no specialty yet: choose it there.)` : ''}\n\nWorks, provisional sums and unapproved items are not sent.`,
-      `${approvedMaterials.length} منظور آئٹمز قیمت کی درخواست کے صفحے پر بھیجیں؟`,
-      `نقل ${approvedMaterials.length} بنداً معتمداً من المواد إلى صفحة طلب التسعير؟${unrouted ? ` (${unrouted} بلا تخصص بعد: اختره هناك.)` : ''}\n\nلا تُرسل الأعمال ولا المبالغ الاحتياطية ولا البنود غير المعتمدة.`)))) return
+    // this opens the sending page (nothing is sent yet); it replaces another unsent list kept there
+    let other = 0
+    try { const d = JSON.parse(localStorage.getItem(PROJECT_DRAFT_KEY) || 'null'); if (d && Array.isArray(d.items) && d.items.length && d.tender_id !== tender.id) other = d.items.length } catch {}
+    if (!(await askConfirm(L(`Move ${approvedMaterials.length} approved material items to the sending page? You review the delivery details there and send.${unrouted ? ` (${unrouted} have no specialty yet: choose it there.)` : ''}\n\nWorks, provisional sums and unapproved items are not moved.${other ? `\n\nThis replaces another unsent list on that page (${other} items).` : ''}`,
+      `${approvedMaterials.length} منظور آئٹمز بھیجنے کے صفحے پر لے جائیں؟ وہاں ڈیلیوری کی تفصیل دیکھ کر بھیجیں۔${other ? `\n\nیہ اس صفحے پر موجود ایک اور فہرست (${other} آئٹمز) کی جگہ لے گا۔` : ''}`,
+      `نقل ${arItems(approvedMaterials.length)} معتمدة من المواد إلى صفحة الإرسال؟ تراجع هناك بيانات التوصيل ثم ترسل.${unrouted ? ` (${arItems(unrouted)} بلا تخصص بعد: اختره هناك.)` : ''}\n\nلا تُنقل الأعمال ولا المبالغ الاحتياطية ولا البنود غير المعتمدة.${other ? `\n\nسيحلّ هذا محل قائمة أخرى غير مرسلة في تلك الصفحة (${arItems(other)}).` : ''}`), { okLabel: L('Continue', 'جاری رکھیں', 'متابعة') }))) return
     const draft = {
       title: tender.title,
-      projectNotes: `مسار العطاء: ${tender.title} — ${approvedMaterials.length} بنداً معتمداً من جدول الكميات`,
+      projectNotes: `تسعير مناقصة: ${tender.title} — ${arItems(approvedMaterials.length)} معتمدة من جدول الكميات`,
       deliveryRequired: true, deliveryLocation: '',
       items: approvedMaterials.map((r, i) => draftItemFromRow(r, i)),
       tender_id: tender.id,
     }
     try { localStorage.setItem(PROJECT_DRAFT_KEY, JSON.stringify(draft)) } catch {
-      alert(L('Could not prepare the request in this browser.', 'تیار نہیں ہو سکا۔', 'تعذّر تجهيز الطلب في هذا المتصفح.')); return
+      setMsg(L('Could not prepare the request in this browser (its storage is full or blocked).', 'اس براؤزر میں درخواست تیار نہیں ہو سکی۔', 'تعذّر تجهيز الطلب في هذا المتصفح (مساحة التخزين ممتلئة أو محظورة).')); return
     }
     window.location.href = '/contractor/project/new'
   }
@@ -235,6 +269,7 @@ export default function TenderReviewPage() {
     try { return catalogCandidates([edit.product_name], (edit.sector || null) as Sector, 4) } catch { return [] }
   }, [edit?.product_name, edit?.sector]) // eslint-disable-line react-hooks/exhaustive-deps
   const catalogNames = useMemo(() => Array.from(new Set(Object.values(SECTOR_PRODUCTS).flat())), [])
+  const catalogSet = useMemo(() => new Set(catalogNames), [catalogNames])
 
   const card = (label: string, value: number | string, tone = 'text-[#0B2438]') => (
     <div className="bg-white rounded-2xl border border-gray-200 p-3">
@@ -244,28 +279,52 @@ export default function TenderReviewPage() {
   )
 
   return (
-    <AppShell title={L('Tender review', 'ٹینڈر جائزہ', 'مراجعة العطاء')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
+    <AppShell title={L('Tender review', 'ٹینڈر جائزہ', 'مراجعة المناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
       <div className="max-w-7xl mx-auto space-y-4">
         {loading && <p className="text-sm text-gray-500">{loadError || L('Loading…', 'لوڈ ہو رہا ہے…', 'جارٍ التحميل…')}</p>}
         {!loading && loadError && <p className="text-sm text-red-600">{loadError}</p>}
         {!loading && tender && (<>
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
-              <Link href="/contractor/tender" className="text-xs font-bold text-[#8F6820] hover:underline">{L('All tenders', 'تمام ٹینڈرز', 'كل العطاءات')}</Link>
+              <Link href="/contractor/tender" className="text-xs font-bold text-[#8F6820] hover:underline">{L('All tenders', 'تمام ٹینڈرز', 'كل المناقصات')}</Link>
               <h1 className="text-xl sm:text-2xl font-bold text-[#0B2438]">{tender.title}</h1>
               <p className="text-xs text-gray-500 mt-0.5">{files.map(f => `${f.kind === 'boq' ? L('BOQ', 'BOQ', 'جدول الكميات') : f.kind === 'spec' ? L('Spec', 'تفصیل', 'مواصفات') : L('Drawing', 'ڈرائنگ', 'مخطط')}: ${f.name}${f.storage_path ? '' : f.kind !== 'boq' ? L(' (text only)', ' (صرف متن)', ' (النص فقط)') : ''}`).join(' · ')}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              {sent && tender.project_rfq_id && <span className="px-3 py-2 rounded-xl text-xs font-bold bg-[#0F6E56]/10 text-[#0F6E56]">{L('Sent for pricing', 'بھیج دیا گیا', 'أُرسل للتسعير')}</span>}
-              <button type="button" disabled={busy || sent} onClick={bulkApprove} className="px-4 py-2.5 rounded-xl text-sm font-bold border border-[#0F6E56] text-[#0F6E56] disabled:opacity-40">
-                {L('Approve flag-free materials shown', 'صاف مواد منظور کریں', 'اعتماد المواد الخالية من التنبيهات (المعروضة)')}
+              {sent && tender.project_rfq_id && <span className="min-h-11 inline-flex items-center px-3 py-2 rounded-xl text-xs font-bold bg-[#0F6E56]/10 text-[#0F6E56]">{L('Sent for pricing', 'بھیج دیا گیا', 'أُرسلت للتسعير')}</span>}
+              {sent && tender.project_rfq_id && (
+                <Link href={`/contractor/project/${tender.project_rfq_id}`} className="min-h-11 inline-flex items-center px-4 py-2.5 rounded-xl text-sm font-bold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                  {L('View the offers received →', 'موصول آفرز دیکھیں ←', 'عرض العروض الواردة ←')}
+                </Link>
+              )}
+              {!sent && (<>
+              <button type="button" disabled={busy} onClick={bulkApprove} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] disabled:opacity-40">
+                {L('Approve the materials without flags (shown)', 'بغیر انتباہ مواد منظور کریں (دکھائے گئے)', 'اعتماد المواد بلا تنبيهات (المعروضة)')}
               </button>
-              <button type="button" disabled={busy || sent || !approvedMaterials.length} onClick={sendApproved} className="px-4 py-2.5 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
-                {L(`Send approved materials for pricing (${approvedMaterials.length})`, `منظور مواد قیمت کے لیے بھیجیں (${approvedMaterials.length})`, `إرسال المواد المعتمدة للتسعير (${approvedMaterials.length})`)}
+              <button type="button" disabled={busy || !approvedMaterials.length} onClick={sendApproved} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                {L(`Continue to the sending page (${approvedMaterials.length}) →`, `بھیجنے کے صفحے پر جائیں (${approvedMaterials.length}) ←`, `متابعة إلى صفحة الإرسال (${approvedMaterials.length}) ←`)}
               </button>
+              </>)}
             </div>
           </div>
-          {msg && <div className="rounded-xl bg-[#0B2438]/5 p-2.5 text-sm text-[#0B2438]">{msg}</div>}
+          {/* the order of work, with progress */}
+          {!sent && (
+            <ol className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { n: 1, t: L('Review the flags', 'انتباہات دیکھیں', 'راجع التنبيهات'), d: flaggedMaterials ? L(`${flaggedMaterials} materials have flags`, `${flaggedMaterials} مواد پر انتباہ`, `مواد عليها تنبيهات: ${flaggedMaterials}`) : L('No material has flags', 'کسی مواد پر انتباہ نہیں', 'لا توجد مواد عليها تنبيهات'), done: flaggedMaterials === 0 },
+                { n: 2, t: L(`Approve the materials (${approvedMaterials.length}/${kindCount.material || 0})`, `مواد منظور کریں (${approvedMaterials.length}/${kindCount.material || 0})`, `اعتمد المواد (${approvedMaterials.length}/${kindCount.material || 0})`), d: L('Open an item, check it and approve it, or approve the ones without flags at once.', 'آئٹم کھولیں، جانچیں اور منظور کریں۔', 'افتح البند وراجعه واعتمده، أو اعتمد المواد بلا تنبيهات دفعة واحدة.'), done: !!approvedMaterials.length && approvedMaterials.length === (kindCount.material || 0) },
+                { n: 3, t: L('Send them for pricing', 'قیمت کے لیے بھیجیں', 'أرسلها للتسعير'), d: L('«Continue to the sending page» opens the request with the approved materials.', '«بھیجنے کے صفحے پر جائیں» منظور مواد کے ساتھ درخواست کھولتا ہے۔', '«متابعة إلى صفحة الإرسال» تفتح الطلب بالمواد المعتمدة.'), done: false },
+              ].map(s => (
+                <li key={s.n} className={`rounded-2xl border p-3 bg-white ${s.done ? 'border-[#0F6E56]/40' : 'border-gray-200'}`}>
+                  <div className="flex items-center gap-2 text-sm font-bold text-[#0B2438]">
+                    <span className={`w-6 h-6 rounded-full grid place-items-center text-xs shrink-0 ${s.done ? 'bg-[#0F6E56] text-white' : 'bg-[#0B2438] text-white'}`}>{s.done ? '✓' : s.n}</span>{s.t}
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">{s.d}</p>
+                </li>
+              ))}
+            </ol>
+          )}
+          {msg && !sel && <div className="rounded-xl bg-[#0B2438]/5 p-2.5 text-sm text-[#0B2438]" role="status">{msg}</div>}
 
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
             {card(kindLabel('material', L), kindCount.material || 0, 'text-[#0F6E56]')}
@@ -280,12 +339,12 @@ export default function TenderReviewPage() {
 
           {tenderFlags.length > 0 && (
             <details className="bg-white rounded-2xl border border-gray-200 p-3">
-              <summary className="text-sm font-bold text-[#0B2438] cursor-pointer">{L(`Tender-wide findings (${tenderFlags.length}): codes on the drawings without a BOQ item`, `عمومی نتائج (${tenderFlags.length})`, `ملاحظات على مستوى العطاء (${tenderFlags.length}): رموز في المخططات بلا بند في الجدول`)}</summary>
+              <summary className="text-sm font-bold text-[#0B2438] cursor-pointer min-h-11 flex items-center">{L(`Tender-wide findings (${tenderFlags.length}): codes on the drawings without a BOQ item`, `عمومی نتائج (${tenderFlags.length})`, `ملاحظات على مستوى المناقصة (${tenderFlags.length}): رموز في المخططات بلا بند في جدول الكميات`)}</summary>
               <ul className="mt-2 space-y-1.5">
                 {tenderFlags.map((f, i) => (
                   <li key={i} className={`text-xs rounded-lg border p-2 ${SEVERITY_TONE[f.severity]}`}>
                     <b>{severityLabel(f.severity, L)}:</b> {locale === 'ar' || locale === 'ur' ? f.ar : f.en}
-                    <span className="block text-[11px] opacity-80 mt-0.5">{f.sources.map(s => `${s.sheet || s.file}${s.page ? ` p${s.page}` : ''}`).join(' · ')}</span>
+                    <span className="block text-xs opacity-80 mt-0.5">{f.sources.map(s => `${s.sheet || s.file}${s.page ? ` p${s.page}` : ''}`).join(' · ')}</span>
                   </li>
                 ))}
               </ul>
@@ -297,7 +356,7 @@ export default function TenderReviewPage() {
               <summary className="text-sm font-bold text-[#0B2438] cursor-pointer">
                 {L(`Area comparison (${fast.areaChecks.length}): room areas on the drawings vs BOQ m²`, `رقبے کا موازنہ (${fast.areaChecks.length})`, `مقارنة المساحات (${fast.areaChecks.length}): مساحات الغرف في المخططات مقابل م² في الجدول`)}
               </summary>
-              <p className="text-[11px] text-gray-500 mt-1">{L('Rooms are matched to finish tags by position on the sheet (a «?» marks a low-confidence room). A difference needs review; it is not an error.', 'کمروں کو شیٹ پر مقام سے ملایا گیا ہے («?» = کم یقین)۔ فرق جائزہ مانگتا ہے، غلطی نہیں۔', 'تُنسب الغرف إلى رموز التشطيب حسب موقعها في اللوحة (علامة «?» تعني نسبة غير مؤكدة). الفرق يحتاج مراجعة وليس خطأً.')}</p>
+              <p className="text-xs text-gray-500 mt-1">{L('Rooms are matched to finish tags by position on the sheet (a «?» marks a low-confidence room). A difference needs review; it is not an error.', 'کمروں کو شیٹ پر مقام سے ملایا گیا ہے («?» = کم یقین)۔ فرق جائزہ مانگتا ہے، غلطی نہیں۔', 'تُنسب الغرف إلى رموز التشطيب حسب موقعها في اللوحة (علامة «?» تعني نسبة غير مؤكدة). الفرق يحتاج مراجعة وليس خطأً.')}</p>
               <div className="overflow-x-auto mt-2">
                 <table className="w-full text-xs">
                   <thead>
@@ -332,7 +391,7 @@ export default function TenderReviewPage() {
           {/* filters */}
           <div className="bg-white rounded-2xl border border-gray-200 p-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
             <select value={fSheet} onChange={(e: any) => { setFSheet(e.target.value); setLimit(PAGE) }} className="input-field text-sm">
-              <option value="">{L('All trades', 'تمام شعبے', 'كل الأعمال (الأوراق)')}</option>
+              <option value="">{L('All trades (sheets)', 'تمام شعبے (شیٹس)', 'كل الأعمال (الأوراق)')}</option>
               {sheets.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
             <select value={fKind} onChange={(e: any) => { setFKind(e.target.value); setLimit(PAGE) }} className="input-field text-sm">
@@ -342,7 +401,7 @@ export default function TenderReviewPage() {
             <select value={fFlag} onChange={(e: any) => { setFFlag(e.target.value); setLimit(PAGE) }} className="input-field text-sm">
               <option value="">{L('All items', 'تمام آئٹمز', 'كل البنود')}</option>
               <option value="flagged">{L('With flags', 'نشان والے', 'عليها تنبيهات')}</option>
-              <option value="clean">{L('Flag-free', 'صاف', 'خالية من التنبيهات')}</option>
+              <option value="clean">{L('Without flags', 'بغیر انتباہ', 'بلا تنبيهات')}</option>
               <option value="error">{severityLabel('error', L)}</option>
               <option value="warning">{severityLabel('warning', L)}</option>
               <option value="review">{severityLabel('review', L)}</option>
@@ -355,7 +414,7 @@ export default function TenderReviewPage() {
           <div className="grid lg:grid-cols-[1fr_440px] gap-4 items-start">
             {/* table */}
             <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100">{L(`${filtered.length} items`, `${filtered.length} آئٹمز`, `${filtered.length} بنداً`)}</div>
+              <div className="px-3 py-2 text-xs text-gray-500 border-b border-gray-100">{L(`${filtered.length} items`, `${filtered.length} آئٹمز`, filtered.length ? arItems(filtered.length) : 'لا توجد بنود')}</div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-xs text-gray-600">
@@ -375,18 +434,18 @@ export default function TenderReviewPage() {
                           <td className="p-2 align-top whitespace-nowrap text-xs text-gray-600" dir="ltr">{r.ref || `${r.row_no}`}</td>
                           <td className="p-2 align-top">
                             <div className="text-gray-900 line-clamp-2" dir="ltr">{r.item_text}</div>
-                            <div className="text-[11px] text-gray-500 line-clamp-1" dir="ltr">{r.lead_in || ''}</div>
+                            <div className="text-xs text-gray-500 line-clamp-1" dir="ltr">{r.lead_in || ''}</div>
                             <div className="flex flex-wrap gap-1 mt-1">
-                              {r.kind !== 'material' && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${KIND_TONE[r.kind]}`}>{kindLabel(r.kind, L)}</span>}
-                              {(r.codes || []).map((c: string) => <span key={c} className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#0B2438]/5 text-[#0B2438]" dir="ltr">{c}</span>)}
-                              {r.product_name && r.kind === 'material' && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{r.product_name.slice(0, 50)}</span>}
+                              {r.kind !== 'material' && <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${KIND_TONE[r.kind]}`}>{kindLabel(r.kind, L)}</span>}
+                              {(r.codes || []).map((c: string) => <span key={c} className="text-xs font-mono px-1.5 py-0.5 rounded bg-[#0B2438]/5 text-[#0B2438]" dir="ltr">{c}</span>)}
+                              {r.product_name && r.kind === 'material' && <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-700">{getProductLabel(r.product_name, locale).slice(0, 50)}</span>}
                             </div>
                           </td>
-                          <td className="p-2 align-top whitespace-nowrap" dir="ltr">{r.lump_sum && r.qty == null ? L('lump sum', 'یکمشت', 'مقطوعية') : `${fmtNum(r.qty)} ${r.unit || ''}`}</td>
+                          <td className="p-2 align-top whitespace-nowrap" dir="ltr">{r.lump_sum && r.qty == null ? L('lump sum', 'یکمشت', 'مقطوعية') : `${fmtNum(r.qty)} ${getUnitLabel(r.unit, locale)}`}</td>
                           <td className="p-2 align-top whitespace-nowrap">
-                            {r.approved && <span className="text-[11px] font-bold text-[#0F6E56] block"><Glyph e="✅" /> {L('Approved', 'منظور', 'معتمد')}</span>}
-                            {worst ? <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border ${SEVERITY_TONE[worst]}`}>{severityLabel(worst, L)}{fl.length > 1 ? ` +${fl.length - 1}` : ''}</span>
-                              : !r.approved && <span className="text-[11px] text-gray-400">{L('clean', 'صاف', 'سليم')}</span>}
+                            {r.approved && <span className="text-xs font-bold text-[#0F6E56] block"><Glyph e="✅" /> {L('Approved', 'منظور', 'معتمد')}</span>}
+                            {worst ? <span className={`text-xs font-bold px-1.5 py-0.5 rounded border ${SEVERITY_TONE[worst]}`}>{severityLabel(worst, L)}{fl.length > 1 ? ` +${fl.length - 1}` : ''}</span>
+                              : !r.approved && <span className="text-xs text-gray-500">{L('No flags', 'بغیر انتباہ', 'بلا تنبيهات')}</span>}
                           </td>
                         </tr>
                       )
@@ -395,21 +454,22 @@ export default function TenderReviewPage() {
                 </table>
               </div>
               {filtered.length > limit && (
-                <button type="button" onClick={() => setLimit(l => l + PAGE)} className="w-full py-2.5 text-sm font-bold text-[#8F6820] border-t border-gray-100">{L('Show more', 'مزید دکھائیں', 'عرض المزيد')}</button>
+                <button type="button" onClick={() => setLimit(l => l + PAGE)} className="w-full min-h-11 py-2.5 text-sm font-bold text-[#8F6820] border-t border-gray-100">{L('Show more', 'مزید دکھائیں', 'عرض المزيد')}</button>
               )}
             </div>
 
             {/* side panel */}
-            <div className={`${sel ? 'fixed inset-0 z-40 bg-black/30 lg:static lg:bg-transparent lg:z-auto' : 'hidden lg:block'}`} onClick={() => setSelId(null)}>
-              <aside onClick={(e: any) => e.stopPropagation()} className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-2xl lg:rounded-2xl lg:max-h-[calc(100vh-120px)] lg:sticky lg:top-4 bg-white border border-gray-200 p-4 space-y-4">
+            {/* phones: a bottom sheet ABOVE the bottom navigation (z-50), with the action row pinned to its bottom */}
+            <div className={`${sel ? 'fixed inset-0 z-50 bg-black/30 lg:static lg:bg-transparent lg:z-auto' : 'hidden lg:block'}`} onClick={() => setSelId(null)}>
+              <aside onClick={(e: any) => e.stopPropagation()} className="absolute inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-2xl lg:rounded-2xl lg:max-h-[calc(100vh-120px)] lg:sticky lg:top-4 bg-white border border-gray-200 p-4 pb-0 lg:pb-4 space-y-4">
                 {!sel && <p className="text-sm text-gray-500">{L('Choose an item to see its sources and approve it.', 'آئٹم منتخب کریں۔', 'اختر بنداً لعرض مصادره واعتماده.')}</p>}
                 {sel && edit && (<>
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="text-xs text-gray-500" dir="ltr">{sel.sheet} · {L('row', 'قطار', 'صف')} {sel.row_no}{sel.ref ? ` · ${sel.ref}` : ''}</div>
-                      <span className={`inline-block mt-1 text-[11px] font-bold px-1.5 py-0.5 rounded ${KIND_TONE[sel.kind]}`}>{kindLabel(sel.kind, L)}{sel.kind_reason ? ` («${sel.kind_reason}»)` : ''}</span>
+                      <span className={`inline-block mt-1 text-xs font-bold px-1.5 py-0.5 rounded ${KIND_TONE[sel.kind]}`}>{kindLabel(sel.kind, L)}{sel.kind_reason ? ` («${sel.kind_reason}»)` : ''}</span>
                     </div>
-                    <button type="button" onClick={() => setSelId(null)} className="text-sm font-bold text-gray-500">{L('Close', 'بند کریں', 'إغلاق')}</button>
+                    <button type="button" onClick={() => setSelId(null)} className="min-h-11 px-2 text-sm font-bold text-gray-500">{L('Close', 'بند کریں', 'إغلاق')}</button>
                   </div>
 
                   {/* flags */}
@@ -496,38 +556,49 @@ export default function TenderReviewPage() {
                   {/* edit */}
                   <section className="space-y-2">
                     <h3 className="text-xs font-bold text-[#0B2438]"><Glyph e="✏" /> {L('What suppliers will receive', 'سپلائرز کو کیا ملے گا', 'ما سيصل إلى الموردين')}</h3>
+                    {/* a catalog material's name is the routing key: shown (translated) read-only, «تغيير المادة» to pick another */}
+                    {nameLocked && catalogSet.has(edit.product_name) ? (
+                      <div className="block">
+                        <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Material', 'مواد', 'المادة')}</span>
+                        <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+                          <span className="flex-1 min-w-0 text-sm font-semibold text-[#0B2438]">{getProductLabel(edit.product_name, locale)}</span>
+                          {!sent && <button type="button" onClick={() => setNameLocked(false)} className="min-h-10 px-2 text-xs font-bold text-[#8F6820] hover:underline shrink-0">{L('Change the material', 'مواد بدلیں', 'تغيير المادة')}</button>}
+                        </div>
+                      </div>
+                    ) : (
                     <label className="block">
-                      <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{L('Material name', 'مواد کا نام', 'اسم المادة')}</span>
-                      <input list="tender-catalog" value={edit.product_name} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, product_name: e.target.value }))} className="input-field text-sm" />
+                      <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Material name (Arabic catalog name)', 'مواد کا نام (عربی کیٹلاگ نام)', 'اسم المادة')}</span>
+                      <input list="tender-catalog" value={edit.product_name} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, product_name: e.target.value }))} className="input-field text-sm" dir="auto" />
                       <datalist id="tender-catalog">{catalogNames.map(n => <option key={n} value={n} />)}</datalist>
                     </label>
-                    {candidates.length > 0 && !sent && (
+                    )}
+                    {candidates.length > 0 && !sent && !(nameLocked && catalogSet.has(edit.product_name)) && (
                       <div className="flex flex-wrap gap-1">
                         {candidates.filter(c => c.name !== edit.product_name).map(c => (
-                          <button key={c.sector + c.name} type="button" onClick={() => setEdit((d: any) => ({ ...d, product_name: c.name, sector: c.sector }))} className="text-[11px] px-2 py-1 rounded-lg border border-[#D4A543]/50 bg-[#D4A543]/5 text-[#8F6820]">{c.name}</button>
+                          <button key={c.sector + c.name} type="button" onClick={() => { setEdit((d: any) => ({ ...d, product_name: c.name, sector: c.sector })); setNameLocked(true) }} className="min-h-10 text-xs px-2 py-1 rounded-lg border border-[#D4A543]/50 bg-[#D4A543]/5 text-[#8F6820]">{getProductLabel(c.name, locale)}</button>
                         ))}
                       </div>
                     )}
                     <div className="grid grid-cols-2 gap-2">
                       <label className="block">
-                        <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{L('Quantity', 'مقدار', 'الكمية')}</span>
+                        <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Quantity', 'مقدار', 'الكمية')}</span>
                         <input inputMode="decimal" value={edit.qty} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, qty: e.target.value }))} className="input-field text-sm" dir="ltr" />
                       </label>
                       <label className="block">
-                        <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{L('Unit', 'یونٹ', 'الوحدة')}</span>
+                        <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Unit', 'یونٹ', 'الوحدة')}</span>
                         <select value={edit.unit} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, unit: e.target.value }))} className="input-field text-sm">
                           <option value="">—</option>
-                          {Array.from(new Set([edit.unit, 'مقطوعية', 'عدد', ...UNIT_OPTIONS].filter(Boolean))).map((u: string) => <option key={u} value={u}>{u}</option>)}
+                          {Array.from(new Set([edit.unit, 'مقطوعية', 'عدد', ...UNIT_OPTIONS].filter(Boolean))).map((u: string) => <option key={u} value={u}>{getUnitLabel(u, locale)}</option>)}
                         </select>
                       </label>
                       <label className="block">
-                        <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{L('Sector', 'شعبہ', 'القطاع')}</span>
+                        <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Sector', 'شعبہ', 'القطاع')}</span>
                         <select value={edit.sector} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, sector: e.target.value, sub_category: '' }))} className="input-field text-sm">
-                          {(Object.keys(SECTOR_LABELS) as Sector[]).map(s => <option key={s} value={s}>{SECTOR_LABELS[s]}</option>)}
+                          {(Object.keys(SECTOR_LABELS) as Sector[]).map(s => <option key={s} value={s}>{sectorName(s, locale)}</option>)}
                         </select>
                       </label>
                       <label className="block">
-                        <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{L('Specialty', 'مہارت', 'التخصص')}</span>
+                        <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Specialty', 'مہارت', 'التخصص')}</span>
                         <select value={edit.sub_category} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, sub_category: e.target.value }))} className={`input-field text-sm ${!edit.sub_category ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
                           <option value="">{L('Choose', 'منتخب کریں', 'اختر')}</option>
                           {Object.keys((SUB_CATEGORIES as any)[edit.sector] || {}).map(k => <option key={k} value={k}>{getSubCategoryLabel(edit.sector as Sector, k, locale)}</option>)}
@@ -535,24 +606,33 @@ export default function TenderReviewPage() {
                       </label>
                     </div>
                     <label className="block">
-                      <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{L('Kind', 'قسم', 'النوع')}</span>
+                      <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Kind', 'قسم', 'النوع')}</span>
                       <select value={edit.kind} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, kind: e.target.value }))} className="input-field text-sm">
                         {(['material', 'works', 'provisional'] as const).map(k => <option key={k} value={k}>{kindLabel(k, L)}</option>)}
                       </select>
                     </label>
                     <label className="block">
-                      <span className="block text-[11px] font-semibold text-gray-600 mb-0.5">{L('Specification for suppliers (empty = the BOQ wording)', 'تفصیل', 'المواصفة للموردين (فارغة = نص جدول الكميات)')}</span>
+                      <span className="block text-xs font-semibold text-gray-600 mb-0.5">{L('Specification for suppliers (empty = the BOQ wording)', 'تفصیل', 'المواصفة للموردين (فارغة = نص جدول الكميات)')}</span>
                       <textarea value={edit.specification} disabled={sent} onChange={(e: any) => setEdit((d: any) => ({ ...d, specification: e.target.value }))} rows={3} className="input-field text-sm" dir="auto" />
                     </label>
-                    {!sent && (
+                  </section>
+                  {/* the confirmation and the actions stay in view: pinned to the bottom of the sheet, above the safe area */}
+                  <div className="sticky bottom-0 -mx-4 px-4 pt-3 bg-white border-t border-gray-100 lg:static lg:mx-0 lg:px-0 lg:border-0 space-y-2" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+                    {msg && <div className="rounded-xl bg-[#0B2438]/5 p-2.5 text-sm font-semibold text-[#0B2438]" role="status">{msg}</div>}
+                    {sent ? (
+                      <p className="text-xs text-gray-500">{L('This tender was sent: its items can no longer be changed.', 'یہ ٹینڈر بھیج دیا گیا: اب آئٹمز نہیں بدلے جا سکتے۔', 'أُرسلت هذه المناقصة، فلا يمكن تعديل بنودها.')}</p>
+                    ) : (
                       <div className="flex gap-2 flex-wrap">
-                        <button type="button" disabled={busy} onClick={() => saveItem()} className="px-4 py-2.5 rounded-xl text-sm font-bold border border-gray-300 text-gray-700 disabled:opacity-40">{L('Save', 'محفوظ کریں', 'حفظ')}</button>
+                        <button type="button" disabled={busy} onClick={() => saveItem()} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] disabled:opacity-40">{L('Save', 'محفوظ کریں', 'حفظ')}</button>
                         {sel.approved
-                          ? <button type="button" disabled={busy} onClick={() => saveItem(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold border border-red-200 text-red-700 disabled:opacity-40">{L('Remove approval', 'منظوری ہٹائیں', 'إلغاء الاعتماد')}</button>
-                          : <button type="button" disabled={busy || edit.kind !== 'material'} onClick={() => saveItem(true)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0F6E56' }}>{L('Save and approve', 'محفوظ اور منظور', 'حفظ واعتماد')}</button>}
+                          ? <button type="button" disabled={busy} onClick={() => saveItem(false)} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold border border-red-200 text-red-700 disabled:opacity-40">{L('Remove approval', 'منظوری ہٹائیں', 'إلغاء الاعتماد')}</button>
+                          : (<>
+                            <button type="button" disabled={busy || edit.kind !== 'material'} onClick={() => saveItem(true, true)} className="flex-1 min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Approve and go to the next', 'منظور کریں اور اگلے پر جائیں', 'اعتماد والانتقال إلى التالي')}</button>
+                            <button type="button" disabled={busy || edit.kind !== 'material'} onClick={() => saveItem(true)} className="min-h-11 px-4 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0B2438' }}>{L('Save and approve', 'محفوظ اور منظور', 'حفظ واعتماد')}</button>
+                          </>)}
                       </div>
                     )}
-                  </section>
+                  </div>
                 </>)}
               </aside>
             </div>

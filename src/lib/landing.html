@@ -1,3 +1,4 @@
+<noscript><style>#taseerak-landing .reveal{opacity:1!important;transform:none!important}</style></noscript>
 <!-- ============ NAVBAR ============ -->
 <header class="nav">
   <div class="wrap nav-inner">
@@ -5,23 +6,31 @@
       <img class="brand-lockup" src="/taseerak-metallic-logo.webp" alt="تسعيرك">
     </a>
 
-    <nav class="nav-links">
+    <nav class="nav-links" id="nav-links">
       <a href="#top" data-i18n="nav_home">الرئيسية</a>
       <a href="#how" data-i18n="nav_how">كيف يعمل</a>
       <a href="#sectors" data-i18n="nav_sectors">الأقسام</a>
       <a href="#boq" data-i18n="nav_boq">قائمة المواد</a>
       <a href="#why" data-i18n="nav_why">لماذا نحن</a>
+      <div class="nav-mobile-extra">
+        <div class="lang" role="group" aria-label="Language">
+          <button type="button" data-lang="ar" class="on">ع</button>
+          <button type="button" data-lang="en">EN</button>
+          <button type="button" data-lang="ur">اردو</button>
+        </div>
+        <a href="/login" class="btn btn-ghost" data-i18n="login">تسجيل الدخول</a>
+      </div>
     </nav>
 
     <div class="nav-actions">
       <div class="lang" role="group" aria-label="Language">
-        <button data-lang="ar" class="on">ع</button>
-        <button data-lang="en">EN</button>
-        <button data-lang="ur">اردو</button>
+        <button type="button" data-lang="ar" class="on">ع</button>
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="ur">اردو</button>
       </div>
       <a href="/login" class="btn btn-ghost" data-i18n="login">تسجيل الدخول</a>
       <a href="/login" class="btn btn-primary" data-i18n="register">ابدأ الآن</a>
-      <button class="menu-toggle" aria-label="Menu"><span></span></button>
+      <button type="button" class="menu-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links"><span></span></button>
     </div>
   </div>
 </header>
@@ -89,27 +98,27 @@
 
   <div class="wrap hero-inner">
     <div class="hero-copy">
-      <span class="eyebrow reveal"><span class="dot"></span><span data-i18n="hero_eyebrow">قارن أسعار السوق بين يديك</span></span>
-      <h1 class="reveal d1">
+      <span class="eyebrow hero-in"><span class="dot"></span><span data-i18n="hero_eyebrow">قارن أسعار السوق بين يديك</span></span>
+      <h1 class="hero-in d1">
         <span data-i18n="hero_h1a">اطلب ما تحتاجه</span>
         <span data-i18n="hero_h1b">وقارن عروض</span>
         <span class="hl" data-i18n="hero_h1c">عدة موردين</span>
       </h1>
-      <p class="lead reveal d2" data-i18n="hero_lead">اكتب ما تحتاجه أو صوّره، أو ارفع قائمة المواد. نوجّه طلبك إلى الموردين المناسبين، لتستقبل عروضهم وتقارن بينها وتختار الأنسب لبيتك أو مشروعك — بلا عمولة على طلب التسعير.</p>
+      <p class="lead hero-in d2" data-i18n="hero_lead">اكتب ما تحتاجه أو صوّره، أو ارفع قائمة المواد. نوجّه طلبك إلى الموردين المناسبين، لتستقبل عروضهم وتقارن بينها وتختار الأنسب لبيتك أو مشروعك — بلا عمولة على طلب التسعير.</p>
 
-      <div class="hero-cta reveal d3">
+      <div class="hero-cta hero-in d3">
         <a href="/login" class="btn btn-primary btn-lg">
           <span data-i18n="hero_cta1">ابدأ الآن مجاناً</span>
           <svg class="dir-arrow" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </a>
         <a href="#how" class="btn btn-light btn-lg">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M10 9l5 3-5 3z" fill="currentColor"/></svg>
-          <span data-i18n="hero_cta2">شاهد كيف يعمل</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+          <span data-i18n="hero_cta2">كيف يعمل؟</span>
         </a>
       </div>
-      <p class="reveal d3" style="margin-top:12px;font-size:14px"><span data-i18n="hero_seller_q">صاحب محل أو مورد مواد؟</span> <a href="/join" style="color:#D4A543;font-weight:700;text-decoration:underline" data-i18n="hero_seller_cta">سجّل كمورد</a></p>
+      <p class="hero-seller hero-in d3"><span data-i18n="hero_seller_q">صاحب محل أو مورد مواد؟</span> <a href="/join" class="seller-pill" data-i18n="hero_seller_cta">سجّل كمورد</a></p>
 
-      <div class="hero-trust reveal d4">
+      <div class="hero-trust hero-in d4">
         <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span data-i18n="trust1">توثيق كل مورد ظاهر لك</span></div>
         <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg><span data-i18n="trust2">تصنيف ذكي للطلبات</span></div>
         <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg><span data-i18n="trust3">ثلاث لغات: عربي · إنجليزي · أردو</span></div>
@@ -117,33 +126,33 @@
     </div>
 
     <!-- Live offer card -->
-    <div class="hero-visual reveal d2">
+    <div class="hero-visual hero-in d2">
       <div class="float-chip c1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="ck" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span data-i18n="chip1">تطابق فوري</span></div>
-      <div class="float-chip c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 12l2 2 4-4"/></svg><span data-i18n="chip2">أمر شراء جاهز</span></div>
+      <div class="float-chip c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 12l2 2 4-4"/></svg><span data-i18n="chip2">عروض بأسعار واضحة</span></div>
 
       <div class="live-card">
         <div class="lc-head">
           <div class="lc-rfq">
-            <div class="lc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/><path d="M15 21V11l6 4v6"/><path d="M7 11h0M7 15h0"/></svg></div>
-            <div><div class="t1" data-i18n="lc_title">حديد تسليح Ø16</div><div class="t2" data-i18n="lc_sub">طلب تسعير · مواد البناء</div></div>
+            <div class="lc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21h16"/><path d="M7 21v-6h10v6"/><path d="M12 15V8"/><path d="M8 8h8"/><path d="M15 8V5h3"/></svg></div>
+            <div><div class="t1" data-i18n="lc_title">خلاط مغسلة</div><div class="t2" data-i18n="lc_sub">طلب تسعير · الحمّام والسباكة</div></div>
           </div>
           <span class="lc-live"><span class="pulse"></span><span data-i18n="lc_live">مثال توضيحي</span></span>
         </div>
 
         <div class="offer best" style="animation-delay:.2s">
           <div class="rank">1</div>
-          <div class="sup"><div class="n" data-i18n="lc_s1">مصنع حديد (أ)</div><div class="m" data-i18n="lc_m1">مُصنّع · موثّق</div></div>
-          <div class="price"><div class="v">2,740</div><div class="u" data-i18n="lc_unit">ر.س / طن</div></div>
+          <div class="sup"><div class="n" data-i18n="lc_s1">محل أدوات صحية (أ)</div><div class="m" data-i18n="lc_m1">محل · سجلّه موثّق</div></div>
+          <div class="price"><div class="v">172</div><div class="u" data-i18n="lc_unit">ر.س / قطعة</div></div>
         </div>
         <div class="offer" style="animation-delay:.45s">
           <div class="rank">2</div>
-          <div class="sup"><div class="n" data-i18n="lc_s2">موزّع معادن (ب)</div><div class="m" data-i18n="lc_m2">موزّع تجاري</div></div>
-          <div class="price"><div class="v">2,815</div><div class="u" data-i18n="lc_unit">ر.س / طن</div></div>
+          <div class="sup"><div class="n" data-i18n="lc_s2">موزّع أدوات صحية (ب)</div><div class="m" data-i18n="lc_m2">موزّع تجاري</div></div>
+          <div class="price"><div class="v">178</div><div class="u" data-i18n="lc_unit">ر.س / قطعة</div></div>
         </div>
         <div class="offer" style="animation-delay:.7s">
           <div class="rank">3</div>
-          <div class="sup"><div class="n" data-i18n="lc_s3">محل مواد بناء (ج)</div><div class="m" data-i18n="lc_m3">مورّد محلي</div></div>
-          <div class="price"><div class="v">2,890</div><div class="u" data-i18n="lc_unit">ر.س / طن</div></div>
+          <div class="sup"><div class="n" data-i18n="lc_s3">محل سباكة (ج)</div><div class="m" data-i18n="lc_m3">مورّد قريب منك</div></div>
+          <div class="price"><div class="v">181</div><div class="u" data-i18n="lc_unit">ر.س / قطعة</div></div>
         </div>
 
         <div class="lc-foot">
@@ -161,28 +170,49 @@
     <span class="lbl" data-i18n="trustbar_lbl">كل الأقسام:</span>
     <div class="marquee">
       <ul>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/></svg>مواد البناء</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h10v6H4z"/><path d="M14 7h4v6h-8v7"/></svg>التشطيبات</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M3 13h18v5H3z"/></svg>الأثاث والديكور</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3 11v2h6v-2a6 6 0 0 0-3-11"/></svg>الكهرباء والإنارة</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-4-3-6s-4-4-4-6c0 2-2 4-4 6s-3 4-3 6a7 7 0 0 0 7 7"/></svg>السباكة</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M2 12h20"/></svg>التكييف والحريق</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-2.5z"/></svg>العُدد والمعدات</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-2.5z"/></svg>الآليات والمعدات الثقيلة</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 7 9h3l-4 6h4v5h4v-5h4l-4-6h3z"/></svg>الحدائق والخارجيات</li>
-        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V8l6-5 6 5v13"/></svg>مواد البناء</li>
-        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h10v6H4z"/><path d="M14 7h4v6h-8v7"/></svg>التشطيبات</li>
-        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M3 13h18v5H3z"/></svg>الأثاث والديكور</li>
-        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3 11v2h6v-2a6 6 0 0 0-3-11"/></svg>الكهرباء والإنارة</li>
-        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-4-3-6s-4-4-4-6c0 2-2 4-4 6s-3 4-3 6a7 7 0 0 0 7 7"/></svg>السباكة</li>
-        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M2 12h20"/></svg>التكييف والحريق</li>
-        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-2.5z"/></svg>العُدد والمعدات</li>
-        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-2.5z"/></svg>الآليات والمعدات الثقيلة</li>
-        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 7 9h3l-4 6h4v5h4v-5h4l-4-6h3z"/></svg>الحدائق والخارجيات</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V8l6-5 6 5v13"/></svg><span data-i18n="tb_build">مواد البناء</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h10v6H4z"/><path d="M14 7h4v6h-8v7"/></svg><span data-i18n="tb_finish">التشطيبات</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M3 13h18v5H3z"/></svg><span data-i18n="tb_furn">الأثاث والديكور</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3 11v2h6v-2a6 6 0 0 0-3-11"/></svg><span data-i18n="tb_light">الكهرباء والإنارة</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-4-3-6s-4-4-4-6c0 2-2 4-4 6s-3 4-3 6a7 7 0 0 0 7 7"/></svg><span data-i18n="tb_plumb">السباكة</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M2 12h20"/></svg><span data-i18n="tb_hvac">التكييف والحريق</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-2.5z"/></svg><span data-i18n="tb_tools">العُدد والمعدات</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 4h14v12H1z"/><path d="M15 9h4l3 3v4h-7"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg><span data-i18n="tb_mach">الآليات والمعدات الثقيلة</span></li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 7 9h3l-4 6h4v5h4v-5h4l-4-6h3z"/></svg><span data-i18n="tb_out">الحدائق والخارجيات</span></li>
+        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V8l6-5 6 5v13"/></svg><span data-i18n="tb_build">مواد البناء</span></li>
+        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h10v6H4z"/><path d="M14 7h4v6h-8v7"/></svg><span data-i18n="tb_finish">التشطيبات</span></li>
+        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11V8a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3"/><path d="M3 13h18v5H3z"/></svg><span data-i18n="tb_furn">الأثاث والديكور</span></li>
+        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3 11v2h6v-2a6 6 0 0 0-3-11"/></svg><span data-i18n="tb_light">الكهرباء والإنارة</span></li>
+        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-4-3-6s-4-4-4-6c0 2-2 4-4 6s-3 4-3 6a7 7 0 0 0 7 7"/></svg><span data-i18n="tb_plumb">السباكة</span></li>
+        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M4.9 4.9l14.2 14.2M19.1 4.9 4.9 19.1M2 12h20"/></svg><span data-i18n="tb_hvac">التكييف والحريق</span></li>
+        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.2 5.2L3 18l3 3 6.5-6.5a4 4 0 0 0 5.2-5.2l-2.5 2.5-2.5-2.5z"/></svg><span data-i18n="tb_tools">العُدد والمعدات</span></li>
+        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 4h14v12H1z"/><path d="M15 9h4l3 3v4h-7"/><circle cx="5.5" cy="18.5" r="2"/><circle cx="18.5" cy="18.5" r="2"/></svg><span data-i18n="tb_mach">الآليات والمعدات الثقيلة</span></li>
+        <li aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 7 9h3l-4 6h4v5h4v-5h4l-4-6h3z"/></svg><span data-i18n="tb_out">الحدائق والخارجيات</span></li>
       </ul>
     </div>
   </div>
 </div>
+
+<!-- ============ HOME PACKS ============ -->
+<section class="section packs" id="packs">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow"><span class="dot"></span><span data-i18n="packs_eyebrow">لبيتك</span></span>
+      <h2 data-i18n="packs_h">جهّز بيتك</h2>
+      <p data-i18n="packs_p">اختر ما تريد تجديده، ونجهّز لك قائمة المواد لتصلك عروض الموردين.</p>
+    </div>
+    <div class="pack-row">
+      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dbathroom"><img src="/images/packs/bathroom.webp" alt="" loading="lazy"><span data-i18n="pk_bathroom">تجديد حمّام</span></a>
+      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dpaint"><img src="/images/packs/paint.webp" alt="" loading="lazy"><span data-i18n="pk_paint">دهان شقة</span></a>
+      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dlighting"><img src="/images/packs/lighting.webp" alt="" loading="lazy"><span data-i18n="pk_lighting">إنارة غرفة</span></a>
+      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dac"><img src="/images/packs/ac.webp" alt="" loading="lazy"><span data-i18n="pk_ac">تكييف غرفة</span></a>
+      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dheater"><img src="/images/packs/heater.webp" alt="" loading="lazy"><span data-i18n="pk_heater">تغيير سخان</span></a>
+      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Dcurtains"><img src="/images/packs/curtains.webp" alt="" loading="lazy"><span data-i18n="pk_curtains">ستائر غرفة</span></a>
+      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Doutdoor"><img src="/images/packs/outdoor.webp" alt="" loading="lazy"><span data-i18n="pk_outdoor">جلسة خارجية</span></a>
+      <a class="pack-card reveal" href="/login?next=%2Fcontractor%2Frfq%2Fquick%3Fpack%3Doffice"><img src="/images/packs/office.webp" alt="" loading="lazy"><span data-i18n="pk_office">تجهيز مكتب فخم</span></a>
+    </div>
+  </div>
+</section>
 
 <!-- ============ HOW IT WORKS ============ -->
 <section class="section how" id="how">
@@ -209,13 +239,13 @@
         <span class="num">٣</span>
         <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></div>
         <h3 data-i18n="step3_t">قارن واختر</h3>
-        <p data-i18n="step3_p">تُعرض العروض مرتّبة حسب السعر، فيتّضح لك العرض الأوفر بنظرة، ثم تختار الأنسب لمشروعك.</p>
+        <p data-i18n="step3_p">تُعرض العروض مرتّبة حسب السعر، فيتّضح لك العرض الأوفر بنظرة، ثم تختار الأنسب لبيتك أو مشروعك.</p>
       </div>
       <div class="step reveal d3">
         <span class="num">٤</span>
         <div class="s-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M9 13l2 2 4-4"/></svg></div>
-        <h3 data-i18n="step4_t">أمر شراء</h3>
-        <p data-i18n="step4_p">بمجرّد اختيار العرض يصدر أمر شراء جاهز للطباعة تلقائياً.</p>
+        <h3 data-i18n="step4_t">تابِع صفقتك</h3>
+        <p data-i18n="step4_p">بعد اختيار العرض تتابع التسليم خطوة بخطوة، مع ملخّص جاهز للطباعة.</p>
       </div>
     </div>
   </div>
@@ -274,6 +304,8 @@
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span data-i18n="boq_l3">طلب واحد بعدة بنود، وتختار أفضل سعر لكل مادة</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span data-i18n="boq_l4">مقارنة العروض لكل مادة مع الإجمالي</span></li>
       </ul>
+      <a href="/login?next=%2Fcontractor%2Fproject%2Fnew" class="btn btn-primary btn-lg boq-cta"><span data-i18n="boq_cta">ارفع قائمتك الآن</span>
+        <svg class="dir-arrow" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
 
     <div class="boq-demo reveal d1">
@@ -354,6 +386,23 @@
   </div>
 </section>
 
+<!-- ============ FAQ ============ -->
+<section class="section faq" id="faq">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow"><span class="dot"></span><span data-i18n="faq_eyebrow">أسئلة شائعة</span></span>
+      <h2 data-i18n="faq_h">قبل أن تبدأ</h2>
+    </div>
+    <div class="faq-list">
+      <details class="reveal"><summary data-i18n="faq_q1">كيف أدفع؟</summary><p data-i18n="faq_a1">تدفع للمورد مباشرة بالطريقة التي تتفقان عليها عند التسليم أو قبله. لا تحتفظ تسعيرك بأي مبالغ.</p></details>
+      <details class="reveal"><summary data-i18n="faq_q2">من يوصل الطلب؟</summary><p data-i18n="faq_a2">المورد الذي تختار عرضه هو من يوصل المواد إلى موقعك، أو تستلمها منه بنفسك إن اخترت الاستلام. يظهر في العرض هل يشمل التوصيل وموعده.</p></details>
+      <details class="reveal"><summary data-i18n="faq_q3">هل الخدمة مجانية؟</summary><p data-i18n="faq_a3">نعم. إرسال طلب التسعير ومقارنة العروض مجانيان، ولا نأخذ عمولة على طلب التسعير.</p></details>
+      <details class="reveal"><summary data-i18n="faq_q4">كيف أعرف المورد؟</summary><p data-i18n="faq_a4">يظهر بجانب كل مورد ما إذا كان سجلّه التجاري موثّقاً، مع تقييمات المشترين السابقين. ولا يرى المورد اسمك أو رقمك حتى تختار عرضه.</p></details>
+    </div>
+    <p class="faq-more"><a href="/deal-protection" data-i18n="faq_more">اعرف كيف نحمي صفقتك</a></p>
+  </div>
+</section>
+
 <!-- ============ CTA ============ -->
 <section class="cta-sec">
   <div class="wrap">
@@ -389,7 +438,7 @@
         <h4 data-i18n="foot_c2">للموردين</h4>
         <a href="/join" data-i18n="foot_c2_1">انضم كمورد</a>
         <a href="/join/seller" data-i18n="foot_c2_6">انضم كوسيط تسعير</a>
-        <a href="/join/company" data-i18n="foot_c2_5">حساب شركة</a>
+        <a href="/join/company" data-i18n="foot_c2_5">انضم كشركة أو محل</a>
         <a href="#sectors" data-i18n="foot_c2_3">التصنيفات</a>
       </div>
       <div class="foot-col">
@@ -402,10 +451,10 @@
     </div>
     <div class="foot-bottom">
       <span data-i18n="foot_copy">© 2026 تسعيرك. جميع الحقوق محفوظة.</span>
-      <div class="langs">
-        <span data-lang="ar" class="on">العربية</span>
-        <span data-lang="en">English</span>
-        <span data-lang="ur">اردو</span>
+      <div class="langs" role="group" aria-label="Language">
+        <button type="button" data-lang="ar" class="on">العربية</button>
+        <button type="button" data-lang="en">English</button>
+        <button type="button" data-lang="ur">اردو</button>
       </div>
     </div>
   </div>

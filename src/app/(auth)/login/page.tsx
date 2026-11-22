@@ -16,9 +16,9 @@ import { pendingTeamInvite } from '@/lib/sellers'
 import { captureRef } from '@/lib/referral'
 
 const txt = {
-  ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساباً جديداً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء', s_auth:'جارٍ تسجيل الدخول…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'جارٍ فتح حسابك…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، ويتنافس عليه الموردون.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد — من الطلب إلى أمر الشراء.', l1:'يظهر بجانب كل مورد توثيق سجلّه التجاري', l2:'قارن العروض واختر الأرخص لكل مادة', l3:'ارفع جدول الكميات ووزّعه تلقائياً', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.' },
-  en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Procurement platform for construction materials', s_auth:'Signing in…', s_role:'Step 2/3: reading your role…', s_go:'Opening your account…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, and suppliers compete for it.', brandP:'Sign in and track your RFQs and offers in one place — from request to purchase order.', l1:'See whether each supplier’s commercial registration is verified', l2:'Compare offers and pick the cheapest per item', l3:'Upload a BOQ and auto-route it', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home', captchaErr:'Please complete the “I am human” check and try again.' },
-  ur: { welcome:'خوش آمدید', sub:'اپنے اکاؤنٹ تک جاری رکھنے کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'نیا اکاؤنٹ بنائیں', error:'غلط ای میل یا پاسورڈ', copyright:'© ۲۰۲۶ تسعیرک · تعمیراتی سامان کا پلیٹ فارم', s_auth:'سائن ان ہو رہا ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'آپ کا اکاؤنٹ کھل رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔', brandH:'ایک درخواست، اور سپلائرز مقابلہ کرتے ہیں۔', brandP:'سائن ان کریں اور اپنی درخواستیں اور پیشکشیں ایک جگہ دیکھیں۔', l1:'دیکھیں کہ ہر سپلائر کا تجارتی رجسٹریشن تصدیق شدہ ہے یا نہیں', l2:'آفرز کا موازنہ کریں، ہر چیز کی سستی قیمت چنیں', l3:'BOQ اپ لوڈ کریں اور خودکار تقسیم', remember:'مجھے یاد رکھیں', forgot:'پاسورڈ بھول گئے؟', or:'یا', home:'ہوم', captchaErr:'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔' },
+  ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساباً جديداً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء', s_auth:'جارٍ تسجيل الدخول…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'جارٍ فتح حسابك…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، ويتنافس عليه الموردون.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد، من الطلب حتى الاستلام.', l1:'يظهر بجانب كل مورد توثيق سجلّه التجاري', l2:'قارن العروض واختر الأرخص لكل مادة', l3:'اكتب قائمة موادك أو صوّرها، ونرسلها إلى الموردين المناسبين', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.' },
+  en: { welcome:'Welcome back', sub:'Sign in to continue to your account', email:'Email Address', password:'Password', login:'Sign In', logging:'Signing in...', noAccount:"Don't have an account?", register:'Create a new account', error:'Invalid email or password', copyright:'© 2026 Taseerak · Procurement platform for construction materials', s_auth:'Signing in…', s_role:'Step 2/3: reading your role…', s_go:'Opening your account…', err_timeout:'Timed out with no response. Your network may be blocking the server — try another network (e.g. mobile data) and retry.', brandH:'One request, and suppliers compete for it.', brandP:'Sign in and track your requests and offers in one place, from request to delivery.', l1:'See whether each supplier’s commercial registration is verified', l2:'Compare offers and pick the cheapest per item', l3:'Write or photograph your materials list; we send it to the right suppliers', remember:'Remember me', forgot:'Forgot password?', or:'or', home:'Home', captchaErr:'Please complete the “I am human” check and try again.' },
+  ur: { welcome:'خوش آمدید', sub:'اپنے اکاؤنٹ تک جاری رکھنے کے لیے سائن ان کریں', email:'ای میل', password:'پاسورڈ', login:'سائن ان', logging:'سائن ان ہو رہا ہے...', noAccount:'اکاؤنٹ نہیں ہے؟', register:'نیا اکاؤنٹ بنائیں', error:'غلط ای میل یا پاسورڈ', copyright:'© ۲۰۲۶ تسعیرک · تعمیراتی سامان کا پلیٹ فارم', s_auth:'سائن ان ہو رہا ہے…', s_role:'مرحلہ 2/3: کردار پڑھا جا رہا ہے…', s_go:'آپ کا اکاؤنٹ کھل رہا ہے…', err_timeout:'کوئی جواب نہیں ملا۔ ہو سکتا ہے آپ کا نیٹ ورک سرور کو بلاک کر رہا ہو — دوسرا نیٹ ورک آزمائیں۔', brandH:'ایک درخواست، اور سپلائرز مقابلہ کرتے ہیں۔', brandP:'سائن ان کریں اور اپنی درخواستیں اور پیشکشیں ایک جگہ دیکھیں۔', l1:'دیکھیں کہ ہر سپلائر کا تجارتی رجسٹریشن تصدیق شدہ ہے یا نہیں', l2:'آفرز کا موازنہ کریں، ہر چیز کی سستی قیمت چنیں', l3:'اپنے سامان کی فہرست لکھیں یا تصویر لیں؛ ہم اسے صحیح سپلائرز تک بھیجتے ہیں', remember:'مجھے یاد رکھیں', forgot:'پاسورڈ بھول گئے؟', or:'یا', home:'ہوم', captchaErr:'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔' },
 }
 
 function LoginForm() {
@@ -40,6 +40,17 @@ function LoginForm() {
   const [progress, setProgress] = useState(0)
   const [captchaToken, setCaptchaToken] = useState('')
   const captchaRef = useRef<any>(null)
+  // Landing from the email-confirmation link (UX-170): ?confirmed=1 → «confirmed, sign in now»;
+  // an expired/invalid link (error_code in the query or the #hash) → explain it and how to get a new one.
+  const [confirmNote, setConfirmNote] = useState<'' | 'ok' | 'expired'>('')
+  useEffect(() => {
+    try {
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+      const code = searchParams.get('error_code') || hash.get('error_code') || ''
+      if (code || searchParams.get('error') === 'access_denied' || hash.get('error') === 'access_denied') { setConfirmNote('expired'); setMode('email') }
+      else if (searchParams.get('confirmed') === '1') { setConfirmNote('ok'); setMode('email') }
+    } catch {}
+  }, [])
 
   // Reject if a promise doesn't settle in `ms` — converts an invisible hang
   // into a clear, reportable error instead of a spinner that never stops.
@@ -179,7 +190,7 @@ function LoginForm() {
       {/* ===== Form panel ===== */}
       <div className="auth-form-side flex-1 flex flex-col" style={{ background: 'var(--bg)' }}>
         <div className="flex items-center justify-between p-5">
-          <a href="/" className="flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-navy transition-colors">
+          <a href="/" className="flex items-center gap-1.5 min-h-[44px] text-sm font-semibold text-ink-2 hover:text-navy transition-colors">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10v10h5v-6h4v6h5V10" /></svg>
             {t.home}
           </a>
@@ -193,21 +204,36 @@ function LoginForm() {
               <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
             </div>
 
-            <h1 className="text-[26px] font-extrabold text-navy mb-1">{mode === 'phone' ? L('Sign in', 'سائن اِن', 'تسجيل الدخول') : t.welcome}</h1>
-            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('With your mobile number, no password. New here? A buyer account is created for you.', 'اپنے موبائل نمبر سے، بغیر پاسورڈ۔ نئے ہیں؟ آپ کا خریدار اکاؤنٹ بن جائے گا۔', 'برقم جوالك، بدون كلمة مرور. جديد؟ نُنشئ لك حساب مشتري تلقائياً.') : t.sub}</p>
+            {/* every «Start now» button lands here: the phone title says «start», not only «sign in» (UX-134) */}
+            <h1 className="text-[26px] font-bold text-navy mb-1">{mode === 'phone' ? L('Start with your mobile number', 'اپنے موبائل نمبر سے شروع کریں', 'ابدأ برقم جوالك') : t.welcome}</h1>
+            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('We will send you a verification code by text message. If your number is new, we create a free buyer account for you.', 'ہم آپ کو ٹیکسٹ میسج سے تصدیقی کوڈ بھیجیں گے۔ اگر آپ کا نمبر نیا ہے تو ہم آپ کے لیے مفت خریدار اکاؤنٹ بنا دیں گے۔', 'سنرسل إليك رمز تحقق برسالة نصية. إن كان رقمك جديداً أنشأنا لك حساب مشتري مجاناً.') : t.sub}</p>
+
+            {confirmNote === 'ok' && (
+              <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-xl p-3 mb-4" role="status">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0" aria-hidden><path d="M20 6L9 17l-5-5" /></svg>
+                <span>{L('Your email is confirmed. Sign in now.', 'آپ کی ای میل کی تصدیق ہو گئی۔ اب سائن اِن کریں۔', 'تم تأكيد بريدك الإلكتروني. سجّل الدخول الآن.')}</span>
+              </div>
+            )}
+            {confirmNote === 'expired' && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-xl p-3 mb-4" role="alert">
+                {L('The confirmation link has expired or was already used. Sign in with your email and password: if the email is not confirmed yet, we will offer to send a new link.', 'تصدیقی لنک کی مدت ختم ہو گئی یا یہ پہلے استعمال ہو چکا ہے۔ اپنی ای میل اور پاسورڈ سے سائن اِن کریں: اگر ای میل ابھی تصدیق نہیں ہوئی تو ہم نیا لنک بھیجنے کی پیشکش کریں گے۔', 'انتهت صلاحية رابط التأكيد أو سبق استخدامه. سجّل الدخول ببريدك وكلمة المرور، فإن لم يكن البريد مؤكَّداً بعد عرضنا عليك إرسال رابط جديد.')}
+              </div>
+            )}
 
             {mode === 'phone' ? (
               <>
               <PhoneOtpForm onSignedIn={async () => {
                 const { data: { user } } = await createClient().auth.getUser()
                 if (user) await routeSignedIn(user.id)
-              }} />
-              {/* owner 2026-11-21: a new seller must not end up as a buyer through the phone sign-up */}
-              <p className="mt-4 text-sm text-center text-ink-2">{L('Seller or pricing agent?', 'فروخت کنندہ یا قیمت ایجنٹ؟', 'بائع أو وسيط تسعير؟')} <a href="/join" className="font-extrabold text-orange-dark hover:underline">{L('Sign up here', 'یہاں رجسٹر کریں', 'سجّل من هنا')}</a></p>
+              }} onUseEmail={() => { setMode('email'); setError('') }} />
+              {/* owner 2026-11-21: a new seller must not end up as a buyer through the phone sign-up.
+                  One word for sellers everywhere: «مورد» (UX-134) */}
+              <p className="mt-4 text-sm text-center text-ink-2">{L('Supplier or pricing agent?', 'سپلائر یا قیمت ایجنٹ؟', 'مورد أو وسيط تسعير؟')} <a href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</a></p>
+              <p className="text-sm text-center text-ink-2">{L('Have a password?', 'پاسورڈ ہے؟', 'لديك كلمة مرور؟')} <Link href="/forgot-password" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.forgot}</Link></p>
               </>
             ) : (
               <>
-                {error && <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg><span>{error}</span></div>}
+                {error && <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg><span>{error}</span></div>}
                 {unconfirmed && email && password && <FixSignupEmail email={email} password={password} locale={locale} onFixed={(e) => { setEmail(e); setError('') }} />}
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div>
@@ -226,7 +252,7 @@ function LoginForm() {
                     </div>
                   </div>
                   <div className="flex justify-end">
-                    <Link href="/forgot-password" className="text-[13px] font-bold text-orange-dark hover:underline">{t.forgot}</Link>
+                    <Link href="/forgot-password" className="inline-flex items-center min-h-[44px] text-[13px] font-bold text-orange-dark hover:underline">{t.forgot}</Link>
                   </div>
                   <div className="flex justify-center">
                     <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
@@ -258,7 +284,7 @@ function LoginForm() {
                 {phoneOn && <button type="button" onClick={() => { setMode('phone'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
                   {L('Buyer? Use my mobile number', 'خریدار؟ موبائل نمبر استعمال کریں', 'مشتري؟ استخدم رقم جوالي')}
                 </button>}
-                <p className="text-sm text-ink-2">{t.noAccount} <a href="/register" className="font-extrabold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
+                <p className="text-sm text-ink-2">{t.noAccount} <a href="/register" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
               </div>
             )}
           </div>

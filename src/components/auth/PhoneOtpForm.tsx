@@ -6,6 +6,8 @@ import { useTranslation } from '@/i18n'
 import { toLatinDigits } from '@/lib/phone'
 import { FIREBASE_CONFIG, firebaseReady, toE164 } from '@/lib/firebaseConfig'
 import { TERMS_VERSION } from '@/lib/legal'
+import { createClient } from '@/lib/supabase/client'
+import { Check } from 'lucide-react'
 
 // Buyer phone entry (owner 2026-11-17): one form for sign-in and sign-up. A Google SMS code
 // (Firebase phone auth) proves the number; /api/auth/phone-session signs the buyer in, or — when the
@@ -16,7 +18,8 @@ const TX = {
     phone: 'رقم جوالك', phoneHint: 'سيصلك رمز التحقق برسالة نصية (SMS)', send: 'أرسل الرمز', sending: 'جارٍ الإرسال…',
     badPhone: 'رقم الجوال غير مقبول. نقبل أرقام السعودية والإمارات والأردن (الرقم الإماراتي يُكتب مع ‎+971‎).', codeTitle: 'اكتب الرمز', codeSent: 'أرسلنا رمزاً من 6 أرقام برسالة نصية إلى',
     verify: 'تأكيد والدخول', verifying: 'جارٍ التحقق…', badCode: 'الرمز غير صحيح أو انتهت صلاحيته. اطلب رمزاً جديداً.',
-    resend: 'أعد إرسال الرمز', resendIn: 'إعادة الإرسال بعد', sec: 'ث', change: 'تغيير الرقم',
+    resend: 'أعد إرسال الرمز', resendIn: 'إعادة الإرسال بعد', sec: 'ثانية', change: 'تغيير الرقم', resent: 'أرسلنا رمزاً جديداً إلى',
+    emailAccount: 'هذا الرقم مسجّل لحساب يدخل بالبريد الإلكتروني ولم يُوثَّق جواله بعد. ادخل بالبريد الإلكتروني وكلمة المرور.', emailBtn: 'الدخول بالبريد الإلكتروني',
     rate: 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.', sendFail: 'تعذّر إرسال الرمز. تأكد من الرقم ثم أعد المحاولة.',
     newTitle: 'أهلاً بك في تسعيرك', newSub: 'هذا الرقم جديد. اكتب اسمك لإنشاء حساب مشتري.', name: 'الاسم', create: 'إنشاء الحساب والدخول',
     terms1: 'أوافق على', terms: 'الشروط والأحكام', and: 'و', privacy: 'سياسة الخصوصية', badName: 'اكتب اسمك.', needTerms: 'وافق على الشروط وسياسة الخصوصية للمتابعة.',
@@ -26,7 +29,8 @@ const TX = {
     phone: 'Your mobile number', phoneHint: 'You will get a code by text message (SMS)', send: 'Send code', sending: 'Sending…',
     badPhone: 'This mobile number is not accepted. We accept Saudi, UAE and Jordanian numbers (type UAE numbers with +971).', codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code by SMS to',
     verify: 'Verify and continue', verifying: 'Verifying…', badCode: 'Wrong or expired code. Request a new one.',
-    resend: 'Resend code', resendIn: 'Resend in', sec: 's', change: 'Change number',
+    resend: 'Resend code', resendIn: 'Resend in', sec: 'seconds', change: 'Change number', resent: 'We sent a new code to',
+    emailAccount: 'This number belongs to an account that signs in with email and has not verified its mobile yet. Sign in with your email and password.', emailBtn: 'Sign in with email',
     rate: 'Too many attempts. Wait a little and try again.', sendFail: 'Could not send the code. Check the number and try again.',
     newTitle: 'Welcome to Taseerak', newSub: 'This number is new. Write your name to create a buyer account.', name: 'Name', create: 'Create account and continue',
     terms1: 'I agree to the', terms: 'Terms', and: 'and', privacy: 'Privacy Policy', badName: 'Write your name.', needTerms: 'Accept the Terms and Privacy Policy to continue.',
@@ -36,7 +40,8 @@ const TX = {
     phone: 'آپ کا موبائل نمبر', phoneHint: 'تصدیقی کوڈ ٹیکسٹ میسج (SMS) سے آئے گا', send: 'کوڈ بھیجیں', sending: 'بھیجا جا رہا ہے…',
     badPhone: 'یہ موبائل نمبر قبول نہیں۔ ہم سعودی، اماراتی اور اردنی نمبر قبول کرتے ہیں (اماراتی نمبر ‎+971‎ کے ساتھ لکھیں)۔', codeTitle: 'کوڈ درج کریں', codeSent: 'ہم نے SMS سے 6 ہندسوں کا کوڈ بھیجا',
     verify: 'تصدیق کریں اور جاری رکھیں', verifying: 'تصدیق ہو رہی ہے…', badCode: 'غلط یا ختم شدہ کوڈ۔ نیا کوڈ منگوائیں۔',
-    resend: 'کوڈ دوبارہ بھیجیں', resendIn: 'دوبارہ بھیجیں', sec: 's', change: 'نمبر تبدیل کریں',
+    resend: 'کوڈ دوبارہ بھیجیں', resendIn: 'دوبارہ بھیجیں', sec: 'سیکنڈ بعد', change: 'نمبر تبدیل کریں', resent: 'ہم نے نیا کوڈ بھیجا',
+    emailAccount: 'یہ نمبر ایسے اکاؤنٹ کا ہے جو ای میل سے سائن اِن کرتا ہے اور جس کا موبائل ابھی تصدیق نہیں ہوا۔ اپنی ای میل اور پاسورڈ سے سائن اِن کریں۔', emailBtn: 'ای میل سے سائن اِن',
     rate: 'بہت زیادہ کوششیں۔ تھوڑا انتظار کریں۔', sendFail: 'کوڈ نہیں بھیجا جا سکا۔ نمبر چیک کریں۔',
     newTitle: 'تسعیرک میں خوش آمدید', newSub: 'یہ نمبر نیا ہے۔ خریدار اکاؤنٹ بنانے کے لیے اپنا نام لکھیں۔', name: 'نام', create: 'اکاؤنٹ بنائیں اور جاری رکھیں',
     terms1: 'میں متفق ہوں', terms: 'شرائط', and: 'اور', privacy: 'رازداری کی پالیسی', badName: 'اپنا نام لکھیں۔', needTerms: 'جاری رکھنے کے لیے شرائط اور رازداری کی پالیسی قبول کریں۔',
@@ -44,7 +49,7 @@ const TX = {
   },
 }
 
-export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void }) {
+export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: () => void; onUseEmail?: () => void }) {
   const { locale } = useTranslation()
   const t = (TX as any)[locale] || TX.ar
   const [step, setStep] = useState<'phone' | 'code' | 'name'>('phone')
@@ -57,6 +62,8 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [cooldown, setCooldown] = useState(0)
+  const [notice, setNotice] = useState('') // «we sent a new code to …»
+  const [emailOnly, setEmailOnly] = useState(false) // the number belongs to an email account (UX-053)
   const codeRef = useRef<HTMLInputElement>(null)
   const confirmRef = useRef<any>(null)
   const verifierRef = useRef<any>(null)
@@ -84,9 +91,9 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
     return auth
   }
 
-  async function sendCode(e?: any) {
+  async function sendCode(e?: any, resend = false) {
     e?.preventDefault()
-    setError('')
+    setError(''); setNotice(''); setEmailOnly(false)
     const p = toE164(toLatinDigits(phone))
     if (!p) { setError(t.badPhone); return }
     if (!firebaseReady()) { setError(t.sendFail); return }
@@ -97,6 +104,7 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
       if (!verifierRef.current) verifierRef.current = new RecaptchaVerifier(auth, boxId, { size: 'invisible' })
       confirmRef.current = await signInWithPhoneNumber(auth, p, verifierRef.current)
       setE164(p); setCode(''); setStep('code'); setCooldown(60)
+      if (resend) setNotice(t.resent)
       setTimeout(() => codeRef.current?.focus(), 50)
     } catch (err: any) {
       const c = String(err?.code || '')
@@ -125,7 +133,16 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
       try { const auth = await fb(); const { signOut } = await import('firebase/auth'); await signOut(auth) } catch {}
       const { ok, j } = await session('login')
       if (ok) { onSignedIn(); return }
-      if (j?.error === 'no_account') { setStep('name'); setLoading(false); return }
+      if (j?.error === 'no_account') {
+        // a number already on an email account (often a seller whose mobile is not verified yet) must
+        // not become a second, buyer account: send them to the email sign-in instead (UX-053)
+        let taken = false
+        try { const { data } = await createClient().rpc('phone_exists', { p_phone: e164 }); taken = data === true } catch {}
+        if (taken) { setError(t.emailAccount); setEmailOnly(true); setLoading(false); return }
+        setStep('name'); setLoading(false); return
+      }
+      if (j?.error === 'phone_taken') { setError(t.emailAccount); setEmailOnly(true); setLoading(false); return }
+      if (j?.error === 'use_email') setEmailOnly(true)
       setError(j?.error === 'use_email' ? t.useEmail : j?.error === 'rate_limited' ? t.rate : t.failed)
     } catch (err: any) {
       setError(String(err?.code || '').includes('invalid-verification-code') ? t.badCode : t.failed)
@@ -147,7 +164,14 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
   }
 
   const errorBox = error && (
-    <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3" role="alert">{error}</div>
+    <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3" role="alert">
+      {error}
+      {emailOnly && (
+        onUseEmail
+          ? <button type="button" onClick={onUseEmail} className="mt-2 w-full min-h-[44px] rounded-xl font-bold text-sm" style={{ background: '#D4A543', color: '#071827' }}>{t.emailBtn}</button>
+          : <a href="/login?m=email" className="mt-2 w-full min-h-[44px] rounded-xl font-bold text-sm grid place-items-center" style={{ background: '#D4A543', color: '#071827' }}>{t.emailBtn}</a>
+      )}
+    </div>
   )
 
   if (step === 'phone') {
@@ -184,20 +208,20 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
             {([['individual', locale === 'en' ? 'My home' : locale === 'ur' ? 'اپنا گھر' : 'لبيتي', locale === 'en' ? 'A simple, quick request' : locale === 'ur' ? 'آسان اور تیز درخواست' : 'طلب بسيط وسريع'],
                ['business', locale === 'en' ? 'Contractor or company' : locale === 'ur' ? 'ٹھیکیدار یا کمپنی' : 'مقاول أو شركة', locale === 'en' ? 'Specs, VAT invoice, quantities' : locale === 'ur' ? 'تفصیلات، VAT انوائس' : 'مواصفات وفاتورة ضريبية وجدول كميات']] as const).map(([v, label, sub]) => (
               <button key={v} type="button" role="radio" aria-checked={buyerType === v} onClick={() => setBuyerType(v)} disabled={loading}
-                className={`text-start rounded-xl border-2 px-3 py-2.5 transition-colors ${buyerType === v ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
-                <span className="block text-sm font-bold text-navy">{buyerType === v ? '✓ ' : ''}{label}</span>
-                <span className="block text-[11px] text-ink-2">{sub}</span>
+                className={`min-h-[56px] text-start rounded-xl border-2 px-3 py-2.5 transition-colors ${buyerType === v ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                <span className="flex items-center gap-1 text-sm font-bold text-navy">{buyerType === v && <Check className="w-4 h-4 text-[#0B2438]" strokeWidth={3} aria-hidden />}{label}</span>
+                <span className="block text-[12px] text-ink-2">{sub}</span>
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-ink-2 mt-1">{locale === 'en' ? 'You can change it any time in Settings.' : locale === 'ur' ? 'آپ اسے کسی بھی وقت ترتیبات میں بدل سکتے ہیں۔' : 'يمكنك تغييره في أي وقت من الإعدادات.'}</p>
+          <p className="text-[12px] text-ink-2 mt-1">{locale === 'en' ? 'You can change it any time in Settings.' : locale === 'ur' ? 'آپ اسے کسی بھی وقت ترتیبات میں بدل سکتے ہیں۔' : 'يمكنك تغييره في أي وقت من الإعدادات.'}</p>
         </div>
-        <label className="flex items-start gap-2 text-[13px] text-ink-2">
-          <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1" />
+        <label className="flex items-start gap-2 text-[13px] text-ink-2 min-h-[44px] cursor-pointer">
+          <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 w-5 h-5 shrink-0 accent-[#0B2438]" />
           <span>{t.terms1} <Link href="/terms" target="_blank" className="font-bold underline">{t.terms}</Link> {t.and} <Link href="/privacy" target="_blank" className="font-bold underline">{t.privacy}</Link></span>
         </label>
         <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">{loading ? t.verifying : t.create}</button>
-        <p className="text-sm text-center text-ink-2">{locale === 'en' ? 'Not a buyer?' : locale === 'ur' ? 'خریدار نہیں؟' : 'لست مشترياً؟'} <a href="/join" className="font-extrabold text-orange-dark hover:underline">{locale === 'en' ? 'Sign up as a seller' : locale === 'ur' ? 'فروخت کنندہ کے طور پر رجسٹر کریں' : 'سجّل كبائع'}</a></p>
+        <p className="text-sm text-center text-ink-2">{locale === 'en' ? 'Not a buyer?' : locale === 'ur' ? 'خریدار نہیں؟' : 'لست مشترياً؟'} <a href="/join" className="font-bold text-orange-dark hover:underline">{locale === 'en' ? 'Sign up as a supplier' : locale === 'ur' ? 'سپلائر کے طور پر رجسٹر کریں' : 'سجّل كمورد'}</a></p>
       </form>
     )
   }
@@ -205,8 +229,9 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
   return (
     <form onSubmit={verify} className="space-y-4">
       {errorBox}
+      {notice && <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-xl p-3" role="status"><span>{notice} </span><span dir="ltr" className="font-bold">{e164}</span></div>}
       <div>
-        <h2 className="text-lg font-extrabold text-navy">{t.codeTitle}</h2>
+        <h2 className="text-lg font-bold text-navy">{t.codeTitle}</h2>
         <p className="text-sm text-ink-2 mt-1">{t.codeSent} <span dir="ltr" className="font-bold">{e164}</span></p>
       </div>
       <input ref={codeRef} id="otp-code" type="text" inputMode="numeric" autoComplete="one-time-code" dir="ltr"
@@ -216,13 +241,14 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
           setCode(v)
           if (v.length === 6 && !loading) verify(undefined, v)
         }}
-        className="input-field text-center text-2xl font-extrabold tracking-[0.5em]" placeholder="••••••" disabled={loading} />
+        className="input-field text-center text-2xl font-bold tracking-[0.5em]" placeholder="••••••" disabled={loading} aria-label={t.codeTitle} />
       <button type="submit" disabled={loading || code.length !== 6} className="btn-orange w-full btn-lg">{loading ? t.verifying : t.verify}</button>
       <div className="flex items-center justify-between text-[13px]">
-        <button type="button" className="font-bold text-ink-2 hover:text-navy" onClick={() => { setStep('phone'); setError('') }}>{t.change}</button>
+        <button type="button" className="min-h-[44px] font-bold text-ink-2 hover:text-navy" onClick={() => { setStep('phone'); setError(''); setNotice('') }}>{t.change}</button>
+        {/* resend sends a new code at once (it used to go back to the number step, UX-134) */}
         {cooldown > 0
-          ? <span className="text-ink-3">{t.resendIn} {cooldown}{t.sec}</span>
-          : <button type="button" className="font-bold text-orange-dark hover:underline" onClick={() => { setStep('phone'); setError('') }}>{t.resend}</button>}
+          ? <span className="text-ink-2" aria-live="polite">{t.resendIn} {cooldown} {t.sec}</span>
+          : <button type="button" disabled={loading} className="min-h-[44px] font-bold text-orange-dark hover:underline disabled:opacity-50" onClick={() => sendCode(undefined, true)}>{t.resend}</button>}
       </div>
     </form>
   )

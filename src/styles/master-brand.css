@@ -19,7 +19,11 @@ body { font-family: var(--ts-font-ar); }
 :lang(en) { font-family: var(--ts-font-en); }
 button, input, select, textarea { font: inherit; }
 a { text-decoration: none; }
-:focus-visible { outline: 2px solid var(--ts-gold-400); outline-offset: 3px; box-shadow: var(--ts-focus-ring); }
+/* Focus (UX-156): a navy ring with a gold halo reads on white (gold alone was 1.6:1); inside the dark
+   navy containers (sidebar, top bar, dark heroes) the ring turns gold. */
+:focus-visible { outline: 2px solid var(--ts-navy-850); outline-offset: 2px; box-shadow: 0 0 0 5px rgba(212,165,67,.45); }
+.ts-dashboard-sidebar :focus-visible, .ts-dashboard-topbar :focus-visible, .public-header :focus-visible,
+.public-footer :focus-visible, .market-hero :focus-visible, .auth-brand :focus-visible { outline-color: var(--ts-gold-400); box-shadow: 0 0 0 5px rgba(245,197,91,.25); }
 
 .input-field {
   min-height: 48px;
@@ -81,7 +85,8 @@ a { text-decoration: none; }
   border-top: 1px solid var(--ts-border-dark);
 }
 .public-footer > div > div:first-child { color: #fff; letter-spacing: .02em; }
-.public-footer > div > div:first-child span { color: var(--ts-gold-400); font-size: 11px; letter-spacing: .18em; }
+.public-footer > div > div:first-child span { color: var(--ts-gold-400); font-size: 12px; letter-spacing: .18em; }
+[dir="rtl"] .public-footer > div > div:first-child span, [dir="rtl"] .public-footer > div > div:first-child { letter-spacing: 0; }
 .public-footer-lockup { width: auto; height: 88px; max-width: 116px; object-fit: contain; border-radius: 13px; }
 .public-footer a { color: #C7CED6; transition: color .18s ease; }
 .public-footer a:hover { color: var(--ts-gold-400); }
@@ -295,7 +300,7 @@ a { text-decoration: none; }
 }
 .ts-dashboard main input:focus, .ts-dashboard main select:focus, .ts-dashboard main textarea:focus {
   outline: none;
-  border-color: var(--ts-gold-500);
+  border-color: var(--ts-navy-850);
   box-shadow: var(--ts-focus-ring);
 }
 .ts-dashboard main input[type="checkbox"], .ts-dashboard main input[type="radio"] { accent-color: var(--ts-gold-500); }
@@ -590,7 +595,7 @@ a { text-decoration: none; }
   .ts-dashboard .ts-marketplace-hero { min-height: 0; background-position: 55% center; }
   .ts-dashboard .ts-marketplace-hero::before { background: linear-gradient(90deg, rgba(5,11,18,.88), rgba(7,24,39,.66)); }
   .ts-dashboard .ts-marketplace-search { background: #fff; }
-  .ts-mobile-nav-link { font-size: 10px; }
+  .ts-mobile-nav-link { font-size: 11.5px; }
 }
 
 /* A welcoming buyer workspace for home shoppers and project teams. */
@@ -618,6 +623,13 @@ a { text-decoration: none; }
 .ts-dashboard-topbar .bg-gray-100:hover { background: rgba(255,255,255,.16) !important; }
 .ts-dashboard-topbar .text-gray-700, .ts-dashboard-topbar .text-gray-600, .ts-dashboard-topbar .text-gray-500 { color: #E8EDF2 !important; }
 .ts-dashboard-topbar a:not(.btn-orange):not([class*="bg-"]) { color: #E8EDF2; }
+/* the chosen language reads as chosen: gold with navy text (it was navy on the navy bar, UX-036) */
+.ts-dashboard-topbar button[aria-pressed="true"] { background: #D4A543 !important; color: #071827 !important; border-color: #D4A543 !important; }
+/* the language menu opens on white, so its rows keep dark text */
+.ts-dashboard-topbar .ts-lang-menu { background: #fff !important; border-color: #D9E0E8 !important; }
+.ts-dashboard-topbar .ts-lang-menu button { color: #0B2438 !important; }
+.ts-dashboard-topbar .ts-lang-menu button[aria-pressed="true"] { background: rgba(212,165,67,.14) !important; color: #071827 !important; }
+.ts-dashboard-topbar .ts-lang-menu button:hover { background: #F5F7FA !important; }
 .ts-dashboard-main { padding-inline: clamp(18px, 2.6vw, 42px); }
 .ts-dashboard .ts-dashboard-greeting {
   color: #10243B;
@@ -840,23 +852,24 @@ a { text-decoration: none; }
 }
 @media (max-width: 640px) {
   .ts-marketplace-hero { gap: 16px; padding: 20px 16px; border-radius: 19px; }
-  .ts-marketplace-eyebrow { font-size: 10px; }
+  /* phone sizes: key text at least 12px, inputs 16px (no iOS zoom), targets 44px (UX-154/155/157) */
+  .ts-marketplace-eyebrow { font-size: 12px; }
   .ts-marketplace-intro h1 { font-size: 23px; }
-  .ts-marketplace-intro p { font-size: 12px; }
+  .ts-marketplace-intro p { font-size: 13px; }
   .ts-marketplace-search { min-height: 56px; gap: 8px; padding-inline-start: 12px; border-radius: 13px; }
   .ts-marketplace-search-icon { font-size: 27px; }
-  .ts-marketplace-search input { font-size: 12px; }
-  .ts-marketplace-search button { min-height: 42px; padding-inline: 13px; font-size: 11px; }
+  .ts-marketplace-search input { font-size: 16px; }
+  .ts-marketplace-search button { min-height: 44px; padding-inline: 13px; font-size: 13px; }
   .ts-marketplace-hero-actions { gap: 11px; }
-  .ts-marketplace-request-link { min-height: 40px; padding-inline: 13px; font-size: 12px; }
-  .ts-marketplace-project-link { font-size: 11px; }
+  .ts-marketplace-request-link { min-height: 44px; padding-inline: 13px; font-size: 13px; }
+  .ts-marketplace-project-link { font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; }
   .ts-section-heading { align-items: flex-start; }
   .ts-section-heading h2 { font-size: 15px; }
-  .ts-section-heading p { font-size: 11px; }
+  .ts-section-heading p { font-size: 12px; }
   .ts-marketplace-categories { grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; }
   .ts-category-card { min-height: 101px; padding: 12px; border-radius: 15px; }
   .ts-category-icon { width: 38px; height: 38px; font-size: 19px; }
-  .ts-category-label { font-size: 11px; }
+  .ts-category-label { font-size: 12px; }
 }
 
 /* Buyer home hero (approved marketplace-home design): city photo under a controlled navy overlay */
@@ -876,9 +889,16 @@ a { text-decoration: none; }
 /* photo cards (buyer home + materials guide): vivid images, lighter scrim */
 .ts-dashboard main a.group img.object-cover, .ts-dashboard main button.group img.object-cover { filter: saturate(1.15) contrast(1.06) brightness(1.04); }
 
-/* Density (owner: the dashboard looked zoomed in). Tailwind sizes are rem-based, so a slightly
-   smaller root size tightens every dashboard page at once; public pages keep 16px. */
-html:has(.ts-dashboard) { font-size: 14.5px; }
+/* Density (owner: the dashboard looked zoomed in ON DESKTOP). Tailwind sizes are rem-based, so a
+   slightly smaller root size tightens every dashboard page at once; public pages keep 16px.
+   Desktop only (UX-035): on a phone it shrank text-xs to ~10.9px and 44px buttons to ~40px. */
+@media (min-width: 1024px) { html:has(.ts-dashboard) { font-size: 14.5px; } }
+
+/* --side-w: how much room the sidebar takes, so a fixed bottom bar can start beside it instead of
+   sliding under it (UX-074): use  inset-inline-start: var(--side-w); inset-inline-end: 0
+   (the sidebar sits on the start side in both directions). */
+.ts-dashboard { --side-w: 0px; }
+@media (min-width: 1024px) { .ts-dashboard:not(.is-nav-collapsed) { --side-w: 244px; } }
 .ts-dashboard-brand { padding-block: 14px 10px !important; }
 .dashboard-brand-lockup { height: 68px !important; max-width: 102px !important; }
 .ts-dashboard-topbar > div { padding-block: 8px !important; }
@@ -887,3 +907,6 @@ html:has(.ts-dashboard) { font-size: 14.5px; }
 @keyframes tskGlow { 0%,100% { box-shadow: 0 0 0 0 rgba(212,165,67,.45), 0 8px 24px -12px rgba(212,165,67,.5) } 50% { box-shadow: 0 0 0 6px rgba(212,165,67,0), 0 10px 30px -10px rgba(212,165,67,.75) } }
 .tsk-glow { animation: tskGlow 2.4s ease-in-out infinite }
 @media (prefers-reduced-motion: reduce) { .tsk-glow { animation: none; box-shadow: 0 0 0 3px rgba(212,165,67,.45) } }
+
+/* gate screens (/verify, /banned): the language button sits on the navy header */
+.ts-gate-lang > div > button { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); color: #fff; }

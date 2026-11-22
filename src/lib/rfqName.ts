@@ -60,7 +60,7 @@ export function rfqDesc(rfq: any, locale: string, itemCount?: number): string {
 
 // itemCount: عدد الأصناف المراد عرضه (للمورد = أصنافه فقط، لا الإجمالي)
 export function rfqDisplayName(rfq: any, locale: string, itemCount?: number): string {
-  const ref = rfqRef(rfq)
+  const ref = rfqRef(rfq, locale) // in the reader's language («Request no. 12», not «طلب رقم» inside English) (UX-069)
   const desc = rfqDesc(rfq, locale, itemCount)
   return ref ? `${ref} · ${desc}` : desc
 }

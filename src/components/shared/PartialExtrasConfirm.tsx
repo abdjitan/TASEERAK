@@ -8,6 +8,7 @@ import { friendlyError } from '@/lib/friendlyError'
 import { toLatinDigits } from '@/lib/phone'
 import Glyph from '@/components/shared/Glyph'
 import { askConfirm } from '@/lib/askConfirm'
+import { arCount } from '@/lib/text'
 
 export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }: { offer: any; locale: string; wonCount?: number; onDone: (o: any) => void }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -24,7 +25,7 @@ export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }
   async function save() {
     setErr('')
     if (sum > max) { setErr(L(`The charges can't be higher than your original offer (${fmt(max)} SAR).`, `چارجز آپ کی اصل پیشکش (${fmt(max)} ریال) سے زیادہ نہیں ہو سکتے۔`, `لا يمكن أن تزيد الرسوم على عرضك الأصلي (${fmt(max)} ر.س).`)); return }
-    if (!(await askConfirm(L(`Confirm ${fmt(sum)} SAR in charges for the materials you won? The buyer will be notified.`, `جیتے گئے سامان کے لیے ${fmt(sum)} ریال چارجز کنفرم کریں؟ خریدار کو اطلاع دی جائے گی۔`, `تأكيد رسوم بقيمة ${fmt(sum)} ر.س للمواد التي فزت بها؟ سيُبلَّغ المشتري.`)))) return
+    if (!(await askConfirm(L(`Confirm ${fmt(sum)} SAR in charges for the materials you won? The buyer will be notified.`, `جیتے گئے سامان کے لیے ${fmt(sum)} ریال چارجز کنفرم کریں؟ خریدار کو اطلاع دی جائے گی۔`, `تأكيد رسوم بقيمة ${fmt(sum)} ر.س للمواد التي فزت بها؟ سيُبلَّغ المشتري.`), { okLabel: L('Confirm charges', 'چارجز کنفرم کریں', 'تأكيد الرسوم'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setBusy(true)
     const payload = rows.filter((r: any) => num(r.amount) > 0).map((r: any) => ({ label: r.label.trim() || L('Delivery', 'ڈیلیوری', 'توصيل'), amount: num(r.amount) }))
     const { error } = await createClient().rpc('confirm_partial_extras', { p_offer_id: offer.id, p_extras: payload })
@@ -38,7 +39,7 @@ export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }
       <h4 className="font-bold text-amber-900 text-sm mb-1"><Glyph e="🚚" /> {L('Confirm the delivery and other charges', 'ڈیلیوری اور دیگر چارجز کی تصدیق کریں', 'أكّد رسوم التوصيل والرسوم الإضافية')}</h4>
       <p className="text-xs text-amber-900/80 leading-relaxed mb-3">
         {wonCount
-          ? L(`The buyer chose ${wonCount} of the materials you priced, not all of them. Set the charges for these materials only: keep them or lower them.`, `خریدار نے آپ کی قیمت والے سامان میں سے صرف ${wonCount} چنے ہیں۔ صرف انہی کے چارجز رکھیں یا کم کریں۔`, `اختار المشتري ${wonCount === 1 ? 'مادة واحدة' : wonCount === 2 ? 'مادتين' : wonCount + ' مواد'} مما سعّرته، لا كل المواد. حدّد الرسوم لهذه المواد فقط: أبقِها أو خفّضها.`)
+          ? L(`The buyer chose ${wonCount} of the materials you priced, not all of them. Set the charges for these materials only: keep them or lower them.`, `خریدار نے آپ کی قیمت والے سامان میں سے صرف ${wonCount} چنے ہیں۔ صرف انہی کے چارجز رکھیں یا کم کریں۔`, `اختار المشتري ${arCount(wonCount, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')} مما سعّرته، لا كل المواد. حدّد الرسوم لهذه المواد فقط: أبقِها أو خفّضها.`)
           : L('The buyer chose only some of the materials you priced. Set the charges for these materials only: keep them or lower them.', 'خریدار نے آپ کی قیمت والے سامان میں سے کچھ ہی چنے ہیں۔ صرف انہی کے چارجز رکھیں یا کم کریں۔', 'اختار المشتري بعض المواد التي سعّرتها فقط. حدّد الرسوم لهذه المواد فقط: أبقِها أو خفّضها.')}
       </p>
       <div className="space-y-2">
@@ -47,14 +48,14 @@ export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }
             <span className="flex-1 min-w-0 text-sm text-gray-700 truncate">{r.label || L('Delivery', 'ڈیلیوری', 'توصيل')}</span>
             <input type="text" inputMode="decimal" dir="ltr" value={r.amount} aria-label={r.label || L('Amount', 'رقم', 'المبلغ')}
               onChange={(e: any) => setRows(prev => prev.map((x: any, k: number) => k === i ? { ...x, amount: e.target.value } : x))}
-              className="input-field w-28 text-end" />
+              className="input-field w-28 text-end text-base sm:text-sm" />
             <span className="text-xs text-gray-500 w-8">{SAR}</span>
           </div>
         ))}
       </div>
-      <div className="flex items-center justify-between mt-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-sm">
         <span className="text-gray-600">{L('Total charges', 'کل چارجز', 'إجمالي الرسوم')}: <b className={sum > max ? 'text-red-600' : 'text-[#0B2438]'}>{fmt(sum)} {SAR}</b> <span className="text-xs text-gray-500">({L('max', 'زیادہ سے زیادہ', 'الحد الأقصى')} {fmt(max)})</span></span>
-        <button type="button" onClick={save} disabled={busy} className="px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>
+        <button type="button" onClick={save} disabled={busy} className="min-h-11 px-4 py-2 rounded-xl text-sm font-extrabold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
           {busy ? '…' : L('Confirm charges', 'چارجز کنفرم کریں', 'تأكيد الرسوم')}
         </button>
       </div>

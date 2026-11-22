@@ -49,3 +49,32 @@ export function totalLabel(o: any, locale: string): string {
   if (!showsVatBreakdown(o)) return locale === 'en' ? 'Total (final, no VAT)' : locale === 'ur' ? 'کل (حتمی، VAT کے بغیر)' : 'الإجمالي (نهائي، دون ضريبة القيمة المضافة)'
   return locale === 'en' ? 'Total incl. 15% VAT' : locale === 'ur' ? 'کل رقم (15% VAT سمیت)' : 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)'
 }
+
+// The amount before VAT of a total entered on an offer (registered seller only; otherwise the total is final).
+export const netOf = (total: any, o: any) =>
+  showsVatBreakdown(o) && o?.vat_included ? (Number(total) || 0) / (1 + VAT_RATE) : Number(total) || 0
+
+// The heading of a price column on the buyer's side (UX-019): the line prices are shown as the seller entered them.
+export function priceBasisLabel(o: any, locale: string): string {
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Price' : locale === 'ur' ? 'قیمت' : 'السعر'
+  if (o?.vat_included) return locale === 'en' ? 'Price incl. VAT' : locale === 'ur' ? 'قیمت (VAT سمیت)' : 'السعر شاملاً الضريبة'
+  return locale === 'en' ? 'Price before VAT' : locale === 'ur' ? 'قیمت (VAT سے پہلے)' : 'السعر قبل الضريبة'
+}
+
+// The seller's invoice on a deal, named by who the seller is (UX-025, legal): a seller without a VAT
+// number cannot issue a tax invoice, and a pricing agent hands over the source shop's invoice.
+//   who = 'buyer' → «… باسمك»; who = 'supplier' → «… باسم المشتري»
+export function sellerInvoiceLabel(o: any, locale: string, who: 'buyer' | 'supplier' = 'buyer'): string {
+  if (isIndependentOffer(o)) return who === 'buyer'
+    ? (locale === 'en' ? 'The source shop invoice in your name' : locale === 'ur' ? 'آپ کے نام سپلائی کرنے والی دکان کی انوائس' : 'فاتورة المحل المصدر باسمك')
+    : (locale === 'en' ? 'The source shop invoice in the buyer’s name' : locale === 'ur' ? 'خریدار کے نام سپلائی کرنے والی دکان کی انوائس' : 'فاتورة المحل المصدر باسم المشتري')
+  if (showsVatBreakdown(o)) return locale === 'en' ? 'The seller’s tax invoice' : locale === 'ur' ? 'بیچنے والے کی ٹیکس انوائس' : 'الفاتورة الضريبية من البائع'
+  return locale === 'en' ? 'The seller’s invoice' : locale === 'ur' ? 'بیچنے والے کی انوائس' : 'فاتورة البائع'
+}
+
+// What the seller is asked to do before confirming delivery (UX-025 / UX-127).
+export function invoiceGateText(o: any, locale: string): string {
+  if (isIndependentOffer(o)) return locale === 'en' ? 'Upload the supplying shop’s invoice in the buyer’s name below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے خریدار کے نام سپلائی کرنے والی دکان کی انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة المحل المورّد باسم المشتري أدناه أولاً، ثم أكّد التسليم.'
+  if (showsVatBreakdown(o)) return locale === 'en' ? 'Upload your tax invoice below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے اپنی ٹیکس انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورتك الضريبية أدناه أولاً، ثم أكّد التسليم.'
+  return locale === 'en' ? 'Upload your sales invoice below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے اپنی سیلز انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة البيع أدناه أولاً، ثم أكّد التسليم.'
+}

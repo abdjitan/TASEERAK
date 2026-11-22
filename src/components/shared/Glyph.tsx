@@ -8,6 +8,7 @@ import {
   Menu, Scale, Globe, Sprout, Medal, Factory, Eye, Wallet, Ruler, Files, Mail, Mailbox, Repeat, KeyRound, Feather,
   Printer, FolderOpen, Map, Flag, Footprints, Bot, Handshake, Brain, Puzzle, BrickWall, Landmark, Tractor, Store, Plus, Pencil,
   Timer, Info, Download, Play, Pause, Undo2, Mic, Wrench,
+  Check, ChevronDown, ChevronUp, X, Bolt, DoorOpen, ShowerHead, Plug, LifeBuoy, Globe2,
 } from 'lucide-react'
 
 const MAP: Record<string, [any, string?]> = {
@@ -30,11 +31,14 @@ const MAP: Record<string, [any, string?]> = {
   '✉': [Mail], '❔': [HelpCircle], '✨': [Sparkles, 'text-[#D4A543]'], '➕': [Plus], '✏': [Pencil],
   '⏱': [Timer], 'ℹ': [Info], '⬆': [Upload], '⬇': [Download], '▶': [Play], '⏸': [Pause], '↩': [Undo2], '⏺': [Mic], '🆕': [Sparkles], '🔧': [Wrench],
   '🥇': [Medal, 'text-[#D4AF37]'], '🥈': [Medal, 'text-[#9CA3AF]'], '🥉': [Medal, 'text-[#CD7F32]'],
+  // text marks drawn in another font before (UX-158)
+  '✓': [Check], '✔': [Check], '▾': [ChevronDown], '▴': [ChevronUp], '×': [X], '✕': [X], '✖': [X],
+  '🔩': [Bolt], '🚪': [DoorOpen], '🚿': [ShowerHead], '🔌': [Plug], '🛟': [LifeBuoy], '🌍': [Globe2],
 }
 
+// An unknown emoji draws a neutral line icon (Package), never the colour emoji itself (UX-158).
 export default function Glyph({ e, className = '' }: { e: string; className?: string }) {
-  const hit = MAP[e.replace(/️/g, '')]
-  if (!hit) return <span aria-hidden>{e}</span>
+  const hit = MAP[e.replace(/️/g, '')] || [Package]
   const [Icon, tone] = hit
   return <Icon aria-hidden strokeWidth={1.8} className={`inline-block w-[1em] h-[1em] align-[-0.15em] shrink-0 ${tone || ''} ${className}`} />
 }

@@ -5,11 +5,18 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { FIREBASE_CONFIG, firebaseReady, toE164 } from '@/lib/firebaseConfig'
+import { Check } from 'lucide-react'
+
+// a verified number changes the verify banner, so its once-per-session cache is dropped
+function clearBannerCache() { try { sessionStorage.removeItem('tsk_pvb') } catch {} }
+const RESEND_AFTER = 60
 
 type Step = 'enter' | 'code' | 'checking' | 'done'
 
-export default function PhoneVerify({ initialPhone, locale, verified, waVerified, onDone, handoff }: {
+export default function PhoneVerify({ initialPhone, locale, verified, waVerified, onDone, handoff, autoOpen }: {
   handoff?: string // the mobile app's single-use link (/api/phone/start): no site session on that page
+  /** open the form at once (the verify gate / phone-verify page), no extra tap (UX-184) */
+  autoOpen?: boolean
   initialPhone?: string
   locale: string
   verified?: boolean
@@ -17,7 +24,14 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
   onDone?: (phone: string) => void
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const [open, setOpen] = useState(!!handoff)
+  const [open, setOpen] = useState(!!handoff || (!!autoOpen && !verified))
+  // seconds until «resend» is allowed (UX-134/184)
+  const [wait, setWait] = useState(0)
+  useEffect(() => {
+    if (wait <= 0) return
+    const t = setTimeout(() => setWait(w => w - 1), 1000)
+    return () => clearTimeout(t)
+  }, [wait])
   const [phone, setPhone] = useState(initialPhone || '')
   const [code, setCode] = useState('')
   const [step, setStep] = useState<Step>('enter')
@@ -57,6 +71,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
       if (!verifierRef.current) verifierRef.current = new RecaptchaVerifier(auth, boxId, { size: 'invisible' })
       confirmRef.current = await signInWithPhoneNumber(auth, e164, verifierRef.current)
       setStep('code')
+      setWait(RESEND_AFTER)
     } catch (e: any) {
       console.error('phone-verify send', e?.code, e?.message)
       const c = String(e?.code || '')
@@ -88,6 +103,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
             : L('Could not verify. Try again.', 'تصدیق نہیں ہو سکی۔', 'تعذّر التوثيق. حاول مرة أخرى.'))
         return
       }
+      clearBannerCache()
       onDone?.(j.phone)
       if (handoff) { setStep('done'); return } // the app re-reads the profile when the browser closes
       setStep('checking')
@@ -116,19 +132,19 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
 
   if (verified && !open) {
     return (
-      <div className="flex flex-wrap items-center gap-2 mt-1.5 text-[11px]">
-        <span className="font-bold text-[#0F6E56]">✓ {L('Mobile verified', 'موبائل تصدیق شدہ', 'الجوال موثّق')}</span>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[12px]">
+        <span className="font-bold text-[#0F6E56] inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" aria-hidden />{L('Mobile verified', 'موبائل تصدیق شدہ', 'الجوال موثّق')}</span>
         {waVerified
-          ? <span className="font-bold text-[#0F6E56]">✓ {L('WhatsApp confirmed', 'واٹس ایپ تصدیق شدہ', 'واتساب مؤكَّد')}</span>
+          ? <span className="font-bold text-[#0F6E56] inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" aria-hidden />{L('WhatsApp confirmed', 'واٹس ایپ تصدیق شدہ', 'واتساب مؤكَّد')}</span>
           : <span className="text-gray-500">{L('WhatsApp not confirmed yet', 'واٹس ایپ ابھی تصدیق نہیں', 'لم يتأكد الواتساب بعد')}</span>}
-        <button type="button" onClick={() => { setOpen(true); setStep('enter') }} className="font-bold text-[#8F6820] hover:underline">{L('Change number', 'نمبر بدلیں', 'تغيير الرقم')}</button>
+        <button type="button" onClick={() => { setOpen(true); setStep('enter') }} className="min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Change number', 'نمبر بدلیں', 'تغيير الرقم')}</button>
       </div>
     )
   }
   if (!open) {
     return (
       <>
-        <button type="button" disabled={busy} onClick={() => { setOpen(true); if (toE164(phone)) send() }} className="mt-1.5 text-[12px] font-bold px-3 py-1.5 rounded-lg border border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10 disabled:opacity-50">
+        <button type="button" disabled={busy} onClick={() => { setOpen(true); if (toE164(phone)) send() }} className="mt-1.5 min-h-[44px] text-[13px] font-bold px-4 rounded-xl border border-[#D4A543] text-[#071827] bg-[#D4A543]/15 disabled:opacity-50">
           {busy ? '…' : L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'وثّق رقم جوالك')}
         </button>
       </>
@@ -140,24 +156,29 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
       {step === 'enter' && !busy && (<>
         <p className="text-[12px] text-gray-600">{L('We will send a 6-digit code by SMS. Use a number that has WhatsApp: platform notifications arrive there.', 'ہم SMS سے 6 ہندسوں کا کوڈ بھیجیں گے۔ واٹس ایپ والا نمبر استعمال کریں۔', 'سنرسل رمزاً من 6 أرقام برسالة نصية. استخدم رقماً عليه واتساب، فإشعارات المنصة تصل إليه.')}</p>
         <div className="flex gap-2">
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" dir="ltr" className="input-field flex-1" placeholder={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} />
-          <button type="button" onClick={send} disabled={busy} className="text-sm px-4 rounded-xl font-bold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>{busy ? '…' : L('Send code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" dir="ltr" className="input-field flex-1 min-w-0" placeholder={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} aria-label={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} />
+          <button type="button" onClick={send} disabled={busy} className="min-h-[48px] text-sm px-4 rounded-xl font-bold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>{busy ? '…' : L('Send code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>
         </div>
       </>)}
       {step === 'code' && (<>
         <p className="text-[12px] text-gray-600">{L(`Enter the code sent to ${toE164(phone)}`, `${toE164(phone)} پر بھیجا گیا کوڈ لکھیں`, `أدخل الرمز المرسل إلى ${toE164(phone)}`)}</p>
         <div className="flex gap-2">
-          <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" dir="ltr" maxLength={6} className="input-field flex-1 tracking-[0.4em] text-center font-bold" placeholder="______" />
-          <button type="button" onClick={confirm} disabled={busy} className="text-sm px-4 rounded-xl font-bold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>{busy ? '…' : L('Confirm', 'تصدیق', 'تأكيد')}</button>
+          <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" dir="ltr" maxLength={6} className="input-field flex-1 min-w-0 tracking-[0.4em] text-center font-bold" placeholder="______" aria-label={L('Verification code', 'تصدیقی کوڈ', 'رمز التحقق')} />
+          <button type="button" onClick={confirm} disabled={busy} className="min-h-[48px] text-sm px-5 rounded-xl font-bold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>{busy ? '…' : L('Confirm', 'تصدیق', 'تأكيد')}</button>
         </div>
-        <button type="button" onClick={() => { setStep('enter'); setCode('') }} className="text-[11px] font-bold text-[#8F6820] hover:underline">{L('Change the number or resend', 'نمبر بدلیں یا دوبارہ بھیجیں', 'تغيير الرقم أو إعادة الإرسال')}</button>
+        <div className="flex flex-wrap items-center gap-x-4">
+          {wait > 0
+            ? <span className="text-[12px] text-gray-600 min-h-[44px] inline-flex items-center">{L(`Resend in ${wait} seconds`, `${wait} سیکنڈ بعد دوبارہ بھیجیں`, `إعادة الإرسال بعد ${wait} ثانية`)}</span>
+            : <button type="button" onClick={() => { setCode(''); send() }} disabled={busy} className="min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline disabled:opacity-50">{L('Resend the code', 'کوڈ دوبارہ بھیجیں', 'أعد إرسال الرمز')}</button>}
+          <button type="button" onClick={() => { setStep('enter'); setCode('') }} className="min-h-[44px] text-[13px] font-bold text-[#48596E] hover:underline">{L('Change the number', 'نمبر بدلیں', 'تغيير الرقم')}</button>
+        </div>
       </>)}
-      {step === 'checking' && <p className="text-[12px] text-gray-600">✓ {L('Mobile verified. Checking WhatsApp: we sent you a message from Taseerak…', 'موبائل تصدیق ہو گیا۔ واٹس ایپ چیک ہو رہا ہے…', 'تم توثيق الجوال. نتحقق من الواتساب: أرسلنا لك رسالة من تسعيرك…')}</p>}
+      {step === 'checking' && <p className="text-[12px] text-gray-600">{L('Mobile verified. Checking WhatsApp: we sent you a message from Taseerak…', 'موبائل تصدیق ہو گیا۔ واٹس ایپ چیک ہو رہا ہے…', 'تم توثيق الجوال. نتحقق من الواتساب: أرسلنا لك رسالة من تسعيرك…')}</p>}
       {step === 'done' && (
         <p className={`text-[12px] font-bold ${wa === 'no' ? 'text-amber-700' : 'text-[#0F6E56]'}`}>
-          {wa === 'yes' ? '✓ ' + L('Mobile verified and WhatsApp confirmed.', 'موبائل اور واٹس ایپ دونوں تصدیق شدہ۔', 'تم توثيق الجوال وتأكيد الواتساب.')
+          {wa === 'yes' ? L('Mobile verified and WhatsApp confirmed.', 'موبائل اور واٹس ایپ دونوں تصدیق شدہ۔', 'تم توثيق الجوال وتأكيد الواتساب.')
             : wa === 'no' ? L('Mobile verified, but this number has no WhatsApp. Use a WhatsApp number to receive notifications.', 'موبائل تصدیق ہو گیا لیکن اس نمبر پر واٹس ایپ نہیں۔', 'تم توثيق الجوال، لكن هذا الرقم ليس عليه واتساب. استخدم رقماً عليه واتساب لتصلك الإشعارات.')
-            : '✓ ' + L('Mobile verified. WhatsApp will be confirmed when our message arrives.', 'موبائل تصدیق ہو گیا۔', 'تم توثيق الجوال، وسيتأكد الواتساب عند وصول رسالتنا.')}
+            : L('Mobile verified. WhatsApp will be confirmed when our message arrives.', 'موبائل تصدیق ہو گیا۔', 'تم توثيق الجوال، وسيتأكد الواتساب عند وصول رسالتنا.')}
           {handoff ? ' ' + L('You can go back to the app now.', 'اب آپ ایپ میں واپس جا سکتے ہیں۔', 'يمكنك الآن الرجوع إلى التطبيق.') : ''}
         </p>
       )}

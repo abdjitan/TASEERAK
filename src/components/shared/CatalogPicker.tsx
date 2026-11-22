@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Check, ChevronDown, ChevronUp, X, Minus, Plus } from 'lucide-react'
 import { getProductLabel, detectSubCategory, getSubCategoryLabel, type Sector } from '@/types'
 import { BROWSE_SECTIONS, getSectionGroups, type BrowseSection, subsOfSection } from '@/lib/browseCategories'
 import { bySectionRank, HOME_ORDER } from '@/lib/sectionOrder'
-import { cleanArName } from '@/lib/displayName'
+import { homeName } from '@/lib/homePacks'
 import { searchProducts, normQuery } from '@/lib/productSearch'
 import { createClient } from '@/lib/supabase/client'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
@@ -18,7 +19,7 @@ import Glyph from '@/components/shared/Glyph'
 // CatalogBrowser is the catalog itself: on desktop the request page shows it inline as its main
 // area (the chosen list sits beside it). CatalogPicker wraps it in a sheet for phones.
 
-type Picked = { key: string; name: string }
+type Picked = { key: string; name: string; qty?: string }
 
 // Section photos from the approved design (public/images/sections, cut from the category sprite).
 // Sections without a photo yet show three of their materials instead.
@@ -48,13 +49,14 @@ function sectionCovers(key: BrowseSection) {
   return coverCache[key]
 }
 
-export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline = false, initialQuery = '', initialSection = null, simple = false }: {
+export function CatalogBrowser({ locale, onPick, onRemove, onQty, picked = [], inline = false, initialQuery = '', initialSection = null, simple = false }: {
   locale: string
+  onQty?: (key: string, qty: string) => void // a home buyer's «− 1 +» on a picked tile (UX-189)
   simple?: boolean   // a home buyer: home-first section order, no heavy machinery, Arabic names without English
   initialQuery?: string
   initialSection?: BrowseSection | null
   onPick: (item: { name: string; sector: Sector; section?: BrowseSection; sub?: string }) => void
-  onRemove?: (key: string) => void   // a second tap on a picked material takes it off the list
+  onRemove?: (key: string) => void   // «أزلها من الطلب» from the «already added» question
   picked?: Picked[]
   inline?: boolean
 }) {
@@ -67,6 +69,16 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   // the same inside an open group (owner 2026-10-31: «طلبك غير موجود» in «الخرسانة والإسمنت» → only those suppliers)
   const [ownG, setOwnG] = useState('')
   const [ownSub, setOwnSub] = useState('')
+  // a home buyer tapped a material already in the request: ask (another size, or remove it)
+  const [dupe, setDupe] = useState<{ name: string; sector: Sector; section?: BrowseSection; sub?: string } | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (inline || initialSection) return
+    let touch = false
+    try { touch = window.matchMedia('(pointer: coarse)').matches } catch {}
+    if (!touch) searchRef.current?.focus()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const nameOf = (n: string) => (simple && locale === 'ar' ? homeName(n) : getProductLabel(n, locale))
 
   // Exact/prefix/synonym matches score >= ~10; loose typo matches (بلك → بلدوزر) ~6. Show only
   // the confident ones unless that leaves almost nothing.
@@ -106,12 +118,14 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
     return () => clearTimeout(t)
   }, [q, hits.length])
   const pickT = (o: any) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
-  const isAdded = (name: string) => picked.some(p => p.name === name)
+  const countOf = (name: string) => picked.filter(p => p.name === name).length
+  const isAdded = (name: string) => countOf(name) > 0
   // Teach the search: what the person typed → the product they chose (fire and forget).
-  function choose(item: { name: string; sector: Sector; section?: BrowseSection; sub?: string }) {
-    // already in the list → a tap removes it (the ✓ goes, the line leaves the list)
-    const already = [...picked].reverse().find(p => p.name === item.name)
-    if (already && onRemove) { onRemove(already.key); return }
+  // UX-063: a second tap never deletes a line (it may carry a quantity, specs and files): it adds
+  // another line (rebar 12 and 16 mm from the guide); a home buyer is asked first.
+  function choose(item: { name: string; sector: Sector; section?: BrowseSection; sub?: string }, force = false) {
+    if (!force && simple && isAdded(item.name)) { setDupe(item); return }
+    setDupe(null)
     const query = q.trim()
     if (query) {
       try { createClient().rpc('log_search_event', { p_query: query, p_query_norm: normQuery(query), p_action: 'picked', p_picked: item.name, p_sector: item.sector, p_source: 'catalog' }).then(() => {}, () => {}) } catch {}
@@ -121,18 +135,36 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
   const tileGrid = inline ? 'grid grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2' : 'grid grid-cols-3 sm:grid-cols-5 gap-2'
 
   const tile = (name: string, s: Sector, k: string) => {
-    const on = isAdded(name)
+    const n = countOf(name)
+    const on = n > 0
+    const last = on ? [...picked].reverse().find(p => p.name === name) : undefined
+    const qn = last ? Math.max(0, parseFloat(last.qty || '') || 0) : 0
     return (
-      <button key={k} type="button" onClick={() => choose({ name, sector: s })}
-        className={`relative text-start rounded-xl border p-2 flex flex-col gap-1.5 transition-all ${on ? 'border-[#0F6E56] bg-[#0F6E56]/5' : 'border-gray-200 bg-white hover:border-[#D4A543]/60 hover:shadow-sm'}`}>
+      <div key={k} className={`relative rounded-xl border-2 p-2 flex flex-col gap-1.5 transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-[#D4A543]/60 hover:shadow-sm'}`}>
+      <button type="button" onClick={() => choose({ name, sector: s })} aria-pressed={on}
+        aria-label={on ? L(`${nameOf(name)}, added`, `${nameOf(name)}، شامل`, `${nameOf(name)}، مضافة إلى طلبك`) : nameOf(name)}
+        className="text-start flex flex-col gap-1.5">
         <span className="aspect-square w-full rounded-lg bg-gray-50 overflow-hidden grid place-items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={productImageUrl(name)} alt="" loading="lazy" className="w-full h-full object-contain"
             onError={(e: any) => imgFallback(e, detectSubCategory(name, s))} />
         </span>
-        <span className="text-[12px] font-semibold text-gray-800 leading-snug line-clamp-2" dir="auto">{simple && locale === 'ar' ? cleanArName(name) : getProductLabel(name, locale)}</span>
-        {on && <span className="absolute top-1.5 end-1.5 w-5 h-5 rounded-full grid place-items-center text-white text-[11px]" style={{ background: '#0F6E56' }}>✓</span>}
+        <span className="text-[13px] font-semibold text-gray-800 leading-snug line-clamp-2" dir="auto">{nameOf(name)}</span>
       </button>
+      {on && (n > 1
+        ? <span className="absolute top-1.5 end-1.5 min-w-6 h-6 px-1.5 rounded-full grid place-items-center text-[12px] font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>×{n}</span>
+        : <span className="absolute top-1.5 end-1.5 w-6 h-6 rounded-full grid place-items-center text-[#071827]" style={{ background: '#D4A543' }}><Check className="w-4 h-4" aria-hidden /></span>)}
+      {/* a home buyer sets the quantity right here: «− 1 +» (UX-189) */}
+      {on && simple && onQty && last && (
+        <div className="flex items-center justify-between gap-1 rounded-lg bg-white border border-[#D4A543]/50">
+          <button type="button" onClick={() => onQty(last.key, String(Math.max(1, qn - 1)))} disabled={qn <= 1}
+            className="w-[40px] h-[40px] grid place-items-center text-[#0B2438] disabled:opacity-30" aria-label={L('Less', 'کم', 'إنقاص')}><Minus className="w-4 h-4" aria-hidden /></button>
+          <span className="text-sm font-extrabold text-[#0B2438]" aria-live="polite">{qn || 1}</span>
+          <button type="button" onClick={() => onQty(last.key, String((qn || 1) + 1))}
+            className="w-[40px] h-[40px] grid place-items-center text-[#0B2438]" aria-label={L('More', 'زیادہ', 'زيادة')}><Plus className="w-4 h-4" aria-hidden /></button>
+        </div>
+      )}
+      </div>
     )
   }
 
@@ -140,23 +172,43 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
 
   return (
     <div className="space-y-3">
-      <input value={q} onChange={e => setQ(e.target.value)} autoFocus={!inline} className="input-field"
-        aria-label={L('Search the catalog', 'فہرست میں تلاش کریں', 'ابحث في القائمة')}
-        placeholder={L('Search any material… e.g. block, cable, pipe', 'کوئی بھی سامان تلاش کریں…', 'ابحث عن أي مادة… مثل: بلك، سلك، ماسورة')} />
+      <input ref={searchRef} type="search" value={q} onChange={e => setQ(e.target.value)} className="input-field text-[16px] sm:text-sm"
+        aria-label={L('Search the materials guide', 'مواد کی فہرست میں تلاش کریں', 'ابحث في دليل المواد')}
+        placeholder={simple
+          ? L('Search… e.g. light, mixer, paint, sofa', 'تلاش کریں… مثلاً لائٹ، مکسر، پینٹ، صوفہ', 'ابحث… مثل: مصباح، خلاط، دهان، أريكة')
+          : L('Search any material… e.g. block, cable, pipe', 'کوئی بھی سامان تلاش کریں…', 'ابحث عن أي مادة… مثل: بلك، سلك، ماسورة')} />
+
+      {dupe && (
+        <div role="alertdialog" aria-label={L('Already added', 'پہلے سے شامل', 'أضفت هذه المادة من قبل')} className="sticky top-2 lg:top-20 z-10 rounded-2xl border-2 border-[#D4A543] bg-[#FFFBF2] p-3 space-y-2 shadow-lg">
+          <div className="text-sm font-bold text-[#0B2438]">{L(`You already added «${nameOf(dupe.name)}»`, `آپ «${nameOf(dupe.name)}» پہلے شامل کر چکے ہیں`, `أضفت «${nameOf(dupe.name)}» إلى طلبك من قبل`)}</div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => choose(dupe, true)} className="min-h-[44px] px-4 rounded-xl text-sm font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>
+              {L('Add another size', 'دوسرا سائز شامل کریں', 'أضف مقاساً آخر')}
+            </button>
+            {onRemove && (
+              <button type="button" onClick={() => { const last = [...picked].reverse().find(p => p.name === dupe.name); if (last) onRemove(last.key); setDupe(null) }}
+                className="min-h-[44px] px-4 rounded-xl text-sm font-bold border border-gray-300 bg-white text-[#0B2438]">
+                {L('Remove it from the request', 'درخواست سے ہٹائیں', 'أزلها من الطلب')}
+              </button>
+            )}
+            <button type="button" onClick={() => setDupe(null)} className="min-h-[44px] px-3 rounded-xl text-sm font-bold text-gray-600">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
+          </div>
+        </div>
+      )}
 
       {/* sections as chips once one is open, so switching is one tap */}
       {!q.trim() && section && (
         <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
           <button type="button" onClick={() => { setSection(null); setOpenGroup(null) }}
-            className="shrink-0 inline-flex items-center gap-1.5 text-xs font-bold ps-1 pe-3 py-1 rounded-full border border-gray-200 bg-white text-gray-600">
+            className="shrink-0 inline-flex items-center gap-1.5 text-[13px] font-bold ps-1 pe-3 py-1 rounded-full border-2 border-gray-200 bg-white text-gray-700">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={sectionIcon('all')} alt="" aria-hidden className="w-7 h-7" />
             {L('All sections', 'تمام حصے', 'كل الأقسام')}
           </button>
           {SECTIONS.map(b => (
             <button key={b.key} type="button" onClick={() => { setSection(b.key); setOpenGroup(null) }}
-              className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-bold ps-1 pe-3 py-1 rounded-full border ${b.key === section ? 'text-white border-[#D4A543]' : 'border-gray-200 bg-white text-gray-600'}`}
-              style={b.key === section ? { background: '#0B2438', boxShadow: '0 0 0 2px rgba(212,165,67,.3)' } : undefined}>
+              aria-pressed={b.key === section}
+              className={`shrink-0 inline-flex items-center gap-1.5 text-[13px] font-bold ps-1 pe-3 py-1 rounded-full border-2 text-[#0B2438] ${b.key === section ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white'}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={sectionIcon(b.key)} alt="" aria-hidden className="w-7 h-7" />{pickT(b)}
             </button>
@@ -174,22 +226,22 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
           ) : web.result?.understood ? (
             <>
               <div className="text-sm">
-                <span className="text-xs font-bold text-[#0F6E56]"><Glyph e="🌐" /> {L('We found what you mean', 'ہم سمجھ گئے', 'فهمنا ما تقصد')}</span>
-                <div className="font-extrabold text-navy mt-0.5" dir="auto">{web.result.name_ar}{web.result.name_en ? <span className="text-xs font-normal text-gray-400"> · {web.result.name_en}</span> : null}</div>
-                {web.result.what_it_is && <div className="text-xs text-gray-600 mt-0.5" dir="auto">{web.result.what_it_is}</div>}
+                <span className="text-[12px] font-bold text-[#0B2438]"><Glyph e="🌐" /> {L('We found what you mean', 'ہم سمجھ گئے', 'فهمنا ما تقصد')}</span>
+                <div className="font-extrabold text-navy mt-0.5" dir="auto">{web.result.name_ar}{web.result.name_en && !simple ? <span className="text-[12px] font-normal text-gray-500"> · {web.result.name_en}</span> : null}</div>
+                {web.result.what_it_is && <div className="text-[12px] text-gray-600 mt-0.5" dir="auto">{web.result.what_it_is}</div>}
               </div>
               {!!web.matches?.length && (
                 <>
-                  <div className="text-[11px] font-bold text-gray-500">{L('Closest in our list', 'ہماری فہرست میں قریب ترین', 'الأقرب في قائمتنا')}</div>
+                  <div className="text-[12px] font-bold text-gray-600">{L('Closest in the materials guide', 'مواد کی فہرست میں قریب ترین', 'الأقرب في دليل المواد')}</div>
                   <div className={tileGrid}>{web.matches.map(m => tile(m.name, m.sector, `w:${m.sector}:${m.name}`))}</div>
                 </>
               )}
               <button type="button" onClick={() => choose({ name: web.result.name_ar, sector: web.result.sector })}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>
-                + {L(`Add «${web.result.name_ar}» to my list`, `«${web.result.name_ar}» فہرست میں شامل کریں`, `أضف «${web.result.name_ar}» إلى قائمتي`)}
+                className="w-full sm:w-auto min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>
+                + {L(`Add «${web.result.name_ar}» to your request`, `«${web.result.name_ar}» درخواست میں شامل کریں`, `أضف «${web.result.name_ar}» إلى طلبك`)}
               </button>
               {!!web.sources?.length && (
-                <div className="text-[10px] text-gray-400 truncate" dir="ltr">{L('Sources', 'ذرائع', 'المصادر')}: {web.sources.map((s: any) => s.title || s.uri).join(' · ')}</div>
+                <div className="text-[12px] text-gray-500 truncate" dir="ltr">{L('Sources', 'ذرائع', 'المصادر')}: {web.sources.map((s: any) => s.title || s.uri).join(' · ')}</div>
               )}
             </>
           ) : (<>
@@ -199,8 +251,8 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                 : L('We could not identify it. Add it as you wrote it, and suppliers will price it.', 'ہم پہچان نہیں سکے۔ جیسا لکھا ہے ویسا شامل کریں۔', 'لم نتعرّف عليها. أضفها كما كتبتها، وسيسعّرها الموردون.')}
             </p>
             <button type="button" onClick={() => choose({ name: q.trim().slice(0, 120), sector: 'supply_store' as Sector })}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl text-sm font-bold border-2 border-[#D4A543] text-[#8F6820]">
-              + {L(`Add «${q.trim()}» as written`, `«${q.trim()}» جیسا لکھا شامل کریں`, `أضف «${q.trim()}» كما كتبتها`)}
+              className="w-full sm:w-auto min-h-[44px] px-4 rounded-xl text-sm font-bold border-2 border-[#D4A543] text-[#8F6820]">
+              + {L(`Add «${q.trim()}» to your request as written`, `«${q.trim()}» جیسا لکھا درخواست میں شامل کریں`, `أضف «${q.trim()}» إلى طلبك كما كتبتها`)}
             </button>
           </>)}
         </div>
@@ -210,13 +262,13 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
         hits.length === 0 ? (web ? null :
           <div className="text-center py-8 space-y-3">
             <p className="text-sm text-gray-500">
-              {L('Not in the materials guide — you can still add it as you wrote it, and suppliers will price it.',
-                'گائیڈ میں نہیں — جیسا لکھا ہے ویسا شامل کریں، سپلائرز قیمت دیں گے۔',
-                'غير موجودة في دليل المواد — يمكنك إضافتها كما كتبتها، وسيسعّرها الموردون.')}
+              {L('We did not find it in the materials guide. You can add it as you wrote it, and suppliers will price it.',
+                'یہ مواد کی فہرست میں نہیں ملا۔ جیسا لکھا ہے ویسا شامل کریں، سپلائرز قیمت دیں گے۔',
+                'لم نجدها في دليل المواد. يمكنك إضافتها كما كتبتها، وسيسعّرها الموردون.')}
             </p>
             <button type="button" onClick={() => choose({ name: q.trim().slice(0, 120), sector: 'supply_store' as Sector })}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>
-              + {L(`Add «${q.trim()}» to my request`, `«${q.trim()}» شامل کریں`, `أضف «${q.trim()}» إلى طلبي`)}
+              className="min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>
+              + {L(`Add «${q.trim()}» to your request`, `«${q.trim()}» درخواست میں شامل کریں`, `أضف «${q.trim()}» إلى طلبك`)}
             </button>
           </div>
         ) : (
@@ -246,7 +298,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={sectionIcon(b.key)} alt="" aria-hidden className="w-12 h-12 mb-auto drop-shadow-[0_4px_10px_rgba(0,0,0,.45)]" />
                 <div className="font-bold text-[15px] text-white leading-snug drop-shadow">{pickT(b)}</div>
-                <div className="text-[11px] text-white/80 mt-0.5 leading-relaxed line-clamp-2">{pickT(b.hint)}</div>
+                <div className="text-[12px] text-white/85 mt-0.5 leading-relaxed line-clamp-2">{pickT(b.hint)}</div>
               </div>
             </button>
           ))}
@@ -258,11 +310,11 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
             return (
               <div key={g.group} className="rounded-xl border border-gray-100 bg-white">
                 <button type="button" onClick={() => setOpenGroup(open ? null : g.group)} aria-expanded={open}
-                  className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-bold text-navy">
+                  className="w-full min-h-[52px] flex items-center justify-between px-3 py-2 text-sm font-bold text-navy">
                   <span className="flex items-center gap-2">{g.items[0] ? <img src={productImageUrl(g.items[0].name)} alt="" loading="lazy" className="w-10 h-10 rounded-lg object-contain bg-white border border-gray-100 shrink-0"
                     onError={(e: any) => imgFallback(e, detectSubCategory(g.items[0].name, g.items[0].sector))} />
-                    : <span className="w-10 h-10 rounded-lg grid place-items-center text-[#0B2438] shrink-0" style={{ background: '#0B24380d' }}><CatIcon k={g.group} className="w-5 h-5" /></span>}{pickT(g)} <span className="text-gray-400 font-normal">({g.items.length})</span></span>
-                  <span className="text-gray-400">{open ? '▴' : '▾'}</span>
+                    : <span className="w-10 h-10 rounded-lg grid place-items-center text-[#0B2438] shrink-0" style={{ background: '#0B24380d' }}><CatIcon k={g.group} className="w-5 h-5" /></span>}{pickT(g)} <span className="text-gray-500 font-normal">({g.items.length})</span></span>
+                  <span className="text-gray-500">{open ? <ChevronUp className="w-4 h-4" aria-hidden /> : <ChevronDown className="w-4 h-4" aria-hidden />}</span>
                 </button>
                 {open && (
                   <div className="p-2 pt-0 space-y-2">
@@ -279,9 +331,9 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                     const add = () => { if (!ownG.trim()) return; choose({ name: ownG.trim().slice(0, 120), sector: chosen.sector, sub: chosen.sub }); setOwnG('') }
                     return (
                       <div className="rounded-xl border border-dashed border-[#D4A543]/70 bg-[#D4A543]/[.06] p-2.5 space-y-2">
-                        <div className="text-[13px] font-bold text-[#0B2438]">{L(`Not listed in «${pickT(g)}»? Write it`, `«${pickT(g)}» میں نہیں؟ نام لکھیں`, `طلبك غير موجود في «${pickT(g)}»؟ اكتب اسم المادة`)}</div>
+                        <div className="text-[13px] font-bold text-[#0B2438]">{L(`Didn't find the material in «${pickT(g)}»? Write its name`, `«${pickT(g)}» میں مطلوبہ چیز نہیں ملی؟ اس کا نام لکھیں`, `لم تجد المادة في «${pickT(g)}»؟ اكتب اسمها`)}</div>
                         <div className="flex flex-wrap gap-2">
-                          <input value={ownG} onChange={e => setOwnG(e.target.value)} className="input-field flex-1 min-w-[10rem]"
+                          <input value={ownG} onChange={e => setOwnG(e.target.value)} className="input-field text-[16px] sm:text-sm flex-1 min-w-[10rem]" aria-label={L('Material name', 'سامان کا نام', 'اسم المادة')}
                             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add() } }} placeholder={L('Material name', 'سامان کا نام', 'اسم المادة')} />
                           {subs.length > 1 && (
                             <select value={chosen.sector + ':' + chosen.sub} onChange={e => setOwnSub(e.target.value)} className="input-field w-auto max-w-full text-sm"
@@ -290,7 +342,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
                             </select>
                           )}
                           <button type="button" disabled={!ownG.trim()} onClick={add}
-                            className="shrink-0 px-4 py-2 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: '#D4A543' }}>+ {L('Add', 'شامل کریں', 'أضف')}</button>
+                            className="shrink-0 min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: '#D4A543' }}>+ {L('Add', 'شامل کریں', 'أضف')}</button>
                         </div>
                       </div>
                     )
@@ -303,13 +355,13 @@ export function CatalogBrowser({ locale, onPick, onRemove, picked = [], inline =
           {/* owner 2026-10-31: in every section — the material isn't listed? write it, and the request
               goes to all of this section's suppliers */}
           <div className="rounded-xl border border-dashed border-[#D4A543]/70 bg-[#D4A543]/[.06] p-3 space-y-2">
-            <div className="text-sm font-bold text-[#0B2438]">{L(`Not listed? Write the material and we send it to all «${pickT(current)}» suppliers`, `فہرست میں نہیں؟ نام لکھیں، «${pickT(current)}» کے سب سپلائرز کو جائے گا`, `طلبك غير موجود؟ اكتب اسم المادة ونرسلها لكل موردي «${pickT(current)}»`)}</div>
+            <div className="text-sm font-bold text-[#0B2438]">{L(`Didn't find the material? Write its name and we send it to all «${pickT(current)}» suppliers`, `مطلوبہ چیز نہیں ملی؟ نام لکھیں، «${pickT(current)}» کے سب سپلائرز کو جائے گا`, `لم تجد المادة؟ اكتب اسمها، ونرسلها إلى كل موردي «${pickT(current)}»`)}</div>
             <div className="flex gap-2">
-              <input value={own} onChange={e => setOwn(e.target.value)} className="input-field flex-1 min-w-0"
+              <input value={own} onChange={e => setOwn(e.target.value)} className="input-field text-[16px] sm:text-sm flex-1 min-w-0" aria-label={L('Material name', 'سامان کا نام', 'اسم المادة')}
                 onKeyDown={e => { if (e.key === 'Enter' && own.trim()) { e.preventDefault(); choose({ name: own.trim().slice(0, 120), sector: sectionSector(section!), section: section! }); setOwn('') } }}
                 placeholder={L('Material name', 'سامان کا نام', 'اسم المادة')} />
               <button type="button" disabled={!own.trim()} onClick={() => { choose({ name: own.trim().slice(0, 120), sector: sectionSector(section!), section: section! }); setOwn('') }}
-                className="shrink-0 px-4 py-2 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: '#D4A543' }}>
+                className="shrink-0 min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40" style={{ background: '#D4A543' }}>
                 + {L('Add', 'شامل کریں', 'أضف')}
               </button>
             </div>
@@ -327,8 +379,9 @@ function sectionSector(section: BrowseSection): Sector {
   return (Object.entries(n).sort((a, b) => b[1] - a[1])[0]?.[0] || 'supply_store') as Sector
 }
 
-export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove, initialQuery = '', initialSection = null, simple = false }: {
+export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove, onQty, initialQuery = '', initialSection = null, simple = false }: {
   locale: string
+  onQty?: (key: string, qty: string) => void
   simple?: boolean
   initialQuery?: string
   initialSection?: BrowseSection | null
@@ -339,33 +392,46 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [showPicked, setShowPicked] = useState(false)
+  const nameOf = (n: string) => (simple && locale === 'ar' ? homeName(n) : getProductLabel(n, locale))
+  // a real sheet: Escape closes, the page behind does not scroll
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey) }
+  }, [onClose])
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center" onClick={onClose}>
       <div className="bg-white w-full sm:max-w-3xl max-h-[92vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
-        onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}>
-        <div className="px-4 pt-4 pb-2 flex items-center justify-between border-b border-gray-100">
-          <h2 className="font-extrabold text-navy"><Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
-          <button type="button" onClick={onClose} className="text-sm font-bold px-4 py-1.5 rounded-xl text-white" style={{ background: '#0B2438' }}>
-            {picked.length ? L(`Done (${picked.length})`, `مکمل (${picked.length})`, `تم (${picked.length})`) : L('Close', 'بند کریں', 'إغلاق')}
-          </button>
+        onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="catalog-sheet-title">
+        <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-2 border-b border-gray-100">
+          <h2 id="catalog-sheet-title" className="font-extrabold text-navy"><Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
+          {picked.length
+            ? <button type="button" onClick={onClose} className="min-h-[44px] text-sm font-extrabold px-4 rounded-xl text-[#071827]" style={{ background: '#D4A543' }}>
+                {L(`Done (${picked.length})`, `مکمل (${picked.length})`, `تم (${picked.length})`)}
+              </button>
+            : <button type="button" onClick={onClose} aria-label={L('Close', 'بند کریں', 'إغلاق')} className="w-[44px] h-[44px] grid place-items-center rounded-full bg-gray-100 text-[#0B2438] hover:bg-gray-200">
+                <X className="w-5 h-5" aria-hidden />
+              </button>}
         </div>
         <div className="flex-1 overflow-y-auto p-4">
-          <CatalogBrowser locale={locale} onPick={onPick} onRemove={onRemove} picked={picked} initialQuery={initialQuery} initialSection={initialSection} simple={simple} />
+          <CatalogBrowser locale={locale} onPick={onPick} onRemove={onRemove} onQty={onQty} picked={picked} initialQuery={initialQuery} initialSection={initialSection} simple={simple} />
         </div>
         {picked.length > 0 && (
           <div className="border-t border-gray-100 bg-gray-50">
-            <button type="button" onClick={() => setShowPicked(v => !v)} className="w-full px-4 py-2.5 text-xs font-bold text-navy flex justify-between">
-              <span><Glyph e="🧾" /> {L('Your list', 'آپ کی فہرست', 'قائمتك')} ({picked.length})</span><span>{showPicked ? '▾' : '▴'}</span>
+            <button type="button" onClick={() => setShowPicked(v => !v)} aria-expanded={showPicked} className="w-full min-h-[44px] px-4 py-2 text-[13px] font-bold text-navy flex items-center justify-between">
+              <span><Glyph e="🧾" /> {L('Your request', 'آپ کی درخواست', 'طلبك')} ({picked.length})</span>{showPicked ? <ChevronDown className="w-4 h-4" aria-hidden /> : <ChevronUp className="w-4 h-4" aria-hidden />}
             </button>
             {showPicked && (
-              <div className="max-h-40 overflow-y-auto px-3 pb-3 space-y-1">
+              <div className="max-h-48 overflow-y-auto px-3 pb-3 space-y-1">
                 {picked.map(p => (
-                  <div key={p.key} className="flex items-center gap-2 text-xs bg-white rounded-lg px-2 py-1.5">
+                  <div key={p.key} className="flex items-center gap-2 text-[13px] bg-white rounded-lg ps-2 py-0.5">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={productImageUrl(p.name)} alt="" className="w-7 h-7 rounded object-contain bg-gray-50 shrink-0" onError={(e: any) => { e.currentTarget.style.visibility = 'hidden' }} />
-                    <span className="flex-1 truncate" dir="auto">{p.name ? getProductLabel(p.name, locale) : '…'}</span>
-                    {onRemove && <button type="button" onClick={() => onRemove(p.key)} className="text-gray-400 hover:text-red-500 px-1" aria-label={L('Remove', 'ہٹائیں', 'احذف')}>×</button>}
+                    <span className="flex-1 truncate" dir="auto">{p.name ? nameOf(p.name) : '…'}{p.qty ? <span className="text-gray-500"> · {p.qty}</span> : null}</span>
+                    {onRemove && <button type="button" onClick={() => onRemove(p.key)} className="w-[44px] h-[44px] grid place-items-center text-gray-500 hover:text-red-600" aria-label={L(`Remove ${nameOf(p.name)}`, `${nameOf(p.name)} ہٹائیں`, `احذف ${nameOf(p.name)}`)}><X className="w-4 h-4" aria-hidden /></button>}
                   </div>
                 ))}
               </div>

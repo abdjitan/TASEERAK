@@ -10,11 +10,12 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import SupportThread from '@/components/shared/SupportThread'
 import DistrictField from '@/components/shared/DistrictField'
 import EnablePush from '@/components/shared/EnablePush'
 import SellerKindPicker from '@/components/shared/SellerKindPicker'
-import { REGIONS } from '@/types'
+import { REGIONS, CITIES_BY_REGION, getRegionLabel } from '@/types'
+import Link from 'next/link'
+import { Check, Circle, LogOut, LifeBuoy } from 'lucide-react'
 import { CONTRACTOR_FEATURES } from '@/lib/features'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
@@ -25,6 +26,7 @@ import EmailVerify from '@/components/shared/EmailVerify'
 import { friendlyError } from '@/lib/friendlyError'
 import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
+import { askConfirm } from '@/lib/askConfirm'
 
 const txt = {
   ar: {
@@ -38,13 +40,13 @@ const txt = {
     confirmPass: 'تأكيد كلمة المرور الجديدة', changePass: 'تغيير كلمة المرور',
     passMatch: 'كلمات المرور غير متطابقة', passMin: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
     passChanged: '✓ تم تغيير كلمة المرور بنجاح',
-    langTitle: 'اختر لغة العرض', langSaved: '✓ تم حفظ اللغة',
+    langTitle: 'اختر لغة العرض', langSaved: 'اللغة الحالية',
     loading: 'جارٍ التحميل...',
     email: 'البريد الإلكتروني', emailNote: 'لا يمكن تغيير البريد الإلكتروني',
     role: 'نوع الحساب', contractor: 'مشتري', supplier: 'مورد',
     verStatus: 'حالة التحقق', pending: 'قيد المراجعة', verified: 'موثق', rejected: 'مرفوض',
     docsTitle: 'المستندات الرسمية', docsSub: 'ارفع مستنداتك لإتمام عملية التحقق',
-    licenseLabel: 'رخصة العمل', crLabel: 'السجل التجاري',
+    licenseLabel: 'الرخصة البلدية أو رخصة النشاط (اختياري)', crLabel: 'شهادة السجل التجاري',
     uploadDoc: 'اضغط لرفع الملف', docHint: 'PDF أو صورة — حجم أقصى 5MB',
     uploadBtn: 'رفع المستندات', uploaded: '✓ تم رفع المستندات بنجاح',
     currentDoc: 'المستند الحالي', viewDoc: 'عرض',
@@ -61,13 +63,13 @@ const txt = {
     confirmPass: 'Confirm New Password', changePass: 'Change Password',
     passMatch: 'Passwords do not match', passMin: 'Password must be at least 8 characters',
     passChanged: '✓ Password changed successfully',
-    langTitle: 'Choose Display Language', langSaved: '✓ Language saved',
+    langTitle: 'Choose Display Language', langSaved: 'Current language',
     loading: 'Loading...',
     email: 'Email Address', emailNote: 'Email cannot be changed',
     role: 'Account Type', contractor: 'Buyer', supplier: 'Supplier',
     verStatus: 'Verification Status', pending: 'Pending', verified: 'Verified', rejected: 'Rejected',
     docsTitle: 'Official Documents', docsSub: 'Upload your documents to complete verification',
-    licenseLabel: 'Business License', crLabel: 'Commercial Registration',
+    licenseLabel: 'Municipal or activity licence (optional)', crLabel: 'Commercial registration certificate',
     uploadDoc: 'Click to upload file', docHint: 'PDF or image — max 5MB',
     uploadBtn: 'Upload Documents', uploaded: '✓ Documents uploaded successfully',
     currentDoc: 'Current document', viewDoc: 'View',
@@ -84,13 +86,13 @@ const txt = {
     confirmPass: 'نئے پاسورڈ کی تصدیق', changePass: 'پاسورڈ تبدیل کریں',
     passMatch: 'پاسورڈ مماثل نہیں', passMin: 'پاسورڈ کم از کم 8 حروف کا ہونا چاہیے',
     passChanged: '✓ پاسورڈ کامیابی سے تبدیل ہو گیا',
-    langTitle: 'ڈسپلے زبان منتخب کریں', langSaved: '✓ زبان محفوظ ہو گئی',
+    langTitle: 'ڈسپلے زبان منتخب کریں', langSaved: 'موجودہ زبان',
     loading: 'لوڈ ہو رہا ہے...',
     email: 'ای میل ایڈریس', emailNote: 'ای میل تبدیل نہیں کی جا سکتی',
     role: 'اکاؤنٹ کی قسم', contractor: 'خریدار', supplier: 'سپلائر',
     verStatus: 'تصدیق کی حیثیت', pending: 'زیر التواء', verified: 'تصدیق شدہ', rejected: 'مسترد',
     docsTitle: 'سرکاری دستاویزات', docsSub: 'تصدیق مکمل کرنے کے لیے دستاویزات اپلوڈ کریں',
-    licenseLabel: 'کاروباری لائسنس', crLabel: 'تجارتی رجسٹریشن',
+    licenseLabel: 'بلدیہ یا سرگرمی کا لائسنس (اختیاری)', crLabel: 'تجارتی رجسٹریشن سرٹیفکیٹ',
     uploadDoc: 'فائل اپلوڈ کرنے کے لیے کلک کریں', docHint: 'PDF یا تصویر — زیادہ سے زیادہ 5MB',
     uploadBtn: 'دستاویزات اپلوڈ کریں', uploaded: '✓ دستاویزات کامیابی سے اپلوڈ',
     currentDoc: 'موجودہ دستاویز', viewDoc: 'دیکھیں',
@@ -99,10 +101,23 @@ const txt = {
 }
 
 const langOptions = [
-  { key: 'ar', flag: '🇸🇦', name: 'العربية', nameLocal: 'Arabic' },
-  { key: 'en', flag: '🇬🇧', name: 'English', nameLocal: 'الإنجليزية' },
-  { key: 'ur', flag: '🇵🇰', name: 'اردو', nameLocal: 'Urdu' },
+  { key: 'ar', name: 'العربية', nameLocal: 'Arabic' },
+  { key: 'en', name: 'English', nameLocal: 'الإنجليزية' },
+  { key: 'ur', name: 'اردو', nameLocal: 'Urdu' },
 ]
+
+// A phone sign-up gets an internal address (m9665…@phone.taseerak.com): never shown as «your email» (UX-045).
+const isPlaceholderEmail = (e?: string | null) => !e || /@phone\.taseerak\.com$/i.test(String(e))
+
+// Status line: a message starting with ✓ is a success (green + icon), anything else an error.
+function Msg({ m }: { m: string }) {
+  const ok = m.startsWith('✓')
+  return (
+    <div role={ok ? 'status' : 'alert'} className={`text-sm rounded-xl p-3 flex items-center gap-2 ${ok ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+      {ok && <Check className="w-4 h-4 shrink-0" aria-hidden />}{m.replace(/^✓\s*/, '')}
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const { locale, dir, setLocale } = useTranslation()
@@ -168,6 +183,12 @@ export default function SettingsPage() {
   const [docsSaving, setDocsSaving] = useState(false)
   const [crCheck, setCrCheck] = useState<any>(null)
   const [crChecking, setCrChecking] = useState(false)
+  // instant-save switches (notifications, language): their own feedback line (UX-138)
+  const [notifMsg, setNotifMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  function flashNotif(ok: boolean) {
+    setNotifMsg({ ok, text: ok ? L('Saved', 'محفوظ', 'حُفظ') : L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.') })
+    setTimeout(() => setNotifMsg(null), 2500)
+  }
 
   useEffect(() => {
     async function init() {
@@ -205,6 +226,23 @@ export default function SettingsPage() {
     }
     init()
   }, [])
+
+  // Links like /settings#phone or #email (verify banner, gates) open the profile tab, scroll to the
+  // field and highlight it for a moment (UX-138).
+  useEffect(() => {
+    if (loading) return
+    const h = window.location.hash.replace('#', '')
+    if (h !== 'phone' && h !== 'email') return
+    setTab('profile')
+    const t1 = setTimeout(() => {
+      const el = document.getElementById(h)
+      if (!el) return
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('ring-2', 'ring-[#D4A543]', 'ring-offset-4', 'rounded-xl')
+      setTimeout(() => el.classList.remove('ring-2', 'ring-[#D4A543]', 'ring-offset-4', 'rounded-xl'), 2600)
+    }, 150)
+    return () => clearTimeout(t1)
+  }, [loading])
 
   // Locked-field change requests (name / classification)
   const [myRequests, setMyRequests] = useState<any[]>([])
@@ -250,11 +288,14 @@ export default function SettingsPage() {
     }
     setProfileSaving(true); setProfileMsg('')
     const supabase = createClient()
-    // Note: name (company_name_*) and classification (supplier_tier / contractor_grade)
-    // are LOCKED — they change only via an approved request, enforced by a DB trigger.
-    const updateData: any = { phone, region, city, vat_number: vat || null, district: district || null, preferred_language: prefLang }
-    // اسم الشركة قابل للتعديل حتى التوثيق (المُشغّل يقفله بعده)
-    if (!(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') && companyAr.trim()) {
+    // Note: a seller's name (company_name_*) and classification (supplier_tier / contractor_grade)
+    // are LOCKED once verified — they change only via an approved request, enforced by a DB trigger.
+    // The phone is NOT saved from here: it changes only through PhoneVerify (SMS code), so a typo can
+    // never silently drop the verification (UX-046). The language is saved by the language tab.
+    const updateData: any = { region, city, vat_number: vat || null, district: district || null }
+    // the name is editable for buyers always, and for sellers until verification (UX-044)
+    const locked = profile?.role === 'supplier' && (profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq')
+    if (!locked && companyAr.trim()) {
       updateData.company_name_ar = companyAr.trim()
     }
     if (profile?.role === 'supplier') {
@@ -369,11 +410,22 @@ export default function SettingsPage() {
     }
   }
 
-  // Verify existing profile's CR against the official source (Wathq)
+  // Verify the CR against the official source (Wathq). The number TYPED in the field is saved first
+  // (one CR = one account: CR_TAKEN offers the claim flow), then checked (UX-131).
   async function verifyCRSettings() {
-    const cr = (profile?.commercial_registration || '').toString()
+    const cr = normalizeCrInput(crNumber)
     if (!/^[0-9]{10}$/.test(cr)) { setCrCheck({ ok: false, message: cv.noCr }); return }
-    setCrChecking(true); setCrCheck(null)
+    if (!isUnifiedCr(cr)) { setCrCheck({ ok: false, message: crFormatText(locale) }); return }
+    setCrChecking(true); setCrCheck(null); setCrTaken('')
+    if (cr !== (profile?.commercial_registration || '')) {
+      const { error: crErr } = await createClient().from('profiles').update({ commercial_registration: cr }).eq('id', user.id)
+      if (crErr) {
+        setCrChecking(false)
+        if ((crErr as any).hint === 'CR_TAKEN') { setCrTaken(cr); return }
+        setCrCheck({ ok: false, message: friendlyError(crErr.message, t.error, locale) }); return
+      }
+      setProfile((p: any) => ({ ...p, commercial_registration: cr }))
+    }
     try {
       const res = await fetch('/api/verify-cr', {
         method: 'POST',
@@ -403,25 +455,99 @@ export default function SettingsPage() {
     if (data?.signedUrl) window.open(data.signedUrl, '_blank')
   }
 
+  // sign-out from the menu or from this page; an unsent request saved on this device is deleted with
+  // it, so ask first (UX-036)
   async function handleSignOut() {
+    let draft = false
+    try { for (let i = 0; i < localStorage.length; i++) if ((localStorage.key(i) || '').startsWith('taseerak_draft:')) { draft = true; break } } catch {}
+    if (draft && !(await askConfirm(L('Log out? The unsent request saved on this device will be deleted with its photos.', 'لاگ آؤٹ کریں؟ اس ڈیوائس پر محفوظ نہ بھیجی گئی درخواست اپنی تصاویر سمیت حذف ہو جائے گی۔', 'تسجيل الخروج؟ سيُحذف الطلب غير المرسل المحفوظ على هذا الجهاز مع صوره.'), { danger: true, okLabel: L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج') }))) return
     const supabase = createClient()
     clearAllLocalDrafts()
     await supabase.auth.signOut()
     window.location.href = '/login'
   }
 
-  const backHref = profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
+  // the display language is also the language of notifications (UX-138: one setting, not two)
+  async function pickLanguage(key: string) {
+    setLocale(key as any)
+    setPrefLang(key)
+    if (!user) return
+    const { error } = await createClient().from('profiles').update({ preferred_language: key }).eq('id', user.id)
+    flashNotif(!error)
+  }
 
   if (loading) return <PageLoader />
 
+  const isSupplier = profile?.role === 'supplier'
+  const isBuyer = profile?.role === 'contractor'
+  const homeBuyer = isBuyer && profile?.buyer_type === 'individual'
+  const independent = ['individual', 'price_agent', 'broker'].includes(profile?.provider_type)
+  const nameLocked = isSupplier && (profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq')
+  const placeholderEmail = isPlaceholderEmail(user?.email)
+  // a phone sign-up has no password: it signs in with a code (UX-040)
+  const phoneAccount = placeholderEmail
+  // documents are for selling businesses only (company / shop), not buyers or independents (UX-043)
+  const showDocs = isSupplier && !independent
+  const profileTitle = isSupplier && !independent ? t.profileTab
+    : homeBuyer ? L('My details', 'میری تفصیلات', 'بياناتي')
+    : L('Account details', 'اکاؤنٹ کی تفصیلات', 'بيانات الحساب')
+  const nameLabel = isSupplier ? (independent ? L('Name', 'نام', 'الاسم') : t.companyAr)
+    : homeBuyer ? L('Name', 'نام', 'الاسم') : L('Company or establishment name', 'کمپنی یا ادارے کا نام', 'اسم الشركة أو المؤسسة')
+  const namePlaceholder = homeBuyer || (isSupplier && independent) ? L('Your full name', 'آپ کا پورا نام', 'اسمك الكامل')
+    : L('Company or establishment name', 'کمپنی یا ادارے کا نام', 'اسم الشركة أو المؤسسة')
+  const showVat = isSupplier ? !(independent && !vatNumber) : homeBuyer ? !!profile?.vat_number : true
+  const crDigits = normalizeCrInput(crNumber)
+  const crValid = isUnifiedCr(crDigits)
+  const cityOptions = CITIES_BY_REGION[region] || []
+  const cityKnown = !city || cityOptions.some(c => c.ar === city)
+
+  const tabs = [
+    { key: 'profile', icon: <Glyph e="👤" />, label: profileTitle },
+    ...(showDocs ? [{ key: 'docs', icon: <Glyph e="📄" />, label: t.docsTab }] : []),
+    { key: 'password', icon: <Glyph e="🔒" />, label: phoneAccount ? L('Sign-in', 'سائن اِن', 'تسجيل الدخول') : t.passwordTab },
+    { key: 'language', icon: <Glyph e="🌐" />, label: t.langTab },
+  ]
+  const supportLabel = L('Support', 'سپورٹ', 'الدعم')
+  const deleteLabel = L('Delete my account', 'میرا اکاؤنٹ حذف کریں', 'حذف حسابي')
+  const signOutLabel = L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج')
+
+  // status pill under the avatar: a buyer sees the phone state, a seller the review state
+  const statusPill = isSupplier
+    ? <span className={`inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold ${
+        profile?.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-800' :
+        profile?.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
+      }`}>
+        {profile?.verification_status === 'verified' ? t.verified : profile?.verification_status === 'rejected' ? t.rejected : t.pending}
+      </span>
+    : profile?.phone_verified_at
+      ? <span className="inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800"><Check className="w-3.5 h-3.5" aria-hidden />{L('Mobile verified', 'موبائل تصدیق شدہ', 'الجوال موثّق')}</span>
+      : <a href="#phone" onClick={() => setTab('profile')} className="inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-800">{L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'وثّق جوالك')}</a>
+
   return (
-    <AppShell title={t.title} company={companyAr} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} onSignOut={handleSignOut} dir={dir}>
+    <AppShell title={t.title} company={companyAr} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} dir={dir}>
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold mb-8" style={{ color: '#0B2438' }}>{t.title}</h1>
+        <h1 className="hidden lg:block text-2xl font-bold mb-8" style={{ color: '#0B2438' }}>{t.title}</h1>
+
+        {/* Phones: one horizontal tab row that stays under the top bar, so a tab never changes content
+            out of sight below a tall menu card (UX-138) */}
+        <div className="lg:hidden sticky top-[61px] z-20 -mx-4 px-4 py-2 mb-4 bg-[#F4F3EF]/95 backdrop-blur border-b border-gray-200/70">
+          <div role="tablist" aria-label={t.title} className="flex gap-2 overflow-x-auto">
+            {tabs.map(item => (
+              <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)}
+                className={`shrink-0 min-h-[44px] inline-flex items-center gap-1.5 px-3.5 rounded-xl text-sm font-bold whitespace-nowrap border ${
+                  tab === item.key ? 'bg-[#0B2438] text-white border-[#0B2438]' : 'bg-white text-[#0B2438] border-gray-200'}`}>
+                {item.icon}{item.label}
+              </button>
+            ))}
+            <Link href="/support" className="shrink-0 min-h-[44px] inline-flex items-center gap-1.5 px-3.5 rounded-xl text-sm font-bold whitespace-nowrap border bg-white text-[#0B2438] border-gray-200">
+              <LifeBuoy className="w-4 h-4" aria-hidden />{supportLabel}
+            </Link>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Sidebar (desktop) */}
+          <div className="hidden lg:block lg:col-span-1">
             <div className="bg-white rounded-2xl p-3 border border-gray-100 shadow-sm">
               {/* Avatar */}
               <div className="text-center p-4 border-b border-gray-50 mb-2">
@@ -429,235 +555,190 @@ export default function SettingsPage() {
                   style={{ background: '#0B2438' }}>
                   {companyAr?.[0] || '?'}
                 </div>
-                <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{companyAr}</div>
-                <div className="text-xs text-gray-400 mt-0.5">{user?.email}</div>
-                <span className={`inline-block mt-2 text-xs px-2 py-0.5 rounded-full font-semibold ${
-                  profile?.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-700' :
-                  profile?.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {profile?.verification_status === 'verified' ? t.verified : profile?.verification_status === 'rejected' ? t.rejected : t.pending}
-                </span>
+                <div className="font-bold text-sm break-words" style={{ color: '#0B2438' }}>{companyAr}</div>
+                {/* the phone for a phone sign-up, never the internal placeholder address (UX-045) */}
+                <div className="text-xs text-gray-600 mt-0.5 break-all" dir="ltr">{placeholderEmail ? (profile?.phone || '') : user?.email}</div>
+                {statusPill}
               </div>
 
-              {[
-                { key: 'profile', icon: <Glyph e="🏢" />, label: t.profileTab },
-                // فرد / وكيل أسعار: ما عنده سجل ولا رخصة — ثقته من التقييمات، فما في تبويب مستندات
-                ...(['individual', 'price_agent', 'broker'].includes(profile?.provider_type) ? [] : [{ key: 'docs', icon: <Glyph e="📄" />, label: t.docsTab }]),
-                { key: 'support', icon: <Glyph e="💬" />, label: locale === 'en' ? 'Support' : locale === 'ur' ? 'سپورٹ' : 'الدعم والرسائل' },
-                { key: 'password', icon: <Glyph e="🔒" />, label: t.passwordTab },
-                { key: 'language', icon: <Glyph e="🌐" />, label: t.langTab },
-              ].map(item => (
-                <button key={item.key} onClick={() => setTab(item.key)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-right ${
-                    tab === item.key ? 'text-white' : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                  style={tab === item.key ? { background: '#0B2438' } : {}}>
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
+              <div role="tablist" aria-orientation="vertical" aria-label={t.title}>
+                {tabs.map(item => (
+                  <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)}
+                    className={`w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-start ${
+                      tab === item.key ? 'text-white' : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                    style={tab === item.key ? { background: '#0B2438' } : {}}>
+                    <span>{item.icon}</span>
+                    <span>{item.label}</span>
+                  </button>
+                ))}
+              </div>
+              {/* one support entry for the whole app: the /support page (UX-033) */}
+              <Link href="/support" className="w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
+                <LifeBuoy className="w-[1em] h-[1em]" aria-hidden /><span>{supportLabel}</span>
+              </Link>
+              <div className="mt-2 pt-2 border-t border-gray-100">
+                <button type="button" onClick={handleSignOut} className="w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50">
+                  <LogOut className="w-[1em] h-[1em]" aria-hidden /><span>{signOutLabel}</span>
                 </button>
-              ))}
-              <a href="/account/delete" className="mt-2 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50">
-                <span><Glyph e="🗑" /></span>
-                <span>{locale === 'en' ? 'Delete my account' : locale === 'ur' ? 'میرا اکاؤنٹ حذف کریں' : 'حذف حسابي'}</span>
-              </a>
+                <a href="/account/delete" className="w-full min-h-[44px] flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-700 hover:bg-red-50">
+                  <span><Glyph e="🗑" /></span>
+                  <span>{deleteLabel}</span>
+                </a>
+              </div>
             </div>
           </div>
 
           {/* Content */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 min-w-0">
             {/* Profile Tab */}
-            {tab === 'profile' && (
-              <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
-                <h2 className="text-lg font-bold mb-6" style={{ color: '#0B2438' }}>{t.profileTab}</h2>
+            {(tab === 'profile' || (tab === 'docs' && !showDocs)) && (
+              <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
+                <h2 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>{profileTitle}</h2>
+                <p className="text-sm text-gray-600 mb-6">{t.role}: <span className="font-semibold text-[#0B2438]">{isBuyer ? t.contractor : t.supplier}</span></p>
                 {/* owner 2026-11-22: «لبيتي» = the simple request and a short home; changeable here any time */}
-                {profile?.role === 'contractor' && (
-                  <div className="mb-6 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/5 p-4">
-                    <div className="text-sm font-bold text-[#0B2438] mb-2">{locale === 'en' ? 'Who are you buying for?' : locale === 'ur' ? 'آپ کس کے لیے خرید رہے ہیں؟' : 'لمن تشتري؟'}</div>
-                    <div className="grid grid-cols-2 gap-2" role="radiogroup">
-                      {([['individual', locale === 'en' ? 'My home' : locale === 'ur' ? 'اپنا گھر' : 'لبيتي', locale === 'en' ? 'Simple request and home screen' : locale === 'ur' ? 'آسان درخواست' : 'طلب وصفحة رئيسية أبسط'], ['business', locale === 'en' ? 'Contractor or company' : locale === 'ur' ? 'ٹھیکیدار یا کمپنی' : 'مقاول أو شركة', locale === 'en' ? 'All options' : locale === 'ur' ? 'تمام اختیارات' : 'كل الخيارات']] as const).map(([v, label, sub]) => (
-                        <button key={v} type="button" role="radio" aria-checked={profile?.buyer_type === v}
-                          onClick={async () => { const prev = profile?.buyer_type; setProfile((p: any) => ({ ...p, buyer_type: v })); rememberBuyerType(v); const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id); if (error) setProfile((p: any) => ({ ...p, buyer_type: prev })) }}
-                          className={`text-start rounded-xl border-2 px-3 py-2.5 ${profile?.buyer_type === v ? 'border-[#D4A543] bg-white' : 'border-gray-200 bg-white/60 hover:border-gray-300'}`}>
-                          <span className="block text-sm font-bold text-[#0B2438]">{profile?.buyer_type === v ? '✓ ' : ''}{label}</span>
-                          <span className="block text-[11px] text-gray-500">{sub}</span>
-                        </button>
-                      ))}
+                {isBuyer && (
+                  <div className="mb-6 rounded-xl border border-gray-200 p-4">
+                    <div id="buyer-type-label" className="text-sm font-bold text-[#0B2438] mb-2">{L('Who are you buying for?', 'آپ کس کے لیے خرید رہے ہیں؟', 'لمن تشتري؟')}</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-labelledby="buyer-type-label">
+                      {([['individual', L('My home', 'اپنا گھر', 'لبيتي'), L('Simple request and home screen', 'آسان درخواست اور ہوم اسکرین', 'طلب وصفحة رئيسية أبسط')], ['business', L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'), L('All options', 'تمام اختیارات', 'كل الخيارات')]] as const).map(([v, label, sub]) => {
+                        const on = profile?.buyer_type === v
+                        return (
+                          <button key={v} type="button" role="radio" aria-checked={on}
+                            onClick={async () => { const prev = profile?.buyer_type; setProfile((p: any) => ({ ...p, buyer_type: v })); rememberBuyerType(v); const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id); if (error) { setProfile((p: any) => ({ ...p, buyer_type: prev })); rememberBuyerType(prev) } flashNotif(!error) }}
+                            className={`min-h-[56px] text-start rounded-xl border-2 px-3 py-2.5 flex items-start gap-2 ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                            <span className={`mt-0.5 w-5 h-5 shrink-0 rounded-full border-2 grid place-items-center ${on ? 'border-[#0B2438] bg-[#0B2438] text-white' : 'border-gray-300'}`}>{on && <Check className="w-3 h-3" strokeWidth={3} aria-hidden />}</span>
+                            <span>
+                              <span className="block text-sm font-bold text-[#0B2438]">{label}</span>
+                              <span className="block text-[12px] text-gray-600">{sub}</span>
+                            </span>
+                          </button>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* Read-only info */}
-                <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-[#f4f6f9] rounded-xl">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1">{t.email}</label>
-                    <div className="text-sm text-gray-700">{user?.email}</div>
-                    <div className="text-[10px] text-gray-400 mt-0.5">{t.emailNote}</div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1">{t.role}</label>
-                    <div className="text-sm font-semibold" style={{ color: '#0B2438' }}>
-                      {profile?.role === 'contractor' ? t.contractor : t.supplier}
-                    </div>
-                  </div>
-                </div>
-
                 <form onSubmit={saveProfile} className="space-y-5">
-                  <div className={companyEn ? 'grid grid-cols-2 gap-4' : ''}>
+                  <div className={companyEn ? 'grid grid-cols-1 sm:grid-cols-2 gap-4' : ''}>
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyAr} {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? <Glyph e="🔒" /> : ''}</label>
-                      {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? (
-                        <div className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
+                      <label htmlFor="set-name" className="block text-xs font-bold text-gray-600 mb-1.5">{nameLabel} {nameLocked ? <Glyph e="🔒" /> : ''}</label>
+                      {nameLocked ? (
+                        <div id="set-name" className="input-field bg-gray-50 text-gray-700 flex items-center min-h-[44px]">{companyAr || '—'}</div>
                       ) : (
-                        <input value={companyAr} onChange={e => setCompanyAr(e.target.value)} className="input-field" placeholder={L('Company / business name', 'کمپنی / کاروبار کا نام', 'اسم الشركة أو النشاط')} />
+                        <input id="set-name" value={companyAr} onChange={e => setCompanyAr(e.target.value)} className="input-field" autoComplete={homeBuyer ? 'name' : 'organization'} placeholder={namePlaceholder} />
                       )}
                     </div>
                     {companyEn && (
                       <div>
-                        <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.companyEn} <Glyph e="🔒" /></label>
-                        <div className="input-field bg-gray-50 text-gray-500 flex items-center min-h-[44px]" dir="ltr">{companyEn}</div>
+                        <div className="block text-xs font-bold text-gray-600 mb-1.5">{t.companyEn} <Glyph e="🔒" /></div>
+                        <div className="input-field bg-gray-50 text-gray-600 flex items-center min-h-[44px]" dir="ltr">{companyEn}</div>
                       </div>
                     )}
                   </div>
-                  <div className="-mt-3">
-                    {(profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq') ? (
-                      pendingFor('name')
-                        ? <p className="text-[11px] text-amber-600"><Glyph e="⏳" /> {L('Name change request under review (to', 'نام کی تبدیلی کی درخواست زیرِ جائزہ (نیا نام', 'طلب تغيير الاسم قيد مراجعة الإدارة (إلى')} «{pendingFor('name').new_value}»).</p>
-                        : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#0B2438' }}><Glyph e="🔒" /> {L('The name is locked to your CR — request a change', 'نام سی آر سے جڑا ہے — تبدیلی کی درخواست دیں', 'الاسم ثابت لارتباطه بالسجل التجاري — اطلب تعديله')}</button>
-                    ) : (
-                      <p className="text-[11px] text-gray-400"><Glyph e="✏" /> {L('You can edit your company name until your account is verified.', 'اکاؤنٹ کی تصدیق تک آپ کمپنی کا نام بدل سکتے ہیں، پھر یہ مقفل ہو جائے گا۔', 'يمكنك تعديل اسم الشركة حتى يتم توثيق حسابك، ثم يُقفل.')}</p>
-                    )}
-                  </div>
-
-                  <div id="email" className="scroll-mt-24">
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{L('Email', 'ای میل', 'البريد الإلكتروني')}</label>
-                    <EmailVerify currentEmail={user?.email} verified={!!profile?.email_verified_at} locale={locale}
-                      onDone={() => setProfile({ ...profile, email_verified_at: new Date().toISOString() })} />
-                  </div>
-                  <div id="phone" className="scroll-mt-24">
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.phone}</label>
-                    <input value={phone} onChange={e => setPhone(e.target.value)}
-                      className="input-field" placeholder="+966 5X XXX XXXX" />
-                    <PhoneVerify initialPhone={phone} locale={locale}
-                      verified={!!profile?.phone_verified_at && (phone || '').replace(/\D/g, '') === String(profile?.phone || '').replace(/\D/g, '')}
-                      waVerified={!!profile?.whatsapp_verified_at}
-                      onDone={(ph: string) => { setPhone(ph); setProfile({ ...profile, phone: ph, phone_verified_at: new Date().toISOString() }) }} />
-                    {profile?.role === 'supplier' && (
-                      <p className="text-[10px] text-gray-400 mt-1"><Glyph e="🔒" /> {L('This WhatsApp number is for the platform and alerts only — buyers do not see it.', 'یہ واٹس ایپ نمبر صرف پلیٹ فارم اور اطلاعات کے لیے ہے — خریدار اسے نہیں دیکھتا۔', 'رقم الواتساب للمنصة والإشعارات فقط — لا يظهر للمشتري.')}</p>
-                    )}
-                  </div>
-
-                  {/* رقم التواصل الرسمي — يظهر للمقاول بعد الترسية فقط (المورد فقط) */}
-                  {profile?.role === 'supplier' && (
-                    <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-3.5">
-                      <label className="block text-xs font-bold text-gray-600 mb-2"><Glyph e="📞" /> {L('Official contact number for buyers', 'خریدار کے لیے رابطہ نمبر', 'رقم التواصل الرسمي مع المشتري')}</label>
-                      <label className="flex items-center gap-2 cursor-pointer mb-2">
-                        <input type="checkbox" checked={!useDiffContact} onChange={e => setUseDiffContact(!e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
-                        <span className="text-xs text-gray-700">{L('Same as WhatsApp', 'واٹس ایپ والا نمبر', 'نفس رقم الواتساب')}</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer mb-2">
-                        <input type="checkbox" checked={useDiffContact} onChange={e => setUseDiffContact(e.target.checked)} className="w-4 h-4 accent-[#0F6E56]" />
-                        <span className="text-xs text-gray-700">{L('Another number', 'دوسرا نمبر', 'رقم آخر للتواصل')}</span>
-                      </label>
-                      {useDiffContact && (
-                        <input value={contactPhone} onChange={e => setContactPhone(e.target.value)}
-                          className="input-field" dir="ltr" placeholder="+966 1X XXX XXXX" />
+                  {/* the lock note is for sellers only: a buyer's name is never tied to a CR (UX-044) */}
+                  {isSupplier && (
+                    <div className="-mt-3">
+                      {nameLocked ? (
+                        pendingFor('name')
+                          ? <p className="text-[12px] text-amber-800"><Glyph e="⏳" /> {L('Name change request under review (to', 'نام کی تبدیلی کی درخواست زیرِ جائزہ (نیا نام', 'طلب تغيير الاسم قيد مراجعة الإدارة (إلى')} «{pendingFor('name').new_value}»).</p>
+                          : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="min-h-[44px] text-[12px] font-semibold underline text-start" style={{ color: '#0B2438' }}><Glyph e="🔒" /> {L('The name is tied to your commercial registration. Request a change', 'نام تجارتی رجسٹریشن سے جڑا ہے۔ تبدیلی کی درخواست دیں', 'الاسم مرتبط بالسجل التجاري. اطلب تعديله')}</button>
+                      ) : (
+                        <p className="text-[12px] text-gray-600"><Glyph e="✏" /> {L('You can edit your name until your account is verified.', 'اکاؤنٹ کی تصدیق تک آپ نام بدل سکتے ہیں، پھر یہ مقفل ہو جائے گا۔', 'يمكنك تعديل الاسم حتى يتم توثيق حسابك، ثم يُقفل.')}</p>
                       )}
-                      <p className="text-[10px] text-gray-400 mt-1.5">{L('Buyers see this number only after choosing your offer; before that, contact is through the in-app chat.', 'خریدار یہ نمبر آپ کی آفر منتخب کرنے کے بعد ہی دیکھتا ہے؛ اس سے پہلے بات چیت ایپ کے اندر ہوتی ہے۔', 'يظهر هذا الرقم للمشتري بعد اختيار العرض فقط، وقبلها يكون التواصل عبر الدردشة الداخلية.')}</p>
                     </div>
                   )}
 
-                  {/* an independent seller normally has no VAT registration — shown only if one was entered */}
-                  {!(profile?.role === 'supplier' && ['individual', 'price_agent', 'broker'].includes(profile?.provider_type) && !vatNumber) && <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">
-                      {locale === 'en' ? 'VAT Number' : locale === 'ur' ? 'ٹیکس نمبر' : 'الرقم الضريبي (ضريبة القيمة المضافة)'}
+                  <div id="email" className="scroll-mt-32">
+                    <div className="block text-xs font-bold text-gray-600 mb-1.5">{isBuyer ? L('Email (optional)', 'ای میل (اختیاری)', 'البريد الإلكتروني (اختياري)') : L('Email', 'ای میل', 'البريد الإلكتروني')}</div>
+                    <EmailVerify currentEmail={user?.email} verified={!!profile?.email_verified_at} locale={locale} optional={isBuyer}
+                      onDone={() => setProfile({ ...profile, email_verified_at: new Date().toISOString() })} />
+                  </div>
+                  {/* the mobile is read-only here: it changes only with an SMS code (UX-046) */}
+                  <div id="phone" className="scroll-mt-32">
+                    <div className="block text-xs font-bold text-gray-600 mb-1.5">{t.phone}</div>
+                    {profile?.phone && (
+                      <div className="input-field bg-gray-50 text-gray-800 flex items-center min-h-[44px] font-semibold"><span dir="ltr">{profile.phone}</span></div>
+                    )}
+                    <PhoneVerify initialPhone={profile?.phone || ''} locale={locale}
+                      verified={!!profile?.phone_verified_at}
+                      waVerified={!!profile?.whatsapp_verified_at}
+                      onDone={(ph: string) => { setPhone(ph); setProfile({ ...profile, phone: ph, phone_verified_at: new Date().toISOString() }) }} />
+                    <p className="text-[12px] text-gray-600 mt-1">{L('Changing the number needs a new SMS code.', 'نمبر بدلنے کے لیے نیا SMS کوڈ درکار ہے۔', 'تغيير الرقم يتطلّب توثيقه من جديد برمز SMS.')}</p>
+                    {isSupplier && (
+                      <p className="text-[12px] text-gray-600 mt-1"><Glyph e="🔒" /> {L('This WhatsApp number is for the platform and alerts only. Buyers do not see it.', 'یہ واٹس ایپ نمبر صرف پلیٹ فارم اور اطلاعات کے لیے ہے۔ خریدار اسے نہیں دیکھتا۔', 'رقم الواتساب للمنصة والإشعارات فقط، ولا يظهر للمشتري.')}</p>
+                    )}
+                  </div>
+
+                  {/* رقم التواصل الرسمي — يظهر للمشتري بعد الاختيار فقط (المورد فقط) */}
+                  {isSupplier && (
+                    <fieldset className="rounded-xl border border-gray-100 bg-gray-50/60 p-3.5">
+                      <legend className="px-1 text-xs font-bold text-gray-700"><Glyph e="📞" /> {L('Official contact number for buyers', 'خریدار کے لیے رابطہ نمبر', 'رقم التواصل الرسمي مع المشتري')}</legend>
+                      <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
+                        <input type="radio" name="contact-mode" checked={!useDiffContact} onChange={() => setUseDiffContact(false)} className="w-5 h-5 accent-[#0B2438]" />
+                        <span className="text-[13px] text-gray-800">{L('Same as WhatsApp', 'واٹس ایپ والا نمبر', 'نفس رقم الواتساب')}</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
+                        <input type="radio" name="contact-mode" checked={useDiffContact} onChange={() => setUseDiffContact(true)} className="w-5 h-5 accent-[#0B2438]" />
+                        <span className="text-[13px] text-gray-800">{L('Another number', 'دوسرا نمبر', 'رقم آخر للتواصل')}</span>
+                      </label>
+                      {useDiffContact && (
+                        <input value={contactPhone} onChange={e => setContactPhone(e.target.value)} aria-label={L('Contact number', 'رابطہ نمبر', 'رقم التواصل')}
+                          className="input-field" dir="ltr" inputMode="tel" placeholder="+966 1X XXX XXXX" />
+                      )}
+                      <p className="text-[12px] text-gray-600 mt-1.5">{L('Buyers see this number only after choosing your offer; before that, contact is through the in-app chat.', 'خریدار یہ نمبر آپ کی آفر منتخب کرنے کے بعد ہی دیکھتا ہے؛ اس سے پہلے بات چیت ایپ کے اندر ہوتی ہے۔', 'يظهر هذا الرقم للمشتري بعد اختيار العرض فقط، وقبلها يكون التواصل عبر الدردشة الداخلية.')}</p>
+                    </fieldset>
+                  )}
+
+                  {/* VAT: a seller's invoices need it; a business buyer may add it (shown to the seller for the
+                      invoice); a home buyer only sees it when one was saved (UX-043) */}
+                  {showVat && <div>
+                    <label htmlFor="set-vat" className="block text-xs font-bold text-gray-600 mb-1.5">
+                      {isSupplier ? L('VAT number', 'ٹیکس نمبر', 'الرقم الضريبي (ضريبة القيمة المضافة)') : L('VAT number (optional)', 'ٹیکس نمبر (اختیاری)', 'الرقم الضريبي (اختياري)')}
                     </label>
-                    <input value={vatNumber} onChange={e => setVatNumber(e.target.value)}
+                    <input id="set-vat" value={vatNumber} onChange={e => setVatNumber(e.target.value)} inputMode="numeric"
                       className="input-field font-mono" dir="ltr" placeholder="3XXXXXXXXXXXXX3" maxLength={15} />
-                    <p className="text-[10px] text-gray-400 mt-1">
-                      {locale === 'en' ? 'Required to issue ZATCA tax invoices.' : locale === 'ur' ? 'ٹیکس انوائس کے لیے ضروری۔' : 'يلزم لإصدار الفواتير الضريبية وفق هيئة الزكاة والضريبة.'}
+                    <p className="text-[12px] text-gray-600 mt-1">
+                      {isSupplier
+                        ? L('Required to issue ZATCA tax invoices.', 'ٹیکس انوائس کے لیے ضروری۔', 'يلزم لإصدار الفواتير الضريبية وفق هيئة الزكاة والضريبة.')
+                        : L('It is shown with your request so the seller can write it on your invoice.', 'یہ آپ کی درخواست کے ساتھ دکھایا جاتا ہے تاکہ فروخت کنندہ اسے آپ کی انوائس پر لکھ سکے۔', 'يظهر مع طلبك ليكتبه البائع في فاتورتك.')}
                     </p>
                   </div>}
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.region}</label>
-                      <select value={region} onChange={e => setRegion(e.target.value)} className="input-field">
+                      <label htmlFor="set-region" className="block text-xs font-bold text-gray-600 mb-1.5">{t.region}</label>
+                      <select id="set-region" value={region} onChange={e => { setRegion(e.target.value); setCity(''); setDistrict('') }} className="input-field">
                         <option value="">{t.selectRegion}</option>
-                        {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+                        {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.city}</label>
-                      <input value={city} onChange={e => setCity(e.target.value)} className="input-field" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'District' : locale === 'ur' ? 'علاقہ' : 'الحي'}</label>
-                      <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-1.5">{locale === 'en' ? 'Notification language' : locale === 'ur' ? 'اطلاعات کی زبان' : 'لغة الإشعارات'}</label>
-                      <select value={prefLang} onChange={e => setPrefLang(e.target.value)} className="input-field">
-                        <option value="ar">العربية</option>
-                        <option value="en">English</option>
-                        <option value="ur">اردو</option>
+                      <label htmlFor="set-city" className="block text-xs font-bold text-gray-600 mb-1.5">{t.city}</label>
+                      {/* a list from the region (UX-138), so the city always matches the routing names */}
+                      <select id="set-city" value={city} onChange={e => { setCity(e.target.value); setDistrict('') }} className="input-field" disabled={!region}>
+                        <option value="">{region ? L('Choose the city', 'شہر منتخب کریں', 'اختر المدينة') : L('Choose the region first', 'پہلے علاقہ منتخب کریں', 'اختر المنطقة أولاً')}</option>
+                        {!cityKnown && <option value={city}>{city}</option>}
+                        {cityOptions.map(c => <option key={c.ar} value={c.ar}>{locale === 'ar' ? c.ar : c.en}</option>)}
                       </select>
                     </div>
                   </div>
 
-                  {/* إشعارات المتصفح (Web Push) */}
-                  <div className="border-t border-gray-100 pt-5">
-                    <EnablePush variant="card" />
-                  </div>
-
-                  {/* Email notifications: important updates only (offers, deals, reminders); the person can stop them */}
-                  <div className="border-t border-gray-100 pt-5">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="checkbox" className="mt-1 w-4 h-4 accent-[#0B2438]" checked={emailOn} disabled={emailBusy}
-                        onChange={async e => {
-                          const on = e.target.checked
-                          setEmailBusy(true); setEmailOn(on)
-                          const { error } = await createClient().rpc('set_email_notifications', { p_on: on })
-                          if (error) setEmailOn(!on)
-                          setEmailBusy(false)
-                        }} />
-                      <span>
-                        <span className="block text-sm font-bold text-gray-700">{L('Email notifications', 'ای میل اطلاعات', 'إشعارات البريد الإلكتروني')}</span>
-                        <span className="block text-xs text-gray-500 mt-0.5">{L('Important updates only: new offers and requests, deal steps and reminders. Messages arrive as one short notice at most every 3 hours.', 'صرف اہم اپ ڈیٹس: نئی پیشکشیں اور درخواستیں، سودے کے مراحل اور یاد دہانیاں۔ پیغامات کی اطلاع زیادہ سے زیادہ ہر 3 گھنٹے میں ایک بار۔', 'التحديثات المهمة فقط: العروض والطلبات الجديدة، ومراحل الصفقة، والتذكيرات. وتصل الرسائل في تنبيه واحد مختصر كل 3 ساعات على الأكثر.')}</span>
-                      </span>
-                    </label>
-                  </div>
-
-                  {/* WhatsApp notifications (owner 2026-11-14): approved templates from the Taseerak number to the saved mobile */}
-                  <div className="border-t border-gray-100 pt-5">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input type="checkbox" className="mt-1 w-4 h-4 accent-[#0B2438]" checked={waOn} disabled={waBusy}
-                        onChange={async e => {
-                          const on = e.target.checked
-                          setWaBusy(true); setWaOn(on)
-                          const { error } = await createClient().rpc('set_whatsapp_notifications', { p_on: on })
-                          if (error) setWaOn(!on)
-                          setWaBusy(false)
-                        }} />
-                      <span>
-                        <span className="block text-sm font-bold text-gray-700">{L('WhatsApp notifications', 'واٹس ایپ اطلاعات', 'إشعارات واتساب')}</span>
-                        <span className="block text-xs text-gray-500 mt-0.5">{L('From the Taseerak number to your saved mobile: new matching requests, received offers, awards and new messages (at most one notice per conversation every 2 hours).', 'تسعیرک کے نمبر سے آپ کے محفوظ موبائل پر: نئی درخواستیں، موصول پیشکشیں، ایوارڈ اور نئے پیغامات (ہر گفتگو پر زیادہ سے زیادہ ہر 2 گھنٹے میں ایک اطلاع)۔', 'من رقم تسعيرك إلى جوالك المسجّل: الطلبات المطابقة الجديدة، والعروض الواصلة، والترسية، والرسائل الجديدة (تنبيه واحد لكل محادثة كل ساعتين على الأكثر).')}</span>
-                      </span>
-                    </label>
+                  <div>
+                    <div className="block text-xs font-bold text-gray-600 mb-1.5">{L('District', 'محلہ', 'الحي')}</div>
+                    <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
                   </div>
 
                   {/* Seller kind + company activity (the buyer-facing tier is derived from it) */}
-                  {profile?.role === 'supplier' && (
+                  {isSupplier && (
                     <div className="border-t border-gray-100 pt-5">
-                      <label className="block text-xs font-bold text-gray-500 mb-2">{locale === 'en' ? 'Account type' : locale === 'ur' ? 'اکاؤنٹ کی قسم' : 'نوع الحساب'}</label>
+                      <div className="block text-xs font-bold text-gray-600 mb-2">{L('Account type', 'اکاؤنٹ کی قسم', 'نوع الحساب')}</div>
                       <SellerKindPicker providerType={profile?.provider_type} supplierTier={supplierTier} locale={locale}
                         onChange={(pt: string, tr: string | null) => { setProfile({ ...profile, provider_type: pt, supplier_tier: tr }); setSupplierTier(tr || 'shop') }} />
-                      {!['individual', 'price_agent', 'broker'].includes(profile?.provider_type) && (
+                      {!independent && (
                         <>
-                          <label className="block text-xs font-bold text-gray-500 mb-1 mt-4">{L('Minimum order value (SAR)', 'کم از کم آرڈر کی قدر (ریال)', 'الحد الأدنى لقيمة الطلب (ر.س)')}</label>
-                          <input type="number" value={minOrderValue} onChange={e => setMinOrderValue(e.target.value)}
+                          <label htmlFor="set-minorder" className="block text-xs font-bold text-gray-600 mb-1 mt-4">{L('Minimum order value (SAR)', 'کم از کم آرڈر کی قدر (ریال)', 'الحد الأدنى لقيمة الطلب (ر.س)')}</label>
+                          <input id="set-minorder" type="number" inputMode="decimal" value={minOrderValue} onChange={e => setMinOrderValue(e.target.value)}
                             className="input-field" placeholder={L('0 = no minimum', '0 = کوئی حد نہیں', '0 = بدون حد أدنى')} min="0" />
                         </>
                       )}
@@ -665,51 +746,99 @@ export default function SettingsPage() {
                   )}
 
                   {/* Contractor Grade — locked (hidden until contractor features return) */}
-                  {CONTRACTOR_FEATURES && profile?.role === 'contractor' && (
+                  {CONTRACTOR_FEATURES && isBuyer && (
                     <div className="border-t border-gray-100 pt-5">
-                      <label className="block text-xs font-bold text-gray-500 mb-2">درجة تصنيف شركتك (للمقاولين) — وزارة الشؤون البلدية <Glyph e="🔒" /></label>
+                      <div className="block text-xs font-bold text-gray-600 mb-2">درجة تصنيف شركتك (للمقاولين) — وزارة الشؤون البلدية <Glyph e="🔒" /></div>
                       <div className="mb-1">
-                        <span className="inline-block px-5 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm font-black text-gray-700">
+                        <span className="inline-block px-5 py-2.5 rounded-xl border-2 border-gray-200 bg-gray-50 text-sm font-bold text-gray-700">
                           {contractorGrade ? `درجة ${({ A: 'أ', B: 'ب', C: 'ج', D: 'د' })[contractorGrade] || contractorGrade}` : '— غير محدّدة —'}
                         </span>
                       </div>
                       {pendingFor('classification')
-                        ? <p className="text-[11px] text-amber-600"><Glyph e="⏳" /> طلب تغيير الدرجة قيد مراجعة الإدارة.</p>
-                        : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(contractorGrade || 'C'); setCrqReason(''); setCrqMsg('') }} className="text-[11px] font-semibold underline" style={{ color: '#0B2438' }}><Glyph e="🔒" /> الدرجة ثابتة — اطلب تعديلها</button>}
+                        ? <p className="text-[12px] text-amber-800"><Glyph e="⏳" /> طلب تغيير الدرجة قيد مراجعة الإدارة.</p>
+                        : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(contractorGrade || 'C'); setCrqReason(''); setCrqMsg('') }} className="min-h-[44px] text-[12px] font-semibold underline" style={{ color: '#0B2438' }}><Glyph e="🔒" /> الدرجة ثابتة، اطلب تعديلها</button>}
                     </div>
                   )}
 
-                  {profileMsg && (
-                    <div className={`text-sm rounded-xl p-3 ${profileMsg.includes('✓') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-                      {profileMsg}
-                    </div>
-                  )}
+                  {profileMsg && <Msg m={profileMsg} />}
 
                   <button type="submit" disabled={profileSaving}
-                    className="px-8 py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
-                    style={{ background: '#D4A543' }}>
+                    className="w-full sm:w-auto min-h-[48px] px-8 py-3 rounded-xl font-bold text-sm disabled:opacity-50 transition-all hover:shadow-lg"
+                    style={{ background: '#D4A543', color: '#071827' }}>
                     {profileSaving ? t.saving : t.saveProfile}
                   </button>
                 </form>
 
+                {/* Notifications: instant switches, kept out of the form above so «Save» is not
+                    mistaken for what saves them (UX-138) */}
+                <section className="mt-8 border-t border-gray-100 pt-6 space-y-5" aria-labelledby="set-notif-title">
+                  <div>
+                    <h3 id="set-notif-title" className="text-base font-bold text-[#0B2438]">{L('Notifications', 'اطلاعات', 'الإشعارات')}</h3>
+                    <p className="text-[13px] text-gray-600 mt-0.5">{L('These options are saved at once.', 'یہ اختیارات فوراً محفوظ ہوتے ہیں۔', 'تُحفظ هذه الخيارات فوراً.')}</p>
+                  </div>
+                  <EnablePush variant="card" />
+
+                  {/* Email notifications: only for a verified, real email (a phone account has none) */}
+                  {!!profile?.email_verified_at && !placeholderEmail && (
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input type="checkbox" className="mt-0.5 w-5 h-5 accent-[#0B2438]" checked={emailOn} disabled={emailBusy}
+                        onChange={async e => {
+                          const on = e.target.checked
+                          setEmailBusy(true); setEmailOn(on)
+                          const { error } = await createClient().rpc('set_email_notifications', { p_on: on })
+                          if (error) setEmailOn(!on)
+                          setEmailBusy(false); flashNotif(!error)
+                        }} />
+                      <span>
+                        <span className="block text-sm font-bold text-gray-800">{L('Email notifications', 'ای میل اطلاعات', 'إشعارات البريد الإلكتروني')}</span>
+                        <span className="block text-[13px] text-gray-600 mt-0.5">{L('Important updates only: new offers and requests, deal steps and reminders. Messages arrive as one short notice at most every 3 hours.', 'صرف اہم اپ ڈیٹس: نئی پیشکشیں اور درخواستیں، سودے کے مراحل اور یاد دہانیاں۔ پیغامات کی اطلاع زیادہ سے زیادہ ہر 3 گھنٹے میں ایک بار۔', 'التحديثات المهمة فقط: العروض والطلبات الجديدة، ومراحل الصفقة، والتذكيرات. وتصل الرسائل في تنبيه واحد مختصر كل 3 ساعات على الأكثر.')}</span>
+                      </span>
+                    </label>
+                  )}
+
+                  {/* WhatsApp notifications (owner 2026-11-14): approved templates from the Taseerak number to the saved mobile */}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input type="checkbox" className="mt-0.5 w-5 h-5 accent-[#0B2438]" checked={waOn} disabled={waBusy}
+                      onChange={async e => {
+                        const on = e.target.checked
+                        setWaBusy(true); setWaOn(on)
+                        const { error } = await createClient().rpc('set_whatsapp_notifications', { p_on: on })
+                        if (error) setWaOn(!on)
+                        setWaBusy(false); flashNotif(!error)
+                      }} />
+                    <span>
+                      <span className="block text-sm font-bold text-gray-800">{L('WhatsApp notifications', 'واٹس ایپ اطلاعات', 'إشعارات واتساب')}</span>
+                      <span className="block text-[13px] text-gray-600 mt-0.5">{isSupplier
+                        ? L('From the Taseerak number to your saved mobile: new matching requests, offer results and new messages (at most one notice per conversation every 2 hours).', 'تسعیرک کے نمبر سے آپ کے محفوظ موبائل پر: نئی درخواستیں، آفرز کے نتائج اور نئے پیغامات (ہر گفتگو پر زیادہ سے زیادہ ہر 2 گھنٹے میں ایک اطلاع)۔', 'من رقم تسعيرك إلى جوالك المسجّل: الطلبات المطابقة الجديدة، ونتائج عروضك، والرسائل الجديدة (تنبيه واحد لكل محادثة كل ساعتين على الأكثر).')
+                        : L('From the Taseerak number to your saved mobile: offers on your requests, deal steps and new messages (at most one notice per conversation every 2 hours).', 'تسعیرک کے نمبر سے آپ کے محفوظ موبائل پر: آپ کی درخواستوں پر آفرز، سودے کے مراحل اور نئے پیغامات (ہر گفتگو پر زیادہ سے زیادہ ہر 2 گھنٹے میں ایک اطلاع)۔', 'من رقم تسعيرك إلى جوالك المسجّل: العروض على طلباتك، ومراحل الصفقة، والرسائل الجديدة (تنبيه واحد لكل محادثة كل ساعتين على الأكثر).')}</span>
+                    </span>
+                  </label>
+                  {notifMsg && (
+                    <p role="status" className={`text-[13px] font-semibold inline-flex items-center gap-1 ${notifMsg.ok ? 'text-emerald-800' : 'text-red-700'}`}>
+                      {notifMsg.ok && <Check className="w-4 h-4" aria-hidden />}{notifMsg.text}
+                    </p>
+                  )}
+                </section>
+
                 {/* Locked-field change request modal */}
                 {crqModal && (
-                  <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !crqSaving && setCrqModal(null)}>
-                    <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl" dir={dir} onClick={e => e.stopPropagation()}>
-                      <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>
-                        {crqModal === 'name' ? L('Request a company name change', 'کمپنی کا نام بدلنے کی درخواست', 'طلب تعديل اسم الشركة') : L('Request a classification change', 'درجہ بندی بدلنے کی درخواست', 'طلب تعديل التصنيف')}
+                  <div className="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !crqSaving && setCrqModal(null)}>
+                    <div role="dialog" aria-modal="true" aria-labelledby="crq-title" className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-md shadow-xl" dir={dir} onClick={e => e.stopPropagation()}
+                      onKeyDown={e => { if (e.key === 'Escape' && !crqSaving) setCrqModal(null) }}>
+                      <h3 id="crq-title" className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>
+                        {crqModal === 'name' ? L('Request a name change', 'نام بدلنے کی درخواست', 'طلب تعديل الاسم') : L('Request a classification change', 'درجہ بندی بدلنے کی درخواست', 'طلب تعديل التصنيف')}
                       </h3>
-                      <p className="text-xs text-gray-500 mb-4">{L('The request goes to the admin team for review — nothing changes before approval.', 'درخواست انتظامیہ کو جائزے کے لیے جاتی ہے — منظوری سے پہلے کچھ نہیں بدلتا۔', 'يُرسل الطلب للإدارة للمراجعة — لا يتغيّر شيء قبل الموافقة.')}</p>
+                      <p className="text-[13px] text-gray-600 mb-4">{L('The request goes to the admin team for review. Nothing changes before approval.', 'درخواست انتظامیہ کو جائزے کے لیے جاتی ہے۔ منظوری سے پہلے کچھ نہیں بدلتا۔', 'يُرسل الطلب إلى الإدارة للمراجعة، ولا يتغيّر شيء قبل الموافقة.')}</p>
 
                       {crqModal === 'name' ? (
                         <>
-                          <label className="block text-xs font-bold text-gray-500 mb-1">{L('New name', 'نیا نام', 'الاسم الجديد')}</label>
-                          <input value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3" />
+                          <label htmlFor="crq-value" className="block text-xs font-bold text-gray-600 mb-1">{L('New name', 'نیا نام', 'الاسم الجديد')}</label>
+                          <input id="crq-value" autoFocus value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3" />
                         </>
                       ) : (
                         <>
-                          <label className="block text-xs font-bold text-gray-500 mb-1">{L('New grade', 'نیا درجہ', 'الدرجة الجديدة')}</label>
-                          <select value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3">
+                          <label htmlFor="crq-value" className="block text-xs font-bold text-gray-600 mb-1">{L('New grade', 'نیا درجہ', 'الدرجة الجديدة')}</label>
+                          <select id="crq-value" value={crqValue} onChange={e => setCrqValue(e.target.value)} className="input-field mb-3">
                             <option value="A">درجة أ</option>
                             <option value="B">درجة ب</option>
                             <option value="C">درجة ج</option>
@@ -718,16 +847,16 @@ export default function SettingsPage() {
                         </>
                       )}
 
-                      <label className="block text-xs font-bold text-gray-500 mb-1">{L('Reason', 'وجہ', 'سبب التغيير')}{crqModal === 'name' ? L(' (the admin may ask for an updated CR)', ' (انتظامیہ تازہ سی آر مانگ سکتی ہے)', ' (قد تطلب الإدارة سجلاً تجارياً محدّثاً)') : ''}</label>
-                      <textarea value={crqReason} onChange={e => setCrqReason(e.target.value)} rows={3} className="input-field mb-3" placeholder={L('Explain the reason…', 'وجہ بتائیں…', 'وضّح سبب التعديل...')} />
+                      <label htmlFor="crq-reason" className="block text-xs font-bold text-gray-600 mb-1">{L('Reason', 'وجہ', 'سبب التغيير')}{crqModal === 'name' ? L(' (the admin may ask for an updated commercial registration)', ' (انتظامیہ تازہ تجارتی رجسٹریشن مانگ سکتی ہے)', ' (قد تطلب الإدارة سجلاً تجارياً محدّثاً)') : ''}</label>
+                      <textarea id="crq-reason" value={crqReason} onChange={e => setCrqReason(e.target.value)} rows={3} className="input-field mb-3" placeholder={L('Explain the reason…', 'وجہ بتائیں…', 'وضّح سبب التعديل...')} />
 
-                      {crqMsg && <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2 mb-3">{crqMsg}</div>}
+                      {crqMsg && <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded-lg p-2 mb-3" role="alert">{crqMsg}</div>}
 
                       <div className="flex gap-2">
-                        <button type="button" disabled={crqSaving} onClick={submitChangeRequest} className="flex-1 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#0B2438' }}>
-                          {crqSaving ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال...') : L('Send to admin', 'انتظامیہ کو بھیجیں', 'إرسال الطلب للإدارة')}
+                        <button type="button" disabled={crqSaving} onClick={submitChangeRequest} className="flex-1 min-h-[48px] rounded-xl font-bold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
+                          {crqSaving ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال...') : L('Send to admin', 'انتظامیہ کو بھیجیں', 'إرسال الطلب إلى الإدارة')}
                         </button>
-                        <button type="button" onClick={() => setCrqModal(null)} className="px-5 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
+                        <button type="button" onClick={() => setCrqModal(null)} className="min-h-[48px] px-5 rounded-xl text-sm font-bold border border-gray-200 text-[#0B2438]">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
                       </div>
                     </div>
                   </div>
@@ -737,125 +866,113 @@ export default function SettingsPage() {
 
             {/* Password Tab */}
             {tab === 'password' && (
-              <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
-                <h2 className="text-lg font-bold mb-6" style={{ color: '#0B2438' }}>{t.passwordTab}</h2>
+              <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
+                <h2 className="text-lg font-bold mb-6" style={{ color: '#0B2438' }}>{phoneAccount ? L('Sign-in', 'سائن اِن', 'تسجيل الدخول') : t.passwordTab}</h2>
 
-                <form onSubmit={changePassword} className="space-y-5 max-w-md">
-                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-700">
-                    <Glyph e="💡" /> {locale === 'en' ? 'Enter your current password, then the new one twice' : locale === 'ur' ? 'موجودہ پاسورڈ درج کریں، پھر نیا پاسورڈ دو بار' : 'أدخل كلمة المرور الحالية، ثم الجديدة مرتين'}
+                {phoneAccount ? (
+                  // a phone sign-up has no password to change (UX-040)
+                  <div className="max-w-md rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-800 leading-relaxed">
+                    <Glyph e="🔑" /> {L('You sign in with a code sent to your mobile, so you do not need a password.', 'آپ اپنے موبائل پر آنے والے کوڈ سے سائن اِن کرتے ہیں، اس لیے پاسورڈ کی ضرورت نہیں۔', 'تدخل إلى حسابك برمز يصلك على جوالك، فلا تحتاج إلى كلمة مرور.')}
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.currentPass}</label>
-                    <input type="password" value={curPass} onChange={e => setCurPass(e.target.value)} autoComplete="current-password"
-                      className="input-field" placeholder="••••••••" required />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.newPass}</label>
-                    <input type="password" value={newPass} onChange={e => setNewPass(e.target.value)} autoComplete="new-password"
-                      className="input-field" placeholder="••••••••" required minLength={8} />
-                    <ul className="mt-2 space-y-1 text-xs">
-                      {passRuleList(newPass, locale).map(r => (
-                        <li key={r.rule} className={r.ok ? 'text-emerald-600' : 'text-gray-400'}>{r.ok ? '✓' : '○'} {r.text}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-1.5">{t.confirmPass}</label>
-                    <input type="password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)}
-                      className="input-field" placeholder="••••••••" required />
-                  </div>
-
-                  {passMsg && (
-                    <div className={`text-sm rounded-xl p-3 ${passMsg.includes('✓') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-                      {passMsg}
+                ) : (
+                  <form onSubmit={changePassword} className="space-y-5 max-w-md">
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800">
+                      <Glyph e="💡" /> {L('Enter your current password, then the new one twice.', 'موجودہ پاسورڈ درج کریں، پھر نیا پاسورڈ دو بار۔', 'أدخل كلمة المرور الحالية، ثم الجديدة مرتين.')}
                     </div>
-                  )}
 
-                  <button type="submit" disabled={passSaving}
-                    className="px-8 py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
-                    style={{ background: '#0B2438' }}>
-                    {passSaving ? t.saving : t.changePass}
-                  </button>
-                </form>
+                    <div>
+                      <label htmlFor="set-curpass" className="block text-xs font-bold text-gray-600 mb-1.5">{t.currentPass}</label>
+                      <input id="set-curpass" type="password" value={curPass} onChange={e => setCurPass(e.target.value)} autoComplete="current-password"
+                        className="input-field" placeholder="••••••••" required />
+                      <Link href="/forgot-password" className="inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">
+                        {L('Forgot your current password? Get a reset link by email', 'موجودہ پاسورڈ بھول گئے؟ ای میل پر ری سیٹ لنک حاصل کریں', 'نسيت كلمة المرور الحالية؟ أرسل رابطاً إلى بريدك')}
+                      </Link>
+                    </div>
+
+                    <div>
+                      <label htmlFor="set-newpass" className="block text-xs font-bold text-gray-600 mb-1.5">{t.newPass}</label>
+                      <input id="set-newpass" type="password" value={newPass} onChange={e => setNewPass(e.target.value)} autoComplete="new-password"
+                        className="input-field" placeholder="••••••••" required minLength={8} aria-describedby="set-passrules" />
+                      <ul id="set-passrules" className="mt-2 space-y-1 text-[13px]">
+                        {passRuleList(newPass, locale).map(r => (
+                          <li key={r.rule} className={`flex items-center gap-1.5 ${r.ok ? 'text-emerald-700' : 'text-gray-600'}`}>
+                            {r.ok ? <Check className="w-3.5 h-3.5" aria-hidden /> : <Circle className="w-3 h-3" aria-hidden />} {r.text}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <label htmlFor="set-confpass" className="block text-xs font-bold text-gray-600 mb-1.5">{t.confirmPass}</label>
+                      <input id="set-confpass" type="password" value={confirmPass} onChange={e => setConfirmPass(e.target.value)} autoComplete="new-password"
+                        className="input-field" placeholder="••••••••" required />
+                    </div>
+
+                    {passMsg && <Msg m={passMsg} />}
+
+                    <button type="submit" disabled={passSaving}
+                      className="w-full sm:w-auto min-h-[48px] px-8 py-3 rounded-xl font-bold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
+                      style={{ background: '#0B2438' }}>
+                      {passSaving ? t.saving : t.changePass}
+                    </button>
+                  </form>
+                )}
               </div>
             )}
 
-            {/* Docs Tab */}
-            {tab === 'docs' && (
-              <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
+            {/* Docs Tab (selling businesses only) */}
+            {tab === 'docs' && showDocs && (
+              <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
                 <h2 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>{t.docsTitle}</h2>
-                <p className="text-sm text-gray-500 mb-4">{t.docsSub}</p>
+                <p className="text-sm text-gray-600 mb-4">{t.docsSub}</p>
                 {/* التوثيق اختياري: يوضّح فايدته وفي خيار «لاحقاً» */}
-                <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6" style={{ background: 'rgba(15,110,86,0.06)', border: '1px solid rgba(15,110,86,0.2)' }}>
-                  <p className="text-sm text-gray-700 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {locale === 'en' ? 'Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.' : locale === 'ur' ? 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔' : 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، وتظهر ضمن «شركات ومصانع معتمدة»، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.'}</p>
-                  <a href={profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'} className="text-sm font-bold px-4 py-2 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{locale === 'en' ? 'Later' : locale === 'ur' ? 'بعد میں' : 'لاحقاً'}</a>
+                <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6 bg-[#F5F7FA] border border-gray-200">
+                  <p className="text-sm text-gray-800 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {L('Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.', 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔', 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، وتظهر ضمن «شركات ومصانع معتمدة»، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}</p>
+                  <a href="/supplier/dashboard" className="min-h-[44px] inline-flex items-center text-sm font-bold px-4 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{L('Later', 'بعد میں', 'لاحقاً')}</a>
                 </div>
 
                 {profile?.verification_status === 'rejected' && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 flex items-start gap-2">
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 flex items-start gap-2" role="alert">
                     <span><Glyph e="❌" /></span>
-                    <div className="text-sm text-red-600 font-medium">{t.rejectedBanner}</div>
+                    <div className="text-sm text-red-700 font-medium">{t.rejectedBanner}</div>
                   </div>
                 )}
 
-                <form onSubmit={uploadDocs} className="space-y-5">
-                  {/* License */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-2">{t.licenseLabel}</label>
-                    {profile?.license_url && !licenseFile && (
-                      <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-                        <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
-                        <button type="button" onClick={() => openDoc(profile.license_url)}
-                          className="text-xs text-[#8F6820] hover:underline font-semibold">{t.viewDoc}</button>
-                      </div>
-                    )}
-                    <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
-                      licenseFile ? 'border-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 hover:border-[#D4A543]/50'
-                    }`}>
-                      <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={e => setLicenseFile(e.target.files?.[0] ?? null)} />
-                      <span className="text-2xl">{licenseFile ? <Glyph e="📎" /> : <Glyph e="📄" />}</span>
-                      <div>
-                        <div className="text-sm font-semibold text-gray-700">
-                          {licenseFile ? licenseFile.name : t.uploadDoc}
-                        </div>
-                        <div className="text-xs text-gray-400 mt-0.5">{t.docHint}</div>
-                      </div>
+                <form onSubmit={uploadDocs} className="space-y-6">
+                  {/* 1) CR number + the Wathq check of THAT number (UX-131) */}
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    <div className="text-sm font-bold flex items-center gap-1.5 text-[#0B2438]">
+                      <Glyph e="🛡" /> {cv.card}
+                    </div>
+                    <div className="text-[13px] text-gray-600 mt-0.5 mb-3">{cv.sub}</div>
+                    <label htmlFor="set-cr" className="block text-xs font-bold text-gray-600 mb-1.5">
+                      {L('Unified national number (10 digits, starts with 7)', 'متحدہ قومی نمبر (7 سے شروع، 10 ہندسے)', 'الرقم الوطني الموحد للمنشأة (10 أرقام يبدأ بـ7)')}
                     </label>
-                  </div>
-
-                  {/* Official CR verification via Wathq */}
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <div className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#0F6E56' }}>
-                          <Glyph e="🛡" /> {cv.card}
-                        </div>
-                        <div className="text-xs text-gray-500 mt-0.5">{cv.sub}</div>
-                        {profile?.commercial_registration && (
-                          <div className="text-[11px] text-gray-400 mt-1 font-mono" dir="ltr">CR: {profile.commercial_registration}</div>
-                        )}
-                      </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <input id="set-cr" value={crNumber} inputMode="numeric" dir="ltr" maxLength={14}
+                        onChange={(e: any) => { setCrNumber(e.target.value); setCrTaken(''); setCrCheck(null) }}
+                        disabled={profile?.verification_status === 'verified'}
+                        className="input-field font-mono disabled:opacity-60 flex-1 min-w-0" placeholder="7001234567" />
                       {profile?.verification_status === 'verified' && profile?.cr_verification_source === 'wathq' ? (
-                        <span className="text-xs px-3 py-1.5 rounded-lg font-bold text-white" style={{ background: '#0F6E56' }}><Glyph e="🛡" /> {t.verified}</span>
+                        <span className="min-h-[48px] inline-flex items-center justify-center gap-1 text-sm px-4 rounded-xl font-bold text-white" style={{ background: '#0F6E56' }}><Glyph e="🛡" /> {t.verified}</span>
                       ) : (
-                        <button type="button" onClick={verifyCRSettings} disabled={crChecking}
-                          className="text-xs px-4 py-2 rounded-xl font-bold text-white whitespace-nowrap disabled:opacity-50 transition-all hover:shadow"
-                          style={{ background: '#0F6E56' }}>
-                          {crChecking ? cv.checking : `${cv.btn}`}
+                        <button type="button" onClick={verifyCRSettings} disabled={crChecking || !crValid}
+                          className="min-h-[48px] text-sm px-5 rounded-xl font-bold text-white whitespace-nowrap disabled:opacity-50 transition-all hover:shadow"
+                          style={{ background: '#0B2438' }}>
+                          {crChecking ? cv.checking : cv.btn}
                         </button>
                       )}
                     </div>
+                    {profile?.verification_status === 'verified' && profile?.commercial_registration && (
+                      <div className="text-[12px] text-gray-600 mt-1">{L('Locked after verification.', 'تصدیق کے بعد مقفل ہے۔', 'يُقفل بعد التوثيق.')}</div>
+                    )}
                     {crCheck && (
-                      <div className={`text-xs rounded-lg p-2.5 mt-3 flex items-start gap-2 ${
-                        crCheck.verified ? 'bg-emerald-100 text-emerald-800'
-                        : crCheck.mode === 'manual' ? 'bg-[#D4A543]/5 text-[#8F6820] border border-blue-200'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200'
-                      }`}>
-                        <span>{crCheck.verified ? <Glyph e="🛡" /> : crCheck.mode === 'manual' ? 'ℹ️' : <Glyph e="⚠" />}</span>
+                      <div className={`text-[13px] rounded-lg p-2.5 mt-3 flex items-start gap-2 ${
+                        crCheck.verified ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : crCheck.mode === 'manual' ? 'bg-[#D4A543]/10 text-[#6C531F] border border-[#D4A543]/40'
+                        : 'bg-amber-50 text-amber-800 border border-amber-200'
+                      }`} role="status">
+                        <span>{crCheck.verified ? <Glyph e="🛡" /> : crCheck.mode === 'manual' ? <Glyph e="ℹ" /> : <Glyph e="⚠" />}</span>
                         <div>
                           {crCheck.name && <div className="font-bold">{crCheck.name}</div>}
                           {crCheck.activity && <div className="opacity-80">{crCheck.activity}</div>}
@@ -863,120 +980,134 @@ export default function SettingsPage() {
                         </div>
                       </div>
                     )}
-                  </div>
-
-                  {/* CR number (one CR = one account, enforced in the DB) */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-2">
-                      {L('Unified national number (10 digits, starts with 7)', 'متحدہ قومی نمبر (7 سے شروع، 10 ہندسے)', 'الرقم الوطني الموحد للمنشأة (10 أرقام يبدأ بـ7)')}
-                    </label>
-                    <input value={crNumber} inputMode="numeric" dir="ltr" maxLength={14}
-                      onChange={(e: any) => { setCrNumber(e.target.value); setCrTaken('') }}
-                      disabled={profile?.verification_status === 'verified'}
-                      className="input-field font-mono disabled:opacity-60" placeholder="7001234567" />
-                    {profile?.verification_status === 'verified' && profile?.commercial_registration && (
-                      <div className="text-[11px] text-gray-400 mt-1">{L('Locked after verification.', 'تصدیق کے بعد مقفل ہے۔', 'يُقفل بعد التوثيق.')}</div>
-                    )}
                     {crRead?.extracted && (
-                      <div className={`mt-2 text-xs rounded-xl p-3 border ${crRead.flags?.not_cr_document || crRead.flags?.cr_mismatch || crRead.flags?.expired ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+                      <div className={`mt-2 text-[13px] rounded-xl p-3 border ${crRead.flags?.not_cr_document || crRead.flags?.cr_mismatch || crRead.flags?.expired ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
                         <div className="font-bold mb-0.5">{L('Read from your certificate', 'آپ کے سرٹیفکیٹ سے پڑھا گیا', 'قُرئ من شهادتك')}:</div>
                         {crRead.extracted.entity_name && <div>{crRead.extracted.entity_name}</div>}
                         {crRead.extracted.cr_number && <div dir="ltr" className="font-mono">CR: {crRead.extracted.cr_number}</div>}
                         {crRead.flags?.not_cr_document && <div>{L('This file does not look like a commercial registration certificate.', 'یہ فائل تجارتی رجسٹریشن سرٹیفکیٹ نہیں لگتی۔', 'لا يبدو هذا الملف شهادة سجل تجاري.')}</div>}
                         {crRead.flags?.cr_mismatch && <div>{L('The number on the certificate differs from the number above.', 'سرٹیفکیٹ کا نمبر اوپر والے نمبر سے مختلف ہے۔', 'الرقم في الشهادة يختلف عن الرقم المكتوب أعلاه.')}</div>}
                         {crRead.flags?.expired && <div>{L('The registration looks expired.', 'رجسٹریشن کی مدت ختم لگتی ہے۔', 'يبدو أن السجل منتهي.')}</div>}
-                        {normalizeCrInput(crNumber) !== (profile?.commercial_registration || '') && (
+                        {crDigits !== (profile?.commercial_registration || '') && (
                           <div className="mt-1">{L('Check the number and press the button below to confirm it.', 'نمبر چیک کریں اور تصدیق کے لیے نیچے والا بٹن دبائیں۔', 'تحقّق من الرقم واضغط الزر أدناه لتأكيده.')}</div>
                         )}
-                        <div className="mt-1 opacity-70">{L('An automatic read to help; the admin still reviews the document.', 'مدد کے لیے خودکار مطالعہ؛ انتظامیہ پھر بھی دستاویز دیکھتی ہے۔', 'قراءة آلية للمساعدة، والإدارة تراجع المستند بنفسها.')}</div>
+                        <div className="mt-1 opacity-80">{L('An automatic read to help; the admin still reviews the document.', 'مدد کے لیے خودکار مطالعہ؛ انتظامیہ پھر بھی دستاویز دیکھتی ہے۔', 'قراءة آلية للمساعدة، والإدارة تراجع المستند بنفسها.')}</div>
                       </div>
                     )}
                     {crTaken && (
-                      <div className="mt-2 text-sm rounded-xl p-3 bg-amber-50 text-amber-800 border border-amber-200">
+                      <div className="mt-2 text-sm rounded-xl p-3 bg-amber-50 text-amber-800 border border-amber-200" role="alert">
                         {crTakenText(locale).msg}{' '}
                         <a href={crClaimHref(crTaken)} className="font-bold underline">{crTakenText(locale).cta}</a>
                       </div>
                     )}
                   </div>
 
-                  {/* CR */}
+                  {/* 2) CR certificate */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 mb-2">{t.crLabel}</label>
+                    <div className="block text-xs font-bold text-gray-600 mb-2">{t.crLabel}</div>
                     {profile?.cr_url && !crFile && (
                       <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
-                        <span className="text-emerald-600 text-sm">✓ {t.currentDoc}</span>
+                        <span className="text-emerald-800 text-sm inline-flex items-center gap-1"><Check className="w-4 h-4" aria-hidden />{t.currentDoc}</span>
                         <button type="button" onClick={() => openDoc(profile.cr_url)}
-                          className="text-xs text-[#8F6820] hover:underline font-semibold">{t.viewDoc}</button>
+                          className="min-h-[44px] text-[13px] text-[#8F6820] hover:underline font-semibold">{t.viewDoc}</button>
                       </div>
                     )}
                     <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
                       crFile ? 'border-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 hover:border-[#D4A543]/50'
                     }`}>
-                      <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png"
+                      <input type="file" className="sr-only" accept=".pdf,.jpg,.jpeg,.png"
                         onChange={e => setCrFile(e.target.files?.[0] ?? null)} />
                       <span className="text-2xl">{crFile ? <Glyph e="📎" /> : <Glyph e="📋" />}</span>
-                      <div>
-                        <div className="text-sm font-semibold text-gray-700">
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-gray-800 break-all">
                           {crFile ? crFile.name : t.uploadDoc}
                         </div>
-                        <div className="text-xs text-gray-400 mt-0.5">{t.docHint}</div>
+                        <div className="text-[12px] text-gray-600 mt-0.5">{t.docHint}</div>
                       </div>
                     </label>
                   </div>
 
-                  {docsMsg && (
-                    <div className={`text-sm rounded-xl p-3 ${docsMsg.includes('✓') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-                      {docsMsg}
-                    </div>
-                  )}
+                  {/* 3) Licence (optional) */}
+                  <div>
+                    <div className="block text-xs font-bold text-gray-600 mb-2">{t.licenseLabel}</div>
+                    {profile?.license_url && !licenseFile && (
+                      <div className="flex items-center gap-3 mb-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                        <span className="text-emerald-800 text-sm inline-flex items-center gap-1"><Check className="w-4 h-4" aria-hidden />{t.currentDoc}</span>
+                        <button type="button" onClick={() => openDoc(profile.license_url)}
+                          className="min-h-[44px] text-[13px] text-[#8F6820] hover:underline font-semibold">{t.viewDoc}</button>
+                      </div>
+                    )}
+                    <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${
+                      licenseFile ? 'border-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 hover:border-[#D4A543]/50'
+                    }`}>
+                      <input type="file" className="sr-only" accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={e => setLicenseFile(e.target.files?.[0] ?? null)} />
+                      <span className="text-2xl">{licenseFile ? <Glyph e="📎" /> : <Glyph e="📄" />}</span>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-gray-800 break-all">
+                          {licenseFile ? licenseFile.name : t.uploadDoc}
+                        </div>
+                        <div className="text-[12px] text-gray-600 mt-0.5">{t.docHint}</div>
+                      </div>
+                    </label>
+                  </div>
 
-                  <button type="submit" disabled={docsSaving || (!licenseFile && !crFile && normalizeCrInput(crNumber) === (profile?.commercial_registration || ''))}
-                    className="px-8 py-3 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow-lg"
-                    style={{ background: '#D4A543' }}>
+                  {docsMsg && <Msg m={docsMsg} />}
+
+                  <button type="submit" disabled={docsSaving || (!licenseFile && !crFile && crDigits === (profile?.commercial_registration || ''))}
+                    className="w-full sm:w-auto min-h-[48px] px-8 py-3 rounded-xl font-bold text-sm disabled:opacity-50 transition-all hover:shadow-lg"
+                    style={{ background: '#D4A543', color: '#071827' }}>
                     {docsSaving ? t.saving : t.uploadBtn}
                   </button>
                 </form>
               </div>
             )}
 
-            {/* Support / Messages Tab */}
-            {tab === 'support' && (
-              <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
-                <h2 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>
-                  {locale === 'en' ? 'Support & Messages' : locale === 'ur' ? 'سپورٹ اور پیغامات' : 'الدعم والرسائل'}
-                </h2>
-                <p className="text-sm text-gray-500 mb-5">
-                  {locale === 'en' ? 'Message the admin team directly about any issue — they will reply here.'
-                    : locale === 'ur' ? 'کسی بھی مسئلے پر انتظامیہ کو پیغام بھیجیں — وہ یہیں جواب دیں گے۔'
-                    : 'راسل فريق الإدارة مباشرة حول أي مشكلة — وسيردّون عليك هنا.'}
-                </p>
-                {user && <SupportThread userId={user.id} viewerRole="user" />}
-              </div>
-            )}
-
-            {/* Language Tab */}
+            {/* Language Tab: the display language is also the notifications language */}
             {tab === 'language' && (
-              <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
+              <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
                 <h2 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{t.langTab}</h2>
-                <p className="text-sm text-gray-500 mb-6">{t.langTitle}</p>
+                <p className="text-sm text-gray-600 mb-6">{t.langTitle}. {L('Notifications reach you in this language too.', 'اطلاعات بھی اسی زبان میں آئیں گی۔', 'تصلك الإشعارات بهذه اللغة أيضاً.')}</p>
 
-                <div className="grid grid-cols-3 gap-4">
-                  {langOptions.map(lang => (
-                    <button key={lang.key} onClick={() => setLocale(lang.key as any)}
-                      className={`p-6 rounded-2xl border-2 text-center transition-all hover:-translate-y-0.5 ${
-                        locale === lang.key ? 'border-[#D4A543] bg-[#D4A543]/5' : 'border-gray-200 hover:border-gray-300'
-                      }`}>
-                      <div className="text-4xl mb-3">{lang.flag}</div>
-                      <div className={`font-bold text-sm ${locale === lang.key ? 'text-[#8F6820]' : 'text-gray-800'}`}>{lang.name}</div>
-                      <div className="text-xs text-gray-400 mt-1">{lang.nameLocal}</div>
-                      {locale === lang.key && (
-                        <div className="mt-2 text-xs font-bold" style={{ color: '#8F6820' }}>✓ {t.langSaved}</div>
-                      )}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4" role="radiogroup" aria-label={t.langTab}>
+                  {langOptions.map(lang => {
+                    const on = locale === lang.key
+                    return (
+                      <button key={lang.key} type="button" role="radio" aria-checked={on} lang={lang.key} onClick={() => pickLanguage(lang.key)}
+                        className={`min-h-[56px] p-4 sm:p-6 rounded-2xl border-2 text-start sm:text-center transition-all flex sm:block items-center justify-between gap-3 ${
+                          on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 hover:border-gray-300'
+                        }`}>
+                        <span>
+                          <span className="block font-bold text-base text-[#0B2438]">{lang.name}</span>
+                          <span className="block text-[13px] text-gray-600 mt-0.5">{lang.nameLocal}</span>
+                        </span>
+                        {on && (
+                          <span className="sm:mt-2 inline-flex items-center gap-1 text-[13px] font-bold text-[#0B2438]"><Check className="w-4 h-4" aria-hidden />{t.langSaved}</span>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
+                {notifMsg && (
+                  <p role="status" className={`mt-3 text-[13px] font-semibold inline-flex items-center gap-1 ${notifMsg.ok ? 'text-emerald-800' : 'text-red-700'}`}>
+                    {notifMsg.ok && <Check className="w-4 h-4" aria-hidden />}{notifMsg.text}
+                  </p>
+                )}
               </div>
             )}
+
+            {/* Phones: support, sign-out and account deletion at the bottom of the page (UX-138/036) */}
+            <div className="lg:hidden mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-2">
+              <Link href="/support" className="w-full min-h-[48px] flex items-center gap-3 px-4 rounded-xl text-sm font-semibold text-[#0B2438] hover:bg-gray-50">
+                <LifeBuoy className="w-4 h-4" aria-hidden />{supportLabel}
+              </Link>
+              <button type="button" onClick={handleSignOut} className="w-full min-h-[48px] flex items-center gap-3 px-4 rounded-xl text-sm font-semibold text-[#0B2438] hover:bg-gray-50">
+                <LogOut className="w-4 h-4" aria-hidden />{signOutLabel}
+              </button>
+              <a href="/account/delete" className="w-full min-h-[48px] flex items-center gap-3 px-4 rounded-xl text-sm font-semibold text-red-700 hover:bg-red-50">
+                <Glyph e="🗑" />{deleteLabel}
+              </a>
+            </div>
           </div>
         </div>
       </div>

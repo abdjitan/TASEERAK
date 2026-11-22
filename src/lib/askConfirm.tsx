@@ -1,42 +1,50 @@
 'use client'
-// Branded replacement for window.confirm (UX audit 2026-11-21): the browser's grey dialog shows the
-// site address and English OK/Cancel and ignores our design. askConfirm() opens a navy/gold modal and
-// resolves true/false. Imperative on purpose, so a call site only changes `confirm(x)` →
-// `await askConfirm(x)` (no provider to wire). Escape / backdrop = cancel; Enter = confirm.
+// Branded replacement for window.confirm / window.alert (UX audit 2026-11-21, 2026-11-23): the
+// browser's grey dialog shows the site address and English OK/Cancel and ignores our design.
+// askConfirm() opens a navy/gold modal and resolves true/false; notify() shows a message with one
+// gold «حسناً» button and resolves when it is closed. Imperative on purpose, so a call site only
+// changes `confirm(x)` → `await askConfirm(x)` and `alert(x)` → `notify(x)` (no provider to wire).
+// Escape / backdrop = cancel; Enter = the focused button.
+// A destructive confirm (danger) focuses «تراجع», so a stray Enter never deletes anything.
 import { createRoot } from 'react-dom/client'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactElement } from 'react'
 
-type Opts = { danger?: boolean; okLabel?: string; cancelLabel?: string }
+type Opts = { danger?: boolean; okLabel?: string; cancelLabel?: string; title?: string }
+export type NotifyTone = 'info' | 'success' | 'error'
+type NotifyOpts = { tone?: NotifyTone; okLabel?: string; title?: string }
 
 function labels() {
   const lang = (typeof document !== 'undefined' && document.documentElement.lang) || 'ar'
-  if (lang.startsWith('en')) return { ok: 'Confirm', cancel: 'Cancel', dir: 'ltr' as const }
-  if (lang.startsWith('ur')) return { ok: 'تصدیق کریں', cancel: 'منسوخ', dir: 'rtl' as const }
-  return { ok: 'تأكيد', cancel: 'إلغاء', dir: 'rtl' as const }
+  if (lang.startsWith('en')) return { ok: 'Confirm', cancel: 'Go back', done: 'OK', dir: 'ltr' as const }
+  if (lang.startsWith('ur')) return { ok: 'تصدیق کریں', cancel: 'واپس', done: 'ٹھیک ہے', dir: 'rtl' as const }
+  return { ok: 'تأكيد', cancel: 'تراجع', done: 'حسناً', dir: 'rtl' as const }
 }
 
 function Dialog({ message, opts, done }: { message: string; opts: Opts; done: (v: boolean) => void }) {
   const okRef = useRef<HTMLButtonElement>(null)
+  const cancelRef = useRef<HTMLButtonElement>(null)
   const l = labels()
   useEffect(() => {
-    okRef.current?.focus()
+    // destructive: the safe choice has the focus
+    ;(opts.danger ? cancelRef.current : okRef.current)?.focus()
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') done(false) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [done])
+  }, [done, opts.danger])
   return (
     <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-4 bg-[#071827]/60 backdrop-blur-sm" dir={l.dir}
       onClick={() => done(false)} role="presentation">
-      <div role="alertdialog" aria-modal="true" aria-label={message.slice(0, 80)} onClick={e => e.stopPropagation()}
-        className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border-t-4 border-[#D4A543] p-5 animate-fade-in">
+      <div role="alertdialog" aria-modal="true" aria-label={(opts.title || message).slice(0, 80)} onClick={e => e.stopPropagation()}
+        className={`w-full max-w-sm rounded-2xl bg-white shadow-2xl border-t-4 ${opts.danger ? 'border-[#b91c1c]' : 'border-[#D4A543]'} p-5 animate-fade-in`}>
+        {opts.title && <h2 className="text-base font-bold text-[#071827] mb-1.5">{opts.title}</h2>}
         <p className="text-[15px] leading-relaxed text-[#071827] whitespace-pre-line">{message}</p>
         <div className="mt-5 flex gap-2">
           <button ref={okRef} type="button" onClick={() => done(true)}
-            className="flex-1 min-h-11 rounded-xl text-sm font-extrabold"
+            className="flex-1 min-h-11 rounded-xl text-sm font-bold"
             style={opts.danger ? { background: '#b91c1c', color: '#fff' } : { background: '#D4A543', color: '#071827' }}>
             {opts.okLabel || l.ok}
           </button>
-          <button type="button" onClick={() => done(false)}
+          <button ref={cancelRef} type="button" onClick={() => done(false)}
             className="flex-1 min-h-11 rounded-xl text-sm font-bold border border-gray-200 text-[#0B2438] bg-white hover:bg-gray-50">
             {opts.cancelLabel || l.cancel}
           </button>
@@ -46,7 +54,44 @@ function Dialog({ message, opts, done }: { message: string; opts: Opts; done: (v
   )
 }
 
-export function askConfirm(message: string, opts: Opts = {}): Promise<boolean> {
+const TONE: Record<NotifyTone, { border: string; icon: string; fg: string; bg: string }> = {
+  info: { border: '#D4A543', icon: 'i', fg: '#0B2438', bg: '#F5EEDC' },
+  success: { border: '#0F6E56', icon: '✓', fg: '#0F6E56', bg: '#E3F2EC' },
+  error: { border: '#b91c1c', icon: '!', fg: '#b91c1c', bg: '#FDECEC' },
+}
+
+function Notice({ message, opts, done }: { message: string; opts: NotifyOpts; done: (v: boolean) => void }) {
+  const okRef = useRef<HTMLButtonElement>(null)
+  const l = labels()
+  const t = TONE[opts.tone || 'info']
+  useEffect(() => {
+    okRef.current?.focus()
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') done(true) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [done])
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-4 bg-[#071827]/60 backdrop-blur-sm" dir={l.dir}
+      onClick={() => done(true)} role="presentation">
+      <div role={opts.tone === 'error' ? 'alertdialog' : 'dialog'} aria-modal="true" aria-label={(opts.title || message).slice(0, 80)} onClick={e => e.stopPropagation()}
+        className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border-t-4 p-5 animate-fade-in" style={{ borderTopColor: t.border }}>
+        <div className="flex items-start gap-3">
+          <span aria-hidden="true" className="w-8 h-8 shrink-0 rounded-full grid place-items-center text-sm font-bold" style={{ background: t.bg, color: t.fg }}>{t.icon}</span>
+          <div className="min-w-0">
+            {opts.title && <h2 className="text-base font-bold text-[#071827] mb-1">{opts.title}</h2>}
+            <p className="text-[15px] leading-relaxed text-[#071827] whitespace-pre-line">{message}</p>
+          </div>
+        </div>
+        <button ref={okRef} type="button" onClick={() => done(true)}
+          className="mt-5 w-full min-h-11 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>
+          {opts.okLabel || l.done}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function mount(render: (done: (v: boolean) => void) => ReactElement): Promise<boolean> {
   if (typeof document === 'undefined') return Promise.resolve(false)
   return new Promise(resolve => {
     const host = document.createElement('div')
@@ -59,6 +104,15 @@ export function askConfirm(message: string, opts: Opts = {}): Promise<boolean> {
       resolve(v)
       setTimeout(() => { root.unmount(); host.remove() }, 0)
     }
-    root.render(<Dialog message={message} opts={opts} done={done} />)
+    root.render(render(done))
   })
+}
+
+export function askConfirm(message: string, opts: Opts = {}): Promise<boolean> {
+  return mount(done => <Dialog message={message} opts={opts} done={done} />)
+}
+
+/** Branded replacement for window.alert: one gold «حسناً» button; resolves when closed. */
+export function notify(message: string, opts: NotifyOpts = {}): Promise<void> {
+  return mount(done => <Notice message={message} opts={opts} done={done} />).then(() => undefined)
 }

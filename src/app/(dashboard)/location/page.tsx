@@ -15,36 +15,36 @@ import { friendlyError } from '@/lib/friendlyError'
 
 const txt = {
   ar: {
-    title: 'الموقع والعنوان الوطني', sub: 'حدد موقعك لتوثيق حسابك وتسهيل التوصيل',
+    title: 'الموقع والعنوان الوطني', sub: 'حدّد موقعك ليحسب الموردون تكلفة التوصيل بدقة', subBuyer: 'أضف عنوان التوصيل ليحسب الموردون تكلفة التوصيل بدقة',
     back: '→ رجوع', save: 'حفظ الموقع والعنوان', saving: 'جارٍ الحفظ...', saved: '✓ تم الحفظ بنجاح',
     nationalAddr: 'العنوان الوطني السعودي', nationalSub: 'حسب نظام العنوان الوطني من البريد السعودي',
     shortAddr: 'الرمز المختصر', shortHint: 'مثال: RUH2343', buildingNo: 'رقم المبنى',
     street: 'اسم الشارع', district: 'الحي', region: 'المنطقة', city: 'المدينة',
     postalCode: 'الرمز البريدي', additionalNo: 'الرقم الإضافي', selectRegion: 'اختر المنطقة',
     locationSection: 'تحديد الموقع على الخريطة', loading: 'جارٍ التحميل...',
-    verifyNote: 'توثيق الموقع يزيد من ثقة المشترين بك ويرفع ترتيبك في نتائج البحث',
+    verifyNote: 'يساعد موقعك الدقيق على وصول الطلبات القريبة منك إليك.', verifyNoteBuyer: 'يساعد العنوان الدقيق الموردين على تقدير تكلفة التوصيل ومدته.',
     optional: 'اختياري',
   },
   en: {
-    title: 'Location & National Address', sub: 'Set your location to verify your account and ease delivery',
+    title: 'Location & National Address', sub: 'Set your location so suppliers can price delivery accurately', subBuyer: 'Add your delivery address so suppliers can price delivery accurately',
     back: '← Back', save: 'Save Location & Address', saving: 'Saving...', saved: '✓ Saved successfully',
     nationalAddr: 'Saudi National Address', nationalSub: 'Per Saudi Post National Address system',
     shortAddr: 'Short Address', shortHint: 'e.g. RUH2343', buildingNo: 'Building Number',
     street: 'Street Name', district: 'District', region: 'Region', city: 'City',
     postalCode: 'Postal Code', additionalNo: 'Additional Number', selectRegion: 'Select region',
     locationSection: 'Pin Location on Map', loading: 'Loading...',
-    verifyNote: 'Verifying your location increases buyers\' trust and boosts your ranking',
+    verifyNote: 'An accurate location helps nearby requests reach you.', verifyNoteBuyer: 'An accurate address helps suppliers estimate delivery cost and time.',
     optional: 'optional',
   },
   ur: {
-    title: 'مقام اور قومی پتہ', sub: 'اپنے اکاؤنٹ کی تصدیق کے لیے مقام مقرر کریں',
+    title: 'مقام اور قومی پتہ', sub: 'اپنا مقام مقرر کریں تاکہ سپلائرز ڈیلیوری کی قیمت درست لگا سکیں', subBuyer: 'ڈیلیوری کا پتہ شامل کریں تاکہ سپلائرز ڈیلیوری کی قیمت درست لگا سکیں',
     back: '→ واپس', save: 'محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: '✓ محفوظ ہو گیا',
     nationalAddr: 'سعودی قومی پتہ', nationalSub: 'سعودی پوسٹ نیشنل ایڈریس سسٹم کے مطابق',
     shortAddr: 'مختصر پتہ', shortHint: 'مثال: RUH2343', buildingNo: 'عمارت نمبر',
     street: 'گلی کا نام', district: 'ضلع', region: 'علاقہ', city: 'شہر',
     postalCode: 'پوسٹل کوڈ', additionalNo: 'اضافی نمبر', selectRegion: 'علاقہ منتخب کریں',
     locationSection: 'نقشے پر مقام', loading: 'لوڈ ہو رہا ہے...',
-    verifyNote: 'مقام کی تصدیق خریداروں کا اعتماد بڑھاتی ہے',
+    verifyNote: 'درست مقام سے قریبی درخواستیں آپ تک پہنچتی ہیں۔', verifyNoteBuyer: 'درست پتہ سپلائرز کو ڈیلیوری کی لاگت اور وقت کا اندازہ لگانے میں مدد دیتا ہے۔',
     optional: 'اختیاری',
   },
 }
@@ -125,10 +125,10 @@ export default function LocationPage() {
       <div className="max-w-3xl mx-auto">
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{T.title}</h1>
-          <p className="text-sm text-gray-500 mt-1">{T.sub}</p>
+          <p className="text-sm text-gray-600 mt-1">{profile?.role === 'contractor' ? T.subBuyer : T.sub}</p>
         </div>
 
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-5 text-sm text-emerald-700">{T.verifyNote}</div>
+        <div className="bg-[#F5F7FA] border border-gray-200 rounded-xl p-3 mb-5 text-sm text-gray-700">{profile?.role === 'contractor' ? T.verifyNoteBuyer : T.verifyNote}</div>
 
         {/* العنوان الوطني */}
         <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
@@ -195,8 +195,9 @@ export default function LocationPage() {
         </div>
 
         {/* Save */}
-        <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4">
-          {msg && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl p-3 mb-3 text-center">{msg}</div>}
+        <div className="sticky bottom-[calc(72px+env(safe-area-inset-bottom))] lg:bottom-4">
+          {/* an error shows in red, never in the success green (UX-140) */}
+          {msg && <div role={msg.startsWith('✓') ? 'status' : 'alert'} className={`text-sm rounded-xl p-3 mb-3 text-center border ${msg.startsWith('✓') ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>{msg}</div>}
           <button onClick={handleSave} disabled={saving}
             className="w-full py-4 rounded-xl font-bold text-[#071827] text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
             style={{ background: '#D4A543' }}>

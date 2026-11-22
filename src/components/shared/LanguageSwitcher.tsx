@@ -2,18 +2,22 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation, locales, type Locale } from '@/i18n'
+import { Check, Globe } from 'lucide-react'
 
+// Short, readable codes in each language's own script (UX-162): «ع / EN / اردو»
 const FLAGS: Record<Locale, string> = {
-  ar: 'AR',
+  ar: 'ع',
   en: 'EN',
-  ur: 'UR',
+  ur: 'اردو',
 }
 
 interface Props {
   variant?: 'nav' | 'minimal' | 'full'
+  /** nav variant only: just the code in a 44px button (phone top bar, UX-036) */
+  compact?: boolean
 }
 
-export default function LanguageSwitcher({ variant = 'nav' }: Props) {
+export default function LanguageSwitcher({ variant = 'nav', compact = false }: Props) {
   const { locale, setLocale, t } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const langAria = (l: Locale) => `${L('Language', 'زبان', 'اللغة')}: ${locales[l].name}`
@@ -40,9 +44,9 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
             aria-label={langAria(l)}
             aria-pressed={locale === l}
             lang={locales[l].lang}
-            className={`w-10 h-10 rounded-lg text-sm flex items-center justify-center transition-all ${
+            className={`min-w-[44px] h-11 px-1.5 rounded-lg text-sm font-bold flex items-center justify-center transition-all ${
               locale === l
-                ? 'bg-[#0B2438] text-white'
+                ? 'bg-[#D4A543] text-[#071827] ring-1 ring-[#9D7425]/40'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
             }`}
           >
@@ -69,10 +73,10 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
                 : 'border-gray-200 hover:border-[#D4A543]/40'
             }`}
           >
-            <span className="text-2xl">{FLAGS[l]}</span>
+            <span className="text-xl font-bold text-[#0B2438]">{FLAGS[l]}</span>
             <span className="text-sm font-semibold text-gray-900">{locales[l].name}</span>
             {locale === l && (
-              <span className="text-xs text-[#8F6820] font-medium">✓ {L('Selected', 'منتخب', 'محدَّدة')}</span>
+              <span className="text-xs text-[#8F6820] font-medium inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" aria-hidden /> {L('Selected', 'منتخب', 'محدَّدة')}</span>
             )}
           </button>
         ))}
@@ -87,10 +91,11 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
         onClick={() => setOpen(!open)}
         aria-label={langAria(locale)}
         aria-expanded={open}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 hover:border-[#D4A543]/50 bg-white transition-all text-sm"
+        className={`flex items-center gap-1.5 rounded-lg border border-gray-200 hover:border-[#D4A543]/50 bg-white transition-all text-sm ${compact ? 'min-w-[44px] h-11 px-2 justify-center' : 'px-3 py-2'}`}
       >
-        <span>{FLAGS[locale]}</span>
-        <span className="font-medium text-gray-700">{locales[locale].name}</span>
+        {compact && <Globe className="w-4 h-4 opacity-80" aria-hidden />}
+        <span className={`font-bold ${compact ? "" : "text-[#0B2438]"}`}>{FLAGS[locale]}</span>
+        {!compact && <span className="font-medium text-gray-700">{locales[locale].name}</span>}
         <svg
           className={`w-3.5 h-3.5 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
           fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -100,14 +105,14 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
       </button>
 
       {open && (
-        <div className="absolute top-full mt-1 left-0 right-0 min-w-[140px] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
+        <div className="ts-lang-menu absolute top-full mt-1 end-0 min-w-[150px] bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden z-50">
           {(Object.keys(locales) as Locale[]).map(l => (
             <button
               key={l}
               onClick={() => { setLocale(l); setOpen(false) }}
               aria-pressed={locale === l}
               lang={locales[l].lang}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-start ${
+              className={`w-full min-h-[44px] flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-start ${
                 locale === l
                   ? 'bg-[#D4A543]/5 text-[#8F6820] font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'
@@ -115,7 +120,7 @@ export default function LanguageSwitcher({ variant = 'nav' }: Props) {
             >
               <span className="text-base">{FLAGS[l]}</span>
               <span>{locales[l].name}</span>
-              {locale === l && <span className="ms-auto text-blue-500 text-xs">✓</span>}
+              {locale === l && <Check className="ms-auto w-4 h-4 text-[#0B2438]" aria-hidden />}
             </button>
           ))}
         </div>

@@ -31,6 +31,16 @@ export const SECTOR_LABELS: Record<Sector, string> = {
   equipment: 'آليات ومعدات',
   supply_store: 'محل توريد',
 }
+const SECTOR_LABELS_I18N: Record<'en' | 'ur', Record<Sector, string>> = {
+  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery & equipment', supply_store: 'Supply store' },
+  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'بجلی', mechanical: 'مکینیکل', equipment: 'مشینری اور آلات', supply_store: 'سپلائی اسٹور' },
+}
+/** The sector name in the reader's language (SECTOR_LABELS is Arabic only). */
+export function getSectorLabel(sector: string | null | undefined, locale: string): string {
+  if (!sector) return ''
+  if (locale === 'en' || locale === 'ur') return (SECTOR_LABELS_I18N[locale] as any)[sector] || sector
+  return (SECTOR_LABELS as any)[sector] || sector
+}
 
 // =============================================
 // SUB-CATEGORIES (التخصصات الفرعية) — 3-level taxonomy
@@ -1638,7 +1648,7 @@ const UNIT_TRANSLATIONS: Record<string, { en: string; ur: string }> = {
 // Arabic dropdown wording: abbreviations spelled out (UX audit 2026-11-21). The stored unit stays the short form.
 const AR_UNIT_LONG: Record<string, string> = {
   'م.ط': 'متر طولي', 'م²': 'متر مربع', 'م³': 'متر مكعب', 'كغ': 'كيلوغرام',
-  'نقلة': 'نقلة (حمولة شاحنة)', 'طبلية': 'طبلية (منصّة كاملة)', 'سيخ': 'سيخ (قضيب)',
+  'نقلة': 'نقلة (حمولة شاحنة)', 'طبلية': 'طبلية (منصّة كاملة)', 'سيخ': 'سيخ (قضيب)', 'كجم': 'كيلوغرام', 'طن MT': 'طن متري', 'م.ط.': 'متر طولي',
 }
 /** Unit name for pickers: Arabic abbreviations spelled out; other locales as getUnitLabel. */
 export function getUnitLabelLong(unit: string | null | undefined, locale: string): string {

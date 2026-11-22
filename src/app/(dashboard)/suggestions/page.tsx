@@ -80,13 +80,13 @@ export default function SuggestionsPage() {
           <div role="radiogroup" aria-label={L('Type', 'قسم', 'النوع')} className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {SUGGESTION_KINDS.map(k => (
               <button key={k.k} type="button" role="radio" aria-checked={kind === k.k} onClick={() => setKind(k.k)}
-                className={`min-h-[44px] rounded-xl border-2 text-sm font-bold ${kind === k.k ? 'border-[#0F6E56] bg-[#0F6E56]/5 text-[#0F6E56]' : 'border-gray-200 bg-white text-gray-600'}`}>{pick(k)}</button>
+                className={`min-h-[44px] rounded-xl border-2 text-sm font-bold ${kind === k.k ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#0B2438]' : 'border-gray-200 bg-white text-gray-700'}`}>{pick(k)}</button>
             ))}
           </div>
           <textarea id="suggestion-body" value={body} onChange={(e: any) => setBody(e.target.value)} maxLength={2000} rows={5} className="input-field"
             placeholder={kind === 'material' ? L('Which material, and how is it usually sold (unit, sizes)?', 'کون سی مواد، اور کیسے بکتی ہے؟', 'ما المادة، وكيف تُباع عادةً (الوحدة، المقاسات)؟') : L('Write your suggestion…', 'اپنی تجویز لکھیں…', 'اكتب اقتراحك…')} />
           {msg && <p role={msg.ok ? 'status' : 'alert'} className={`text-sm font-semibold ${msg.ok ? 'text-emerald-700' : 'text-red-600'}`}>{msg.text}</p>}
-          <button type="submit" disabled={sending} className="w-full min-h-[48px] rounded-xl font-bold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>
+          <button type="submit" disabled={sending} className="w-full min-h-[48px] rounded-xl font-bold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
             {sending ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send suggestion', 'تجویز بھیجیں', 'أرسل الاقتراح')}
           </button>
         </form>
@@ -100,7 +100,7 @@ export default function SuggestionsPage() {
                 <div key={b.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-start gap-3">
                   <button type="button" onClick={() => vote(b.id)} disabled={voting === b.id} aria-pressed={!!b.my_vote}
                     aria-label={b.my_vote ? L('Remove my vote', 'ووٹ واپس لیں', 'ألغِ صوتي') : L('Vote', 'ووٹ دیں', 'صوّت')}
-                    className={`shrink-0 w-14 rounded-xl border-2 py-1.5 text-center transition-colors disabled:opacity-50 ${b.my_vote ? 'border-[#0F6E56] bg-[#0F6E56] text-white' : 'border-gray-200 text-[#0B2438] hover:border-[#0F6E56]'}`}>
+                    className={`shrink-0 w-14 min-h-[44px] rounded-xl border-2 py-1.5 text-center transition-colors disabled:opacity-50 ${b.my_vote ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#0B2438]' : 'border-gray-200 text-[#0B2438] hover:border-[#D4A543]'}`}>
                     <div className="text-sm leading-none">▲</div>
                     <div className="text-base font-extrabold leading-tight">{b.votes}</div>
                   </button>

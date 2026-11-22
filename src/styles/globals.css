@@ -25,7 +25,7 @@
     --civil: #0B2438;
     --arch: #435A70;
     --elec: #D4A543;
-    --mech: #0F6E56;
+    --mech: #102E45;
     /* Type */
     --font: "IBM Plex Sans Arabic", "Tajawal", "Cairo", "Segoe UI", Tahoma, Arial, sans-serif;
     /* Shape */
@@ -142,3 +142,17 @@
 /* Touch-friendly tap targets */
 button, a { min-height: 36px; }
 .badge { min-height: auto; }
+
+/* Phones / touch screens (UX audit 2026-11-23) */
+@media (pointer: coarse) {
+  /* icon-only buttons and links (they carry an aria-label) get a full 44px target (UX-155) */
+  .ts-dashboard button[aria-label], .ts-dashboard a[aria-label] { min-width: 44px; min-height: 44px; }
+  .ts-dashboard input[type="checkbox"], .ts-dashboard input[type="radio"] { width: 20px; height: 20px; }
+}
+@media (max-width: 640px) {
+  /* Safari zooms into any field under 16px and stays zoomed (UX-157) */
+  .ts-dashboard input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  .ts-dashboard select, .ts-dashboard textarea, .auth-screen input, .auth-screen select { font-size: 16px !important; }
+}
+/* printing a deal: the assistant bubble and the verify banner stay off the paper (UX-056) */
+@media print { .ts-no-print { display: none !important; } }

@@ -1,25 +1,47 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { Sparkles, X, SendHorizontal } from 'lucide-react'
 import { useTranslation } from '@/i18n'
-import Glyph from '@/components/shared/Glyph'
 
 // مساعد تسعيرك الذكي — زر عائم + نافذة محادثة تظهر في كل صفحات لوحة التحكم.
+// UX-006: the bubble must never sit on a page's fixed action bar (send request / send offer / save):
+// a page with such a bar sets document.body.dataset.actionbar = '1' and the bubble hides while it is
+// there. It sits under dialogs and sheets (z-45), uses the navy + gold identity, and never prints.
 export default function AiAssistant() {
   const { locale, dir } = useTranslation()
   const [open, setOpen] = useState(false)
   const [msgs, setMsgs] = useState<{ role: string; content: string }[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [actionBar, setActionBar] = useState(false)
   const endRef = useRef<any>(null)
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs, loading, open])
 
+  // follow body[data-actionbar] (set by pages with a sticky/fixed action bar)
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const read = () => setActionBar(!!document.body.dataset.actionbar)
+    read()
+    const mo = new MutationObserver(read)
+    mo.observe(document.body, { attributes: true, attributeFilter: ['data-actionbar'] })
+    return () => mo.disconnect()
+  }, [])
+
+  // Escape closes the chat
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
   const T = locale === 'en'
-    ? { title: 'Taseerak Assistant', ph: 'Ask me anything…', hi: 'Hi! How can I help with your procurement today?', send: 'Send' }
+    ? { title: 'Taseerak Assistant', ph: 'Ask me anything…', hi: 'Hello! How can I help with your purchases today?', send: 'Send', close: 'Close' }
     : locale === 'ur'
-    ? { title: 'تسعیرک اسسٹنٹ', ph: 'کچھ پوچھیں…', hi: 'سلام! آج آپ کی خریداری میں کیسے مدد کروں؟', send: 'بھیجیں' }
-    : { title: 'مساعد تسعيرك', ph: 'اسألني أي شيء…', hi: 'أهلاً! كيف يمكنني مساعدتك في مشترياتك اليوم؟', send: 'إرسال' }
+    ? { title: 'تسعیرک اسسٹنٹ', ph: 'کچھ پوچھیں…', hi: 'سلام! آج آپ کی خریداری میں کیسے مدد کروں؟', send: 'بھیجیں', close: 'بند کریں' }
+    : { title: 'مساعد تسعيرك', ph: 'اسألني أي شيء…', hi: 'أهلاً! كيف يمكنني مساعدتك في مشترياتك اليوم؟', send: 'إرسال', close: 'إغلاق' }
 
   async function send() {
     const text = input.trim()
@@ -34,34 +56,38 @@ export default function AiAssistant() {
       const d = await res.json()
       setMsgs([...next, { role: 'assistant', content: d.reply || '…' }])
     } catch {
-      setMsgs([...next, { role: 'assistant', content: locale === 'en' ? 'Could not connect — please try again.' : locale === 'ur' ? 'رابطہ نہیں ہو سکا، دوبارہ کوشش کریں۔' : 'تعذّر الاتصال، حاول مجدداً.' }])
+      setMsgs([...next, { role: 'assistant', content: locale === 'en' ? 'Could not connect. Please try again.' : locale === 'ur' ? 'رابطہ نہیں ہو سکا، دوبارہ کوشش کریں۔' : 'تعذّر الاتصال، حاول مرة أخرى.' }])
     } finally { setLoading(false) }
   }
 
   const sideStyle = dir === 'rtl' ? { left: 20 } : { right: 20 }
+  // hidden while a page action bar is on screen (unless the chat is already open)
+  if (actionBar && !open) return null
 
   return (
-    <>
+    <div className="print:hidden">
       {/* الزر العائم */}
-      <button onClick={() => setOpen(o => !o)} aria-label={T.title}
-        className="fixed z-[60] w-14 h-14 rounded-full grid place-items-center text-white shadow-xl hover:scale-105 transition-transform bottom-[84px] lg:bottom-5"
-        style={{ ...sideStyle, background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
-        <span className="text-2xl">{open ? '✕' : <Glyph e="✨" />}</span>
+      <button type="button" onClick={() => setOpen(o => !o)} aria-label={open ? T.close : T.title} aria-expanded={open}
+        className="fixed z-[45] w-14 h-14 rounded-full grid place-items-center text-[#F5C55B] shadow-xl hover:scale-105 transition-transform bottom-[84px] lg:bottom-5 ring-2 ring-[#D4A543]/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D4A543]"
+        style={{ ...sideStyle, background: '#0B2438' }}>
+        {open ? <X className="w-6 h-6" aria-hidden /> : <Sparkles className="w-6 h-6" aria-hidden />}
       </button>
 
       {/* نافذة المحادثة */}
       {open && (
-        <div dir={dir} className="fixed z-[60] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bottom-[150px] lg:bottom-[86px]"
+        <div dir={dir} role="dialog" aria-label={T.title} className="fixed z-[45] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bottom-[150px] lg:bottom-[86px]"
           style={{ ...sideStyle, width: 'min(380px, calc(100vw - 32px))', height: 'min(560px, calc(100vh - 210px))' }}>
           {/* رأس */}
-          <div className="px-4 py-3 text-white flex items-center gap-2" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
-            <span className="text-lg"><Glyph e="✨" /></span>
+          <div className="px-4 py-2 text-white flex items-center gap-2 border-b-2 border-[#D4A543]" style={{ background: '#0B2438' }}>
+            <Sparkles className="w-5 h-5 text-[#F5C55B]" aria-hidden />
             <span className="font-bold text-sm flex-1">{T.title}</span>
-            <button onClick={() => setOpen(false)} aria-label={locale === 'en' ? 'Close' : locale === 'ur' ? 'بند کریں' : 'إغلاق'} className="text-white/80 hover:text-white text-lg leading-none">✕</button>
+            <button type="button" onClick={() => setOpen(false)} aria-label={T.close} className="w-[44px] h-[44px] -me-2 grid place-items-center rounded-lg text-white/80 hover:text-white">
+              <X className="w-5 h-5" aria-hidden />
+            </button>
           </div>
 
           {/* الرسائل */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50" aria-live="polite">
             <div className="flex">
               <div className="max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm bg-white border border-gray-100 text-gray-700 shadow-sm">{T.hi}</div>
             </div>
@@ -89,14 +115,16 @@ export default function AiAssistant() {
           <div className="p-2.5 border-t border-gray-100 flex items-end gap-2">
             <textarea value={input} onChange={e => setInput(e.target.value)} rows={1}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-              placeholder={T.ph}
-              className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:border-[#7C3AED] max-h-28" />
-            <button onClick={send} disabled={loading || !input.trim()}
-              className="shrink-0 w-10 h-10 rounded-xl grid place-items-center text-[#071827] disabled:opacity-50"
-              style={{ background: '#D4A543' }} aria-label={T.send}>➤</button>
+              placeholder={T.ph} aria-label={T.ph}
+              className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-[16px] sm:text-sm focus:outline-none focus:border-[#0B2438] focus:ring-2 focus:ring-[#D4A543]/40 max-h-28" />
+            <button type="button" onClick={send} disabled={loading || !input.trim()}
+              className="shrink-0 w-[44px] h-[44px] rounded-xl grid place-items-center text-[#071827] disabled:opacity-50"
+              style={{ background: '#D4A543' }} aria-label={T.send}>
+              <SendHorizontal className={`w-5 h-5 ${dir === 'rtl' ? 'rotate-180' : ''}`} aria-hidden />
+            </button>
           </div>
         </div>
       )}
-    </>
+    </div>
   )
 }

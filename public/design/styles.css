@@ -500,3 +500,71 @@ ul { list-style: none; }
   .float-chip.c2 { inset-inline-start: -10px; }
   .trustbar .lbl { display: none; }
 }
+
+/* ============================================================
+   UX audit 2026-11-23 (landing)
+   ============================================================ */
+/* UX-052: the first screen enters with CSS only, it never waits for the script */
+@keyframes heroIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+.hero-in { animation: heroIn .6s cubic-bezier(.2,.8,.2,1) both; }
+.hero-in.d1 { animation-delay: .06s; } .hero-in.d2 { animation-delay: .12s; }
+.hero-in.d3 { animation-delay: .18s; } .hero-in.d4 { animation-delay: .24s; }
+@media (prefers-reduced-motion: reduce) { .hero-in { animation: none; } }
+
+/* UX-180: the seller link is a real 44px pill */
+.hero-seller { margin-top: 14px; font-size: 14px; color: rgba(255,255,255,.82); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.seller-pill { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 100px; border: 1.5px solid #D4A543; color: #F5C55B; font-weight: 800; transition: background .2s; }
+.seller-pill:hover { background: rgba(212,165,67,.14); }
+/* the chips no longer cover «مثال توضيحي» */
+#taseerak-landing .hero-visual .float-chip.c1 { inset-inline-end: auto !important; inset-inline-start: 18px; top: -22px; }
+
+/* UX-136: nav links never wrap; the open mobile menu carries the languages and «تسجيل الدخول» */
+.nav-links a { white-space: nowrap; }
+.nav-mobile-extra { display: none; }
+@media (min-width: 861px) and (max-width: 1100px) {
+  .nav-links a { padding: 8px 9px; font-size: 14px; }
+  .nav-inner { gap: 12px; } .nav-actions { gap: 8px; }
+}
+@media (max-width: 860px) {
+  .nav.mobile-open .nav-links .nav-mobile-extra { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding-top: 10px; margin-top: 6px; border-top: 1px solid rgba(7,24,39,.1); }
+  .nav.mobile-open .nav-links .nav-mobile-extra .btn-ghost { width: auto; min-height: 44px; }
+  .nav:not(.scrolled).mobile-open .nav-links .lang { background: #EEF1F4; }
+  .nav:not(.scrolled).mobile-open .nav-links .lang button { color: #48596E; min-height: 40px; }
+  .nav:not(.scrolled).mobile-open .nav-links .lang button.on { background: #0B2438; color: #fff; }
+  .nav:not(.scrolled).mobile-open .nav-links .btn-ghost { color: #0B2438 !important; border-color: rgba(11,36,56,.25); }
+  .nav.mobile-open .menu-toggle span { background: transparent; }
+  .nav.mobile-open .menu-toggle span::before { top: 0; transform: rotate(45deg); }
+  .nav.mobile-open .menu-toggle span::after { top: 0; transform: rotate(-45deg); }
+}
+.foot-bottom .langs button { background: none; border: 0; color: inherit; font: inherit; cursor: pointer; min-height: 44px; padding: 0 4px; transition: .2s; }
+.foot-bottom .langs button:hover { color: #fff; }
+.foot-bottom .langs button.on { color: #F5C55B; font-weight: 700; }
+
+/* UX-193: «جهّز بيتك» under the hero */
+.packs { padding-bottom: 40px; }
+.pack-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.pack-card { display: block; border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 14px 34px -18px rgba(7,24,39,.4); color: #0B2438; font-weight: 800; border: 1px solid rgba(7,24,39,.06); transition: transform .3s, box-shadow .3s; }
+.pack-card img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; background: #EEF1F4; }
+.pack-card span { display: block; padding: 12px 14px; font-size: 15px; }
+.pack-card:hover { transform: translateY(-3px); box-shadow: 0 20px 40px -18px rgba(7,24,39,.5); }
+@media (max-width: 980px) { .pack-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+
+/* UX-135 */
+.boq-cta { margin-top: 26px; }
+
+/* UX-137: questions a home buyer asks first */
+.faq-list { max-width: 760px; margin: 0 auto; display: grid; gap: 12px; }
+.faq-list details { background: #fff; border: 1px solid rgba(7,24,39,.1); border-radius: 16px; padding: 0 18px; }
+.faq-list summary { cursor: pointer; min-height: 56px; display: flex; align-items: center; gap: 12px; font-weight: 800; color: #0B2438; font-size: 16px; list-style: none; }
+.faq-list summary::-webkit-details-marker { display: none; }
+.faq-list summary::after { content: "+"; margin-inline-start: auto; color: #9D7425; font-size: 22px; font-weight: 700; }
+.faq-list details[open] summary::after { content: "−"; }
+.faq-list p { padding-bottom: 16px; color: #48596E; line-height: 1.8; }
+.faq-more { text-align: center; margin-top: 20px; }
+.faq-more a { color: #9D7425; font-weight: 800; text-decoration: underline; }
+
+/* UX-180: shorter page on phones: stats and footer in two columns */
+@media (max-width: 560px) {
+  .stat-grid, .foot-top { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .foot-brand { grid-column: 1 / -1; }
+}

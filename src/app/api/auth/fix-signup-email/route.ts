@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   const origin = req.headers.get('origin') || 'https://taseerak.com'
   // the service role is not asked for a CAPTCHA (the browser's own resend would be)
   if (resendOnly) {
-    const { error: rsErr } = await admin.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${origin}/login` } })
+    const { error: rsErr } = await admin.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${origin}/login?confirmed=1` } })
     return rsErr ? err('resend_failed', 500) : NextResponse.json({ ok: true, resent: true })
   }
   const { data: taken } = await admin.rpc('admin_user_by_email', { p_email: newEmail })
@@ -47,6 +47,6 @@ export async function POST(req: NextRequest) {
 
   const { error: upErr } = await admin.auth.admin.updateUserById(u.id, { email: newEmail })
   if (upErr) return err(/already|exists|registered/i.test(upErr.message || '') ? 'email_taken' : 'update_failed', 500)
-  const { error: rsErr } = await admin.auth.resend({ type: 'signup', email: newEmail, options: { emailRedirectTo: `${origin}/login` } })
+  const { error: rsErr } = await admin.auth.resend({ type: 'signup', email: newEmail, options: { emailRedirectTo: `${origin}/login?confirmed=1` } })
   return NextResponse.json({ ok: true, resent: !rsErr })
 }

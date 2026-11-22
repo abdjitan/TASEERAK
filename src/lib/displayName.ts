@@ -8,3 +8,10 @@ export function cleanArName(name: string): string {
   s = s.replace(/\s{2,}/g, ' ').trim()
   return /[؀-ۿ]/.test(s) ? s : name                           // never leave an empty/Latin-only name
 }
+
+/** The product name to show: a home buyer reading Arabic gets cleanArName; everyone else getProductLabel. */
+import { getProductLabel } from '@/types'
+export function displayProductName(name: string, locale: string, homeBuyer: boolean): string {
+  if (!name) return name
+  return homeBuyer && locale === 'ar' ? cleanArName(name) : getProductLabel(name, locale)
+}

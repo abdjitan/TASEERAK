@@ -33,6 +33,11 @@ export async function POST(req: Request) {
   } else {
     if (mode !== 'signup') return NextResponse.json({ error: 'no_account' }, { status: 404 })
     if (!isAllowedPhone(phone)) return NextResponse.json({ error: 'country_not_allowed' }, { status: 400 })
+    // UX-053: the number already belongs to an (email) account, even if not verified there: never create a second one
+    try {
+      const { data: taken } = await admin.rpc('phone_exists', { p_phone: phone })
+      if (taken === true) return NextResponse.json({ error: 'phone_taken' }, { status: 409 })
+    } catch {}
     const name = String(body?.full_name || '').trim().slice(0, 80)
     if (name.length < 2) return NextResponse.json({ error: 'name_required' }, { status: 400 })
     if (!body?.terms_version) return NextResponse.json({ error: 'terms_required' }, { status: 400 })

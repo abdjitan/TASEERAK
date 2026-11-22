@@ -177,7 +177,7 @@ export default function MarketPricePage() {
             {[
               { label: L('Materials tracked', 'زیرِ نگرانی اشیاء', 'المواد المرصودة'), value: priceData.length, icon: <Glyph e="📦" />, bg: '#0B2438', fg: '#fff' },
               { label: L('Total offers', 'کل آفرز', 'إجمالي العروض'), value: priceData.reduce((s, p) => s + p.count, 0), icon: <Glyph e="💬" />, bg: '#D4A543', fg: '#071827' },
-              { label: L('Sectors', 'شعبے', 'القطاعات'), value: Object.keys(SECTOR_LABELS).length, icon: <Glyph e="🏗" />, bg: '#0F6E56', fg: '#fff' },
+              { label: L('Sectors', 'شعبے', 'القطاعات'), value: Object.keys(SECTOR_LABELS).length, icon: <Glyph e="🏗" />, bg: '#102E45', fg: '#fff' },
             ].map(({ label, value, icon, bg, fg }) => (
               <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm text-center">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg mx-auto mb-2" style={{ background: bg, color: fg }}>{icon}</div>

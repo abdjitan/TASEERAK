@@ -1,96 +1,88 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { noEmoji, timeAgo as timeAgoText, arCount, arMaterials, dateLocale } from '@/lib/text'
+import { Check, RotateCcw } from 'lucide-react'
+import { noEmoji, timeAgo as timeAgoText, arCount, arMaterials, arRequests, countLabel, dateLocale } from '@/lib/text'
 import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
-import { SECTOR_LABELS } from '@/types'
-import Logo from '@/components/shared/Logo'
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
-import NotificationBell from '@/components/shared/NotificationBell'
+import { getProductLabel, getUnitLabelLong } from '@/types'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import EnablePush from '@/components/shared/EnablePush'
 import MarketHero from '@/components/buyer/MarketHero'
 import BuyerTypePrompt from '@/components/buyer/BuyerTypePrompt'
 import { rememberBuyerType } from '@/lib/buyerType'
 import { AppIcon } from '@/components/AppIcon'
-import { rfqDisplayName, arItems, rfqDate } from '@/lib/rfqName'
-import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, formatDateTime } from '@/lib/deadline'
+import { rfqRef, rfqDesc, arItems, rfqDate } from '@/lib/rfqName'
+import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 import { dealStage } from '@/lib/dealStage'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { FEATURES } from '@/lib/features'
 import { canUseProjects } from '@/lib/plans'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
+import { cleanArName } from '@/lib/displayName'
+import { normalizeText } from '@/lib/normalize'
+import { offerComparable, lineComparable } from '@/lib/vat'
 import Glyph from '@/components/shared/Glyph'
 import { askConfirm } from '@/lib/askConfirm'
 
 const txt = {
   ar: {
     welcome: 'أهلاً',
-    subtitle: 'إليك ملخص طلباتك وعروضك',
-    newRfq: '+ طلب تسعير',
-    logout: 'خروج',
     activeRfqs: 'طلبات نشطة',
     totalOffers: 'إجمالي العروض',
-    completed: 'صفقات مكتملة',
+    completed: 'صفقاتي',
     total: 'إجمالي الطلبات',
     rfqList: 'طلبات التسعير',
-    requests: 'طلب',
-    noRfqs: 'لا يوجد طلبات بعد',
+    noRfqs: 'لا توجد طلبات بعد',
     noRfqsSub: 'أرسل أول طلب تسعير لتصلك عروض الموردين المختصين بموادك',
     newRfqBtn: '+ طلب تسعير جديد',
-    viewDetails: 'عرض التفاصيل ←',
-    open: '● مفتوح', closed: '● مغلق', expired: '● منتهي', cancelled: '● ملغي',
-    offers: 'عرض',
-    qty: 'الكمية',
+    viewDetails: 'عرض التفاصيل',
+    open: 'مفتوح', expired: 'انتهت المهلة', cancelled: 'ملغى',
   },
   en: {
     welcome: 'Hello',
-    subtitle: 'Here is a summary of your requests and offers',
-    newRfq: '+ New RFQ',
-    logout: 'Logout',
-    activeRfqs: 'Active RFQs',
-    totalOffers: 'Total Offers',
-    completed: 'Completed Deals',
-    total: 'Total Requests',
-    rfqList: 'RFQ Requests',
-    requests: 'requests',
+    activeRfqs: 'Active requests',
+    totalOffers: 'Total offers',
+    completed: 'My deals',
+    total: 'Total requests',
+    rfqList: 'Price requests',
     noRfqs: 'No requests yet',
     noRfqsSub: 'Send your first price request to get offers from suppliers of your materials',
-    newRfqBtn: '+ New RFQ Request',
-    viewDetails: 'View Details →',
-    open: '● Open', closed: '● Closed', expired: '● Expired', cancelled: '● Cancelled',
-    offers: 'offer',
-    qty: 'Qty',
+    newRfqBtn: '+ New price request',
+    viewDetails: 'View details',
+    open: 'Open', expired: 'Deadline passed', cancelled: 'Cancelled',
   },
   ur: {
     welcome: 'خوش آمدید',
-    subtitle: 'آپ کی درخواستوں اور پیشکشوں کا خلاصہ',
-    newRfq: '+ نئی درخواست',
-    logout: 'لاگ آؤٹ',
     activeRfqs: 'فعال درخواستیں',
     totalOffers: 'کل پیشکشیں',
-    completed: 'مکمل سودے',
+    completed: 'میری ڈیلز',
     total: 'کل درخواستیں',
     rfqList: 'قیمت کی درخواستیں',
-    requests: 'درخواست',
     noRfqs: 'ابھی تک کوئی درخواست نہیں',
     noRfqsSub: 'پہلی قیمت کی درخواست بھیجیں تاکہ متعلقہ سپلائرز سے پیشکشیں ملیں',
-    newRfqBtn: '+ نئی درخواست',
-    viewDetails: 'تفصیلات دیکھیں →',
-    open: '● کھلا', closed: '● بند', expired: '● ختم', cancelled: '● منسوخ',
-    offers: 'پیشکش',
-    qty: 'مقدار',
+    newRfqBtn: '+ نئی قیمت کی درخواست',
+    viewDetails: 'تفصیلات دیکھیں',
+    open: 'کھلا', expired: 'مہلت ختم', cancelled: 'منسوخ',
   },
 }
 
 const sectorLabels = {
   ar: { civil: 'مدني', architectural: 'معماري', electrical: 'كهرباء', mechanical: 'ميكانيك', equipment: 'آليات ومعدات', supply_store: 'محل توريد' },
-  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
+  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply store' },
   ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'سپلائی اسٹور' },
+}
+
+// «عروض جديدة» only for offers the buyer has not seen yet (UX-066): the offer count seen per request,
+// kept on this device when the buyer opens the request
+const SEEN_KEY = 'tsk_seen_offers_v1'
+function readSeen(): Record<string, number> {
+  try { const v = JSON.parse(localStorage.getItem(SEEN_KEY) || '{}'); return v && typeof v === 'object' ? v : {} } catch { return {} }
+}
+function markSeen(id: string, count: number) {
+  try { const m = readSeen(); m[id] = count; localStorage.setItem(SEEN_KEY, JSON.stringify(m)) } catch {}
 }
 
 export default function ContractorDashboard() {
@@ -98,6 +90,7 @@ export default function ContractorDashboard() {
   const t = txt[locale] || txt.ar
   const sectors = (sectorLabels as any)[locale] || sectorLabels.ar
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  const fwd = locale === 'en' ? '→' : '←' // the forward arrow in the reading direction (UX-159)
 
   const [user, setUser] = useState<any>(null)
   const [profileFresh, setProfileFresh] = useState(false)   // the profile came from the DB (not the cached snapshot)
@@ -106,9 +99,12 @@ export default function ContractorDashboard() {
   const [deals, setDeals] = useState<Record<string, any>>({})
   const [projects, setProjects] = useState<any[]>([])
   const [drafts, setDrafts] = useState<any[]>([])
+  const [draftErr, setDraftErr] = useState('')
   const [activity, setActivity] = useState<any[]>([])
   const [marketTop, setMarketTop] = useState<any[]>([])
   const [marketTrend, setMarketTrend] = useState<Record<string, any>>({})
+  const [openOffers, setOpenOffers] = useState<Record<string, any[]>>({}) // offers on open requests (best price, UX-194)
+  const [seen, setSeen] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
   const [mySavings, setMySavings] = useState<any>(null) // «وفّرت X ريال» across all requests (210)
   const [filter, setFilter] = useState('all') // all | has_offers | pending | closed
@@ -117,6 +113,7 @@ export default function ContractorDashboard() {
   const [sortBy, setSortBy] = useState('newest') // newest | expiry
 
   useEffect(() => {
+    setSeen(readSeen())
     async function init() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -128,8 +125,11 @@ export default function ContractorDashboard() {
       // Back on the home page within this tab: show the last data at once, refresh below.
       const snap = readPageCache('home_' + uid)
       if (snap) {
+        // the buyer type first, so names and codes render in the right mode on the first paint (UX-171)
+        rememberBuyerType(snap.p?.buyer_type)
         setProfile(snap.p); setRfqs(snap.r || []); setDrafts(snap.dr || []); setProjects(snap.proj || [])
         setActivity(snap.notifs || []); setMarketTop(snap.marketTop || []); setMarketTrend(snap.trend || {}); setDeals(snap.deals || {})
+        setOpenOffers(snap.oo || {})
         setLoading(false)
       }
       const safe = (q: any) => Promise.resolve(q).catch(() => ({ data: null }))
@@ -143,6 +143,7 @@ export default function ContractorDashboard() {
         safe(supabase.rpc('get_market_price_trend')),
       ])
       safe(supabase.rpc('my_savings')).then((x: any) => setMySavings(x?.data || null))
+      rememberBuyerType(p?.buyer_type) // before the profile renders (UX-171)
       setProfile(p); setProfileFresh(true)
       setRfqs(r || [])
       setDrafts(dr || [])
@@ -156,18 +157,25 @@ export default function ContractorDashboard() {
       setLoading(false)
       const marketTop = (mp || []).sort((a: any, b: any) => Number(b.offer_count) - Number(a.offer_count)).slice(0, 3)
       let deals: Record<string, any[]> = snap?.deals || {}
+      let oo: Record<string, any[]> = snap?.oo || {}
       try {
         const closedIds = (r || []).filter((x: any) => x.status === 'closed').map((x: any) => x.id)
-        if (closedIds.length) {
-          const { data: acc } = await supabase.from('offers').select('rfq_id, accepted_at, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status').in('rfq_id', closedIds).eq('status', 'accepted')
-          // keep ALL accepted offers per RFQ (per-item awards → multiple suppliers), not one arbitrary (B11)
-          const m: Record<string, any[]> = {}
-          for (const o of (acc || [])) (m[o.rfq_id] ||= []).push(o)
-          setDeals(m)
-          deals = m
-        }
+        const openIds = (r || []).filter((x: any) => x.status === 'open' && (x.offer_count || 0) > 0).map((x: any) => x.id).slice(0, 60)
+        const [acc, offs] = await Promise.all([
+          closedIds.length ? supabase.from('offers').select('rfq_id, accepted_at, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status').in('rfq_id', closedIds).eq('status', 'accepted') : Promise.resolve({ data: [] } as any),
+          openIds.length ? safe(supabase.from('offers').select('rfq_id, status, total_price, vat_included, vat_status, item_prices, price_valid_until').in('rfq_id', openIds)) : Promise.resolve({ data: [] } as any),
+        ])
+        // keep ALL accepted offers per RFQ (per-item awards → multiple suppliers), not one arbitrary (B11)
+        const m: Record<string, any[]> = {}
+        for (const o of (acc?.data || [])) (m[o.rfq_id] ||= []).push(o)
+        setDeals(m)
+        deals = m
+        const om: Record<string, any[]> = {}
+        for (const o of (offs?.data || [])) if (!['rejected', 'withdrawn', 'cancelled'].includes(o.status)) (om[o.rfq_id] ||= []).push(o)
+        setOpenOffers(om)
+        oo = om
       } catch {}
-      writePageCache('home_' + uid, { p, r, dr, proj, notifs, marketTop, trend: map, deals })
+      writePageCache('home_' + uid, { p, r, dr, proj, notifs, marketTop, trend: map, deals, oo })
     }
     init()
   }, [])
@@ -183,22 +191,38 @@ export default function ContractorDashboard() {
   useEffect(() => { if (profile) rememberBuyerType(profile.buyer_type) }, [profile])
   if (loading) return <PageLoader />
 
+  const homeBuyer = profile?.buyer_type === 'individual'
   const active = rfqs.filter((r: any) => r.status === 'open')
   const closed = rfqs.filter((r: any) => r.status === 'closed')
   const totalOffers = rfqs.reduce((s: any, r: any) => s + (r.offer_count || 0), 0)
+  const newCount = (r: any) => Math.max(0, (r.offer_count || 0) - (seen[r.id] || 0))
+  const hasNew = (r: any) => r.status === 'open' && newCount(r) > 0
+  const openRfq = (r: any) => { if ((r.offer_count || 0) > 0) markSeen(r.id, r.offer_count || 0) }
 
   // أرقام حيّة + اكتمال الحساب
   const now = Date.now()
   const rfqsThisWeek = rfqs.filter((r: any) => r.created_at && (now - new Date(r.created_at).getTime()) < 7 * 864e5).length
-  const awaitingReply = rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) > 0).length
+  const awaitingReply = rfqs.filter(hasNew).length
   const completion = [
     { ok: !!(profile?.region && profile?.city), label: L('Location', 'مقام', 'الموقع'), href: '/settings' },
     { ok: !!profile?.phone, label: L('Phone', 'فون نمبر', 'رقم الجوال'), href: '/settings' },
     { ok: !!(profile?.latitude || profile?.national_short_address), label: L('Map pin', 'نقشے پر مقام', 'الموقع على الخريطة'), href: '/location' },
-    { ok: rfqs.length > 0, label: L('First RFQ', 'پہلی قیمت کی درخواست', 'أول طلب تسعير'), href: '/contractor/rfq/quick' },
+    { ok: rfqs.length > 0, label: L('First price request', 'پہلی قیمت کی درخواست', 'أول طلب تسعير'), href: '/contractor/rfq/quick' },
   ]
   const compDone = completion.filter((c: any) => c.ok).length
   const compPct = Math.round((compDone / completion.length) * 100)
+
+  // the deal stage of a closed request: an open dispute wins, else the least-advanced stage; done only if all are done
+  const dealOf = (rfq: any) => {
+    const list = deals[rfq.id]
+    if (!list?.length) return null
+    const stages = list.map((o: any) => dealStage(o, 'buyer', locale))
+    const disputed = stages.find((s: any) => s.key === 'disputed')
+    const allDone = stages.every((s: any) => s.done)
+    const st = disputed || (allDone ? stages[0] : stages.slice().sort((a: any, b: any) => a.step - b.step)[0])
+    return { st, allDone, n: list.length }
+  }
+  const dealsDone = closed.filter((r: any) => dealOf(r)?.allDone).length
 
   function timeAgo(d: any) {
     if (!d) return ''
@@ -218,63 +242,81 @@ export default function ContractorDashboard() {
     : rfqs.length >= 3 ? { t: L('Active Buyer', 'فعال خریدار', 'مشتري نشط'), e: <Glyph e="⭐" /> }
     : { t: L('Getting Started', 'اچھا آغاز', 'بداية موفقة'), e: <Glyph e="🌱" /> }
 
-  const statusLabel = (status: any) => {
-    if (status === 'open') return t.open
-    if (status === 'closed') return t.closed
-    if (status === 'cancelled') return t.cancelled
-    return t.expired
+  // the request's name with the reference in the reader's language (UX-069)
+  const displayName = (rfq: any) => { const ref = rfqRef(rfq, locale); const desc = rfqDesc(rfq, locale); return ref ? `${ref} · ${desc}` : desc }
+  const itemsOf = (rfq: any): any[] => Array.isArray(rfq.items) && rfq.items.length ? rfq.items : rfq.product_name ? [{ product_name: rfq.product_name }] : []
+  const sar = (n: number) => `${Math.round(n).toLocaleString('en-US')} ${L('SAR', 'ریال', 'ر.س')}`
+  const whenShort = (d: any) => new Date(d).toLocaleString(dateLocale(locale), { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Riyadh' })
+
+  // «أقل سعر» for one material, «أفضل مجموع» or «سُعّرت k من n مواد» for several (UX-194)
+  function bestLine(rfq: any): string {
+    const offs = openOffers[rfq.id] || []
+    if (!offs.length) return ''
+    const items = itemsOf(rfq)
+    const n = Math.max(1, items.length)
+    if (n === 1) {
+      const min = Math.min(...offs.map(offerComparable).filter((x: number) => x > 0))
+      return isFinite(min) ? L(`Lowest price: ${sar(min)}`, `کم ترین قیمت: ${sar(min)}`, `أقل سعر: ${sar(min)}`) : ''
+    }
+    const pricedIdx = new Set<number>()
+    let bestFull = Infinity
+    for (const o of offs) {
+      const list = (Array.isArray(o.item_prices) ? o.item_prices : []).filter((e: any) => Number(e?.total) > 0)
+      list.forEach((e: any, i: number) => pricedIdx.add(Number.isInteger(e.item_index) ? e.item_index : i))
+      if (list.length >= n) { const tot = list.reduce((s: number, e: any) => s + lineComparable(e.total, o), 0); if (tot > 0 && tot < bestFull) bestFull = tot }
+    }
+    if (isFinite(bestFull)) return L(`Best total: ${sar(bestFull)}`, `بہترین کل: ${sar(bestFull)}`, `أفضل مجموع: ${sar(bestFull)}`)
+    const k = Math.min(pricedIdx.size, n)
+    return k ? L(`${k} of ${n} items priced`, `${n} میں سے ${k} اشیاء کی قیمت آئی`, `سُعّرت ${k} من ${arMaterials(n)}`) : ''
   }
+  // an offer price that ends within 48 hours on an open request (one row, the soonest)
+  const expiring = (() => {
+    let best: { rfq: any; at: string } | null = null
+    for (const rfq of active) for (const o of openOffers[rfq.id] || []) {
+      const at = o.price_valid_until
+      if (!at) continue
+      const ms = new Date(at).getTime() - now
+      if (ms > 0 && ms < 48 * 3600e3 && (!best || new Date(at).getTime() < new Date(best.at).getTime())) best = { rfq, at }
+    }
+    return best
+  })()
 
   const nav = getNav('contractor', locale, '/contractor') // the shared menu (طلباتي، صفقاتي، الرسائل…)
-  const headerActions = profile?.verification_status !== 'rejected' ? (
-    <>
-      {canUseProjects(profile) && profile?.buyer_type !== 'individual' && <Link href="/contractor/project/new" className="hidden sm:inline-flex items-center gap-1 text-xs px-3.5 py-2 rounded-pill font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /> {L('Project', 'پراجیکٹ', 'مشروع')}</Link>}
-      <Link href="/contractor/rfq/quick" className="btn-orange text-xs px-4 py-2">{t.newRfq}</Link>
-    </>
-  ) : null
+  const name = profile?.company_name_ar || profile?.company_name_en || profile?.full_name || ''
+  const greeting = name ? `${t.welcome}، ${name}` : undefined
 
-  // UX audit 2026-11-21: a home buyer sees a short home (search + sections, actions, savings, requests)
-  const homeBuyer = profile?.buyer_type === 'individual'
+  // the request list's search: title, number, display name and every material name (raw, cleaned, translated) (UX-070)
+  const haystack = (rfq: any) => normalizeText([
+    rfq.title, rfq.ref_no, rfqRef(rfq, locale), rfqDesc(rfq, locale), rfq.product_name,
+    ...itemsOf(rfq).flatMap((it: any) => { const n = String(it?.product_name || ''); return [n, cleanArName(n), getProductLabel(n, locale)] }),
+  ].filter(Boolean).join(' '))
 
   return (
     <AppShell
-      title={homeBuyer ? (locale === 'en' ? 'Home' : locale === 'ur' ? 'ہوم' : 'الرئيسية') : locale === 'en' ? 'Buyer Dashboard' : locale === 'ur' ? 'خریدار ڈیش بورڈ' : 'لوحة المشتري'}
+      title={homeBuyer ? (locale === 'en' ? 'Home' : locale === 'ur' ? 'ہوم' : 'الرئيسية') : locale === 'en' ? 'Buyer dashboard' : locale === 'ur' ? 'خریدار ڈیش بورڈ' : 'لوحة المشتري'}
       company={profile?.company_name_ar || profile?.company_name_en}
       userId={user?.id}
       nav={nav}
-      actions={headerActions}
       onSignOut={handleSignOut}
       dir={dir}
     >
       <div className="max-w-6xl mx-auto">
-        {/* السوق: «ماذا تحتاج اليوم؟» + الأقسام بالصور (التصميم المعتمد) */}
         {/* owner 2026-11-22: existing buyers choose «لبيتي / مقاول أو شركة» once after the update */}
         {profileFresh && user && profile?.role === 'contractor' && !profile?.buyer_type && (
-          <BuyerTypePrompt userId={user.id} locale={locale} onChosen={(v) => setProfile((p: any) => ({ ...p, buyer_type: v }))} />
+          <BuyerTypePrompt userId={user.id} locale={locale} onChosen={(v) => { rememberBuyerType(v); setProfile((p: any) => ({ ...p, buyer_type: v })) }} />
         )}
-        <MarketHero locale={locale} homeBuyer={homeBuyer} />
-        {/* أكمل ملفك — يظهر بعد التسجيل المبسّط حتى تُعبّأ البيانات */}
-        {!profile?.region && (
-          <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 text-[#071827] hover:shadow-lg transition-shadow" style={{ background: 'linear-gradient(120deg,#D4A543,#8F6820)' }}>
-            <div>
-              <div className="font-extrabold text-sm"><Glyph e="👋" /> {locale === 'en' ? 'Complete your profile' : locale === 'ur' ? 'اپنی پروفائل مکمل کریں' : 'أكمل ملفك'}</div>
-              <div className="text-[12px] text-[#071827]/80 mt-0.5">{locale === 'en' ? 'Add your location and sectors to get the best offers.' : locale === 'ur' ? 'بہترین آفرز کے لیے اپنا مقام اور شعبے شامل کریں۔' : 'أضف موقعك وقطاعاتك لتصلك أفضل العروض.'}</div>
-            </div>
-            <span className="shrink-0 text-sm font-bold bg-white/20 rounded-full px-3 py-1.5">{L('Complete →', 'مکمل کریں ←', 'أكمل ←')}</span>
-          </Link>
-        )}
-        <EnablePush variant="nudge" />
-        {/* Verification Status Banner */}
+
+        {/* Verification Status Banner (buyers are not reviewed; only a rejected account is told) */}
         {profile?.verification_status === 'rejected' && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">
             <div className="flex items-start gap-3 mb-3">
               <span className="text-2xl"><Glyph e="❌" /></span>
               <div>
                 <div className="font-bold text-red-700 mb-1">
-                  {locale === 'en' ? 'Account Rejected' : locale === 'ur' ? 'اکاؤنٹ مسترد' : 'تم رفض حسابك'}
+                  {locale === 'en' ? 'Account rejected' : locale === 'ur' ? 'اکاؤنٹ مسترد' : 'تم رفض حسابك'}
                 </div>
-                <div className="text-sm text-red-600">
-                  {locale === 'en' ? 'Your account has been rejected. Please review the reason below and reupload your documents.'
+                <div className="text-sm text-red-700">
+                  {locale === 'en' ? 'Your account has been rejected. Please review the reason below and upload your documents again.'
                   : locale === 'ur' ? 'آپ کا اکاؤنٹ مسترد ہو گیا۔ وجہ دیکھیں اور دستاویزات دوبارہ اپلوڈ کریں۔'
                   : 'تم رفض حسابك. يرجى مراجعة السبب وإعادة رفع المستندات المطلوبة.'}
                 </div>
@@ -285,35 +327,95 @@ export default function ContractorDashboard() {
                 )}
               </div>
             </div>
-            <Link href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
-              {locale === 'en' ? 'Reupload Documents' : locale === 'ur' ? 'دستاویزات دوبارہ اپلوڈ کریں' : 'إعادة رفع المستندات'}
+            <Link href="/settings" className="inline-flex items-center min-h-[44px] text-sm px-4 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
+              {locale === 'en' ? 'Upload documents again' : locale === 'ur' ? 'دستاویزات دوبارہ اپلوڈ کریں' : 'إعادة رفع المستندات'}
             </Link>
           </div>
         )}
 
-        {profile?.verification_status === 'pending' && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-3 animate-fade-in">
-            <span className="text-2xl"><Glyph e="⏳" /></span>
-            <div>
-              <div className="font-bold text-amber-700 mb-1">
-                {locale === 'en' ? 'Account Under Review' : locale === 'ur' ? 'اکاؤنٹ زیر جائزہ' : 'حسابك قيد المراجعة'}
-              </div>
-              <div className="text-sm text-amber-600">
-                {locale === 'en' ? 'Your account is being reviewed. This usually takes up to 24 hours.'
-                : locale === 'ur' ? 'آپ کے اکاؤنٹ کا جائزہ لیا جا رہا ہے۔ اس میں عام طور پر 24 گھنٹے لگتے ہیں۔'
-                : 'يتم مراجعة بياناتك ورخصة عملك. عادةً تستغرق 24 ساعة.'}
-              </div>
+        {/* a returning buyer: their requests come first, above the market (UX-065) */}
+        {rfqs.length > 0 && (
+          <section className="mb-5 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in" aria-labelledby="my-req-strip">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h2 id="my-req-strip" className="text-sm font-extrabold text-[#0B2438]">{L('My requests', 'میری درخواستیں', 'طلباتي')}</h2>
+              <button type="button" onClick={() => { setFilter('all'); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+                className="min-h-[44px] px-1 text-[13px] font-bold text-[#8F6820] hover:underline">{L('All my requests', 'میری تمام درخواستیں', 'كل طلباتي')} {fwd}</button>
             </div>
-          </div>
+            {awaitingReply > 0 && (
+              <button type="button" onClick={() => { setFilter('has_offers'); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+                className="w-full mb-2 rounded-xl p-3 flex items-center gap-3 text-start transition-all hover:shadow-md border"
+                style={{ background: 'linear-gradient(135deg,#D4A54318,#0B243808)', borderColor: '#D4A54366' }}>
+                <span className="w-10 h-10 rounded-xl grid place-items-center text-[#071827] shrink-0" style={{ background: '#D4A543' }}><Glyph e="🔔" /></span>
+                <span className="flex-1 text-sm font-bold" style={{ color: '#0B2438' }}>
+                  {L(awaitingReply === 1 ? '1 request received new offers. Compare them now' : `${awaitingReply} requests received new offers. Compare them now`,
+                    `${awaitingReply} درخواستوں پر نئی پیشکشیں آئی ہیں۔ ابھی موازنہ کریں`,
+                    `${arCount(awaitingReply, 'طلب واحد وصلته', 'طلبان وصلتهما', 'طلبات وصلتها', 'طلباً وصلته')} عروض جديدة، قارِنها الآن`)}
+                </span>
+                <span className="font-bold text-sm text-[#8F6820]" aria-hidden>{fwd}</span>
+              </button>
+            )}
+            {expiring && (
+              <Link href={`/contractor/rfq/${expiring.rfq.id}`} onClick={() => openRfq(expiring.rfq)}
+                className="mb-2 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[13px] font-bold text-amber-900">
+                <Glyph e="⏰" />
+                <span className="flex-1">{L(`An offer price on «${rfqDesc(expiring.rfq, locale)}» ends in ${formatTimeLeft(expiring.at, locale)}. Choose before it changes.`,
+                  `«${rfqDesc(expiring.rfq, locale)}» کی ایک پیشکش کی قیمت ${formatTimeLeft(expiring.at, locale)} میں ختم ہو گی۔ بدلنے سے پہلے انتخاب کریں۔`,
+                  `سعر أحد عروض «${rfqDesc(expiring.rfq, locale)}» ينتهي خلال ${formatTimeLeft(expiring.at, locale)}، اختر قبل أن يتغيّر.`)}</span>
+              </Link>
+            )}
+            <div className="grid sm:grid-cols-2 gap-2">
+              {rfqs.slice(0, 2).map((rfq: any) => {
+                const d = rfq.status === 'closed' ? dealOf(rfq) : null
+                const status = rfq.status === 'closed' ? (d ? d.st.label : L('Offer chosen', 'پیشکش منتخب ہو گئی', 'تم اختيار العرض'))
+                  : rfq.status === 'open' && !isExpired(rfq.expires_at) ? ((rfq.offer_count || 0) > 0 ? countLabel(rfq.offer_count, locale, (n: number) => arCount(n, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'), 'offer', 'پیشکش') : L('Awaiting offers', 'پیشکشوں کا انتظار', 'بانتظار العروض'))
+                  : rfq.status === 'cancelled' ? t.cancelled : t.expired
+                return (
+                  <Link key={rfq.id} href={`/contractor/rfq/${rfq.id}`} onClick={() => openRfq(rfq)}
+                    className="flex items-center justify-between gap-2 rounded-xl border border-gray-100 px-3 py-2 min-h-[52px] hover:border-[#D4A543]/50">
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-[#0B2438] truncate">{rfqDesc(rfq, locale)}</span>
+                      <span className="block text-[12px] text-gray-600 truncate">{status}</span>
+                    </span>
+                    {hasNew(rfq) && <span className="shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{L('New offers', 'نئی پیشکشیں', 'عروض جديدة')}</span>}
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
         )}
 
-        <div className="mb-5 animate-fade-in">
-          <h1 className="text-2xl font-bold" style={{ color: '#0B2438' }}>
-            {t.welcome}، {profile?.company_name_ar || profile?.company_name_en || profile?.full_name || L('Buyer', 'خریدار', 'مشتري')} <Glyph e="👋" />
-          </h1>
-          <p className="text-gray-500 mt-1 text-sm">{t.subtitle}</p>
-        </div>
+        {/* السوق: «ماذا تحتاج اليوم؟» + الأقسام بالصور (التصميم المعتمد); the greeting lives in the hero */}
+        <MarketHero locale={locale} homeBuyer={homeBuyer} greeting={greeting} />
 
+        {/* one attention card at a time, by priority (UX-087) */}
+        {!profile?.region ? (
+          <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 bg-white border-2 border-[#D4A543]/60 hover:shadow-md transition-shadow">
+            <div>
+              <div className="font-extrabold text-sm text-[#0B2438]"><Glyph e="📍" /> {homeBuyer ? L('Add your delivery address', 'ڈیلیوری کا پتہ شامل کریں', 'أضف عنوان التوصيل') : L('Complete your profile', 'اپنی پروفائل مکمل کریں', 'أكمل ملفك')}</div>
+              <div className="text-[13px] text-gray-700 mt-0.5">{homeBuyer
+                ? L('Add your delivery address so your request reaches the suppliers near you.', 'ڈیلیوری کا پتہ شامل کریں تاکہ آپ کی درخواست قریبی سپلائرز تک پہنچے۔', 'أضف عنوان التوصيل، ليصل طلبك إلى الموردين القريبين منك.')
+                : L('Add your location and sectors to get the best offers.', 'بہترین پیشکشوں کے لیے اپنا مقام اور شعبے شامل کریں۔', 'أضف موقعك وقطاعات عملك لتصلك أفضل العروض.')}</div>
+            </div>
+            <span className="shrink-0 text-sm font-bold text-[#0B2438] border border-[#0B2438]/30 rounded-full px-3 py-1.5">{L('Add', 'شامل کریں', 'أضف')} {fwd}</span>
+          </Link>
+        ) : !homeBuyer && compPct < 100 ? (
+          <div className="mb-6 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-bold" style={{ color: '#0B2438' }}>
+                {locale === 'en' ? `Your account is ${compPct}% complete` : locale === 'ur' ? `آپ کا اکاؤنٹ ${compPct}% مکمل` : `حسابك مكتمل ${compPct}%`}
+              </span>
+              <span className="text-[12px] text-gray-500">{compDone}/{completion.length}</span>
+            </div>
+            <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-3">
+              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${compPct}%`, background: 'linear-gradient(90deg,#D4A543,#9D7425)' }} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {completion.filter((c: any) => !c.ok).map((c: any) => (
+                <Link key={c.label} href={c.href} className="min-h-[40px] inline-flex items-center text-[12px] font-semibold px-3 rounded-full border border-dashed transition-all hover:bg-[#D4A543]/10" style={{ borderColor: '#D4A543', color: '#8F6820' }}>+ {c.label}</Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {/* تنبيه سعري — أكبر تغيّر شهري (يخلق قيمة عودة يومية) */}
         {!homeBuyer && (() => {
@@ -332,11 +434,11 @@ export default function ContractorDashboard() {
               style={{ background: down ? '#ecfdf5' : '#fef2f2', borderColor: down ? '#a7f3d0' : '#fecaca' }}>
               <span className="text-xl">{down ? <Glyph e="📉" /> : <Glyph e="📈" />}</span>
               <span className="flex-1 text-sm font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>
-                {L(`${best.name} ${down ? 'down' : 'up'} ${Math.abs(best.pct)}% vs last month`,
-                  `${best.name} کی قیمت پچھلے مہینے کے مقابلے میں ${Math.abs(best.pct)}% ${down ? 'کم ہوئی' : 'بڑھی'}`,
+                {L(`${getProductLabel(best.name, 'en')} ${down ? 'down' : 'up'} ${Math.abs(best.pct)}% vs last month`,
+                  `${getProductLabel(best.name, 'ur')} کی قیمت پچھلے مہینے کے مقابلے میں ${Math.abs(best.pct)}% ${down ? 'کم ہوئی' : 'بڑھی'}`,
                   `سعر ${best.name} ${down ? 'انخفض' : 'ارتفع'} ${Math.abs(best.pct)}% مقارنةً بالشهر الماضي`)}
               </span>
-              <span className="text-xs font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }}>{dir === 'rtl' ? '←' : '→'}</span>
+              <span className="text-[12px] font-bold" style={{ color: down ? '#0F6E56' : '#b91c1c' }} aria-hidden>{fwd}</span>
             </Link>
           )
         })()}
@@ -348,103 +450,59 @@ export default function ContractorDashboard() {
               <h2 className="text-sm font-bold flex items-center gap-2" style={{ color: '#0B2438' }}>
                 <AppIcon name="pricing" tone="warning" variant="line" size={20} /> {L('Market pulse', 'مارکیٹ کی نبض', 'نبض السوق')}
               </h2>
-              <Link href="/market" className="text-xs font-semibold" style={{ color: '#8F6820' }}>{L('Full index →', 'مکمل انڈیکس ←', 'المؤشر كاملاً ←')}</Link>
+              <Link href="/market" className="text-[12px] font-semibold" style={{ color: '#8F6820' }}>{L('Full index', 'مکمل انڈیکس', 'المؤشر كاملاً')} {fwd}</Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {marketTop.map((p: any, i: any) => (
                 <div key={i} className="bg-gray-50 rounded-xl p-3">
-                  <div className="text-xs font-bold truncate" style={{ color: '#0B2438' }}>{p.product_name}</div>
-                  <div className="text-base font-extrabold mt-1" style={{ color: '#0F6E56' }}>
-                    {Math.round(Number(p.avg_price)).toLocaleString('en-US')} <span className="text-[10px] text-gray-400 font-normal">ر.س/{p.unit || ''}</span>
+                  <div className="text-[12px] font-bold truncate" style={{ color: '#0B2438' }}>{getProductLabel(p.product_name, locale)}</div>
+                  <div className="text-base font-extrabold mt-1" style={{ color: '#0B2438' }}>
+                    {Math.round(Number(p.avg_price)).toLocaleString('en-US')} <span className="text-[12px] text-gray-500 font-normal">{L('SAR', 'ریال', 'ر.س')}/{getUnitLabelLong(p.unit || '', locale)}</span>
                   </div>
-                  <div className="text-[10px] text-gray-400 mt-0.5">
-                    {Math.round(Number(p.min_price)).toLocaleString('en-US')}–{Math.round(Number(p.max_price)).toLocaleString('en-US')} · {L(`${p.offer_count} offers`, `${p.offer_count} آفرز`, arCount(Number(p.offer_count) || 0, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}
+                  <div className="text-[12px] text-gray-500 mt-0.5">
+                    {Math.round(Number(p.min_price)).toLocaleString('en-US')}–{Math.round(Number(p.max_price)).toLocaleString('en-US')} · {L(`${p.offer_count} offers`, `${p.offer_count} پیشکشیں`, arCount(Number(p.offer_count) || 0, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}
                   </div>
-                  {(() => {
-                    const tr = marketTrend[`${p.product_name}|${p.sector}`]
-                    if (!tr || !(Number(tr.prev_avg) > 0) || !(Number(tr.recent_avg) > 0)) return null
-                    const pct = Math.round(((Number(tr.recent_avg) - Number(tr.prev_avg)) / Number(tr.prev_avg)) * 100)
-                    if (pct === 0) return <div className="text-[10px] mt-1 font-semibold text-gray-400">{L('◆ stable vs last month', '◆ پچھلے مہینے جتنی', '◆ ثابت مقارنةً بالشهر الماضي')}</div>
-                    const up = pct > 0 // ارتفاع السعر = أحمر (غير مناسب للمشتري)، انخفاض = أخضر
-                    return (
-                      <div className="text-[10px] mt-1 font-bold" style={{ color: up ? '#dc2626' : '#0F6E56' }}>
-                        {up ? '▲' : '▼'} {Math.abs(pct)}% {L('vs last month', 'پچھلے مہینے کے مقابلے میں', 'مقارنةً بالشهر الماضي')}
-                      </div>
-                    )
-                  })()}
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* مركز الإجراءات — طلبات وصلها عروض وتحتاج ردّك */}
-        {awaitingReply > 0 && (
-          <button type="button" onClick={() => { setFilter('has_offers'); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
-            className="w-full mb-5 rounded-2xl p-4 flex items-center gap-3 text-start animate-fade-in transition-all hover:shadow-md border"
-            style={{ background: 'linear-gradient(135deg,#D4A54312,#0B243808)', borderColor: '#D4A54344' }}>
-            <span className="w-10 h-10 rounded-xl grid place-items-center text-[#071827] shrink-0 animate-pulse" style={{ background: '#D4A543' }}><Glyph e="🔔" /></span>
-            <span className="flex-1 text-sm font-bold" style={{ color: '#0B2438' }}>
-              {L(awaitingReply === 1 ? '1 request received new offers — compare now' : `${awaitingReply} requests received new offers — compare now`,
-                `${awaitingReply} درخواستوں پر نئی آفرز آئی ہیں — ابھی موازنہ کریں`,
-                `${arCount(awaitingReply, 'طلب واحد وصلته', 'طلبان وصلتهما', 'طلبات وصلتها', 'طلباً وصلته')} عروض جديدة — قارِنها الآن`)}
-            </span>
-            <span className="font-bold text-sm" style={{ color: '#D4A543' }}>{dir === 'rtl' ? '←' : '→'}</span>
-          </button>
-        )}
-
         {/* «وفّرت X ريال» — total compared with the highest quote per awarded item (owner 2026-11-14) */}
         {mySavings && Number(mySavings.saved) >= 1 && (
           <div className="w-full mb-5 rounded-2xl p-4 flex items-center gap-3 border animate-fade-in" style={{ background: '#E7F4EF', borderColor: '#0F6E5633' }}>
-            <span className="w-10 h-10 rounded-xl grid place-items-center text-white font-extrabold shrink-0" style={{ background: '#0F6E56' }}>✓</span>
+            <span className="w-10 h-10 rounded-xl grid place-items-center text-white shrink-0" style={{ background: '#0F6E56' }}><Check className="w-5 h-5" aria-hidden /></span>
             <span className="flex-1 min-w-0">
               <span className="block font-extrabold text-[15px]" style={{ color: '#0F6E56' }}>
                 {L(`You have saved ${Number(mySavings.saved).toLocaleString('en-US')} SAR with Taseerak`, `آپ نے تسعیرک سے ${Number(mySavings.saved).toLocaleString('en-US')} ریال بچائے`, `وفّرت ${Number(mySavings.saved).toLocaleString('en-US')} ر.س مع تسعيرك`)}
               </span>
-              <span className="block text-[12px] text-gray-600">{L(`Across ${mySavings.requests} request(s), compared with the highest quote for each material.`, `${mySavings.requests} درخواستوں میں، ہر مواد کی سب سے زیادہ قیمت کے مقابلے میں۔`, `في ${mySavings.requests} ${Number(mySavings.requests) === 1 ? 'طلب' : 'طلبات'}، مقارنةً بأعلى عرض لكل مادة.`)}</span>
+              <span className="block text-[13px] text-gray-700">{L(`Across ${countLabel(Number(mySavings.requests) || 0, 'en', arRequests, 'request', '')}, compared with the highest quote for each material.`, `${mySavings.requests} درخواستوں میں، ہر مواد کی سب سے زیادہ قیمت کے مقابلے میں۔`, `في ${arRequests(Number(mySavings.requests) || 0)}، مقارنةً بأعلى عرض لكل مادة.`)}</span>
             </span>
           </div>
         )}
 
-        {/* ويدجت اكتمال الحساب */}
-        {!homeBuyer && compPct < 100 && (
-          <div className="mb-6 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold" style={{ color: '#0B2438' }}>
-                {locale === 'en' ? `Your account is ${compPct}% complete` : locale === 'ur' ? `آپ کا اکاؤنٹ ${compPct}% مکمل` : `حسابك مكتمل ${compPct}%`}
-              </span>
-              <span className="text-xs text-gray-400">{compDone}/{completion.length}</span>
-            </div>
-            <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-3">
-              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${compPct}%`, background: 'linear-gradient(90deg,#D4A543,#0F6E56)' }} />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {completion.filter((c: any) => !c.ok).map((c: any) => (
-                <Link key={c.label} href={c.href} className="text-[11px] font-semibold px-3 py-1.5 rounded-full border border-dashed transition-all hover:bg-orange-50" style={{ borderColor: '#D4A543', color: '#8F6820' }}>+ {c.label}</Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Stats — قابلة للضغط: تفلتر القائمة وتنزّل لها */}
-        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger ${rfqs.length === 0 ? 'hidden' : ''}`}>
+        {/* Stats — clickable filters; a home buyer does not need the four numbers (UX-065) */}
+        {!homeBuyer && rfqs.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
           {[
             { label: t.activeRfqs, value: active.length, name: 'active', tone: 'brand', f: 'pending', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${L('this week', 'اس ہفتے', 'هذا الأسبوع')}` : '' },
-            { label: t.totalOffers, value: totalOffers, name: 'offers', tone: 'warning', f: 'has_offers', sub: awaitingReply > 0 ? `${awaitingReply} ${L('awaiting you', 'آپ کے منتظر', 'بانتظار ردّك')}` : '' },
-            { label: t.completed, value: closed.length, name: 'completed', tone: 'success', f: 'closed', sub: '' },
+            { label: t.totalOffers, value: totalOffers, name: 'offers', tone: 'warning', f: 'has_offers', sub: awaitingReply > 0 ? `${awaitingReply} ${L('with new offers', 'نئی پیشکشوں کے ساتھ', 'فيها عروض جديدة')}` : '' },
+            { label: t.completed, value: closed.length, name: 'completed', tone: 'success', f: 'closed', sub: L(`${dealsDone} completed`, `${dealsDone} مکمل`, `${dealsDone} مكتملة`) },
             { label: t.total, value: rfqs.length, name: 'all', tone: 'info', f: 'all', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${L('new', 'نئی', 'جديد')}` : '' },
           ].map(({ label, value, name, tone, f, sub }) => (
             <button key={label} type="button" onClick={() => { setFilter(f); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+              aria-pressed={filter === f}
               className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${filter === f ? 'border-[#D4A543] ring-1 ring-[#D4A543]/30' : 'border-gray-100'}`}>
               <div className="flex items-start justify-between">
                 <AppIcon name={name} tone={tone} variant="solid" size={44} />
                 <div className="text-3xl font-bold" style={{ color: '#0B2438' }}>{value}</div>
               </div>
-              <div className="text-xs text-gray-500 mt-3 font-medium">{label}</div>
-              {sub && <div className="text-[11px] font-bold mt-0.5" style={{ color: '#0F6E56' }}>↑ {sub}</div>}
+              <div className="text-[13px] text-gray-600 mt-3 font-medium">{label}</div>
+              {sub && <div className="text-[12px] font-bold mt-0.5 text-[#48596E]">{sub}</div>}
             </button>
           ))}
         </div>
+        )}
 
         {/* آخر النشاطات + إنجازاتك */}
         {!homeBuyer && (activity.length > 0 || rfqs.length > 0) && (
@@ -454,7 +512,7 @@ export default function ContractorDashboard() {
                 <AppIcon name="active" tone="brand" variant="line" size={20} /> {L('Recent activity', 'حالیہ سرگرمی', 'آخر النشاطات')}
               </h2>
               {activity.length === 0 ? (
-                <p className="text-xs text-gray-400 py-6 text-center">{L('No activity yet. It will appear here as offers arrive.', 'ابھی کوئی سرگرمی نہیں۔ آفرز آتے ہی یہاں نظر آئے گی۔', 'لا يوجد نشاط بعد، وسيظهر هنا فور وصول العروض.')}</p>
+                <p className="text-[13px] text-gray-500 py-6 text-center">{L('No activity yet. It will appear here as offers arrive.', 'ابھی کوئی سرگرمی نہیں۔ پیشکشیں آتے ہی یہاں نظر آئے گی۔', 'لا يوجد نشاط بعد، وسيظهر هنا فور وصول العروض.')}</p>
               ) : (
                 <div className="space-y-3">
                   {activity.map((a: any) => {
@@ -464,9 +522,9 @@ export default function ContractorDashboard() {
                         <AppIcon name={m.name} tone={m.tone} variant="tone" size={36} />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-semibold truncate" style={{ color: '#0B2438' }}>{noEmoji(a.title)}</div>
-                          {a.body && <div className="text-xs text-gray-500 truncate">{noEmoji(a.body)}</div>}
+                          {a.body && <div className="text-[12px] text-gray-600 truncate">{noEmoji(a.body)}</div>}
                         </div>
-                        <span className="text-[10px] text-gray-400 whitespace-nowrap shrink-0">{timeAgo(a.created_at)}</span>
+                        <span className="text-[12px] text-gray-500 whitespace-nowrap shrink-0">{timeAgo(a.created_at)}</span>
                       </div>
                     )
                   })}
@@ -477,31 +535,31 @@ export default function ContractorDashboard() {
               <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('Your progress', 'آپ کی پیش رفت', 'إنجازاتك')}</h2>
               {FEATURES.gamification && <div className="rounded-xl p-3 mb-3 text-center" style={{ background: 'linear-gradient(135deg,#D4A54312,#0B243808)' }}>
                 <div className="text-3xl">{gameBadge.e}</div>
-                <div className="text-xs font-bold mt-1" style={{ color: '#0B2438' }}>{gameBadge.t}</div>
+                <div className="text-[12px] font-bold mt-1" style={{ color: '#0B2438' }}>{gameBadge.t}</div>
               </div>}
               <div className="grid grid-cols-2 gap-2 text-center">
                 <div className="bg-gray-50 rounded-xl p-2.5">
-                  <div className="text-lg font-bold" style={{ color: '#0F6E56' }}>{closed.length}</div>
-                  <div className="text-[10px] text-gray-500">{L('Deals done', 'مکمل سودے', 'صفقات مكتملة')}</div>
+                  <div className="text-lg font-bold" style={{ color: '#0F6E56' }}>{dealsDone}</div>
+                  <div className="text-[12px] text-gray-600">{L('Deals completed', 'مکمل ڈیلز', 'صفقات مكتملة')}</div>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-2.5">
                   <div className="text-lg font-bold" style={{ color: '#8F6820' }}>{rfqsThisWeek}</div>
-                  <div className="text-[10px] text-gray-500">{L('This week', 'اس ہفتے', 'هذا الأسبوع')}</div>
+                  <div className="text-[12px] text-gray-600">{L('This week', 'اس ہفتے', 'هذا الأسبوع')}</div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Projects */}
+        {/* Bills of quantities (one consistent name: «جدول الكميات», UX-144) */}
         {projects.length > 0 && canUseProjects(profile) && !homeBuyer && (
           <div className="mb-6 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
-                <Glyph e="📋" /> {locale === 'en' ? 'My projects' : locale === 'ur' ? 'میرے پراجیکٹس' : 'مشاريعي'}
+                <Glyph e="📋" /> {L('My bills of quantities', 'میری مقداروں کی فہرستیں', 'جداول الكميات')}
               </h2>
-              <Link href="/contractor/project/new" className="text-xs font-semibold" style={{ color: '#8F6820' }}>
-                + {L('New Project', 'نیا پراجیکٹ', 'مشروع جديد')}
+              <Link href="/contractor/project/new" className="min-h-[44px] inline-flex items-center text-[13px] font-semibold" style={{ color: '#8F6820' }}>
+                + {L('New bill of quantities', 'نئی مقداروں کی فہرست', 'جدول كميات جديد')}
               </Link>
             </div>
             <div className="space-y-2 stagger">
@@ -512,11 +570,11 @@ export default function ContractorDashboard() {
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /></div>
                     <div>
                       <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{p.title}</div>
-                      <div className="text-xs text-gray-400"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString(dateLocale(locale))}</div>
+                      <div className="text-[12px] text-gray-500"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString(dateLocale(locale))}</div>
                     </div>
                   </div>
-                  <div className="text-xs font-semibold" style={{ color: '#8F6820' }}>
-                    {L('View Results →', 'نتائج دیکھیں ←', 'عرض النتائج ←')}
+                  <div className="text-[12px] font-semibold" style={{ color: '#8F6820' }}>
+                    {L('View results', 'نتائج دیکھیں', 'عرض النتائج')} {fwd}
                   </div>
                 </Link>
               ))}
@@ -527,23 +585,25 @@ export default function ContractorDashboard() {
         {/* Drafts — saved, not yet published (invisible to suppliers) */}
         {drafts.length > 0 && (
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6 animate-slide-up">
-            <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#0B2438' }}><Glyph e="📝" /> {L('Drafts', 'مسودے', 'المسودّات')} <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">{drafts.length}</span></h2>
+            <h2 className="font-bold text-sm mb-3 flex items-center gap-2" style={{ color: '#0B2438' }}><Glyph e="📝" /> {L('Drafts', 'مسودے', 'المسودّات')} <span className="text-[12px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{drafts.length}</span></h2>
+            {draftErr && <p className="mb-2 text-[13px] text-red-700" role="alert">{draftErr}</p>}
             <div className="space-y-2">
               {drafts.map((d: any) => (
                 <div key={d.id} className="flex items-center justify-between gap-2 border border-gray-100 rounded-xl px-3 py-2.5 hover:border-[#D4A543]/40 transition-colors">
                   <div className="min-w-0">
                     <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{d.title || L('Untitled draft', 'بے نام مسودہ', 'مسودة بلا اسم')}</div>
-                    <div className="text-[11px] text-gray-400">{L(`${d.data?.items?.length || 0} items`, `${d.data?.items?.length || 0} اشیاء`, arMaterials(d.data?.items?.length || 0))} · {new Date(d.updated_at).toLocaleDateString(dateLocale(locale))}</div>
+                    <div className="text-[12px] text-gray-500">{countLabel(d.data?.items?.length || 0, locale, arMaterials, 'item', 'اشیاء')} · {new Date(d.updated_at).toLocaleDateString(dateLocale(locale))}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="text-xs font-bold px-3 py-1.5 rounded-lg text-[#071827]" style={{ background: '#D4A543' }}>{L('Continue', 'جاری رکھیں', 'إكمال')} <span aria-hidden="true" className="inline-block ltr:rotate-180">←</span></Link>
+                    <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="min-h-[44px] inline-flex items-center gap-1 text-[13px] font-bold px-3 rounded-lg text-white" style={{ background: '#0B2438' }}>{L('Continue', 'جاری رکھیں', 'إكمال')} <span aria-hidden="true">{fwd}</span></Link>
                     <button onClick={async () => {
-                      if (!(await askConfirm(L('Delete this draft?', 'یہ مسودہ حذف کریں؟', 'حذف المسودة؟'), { danger: true }))) return
+                      if (!(await askConfirm(L('Delete this draft? This cannot be undone.', 'یہ مسودہ حذف کریں؟ یہ واپس نہیں ہو سکتا۔', 'هل تريد حذف المسودة؟ لا يمكن التراجع عن ذلك.'), { danger: true }))) return
                       let failed = false
                       try { const { error } = await createClient().from('rfq_drafts').delete().eq('id', d.id); failed = !!error } catch { failed = true }
-                      if (failed) { alert(L('Could not delete the draft — please try again.', 'مسودہ حذف نہیں ہو سکا — دوبارہ کوشش کریں۔', 'تعذّر حذف المسودة — حاول مرة أخرى.')); return }
+                      if (failed) { setDraftErr(L('Could not delete the draft. Please try again.', 'مسودہ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر حذف المسودة. حاول مرة أخرى.')); return }
+                      setDraftErr('')
                       setDrafts((prev: any[]) => prev.filter((x: any) => x.id !== d.id))
-                    }} aria-label={L('Delete draft', 'مسودہ حذف کریں', 'حذف المسودة')} className="text-sm text-red-400 hover:text-red-600 w-10 h-10 grid place-items-center rounded-lg"><Glyph e="🗑" /></button>
+                    }} aria-label={L('Delete draft', 'مسودہ حذف کریں', 'حذف المسودة')} className="text-sm text-red-500 hover:text-red-700 w-[44px] h-[44px] grid place-items-center rounded-lg"><Glyph e="🗑" /></button>
                   </div>
                 </div>
               ))}
@@ -553,17 +613,17 @@ export default function ContractorDashboard() {
 
         {/* RFQs */}
         {rfqs.length === 0 ? (
-          <div className="bg-white rounded-2xl p-16 shadow-sm border border-gray-100 text-center animate-slide-up">
+          <div className="bg-white rounded-2xl p-8 sm:p-16 shadow-sm border border-gray-100 text-center animate-slide-up">
             <div className="text-6xl mb-5 animate-float"><Glyph e="📋" /></div>
             <h2 className="text-xl font-bold mb-3" style={{ color: '#0B2438' }}>{t.noRfqs}</h2>
-            <p className="text-gray-500 mb-6 text-sm">{t.noRfqsSub}</p>
-            <Link href="/contractor/rfq/quick" className="inline-block btn-orange px-10 py-4 text-base rounded-2xl">{t.newRfqBtn}</Link>
+            <p className="text-gray-600 mb-6 text-sm">{t.noRfqsSub}</p>
+            <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[48px] px-8 text-base font-bold rounded-2xl text-white" style={{ background: '#0B2438' }}>{t.newRfqBtn}</Link>
           </div>
         ) : (
           <div className="animate-fade-in" id="rfq-list" style={{ scrollMarginTop: '70px' }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{homeBuyer ? (locale === 'en' ? 'My requests' : locale === 'ur' ? 'میری درخواستیں' : 'طلباتي') : t.rfqList}</h2>
-              <span className="text-xs text-gray-400">{rfqs.length} {t.requests}</span>
+              <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{homeBuyer ? L('My requests', 'میری درخواستیں', 'طلباتي') : t.rfqList}</h2>
+              <span className="text-[12px] text-gray-500">{countLabel(rfqs.length, locale, arRequests, 'request', 'درخواستیں')}</span>
             </div>
 
             {/* Filters */}
@@ -572,21 +632,21 @@ export default function ContractorDashboard() {
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {[
                     { key: 'all', label: L('All', 'سب', 'الكل'), icon: <Glyph e="📋" /> },
-                    { key: 'has_offers', label: L('Has Offers', 'آفرز موصول', 'وصلتها عروض'), icon: <Glyph e="💬" /> },
-                    { key: 'pending', label: L('Awaiting', 'آفرز کے منتظر', 'بانتظار العروض'), icon: <Glyph e="⏳" /> },
-                    { key: 'closed', label: L('Completed', 'مکمل', 'مكتملة'), icon: <Glyph e="✅" /> },
+                    { key: 'has_offers', label: L('Has offers', 'پیشکشیں موصول', 'وصلتها عروض'), icon: <Glyph e="💬" /> },
+                    { key: 'pending', label: L('Awaiting offers', 'پیشکشوں کے منتظر', 'بانتظار العروض'), icon: <Glyph e="⏳" /> },
+                    { key: 'closed', label: L('Deals', 'ڈیلز', 'الصفقات'), icon: <Glyph e="🤝" /> },
                   ].map((f: any) => {
                     const count = f.key === 'all' ? rfqs.length
                       : f.key === 'has_offers' ? rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) > 0).length
                       : f.key === 'pending' ? rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) === 0).length
                       : rfqs.filter((r: any) => r.status === 'closed').length
                     return (
-                      <button key={f.key} onClick={() => setFilter(f.key)} aria-pressed={filter === f.key}
-                        className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                          filter === f.key ? 'text-white' : 'bg-gray-50 text-gray-600 border border-gray-200'
-                        }`} style={filter === f.key ? { background: '#0B2438' } : {}}>
+                      <button key={f.key} type="button" onClick={() => setFilter(f.key)} aria-pressed={filter === f.key}
+                        className={`min-h-[44px] px-4 rounded-xl text-[13px] font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 border-2 ${
+                          filter === f.key ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#0B2438]' : 'bg-gray-50 text-gray-700 border-gray-200'
+                        }`}>
                         {f.icon} {f.label}
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${filter === f.key ? 'bg-white/20' : 'bg-gray-200'}`}>{count}</span>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[12px] ${filter === f.key ? 'bg-[#D4A543] text-[#071827]' : 'bg-gray-200'}`}>{count}</span>
                       </button>
                     )
                   })}
@@ -594,29 +654,30 @@ export default function ContractorDashboard() {
                 {/* على الجوال: البحث بسطر كامل تحت الفلاتر حتى لا تسحقه القوائم الطويلة */}
                 <div className="flex flex-wrap gap-2">
                   {!homeBuyer && <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
-                    className="input-field text-xs flex-shrink-0 w-auto py-2" aria-label={L('Sector', 'شعبہ', 'القطاع')}>
+                    className="input-field text-[16px] sm:text-[13px] flex-shrink-0 w-auto py-2" aria-label={L('Sector', 'شعبہ', 'القطاع')}>
                     <option value="all">{L('All sections', 'تمام حصے', 'كل الأقسام')}</option>
                     {Object.keys(sectors).map((s: any) => <option key={s} value={s}>{sectors[s]}</option>)}
                   </select>}
                   <select value={sortBy} onChange={(e: any) => setSortBy(e.target.value)}
-                    className="input-field text-xs flex-shrink-0 w-auto py-2" aria-label={L('Sort by', 'ترتیب', 'الترتيب')}>
+                    className="input-field text-[16px] sm:text-[13px] flex-shrink-0 w-auto py-2" aria-label={L('Sort by', 'ترتیب', 'الترتيب')}>
                     <option value="newest">{L('Newest', 'تازہ ترین', 'الأحدث')}</option>
-                    <option value="expiry">{L('Closest to expiry', 'جلد ختم ہونے والی', 'الأقرب انتهاءً')}</option>
+                    <option value="expiry">{L('Closest to the deadline', 'مہلت کے قریب ترین', 'الأقرب انتهاءً')}</option>
                   </select>
                   <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-                    className="input-field text-xs basis-full sm:basis-auto sm:flex-1 sm:min-w-[160px] py-2 order-first sm:order-none" type="search" placeholder={L('Search requests…', 'درخواست تلاش کریں…', 'ابحث عن طلب…')} aria-label={L('Search requests', 'درخواستیں تلاش کریں', 'البحث في الطلبات')} />
+                    className="input-field text-[16px] sm:text-[13px] basis-full sm:basis-auto sm:flex-1 sm:min-w-[160px] py-2 order-first sm:order-none" type="search" placeholder={L('Search by material or request number…', 'سامان یا درخواست نمبر سے تلاش کریں…', 'ابحث باسم المادة أو رقم الطلب…')} aria-label={L('Search requests', 'درخواستیں تلاش کریں', 'البحث في الطلبات')} />
                 </div>
               </div>
             </div>
 
             <div className="space-y-3 stagger">
               {(() => {
+                const q = normalizeText(search.trim())
                 const filtered = rfqs.filter((rfq: any) => {
                   if (filter === 'has_offers' && !(rfq.status === 'open' && (rfq.offer_count || 0) > 0)) return false
                   if (filter === 'pending' && !(rfq.status === 'open' && (rfq.offer_count || 0) === 0)) return false
                   if (filter === 'closed' && rfq.status !== 'closed') return false
-                  if (sectorFilter !== 'all' && rfq.sector !== sectorFilter) return false
-                  if (search && !`${rfq.title || ''} ${rfq.product_name || ''}`.toLowerCase().includes(search.toLowerCase())) return false
+                  if (sectorFilter !== 'all' && rfq.sector !== sectorFilter && !(Array.isArray(rfq.sectors) && rfq.sectors.includes(sectorFilter))) return false
+                  if (q && !haystack(rfq).includes(q)) return false
                   return true
                 })
                 if (sortBy === 'expiry') {
@@ -627,27 +688,31 @@ export default function ContractorDashboard() {
                   })
                 }
                 if (filtered.length === 0) return (
-                  <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center text-gray-400 text-sm">
+                  <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center text-gray-500 text-sm">
                     <Glyph e="🔍" /> {L('No matching requests', 'کوئی مطابق درخواست نہیں', 'لا توجد طلبات مطابقة')}
                   </div>
                 )
-                return filtered.map((rfq: any) => (
-                <Link key={rfq.id} href={`/contractor/rfq/${rfq.id}`}
-                  className={`block bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative ${
-                    rfq.status === 'open' && (rfq.offer_count || 0) > 0
-                      ? 'border-[#D4A543] ring-2 ring-[#D4A543]/20'
-                      : 'border-gray-100 hover:border-[#D4A543]/30'
+                return filtered.map((rfq: any) => {
+                  const isNew = hasNew(rfq)
+                  const openNow = rfq.status === 'open' && !isExpired(rfq.expires_at)
+                  const items = itemsOf(rfq)
+                  const best = openNow ? bestLine(rfq) : ''
+                  return (
+                <div key={rfq.id} className="relative">
+                <Link href={`/contractor/rfq/${rfq.id}`} onClick={() => openRfq(rfq)}
+                  className={`block bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative ${rfq.status === 'closed' ? 'pb-[4.5rem]' : ''} ${
+                    isNew ? 'border-[#D4A543] ring-2 ring-[#D4A543]/20' : 'border-gray-100 hover:border-[#D4A543]/30'
                   }`}>
-                  {/* شارة "جديد" للطلبات اللي وصلها عروض */}
-                  {rfq.status === 'open' && (rfq.offer_count || 0) > 0 && (
-                    <div className="absolute -top-2 ltr:-right-2 rtl:-left-2 z-10">
-                      <span className="inline-flex items-center gap-1 text-[#071827] text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg animate-pulse"
+                  {/* «عروض جديدة» only for offers not seen yet (UX-066) */}
+                  {isNew && (
+                    <div className="absolute -top-2 end-[-0.5rem] z-10">
+                      <span className="inline-flex items-center gap-1 text-[#071827] text-[12px] font-bold px-2.5 py-1 rounded-full shadow-lg"
                         style={{ background: '#D4A543' }}>
-                        <Glyph e="🔔" /> {locale === 'en' ? 'New Offers!' : locale === 'ur' ? 'نئی پیشکشیں!' : 'عروض جديدة!'}
+                        <Glyph e="🔔" /> {L('New offers', 'نئی پیشکشیں', 'عروض جديدة')}
                       </span>
                     </div>
                   )}
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-3 gap-2">
                     <div className="flex items-center gap-3 min-w-0">
                       {(() => {
                         const m = rfq.status === 'open' && (rfq.offer_count || 0) > 0 ? { name: 'quoted', tone: 'info' }
@@ -657,63 +722,65 @@ export default function ContractorDashboard() {
                         return <AppIcon name={m.name} tone={m.tone} variant="tone" size={44} />
                       })()}
                       <div className="min-w-0">
-                        <div className="font-bold truncate" style={{ color: '#0B2438' }}>{rfqDisplayName(rfq, locale)}</div>
-                        <div className="text-xs text-gray-400 truncate max-w-[260px]">{rfqDate(rfq, locale)}</div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="badge badge-blue text-[10px]">{sectors[rfq.sector] || rfq.sector}</span>
-                          <span className={`badge text-[10px] ${
-                            rfq.status === 'open' && !isExpired(rfq.expires_at) ? 'badge-green' : rfq.status === 'closed' ? 'badge-gray' : 'badge-red'
-                          }`}>{rfq.status === 'open' && isExpired(rfq.expires_at) ? (locale === 'en' ? '● Deadline passed' : locale === 'ur' ? '● مہلت ختم' : '● انتهت المهلة') : statusLabel(rfq.status)}</span>
-                          {rfq.status === 'open' && rfq.expires_at && !isExpired(rfq.expires_at) && (() => {
+                        <div className="font-bold truncate" style={{ color: '#0B2438' }}>{displayName(rfq)}</div>
+                        <div className="text-[12px] text-gray-500 truncate max-w-[260px]">{L('Sent on ', 'بھیجی گئی: ', 'أُرسل في ')}{rfqDate(rfq, locale)}</div>
+                        <div className="flex items-center flex-wrap gap-2 mt-1">
+                          {/* a home buyer sees no engineering sector tags (UX-068) */}
+                          {!homeBuyer && <span className="text-[12px] px-2 py-0.5 rounded-full font-semibold bg-[#0B2438]/[.07] text-[#0B2438]">{sectors[rfq.sector] || rfq.sector}</span>}
+                          {rfq.status === 'open' && isExpired(rfq.expires_at) && <span className="badge badge-red text-[12px]">{t.expired}</span>}
+                          {rfq.status === 'cancelled' && <span className="badge badge-gray text-[12px]">{t.cancelled}</span>}
+                          {openNow && rfq.expires_at && (() => {
                             const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
                             return (
-                              <span className="badge text-[10px]" style={{ background: st.bg, color: st.fg }}>
-                                {isExpired(rfq.expires_at) ? L('ended', 'ختم', 'انتهت') : `${formatTimeLeft(rfq.expires_at, locale)}`}
+                              <span className="badge text-[12px]" style={{ background: st.bg, color: st.fg }}>
+                                {formatTimeLeft(rfq.expires_at, locale)}
                               </span>
                             )
                           })()}
                         </div>
                       </div>
                     </div>
-                    {rfq.status === 'closed' && deals[rfq.id]?.length ? (() => {
-                      // roll up all awarded suppliers: an open dispute wins, else the least-advanced stage; "done" only if ALL are done
-                      const stages = deals[rfq.id].map((o: any) => dealStage(o))
-                      const disputed = stages.find((s: any) => s.key === 'disputed')
-                      const allDone = stages.every((s: any) => s.done)
-                      const st = disputed || (allDone ? stages[0] : stages.slice().sort((a: any, b: any) => a.step - b.step)[0])
-                      const n = deals[rfq.id].length
+                    {rfq.status === 'closed' ? (() => {
+                      const d = dealOf(rfq)
+                      if (!d) return (
+                        <div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px] bg-[#0F6E56]/10 text-[#0F6E56]">
+                          <div className="text-lg leading-none"><Check className="w-5 h-5 inline" aria-hidden /></div>
+                          <div className="text-[12px] font-bold leading-tight mt-0.5">{L('Offer chosen', 'پیشکش منتخب', 'تم اختيار العرض')}</div>
+                        </div>
+                      )
+                      const { st, allDone, n } = d
                       const lbl = st.key === 'disputed' ? L('Dispute', 'تنازع', 'نزاع')
-                        : allDone ? '✓ ' + L('Completed', 'مکمل', 'مكتملة')
+                        : allDone ? L('Completed', 'مکمل', 'مكتملة')
                         : st.step >= 3 ? L('Awaiting payment', 'ادائیگی کا انتظار', 'بانتظار الدفع')
                         : st.step >= 2 ? L('Delivered', 'ڈیلیور ہو گیا', 'تم التسليم')
                         : L('Being delivered', 'ڈیلیوری جاری ہے', 'جارٍ التوصيل')
-                      return (<div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}><div className="text-lg leading-none"><Glyph e={st.emoji} /></div><div className="text-[10px] font-bold leading-tight mt-0.5">{lbl}{n > 1 ? ` (${n})` : ''}</div></div>)
+                      return (<div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}><div className="text-lg leading-none"><Glyph e={st.emoji} /></div><div className="text-[12px] font-bold leading-tight mt-0.5">{lbl}{n > 1 ? ` (${n})` : ''}</div></div>)
                     })() : (rfq.offer_count || 0) > 0 ? (
                       <div className="text-center rounded-xl px-4 py-2 text-[#071827] shrink-0" style={{ background: '#D4A543' }}>
                         <div className="text-xl font-bold">{rfq.offer_count}</div>
-                        <div className="text-[10px] text-[#071827]/80">{L(rfq.offer_count === 1 ? 'offer' : 'offers', 'پیشکش', rfq.offer_count === 2 ? 'عرضان' : rfq.offer_count >= 3 && rfq.offer_count <= 10 ? 'عروض' : rfq.offer_count > 10 ? 'عرضاً' : 'عرض')}</div>
+                        <div className="text-[12px] text-[#071827]">{L(rfq.offer_count === 1 ? 'offer' : 'offers', 'پیشکش', rfq.offer_count === 1 ? 'عرض' : rfq.offer_count === 2 ? 'عرضان' : rfq.offer_count <= 10 ? 'عروض' : 'عرضاً')}</div>
                       </div>
                     ) : (
-                      <div className="text-center rounded-xl px-3 py-2 bg-gray-100 text-gray-400 shrink-0 min-w-[78px]">
+                      <div className="text-center rounded-xl px-3 py-2 bg-gray-100 text-gray-600 shrink-0 min-w-[78px]">
                         <div className="text-base leading-none mb-0.5"><Glyph e="⏳" /></div>
-                        <div className="text-[10px] font-semibold leading-tight">{L('Awaiting offers', 'آفرز کا انتظار', 'بانتظار العروض')}</div>
+                        <div className="text-[12px] font-semibold leading-tight">{L('Awaiting offers', 'پیشکشوں کا انتظار', 'بانتظار العروض')}</div>
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-x-4 gap-y-1 text-xs text-gray-400 font-medium flex-wrap">
-                    <span><Glyph e="📦" /> {Array.isArray(rfq.items) && rfq.items.length > 1 ? arItems(rfq.items.length, locale) : `${rfq.quantity} ${rfq.unit}`}</span>
+                  {best && <div className="mb-2 text-[13px] font-extrabold text-[#0B2438]">{best}</div>}
+                  <div className="flex items-center gap-x-4 gap-y-1 text-[12px] text-gray-600 font-medium flex-wrap">
+                    <span><Glyph e="📦" /> {items.length > 1 ? arItems(items.length, locale) : `${rfq.quantity} ${getUnitLabelLong(rfq.unit, locale)}`}</span>
                     <span><Glyph e="📍" /> {rfq.region}</span>
-                    {rfq.created_at && <span><Glyph e="🗓" /> {formatDateTime(rfq.created_at)}</span>}
-                    {rfq.expires_at && <span><Glyph e="⏰" /> {formatDateTime(rfq.expires_at)}</span>}
-                    {rfq.specification && <span className="truncate max-w-[200px]"><Glyph e="⚙" /> {rfq.specification}</span>}
-                    <span className="ms-auto" style={{ color: '#8F6820' }}>{t.viewDetails}</span>
+                    {openNow && rfq.expires_at && <span><Glyph e="⏰" /> {L('Offers deadline: ', 'پیشکشوں کی آخری تاریخ: ', 'آخر موعد للعروض: ')}{whenShort(rfq.expires_at)}</span>}
+                    {!homeBuyer && rfq.specification && <span className="truncate max-w-[200px]"><Glyph e="⚙" /> {rfq.specification}</span>}
+                    <span className="ms-auto" style={{ color: '#8F6820' }}>{t.viewDetails} {fwd}</span>
                   </div>
                   {/* عدّاد وقت بصري ينقص حتى انتهاء المهلة */}
-                  {rfq.status === 'open' && rfq.expires_at && rfq.created_at && !isExpired(rfq.expires_at) && (() => {
+                  {openNow && rfq.expires_at && rfq.created_at && (() => {
                     const total = new Date(rfq.expires_at).getTime() - new Date(rfq.created_at).getTime()
                     const remain = new Date(rfq.expires_at).getTime() - Date.now()
                     const pct = total > 0 ? Math.max(2, Math.min(100, (remain / total) * 100)) : 0
-                    const barColor = pct < 15 ? '#dc2626' : pct < 40 ? '#D4A543' : '#0F6E56'
+                    const barColor = pct < 15 ? '#dc2626' : pct < 40 ? '#D4A543' : '#0B2438'
                     return (
                       <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden">
                         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: barColor }} />
@@ -721,7 +788,16 @@ export default function ContractorDashboard() {
                     )
                   })()}
                 </Link>
-                ))
+                {/* «اطلب مرة أخرى» on a finished request (UX-195): a sibling link, never nested in the card link */}
+                {rfq.status === 'closed' && (
+                  <Link href={`/contractor/rfq/quick?from=${rfq.id}`}
+                    className="absolute bottom-4 start-5 inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl text-[13px] font-bold text-white" style={{ background: '#0B2438' }}>
+                    <RotateCcw className="w-4 h-4" aria-hidden />{L('Order again', 'دوبارہ منگوائیں', 'اطلب مرة أخرى')}
+                  </Link>
+                )}
+                </div>
+                  )
+                })
               })()}
             </div>
           </div>

@@ -14,25 +14,28 @@ const txt = {
   ar: {
     title: 'نسيت كلمة المرور؟', sub: 'أدخل بريدك الإلكتروني ونرسل لك رابط إعادة التعيين',
     email: 'البريد الإلكتروني', send: 'إرسال رابط الاستعادة', sending: 'جارٍ الإرسال...',
-    back: '→ رجوع لتسجيل الدخول', home: 'الرئيسية',
-    sentTitle: 'تحقق من بريدك ',
-    sentSub: 'أرسلنا رابط إعادة تعيين كلمة المرور إلى بريدك. افتح الرابط لتعيين كلمة مرور جديدة.',
+    back: 'رجوع إلى تسجيل الدخول', home: 'الرئيسية',
+    sentTitle: 'تحقق من بريدك',
+    sentSub: 'إذا كان {email} مسجّلاً لدينا فستصلك رسالة فيها رابط لتعيين كلمة مرور جديدة. تفقّد مجلد الرسائل غير المرغوب فيها أيضاً.',
+    phoneQ: 'سجّلت برقم جوالك؟', phoneA: 'لا تحتاج كلمة مرور: ادخل برمز يصلك على جوالك.', phoneBtn: 'الدخول برقم الجوال',
     err: 'تعذّر الإرسال، تأكد من البريد وحاول مرة أخرى',
   },
   en: {
     title: 'Forgot your password?', sub: 'Enter your email and we will send you a reset link',
     email: 'Email Address', send: 'Send reset link', sending: 'Sending...',
-    back: '← Back to sign in', home: 'Home',
-    sentTitle: 'Check your inbox ',
-    sentSub: 'We sent a password reset link to your email. Open it to set a new password.',
+    back: 'Back to sign in', home: 'Home',
+    sentTitle: 'Check your inbox',
+    sentSub: 'If {email} is registered with us, you will get a message with a link to set a new password. Check your spam folder too.',
+    phoneQ: 'Signed up with your mobile number?', phoneA: 'You do not need a password: sign in with a code sent to your mobile.', phoneBtn: 'Sign in with my mobile',
     err: 'Could not send. Check the email and try again',
   },
   ur: {
     title: 'پاسورڈ بھول گئے؟', sub: 'اپنا ای میل درج کریں، ہم ری سیٹ لنک بھیجیں گے',
     email: 'ای میل', send: 'ری سیٹ لنک بھیجیں', sending: 'بھیجا جا رہا ہے...',
-    back: '→ سائن ان پر واپس', home: 'مرکزی صفحہ',
-    sentTitle: 'اپنا ان باکس دیکھیں ',
-    sentSub: 'ہم نے آپ کے ای میل پر ری سیٹ لنک بھیج دیا ہے۔',
+    back: 'سائن ان پر واپس', home: 'مرکزی صفحہ',
+    sentTitle: 'اپنا ان باکس دیکھیں',
+    sentSub: 'اگر {email} ہمارے پاس رجسٹرڈ ہے تو آپ کو نیا پاسورڈ مقرر کرنے کے لنک والا پیغام ملے گا۔ اسپام فولڈر بھی دیکھیں۔',
+    phoneQ: 'موبائل نمبر سے رجسٹر کیا تھا؟', phoneA: 'پاسورڈ کی ضرورت نہیں: موبائل پر آنے والے کوڈ سے سائن اِن کریں۔', phoneBtn: 'موبائل نمبر سے سائن اِن',
     err: 'بھیجنے میں ناکامی، دوبارہ کوشش کریں',
   },
 }
@@ -66,7 +69,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden" dir={dir}
       style={{ background: 'linear-gradient(135deg, #0B1D3A 0%, #0B2438 50%, #102E45 100%)' }}>
       <div className="absolute top-4 end-4 z-20"><LanguageSwitcher variant="minimal" /></div>
-      <a href="/" className="absolute top-4 start-4 z-20 text-sm font-medium text-white/70 hover:text-white transition-colors">{t.home}</a>
+      <a href="/" className="absolute top-4 start-4 z-20 min-h-[44px] inline-flex items-center text-sm font-medium text-white/80 hover:text-white transition-colors">{t.home}</a>
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
@@ -79,14 +82,14 @@ export default function ForgotPasswordPage() {
             <div className="text-center">
               <div className="text-5xl mb-4"><Glyph e="📬" /></div>
               <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.sentTitle}</h2>
-              <p className="text-sm text-gray-500 mb-6">{t.sentSub}</p>
-              <Link href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.back}</Link>
+              <p className="text-sm text-gray-700 mb-6">{t.sentSub.split('{email}')[0]}<span dir="ltr" className="font-bold">{email}</span>{t.sentSub.split('{email}')[1]}</p>
+              <Link href="/login?m=email" className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.back}</Link>
             </div>
           ) : (
             <>
               <h2 className="text-xl font-bold text-[#0B2438] mb-1">{t.title}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.sub}</p>
-              {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
+              {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
               <form onSubmit={handleSubmit}>
                 <label htmlFor="fp-email" className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
                 <input id="fp-email" type="email" autoComplete="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-4" placeholder="info@company.com" required disabled={loading} />
@@ -99,8 +102,13 @@ export default function ForgotPasswordPage() {
                   {loading ? t.sending : t.send}
                 </button>
               </form>
-              <p className="text-center text-sm text-gray-500 mt-5">
-                <Link href="/login" className="font-medium hover:underline" style={{ color: '#8F6820' }}>{t.back}</Link>
+              {/* a phone sign-up has no password to reset (UX-184) */}
+              <div className="mt-5 rounded-xl bg-[#F5F7FA] border border-gray-200 p-3 text-sm text-gray-700">
+                <span className="font-bold text-[#0B2438]">{t.phoneQ}</span> {t.phoneA}{' '}
+                <Link href="/login" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.phoneBtn}</Link>
+              </div>
+              <p className="text-center text-sm text-gray-600 mt-3">
+                <Link href="/login?m=email" className="inline-flex items-center min-h-[44px] font-medium hover:underline" style={{ color: '#8F6820' }}>{t.back}</Link>
               </p>
             </>
           )}

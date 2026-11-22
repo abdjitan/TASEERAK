@@ -1,9 +1,10 @@
 'use client'
-// «Not in the list» item → which specialty is it? (owner 2026-10-24: bigger, clearer, and it folds
-// once chosen.) Steps: our guess with «نعم / تغيير» → the sections as large cards → that section's
+// «Not in the materials guide» item → which specialty is it? (owner 2026-10-24: bigger, clearer, and it
+// folds once chosen.) Steps: our guess with «نعم / تغيير» → the sections as large cards → that section's
 // specialties as large buttons → a one-line summary with «تغيير». «لا أعرف» keeps the old
 // behaviour (every supplier of the guessed sector). Same flow as the mobile app.
 import { useMemo, useState } from 'react'
+import { Check } from 'lucide-react'
 import { BROWSE_SECTIONS, sectionOfSub, subsOfSection, type BrowseSection } from '@/lib/browseCategories'
 import { SUB_CATEGORIES, detectSubCategory, type Sector } from '@/types'
 
@@ -12,13 +13,15 @@ export type SpecialtyChoice = { sector: string; sub: string | null; section?: st
 /** a choice that routes somewhere: a specialty, or at least a main section */
 export const choiceDone = (v?: SpecialtyChoice) => !!v && (!!v.sub || !!v.section)
 
-export default function LineSpecialty({ name, sector, value, onChange, locale }: {
+export default function LineSpecialty({ name, sector, value, onChange, locale, simple = false }: {
   name: string
   sector: string
   /** undefined = not chosen yet (our guess is shown); sub null = «لا أعرف» */
   value?: SpecialtyChoice
   onChange: (v: SpecialtyChoice) => void
   locale: string
+  /** a home buyer: no heavy machinery section */
+  simple?: boolean
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: { ar: string; en: string; ur: string }) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
@@ -33,23 +36,26 @@ export default function LineSpecialty({ name, sector, value, onChange, locale }:
   const startChange = () => { setSection(sectionOfSub(current.sub, subInfo(current.sector, current.sub)?.group) || ((value?.section as BrowseSection) || null)); setOpen(true) }
   const sectionName = (k?: string | null) => { const b = BROWSE_SECTIONS.find(x => x.key === k); return b ? pick(b) : '' }
   const curLabel = subInfo(current.sector, current.sub) ? pick(subInfo(current.sector, current.sub)) : null
+  const sections = simple ? BROWSE_SECTIONS.filter(b => b.key !== 'machinery') : BROWSE_SECTIONS
+  // «إغلاق» only when it leads somewhere: back to a choice or to our guess
+  const canClose = choiceDone(value) || !!guessSub
 
   if (!open) {
     const chosen = choiceDone(value)
     return (
       <div className={`rounded-xl border p-3 flex items-center justify-between gap-3 flex-wrap ${chosen ? 'border-[#0F6E56]/30 bg-[#0F6E56]/[.05]' : 'border-[#D4A543]/60 bg-[#D4A543]/[.07]'}`}>
         <div className="min-w-0 text-sm">
-          <span className="text-gray-500">{chosen ? L('Specialty: ', 'شعبہ: ', 'التخصص: ') : L('Not in our list. Is it: ', 'فہرست میں نہیں۔ کیا یہ ہے: ', 'غير موجودة في القائمة. هل تتبع: ')}</span>
+          <span className="text-gray-600">{chosen ? L('Specialty: ', 'شعبہ: ', 'التخصص: ') : L('Not found in the materials guide. Is it from: ', 'مواد کی فہرست میں نہیں ملا۔ کیا یہ اس میں سے ہے: ', 'لم نجدها في دليل المواد. هل هي من: ')}</span>
           <b className="text-[#0B2438]">{curLabel || (chosen ? L(`${sectionName(value?.section)} (all its suppliers)`, `${sectionName(value?.section)} (سب سپلائرز)`, `${sectionName(value?.section)} (كل موردي القسم)`) : '')}</b>
-          {!chosen && curLabel && <span className="text-gray-500">؟</span>}
+          {!chosen && curLabel && <span className="text-gray-600">{L('?', '؟', '؟')}</span>}
         </div>
         <div className="flex gap-2 shrink-0">
           {!chosen && curLabel && (
             <button type="button" onClick={() => choose({ sector: current.sector, sub: current.sub })}
-              className="px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: '#0F6E56' }}>{L('Yes', 'ہاں', 'نعم')}</button>
+              className="min-h-[44px] px-4 rounded-xl text-sm font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>{L('Yes', 'ہاں', 'نعم')}</button>
           )}
           <button type="button" onClick={startChange}
-            className="px-4 py-2 rounded-xl text-sm font-bold border border-gray-300 bg-white text-[#0B2438] hover:border-[#D4A543]">
+            className="min-h-[44px] px-4 rounded-xl text-sm font-bold border border-gray-300 bg-white text-[#0B2438] hover:border-[#D4A543]">
             {chosen || curLabel ? L('Change', 'تبدیل', 'تغيير') : L('Choose its specialty', 'شعبہ چنیں', 'اختر تخصصها')}
           </button>
         </div>
@@ -64,17 +70,19 @@ export default function LineSpecialty({ name, sector, value, onChange, locale }:
         <p className="text-sm font-bold text-[#0B2438]">
           {section
             ? L('Which specialty?', 'کون سا شعبہ؟', 'اختر التخصص')
-            : L('Which section is it from? (so it reaches the right suppliers)', 'کس شعبے کا ہے؟', 'من أي قسم هذه المادة؟ (ليصل طلبك للمورد المختص)')}
+            : L('Which section is it from? (so it reaches the right suppliers)', 'کس شعبے کا ہے؟ (تاکہ صحیح سپلائرز تک پہنچے)', 'من أي قسم هذه المادة؟ (لتصل إلى الموردين المختصين)')}
         </p>
-        <button type="button" onClick={() => (section ? setSection(null) : (choiceDone(value) || guessSub) ? setOpen(false) : undefined)} className="text-sm font-bold text-[#8F6820] hover:underline shrink-0">
-          {section ? L('← Sections', '→ شعبے', '→ الأقسام') : L('Close', 'بند', 'إغلاق')}
-        </button>
+        {(section || canClose) && (
+          <button type="button" onClick={() => (section ? setSection(null) : setOpen(false))} className="min-h-[44px] px-2 text-sm font-bold text-[#8F6820] hover:underline shrink-0">
+            {section ? L('← Sections', '→ شعبے', '→ الأقسام') : L('Close', 'بند', 'إغلاق')}
+          </button>
+        )}
       </div>
       {!section ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {BROWSE_SECTIONS.map(b => (
+          {sections.map(b => (
             <button key={b.key} type="button" onClick={() => setSection(b.key)}
-              className="flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 bg-white text-start hover:border-[#D4A543] hover:bg-[#D4A543]/5 transition-colors">
+              className="flex items-center gap-2 min-h-[52px] p-2.5 rounded-xl border border-gray-200 bg-white text-start hover:border-[#D4A543] hover:bg-[#D4A543]/5 transition-colors">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={`/images/section-icons/${b.key}.webp`} alt="" aria-hidden className="w-9 h-9 shrink-0" />
               <span className="text-sm font-bold text-[#0B2438] leading-snug">{pick(b)}</span>
@@ -87,9 +95,8 @@ export default function LineSpecialty({ name, sector, value, onChange, locale }:
             const on = current.sub === s.key && current.sector === s.sector
             return (
               <button key={s.sector + s.key} type="button" onClick={() => choose({ sector: s.sector, sub: s.key })} aria-pressed={on}
-                className={`px-3 py-2.5 rounded-xl border text-sm font-bold text-start transition-colors ${on ? 'text-white border-[#0F6E56]' : 'bg-white text-[#0B2438] border-gray-200 hover:border-[#D4A543] hover:bg-[#D4A543]/5'}`}
-                style={on ? { background: '#0F6E56' } : undefined}>
-                {pick(s)}
+                className={`min-h-[44px] px-3 py-2.5 rounded-xl border-2 text-sm font-bold text-start text-[#0B2438] transition-colors inline-flex items-center gap-1.5 ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'bg-white border-gray-200 hover:border-[#D4A543] hover:bg-[#D4A543]/5'}`}>
+                {on && <Check className="w-4 h-4 shrink-0" aria-hidden />}{pick(s)}
               </button>
             )
           })}
@@ -97,8 +104,8 @@ export default function LineSpecialty({ name, sector, value, onChange, locale }:
       )}
       {section && (
         <button type="button" onClick={() => choose({ sector: subs[0]?.sector || current.sector, sub: null, section })}
-          className="w-full px-3 py-2.5 rounded-xl border border-dashed border-gray-300 text-sm font-bold text-gray-600 hover:bg-gray-50">
-          {L(`I don't know the specialty — send it to all suppliers of «${sectionName(section)}»`, `شعبہ معلوم نہیں — «${sectionName(section)}» کے سب سپلائرز`, `لا أعرف التخصص — أرسله لكل موردي «${sectionName(section)}»`)}
+          className="w-full min-h-[44px] px-3 py-2.5 rounded-xl border border-dashed border-gray-300 text-sm font-bold text-gray-700 hover:bg-gray-50">
+          {L(`I don't know the specialty: send it to all suppliers of «${sectionName(section)}»`, `شعبہ معلوم نہیں: «${sectionName(section)}» کے سب سپلائرز کو بھیجیں`, `لا أعرف التخصص: أرسلها إلى كل موردي «${sectionName(section)}»`)}
         </button>
       )}
     </div>

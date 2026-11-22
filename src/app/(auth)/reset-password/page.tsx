@@ -7,6 +7,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Glyph from '@/components/shared/Glyph'
 import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
+import { Check, Circle } from 'lucide-react'
 
 const txt = {
   ar: {
@@ -17,8 +18,9 @@ const txt = {
     toLogin: 'تسجيل الدخول ←',
     short: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
     mismatch: 'كلمتا المرور غير متطابقتين',
-    invalid: 'الرابط غير صالح أو منتهي الصلاحية. اطلب رابطاً جديداً.',
+    invalid: 'تعذّر فتح الرابط. افتحه في المتصفح نفسه الذي طلبت منه الاستعادة، أو اطلب رابطاً جديداً.',
     requestNew: 'اطلب رابط استعادة جديد', err: 'تعذّر الحفظ، حاول مرة أخرى',
+    checking: 'جارٍ التحقق من الرابط…', login: 'تسجيل الدخول',
   },
   en: {
     title: 'Set a new password', sub: 'Enter a new password for your account',
@@ -28,8 +30,9 @@ const txt = {
     toLogin: 'Sign in →',
     short: 'Password must be at least 8 characters',
     mismatch: 'Passwords do not match',
-    invalid: 'This link is invalid or expired. Request a new one.',
+    invalid: 'We could not open the link. Open it in the same browser you requested it from, or request a new link.',
     requestNew: 'Request a new reset link', err: 'Could not save, try again',
+    checking: 'Checking the link…', login: 'Sign in',
   },
   ur: {
     title: 'نیا پاسورڈ مقرر کریں', sub: 'اپنے اکاؤنٹ کے لیے نیا پاسورڈ درج کریں',
@@ -39,8 +42,9 @@ const txt = {
     toLogin: 'سائن ان ←',
     short: 'پاسورڈ کم از کم 8 حروف کا ہونا چاہیے',
     mismatch: 'پاسورڈ مماثل نہیں',
-    invalid: 'لنک غلط یا ختم ہو چکا ہے۔ نیا لنک طلب کریں۔',
+    invalid: 'لنک نہیں کھل سکا۔ اسے اسی براؤزر میں کھولیں جہاں سے آپ نے درخواست کی تھی، یا نیا لنک طلب کریں۔',
     requestNew: 'نیا ری سیٹ لنک طلب کریں', err: 'محفوظ نہیں ہوا، دوبارہ کوشش کریں',
+    checking: 'لنک چیک ہو رہا ہے…', login: 'سائن ان',
   },
 }
 
@@ -64,10 +68,23 @@ export default function ResetPasswordPage() {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') { setReady(true); setChecking(false) }
     })
-    supabase.auth.getSession().then(({ data }) => {
-      if (isRecovery && data.session) setReady(true)
-      setChecking(false)
-    })
+    // Cross-device link (UX-034): an email template that sends ?token_hash=…&type=recovery is verified
+    // here directly, so the link also works on a phone other than the browser that asked for it
+    // (the PKCE ?code= link only works in that same browser).
+    const qs = new URLSearchParams(window.location.search)
+    const tokenHash = qs.get('token_hash')
+    if (tokenHash && qs.get('type') === 'recovery') {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }).then(({ data, error }) => {
+        if (!error && data.session) setReady(true)
+        setChecking(false)
+        try { window.history.replaceState(null, '', '/reset-password') } catch {}
+      }, () => setChecking(false))
+    } else {
+      supabase.auth.getSession().then(({ data }) => {
+        if (isRecovery && data.session) setReady(true)
+        setChecking(false)
+      })
+    }
     return () => sub?.subscription?.unsubscribe()
   }, [])
 
@@ -103,29 +120,30 @@ export default function ResetPasswordPage() {
               <div className="text-5xl mb-4"><Glyph e="🎉" /></div>
               <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.doneTitle}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.doneSub}</p>
-              <a href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.toLogin}</a>
+              <a href="/login" className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{t.toLogin}</a>
             </div>
           ) : checking ? (
-            <p className="text-center text-sm text-gray-500 py-6">...</p>
+            <p className="text-center text-sm text-gray-600 py-6" role="status" aria-live="polite">{t.checking}</p>
           ) : !ready ? (
             <div className="text-center">
               <div className="text-4xl mb-3"><Glyph e="⚠" /></div>
-              <p className="text-sm text-gray-600 mb-6">{t.invalid}</p>
-              <a href="/forgot-password" className="inline-block w-full py-3 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{t.requestNew}</a>
+              <p className="text-sm text-gray-700 mb-6">{t.invalid}</p>
+              <a href="/forgot-password" className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{t.requestNew}</a>
+              <a href="/login" className="mt-3 inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-[#0B2438] text-sm border border-gray-200">{t.login}</a>
             </div>
           ) : (
             <>
               <h2 className="text-xl font-bold text-[#0B2438] mb-1">{t.title}</h2>
               <p className="text-sm text-gray-500 mb-6">{t.sub}</p>
-              {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
+              {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4 mb-5">
                   <div>
                     <label htmlFor="rp-pass" className="block text-xs font-bold text-gray-500 mb-1.5">{t.pass}</label>
                     <input id="rp-pass" type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} className="input-field" placeholder="••••••••" required disabled={loading} />
-                    <ul className="mt-2 space-y-1 text-xs">
+                    <ul className="mt-2 space-y-1 text-[13px]">
                       {passRuleList(password, locale).map(r => (
-                        <li key={r.rule} className={r.ok ? 'text-emerald-600' : 'text-gray-400'}>{r.ok ? '✓' : '○'} {r.text}</li>
+                        <li key={r.rule} className={`flex items-center gap-1.5 ${r.ok ? 'text-emerald-700' : 'text-gray-600'}`}>{r.ok ? <Check className="w-3.5 h-3.5" aria-hidden /> : <Circle className="w-3 h-3" aria-hidden />} {r.text}</li>
                       ))}
                     </ul>
                   </div>

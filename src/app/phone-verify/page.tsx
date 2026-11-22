@@ -15,15 +15,16 @@ export default function PhoneVerifyPage() {
   return (
     <div className="min-h-screen flex justify-center px-4 py-10" dir={dir} style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-[440px] space-y-4">
-        <div className="text-xl font-extrabold text-navy">تسعير<span className="text-orange">ك</span></div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/taseerak-metallic-logo.webp" alt={locale === 'en' ? 'Taseerak' : 'تسعيرك'} className="h-12 w-auto" />
         <div>
-          <h1 className="text-[22px] font-extrabold text-navy">{L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'توثيق رقم الجوال')}</h1>
+          <h1 className="text-[22px] font-bold text-navy">{L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'توثيق رقم الجوال')}</h1>
           <p className="text-ink-2 text-sm mt-1">{L('Enter your WhatsApp number and the code we send by SMS.', 'اپنا واٹس ایپ نمبر اور SMS کوڈ درج کریں۔', 'أدخل رقمك الذي عليه واتساب، ثم الرمز الذي نرسله برسالة نصية.')}</p>
         </div>
         {h === null ? null : h ? (
           <PhoneVerify handoff={h} locale={locale} />
         ) : (
-          <p className="text-sm text-red-600">{L('This link is not valid. Open it again from the app.', 'یہ لنک درست نہیں۔ ایپ سے دوبارہ کھولیں۔', 'هذا الرابط غير صالح. افتحه من جديد من التطبيق.')}</p>
+          <p className="text-sm text-red-700" role="alert">{L('This link is not valid. Open it again from the app.', 'یہ لنک درست نہیں۔ ایپ سے دوبارہ کھولیں۔', 'هذا الرابط غير صالح. افتحه من جديد من التطبيق.')}</p>
         )}
       </div>
     </div>

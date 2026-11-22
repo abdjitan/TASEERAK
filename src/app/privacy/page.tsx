@@ -4,6 +4,9 @@ import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Glyph from '@/components/shared/Glyph'
+import { OPERATOR } from '@/lib/legal'
+
+const OPERATOR_EMAIL: string = OPERATOR.email
 
 const C: Record<string, any> = {
   ar: {
@@ -79,17 +82,17 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-slate-50" dir={dir}>
       <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
+          <a href="/" className="shrink-0" aria-label="تسعيرك">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="h-11 w-auto" /></a>
+          <div className="flex items-center gap-2">
             <LanguageSwitcher variant="minimal" />
-            <a href="/" className="text-xs text-gray-400 hover:text-gray-600">{t.home}</a>
+            <a href="/" className="min-h-[44px] inline-flex items-center px-2 text-sm font-semibold text-[#0B2438] hover:underline">{t.home}</a>
           </div>
         </div>
       </nav>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="text-2xl font-bold mb-1" style={{ color: '#0B2438' }}>{t.title}</h1>
-        <p className="text-xs text-gray-400 mb-5">{t.updated}</p>
+        <p className="text-[12px] text-gray-600 mb-5">{t.updated}</p>
 
         <p className="text-sm text-gray-700 leading-relaxed mb-4">{t.intro}</p>
         <div className="bg-white border border-gray-200 rounded-xl p-3 text-xs text-gray-600 mb-6"><Glyph e="✉" /> {t.note}</div>
@@ -103,7 +106,8 @@ export default function PrivacyPage() {
           ))}
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-10">© 2026 تسعيرك — Taseerak</p>
+        {OPERATOR_EMAIL && <p className="text-center text-sm mt-10"><a href={`mailto:${OPERATOR_EMAIL}`} dir="ltr" className="inline-flex items-center min-h-[44px] font-semibold text-[#8F6820] hover:underline">{OPERATOR_EMAIL}</a></p>}
+        <p className="text-center text-[12px] text-gray-600">© 2026 تسعيرك — Taseerak</p>
       </div>
     </div>
   )

@@ -97,10 +97,10 @@ export default function DeleteAccountPage() {
     <div className="min-h-screen bg-slate-50" dir={dir}>
       <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Logo theme="light" size="sm" />
-          <div className="flex items-center gap-3">
+          <a href="/" className="shrink-0" aria-label="تسعيرك">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="h-11 w-auto" /></a>
+          <div className="flex items-center gap-2">
             <LanguageSwitcher variant="minimal" />
-            <a href="/" className="text-xs text-gray-400 hover:text-gray-600">{t.home}</a>
+            <a href="/" className="min-h-[44px] inline-flex items-center text-sm font-semibold text-[#0B2438] hover:underline">{t.home}</a>
           </div>
         </div>
       </nav>
@@ -125,7 +125,7 @@ export default function DeleteAccountPage() {
           ) : signedIn === false ? (
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <p className="text-sm text-gray-600">{t.signedOut}</p>
-              <Link href="/login?next=/account/delete" className="px-4 py-2 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{t.login}</Link>
+              <Link href="/login?next=/account/delete" className="min-h-[44px] inline-flex items-center px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{t.login}</Link>
             </div>
           ) : signedIn ? (
             <div className="space-y-3">
@@ -133,9 +133,13 @@ export default function DeleteAccountPage() {
               <input id="confirm-word" value={word} onChange={e => setWord(e.target.value)} className="input-field max-w-xs" autoComplete="off" />
               {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
               <button type="button" onClick={remove} disabled={busy || word.trim().toUpperCase() !== t.confirmWord}
-                className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 disabled:opacity-40">
+                className="min-h-[44px] px-5 rounded-xl text-sm font-bold text-white bg-red-700 hover:bg-red-800 disabled:opacity-40">
                 {busy ? t.deleting : t.button}
               </button>
+              {/* a way back without deleting (UX-184) */}
+              <Link href="/settings" className="ms-0 sm:ms-2 inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold border border-gray-200 text-[#0B2438] bg-white hover:bg-gray-50">
+                {locale === 'en' ? 'Cancel and go back to Settings' : locale === 'ur' ? 'منسوخ کریں اور ترتیبات پر واپس جائیں' : 'إلغاء والعودة إلى الإعدادات'}
+              </Link>
             </div>
           ) : null}
         </div>

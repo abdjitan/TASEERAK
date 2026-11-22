@@ -6,6 +6,7 @@ import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { SELLER_KINDS, rememberedSignupKind, type SellerKind } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
+import { Check } from 'lucide-react'
 
 // After the first WhatsApp OTP: "Do you need prices or provide them?", and for a provider
 // "independent or company?", plus a name. Everything else (location, categories, company
@@ -60,13 +61,14 @@ export default function WelcomePage() {
   return (
     <div className="min-h-screen flex flex-col" dir={dir} style={{ background: 'var(--bg)' }}>
       <div className="flex items-center justify-between p-5">
-        <span className="text-xl font-extrabold text-navy">تسعير<span className="text-orange">ك</span></span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/taseerak-metallic-logo.webp" alt={locale === 'en' ? 'Taseerak' : 'تسعيرك'} className="h-12 w-auto" />
         <LanguageSwitcher variant="minimal" />
       </div>
       <div className="flex-1 flex justify-center px-4 pb-12">
         <div className="w-full max-w-[460px] space-y-6 animate-slide-up">
           <div>
-            <h1 className="text-[26px] font-extrabold text-navy">{L('Welcome to Taseerak', 'تسعیرک میں خوش آمدید', 'أهلاً بك في تسعيرك')}</h1>
+            <h1 className="text-[26px] font-bold text-navy">{L('Welcome to Taseerak', 'تسعیرک میں خوش آمدید', 'أهلاً بك في تسعيرك')}</h1>
             <p className="text-ink-2 text-sm mt-1">{L('Two quick answers and you are in.', 'دو جواب اور آپ اندر ہیں۔', 'إجابتان سريعتان وتبدأ.')}</p>
           </div>
 
@@ -89,15 +91,16 @@ export default function WelcomePage() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6"><path d="M21 21l-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z" /></svg>
               </span>
               <span className="min-w-0">
-                <span className="block font-extrabold text-lg">{intent === 'buyer' ? '✓ ' : ''}{L('Request prices', 'قیمتیں منگوائیں', 'اطلب الأسعار')}</span>
+                <span className="flex items-center gap-1.5 font-bold text-lg">{intent === 'buyer' && <Check className="w-5 h-5" strokeWidth={3} aria-hidden />}{L('Request prices', 'قیمتیں منگوائیں', 'اطلب الأسعار')}</span>
                 <span className="block text-[13px] mt-0.5 leading-relaxed opacity-80">{L('Request material prices from suppliers and compare quotes.', 'سپلائرز سے سامان کی قیمتیں منگوائیں اور پیشکشوں کا موازنہ کریں۔', 'اطلب أسعار المواد من الموردين وقارن العروض.')}</span>
               </span>
             </button>}
             <button type="button" onClick={() => setIntent('provider')} aria-pressed={intent === 'provider'}
-              className={`w-full text-start px-4 py-3 rounded-xl border text-sm transition-all ${intent === 'provider' ? 'border-navy bg-navy/5' : 'bg-white hover:border-gray-300'}`}
+              className={`w-full min-h-[48px] text-start px-4 py-3 rounded-xl border-2 text-sm transition-all ${intent === 'provider' ? 'border-[#D4A543] bg-[#D4A543]/10' : 'bg-white hover:border-gray-300'}`}
               style={intent === 'provider' ? undefined : { borderColor: 'var(--line)' }}>
-              <span className="text-ink-2">{intent === 'provider' ? '✓ ' : ''}{L('Own a shop or supply materials?', 'دکان ہے یا سامان سپلائی کرتے ہیں؟', 'صاحب محل أو مورد مواد؟')}</span>{' '}
-              <span className="font-extrabold" style={{ color: '#8F6820' }}>{L('Register as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</span>
+              {intent === 'provider' && <Check className="inline w-4 h-4 me-1 text-[#0B2438]" strokeWidth={3} aria-hidden />}
+              <span className="text-ink-2">{L('Own a shop or supply materials?', 'دکان ہے یا سامان سپلائی کرتے ہیں؟', 'صاحب محل أو مورد مواد؟')}</span>{' '}
+              <span className="font-bold" style={{ color: '#8F6820' }}>{L('Register as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</span>
             </button>
           </div>
 
@@ -110,10 +113,10 @@ export default function WelcomePage() {
                   const info = SELLER_KINDS[k]
                   return (
                     <button key={k} type="button" onClick={() => setKind(k)} aria-pressed={on}
-                      className={`text-start p-3 rounded-xl border-2 transition-all ${on ? 'border-navy bg-navy/5' : 'bg-white'}`}
+                      className={`min-h-[56px] text-start p-3 rounded-xl border-2 transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'bg-white'}`}
                       style={on ? undefined : { borderColor: 'var(--line)' }}>
-                      <span className="block font-bold text-sm text-navy"><SellerIcon name={info.icon} /> {L(info.en, info.ur, info.ar)}</span>
-                      <span className="block text-[11px] text-ink-2 mt-0.5 leading-relaxed">{L(info.sub.en, info.sub.ur, info.sub.ar)}</span>
+                      <span className="flex items-center gap-1 font-bold text-sm text-navy">{on ? <Check className="w-4 h-4" strokeWidth={3} aria-hidden /> : <SellerIcon name={info.icon} />} {L(info.en, info.ur, info.ar)}</span>
+                      <span className="block text-[12px] text-ink-2 mt-0.5 leading-relaxed">{L(info.sub.en, info.sub.ur, info.sub.ar)}</span>
                     </button>
                   )
                 })}

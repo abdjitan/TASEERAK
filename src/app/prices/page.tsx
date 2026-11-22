@@ -61,7 +61,7 @@ export default async function PricesPage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <div className="text-4xl mb-3"><Glyph e="📊" /></div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
-            <p className="text-sm text-gray-400 max-w-sm mx-auto">سيظهر هنا مؤشّر أسعار مواد البناء بمجرد إتمام صفقات على المنصّة. كل صفقة تُغذّي المؤشّر تلقائياً.</p>
+            <p className="text-sm text-gray-600 max-w-sm mx-auto">سيظهر هنا مؤشّر أسعار مواد البناء بمجرد إتمام صفقات على المنصّة. كل صفقة تُغذّي المؤشّر تلقائياً.</p>
             <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>ابدأ الآن مجاناً</Link>
           </div>
         ) : (
@@ -76,13 +76,13 @@ export default async function PricesPage() {
                     <div key={r.product_name} className="px-4 py-3 flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-semibold text-sm text-gray-800 truncate">{r.product_name}</div>
-                        <div className="text-[10px] text-gray-400 mt-0.5">
+                        <div className="text-[12px] text-gray-600 mt-0.5">
                           النطاق: {fmt(r.min_price)} – {fmt(r.max_price)} ر.س · {r.samples} صفقة · آخر تحديث {fmtDate(r.last_awarded)}
                         </div>
                       </div>
                       <div className="text-end shrink-0">
-                        <div className="font-extrabold text-base" style={{ color: '#0F6E56' }}>{fmt(r.avg_price)} <span className="text-[11px] font-normal text-gray-400">ر.س</span></div>
-                        <div className="text-[10px] text-gray-400">/ {r.unit || 'وحدة'}</div>
+                        <div className="font-extrabold text-base" style={{ color: '#0B2438' }}>{fmt(r.avg_price)} <span className="text-[12px] font-normal text-gray-600">ر.س</span></div>
+                        <div className="text-[12px] text-gray-600">/ {r.unit || 'وحدة'}</div>
                       </div>
                     </div>
                   ))}

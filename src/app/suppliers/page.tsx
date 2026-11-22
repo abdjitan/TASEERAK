@@ -65,7 +65,7 @@ export default async function SuppliersLeaderboard() {
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <div className="text-4xl mb-3"><Glyph e="🏗" /></div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
-            <p className="text-sm text-gray-400">سيظهر هنا الموردون الأعلى تقييماً بمجرد بدء الصفقات على المنصّة.</p>
+            <p className="text-sm text-gray-600">سيظهر هنا الموردون الأعلى تقييماً بمجرد بدء الصفقات على المنصّة.</p>
             <Link href="/register?role=supplier" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>سجّل كمورّد</Link>
           </div>
         ) : (
@@ -74,7 +74,7 @@ export default async function SuppliersLeaderboard() {
             {listings.length > 0 && (
               <section className="mt-8">
                 <h2 className="text-sm font-bold mb-1" style={{ color: '#0B2438' }}>موردون في دليلنا</h2>
-                <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                <p className="text-[12px] text-gray-600 mb-3 leading-relaxed">
                   موردون معروفون في السوق لم يسجّلوا بعد. هل أحدها نشاطك؟{' '}
                   <Link href="/register?role=supplier" className="underline font-semibold" style={{ color: '#8F6820' }}>سجّله مجاناً</Link>{' '}
                   لاستقبال طلبات التسعير.
@@ -84,13 +84,13 @@ export default async function SuppliersLeaderboard() {
                     <div key={l.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-bold text-sm text-gray-800 truncate">{l.name}</div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap text-[11px] text-gray-500">
-                          {l.category && <span className="badge badge-gray text-[10px]">{l.category}</span>}
+                        <div className="flex items-center gap-2 mt-1 flex-wrap text-[12px] text-gray-500">
+                          {l.category && <span className="badge badge-gray text-[12px]">{l.category}</span>}
                           {l.region && <span><Glyph e="📍" /> {l.region}{l.city ? ` · ${l.city}` : ''}</span>}
                           {l.google_rating != null && <span><Glyph e="⭐" /> {l.google_rating}{l.google_reviews ? ` (${l.google_reviews})` : ''}</span>}
                         </div>
                       </div>
-                      <span className="text-[10px] font-semibold text-gray-400 whitespace-nowrap border border-gray-200 rounded-lg px-2 py-1">لم ينضمّ بعد</span>
+                      <span className="text-[12px] font-semibold text-gray-600 whitespace-nowrap border border-gray-200 rounded-lg px-2 py-1">لم ينضمّ بعد</span>
                     </div>
                   ))}
                 </div>
@@ -99,7 +99,7 @@ export default async function SuppliersLeaderboard() {
           </>
         )}
 
-        <p className="text-center text-[11px] text-gray-400 mt-8 leading-relaxed">
+        <p className="text-center text-[12px] text-gray-600 mt-8 leading-relaxed">
           الدرجة تُحسب من: التوثيق عبر واثق + التقييم + نسبة الفوز بالعروض + النشاط. تتحدّث تلقائياً.
         </p>
       </main>

@@ -6,13 +6,16 @@ import Glyph from '@/components/shared/Glyph'
 
 // Build the dashboard sidebar nav for a role. Used by every page that sits on
 // AppShell so the navigation is consistent across the app.
-import { storedBuyerType } from '@/lib/buyerType'
+// Business-only tools carry only:'business'; AppShell drops them for a home buyer after mount
+// (reading localStorage here, during render, caused a hydration mismatch, UX-144).
 
 export function getNav(role: string | undefined, locale: string, active: string): ShellNavItem[] {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const secTools = L('Tools', 'اوزار', 'الأدوات')
   const secAccount = L('Account', 'اکاؤنٹ', 'الحساب')
-  let items: { href: string; icon: string | ReactNode; label: string; section?: string; mobile?: number; only?: 'company'; off?: boolean }[]
+  let items: { href: string; icon: string | ReactNode; label: string; section?: string; mobile?: number; only?: 'company' | 'business'; off?: boolean }[]
+  // every role reaches its notifications from the menu, not only from the bell (UX-100)
+  const notifItem = { href: '/notifications', icon: createElement(Glyph, { e: '🔔' }), label: L('Notifications', 'اطلاعات', 'الإشعارات'), section: secAccount }
   if (role === 'admin') {
     const sec = L('Admin', 'ایڈمن', 'الإدارة')
     items = [
@@ -28,6 +31,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/admin/invites', icon: '💬', label: L('Supplier invites', 'سپلائر دعوتیں', 'دعوات الموردين'), section: sec },
       { href: '/admin/whatsapp', icon: '💬', label: L('WhatsApp support', 'واٹس ایپ سپورٹ', 'واتساب الدعم'), section: sec },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
+      notifItem,
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
   } else if (role === 'supplier') {
@@ -46,6 +50,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
       { href: '/invite-friends', icon: '🤝', label: L('Invite someone', 'دعوت دیں', 'ادعُ من تعرفه'), section: secAccount },
       { href: '/suggestions', icon: '💡', label: L('Your suggestions', 'آپ کی تجاویز', 'اقتراحاتك'), section: secAccount },
+      notifItem,
       { href: '/support', icon: '💬', label: L('Support', 'سپورٹ', 'الدعم'), section: secAccount },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]
@@ -55,14 +60,16 @@ export function getNav(role: string | undefined, locale: string, active: string)
       { href: '/contractor', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
       { href: '/contractor/rfq/quick', icon: '📝', label: L('Price request', 'قیمت کی درخواست', 'طلب تسعير'), section: sec, mobile: 3 },
       { href: '/contractor/rfqs', icon: '🧾', label: L('My requests and deals', 'درخواستیں اور ڈیلز', 'طلباتي وصفقاتي'), section: sec, mobile: 2 },
-      // a home buyer («لبيتي») does not see the project tools (UX study 2026-11-22); still reachable by URL
-      { href: '/contractor/project/new', icon: '📋', label: L('Project', 'پراجیکٹ', 'مشروع'), section: sec, off: storedBuyerType() === 'individual' },
-      { href: '/contractor/tender', icon: '📑', label: L('Tender pricing', 'ٹینڈر قیمت', 'مسار العطاء'), section: sec, off: storedBuyerType() === 'individual' },
+      // a home buyer («لبيتي») does not see the business tools (UX study 2026-11-22); still reachable by URL.
+      // One name for each tool everywhere (UX-144): «جدول الكميات» and «تسعير مناقصة».
+      { href: '/contractor/project/new', icon: '📋', label: L('Bill of quantities', 'مقداروں کی فہرست', 'جدول الكميات'), section: sec, only: 'business' },
+      { href: '/contractor/tender', icon: '📑', label: L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة'), section: sec, only: 'business' },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },
       { href: '/location', icon: '📍', label: L('Location', 'مقام', 'الموقع'), section: secTools, off: !FEATURES.locationNav },
       { href: '/invite-friends', icon: '🤝', label: L('Invite someone', 'دعوت دیں', 'ادعُ من تعرفه'), section: secAccount },
       { href: '/suggestions', icon: '💡', label: L('Your suggestions', 'آپ کی تجاویز', 'اقتراحاتك'), section: secAccount },
+      notifItem,
       { href: '/support', icon: '💬', label: L('Support', 'سپورٹ', 'الدعم'), section: secAccount },
       { href: '/settings', icon: '⚙️', label: L('Settings', 'ترتیبات', 'الإعدادات'), section: secAccount },
     ]

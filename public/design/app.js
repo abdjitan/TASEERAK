@@ -13,20 +13,30 @@ const I18N = {
     hero_eyebrow: "قارن أسعار السوق بين يديك",
     hero_h1a: "اطلب ما تحتاجه", hero_h1b: "وقارن عروض", hero_h1c: "عدة موردين",
     hero_lead: "اكتب ما تحتاجه أو صوّره، أو ارفع قائمة المواد. نوجّه طلبك إلى الموردين المناسبين، لتستقبل عروضهم وتقارن بينها وتختار الأنسب لبيتك أو مشروعك — بلا عمولة على طلب التسعير.",
-    hero_cta1: "ابدأ الآن مجاناً", hero_cta2: "شاهد كيف يعمل",
+    hero_cta1: "ابدأ الآن مجاناً", hero_cta2: "كيف يعمل؟",
     trust1: "توثيق كل مورد ظاهر لك", trust2: "تصنيف ذكي للطلبات", trust3: "ثلاث لغات: عربي · إنجليزي · أردو",
-    lc_title: "حديد تسليح Ø16", lc_sub: "طلب تسعير · مواد البناء", lc_live: "مثال توضيحي",
-    lc_s1: "مصنع حديد (أ)", lc_m1: "مُصنّع · موثّق", 
-    lc_s2: "موزّع معادن (ب)", lc_m2: "موزّع تجاري",
-    lc_s3: "محل مواد بناء (ج)", lc_m3: "مورّد محلي",
-    lc_unit: "ر.س / طن", lc_saved: "الفرق بين أعلى عرض وأقلّه في هذا المثال:",
-    chip1: "تطابق فوري", chip2: "أمر شراء جاهز",
+    lc_title: "خلاط مغسلة", lc_sub: "طلب تسعير · الحمّام والسباكة", lc_live: "مثال توضيحي",
+    lc_s1: "محل أدوات صحية (أ)", lc_m1: "محل · سجلّه موثّق",
+    lc_s2: "موزّع أدوات صحية (ب)", lc_m2: "موزّع تجاري",
+    lc_s3: "محل سباكة (ج)", lc_m3: "مورّد قريب منك",
+    lc_unit: "ر.س / قطعة", lc_saved: "الفرق بين أعلى عرض وأقلّه في هذا المثال:",
+    chip1: "تطابق فوري", chip2: "عروض بأسعار واضحة",
+    tb_build: "مواد البناء", tb_finish: "التشطيبات", tb_furn: "الأثاث والديكور", tb_light: "الكهرباء والإنارة", tb_plumb: "السباكة", tb_hvac: "التكييف والحريق", tb_tools: "العُدد والمعدات", tb_mach: "الآليات والمعدات الثقيلة", tb_out: "الحدائق والخارجيات",
+    packs_eyebrow: "لبيتك", packs_h: "جهّز بيتك", packs_p: "اختر ما تريد تجديده، ونجهّز لك قائمة المواد لتصلك عروض الموردين.",
+    pk_bathroom: "تجديد حمّام", pk_paint: "دهان شقة", pk_lighting: "إنارة غرفة", pk_ac: "تكييف غرفة", pk_heater: "تغيير سخان", pk_curtains: "ستائر غرفة", pk_outdoor: "جلسة خارجية", pk_office: "تجهيز مكتب فخم",
+    boq_cta: "ارفع قائمتك الآن",
+    faq_eyebrow: "أسئلة شائعة", faq_h: "قبل أن تبدأ",
+    faq_q1: "كيف أدفع؟", faq_a1: "تدفع للمورد مباشرة بالطريقة التي تتفقان عليها عند التسليم أو قبله. لا تحتفظ تسعيرك بأي مبالغ.",
+    faq_q2: "من يوصل الطلب؟", faq_a2: "المورد الذي تختار عرضه هو من يوصل المواد إلى موقعك، أو تستلمها منه بنفسك إن اخترت الاستلام. يظهر في العرض هل يشمل التوصيل وموعده.",
+    faq_q3: "هل الخدمة مجانية؟", faq_a3: "نعم. إرسال طلب التسعير ومقارنة العروض مجانيان، ولا نأخذ عمولة على طلب التسعير.",
+    faq_q4: "كيف أعرف المورد؟", faq_a4: "يظهر بجانب كل مورد ما إذا كان سجلّه التجاري موثّقاً، مع تقييمات المشترين السابقين. ولا يرى المورد اسمك أو رقمك حتى تختار عرضه.",
+    faq_more: "اعرف كيف نحمي صفقتك",
     trustbar_lbl: "كل الأقسام:",
     how_eyebrow: "أربع خطوات بسيطة", how_h: "كيف تعمل تسعيرك؟", how_p: "من الطلب إلى استلام المواد، كل شيء في مكان واحد ومنظّم.",
     step1_t: "أرسل طلب التسعير", step1_p: "اكتب المادة أو صوّرها أو ارفع قائمتك، وحدّد الكمية وموقع التسليم.",
     step2_t: "استقبل عروض الموردين", step2_p: "يصل طلبك إلى الموردين المناسبين لقطاعه وتصنيفه، ليقدّموا عروضهم.",
-    step3_t: "قارن واختر", step3_p: "تُعرض العروض مرتّبة حسب السعر، فيتّضح لك العرض الأوفر بنظرة، ثم تختار الأنسب لمشروعك.",
-    step4_t: "أمر شراء", step4_p: "بمجرّد اختيار العرض يصدر أمر شراء جاهز للطباعة تلقائياً.",
+    step3_t: "قارن واختر", step3_p: "تُعرض العروض مرتّبة حسب السعر، فيتّضح لك العرض الأوفر بنظرة، ثم تختار الأنسب لبيتك أو مشروعك.",
+    step4_t: "تابِع صفقتك", step4_p: "بعد اختيار العرض تتابع التسليم خطوة بخطوة، مع ملخّص جاهز للطباعة.",
     sectors_eyebrow: "ابدأ من القسم", sectors_h: "كل ما تحتاجه في مكان واحد", sectors_p: "من مصباح لمنزلك إلى مواد مشروع كامل — نوجّه طلبك إلى الموردين المختصين.",
     cat_hvac: "التكييف والحريق", cat_hvac_p: "مكيفات، دكت، مراوح، رشاشات وإطفاء.", cat_mach: "الآليات الثقيلة", cat_mach_p: "حفارات، رافعات، شاحنات، مضخات خرسانة.", cat_out: "الحدائق والخارجيات", cat_out_p: "عشب، ري، إنترلوك، أسوار.", cat_light: "الكهرباء والإنارة", cat_light_p: "ثريات، سبوتات، إنارة خارجية وديكور.", cat_furn: "الأثاث والديكور", cat_furn_p: "طاولات، كنب، خزائن، ستائر، مجالس.", cat_finish: "التشطيبات والدهانات", cat_finish_p: "بلاط، رخام، دهانات، جبس، أبواب.", cat_bath: "الحمّامات والسباكة", cat_bath_p: "خلاطات، أدوات صحية، مواسير، سخانات.", cat_tools: "العُدد والمعدات", cat_tools_p: "عُدد يدوية وكهربائية، سلامة، آليات.", cat_build: "مواد البناء", cat_build_p: "أسمنت، حديد، بلوك، خرسانة، عوازل.",
     sec_civil: "مدني", sec_civil_p: "حديد، أسمنت، خرسانة، بلوك، تصريف.",
@@ -54,7 +64,7 @@ const I18N = {
     cta_b1: "ابدأ برقم جوالك", cta_b2: "تواصل معنا",
     foot_tag: "منصة التسعير والتوريد لمواد البناء في السعودية. اطلب، قارن، واختر بثقة.",
     foot_c1: "المنتج", foot_c1_1: "كيف يعمل", foot_c1_2: "الأقسام", foot_c1_3: "قائمة المواد", foot_c1_4: "مؤشر الأسعار",
-    foot_c2: "للموردين", foot_c2_1: "انضم كمورد", foot_c2_6: "انضم كوسيط تسعير", hero_seller_q: "صاحب محل أو مورد مواد؟", hero_seller_cta: "سجّل كمورد", foot_c2_5: "حساب شركة", foot_c2_2: "التوثيق", foot_c2_3: "التصنيفات", foot_c2_4: "الأسئلة الشائعة",
+    foot_c2: "للموردين", foot_c2_1: "انضم كمورد", foot_c2_6: "انضم كوسيط تسعير", hero_seller_q: "صاحب محل أو مورد مواد؟", hero_seller_cta: "سجّل كمورد", foot_c2_5: "انضم كشركة أو محل", foot_c2_2: "التوثيق", foot_c2_3: "التصنيفات", foot_c2_4: "الأسئلة الشائعة",
     foot_c3: "الشركة", foot_c3_1: "من نحن", foot_c3_2: "تواصل معنا", foot_c3_3: "الخصوصية", foot_c3_4: "الشروط", foot_c3_5: "كيف نحمي صفقتك",
     foot_copy: "© 2026 تسعيرك. جميع الحقوق محفوظة.",
   },
@@ -66,20 +76,30 @@ const I18N = {
     hero_eyebrow: "Compare market prices in your hands",
     hero_h1a: "Order what you need", hero_h1b: "and compare offers from", hero_h1c: "several suppliers",
     hero_lead: "Type what you need, snap a photo, or upload your materials list. Taseerak routes it to the right suppliers so you can compare their offers and choose what fits your home or project, with no commission for requesting quotes.",
-    hero_cta1: "Start free", hero_cta2: "See how it works",
+    hero_cta1: "Start free", hero_cta2: "How does it work?",
     trust1: "See which suppliers are verified", trust2: "Smart request routing", trust3: "Three languages: AR · EN · UR",
-    lc_title: "Rebar Ø16", lc_sub: "Price request · Building materials", lc_live: "Illustrative example",
-    lc_s1: "Steel mill (A)", lc_m1: "Manufacturer · Verified",
-    lc_s2: "Metals distributor (B)", lc_m2: "Commercial distributor",
-    lc_s3: "Building-materials shop (C)", lc_m3: "Local supplier",
-    lc_unit: "SAR / ton", lc_saved: "Gap between the highest and lowest offer here:",
-    chip1: "Instant match", chip2: "PO ready",
+    lc_title: "Basin mixer", lc_sub: "Price request · Bathroom & plumbing", lc_live: "Illustrative example",
+    lc_s1: "Sanitary-ware shop (A)", lc_m1: "Shop · Registration verified",
+    lc_s2: "Sanitary-ware distributor (B)", lc_m2: "Commercial distributor",
+    lc_s3: "Plumbing shop (C)", lc_m3: "Supplier near you",
+    lc_unit: "SAR / piece", lc_saved: "Gap between the highest and lowest offer here:",
+    chip1: "Instant match", chip2: "Offers with clear prices",
+    tb_build: "Building materials", tb_finish: "Finishing", tb_furn: "Furniture & decor", tb_light: "Electrical & lighting", tb_plumb: "Plumbing", tb_hvac: "AC & firefighting", tb_tools: "Tools & equipment", tb_mach: "Heavy machinery", tb_out: "Garden & outdoor",
+    packs_eyebrow: "For your home", packs_h: "Get your home ready", packs_p: "Choose what you want to renovate; we prepare the materials list and suppliers send you offers.",
+    pk_bathroom: "Bathroom renovation", pk_paint: "Paint an apartment", pk_lighting: "Light a room", pk_ac: "Air-condition a room", pk_heater: "Replace a water heater", pk_curtains: "Curtains for a room", pk_outdoor: "Outdoor sitting area", pk_office: "An elegant office",
+    boq_cta: "Upload your list now",
+    faq_eyebrow: "Questions", faq_h: "Before you start",
+    faq_q1: "How do I pay?", faq_a1: "You pay the supplier directly, in the way you agree, at or before delivery. Taseerak never holds any money.",
+    faq_q2: "Who delivers the order?", faq_a2: "The supplier whose offer you choose delivers to your location, or you collect from them if you chose pickup. The offer shows whether delivery is included and when.",
+    faq_q3: "Is the service free?", faq_a3: "Yes. Sending a price request and comparing offers are free, with no commission on price requests.",
+    faq_q4: "How do I know the supplier?", faq_a4: "Each supplier shows whether its commercial registration is verified, with ratings from earlier buyers. The supplier does not see your name or number until you choose its offer.",
+    faq_more: "How we protect your deal",
     trustbar_lbl: "Every section:",
     how_eyebrow: "Four simple steps", how_h: "How Taseerak works", how_p: "From request to delivery, everything in one organized place.",
-    step1_t: "Send an RFQ", step1_p: "Type or photograph the material, or upload your list; set the quantity and delivery location.",
+    step1_t: "Send a price request", step1_p: "Type or photograph the material, or upload your list; set the quantity and delivery location.",
     step2_t: "Receive supplier offers", step2_p: "Your request reaches the suppliers who match its sector and specialty, and they send their offers.",
-    step3_t: "Compare & pick", step3_p: "Offers are sorted by price, so the best value is clear at a glance; then pick what fits your project.",
-    step4_t: "Purchase order", step4_p: "Choose an offer and a print-ready purchase order is generated instantly.",
+    step3_t: "Compare & pick", step3_p: "Offers are sorted by price, so the best value is clear at a glance; then pick what fits your home or project.",
+    step4_t: "Follow your deal", step4_p: "After you choose an offer, follow the delivery step by step, with a print-ready summary.",
     sectors_eyebrow: "Start with a section", sectors_h: "Everything you need, in one place", sectors_p: "From one lamp for your home to a full project — we route your request to the right suppliers.",
     cat_hvac: "AC & firefighting", cat_hvac_p: "AC units, ducts, fans, sprinklers.", cat_mach: "Heavy machinery", cat_mach_p: "Excavators, cranes, trucks, concrete pumps.", cat_out: "Garden & outdoor", cat_out_p: "Turf, irrigation, interlock, fencing.", cat_light: "Electrical & lighting", cat_light_p: "Chandeliers, spots, outdoor and decor lighting.", cat_furn: "Furniture & decor", cat_furn_p: "Tables, sofas, wardrobes, curtains, majlis.", cat_finish: "Finishing & paints", cat_finish_p: "Tiles, marble, paints, gypsum, doors.", cat_bath: "Bathrooms & plumbing", cat_bath_p: "Mixers, sanitary ware, pipes, heaters.", cat_tools: "Tools & equipment", cat_tools_p: "Hand and power tools, safety, machinery.", cat_build: "Building materials", cat_build_p: "Cement, rebar, blocks, concrete, insulation.",
     sec_civil: "Civil", sec_civil_p: "Rebar, cement, concrete, blocks, drainage.",
@@ -107,7 +127,7 @@ const I18N = {
     cta_b1: "Start with your mobile number", cta_b2: "Contact us",
     foot_tag: "The procurement & quoting platform for construction materials in Saudi Arabia. Request, compare, choose with confidence.",
     foot_c1: "Product", foot_c1_1: "How it works", foot_c1_2: "Sections", foot_c1_3: "Materials list", foot_c1_4: "Price index",
-    foot_c2: "For suppliers", foot_c2_1: "Join as supplier", foot_c2_6: "Join as a pricing agent", hero_seller_q: "Own a shop or supply materials?", hero_seller_cta: "Sign up as a supplier", foot_c2_5: "Company account", foot_c2_2: "Verification", foot_c2_3: "Tiers", foot_c2_4: "FAQ",
+    foot_c2: "For suppliers", foot_c2_1: "Join as supplier", foot_c2_6: "Join as a pricing agent", hero_seller_q: "Own a shop or supply materials?", hero_seller_cta: "Sign up as a supplier", foot_c2_5: "Join as a company or shop", foot_c2_2: "Verification", foot_c2_3: "Tiers", foot_c2_4: "FAQ",
     foot_c3: "Company", foot_c3_1: "About", foot_c3_2: "Contact", foot_c3_3: "Privacy", foot_c3_4: "Terms", foot_c3_5: "How we protect your deal",
     foot_copy: "© 2026 Taseerak. All rights reserved.",
   },
@@ -119,20 +139,30 @@ const I18N = {
     hero_eyebrow: "مارکیٹ کی قیمتوں کا موازنہ آپ کے ہاتھ میں",
     hero_h1a: "جو چاہیے منگوائیں", hero_h1b: "اور کئی سپلائرز کی", hero_h1c: "پیشکشوں کا موازنہ کریں",
     hero_lead: "جو چاہیے لکھیں، تصویر لیں یا مواد کی فہرست اپ لوڈ کریں۔ تسعیرک اسے متعلقہ سپلائرز تک پہنچاتا ہے تاکہ آپ پیشکشوں کا موازنہ کر کے اپنے گھر یا منصوبے کے لیے موزوں انتخاب کریں، قیمت کی درخواست پر کوئی کمیشن نہیں۔",
-    hero_cta1: "مفت شروع کریں", hero_cta2: "دیکھیں کیسے کام کرتا ہے",
+    hero_cta1: "مفت شروع کریں", hero_cta2: "یہ کیسے کام کرتا ہے؟",
     trust1: "ہر سپلائر کی تصدیق آپ کو نظر آتی ہے", trust2: "ذہین درخواست رہنمائی", trust3: "تین زبانیں: عربی · انگریزی · اردو",
-    lc_title: "سریا Ø16", lc_sub: "درخواست · تعمیراتی مواد", lc_live: "مثالی معلومات",
-    lc_s1: "اسٹیل مل (A)", lc_m1: "مینوفیکچرر · تصدیق شدہ",
-    lc_s2: "دھات ڈسٹری بیوٹر (B)", lc_m2: "تجارتی تقسیم کار",
-    lc_s3: "تعمیراتی سامان کی دکان (C)", lc_m3: "مقامی سپلائر",
-    lc_unit: "ریال / ٹن", lc_saved: "اس مثال میں سب سے زیادہ اور سب سے کم پیشکش کا فرق:",
-    chip1: "فوری میچ", chip2: "پی او تیار",
+    lc_title: "بیسن مکسر", lc_sub: "درخواست · باتھ روم اور پلمبنگ", lc_live: "مثال",
+    lc_s1: "سینیٹری کی دکان (A)", lc_m1: "دکان · رجسٹریشن تصدیق شدہ",
+    lc_s2: "سینیٹری ڈسٹری بیوٹر (B)", lc_m2: "تجارتی تقسیم کار",
+    lc_s3: "پلمبنگ کی دکان (C)", lc_m3: "آپ کے قریب سپلائر",
+    lc_unit: "ریال / عدد", lc_saved: "اس مثال میں سب سے زیادہ اور سب سے کم پیشکش کا فرق:",
+    chip1: "فوری میچ", chip2: "واضح قیمتوں والی پیشکشیں",
+    tb_build: "تعمیراتی سامان", tb_finish: "فنشنگ", tb_furn: "فرنیچر اور سجاوٹ", tb_light: "بجلی اور روشنی", tb_plumb: "پلمبنگ", tb_hvac: "اے سی اور فائر", tb_tools: "اوزار اور سامان", tb_mach: "بھاری مشینری", tb_out: "باغ اور بیرونی",
+    packs_eyebrow: "آپ کے گھر کے لیے", packs_h: "اپنا گھر تیار کریں", packs_p: "جو تجدید کرنا ہے چنیں، ہم سامان کی فہرست تیار کریں گے اور سپلائرز آپ کو پیشکشیں بھیجیں گے۔",
+    pk_bathroom: "باتھ روم کی تجدید", pk_paint: "اپارٹمنٹ پینٹ", pk_lighting: "کمرے کی روشنی", pk_ac: "کمرے کا اے سی", pk_heater: "گیزر بدلیں", pk_curtains: "کمرے کے پردے", pk_outdoor: "بیرونی بیٹھک", pk_office: "شاندار دفتر",
+    boq_cta: "ابھی اپنی فہرست اپ لوڈ کریں",
+    faq_eyebrow: "عام سوالات", faq_h: "شروع کرنے سے پہلے",
+    faq_q1: "ادائیگی کیسے کروں؟", faq_a1: "آپ سپلائر کو براہ راست، طے شدہ طریقے سے، ڈیلیوری پر یا پہلے ادائیگی کرتے ہیں۔ تسعیرک کوئی رقم اپنے پاس نہیں رکھتا۔",
+    faq_q2: "آرڈر کون پہنچاتا ہے؟", faq_a2: "جس سپلائر کی پیشکش آپ چنیں وہی سامان آپ کے مقام تک پہنچاتا ہے، یا آپ خود وصول کرتے ہیں۔ پیشکش میں ڈیلیوری اور اس کا وقت لکھا ہوتا ہے۔",
+    faq_q3: "کیا سروس مفت ہے؟", faq_a3: "جی ہاں۔ قیمت کی درخواست بھیجنا اور پیشکشوں کا موازنہ مفت ہے، کوئی کمیشن نہیں۔",
+    faq_q4: "سپلائر کو کیسے پہچانوں؟", faq_a4: "ہر سپلائر کے ساتھ دکھایا جاتا ہے کہ اس کی تجارتی رجسٹریشن تصدیق شدہ ہے یا نہیں، پچھلے خریداروں کی ریٹنگ کے ساتھ۔ سپلائر آپ کا نام یا نمبر تب تک نہیں دیکھتا جب تک آپ اس کی پیشکش نہ چنیں۔",
+    faq_more: "ہم آپ کے سودے کی حفاظت کیسے کرتے ہیں",
     trustbar_lbl: "ہر شعبے کی خدمت:",
     how_eyebrow: "چار آسان مراحل", how_h: "تسعیرک کیسے کام کرتا ہے", how_p: "درخواست سے ترسیل تک، سب کچھ ایک منظم جگہ پر۔",
     step1_t: "درخواست بھیجیں", step1_p: "مواد لکھیں یا تصویر لیں یا فہرست اپ لوڈ کریں؛ مقدار اور ترسیل کا مقام طے کریں۔",
     step2_t: "سپلائرز کی پیشکشیں وصول کریں", step2_p: "آپ کی درخواست اس کے شعبے اور تخصص کے مطابق سپلائرز تک پہنچتی ہے، اور وہ اپنی پیشکشیں بھیجتے ہیں۔",
-    step3_t: "موازنہ اور انتخاب", step3_p: "پیشکشیں قیمت کے لحاظ سے ترتیب — بہترین ایک نظر میں۔",
-    step4_t: "خریداری آرڈر", step4_p: "آفر منتخب کرتے ہی پرنٹ کے لیے تیار آرڈر بن جاتا ہے۔",
+    step3_t: "موازنہ اور انتخاب", step3_p: "پیشکشیں قیمت کے لحاظ سے ترتیب میں ہوتی ہیں، بہترین ایک نظر میں؛ پھر اپنے گھر یا منصوبے کے لیے موزوں چنیں۔",
+    step4_t: "اپنی ڈیل دیکھیں", step4_p: "پیشکش چننے کے بعد ڈیلیوری قدم بہ قدم دیکھیں، پرنٹ کے لیے تیار خلاصے کے ساتھ۔",
     sectors_eyebrow: "سیکشن سے شروع کریں", sectors_h: "ہر چیز، ایک جگہ", sectors_p: "گھر کے ایک لیمپ سے پورے پراجیکٹ تک — ہم آپ کی درخواست درست سپلائرز تک پہنچاتے ہیں۔",
     cat_hvac: "اے سی اور فائر", cat_hvac_p: "اے سی، ڈکٹ، پنکھے، اسپرنکلر۔", cat_mach: "بھاری مشینری", cat_mach_p: "کھدائی مشین، کرین، ٹرک، کنکریٹ پمپ۔", cat_out: "باغ اور بیرونی", cat_out_p: "گھاس، آبپاشی، انٹرلاک، باڑ۔", cat_light: "روشنی", cat_light_p: "جھومر، اسپاٹ، بیرونی اور آرائشی لائٹس۔", cat_furn: "فرنیچر اور سجاوٹ", cat_furn_p: "میزیں، صوفے، الماریاں، پردے، مجلس۔", cat_finish: "فنشنگ اور پینٹ", cat_finish_p: "ٹائلیں، ماربل، پینٹ، جپسم، دروازے۔", cat_bath: "باتھ روم اور پلمبنگ", cat_bath_p: "مکسر، سینیٹری، پائپ، گیزر۔", cat_tools: "اوزار اور مشینری", cat_tools_p: "ہاتھ اور بجلی کے اوزار، حفاظت، مشینری۔", cat_build: "تعمیراتی سامان", cat_build_p: "سیمنٹ، سریا، بلاک، کنکریٹ، انسولیشن۔",
     sec_civil: "سول", sec_civil_p: "سریا، سیمنٹ، کنکریٹ، بلاک، نکاسی۔",
@@ -160,7 +190,7 @@ const I18N = {
     cta_b1: "اپنے موبائل نمبر سے شروع کریں", cta_b2: "ہم سے رابطہ",
     foot_tag: "سعودی عرب میں تعمیراتی سامان کے لیے قیمت اور سپلائی پلیٹ فارم۔ درخواست، موازنہ، اعتماد سے انتخاب۔",
     foot_c1: "پروڈکٹ", foot_c1_1: "کیسے کام کرتا ہے", foot_c1_2: "حصے", foot_c1_3: "مواد کی فہرست", foot_c1_4: "قیمت انڈیکس",
-    foot_c2: "سپلائرز کے لیے", foot_c2_1: "بطور سپلائر شامل ہوں", foot_c2_6: "بطور قیمت ایجنٹ شامل ہوں", hero_seller_q: "دکان کے مالک یا سامان فراہم کرتے ہیں؟", hero_seller_cta: "بطور سپلائر رجسٹر کریں", foot_c2_5: "کمپنی اکاؤنٹ", foot_c2_2: "تصدیق", foot_c2_3: "درجے", foot_c2_4: "عام سوالات",
+    foot_c2: "سپلائرز کے لیے", foot_c2_1: "بطور سپلائر شامل ہوں", foot_c2_6: "بطور قیمت ایجنٹ شامل ہوں", hero_seller_q: "دکان کے مالک یا سامان فراہم کرتے ہیں؟", hero_seller_cta: "بطور سپلائر رجسٹر کریں", foot_c2_5: "بطور کمپنی یا دکان شامل ہوں", foot_c2_2: "تصدیق", foot_c2_3: "درجے", foot_c2_4: "عام سوالات",
     foot_c3: "کمپنی", foot_c3_1: "ہمارے بارے میں", foot_c3_2: "رابطہ", foot_c3_3: "رازداری", foot_c3_4: "شرائط", foot_c3_5: "ہم آپ کے سودے کی حفاظت کیسے کرتے ہیں",
     foot_copy: "© 2026 تسعیرک۔ جملہ حقوق محفوظ ہیں۔",
   }
@@ -176,8 +206,9 @@ function setLang(lang) {
     const k = el.getAttribute("data-i18n");
     if (dict[k] != null) el.textContent = dict[k];
   });
-  document.querySelectorAll(".lang button, .foot-bottom .langs span").forEach(b => {
+  document.querySelectorAll(".lang button, .foot-bottom .langs button").forEach(b => {
     b.classList.toggle("on", b.dataset.lang === lang);
+    b.setAttribute("aria-pressed", b.dataset.lang === lang ? "true" : "false");
   });
   try { localStorage.setItem("taseerak_lang", lang); localStorage.setItem("taseerak_locale", lang); } catch (e) {}
 }
@@ -195,17 +226,17 @@ function initCanvas() {
   let mouse = { x: -9999, y: -9999 }, px = 0, py = 0;
   let last = performance.now(), t = 0, nextBroadcast = 0.7;
 
-  let ACCENT = window.__bgAccent || "245,131,31";
+  let ACCENT = window.__bgAccent || "212,165,67";
   let MOTION = window.__bgMotion != null ? window.__bgMotion : 1;
   window.setBgAccent = (rgb) => { ACCENT = rgb; window.__bgAccent = rgb; };
   window.setBgMotion = (m) => { MOTION = m; window.__bgMotion = m; };
 
   const C = {
-    line:  "120,160,235",
-    node:  "170,198,250",
-    req:   "180,205,255",
+    line:  "196,206,220",
+    node:  "214,222,232",
+    req:   "226,232,240",
     get offer() { return ACCENT; },
-    best:  "46,204,134"
+    best:  "245,197,91"
   };
 
   function resize() {
@@ -285,8 +316,8 @@ function initCanvas() {
 
     // depth wash (subtle blue + warm) for richness
     const dw = ctx.createRadialGradient(hub.x + px, hub.y + py, 10, hub.x, hub.y, Math.max(W, H) * 0.6);
-    dw.addColorStop(0, "rgba(54,104,205,0.20)");
-    dw.addColorStop(0.55, "rgba(40,80,170,0.06)");
+    dw.addColorStop(0, "rgba(16,46,69,0.22)");
+    dw.addColorStop(0.55, "rgba(11,36,56,0.08)");
     dw.addColorStop(1, "rgba(8,17,40,0)");
     ctx.fillStyle = dw; ctx.fillRect(0, 0, W, H);
 
@@ -412,8 +443,15 @@ function initCanvas() {
     vg.addColorStop(0, "rgba(8,17,40,0)");
     vg.addColorStop(1, "rgba(8,17,40,0.5)");
     ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
-
-    requestAnimationFrame(frame);
+    if (reduce) return; // a single still frame
+    if (visible) requestAnimationFrame(frame); else running = false;
+  }
+  let visible = true, running = true;
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((es) => {
+      visible = es[0].isIntersecting;
+      if (visible && !running && !reduce) { running = true; last = performance.now(); requestAnimationFrame(frame); }
+    }).observe(canvas.parentElement);
   }
 
   window.addEventListener("resize", resize);
@@ -513,7 +551,7 @@ document.addEventListener("DOMContentLoaded", () => {
   var saved = "ar"; try { saved = localStorage.getItem("taseerak_locale") || localStorage.getItem("taseerak_lang") || "ar"; } catch (e) {}
   setLang(saved);
 
-  document.querySelectorAll(".lang button, .foot-bottom .langs span").forEach(b => {
+  document.querySelectorAll(".lang button, .foot-bottom .langs button").forEach(b => {
     b.addEventListener("click", () => setLang(b.dataset.lang));
   });
 
@@ -524,8 +562,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // mobile menu
   const mt = document.querySelector(".menu-toggle");
-  mt?.addEventListener("click", () => nav.classList.toggle("mobile-open"));
-  document.querySelectorAll(".nav-links a").forEach(a => a.addEventListener("click", () => nav.classList.remove("mobile-open")));
+  const setMenu = (open) => { nav.classList.toggle("mobile-open", open); mt?.setAttribute("aria-expanded", open ? "true" : "false"); };
+  mt?.addEventListener("click", (e) => { e.stopPropagation(); setMenu(!nav.classList.contains("mobile-open")); });
+  document.querySelectorAll(".nav-links a").forEach(a => a.addEventListener("click", () => setMenu(false)));
+  document.addEventListener("click", (e) => { if (nav.classList.contains("mobile-open") && !nav.contains(e.target)) setMenu(false); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && nav.classList.contains("mobile-open")) { setMenu(false); mt?.focus(); } });
 
   initCanvas();
   initObservers();
