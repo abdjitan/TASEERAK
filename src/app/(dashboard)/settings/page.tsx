@@ -467,6 +467,22 @@ export default function SettingsPage() {
             {tab === 'profile' && (
               <div className="bg-white rounded-2xl p-7 border border-gray-100 shadow-sm animate-fade-in">
                 <h2 className="text-lg font-bold mb-6" style={{ color: '#0B2438' }}>{t.profileTab}</h2>
+                {/* owner 2026-11-22: «لبيتي» = the simple request and a short home; changeable here any time */}
+                {profile?.role === 'contractor' && (
+                  <div className="mb-6 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/5 p-4">
+                    <div className="text-sm font-bold text-[#0B2438] mb-2">{locale === 'en' ? 'Who are you buying for?' : locale === 'ur' ? 'آپ کس کے لیے خرید رہے ہیں؟' : 'لمن تشتري؟'}</div>
+                    <div className="grid grid-cols-2 gap-2" role="radiogroup">
+                      {([['individual', locale === 'en' ? 'My home' : locale === 'ur' ? 'اپنا گھر' : 'لبيتي', locale === 'en' ? 'Simple request and home screen' : locale === 'ur' ? 'آسان درخواست' : 'طلب وصفحة رئيسية أبسط'], ['business', locale === 'en' ? 'Contractor or company' : locale === 'ur' ? 'ٹھیکیدار یا کمپنی' : 'مقاول أو شركة', locale === 'en' ? 'All options' : locale === 'ur' ? 'تمام اختیارات' : 'كل الخيارات']] as const).map(([v, label, sub]) => (
+                        <button key={v} type="button" role="radio" aria-checked={profile?.buyer_type === v}
+                          onClick={async () => { const prev = profile?.buyer_type; setProfile((p: any) => ({ ...p, buyer_type: v })); const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id); if (error) setProfile((p: any) => ({ ...p, buyer_type: prev })) }}
+                          className={`text-start rounded-xl border-2 px-3 py-2.5 ${profile?.buyer_type === v ? 'border-[#D4A543] bg-white' : 'border-gray-200 bg-white/60 hover:border-gray-300'}`}>
+                          <span className="block text-sm font-bold text-[#0B2438]">{profile?.buyer_type === v ? '✓ ' : ''}{label}</span>
+                          <span className="block text-[11px] text-gray-500">{sub}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Read-only info */}
                 <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-[#f4f6f9] rounded-xl">

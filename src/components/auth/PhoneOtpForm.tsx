@@ -52,6 +52,7 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
   const [e164, setE164] = useState('')
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
+  const [buyerType, setBuyerType] = useState<'individual' | 'business' | ''>('')
   const [agree, setAgree] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -108,7 +109,7 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
   async function session(mode: 'login' | 'signup') {
     const res = await fetch('/api/auth/phone-session', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken: tokenRef.current, mode, locale, ...(mode === 'signup' ? { full_name: name.trim(), terms_version: TERMS_VERSION } : {}) }),
+      body: JSON.stringify({ idToken: tokenRef.current, mode, locale, ...(mode === 'signup' ? { full_name: name.trim(), terms_version: TERMS_VERSION, ...(buyerType ? { buyer_type: buyerType } : {}) } : {}) }),
     })
     return { ok: res.ok, j: await res.json().catch(() => ({})) }
   }
@@ -135,6 +136,7 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
   async function create(e?: any) {
     e?.preventDefault()
     if (name.trim().length < 2) { setError(t.badName); return }
+    if (!buyerType) { setError(locale === 'en' ? 'Choose who you are buying for.' : locale === 'ur' ? 'منتخب کریں کہ آپ کس کے لیے خرید رہے ہیں۔' : 'اختر لمن تشتري.'); return }
     if (!agree) { setError(t.needTerms); return }
     setLoading(true); setError('')
     const { ok, j } = await session('signup')
@@ -175,6 +177,20 @@ export default function PhoneOtpForm({ onSignedIn }: { onSignedIn: () => void })
         <div>
           <label htmlFor="otp-name" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.name}</label>
           <input id="otp-name" value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} autoComplete="name" className="input-field" required disabled={loading} autoFocus />
+        </div>
+        <div role="radiogroup" aria-label={locale === 'en' ? 'Who are you buying for?' : locale === 'ur' ? 'آپ کس کے لیے خرید رہے ہیں؟' : 'لمن تشتري؟'}>
+          <div className="block text-[13px] font-bold text-ink-2 mb-1.5">{locale === 'en' ? 'Who are you buying for?' : locale === 'ur' ? 'آپ کس کے لیے خرید رہے ہیں؟' : 'لمن تشتري؟'}</div>
+          <div className="grid grid-cols-2 gap-2">
+            {([['individual', locale === 'en' ? 'My home' : locale === 'ur' ? 'اپنا گھر' : 'لبيتي', locale === 'en' ? 'A simple, quick request' : locale === 'ur' ? 'آسان اور تیز درخواست' : 'طلب بسيط وسريع'],
+               ['business', locale === 'en' ? 'Contractor or company' : locale === 'ur' ? 'ٹھیکیدار یا کمپنی' : 'مقاول أو شركة', locale === 'en' ? 'Specs, VAT invoice, quantities' : locale === 'ur' ? 'تفصیلات، VAT انوائس' : 'مواصفات وفاتورة ضريبية وجدول كميات']] as const).map(([v, label, sub]) => (
+              <button key={v} type="button" role="radio" aria-checked={buyerType === v} onClick={() => setBuyerType(v)} disabled={loading}
+                className={`text-start rounded-xl border-2 px-3 py-2.5 transition-colors ${buyerType === v ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                <span className="block text-sm font-bold text-navy">{buyerType === v ? '✓ ' : ''}{label}</span>
+                <span className="block text-[11px] text-ink-2">{sub}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[11px] text-ink-2 mt-1">{locale === 'en' ? 'You can change it any time in Settings.' : locale === 'ur' ? 'آپ اسے کسی بھی وقت ترتیبات میں بدل سکتے ہیں۔' : 'يمكنك تغييره في أي وقت من الإعدادات.'}</p>
         </div>
         <label className="flex items-start gap-2 text-[13px] text-ink-2">
           <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-1" />

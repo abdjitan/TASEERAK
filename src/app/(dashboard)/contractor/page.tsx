@@ -243,7 +243,7 @@ export default function ContractorDashboard() {
     >
       <div className="max-w-6xl mx-auto">
         {/* السوق: «ماذا تحتاج اليوم؟» + الأقسام بالصور (التصميم المعتمد) */}
-        <MarketHero locale={locale} />
+        <MarketHero locale={locale} homeBuyer={homeBuyer} />
         {/* أكمل ملفك — يظهر بعد التسجيل المبسّط حتى تُعبّأ البيانات */}
         {!profile?.region && (
           <Link href="/onboarding" className="flex items-center justify-between gap-3 rounded-2xl p-4 mb-4 text-[#071827] hover:shadow-lg transition-shadow" style={{ background: 'linear-gradient(120deg,#D4A543,#8F6820)' }}>

@@ -1,4 +1,4 @@
-// POST /api/auth/phone-session { idToken, mode: 'login'|'signup', full_name?, terms_version?, locale?, client? }
+// POST /api/auth/phone-session { idToken, mode: 'login'|'signup', full_name?, terms_version?, locale?, client?, buyer_type? }
 // Buyer sign-up / sign-in with the mobile only (owner 2026-11-17, migration 220). The browser (or app)
 // proves the number with a Google SMS code (Firebase phone auth) and sends the ID token here.
 //  - login: the buyer account that owns this verified number gets a Supabase session.
@@ -48,7 +48,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'signup_failed' }, { status: 500 })
     }
     created = true
-    await admin.from('profiles').update({ phone, phone_verified_at: new Date().toISOString() }).eq('id', cu.user.id)
+    const buyerType = body?.buyer_type === 'individual' || body?.buyer_type === 'business' ? body.buyer_type : null
+    await admin.from('profiles').update({ phone, phone_verified_at: new Date().toISOString(), ...(buyerType ? { buyer_type: buyerType } : {}) }).eq('id', cu.user.id)
     // WhatsApp check (best effort), as /api/phone/confirm does
     try {
       const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || ''

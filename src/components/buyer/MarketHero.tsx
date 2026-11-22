@@ -8,6 +8,8 @@ import { Search, Plus, FileSpreadsheet, Camera } from 'lucide-react'
 import { searchProducts } from '@/lib/productSearch'
 import { getProductLabel } from '@/types'
 import { BROWSE_SECTIONS } from '@/lib/browseCategories'
+import { createClient } from '@/lib/supabase/client'
+import { sectionRank, bySectionRank, type DemandRow } from '@/lib/sectionOrder'
 
 // All sections, building first (owner 2026-10-19: show every category photo, building materials first)
 const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub: { ar: string; en: string; ur: string } }[] = [
@@ -22,7 +24,7 @@ const CATS: { key: string; img: string; ar: string; en: string; ur: string; sub:
   { key: 'outdoor', img: 'outdoor', ar: 'الحدائق والخارجيات', en: 'Garden & outdoor', ur: 'باغ اور بیرونی', sub: { ar: 'عشب وري وإنترلوك', en: 'Turf, irrigation, interlock', ur: 'گھاس، آبپاشی' } },
 ]
 
-export default function MarketHero({ locale }: { locale: string }) {
+export default function MarketHero({ locale, homeBuyer = false }: { locale: string; homeBuyer?: boolean }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: { ar: string; en: string; ur: string }) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
   const router = useRouter()
@@ -31,6 +33,17 @@ export default function MarketHero({ locale }: { locale: string }) {
   const [touch, setTouch] = useState(false)
   useEffect(() => { try { setTouch(window.matchMedia('(pointer: coarse)').matches) } catch {} }, [])
   const [open, setOpen] = useState(false)
+  // sections ordered by what buyers request most (homes first for a home buyer); cached for the session
+  const [demand, setDemand] = useState<DemandRow[] | null>(null)
+  useEffect(() => {
+    try { const c = sessionStorage.getItem('ts_section_demand'); if (c) { setDemand(JSON.parse(c)); return } } catch {}
+    createClient().rpc('get_section_demand').then(({ data }: any) => {
+      if (Array.isArray(data)) { setDemand(data); try { sessionStorage.setItem('ts_section_demand', JSON.stringify(data)) } catch {} }
+    }, () => {})
+  }, [])
+  const rank = useMemo(() => sectionRank(homeBuyer, demand), [homeBuyer, demand])
+  const cats = useMemo(() => bySectionRank(CATS, c => c.key, rank), [rank])
+  const chips = useMemo(() => bySectionRank(BROWSE_SECTIONS, b => b.key, rank), [rank])
   const [active, setActive] = useState(-1)
   // Live suggestions while typing («بلو» → بلوك، بلوك عازل…), from the same catalog search the request page uses.
   const hits = useMemo(() => {
@@ -117,15 +130,15 @@ export default function MarketHero({ locale }: { locale: string }) {
           <Link href="/contractor/rfq/quick" className="inline-flex items-center gap-1.5 rounded-xl px-5 py-3 text-sm font-extrabold text-[#071827] shadow-md hover:brightness-105 transition" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
             <Plus className="w-4 h-4" aria-hidden />{L('Ask a price for any product', 'کسی بھی چیز کی قیمت پوچھیں', 'اطلب سعر أي منتج')}
           </Link>
-          <Link href="/contractor/project/new" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-[#F5C55B] transition-colors">
+          {!homeBuyer && (<Link href="/contractor/project/new" className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-[#F5C55B] transition-colors">
             <FileSpreadsheet className="w-4 h-4" aria-hidden />{L('A big project? Upload your materials list', 'بڑا پراجیکٹ؟ سامان کی فہرست اپ لوڈ کریں', 'تجهّز مشروعًا كبيرًا؟ أضف قائمة المواد')}
-          </Link>
+          </Link>)}
         </div>
       </section>
 
       {/* every section as a medallion chip (same row as the mobile app) */}
       <div className="mt-4 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" aria-label={L('Sections', 'حصے', 'الأقسام')}>
-        {BROWSE_SECTIONS.map(b => (
+        {chips.map(b => (
           <Link key={b.key} href={`/contractor/rfq/quick?section=${b.key}`}
             className="shrink-0 inline-flex items-center gap-2 ps-1 pe-3.5 py-1 rounded-full border border-gray-200 bg-white text-[13px] font-bold text-[#0B2438] hover:border-[#D4A543] transition-colors">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -138,12 +151,12 @@ export default function MarketHero({ locale }: { locale: string }) {
       <div className="mt-6 flex items-end justify-between gap-3">
         <div>
           <h3 className="text-lg font-extrabold text-[#0B2438]">{L('Start with what you need', 'جو چاہیے وہاں سے شروع کریں', 'ابدأ من الشيء الذي تحتاجه')}</h3>
-          <p className="text-xs text-[#48596E]">{L('For your home, a renovation or a whole project', 'گھر، مرمت یا پورے پراجیکٹ کے لیے', 'للبيت أو التجديد أو مشروع كامل')}</p>
+          <p className="text-xs text-[#48596E]">{homeBuyer ? L('The sections homes ask for most come first', 'گھروں کی سب سے زیادہ مانگ والے حصے پہلے', 'الأقسام الأكثر طلباً للبيوت أولاً') : L('For your home, a renovation or a whole project', 'گھر، مرمت یا پورے پراجیکٹ کے لیے', 'للبيت أو التجديد أو مشروع كامل')}</p>
         </div>
         <Link href="/contractor/rfq/quick" className="text-sm font-bold text-[#8F6820] hover:underline whitespace-nowrap">{L('All categories', 'تمام زمرے', 'كل التصنيفات')} ←</Link>
       </div>
       <div className="mt-3 grid grid-cols-3 lg:grid-cols-9 gap-2 sm:gap-3">
-        {CATS.map(c => (
+        {cats.map(c => (
           <Link key={c.key} href={`/contractor/rfq/quick?section=${c.key}`}
             className="group relative overflow-hidden rounded-2xl min-h-[112px] sm:min-h-[140px] bg-[#0B2438] shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all">
             {/* eslint-disable-next-line @next/next/no-img-element */}

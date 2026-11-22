@@ -620,7 +620,17 @@ export default function QuickRequestPage() {
         <div className="space-y-5 lg:col-start-1 lg:row-start-1">
         <div>
           <div className="text-xs font-bold text-[#9D7425] mb-1">{L('One request… and offers from several suppliers in your hands', 'ایک درخواست… اور کئی سپلائرز کی پیشکشیں آپ کے ہاتھ میں', 'طلب واحد… وعروض عدة موردين بين يديك')}</div>
-          <h1 className="text-2xl font-extrabold text-navy">{L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
+          <h1 className="text-2xl font-extrabold text-navy">{simple ? L('What does your home need?', 'آپ کے گھر کو کیا چاہیے؟', 'ماذا يحتاج بيتك؟') : L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
+          {simple && <p className="mt-1 text-sm font-semibold text-[#0B2438]">{L('Three steps: what you need, how many, and where.', 'تین قدم: کیا، کتنا، اور کہاں۔', 'ثلاث خطوات: ماذا تحتاج، وكم، وأين.')}</p>}
+          {buyerType === 'business' && (
+            <a href="/contractor/project/new" className="mt-3 flex items-center justify-between gap-3 rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 px-4 py-3 hover:bg-[#D4A543]/20">
+              <span>
+                <span className="block text-sm font-extrabold text-navy"><Glyph e="📊" /> {L('Upload a bill of quantities', 'BOQ اپ لوڈ کریں', 'ارفع جدول الكميات')}</span>
+                <span className="block text-[11px] text-gray-600">{L('Excel, PDF or a photo: every item is extracted and sent to the right suppliers', 'Excel، PDF یا تصویر', 'Excel أو PDF أو صورة: نستخرج كل بند ونرسله إلى الموردين المختصين')}</span>
+              </span>
+              <span className="text-[#8F6820] font-bold" aria-hidden="true">{dir === 'rtl' ? '←' : '→'}</span>
+            </a>
+          )}
           {buyerType && (
             <div className="mt-1 text-[11px] text-gray-500">{buyerType === 'individual' ? L('Simple request for your home', 'آپ کے گھر کے لیے آسان درخواست', 'طلب بسيط لبيتك') : L('Full request (contractor/company)', 'مکمل درخواست (ٹھیکیدار/کمپنی)', 'طلب كامل (مقاول أو شركة)')} · <button type="button" className="underline" onClick={() => setBuyerType(null)}>{L('change', 'تبدیل کریں', 'تغيير')}</button></div>
           )}
@@ -655,10 +665,10 @@ export default function QuickRequestPage() {
 
         {/* Input: text + mic + photo */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
-          <label htmlFor="quick-text" className="block text-sm font-bold text-navy">{L('Write or paste your list', 'اپنی فہرست لکھیں', 'اكتب أو الصق قائمتك')}</label>
+          <label htmlFor="quick-text" className="block text-sm font-bold text-navy">{simple && <span className="inline-grid place-items-center w-6 h-6 me-1.5 rounded-full bg-[#D4A543] text-[#071827] text-xs font-extrabold align-middle">1</span>}{simple ? L('What do you need? Write it, say it or take a photo', 'کیا چاہیے؟ لکھیں، بولیں یا تصویر لیں', 'ماذا تحتاج؟ اكتبه أو قله أو صوّره') : L('Write or paste your list', 'اپنی فہرست لکھیں', 'اكتب أو الصق قائمتك')}</label>
           <textarea id="quick-text" value={text} onChange={e => setText(e.target.value)} rows={4}
             className="input-field text-base leading-relaxed"
-            placeholder={L('e.g. 10 bags cement, 500 hollow blocks 20cm, 2 tons rebar 12mm', 'مثلاً: 10 بوری سیمنٹ، 500 بلاک', 'مثلاً: ١٠ أكياس أسمنت، ٥٠٠ بلك ٢٠، ٢ طن حديد ١٢')} />
+            placeholder={simple ? L('e.g. 6 ceiling spotlights, a basin mixer, 2 gallons of white paint', 'مثلاً: 6 سیلنگ اسپاٹ لائٹس، ایک مکسر، 2 گیلن سفید پینٹ', 'مثلاً: ٦ سبوتات سقف، خلاط مغسلة، ٢ جالون دهان أبيض') : L('e.g. 10 bags cement, 500 hollow blocks 20cm, 2 tons rebar 12mm', 'مثلاً: 10 بوری سیمنٹ، 500 بلاک', 'مثلاً: ١٠ أكياس أسمنت، ٥٠٠ بلك ٢٠، ٢ طن حديد ١٢')} />
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={parseText} disabled={!text.trim() || parsing} className="btn-orange px-5 py-2.5 rounded-xl font-bold disabled:opacity-50">
               {parsing ? L('Reading…', 'پڑھ رہے ہیں…', 'جارٍ القراءة…') : L('Organise my list', 'فہرست ترتیب دیں', 'رتّب قائمتي')}
@@ -701,7 +711,7 @@ export default function QuickRequestPage() {
         ) : (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
-              <h2 id="request-list" className="font-bold text-navy scroll-mt-24">{L('Your list', 'آپ کی فہرست', 'قائمتك')} <span className="text-gray-400 font-normal">({lines.length})</span></h2>
+              <h2 id="request-list" className="font-bold text-navy scroll-mt-24">{simple && <span className="inline-grid place-items-center w-6 h-6 me-1.5 rounded-full bg-[#D4A543] text-[#071827] text-xs font-extrabold align-middle">2</span>}{simple ? L('How many?', 'کتنا؟', 'كم تحتاج؟') : L('Your list', 'آپ کی فہرست', 'قائمتك')} <span className="text-gray-400 font-normal">({lines.length})</span></h2>
               <span className="text-xs text-gray-400">{L('Check each line before sending', 'بھیجنے سے پہلے چیک کریں', 'راجع كل سطر قبل الإرسال')}</span>
             </div>
             <div className="flex items-center justify-between text-[11px] text-gray-400">
@@ -921,7 +931,7 @@ export default function QuickRequestPage() {
                 </button>
               ))}
             </div>
-            <h2 className="font-bold text-navy flex items-center gap-1.5"><SellerIcon name="pin" className="w-4 h-4 text-[#D4A543]" />{pickup ? L('Your area', 'آپ کا علاقہ', 'منطقتك') : L('Delivery to', 'ڈیلیوری', 'التوصيل إلى')}</h2>
+            <h2 className="font-bold text-navy flex items-center gap-1.5">{simple && <span className="inline-grid place-items-center w-6 h-6 me-1.5 rounded-full bg-[#D4A543] text-[#071827] text-xs font-extrabold align-middle">3</span>}<SellerIcon name="pin" className="w-4 h-4 text-[#D4A543]" />{pickup ? L('Your area', 'آپ کا علاقہ', 'منطقتك') : L('Delivery to', 'ڈیلیوری', 'التوصيل إلى')}</h2>
             <div className="grid grid-cols-2 gap-2">
               <select value={region} onChange={e => { setRegion(e.target.value); setCity('') }} className="input-field" aria-label={L('Region', 'علاقہ', 'المنطقة')}>
                 <option value="">{L('Region', 'علاقہ', 'المنطقة')}</option>
@@ -932,7 +942,7 @@ export default function QuickRequestPage() {
                 {((CITIES_BY_REGION as any)[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
               </select>
             </div>
-            {region && (
+            {region && !simple && (
               <div>
                 <div className="text-xs font-bold text-gray-600 mb-1.5">{L('Who should receive your request?', 'آپ کی درخواست کس کو بھیجی جائے؟', 'لمن نرسل طلبك؟')}</div>
                 <div role="radiogroup" className="grid grid-cols-2 gap-2">
@@ -957,8 +967,8 @@ export default function QuickRequestPage() {
                 <p className="text-[11px] text-gray-400"><Glyph e="🔒" /> {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
               </div>
             )}
-            {/* when the buyer needs the prices — visible, with a same-day option (persona: the villa contractor) */}
-            <div>
+            {/* when the buyer needs the prices — visible, with a same-day option (persona: the villa contractor); a home buyer gets 2 days */}
+            <div className={simple ? 'hidden' : ''}>
               <div className="text-xs font-bold text-gray-600 mb-1.5">{L('How long should suppliers have to send offers?', 'سپلائرز کتنی دیر میں پیشکش بھیجیں؟', 'خلال كم تريد أن تصلك العروض؟')}</div>
               <div role="radiogroup" aria-label={L('How long should suppliers have to send offers?', 'سپلائرز کتنی دیر میں پیشکش بھیجیں؟', 'خلال كم تريد أن تصلك العروض؟')} className="flex flex-wrap gap-1.5">
                 {([[6, L('Today', 'آج', 'اليوم')], [24, L('Tomorrow', 'کل', 'غداً')], [48, L('2 days', '2 دن', 'يومان')], [72, L('3 days', '3 دن', '3 أيام')], [168, L('A week', 'ایک ہفتہ', 'أسبوع')]] as [number, string][]).map(([h, lab]) => (
