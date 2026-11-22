@@ -75,7 +75,7 @@ export const HOME_PACKS: HomePack[] = [
     ],
   },
   {
-    id: 'heater', img: 'plumbing', cover: 'سخانات مياه كهربائية', ar: 'تغيير سخان', en: 'Replace a water heater', ur: 'گیزر بدلیں',
+    id: 'heater', img: 'plumbing', cover: 'سخانات مياه كهربائية', photo: '/images/packs/heater.webp', ar: 'تغيير سخان', en: 'Replace a water heater', ur: 'گیزر بدلیں',
     sub: { ar: 'سخان وصمام أمان وتوصيلات', en: 'Heater, safety valve, hoses', ur: 'گیزر، سیفٹی والو، پائپ' },
     items: [
       { name: 'سخانات مياه كهربائية', sector: 'mechanical', qty: 1 },
