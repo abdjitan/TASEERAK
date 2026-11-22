@@ -3,7 +3,7 @@
 import { SUB_CATEGORIES } from '@/types'
 import {
   BrickWall, Zap, ShowerHead, PaintRoller, Wrench, Factory, Building2, Truck, Snowflake, DoorOpen, FireExtinguisher, Cctv,
-  Layers, Trees, Sofa, Lightbulb, Sun, CookingPot, Briefcase, Landmark, Waves, Warehouse, Droplets, ArrowUpDown, Package, HardHat, Hammer,
+  Layers, Trees, Sofa, Lightbulb, Sun, CookingPot, Briefcase, Landmark, Waves, Warehouse, Droplets, ArrowUpDown, Package, HardHat, Hammer, Check,
 } from 'lucide-react'
 import { SUPPLIER_PACKS, packSectors, packSpecialties, isPackSelected, type SupplierPack } from '@/lib/supplierPacks'
 
@@ -28,6 +28,7 @@ export default function SupplierPackPicker({
   locale?: string
 }) {
   const L = (p: SupplierPack) => (locale === 'en' ? p.en : locale === 'ur' ? p.ur : p.ar)
+  const T = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const H = (p: SupplierPack) => (locale === 'en' ? p.hint.en : locale === 'ur' ? p.hint.ur : p.hint.ar)
 
   function toggle(p: SupplierPack) {
@@ -51,18 +52,26 @@ export default function SupplierPackPicker({
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
       {SUPPLIER_PACKS.map(p => {
         const on = isPackSelected(p, specialties)
+        const all = packSpecialties(p)
+        const have = all.filter(k => specialties.includes(k)).length
+        const partial = !on && have > 0
         return (
           <button key={p.id} type="button" onClick={() => toggle(p)} aria-pressed={on}
-            className={`relative text-start p-3 rounded-xl border-2 transition-all ${on ? 'shadow-sm' : 'bg-white hover:border-gray-300'}`}
-            style={on ? { borderColor: '#0F6E56', background: 'rgba(15,110,86,0.07)' } : { borderColor: '#e5e7eb' }}>
+            className={`relative text-start p-3 min-h-11 rounded-xl border-2 transition-all ${on ? 'shadow-sm' : 'bg-white hover:border-gray-300'}`}
+            style={on ? { borderColor: '#D4A543', background: 'rgba(212,165,67,0.10)' } : partial ? { borderColor: '#D4A543', borderStyle: 'dashed' } : { borderColor: '#e5e7eb' }}>
             {(() => { const I = PACK_ICON[p.id] || Package; return (
               <span className="grid place-items-center w-9 h-9 rounded-lg mb-2" aria-hidden="true"
-                style={on ? { background: '#0F6E56', color: '#fff' } : { background: 'rgba(212,165,67,.14)', color: '#8F6820' }}>
+                style={on ? { background: '#D4A543', color: '#071827' } : { background: 'rgba(212,165,67,.14)', color: '#8F6820' }}>
                 <I className="w-[18px] h-[18px]" strokeWidth={1.9} />
               </span>) })()}
             <div className="font-bold text-sm text-navy leading-snug">{L(p)}</div>
-            <div className="text-[11px] text-gray-500 mt-0.5 leading-snug">{H(p)}</div>
-            {on && <span className="absolute top-2 end-2 w-5 h-5 grid place-items-center rounded-full text-white text-[11px]" style={{ background: '#0F6E56' }}>✓</span>}
+            <div className="text-xs text-gray-500 mt-0.5 leading-snug">{H(p)}</div>
+            {(on || partial) && (
+              <div className="text-xs font-bold mt-1" style={{ color: on ? '#071827' : '#8F6820' }}>
+                {T(`${have} of ${all.length}`, `${all.length} میں سے ${have}`, `${have} من ${all.length}`)}
+              </div>
+            )}
+            {on && <span className="absolute top-2 end-2 w-6 h-6 grid place-items-center rounded-full" style={{ background: '#D4A543', color: '#071827' }} aria-hidden="true"><Check className="w-4 h-4" strokeWidth={2.5} /></span>}
           </button>
         )
       })}

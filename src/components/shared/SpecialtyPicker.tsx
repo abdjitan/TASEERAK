@@ -4,12 +4,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, SECTOR_PRODUCTS, sortGroupKeys, detectSubCategory, hydrateTaxonomy } from '@/types'
 import CatIcon from './CatIcon'
+import { Check, ChevronDown } from 'lucide-react'
 import { productImageUrl, specialtyImageUrl, groupImageUrl } from '@/lib/productImage'
 
 // منتقي القطاعات/التخصصات الموحّد — يُستخدم في «أكمل ملفك» وصفحة «تخصصاتي» معاً حتى تكون
 // التجربة والأيقونات واحدة. يُرطّب التصنيفات من قاعدة البيانات (get_taxonomy) ويُعيد الرسم،
 // فتظهر تعديلات الأدمن (الأسماء/الأيقونات/المجموعات) مباشرةً في كل الشاشات.
-const SECTOR_COLORS: Record<string, string> = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
+// Selected = gold border, 10% gold background, navy text and a check (brand; no per-sector colours).
+const GOLD = '#D4A543'
+const NAVY = '#071827'
 const SECTOR_TR: Record<string, any> = {
   civil: { en: 'Civil', ur: 'سول' }, architectural: { en: 'Architectural', ur: 'تعمیراتی' },
   electrical: { en: 'Electrical', ur: 'برقی' }, mechanical: { en: 'Mechanical', ur: 'مکینیکل' },
@@ -76,28 +79,31 @@ export default function SpecialtyPicker({
         const subs = (SUB_CATEGORIES as any)[sector] || {}
         const subKeys = Object.keys(subs)
         const selCount = specialties.filter((s) => subKeys.includes(s)).length
-        const color = SECTOR_COLORS[sector]
         const groups: Record<string, string[]> = {}
         Object.entries(subs).forEach(([key, sub]: any) => { (groups[sub.group] = groups[sub.group] || []).push(key) })
         return (
           <div key={sector}
-            className={`rounded-xl border overflow-hidden transition-all bg-white ${selected ? 'border-line shadow-md2' : 'border-gray-200 hover:border-[#cfd7e6]'}`}
-            style={selected ? { borderInlineStartWidth: 4, borderInlineStartStyle: 'solid', borderInlineStartColor: color } : {}}>
-            <div onClick={() => { if (!selected) onToggleSector(sector); onOpenSector(isOpen ? null : sector) }}
-              className={`w-full flex items-center justify-between p-3.5 min-h-[48px] cursor-pointer transition-colors ${selected ? '' : 'hover:bg-gray-50'}`}
-              style={selected ? { background: color + '0F' } : {}}>
-              <div className="flex items-center gap-2">
-                {selected && <span className="w-5 h-5 grid place-items-center rounded-full text-white text-[11px] shrink-0" style={{ background: color }}>✓</span>}
-                <span className="font-semibold text-sm" style={{ color: selected ? color : '#374151' }}>{sl(sector)}</span>
-                {selCount > 0 && <span className="text-[10px] font-bold text-white rounded-full px-2 py-0.5" style={{ background: color }}>{selCount}</span>}
-              </div>
-              <div className="flex items-center gap-2">
-                {selected && (
-                  <button type="button" onClick={(e) => { e.stopPropagation(); onToggleSector(sector); if (isOpen) onOpenSector(null) }}
-                    className="text-[11px] text-red-400 hover:text-red-600">{rm}</button>
-                )}
-                <span className="text-gray-400 text-xs">{isOpen ? '▲' : '▼'}</span>
-              </div>
+            className={`rounded-xl border-2 overflow-hidden transition-all bg-white ${selected ? 'shadow-md2' : 'border-gray-200 hover:border-[#cfd7e6]'}`}
+            style={selected ? { borderColor: GOLD } : {}}>
+            <div className="flex items-stretch" style={selected ? { background: 'rgba(212,165,67,0.10)' } : {}}>
+              {/* selecting is a separate 44px checkbox; the header itself only opens or closes the list */}
+              <button type="button" role="checkbox" aria-checked={selected}
+                aria-label={selected ? `${rm}: ${sl(sector)}` : sl(sector)}
+                onClick={() => { onToggleSector(sector); if (selected) { if (isOpen) onOpenSector(null) } else if (!isOpen) onOpenSector(sector) }}
+                className="w-11 min-h-11 shrink-0 grid place-items-center">
+                <span className="w-6 h-6 grid place-items-center rounded-md border-2"
+                  style={selected ? { background: GOLD, borderColor: GOLD, color: NAVY } : { borderColor: '#9ca3af', background: '#fff' }}>
+                  {selected && <Check className="w-4 h-4" strokeWidth={2.5} aria-hidden="true" />}
+                </span>
+              </button>
+              <button type="button" aria-expanded={isOpen} onClick={() => onOpenSector(isOpen ? null : sector)}
+                className={`flex-1 min-w-0 flex items-center justify-between gap-2 py-3 pe-3.5 min-h-[48px] text-start transition-colors ${selected ? '' : 'hover:bg-gray-50'}`}>
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className="font-semibold text-sm truncate" style={{ color: selected ? NAVY : '#374151' }}>{sl(sector)}</span>
+                  {selCount > 0 && <span className="text-xs font-bold rounded-full px-2 py-0.5 shrink-0" style={{ background: GOLD, color: NAVY }}>{selCount}</span>}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+              </button>
             </div>
             {isOpen && (
               <div className="p-3 border-t border-gray-100 bg-white space-y-2">
@@ -118,9 +124,9 @@ export default function SpecialtyPicker({
                             onError={(e: any) => { e.currentTarget.style.display = 'none' }}
                             className="w-7 h-7 object-contain rounded-md bg-white border border-gray-100 shrink-0" />
                           <span className="text-sm font-bold text-gray-700 truncate">{grpLabel}</span>
-                          {selInGroup > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full text-white shrink-0" style={{ background: color }}>{selInGroup}</span>}
+                          {selInGroup > 0 && <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: GOLD, color: NAVY }}>{selInGroup}</span>}
                         </span>
-                        <span className="text-gray-400 text-xs shrink-0">{gOpen ? '▲' : '▼'}</span>
+                        <ChevronDown className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${gOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
                       </button>
                       {gOpen && (
                         <div className="p-2.5 pt-1 grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -130,9 +136,9 @@ export default function SpecialtyPicker({
                             const subLabel = locale === 'en' ? sub.en : locale === 'ur' ? sub.ur : sub.ar
                             // بطاقة عمودية بصورة المنتج بالأعلى (نفس نمط صفحة المقاول)؛ الإيموجي احتياطي.
                             return (
-                              <button key={key} type="button" onClick={() => onToggleSpecialty(key)}
-                                className={`flex flex-col items-center gap-1.5 text-center px-2 py-2 rounded-xl text-xs font-semibold border-2 transition-all ${active ? 'border-transparent text-white' : 'border-gray-200 text-gray-700 hover:border-[#D4A543]/50 bg-white'}`}
-                                style={active ? { background: color } : {}}>
+                              <button key={key} type="button" onClick={() => onToggleSpecialty(key)} aria-pressed={active}
+                                className={`flex flex-col items-center gap-1.5 text-center px-2 py-2 min-h-11 rounded-xl text-xs font-semibold border-2 transition-all ${active ? 'text-navy' : 'border-gray-200 text-gray-700 hover:border-[#D4A543]/50 bg-white'}`}
+                                style={active ? { borderColor: GOLD, background: 'rgba(212,165,67,0.10)', color: NAVY } : {}}>
                                 {/* صورة التخصص المخصّصة أولاً، ثم صورة منتج ممثّل، ثم الإيموجي */}
                                 <img src={specialtyImageUrl(key)} alt="" loading="lazy"
                                   data-fb={productImageUrl(repProduct[sector]?.[key] || productNameForImage(sub.ar))}
@@ -143,7 +149,7 @@ export default function SpecialtyPicker({
                                   }}
                                   className="w-full object-contain rounded-lg bg-white" style={{ height: 54 }} />
                                 <span className="text-3xl leading-none" style={{ display: 'none' }}>{sub.icon}</span>
-                                <span className="leading-tight flex items-center gap-1 justify-center">{active && <span>✓</span>}{subLabel}</span>
+                                <span className="leading-tight flex items-center gap-1 justify-center">{active && <Check className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />}{subLabel}</span>
                               </button>
                             )
                           })}

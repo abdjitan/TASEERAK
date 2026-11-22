@@ -32,7 +32,8 @@ const Turnstile = forwardRef(function Turnstile(
   const containerRef = useRef<HTMLDivElement>(null)
   const widgetIdRef = useRef<string | null>(null)
   const [errCode, setErrCode] = useState('') // logged, not shown
-  // no token after an error or 15 s: offer «حاول مرة أخرى» (as in the app)
+  // only when the widget really reports an error (or the script fails to load): offer «حاول مرة أخرى».
+  // No timer: a slow check is not an error, and Turnstile retries on its own (UX-133).
   const [stuck, setStuck] = useState(false)
   const gotToken = useRef(false)
   const lang = typeof document !== 'undefined' ? (document.documentElement.lang || 'ar') : 'ar'
@@ -75,9 +76,7 @@ const Turnstile = forwardRef(function Turnstile(
         })
       })
       .catch(() => { setStuck(true); onError && onError() })
-    const t = setTimeout(() => { if (!gotToken.current) setStuck(true) }, 15000)
     return () => {
-      clearTimeout(t)
       cancelled = true
       try {
         if (widgetIdRef.current && (window as any).turnstile) {

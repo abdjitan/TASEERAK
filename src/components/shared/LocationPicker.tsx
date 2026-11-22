@@ -25,7 +25,7 @@ const txt = {
     notSupported: 'هذا المتصفح لا يتيح تحديد الموقع. الصق رابط الموقع بدلاً من ذلك.',
     invalidLink: 'لم نجد إحداثيات في هذا الرابط. افتح الموقع في خرائط Google ثم انسخ الرابط من شريط العنوان.',
     shortLink: 'هذا رابط مختصر. افتحه في المتصفح، ثم انسخ الرابط الكامل من شريط العنوان والصقه هنا.',
-    more: 'خيارات أخرى',
+    more: 'خيارات أخرى', resolving: 'جارٍ قراءة الرابط...',
   },
   en: {
     title: 'Location', detect: 'Use my current location', detecting: 'Finding your location...',
@@ -36,7 +36,7 @@ const txt = {
     notSupported: 'This browser cannot share your location. Paste a map link instead.',
     invalidLink: 'No coordinates found in this link. Open the place in Google Maps and copy the link from the address bar.',
     shortLink: 'This is a short link. Open it in the browser, then copy the full link from the address bar and paste it here.',
-    more: 'More options',
+    more: 'More options', resolving: 'Reading the link...',
   },
   ur: {
     title: 'مقام', detect: 'میرا موجودہ مقام استعمال کریں', detecting: 'مقام تلاش ہو رہا ہے...',
@@ -47,7 +47,7 @@ const txt = {
     notSupported: 'یہ براؤزر مقام نہیں بتا سکتا۔ لنک پیسٹ کریں۔',
     invalidLink: 'اس لنک میں مقام نہیں ملا۔ Google Maps میں جگہ کھول کر ایڈریس بار سے لنک کاپی کریں۔',
     shortLink: 'یہ مختصر لنک ہے۔ اسے براؤزر میں کھولیں اور ایڈریس بار سے پورا لنک کاپی کریں۔',
-    more: 'مزید اختیارات',
+    more: 'مزید اختیارات', resolving: 'لنک پڑھا جا رہا ہے...',
   },
 }
 
@@ -56,6 +56,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
   const [detecting, setDetecting] = useState(false)
   const [error, setError] = useState('')
   const [mapLink, setMapLink] = useState('')
+  const [resolving, setResolving] = useState(false)
 
   function detectLocation() {
     setError('')
@@ -78,7 +79,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
     )
   }
 
-  function extractFromLink() {
+  async function extractFromLink() {
     setError('')
     const link = mapLink.trim()
     // The place's own pin (!3d…!4d…) comes before the map centre (@lat,lng), which is only where the
@@ -98,7 +99,22 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
         return
       }
     }
-    setError(/goo\.gl|maps\.app/i.test(link) ? T.shortLink : T.invalidLink)
+    if (/goo\.gl|maps\.app/i.test(link)) {
+      // a short link: the server follows its redirects (/api/maps/resolve); the explanation is the fallback
+      setResolving(true)
+      try {
+        const res = await fetch('/api/maps/resolve', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: link }) })
+        const j: any = await res.json().catch(() => null)
+        if (res.ok && typeof j?.lat === 'number' && typeof j?.lng === 'number') {
+          onChange(j.lat, j.lng)
+          setMapLink('')
+          return
+        }
+      } catch { /* fall through to the explanation */ } finally { setResolving(false) }
+      setError(T.shortLink)
+      return
+    }
+    setError(T.invalidLink)
   }
 
   const hasLocation = lat != null && lng != null
@@ -109,10 +125,10 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
       <div className="flex gap-2">
         <input id="loc-map-link" value={mapLink} onChange={e => setMapLink(e.target.value)}
           className="input-field text-[16px] sm:text-sm flex-1 min-w-0" placeholder="https://maps.google.com/..." dir="ltr" />
-        <button type="button" onClick={extractFromLink} disabled={!mapLink}
+        <button type="button" onClick={extractFromLink} disabled={!mapLink || resolving} aria-busy={resolving}
           className="px-4 min-h-[44px] rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40 transition-all shrink-0"
           style={{ background: '#D4A543' }}>
-          {T.extract}
+          {resolving ? T.resolving : T.extract}
         </button>
       </div>
       <p className="text-[12px] text-gray-500 mt-1">{T.pasteHint}</p>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SELLER_KINDS, COMPANY_ACTIVITIES, sellerKindOf, tierLabel, type SellerKind } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
+import { askConfirm } from '@/lib/askConfirm'
 
 // The seller's account kind (independent / company) and, for a company, its activity. Saved
 // immediately through set_seller_kind; the buyer-facing tier is derived by the DB from this and
@@ -18,12 +19,24 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: any) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
-  const [ptype, setPtype] = useState<string>(providerType || 'company')
+  // nothing is pre-selected when the kind is still empty: one tap locks it, so it must be a real choice
+  const [ptype, setPtype] = useState<string | null>(providerType || null)
   const [tier, setTier] = useState<string | null>(supplierTier || null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const kind: SellerKind = sellerKindOf(ptype)
-  const kindLocked = !!providerType
+  const kind: SellerKind | null = ptype ? sellerKindOf(ptype) : null
+  const kindLocked = !!providerType || !!ptype
+
+  // choosing the kind is final (migration 215): confirm first and say how to change it later
+  async function chooseKind(k: SellerKind) {
+    const name = pick(SELLER_KINDS[k])
+    const ok = await askConfirm(
+      L(`Your account type will be "${name}". It can only be changed later through Support.`,
+        `آپ کے اکاؤنٹ کی قسم «${name}» ہوگی۔ بعد میں اسے صرف سپورٹ کے ذریعے بدلا جا سکتا ہے۔`,
+        `سيكون نوع حسابك «${name}». ولا يمكن تغييره لاحقاً إلا عن طريق الدعم.`),
+      { title: L('Confirm the account type', 'اکاؤنٹ کی قسم کی تصدیق', 'تأكيد نوع الحساب'), okLabel: L('Confirm', 'تصدیق کریں', 'تأكيد النوع') })
+    if (ok) save(k, k === 'company' ? 'company' : undefined)
+  }
 
   async function save(nextKind: SellerKind, activity?: string) {
     setBusy(true); setErr('')
@@ -50,16 +63,19 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
           const info = SELLER_KINDS[k]
           return (
             <button key={k} type="button" disabled={busy} aria-pressed={on}
-              onClick={() => { if (!on) save(k, k === 'company' ? 'company' : undefined) }}
-              className={`text-start p-3 rounded-xl border-2 transition-all disabled:opacity-60 ${on ? 'border-navy bg-navy/5' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
+              onClick={() => { if (!on && !kindLocked) chooseKind(k) }}
+              className={`text-start p-3 min-h-11 rounded-xl border-2 transition-all disabled:opacity-60 ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 hover:border-gray-300 bg-white'}`}>
               <div className="font-bold text-sm text-navy"><SellerIcon name={info.icon} /> {pick(info)}</div>
-              <div className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">{pick(info.sub)}</div>
+              <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">{pick(info.sub)}</div>
             </button>
           )
         })}
       </div>
+      {!kind && (
+        <p className="text-xs text-[#8F6820] font-semibold">{L('Choose carefully: the account type can only be changed later through Support.', 'احتیاط سے منتخب کریں: اکاؤنٹ کی قسم بعد میں صرف سپورٹ کے ذریعے بدلی جا سکتی ہے۔', 'اختر بعناية: لا يمكن تغيير نوع الحساب لاحقاً إلا عن طريق الدعم.')}</p>
+      )}
       {kindLocked && (
-        <p className="text-[11px] text-gray-500">{L('The account type is fixed. To change it, ', 'اکاؤنٹ کی قسم مقرر ہے۔ بدلنے کے لیے ', 'نوع الحساب ثابت. لتغييره ')}<a href="/support?topic=kind" className="font-bold underline text-navy">{L('request it from Support', 'سپورٹ سے درخواست کریں', 'اطلب ذلك من الدعم')}</a>{L(' (admin approval).', ' (انتظامیہ کی منظوری)۔', ' (بموافقة الإدارة).')}</p>
+        <p className="text-xs text-gray-500">{L('The account type is fixed. To change it, ', 'اکاؤنٹ کی قسم مقرر ہے۔ بدلنے کے لیے ', 'نوع الحساب ثابت. لتغييره ')}<a href="/support?topic=kind" className="font-bold underline text-navy">{L('request it from Support', 'سپورٹ سے درخواست کریں', 'اطلب ذلك من الدعم')}</a>{L(' (admin approval).', ' (انتظامیہ کی منظوری)۔', ' (بموافقة الإدارة).')}</p>
       )}
 
       {kind === 'company' && (
@@ -70,7 +86,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
               const on = ptype === a.k
               return (
                 <button key={a.k} type="button" disabled={busy} aria-pressed={on} onClick={() => { if (!on) save('company', a.k) }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all disabled:opacity-60 ${on ? 'bg-navy text-white border-navy' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'}`}>
+                  className={`px-3 min-h-11 rounded-full text-xs font-bold border transition-all disabled:opacity-60 ${on ? 'bg-[#D4A543]/10 text-navy border-[#D4A543] border-2' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'}`}>
                   <SellerIcon name={a.icon} /> {pick(a)}
                 </button>
               )
@@ -79,7 +95,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
         </div>
       )}
 
-      <div className="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2.5 text-xs text-gray-600 leading-relaxed">
+      {kind && <div className="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2.5 text-xs text-gray-600 leading-relaxed">
         <div>
           {L('How buyers see you:', 'خریدار آپ کو اس طرح دیکھتے ہیں:', 'تظهر للمشترين ضمن:')} <b className="text-navy">{tierLabel(tier, locale)}</b>
         </div>
@@ -97,7 +113,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
               'تُبنى ثقتك من تقييماتك. وعند تقديم أي عرض، حدّد مصدر السعر.')}
           </div>
         )}
-      </div>
+      </div>}
       {err && <p className="text-xs text-red-600" role="alert">{err}</p>}
     </div>
   )
