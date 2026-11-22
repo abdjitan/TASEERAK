@@ -11,8 +11,6 @@ export default function PublicFooter() {
         <div className="flex items-center justify-center gap-3 text-[11px] text-gray-500 flex-wrap">
           <Link href="/prices" className="hover:text-[#0B2438]">أسعار المواد</Link>
           <span className="text-gray-300">·</span>
-          <Link href="/suppliers" className="hover:text-[#0B2438]">الموردون</Link>
-          <span className="text-gray-300">·</span>
           <Link href="/privacy" className="hover:text-[#0B2438]">الخصوصية</Link>
           <span className="text-gray-300">·</span>
           <Link href="/terms" className="hover:text-[#0B2438]">الشروط</Link>

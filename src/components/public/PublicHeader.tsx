@@ -3,7 +3,7 @@ import Link from 'next/link'
 const LINKS = [
   { href: '/', key: 'home', label: 'الرئيسية' },
   { href: '/prices', key: 'prices', label: 'أسعار المواد' },
-  { href: '/suppliers', key: 'suppliers', label: 'الموردون' },
+  // (UX-003) the public suppliers directory stays unlinked until real suppliers are listed
 ]
 
 export default function PublicHeader({ active }: { active?: string }) {

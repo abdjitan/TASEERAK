@@ -128,6 +128,8 @@ begin
   r := public.get_offer_source(v_offer);
   if r->>'area' = 'حي الملز' and r->>'name' is null then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL source shop shown before deal'; end if;
   perform public.award_rfq_item(v_rfq, 0, v_offer);
+  -- 257: a tentative item award does not reveal the source shop yet
+  if public.get_offer_source(v_offer)->>'name' is null then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL source shop revealed before finalize (257)'; end if;
   perform public.finalize_rfq_awards(v_rfq);
   reset role;
   select status::text into t from offers where id = v_offer;

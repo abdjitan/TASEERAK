@@ -112,8 +112,11 @@ export function SourceShopBadge({ offerId, locale, compact }: { offerId: string;
   if (d.revealed && d.name) {
     return (
       <div className={`${compact ? 'text-[11px]' : 'text-xs'} mt-1 rounded-lg bg-emerald-50 border border-emerald-200 px-2 py-1 text-emerald-900`}>
-        {L('Seller (source shop):', 'فروخت کنندہ (ماخذ دکان):', 'البائع (المحل المصدر):')} <b>{d.name}</b>{where ? ` — ${where}` : ''}{d.phone ? <> · <span dir="ltr">{d.phone}</span></> : null}
-        <div className="text-[10px] text-emerald-800">{L('The tax invoice is issued by this shop in your name.', 'ٹیکس انوائس یہی دکان آپ کے نام جاری کرے گی۔', 'الفاتورة الضريبية تصدر من هذا المحل باسمك.')}</div>
+        {/* UX-002: never the shop phone here (this badge is also printed on the deal page); the seller sees it in SourceShopCard */}
+        {L('Seller (source shop):', 'فروخت کنندہ (ماخذ دکان):', 'البائع (المحل المصدر):')} <b>{d.name}</b>{where ? ` — ${where}` : ''}
+        <div className="text-[11px] text-emerald-800">{d.viewer === 'seller'
+          ? L('The tax invoice is issued by this shop in the buyer’s name.', 'ٹیکس انوائس یہی دکان خریدار کے نام جاری کرے گی۔', 'تصدر الفاتورة الضريبية من هذا المحل باسم المشتري.')
+          : L('The tax invoice is issued by this shop in your name.', 'ٹیکس انوائس یہی دکان آپ کے نام جاری کرے گی۔', 'الفاتورة الضريبية تصدر من هذا المحل باسمك.')}</div>
       </div>
     )
   }

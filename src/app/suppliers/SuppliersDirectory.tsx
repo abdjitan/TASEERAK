@@ -43,6 +43,16 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
   const anyFilter = !!(q || region || sector || tier || verifiedOnly)
   const clear = () => { setQ(''); setRegion(''); setSector(''); setTier(''); setVerifiedOnly(false) }
 
+  // (UX-003) no real company/shop listed yet: a calm «coming soon» instead of empty filters
+  if (suppliers.length === 0) return (
+    <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
+      <div className="text-3xl mb-2 text-[#0B2438]"><Glyph e="🏪" /></div>
+      <p className="font-bold text-[#0B2438] mb-1">دليل الموردين قريباً</p>
+      <p className="text-sm text-gray-600">نعرض هنا الشركات والمحلات الموثّقة فور انضمامها. يمكنك الآن إرسال طلب تسعير، فيصل إلى الموردين المختصين بموادك.</p>
+      <a href="/login" className="inline-block mt-4 px-5 py-2.5 rounded-xl text-sm font-extrabold" style={{ background: '#D4A543', color: '#071827' }}>اطلب تسعيرة</a>
+    </div>
+  )
+
   return (
     <>
       {/* الفلاتر */}
