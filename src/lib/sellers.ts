@@ -73,8 +73,8 @@ export function sellerKindOf(providerType?: string | null): SellerKind {
 }
 export const SELLER_KINDS: Record<SellerKind, T3 & { icon: string; sub: T3 }> = {
   independent: {
-    icon: 'user', ar: 'وسيط تسعير (بدون سجل تجاري)', en: 'Pricing agent (no commercial registration)', ur: 'قیمت ایجنٹ (تجارتی رجسٹریشن کے بغیر)',
-    sub: { ar: 'ليس لديك محل أو سجل تجاري: تجلب أسعار المواد من المحلات للمشترين، وتتم الصفقة بفاتورة ضريبية من المحل باسم المشتري', en: 'You bring shop prices to buyers; the deal uses a certified tax invoice from the shop in the buyer’s name', ur: 'آپ دکانوں کی قیمتیں خریداروں تک لاتے ہیں؛ سودا دکان کی خریدار کے نام ٹیکس انوائس سے' },
+    icon: 'user', ar: 'وسيط تسعير', en: 'Pricing agent', ur: 'قیمت ایجنٹ',
+    sub: { ar: 'ليس لديك محل: تجلب أسعار المواد من المحلات للمشترين، وتتم الصفقة بفاتورة ضريبية من المحل باسم المشتري', en: 'You bring shop prices to buyers; the deal uses a certified tax invoice from the shop in the buyer’s name', ur: 'آپ دکانوں کی قیمتیں خریداروں تک لاتے ہیں؛ سودا دکان کی خریدار کے نام ٹیکس انوائس سے' },
   },
   company: {
     icon: 'building', ar: 'شركة أو محل (بسجل تجاري)', en: 'Company or shop (with a commercial registration)', ur: 'کمپنی یا دکان (تجارتی رجسٹریشن کے ساتھ)',

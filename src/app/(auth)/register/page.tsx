@@ -326,7 +326,7 @@ export default function RegisterPage() {
             {selectedType === 'supplier' && !sellerKind && (
             <div>
                 <p className="text-base font-extrabold text-navy mb-1">{locale === 'en' ? 'First: what kind of seller are you?' : locale === 'ur' ? 'پہلے: آپ کس قسم کے بیچنے والے ہیں؟' : 'أولاً: ما نوع حسابك؟'}</p>
-                <p className="text-xs text-gray-500 mb-3">{locale === 'en' ? 'A company or shop needs a commercial registration; a pricing agent does not.' : locale === 'ur' ? 'کمپنی یا دکان کو تجارتی رجسٹریشن چاہیے؛ قیمت ایجنٹ کو نہیں۔' : 'الشركة أو المحل تحتاج سجلاً تجارياً، ووسيط التسعير لا يحتاجه.'}</p>
+                <p className="text-xs text-gray-500 mb-3">{locale === 'en' ? 'A company or shop needs a commercial registration.' : locale === 'ur' ? 'کمپنی یا دکان کو تجارتی رجسٹریشن چاہیے۔' : 'الشركة أو المحل تحتاج سجلاً تجارياً.'}</p>
                 <div className="grid sm:grid-cols-2 gap-3">
                   {(['company', 'independent'] as const).map(k => {
                     const on = sellerKind === k
@@ -380,7 +380,7 @@ export default function RegisterPage() {
               <div className="mt-2 rounded-lg border border-[#D4A543]/40 bg-[#D4A543]/5 px-3 py-2 text-xs text-[#071827]">
                 {locale === 'en' ? 'No shop or commercial registration?' : locale === 'ur' ? 'دکان یا تجارتی رجسٹریشن نہیں؟' : 'ليس لديك محل أو سجل تجاري؟'}{' '}
                 <button type="button" className="font-extrabold text-[#8F6820] underline" onClick={() => { setSellerKind('independent'); setCr(''); setCrTaken(false); setFormError('') }}>
-                  {locale === 'en' ? 'Sign up as a pricing agent (no registration needed)' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر رجسٹر کریں (رجسٹریشن کی ضرورت نہیں)' : 'سجّل كوسيط تسعير (بدون سجل تجاري)'}
+                  {locale === 'en' ? 'Sign up as a pricing agent' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر رجسٹر کریں' : 'سجّل كوسيط تسعير'}
                 </button>
               </div>
             </div>}
