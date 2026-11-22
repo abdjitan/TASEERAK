@@ -95,7 +95,7 @@ export const HOME_PACKS: HomePack[] = [
   },
   {
     // owner 2026-11-22: an outdoor sitting area with a shade or pergola
-    id: 'outdoor', img: 'outdoor', cover: 'برجولات ومظلات حدائق', ar: 'قعدة خارجية', en: 'Outdoor sitting area', ur: 'بیرونی بیٹھک',
+    id: 'outdoor', img: 'outdoor', cover: 'برجولات ومظلات حدائق', photo: '/images/packs/outdoor.webp', ar: 'قعدة خارجية', en: 'Outdoor sitting area', ur: 'بیرونی بیٹھک',
     sub: { ar: 'مظلة أو برجولا وجلسة وإنارة', en: 'Shade or pergola, seating, lights', ur: 'سائبان یا پرگولا، بیٹھک، روشنی' },
     items: [
       { name: 'برجولات ومظلات حدائق', sector: 'civil', qty: null, hint: { ar: 'اكتب المساحة بالمتر المربع (مثلاً ٤×٥ = ٢٠)', en: 'Write the area in m² (e.g. 4×5 = 20)', ur: 'رقبہ مربع میٹر میں لکھیں' } },
