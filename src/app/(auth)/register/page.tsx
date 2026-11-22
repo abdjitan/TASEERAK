@@ -15,12 +15,14 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import { PHONE_OTP_ENABLED, BUYER_PHONE_LOGIN } from '@/lib/features'
-import { SELLER_KINDS } from '@/lib/sellers'
+import { SELLER_KINDS, TEAM_INVITE_KEY } from '@/lib/sellers'
+import { OPERATOR } from '@/lib/legal'
+import { Check, Eye, EyeOff } from 'lucide-react'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { captureRef } from '@/lib/referral'
 import { friendlyError } from '@/lib/friendlyError'
-import { passwordProblems, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
+import { passwordProblems, PASS_RULES_SUMMARY, passRuleList } from '@/lib/passwordPolicy'
 import { toLatinDigits } from '@/lib/phone'
 import { toE164 } from '@/lib/firebaseConfig'
 import { normalizeCrInput, crTakenText, isUnifiedCr, crFormatText } from '@/lib/cr'
@@ -68,15 +70,18 @@ const TR = {
     l1: 'أرسل قائمة موادك مرة واحدة، وتصلك عروض عدة موردين', l2: 'قارن واختر الأرخص لكل مادة', l3: 'مجاني خلال الإطلاق، بلا عمولة',
     corpQ: 'شركة لديها فريق مشتريات؟', corpA: 'نجهّز لك حساباً للشركة يضم موظفيك — تواصل معنا',
     copyright: '© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء',
-    phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف: كبير وصغير ورقم',
+    phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف منها حرف إنجليزي كبير وصغير ورقم',
     create: 'إنشاء الحساب ←', creating: 'جارٍ الإنشاء...', haveAccount: 'لديك حساب؟', login: 'تسجيل الدخول',
-    chooseType: 'اختر نوع الحساب أولاً', phoneTaken: 'رقم الجوال مسجّل مسبقاً — استخدم رقماً آخر.',
+    chooseType: 'اختر نوع الحساب أولاً', phoneTaken: 'رقم الجوال هذا مسجّل لدينا. إن كان رقمك، فسجّل الدخول.',
     emailTaken: 'هذا البريد الإلكتروني مسجّل مسبقاً — ', signInInstead: 'سجّل الدخول.',
     agreePre: 'أوافق على ', terms: 'الشروط والأحكام', and: ' و', privacy: 'سياسة الخصوصية',
     agreeErr: 'يجب الموافقة على الشروط وسياسة الخصوصية',
     captchaErr: 'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.',
     verifyTitle: 'فعّل بريدك الإلكتروني', verifyBody: 'أرسلنا رابط تأكيد إلى بريدك الإلكتروني. افتحه لتفعيل حسابك، ثم سجّل الدخول.',
     verifyNext: 'بعد الدخول ستكمل بياناتك (الموقع، القطاعات، والتوثيق) بخطوات سهلة.',
+    junk: 'لم تجد الرسالة؟ افحص مجلد البريد غير الهام (Junk أو Spam).',
+    supBrandH: 'تصلك طلبات المواد التي تبيعها.', supBrandP: 'سعّر طلبات المشترين في منطقتك من جوالك، وتابع صفقاتك من العرض إلى التسليم.',
+    sl1: 'طلبات مطابقة لتخصصك ومنطقتك فقط', sl2: 'تسعير سريع لكل مادة مع عرض واحد', sl3: 'مجاني للموردين، بلا عمولة',
     goSignIn: 'الذهاب لتسجيل الدخول', home: 'الرئيسية',
   },
   en: {
@@ -92,15 +97,18 @@ const TR = {
     l1: 'Send your list once and get quotes from several suppliers', l2: 'Compare and pick the cheapest for each item', l3: 'Free during launch, no commission',
     corpQ: 'A company with a procurement team?', corpA: 'We set up a company account for your staff — contact us',
     copyright: '© 2026 Taseerak · Procurement platform for construction materials',
-    phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: '8+ chars: Aa + number',
+    phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: '8 characters with an uppercase and a lowercase English letter and a number',
     create: 'Create account →', creating: 'Creating...', haveAccount: 'Have an account?', login: 'Sign In',
-    chooseType: 'Choose your account type first', phoneTaken: 'This phone is already registered — use another.',
+    chooseType: 'Choose your account type first', phoneTaken: 'This mobile number is already registered with us. If it is yours, sign in.',
     emailTaken: 'This email is already registered — ', signInInstead: 'sign in.',
     agreePre: 'I agree to the ', terms: 'Terms & Conditions', and: ' and ', privacy: 'Privacy Policy',
     agreeErr: 'You must agree to the Terms & Privacy Policy',
     captchaErr: 'Please complete the “I am human” check and try again.',
     verifyTitle: 'Verify your email', verifyBody: 'We sent a confirmation link to your email. Open it to activate your account, then sign in.',
     verifyNext: 'After signing in you will complete your details (location, sectors, verification) in easy steps.',
+    junk: 'No email? Check your Junk or Spam folder.',
+    supBrandH: 'Requests for the materials you sell reach you.', supBrandP: 'Price buyers’ requests in your region from your phone and follow your deals from offer to delivery.',
+    sl1: 'Only requests that match your specialty and region', sl2: 'Quick pricing, one offer for all materials', sl3: 'Free for suppliers, no commission',
     goSignIn: 'Go to sign in', home: 'Home',
   },
   ur: {
@@ -116,15 +124,18 @@ const TR = {
     l1: 'اپنی فہرست ایک بار بھیجیں، کئی سپلائرز کی آفرز پائیں', l2: 'موازنہ کریں اور ہر چیز کی سستی قیمت چنیں', l3: 'لانچ کے دوران مفت، کوئی کمیشن نہیں',
     corpQ: 'خریداری ٹیم والی کمپنی؟', corpA: 'ہم آپ کے عملے کے لیے کمپنی اکاؤنٹ بناتے ہیں — رابطہ کریں',
     copyright: '© 2026 تسعیرک · تعمیراتی سامان کی قیمتوں کا پلیٹ فارم',
-    phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: '8 حروف: Aa + ہندسہ',
-    create: 'اکاؤنٹ بنائیں →', creating: 'بن رہا ہے...', haveAccount: 'اکاؤنٹ ہے؟', login: 'سائن ان',
-    chooseType: 'پہلے اکاؤنٹ کی قسم منتخب کریں', phoneTaken: 'یہ فون پہلے سے رجسٹرڈ ہے — دوسرا استعمال کریں۔',
+    phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: '8 حروف: انگریزی بڑا اور چھوٹا حرف اور ہندسہ',
+    create: 'اکاؤنٹ بنائیں ←', creating: 'بن رہا ہے...', haveAccount: 'اکاؤنٹ ہے؟', login: 'سائن ان',
+    chooseType: 'پہلے اکاؤنٹ کی قسم منتخب کریں', phoneTaken: 'یہ موبائل نمبر ہمارے پاس رجسٹرڈ ہے۔ اگر آپ کا ہے تو سائن اِن کریں۔',
     emailTaken: 'یہ ای میل پہلے سے رجسٹرڈ ہے — ', signInInstead: 'سائن اِن کریں۔',
     agreePre: 'میں متفق ہوں ', terms: 'شرائط و ضوابط', and: ' اور ', privacy: 'پرائیویسی پالیسی',
     agreeErr: 'شرائط اور پرائیویسی پالیسی سے اتفاق ضروری ہے',
     captchaErr: 'براہ کرم تصدیق مکمل کریں (میں روبوٹ نہیں ہوں) اور دوبارہ کوشش کریں۔',
     verifyTitle: 'اپنا ای میل تصدیق کریں', verifyBody: 'ہم نے آپ کے ای میل پر تصدیقی لنک بھیجا ہے۔ اسے کھول کر اکاؤنٹ فعال کریں، پھر سائن ان کریں۔',
     verifyNext: 'سائن اِن کے بعد آپ اپنی تفصیلات (مقام، شعبے، تصدیق) آسان مراحل میں مکمل کریں گے۔',
+    junk: 'ای میل نہیں ملی؟ Junk یا Spam فولڈر دیکھیں۔',
+    supBrandH: 'جو سامان آپ بیچتے ہیں اس کی درخواستیں آپ تک پہنچتی ہیں۔', supBrandP: 'اپنے علاقے کے خریداروں کی درخواستوں کی قیمت فون سے دیں اور سودے آفر سے ڈیلیوری تک دیکھیں۔',
+    sl1: 'صرف آپ کی مہارت اور علاقے کی درخواستیں', sl2: 'تمام مال کے لیے ایک آفر، تیز قیمت', sl3: 'سپلائرز کے لیے مفت، کوئی کمیشن نہیں',
     goSignIn: 'سائن ان پر جائیں', home: 'مرکزی صفحہ',
   },
 }
@@ -139,6 +150,11 @@ export default function RegisterPage() {
   const [selectedType, setSelectedType] = useState<'contractor' | 'supplier'>('contractor')
   const [sellerKind, setSellerKind] = useState<'company' | 'independent' | null>(null)
   const [sellerOnly, setSellerOnly] = useState(false) // /join (supplier invite link): no buyer switch (owner 2026-11-21)
+  // UX-027: a company employee invited by link (/register?team=<token>): no kind step, no CR, no business name
+  const [teamToken, setTeamToken] = useState('')
+  const [teamCompany, setTeamCompany] = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [termsErr, setTermsErr] = useState(false) // UX-133: the error sits under the box (the button is not disabled for it)
   // optional CR at sign-up for a company/shop (owner 2026-11-16, migration 216): one CR = one account.
   // Checked on blur / submit only (cr_exists: yes/no, 10 checks per hour per IP).
   const [cr, setCr] = useState('')
@@ -165,7 +181,7 @@ export default function RegisterPage() {
   const [emailDup, setEmailDup] = useState(false)
 
   const { register, handleSubmit, watch, setValue, trigger, setError, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema), mode: 'onChange', defaultValues: { role: 'contractor' },
+    resolver: zodResolver(schema), mode: 'onTouched', defaultValues: { role: 'contractor' },
   })
   const switchTo = (r: 'contractor' | 'supplier') => {
     setSelectedType(r); setValue('role', r, { shouldValidate: true }); setFormError('')
@@ -183,6 +199,12 @@ export default function RegisterPage() {
       const qs = new URLSearchParams(window.location.search)
       const k = qs.get('kind')
       if (qs.get('only') === '1') setSellerOnly(true)
+      const tt = qs.get('team') || ''
+      if (/^[0-9a-f-]{36}$/.test(tt)) {
+        setTeamToken(tt); setSellerOnly(true); switchTo('supplier')
+        try { localStorage.setItem(TEAM_INVITE_KEY, tt) } catch {}
+        Promise.resolve(supabase.rpc('get_company_invite', { p_token: tt })).then(({ data }: any) => { if (data?.company_name) setTeamCompany(String(data.company_name)) }).catch(() => {})
+      }
       if (qs.get('role') === 'supplier' || k === 'company' || k === 'independent') {
         switchTo('supplier')
         if (k === 'company' || k === 'independent') setSellerKind(k)
@@ -205,9 +227,9 @@ export default function RegisterPage() {
   }
 
   async function onSubmit(data: FormData) {
-    if (data.role === 'supplier' && !sellerKind) { setFormError(locale === 'en' ? 'Choose: a company / shop, or a pricing agent' : locale === 'ur' ? 'منتخب کریں: کمپنی / دکان یا قیمت ایجنٹ' : 'اختر نوع نشاطك: شركة أو محل، أو وسيط تسعير'); return }
-    if (!agreedToTerms) { setFormError(t.agreeErr); return }
-    const soloSeller = data.role === 'supplier' && sellerKind === 'independent'
+    if (data.role === 'supplier' && !sellerKind && !teamToken) { setFormError(locale === 'en' ? 'Choose: a company / shop, or a pricing agent' : locale === 'ur' ? 'منتخب کریں: کمپنی / دکان یا قیمت ایجنٹ' : 'اختر نوع نشاطك: شركة أو محل، أو وسيط تسعير'); return }
+    if (!agreedToTerms) { setTermsErr(true); return }
+    const soloSeller = data.role === 'supplier' && (sellerKind === 'independent' || !!teamToken)
     const asksBusiness = data.role === 'supplier' && !soloSeller
     if (asksBusiness && (data.company_name_ar || '').trim().length < 2) {
       setError('company_name_ar', { message: locale === 'en' ? 'Company or business name is required' : locale === 'ur' ? 'کمپنی یا کاروبار کا نام ضروری ہے' : 'اسم المحل أو النشاط التجاري مطلوب' }); return
@@ -228,20 +250,22 @@ export default function RegisterPage() {
         company_name_ar: (asksBusiness ? (data.company_name_ar || '').trim() : '') || data.full_name.trim(),
         phone: data.phone,
         preferred_language: locale,
-        ...(data.role === 'supplier' ? { seller_kind: sellerKind } : {}),
+        ...(data.role === 'supplier' && !teamToken ? { seller_kind: sellerKind } : {}),
+        ...(teamToken ? { team_invite: teamToken } : {}),
         ...(asksBusiness && isUnifiedCr(normalizeCrInput(cr)) ? { commercial_registration: normalizeCrInput(cr) } : {}),
         terms_version: TERMS_VERSION, client: 'web',
       }
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email, password: data.password,
-        options: { data: meta, emailRedirectTo: `${window.location.origin}/login`, captchaToken: captchaToken || undefined },
+        // UX-170: the confirmation link lands on «تم تأكيد بريدك»; a team invite comes back to the invitation (UX-027)
+        options: { data: meta, emailRedirectTo: `${window.location.origin}/login?confirmed=1${teamToken ? '&next=' + encodeURIComponent('/team/join/' + teamToken) : (data.role === 'supplier' ? '&m=email' : '')}`, captchaToken: captchaToken || undefined },
       })
       if (authError) throw new Error(authError.message)
 
       // تأكيد البريد مفعّل → لا جلسة: نعرض شاشة «فعّل بريدك».
       if (!authData.session) { setSentTo({ email: data.email, password: data.password }); setEmailSent(true); return }
-      // تأكيد البريد معطّل → لدينا جلسة: نوجّه مباشرة لإكمال الملف.
-      window.location.href = '/onboarding'
+      // تأكيد البريد معطّل → لدينا جلسة: نوجّه مباشرة لإكمال الملف (عضو الفريق يعود إلى الدعوة).
+      window.location.href = teamToken ? `/team/join/${teamToken}` : '/onboarding'
     } catch (err: any) {
       captchaRef.current?.reset(); setCaptchaToken('')
       const msg = err?.message || ''
@@ -260,8 +284,9 @@ export default function RegisterPage() {
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
           {sentTo && <p className="text-sm font-bold text-navy mb-2" dir="ltr">{sentTo.email}</p>}
-          <p className="text-xs text-gray-500 mb-6">{t.verifyNext}</p>
-          <Link href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.goSignIn}</Link>
+          <p className="text-[13px] text-gray-600 mb-2">{teamToken ? (locale === 'en' ? 'After confirming, sign in and you will come back to the invitation to join.' : locale === 'ur' ? 'تصدیق کے بعد سائن اِن کریں، آپ شامل ہونے کے لیے دعوت پر واپس آئیں گے۔' : 'بعد التأكيد سجّل الدخول، وستعود إلى الدعوة لإتمام الانضمام.') : t.verifyNext}</p>
+          <p className="text-[13px] text-gray-600 mb-6">{t.junk}</p>
+          <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="flex items-center justify-center w-full min-h-[44px] py-3 rounded-xl font-extrabold text-[#071827] text-sm" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{t.goSignIn}</Link>
           {sentTo && <FixSignupEmail email={sentTo.email} password={sentTo.password} locale={locale} onFixed={(e) => setSentTo(s => s ? { ...s, email: e } : s)} />}
         </div>
       </div>
@@ -277,11 +302,11 @@ export default function RegisterPage() {
           <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-brand-lockup" />
         </a>
         <div className="max-w-md">
-          <h2 className="text-3xl xl:text-[40px] font-extrabold leading-[1.25] mb-4">{t.brandH}</h2>
-          <p className="text-blue-100/80 text-base mb-8 leading-relaxed">{t.brandP}</p>
+          <h2 className="text-3xl xl:text-[40px] font-extrabold leading-[1.25] mb-4">{selectedType === 'supplier' ? t.supBrandH : t.brandH}</h2>
+          <p className="text-white/80 text-base mb-8 leading-relaxed">{selectedType === 'supplier' ? t.supBrandP : t.brandP}</p>
           <ul className="space-y-4">
-            {[t.l1, t.l2, t.l3].map((it, i) => (
-              <li key={i} className="flex items-center gap-3 text-[15px] text-blue-50">
+            {(selectedType === 'supplier' ? [t.sl1, t.sl2, t.sl3] : [t.l1, t.l2, t.l3]).map((it, i) => (
+              <li key={i} className="flex items-center gap-3 text-[15px] text-white/90">
                 <span className="w-6 h-6 rounded-full grid place-items-center shrink-0" style={{ background: '#D4A543' }}>
                   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="#071827" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                 </span>{it}
@@ -289,7 +314,7 @@ export default function RegisterPage() {
             ))}
           </ul>
         </div>
-        <div className="text-xs text-blue-200/50">{t.copyright}</div>
+        <div className="text-xs text-white/50">{t.copyright}</div>
       </div>
 
       {/* ===== Form panel ===== */}
@@ -300,7 +325,7 @@ export default function RegisterPage() {
             {t.home}
           </a>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</Link>
+            <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="inline-flex items-center min-h-[44px] text-sm font-bold text-orange-dark hover:underline">{t.haveAccount} {t.login}</Link>
             <LanguageSwitcher variant="minimal" />
           </div>
         </div>
@@ -312,18 +337,22 @@ export default function RegisterPage() {
               <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
             </div>
             <div className="mb-6">
-              <h1 className="text-2xl font-extrabold text-navy">{selectedType === 'supplier' ? t.supTitle : t.title}</h1>
-              <p className="text-ink-2 mt-1.5 text-sm">{selectedType === 'supplier' ? t.supSub : t.sub}</p>
+              <h1 className="text-2xl font-extrabold text-navy">{teamToken
+                ? (locale === 'en' ? `Join the team of ${teamCompany || 'the company'}` : locale === 'ur' ? `${teamCompany || 'کمپنی'} کی ٹیم میں شامل ہوں` : `انضم إلى فريق ${teamCompany || 'الشركة'}`)
+                : selectedType === 'supplier' ? t.supTitle : t.title}</h1>
+              <p className="text-ink-2 mt-1.5 text-sm">{teamToken
+                ? (locale === 'en' ? 'You will price requests in the company name from your own account. You do not need a commercial registration.' : locale === 'ur' ? 'آپ اپنے اکاؤنٹ سے کمپنی کے نام پر قیمتیں دیں گے۔ تجارتی رجسٹریشن کی ضرورت نہیں۔' : 'ستسعّر الطلبات باسم الشركة من حسابك الخاص، ولا تحتاج سجلاً تجارياً.')
+                : selectedType === 'supplier' ? t.supSub : t.sub}</p>
             </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-start">
-            {selectedType === 'supplier' && sellerKind && (
+            {selectedType === 'supplier' && sellerKind && !teamToken && (
               <div className="flex items-center justify-between gap-2 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-3 py-2">
                 <span className="text-sm font-bold text-navy"><SellerIcon name={SELLER_KINDS[sellerKind].icon} /> {locale === 'en' ? SELLER_KINDS[sellerKind].en : locale === 'ur' ? SELLER_KINDS[sellerKind].ur : SELLER_KINDS[sellerKind].ar}</span>
-                <button type="button" onClick={() => { setSellerKind(null); setFormError('') }} className="text-xs font-bold text-[#8F6820] underline shrink-0">{locale === 'en' ? 'Change' : locale === 'ur' ? 'تبدیل کریں' : 'تغيير'}</button>
+                <button type="button" onClick={() => { setSellerKind(null); setFormError('') }} className="min-h-[44px] px-2 text-sm font-bold text-[#8F6820] underline shrink-0">{locale === 'en' ? 'Change' : locale === 'ur' ? 'تبدیل کریں' : 'تغيير'}</button>
               </div>
             )}
-            {selectedType === 'supplier' && !sellerKind && (
+            {selectedType === 'supplier' && !sellerKind && !teamToken && (
             <div>
                 <p className="text-base font-extrabold text-navy mb-1">{locale === 'en' ? 'First: what kind of seller are you?' : locale === 'ur' ? 'پہلے: آپ کس قسم کے بیچنے والے ہیں؟' : 'أولاً: ما نوع حسابك؟'}</p>
                 <p className="text-xs text-gray-500 mb-3">{locale === 'en' ? 'A company or shop needs a commercial registration.' : locale === 'ur' ? 'کمپنی یا دکان کو تجارتی رجسٹریشن چاہیے۔' : 'الشركة أو المحل تحتاج سجلاً تجارياً.'}</p>
@@ -334,7 +363,7 @@ export default function RegisterPage() {
                     return (
                       <button key={k} type="button" onClick={() => { setSellerKind(k); setFormError('') }} aria-pressed={on}
                         className={`p-4 rounded-xl border-2 text-start transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/10 shadow-sm' : 'border-gray-200 bg-white hover:border-[#D4A543]/60'}`}>
-                        <div className="font-extrabold text-navy text-sm">{on ? '✓ ' : ''}<SellerIcon name={info.icon} /> {locale === 'en' ? info.en : locale === 'ur' ? info.ur : info.ar}</div>
+                        <div className="font-extrabold text-navy text-sm">{on && <Check className="inline w-4 h-4 me-1" aria-hidden />}<SellerIcon name={info.icon} /> {locale === 'en' ? info.en : locale === 'ur' ? info.ur : info.ar}</div>
                         <div className="text-xs text-gray-500 mt-1 leading-relaxed">{locale === 'en' ? info.sub.en : locale === 'ur' ? info.sub.ur : info.sub.ar}</div>
                       </button>
                     )
@@ -343,39 +372,49 @@ export default function RegisterPage() {
             </div>
             )}
 
-            <div className={selectedType === 'supplier' && !sellerKind ? 'hidden' : 'space-y-4'}>
-            <div className="grid grid-cols-2 gap-3">
+            <div className={selectedType === 'supplier' && !sellerKind && !teamToken ? 'hidden' : 'space-y-4'}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="reg-name" className="block text-xs font-semibold text-gray-600 mb-1">{t.fullName} *</label>
                 <input id="reg-name" {...register('full_name')} autoComplete="name" className="input-field" placeholder={locale === 'en' ? 'Mohammed Al-Otaibi' : locale === 'ur' ? 'محمد العتیبی' : 'محمد العتيبي'} />
-                {errors.full_name && <p className="text-red-500 text-xs mt-1">{vmsg(errors.full_name.message, locale)}</p>}
+                {errors.full_name && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.full_name.message, locale)}</p>}
               </div>
               <div>
                 <label htmlFor="reg-phone" className="block text-xs font-semibold text-gray-600 mb-1">{t.phone} *</label>
-                <input id="reg-phone" {...register('phone')} autoComplete="tel-national" className="input-field" placeholder={locale === 'en' ? 'Mobile number' : locale === 'ur' ? 'موبائل نمبر' : 'رقم الجوال'} type="tel" inputMode="tel" maxLength={16} dir="ltr"
-                  onInput={(e: any) => { const v = toLatinDigits(e.currentTarget.value).replace(/[^0-9]/g, '').slice(0, 10); e.currentTarget.value = v; if (v.length === 10) checkPhoneDup(v); else setPhoneDup(false) }} />
-                {errors.phone && <p className="text-red-500 text-xs mt-1">{vmsg(errors.phone.message, locale)}</p>}
+                <input id="reg-phone" {...register('phone')} autoComplete="tel-national" className="input-field" placeholder="05XXXXXXXX" type="tel" inputMode="tel" maxLength={16} dir="ltr"
+                  onInput={(e: any) => { const raw = toLatinDigits(e.currentTarget.value); const plus = raw.trim().startsWith('+'); const d = raw.replace(/[^0-9]/g, '').slice(0, plus ? 15 : 12); const v = (plus ? '+' : '') + d; e.currentTarget.value = v; if (/^05[0-9]{8}$/.test(v) || toE164(v)) checkPhoneDup(v); else setPhoneDup(false) }} />
+                {errors.phone && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.phone.message, locale)}</p>}
               </div>
             </div>
-            {phoneDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2"><Glyph e="⚠" /> {t.phoneTaken}</p>}
+            {phoneDup && (
+              <div role="alert" className="text-red-700 text-[13px] bg-red-50 border border-red-200 rounded-lg p-2">
+                <Glyph e="⚠" /> {t.phoneTaken}{' '}
+                <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="font-bold underline">{t.login}</Link>
+                {' · '}<Link href="/reset-password" className="font-bold underline">{locale === 'en' ? 'Forgot your password?' : locale === 'ur' ? 'پاسورڈ بھول گئے؟' : 'نسيت كلمة المرور؟'}</Link>
+              </div>
+            )}
 
             {selectedType === 'contractor' && BUYER_PHONE_LOGIN && (
               <a href="/login" className="block rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-3 py-2.5 text-sm font-bold text-[#071827]">
                 {locale === 'en' ? 'Faster: sign up with your mobile number only (no password) →' : locale === 'ur' ? 'تیز تر: صرف موبائل نمبر سے رجسٹر کریں (بغیر پاسورڈ) ←' : 'أسرع: سجّل برقم جوالك فقط (بدون كلمة مرور) ←'}
               </a>
             )}
-            {selectedType === 'supplier' && sellerKind === 'company' && <div>
+            {selectedType === 'supplier' && sellerKind === 'company' && !teamToken && <div>
               <label htmlFor="reg-company" className="block text-xs font-semibold text-gray-600 mb-1">{t.company} * <span className="text-gray-500 font-normal">— {t.companyHint}</span></label>
               <input id="reg-company" {...register('company_name_ar')} autoComplete="organization" className="input-field" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : locale === 'ur' ? 'الصخر بلڈنگ میٹریلز' : 'مؤسسة الصخر لمواد البناء'} />
-              {errors.company_name_ar && <p className="text-red-500 text-xs mt-1">{vmsg(errors.company_name_ar.message, locale)}</p>}
+              {errors.company_name_ar && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.company_name_ar.message, locale)}</p>}
               <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} <span className="text-red-500">*</span> <span className="text-gray-500 font-normal">— {locale === 'en' ? 'unified number, 10 digits starting with 7' : locale === 'ur' ? 'متحدہ نمبر، 7 سے شروع 10 ہندسے' : 'الرقم الوطني الموحد: 10 أرقام يبدأ بـ 7'}</span></label>
               <input id="reg-cr" value={cr} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX"
                 onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); if (crTaken) setCrTaken(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
               {crTaken && (
-                <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1">
-                  <Glyph e="⚠" /> {crTakenText(locale).msg}{' '}
-                  {locale === 'en' ? 'If it is yours, contact Support so we can link it to you.' : locale === 'ur' ? 'اگر یہ آپ کی ہے تو سپورٹ سے رابطہ کریں۔' : 'إن كان سجلّك، تواصل مع الدعم لنربطه بك.'}
-                </p>
+                <div role="alert" className="text-red-700 text-[13px] bg-red-50 border border-red-200 rounded-lg p-2.5 mt-1">
+                  <p><Glyph e="⚠" /> {crTakenText(locale).msg}{' '}
+                  {locale === 'en' ? 'If the registration is yours, write to us and we will help you prove it.' : locale === 'ur' ? 'اگر رجسٹریشن آپ کی ہے تو ہمیں لکھیں، ہم ملکیت ثابت کرنے میں مدد کریں گے۔' : 'إن كان السجل سجلّك، راسلنا وسنساعدك في إثبات ملكيته.'}</p>
+                  <a href={`mailto:${OPERATOR.email}?subject=${encodeURIComponent(locale === 'en' ? 'Commercial registration already used' : 'سجل تجاري مستخدم')}&body=${encodeURIComponent((locale === 'en' ? 'Hello, my commercial registration is already used by another account: ' : 'مرحباً، سجلي التجاري مستخدم في حساب آخر: ') + cr)}`}
+                    className="mt-2 inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>
+                    {locale === 'en' ? 'Email Support' : locale === 'ur' ? 'سپورٹ کو ای میل کریں' : 'راسل الدعم بالبريد'}
+                  </a>
+                </div>
               )}
               <div className="mt-2 rounded-lg border border-[#D4A543]/40 bg-[#D4A543]/5 px-3 py-2 text-xs text-[#071827]">
                 {locale === 'en' ? 'No shop or commercial registration?' : locale === 'ur' ? 'دکان یا تجارتی رجسٹریشن نہیں؟' : 'ليس لديك محل أو سجل تجاري؟'}{' '}
@@ -390,39 +429,54 @@ export default function RegisterPage() {
               <label htmlFor="reg-email" className="block text-xs font-semibold text-gray-600 mb-1">{t.email} *</label>
               <input id="reg-email" autoComplete="email" dir="ltr" {...register('email', { onBlur: (e) => checkEmailDup(e.target.value), onChange: () => { if (emailDup) setEmailDup(false) } })}
                 className="input-field" placeholder="name@example.com" type="email" />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{vmsg(errors.email.message, locale)}</p>}
+              {errors.email && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.email.message, locale)}</p>}
               {(() => { const sug = emailTypoSuggestion(watch('email') || ''); return sug ? (
                 <p className="text-xs mt-1 text-[#8F6820]">{locale === 'en' ? 'Did you mean' : locale === 'ur' ? 'کیا آپ کا مطلب' : 'هل تقصد'} <button type="button" dir="ltr" className="font-bold underline" onClick={() => { setValue('email', sug, { shouldValidate: true }); checkEmailDup(sug) }}>{sug}</button>{locale === 'en' ? '?' : '؟'}</p>
               ) : null })()}
-              {emailDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<Link href="/login" className="underline font-bold">{t.signInInstead}</Link></p>}
+              {emailDup && <p className="text-red-700 text-[13px] bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="underline font-bold">{t.signInInstead}</Link></p>}
             </div>
 
             <div>
               <label htmlFor="reg-password" className="block text-xs font-semibold text-gray-600 mb-1">{t.password} *</label>
-              <input id="reg-password" {...register('password')} autoComplete="new-password" className="input-field" type="password" placeholder={t.passwordPh} />
-              {errors.password && <p className="text-red-500 text-xs mt-1">{vmsg(errors.password.message, locale)}</p>}
+              <div className="relative">
+                <input id="reg-password" {...register('password')} autoComplete="new-password" className="input-field pe-12" type={showPass ? 'text' : 'password'} placeholder={t.passwordPh} aria-describedby="reg-pass-rules" />
+                <button type="button" onClick={() => setShowPass(v => !v)} className="absolute end-1 top-1/2 -translate-y-1/2 w-11 h-11 grid place-items-center text-gray-500" aria-label={showPass ? (locale === 'en' ? 'Hide password' : locale === 'ur' ? 'پاسورڈ چھپائیں' : 'إخفاء كلمة المرور') : (locale === 'en' ? 'Show password' : locale === 'ur' ? 'پاسورڈ دکھائیں' : 'إظهار كلمة المرور')}>
+                  {showPass ? <EyeOff className="w-5 h-5" aria-hidden /> : <Eye className="w-5 h-5" aria-hidden />}
+                </button>
+              </div>
+              <ul id="reg-pass-rules" className="mt-1.5 space-y-0.5">
+                {passRuleList(watch('password') || '', locale).map(r => (
+                  <li key={r.rule} className={`flex items-center gap-1.5 text-[12px] ${r.ok ? 'text-emerald-700' : 'text-gray-600'}`}>
+                    {r.ok ? <Check className="w-3.5 h-3.5" aria-hidden /> : <span className="w-3.5 h-3.5 inline-grid place-items-center" aria-hidden>•</span>}{r.text}
+                  </li>
+                ))}
+              </ul>
+              {errors.password && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.password.message, locale)}</p>}
             </div>
             </div>
 
-            {formError && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{formError}</div>}
+            {formError && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{formError}</div>}
 
-            <label className="flex items-start gap-2 cursor-pointer">
-              <input type="checkbox" checked={agreedToTerms} onChange={(e: any) => setAgreedToTerms(e.target.checked)} className="mt-0.5 w-4 h-4 accent-[#0B2438] flex-shrink-0" />
-              <span className="text-xs text-gray-600 leading-relaxed">
+            <div>
+            <label className="flex items-start gap-2 cursor-pointer min-h-[44px]">
+              <input type="checkbox" checked={agreedToTerms} onChange={(e: any) => { setAgreedToTerms(e.target.checked); if (e.target.checked) setTermsErr(false) }} aria-invalid={termsErr} aria-describedby={termsErr ? 'reg-terms-err' : undefined} className="mt-0.5 w-5 h-5 accent-[#0B2438] flex-shrink-0" />
+              <span className="text-[13px] text-gray-700 leading-relaxed">
                 {t.agreePre}
                 <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{t.terms}</a>
                 {t.and}
                 <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{t.privacy}</a>
               </span>
             </label>
+            {termsErr && <p id="reg-terms-err" role="alert" className="text-red-600 text-[13px] font-semibold ms-7">{t.agreeErr}</p>}
+            </div>
 
             <div className="flex justify-center">
               <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
             </div>
 
-            <button type="submit" disabled={submitting || !agreedToTerms}
-              onClick={async () => { await trigger() }}
-              className="btn-orange w-full disabled:opacity-50">
+            <button type="submit" disabled={submitting}
+              onClick={async () => { await trigger(); if (!agreedToTerms) setTermsErr(true) }}
+              className="btn-orange w-full min-h-[48px] disabled:opacity-50">
               {submitting ? t.creating : t.create}
             </button>
             </div>
@@ -434,7 +488,7 @@ export default function RegisterPage() {
               {selectedType === 'supplier' ? t.toBuyer : t.toSupplier}{' '}
               <span className="font-extrabold" style={{ color: '#8F6820' }}>{selectedType === 'supplier' ? t.toBuyerCta : t.toSupplierCta}</span>
             </button>}
-            <p className="mt-3 text-sm text-ink-2 text-center">{t.haveAccount} <Link href="/login" className="font-extrabold text-orange-dark hover:underline">{t.login}</Link></p>
+            <p className="mt-3 text-sm text-ink-2 text-center">{t.haveAccount} <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="inline-flex items-center min-h-[44px] font-extrabold text-orange-dark hover:underline">{t.login}</Link></p>
 
             {/* company accounts with several procurement staff are set up with us, not here */}
             {selectedType === 'contractor' && <p className="mt-5 pt-4 border-t border-line text-xs text-gray-500 text-center">

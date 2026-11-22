@@ -9,7 +9,7 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, sortGroupKeys } from '@/types'
+import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, sortGroupKeys, getSubCategoryLabel } from '@/types'
 import { detectSpecialtiesFromText } from '@/lib/classify'
 import CatIcon from '@/components/shared/CatIcon'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
@@ -18,31 +18,32 @@ import { storedSellerKind } from '@/lib/sellers'
 import Glyph from '@/components/shared/Glyph'
 import { compressImage } from '@/lib/compressImage'
 import { askConfirm } from '@/lib/askConfirm'
+import { arCount } from '@/lib/text'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 
-const SECTOR_COLORS = { civil: '#0B2438', architectural: '#7c3aed', electrical: '#D97706', mechanical: '#0F6E56', equipment: '#6b5b4f', supply_store: '#c026d3' }
 
 const txt = {
   ar: {
     title: 'تخصصاتي الدقيقة', sub: 'اختر المواد التي تتعامل بها بالضبط — ستصلك الطلبات المطابقة فقط',
-    back: '→ رجوع', save: 'حفظ التخصصات', saving: 'جارٍ الحفظ...', saved: '✓ تم الحفظ بنجاح',
+    back: '→ رجوع', save: 'احفظ التغييرات', saving: 'جارٍ الحفظ...', saved: 'حُفظت تخصصاتك.',
     selectSectors: 'أولاً، اختر القطاعات الرئيسية', thenSpecialties: 'ثم اختر تخصصاتك الدقيقة',
     selected: 'تخصص محدد', noSectors: 'اختر قطاعاً واحداً على الأقل من الأعلى لعرض التخصصات',
     hint: 'كلما حددت تخصصك بدقة، وصلتك طلبات أكثر صلة بعملك',
     loading: 'جارٍ التحميل...',
-    suggestTitle: 'ما لقيت مادتك في القائمة؟',
+    suggestTitle: 'لم تجد مادتك في القائمة؟',
     suggestSub: 'اقترح إضافتها وسيراجعها الفريق ويضيفها للقائمة',
     sNamePh: 'اسم المادة (مثال: عزل بولي يوريا)',
     sSectorPh: 'القطاع المناسب (اختياري)',
     sDescPh: 'وصف مختصر أو مواصفات (اختياري)',
     sBtn: '+ إرسال الاقتراح للإدارة',
     sSending: 'جارٍ الإرسال...',
-    sSent: '✓ تم إرسال اقتراحك، سيراجعه الفريق',
+    sSent: 'أُرسل اقتراحك، وسيراجعه الفريق.',
     myReq: 'اقتراحاتي السابقة',
     stPending: 'قيد المراجعة', stApproved: 'تمت الموافقة', stRejected: 'مرفوض',
   },
   en: {
     title: 'My Specialties', sub: 'Select exactly what you supply — you only get matching requests',
-    back: '← Back', save: 'Save Specialties', saving: 'Saving...', saved: '✓ Saved successfully',
+    back: '← Back', save: 'Save changes', saving: 'Saving...', saved: 'Your specialties were saved.',
     selectSectors: 'First, select main sectors', thenSpecialties: 'Then pick your exact specialties',
     selected: 'selected', noSectors: 'Select at least one sector above to show specialties',
     hint: 'The more precise your specialties, the more relevant requests you receive',
@@ -54,13 +55,13 @@ const txt = {
     sDescPh: 'Short description or specs (optional)',
     sBtn: '+ Send suggestion to admin',
     sSending: 'Sending...',
-    sSent: '✓ Suggestion sent, our team will review it',
+    sSent: 'Suggestion sent; our team will review it.',
     myReq: 'My previous suggestions',
     stPending: 'Under review', stApproved: 'Approved', stRejected: 'Rejected',
   },
   ur: {
     title: 'میری مہارتیں', sub: 'بالکل وہی منتخب کریں جو آپ فراہم کرتے ہیں',
-    back: '→ واپس', save: 'محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: '✓ محفوظ ہو گیا',
+    back: '→ واپس', save: 'تبدیلیاں محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: 'آپ کی مہارتیں محفوظ ہو گئیں۔',
     selectSectors: 'پہلے، اہم شعبے منتخب کریں', thenSpecialties: 'پھر اپنی مہارتیں منتخب کریں',
     selected: 'منتخب', noSectors: 'مہارتیں دکھانے کے لیے کم از کم ایک شعبہ منتخب کریں',
     hint: 'جتنی درست مہارت، اتنی متعلقہ درخواستیں',
@@ -72,7 +73,7 @@ const txt = {
     sDescPh: 'مختصر تفصیل (اختیاری)',
     sBtn: '+ تجویز بھیجیں',
     sSending: 'بھیجا جا رہا ہے...',
-    sSent: '✓ آپ کی تجویز بھیج دی گئی',
+    sSent: 'آپ کی تجویز بھیج دی گئی۔',
     myReq: 'میری پچھلی تجاویز',
     stPending: 'زیر جائزہ', stApproved: 'منظور', stRejected: 'مسترد',
   },
@@ -99,6 +100,10 @@ export default function SpecialtiesPage() {
   const [suggestGroup, setSuggestGroup] = useState('')
   const [suggestFile, setSuggestFile] = useState<any>(null)
   const [suggestMsg, setSuggestMsg] = useState('')
+  const [suggestErr, setSuggestErr] = useState(false)
+  // UX-124: what was last saved, so the page knows about unsaved changes
+  const [savedKey, setSavedKey] = useState('')
+  const [showIncluded, setShowIncluded] = useState(false)
   const [suggestSubmitting, setSuggestSubmitting] = useState(false)
   const [myRequests, setMyRequests] = useState<any[]>([])
   const [openSector, setOpenSector] = useState<any>(null) // single-open accordion (Step 2)
@@ -114,16 +119,16 @@ export default function SpecialtiesPage() {
     const text = [name, activity].filter(Boolean).join(' ')
     const { sectors, specialties } = detectSpecialtiesFromText(text)
     if (!specialties.length) {
-      if (!silent) setDetectMsg(locale === 'en' ? "Couldn't detect specialties from your CR activity — pick them manually." : locale === 'ur' ? 'سرگرمی سے مہارتیں نہیں ملیں — دستی منتخب کریں۔' : 'ما تعرّفنا على تخصصات من نشاط سجلك — اخترها يدوياً.')
+      if (!silent) setDetectMsg(locale === 'en' ? "Couldn't detect specialties from your CR activity — pick them manually." : locale === 'ur' ? 'سرگرمی سے مہارتیں نہیں ملیں — دستی منتخب کریں۔' : 'لم نتعرّف على تخصصات من نشاط سجلك، فاخترها يدوياً.')
       return
     }
     setMySectors(prev => Array.from(new Set([...prev, ...sectors])))
     setMySpecialties(prev => Array.from(new Set([...prev, ...specialties])))
     if (sectors.length) setOpenSector(sectors[0])
     setDetectMsg(
-      locale === 'en' ? `✓ Detected ${specialties.length} specialties across ${sectors.length} sectors from your CR — review, adjust, then save.`
-      : locale === 'ur' ? `✓ آپ کے ریکارڈ سے ${specialties.length} مہارتیں ${sectors.length} شعبوں میں ملیں — جائزہ لے کر محفوظ کریں۔`
-      : `✓ تعرّفنا على ${specialties.length} تخصص في ${sectors.length} قطاع من نشاط سجلك — راجِعها وعدّل ثم احفظ.`
+      locale === 'en' ? `Detected ${specialties.length} specialties across ${sectors.length} sectors from your CR — review, adjust, then save.`
+      : locale === 'ur' ? `آپ کے ریکارڈ سے ${specialties.length} مہارتیں ${sectors.length} شعبوں میں ملیں — جائزہ لے کر محفوظ کریں۔`
+      : `تعرّفنا على ${arCount(specialties.length, 'تخصص واحد', 'تخصصين', 'تخصصات', 'تخصصاً')} في ${arCount(sectors.length, 'قطاع واحد', 'قطاعين', 'قطاعات', 'قطاعاً')} من نشاط سجلك. راجِعها وعدّلها ثم احفظ.`
     )
   }
 
@@ -146,6 +151,7 @@ export default function SpecialtiesPage() {
       if (specErr) throw specErr
       setMySectors((secs || []).map(s => s.sector))
       setMySpecialties((specs || []).map(s => s.specialty))
+      setSavedKey(selKey((secs || []).map(s => s.sector), (specs || []).map(s => s.specialty)))
 
       const { data: reqs } = await supabase.from('material_requests')
         .select('*').eq('supplier_id', session.user.id).order('created_at', { ascending: false })
@@ -168,6 +174,28 @@ export default function SpecialtiesPage() {
 
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // UX-124: a sector follows from the specialties chosen in it (a sector header only opens the list)
+  function sectorsFor(secs: any[], specs: any[]): string[] {
+    const out = new Set<string>(secs)
+    for (const sec of Object.keys(SUB_CATEGORIES as any)) if (specs.some(k => k in ((SUB_CATEGORIES as any)[sec] || {}))) out.add(sec)
+    return [...out]
+  }
+  function selKey(secs: any[], specs: any[]) { return JSON.stringify([[...sectorsFor(secs, specs)].sort(), [...specs].sort()]) }
+  const dirty = !loading && !loadFailed && !isMember && savedKey !== '' && selKey(mySectors, mySpecialties) !== savedKey
+  // warn before leaving with unsaved changes
+  useEffect(() => {
+    if (!dirty) return
+    const h = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', h)
+    return () => window.removeEventListener('beforeunload', h)
+  }, [dirty])
+  // UX-006: the sticky save bar is an action bar (the assistant bubble must not cover it)
+  useEffect(() => {
+    if (typeof document === 'undefined' || isMember) return
+    document.body.dataset.actionbar = '1'
+    return () => { delete document.body.dataset.actionbar }
+  }, [isMember])
+
   function toggleSector(sector: any) {
     setMySectors(prev => {
       if (prev.includes(sector)) {
@@ -188,7 +216,7 @@ export default function SpecialtiesPage() {
   async function handleSave() {
     if (isMember || loadFailed) return
     // no sector at all: the seller would receive no requests (audit 2026-11-01) — ask first
-    if (mySectors.length === 0 && !(await askConfirm(locale === 'en'
+    if (sectorsFor(mySectors, mySpecialties).length === 0 && !(await askConfirm(locale === 'en'
       ? 'You have not chosen any sector, so no requests will reach you. Save anyway?'
       : locale === 'ur'
         ? 'آپ نے کوئی شعبہ منتخب نہیں کیا، اس لیے آپ کو کوئی درخواست نہیں ملے گی۔ پھر بھی محفوظ کریں؟'
@@ -198,19 +226,21 @@ export default function SpecialtiesPage() {
 
     // حفظ ذرّي: حذف + إضافة داخل معاملة واحدة على الخادم — لو فشلت الإضافة يتراجع الحذف
     // فلا تُمسح تخصصات المورّد بصمت (B12).
+    const secs = sectorsFor(mySectors, mySpecialties)
     const { error } = await supabase.rpc('save_supplier_specialties', {
-      p_sectors: mySectors,
+      p_sectors: secs,
       p_specialties: mySpecialties,
     })
     setSaving(false)
     if (error) { setMsgErr(true); setMsg(locale === 'en' ? 'Could not save — please try again.' : locale === 'ur' ? 'محفوظ نہیں ہو سکا — دوبارہ کوشش کریں۔' : 'تعذّر الحفظ، حاول مرة أخرى.'); return }
-    setMsg(T.saved)
-    setTimeout(() => { window.location.href = '/supplier/dashboard' }, 1200)
+    setMySectors(secs)
+    setSavedKey(selKey(secs, mySpecialties))
+    setMsg(T.saved) // no automatic redirect (UX-124): the seller stays and sees the saved state
   }
 
   async function submitSuggestion() {
     if (!suggestName.trim() || !user) return
-    setSuggestSubmitting(true); setSuggestMsg('')
+    setSuggestSubmitting(true); setSuggestMsg(''); setSuggestErr(false)
     const supabase = createClient()
     let spec_file_url = null
     if (suggestFile) {
@@ -224,7 +254,7 @@ export default function SpecialtiesPage() {
         else upFailed = true
       } catch { upFailed = true }
       if (upFailed) {
-        setSuggestSubmitting(false)
+        setSuggestSubmitting(false); setSuggestErr(true)
         setSuggestMsg(locale === 'en' ? 'Could not upload the file — try again, or remove it and send without it.' : locale === 'ur' ? 'فائل اپ لوڈ نہیں ہو سکی — دوبارہ کوشش کریں، یا فائل ہٹا کر بغیر اس کے بھیجیں۔' : 'تعذّر رفع الملف — حاول مجدداً، أو أزله وأرسل الاقتراح بدونه.')
         return
       }
@@ -238,7 +268,7 @@ export default function SpecialtiesPage() {
       spec_file_url,
     }).select().single()
     setSuggestSubmitting(false)
-    if (error) { setSuggestMsg(locale === 'en' ? 'Something went wrong — please try again.' : locale === 'ur' ? 'خرابی ہوئی — دوبارہ کوشش کریں۔' : 'حدث خطأ، حاول مرة أخرى.'); return }
+    if (error) { setSuggestErr(true); setSuggestMsg(locale === 'en' ? 'Something went wrong — please try again.' : locale === 'ur' ? 'خرابی ہوئی — دوبارہ کوشش کریں۔' : 'حدث خطأ، حاول مرة أخرى.'); return }
     setMyRequests(prev => [data, ...prev])
     setSuggestName(''); setSuggestSector(''); setSuggestDesc(''); setSuggestGroup(''); setSuggestFile(null)
     setSuggestMsg(T.sSent)
@@ -248,14 +278,19 @@ export default function SpecialtiesPage() {
   if (loading) return <PageLoader />
 
   return (
-    <AppShell title={T.title} nav={getNav('supplier', locale, '/supplier/specialties')} dir={dir}>
+    <AppShell title={T.title} nav={getNav('supplier', locale, '/supplier/specialties')} dir={dir} hideAssistant={!isMember}>
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{T.title}</h1>
           <p className="text-sm text-gray-500 mt-1">{T.sub}</p>
         </div>
 
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-700">{T.hint}</div>
+        {isMember && (
+          <div className="rounded-xl p-3 mb-5 text-sm bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] font-semibold">
+            {locale === 'en' ? "These are your company's specialties, shown for reading. The account owner edits them." : locale === 'ur' ? 'یہ آپ کی کمپنی کی مہارتیں ہیں، صرف دیکھنے کے لیے۔ اکاؤنٹ کا مالک انہیں بدلتا ہے۔' : 'هذه تخصصات شركتك للاطّلاع فقط، ويعدّلها صاحب الحساب.'}
+          </div>
+        )}
+        <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl p-3 mb-5 text-sm text-[#0B2438]">{T.hint}</div>
 
         {loadFailed && (
           <LoadError onRetry={load} className="mb-5"
@@ -264,29 +299,29 @@ export default function SpecialtiesPage() {
 
         {/* تحليل النشاط التجاري — يُحدّد التخصصات تلقائياً من السجل التجاري */}
         {crActivity && (
-          <div className="rounded-2xl p-4 mb-5 border shadow-sm" style={{ background: 'linear-gradient(135deg,#0F6E5608,#0B243808)', borderColor: '#0F6E5633' }}>
+          <div className="rounded-2xl p-4 mb-5 border shadow-sm bg-white" style={{ borderColor: '#0B243826' }}>
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
-                <div className="font-bold text-sm flex items-center gap-1.5" style={{ color: '#0F6E56' }}>
+                <div className="font-bold text-sm flex items-center gap-1.5" style={{ color: '#0B2438' }}>
                   <Glyph e="🔍" /> {locale === 'en' ? 'Detected from your CR activity' : locale === 'ur' ? 'آپ کے ریکارڈ سے ملا' : 'تحليل نشاطك التجاري'}
                 </div>
                 <div className="text-xs text-gray-600 mt-0.5 leading-relaxed">
                   {locale === 'en' ? 'We read your official CR activity and pre-selected your specialties below — review and adjust freely, then save.'
                   : locale === 'ur' ? 'ہم نے آپ کے سرکاری ریکارڈ سے مہارتیں منتخب کیں — جائزہ لے کر محفوظ کریں۔'
-                  : 'قرأنا نشاطك في السجل التجاري وحدّدنا تخصصاتك بالأسفل تلقائياً — راجِعها وعدّل بحرية ثم احفظ.'}
+                  : 'قرأنا نشاطك في السجل التجاري وحدّدنا تخصصاتك بالأسفل تلقائياً. راجِعها وعدّلها ثم احفظ.'}
                 </div>
-                {detectMsg && <div className="text-xs font-semibold mt-1.5" style={{ color: '#0F6E56' }}>{detectMsg}</div>}
+                {detectMsg && <div className="text-[13px] font-semibold mt-1.5 text-[#0B2438]">{detectMsg}</div>}
               </div>
-              <button onClick={() => analyzeFromCR(crActivity, companyName)}
-                className="px-4 py-2 rounded-xl font-bold text-white text-xs shrink-0 hover:shadow transition-all" style={{ background: '#0F6E56' }}>
-                {locale === 'en' ? '↻ Re-analyze' : locale === 'ur' ? '↻ دوبارہ' : '↻ إعادة التحليل'}
+              <button onClick={() => analyzeFromCR(crActivity, companyName)} disabled={isMember}
+                className="min-h-[44px] px-4 rounded-xl font-bold text-white text-sm shrink-0 hover:shadow transition-all disabled:opacity-50" style={{ background: '#0B2438' }}>
+                {locale === 'en' ? 'Re-analyze' : locale === 'ur' ? 'دوبارہ تجزیہ' : 'إعادة التحليل'}
               </button>
             </div>
           </div>
         )}
 
         {/* اختيار القطاعات + التخصصات — منتقي موحّد مع «أكمل ملفك» (نفس التصنيفات والأيقونات) */}
-        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5">
+        <fieldset disabled={isMember} className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm mb-5 min-w-0">
           <p className="text-sm font-bold mb-0.5" style={{ color: '#0B2438' }}>{locale === 'en' ? 'Quick pick: what do you sell?' : locale === 'ur' ? 'فوری انتخاب: آپ کیا بیچتے ہیں؟' : 'اختيار سريع: ماذا تبيع؟'}</p>
           <p className="text-xs text-gray-500 mb-2.5">{locale === 'en' ? 'One tap selects a whole kind of business.' : locale === 'ur' ? 'ایک کلک میں پورا کاروبار۔' : 'بضغطة واحدة تختار جميع مواد هذا النوع من المحلات.'}</p>
           <div className="mb-6"><SupplierPackPicker sectors={mySectors} specialties={mySpecialties} locale={locale} onChange={(n: any) => { setMySectors(n.sectors); setMySpecialties(n.specialties) }} /></div>
@@ -302,15 +337,39 @@ export default function SpecialtiesPage() {
             />
           </>) : (
             <button type="button" onClick={() => setShowDetailed(true)}
-              className="w-full text-sm font-bold py-3 rounded-xl border border-dashed border-gray-300 text-gray-600 hover:border-[#D4A543] hover:text-[#8F6820]">
-              {locale === 'en' ? 'Fine-tune exact specialties (optional) ▾' : locale === 'ur' ? 'تفصیلی مہارتیں (اختیاری) ▾' : 'تخصيص دقيق للتخصصات (اختياري) ▾'}
+              className="w-full inline-flex items-center justify-center gap-1 min-h-[44px] text-sm font-bold py-3 rounded-xl border border-dashed border-gray-300 text-gray-600 hover:border-[#D4A543] hover:text-[#8F6820]">
+              {locale === 'en' ? 'Fine-tune exact specialties (optional)' : locale === 'ur' ? 'تفصیلی مہارتیں (اختیاری)' : 'تخصيص دقيق للتخصصات (اختياري)'} <ChevronDown className="w-4 h-4" aria-hidden />
             </button>
           )}
-        </div>
+        </fieldset>
 
-        {mySectors.length === 0 && (
-          <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center text-gray-400 text-sm">
-            {T.noSectors}
+        {/* UX-124: what the choice includes (a pack selects many specialties at once) */}
+        {mySpecialties.length > 0 ? (
+          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-5">
+            <button type="button" onClick={() => setShowIncluded(v => !v)} aria-expanded={showIncluded} className="w-full min-h-[44px] flex items-center justify-between gap-2 text-sm font-bold text-[#0B2438]">
+              <span>{locale === 'en' ? `What your choice includes (${mySpecialties.length})` : locale === 'ur' ? `آپ کے انتخاب میں شامل (${mySpecialties.length})` : `ما يشمله اختيارك: ${arCount(mySpecialties.length, 'تخصص واحد', 'تخصصان', 'تخصصات', 'تخصصاً')}`}</span>
+              {showIncluded ? <ChevronUp className="w-4 h-4" aria-hidden /> : <ChevronDown className="w-4 h-4" aria-hidden />}
+            </button>
+            {showIncluded && (
+              <div className="mt-2 space-y-2">
+                {Object.keys(SUB_CATEGORIES as any).map(sec => {
+                  const keys = mySpecialties.filter(k => k in ((SUB_CATEGORIES as any)[sec] || {}))
+                  if (!keys.length) return null
+                  return (
+                    <div key={sec}>
+                      <div className="text-[13px] font-bold text-gray-600 mb-1">{(SECTOR_LABELS as any)[sec]}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {keys.map(k => <span key={k} className="text-[12px] px-2 py-1 rounded-full bg-[#D4A543]/10 border border-[#D4A543]/40 text-[#071827]">{getSubCategoryLabel(sec as any, k, locale)}</span>)}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ) : !loadFailed && (
+          <div role="status" className="bg-amber-50 rounded-2xl p-5 border border-amber-200 text-center text-amber-900 text-sm font-semibold mb-5">
+            {locale === 'en' ? 'You have not chosen what you sell yet, so no requests will reach you. Pick a kind of business above or your exact specialties.' : locale === 'ur' ? 'آپ نے ابھی منتخب نہیں کیا کہ آپ کیا بیچتے ہیں، اس لیے کوئی درخواست نہیں آئے گی۔ اوپر کاروبار کی قسم یا مہارتیں منتخب کریں۔' : 'لم تختر بعد ما تبيعه، ولن تصلك طلبات حتى تختار. اختر نوع محلك من الأعلى أو تخصصاتك الدقيقة.'}
           </div>
         )}
 
@@ -320,9 +379,9 @@ export default function SpecialtiesPage() {
           <p className="text-xs text-gray-500 mt-0.5 mb-4">{T.suggestSub}</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input value={suggestName} onChange={e => setSuggestName(e.target.value)}
+            <input value={suggestName} onChange={e => setSuggestName(e.target.value)} aria-label={T.sNamePh}
               className="input-field" placeholder={T.sNamePh} />
-            <select value={suggestSector} onChange={e => setSuggestSector(e.target.value)} className="input-field">
+            <select value={suggestSector} onChange={e => setSuggestSector(e.target.value)} className="input-field" aria-label={T.sSectorPh}>
               <option value="">{T.sSectorPh}</option>
               {Object.keys(SECTOR_LABELS).map(s => (
                 <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>
@@ -346,11 +405,11 @@ export default function SpecialtiesPage() {
             <input type="file" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onChange={e => setSuggestFile((e.target as any).files?.[0] || null)} className="input-field mt-1 text-sm" />
           </label>
 
-          {suggestMsg && <div className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mt-3">{suggestMsg}</div>}
+          {suggestMsg && <div role={suggestErr ? 'alert' : 'status'} className={`text-sm rounded-xl p-2.5 mt-3 border ${suggestErr ? 'text-red-700 bg-red-50 border-red-200' : 'text-emerald-700 bg-emerald-50 border-emerald-200'}`}>{suggestMsg}</div>}
 
           <button onClick={submitSuggestion} disabled={!suggestName.trim() || suggestSubmitting}
-            className="mt-3 px-5 py-2.5 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow"
-            style={{ background: '#0F6E56' }}>
+            className="mt-3 min-h-[44px] px-5 rounded-xl font-semibold text-white text-sm disabled:opacity-50 transition-all hover:shadow"
+            style={{ background: '#0B2438' }}>
             {suggestSubmitting ? T.sSending : T.sBtn}
           </button>
 
@@ -361,7 +420,7 @@ export default function SpecialtiesPage() {
                 {myRequests.map(r => (
                   <div key={r.id} className="flex items-center justify-between gap-2 text-sm bg-gray-50 rounded-xl px-3 py-2">
                     <span className="font-semibold text-gray-700">{r.name}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                    <span className={`text-[12px] px-2 py-0.5 rounded-full font-bold ${
                       r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
                       r.status === 'rejected' ? 'bg-red-100 text-red-600' :
                       'bg-amber-100 text-amber-700'
@@ -378,16 +437,16 @@ export default function SpecialtiesPage() {
         {/* Save */}
         <div className="sticky bottom-[calc(4.5rem+env(safe-area-inset-bottom))] lg:bottom-4 mt-6 z-10">
           {msg && <div role={msgErr ? 'alert' : undefined} className={`text-sm rounded-xl p-3 mb-3 text-center border ${msgErr ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>{msg}</div>}
-          {isMember ? (
-            <div className="rounded-xl p-3 text-sm text-center bg-white border border-gray-200 text-gray-600 shadow">
-              {locale === 'en' ? "These are your company's specialties. The account owner edits them." : locale === 'ur' ? 'یہ آپ کی کمپنی کا سامان ہے۔ اکاؤنٹ کا مالک اسے بدلتا ہے۔' : 'هذه تخصصات شركتك، ويعدّلها مالك الحساب.'}
-            </div>
-          ) : (
+          {isMember ? null : dirty || saving ? (
           <button onClick={handleSave} disabled={saving || loadFailed}
-            className="w-full py-4 rounded-xl font-bold text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
-            style={{ background: '#D4A543', color: '#071827' }}>
+            className="w-full min-h-[52px] py-4 rounded-xl font-extrabold text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
+            style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', color: '#071827' }}>
             {saving ? T.saving : `${T.save} (${mySpecialties.length})`}
           </button>
+          ) : !loadFailed && (
+            <div className="w-full min-h-[52px] py-3 rounded-xl text-center font-bold text-base bg-white border border-emerald-200 text-emerald-700 shadow" aria-live="polite">
+              {locale === 'en' ? `Specialties saved (${mySpecialties.length})` : locale === 'ur' ? `مہارتیں محفوظ ہیں (${mySpecialties.length})` : `التخصصات محفوظة (${mySpecialties.length})`}
+            </div>
           )}
         </div>
       </div>

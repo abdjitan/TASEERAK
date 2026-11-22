@@ -96,7 +96,7 @@ export default function CrClaimPage() {
           </p>
           {done ? (
             <div className="text-sm rounded-xl p-4 bg-emerald-50 text-emerald-700 border border-emerald-200">
-              ✓ {L('Your request was sent. You will be notified of the decision.', 'آپ کی درخواست بھیج دی گئی۔ فیصلے کی اطلاع دی جائے گی۔', 'أُرسل طلبك، وسيصلك إشعار بالقرار.')}
+              <Glyph e="✅" /> {L('Your request was sent. You will be notified of the decision.', 'آپ کی درخواست بھیج دی گئی۔ فیصلے کی اطلاع دی جائے گی۔', 'أُرسل طلبك، وسيصلك إشعار بالقرار.')}
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">
@@ -133,7 +133,7 @@ export default function CrClaimPage() {
                 <div key={c.id} className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 p-3 text-sm">
                   <div className="min-w-0">
                     <div className="font-mono" dir="ltr">{c.commercial_registration}</div>
-                    <div className="text-[11px] text-gray-400">{statusLabel(c.status)}{c.admin_note ? ' · ' + c.admin_note : ''}</div>
+                    <div className="text-[12px] text-gray-500">{statusLabel(c.status)}{c.admin_note ? ' · ' + c.admin_note : ''}</div>
                   </div>
                   {c.status === 'open' && (
                     <button type="button" onClick={() => withdraw(c.id)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">

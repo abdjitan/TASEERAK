@@ -46,7 +46,7 @@ export default function SupplierAnalyticsPage() {
   const cards = [
     { label: L('Offers submitted', 'جمع کرائی گئی آفرز', 'العروض المقدَّمة'), value: totalOffers, color: '#0B2438' },
     { label: L('Won', 'جیتی گئیں', 'مكسوبة'), value: won, color: '#0F6E56' },
-    { label: L('Lost', 'ہاری گئیں', 'خاسرة'), value: lost, color: '#b91c1c' },
+    { label: L('Not chosen', 'منتخب نہیں ہوئیں', 'لم تُختر'), value: lost, color: '#9AA3AD' },
     { label: L('Pending', 'زیرِ التوا', 'قيد الانتظار'), value: pending, color: '#8F6820' },
   ]
 
@@ -57,7 +57,7 @@ export default function SupplierAnalyticsPage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <div className="text-4xl mb-3"><Glyph e="🏆" /></div>
             <p className="font-bold text-gray-700 mb-1">{L('No offers yet', 'ابھی کوئی آفر نہیں', 'لا توجد عروض بعد')}</p>
-            <p className="text-sm text-gray-400">{L('Submit offers on requests and your win/loss stats will appear here.', 'درخواستوں پر آفرز دیں، آپ کی جیت اور ہار کے اعداد و شمار یہاں نظر آئیں گے۔', 'قدّم عروضاً على الطلبات وستظهر إحصاءات الفوز والخسارة هنا.')}</p>
+            <p className="text-sm text-gray-500">{L('Submit offers on requests and your win/loss stats will appear here.', 'درخواستوں پر آفرز دیں، آپ کی جیت اور ہار کے اعداد و شمار یہاں نظر آئیں گے۔', 'قدّم عروضاً على الطلبات وستظهر إحصاءات الفوز والخسارة هنا.')}</p>
           </div>
         ) : (
           <>
@@ -76,7 +76,7 @@ export default function SupplierAnalyticsPage() {
               {cards.map((c) => (
                 <div key={c.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
                   <div className="text-2xl font-extrabold" style={{ color: c.color }}>{c.value.toLocaleString('en-US')}</div>
-                  <div className="text-[11px] text-gray-500 mt-1">{c.label}</div>
+                  <div className="text-[12px] text-gray-500 mt-1">{c.label}</div>
                 </div>
               ))}
             </div>
@@ -95,20 +95,20 @@ export default function SupplierAnalyticsPage() {
                       <div key={s.sector}>
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="font-semibold text-gray-700">{sl(s.sector)}</span>
-                          <span className="text-gray-400">{dec ? `${rate}% ${L('win', 'جیت', 'فوز')}` : L('undecided', 'غیر طے شدہ', 'قيد الحسم')} · {L(`${t} total`, `کل ${t}`, `الإجمالي ${t}`)}</span>
+                          <span className="text-gray-500">{dec ? `${rate}% ${L('win', 'جیت', 'فوز')}` : L('undecided', 'غیر طے شدہ', 'قيد الحسم')} · {L(`${t} total`, `کل ${t}`, `الإجمالي ${t}`)}</span>
                         </div>
                         <div className="h-2.5 rounded-full overflow-hidden bg-gray-100 flex">
                           <div style={{ width: pct(w), background: '#0F6E56' }} title={L('Won', 'جیتی گئیں', 'مكسوبة')} />
-                          <div style={{ width: pct(l), background: '#b91c1c' }} title={L('Lost', 'ہاری گئیں', 'خاسرة')} />
+                          <div style={{ width: pct(l), background: '#9AA3AD' }} title={L('Not chosen', 'منتخب نہیں ہوئیں', 'لم تُختر')} />
                           <div style={{ width: pct(t - w - l), background: '#e5e7eb' }} title={L('Pending', 'زیرِ التوا', 'قيد الانتظار')} />
                         </div>
                       </div>
                     )
                   })}
                 </div>
-                <div className="flex items-center gap-4 mt-3 text-[10px] text-gray-400">
+                <div className="flex items-center gap-4 mt-3 text-[12px] text-gray-500">
                   <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#0F6E56' }} />{L('Won', 'جیتی گئیں', 'مكسوبة')}</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#b91c1c' }} />{L('Lost', 'ہاری گئیں', 'خاسرة')}</span>
+                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#9AA3AD' }} />{L('Not chosen', 'منتخب نہیں ہوئیں', 'لم تُختر')}</span>
                   <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#e5e7eb' }} />{L('Pending', 'زیرِ التوا', 'قيد الانتظار')}</span>
                 </div>
               </div>
@@ -125,25 +125,26 @@ export default function SupplierAnalyticsPage() {
                     const wh = offs ? Math.round((w / offs) * h) : 0
                     return (
                       <div key={m.month} className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[10px] font-bold text-gray-500">{offs}</div>
+                        <div className="text-[12px] font-bold text-gray-500">{offs}</div>
                         <div className="w-full max-w-[42px] rounded-t-md relative flex flex-col justify-end" style={{ height: '100px' }}>
                           <div className="w-full rounded-t-md bg-[#0B2438]/15 relative" style={{ height: `${h}%` }}>
                             <div className="absolute bottom-0 left-0 right-0 rounded-t-md" style={{ height: `${wh}%`, background: '#0F6E56' }} title={`${w} ${L('won', 'جیتیں', 'فوز')}`} />
                           </div>
                         </div>
-                        <div className="text-[9px] text-gray-400" dir="ltr">{m.month}</div>
+                        <div className="text-[12px] text-gray-500" dir="ltr">{m.month}</div>
                       </div>
                     )
                   })}
                 </div>
-                <div className="flex items-center gap-4 mt-3 text-[10px] text-gray-400 justify-center">
+                <div className="flex items-center gap-4 mt-3 text-[12px] text-gray-500 justify-center">
                   <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#0B243826' }} />{L('Offers', 'آفرز', 'العروض')}</span>
                   <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#0F6E56' }} />{L('Won', 'جیتی گئیں', 'مكسوبة')}</span>
                 </div>
               </div>
             )}
 
-            <p className="text-center text-[11px] text-gray-400 mt-5">{L('Based on your own offers only. Competitor prices are never shown.', 'صرف آپ کی اپنی آفرز کی بنیاد پر۔ حریفوں کی قیمتیں کبھی نہیں دکھائی جاتیں۔', 'محسوبة من عروضك أنت فقط، ولا تُعرض أسعار المنافسين إطلاقاً.')}</p>
+            <p className="text-center text-[13px] text-gray-600 mt-5">{L('Buyers usually choose by price and delivery time; a complete offer with clear specifications helps.', 'خریدار عموماً قیمت اور ڈیلیوری کے وقت سے انتخاب کرتے ہیں؛ واضح تفصیلات والی مکمل آفر مدد دیتی ہے۔', 'يختار المشتري عادةً بحسب السعر ومدة التوصيل، والعرض الكامل بمواصفات واضحة يرفع فرصتك.')}</p>
+            <p className="text-center text-[12px] text-gray-500 mt-5">{L('Based on your own offers only. Competitor prices are never shown.', 'صرف آپ کی اپنی آفرز کی بنیاد پر۔ حریفوں کی قیمتیں کبھی نہیں دکھائی جاتیں۔', 'محسوبة من عروضك أنت فقط، ولا تُعرض أسعار المنافسين إطلاقاً.')}</p>
           </>
         )}
       </div>

@@ -73,10 +73,10 @@ export default function CrClaimsOnMyAccountPage() {
           <div key={c.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <span className="font-mono font-bold" style={{ color: '#0B2438' }} dir="ltr">{c.commercial_registration}</span>
-              <span className="text-[11px] text-gray-500">{statusLabel(c.status)}</span>
+              <span className="text-[12px] text-gray-500">{statusLabel(c.status)}</span>
             </div>
             <div className="text-sm text-gray-600 mt-1">{L('Requested by', 'درخواست دہندہ', 'صاحب الطلب')}: <b>{c.claimant_name}</b></div>
-            <div className="text-[11px] text-gray-400 mt-0.5">{new Date(c.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</div>
+            <div className="text-[12px] text-gray-500 mt-0.5">{new Date(c.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</div>
             {c.holder_response ? (
               <div className="mt-3 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-700"><Glyph e="💬" /> {L('Your answer', 'آپ کا جواب', 'ردّك')}: {c.holder_response}</div>
             ) : c.status === 'open' && (
@@ -87,7 +87,7 @@ export default function CrClaimsOnMyAccountPage() {
                   className="px-6 py-2 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#0B2438' }}>
                   {busy === c.id ? '…' : L('Send to the admin', 'انتظامیہ کو بھیجیں', 'إرسال إلى الإدارة')}
                 </button>
-                <div className="text-[11px] text-gray-400">{L('You can answer once.', 'آپ ایک بار جواب دے سکتے ہیں۔', 'يمكنك الرد مرة واحدة.')}</div>
+                <div className="text-[12px] text-gray-500">{L('You can answer once.', 'آپ ایک بار جواب دے سکتے ہیں۔', 'يمكنك الرد مرة واحدة.')}</div>
               </div>
             )}
           </div>
