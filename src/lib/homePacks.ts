@@ -39,7 +39,7 @@ export const HOME_PACKS: HomePack[] = [
     ],
   },
   {
-    id: 'paint', img: 'finishing', cover: 'رولة دهان', ar: 'دهان شقة', en: 'Paint an apartment', ur: 'اپارٹمنٹ پینٹ',
+    id: 'paint', img: 'finishing', cover: 'رولة دهان', photo: '/images/packs/paint.webp', ar: 'دهان شقة', en: 'Paint an apartment', ur: 'اپارٹمنٹ پینٹ',
     sub: { ar: 'دهان ومعجون وأدوات', en: 'Paint, filler and tools', ur: 'پینٹ، پٹی اور اوزار' },
     items: [
       { name: 'دهان داخلي', sector: 'supply_store', qty: null, hint: { ar: 'جالون لكل ٣٠ م² من الجدران تقريباً (وجهان)', en: 'About one gallon per 30 m² of wall (two coats)', ur: 'تقریباً ہر 30 مربع میٹر دیوار کے لیے ایک گیلن' } },
