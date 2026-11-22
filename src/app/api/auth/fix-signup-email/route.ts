@@ -3,7 +3,7 @@
 // stuck (a new sign-up is refused because the phone is taken). While the e-mail is NOT confirmed yet, the
 // owner of the account can correct it here and get a new link.
 // Proof of ownership: the e-mail + password they signed up with, checked against the stored bcrypt hash
-// (admin_unconfirmed_owner, migration 254) and only while the e-mail is unconfirmed. Confirmed accounts are never touched (they change e-mail in Settings).
+// (admin_account_owner, migrations 254/255) and only while the e-mail is unconfirmed. Confirmed accounts are never touched (they change e-mail in Settings).
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/server'
 
@@ -31,13 +31,10 @@ export async function POST(req: NextRequest) {
 
   // ownership: the password must match AND the e-mail must still be unconfirmed (bcrypt checked in the DB,
   // migration 254: password sign-in needs a CAPTCHA, so the server cannot simply try to sign in)
-  const { data: rows } = await admin.rpc('admin_unconfirmed_owner', { p_email: email, p_password: password })
+  const { data: rows } = await admin.rpc('admin_account_owner', { p_email: email, p_password: password })
   const u = Array.isArray(rows) ? rows[0] : null
-  if (!u?.id) {
-    const { data: any } = await admin.rpc('admin_user_by_email', { p_email: email })
-    const acc = Array.isArray(any) ? any[0] : null
-    return acc?.email_confirmed ? err('already_confirmed') : err('bad_credentials', 401)
-  }
+  if (!u?.id) return err('bad_credentials', 401)   // same answer whether or not the e-mail exists (migration 255)
+  if (u.email_confirmed) return err('already_confirmed')
   if (Date.now() - new Date(u.created_at).getTime() > 14 * 24 * 3600 * 1000) return err('too_old')
   const origin = req.headers.get('origin') || 'https://taseerak.com'
   // the service role is not asked for a CAPTCHA (the browser's own resend would be)
