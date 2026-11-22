@@ -6,6 +6,8 @@ import { useState, useRef, useEffect } from 'react'
 import { TERMS_VERSION } from '@/lib/legal'
 import { createClient } from '@/lib/supabase/client'
 import { useForm } from 'react-hook-form'
+import FixSignupEmail from '@/components/auth/FixSignupEmail'
+import { emailTypoSuggestion } from '@/lib/emailTypo'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTranslation } from '@/i18n'
@@ -155,6 +157,7 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
+  const [sentTo, setSentTo] = useState<{ email: string; password: string } | null>(null) // to resend / correct a mistyped e-mail
   const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [captchaToken, setCaptchaToken] = useState('')
   const captchaRef = useRef<any>(null)
@@ -235,7 +238,7 @@ export default function RegisterPage() {
       if (authError) throw new Error(authError.message)
 
       // تأكيد البريد مفعّل → لا جلسة: نعرض شاشة «فعّل بريدك».
-      if (!authData.session) { setEmailSent(true); return }
+      if (!authData.session) { setSentTo({ email: data.email, password: data.password }); setEmailSent(true); return }
       // تأكيد البريد معطّل → لدينا جلسة: نوجّه مباشرة لإكمال الملف.
       window.location.href = '/onboarding'
     } catch (err: any) {
@@ -255,8 +258,10 @@ export default function RegisterPage() {
           <div className="text-5xl mb-4"><Glyph e="📬" /></div>
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
+          {sentTo && <p className="text-sm font-bold text-navy mb-2" dir="ltr">{sentTo.email}</p>}
           <p className="text-xs text-gray-500 mb-6">{t.verifyNext}</p>
           <Link href="/login" className="inline-block w-full py-3 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.goSignIn}</Link>
+          {sentTo && <FixSignupEmail email={sentTo.email} password={sentTo.password} locale={locale} onFixed={(e) => setSentTo(s => s ? { ...s, email: e } : s)} />}
         </div>
       </div>
     )
@@ -371,6 +376,9 @@ export default function RegisterPage() {
               <input id="reg-email" autoComplete="email" dir="ltr" {...register('email', { onBlur: (e) => checkEmailDup(e.target.value), onChange: () => { if (emailDup) setEmailDup(false) } })}
                 className="input-field" placeholder="name@example.com" type="email" />
               {errors.email && <p className="text-red-500 text-xs mt-1">{vmsg(errors.email.message, locale)}</p>}
+              {(() => { const sug = emailTypoSuggestion(watch('email') || ''); return sug ? (
+                <p className="text-xs mt-1 text-[#8F6820]">{locale === 'en' ? 'Did you mean' : locale === 'ur' ? 'کیا آپ کا مطلب' : 'هل تقصد'} <button type="button" dir="ltr" className="font-bold underline" onClick={() => { setValue('email', sug, { shouldValidate: true }); checkEmailDup(sug) }}>{sug}</button>{locale === 'en' ? '?' : '؟'}</p>
+              ) : null })()}
               {emailDup && <p className="text-red-600 text-xs bg-red-50 border border-red-200 rounded-lg p-2 mt-1"><Glyph e="⚠" /> {t.emailTaken}<Link href="/login" className="underline font-bold">{t.signInInstead}</Link></p>}
             </div>
 

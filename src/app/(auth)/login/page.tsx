@@ -10,6 +10,7 @@ import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import PhoneOtpForm from '@/components/auth/PhoneOtpForm'
 import { rememberPostSignupNext } from '@/lib/postSignupNext'
+import FixSignupEmail from '@/components/auth/FixSignupEmail'
 import { BUYER_PHONE_LOGIN as PHONE_OTP_ENABLED } from '@/lib/features'
 import { pendingTeamInvite } from '@/lib/sellers'
 import { captureRef } from '@/lib/referral'
@@ -34,6 +35,7 @@ function LoginForm() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [unconfirmed, setUnconfirmed] = useState(false) // e-mail not confirmed: offer resend / correct the address
   const [status, setStatus] = useState('')
   const [progress, setProgress] = useState(0)
   const [captchaToken, setCaptchaToken] = useState('')
@@ -122,6 +124,7 @@ function LoginForm() {
       if (err) {
         // A used/expired CAPTCHA token can't be reused — refresh it for the retry.
         captchaRef.current?.reset(); setCaptchaToken('')
+        setUnconfirmed(/not confirmed/i.test(err.message || '') || (err as any).code === 'email_not_confirmed')
         setError(/captcha/i.test(err.message || '') ? t.captchaErr
           : /not confirmed/i.test(err.message || '') || (err as any).code === 'email_not_confirmed'
             ? L('Confirm your email first: open the link we sent to your inbox (check spam too), then sign in.', 'پہلے اپنی ای میل کی تصدیق کریں: ہمارا بھیجا ہوا لنک کھولیں (اسپام بھی دیکھیں)، پھر سائن اِن کریں۔', 'أكّد بريدك الإلكتروني أولاً من الرابط الذي أرسلناه إليك (تحقّق من مجلد الرسائل غير المرغوب فيها أيضاً)، ثم سجّل الدخول.')
@@ -205,6 +208,7 @@ function LoginForm() {
             ) : (
               <>
                 {error && <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg><span>{error}</span></div>}
+                {unconfirmed && email && password && <FixSignupEmail email={email} password={password} locale={locale} onFixed={(e) => { setEmail(e); setError('') }} />}
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div>
                     <label htmlFor="login-email" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.email}</label>
