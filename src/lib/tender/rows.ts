@@ -2,6 +2,7 @@
 // (the existing project → request path in /contractor/project/new sends it).
 import type { TenderItem, TenderFlag } from './types'
 import type { Routed } from './classify'
+import { SUB_CATEGORIES } from '@/types'
 
 export function itemToRow(tenderId: string, it: TenderItem, routed: Routed | null, flags: TenderFlag[], links: any): Record<string, any> {
   return {
@@ -63,6 +64,8 @@ export function composeSpecification(r: any): string {
 /** One approved material row → one line of the project draft (same shape the project page uses). */
 export function draftItemFromRow(r: any, i: number): Record<string, any> {
   const qty = r.qty == null ? (r.lump_sum ? 1 : '') : Number(r.qty)
+  // round-4 UX-023: a specialty that does not belong to the sector is never carried over
+  const sub = r.sub_category && (SUB_CATEGORIES as any)[r.sector || 'civil']?.[r.sub_category] ? r.sub_category : null
   return {
     id: `tender-${i}`,
     product_name: (r.product_name || r.item_text || '').slice(0, 120),
@@ -71,10 +74,10 @@ export function draftItemFromRow(r: any, i: number): Record<string, any> {
     unit: r.lump_sum ? 'مقطوعية' : (r.unit || 'عدد'),
     specification: composeSpecification(r),
     specs: r.specs || {},
-    sub_category: r.sub_category || null,
-    needs_classification: !r.sub_category,
+    sub_category: sub,
+    needs_classification: !sub,
     selected: true,
-    done: Number(qty) > 0 && !!r.sub_category,
+    done: Number(qty) > 0 && !!sub,
     custom: !r.links?.catalog,
     description: r.description,
     ref: (r.codes || [])[0] || r.ref || '',

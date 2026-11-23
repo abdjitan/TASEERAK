@@ -203,6 +203,10 @@ begin
   select count(*) into n from notifications where user_id = buyer and data->>'offer_id' = v_offer::text
      and title in ('أكّد المورد التوصيل', 'أرفق المورد فاتورته');
   if n = 2 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL buyer deal notifications=' || n; end if;
+  -- 275 (round-4 UX-005): payment notices reach both parties
+  select count(*) into n from notifications where data->>'offer_id' = v_offer::text
+     and ((user_id = sup and data->>'kind' = 'paid') or (user_id = buyer and data->>'kind' = 'payment_confirmed'));
+  if n = 2 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL payment notices=' || n; end if;
   select count(*) into n from notifications where user_id = sup and data->>'offer_id' = v_offer::text and title = 'أكّد المشتري الاستلام';
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL receipt notification'; end if;
 
