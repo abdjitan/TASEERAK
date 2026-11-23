@@ -185,6 +185,13 @@ export default function SettingsPage() {
   const [crChecking, setCrChecking] = useState(false)
   // instant-save switches (notifications, language): their own feedback line (UX-138)
   const [notifMsg, setNotifMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  // «who are you buying for?»: its own status line next to the choice (UX-107)
+  const [btSaving, setBtSaving] = useState(false)
+  const [btMsg, setBtMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  // the mobile badge only when verifying the mobile is required (app flag), UX-117
+  const [phoneRequired, setPhoneRequired] = useState(false)
+  // a company team member: the company data belongs to the owner (UX-118)
+  const [teamOf, setTeamOf] = useState<{ id: string; name: string } | null>(null)
   function flashNotif(ok: boolean) {
     setNotifMsg({ ok, text: ok ? L('Saved', 'محفوظ', 'حُفظ') : L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.') })
     setTimeout(() => setNotifMsg(null), 2500)
@@ -220,6 +227,14 @@ export default function SettingsPage() {
         if (cp && cp !== (p.phone || '')) { setUseDiffContact(true); setContactPhone(cp) }
         else { setUseDiffContact(false); setContactPhone('') }
       }
+      try {
+        const [{ data: req }, { data: acting }] = await Promise.all([supabase.rpc('phone_verify_required'), supabase.rpc('acting_uid')])
+        setPhoneRequired(req === true)
+        if (p?.role === 'supplier' && acting && acting !== session.user.id) {
+          const { data: co } = await supabase.from('profiles_public').select('company_name_ar').eq('id', acting).maybeSingle()
+          setTeamOf({ id: String(acting), name: (co as any)?.company_name_ar || '' })
+        }
+      } catch {}
       const { data: reqs } = await supabase.from('profile_change_requests').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false })
       setMyRequests(reqs || [])
       setLoading(false)
@@ -500,15 +515,17 @@ export default function SettingsPage() {
   // a phone sign-up has no password: it signs in with a code (UX-040)
   const phoneAccount = placeholderEmail
   // documents are for selling businesses only (company / shop), not buyers or independents (UX-043)
-  const showDocs = isSupplier && !independent
-  const profileTitle = isSupplier && !independent ? t.profileTab
+  const teamMember = isSupplier && !!teamOf
+  const showDocs = isSupplier && !independent && !teamMember
+  const profileTitle = isSupplier && independent ? L('Account details', 'اکاؤنٹ کی تفصیلات', 'بيانات الحساب')
+    : isSupplier ? t.profileTab
     : homeBuyer ? L('My details', 'میری تفصیلات', 'بياناتي')
     : L('Account details', 'اکاؤنٹ کی تفصیلات', 'بيانات الحساب')
   const nameLabel = isSupplier ? (independent ? L('Name', 'نام', 'الاسم') : t.companyAr)
     : homeBuyer ? L('Name', 'نام', 'الاسم') : L('Company or establishment name', 'کمپنی یا ادارے کا نام', 'اسم الشركة أو المؤسسة')
   const namePlaceholder = homeBuyer || (isSupplier && independent) ? L('Your full name', 'آپ کا پورا نام', 'اسمك الكامل')
     : L('Company or establishment name', 'کمپنی یا ادارے کا نام', 'اسم الشركة أو المؤسسة')
-  const showVat = isSupplier ? !(independent && !vatNumber) : homeBuyer ? !!profile?.vat_number : true
+  const showVat = teamMember ? false : isSupplier ? !(independent && !vatNumber) : homeBuyer ? !!profile?.vat_number : true
   const crDigits = normalizeCrInput(crNumber)
   const crValid = isUnifiedCr(crDigits)
   const cityOptions = CITIES_BY_REGION[region] || []
@@ -533,17 +550,19 @@ export default function SettingsPage() {
         profile?.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
       }`}>
         {profile?.verification_status === 'verified' ? t.verified : profile?.verification_status === 'rejected' ? t.rejected
-          : independent ? L('Independent seller', 'آزاد فروخت کنندہ', 'بائع مستقل')
+          : independent ? L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')
           : !profile?.cr_url ? L('Upload your commercial registration', 'اپنا تجارتی رجسٹریشن اپلوڈ کریں', 'ارفع السجل التجاري') : t.pending}
       </span>
     : profile?.phone_verified_at
       ? <span className="inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800"><Check className="w-3.5 h-3.5" aria-hidden />{L('Mobile verified', 'موبائل تصدیق شدہ', 'الجوال موثّق')}</span>
+      : !phoneRequired ? null
       : <a href="#phone" onClick={() => setTab('profile')} className="inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-800">{L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'وثّق جوالك')}</a>
 
   return (
     <AppShell title={t.title} company={companyAr} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} dir={dir}>
       <div className="max-w-5xl mx-auto">
-        <h1 className="hidden lg:block text-2xl font-bold mb-8" style={{ color: '#0B2438' }}>{t.title}</h1>
+        {/* one h1 on every width; visually hidden on phones where the top bar shows the title (UX-110) */}
+        <h1 className="sr-only lg:not-sr-only lg:block text-2xl font-bold mb-8" style={{ color: '#0B2438' }}>{t.title}</h1>
 
         {/* Phones: one horizontal tab row that stays under the top bar, so a tab never changes content
             out of sight below a tall menu card (UX-138) */}
@@ -621,18 +640,37 @@ export default function SettingsPage() {
             {(tab === 'profile' || (tab === 'docs' && !showDocs)) && (
               <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
                 <h2 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>{profileTitle}</h2>
-                <p className="text-sm text-gray-600 mb-6">{t.role}: <span className="font-semibold text-[#0B2438]">{isBuyer ? t.contractor : t.supplier}</span></p>
+                <p className="text-sm text-gray-600 mb-6">{t.role}: <span className="font-semibold text-[#0B2438]">{isBuyer ? t.contractor : independent ? L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير') : t.supplier}</span></p>
+                {teamMember && (
+                  <div className="mb-6 rounded-xl border border-gray-200 bg-[#EEF2F6] p-4 text-sm text-[#0B2438] leading-relaxed" role="note">
+                    {L(`You are a member of the «${teamOf?.name || 'company'}» team. The company details and documents are managed by the account owner.`, `آپ «${teamOf?.name || 'کمپنی'}» کی ٹیم کے رکن ہیں۔ کمپنی کی تفصیلات اور دستاویزات اکاؤنٹ کا مالک سنبھالتا ہے۔`, `أنت عضو في فريق «${teamOf?.name || 'الشركة'}». بيانات الشركة ومستنداتها يديرها مالك الحساب.`)}
+                  </div>
+                )}
                 {/* owner 2026-11-22: «لبيتي» = the simple request and a short home; changeable here any time */}
                 {isBuyer && (
                   <div className="mb-6 rounded-xl border border-gray-200 p-4">
                     <div id="buyer-type-label" className="text-sm font-bold text-[#0B2438] mb-2">{L('Who are you buying for?', 'آپ کس کے لیے خرید رہے ہیں؟', 'لمن تشتري؟')}</div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-labelledby="buyer-type-label">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-labelledby="buyer-type-label" aria-busy={btSaving}>
                       {([['individual', L('My home', 'اپنا گھر', 'لبيتي'), L('Simple request and home screen', 'آسان درخواست اور ہوم اسکرین', 'طلب وصفحة رئيسية أبسط')], ['business', L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'), L('All options', 'تمام اختیارات', 'كل الخيارات')]] as const).map(([v, label, sub]) => {
                         const on = profile?.buyer_type === v
                         return (
                           <button key={v} type="button" role="radio" aria-checked={on}
-                            onClick={async () => { const prev = profile?.buyer_type; setProfile((p: any) => ({ ...p, buyer_type: v })); rememberBuyerType(v); window.dispatchEvent(new Event('tsk:buyer-type')); const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id); if (error) { setProfile((p: any) => ({ ...p, buyer_type: prev })); rememberBuyerType(prev); window.dispatchEvent(new Event('tsk:buyer-type')) } flashNotif(!error) }}
-                            className={`min-h-[56px] text-start rounded-xl border-2 px-3 py-2.5 flex items-start gap-2 ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
+                            disabled={btSaving}
+                            onClick={async () => {
+                              if (on || btSaving) return
+                              const prev = profile?.buyer_type
+                              setBtSaving(true); setBtMsg(null)
+                              setProfile((p: any) => ({ ...p, buyer_type: v })); rememberBuyerType(v); window.dispatchEvent(new Event('tsk:buyer-type'))
+                              const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id)
+                              if (error) { setProfile((p: any) => ({ ...p, buyer_type: prev })); rememberBuyerType(prev); window.dispatchEvent(new Event('tsk:buyer-type')) }
+                              setBtSaving(false)
+                              setBtMsg(error
+                                ? { ok: false, text: L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.') }
+                                : v === 'individual'
+                                  ? { ok: true, text: L('Saved. The home page and the request are now simpler.', 'محفوظ ہو گیا۔ ہوم پیج اور درخواست اب آسان ہیں۔', 'حُفظ. أصبحت الصفحة الرئيسية والطلب أبسط.') }
+                                  : { ok: true, text: L('Saved. All the options now appear in the menu.', 'محفوظ ہو گیا۔ تمام اختیارات اب مینو میں ہیں۔', 'حُفظ. ظهرت كل الخيارات في القائمة.') })
+                            }}
+                            className={`min-h-[56px] text-start rounded-xl border-2 px-3 py-2.5 flex items-start gap-2 disabled:opacity-70 ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
                             <span className={`mt-0.5 w-5 h-5 shrink-0 rounded-full border-2 grid place-items-center ${on ? 'border-[#0B2438] bg-[#0B2438] text-white' : 'border-gray-300'}`}>{on && <Check className="w-3 h-3" strokeWidth={3} aria-hidden />}</span>
                             <span>
                               <span className="block text-sm font-bold text-[#0B2438]">{label}</span>
@@ -642,6 +680,11 @@ export default function SettingsPage() {
                         )
                       })}
                     </div>
+                    {(btSaving || btMsg) && (
+                      <p role="status" className={`mt-2 text-[13px] font-semibold inline-flex items-center gap-1 ${btSaving ? 'text-gray-600' : btMsg?.ok ? 'text-emerald-800' : 'text-red-700'}`}>
+                        {!btSaving && btMsg?.ok && <Check className="w-4 h-4" aria-hidden />}{btSaving ? L('Saving…', 'محفوظ ہو رہا ہے…', 'جارٍ الحفظ…') : btMsg?.text}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -750,12 +793,13 @@ export default function SettingsPage() {
                   <div>
                     <div className="block text-xs font-bold text-gray-600 mb-1.5">{L('District', 'محلہ', 'الحي')}</div>
                     <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
+                    <Link href="/location" className="inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Set your location on the map (optional)', 'نقشے پر اپنا مقام منتخب کریں (اختیاری)', 'حدّد موقعك على الخريطة (اختياري)')}</Link>
                   </div>
 
                   {/* Seller kind + company activity (the buyer-facing tier is derived from it) */}
-                  {isSupplier && (
+                  {isSupplier && !teamMember && (
                     <div className="border-t border-gray-100 pt-5">
-                      <div className="block text-xs font-bold text-gray-600 mb-2">{L('Account type', 'اکاؤنٹ کی قسم', 'نوع الحساب')}</div>
+                      <div className="block text-xs font-bold text-gray-600 mb-2">{L('Seller type (company or pricing agent)', 'فروخت کنندہ کی قسم (کمپنی یا قیمت ایجنٹ)', 'نوع البائع (شركة أو وسيط تسعير)')}</div>
                       <SellerKindPicker providerType={profile?.provider_type} supplierTier={supplierTier} locale={locale}
                         onChange={(pt: string, tr: string | null) => { setProfile({ ...profile, provider_type: pt, supplier_tier: tr }); setSupplierTier(tr || 'shop') }} />
                       {!independent && (
@@ -824,6 +868,13 @@ export default function SettingsPage() {
                     </label>
                   )}
 
+                  {/* nothing reaches WhatsApp before the mobile is verified and WhatsApp confirmed on it (UX-106) */}
+                  {waOn && !(profile?.phone_verified_at && profile?.whatsapp_verified_at) && (
+                    <p className="rounded-xl border p-3 text-[13px] leading-relaxed" style={{ background: '#FBF3E1', borderColor: '#EBD7A6', color: '#6C531F' }} role="note">
+                      {L('You will not receive WhatsApp messages until your mobile is verified and WhatsApp is confirmed on it.', 'جب تک آپ کا موبائل تصدیق اور اس پر واٹس ایپ کی تصدیق نہ ہو، واٹس ایپ پیغامات نہیں آئیں گے۔', 'لن تصلك رسائل واتساب قبل توثيق رقم جوالك وتأكيد الواتساب عليه.')}{' '}
+                      <button type="button" onClick={() => { setTab('profile'); setTimeout(() => document.getElementById('phone')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60) }} className="inline-flex items-center min-h-[44px] font-bold underline">{L('Verify your number', 'اپنا نمبر تصدیق کریں', 'وثّق رقمك')}</button>
+                    </p>
+                  )}
                   {/* WhatsApp notifications (owner 2026-11-14): approved templates from the Taseerak number to the saved mobile */}
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input type="checkbox" className="mt-0.5 w-5 h-5 accent-[#0B2438]" checked={waOn} disabled={waBusy}
@@ -959,7 +1010,7 @@ export default function SettingsPage() {
                 <p className="text-sm text-gray-600 mb-4">{t.docsSub}</p>
                 {/* التوثيق اختياري: يوضّح فايدته وفي خيار «لاحقاً» */}
                 <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6 bg-[#F5F7FA] border border-gray-200">
-                  <p className="text-sm text-gray-800 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {L('Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.', 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔', 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، وتظهر ضمن «شركات ومصانع معتمدة»، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}</p>
+                  <p className="text-sm text-gray-800 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {L('Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.', 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں، جس سے آپ پر اعتماد بڑھتا ہے اور زیادہ درخواستیں جیتنے میں مدد ملتی ہے۔', 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}{supplierTier !== 'shop' && ' ' + L('Verified companies also appear under «Approved companies and factories».', 'تصدیق شدہ کمپنیاں «منظور شدہ کمپنیاں اور فیکٹریاں» میں بھی نظر آتی ہیں۔', 'وتظهر الشركات الموثّقة كذلك ضمن «شركات ومصانع معتمدة».')}</p>
                   {/* «لاحقاً» stays on this page: it goes back to the profile tab instead of leaving (UX-160) */}
                   <button type="button" onClick={() => setTab('profile')} className="min-h-[44px] inline-flex items-center text-sm font-bold px-4 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{L('Later', 'بعد میں', 'لاحقاً')}</button>
                 </div>
@@ -967,7 +1018,7 @@ export default function SettingsPage() {
                 {profile?.verification_status === 'rejected' && (
                   <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 flex items-start gap-2" role="alert">
                     <span><Glyph e="❌" /></span>
-                    <div className="text-sm text-red-700 font-medium">{t.rejectedBanner}</div>
+                    <div className="text-sm text-red-700 font-medium">{t.rejectedBanner}{profile?.rejection_reason && <span className="block mt-1 font-normal">{L('Reason:', 'وجہ:', 'السبب:')} {profile.rejection_reason}</span>}</div>
                   </div>
                 )}
 
@@ -1112,7 +1163,8 @@ export default function SettingsPage() {
                         }`}>
                         <span>
                           <span className="block font-bold text-base text-[#0B2438]">{lang.name}</span>
-                          <span className="block text-[13px] text-gray-600 mt-0.5">{lang.nameLocal}</span>
+                          {/* the second line names the language in the interface language, in one script (UX-142) */}
+                          <span className="block text-[13px] text-gray-600 mt-0.5">{lang.key === 'ar' ? L('Arabic', 'عربی', 'العربية') : lang.key === 'en' ? L('English', 'انگریزی', 'الإنجليزية') : L('Urdu', 'اردو', 'الأردية')}</span>
                         </span>
                         {on && (
                           <span className="sm:mt-2 inline-flex items-center gap-1 text-[13px] font-bold text-[#0B2438]"><Check className="w-4 h-4" aria-hidden />{t.langSaved}</span>

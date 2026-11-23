@@ -118,7 +118,11 @@ export default function InviteFriendsPage() {
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center justify-between gap-3">
             <div>
               <div className="text-sm font-bold" style={{ color: '#0B2438' }}>{L('Joined through your invite', 'آپ کی دعوت سے شامل ہوئے', 'انضمّوا عن طريق دعوتك')}</div>
-              <div className="text-[12px] text-gray-500">{L('Counted when the new account signs in for the first time.', 'نیا اکاؤنٹ پہلی بار لاگ ان ہونے پر شمار ہوتا ہے۔', 'يُحتسب عند أول دخول للحساب الجديد.')}</div>
+              {/* a thank-you, not a bare number (UX-155) */}
+              <div className="text-[13px] text-[#0B2438] mt-0.5">{joined > 0
+                ? L(`Thank you: ${joined} joined through your invite.`, `شکریہ، آپ کی دعوت سے ${joined} شامل ہوئے۔`, `شكراً لك، انضمّ عن طريق دعوتك ${joined}.`)
+                : L('Every new supplier means more price offers on everyone’s requests.', 'ہر نیا سپلائر یعنی سب کی درخواستوں پر زیادہ قیمتیں۔', 'كل مورد جديد يعني عروض أسعار أكثر على طلبات الجميع.')}</div>
+              <div className="text-[12px] text-gray-600">{L('Counted when the new account signs in for the first time.', 'نیا اکاؤنٹ پہلی بار لاگ ان ہونے پر شمار ہوتا ہے۔', 'يُحتسب عند أول دخول للحساب الجديد.')}</div>
             </div>
             <div className="text-3xl font-bold tabular-nums" style={{ color: '#0B2438' }}>{joined}</div>
           </div>

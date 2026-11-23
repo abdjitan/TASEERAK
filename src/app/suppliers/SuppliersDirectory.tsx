@@ -2,7 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { scoreColor, approvalLabel } from '@/lib/supplierScore'
+import { scoreColor, approvalLabel, isNewSupplier } from '@/lib/supplierScore'
+import { normalizeText } from '@/lib/normalize'
+import { arCount } from '@/lib/text'
 import { SECTOR_LABELS, getSectorLabel, getRegionLabel } from '@/types'
 import { useTranslation } from '@/i18n'
 import { Check, X } from 'lucide-react'
@@ -37,9 +39,10 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
   const regions = useMemo(() => Array.from(new Set(suppliers.map((s: any) => s.region).filter(Boolean))).sort() as string[], [suppliers])
 
   const filtered = useMemo(() => {
-    const needle = q.trim()
+    // tolerant search (hamza/alef, ة/ه …), UX-104
+    const needle = normalizeText(q.trim())
     return suppliers.filter((s: any) =>
-      (needle === '' || (s.company_name_ar || '').includes(needle)) &&
+      (needle === '' || normalizeText(s.company_name_ar || '').includes(needle)) &&
       (region === '' || s.region === region) &&
       (sector === '' || (Array.isArray(s.sectors) && s.sectors.includes(sector))) &&
       (tier === '' || (s.supplier_tier && normTier(s.supplier_tier) === tier)) &&
@@ -47,6 +50,8 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
     )
   }, [suppliers, q, region, sector, tier, verifiedOnly])
 
+  // the medals follow the overall ranking, not the position inside a filtered list (UX-104)
+  const rankOf = useMemo(() => { const m = new Map<any, number>(); suppliers.forEach((s: any, i: number) => m.set(s.supplier_id, i)); return m }, [suppliers])
   const anyFilter = !!(q || region || sector || tier || verifiedOnly)
   const clear = () => { setQ(''); setRegion(''); setSector(''); setTier(''); setVerifiedOnly(false) }
 
@@ -57,7 +62,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
       <p className="font-bold text-[#0B2438] mb-1">{L('Supplier directory coming soon', 'سپلائر ڈائریکٹری جلد', 'دليل الموردين قريباً')}</p>
       <p className="text-sm text-gray-600">{L('Verified companies and shops appear here as soon as they join. You can already send a price request; it reaches the suppliers of your materials.', 'تصدیق شدہ کمپنیاں اور دکانیں شامل ہوتے ہی یہاں نظر آئیں گی۔ آپ ابھی قیمت کی درخواست بھیج سکتے ہیں۔', 'نعرض هنا الشركات والمحلات الموثّقة فور انضمامها. يمكنك الآن إرسال طلب تسعير، فيصل إلى الموردين المختصين بموادك.')}</p>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-        <a href="/login" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب تسعيرة')}</a>
+        <a href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب تسعيرة')}</a>
         <a href="/join" className="btn-ghost text-sm">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</a>
       </div>
     </div>
@@ -89,7 +94,7 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
         </div>
         {anyFilter && (
           <div className="flex items-center justify-between mt-3 text-xs">
-            <span className="text-gray-600">{L(`${filtered.length} results`, `${filtered.length} نتائج`, `${filtered.length} نتيجة`)}</span>
+            <span className="text-gray-600">{L(`${filtered.length} results`, `${filtered.length} نتائج`, arCount(filtered.length, 'نتيجة واحدة', 'نتيجتان', 'نتائج', 'نتيجة'))}</span>
             <button onClick={clear} className="inline-flex items-center gap-1 min-h-[44px] text-[#8F6820] font-bold hover:underline">{L('Clear filters', 'فلٹر صاف کریں', 'مسح الفلاتر')} <X className="w-3.5 h-3.5" aria-hidden /></button>
           </div>
         )}
@@ -104,7 +109,10 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
       ) : (
         <div className="space-y-3">
           {filtered.map((r: any, i: number) => {
-            const rb = rankBadge(i)
+            const rb = rankBadge(rankOf.get(r.supplier_id) ?? i)
+            const fresh = isNewSupplier(r)
+            const nOffers = Number(r.total_offers) || 0
+            const nWon = Number(r.won_deals) || 0
             const rating = Number(r.rating_avg) || 0
             return (
               <Link key={r.supplier_id} href={`/suppliers/${r.supplier_id}`} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:border-[#D4A543]/40 transition-colors">
@@ -118,8 +126,8 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                     <span><SellerIcon name={r.supplier_tier ? tierIcon(r.supplier_tier) : 'store'} /> {r.supplier_tier ? tierLabel(r.supplier_tier, lc) : L('Supplier', 'سپلائر', 'مورد')}</span>
                     {r.region && <span><Glyph e="📍" /> {getRegionLabel(r.region, locale)}</span>}
                     {rating > 0 && <span><Glyph e="⭐" /> {rating.toFixed(1)}</span>}
-                    <span><Glyph e="📦" /> {L(`${r.total_offers} offers`, `${r.total_offers} آفرز`, `${r.total_offers} عرض`)}</span>
-                    <span><SellerIcon name="handshake" /> {L(`${r.won_deals} requests won`, `${r.won_deals} جیتی گئی درخواستیں`, `${r.won_deals} طلب فاز به`)}</span>
+                    <span><Glyph e="📦" /> {L(`${nOffers} offers`, `${nOffers} آفرز`, arCount(nOffers, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</span>
+                    <span><SellerIcon name="handshake" /> {L(`${nWon} requests won`, `${nWon} جیتی گئی درخواستیں`, nWon === 0 ? 'لم يفز بطلب بعد' : (nWon <= 2 ? 'فاز ب' : 'فاز بـ') + arCount(nWon, 'طلب واحد', 'طلبين', 'طلبات', 'طلباً'))}</span>
                   </div>
                   {Array.isArray(r.approvals) && r.approvals.length > 0 && (
                     <div className="flex gap-1 mt-1.5 flex-wrap">
@@ -129,10 +137,16 @@ export default function SuppliersDirectory({ suppliers }: { suppliers: any[] }) 
                     </div>
                   )}
                 </div>
+                {fresh ? (
+                  <div className="shrink-0 text-center">
+                    <span className="inline-flex items-center rounded-full px-3 min-h-[32px] text-[12px] font-bold" style={{ background: '#EEF2F6', color: '#0B2438' }}>{L('New on the platform', 'پلیٹ فارم پر نیا', 'جديد على المنصة')}</span>
+                  </div>
+                ) : (
                 <div className="shrink-0 text-center">
                   <div className="w-14 h-14 grid place-items-center rounded-full font-extrabold text-lg" style={{ background: scoreColor(r.score), color: scoreText(r.score) }}>{r.score}</div>
                   <div className="text-[12px] text-gray-600 mt-1">{L('Reliability / 100', 'اعتماد / 100', 'الموثوقية من 100')}</div>
                 </div>
+                )}
               </Link>
             )
           })}

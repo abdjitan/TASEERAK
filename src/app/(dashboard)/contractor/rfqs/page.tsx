@@ -13,7 +13,7 @@ import { getNav } from '@/lib/nav'
 import { getProductLabel, getUnitLabelLong } from '@/types'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { rfqRef, rfqDate, rfqDesc } from '@/lib/rfqName'
-import { storedBuyerType } from '@/lib/buyerType'
+import { useHomeBuyer } from '@/components/buyer/useHomeBuyer'
 import { cleanArName } from '@/lib/displayName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, rfqPurgeInfo } from '@/lib/deadline'
 import Glyph from '@/components/shared/Glyph'
@@ -21,7 +21,7 @@ import { arCount, arOffers, arRequests, countLabel } from '@/lib/text'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { askConfirm } from '@/lib/askConfirm'
 import { rfqState, rfqStatusLabel, rfqStateTone, type RfqState } from '@/lib/rfqState'
-import { dealStage } from '@/lib/dealStage'
+import { dealStage, buyerTodo, buyerActionLabel } from '@/lib/dealStage'
 import { offerComparable, lineComparable, sarLabel } from '@/lib/vat'
 import { fileHref } from '@/lib/fileHref'
 
@@ -43,7 +43,7 @@ function MyRequests() {
   const { locale, dir } = useTranslation()
   const params = useSearchParams()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  const home = storedBuyerType() === 'individual'
+  const home = useHomeBuyer() // also on a new device: read from the profile once (UX-068)
   const pname = (n: any) => (home && locale === 'ar' ? cleanArName(String(n || '')) : getProductLabel(n, locale))
   const [loading, setLoading] = useState(true)
   const [rfqs, setRfqs] = useState<any[]>([])
@@ -113,6 +113,10 @@ function MyRequests() {
   }
   // every accepted deal of a chosen request is paid and confirmed (UX-048)
   const dealDoneOf = (r: any) => { const d = dealsBy[r.id] || []; return d.length > 0 && d.every((o: any) => dealStage(o).done) }
+  // the first deal of a chosen request that waits on the buyer (confirm receipt / record payment) (UX-055)
+  const dealTodoOf = (r: any) => (dealsBy[r.id] || []).find((o: any) => !!buyerTodo(dealStage(o)))
+  // an open request past its deadline with no offers can still be extended: it is not deleted in bulk (UX-056)
+  const extendable = (r: any) => r.status === 'open' && stateOf(r) === 'ended' && offersOf(r) === 0
   const sar = (n: number) => `${Math.round(n).toLocaleString('en-US')} ${sarLabel(locale)}`
   // «أقل سعر» for one material, «أفضل مجموع» for several, or «سُعّرت k من n» (UX-003)
   function bestLine(r: any, items: any[]): string {
@@ -152,11 +156,15 @@ function MyRequests() {
     return has(rfqRef(r)) || has(rfqRef(r, locale)) || has(r.ref_no) || has(r.title) || has(r.product_name)
       || items.some((it: any) => has(it.product_name) || has(getProductLabel(it.product_name, locale)))
   })
+    // what needs the buyer first (a choice to make, a deal step to do), newest first otherwise (UX-055)
+    .map((r: any, i: number) => ({ r, i, k: stateOf(r) === 'choose' || dealTodoOf(r) ? 0 : 1 }))
+    .sort((a, b) => a.k - b.k || a.i - b.i)
+    .map(x => x.r)
 
   // Delete every ended request at once. A request with an accepted offer or an awarded item is a
   // deal and is kept. Offers the buyer never chose are named in the confirmation (UX-020).
   async function deleteEnded() {
-    const ended = rfqs.filter(r => stateOf(r) === 'ended')
+    const ended = rfqs.filter(r => stateOf(r) === 'ended' && !extendable(r))
     if (!ended.length) return
     setStatus(null)
     const withOffers = ended.filter(r => offersOf(r) > 0).length
@@ -236,19 +244,21 @@ function MyRequests() {
     ['all', L('All', 'سب', 'الكل')],
     ...(counts.choose > 0 ? [['choose', L('Waiting for your choice', 'آپ کے انتخاب کی منتظر', 'بانتظار اختيارك')] as [Filter, string]] : []),
     ['open', L('Open', 'کھلی', 'مفتوحة')],
-    ['closed', L('Deals', 'ڈیلز', 'الصفقات')],
+    ['closed', L('Offer chosen', 'آفر منتخب ہو گئی', 'تمّ اختيار العرض')], // not «الصفقات»: that is the «صفقاتي» tab (UX-070)
     ['ended', L('Ended', 'ختم', 'منتهية')],
     ['cancelled', L('Cancelled', 'منسوخ', 'الملغاة')],
   ]
   const selectable = shown.filter(cancellable)
   const showBulk = filter !== 'cancelled' && filter !== 'closed' && selectable.length > 0
-  const showDeleteEnded = filter === 'ended' && counts.ended > 0
+  const deletableEnded = rfqs.filter(r => stateOf(r) === 'ended' && !extendable(r)).length
+  const showDeleteEnded = filter === 'ended' && deletableEnded > 0
 
   return (
     <AppShell title={L('My requests', 'میری درخواستیں', 'طلباتي')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-5xl mx-auto space-y-3">
         {/* row 1: the requests/deals tabs and the main action (UX-105) */}
         <div className="flex items-center justify-between gap-2 flex-wrap">
+          <h1 className="sr-only">{L('My requests', 'میری درخواستیں', 'طلباتي')}</h1>
           <RequestsTabs active="requests" locale={locale} />
           <Link href="/contractor/rfq/quick" className="btn-orange mb-4 inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-sm">+ {L('New request', 'نئی درخواست', 'طلب جديد')}</Link>
         </div>
@@ -271,7 +281,7 @@ function MyRequests() {
             {showDeleteEnded && (
               <button type="button" onClick={deleteEnded} disabled={deleting}
                 className="min-h-[44px] px-3.5 rounded-xl text-sm font-bold border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50">
-                <Glyph e="🗑" /> {deleting ? L('Deleting…', 'حذف ہو رہا ہے…', 'جارٍ الحذف…') : L(`Delete all ended (${counts.ended})`, `تمام ختم شدہ حذف کریں (${counts.ended})`, `حذف كل المنتهية (${counts.ended})`)}
+                <Glyph e="🗑" /> {deleting ? L('Deleting…', 'حذف ہو رہا ہے…', 'جارٍ الحذف…') : L(`Delete all ended (${deletableEnded})`, `تمام ختم شدہ حذف کریں (${deletableEnded})`, `حذف كل المنتهية (${deletableEnded})`)}
               </button>
             )}
             {showBulk && (!selecting ? (
@@ -302,7 +312,7 @@ function MyRequests() {
           </div>
         )}
         {filter === 'choose' && (
-          <p className="text-sm text-gray-600">{L('The pricing time ended on these requests, but their offers can still be chosen for 30 days. Open a request to compare and choose.', 'ان درخواستوں پر قیمتوں کا وقت ختم ہو گیا، لیکن ان کی آفرز 30 دن تک منتخب کی جا سکتی ہیں۔ موازنہ اور انتخاب کے لیے درخواست کھولیں۔', 'انتهت مهلة التسعير على هذه الطلبات، لكن يمكنك اختيار أحد عروضها خلال 30 يوماً. افتح الطلب لتقارن وتختار.')}</p>
+          <p className="text-sm text-gray-600">{L('The offer window ended on these requests, but their offers can still be chosen for 30 days. Open a request to compare and choose.', 'ان درخواستوں پر قیمتوں کا وقت ختم ہو گیا، لیکن ان کی آفرز 30 دن تک منتخب کی جا سکتی ہیں۔ موازنہ اور انتخاب کے لیے درخواست کھولیں۔', 'انتهت مهلة العروض على هذه الطلبات، لكن يمكنك اختيار أحد عروضها خلال 30 يوماً. افتح الطلب لتقارن وتختار.')}</p>
         )}
         {(filter === 'ended' || filter === 'cancelled') && shown.some(r => purgeOf(r)) && (
           <p className="text-xs text-gray-600">{purgeOf(shown.find(r => purgeOf(r)))?.hint}</p>
@@ -345,9 +355,12 @@ function MyRequests() {
               const rs = rstate(r)
               const best = rs === 'offers' || rs === 'offers_expired' ? bestLine(r, items) : ''
               const deals = dealsBy[r.id] || []
+              const todoDeal = st === 'closed' ? dealTodoOf(r) : undefined
+              const todo = todoDeal ? buyerTodo(dealStage(todoDeal), locale) : null
+              const canExtend = extendable(r)
               return (
                 <div key={r.id}
-                  className={`bg-white rounded-2xl border shadow-sm hover:shadow transition-all ${sel.has(r.id) ? 'border-[#0B2438] ring-2 ring-[#0B2438]/15' : st === 'choose' ? 'border-[#D4A543]/60' : 'border-gray-100 hover:border-[#D4A543]/50'} ${selecting && !cancellable(r) ? 'opacity-50' : ''}`}>
+                  className={`bg-white rounded-2xl border shadow-sm hover:shadow transition-all ${sel.has(r.id) ? 'border-[#0B2438] ring-2 ring-[#0B2438]/15' : st === 'choose' || todo ? 'border-[#D4A543]/60' : 'border-gray-100 hover:border-[#D4A543]/50'} ${selecting && !cancellable(r) ? 'opacity-50' : ''}`}>
                   <Link href={`/contractor/rfq/${r.id}`} aria-pressed={selecting ? sel.has(r.id) : undefined}
                     onClick={(e: any) => { if (selecting) { e.preventDefault(); if (cancellable(r)) toggle(r.id) } }}
                     className="block p-4 sm:p-5 rounded-2xl">
@@ -397,25 +410,39 @@ function MyRequests() {
                     )}
                     {st === 'ended' && (
                       <div className="mt-3 text-sm text-gray-600">
-                        {offers ? L('This request ended without a choice.', 'یہ درخواست انتخاب کے بغیر ختم ہو گئی۔', 'انتهى هذا الطلب دون اختيار عرض.') : L('The deadline passed and no offers arrived.', 'مہلت ختم ہو گئی اور کوئی آفر نہیں آئی۔', 'انتهت المهلة، لم تصل عروض.')}
+                        {canExtend
+                          ? L('The offer window ended and no offers have arrived yet. Extend it so more suppliers can reach you.', 'آفرز کی مہلت ختم ہو گئی اور ابھی کوئی آفر نہیں آئی۔ مہلت بڑھائیں تاکہ مزید سپلائرز آپ تک پہنچیں۔', 'انتهت المهلة ولم تصل عروض بعد. مدّد المهلة ليصلك المزيد من الموردين.')
+                          : offers ? L('This request ended without a choice.', 'یہ درخواست انتخاب کے بغیر ختم ہو گئی۔', 'انتهى هذا الطلب دون اختيار عرض.') : L('This request ended without offers.', 'یہ درخواست آفرز کے بغیر ختم ہو گئی۔', 'انتهى الطلب دون عروض.')}
                       </div>
+                    )}
+                    {todo && (
+                      <span className="inline-block mt-3 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: '#D4A543', color: '#071827' }}>{todo}</span>
                     )}
                   </Link>
                   {/* a real link next to the card, reachable by keyboard (was a nested fake link, UX-105) */}
-                  {(st === 'cancelled' || st === 'ended') && !selecting && (
+                  {/* an open request past its deadline with no offers is extended, not sent again as a duplicate (UX-056) */}
+                  {canExtend && !selecting && (
+                    <div className="px-4 sm:px-5 pb-4 -mt-1 flex justify-end">
+                      <Link href={`/contractor/rfq/${r.id}?extend=1`}
+                        className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>
+                        <Glyph e="⏰" /> <span className="ms-1.5">{L('Extend the offer window', 'آفرز کی مہلت بڑھائیں', 'مدّد المهلة')}</span>
+                      </Link>
+                    </div>
+                  )}
+                  {(st === 'cancelled' || (st === 'ended' && !canExtend)) && !selecting && (
                     <div className="px-4 sm:px-5 pb-4 -mt-1 flex justify-end">
                       <Link href={`/contractor/rfq/quick?from=${r.id}`}
                         className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>
-                        <Glyph e="🔁" /> <span className="ms-1.5">{st === 'ended' ? L('Send the request again', 'درخواست دوبارہ بھیجیں', 'أعد إرسال الطلب') : L('Request again', 'دوبارہ منگوائیں', 'اطلب مرة أخرى')}</span>
+                        <Glyph e="🔁" /> <span className="ms-1.5">{L('Request again', 'دوبارہ منگوائیں', 'اطلب مرة أخرى')}</span>
                       </Link>
                     </div>
                   )}
                   {/* a chosen request leads to its deal (UX-141) */}
                   {st === 'closed' && !selecting && (
                     <div className="px-4 sm:px-5 pb-4 -mt-1 flex justify-end">
-                      <Link href={deals.length === 1 ? `/contractor/orders/${deals[0].id}` : `/contractor/orders${r.ref_no ? `?q=${encodeURIComponent(String(r.ref_no))}` : ''}`}
+                      <Link href={todoDeal ? `/contractor/orders/${todoDeal.id}` : deals.length === 1 ? `/contractor/orders/${deals[0].id}` : `/contractor/orders${r.ref_no ? `?q=${encodeURIComponent(String(r.ref_no))}` : ''}`}
                         className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>
-                        {L('Follow the deal', 'ڈیل دیکھیں', 'متابعة الصفقة')} <span aria-hidden="true" className="ms-1.5 inline-block rtl:rotate-180">→</span>
+                        {todoDeal ? buyerActionLabel(dealStage(todoDeal), locale) : L('Follow the deal', 'ڈیل دیکھیں', 'متابعة الصفقة')} <span aria-hidden="true" className="ms-1.5 inline-block rtl:rotate-180">→</span>
                       </Link>
                     </div>
                   )}

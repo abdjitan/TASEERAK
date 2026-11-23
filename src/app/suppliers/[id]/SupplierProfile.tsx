@@ -5,7 +5,9 @@ import Link from 'next/link'
 import { Check } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import { getRegionLabel } from '@/types'
-import { scoreColor, approvalLabel } from '@/lib/supplierScore'
+import { scoreColor, approvalLabel, isNewSupplier } from '@/lib/supplierScore'
+import { arCount } from '@/lib/text'
+import AutoTr from '@/components/shared/AutoTr'
 import { tierLabel, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
@@ -22,6 +24,8 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
   const won = Number(s.won_deals) || 0
   const rating = Number(s.rating_avg) || 0
   const name = s.company_name_ar || L('Supplier', 'سپلائر', 'مورد')
+  const fresh = isNewSupplier(s)
+  const ratingCount = Number(s.rating_count) || 0
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8" dir={dir}>
@@ -36,7 +40,7 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
               <h1 className="text-xl font-extrabold" style={{ color: '#0B2438' }}>{name}</h1>
               {s.verification_status === 'verified' && (
                 <span className="badge text-[12px] inline-flex items-center gap-0.5" style={{ background: '#0F6E5614', color: '#0F6E56' }}>
-                  <Check className="w-3 h-3" aria-hidden />{s.cr_verification_source === 'wathq' ? L('Verified through Wathq', 'واثق کے ذریعے تصدیق شدہ', 'موثّق عبر واثق') : L('Verified', 'تصدیق شدہ', 'موثّق')}
+                  <Check className="w-3 h-3" aria-hidden />{L('Commercial registration verified', 'تجارتی رجسٹریشن تصدیق شدہ', 'سجلّه التجاري موثّق')}
                 </span>
               )}
             </div>
@@ -45,15 +49,22 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
               {s.region && <span><Glyph e="📍" /> {getRegionLabel(s.region, locale)}{s.city ? ` · ${s.city}` : ''}</span>}
             </div>
           </div>
+          {/* a supplier with almost no history: «new», not a low grey score (UX-104) */}
+          {fresh ? (
+            <div className="shrink-0 text-center">
+              <span className="inline-flex items-center rounded-full px-3 min-h-[32px] text-[12px] font-bold" style={{ background: '#EEF2F6', color: '#0B2438' }}>{L('New on the platform', 'پلیٹ فارم پر نیا', 'جديد على المنصة')}</span>
+            </div>
+          ) : (
           <div className="shrink-0 text-center">
             <div className="w-16 h-16 grid place-items-center rounded-full font-bold text-lg" style={{ background: scoreColor(score), color: scoreText(score) }}>{score}<span className="text-[12px] opacity-80">/100</span></div>
             <div className="text-[12px] text-gray-600 mt-1">{L('Reliability score', 'اعتماد کا اسکور', 'درجة الموثوقية')}</div>
           </div>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-3 mt-6">
           {[
-            { l: L('Rating', 'ریٹنگ', 'التقييم'), v: rating > 0 ? rating.toFixed(1) : '—', sub: s.rating_count ? L(`${s.rating_count} ratings`, `${s.rating_count} ریٹنگز`, `${s.rating_count} تقييم`) : '' },
+            { l: L('Rating', 'ریٹنگ', 'التقييم'), v: rating > 0 ? rating.toFixed(1) : '—', sub: ratingCount ? L(`${ratingCount} ratings`, `${ratingCount} ریٹنگز`, arCount(ratingCount, 'تقييم واحد', 'تقييمان', 'تقييمات', 'تقييماً')) : '' },
             { l: L('Offers', 'آفرز', 'العروض'), v: total.toLocaleString('en-US'), sub: L('offers sent', 'بھیجی گئی آفرز', 'عرض مقدَّم') },
             { l: L('Won', 'جیتی گئی', 'الفوز'), v: won.toLocaleString('en-US'), sub: L('requests won', 'جیتی گئی درخواستیں', 'طلب فاز به') },
           ].map((k: any) => (
@@ -86,7 +97,7 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
                     </div>
                     {rv.created_at && <span className="text-[12px] text-gray-600">{new Date(rv.created_at).toLocaleDateString(dateLocale)}</span>}
                   </div>
-                  {rv.comment && <p className="text-sm text-gray-700 mt-1.5 leading-relaxed">{rv.comment}</p>}
+                  {rv.comment && <p className="text-sm text-gray-700 mt-1.5 leading-relaxed"><AutoTr text={rv.comment} locale={locale} /></p>}
                 </div>
               ))}
             </div>
@@ -94,8 +105,8 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
         )}
 
         <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-          <p className="text-sm text-gray-600 mb-3">{L(`Send a price request: ${name} and other suppliers compete for it.`, `قیمت کی درخواست بھیجیں: ${name} اور دوسرے سپلائرز اس پر مقابلہ کریں گے۔`, `اطلب تسعيرة ينافس عليها ${name} وغيره من الموردين.`)}</p>
-          <Link href="/login" className="btn-orange text-sm">{L('Request a price for free', 'مفت قیمت معلوم کریں', 'اطلب تسعيرة مجاناً')}</Link>
+          <p className="text-sm text-gray-600 mb-3">{L('Send a free price request: it reaches the suppliers who specialise in your materials in your region.', 'مفت قیمت کی درخواست بھیجیں: یہ آپ کے علاقے میں آپ کے سامان کے ماہر سپلائرز تک پہنچتی ہے۔', 'أرسل طلب تسعير مجاناً، فيصل إلى الموردين المختصين بموادك في منطقتك.')}</p>
+          <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price for free', 'مفت قیمت معلوم کریں', 'اطلب تسعيرة مجاناً')}</Link>
         </div>
       </div>
       {s.member_since && <p className="text-center text-[12px] text-gray-600 mt-6">{L('Member since', 'رکن از', 'عضو منذ')} {new Date(s.member_since).toLocaleDateString(dateLocale)}</p>}

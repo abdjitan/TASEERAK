@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Sparkles, X, SendHorizontal } from 'lucide-react'
+import { usePathname } from 'next/navigation'
 import { useTranslation } from '@/i18n'
 
 // مساعد تسعيرك الذكي — زر عائم + نافذة محادثة تظهر في كل صفحات لوحة التحكم.
@@ -16,6 +17,10 @@ export default function AiAssistant() {
   const [loading, setLoading] = useState(false)
   const [actionBar, setActionBar] = useState(false)
   const endRef = useRef<any>(null)
+  const isSupplier = (usePathname() || '').startsWith('/supplier')
+  // hidden while the assistant is switched off on the server (UX-113)
+  const [enabled, setEnabled] = useState(true)
+  useEffect(() => { fetch('/api/assistant').then(r => r.json()).then((d: any) => { if (d && d.enabled === false) setEnabled(false) }).catch(() => {}) }, [])
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs, loading, open])
 
@@ -38,10 +43,10 @@ export default function AiAssistant() {
   }, [open])
 
   const T = locale === 'en'
-    ? { title: 'Taseerak Assistant', ph: 'Ask me anything…', hi: 'Hello! How can I help with your purchases today?', send: 'Send', close: 'Close' }
+    ? { title: 'Taseerak Assistant', ph: 'Ask me anything…', hi: isSupplier ? 'Hello! How can I help you price requests today?' : 'Hello! How can I help with your purchases today?', send: 'Send', close: 'Close' }
     : locale === 'ur'
-    ? { title: 'تسعیرک اسسٹنٹ', ph: 'کچھ پوچھیں…', hi: 'سلام! آج آپ کی خریداری میں کیسے مدد کروں؟', send: 'بھیجیں', close: 'بند کریں' }
-    : { title: 'مساعد تسعيرك', ph: 'اسألني أي شيء…', hi: 'أهلاً! كيف يمكنني مساعدتك في مشترياتك اليوم؟', send: 'إرسال', close: 'إغلاق' }
+    ? { title: 'تسعیرک اسسٹنٹ', ph: 'کچھ پوچھیں…', hi: isSupplier ? 'سلام! آج درخواستوں کی قیمت لگانے میں کیسے مدد کروں؟' : 'سلام! آج آپ کی خریداری میں کیسے مدد کروں؟', send: 'بھیجیں', close: 'بند کریں' }
+    : { title: 'مساعد تسعيرك', ph: 'اسألني أي شيء…', hi: isSupplier ? 'أهلاً! كيف يمكنني مساعدتك في تسعير الطلبات اليوم؟' : 'أهلاً! كيف يمكنني مساعدتك في مشترياتك اليوم؟', send: 'إرسال', close: 'إغلاق' }
 
   async function send() {
     const text = input.trim()
@@ -51,10 +56,14 @@ export default function AiAssistant() {
     try {
       const res = await fetch('/api/assistant', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next }),
+        body: JSON.stringify({ messages: next, locale }),
       })
-      const d = await res.json()
-      setMsgs([...next, { role: 'assistant', content: d.reply || '…' }])
+      const d: any = await res.json().catch(() => ({}))
+      // never a bare «…» bubble: a failure says so (UX-113)
+      const failMsg = locale === 'en' ? 'The assistant cannot be reached right now. Please try again shortly.' : locale === 'ur' ? 'اسسٹنٹ سے ابھی رابطہ نہیں ہو سکا، تھوڑی دیر بعد کوشش کریں۔' : 'تعذّر الوصول إلى المساعد حالياً، حاول بعد قليل.'
+      const content = typeof d.reply === 'string' && d.reply.trim() ? d.reply : (res.status === 429 && locale === 'en' && typeof d.error_en === 'string' ? d.error_en : res.status === 429 && locale === 'ar' && typeof d.error === 'string' ? d.error : failMsg)
+      setMsgs([...next, { role: 'assistant', content }])
+      if (d.disabled) setEnabled(false)
     } catch {
       setMsgs([...next, { role: 'assistant', content: locale === 'en' ? 'Could not connect. Please try again.' : locale === 'ur' ? 'رابطہ نہیں ہو سکا، دوبارہ کوشش کریں۔' : 'تعذّر الاتصال، حاول مرة أخرى.' }])
     } finally { setLoading(false) }
@@ -62,7 +71,7 @@ export default function AiAssistant() {
 
   const sideStyle = dir === 'rtl' ? { left: 20 } : { right: 20 }
   // hidden while a page action bar is on screen (unless the chat is already open)
-  if (actionBar && !open) return null
+  if ((actionBar || !enabled) && !open) return null
 
   return (
     <div className="print:hidden">

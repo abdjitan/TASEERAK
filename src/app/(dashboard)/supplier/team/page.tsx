@@ -42,9 +42,6 @@ export default function SupplierTeamPage() {
     setLoading(false)
   }
   useEffect(() => { load() }, [])
-  const [newLabel, setNewLabel] = useState('')
-  const [labels, setLabels] = useState<Record<string, string>>({})
-  useEffect(() => { try { setLabels(JSON.parse(localStorage.getItem('tsk_invite_labels') || '{}') || {}) } catch {} }, [])
 
   const linkFor = (token: string) => `${typeof window !== 'undefined' ? window.location.origin : ''}/team/join/${token}`
 
@@ -54,14 +51,12 @@ export default function SupplierTeamPage() {
     const j: any = error ? { ok: false } : (data || {})
     if (j.ok) {
       setLastLink(linkFor(j.token))
-      // UX-146: a name for the invitation, kept on this device until company_invites.label exists
-      if (newLabel.trim()) { const m = { ...labels, [j.token]: newLabel.trim().slice(0, 60) }; setLabels(m); try { localStorage.setItem('tsk_invite_labels', JSON.stringify(m)) } catch {} }
-      setNewLabel('')
+      // UX-137: no employee name kept on one device only (it was lost on another device); the member's own name shows once joined
       await load()
     }
     else setMsg(j.error === 'too_many_invites'
-      ? L('Too many open invitations. Revoke some first.', 'بہت زیادہ دعوتیں کھلی ہیں۔', 'لديك دعوات مفتوحة كثيرة. ألغِ بعضها أولاً.')
-      : L('Could not create the link. Try again.', 'لنک نہیں بن سکا۔', 'تعذّر إنشاء الرابط. حاول مرة أخرى.'))
+      ? L('Too many open invitations. Revoke some first.', 'بہت زیادہ دعوتیں کھلی ہیں۔ پہلے کچھ منسوخ کریں۔', 'لديك دعوات مفتوحة كثيرة. ألغِ بعضها أولاً.')
+      : L('Could not create the link. Try again.', 'لنک نہیں بن سکا۔ دوبارہ کوشش کریں۔', 'تعذّر إنشاء الرابط. حاول مرة أخرى.'))
     setBusy('')
   }
 
@@ -75,8 +70,8 @@ export default function SupplierTeamPage() {
 
   async function remove(userId: string, self: boolean) {
     const q = self
-      ? L('Leave this company team?', 'ٹیم چھوڑیں؟', 'هل تريد مغادرة فريق الشركة؟')
-      : L('Remove this member from the team?', 'رکن کو ہٹائیں؟', 'هل تريد إزالة هذا العضو من الفريق؟')
+      ? L('Leave this company team? You will no longer price requests for the company.', 'کمپنی کی ٹیم چھوڑیں؟ آپ مزید کمپنی کی جانب سے قیمت نہیں دے سکیں گے۔', 'هل تريد مغادرة فريق الشركة؟ لن تستطيع بعدها تسعير الطلبات باسم الشركة.')
+      : L('Remove this member from the team? They will lose access to the company account at once.', 'اس رکن کو ٹیم سے ہٹائیں؟ ان کی کمپنی اکاؤنٹ تک رسائی فوراً ختم ہو جائے گی۔', 'هل تريد إزالة هذا العضو من الفريق؟ سيفقد الوصول إلى حساب الشركة فوراً.')
     if (!(await askConfirm(q, { danger: true, okLabel: self ? L('Yes, leave', 'ہاں، چھوڑیں', 'نعم، غادر') : L('Yes, remove', 'ہاں، ہٹائیں', 'نعم، أزِل'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setBusy(userId); setMsg('')
     const { data, error } = await createClient().rpc('remove_company_member', { p_user: userId })
@@ -107,11 +102,6 @@ export default function SupplierTeamPage() {
               'آپ کا سیلز عملہ اپنے اکاؤنٹس سے سائن اِن کر کے کمپنی کی جانب سے درخواستوں کی قیمت دیتا ہے۔ ان کی بھیجی ہر آفر کمپنی کی ہوتی ہے اور اس پر بھیجنے والے کا نام دکھتا ہے۔',
               'يدخل موظفو المبيعات بحساباتهم الخاصة ويسعّرون الطلبات باسم الشركة. كل عرض يرسلونه يُسجَّل للشركة مع اسم من أرسله.')}
           </p>
-          {/* one clear list of what a member can do (the same on every supplier page) */}
-          <ul className="mt-2 text-[13px] text-gray-600 leading-relaxed list-disc ps-5 space-y-0.5">
-            <li>{L('A member can price requests, answer a discount request or a buyer question, edit an offer within 15 minutes, and hide a request for the whole company.', 'رکن درخواستوں کی قیمت دے سکتا ہے، رعایت کی درخواست یا خریدار کے سوال کا جواب دے سکتا ہے، 15 منٹ میں آفر میں ترمیم کر سکتا ہے، اور پوری کمپنی کے لیے درخواست چھپا سکتا ہے۔', 'يستطيع العضو تسعير الطلبات، والرد على طلب التخفيض وسؤال المشتري، وتعديل العرض خلال 15 دقيقة، وإخفاء الطلب عن الشركة كلها.')}</li>
-            <li>{L('Messages with buyers and managing a deal after the buyer chooses stay with the account owner.', 'خریداروں سے پیغامات اور انتخاب کے بعد سودے کا انتظام اکاؤنٹ کے مالک کے پاس رہتا ہے۔', 'تبقى المحادثات مع المشترين وإدارة الصفقة بعد الاختيار لدى مالك الحساب.')}</li>
-          </ul>
         </div>
 
         {loadFailed && <LoadError onRetry={() => { setLoading(true); load() }} />}
@@ -120,7 +110,7 @@ export default function SupplierTeamPage() {
         {notCompany && (
           <div className="bg-white rounded-2xl p-6 border border-gray-100 text-center">
             <div className="text-4xl mb-2"><Glyph e="🏢" /></div>
-            <p className="text-sm text-gray-600">{L('Teams are available for company and shop accounts.', 'ٹیم صرف کمپنی اکاؤنٹس کے لیے ہے۔', 'فريق العمل متاح لحسابات الشركات والمحلات.')}</p>
+            <p className="text-sm text-gray-600">{L('Teams are available for company and shop accounts.', 'ٹیم کمپنی اور دکان کے اکاؤنٹس کے لیے دستیاب ہے۔', 'فريق العمل متاح لحسابات الشركات والمحلات.')}</p>
             <Link href="/support?topic=kind" className="inline-flex items-center mt-3 min-h-[44px] px-4 text-sm font-bold text-[#8F6820] hover:underline">{L('Ask support to change the account type', 'اکاؤنٹ کی قسم بدلنے کے لیے سپورٹ سے رابطہ کریں', 'اطلب من الدعم تغيير نوع الحساب')}</Link>
           </div>
         )}
@@ -130,7 +120,6 @@ export default function SupplierTeamPage() {
             <h2 className="font-bold text-navy">{L('Invite a team member', 'رکن کو مدعو کریں', 'دعوة عضو جديد')}</h2>
             <p className="text-[13px] text-gray-600">{L('Each link works once and expires after 7 days. Send it to the employee on WhatsApp.', 'ہر لنک ایک بار استعمال ہوتا ہے اور 7 دن بعد ختم ہو جاتا ہے۔ اسے واٹس ایپ پر ملازم کو بھیجیں۔', 'كل رابط يُستخدم مرة واحدة وينتهي بعد 7 أيام. أرسله إلى الموظف عبر واتساب.')}</p>
             <div className="flex flex-wrap items-center gap-2">
-              <input value={newLabel} onChange={(e: any) => setNewLabel(e.target.value)} maxLength={60} className="input-field w-full sm:w-56" aria-label={L('Employee name (optional)', 'ملازم کا نام (اختیاری)', 'اسم الموظف (اختياري)')} placeholder={L('Employee name (optional)', 'ملازم کا نام (اختیاری)', 'اسم الموظف (اختياري)')} />
               <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="input-field w-auto" aria-label={L('Role', 'کردار', 'الدور')}>
                 <option value="member">{roleLabel('member')}: {L('prices requests', 'قیمتیں دیتا ہے', 'يسعّر الطلبات')}</option>
                 <option value="admin">{roleLabel('admin')}: {L('also invites members', 'اراکین بھی بلاتا ہے', 'يسعّر ويدعو أعضاء')}</option>
@@ -145,7 +134,7 @@ export default function SupplierTeamPage() {
                 <div className="text-xs text-gray-700 break-all" dir="ltr">{lastLink}</div>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => copy(lastLink)} className="min-h-[44px] text-sm font-bold px-3 rounded-lg border border-gray-200 bg-white">{copied === lastLink ? L('Copied', 'کاپی ہو گیا', 'تم النسخ') : L('Copy', 'کاپی', 'نسخ')}</button>
-                  <a href={waShare(lastLink)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] text-sm font-bold px-3 rounded-lg text-white" style={{ background: '#0B2438' }}>{L('Send on WhatsApp', 'واٹس ایپ', 'إرسال عبر واتساب')}</a>
+                  <a href={waShare(lastLink)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] text-sm font-bold px-3 rounded-lg text-white" style={{ background: '#0B2438' }}>{L('Send on WhatsApp', 'واٹس ایپ پر بھیجیں', 'إرسال عبر واتساب')}</a>
                 </div>
               </div>
             )}
@@ -157,7 +146,7 @@ export default function SupplierTeamPage() {
                 <div className="space-y-1.5">
                   {team.invites.map((i: any) => (
                     <div key={i.id} className="flex items-center justify-between gap-2 text-[13px] rounded-lg border border-gray-100 px-3 py-1">
-                      <span className="text-gray-600">{labels[i.token] ? <b className="text-navy">{labels[i.token]} · </b> : null}{roleLabel(i.role)} · {L('expires', 'ختم ہوگا', 'ينتهي')} {new Date(i.expires_at).toLocaleDateString(locale === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : 'en-GB')}</span>
+                      <span className="text-gray-600">{roleLabel(i.role)} · {L('expires', 'ختم ہوگا', 'ينتهي')} {new Date(i.expires_at).toLocaleDateString(locale === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : 'en-GB')}</span>
                       <span className="flex gap-2">
                         <button type="button" onClick={() => copy(linkFor(i.token))} className="min-h-[44px] px-2 font-bold text-navy">{copied === linkFor(i.token) ? L('Copied', 'کاپی ہو گیا', 'تم النسخ') : L('Copy', 'کاپی', 'نسخ')}</button>
                         <button type="button" onClick={() => revoke(i.id)} disabled={busy === i.id} className="min-h-[44px] px-2 font-bold text-red-600">{L('Revoke the link', 'لنک منسوخ کریں', 'إبطال الرابط')}</button>
@@ -174,7 +163,7 @@ export default function SupplierTeamPage() {
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
             <h2 className="font-bold text-navy mb-3">{L('Members', 'اراکین', 'الأعضاء')} <span className="ms-1 inline-grid place-items-center min-w-[1.4rem] h-[1.4rem] px-1 rounded-full bg-[#0B2438]/10 text-[12px] font-normal">{(team.members || []).length}</span></h2>
             {(team.members || []).length === 0 ? (
-              <p className="text-sm text-gray-600">{L('No members yet. Create an invite link above.', 'ابھی کوئی رکن نہیں۔', 'لا يوجد أعضاء بعد. أنشئ رابط دعوة من الأعلى.')}</p>
+              <p className="text-sm text-gray-600">{L('No members yet. Create an invite link above.', 'ابھی کوئی رکن نہیں۔ اوپر دعوتی لنک بنائیں۔', 'لا يوجد أعضاء بعد. أنشئ رابط دعوة من الأعلى.')}</p>
             ) : (
               <div className="divide-y divide-gray-50">
                 {team.members.map((m: any) => {
@@ -208,6 +197,7 @@ export default function SupplierTeamPage() {
           <div className="font-bold mb-1" style={{ color: '#0B2438' }}>{L('What team members can do', 'ٹیم ممبر کیا کر سکتے ہیں', 'ما يستطيعه أعضاء الفريق')}</div>
           <ul className="list-disc ps-5 space-y-0.5">
             <li>{L('Price requests in the company name; each offer shows who sent it.', 'کمپنی کے نام سے قیمت دینا؛ ہر آفر پر بھیجنے والے کا نام۔', 'تسعير الطلبات باسم الشركة، ويظهر على كل عرض من أرسله.')}</li>
+            <li>{L('Answer a discount request or a buyer question, edit an offer within 15 minutes, and hide a request for the whole company.', 'رعایت کی درخواست یا خریدار کے سوال کا جواب دینا، 15 منٹ میں آفر میں ترمیم، اور پوری کمپنی کے لیے درخواست چھپانا۔', 'الرد على طلب التخفيض وسؤال المشتري، وتعديل العرض خلال 15 دقيقة، وإخفاء الطلب عن الشركة كلها.')}</li>
             <li>{L('See the company deals and their stages.', 'کمپنی کے سودے اور ان کے مراحل دیکھنا۔', 'الاطّلاع على صفقات الشركة ومراحلها.')}</li>
             <li>{L('Only the account owner: managing a deal after the buyer chooses (delivery charges, invoice, delivery), conversations with buyers, specialties, branches and the company profile.', 'صرف اکاؤنٹ کا مالک: خریدار کے انتخاب کے بعد سودے کا انتظام (ڈیلیوری فیس، انوائس، ڈیلیوری)، خریداروں سے بات چیت، سامان، شاخیں اور کمپنی پروفائل۔', 'لصاحب الحساب فقط: إدارة الصفقة بعد اختيار المشتري (رسوم التوصيل والفاتورة والتسليم)، والمحادثات مع المشترين، والتخصصات، والفروع، وملف الشركة.')}</li>
           </ul>
@@ -220,7 +210,7 @@ export default function SupplierTeamPage() {
 function MemberLeave({ onLeave, L }: { onLeave: () => void; L: (en: string, ur: string, ar: string) => string }) {
   return (
     <div className="bg-white rounded-2xl p-5 border border-gray-100 flex items-center justify-between gap-3">
-      <span className="text-sm text-gray-600">{L('You are a member of this company team.', 'آپ اس ٹیم کے رکن ہیں۔', 'أنت عضو في فريق هذه الشركة.')}</span>
+      <span className="text-sm text-gray-600">{L('You are a member of this company team.', 'آپ اس کمپنی کی ٹیم کے رکن ہیں۔', 'أنت عضو في فريق هذه الشركة.')}</span>
       <button type="button" onClick={onLeave} className="min-h-[44px] px-2 text-sm font-bold text-red-600 shrink-0">{L('Leave team', 'ٹیم چھوڑیں', 'مغادرة الفريق')}</button>
     </div>
   )

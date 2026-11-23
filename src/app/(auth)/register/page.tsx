@@ -25,7 +25,7 @@ import { friendlyError } from '@/lib/friendlyError'
 import { passwordProblems, PASS_RULES_SUMMARY, passRuleList } from '@/lib/passwordPolicy'
 import { toLatinDigits } from '@/lib/phone'
 import { toE164 } from '@/lib/firebaseConfig'
-import { normalizeCrInput, crTakenText, isUnifiedCr, crFormatText } from '@/lib/cr'
+import { normalizeCrInput, crTakenText, isUnifiedCr, crFormatText, crSupportHref } from '@/lib/cr'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
 // نجمع الحد الأدنى فقط: الدور + الاسم + اسم الشركة + الجوال + البريد + كلمة المرور.
@@ -70,7 +70,7 @@ const TR = {
     l1: 'أرسل قائمة موادك مرة واحدة، وتصلك عروض عدة موردين', l2: 'قارن واختر الأرخص لكل مادة', l3: 'مجاني خلال الإطلاق، بلا عمولة',
     corpQ: 'شركة لديها فريق مشتريات؟', corpA: 'نجهّز لك حساباً للشركة يضم موظفيك — تواصل معنا',
     copyright: '© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء',
-    phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: '8 أحرف منها حرف إنجليزي كبير وصغير ورقم',
+    phone: 'رقم الجوال (واتساب)', email: 'البريد الإلكتروني', password: 'كلمة المرور', passwordPh: 'كلمة مرور قوية',
     create: 'إنشاء الحساب ←', creating: 'جارٍ الإنشاء...', haveAccount: 'لديك حساب؟', login: 'تسجيل الدخول',
     chooseType: 'اختر نوع الحساب أولاً', phoneTaken: 'رقم الجوال هذا مسجّل لدينا. إن كان رقمك، فسجّل الدخول.',
     emailTaken: 'هذا البريد الإلكتروني مسجّل مسبقاً — ', signInInstead: 'سجّل الدخول.',
@@ -97,7 +97,7 @@ const TR = {
     l1: 'Send your list once and get quotes from several suppliers', l2: 'Compare and pick the cheapest for each item', l3: 'Free during launch, no commission',
     corpQ: 'A company with a procurement team?', corpA: 'We set up a company account for your staff — contact us',
     copyright: '© 2026 Taseerak · Procurement platform for construction materials',
-    phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: '8 characters with an uppercase and a lowercase English letter and a number',
+    phone: 'Phone (WhatsApp)', email: 'Email address', password: 'Password', passwordPh: 'A strong password',
     create: 'Create account →', creating: 'Creating...', haveAccount: 'Have an account?', login: 'Sign In',
     chooseType: 'Choose your account type first', phoneTaken: 'This mobile number is already registered with us. If it is yours, sign in.',
     emailTaken: 'This email is already registered — ', signInInstead: 'sign in.',
@@ -124,7 +124,7 @@ const TR = {
     l1: 'اپنی فہرست ایک بار بھیجیں، کئی سپلائرز کی آفرز پائیں', l2: 'موازنہ کریں اور ہر چیز کی سستی قیمت چنیں', l3: 'لانچ کے دوران مفت، کوئی کمیشن نہیں',
     corpQ: 'خریداری ٹیم والی کمپنی؟', corpA: 'ہم آپ کے عملے کے لیے کمپنی اکاؤنٹ بناتے ہیں — رابطہ کریں',
     copyright: '© 2026 تسعیرک · تعمیراتی سامان کی قیمتوں کا پلیٹ فارم',
-    phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: '8 حروف: انگریزی بڑا اور چھوٹا حرف اور ہندسہ',
+    phone: 'فون (واٹس ایپ)', email: 'ای میل', password: 'پاسورڈ', passwordPh: 'مضبوط پاسورڈ',
     create: 'اکاؤنٹ بنائیں ←', creating: 'بن رہا ہے...', haveAccount: 'اکاؤنٹ ہے؟', login: 'سائن ان',
     chooseType: 'پہلے اکاؤنٹ کی قسم منتخب کریں', phoneTaken: 'یہ موبائل نمبر ہمارے پاس رجسٹرڈ ہے۔ اگر آپ کا ہے تو سائن اِن کریں۔',
     emailTaken: 'یہ ای میل پہلے سے رجسٹرڈ ہے — ', signInInstead: 'سائن اِن کریں۔',
@@ -162,17 +162,22 @@ export default function RegisterPage() {
   // Checked on blur / submit only (cr_exists: yes/no, 10 checks per hour per IP).
   const [cr, setCr] = useState('')
   const [crTaken, setCrTaken] = useState(false)
+  // UX-039: the check itself failed (rate limit / offline): sign-up waits, never goes on unchecked
+  const [crCheckFailed, setCrCheckFailed] = useState(false)
+  const [crErr, setCrErr] = useState('') // UX-137: the CR error sits under its field
   const crChecked = useRef('')
-  async function checkCr(v: string): Promise<boolean> {
+  async function checkCr(v: string): Promise<'taken' | 'free' | 'error' | 'invalid'> {
     const c = normalizeCrInput(v)
-    if (!isUnifiedCr(c)) { setCrTaken(false); return false }
-    if (crChecked.current === c) return crTaken
+    if (!isUnifiedCr(c)) { setCrTaken(false); return 'invalid' }
+    if (crChecked.current === c) return crTaken ? 'taken' : 'free'
     const { data, error } = await supabase.rpc('cr_exists', { p_cr: c })
-    if (error) return false // rate-limited / offline: the DB still refuses a duplicate on save
+    if (error) { setCrCheckFailed(true); return 'error' }
+    setCrCheckFailed(false)
     crChecked.current = c
     setCrTaken(data === true)
-    return data === true
+    return data === true ? 'taken' : 'free'
   }
+  const crCheckFailedText = locale === 'en' ? 'The commercial registration could not be checked right now. Try again in a few minutes.' : locale === 'ur' ? 'تجارتی رجسٹریشن کی ابھی تصدیق نہیں ہو سکی۔ چند منٹ بعد دوبارہ کوشش کریں۔' : 'تعذّر التحقق من السجل التجاري الآن. حاول مرة أخرى بعد دقائق.'
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [emailSent, setEmailSent] = useState(false)
@@ -242,11 +247,17 @@ export default function RegisterPage() {
     if (asksBusiness && (data.company_name_ar || '').trim().length < 2) {
       setError('company_name_ar', { message: locale === 'en' ? 'Company or business name is required' : locale === 'ur' ? 'کمپنی یا کاروبار کا نام ضروری ہے' : 'اسم المحل أو النشاط التجاري مطلوب' }); return
     }
-    if (asksBusiness && !cr.trim()) { setFormError(locale === 'en' ? 'A company or shop needs its commercial registration number. No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'الشركة أو المحل تحتاج رقم السجل التجاري. ليس لديك سجل؟ اختر «وسيط تسعير».'); return }
-    if (asksBusiness && cr && !isUnifiedCr(normalizeCrInput(cr))) { setFormError(crFormatText(locale)); return }
+    setCrErr('')
+    const focusCr = () => setTimeout(() => document.getElementById('reg-cr')?.focus(), 30)
+    if (asksBusiness && !cr.trim()) { setCrErr(locale === 'en' ? 'A company or shop needs its commercial registration number. No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'الشركة أو المحل تحتاج رقم السجل التجاري. ليس لديك سجل؟ اختر «وسيط تسعير».'); focusCr(); return }
+    if (asksBusiness && cr && !isUnifiedCr(normalizeCrInput(cr))) { setCrErr(crFormatText(locale)); focusCr(); return }
     // owner 2026-11-23: one CR = one account. A CR held by another account blocks sign-up; the real owner
     // contacts support, who opens an ownership claim (cr_claims) after checking.
-    if (asksBusiness && cr && await checkCr(cr)) { setFormError((locale === 'en' ? 'This commercial registration is registered to another account. If it is yours, contact support to prove ownership.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن کسی دوسرے اکاؤنٹ میں رجسٹرڈ ہے۔ اگر یہ آپ کی ہے تو ملکیت ثابت کرنے کے لیے سپورٹ سے رابطہ کریں۔' : 'هذا السجل التجاري مسجّل بحساب آخر. إن كان السجل لك، تواصل مع الدعم لإثبات ملكيته.')); return }
+    if (asksBusiness && cr) {
+      const r = await checkCr(cr)
+      if (r === 'taken') { focusCr(); return } // the message and «تواصل مع الدعم» show under the field
+      if (r === 'error') { setFormError(crCheckFailedText); return } // UX-039: never sign up unchecked (the CR would be dropped silently)
+    }
     if (phoneDup) { setFormError(t.phoneTaken); return }
     // check again at submit, whatever the format (owner 2026-11-21): never create an account on a taken number
     try { const { data: taken } = await supabase.rpc('phone_exists', { p_phone: data.phone }); if (taken === true) { setPhoneDup(true); setFormError(t.phoneTaken); return } } catch {}
@@ -279,7 +290,15 @@ export default function RegisterPage() {
     } catch (err: any) {
       captchaRef.current?.reset(); setCaptchaToken('')
       const msg = err?.message || ''
-      setFormError(/captcha/i.test(msg) ? t.captchaErr : /database error|duplicate|unique/i.test(msg) ? t.phoneTaken : friendlyError(msg, locale === 'en' ? 'Something went wrong while signing up. Please try again.' : locale === 'ur' ? 'رجسٹریشن کے دوران خرابی ہوئی، دوبارہ کوشش کریں۔' : 'حدث خطأ أثناء التسجيل، حاول مرة أخرى.', locale))
+      const failText = locale === 'en' ? 'The account could not be created. Check your details and try again, or contact support.' : locale === 'ur' ? 'اکاؤنٹ نہیں بن سکا۔ اپنی تفصیلات چیک کر کے دوبارہ کوشش کریں، یا سپورٹ سے رابطہ کریں۔' : 'تعذّر إنشاء الحساب. تحقّق من بياناتك وحاول مرة أخرى، أو تواصل مع الدعم.'
+      if (/captcha/i.test(msg)) setFormError(t.captchaErr)
+      else if (/database error|duplicate|unique/i.test(msg)) {
+        // UX-039: say WHICH value is taken: check the phone and the CR again, otherwise a general message
+        let said = false
+        try { const { data: pt } = await supabase.rpc('phone_exists', { p_phone: data.phone }); if (pt === true) { setPhoneDup(true); setFormError(t.phoneTaken); said = true } } catch {}
+        if (!said && asksBusiness && cr) { crChecked.current = ''; if ((await checkCr(cr)) === 'taken') { setFormError(''); said = true } }
+        if (!said) setFormError(failText)
+      } else setFormError(friendlyError(msg, failText, locale))
     } finally { setSubmitting(false) }
   }
 
@@ -424,19 +443,24 @@ export default function RegisterPage() {
               {errors.company_name_ar && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.company_name_ar.message, locale)}</p>}
               <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} <span className="text-red-500">*</span> <span className="text-gray-500 font-normal">— {locale === 'en' ? 'unified number, 10 digits starting with 7' : locale === 'ur' ? 'متحدہ نمبر، 7 سے شروع 10 ہندسے' : 'الرقم الوطني الموحد: 10 أرقام يبدأ بـ 7'}</span></label>
               <input id="reg-cr" value={cr} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX"
-                onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); if (crTaken) setCrTaken(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
+                aria-invalid={crTaken || !!crErr} aria-describedby={crTaken ? 'reg-cr-taken' : crErr ? 'reg-cr-err' : undefined}
+                onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); if (crTaken) setCrTaken(false); setCrErr(''); setCrCheckFailed(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
+              {crErr && <p id="reg-cr-err" role="alert" className="text-red-600 text-[13px] mt-1">{crErr}</p>}
+              {crCheckFailed && !crErr && !crTaken && <p role="status" className="text-[#8F6820] text-[13px] mt-1">{crCheckFailedText}</p>}
+              {/* UX-040: one text everywhere; the visitor e-mails support with the CR (the address is shown to copy) */}
               {crTaken && (
-                <div role="status" className="text-[#071827] text-[13px] bg-[#D4A543]/10 border border-[#D4A543]/50 rounded-lg p-2.5 mt-1">
-                  <p><Glyph e="⚠" /> {(locale === 'en' ? 'This commercial registration is registered to another account. If it is yours, contact support to prove ownership.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن کسی دوسرے اکاؤنٹ میں رجسٹرڈ ہے۔ اگر یہ آپ کی ہے تو ملکیت ثابت کرنے کے لیے سپورٹ سے رابطہ کریں۔' : 'هذا السجل التجاري مسجّل بحساب آخر. إن كان السجل لك، تواصل مع الدعم لإثبات ملكيته.')}</p>
-                  <a href={`mailto:${OPERATOR.email}?subject=${encodeURIComponent(locale === 'en' ? 'Commercial registration already used' : 'سجل تجاري مستخدم')}`}
+                <div id="reg-cr-taken" role="alert" className="text-[#071827] text-[13px] bg-[#D4A543]/10 border border-[#D4A543]/50 rounded-lg p-2.5 mt-1">
+                  <p><Glyph e="⚠" /> {crTakenText(locale).msg}</p>
+                  <a href={crSupportHref(cr, { signedIn: false, email: OPERATOR.email, locale })}
                     className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold underline text-[#8F6820]">
-                    {locale === 'en' ? 'Contact support' : locale === 'ur' ? 'سپورٹ سے رابطہ کریں' : 'تواصل مع الدعم'}
+                    {crTakenText(locale).cta}
                   </a>
+                  {OPERATOR.email && <p className="text-[12px] text-gray-600">{locale === 'en' ? 'Support e-mail: ' : locale === 'ur' ? 'سپورٹ ای میل: ' : 'بريد الدعم: '}<span dir="ltr" className="font-bold select-all break-all">{OPERATOR.email}</span></p>}
                 </div>
               )}
               <div className="mt-2 rounded-lg border border-[#D4A543]/40 bg-[#D4A543]/5 px-3 py-2 text-xs text-[#071827]">
                 {locale === 'en' ? 'No shop or commercial registration?' : locale === 'ur' ? 'دکان یا تجارتی رجسٹریشن نہیں؟' : 'ليس لديك محل أو سجل تجاري؟'}{' '}
-                <button type="button" className="font-extrabold text-[#8F6820] underline" onClick={() => { setSellerKind('independent'); setCr(''); setCrTaken(false); setFormError('') }}>
+                <button type="button" className="inline-flex items-center min-h-[44px] font-extrabold text-[#8F6820] underline" onClick={() => { setSellerKind('independent'); setCr(''); setCrTaken(false); setCrErr(''); setFormError('') }}>
                   {locale === 'en' ? 'Sign up as a pricing agent' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر رجسٹر کریں' : 'سجّل كوسيط تسعير'}
                 </button>
               </div>
@@ -489,7 +513,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex justify-center">
-              <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
+              <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} language={locale} />
             </div>
 
             <button type="submit" disabled={submitting}

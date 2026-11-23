@@ -66,15 +66,15 @@ export function priceBasisLabel(o: any, locale: string): string {
 //   who = 'buyer' → «… باسمك»; who = 'supplier' → «… باسم المشتري»
 export function sellerInvoiceLabel(o: any, locale: string, who: 'buyer' | 'supplier' = 'buyer'): string {
   if (isIndependentOffer(o)) return who === 'buyer'
-    ? (locale === 'en' ? 'The source shop invoice in your name' : locale === 'ur' ? 'آپ کے نام سپلائی کرنے والی دکان کی انوائس' : 'فاتورة المحل المصدر باسمك')
-    : (locale === 'en' ? 'The source shop invoice in the buyer’s name' : locale === 'ur' ? 'خریدار کے نام سپلائی کرنے والی دکان کی انوائس' : 'فاتورة المحل المصدر باسم المشتري')
+    ? (locale === 'en' ? 'The source shop invoice in your name' : locale === 'ur' ? 'آپ کے نام ماخذ دکان کی انوائس' : 'فاتورة المحل المصدر باسمك')
+    : (locale === 'en' ? 'The source shop invoice in the buyer’s name' : locale === 'ur' ? 'خریدار کے نام ماخذ دکان کی انوائس' : 'فاتورة المحل المصدر باسم المشتري')
   if (showsVatBreakdown(o)) return locale === 'en' ? 'The seller’s tax invoice' : locale === 'ur' ? 'بیچنے والے کی ٹیکس انوائس' : 'الفاتورة الضريبية من البائع'
   return locale === 'en' ? 'The seller’s invoice' : locale === 'ur' ? 'بیچنے والے کی انوائس' : 'فاتورة البائع'
 }
 
 // What the seller is asked to do before confirming delivery (UX-025 / UX-127).
 export function invoiceGateText(o: any, locale: string): string {
-  if (isIndependentOffer(o)) return locale === 'en' ? 'Upload the source shop’s invoice in the buyer’s name below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے خریدار کے نام سپلائی کرنے والی دکان کی انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة المحل المصدر باسم المشتري أدناه أولاً، ثم أكّد التسليم.'
+  if (isIndependentOffer(o)) return locale === 'en' ? 'Upload the source shop’s invoice in the buyer’s name below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے خریدار کے نام ماخذ دکان کی انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة المحل المصدر باسم المشتري أدناه أولاً، ثم أكّد التسليم.'
   if (showsVatBreakdown(o)) return locale === 'en' ? 'Upload your tax invoice below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے اپنی ٹیکس انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورتك الضريبية أدناه أولاً، ثم أكّد التسليم.'
   return locale === 'en' ? 'Upload your sales invoice below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے اپنی سیلز انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة البيع أدناه أولاً، ثم أكّد التسليم.'
 }

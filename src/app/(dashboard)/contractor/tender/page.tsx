@@ -12,6 +12,7 @@ import { makeL } from '@/components/tender/labels'
 import { arItems, dateLocale } from '@/lib/text'
 import { friendlyError } from '@/lib/friendlyError'
 import { askConfirm, notify } from '@/lib/askConfirm'
+import { storedBuyerType } from '@/lib/buyerType'
 
 export default function TendersPage() {
   const { locale, dir } = useTranslation()
@@ -20,9 +21,13 @@ export default function TendersPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    // a home buyer has no tenders: the simple request page (UX-078)
+    if (storedBuyerType() === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
     const supabase = createClient()
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) { window.location.href = '/login'; return }
+      const { data: bt } = await supabase.from('profiles').select('buyer_type').eq('id', data.session.user.id).maybeSingle()
+      if ((bt as any)?.buyer_type === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
       const { data: t, error: e } = await supabase.from('tenders').select('id, title, status, summary, created_at, project_rfq_id').eq('contractor_id', data.session.user.id).order('created_at', { ascending: false }).limit(100)
       // a missing table = not enabled on the server; anything else = the real error (connection…), with a retry
       if (e) setError(/relation|does not exist|schema cache/i.test(e.message || '') ? L('Tender pricing is not enabled yet.', 'ٹینڈر قیمت ابھی فعال نہیں۔', 'تسعير المناقصات غير مفعّل بعد.') : friendlyError(e.message, L('Could not load your tenders. Check your connection and try again.', 'آپ کے ٹینڈرز لوڈ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر تحميل مناقصاتك. تحقّق من الاتصال وحاول مرة أخرى.'), locale))
@@ -45,7 +50,7 @@ export default function TendersPage() {
     setRows(rs => (rs || []).filter(r => r.id !== t.id))
   }
 
-  const statusLabel = (s: string) => (s === 'sent' ? L('Sent for pricing', 'قیمت کے لیے بھیجا', 'أُرسل للتسعير') : s === 'review' ? L('Under review', 'جائزہ میں', 'قيد المراجعة') : L('Draft', 'مسودہ', 'مسودة'))
+  const statusLabel = (s: string) => (s === 'sent' ? L('Sent for pricing', 'قیمت کے لیے بھیجا', 'أُرسل للتسعير') : s === 'review' ? L('Awaiting your approval', 'آپ کی منظوری کا منتظر', 'بانتظار اعتمادك') : L('Draft', 'مسودہ', 'مسودة'))
 
   return (
     <AppShell title={L('Tender pricing', 'ٹینڈر قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>

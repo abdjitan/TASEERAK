@@ -308,3 +308,32 @@ html[dir="rtl"] #taseerak-landing .dir-arrow { transform: scaleX(-1); }
 
 /* round-2 UX-134: printing (or a browser without IntersectionObserver) never hides the sections */
 @media print { #taseerak-landing .reveal { opacity: 1 !important; transform: none !important; } }
+
+/* round-3 UX-101 / UX-143: chips above the example card, readable text over photos, a shorter phone page */
+#taseerak-landing .hero-visual .float-chip { z-index: 4; background: rgba(255,255,255,.94); color: #0b2438; }
+#taseerak-landing .cat-card::before { background: linear-gradient(to top, rgba(5,11,18,.88) 0%, rgba(7,24,39,.6) 50%, rgba(7,24,39,.2) 100%); }
+#taseerak-landing .hero::after {
+  background:
+    linear-gradient(90deg, rgba(5,11,18,.08) 0%, rgba(5,11,18,.2) 30%, rgba(5,11,18,.52) 61%, rgba(5,11,18,.76) 100%),
+    linear-gradient(0deg, rgba(5,11,18,.4) 0%, rgba(5,11,18,.08) 36%, rgba(5,11,18,0) 74%);
+}
+html[dir="ltr"] #taseerak-landing .hero::after {
+  background:
+    linear-gradient(270deg, rgba(5,11,18,.08) 0%, rgba(5,11,18,.2) 30%, rgba(5,11,18,.52) 61%, rgba(5,11,18,.76) 100%),
+    linear-gradient(0deg, rgba(5,11,18,.4) 0%, rgba(5,11,18,.08) 36%, rgba(5,11,18,0) 74%);
+}
+/* «illustrative example» is a label, not a live signal: neutral, no green pulse */
+#taseerak-landing .lc-live { color: #48596e; background: #eef2f6; }
+#taseerak-landing .lc-live .pulse { background: #728196; animation: none; }
+/* a lone card in the last row spans the row */
+@media (max-width: 980px) { #taseerak-landing .pack-row .pack-card:last-child:nth-child(odd) { grid-column: 1 / -1; } #taseerak-landing .pack-row .pack-card:last-child:nth-child(odd) img { aspect-ratio: 8 / 3; } }
+@media (max-width: 560px) {
+  #taseerak-landing .cat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  #taseerak-landing .cat-card { min-height: 132px; padding: 14px; }
+  #taseerak-landing .cat-card h3 { font-size: 15px; margin: 0; }
+  #taseerak-landing .cat-card p { display: none; }
+  #taseerak-landing .cat-grid .cat-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  #taseerak-landing .live-card .offer + .offer + .offer { display: none; }
+}
+/* 44px targets on the landing (nav links, language buttons, FAQ link) */
+#taseerak-landing .nav-links a, #taseerak-landing .lang button, #taseerak-landing .faq-more a { min-height: 44px; display: inline-flex; align-items: center; }

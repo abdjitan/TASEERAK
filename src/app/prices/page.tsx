@@ -30,7 +30,8 @@ function fmtDate(d: any) {
 export default async function PricesPage() {
   // جلب غير قاتل: إذا تعذّر الاتصال وقت البناء نعرض حالة فارغة بدل كسر البناء
   let rows: any[] = []
-  try {
+  // while the price board is off the index is not fetched or shown at all (UX-099)
+  if (FEATURES.priceBoard) try {
     const supabase = createPublicClient()
     const { data } = await supabase.rpc('get_public_price_index')
     rows = Array.isArray(data) ? data : []
@@ -61,8 +62,8 @@ export default async function PricesPage() {
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <div className="text-4xl mb-3"><Glyph e="📊" /></div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
-            <p className="text-sm text-gray-600 max-w-sm mx-auto">سيظهر هنا مؤشّر أسعار مواد البناء بمجرد إتمام صفقات على المنصّة. كل صفقة تُغذّي المؤشّر تلقائياً.</p>
-            <Link href="/login" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>ابدأ الآن مجاناً</Link>
+            <p className="text-sm text-gray-600 max-w-sm mx-auto">سيظهر هنا مؤشّر أسعار مواد البناء قريباً. وحتى ذلك الحين، أرسل طلب تسعير مجاناً لتصلك أسعار الموردين لموادك.</p>
+            <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[44px] mt-5 px-6 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>اطلب تسعيرة مجاناً</Link>
           </div>
         ) : (
           <div className="space-y-6">
@@ -99,7 +100,7 @@ export default async function PricesPage() {
             يوفّر مؤشّر تسعيرك متوسّط أسعار أهم مواد البناء في السوق السعودي — مثل حديد التسليح، والأسمنت، والخرسانة الجاهزة، والبلوك، والبلاط والسيراميك، والمواد الكهربائية والميكانيكية — اعتماداً على أسعار فعلية من صفقات بين مشترين وموردين موثّقين.
           </p>
           <p>
-            للحصول على سعر دقيق لمشروعك، <Link href="/login" className="font-semibold underline" style={{ color: '#8F6820' }}>أنشئ طلب تسعير</Link> مجاناً، وسيتنافس عليه الموردون في منطقتك.
+            للحصول على سعر دقيق لمشروعك، <Link href="/contractor/rfq/quick" className="font-semibold underline" style={{ color: '#8F6820' }}>أنشئ طلب تسعير</Link> مجاناً، وسيتنافس عليه الموردون في منطقتك.
           </p>
         </div>
       </main>

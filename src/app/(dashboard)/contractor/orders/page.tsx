@@ -10,7 +10,8 @@ import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import LoadError from '@/components/shared/LoadError'
 import { getNav } from '@/lib/nav'
-import { dealStage } from '@/lib/dealStage'
+import { dealStage, buyerTodo } from '@/lib/dealStage'
+import { useHomeBuyer } from '@/components/buyer/useHomeBuyer'
 import { offerComparable, vatTag, sarLabel } from '@/lib/vat'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
@@ -33,14 +34,6 @@ const statementNo = (d: any) => (d?.invoice_number || '').replace(/^INV-/, 'ST-'
 // the purchase-order number on the deal page («PO-…»), searchable too (UX-141)
 const poNo = (d: any) => (d?.id ? `PO-${String(d.id).slice(0, 8).toUpperCase()}` : '')
 
-// what the buyer has to do at this stage (null = waiting on the supplier)
-function buyerTodo(key: string, locale: string): string | null {
-  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
-  if (key === 'delivered') return L('Your turn: confirm receipt', 'آپ کی باری: وصولی کی تصدیق کریں', 'مطلوب منك: تأكيد الاستلام')
-  if (key === 'received') return L('Your turn: pay the supplier and record it', 'آپ کی باری: سپلائر کو ادائیگی کریں اور درج کریں', 'مطلوب منك: الدفع للمورد وتسجيله')
-  return null
-}
-
 // «صفقاتي» للمقاول — تجمع كل الصفقات المُرساة (العروض المقبولة) في مكان واحد مع مرحلتها
 // ورقم الفاتورة، وترتبط بأمر الشراء/الفاتورة. كانت دورة الصفقة تُفتح فقط من الطلب الأصلي.
 export default function ContractorDealsPage() {
@@ -56,7 +49,8 @@ function ContractorDeals() {
   const [loadFailed, setLoadFailed] = useState(false)
   const [filter, setFilter] = useState<'all' | 'active' | 'done' | 'disputed'>('all')
   const [search, setSearch] = useState(() => params.get('q') || '') // «متابعة الصفقة» from «طلباتي» (UX-141)
-  const [reviewed, setReviewed] = useState<Set<string>>(new Set()) // deals the buyer already rated
+  const [reviewed, setReviewed] = useState<Set<string> | null>(null) // deals the buyer already rated (null = not loaded: no «قيّم المورد» flash, UX-071)
+  const home = useHomeBuyer()
 
   const load = useCallback(async () => {
     setLoadFailed(false)
@@ -92,7 +86,7 @@ function ContractorDeals() {
       if (recvIds.length) {
         const { data: revs } = await supabase.from('reviews').select('offer_id').eq('reviewer_id', session.user.id).in('offer_id', recvIds)
         setReviewed(new Set((revs || []).map((r: any) => r.offer_id)))
-      }
+      } else setReviewed(new Set())
     } catch (e) {
       console.error('[contractor/orders] load failed:', e)
       if (!shown) setLoadFailed(true)
@@ -118,7 +112,7 @@ function ContractorDeals() {
     return true
   })
     // the deals waiting on the buyer first (stable otherwise: newest first)
-    .map((d: any, i: number) => ({ d, i, todo: buyerTodo(dealStage(d, 'buyer', locale).key, locale) ? 0 : 1 }))
+    .map((d: any, i: number) => ({ d, i, todo: buyerTodo(dealStage(d, 'buyer', locale), locale) ? 0 : 1 }))
     .sort((a, b) => a.todo - b.todo || a.i - b.i)
     .map(x => x.d)
   const narrowed = deals.length > 0 && (filter !== 'all' || !!q)
@@ -127,10 +121,13 @@ function ContractorDeals() {
   return (
     <AppShell title={L('My Deals', 'میری ڈیلز', 'صفقاتي')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-4xl mx-auto">
+        <h1 className="sr-only">{L('My Deals', 'میری ڈیلز', 'صفقاتي')}</h1>
         <RequestsTabs active="deals" locale={locale} />
         <input value={search} onChange={(e: any) => setSearch(e.target.value)} type="search"
           aria-label={L('Search deals', 'ڈیلز تلاش کریں', 'البحث في الصفقات')}
-          className="input-field mb-3 text-base sm:text-sm" placeholder={L('Search deals (material, supplier, request or statement no.)…', 'ڈیلز تلاش کریں (سامان، سپلائر، درخواست یا بیان نمبر)…', 'ابحث في الصفقات (مادة، مورد، رقم الطلب أو البيان)…')} />
+          className="input-field mb-3 text-base sm:text-sm" placeholder={home
+            ? L('Search by material, supplier or request number…', 'سامان، سپلائر یا درخواست نمبر سے تلاش کریں…', 'ابحث بالمادة أو المورد أو رقم الطلب…')
+            : L('Search deals (material, supplier, request or statement no.)…', 'ڈیلز تلاش کریں (سامان، سپلائر، درخواست یا بیان نمبر)…', 'ابحث في الصفقات (مادة، مورد، رقم الطلب أو البيان)…')} />
         <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
           {[{ k: 'all', l: L('All', 'سب', 'الكل') }, { k: 'active', l: L('Active', 'جاری', 'جارية') }, { k: 'done', l: L('Completed', 'مکمل', 'مكتملة') }, { k: 'disputed', l: L('Problems', 'مسائل', 'مشكلات') }].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)} aria-pressed={filter === f.k}
@@ -168,10 +165,10 @@ function ContractorDeals() {
           <div className="space-y-3">
             {shown.map((d: any) => {
               const st = dealStage(d, 'buyer', locale)
-              const todo = buyerTodo(st.key, locale)
+              const todo = buyerTodo(st, locale)
               const amount = typeof d._amount === 'number' ? d._amount : offerComparable(d)
               const refLine = d.rfq ? rfqRefLine(d.rfq, locale) : ''
-              const rateDue = !!d.received_at && !reviewed.has(d.id) && st.key !== 'disputed'
+              const rateDue = !!reviewed && !!d.received_at && !reviewed.has(d.id) && st.key !== 'disputed'
               return (
                 <Link key={d.id} href={`/contractor/orders/${d.id}${!todo && rateDue ? '#rate' : ''}`}
                   className={`block bg-white rounded-2xl p-4 border shadow-sm transition-colors ${todo ? 'border-[#D4A543]/60' : 'border-gray-100 hover:border-[#D4A543]/40'}`}>
@@ -179,7 +176,9 @@ function ContractorDeals() {
                     <div className="min-w-0">
                       <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }} dir="auto">{d.rfq ? rfqDesc(d.rfq, locale) : L('Deal', 'ڈیل', 'صفقة')}</div>
                       {refLine && <div className="text-xs text-gray-500 mt-0.5" dir="auto">{refLine}</div>}
-                      <div className="text-xs text-gray-500 mt-1 truncate"><SellerIcon name="store" className="w-3.5 h-3.5" /> {d.supplier?.company_name_ar || '—'} · <span className="font-bold text-[#8F6820]">{amount.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span> <span className="text-xs">({vatTag(d, locale)})</span></div>
+                      <div className="text-xs text-gray-500 mt-1 truncate" dir="auto"><SellerIcon name="store" className="w-3.5 h-3.5" /> {d.supplier?.company_name_ar || '—'}</div>
+                      {/* the amount on its own wrapping line, never cut with the supplier name (UX-071) */}
+                      <div className="text-xs text-gray-500 mt-0.5 flex flex-wrap items-baseline gap-x-1"><span className="font-bold text-sm text-[#8F6820]">{amount.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</span> <span className="text-xs">({vatTag(d, locale)})</span></div>
                       {d.extras_pending && Array.isArray(d.extra_charges) && d.extra_charges.length > 0 && (
                         <div className="text-xs font-semibold text-[#8F6820] mt-0.5">{L('+ delivery charges, waiting for the supplier’s confirmation', '+ ڈیلیوری چارجز، سپلائر کی تصدیق کا انتظار', '+ رسوم التوصيل بانتظار تأكيد المورد')}</div>
                       )}

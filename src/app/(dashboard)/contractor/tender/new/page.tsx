@@ -28,6 +28,7 @@ import { itemToRow } from '@/lib/tender/rows'
 import { MAX_ORIGINAL_BYTES, MAX_BOQ_BYTES, extractPdfInBrowser } from '@/lib/tender/browserPdf'
 import type { TenderItem, BoqReadStats, ExtractedPdf, DrawingSummary, SpecIndex } from '@/lib/tender/types'
 import { makeL, kindLabel, fmtSize } from '@/components/tender/labels'
+import { storedBuyerType } from '@/lib/buyerType'
 
 type PdfKind = 'spec' | 'drawing'
 type PdfJob = {
@@ -67,10 +68,14 @@ export default function NewTenderPage() {
   const leavingRef = useRef(false) // set just before opening the review, so the leave warning stays quiet
 
   useEffect(() => {
+    // a home buyer has no tenders: the simple request page (UX-078)
+    if (storedBuyerType() === 'individual') { window.location.replace('/contractor/rfq/quick'); return }
     const supabase = createClient()
     supabase.auth.getSession().then(({ data }) => {
       if (!data.session) { window.location.href = '/login'; return }
       setUser(data.session.user)
+      supabase.from('profiles').select('buyer_type').eq('id', data.session.user.id).maybeSingle()
+        .then(({ data: bt }: any) => { if (bt?.buyer_type === 'individual') window.location.replace('/contractor/rfq/quick') })
       // open to everyone during the trial: decided before the profile read, so a failed read never shows a gate
       if (PROJECTS_OPEN_TO_ALL) { setAllowed(true); return }
       supabase.from('profiles').select('role, verification_status, cr_verified_at, subscription_plan, subscription_expires_at').eq('id', data.session.user.id).single()
@@ -123,9 +128,17 @@ export default function NewTenderPage() {
         if (next.kind === 'drawing') patch({ status: 'done', data, thumbs, drawings: readDrawings([{ name: next.file.name, pages: data.pages }]) })
         else patch({ status: 'done', data, index: buildSpecIndex(next.file.name, data.pages) })
       })
-      .catch(() => patch({ status: 'error', error: L('Could not read this PDF (protected or damaged?).', 'یہ PDF نہیں پڑھی جا سکی۔', 'تعذّرت قراءة ملف PDF هذا (محمي أو تالف؟).') }))
+      .catch(() => patch({ status: 'error', error: L('Could not read this PDF (protected or damaged?).', 'یہ PDF نہیں پڑھی جا سکی (محفوظ شدہ یا خراب؟)۔', 'تعذّرت قراءة ملف PDF هذا (محمي أو تالف؟).') }))
       .finally(() => { busyRef.current = false; setJobs(js => [...js]) })
   }, [jobs]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // a file dropped outside a section must not make the browser open it and leave the page
+  useEffect(() => {
+    const stop = (e: DragEvent) => { if (e.dataTransfer?.types?.includes('Files')) e.preventDefault() }
+    window.addEventListener('dragover', stop)
+    window.addEventListener('drop', stop)
+    return () => { window.removeEventListener('dragover', stop); window.removeEventListener('drop', stop) }
+  }, [])
 
   const reading = jobs.some(j => j.status === 'queued' || j.status === 'reading') || boq?.status === 'reading'
   const doneDrawings = jobs.filter(j => j.kind === 'drawing' && j.status === 'done')
@@ -168,7 +181,7 @@ export default function NewTenderPage() {
       const drawings: DrawingSummary[] = []
       const specs: { index: SpecIndex; pages: any[] }[] = []
       for (const j of jobs.filter(x => x.status === 'done' && x.data)) {
-        setSaveMsg(L(`Saving ${j.file.name}…`, `${j.file.name} محفوظ…`, `جارٍ حفظ ${j.file.name}…`))
+        setSaveMsg(L(`Saving ${j.file.name}…`, `${j.file.name} محفوظ کی جا رہی ہے…`, `جارٍ حفظ ${j.file.name}…`))
         const fid = uid()
         const jsonPath = `${base}/${fid}.json`
         const jsonUp = await bucket.upload(jsonPath, new Blob([JSON.stringify(j.data)], { type: 'application/json' }), { upsert: true, contentType: 'application/json' })
@@ -203,7 +216,7 @@ export default function NewTenderPage() {
       }
 
       // checks + routing → items
-      setSaveMsg(L('Checking the BOQ against the drawings and specifications…', 'جانچ ہو رہی ہے…', 'جارٍ مطابقة جدول الكميات مع المخططات والمواصفات…'))
+      setSaveMsg(L('Checking the BOQ against the drawings and specifications…', 'مقداروں کے جدول کو ڈرائنگز اور تفصیلات سے ملایا جا رہا ہے…', 'جارٍ مطابقة جدول الكميات مع المخططات والمواصفات…'))
       await new Promise(r => setTimeout(r, 0))
       const res = runChecks({ items: boq.items, drawings, specs })
       const rows = boq.items.map(it => {
@@ -237,13 +250,20 @@ export default function NewTenderPage() {
           if (left?.length) await bucket.remove(left.map((f: any) => `${user.id}/${createdId}/${f.name}`))
         } catch { /* best effort */ }
       }
-      setError(m.includes('tenders_daily_limit') ? L('Daily limit of new tenders reached.', 'نئے ٹینڈرز کی روزانہ حد پوری۔', 'وصلت إلى الحد اليومي للمناقصات الجديدة.')
+      setError(m.includes('tenders_daily_limit') ? L('Daily limit of new tenders reached. Try again tomorrow.', 'نئے ٹینڈرز کی روزانہ حد پوری ہو گئی۔ کل دوبارہ کوشش کریں۔', 'وصلت إلى الحد اليومي للمناقصات الجديدة، فحاول غداً.')
         : m.includes('Bucket not found') || m.includes('relation') ? L('Tender pricing is not enabled yet on the server.', 'ٹینڈر قیمت سرور پر ابھی فعال نہیں۔', 'تسعير المناقصات غير مفعّل على الخادم بعد.')
         : L('Could not save the tender. Your files are still here: check your connection and try again.', 'ٹینڈر محفوظ نہیں ہو سکا۔ آپ کی فائلیں یہیں ہیں: کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر حفظ المناقصة. ملفاتك ما زالت هنا: تحقّق من الاتصال وحاول مرة أخرى.'))
       setSaving(false); setSaveMsg('')
     }
   }
 
+  // an unreadable workbook or one without items is never a dead end (UX-077)
+  const otherFormatHelp = (
+    <div className="mt-2 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/[.06] p-3 text-[13px] text-[#0B2438] leading-relaxed">
+      {L('Tender pricing reads tables that have a «Unit» column and a «Quantity» column. If your table has another layout, try «Add a bill of quantities»: it reads Excel, PDF and photos.', 'ٹینڈر قیمت وہ جدول پڑھتی ہے جن میں «یونٹ» اور «مقدار» کے کالم ہوں۔ اگر آپ کا جدول کسی اور ترتیب میں ہے تو «مقداروں کا جدول شامل کریں» آزمائیں: یہ Excel، PDF اور تصاویر پڑھتا ہے۔', 'يقرأ تسعير المناقصات الجداول التي تحتوي عمودَي «الوحدة» و«الكمية». إن كان جدولك بتنسيق آخر، فجرّب «إضافة جدول الكميات»، فهي تقرأ ملفات Excel وPDF والصور.')}
+      <Link href="/contractor/project/new" className="mt-1 flex items-center min-h-11 font-bold text-[#8F6820] underline">{L('Open «Add a bill of quantities» →', '«مقداروں کا جدول شامل کریں» کھولیں ←', 'افتح «إضافة جدول الكميات» ←')}</Link>
+    </div>
+  )
   const byKind = boq?.stats?.by_kind
   const boqCodes = boq ? new Set(boq.items.flatMap(i => i.codes)).size : 0
 
@@ -251,7 +271,7 @@ export default function NewTenderPage() {
     <AppShell title={L('Tender pricing', 'ٹینڈر قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
       <div className="max-w-4xl mx-auto space-y-5">
         <div>
-          <Link href="/contractor/tender" className="text-xs font-bold text-[#8F6820] hover:underline">{L('All tenders', 'تمام ٹینڈرز', 'كل المناقصات')}</Link>
+          <Link href="/contractor/tender" className="inline-flex items-center min-h-11 text-xs font-bold text-[#8F6820] hover:underline">{L('All tenders', 'تمام ٹینڈرز', 'كل المناقصات')}</Link>
           <h1 className="text-xl sm:text-2xl font-bold text-[#0B2438]">{L('New tender', 'نیا ٹینڈر', 'مناقصة جديدة')}</h1>
           <p className="text-sm text-gray-600 mt-1 leading-relaxed">
             {L('Upload the bill of quantities, the specifications and the drawings. They are read in your browser; every number is linked to its source, every inconsistency is flagged, and nothing goes to suppliers until you approve it.',
@@ -279,7 +299,9 @@ export default function NewTenderPage() {
           </label>
 
           {/* BOQ */}
-          <section className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
+          <section className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3"
+            onDragOver={(e: any) => { if (!saving) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' } }}
+            onDrop={(e: any) => { e.preventDefault(); e.stopPropagation(); if (!saving && boq?.status !== 'reading') onBoq(e.dataTransfer?.files?.[0] || null) }}>
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h2 className="font-bold text-[#0B2438]"><Glyph e="📋" /> {L('1. Bill of quantities (Excel)', '1. مقداروں کا جدول (Excel)', '1. جدول الكميات (Excel)')}</h2>
               <label className="min-h-11 inline-flex items-center px-4 py-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#8F6820] cursor-pointer">
@@ -287,7 +309,7 @@ export default function NewTenderPage() {
                 <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(e: any) => { onBoq(e.target.files?.[0] || null); e.target.value = '' }} />
               </label>
             </div>
-            {!boq && <p className="text-xs text-gray-500">{L('Required. Up to 15 MB.', 'ضروری۔ 15 میگا بائٹ تک۔', 'مطلوب. حتى 15 ميجابايت.')}</p>}
+            {!boq && <p className="text-xs text-gray-500">{L('Required. Up to 15 MB. You can also drop the file here.', 'ضروری۔ 15 میگا بائٹ تک۔ آپ فائل یہاں چھوڑ بھی سکتے ہیں۔', 'مطلوب. حتى 15 ميجابايت. ويمكنك سحب الملف وإفلاته هنا.')}</p>}
             {boqError && (
               <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {boqError}
@@ -308,6 +330,7 @@ export default function NewTenderPage() {
                 </div>
                 {boq.status === 'reading' && <p className="text-gray-600 mt-1">{L('Reading…', 'پڑھا جا رہا ہے…', 'جارٍ القراءة…')}</p>}
                 {boq.status === 'error' && <p className="text-red-600 mt-1">{boq.error}</p>}
+                {(boq.status === 'error' || (boq.status === 'done' && boq.items.length === 0)) && otherFormatHelp}
                 {boq.status === 'done' && boq.stats && (
                   <div className="mt-2 space-y-1 text-gray-700">
                     <p>{L(`${boq.stats.sheets_read.length} trade sheets read, ${boq.stats.sheets_skipped.length} skipped (cover, summary, collections).`, `کاموں کی ${boq.stats.sheets_read.length} شیٹس پڑھی گئیں، ${boq.stats.sheets_skipped.length} چھوڑ دی گئیں (سرورق، خلاصہ اور مجموعے کی شیٹس)۔`, `أوراق الأعمال المقروءة: ${arSheets(boq.stats.sheets_read.length)}، والمتجاهَلة: ${arSheets(boq.stats.sheets_skipped.length)} (الغلاف والملخص وأوراق التجميع).`)}</p>
@@ -322,7 +345,9 @@ export default function NewTenderPage() {
 
           {/* PDFs */}
           {(['spec', 'drawing'] as PdfKind[]).map((kind, idx) => (
-            <section key={kind} className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
+            <section key={kind} className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3"
+              onDragOver={(e: any) => { if (!saving) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy' } }}
+              onDrop={(e: any) => { e.preventDefault(); e.stopPropagation(); if (!saving) addPdfs(e.dataTransfer?.files || null, kind) }}>
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <h2 className="font-bold text-[#0B2438]"><Glyph e={kind === 'spec' ? '📑' : '📏'} /> {idx + 2}. {kind === 'spec' ? L('Specifications (PDF)', 'تفصیلات (PDF)', 'المواصفات (PDF)') : L('Drawings (PDF)', 'ڈرائنگز (PDF)', 'المخططات (PDF)')}</h2>
                 <label className="min-h-11 inline-flex items-center px-4 py-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#8F6820] cursor-pointer">
@@ -384,7 +409,7 @@ export default function NewTenderPage() {
                   {!title.trim()
                     ? L('Write the tender name to continue.', 'جاری رکھنے کے لیے ٹینڈر کا نام لکھیں۔', 'اكتب اسم المناقصة للمتابعة.')
                     : !(boq?.status === 'done' && boq.items.length > 0)
-                      ? L('Upload a bill of quantities in Excel with priced rows to continue.', 'جاری رکھنے کے لیے Excel میں مقداروں کا جدول اپ لوڈ کریں جس میں آئٹمز ہوں۔', 'ارفع جدول كميات بصيغة Excel يحتوي بنوداً للمتابعة.')
+                      ? <>{L('Upload a bill of quantities in Excel with priced rows to continue.', 'جاری رکھنے کے لیے Excel میں مقداروں کا جدول اپ لوڈ کریں جس میں آئٹمز ہوں۔', 'ارفع جدول كميات بصيغة Excel يحتوي بنوداً للمتابعة.')}{boq && boq.status !== 'reading' && <> <Link href="/contractor/project/new" className="underline">{L('Or use «Add a bill of quantities».', 'یا «مقداروں کا جدول شامل کریں» استعمال کریں۔', 'أو استخدم «إضافة جدول الكميات».')}</Link></>}</>
                       : ''}
                 </span>
               )}

@@ -11,7 +11,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import LoadError from '@/components/shared/LoadError'
 import { rfqDisplayName } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
-import { Flag } from 'lucide-react'
+import { Flag, Check, CheckCheck } from 'lucide-react'
 import AutoTr from '@/components/shared/AutoTr'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
@@ -152,15 +152,18 @@ function Messages() {
       ch = supabase.channel(realtimeTopic(`conv-${activeId}`))
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeId}` }, (payload) => {
           setMsgs(prev => {
-            if (prev.some(m => m.id === payload.new.id)) return prev
-            // استبدل الرسالة المتفائلة المؤقتة بنفس المحتوى بالصف الحقيقي (منع التكرار)
-            if (payload.new.sender_id === me) {
-              const i = prev.findIndex((m: any) => typeof m.id === 'string' && m.id.startsWith('temp-') && m.body === payload.new.body && m._status !== 'failed')
-              if (i !== -1) { const c = [...prev]; c[i] = payload.new; return c }
-            }
+            // matched by id only (UX-018): the server row replaces ours, with its masked text, so the
+            // sender sees what the other side sees (a phone number hidden before the award)
+            if (prev.some(m => m.id === payload.new.id)) return prev.map((m: any) => m.id === payload.new.id ? { ...payload.new } : m)
+            // our own message whose send_message call has not returned yet: deliver() drops the temp row
+            // when it gets the id back, so the server row is added here once
             return [...prev, payload.new]
           })
           if (payload.new.sender_id !== me) supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id).then(() => window.dispatchEvent(new Event('tsk:msgs-read')))
+        })
+        // «read» ticks: the other side opening the message updates read_at (UX-142)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeId}` }, (payload) => {
+          setMsgs(prev => prev.map((m: any) => m.id === payload.new.id ? { ...m, read_at: payload.new.read_at, body: payload.new.body } : m))
         })
         .subscribe()
     })()
@@ -207,6 +210,12 @@ function Messages() {
       if (newId && prev.some((m: any) => m.id === newId)) return prev.filter((m: any) => m.id !== id)
       return prev.map((m: any) => m.id === id ? { ...m, id: (newId as any) || id, _status: 'sent' } : m)
     })
+    // then show the stored row (the server may have masked a phone number), UX-018
+    if (newId) {
+      supabase.from('messages').select('*').eq('id', newId as any).maybeSingle().then(({ data: row }: any) => {
+        if (row) setMsgs(prev => prev.map((m: any) => m.id === row.id ? { ...row } : m))
+      }, () => {})
+    }
     setLastMine(prev => ({ ...prev, [convoId]: true }))
     loadConvos()
   }
@@ -298,6 +307,7 @@ function Messages() {
 
   return (
     <AppShell title={L('Messages', 'پیغامات', 'الرسائل')} nav={getNav(role, locale, '/messages')} dir={dir}>
+      <h1 className="sr-only">{L('Messages', 'پیغامات', 'الرسائل')}</h1>
       <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-4 min-h-0 h-[calc(100dvh-130px-4.5rem-env(safe-area-inset-bottom))] lg:h-[calc(100dvh-130px)]">
         {/* قائمة المحادثات */}
         <aside className={`lg:col-span-1 min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-y-auto ${activeId ? 'hidden lg:block' : ''}`}>
@@ -419,13 +429,15 @@ function Messages() {
                   const mine = m.sender_id === me
                   return (
                     <div key={m.id} className={`flex ${mine ? 'justify-start' : 'justify-end'}`}>
-                      <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white' : 'bg-white border border-gray-100 text-gray-800'}`} style={mine ? { background: m._status === 'failed' ? '#b91c1c' : '#0B2438' } : {}}>
+                      <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${mine ? 'text-white' : 'bg-white border border-gray-100 text-gray-800'}`} style={mine ? { background: m._status === 'failed' ? '#B42318' : '#0B2438' } : {}}>
                         <div className="whitespace-pre-wrap break-words">{mine ? m.body : <AutoTr text={m.body} locale={locale} />}</div>
                         <div className={`text-xs mt-1 ${mine ? 'text-white/80' : 'text-gray-500'}`}>
                           {m._status === 'pending' ? `${L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…')}`
                             : m._status === 'failed'
                               ? <button type="button" onClick={() => retry(m)} className="underline font-semibold text-white min-h-[44px] inline-flex items-center gap-1"><Glyph e="⚠" /> {L('Failed to send — retry', 'نہیں بھیجا جا سکا — دوبارہ کوشش کریں', 'تعذّر الإرسال — إعادة المحاولة')}</button>
-                              : <span className="inline-flex items-center gap-1">{fmtTime(m.created_at, locale)}{mine && <span aria-label={L('Sent', 'بھیج دیا', 'أُرسلت')}><Glyph e="✓" /></span>}{!mine && bstate?.other_id && typeof m.id === 'string' && !m.id.startsWith('temp-') && (
+                              : <span className="inline-flex items-center gap-1">{fmtTime(m.created_at, locale)}{mine && (m.read_at
+                                ? <span className="inline-flex items-center gap-0.5" title={L('Read', 'پڑھ لیا گیا', 'قُرئت')}><CheckCheck className="w-3.5 h-3.5 text-[#F5C55B]" aria-hidden /><span className="sr-only">{L('Read', 'پڑھ لیا گیا', 'قُرئت')}</span></span>
+                                : <span className="inline-flex items-center" title={L('Sent', 'بھیج دیا', 'أُرسلت')}><Check className="w-3.5 h-3.5" aria-hidden /><span className="sr-only">{L('Sent', 'بھیج دیا', 'أُرسلت')}</span></span>)}{!mine && bstate?.other_id && typeof m.id === 'string' && !m.id.startsWith('temp-') && (
                                 <button type="button" onClick={() => openReport(m.id)} aria-label={L('Report this message', 'اس پیغام کی رپورٹ کریں', 'الإبلاغ عن هذه الرسالة')} title={L('Report', 'رپورٹ', 'إبلاغ')}
                                   className="-my-3 -me-2 ms-1 min-w-[44px] min-h-[44px] grid place-items-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"><Flag aria-hidden className="w-4 h-4" /></button>
                               )}</span>}

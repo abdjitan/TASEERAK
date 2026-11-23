@@ -48,7 +48,7 @@ export default function BudgetField({ value, visible, unit, locale, onChange, ho
       <p className="text-[12px] text-gray-600 leading-relaxed">
         {visible
           ? L('Suppliers will see this budget.', 'سپلائرز یہ بجٹ دیکھیں گے۔', 'سيرى الموردون هذه الميزانية.')
-          : L('Only you see it: offers will be marked within or above your budget.', 'صرف آپ دیکھیں گے: پیشکشوں پر بجٹ کے اندر یا اوپر لکھا ہوگا۔', 'تراها أنت فقط، وستُعلَّم العروض بأنها ضمن ميزانيتك أو أعلى منها.')}
+          : L('Only you see it: offers will be marked within or above your budget.', 'صرف آپ دیکھیں گے: آفرز پر بجٹ کے اندر یا اوپر لکھا ہوگا۔', 'تراها أنت فقط، وستُعلَّم العروض بأنها ضمن ميزانيتك أو أعلى منها.')}
       </p>
       <label className="flex items-center gap-2 min-h-11 text-[13px] text-gray-700 cursor-pointer">
         <input type="checkbox" checked={visible} onChange={e => onChange(value, e.target.checked)} className="w-5 h-5 accent-[#0B2438]" />

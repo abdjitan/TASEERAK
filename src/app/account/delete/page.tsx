@@ -9,6 +9,8 @@ import { createClient } from '@/lib/supabase/client'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { OPERATOR } from '@/lib/legal'
+import { arCount } from '@/lib/text'
+import HomeOrAccountLink from '@/components/public/HomeOrAccountLink'
 
 // Public page required by Google Play / the App Store: how to delete a Taseerak account, what is
 // deleted and what is kept. A signed-in visitor can delete the account here (POST /api/account/delete).
@@ -31,7 +33,10 @@ const C: Record<string, any> = {
     adminErr: 'لا يمكن حذف حساب مدير المنصة من هنا.', err: 'تعذّر حذف الحساب. حاول مرة أخرى أو راسل الدعم.',
     delHome: ['اسمك ورقم جوالك وعنوانك وموقعك.', 'المسودات والإشعارات.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى طلباتك المفتوحة.'],
     keepHome: ['سجلّات مشترياتك المكتملة (الفواتير والمراسلات المرتبطة بها) تبقى لدى البائع باسم «حساب محذوف»، لأنها جزء من سجلّاته.', 'البيانات التي يُلزمنا النظام بحفظها، مثل بيانات الفواتير الضريبية، تُحفظ للمدة التي يحددها النظام ثم تُحذف.'],
-    activeDeals: (n: number) => `لديك ${n} صفقة قيد التنفيذ. أكملها أو تواصل مع الطرف الآخر قبل الحذف، لأن الحذف يوقف المراسلة والتأكيدات فيها.`,
+    activeDeals: (n: number) => `لديك ${arCount(n, 'صفقة واحدة', 'صفقتان', 'صفقات', 'صفقة')} قيد التنفيذ. أكملها أو تواصل مع الطرف الآخر قبل الحذف، لأن الحذف يوقف المراسلة والتأكيدات فيها.`,
+    openDeals: 'افتح صفقاتي',
+    team: (n: number) => `لديك ${arCount(n, 'عضو واحد', 'عضوان', 'أعضاء', 'عضواً')} في فريق الشركة، وسيفقدون الوصول إلى حساب الشركة فور الحذف.`,
+    delBiz: ['اسمك واسم منشأتك ورقم جوالك وعنوانك وموقعك.', 'المسودات والإشعارات.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول (البريد وكلمة المرور)، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى طلباتك المفتوحة.'],
     backHome: 'العودة إلى الصفحة الرئيسية',
   },
   en: {
@@ -51,7 +56,10 @@ const C: Record<string, any> = {
     adminErr: 'A platform admin account cannot be deleted here.', err: 'Could not delete the account. Try again or contact support.',
     delHome: ['Your name, phone number, address and location.', 'Drafts and notifications.', 'Your devices’ notification tokens and your sign-in, so the account can no longer be used.', 'Your open requests are cancelled.'],
     keepHome: ['Your completed purchases (invoices and the messages about them) stay with the seller under the name "Deleted account", because they are part of their records.', 'Data the law requires us to keep, such as tax-invoice data, is kept for the legally required period and then deleted.'],
-    activeDeals: (n: number) => `You have ${n} deal(s) in progress. Finish them or talk to the other party before deleting: deleting stops the messages and confirmations in them.`,
+    activeDeals: (n: number) => `You have ${n} ${n === 1 ? 'deal' : 'deals'} in progress. Finish them or talk to the other party before deleting: deleting stops the messages and confirmations in them.`,
+    openDeals: 'Open my deals',
+    team: (n: number) => `You have ${n} company team ${n === 1 ? 'member' : 'members'}; they lose access to the company account as soon as you delete it.`,
+    delBiz: ['Your name, business name, phone number, address and location.', 'Drafts and notifications.', 'Your devices’ notification tokens and your sign-in (email and password), so the account can no longer be used.', 'Your open requests are cancelled.'],
     backHome: 'Back to the home page',
   },
   ur: {
@@ -72,6 +80,9 @@ const C: Record<string, any> = {
     delHome: ['آپ کا نام، فون نمبر، پتہ اور مقام۔', 'ڈرافٹ اور اطلاعات۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی کھلی درخواستیں منسوخ ہو جاتی ہیں۔'],
     keepHome: ['آپ کی مکمل خریداریاں (انوائس اور متعلقہ پیغامات) بیچنے والے کے پاس «حذف شدہ اکاؤنٹ» کے نام سے رہتی ہیں کیونکہ وہ اس کے ریکارڈ کا حصہ ہیں۔', 'جو ڈیٹا قانوناً رکھنا لازم ہے، جیسے ٹیکس انوائس کا ڈیٹا، مقررہ مدت تک رکھا جاتا ہے پھر حذف کر دیا جاتا ہے۔'],
     activeDeals: (n: number) => `آپ کے ${n} سودے جاری ہیں۔ حذف کرنے سے پہلے انہیں مکمل کریں یا دوسرے فریق سے بات کریں، کیونکہ حذف کرنے سے ان میں پیغامات اور تصدیقات رک جاتی ہیں۔`,
+    openDeals: 'میرے سودے کھولیں',
+    team: (n: number) => `کمپنی کی ٹیم میں آپ کے ${n} رکن ہیں، اور حذف کرتے ہی وہ کمپنی کے اکاؤنٹ تک رسائی کھو دیں گے۔`,
+    delBiz: ['آپ کا نام، ادارے کا نام، فون نمبر، پتہ اور مقام۔', 'ڈرافٹ اور اطلاعات۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن (ای میل اور پاسورڈ)، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی کھلی درخواستیں منسوخ ہو جاتی ہیں۔'],
     backHome: 'مرکزی صفحے پر واپس جائیں',
   },
 }
@@ -87,6 +98,8 @@ export default function DeleteAccountPage() {
   // role-based lists (a home buyer has no purchase orders or business name) and a warning when deals are still running (UX-100)
   const [homeBuyer, setHomeBuyer] = useState(false)
   const [activeDeals, setActiveDeals] = useState(0)
+  const [role, setRole] = useState('')
+  const [teamCount, setTeamCount] = useState(0)
 
   useEffect(() => {
     const sb = createClient()
@@ -97,6 +110,12 @@ export default function DeleteAccountPage() {
       try {
         const { data: p } = await sb.from('profiles').select('role, buyer_type').eq('id', uid).maybeSingle()
         setHomeBuyer(p?.role === 'contractor' && p?.buyer_type === 'individual')
+        setRole(p?.role || '')
+        // the company's team members lose access at once (UX-119)
+        if (p?.role === 'supplier') {
+          const { count } = await sb.from('company_members').select('user_id', { count: 'exact', head: true }).eq('company_id', uid).eq('status', 'active')
+          setTeamCount(count || 0)
+        }
       } catch {}
       try {
         const { data: n, error } = await sb.rpc('my_active_deal_count')
@@ -128,7 +147,7 @@ export default function DeleteAccountPage() {
           <a href="/" className="shrink-0" aria-label="تسعيرك">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="h-11 w-auto" /></a>
           <div className="flex items-center gap-2">
             <LanguageSwitcher variant="minimal" />
-            <a href="/" className="min-h-[44px] inline-flex items-center text-sm font-semibold text-[#0B2438] hover:underline">{t.home}</a>
+            <HomeOrAccountLink homeLabel={t.home} />
           </div>
         </div>
       </nav>
@@ -144,7 +163,7 @@ export default function DeleteAccountPage() {
           <a href={`mailto:${OPERATOR.email}`} dir="ltr" className="inline-block font-mono text-base font-bold text-[#8F6820] hover:underline select-all break-all">{OPERATOR.email}</a>
           <p className="text-xs text-gray-500 mt-1">{t.mailHint}</p>
         </section>
-        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={homeBuyer ? t.delHome : t.del} /></section>
+        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={homeBuyer ? t.delHome : role === 'contractor' ? t.delBiz : t.del} /></section>
         <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.keepTitle}</h2><List items={homeBuyer ? t.keepHome : t.keep} /></section>
 
         <div className="bg-white rounded-2xl border border-red-100 p-5">
@@ -161,7 +180,12 @@ export default function DeleteAccountPage() {
           ) : signedIn ? (
             <div className="space-y-3">
               {activeDeals > 0 && (
-                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alert">{t.activeDeals(activeDeals)}</div>
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alert">{t.activeDeals(activeDeals)}{' '}
+                  <a href={role === 'supplier' ? '/supplier/deals' : '/contractor/rfqs'} className="inline-flex items-center min-h-[44px] font-bold underline">{t.openDeals}</a>
+                </div>
+              )}
+              {teamCount > 0 && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alert">{t.team(teamCount)}</div>
               )}
               <label className="block text-sm font-semibold text-gray-700" htmlFor="confirm-word">{t.confirmLabel}</label>
               <input id="confirm-word" value={word} onChange={e => setWord(e.target.value)} className="input-field max-w-xs" autoComplete="off" />

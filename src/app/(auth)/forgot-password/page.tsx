@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
-import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
@@ -19,7 +18,7 @@ const txt = {
     sentSub: 'إذا كان {email} مسجّلاً لدينا فستصلك رسالة فيها رابط لتعيين كلمة مرور جديدة. تفقّد مجلد الرسائل غير المرغوب فيها أيضاً.',
     phoneQ: 'سجّلت برقم جوالك؟', phoneA: 'لا تحتاج كلمة مرور: ادخل برمز يصلك على جوالك.', phoneBtn: 'الدخول برقم الجوال',
     err: 'تعذّر الإرسال، تأكد من البريد وحاول مرة أخرى',
-    notArrived: 'لم تصلك الرسالة؟', resend: 'أعد الإرسال', resendIn: 'أعد الإرسال بعد {s} ثانية', editEmail: 'تعديل البريد',
+    resent: 'أرسلنا الرابط مرة أخرى.', notArrived: 'لم تصلك الرسالة؟', resend: 'أعد الإرسال', resendIn: 'أعد الإرسال بعد {s} ثانية', editEmail: 'تعديل البريد',
   },
   en: {
     title: 'Forgot your password?', sub: 'Enter your email and we will send you a reset link',
@@ -29,7 +28,7 @@ const txt = {
     sentSub: 'If {email} is registered with us, you will get a message with a link to set a new password. Check your spam folder too.',
     phoneQ: 'Signed up with your mobile number?', phoneA: 'You do not need a password: sign in with a code sent to your mobile.', phoneBtn: 'Sign in with my mobile',
     err: 'Could not send. Check the email and try again',
-    notArrived: 'Did the message not arrive?', resend: 'Send it again', resendIn: 'Send again in {s} s', editEmail: 'Change the email',
+    resent: 'We sent the link again.', notArrived: 'Did the message not arrive?', resend: 'Send it again', resendIn: 'Send again in {s} s', editEmail: 'Change the email',
   },
   ur: {
     title: 'پاسورڈ بھول گئے؟', sub: 'اپنا ای میل درج کریں، ہم ری سیٹ لنک بھیجیں گے',
@@ -39,7 +38,7 @@ const txt = {
     sentSub: 'اگر {email} ہمارے پاس رجسٹرڈ ہے تو آپ کو نیا پاسورڈ مقرر کرنے کے لنک والا پیغام ملے گا۔ اسپام فولڈر بھی دیکھیں۔',
     phoneQ: 'موبائل نمبر سے رجسٹر کیا تھا؟', phoneA: 'پاسورڈ کی ضرورت نہیں: موبائل پر آنے والے کوڈ سے سائن اِن کریں۔', phoneBtn: 'موبائل نمبر سے سائن اِن',
     err: 'بھیجنے میں ناکامی، دوبارہ کوشش کریں',
-    notArrived: 'پیغام نہیں ملا؟', resend: 'دوبارہ بھیجیں', resendIn: '{s} سیکنڈ بعد دوبارہ بھیجیں', editEmail: 'ای میل تبدیل کریں',
+    resent: 'ہم نے لنک دوبارہ بھیج دیا۔', notArrived: 'پیغام نہیں ملا؟', resend: 'دوبارہ بھیجیں', resendIn: '{s} سیکنڈ بعد دوبارہ بھیجیں', editEmail: 'ای میل تبدیل کریں',
   },
 }
 
@@ -60,9 +59,25 @@ export default function ForgotPasswordPage() {
     return () => clearTimeout(id)
   }, [wait])
   const emailRef = useRef<HTMLInputElement | null>(null)
+  const [resent, setResent] = useState(false)
   function backToForm(focus: boolean) {
     setSent(false); setError(''); setCaptchaToken('')
     if (focus) setTimeout(() => emailRef.current?.focus(), 50)
+  }
+
+  // «send again» really sends (it only went back to the form before, UX-120)
+  async function resend() {
+    setLoading(true); setError(''); setResent(false)
+    try {
+      const { error: err } = await createClient().auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+        captchaToken: captchaToken || undefined,
+      })
+      captchaRef.current?.reset(); setCaptchaToken('')
+      if (err) setError(t.err)
+      else { setResent(true); setWait(60) }
+    } catch { setError(t.err) }
+    setLoading(false)
   }
 
   async function handleSubmit(e: any) {
@@ -88,8 +103,9 @@ export default function ForgotPasswordPage() {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup mx-auto mb-4" />
-          <Logo theme="dark" size="lg" className="justify-center" variant="wordmark" />
+          {/* one logo, as on the sign-in page (the word mark repeated it, UX-120) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup mx-auto" />
         </div>
 
         <div className="bg-white rounded-3xl p-8 shadow-2xl">
@@ -100,10 +116,13 @@ export default function ForgotPasswordPage() {
               <p className="text-sm text-gray-700 mb-6">{t.sentSub.split('{email}')[0]}<span dir="ltr" className="font-bold">{email}</span>{t.sentSub.split('{email}')[1]}</p>
               <div className="mb-5 rounded-xl bg-[#F5F7FA] border border-gray-200 p-3 text-sm text-gray-700">
                 <div className="font-bold text-[#0B2438] mb-1">{t.notArrived}</div>
+                {resent && <p role="status" className="text-[13px] font-semibold text-emerald-800 mb-2">{t.resent}</p>}
+                {error && <p role="alert" className="text-[13px] font-semibold text-red-700 mb-2">{error}</p>}
+                {wait <= 0 && TURNSTILE_SITE_KEY && <div className="flex justify-center mb-2"><Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} language={locale} /></div>}
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  <button type="button" disabled={wait > 0} onClick={() => backToForm(false)}
+                  <button type="button" disabled={wait > 0 || loading || (!!TURNSTILE_SITE_KEY && !captchaToken)} onClick={resend}
                     className="min-h-[44px] px-4 rounded-xl font-bold text-[#071827] bg-[#D4A543] disabled:opacity-50">
-                    {wait > 0 ? t.resendIn.replace('{s}', String(wait)) : t.resend}
+                    {loading ? t.sending : wait > 0 ? t.resendIn.replace('{s}', String(wait)) : t.resend}
                   </button>
                   <button type="button" onClick={() => backToForm(true)} className="min-h-[44px] px-4 rounded-xl font-bold text-[#0B2438] border border-gray-200 bg-white hover:bg-gray-50">{t.editEmail}</button>
                 </div>
@@ -119,7 +138,7 @@ export default function ForgotPasswordPage() {
                 <label htmlFor="fp-email" className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
                 <input id="fp-email" ref={emailRef} type="email" autoComplete="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-4" placeholder="info@company.com" required disabled={loading} />
                 <div className="flex justify-center mb-5">
-                  <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
+                  <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} language={locale} />
                 </div>
                 <button type="submit" disabled={loading}
                   className="w-full py-3.5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"

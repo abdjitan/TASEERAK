@@ -31,7 +31,7 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
     const j = await r.json().catch(() => ({}))
     setBusy(false)
     if (j?.ok) {
-      setMsg({ ok: true, text: L(`Done. We sent the confirmation link to ${target}. Open it, then sign in with this email.`, `ہو گیا۔ تصدیقی لنک ${target} پر بھیج دیا۔`, `تم. أرسلنا رابط التأكيد إلى ${target}. افتحه، ثم سجّل الدخول بهذا البريد.`) })
+      setMsg({ ok: true, text: L(`Done. We sent the confirmation link to ${target}. Open it, then sign in with this email.`, `ہو گیا۔ ہم نے تصدیقی لنک ${target} پر بھیج دیا۔ اسے کھولیں، پھر اسی ای میل سے سائن اِن کریں۔`, `تم. أرسلنا رابط التأكيد إلى ${target}. افتحه، ثم سجّل الدخول بهذا البريد.`) })
       onFixed?.(target)
       return
     }
@@ -42,7 +42,7 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
       : e === 'bad_credentials' ? L('The password does not match this email.', 'پاس ورڈ اس ای میل سے میل نہیں کھاتا۔', 'كلمة المرور لا تطابق هذا البريد.')
       : e === 'rate' ? L('Too many tries. Try again later.', 'بہت زیادہ کوششیں، بعد میں کوشش کریں۔', 'محاولات كثيرة، حاول لاحقاً.')
       : e === 'too_old' ? L('This sign-up is too old: contact Support.', 'یہ رجسٹریشن پرانی ہے، سپورٹ سے رابطہ کریں۔', 'هذا التسجيل قديم: تواصل مع الدعم.')
-      : L('Could not change the email. Try again or contact Support.', 'ای میل نہیں بدل سکی۔', 'تعذّر تعديل البريد. حاول مرة أخرى أو تواصل مع الدعم.') })
+      : L('Could not change the email. Try again or contact Support.', 'ای میل نہیں بدل سکی۔ دوبارہ کوشش کریں یا سپورٹ سے رابطہ کریں۔', 'تعذّر تعديل البريد. حاول مرة أخرى أو تواصل مع الدعم.') })
   }
 
   return (

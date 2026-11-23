@@ -42,7 +42,7 @@ export default function JoinSupplier() {
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center" aria-label={L('Taseerak home', 'تسعیرک مرکزی صفحہ', 'تسعيرك، الرئيسية')}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-9 w-auto" />
+            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-11 w-auto" />
           </Link>
           <LanguageSwitcher variant="minimal" />
         </div>
@@ -66,6 +66,43 @@ export default function JoinSupplier() {
               <div className="text-[13px] text-ink-2 mt-1 leading-relaxed">{b}</div>
             </div>
           ))}
+        </div>
+
+        {/* UX-103: what each kind needs to sign up */}
+        <h2 className="mt-8 mb-3 text-lg font-extrabold text-navy">{L('What do you need to sign up?', 'رجسٹریشن کے لیے کیا چاہیے؟', 'ماذا تحتاج للتسجيل؟')}</h2>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div className="bg-white rounded-2xl p-4 border border-line">
+            <div className="font-bold text-navy text-sm flex items-center gap-1.5"><SellerIcon name="building" /> {L('Company or shop', 'کمپنی یا دکان', 'شركة أو محل')}</div>
+            <p className="text-[13px] text-ink-2 mt-1 leading-relaxed">{L('Your commercial registration (the unified number, 10 digits starting with 7). You can add your sales team later.', 'آپ کی تجارتی رجسٹریشن (متحدہ نمبر، 7 سے شروع 10 ہندسے)۔ سیلز ٹیم بعد میں شامل کر سکتے ہیں۔', 'سجلك التجاري (الرقم الوطني الموحد: 10 أرقام يبدأ بـ7)، ويمكنك إضافة فريق المبيعات لاحقاً.')}</p>
+            <Link href={`/join/company`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a company or shop', 'کمپنی یا دکان کے طور پر رجسٹر کریں', 'سجّل كشركة أو محل')}</Link>
+          </div>
+          <div className="bg-white rounded-2xl p-4 border border-line">
+            <div className="font-bold text-navy text-sm flex items-center gap-1.5"><SellerIcon name="user" /> {L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}</div>
+            <p className="text-[13px] text-ink-2 mt-1 leading-relaxed">{L('No registration needed. The deal is done with the source shop’s invoice in the buyer’s name, up to 15,000 SAR per deal at first.', 'رجسٹریشن کی ضرورت نہیں۔ سودا خریدار کے نام ماخذ دکان کی انوائس سے ہوتا ہے، شروع میں فی سودا 15,000 ریال تک۔', 'لا تحتاج سجلاً تجارياً. تتم الصفقة بفاتورة المحل المصدر باسم المشتري، وحدّك في البداية 15,000 ر.س للصفقة.')}</p>
+            <Link href={`/join/seller`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a pricing agent', 'قیمت ایجنٹ کے طور پر رجسٹر کریں', 'سجّل كوسيط تسعير')}</Link>
+          </div>
+        </div>
+
+        {/* UX-103: three steps */}
+        <h2 className="mt-8 mb-3 text-lg font-extrabold text-navy">{L('How it works', 'یہ کیسے کام کرتا ہے', 'كيف يعمل؟')}</h2>
+        <ol className="grid sm:grid-cols-3 gap-3">
+          {[
+            L('Create your account and choose what you sell.', 'اکاؤنٹ بنائیں اور منتخب کریں کہ آپ کیا بیچتے ہیں۔', 'أنشئ حسابك واختر ما تبيعه.'),
+            L('Requests for your materials in your area reach you.', 'آپ کے علاقے میں آپ کے سامان کی درخواستیں آپ تک پہنچتی ہیں۔', 'تصلك طلبات موادك في منطقتك.'),
+            L('Price each item and send one offer; the buyer chooses.', 'ہر آئٹم کی قیمت دیں اور ایک آفر بھیجیں؛ خریدار انتخاب کرتا ہے۔', 'سعّر كل مادة وأرسل عرضاً واحداً، ويختار المشتري.'),
+          ].map((s, i) => (
+            <li key={i} className="bg-white rounded-2xl p-4 border border-line flex items-start gap-3">
+              <span className="w-8 h-8 shrink-0 grid place-items-center rounded-full font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>{i + 1}</span>
+              <span className="text-[13px] text-ink-2 leading-relaxed">{s}</span>
+            </li>
+          ))}
+        </ol>
+
+        {/* UX-103: an example request, marked as an example */}
+        <div className="mt-8 bg-white rounded-2xl p-4 border border-line">
+          <span className="inline-block text-[12px] font-bold px-2 py-0.5 rounded-full bg-[#0B2438]/5 text-[#0B2438]">{L('Example', 'مثال', 'مثال')}</span>
+          <div className="mt-2 font-bold text-navy">{L('Cement 50 kg: 200 bags, Rebar 12 mm: 3 tons', 'سیمنٹ 50 کلو: 200 بوری، سریا 12 ملی میٹر: 3 ٹن', 'أسمنت 50 كغ: 200 كيس، حديد تسليح 12 ملم: 3 أطنان')}</div>
+          <div className="text-[13px] text-ink-2 mt-1">{L('Riyadh · delivery required · pricing closes in 2 days', 'ریاض · ڈیلیوری ضروری · قیمت کی مہلت 2 دن', 'الرياض · التوصيل مطلوب · تنتهي مهلة التسعير بعد يومين')}</div>
         </div>
       </main>
     </div>

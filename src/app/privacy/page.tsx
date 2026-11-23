@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
+import HomeOrAccountLink from '@/components/public/HomeOrAccountLink'
 import Glyph from '@/components/shared/Glyph'
 import { OPERATOR } from '@/lib/legal'
 
@@ -86,7 +87,7 @@ export default function PrivacyPage() {
           <a href="/" className="shrink-0" aria-label="تسعيرك">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="h-11 w-auto" /></a>
           <div className="flex items-center gap-2">
             <LanguageSwitcher variant="minimal" />
-            <a href="/" className="min-h-[44px] inline-flex items-center px-2 text-sm font-semibold text-[#0B2438] hover:underline">{t.home}</a>
+            <HomeOrAccountLink homeLabel={t.home} />
           </div>
         </div>
       </nav>

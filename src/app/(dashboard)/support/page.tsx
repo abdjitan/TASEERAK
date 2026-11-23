@@ -34,6 +34,8 @@ function Support() {
   const [loaded, setLoaded] = useState(false)
   const [convMsg, setConvMsg] = useState('')
   const [buyerType, setBuyerType] = useState<string | null>(null)
+  // the mobile counts as missing only while verifying it is required (UX-117)
+  const [phoneRequired, setPhoneRequired] = useState(false)
   useEffect(() => {
     setBuyerType(storedBuyerType())
     const sb = createClient()
@@ -41,10 +43,14 @@ function Support() {
       const uid = data?.user?.id || null
       setUserId(uid)
       if (uid) {
-        const { data: p } = await sb.from('profiles')
-          .select('role, buyer_type, supplier_conversion_requested_at, banned_until, phone_verified_at, email_verified_at')
-          .eq('id', uid).maybeSingle()
+        const [{ data: p }, { data: req }] = await Promise.all([
+          sb.from('profiles')
+            .select('role, buyer_type, supplier_conversion_requested_at, banned_until, phone_verified_at, email_verified_at')
+            .eq('id', uid).maybeSingle(),
+          sb.rpc('phone_verify_required'),
+        ])
         setMe(p)
+        setPhoneRequired(req === true)
       }
       setLoaded(true)
     }, () => setLoaded(true))
@@ -66,7 +72,7 @@ function Support() {
 
   const role = me?.role || 'contractor'
   const banned = !!me?.banned_until && new Date(me.banned_until).getTime() > Date.now() && role !== 'admin'
-  const sellerUnverified = role === 'supplier' && (!me?.phone_verified_at || !me?.email_verified_at)
+  const sellerUnverified = role === 'supplier' && ((phoneRequired && !me?.phone_verified_at) || !me?.email_verified_at)
   const atGate = !userId || banned || sellerUnverified
   // «Do you sell building materials?» is for a business buyer only, under the message box (UX-139)
   const homeBuyer = (me?.buyer_type || buyerType) === 'individual'
@@ -74,11 +80,10 @@ function Support() {
 
   const content = (
     <div className="max-w-3xl mx-auto space-y-5">
-      {atGate && (
-        <div>
-          <h1 className="text-2xl font-bold text-[#071827]">{L('Support', 'سپورٹ', 'الدعم')}</h1>
-        </div>
-      )}
+      {/* one h1 always; inside the app shell the top bar shows the title, so it is visually hidden (UX-110) */}
+      <div className={atGate ? '' : 'sr-only'}>
+        <h1 className="text-2xl font-bold text-[#071827]">{L('Support', 'سپورٹ', 'الدعم')}</h1>
+      </div>
       <p className="text-sm text-gray-600">{L('Reach the Taseerak team on WhatsApp, or send a message to the admin team here.', 'تسعیرک ٹیم سے واٹس ایپ پر رابطہ کریں، یا یہاں انتظامیہ کو پیغام بھیجیں۔', 'تواصل مع فريق تسعيرك على واتساب، أو أرسل رسالة إلى الإدارة من هنا.')}</p>
 
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-gray-100 shadow-sm">
@@ -99,7 +104,8 @@ function Support() {
           <div className="font-bold flex items-center gap-2"><MessageCircle className="w-5 h-5 text-[#F5C55B]" aria-hidden />{L('Message the Taseerak team on WhatsApp', 'تسعیرک ٹیم کو واٹس ایپ پر پیغام بھیجیں', 'راسل فريق تسعيرك على واتساب')}</div>
           <div className="text-[13px] text-[#C7CED6] mt-0.5">{L('Taseerak’s official WhatsApp number (an international business number)', 'تسعیرک کا سرکاری واٹس ایپ نمبر (بین الاقوامی کاروباری نمبر)', 'رقم واتساب تسعيرك الرسمي (رقم أعمال دولي)')}: <span dir="ltr">+1 213 561 4366</span></div>
         </div>
-        <span className="shrink-0 min-h-[44px] inline-flex items-center px-4 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>{L('Open', 'کھولیں', 'فتح')}</span>
+        {/* an outline, not a second gold button on the page (UX-142) */}
+        <span className="shrink-0 min-h-[44px] inline-flex items-center px-4 rounded-xl text-sm font-bold border border-[#F5C55B] text-[#F5C55B]">{L('Open', 'کھولیں', 'فتح')}</span>
       </a>
 
       {/* the rules behind the platform, one tap away (UX-160) */}

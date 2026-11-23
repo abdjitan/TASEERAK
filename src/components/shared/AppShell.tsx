@@ -15,7 +15,7 @@ import { storedSellerKind } from '@/lib/sellers'
 import { claimPendingRef } from '@/lib/referral'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import PhoneVerifyBanner from '@/components/shared/PhoneVerifyBanner'
-import { storedBuyerType } from '@/lib/buyerType'
+import { storedBuyerType, rememberBuyerType } from '@/lib/buyerType'
 import { askConfirm } from '@/lib/askConfirm'
 import { LogOut, ShieldCheck, Plus } from 'lucide-react'
 
@@ -34,7 +34,7 @@ const unreadCache = { uid: '', n: 0, at: 0 }
 const lastSeenTouch = { at: 0 }
 // Shell state read from this device (folded sidebar, seller kind, buyer type), kept for the whole visit
 // so a page change does not make the sidebar jump or the menu items flash (UX-098). ready = read once.
-const shellCache: { ready: boolean; collapsed: boolean; kind: string | null; buyerType: string | null } = { ready: false, collapsed: false, kind: null, buyerType: null }
+const shellCache: { ready: boolean; collapsed: boolean; kind: string | null; buyerType: string | null; typeSynced?: boolean } = { ready: false, collapsed: false, kind: null, buyerType: null }
 
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
 // only: 'company' = hidden for an independent seller; 'business' = hidden for a home buyer («لبيتي»).
@@ -137,6 +137,29 @@ export default function AppShell({
     createClient().auth.getSession().then(({ data: { session } }) => { if (!gone) setSessionUid(session?.user?.id) }, () => {})
     return () => { gone = true }
   }, [userId])
+  // The home/business mode lived only in this device's storage: a deal link opened on a new device
+  // showed «RFQ-1045» and business warnings to a home buyer. Read buyer_type from the profile once per
+  // session on buyer pages and remember it (UX-068).
+  useEffect(() => {
+    if (!sessionUid || roleHint !== 'contractor' || shellCache.typeSynced) return
+    shellCache.typeSynced = true
+    createClient().from('profiles').select('buyer_type').eq('id', sessionUid).maybeSingle().then(({ data }: any) => {
+      const bt = data?.buyer_type || null
+      if (bt && bt !== storedBuyerType()) { rememberBuyerType(bt); window.dispatchEvent(new Event('tsk:buyer-type')) }
+    }, () => { shellCache.typeSynced = false })
+  }, [sessionUid, roleHint])
+  // One h1 per page (UX-110): when the page itself has none, the bar title becomes the h1.
+  const mainRef = useRef<HTMLElement | null>(null)
+  const [pageHasH1, setPageHasH1] = useState(true)
+  useEffect(() => {
+    const el = mainRef.current
+    if (!el) return
+    const check = () => setPageHasH1(!!el.querySelector('h1'))
+    check()
+    const mo = new MutationObserver(check)
+    mo.observe(el, { childList: true, subtree: true })
+    return () => mo.disconnect()
+  }, [])
   // Mobile drawer: Escape closes it, the page behind does not scroll, Tab stays inside the menu, and
   // focus returns to the button that opened it when it closes (UX-156, UX-106).
   const drawerRef = useRef<HTMLElement | null>(null)
@@ -262,7 +285,7 @@ export default function AppShell({
         aria-label={L('Main menu', 'مرکزی مینو', 'القائمة الرئيسية')}
         {...(drawerInert ? { inert: true as any, 'aria-hidden': true } : {})}
         {...(!isDesk && open ? { role: 'dialog', 'aria-modal': true } : {})}
-        className={`ts-dashboard-sidebar fixed inset-y-0 ${sideEdge} z-50 w-[244px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} ${collapsed ? deskHidden : 'lg:translate-x-0'}`}
+        className={`ts-dashboard-sidebar print:hidden fixed inset-y-0 ${sideEdge} z-50 w-[244px] flex flex-col text-white transition-transform duration-300 ${open ? 'translate-x-0' : hidden} ${collapsed ? deskHidden : 'lg:translate-x-0'}`}
         style={{ background: 'linear-gradient(180deg,#071827 0%,#0B2438 54%,#050B12 100%)' }}
       >
         {/* Brand */}
@@ -337,7 +360,9 @@ export default function AppShell({
 
       {/* ===== Main column ===== */}
       <div className={`${mainPush} flex flex-col min-h-screen transition-[margin] duration-300`} {...(!isDesk && open ? { inert: true as any } : {})}>
-        <header className="ts-dashboard-topbar sticky top-0 z-30 backdrop-blur-md border-b">
+        {/* keyboard users jump past the menu and the top bar (UX-110) */}
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:start-2 focus:z-[80] focus:inline-flex focus:items-center focus:min-h-[44px] focus:px-4 focus:rounded-xl focus:font-bold focus:shadow-lg" style={{ background: '#D4A543', color: '#071827' }}>{L('Skip to content', 'مواد پر جائیں', 'انتقل إلى المحتوى')}</a>
+        <header className="ts-dashboard-topbar print:hidden sticky top-0 z-30 backdrop-blur-md border-b">
           <div className="flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <button type="button" className="w-11 h-11 grid place-items-center rounded-lg hover:bg-gray-100 shrink-0" aria-controls="ts-drawer"
@@ -347,7 +372,9 @@ export default function AppShell({
               </button>
               <div className="min-w-0">
                 {/* the page has its own h1; the bar title is a plain line so there is one h1 per page (UX-159) */}
-                {title && <p className="ts-topbar-title text-base sm:text-lg font-bold leading-tight truncate" style={{ color: '#0B2438' }}>{title}</p>}
+                {title && (pageHasH1
+                  ? <p className="ts-topbar-title text-base sm:text-lg font-bold leading-tight truncate" style={{ color: '#0B2438' }}>{title}</p>
+                  : <h1 className="ts-topbar-title text-base sm:text-lg font-bold leading-tight truncate" style={{ color: '#0B2438' }}>{title}</h1>)}
                 {subtitle && <p className="text-xs truncate" style={{ color: '#48596E' }}>{subtitle}</p>}
               </div>
             </div>
@@ -366,7 +393,7 @@ export default function AppShell({
           </div>
         </header>
 
-        <main className="ts-dashboard-main flex-1 p-4 sm:p-6 lg:p-7 pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-7"><PhoneVerifyBanner />{children}</main>
+        <main id="main" tabIndex={-1} ref={mainRef} className="ts-dashboard-main flex-1 p-4 sm:p-6 lg:p-7 pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-7 focus:outline-none"><PhoneVerifyBanner />{children}</main>
       </div>
 
       {/* ===== Bottom nav (mobile only) — 4 وجهات مُنسّقة (رتبة mobile) + «المزيد» يفتح القائمة الكاملة ===== */}

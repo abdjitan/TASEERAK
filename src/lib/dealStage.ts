@@ -6,6 +6,7 @@ export type DealStage = {
   step: number // 1..4 (0 عند وجود نزاع)
   key: 'accepted' | 'delivered' | 'received' | 'paid' | 'disputed'
   label: string // نص "وين صارت الطلبية"
+  short: string // a short badge for lists and cards (UX-054): never «تم التسليم» before the buyer confirms
   emoji: string
   done: boolean // الصفقة مكتملة (مدفوعة وموثّقة)
   tone: string // لون المؤشّر (hex)
@@ -26,25 +27,60 @@ const LABELS: Record<string, { buyer: [string, string, string]; supplier: [strin
 }
 function lbl(k: string, who: Who, locale: string) { const t = LABELS[k][who]; return locale === 'en' ? t[1] : locale === 'ur' ? t[2] : t[0] }
 
+// The supplier already uploaded its invoice and has not delivered yet (UX-033): the next step is delivery.
+const SUPPLIER_INVOICED: [string, string, string] = ['رفعتَ الفاتورة — أكّد التسليم عند إيصال البضاعة', 'You uploaded the invoice — confirm delivery when the goods arrive', 'آپ نے انوائس اپ لوڈ کر دی — سامان پہنچانے پر ڈیلیوری کی تصدیق کریں']
+
+// Short badges per stage (UX-054), the same words on the web and in the app.
+const SHORT: Record<string, { buyer: [string, string, string]; supplier: [string, string, string] }> = {
+  disputed: { buyer: ['بلاغ قيد المعالجة', 'Problem being handled', 'مسئلہ زیرِ کارروائی'], supplier: ['بلاغ قيد المعالجة', 'Problem being handled', 'مسئلہ زیرِ کارروائی'] },
+  done: { buyer: ['اكتملت الصفقة', 'Deal complete', 'ڈیل مکمل'], supplier: ['اكتملت الصفقة', 'Deal complete', 'ڈیل مکمل'] },
+  paid_pending: { buyer: ['دُفع، بانتظار تأكيد المورد', 'Paid, waiting for the supplier', 'ادائیگی ہو گئی، سپلائر کا انتظار'], supplier: ['أكّد استلام المبلغ', 'Confirm the payment', 'رقم ملنے کی تصدیق کریں'] },
+  received: { buyer: ['ادفع للمورد', 'Pay the supplier', 'سپلائر کو ادائیگی کریں'], supplier: ['بانتظار الدفع', 'Waiting for payment', 'ادائیگی کا انتظار'] },
+  delivered: { buyer: ['أكّد الاستلام', 'Confirm receipt', 'وصولی کی تصدیق کریں'], supplier: ['بانتظار تأكيد المشتري', 'Waiting for the buyer', 'خریدار کی تصدیق کا انتظار'] },
+  accepted: { buyer: ['بانتظار تسليم المورد', 'Waiting for delivery', 'ڈیلیوری کا انتظار'], supplier: ['سلّم البضاعة', 'Deliver the goods', 'سامان پہنچائیں'] },
+}
+function sh(k: string, who: Who, locale: string) { const t = SHORT[k][who]; return locale === 'en' ? t[1] : locale === 'ur' ? t[2] : t[0] }
+const pick = (t: [string, string, string], locale: string) => (locale === 'en' ? t[1] : locale === 'ur' ? t[2] : t[0])
+
 export function dealStage(offer: any, who: Who = 'buyer', locale: string = 'ar'): DealStage {
   if (offer?.dispute_status === 'open')
-    return { step: 0, key: 'disputed', label: lbl('disputed', who, locale), emoji: '⚠', done: false, tone: '#DC2626' }
+    return { step: 0, key: 'disputed', label: lbl('disputed', who, locale), short: sh('disputed', who, locale), emoji: '⚠', done: false, tone: '#DC2626' }
 
   const paid = offer?.payment_status === 'paid'
 
   if (paid && offer?.payment_confirmed_at && offer?.supplier_delivered_at && offer?.received_at)
-    return { step: 4, key: 'paid', label: lbl('done', who, locale), emoji: '✅', done: true, tone: '#0F6E56' }
+    return { step: 4, key: 'paid', label: lbl('done', who, locale), short: sh('done', who, locale), emoji: '✅', done: true, tone: '#0F6E56' }
 
   if (offer?.received_at) {
     if (paid)
-      return { step: 4, key: 'paid', label: lbl('paid_pending', who, locale), emoji: '💵', done: false, tone: '#0F6E56' }
-    return { step: 3, key: 'received', label: lbl('received', who, locale), emoji: '📥', done: false, tone: '#0B2438' }
+      return { step: 4, key: 'paid', label: lbl('paid_pending', who, locale), short: sh('paid_pending', who, locale), emoji: '💵', done: false, tone: '#0F6E56' }
+    return { step: 3, key: 'received', label: lbl('received', who, locale), short: sh('received', who, locale), emoji: '📥', done: false, tone: '#0B2438' }
   }
 
   if (offer?.supplier_delivered_at)
-    return { step: 2, key: 'delivered', label: lbl('delivered', who, locale), emoji: '📦', done: false, tone: '#D4A543' }
+    return { step: 2, key: 'delivered', label: lbl('delivered', who, locale), short: sh('delivered', who, locale), emoji: '📦', done: false, tone: '#D4A543' }
 
-  return { step: 1, key: 'accepted', label: lbl('accepted', who, locale), emoji: '🚚', done: false, tone: '#D4A543' }
+  // the supplier uploaded its invoice already: its next step is delivery (UX-033; same key and step)
+  const label = who === 'supplier' && (offer?.supplier_invoice_url || offer?.invoice_url) ? pick(SUPPLIER_INVOICED, locale) : lbl('accepted', who, locale)
+  return { step: 1, key: 'accepted', label, short: sh('accepted', who, locale), emoji: '🚚', done: false, tone: '#D4A543' }
+}
+
+/** What the buyer has to do at this stage, as a chip (null = waiting on the supplier) (UX-055). */
+export function buyerTodo(st: DealStage | string, locale: string = 'ar'): string | null {
+  const key = typeof st === 'string' ? st : st.key
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  if (key === 'delivered') return L('Your turn: confirm receipt', 'آپ کی باری: وصولی کی تصدیق کریں', 'مطلوب منك: تأكيد الاستلام')
+  if (key === 'received') return L('Your turn: pay the supplier and record it', 'آپ کی باری: سپلائر کو ادائیگی کریں اور درج کریں', 'مطلوب منك: الدفع للمورد وتسجيله')
+  return null
+}
+
+/** The button text for the buyer's next action on a deal (UX-055): «أكّد الاستلام», «سجّل الدفع» or «تابع الصفقة». */
+export function buyerActionLabel(st: DealStage | string, locale: string = 'ar'): string {
+  const key = typeof st === 'string' ? st : st.key
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  if (key === 'delivered') return L('Confirm receipt', 'وصولی کی تصدیق کریں', 'أكّد الاستلام')
+  if (key === 'received') return L('Record the payment', 'ادائیگی درج کریں', 'سجّل الدفع')
+  return L('Follow the deal', 'ڈیل دیکھیں', 'تابع الصفقة')
 }
 
 // One name per request status for the buyer, on every list and page (UX-048).
@@ -65,8 +101,8 @@ export function rfqStatusLabel(
   if (rfq?.status === 'open') {
     if (!opts.expired) return { key: 'open', label: T('Receiving offers', 'آفرز آ رہی ہیں', 'يستقبل العروض') }
     return opts.hasOffers
-      ? { key: 'expired_choose', label: T('Deadline passed — choose an offer', 'مہلت ختم — آفر منتخب کریں', 'انتهت المهلة — اختر عرضاً') }
-      : { key: 'expired_empty', label: T('Deadline passed — extend it', 'مہلت ختم — مہلت بڑھائیں', 'انتهت المهلة — مدّد المهلة') }
+      ? { key: 'expired_choose', label: T('Offer window ended — choose an offer', 'آفرز کی مہلت ختم — آفر منتخب کریں', 'انتهت مهلة العروض — اختر عرضاً') }
+      : { key: 'expired_empty', label: T('Offer window ended — extend it', 'آفرز کی مہلت ختم — مہلت بڑھائیں', 'انتهت مهلة العروض — مدّدها') }
   }
   return { key: 'ended', label: T('Ended without a choice', 'انتخاب کے بغیر ختم', 'انتهى دون اختيار') }
 }

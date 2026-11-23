@@ -10,7 +10,7 @@ import LocationPicker from '@/components/shared/LocationPicker'
 import SpecialtyPicker from '@/components/shared/SpecialtyPicker'
 import SupplierPackPicker from '@/components/shared/SupplierPackPicker'
 import SellerKindPicker from '@/components/shared/SellerKindPicker'
-import { SIGNUP_KIND_KEY, SELLER_KINDS, sellerKindLabel, sellerKindOf } from '@/lib/sellers'
+import { SIGNUP_KIND_KEY, SELLER_KINDS, sellerKindLabel, sellerKindOf, sectorsFor, COMPANY_ACTIVITIES } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { askConfirm } from '@/lib/askConfirm'
 import { rememberBuyerType } from '@/lib/buyerType'
@@ -21,7 +21,7 @@ import { CONTRACTOR_FEATURES } from '@/lib/features'
 import Glyph from '@/components/shared/Glyph'
 import { takePostSignupNext } from '@/lib/postSignupNext'
 import { toast } from 'sonner'
-import { normalizeCrInput, isUnifiedCr, crTakenText } from '@/lib/cr'
+import { normalizeCrInput, isUnifiedCr, crTakenText, isCrTaken, crSupportHref } from '@/lib/cr'
 
 // ── إعداد ملفك التجاري (Progressive profiling) ────────────────────────────
 // تُعبّأ هنا البيانات المنقولة خارج التسجيل: الموقع + القطاعات + (للمقاول: الدرجة)
@@ -35,18 +35,18 @@ const SECTOR_TR: Record<string, any> = {
 
 const TR = {
   ar: {
-    title: 'إعداد ملفك التجاري', subC: 'أضف موقعك ومجالات عملك لتصلك أفضل العروض', subS: 'أضف موقعك وتخصصاتك لتظهر للمشترين وتصلك الطلبات المطابقة',
+    title: 'إعداد ملفك التجاري', subC: 'أضف موقعك، ليصل طلبك إلى الموردين القريبين منك.', subS: 'أضف موقعك وتخصصاتك لتظهر للمشترين وتصلك الطلبات المطابقة',
     location: 'الموقع', region: 'المنطقة', selectRegion: '-- اختر --', city: 'المدينة', district: 'الحي',
     sectorsTitleC: 'قطاعات عملك', sectorsHintC: 'اختياري: يمكنك تخطّي هذه الخطوة، فطلبك يصل إلى الموردين المناسبين بحسب المواد التي تطلبها.',
-    sectorsTitleS: 'تخصصاتك والمواد', sectorsHintS: 'اختر قطاعاتك ثم حدّد ما توردّه بالضبط',
+    sectorsTitleS: 'تخصصاتك والمواد', sectorsHintS: 'اختر ما تبيعه، وتُحدَّد قطاعاتك منه تلقائياً',
     classTitle: 'نوع الحساب', classHint: 'هل تمثّل شركة أو محلاً، أم تعمل وسيط تسعير؟ لا يمكن تغييره لاحقاً إلا بطلب من الدعم وموافقة الإدارة.',
-    minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات — أو حدّده ليُفلتر الطلبات حسب قدرتك التوريدية.',
+    minOrder: 'الحد الأدنى لقيمة الطلب (ر.س) — اختياري', minOrderPh: 'مثال: 50000', minOrderHint: 'اتركه فارغاً لقبول كل الطلبات، أو حدّده لتصفية الطلبات حسب قدرتك التوريدية.',
     gradeTitle: 'درجة تصنيف شركتك (للمقاولين)', gradeSub: 'من رخصتك (وزارة الشؤون البلدية) — يستخدمها الموردون لفلترة الطلبات حسب حجم المشروع. اختياري.',
     verifyTitle: 'وثّق نشاطك التجاري', verifyBody: 'التوثيق اختياري: يضيف شارة «موثّق» إلى عروضك لدى المشترين، فترتفع موثوقيتك وفرصك في الفوز بالطلبات.', verifyCta: 'احفظ وابدأ التوثيق ←', verifyLocked: 'أكمل موقعك وقطاعاتك وتخصصاتك أعلاه لتُفتح خطوة التوثيق.',
-    addMatTitle: 'لا تجد مادة توردّها بالقائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
+    addMatTitle: 'لا تجد مادة تورّدها في القائمة؟', addMatPh: 'اسم المادة...', addMatBtn: 'إضافة', remove: 'إزالة',
     save: 'حفظ ومتابعة ←', saving: 'جارٍ الحفظ...', later: 'لاحقاً', selected: 'محدد',
     needLoc: 'اختر المنطقة والمدينة', needSector: 'اختر قطاعاً واحداً على الأقل', saved: 'تم حفظ ملفك',
-    progress: 'اكتمال ملفك', stepLocation: 'الموقع', stepSectors: 'القطاعات', stepSpecialties: 'ما تبيعه', stepVerify: 'التوثيق (لاحقاً)', stepMap: 'الموقع على الخريطة', stepBiz: 'اسم المحل',
+    progress: 'اكتمال ملفك', stepKind: 'نوع الحساب', stepActivity: 'النشاط الرئيسي', stepLocation: 'الموقع', stepSectors: 'القطاعات', stepSpecialties: 'ما تبيعه', stepVerify: 'التوثيق (لاحقاً)', stepMap: 'الموقع على الخريطة', stepBiz: 'اسم المحل',
     warn: 'بدون تحديد موقعك وقطاعاتك وتخصصاتك لن تظهر للمشترين ولن تصلك أي طلبات مطابقة.',
     company: 'ملف الشركة', required: 'مطلوب', optional: 'اختياري',
     loadFailed: 'تعذّر تحميل بيانات ملفك. حدّث الصفحة وحاول مرة أخرى قبل الحفظ حتى لا تُستبدل بياناتك المحفوظة.',
@@ -57,10 +57,10 @@ const TR = {
     bizName: 'اسم المحل أو النشاط التجاري', bizHint: 'يظهر للمشترين على عروضك', bizPh: 'مثال: مؤسسة الصخر لمواد البناء', needBiz: 'اكتب اسم المحل أو النشاط التجاري', needSpec: 'اختر نوعاً واحداً على الأقل مما تبيعه حتى تصلك الطلبات',
   },
   en: {
-    title: 'Set up your business profile', subC: 'Add your location and work areas to get the best offers', subS: 'Add your location and specialties to appear to buyers and receive matching requests',
+    title: 'Set up your business profile', subC: 'Add your location, so your request reaches the suppliers near you.', subS: 'Add your location and specialties to appear to buyers and receive matching requests',
     location: 'Location', region: 'Region', selectRegion: '-- Select --', city: 'City', district: 'District',
     sectorsTitleC: 'Your sectors', sectorsHintC: 'Optional: you can skip this. Your request reaches the right suppliers based on the materials you ask for.',
-    sectorsTitleS: 'Specialties & materials', sectorsHintS: 'Select your sectors then pick exactly what you supply',
+    sectorsTitleS: 'Specialties & materials', sectorsHintS: 'Choose what you sell; your sectors follow from it',
     classTitle: 'Account type', classHint: 'Do you represent a company or shop, or work as a pricing agent? It can only be changed later through Support, with admin approval.',
     minOrder: 'Min order value (SAR) — optional', minOrderPh: 'e.g. 50000', minOrderHint: 'Leave empty to accept all requests — or set it to filter by your supply capacity.',
     gradeTitle: 'Company grade (contractors)', gradeSub: 'From your license (Ministry of Municipal Affairs) — suppliers use it to filter by project size. Optional.',
@@ -68,7 +68,7 @@ const TR = {
     addMatTitle: "Can't find a material you supply?", addMatPh: 'Material name...', addMatBtn: 'Add', remove: 'Remove',
     save: 'Save & continue →', saving: 'Saving...', later: 'Later', selected: 'selected',
     needLoc: 'Select region and city', needSector: 'Select at least one sector', saved: 'Profile saved',
-    progress: 'Profile completion', stepLocation: 'Location', stepSectors: 'Sectors', stepSpecialties: 'What you sell', stepVerify: 'Verification (later)', stepMap: 'Map location', stepBiz: 'Shop name',
+    progress: 'Profile completion', stepKind: 'Account type', stepActivity: 'Main activity', stepLocation: 'Location', stepSectors: 'Sectors', stepSpecialties: 'What you sell', stepVerify: 'Verification (later)', stepMap: 'Map location', stepBiz: 'Shop name',
     warn: "Without your location, sectors and specialties you won't appear to buyers and won't receive any matching requests.",
     company: 'Company profile', required: 'Required', optional: 'Optional',
     loadFailed: 'Could not load your profile. Refresh the page and try again before saving so your saved data is not replaced.',
@@ -79,10 +79,10 @@ const TR = {
     bizName: 'Shop or business name', bizHint: 'Shown to buyers on your offers', bizPh: 'e.g. Al-Sakhr Building Materials', needBiz: 'Write your shop or business name', needSpec: 'Pick at least one thing you sell so requests can reach you',
   },
   ur: {
-    title: 'اپنی کاروباری پروفائل ترتیب دیں', subC: 'بہترین آفرز کے لیے اپنا مقام اور کام کے شعبے شامل کریں', subS: 'خریداروں کو نظر آنے اور مماثل درخواستیں وصول کرنے کے لیے مقام اور مہارتیں شامل کریں',
-    location: 'مقام', region: 'علاقہ', selectRegion: '-- منتخب کریں --', city: 'شہر', district: 'علاقہ',
+    title: 'اپنی کاروباری پروفائل ترتیب دیں', subC: 'اپنا مقام شامل کریں تاکہ آپ کی درخواست قریبی سپلائرز تک پہنچے۔', subS: 'خریداروں کو نظر آنے اور مماثل درخواستیں وصول کرنے کے لیے مقام اور مہارتیں شامل کریں',
+    location: 'مقام', region: 'علاقہ', selectRegion: '-- منتخب کریں --', city: 'شہر', district: 'محلہ',
     sectorsTitleC: 'آپ کے شعبے', sectorsHintC: 'اختیاری: آپ یہ مرحلہ چھوڑ سکتے ہیں۔ آپ کی درخواست مطلوبہ مواد کے مطابق درست سپلائرز تک پہنچتی ہے۔',
-    sectorsTitleS: 'مہارتیں اور مواد', sectorsHintS: 'اپنے شعبے منتخب کریں پھر بالکل وہی چنیں جو فراہم کرتے ہیں',
+    sectorsTitleS: 'مہارتیں اور مواد', sectorsHintS: 'منتخب کریں آپ کیا بیچتے ہیں؛ آپ کے شعبے اسی سے طے ہوں گے',
     classTitle: 'اکاؤنٹ کی قسم', classHint: 'کیا آپ کمپنی یا دکان کی نمائندگی کرتے ہیں یا قیمت ایجنٹ ہیں؟ بعد میں صرف سپورٹ کے ذریعے، انتظامیہ کی منظوری سے بدلا جا سکتا ہے۔',
     minOrder: 'کم از کم آرڈر قیمت (ریال) — اختیاری', minOrderPh: 'مثال: 50000', minOrderHint: 'تمام درخواستوں کے لیے خالی چھوڑیں یا اپنی صلاحیت کے مطابق مقرر کریں۔',
     gradeTitle: 'کمپنی کا درجہ (ٹھیکیداروں کے لیے)', gradeSub: 'آپ کے لائسنس سے — سپلائرز پروجیکٹ سائز کے مطابق فلٹر کرتے ہیں۔ اختیاری۔',
@@ -90,7 +90,7 @@ const TR = {
     addMatTitle: 'فہرست میں کوئی مواد نہیں؟', addMatPh: 'مواد کا نام...', addMatBtn: 'شامل کریں', remove: 'ہٹائیں',
     save: 'محفوظ کریں اور جاری رکھیں ←', saving: 'محفوظ ہو رہا ہے...', later: 'بعد میں', selected: 'منتخب',
     needLoc: 'علاقہ اور شہر منتخب کریں', needSector: 'کم از کم ایک شعبہ منتخب کریں', saved: 'پروفائل محفوظ',
-    progress: 'پروفائل تکمیل', stepLocation: 'مقام', stepSectors: 'شعبے', stepSpecialties: 'آپ کیا بیچتے ہیں', stepVerify: 'تصدیق (بعد میں)', stepMap: 'نقشے پر مقام', stepBiz: 'دکان کا نام',
+    progress: 'پروفائل تکمیل', stepKind: 'اکاؤنٹ کی قسم', stepActivity: 'بنیادی سرگرمی', stepLocation: 'مقام', stepSectors: 'شعبے', stepSpecialties: 'آپ کیا بیچتے ہیں', stepVerify: 'تصدیق (بعد میں)', stepMap: 'نقشے پر مقام', stepBiz: 'دکان کا نام',
     warn: 'مقام، شعبوں اور مہارتوں کے بغیر آپ خریداروں کو نظر نہیں آئیں گے اور کوئی درخواست موصول نہیں ہوگی۔',
     company: 'کمپنی پروفائل', required: 'ضروری', optional: 'اختیاری',
     loadFailed: 'آپ کی پروفائل لوڈ نہیں ہو سکی۔ محفوظ کرنے سے پہلے صفحہ ریفریش کریں تاکہ آپ کا محفوظ ڈیٹا تبدیل نہ ہو۔',
@@ -128,6 +128,12 @@ export default function OnboardingPage() {
   // round-2 UX-076: choosing «company or shop» asks for the CR when none was given at sign-up
   const [crInput, setCrInput] = useState('')
   const [crAsk, setCrAsk] = useState(false)
+  // UX-010 / UX-040: a CR held by another account: shown under the field, with «تواصل مع الدعم»
+  const [crTakenNo, setCrTakenNo] = useState('')
+  const [crBusy, setCrBusy] = useState(false)
+  // UX-080: a business buyer's company name and VAT number (optional; shown on purchase orders)
+  const [buyerCo, setBuyerCo] = useState('')
+  const [buyerVat, setBuyerVat] = useState('')
   // round-2 UX-037: the map pin changed the city: say so
   const [cityNote, setCityNote] = useState('')
   const [editBuyer, setEditBuyer] = useState(false)
@@ -135,6 +141,8 @@ export default function OnboardingPage() {
   const [kindBusy, setKindBusy] = useState(false)
   // فرد / وكيل أسعار / سمسار: ما عنده محل ولا سجل — ثقته من التقييمات، فما نسأله تصنيف ولا توثيق
   const isIndividual = ['individual', 'price_agent', 'broker'].includes(providerType)
+  // a company's main activity is chosen (provider_type is one of the four activities, not the bare «company»)
+  const hasActivity = COMPANY_ACTIVITIES.some(a => a.k === providerType) || providerType === 'dealer'
   // business name for a company seller: the WhatsApp sign-up only asks for the person's name
   const [bizName, setBizName] = useState('')
   const [bizOrig, setBizOrig] = useState('')
@@ -161,7 +169,7 @@ export default function OnboardingPage() {
         if (act && act !== session.user.id) { window.location.replace('/supplier/dashboard'); return }
       } catch {}
       const metaRole = (session.user.user_metadata as any)?.role
-      const { data: p, error: pErr } = await supabase.from('profiles').select('role, buyer_type, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type, full_name, company_name_ar, commercial_registration').eq('id', session.user.id).single()
+      const { data: p, error: pErr } = await supabase.from('profiles').select('role, buyer_type, region, city, district, supplier_tier, min_order_value, contractor_grade, latitude, longitude, provider_type, full_name, company_name_ar, commercial_registration, vat_number').eq('id', session.user.id).single()
       if (pErr) { setLoadFailed(true); showErr(t.loadFailed) }
       setRole(((p?.role || metaRole) === 'supplier') ? 'supplier' : 'contractor')
       setHomeBuyer(p?.buyer_type === 'individual')
@@ -175,6 +183,7 @@ export default function OnboardingPage() {
         const cn = (p.company_name_ar || '').trim()
         const own = !cn || cn === 'شركة جديدة' || cn === (p.full_name || '').trim()
         setBizName(own ? '' : cn); setBizOrig(own ? '' : cn)
+        setBuyerCo(own ? '' : cn); setBuyerVat(p.vat_number || '')
         // Invitation links (/join/company, /join/seller) pass the kind at signup: apply it once.
         // only the kind the seller tapped on the sign-up form; a device hint (e.g. an old /join visit) just pre-selects nothing (owner 2026-11-19)
         const metaKind = (session.user.user_metadata as any)?.seller_kind
@@ -219,17 +228,29 @@ export default function OnboardingPage() {
       }
       newCr = c
     }
+    // UX-010: the CR is saved BEFORE the kind is locked; a CR held by another account stops here
+    if (newCr && !(await saveCr(newCr))) return
     if (!(await askConfirm(locale === 'en' ? `Set your account type to «${label}»? It can only be changed later through Support.` : locale === 'ur' ? `اکاؤنٹ کی قسم «${label}» مقرر کریں؟ بعد میں صرف سپورٹ کے ذریعے بدلی جا سکتی ہے۔` : `تحديد نوع حسابك «${label}»؟ لا يمكن تغييره لاحقاً إلا بطلب من الدعم.`, { okLabel: locale === 'en' ? 'Yes, confirm' : locale === 'ur' ? 'ہاں، تصدیق کریں' : 'نعم، أكّد', cancelLabel: locale === 'en' ? 'Go back' : locale === 'ur' ? 'واپس' : 'تراجع' }))) return
     setKindBusy(true)
     const { data: np, error } = await supabase.rpc('set_seller_kind', { p_kind: k, p_activity: k === 'company' ? 'company' : null })
     setKindBusy(false)
     if (error) { showErr(t.kindFailed); return }
-    if (newCr) {
-      const { error: crErr } = await supabase.from('profiles').update({ commercial_registration: newCr }).eq('id', uid)
-      if (crErr) showErr(/duplicate|unique|23505/i.test(crErr.message || '') ? crTakenText(locale).msg : t.profileFailed)
-      else setCrNo(newCr)
-    }
     setProviderType(String(np || (k === 'independent' ? 'individual' : 'company')))
+  }
+
+  // UX-010 / UX-039: save the CR on its own; true when saved. A CR held by another account is said under the field.
+  async function saveCr(c: string): Promise<boolean> {
+    setCrTakenNo(''); setErr('')
+    if (!isUnifiedCr(c)) { setCrAsk(true); showErr(locale === 'en' ? 'Enter the unified national number: 10 digits starting with 7.' : locale === 'ur' ? 'متحدہ قومی نمبر درج کریں: 7 سے شروع، 10 ہندسے۔' : 'أدخل الرقم الوطني الموحد: 10 أرقام يبدأ بـ7.'); return false }
+    setCrBusy(true)
+    const { error: crErr } = await supabase.from('profiles').update({ commercial_registration: c }).eq('id', uid)
+    setCrBusy(false)
+    if (crErr) {
+      if (isCrTaken(crErr) || /duplicate|unique|23505|CR_TAKEN/i.test(`${crErr.message || ''} ${(crErr as any).hint || ''}`)) { setCrTakenNo(c); setCrAsk(true); return false }
+      showErr(t.profileFailed); return false
+    }
+    setCrNo(c); setCrAsk(false)
+    return true
   }
 
   function toggleSector(s: string) {
@@ -252,13 +273,17 @@ export default function OnboardingPage() {
     setErr('')
     if (loadFailed) { showErr(t.loadFailed); return }
     if (role === 'supplier' && !providerType) { showErr(locale === 'en' ? 'Choose your account type first.' : locale === 'ur' ? 'پہلے اکاؤنٹ کی قسم منتخب کریں۔' : 'اختر نوع حسابك أولاً.'); return }
+    // UX-038: a company names its main activity (the star on «ما نشاطك الرئيسي؟» is enforced)
+    if (role === 'supplier' && !isIndividual && !hasActivity) { showErr(locale === 'en' ? 'Choose your main activity: building-materials shop, agent / distributor, trading company or factory.' : locale === 'ur' ? 'اپنی بنیادی سرگرمی منتخب کریں: تعمیراتی سامان کی دکان، ایجنٹ / ڈسٹری بیوٹر، تجارتی کمپنی یا فیکٹری۔' : 'اختر نشاطك الرئيسي: محل مواد بناء، أو وكيل وموزّع، أو شركة تجارية، أو مصنع.'); return }
+    // UX-060: a buyer says who they buy for before anything else
+    if (role !== 'supplier' && !buyerType) { showErr(locale === 'en' ? 'Choose who you are buying for first.' : locale === 'ur' ? 'پہلے منتخب کریں کہ آپ کس کے لیے خرید رہے ہیں۔' : 'اختر لمن تشتري أولاً.'); return }
     if (!region || !city) { showErr(t.needLoc); return }
     // القطاعات إلزامية للمورّد فقط؛ المشتري يكفيه الموقع (التوجيه يتم من مواد الطلب).
-    if (role === 'supplier' && sectors.length === 0) { showErr(t.needSector); return }
     if (role === 'supplier' && specialties.length === 0) { showErr(t.needSpec); return }
     if (role === 'supplier' && !isIndividual && bizName.trim().length < 2) { showErr(t.needBiz); return }
     // نتحقّق من البيانات قبل أي كتابة: قطاعات معروفة فقط (عمود enum) وبلا تكرار.
-    const validSectors = Array.from(new Set(sectors.filter(s => Object.prototype.hasOwnProperty.call(SECTOR_LABELS, s))))
+    // UX-038: the sectors follow from the materials chosen (picking materials without ticking a sector still saves)
+    const validSectors = Array.from(new Set(sectorsFor(sectors, specialties).filter(s => Object.prototype.hasOwnProperty.call(SECTOR_LABELS, s))))
     const validSpecialties = Array.from(new Set(specialties.filter(k => typeof k === 'string' && k.trim() !== '')))
     if (role === 'supplier' && validSectors.length === 0) { showErr(t.needSector); return }
     if (role === 'supplier' && !isIndividual && (lat == null || lng == null)) {
@@ -271,6 +296,10 @@ export default function OnboardingPage() {
       if (lat != null && lng != null) { update.latitude = lat; update.longitude = lng }
       if (role === 'supplier' && !isIndividual && bizName.trim() && bizName.trim() !== bizOrig) update.company_name_ar = bizName.trim().slice(0, 120)
       if (role === 'contractor') update.contractor_grade = contractorGrade || null
+      if (role === 'contractor' && buyerType === 'business') {
+        if (buyerCo.trim()) update.company_name_ar = buyerCo.trim().slice(0, 120)
+        update.vat_number = buyerVat.trim() || null
+      }
       const { error: upErr } = await supabase.from('profiles').update(update).eq('id', uid)
       if (upErr) { showErr(t.profileFailed); setSaving(false); return }
 
@@ -297,9 +326,8 @@ export default function OnboardingPage() {
         if (failed.length) { showErr(t.matFailed); setSaving(false); return }
       }
       const after = takePostSignupNext() // e.g. /contractor/rfq/quick?section=… from a landing card
-      // a CR used by another account at sign-up (round-2 UX-021): straight to the claim page
-      const claimNext = after && after.startsWith('/verification/claim') ? after : null
-      const go = typeof dest === 'string' ? dest : claimNext || (role === 'supplier' ? '/supplier/dashboard?welcome=1' : (after && after.startsWith('/contractor') ? after : '/contractor'))
+      // owner 2026-11-23: no self-service claim at sign-up (support handles CR ownership)
+      const go = typeof dest === 'string' ? dest : (role === 'supplier' ? '/supplier/dashboard?welcome=1' : (after && after.startsWith('/contractor') ? after : '/contractor'))
       if (role !== 'supplier' && typeof dest !== 'string') {
         // round-2 UX-037: confirm the save before leaving
         toast.success(locale === 'en' ? 'Delivery address saved' : locale === 'ur' ? 'ڈیلیوری پتہ محفوظ ہو گیا' : 'حُفظ عنوان التوصيل')
@@ -320,13 +348,16 @@ export default function OnboardingPage() {
   // UX-125: every requirement of «save» is a step (the map pin and the shop name too), so 100% means ready
   const steps = role === 'supplier'
     ? [
+        // UX-038: the account type (and a company's main activity) are steps, so 100% really means ready
+        { label: t.stepKind, done: !!providerType },
+        ...(!isIndividual ? [{ label: t.stepActivity, done: hasActivity }] : []),
         { label: t.stepLocation, done: !!(region && city) },
         ...(!isIndividual ? [{ label: t.stepMap, done: lat != null && lng != null }, { label: t.stepBiz, done: bizName.trim().length >= 2 }] : []),
-        { label: t.stepSpecialties, done: sectors.length > 0 && specialties.length > 0 },
+        { label: t.stepSpecialties, done: specialties.length > 0 },
       ]
     : [{ label: t.stepLocation, done: !!(region && city) }] // المشتري: الموقع فقط مطلوب، والقطاعات اختيارية
   const pct = Math.round((steps.filter(s => s.done).length / steps.length) * 100)
-  const canSave = !loadFailed && !!(region && city) && (role !== 'supplier' || (sectors.length > 0 && specialties.length > 0 && (isIndividual || bizName.trim().length >= 2)))
+  const canSave = !loadFailed && !!(region && city) && (role === 'supplier' ? (!!providerType && (isIndividual || hasActivity) && specialties.length > 0 && (isIndividual || bizName.trim().length >= 2)) : !!buyerType)
   // اكتمال كل المطلوب أعلاه (يفتح خطوة التوثيق للمورّد)
   const profileComplete = canSave && (role !== 'supplier' || specialties.length > 0)
   const ringC = 2 * Math.PI * 24
@@ -340,6 +371,69 @@ export default function OnboardingPage() {
     </button>
   )
   const cardCls = 'bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100'
+  // نوع الحساب: مستقل أو شركة (+ النشاط). الفئة الظاهرة للمشترين تُحسب تلقائياً
+  // UX-010 / UX-040: one message for a CR held by another account, under the field, with «تواصل مع الدعم»
+  const crTakenBox = crTakenNo ? (
+    <div id="ob-cr-taken" role="alert" className="mt-2 text-[13px] text-[#071827] bg-[#D4A543]/10 border border-[#D4A543]/50 rounded-lg p-2.5">
+      <p><Glyph e="⚠" /> {crTakenText(locale).msg}</p>
+      <a href={crSupportHref(crTakenNo, { signedIn: true })} className="mt-1 inline-flex items-center min-h-[44px] font-bold underline text-[#8F6820]">{crTakenText(locale).cta}</a>
+    </div>
+  ) : null
+  const kindCard = (
+              <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-sm font-bold text-navy"><Glyph e="🏢" /> {t.classTitle}</h2>
+                </div>
+                {!providerType ? (<>
+                  <p className="text-[13px] text-gray-600 mb-3 leading-relaxed">{t.classHint}</p>
+                  {/* round-2 UX-076: the CR is asked before a company / shop kind is locked */}
+                  {!crNo && (
+                    <div className={`mb-3 ${crAsk ? 'rounded-xl ring-2 ring-[#D4A543] p-2' : ''}`}>
+                      <label htmlFor="ob-cr" className="block text-xs font-bold text-navy mb-1">{locale === 'en' ? 'Commercial registration no. (for a company or shop)' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر (کمپنی یا دکان کے لیے)' : 'رقم السجل التجاري (للشركة أو المحل)'} <span className="text-red-500">*</span></label>
+                      <input id="ob-cr" value={crInput} onChange={(e: any) => { setCrInput(normalizeCrInput(e.target.value).slice(0, 10)); setCrTakenNo('') }} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX" aria-invalid={!!crTakenNo} aria-describedby={crTakenNo ? 'ob-cr-taken' : undefined} />
+                      {crTakenBox}
+                    </div>
+                  )}
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {(['company', 'independent'] as const).map(k => (
+                      <button key={k} type="button" disabled={kindBusy} onClick={() => chooseKind(k)}
+                        className="text-start min-h-[56px] p-3 rounded-xl border-2 border-gray-200 bg-white hover:border-[#D4A543]/60 transition-all disabled:opacity-60">
+                        <div className="font-bold text-sm text-navy"><SellerIcon name={SELLER_KINDS[k].icon} /> {sellerKindLabel(k, locale)}</div>
+                        <div className="text-[12px] text-gray-600 mt-0.5 leading-relaxed">{locale === 'en' ? SELLER_KINDS[k].sub.en : locale === 'ur' ? SELLER_KINDS[k].sub.ur : SELLER_KINDS[k].sub.ar}</div>
+                      </button>
+                    ))}
+                  </div>
+                </>) : (<>
+                  {/* round-2 UX-076: for a company the picker below already names the kind; say it once */}
+                  {isIndividual && <p className="text-sm text-navy"><b>{locale === 'en' ? 'Account type:' : locale === 'ur' ? 'اکاؤنٹ کی قسم:' : 'نوع الحساب:'}</b> {sellerKindLabel(sellerKindOf(providerType), locale)}</p>}
+                  {/* UX-039: a company / shop without a CR keeps the field (it cannot price without one) */}
+                  {!isIndividual && !crNo && (
+                    <div className="mt-2 mb-3 rounded-xl ring-2 ring-[#D4A543] p-2">
+                      <label htmlFor="ob-cr2" className="block text-xs font-bold text-navy mb-1">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} <span className="text-red-500">*</span> <span className="font-normal text-gray-500">— {locale === 'en' ? 'needed to price requests' : locale === 'ur' ? 'قیمت دینے کے لیے ضروری' : 'يلزم لتسعير الطلبات'}</span></label>
+                      <div className="flex gap-2">
+                        <input id="ob-cr2" value={crInput} onChange={(e: any) => { setCrInput(normalizeCrInput(e.target.value).slice(0, 10)); setCrTakenNo('') }} inputMode="numeric" dir="ltr" maxLength={10} className="input-field flex-1" placeholder="7XXXXXXXXX" aria-invalid={!!crTakenNo} aria-describedby={crTakenNo ? 'ob-cr-taken' : undefined} />
+                        <button type="button" disabled={crBusy} onClick={() => saveCr(normalizeCrInput(crInput))} className="min-h-[44px] px-4 rounded-xl text-sm font-bold text-white shrink-0 disabled:opacity-50" style={{ background: '#0B2438' }}>{crBusy ? t.saving : (locale === 'en' ? 'Save' : locale === 'ur' ? 'محفوظ کریں' : 'حفظ')}</button>
+                      </div>
+                      {crTakenBox}
+                    </div>
+                  )}
+                  {crNo && <p className="text-sm text-navy mt-1"><b>{locale === 'en' ? 'Your commercial registration no.:' : locale === 'ur' ? 'آپ کا تجارتی رجسٹریشن نمبر:' : 'رقم سجلك التجاري:'}</b> <span dir="ltr">{crNo}</span></p>}
+                  <p className="text-[13px] text-gray-600 mt-1">{locale === 'en' ? 'To change it, ' : locale === 'ur' ? 'بدلنے کے لیے ' : 'لتغييره '}<a href="/support?topic=kind" className="font-bold underline text-navy">{locale === 'en' ? 'ask Support' : locale === 'ur' ? 'سپورٹ سے درخواست کریں' : 'اطلب ذلك من الدعم'}</a>.</p>
+                  {!isIndividual && (
+                    <div className="mt-3">
+                      <SellerKindPicker providerType={providerType || null} supplierTier={supplierTier} locale={locale}
+                        onChange={(pt: string, tr: string | null) => { setProviderType(pt); setSupplierTier(tr) }} />
+                    </div>
+                  )}
+                </>)}
+                {!isIndividual && (
+                  <>
+                    <label htmlFor="ob-biz" className="block text-xs font-bold text-navy mb-1 mt-4">{t.bizName} * <span className="text-gray-500 font-normal">— {t.bizHint}</span></label>
+                    <input id="ob-biz" value={bizName} onChange={(e: any) => setBizName(e.target.value)} autoComplete="organization" maxLength={120} className="input-field" placeholder={t.bizPh} />
+                  </>
+                )}
+              </div>
+  )
 
   return (
     <div className="min-h-screen relative isolate" dir={dir}
@@ -378,13 +472,14 @@ export default function OnboardingPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-6 lg:py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-extrabold text-navy">{role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'Your delivery address' : locale === 'ur' ? 'آپ کا ڈیلیوری پتہ' : 'عنوان التوصيل') : t.title}</h1>
-          <p className="text-ink-2 mt-1.5 text-sm">{role === 'supplier' ? t.subS : homeBuyer ? (locale === 'en' ? 'So suppliers near you can price your requests.' : locale === 'ur' ? 'تاکہ قریبی سپلائرز قیمت دے سکیں۔' : 'ليصل طلبك إلى الموردين القريبين منك.') : t.subC}</p>
+          <h1 className="text-2xl font-extrabold text-navy">{role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'Your delivery address' : locale === 'ur' ? 'آپ کا ڈیلیوری پتہ' : 'عنوان التوصيل') : role !== 'supplier' && !buyerType ? (locale === 'en' ? 'Complete your details' : locale === 'ur' ? 'اپنی تفصیلات مکمل کریں' : 'أكمل بياناتك') : t.title}</h1>
+          <p className="text-ink-2 mt-1.5 text-sm">{role === 'supplier' ? t.subS : !buyerType ? (locale === 'en' ? 'Choose who you are buying for, then add the delivery address.' : locale === 'ur' ? 'منتخب کریں کہ آپ کس کے لیے خرید رہے ہیں، پھر ڈیلیوری کا پتہ شامل کریں۔' : 'اختر لمن تشتري، ثم أضف عنوان التوصيل.') : homeBuyer ? (locale === 'en' ? 'So suppliers near you can price your requests.' : locale === 'ur' ? 'تاکہ قریبی سپلائرز قیمت دے سکیں۔' : 'ليصل طلبك إلى الموردين القريبين منك.') : t.subC}</p>
         </div>
 
         <div className="lg:flex lg:gap-6 lg:items-start">
           {/* ═══ العمود الرئيسي ═══ */}
           <div className="flex-1 min-w-0 space-y-4 pb-28 lg:pb-0">
+            {role === 'supplier' && !providerType && kindCard}
             {role !== 'supplier' && (
               <div className={cardCls}>
                 {/* round-2 UX-130: asked once; when already chosen it is one line with «تغيير» */}
@@ -407,6 +502,20 @@ export default function OnboardingPage() {
                   })}
                 </div>
                 </>)}
+                {/* UX-080: a business buyer's company on purchase orders (optional) */}
+                {buyerType === 'business' && (
+                  <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <label htmlFor="ob-buyer-co" className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'Company or establishment name (optional)' : locale === 'ur' ? 'کمپنی یا ادارے کا نام (اختیاری)' : 'اسم الشركة أو المؤسسة (اختياري)'}</label>
+                      <input id="ob-buyer-co" value={buyerCo} onChange={(e: any) => setBuyerCo(e.target.value)} maxLength={120} autoComplete="organization" className="input-field" aria-describedby="ob-buyer-co-hint" />
+                      <p id="ob-buyer-co-hint" className="text-[12px] text-gray-500 mt-1">{locale === 'en' ? 'Shown on purchase orders' : locale === 'ur' ? 'پرچیز آرڈر پر دکھایا جاتا ہے' : 'يظهر على أوامر الشراء'}</p>
+                    </div>
+                    <div>
+                      <label htmlFor="ob-buyer-vat" className="block text-xs font-semibold text-gray-600 mb-1">{locale === 'en' ? 'VAT number (optional)' : locale === 'ur' ? 'ٹیکس نمبر (اختیاری)' : 'الرقم الضريبي (اختياري)'}</label>
+                      <input id="ob-buyer-vat" value={buyerVat} onChange={(e: any) => setBuyerVat(normalizeCrInput(e.target.value).slice(0, 15))} inputMode="numeric" dir="ltr" maxLength={15} className="input-field" placeholder="3XXXXXXXXXXXXX3" />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {/* الموقع (مطلوب) */}
@@ -463,7 +572,7 @@ export default function OnboardingPage() {
               </div>
               {city && (
                 <div className="mt-3">
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">{t.district}</label>
+                  <span className="block text-xs font-semibold text-gray-600 mb-1">{t.district}</span>
                   <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
                 </div>
               )}
@@ -474,7 +583,7 @@ export default function OnboardingPage() {
             })()}
 
             {/* القطاعات / التخصصات (مطلوب للمورّد، اختياري للمشتري؛ مخفي لصاحب البيت) */}
-            <div className={`${cardCls} ${role !== 'supplier' && homeBuyer ? 'hidden' : ''}`} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
+            <div className={`${cardCls} ${role !== 'supplier' && buyerType !== 'business' ? 'hidden' : ''}`} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
               <div className="flex items-center justify-between mb-0.5">
                 <h2 className="text-sm font-bold text-navy"><Glyph e="🧩" /> {role === 'supplier' ? t.sectorsTitleS : t.sectorsTitleC}</h2>
                 {role === 'supplier'
@@ -522,8 +631,8 @@ export default function OnboardingPage() {
                           <div className="flex gap-2">
                             <input type="text" value={extraMaterialInput} onChange={(e: any) => setExtraMaterialInput(e.target.value)}
                               onKeyDown={(e: any) => { if (e.key === 'Enter') { e.preventDefault(); addExtraMaterial(sector) } }}
-                              className="input-field flex-1" placeholder={t.addMatPh} />
-                            <button type="button" onClick={() => addExtraMaterial(sector)} className="px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#0B2438' }}>{t.addMatBtn}</button>
+                              className="input-field flex-1" placeholder={t.addMatPh} aria-label={t.addMatTitle} />
+                            <button type="button" onClick={() => addExtraMaterial(sector)} className="min-h-[44px] px-4 rounded-xl text-sm font-bold text-white shrink-0" style={{ background: '#0B2438' }}>{t.addMatBtn}</button>
                           </div>
                           {sectorMats.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-2">
@@ -545,50 +654,8 @@ export default function OnboardingPage() {
               )}
             </div>
 
-            {/* نوع الحساب: مستقل أو شركة (+ النشاط). الفئة الظاهرة للمشترين تُحسب تلقائياً */}
-            {role === 'supplier' && (
-              <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
-                <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-sm font-bold text-navy"><Glyph e="🏢" /> {t.classTitle}</h2>
-                </div>
-                {!providerType ? (<>
-                  <p className="text-[13px] text-gray-600 mb-3 leading-relaxed">{t.classHint}</p>
-                  {/* round-2 UX-076: the CR is asked before a company / shop kind is locked */}
-                  {!crNo && (
-                    <div className={`mb-3 ${crAsk ? 'rounded-xl ring-2 ring-[#D4A543] p-2' : ''}`}>
-                      <label htmlFor="ob-cr" className="block text-xs font-bold text-navy mb-1">{locale === 'en' ? 'Commercial registration no. (for a company or shop)' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر (کمپنی یا دکان کے لیے)' : 'رقم السجل التجاري (للشركة أو المحل)'} <span className="text-red-500">*</span></label>
-                      <input id="ob-cr" value={crInput} onChange={(e: any) => setCrInput(normalizeCrInput(e.target.value).slice(0, 10))} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX" />
-                    </div>
-                  )}
-                  <div className="grid sm:grid-cols-2 gap-2">
-                    {(['company', 'independent'] as const).map(k => (
-                      <button key={k} type="button" disabled={kindBusy} onClick={() => chooseKind(k)}
-                        className="text-start min-h-[56px] p-3 rounded-xl border-2 border-gray-200 bg-white hover:border-[#D4A543]/60 transition-all disabled:opacity-60">
-                        <div className="font-bold text-sm text-navy"><SellerIcon name={SELLER_KINDS[k].icon} /> {sellerKindLabel(k, locale)}</div>
-                        <div className="text-[12px] text-gray-600 mt-0.5 leading-relaxed">{locale === 'en' ? SELLER_KINDS[k].sub.en : locale === 'ur' ? SELLER_KINDS[k].sub.ur : SELLER_KINDS[k].sub.ar}</div>
-                      </button>
-                    ))}
-                  </div>
-                </>) : (<>
-                  {/* round-2 UX-076: for a company the picker below already names the kind; say it once */}
-                  {isIndividual && <p className="text-sm text-navy"><b>{locale === 'en' ? 'Account type:' : locale === 'ur' ? 'اکاؤنٹ کی قسم:' : 'نوع الحساب:'}</b> {sellerKindLabel(sellerKindOf(providerType), locale)}</p>}
-                  {crNo && <p className="text-sm text-navy mt-1"><b>{locale === 'en' ? 'Your commercial registration no.:' : locale === 'ur' ? 'آپ کا تجارتی رجسٹریشن نمبر:' : 'رقم سجلك التجاري:'}</b> <span dir="ltr">{crNo}</span></p>}
-                  <p className="text-[13px] text-gray-600 mt-1">{locale === 'en' ? 'To change it, ' : locale === 'ur' ? 'بدلنے کے لیے ' : 'لتغييره '}<a href="/support?topic=kind" className="font-bold underline text-navy">{locale === 'en' ? 'ask Support' : locale === 'ur' ? 'سپورٹ سے درخواست کریں' : 'اطلب ذلك من الدعم'}</a>.</p>
-                  {!isIndividual && (
-                    <div className="mt-3">
-                      <SellerKindPicker providerType={providerType || null} supplierTier={supplierTier} locale={locale}
-                        onChange={(pt: string, tr: string | null) => { setProviderType(pt); setSupplierTier(tr) }} />
-                    </div>
-                  )}
-                </>)}
-                {!isIndividual && (
-                  <>
-                    <label htmlFor="ob-biz" className="block text-xs font-bold text-navy mb-1 mt-4">{t.bizName} * <span className="text-gray-500 font-normal">— {t.bizHint}</span></label>
-                    <input id="ob-biz" value={bizName} onChange={(e: any) => setBizName(e.target.value)} autoComplete="organization" maxLength={120} className="input-field" placeholder={t.bizPh} />
-                  </>
-                )}
-              </div>
-            )}
+            {/* the account-type card comes first while the kind is still empty (UX-038) */}
+            {role === 'supplier' && providerType && kindCard}
 
             {CONTRACTOR_FEATURES && role === 'contractor' && (
               <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0F6E56' }}>

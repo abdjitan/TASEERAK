@@ -12,7 +12,7 @@ export function buyerTypeText(locale: string) {
   return {
     question: L('Who are you buying for?', 'آپ کس کے لیے خرید رہے ہیں؟', 'لمن تشتري؟'),
     home: L('My home', 'اپنا گھر', 'لبيتي'),
-    homeSub: L('A simple, quick request', 'آسان اور تیز درخواست', 'طلب بسيط وسريع'),
+    homeSub: L('A simple request in three steps, and ready lists to get your home ready', 'تین قدموں میں آسان درخواست، اور گھر کی تیاری کے لیے تیار فہرستیں', 'طلب بسيط بثلاث خطوات، وقوائم جاهزة لتجهيز البيت'),
     business: L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'),
     businessSub: L('Specifications, a tax invoice and quantity lists', 'تفصیلات، ٹیکس انوائس اور مقداروں کا جدول', 'مواصفات وفاتورة ضريبية وجدول كميات'),
     changeLater: L('You can change it any time in Settings.', 'آپ اسے کسی بھی وقت ترتیبات میں بدل سکتے ہیں۔', 'يمكنك تغييره في أي وقت من الإعدادات.'),

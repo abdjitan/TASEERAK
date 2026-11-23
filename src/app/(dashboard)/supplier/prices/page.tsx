@@ -14,6 +14,8 @@ import Glyph from '@/components/shared/Glyph'
 import { timeAgo as timeAgoText } from '@/lib/text'
 import { askConfirm } from '@/lib/askConfirm'
 import { Check, X } from 'lucide-react'
+import { normalizeText } from '@/lib/normalize'
+import { sectionLabelOf } from '@/lib/sellers'
 // Arabic-Indic / Persian digits and «٫» from Arabic and Urdu keyboards → 12.5 (type=number refused them silently)
 const latinNum = (v: string) => String(v ?? '').replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٫,]/g, '.').replace(/[^0-9.]/g, '')
 
@@ -21,7 +23,7 @@ const txt = {
   ar: {
     title: 'أسعاري', sub: 'أسعارك المحفوظة خاصة بك — لا يراها المشترون ولا المنافسون، وتُعبَّأ تلقائياً عند تسعير الطلبات',
     back: '→ رجوع', addPrice: '+ إضافة سلعة', myPrices: 'أسعاري المحفوظة',
-    product: 'اسم السلعة', sector: 'القطاع', unit: 'الوحدة', price: 'السعر (ر.س)',
+    product: 'اسم السلعة', sector: 'القطاع', unit: 'الوحدة', price: 'السعر شامل ضريبة القيمة المضافة (ر.س)',
     region: 'المنطقة', selectSector: 'اختر القطاع', selectUnit: 'الوحدة', selectRegion: 'كل المناطق',
     save: 'حفظ السعر', saving: 'جارٍ الحفظ...', update: 'تحديث', updated: 'تم التحديث',
     noPrices: 'لم تحفظ أي أسعار بعد', noPricesSub: 'احفظ أسعار ما تبيعه لتُعبَّأ تلقائياً في عروضك',
@@ -33,7 +35,7 @@ const txt = {
   en: {
     title: 'My prices', sub: 'Your saved prices are private — buyers and competitors never see them; they prefill your offers',
     back: '← Back', addPrice: '+ Add Item', myPrices: 'My saved prices',
-    product: 'Product Name', sector: 'Sector', unit: 'Unit', price: 'Price (SAR)',
+    product: 'Product Name', sector: 'Sector', unit: 'Unit', price: 'Price incl. VAT (SAR)',
     region: 'Region', selectSector: 'Select sector', selectUnit: 'Unit', selectRegion: 'All regions',
     save: 'Save price', saving: 'Saving...', update: 'Update', updated: 'Updated',
     noPrices: 'No saved prices yet', noPricesSub: 'Save the prices of what you sell to prefill your offers',
@@ -45,7 +47,7 @@ const txt = {
   ur: {
     title: 'میری قیمتیں', sub: 'آپ کی محفوظ قیمتیں نجی ہیں — خریدار اور حریف نہیں دیکھتے؛ یہ آفر میں خود بھر جاتی ہیں',
     back: '→ واپس', addPrice: '+ آئٹم شامل کریں', myPrices: 'میری محفوظ قیمتیں',
-    product: 'پروڈکٹ کا نام', sector: 'شعبہ', unit: 'یونٹ', price: 'قیمت (ریال)',
+    product: 'پروڈکٹ کا نام', sector: 'شعبہ', unit: 'یونٹ', price: 'قیمت ٹیکس سمیت (ریال)',
     region: 'علاقہ', selectSector: 'شعبہ منتخب کریں', selectUnit: 'یونٹ', selectRegion: 'تمام علاقے',
     save: 'قیمت محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', update: 'اپ ڈیٹ', updated: 'اپ ڈیٹ ہو گیا',
     noPrices: 'ابھی کوئی محفوظ قیمت نہیں', noPricesSub: 'جو بیچتے ہیں اس کی قیمتیں محفوظ کریں تاکہ آفر خود بھر جائے',
@@ -80,6 +82,8 @@ export default function SupplierPricesPage() {
   const [actId, setActId] = useState('')
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [loadFailed, setLoadFailed] = useState(false) // UX-083: a failed load is never «no saved prices»
+  // UX-030: a seller without a VAT number keeps final prices; a registered one keeps prices incl. VAT
+  const [noVat, setNoVat] = useState(false)
   // UX-083: the unit fills in from the item (still editable)
   useEffect(() => { if (product && sector && !unit) { try { const u = getDefaultUnit(product, sector as any); if (u) setUnit(u) } catch {} } }, [product, sector]) // eslint-disable-line react-hooks/exhaustive-deps
   // UX-144: sector names in the reader's language
@@ -91,8 +95,17 @@ export default function SupplierPricesPage() {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const subLabel = (x: any) => (locale === 'en' ? x.en : locale === 'ur' ? x.ur : x.ar)
   const allSubs = useMemo(() => subGroups.flatMap(g => g.subs), [subGroups])
-  const psq = psearch.trim().toLowerCase()
-  const subResults = psq.length >= 1 ? allSubs.filter(x => (x.ar + ' ' + x.en).toLowerCase().includes(psq)).slice(0, 60) : []
+  // UX-036: the search reads the three names, tolerant of spelling (hamza, ta marbuta, Urdu letters)
+  const psq = normalizeText(psearch.trim()).toLowerCase()
+  const subResults = psq.length >= 1 ? allSubs.filter(x => normalizeText([x.ar, x.en, (x as any).ur || ''].join(' ')).toLowerCase().includes(psq)).slice(0, 60) : []
+  // UX-036: a saved item named after a sub-category shows in the reader's language
+  const nameOf = (p: any): string => {
+    if (locale === 'ar') return p.product_name
+    const subs: any = (SUB_CATEGORIES as any)[p.sector] || {}
+    const hit: any = Object.values(subs).find((x: any) => x?.ar === p.product_name)
+    return hit ? (locale === 'ur' ? hit.ur || hit.en : hit.en) || p.product_name : p.product_name
+  }
+  const keyOf = (p: any): string | null => { const subs: any = (SUB_CATEGORIES as any)[p.sector] || {}; return Object.keys(subs).find(k => subs[k]?.ar === p.product_name) || null }
 
   useEffect(() => { load() }, [])
 
@@ -104,6 +117,7 @@ export default function SupplierPricesPage() {
     const { data: act } = await supabase.rpc('acting_uid')
     const aid: string = (act as any) || session.user.id
     setActId(aid)
+    supabase.from('profiles').select('vat_number').eq('id', aid).maybeSingle().then(({ data: pr }: any) => setNoVat(!String(pr?.vat_number || '').trim()), () => {})
     const { data, error } = await supabase.from('live_prices').select('*')
       .eq('supplier_id', aid).order('updated_at', { ascending: false })
     setLoadFailed(!!error)
@@ -189,21 +203,21 @@ export default function SupplierPricesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               {/* Sector first — the item list depends on it */}
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">{T.sector}</label>
-                <select value={sector} onChange={e => { setSector(e.target.value); setProduct(''); setProductOther(false); setPgroup(''); setPsearch('') }} className="input-field" required>
+                <label htmlFor="lp-sector" className="block text-xs font-bold text-gray-500 mb-1">{T.sector}</label>
+                <select id="lp-sector" value={sector} onChange={e => { setSector(e.target.value); setProduct(''); setProductOther(false); setPgroup(''); setPsearch('') }} className="input-field" required>
                   <option value="">{T.selectSector}</option>
                   {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{secLabel(s)}</option>)}
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-gray-500 mb-1">{T.product}</label>
+                <label htmlFor="lp-product" className="block text-xs font-bold text-gray-500 mb-1">{T.product}</label>
                 {!sector ? (
-                  <input disabled className="input-field" placeholder={L('Select a sector first', 'پہلے شعبہ منتخب کریں', 'اختر القطاع أولاً')} />
+                  <input id="lp-product" disabled className="input-field" placeholder={L('Select a sector first', 'پہلے شعبہ منتخب کریں', 'اختر القطاع أولاً')} />
                 ) : productOther ? (
                   <div className="flex gap-2">
-                    <input value={product} onChange={e => setProduct(e.target.value)} className="input-field flex-1"
+                    <input id="lp-product" value={product} onChange={e => setProduct(e.target.value)} className="input-field flex-1"
                       placeholder={L('Item name', 'چیز کا نام', 'اسم السلعة')} required />
-                    <button type="button" onClick={() => { setProductOther(false); setProduct('') }} className="text-xs text-gray-500 whitespace-nowrap px-2"><Glyph e="↩" /> {L('List', 'فہرست', 'القائمة')}</button>
+                    <button type="button" onClick={() => { setProductOther(false); setProduct('') }} className="inline-flex items-center min-h-[44px] text-xs text-gray-500 whitespace-nowrap px-3"><Glyph e="↩" /> {L('List', 'فہرست', 'القائمة')}</button>
                   </div>
                 ) : (
                   <div className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
@@ -243,8 +257,8 @@ export default function SupplierPricesPage() {
                     )}
 
                     <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                      <span className="text-[13px] text-gray-600">{product ? <span className="inline-flex items-center gap-1"><Check className="w-4 h-4 text-[#0B2438]" aria-hidden /><span className="font-bold text-[#0B2438]">{product}</span></span> : L('Pick an item above', 'اوپر سے کوئی چیز منتخب کریں', 'اختر سلعة من الأعلى')}</span>
-                      <button type="button" onClick={() => { setProductOther(true) }} className="text-xs font-semibold text-[#8F6820]"><Glyph e="✏" /> {L('Type manually', 'خود لکھیں', 'اكتب يدوياً')}</button>
+                      <span className="text-[13px] text-gray-600">{product ? <span className="inline-flex items-center gap-1"><Check className="w-4 h-4 text-[#0B2438]" aria-hidden /><span className="font-bold text-[#0B2438]">{nameOf({ product_name: product, sector })}</span></span> : L('Pick an item above', 'اوپر سے کوئی چیز منتخب کریں', 'اختر سلعة من الأعلى')}</span>
+                      <button type="button" onClick={() => { setProductOther(true) }} className="inline-flex items-center min-h-[44px] px-2 text-xs font-semibold text-[#8F6820]"><Glyph e="✏" /> {L('Type manually', 'خود لکھیں', 'اكتب يدوياً')}</button>
                     </div>
                   </div>
                 )}
@@ -257,9 +271,10 @@ export default function SupplierPricesPage() {
                 </select>
               </div>
               <div>
-                <label htmlFor="lp-price" className="block text-xs font-bold text-gray-600 mb-1">{T.price}</label>
+                <label htmlFor="lp-price" className="block text-xs font-bold text-gray-600 mb-1">{noVat ? L('Final price (SAR)', 'حتمی قیمت (ریال)', 'السعر النهائي (ر.س)') : T.price}</label>
                 <input id="lp-price" type="text" inputMode="decimal" value={price} onChange={e => setPrice(latinNum(e.target.value))}
-                  className="input-field text-base sm:text-sm" placeholder="2750" required />
+                  className="input-field text-base sm:text-sm" placeholder="2750" required aria-describedby="lp-price-hint" />
+                <p id="lp-price-hint" className="text-[12px] text-gray-500 mt-1">{noVat ? L('Enter the final price the buyer pays; nothing is added to it.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا؛ اس پر کچھ شامل نہیں ہوگا۔', 'أدخل السعر النهائي الذي يدفعه المشتري، ولا يُضاف إليه شيء.') : L('Enter the final price the buyer pays, including 15% VAT.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا، 15% ٹیکس سمیت۔', 'أدخل السعر النهائي الذي يدفعه المشتري، شاملاً الضريبة 15%.')}</p>
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="lp-region" className="block text-xs font-bold text-gray-600 mb-1">{T.region}</label>
@@ -297,9 +312,9 @@ export default function SupplierPricesPage() {
                 <div key={p.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="font-bold" style={{ color: '#0B2438' }}>{p.product_name}</div>
+                      <div className="font-bold" style={{ color: '#0B2438' }}>{nameOf(p)}</div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500">
-                        <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{secLabel(p.sector)}</span>
+                        <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{sectionLabelOf(p.sector, keyOf(p), locale) || secLabel(p.sector)}</span>
                         {p.region && <span><Glyph e="📍" /> {getRegionLabel(p.region, locale)}</span>}
                         <span><Glyph e="🕐" /> {T.lastUpdate}: {timeAgoText(p.updated_at, locale)}</span>
                       </div>
@@ -307,6 +322,7 @@ export default function SupplierPricesPage() {
                     <div className="text-end flex-shrink-0">
                       <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{p.price?.toLocaleString('en-US')}</div>
                       <div className="text-[12px] text-gray-500">{L('SAR', 'ریال', 'ر.س')} / {getUnitLabel(p.unit, locale) || p.unit}</div>
+                      <div className="text-[12px] text-gray-500">{noVat ? L('final price', 'حتمی قیمت', 'سعر نهائي') : L('incl. VAT', 'ٹیکس سمیت', 'شامل الضريبة')}</div>
                       {p.previous_price && Number(p.previous_price) !== Number(p.price) && <div className="text-[12px] text-gray-500">{L('was', 'پہلے', 'كان')} {Number(p.previous_price).toLocaleString('en-US')}</div>}
                     </div>
                   </div>

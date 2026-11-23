@@ -45,7 +45,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
     if (error) {
       setErr((error as any).hint === 'KIND_LOCKED'
         ? L('The account type can’t be changed directly. Request the change from Support; the admin reviews it.', 'اکاؤنٹ کی قسم براہ راست نہیں بدلی جا سکتی۔ سپورٹ سے درخواست کریں؛ انتظامیہ جائزہ لے گی۔', 'لا يمكن تغيير نوع الحساب مباشرة. اطلب التغيير من الدعم، وتراجعه الإدارة.')
-        : L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔', 'تعذّر الحفظ. حاول مرة أخرى.'))
+        : L('Could not save. Try again.', 'محفوظ نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر الحفظ. حاول مرة أخرى.'))
       setBusy(false); return
     }
     const np = String(data || (nextKind === 'independent' ? 'individual' : activity || 'company'))
@@ -80,8 +80,10 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
 
       {kind === 'company' && (
         <div>
-          <p className="text-xs font-bold text-gray-600 mb-1.5">{L('What is your main activity? *', 'آپ کی بنیادی سرگرمی کیا ہے؟ *', 'ما نشاطك الرئيسي؟ *')}</p>
-          <div className="flex flex-wrap gap-2">
+          <p id="skp-activity" className="text-xs font-bold text-gray-600 mb-1.5">{L('What is your main activity?', 'آپ کی بنیادی سرگرمی کیا ہے؟', 'ما نشاطك الرئيسي؟')} <span className="text-red-500">*</span></p>
+          {/* UX-038: the star is enforced: the generic «company» has no activity yet */}
+          {!COMPANY_ACTIVITIES.some(a => a.k === ptype) && <p className="text-[12px] font-semibold text-[#8F6820] mb-1.5">{L('Required: choose one to finish your profile.', 'ضروری: پروفائل مکمل کرنے کے لیے ایک منتخب کریں۔', 'مطلوب: اختر نشاطاً لإكمال ملفك.')}</p>}
+          <div className="flex flex-wrap gap-2" role="group" aria-labelledby="skp-activity">
             {COMPANY_ACTIVITIES.map(a => {
               const on = ptype === a.k
               return (
@@ -110,7 +112,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
         {kind === 'independent' && (
           <div className="mt-1 text-gray-500">
             {L('Your trust comes from your ratings. When you quote, say where the price comes from.',
-              'آپ کا اعتماد آپ کی ریٹنگ سے بنتا ہے۔',
+              'آپ کا اعتماد آپ کی ریٹنگ سے بنتا ہے۔ آفر دیتے وقت بتائیں کہ قیمت کہاں سے ہے۔',
               'تُبنى ثقتك من تقييماتك. وعند تقديم أي عرض، حدّد مصدر السعر.')}
           </div>
         )}

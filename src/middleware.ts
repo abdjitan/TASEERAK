@@ -181,6 +181,8 @@ export async function middleware(request: NextRequest) {
   }
 
   const { pathname } = request.nextUrl
+  // the path WITH its query, so a deep link (e.g. /messages?c=…) survives the sign-in round trip (UX-097)
+  const fullPath = pathname + (request.nextUrl.search || '')
 
   // Build a redirect that PRESERVES any refreshed auth cookies. Without this,
   // when getUser() rotates the session, the redirect would drop the new
@@ -203,6 +205,11 @@ export async function middleware(request: NextRequest) {
     try {
       const profile = await profileOf(user.id)
       home = profile?.role === 'admin' ? '/admin' : !profile?.role_chosen_at ? '/welcome' : profile?.role === 'supplier' ? '/supplier/dashboard' : '/contractor'
+      // a signed-in user who opens a /login?next=… link goes straight to that page (UX-097)
+      const nx = request.nextUrl.searchParams.get('next') || ''
+      let safe = profile?.role_chosen_at && nx[0] === '/' && nx[1] !== '/'
+      for (let i = 0; safe && i < nx.length; i++) { const c = nx.charCodeAt(i); if (c === 92 || c < 32) safe = false }
+      if (safe) home = nx
     } catch {}
     return redirectTo(new URL(home, request.url))
   }
@@ -211,7 +218,7 @@ export async function middleware(request: NextRequest) {
   if (!user && PROTECTED.some(matches)) {
     const loginUrl = new URL('/login', request.url)
     // Remember where they were going so we can redirect back after login
-    loginUrl.searchParams.set('next', pathname)
+    loginUrl.searchParams.set('next', fullPath)
     return redirectTo(loginUrl)
   }
 
@@ -221,7 +228,7 @@ export async function middleware(request: NextRequest) {
     if (st === 'banned') return redirectTo(new URL('/banned', request.url))
     if (st === 'verify') {
       const v = new URL('/verify', request.url)
-      v.searchParams.set('next', pathname)
+      v.searchParams.set('next', fullPath)
       return redirectTo(v)
     }
   }
@@ -262,7 +269,7 @@ export async function middleware(request: NextRequest) {
       const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
       if (aal?.currentLevel !== 'aal2') {
         const mfaUrl = new URL('/admin/mfa', request.url)
-        mfaUrl.searchParams.set('next', pathname)
+        mfaUrl.searchParams.set('next', fullPath)
         return redirectTo(mfaUrl)
       }
     }

@@ -37,6 +37,15 @@ export function notifGlyph(type: any, data?: any, title?: any): string {
   const ti = normalizeText(String(title || ''))
   if (ti && (ti.includes(normalizeText('من جديد')) || ti.includes(normalizeText('عدّل المشتري')))) return '🔁'
   const t = String(type || '')
+  // a settled problem is good news: a check, not the warning sign (UX-128)
+  if (t === 'dispute_resolved' || kind === 'dispute_resolved') return '✅'
+  // deal steps stored without a kind used to show the handshake: read the step from the title (UX-128)
+  if (ti && (t === 'offer_accepted' || t.includes('deal'))) {
+    if (ti.includes(normalizeText('فاتورة'))) return '🧾'
+    if (ti.includes(normalizeText('استلام')) || ti.includes(normalizeText('استلم'))) return '📥'
+    if (ti.includes(normalizeText('تسليم')) || ti.includes(normalizeText('سلّم'))) return '🚚'
+    if (ti.includes(normalizeText('دفع'))) return '💵'
+  }
   if (t === 'rfq_changed') return '🔁'
   if (t.includes('message')) return '💬'
   if (t === 'offer_accepted' || t.includes('award')) return '🤝'
@@ -150,8 +159,8 @@ export default function NotificationBell({ userId }: { userId?: string }) {
                 <Glyph e={notifGlyph(n.type, n.data, n.title)} />
               </span>
               <div className="min-w-0 flex-1">
-                <div className={`text-sm line-clamp-2 ${n.is_read ? 'font-semibold' : 'font-bold'}`} style={{ color: '#0B2438' }}><AutoTr text={noEmoji(n.title)} locale={locale} /></div>
-                {n.body && <div className="text-xs mt-0.5 line-clamp-2" style={{ color: '#526579' }}><AutoTr text={noEmoji(n.body)} locale={locale} /></div>}
+                <div className={`text-sm line-clamp-2 ${n.is_read ? 'font-semibold' : 'font-bold'}`} style={{ color: '#0B2438' }}><AutoTr text={noEmoji(n.title)} locale={locale} noToggle /></div>
+                {n.body && <div className="text-xs mt-0.5 line-clamp-2" style={{ color: '#526579' }}><AutoTr text={noEmoji(n.body)} locale={locale} noToggle /></div>}
                 <div className="text-xs mt-1" style={{ color: '#526579' }}>{timeAgo(n.created_at, locale)}</div>
               </div>
               {!n.is_read && <span className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ background: '#D4A543' }} role="img" aria-label={L('Unread', 'نئی', 'غير مقروء')} />}

@@ -110,6 +110,10 @@ const SECTOR_L: Record<string, [string, string]> = {
 }
 const sectorName = (s: string, locale: string) => (locale === 'ar' ? (SECTOR_LABELS as any)[s] || s : (SECTOR_L[s]?.[locale === 'ur' ? 1 : 0] || s))
 const CATALOG_SET = new Set<string>(Object.values(SECTOR_PRODUCTS).flat())
+// an item that came from a file (the uploaded bill of quantities, or a list moved from a tender review), as opposed
+// to one the buyer added himself. Older drafts have no from_file flag: their file items have ids «item-<row>»
+// (hand-added ones carry a timestamp) and tender items «tender-<n>».
+const isFileItem = (it: any) => !!it?.from_file || /^item-\d{1,6}$/.test(String(it?.id || '')) || String(it?.id || '').startsWith('tender-')
 
 export default function NewProjectPage() {
   useCatalogSpecs() // spec fields and order units (loaded on demand)
@@ -223,9 +227,9 @@ export default function NewProjectPage() {
         return { ...it, specFromDoc: doc }
       }))
       const parts = [L(`Matched ${data.matched} of ${data.total} items`, `${data.total} میں سے ${data.matched} آئٹمز ملائے گئے`, `طوبق ${data.matched} من أصل ${arItems(data.total)}`)]
-      if (filled) parts.push(L(`${filled} filled`, `${filled} بھرے گئے`, `عُبّئ ${filled}`))
-      if (diff) parts.push(L(`${diff} differ from the BOQ — review them`, `${diff} BOQ سے مختلف ہیں — جائزہ لیں`, `${diff} تختلف عن جدول الكميات — راجعها`))
-      if (data.with_conflicts) parts.push(L(`${data.with_conflicts} contradict the specification`, `${data.with_conflicts} اسپیسیفکیشن سے متصادم`, `${data.with_conflicts} تتعارض مع المواصفات`))
+      if (filled) parts.push(L(`${filled} filled`, `${filled} بھرے گئے`, `عُبّئ ${arItems(filled)}`))
+      if (diff) parts.push(L(`${diff} differ from the BOQ — review them`, `${diff} BOQ سے مختلف ہیں — جائزہ لیں`, `${arItems(diff)} تختلف عن جدول الكميات، فراجعها`))
+      if (data.with_conflicts) parts.push(L(`${data.with_conflicts} contradict the specification`, `${data.with_conflicts} اسپیسیفکیشن سے متصادم`, `${arItems(Number(data.with_conflicts) || 0)} تتعارض مع المواصفات`))
       if (data.truncated) parts.push(L('The specifications are large and were cut; split the file', 'اسپیسیفکیشن بڑی تھیں اور کاٹ دی گئیں؛ فائل تقسیم کریں', 'المواصفات كبيرة واقتُطع جزء منها، قسّم الملف'))
       setSpecOk(true); setSpecMsg(parts.join(' · '))
     } catch {
@@ -373,11 +377,15 @@ export default function NewProjectPage() {
     try { localStorage.removeItem(DRAFT_KEY) } catch {}
   }
 
-  // «إزالة الملف»: removes the items read from it (asks first) and lets the same file be chosen again
+  // «إزالة الملف»: removes ONLY the items read from it (asks first); the materials the buyer added himself stay (UX-075)
   async function removeBoqFile() {
-    const n = items.length
-    if (n && !(await askConfirm(L(`All ${n} extracted items and all your edits to them will be deleted. This cannot be undone. Remove the file?`, `تمام ${n} نکالے گئے آئٹمز اور ان پر آپ کی ترامیم حذف ہو جائیں گی۔ یہ واپس نہیں ہو سکتا۔ فائل ہٹائیں؟`, `ستُحذف كل البنود المستخرجة (${arItems(n)}) وكل تعديلاتك عليها، ولا يمكن التراجع. هل تريد إزالة الملف؟`), { danger: true, okLabel: L('Remove', 'ہٹائیں', 'إزالة'), cancelLabel: L('Keep', 'رکھیں', 'إبقاء') }))) return
-    setBoqFile(null); setItems([]); setAiUsed(false); setParseError(''); setEditingIndex(null); setRestoredCount(0)
+    const n = items.filter(isFileItem).length
+    const kept = items.length - n
+    const keptEn = kept ? ` The ${kept} materials you added yourself stay.` : ''
+    const keptUr = kept ? ` آپ کے خود شامل کردہ ${kept} مواد باقی رہیں گے۔` : ''
+    const keptAr = kept ? ' وتبقى المواد التي أضفتها بنفسك.' : ''
+    if (n && !(await askConfirm(L(`The ${n} items extracted from the file and your edits to them will be deleted. This cannot be undone.${keptEn} Remove the file?`, `فائل سے نکالے گئے ${n} آئٹمز اور ان پر آپ کی ترامیم حذف ہو جائیں گی۔ یہ واپس نہیں ہو سکتا۔${keptUr} فائل ہٹائیں؟`, `ستُحذف البنود المستخرجة من الملف (${arItems(n)}) وتعديلاتك عليها، ولا يمكن التراجع.${keptAr} هل تريد إزالة الملف؟`), { danger: true, okLabel: L('Remove', 'ہٹائیں', 'إزالة'), cancelLabel: L('Keep', 'رکھیں', 'إبقاء') }))) return
+    setBoqFile(null); setItems(prev => prev.filter((it: any) => !isFileItem(it))); setAiUsed(false); setParseError(''); setEditingIndex(null); setRestoredCount(0)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -411,8 +419,18 @@ export default function NewProjectPage() {
 
   async function handleBOQUpload(file: File) {
     if (parsing) return
-    // a new file replaces the current list: ask first (the edits would be lost)
-    if (items.length && !(await askConfirm(L(`The items of the new file will replace your current list (${items.length} items) and your edits to it. Continue?`, `نئی فائل کے آئٹمز آپ کی موجودہ فہرست (${items.length} آئٹمز) اور اس کی ترامیم کی جگہ لیں گے۔ جاری رکھیں؟`, `ستحلّ بنود الملف الجديد محل قائمتك الحالية (${arItems(items.length)}) وتعديلاتك عليها. هل تتابع؟`), { danger: true, okLabel: L('Replace', 'بدلیں', 'استبدال'), cancelLabel: L('Keep my list', 'میری فہرست رکھیں', 'إبقاء قائمتي') }))) return
+    // a new file replaces the items of the previous file (or of the tender), never the materials the buyer added
+    // himself: ask first, the edits would be lost. A list from a tender is detached from it (UX-024).
+    const replaced = items.filter(isFileItem).length
+    const kept = items.length - replaced
+    if (replaced) {
+      const en = [`The items of the new file will replace the ${replaced} items of the current file and your edits to them.`]
+      const ur = [`نئی فائل کے آئٹمز موجودہ فائل کے ${replaced} آئٹمز اور ان کی ترامیم کی جگہ لیں گے۔`]
+      const ar = [`ستحلّ بنود الملف الجديد محل بنود الملف الحالي (${arItems(replaced)}) وتعديلاتك عليها.`]
+      if (kept) { en.push('The materials you added yourself stay.'); ur.push('آپ کے خود شامل کردہ مواد باقی رہیں گے۔'); ar.push('وتبقى المواد التي أضفتها بنفسك.') }
+      if (tenderId) { en.push('The list will be detached from the tender, and its approved items stay in it.'); ur.push('فہرست ٹینڈر سے الگ ہو جائے گی، اور اس کے منظور آئٹمز ٹینڈر میں باقی رہیں گے۔'); ar.push('ستُفصل القائمة عن المناقصة، وتبقى بنودها المعتمدة فيها.') }
+      if (!(await askConfirm(L(`${en.join(' ')} Continue?`, `${ur.join(' ')} جاری رکھیں؟`, `${ar.join(' ')} هل تتابع؟`), { danger: true, okLabel: L('Replace', 'بدلیں', 'استبدال'), cancelLabel: L('Keep my list', 'میری فہرست رکھیں', 'إبقاء قائمتي') }))) return
+    }
     setBoqFile(file)
     setParsing(true)
     setParseError('')
@@ -425,13 +443,17 @@ export default function NewProjectPage() {
       if (!res.ok) throw new Error(boqErr(data.error))
       if (data.items?.length > 0) {
         setAiUsed(!!data.ai)
-        setItems(data.items.map((item: any, i: any) => {
+        const fromFile = data.items.map((item: any, i: any) => {
           // التخصص يأتي مُصنّفاً من الخادم (من القوائم الرسمية). نتأكد أنه مفتاح صحيح وإلا = غير مصنّف.
           const sub = (item.sub_category && (SUB_CATEGORIES as any)[item.sector]?.[item.sub_category]) ? item.sub_category : null
           // غير مصنّف لو بلا تخصص، أو لو الذكاء أبلغ ثقة منخفضة (يبقى الاقتراح ظاهراً في القائمة ليؤكّده المقاول)
           // specs = spec fields recognised in the BOQ wording; needs_review = a quantity/unit/total that did not add up
-          return { ...item, specs: item.specs || {}, id: `item-${i}`, selected: true, done: parseFloat(item.quantity) > 0 && !item.needs_review && missingSpecs(item.product_name, item.sector, item.specs || {}, item.specification || '').length === 0, sub_category: sub, needs_classification: !sub || !!item.needs_classification || !!item.low_confidence }
-        }))
+          return { ...item, specs: item.specs || {}, id: `item-${i}`, from_file: true, selected: true, done: parseFloat(item.quantity) > 0 && !item.needs_review && missingSpecs(item.product_name, item.sector, item.specs || {}, item.specification || '').length === 0, sub_category: sub, needs_classification: !sub || !!item.needs_classification || !!item.low_confidence }
+        })
+        // the materials the buyer added himself stay, after the file's items
+        setItems(prev => [...fromFile, ...prev.filter((it: any) => !isFileItem(it))])
+        // from here on the list is no longer the tender's: sending it must not mark the tender as sent (UX-024)
+        setTenderId(null)
         setStep('items')
         // the project name from the file name, when the buyer has not written one
         setTitle(t => t || file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim().slice(0, 120))
@@ -558,9 +580,9 @@ export default function NewProjectPage() {
         <button type="button" onClick={() => setDraft(null)} className="min-h-11 px-2 text-sm font-bold text-gray-600 hover:underline">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
       </div>
       <div>
-        <input list="boq-catalog" autoFocus value={draft.product_name}
+        <input list="boq-catalog" autoFocus value={draft.product_name} aria-label={L('Material name', 'مواد کا نام', 'اسم المادة')}
           onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, product_name: v, spec: undefined, unit: '', specs: {} })) }}
-          className="input-field" placeholder={L('Material name: type and pick from the list, or write it your way', 'مواد کا نام', 'اسم المادة: اكتب واختر من القائمة، أو اكتبها كما تريد')} />
+          className="input-field" placeholder={L('Material name: type and pick from the list, or write it your way', 'مواد کا نام: لکھیں اور فہرست سے منتخب کریں، یا اپنے انداز میں لکھیں', 'اسم المادة: اكتب واختر من القائمة، أو اكتبها كما تريد')} />
         <button type="button" onClick={() => setShowCatalog(true)}
           className="mt-2 w-full sm:w-auto min-h-11 px-4 py-2.5 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#8F6820] hover:bg-[#D4A543]/20">
           {L("Can't find it? Browse the materials guide by section", 'نہیں ملا؟ شعبوں سے فہرست دیکھیں', 'لم تجدها؟ تصفّح دليل المواد حسب الأقسام')}
@@ -576,23 +598,23 @@ export default function NewProjectPage() {
       <div className="grid grid-cols-2 gap-3">
         <input type="text" inputMode="decimal" value={draft.quantity}
           onChange={(e: any) => { const v = toQty(e.target.value); setDraft((d: any) => ({ ...d, quantity: v })) }}
-          className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
+          aria-label={L('Quantity', 'مقدار', 'الكمية')} className="input-field" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
         <select value={draftDefUnit}
-          onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, unit: v })) }} className="input-field">
+          onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, unit: v })) }} aria-label={L('Unit', 'یونٹ', 'الوحدة')} className="input-field">
           {!draftDefUnit && <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>}
           {draftUnits.map((u: any) => <option key={u} value={u}>{getUnitLabel(u, locale)}</option>)}
         </select>
       </div>
       {draftName && <ItemSpecFields name={draftName} sector={draftSector} specs={draft.specs} locale={locale} onChange={(v: any) => setDraft((d: any) => ({ ...d, specs: v }))} />}
       {draftName && brandApplies(draftName, draftSector) && (
-        <input value={draft.brand || ''} onChange={(e: any) => { const v = e.target.value.slice(0, 80); setDraft((d: any) => ({ ...d, brand: v })) }} className="input-field"
-          placeholder={L('Brand or product name (optional), e.g. Fosroc Renderoc', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)، مثل: فوسروك رندروك')} />
+        <input value={draft.brand || ''} aria-label={L('Brand or product name (optional)', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)')} onChange={(e: any) => { const v = e.target.value.slice(0, 80); setDraft((d: any) => ({ ...d, brand: v })) }} className="input-field"
+          placeholder={L('Brand or product name (optional), e.g. Fosroc Renderoc', 'برانڈ یا پروڈکٹ کا نام (اختیاری)، مثلاً: Fosroc Renderoc', 'الماركة أو اسم المنتج (اختياري)، مثل: فوسروك رندروك')} />
       )}
-      <input value={draft.specification} onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, specification: v })) }}
+      <input value={draft.specification} aria-label={L('Specification', 'تفصیل', 'المواصفة')} onChange={(e: any) => { const v = e.target.value; setDraft((d: any) => ({ ...d, specification: v })) }}
         className={`input-field ${draftName && missingSpecs(draftName, draftSector, draft.specs, draft.specification).includes('*') ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
         placeholder={draftName && specsRequired(draftName, draftSector) && !getProductSpecs(draftName).some(f => f.key !== 'unit')
-          ? L('Specification (required): size, length, grade…', 'تفصیل (ضروری)', 'المواصفة (مطلوبة): المقاس، الطول، الدرجة…')
-          : L('Specification (optional): size, grade, brand…', 'تفصیل (اختیاری)', 'المواصفة (اختياري): المقاس، الدرجة، الماركة…')} />
+          ? L('Specification (required): size, length, grade…', 'تفصیل (ضروری): سائز، لمبائی، گریڈ…', 'المواصفة (مطلوبة): المقاس، الطول، الدرجة…')
+          : L('Specification (optional): size, grade, brand…', 'تفصیل (اختیاری): سائز، گریڈ، برانڈ…', 'المواصفة (اختياري): المقاس، الدرجة، الماركة…')} />
       <button type="button" disabled={!draftName} onClick={commitDraft}
         className="w-full min-h-11 py-3 rounded-xl text-[#071827] font-bold disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
         {L('Add to the list', 'فہرست میں شامل کریں', 'أضف إلى القائمة')}
@@ -702,10 +724,12 @@ export default function NewProjectPage() {
         const specsUp = await (await import('@/lib/compressImage')).compressImage(specsFile, { maxSide: 2000 }) // lighter scans/photos
         const path = `${user.id}/spec-doc-${Date.now()}.${specsUp.name.split('.').pop()}`
         const { data } = await supabase.storage.from('licenses').upload(path, specsUp, { upsert: true })
-        if (data) {
-          const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(data.path)
-          specUrl = publicUrl
+        // a failed upload is never silent: the request would reach suppliers without the specifications (UX-075)
+        if (!data) {
+          await notify(L('Could not upload the specification document. Check your connection and try again, or remove the document. Nothing was sent.', 'اسپیسیفکیشن دستاویز اپ لوڈ نہیں ہو سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں، یا دستاویز ہٹا دیں۔ کچھ نہیں بھیجا گیا۔', 'تعذّر رفع مستند المواصفات. تحقّق من الاتصال وحاول مرة أخرى، أو احذف المستند. لم يُرسل شيء.'), { tone: 'error' })
+          return
         }
+        specUrl = supabase.storage.from('licenses').getPublicUrl(data.path).data.publicUrl
       }
       // what suppliers read = the visible «ملاحظات للموردين» field + the spec document as a button
       // («[مواصفات مرفقة: …]» is the marker the supplier page turns into «عرض المواصفات»). Never the
@@ -824,15 +848,18 @@ export default function NewProjectPage() {
   const noQtyCount = noQtyItems.length
   const scrollToSend = () => document.getElementById('boq-send')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   // ready / no quantity / no specialty: each chip takes you to the first item it counts (UX-073)
-  const statusChips = (
-    <div className="flex flex-wrap gap-2 text-xs font-bold">
-      <span className="inline-flex items-center gap-1 min-h-11 px-3 rounded-full bg-[#0F6E56]/10 text-[#0F6E56]"><Glyph e="✓" /> {L(`Ready: ${readyCount}`, `تیار: ${readyCount}`, `جاهز: ${readyCount}`)}</span>
-      <button type="button" disabled={!noQtyCount} onClick={() => focusItem(noQtyItems[0])}
-        className={`inline-flex items-center min-h-11 px-3 rounded-full ${noQtyCount ? 'bg-[#D4A543]/15 text-[#8F6820] underline underline-offset-2' : 'bg-gray-100 text-gray-500'}`}>{L(`No quantity: ${noQtyCount}`, `بغیر مقدار: ${noQtyCount}`, `بلا كمية: ${noQtyCount}`)}</button>
-      <button type="button" disabled={!unclassifiedCount} onClick={() => focusItem(unclassifiedItems[0])}
-        className={`inline-flex items-center min-h-11 px-3 rounded-full ${unclassifiedCount ? 'bg-red-50 text-red-700 underline underline-offset-2' : 'bg-gray-100 text-gray-500'}`}>{L(`No specialty: ${unclassifiedCount}`, `بغیر شعبہ: ${unclassifiedCount}`, `بلا تخصص: ${unclassifiedCount}`)}</button>
+  // compact (the sticky bar on a phone, UX-076): chips with a zero count are hidden and the row never wraps.
+  // «بلا تخصص» is not an error: gold, like «بلا كمية» (UX-136)
+  const chipsRow = (compact: boolean) => (
+    <div className={`flex gap-2 text-xs font-bold ${compact ? 'flex-nowrap whitespace-nowrap' : 'flex-wrap'}`}>
+      {(!compact || readyCount > 0) && <span className="inline-flex items-center gap-1 min-h-11 px-3 rounded-full shrink-0 bg-[#0F6E56]/10 text-[#0F6E56]"><Glyph e="✓" /> {L(`Ready: ${readyCount}`, `تیار: ${readyCount}`, `جاهز: ${readyCount}`)}</span>}
+      {(!compact || noQtyCount > 0) && <button type="button" disabled={!noQtyCount} onClick={() => focusItem(noQtyItems[0])}
+        className={`inline-flex items-center min-h-11 px-3 rounded-full shrink-0 ${noQtyCount ? 'bg-[#D4A543]/15 text-[#8F6820] underline underline-offset-2' : 'bg-gray-100 text-gray-500'}`}>{L(`No quantity: ${noQtyCount}`, `بغیر مقدار: ${noQtyCount}`, `بلا كمية: ${noQtyCount}`)}</button>}
+      {(!compact || unclassifiedCount > 0) && <button type="button" disabled={!unclassifiedCount} onClick={() => focusItem(unclassifiedItems[0])}
+        className={`inline-flex items-center min-h-11 px-3 rounded-full shrink-0 ${unclassifiedCount ? 'bg-[#D4A543]/15 text-[#8F6820] underline underline-offset-2' : 'bg-gray-100 text-gray-500'}`}>{L(`No specialty: ${unclassifiedCount}`, `بغیر شعبہ: ${unclassifiedCount}`, `بلا تخصص: ${unclassifiedCount}`)}</button>}
     </div>
   )
+  const statusChips = chipsRow(false)
   const unitOpt = (u: string) => <option key={u} value={u}>{getUnitLabel(u, locale)}</option>
   const unitsFor = (item: any) => Array.from(new Set([...(unitChoicesFor(item.product_name, item.sector) || UNIT_OPTIONS), ...(item.unit ? [item.unit] : [])])) as string[]
   // «تم»: closes the line and marks it complete when it has what suppliers need
@@ -866,11 +893,12 @@ export default function NewProjectPage() {
         <ItemSpecFields name={item.product_name} sector={item.sector} specs={item.specs} locale={locale} onChange={(v: any) => updateItem(item.id, 'specs', v)} />
         {brandApplies(item.product_name, item.sector) && (
           <input value={item.brand || ''} onChange={(e: any) => updateItem(item.id, 'brand', e.target.value.slice(0, 80))} className="input-field text-sm"
-            placeholder={L('Brand or product name (optional)', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)، مثل: فوسروك رندروك')} />
+            aria-label={L('Brand or product name (optional)', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)')}
+            placeholder={L('Brand or product name (optional), e.g. Fosroc Renderoc', 'برانڈ یا پروڈکٹ کا نام (اختیاری)، مثلاً: Fosroc Renderoc', 'الماركة أو اسم المنتج (اختياري)، مثل: فوسروك رندروك')} />
         )}
         <input value={item.specification || ''} onChange={(e: any) => updateItem(item.id, 'specification', e.target.value)}
-          className={`input-field text-sm ${needWritten ? 'border-[#D4A543] bg-white' : ''}`}
-          placeholder={needWritten ? L('Size and specs (required): length, width, thickness, grade…', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): الطول، العرض، السماكة، الدرجة…') : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
+          aria-label={L('Specification', 'تفصیل', 'المواصفة')} className={`input-field text-sm ${needWritten ? 'border-[#D4A543] bg-white' : ''}`}
+          placeholder={needWritten ? L('Size and specs (required): length, width, thickness, grade…', 'سائز اور تفصیل (ضروری): لمبائی، چوڑائی، موٹائی، گریڈ…', 'المقاس والمواصفات (مطلوب): الطول، العرض، السماكة، الدرجة…') : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹس (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
         <button type="button" disabled={!ok} onClick={() => updateItem(item.id, 'done', true)}
           className="w-full min-h-11 rounded-xl text-sm font-bold text-white disabled:opacity-40" style={{ background: '#0B2438' }}>
           {!(parseFloat(item.quantity) > 0) ? L('Enter the quantity', 'مقدار لکھیں', 'أدخل الكمية') : miss.length ? L('Enter the specs', 'تفصیل لکھیں', 'أدخل المواصفات') : <><Glyph e="✓" /> {L('Done', 'ہو گیا', 'تم')}</>}
@@ -915,7 +943,7 @@ export default function NewProjectPage() {
                   ? L(`${sentInfo.count} materials sent to ${reached} supplier${reached === 1 ? '' : 's'}.`, `${sentInfo.count} مواد ${reached} سپلائرز کو بھیجے گئے۔`, `أُرسلت ${arMaterials(sentInfo.count)} إلى ${suppliersAr(reached)}.`)
                   : L(`${sentInfo.count} materials sent to the specialist suppliers. We will notify you as soon as an offer arrives.`, `${sentInfo.count} مواد متعلقہ سپلائرز کو بھیجے گئے۔ کوئی بھی پیشکش آتے ہی ہم آپ کو اطلاع دیں گے۔`, `أُرسلت ${arMaterials(sentInfo.count)} إلى الموردين المختصين، وسنُبلغك فور وصول أي عرض.`)}
               </p>
-              <p className="mt-3 text-[13px] text-gray-600">{L('Offers close: ', 'پیشکشیں بند ہوں گی: ', 'تُغلق العروض: ')}<b className="text-[#0B2438]">{new Date(sentInfo.expires).toLocaleString(dateLocale(locale), { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Riyadh' })}</b></p>
+              <p className="mt-3 text-[13px] text-gray-600">{L('The offers deadline ends: ', 'پیشکشوں کی مہلت ختم ہوگی: ', 'تنتهي مهلة العروض في: ')}<b className="text-[#0B2438]">{new Date(sentInfo.expires).toLocaleString(dateLocale(locale), { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Riyadh' })}</b></p>
               {uncovered.length > 0 && (
                 <div className="mt-3 text-start rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/[.06] p-3 space-y-1">
                   {uncovered.slice(0, 4).map(n => (
@@ -960,11 +988,11 @@ export default function NewProjectPage() {
               'ارفع جدول الكميات أو أضف المواد بنفسك، وتصل كل مادة إلى موردي تخصصها.')}
           </p>
           {tenderId ? (
-            <p className="mt-2 text-xs font-bold text-[#0B2438]"><Glyph e="📑" /> {L('These items come from your tender review (approved items only).', 'یہ آئٹمز آپ کے ٹینڈر جائزے سے ہیں۔', 'هذه البنود من مراجعة المناقصة (المعتمدة فقط).')} <Link href={`/contractor/tender/${tenderId}`} className="inline-flex items-center min-h-11 px-1 underline">{L('Back to the tender', 'ٹینڈر پر واپس', 'العودة إلى المناقصة')}</Link>
+            <p className="mt-2 text-xs font-bold text-[#0B2438]"><Glyph e="📑" /> {L('These items come from your tender review (approved items only).', 'یہ آئٹمز آپ کے ٹینڈر جائزے سے ہیں (صرف منظور شدہ)۔', 'هذه البنود من مراجعة المناقصة (المعتمدة فقط).')} <Link href={`/contractor/tender/${tenderId}`} className="inline-flex items-center min-h-11 px-1 underline">{L('Back to the tender', 'ٹینڈر پر واپس', 'العودة إلى المناقصة')}</Link>
               {' · '}<button type="button" onClick={cancelTenderList} className="inline-flex items-center min-h-11 px-1 underline text-red-700">{L('Cancel this list', 'یہ فہرست منسوخ کریں', 'إلغاء هذه القائمة')}</button></p>
           ) : (
             <Link href="/contractor/tender/new" className="mt-2 inline-block text-xs font-bold text-[#8F6820] hover:underline">
-              <Glyph e="📑" /> {L('A full tender in Excel with drawings and specifications? Use «Tender pricing», which checks every number against its source', 'ڈرائنگز اور تفصیلات کے ساتھ Excel میں پورا ٹینڈر؟ «ٹینڈر قیمت» استعمال کریں', 'لديك مناقصة كاملة بصيغة Excel مع مخططات ومواصفات؟ استخدم «تسعير مناقصة» الذي يطابق كل رقم مع مصدره')}
+              <Glyph e="📑" /> {L('A full tender in Excel with drawings and specifications? Use «Tender pricing», which checks every number against its source', 'ڈرائنگز اور تفصیلات کے ساتھ Excel میں پورا ٹینڈر؟ «ٹینڈر قیمت» استعمال کریں، جو ہر عدد کو اس کے ماخذ سے ملاتا ہے', 'لديك مناقصة كاملة بصيغة Excel مع مخططات ومواصفات؟ استخدم «تسعير مناقصة» الذي يطابق كل رقم مع مصدره')}
             </Link>
           )}
         </div>
@@ -1012,11 +1040,11 @@ export default function NewProjectPage() {
                 <div className="text-xs text-gray-500 mt-1">{L(`${items.length} items extracted`, `${items.length} آئٹمز نکالے گئے`, `تم استخراج ${arItems(items.length)}`)}</div>
                 <div className="mt-2 flex flex-wrap justify-center gap-2">
                   <button type="button" onClick={(e: any) => { e.preventDefault(); e.stopPropagation(); fileRef.current?.click() }}
-                    className="min-h-10 px-3 rounded-lg border border-[#0B2438] text-xs font-bold text-[#0B2438] bg-white">
+                    className="min-h-11 px-3 rounded-lg border border-[#0B2438] text-xs font-bold text-[#0B2438] bg-white">
                     {L('Upload another file', 'دوسری فائل اپ لوڈ کریں', 'رفع ملف آخر')}
                   </button>
                   <button type="button" onClick={(e: any) => { e.preventDefault(); e.stopPropagation(); removeBoqFile() }}
-                    className="min-h-10 px-3 rounded-lg border border-red-200 text-xs font-bold text-red-600 bg-white">
+                    className="min-h-11 px-3 rounded-lg border border-red-200 text-xs font-bold text-red-600 bg-white">
                     {L('Remove the file', 'فائل ہٹائیں', 'إزالة الملف')}
                   </button>
                 </div>
@@ -1071,9 +1099,9 @@ export default function NewProjectPage() {
 
             {/* تنبيه البنود غير المصنّفة — لن تصل للمورد المتخصص بدقّة حتى تُصنّف */}
             {unclassifiedCount > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-2">
-                <span className="text-lg"><Glyph e="⚠" /></span>
-                <div className="text-sm text-red-700 leading-relaxed">
+              <div className="bg-[#D4A543]/[.08] border border-[#D4A543]/40 rounded-xl p-3 flex items-start gap-2">
+                <span className="text-lg text-[#8F6820]"><Glyph e="⚠" /></span>
+                <div className="text-sm text-[#0B2438] leading-relaxed">
                   <strong>{L(`${unclassifiedCount} item(s) have no specialty.`, `${unclassifiedCount} آئٹمز کا شعبہ منتخب نہیں۔`, `${arItems(unclassifiedCount)} بلا تخصص.`)}</strong>{' '}
                   {L('They are not sent until you choose their specialty (it routes each item to the right supplier); they stay saved here. Tap «Choose its specialty» on each one, or classify them together below.',
                     'شعبہ منتخب کیے بغیر یہ نہیں بھیجے جاتے؛ یہ یہاں محفوظ رہتے ہیں۔ ہر ایک پر «اس کا شعبہ منتخب کریں» دبائیں، یا نیچے اکٹھے درجہ بندی کریں۔',
@@ -1153,8 +1181,8 @@ export default function NewProjectPage() {
                 return (
                   <div key={g.key} className="border border-gray-100 rounded-xl bg-white overflow-hidden shadow-sm">
                     <button type="button" onClick={() => toggleGroup(g.key)} aria-expanded={open}
-                      className={`w-full min-h-11 flex items-center justify-between px-4 py-3 ${g.key === '_unclassified' ? 'bg-red-50' : 'bg-gray-50'}`}>
-                      <span className="font-bold text-sm flex items-center gap-2" style={{ color: g.key === '_unclassified' ? '#b91c1c' : '#0B2438' }}>
+                      className={`w-full min-h-11 flex items-center justify-between px-4 py-3 ${g.key === '_unclassified' ? 'bg-[#D4A543]/10' : 'bg-gray-50'}`}>
+                      <span className="font-bold text-sm flex items-center gap-2" style={{ color: g.key === '_unclassified' ? '#8F6820' : '#0B2438' }}>
                         <span className="w-5 h-5 grid place-items-center"><CatIcon k={g.key} className="w-4 h-4" /></span> {g.label}
                         <span className="badge text-xs bg-white border border-gray-200 text-gray-600">{g.entries.length}</span>
                       </span>
@@ -1186,10 +1214,10 @@ export default function NewProjectPage() {
                             {nameIsCatalog && nameEdit !== item.id ? (
                               <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
                                 <span className="flex-1 min-w-0 text-sm font-semibold text-[#0B2438]">{getProductLabel(item.product_name, locale)}</span>
-                                <button type="button" onClick={() => setNameEdit(item.id)} className="min-h-10 px-2 text-xs font-bold text-[#8F6820] hover:underline shrink-0">{L('Change the material', 'مواد بدلیں', 'تغيير المادة')}</button>
+                                <button type="button" onClick={() => setNameEdit(item.id)} className="min-h-11 px-2 text-xs font-bold text-[#8F6820] hover:underline shrink-0">{L('Change the material', 'مواد بدلیں', 'تغيير المادة')}</button>
                               </div>
                             ) : (<>
-                              <input value={item.product_name} list="boq-catalog" dir="auto"
+                              <input value={item.product_name} list="boq-catalog" dir="auto" aria-label={L('Material name', 'مواد کا نام', 'اسم المادة')}
                                 onChange={(e: any) => { const v = e.target.value; setItems(prev => prev.map((it: any) => it.id === item.id ? { ...it, product_name: v, specs: {} } : it)) }}
                                 className="input-field text-sm" placeholder={L('Material name *', 'مواد کا نام *', 'اسم المادة *')} />
                               {locale !== 'ar' && <p className="text-xs text-gray-500 mt-1">{L('Pick from the list so the material is matched to its suppliers.', 'فہرست سے منتخب کریں تاکہ مواد اپنے سپلائرز سے ملے۔', 'اختر من القائمة لتُطابق المادة مع مورديها.')}</p>}
@@ -1204,10 +1232,10 @@ export default function NewProjectPage() {
                           <div className="grid grid-cols-2 gap-2 sm:col-span-2">
                             <input type="text" inputMode="decimal" value={item.quantity}
                               onChange={(e: any) => updateItem(item.id, 'quantity', toQty(e.target.value))}
-                              className="input-field text-sm" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
+                              aria-label={L('Quantity', 'مقدار', 'الكمية')} className="input-field text-sm" placeholder={L('Quantity', 'مقدار', 'الكمية')} />
                             <select value={item.unit}
                               onChange={(e: any) => updateItem(item.id, 'unit', e.target.value)}
-                              className="input-field text-sm">
+                              aria-label={L('Unit', 'یونٹ', 'الوحدة')} className="input-field text-sm">
                               {unitsFor(item).map(unitOpt)}
                             </select>
                           </div>
@@ -1217,34 +1245,35 @@ export default function NewProjectPage() {
                           <div className="sm:col-span-2">
                             <input value={item.specification || ''}
                               onChange={(e: any) => updateItem(item.id, 'specification', e.target.value)}
-                              className={`input-field text-sm ${missingSpecs(item.product_name, item.sector, item.specs, item.specification || '', !!item.specFile).includes('*') ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
-                              placeholder={specsRequired(item.product_name, item.sector) && !getProductSpecs(item.product_name).some(f => f.key !== 'unit') ? L('Size and specs (required): length, width, thickness, grade…', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب): الطول، العرض، السماكة، الدرجة…') : L('More specs or notes (optional)', 'مزید تفصیل (اختیاری)', 'مواصفات إضافية أو ملاحظات (اختياري)')} />
+                              aria-label={L('Specification', 'تفصیل', 'المواصفة')} className={`input-field text-sm ${missingSpecs(item.product_name, item.sector, item.specs, item.specification || '', !!item.specFile).includes('*') ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
+                              placeholder={specsRequired(item.product_name, item.sector) && !getProductSpecs(item.product_name).some(f => f.key !== 'unit') ? L('Size and specs (required): length, width, thickness, grade…', 'سائز اور تفصیل (ضروری): لمبائی، چوڑائی، موٹائی، گریڈ…', 'المقاس والمواصفات (مطلوب): الطول، العرض، السماكة، الدرجة…') : L('More specs or notes (optional)', 'مزید تفصیل یا نوٹس (اختیاری)', 'مواصفات إضافية أو ملاحظات (اختياري)')} />
                             {item.specFromDoc && (item.specFromDoc !== (item.specification || '')) && (
                               <div className="mt-1.5 text-xs bg-[#D4A543]/5 border border-[#D4A543]/30 rounded-lg p-2 flex items-start gap-2">
                                 <span className="text-[#8F6820] font-bold shrink-0"><Glyph e="📄" /> {L('Spec doc:', 'دستاویز سے:', 'من الوثيقة:')}</span>
                                 <span className="text-gray-600 flex-1 min-w-0">{item.specFromDoc}</span>
                                 <button type="button" onClick={() => updateItem(item.id, 'specification', item.specFromDoc)}
-                                  className="min-h-10 px-2 text-[#0B2438] font-bold shrink-0 hover:underline">{L('Use', 'استعمال کریں', 'استبدل')}</button>
+                                  className="min-h-11 px-2 text-[#0B2438] font-bold shrink-0 hover:underline">{L('Use', 'استعمال کریں', 'استبدل')}</button>
                               </div>
                             )}
                           </div>
                           {/* رفع ملف مواصفات للبند */}
                           <div className="sm:col-span-2">
-                            <label className="block text-xs font-bold text-gray-600 mb-1">
+                            <span id={`boq-specfile-${item.id}`} className="block text-xs font-bold text-gray-600 mb-1">
                               {L('Spec file (optional)', 'آئٹم کی اسپیسیفکیشن فائل (اختیاری)', 'ملف مواصفات للبند (اختياري)')}
-                            </label>
+                            </span>
+                            <p className="text-xs text-[#8F6820] mb-1"><Glyph e="👁" /> {L('Suppliers can view this file, so remove your company name and contact details from it.', 'سپلائرز یہ فائل دیکھ سکتے ہیں، اس لیے اس سے اپنی کمپنی کا نام اور رابطے کی تفصیل ہٹا دیں۔', 'يطّلع الموردون على هذا الملف، فاحذف منه اسم شركتك وبيانات تواصلك.')}</p>
                             {item.specFile ? (
                               <div className="flex items-center gap-2 bg-[#0B2438]/5 rounded-lg p-2 border border-[#0B2438]/20">
                                 <span className="text-base"><Glyph e="📎" /></span>
                                 <span className="text-xs font-semibold flex-1 truncate" style={{ color: '#0B2438' }}>{item.specFile.name}</span>
                                 <button type="button" onClick={() => updateItem(item.id, 'specFile', null)}
-                                  className="min-h-10 px-2 text-xs font-bold text-red-600 hover:underline">
+                                  className="min-h-11 px-2 text-xs font-bold text-red-600 hover:underline">
                                   {L('Remove', 'ہٹائیں', 'إزالة')}
                                 </button>
                               </div>
                             ) : (
                               <label className="flex items-center gap-2 min-h-11 border-2 border-dashed border-gray-200 rounded-lg p-2 cursor-pointer hover:border-[#D4A543]/50 transition-all">
-                                <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.dwg,.xlsx,.doc,.docx"
+                                <input type="file" className="hidden" aria-labelledby={`boq-specfile-${item.id}`} accept=".pdf,.jpg,.jpeg,.png,.dwg,.xlsx,.doc,.docx"
                                   onChange={(e: any) => { updateItem(item.id, 'specFile', e.target.files?.[0] ?? null); e.target.value = '' }} />
                                 <span className="text-base"><Glyph e="📄" /></span>
                                 <span className="text-xs text-gray-600">
@@ -1280,20 +1309,20 @@ export default function NewProjectPage() {
                               )}
                               {item.needs_classification && (
                                 <button type="button" onClick={() => setEditingIndex(i)}
-                                  className="min-h-10 badge text-xs bg-red-100 text-red-700 font-bold hover:bg-red-200">
+                                  className="min-h-11 badge text-xs bg-[#D4A543]/15 text-[#8F6820] font-bold hover:bg-[#D4A543]/25">
                                   <Glyph e="⚠" /> {L('Choose its specialty', 'اس کا شعبہ منتخب کریں', 'اختر تخصصها')}
                                 </button>
                               )}
                               {item.quantity && <span className="text-xs text-gray-600"><Glyph e="📦" /> {item.quantity} {getUnitLabel(item.unit, locale)}</span>}
                               {(specTextOf(item.product_name, item.specs) || item.specification) && <span className="text-xs text-gray-600 break-words max-w-full"><Glyph e="⚙" /> {[specTextOf(item.product_name, item.specs), item.specification].filter(Boolean).join(' — ')}</span>}
                               {missingSpecs(item.product_name, item.sector, item.specs, item.specification || '', !!item.specFile).length > 0 && !needsBox && (
-                                <button type="button" onClick={() => setEditingIndex(i)} className="min-h-10 badge text-xs bg-[#D4A543]/15 text-[#8F6820] font-bold hover:bg-[#D4A543]/25">
+                                <button type="button" onClick={() => setEditingIndex(i)} className="min-h-11 badge text-xs bg-[#D4A543]/15 text-[#8F6820] font-bold hover:bg-[#D4A543]/25">
                                   {L('Complete the specs', 'تفصیل مکمل کریں', 'أكمل المواصفات')}
                                 </button>
                               )}
                               {item.specFile && <span className="text-xs text-[#0B2438] font-semibold"><Glyph e="📎" /> {L('File attached', 'فائل منسلک', 'مرفق ملف')}</span>}
                               {isInstallable(item.sector, item.sub_category || detectSubCategory(item.product_name, item.sector)) && (
-                                <label className={`inline-flex items-center gap-1.5 min-h-10 text-xs font-bold px-2 py-1 rounded-lg border cursor-pointer select-none ${item.with_install ? 'border-[#0B2438] text-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 text-gray-600'}`}>
+                                <label className={`inline-flex items-center gap-1.5 min-h-11 text-xs font-bold px-2 py-1 rounded-lg border cursor-pointer select-none ${item.with_install ? 'border-[#0B2438] text-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 text-gray-600'}`}>
                                   <input type="checkbox" checked={!!item.with_install} onChange={(e: any) => updateItem(item.id, 'with_install', e.target.checked)} className="w-4 h-4 accent-[#0B2438]" />
                                   <Glyph e="🔧" /> {L('Ask for the price with installation', 'تنصیب سمیت قیمت مانگیں', 'اطلب السعر مع التركيب')}
                                 </label>
@@ -1342,12 +1371,13 @@ export default function NewProjectPage() {
                   'اسپیسیفکیشن دستاویز اپ لوڈ کریں: اسے مقداروں کے جدول کے ساتھ پڑھ کر آئٹم کوڈ (جیسے DRS-701) ملائے جاتے ہیں اور ہر آئٹم کی مکمل تفصیل بھری جاتی ہے۔',
                   'ارفع مستند المواصفات: يُقرأ مع جدول الكميات، وتُربط رموز البنود (مثل DRS-701) وتُملأ تفاصيل كل بند كاملة.')}
               </p>
+              <p className="text-xs font-semibold text-[#8F6820] -mt-1 mb-3"><Glyph e="👁" /> {L('Suppliers can view this file, so remove your company name and contact details from it.', 'سپلائرز یہ فائل دیکھ سکتے ہیں، اس لیے اس سے اپنی کمپنی کا نام اور رابطے کی تفصیل ہٹا دیں۔', 'يطّلع الموردون على هذا الملف، فاحذف منه اسم شركتك وبيانات تواصلك.')}</p>
               <div className="flex flex-wrap items-center gap-2">
                 {specsFile ? (
                   <div className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-gray-200">
                     <span className="text-base"><Glyph e="📄" /></span>
                     <span className="text-xs font-semibold truncate max-w-[200px]" style={{ color: '#0B2438' }}>{specsFile.name}</span>
-                    <button type="button" onClick={() => { setSpecsFile(null); setSpecMsg(''); if (specsRef.current) specsRef.current.value = '' }} className="min-h-10 px-2 text-xs font-bold text-red-600 hover:underline">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
+                    <button type="button" onClick={() => { setSpecsFile(null); setSpecMsg(''); if (specsRef.current) specsRef.current.value = '' }} className="min-h-11 px-2 text-xs font-bold text-red-600 hover:underline">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                   </div>
                 ) : (
                   <label className="flex items-center gap-2 min-h-11 border-2 border-dashed border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-[#0B2438]/40 transition-all">
@@ -1369,10 +1399,11 @@ export default function NewProjectPage() {
             </details>
 
             {/* a status bar that stays in view while reviewing a long list, until step 3 is reached (UX-073) */}
-            <div className="sticky z-30 bottom-[calc(88px+env(safe-area-inset-bottom))] lg:bottom-4 rounded-2xl border border-[#0B2438]/15 bg-white/95 backdrop-blur shadow-lg p-2 flex flex-wrap items-center justify-between gap-2"
+            <div className="sticky z-30 bottom-[calc(88px+env(safe-area-inset-bottom))] lg:bottom-4 rounded-2xl border border-[#0B2438]/15 bg-white/95 backdrop-blur shadow-lg p-2 flex flex-nowrap items-center justify-between gap-2"
               role="region" aria-label={L('List status', 'فہرست کی حالت', 'حالة القائمة')}>
-              {statusChips}
-              <button type="button" onClick={scrollToSend} className="min-h-11 px-4 rounded-xl font-bold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+              {/* one row on a phone: the chips scroll sideways, the button keeps its place (UX-076) */}
+              <div className="min-w-0 flex-1 overflow-x-auto">{chipsRow(true)}</div>
+              <button type="button" onClick={scrollToSend} className="min-h-11 px-4 rounded-xl font-bold text-sm text-[#071827] shrink-0 whitespace-nowrap" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                 {L('Continue to sending', 'بھیجنے کی طرف بڑھیں', 'المتابعة للإرسال')} <Glyph e="▾" />
               </button>
             </div>
@@ -1380,8 +1411,9 @@ export default function NewProjectPage() {
         )}
 
         {/* «حُذف البند · تراجع» */}
+        {/* above the sticky status bar (UX-076), so it never covers its chips or button */}
         {lastRemoved && (
-          <div className="fixed z-50 inset-x-4 sm:inset-x-auto sm:start-1/2 sm:-translate-x-1/2 rtl:sm:translate-x-1/2 bottom-[calc(96px+env(safe-area-inset-bottom))] lg:bottom-6 rounded-xl bg-[#0B2438] text-white shadow-xl px-4 py-2 flex items-center justify-between gap-3" role="status" aria-live="polite">
+          <div className="fixed z-50 inset-x-4 sm:inset-x-auto sm:start-1/2 sm:-translate-x-1/2 rtl:sm:translate-x-1/2 bottom-[calc(160px+env(safe-area-inset-bottom))] lg:bottom-24 rounded-xl bg-[#0B2438] text-white shadow-xl px-4 py-2 flex items-center justify-between gap-3" role="status" aria-live="polite">
             <span className="text-sm font-semibold truncate">{L('Item removed', 'آئٹم ہٹا دیا گیا', 'حُذف البند')}{lastRemoved.item?.product_name ? ` · ${getProductLabel(lastRemoved.item.product_name, locale)}` : ''}</span>
             <button type="button" onClick={undoRemove} className="min-h-11 px-3 rounded-lg font-bold text-sm text-[#F5C55B] shrink-0"><Glyph e="↩" /> {L('Undo', 'واپس لائیں', 'تراجع')}</button>
           </div>
@@ -1489,7 +1521,7 @@ export default function NewProjectPage() {
 
             <div className="mb-4 pb-4 border-b border-gray-100 space-y-3">
               <div>
-                <div className="text-sm font-bold text-[#0B2438] mb-2">{L('When do you need the prices?', 'قیمتیں کب چاہئیں؟', 'متى تحتاج الأسعار؟')}</div>
+                <div className="text-sm font-bold text-[#0B2438] mb-2">{L('Offers deadline: when do you need the prices?', 'پیشکشوں کی مہلت: قیمتیں کب چاہئیں؟', 'مهلة العروض: متى تحتاج الأسعار؟')}</div>
                 <div className="flex flex-wrap gap-2">
                   {([[24, L('Tomorrow', 'کل', 'غداً')], [48, L('2 days', '2 دن', 'يومان')], [72, L('3 days', '3 دن', '3 أيام')], [168, L('A week', 'ایک ہفتہ', 'أسبوع')]] as [number, string][]).map(([h, lab]) => (
                     <button key={h} type="button" onClick={() => setHours(h)} aria-pressed={hours === h}
@@ -1546,7 +1578,7 @@ export default function NewProjectPage() {
                 {missingFields.map((f, k) => (
                   <span key={f.key}>
                     {k > 0 && ' · '}
-                    <button type="button" onClick={() => goToField(f.ref)} className="underline underline-offset-2 min-h-10">{f.label}</button>
+                    <button type="button" onClick={() => goToField(f.ref)} className="underline underline-offset-2 min-h-11">{f.label}</button>
                   </span>
                 ))}
               </div>

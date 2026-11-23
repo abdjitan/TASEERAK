@@ -45,7 +45,16 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current() }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { closeRef.current(); return }
+      // keep Tab inside the dialog (round-3 UX-142)
+      if (e.key !== 'Tab' || !boxRef.current) return
+      const f = Array.from(boxRef.current.querySelectorAll<HTMLElement>('button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])')).filter(el => !(el as any).disabled)
+      if (!f.length) return
+      const first = f[0], last = f[f.length - 1]
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === boxRef.current)) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
     window.addEventListener('keydown', onKey)
     boxRef.current?.focus()
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey) }
@@ -90,11 +99,13 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
               </div>
               </div>
               {/* «احسبها من مقاس الغرفة» for measured items (shared calculator) */}
-              {r.on && calcSupported(r.unit) && (calcFor === i ? (
-                <div className="mt-1 mb-1"><QuantityCalc compact unit={r.unit} name={r.name} locale={locale} onUse={q => { set(i, { quantity: q }); setCalcFor(null) }} /></div>
+              {/* curtains and blinds have no room calculator: their hint explains the window sizes (UX-061) */}
+              {r.on && r.calc !== 'none' && (r.calc || calcSupported(r.unit)) && (calcFor === i ? (
+                <div className="mt-1 mb-1"><QuantityCalc compact unit={r.unit} name={r.name} locale={locale} calc={r.calc} cover={r.cover} coats={r.coats}
+                  onClose={() => setCalcFor(null)} onUse={q => { set(i, { quantity: q }); setCalcFor(null) }} /></div>
               ) : (
                 <button type="button" onClick={() => setCalcFor(i)} className="min-h-[44px] ms-9 text-[13px] font-bold text-[#8F6820] inline-flex items-center gap-1.5 hover:underline">
-                  <Calculator className="w-4 h-4" aria-hidden />{L('Work it out from the room size', 'کمرے کے سائز سے حساب کریں', 'احسبها من مقاس الغرفة')}
+                  <Calculator className="w-4 h-4" aria-hidden />{r.calc === 'area' ? L('Work it out from the area', 'رقبے سے حساب کریں', 'احسبها من المساحة') : L('Work it out from the room size', 'کمرے کے سائز سے حساب کریں', 'احسبها من مقاس الغرفة')}
                 </button>
               ))}
             </li>

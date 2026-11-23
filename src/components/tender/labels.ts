@@ -43,7 +43,7 @@ export function areaStatusLabel(s: string, L: Lfn): string {
 
 export const AREA_TONE: Record<string, string> = {
   ok: 'bg-[#0F6E56]/10 text-[#0F6E56]',
-  review: 'bg-sky-50 text-sky-800',
+  review: 'bg-[#0B2438]/5 text-[#0B2438]', // navy: a difference needs review, it is not an error (UX-136)
   partial: 'bg-[#D4A543]/15 text-[#8F6820]',
   walls: 'bg-gray-100 text-gray-600',
   no_rooms: 'bg-gray-100 text-gray-600',

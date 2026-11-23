@@ -23,7 +23,7 @@ import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { dbMessage } from '@/lib/dbMessage'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
 import { askConfirm } from '@/lib/askConfirm'
-import { storedBuyerType } from '@/lib/buyerType'
+import { useHomeBuyer } from '@/components/buyer/useHomeBuyer'
 import { cleanArName } from '@/lib/displayName'
 import { daysText } from '@/lib/text'
 import { isExpired } from '@/lib/deadline'
@@ -54,8 +54,7 @@ export default function OfferDetailPage() {
   const [reqBusy, setReqBusy] = useState(false)
   const [reqDone, setReqDone] = useState(false)
   const [err, setErr] = useState('') // inline error instead of the browser alert (UX-149)
-  const [home, setHome] = useState(false) // a home buyer («لبيتي»): plain words, no sector, no procurement terms
-  useEffect(() => { setHome(storedBuyerType() === 'individual') }, [])
+  const home = useHomeBuyer() // a home buyer («لبيتي»): plain words, no sector, no procurement terms (profile-backed, UX-068)
   const pname = (n: string) => (home && locale === 'ar' ? cleanArName(n || '') : getProductLabel(n || '', locale))
   const unitL = (u: string) => getUnitLabelLong(u, locale)
   const showErr = (m: string) => { setErr(m); setTimeout(() => document.getElementById('offer-err')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 30) }
@@ -274,7 +273,7 @@ export default function OfferDetailPage() {
             {s.supplier_tier && <span className="badge text-xs bg-[#D4A543]/10 text-[#8F6820]"><SellerIcon name={tierIcon(s.supplier_tier)} /> {tierText}</span>}
             {s.verification_status === 'verified' && (
               <span className="badge text-xs" style={s.cr_verification_source === 'wathq' ? { background: '#0F6E56', color: '#fff' } : { background: '#E1F5EE', color: '#0F6E56' }}>
-                {s.cr_verification_source === 'wathq' ? L('Verified via Wathq', 'واثق کے ذریعے تصدیق شدہ', 'موثّق عبر واثق') : L('Verified', 'تصدیق شدہ', 'موثّق')}
+                {s.cr_verification_source === 'wathq' ? L('Commercial registration verified', 'کمرشل رجسٹریشن کی تصدیق شدہ', 'سجلّه التجاري موثّق') : L('Verified', 'تصدیق شدہ', 'موثّق')}
               </span>
             )}
             {s.verification_status !== 'verified' && s.cr_verification_source !== 'wathq' && (
@@ -305,7 +304,7 @@ export default function OfferDetailPage() {
               if (error || !data) { showErr(dbMessage(error, L('Could not open the conversation. Please try again.', 'گفتگو نہیں کھل سکی۔ دوبارہ کوشش کریں۔', 'تعذّر فتح المحادثة. حاول مرة أخرى.'))); return }
               router.push(`/messages?c=${data}`)
             }} className="min-h-11 text-sm px-4 rounded-xl font-semibold text-white" style={{ background: '#0B2438' }}><Glyph e="💬" /> {L('Message the supplier', 'سپلائر کو پیغام', 'راسل المورد')}</button>
-            {wa && <a href={wa} target="_blank" rel="noreferrer" className="min-h-11 inline-flex items-center text-sm px-4 rounded-xl font-semibold text-white" style={{ background: '#25D366' }}>{L('WhatsApp', 'واٹس ایپ', 'تواصل واتساب')}</a>}
+            {wa && <a href={wa} target="_blank" rel="noreferrer" className="min-h-11 inline-flex items-center text-sm px-4 rounded-xl font-bold" style={{ background: '#25D366', color: '#071827' }}>{L('WhatsApp', 'واٹس ایپ', 'تواصل واتساب')}</a>}
             {mapsUrl && <a href={mapsUrl} target="_blank" rel="noreferrer" className="min-h-11 inline-flex items-center text-sm px-4 rounded-xl border border-gray-200 text-gray-700"><Glyph e="🗺" /> {L('Supplier location', 'سپلائر کا مقام', 'موقع المورد')}</a>}
           </div>
         </div>
@@ -409,7 +408,7 @@ export default function OfferDetailPage() {
           )}
           {offer.notes && <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg mb-2"><Glyph e="📝" /> <AutoTr text={offer.notes} locale={locale} /></p>}
           {offer.attachment_url && (
-            <a href={fileHref(offer.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm text-[#8F6820] underline mt-1">
+            <a href={fileHref(offer.attachment_url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 min-h-[44px] text-sm text-[#8F6820] underline mt-1">
               <Glyph e="📎" /> {offer.attachment_name || L('Offer attachment', 'آفر کی فائل', 'مرفق العرض')}
             </a>
           )}
@@ -448,11 +447,11 @@ export default function OfferDetailPage() {
         {/* actions: sticky above the phone's bottom bar (UX-023) */}
         {showBar && (
           <div className="bg-white rounded-2xl p-3 sm:p-4 border border-gray-200 shadow-lg sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-3 z-30">
-            {pastDeadline && <p className="text-xs font-semibold text-amber-900 mb-2"><Glyph e="⏱" /> {L('The pricing deadline has passed, and you can still choose this offer.', 'قیمت کی مہلت ختم ہو گئی، اور آپ اب بھی یہ آفر منتخب کر سکتے ہیں۔', 'انتهت مهلة التسعير، وما زال بإمكانك اختيار هذا العرض.')}</p>}
+            {pastDeadline && <p className="text-xs font-semibold text-amber-900 mb-2"><Glyph e="⏱" /> {L('The offer window ended, and you can still choose this offer.', 'آفرز کی مہلت ختم ہو گئی، اور آپ اب بھی یہ آفر منتخب کر سکتے ہیں۔', 'انتهت مهلة العروض، وما زال بإمكانك اختيار هذا العرض.')}</p>}
             <div className="flex flex-wrap gap-2">
               {/* a multi-item request is chosen per item on the request page (177: accept_offer refuses it) */}
               {isMulti ? (
-                <Link href={`/contractor/rfq/${rfq.id}`} className="flex-[2] min-h-12 inline-flex items-center justify-center gap-1 rounded-xl font-extrabold text-sm text-center" style={{ background: '#D4A543', color: '#071827' }}>{L('Choose the best for each material', 'ہر چیز کے لیے بہترین منتخب کریں', 'اختر الأفضل لكل مادة')} <span aria-hidden="true">{FWD}</span></Link>
+                <Link href={`/contractor/rfq/${rfq.id}#choose`} className="flex-[2] min-h-12 inline-flex items-center justify-center gap-1 rounded-xl font-extrabold text-sm text-center" style={{ background: '#D4A543', color: '#071827' }}>{L('Choose the best for each material', 'ہر چیز کے لیے بہترین منتخب کریں', 'اختر الأفضل لكل مادة')} <span aria-hidden="true">{FWD}</span></Link>
               ) : (
                 <button type="button" onClick={acceptOffer} disabled={acting} className="flex-[2] min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>{reducing ? L('Choose at the original price', 'اصل قیمت پر منتخب کریں', 'اختر العرض بالسعر الأصلي') : L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض')}</button>
               )}
@@ -491,7 +490,9 @@ export default function OfferDetailPage() {
             <div role="dialog" aria-modal="true" className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir={dir} onClick={(e: any) => e.stopPropagation()}>
               <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="❓" /> {L('Ask the supplier', 'سپلائر سے پوچھیں', 'اسأل المورد')}</h3>
               <label htmlFor="info-q" className="block text-xs text-gray-600 mb-3">{L('What do you want to know about the product? (type, specs, origin, warranty…)', 'پروڈکٹ کے بارے میں کیا معلومات چاہیے؟ (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی…)', 'ما المعلومات التي تريدها عن المنتج؟ (النوع، المواصفات، المنشأ، الضمان…)')}</label>
-              <textarea id="info-q" value={infoText} onChange={(e: any) => setInfoText(e.target.value)} rows={3} className="input-field mb-3 text-base sm:text-sm" placeholder={L('e.g. Where is the steel from? Does it meet ASTM? Is there a quality certificate?', 'مثال: سریا کہاں کا بنا ہے؟ کیا یہ ASTM کے مطابق ہے؟ کیا کوالٹی سرٹیفکیٹ ہے؟', 'مثال: ما منشأ الحديد؟ هل يطابق مواصفة ASTM؟ هل توجد شهادة جودة؟')} />
+              <textarea id="info-q" value={infoText} onChange={(e: any) => setInfoText(e.target.value)} rows={3} className="input-field mb-3 text-base sm:text-sm" placeholder={home
+                ? L('e.g. Where is it made? Does the warranty cover it?', 'مثال: یہ کہاں کا بنا ہے؟ کیا وارنٹی شامل ہے؟', 'مثال: ما بلد الصنع؟ هل يشمل الضمان؟')
+                : L('e.g. Where is the steel from? Does it meet ASTM? Is there a quality certificate?', 'مثال: سریا کہاں کا بنا ہے؟ کیا یہ ASTM کے مطابق ہے؟ کیا کوالٹی سرٹیفکیٹ ہے؟', 'مثال: ما منشأ الحديد؟ هل يطابق مواصفة ASTM؟ هل توجد شهادة جودة؟')} />
               <div className="flex gap-2">
                 <button type="button" disabled={infoBusy || !infoText.trim()} onClick={submitInfoRequest} className="flex-1 min-h-11 rounded-xl font-semibold text-white text-sm disabled:opacity-50" style={{ background: '#0B2438' }}>{infoBusy ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send to supplier', 'سپلائر کو بھیجیں', 'إرسال إلى المورد')}</button>
                 <button type="button" onClick={() => setInfoOpen(false)} className="min-h-11 px-4 rounded-xl text-sm border border-gray-200 text-gray-600">{L('Close without sending', 'بھیجے بغیر بند کریں', 'إغلاق دون إرسال')}</button>

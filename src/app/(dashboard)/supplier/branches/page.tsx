@@ -15,6 +15,7 @@ import { askConfirm } from '@/lib/askConfirm'
 import LocationPicker from '@/components/shared/LocationPicker'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
+import LoadError from '@/components/shared/LoadError'
 import { nearestSaCity } from '@/lib/saCityCoords'
 
 export default function SupplierBranchesPage() {
@@ -28,6 +29,9 @@ export default function SupplierBranchesPage() {
   const [readOnly, setReadOnly] = useState(false)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
+  const [loadFailed, setLoadFailed] = useState(false) // UX-137: a failed load is said, never «no branches»
+  // UX-137: city names in the reader's language
+  const cityLabel = (reg: string, c: string) => { if (!c || locale === 'ar') return c; const hit = (CITIES_BY_REGION[reg] || []).find((x: any) => x.ar === c); return hit ? hit.en : c }
 
   const [name, setName] = useState('')
   const [region, setRegion] = useState('')
@@ -51,11 +55,12 @@ export default function SupplierBranchesPage() {
     const { data: actRaw } = await supabase.rpc('acting_uid')
     const actId: string = (actRaw as any) || session.user.id
     setReadOnly(actId !== session.user.id)
-    const [{ data }, { data: me }] = await Promise.all([
+    const [{ data, error: bErr }, { data: me }] = await Promise.all([
       supabase.from('branches').select('*').eq('supplier_id', actId).order('created_at', { ascending: false }),
       supabase.from('profiles').select('region, city, district, latitude, longitude').eq('id', actId).maybeSingle(),
     ])
-    setBranches(data || [])
+    setLoadFailed(!!bErr)
+    if (!bErr) setBranches(data || [])
     setMainLoc(me || null)
     setLoading(false)
   }
@@ -69,7 +74,8 @@ export default function SupplierBranchesPage() {
 
   async function save(e: any) {
     e.preventDefault()
-    if (!name || !region) return
+    if (!name.trim()) { setErr(L('Write the branch name.', 'شاخ کا نام لکھیں۔', 'اكتب اسم الفرع.')); return }
+    if (!region) { setErr(L('Choose the branch region.', 'شاخ کا علاقہ منتخب کریں۔', 'اختر منطقة الفرع.')); return }
     if (lat == null || lng == null) { setErr(L('Set the branch location on the map, so requests near it reach you.', 'شاخ کا مقام نقشے پر مقرر کریں تاکہ اس کے قریب کی درخواستیں آپ تک پہنچیں۔', 'حدّد موقع الفرع على الخريطة لتصلك الطلبات القريبة منه.')); return }
     setSaving(true); setErr('')
     const supabase = createClient()
@@ -116,7 +122,7 @@ export default function SupplierBranchesPage() {
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-5 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="text-[13px] font-bold text-gray-600">{L('Main location', 'مرکزی مقام', 'الموقع الرئيسي')}</div>
-            <div className="font-bold text-[#0B2438] mt-0.5">{mainLoc?.region ? <><Glyph e="📍" /> {getRegionLabel(mainLoc.region, locale)}{mainLoc.city ? ' - ' + mainLoc.city : ''}{mainLoc.district ? ' - ' + mainLoc.district : ''}</> : L('Not set yet', 'ابھی مقرر نہیں', 'لم يُحدَّد بعد')}</div>
+            <div className="font-bold text-[#0B2438] mt-0.5">{mainLoc?.region ? <><Glyph e="📍" /> {getRegionLabel(mainLoc.region, locale)}{mainLoc.city ? ' - ' + cityLabel(mainLoc.region, mainLoc.city) : ''}{mainLoc.district ? ' - ' + mainLoc.district : ''}</> : L('Not set yet', 'ابھی مقرر نہیں', 'لم يُحدَّد بعد')}</div>
             {mainLoc && !mainLoc.latitude && <div className="text-[13px] text-amber-800 mt-0.5">{L('No map pin yet.', 'ابھی نقشے پر نشان نہیں۔', 'لم تحدّد موقعك على الخريطة بعد.')}</div>}
           </div>
           {!readOnly && <a href="/location" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#0B2438] border border-[#0B2438]/30 shrink-0">{L('Edit', 'ترمیم', 'تعديل')}</a>}
@@ -124,10 +130,10 @@ export default function SupplierBranchesPage() {
 
         {err && <div role="alert" className="mb-5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3">{err}</div>}
         {readOnly && (
-          <p className="mb-5 text-xs rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-gray-600">{L('These are your company\'s branches. The account owner adds and edits them.', 'یہ آپ کی کمپنی کی شاخیں ہیں۔ اکاؤنٹ کا مالک انہیں شامل اور تبدیل کرتا ہے۔', 'هذه فروع شركتك. يضيفها ويعدّلها مالك الحساب.')}</p>
+          <p className="mb-5 text-xs rounded-xl bg-gray-50 border border-gray-200 px-3 py-2 text-gray-600">{L('These are your company\'s branches. The account owner adds and edits them.', 'یہ آپ کی کمپنی کی شاخیں ہیں۔ اکاؤنٹ کا مالک انہیں شامل اور تبدیل کرتا ہے۔', 'هذه فروع شركتك. يضيفها ويعدّلها صاحب الحساب.')}</p>
         )}
         {!showForm && !readOnly && (
-          <button onClick={() => { reset(); setShowForm(true) }} className="w-full mb-5 min-h-[44px] py-3 rounded-xl font-semibold text-white text-sm transition-all hover:shadow-lg" style={{ background: '#0B2438' }}>
+          <button onClick={() => { reset(); setShowForm(true) }} className="w-full mb-5 min-h-[44px] py-3 rounded-xl font-extrabold text-[#071827] text-sm transition-all hover:shadow-lg" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
             + {L('Add a branch', 'شاخ شامل کریں', 'إضافة فرع')}
           </button>
         )}
@@ -155,7 +161,7 @@ export default function SupplierBranchesPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">{L('District', 'محلہ', 'الحي')}</label>
+                <span className="block text-xs font-bold text-gray-500 mb-1">{L('District', 'محلہ', 'الحي')}</span>
                 <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
               </div>
               <div>
@@ -180,7 +186,8 @@ export default function SupplierBranchesPage() {
           </form>
         )}
 
-        {branches.length === 0 ? (
+        {loadFailed && <LoadError onRetry={() => { setLoading(true); load() }} className="mb-5" />}
+        {loadFailed && branches.length === 0 ? null : branches.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 sm:p-12 border border-gray-100 text-center">
             <div className="text-5xl mb-3 animate-float"><Glyph e="🏢" /></div>
             <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{L('You have not added other branches yet', 'آپ نے ابھی دوسری شاخیں شامل نہیں کیں', 'لم تُضف فروعاً أخرى بعد')}</h3>
@@ -194,7 +201,7 @@ export default function SupplierBranchesPage() {
                 <div className="min-w-0">
                   <div className="font-bold" style={{ color: '#0B2438' }}>{b.name}</div>
                   <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500">
-                    <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]"><Glyph e="📍" /> {getRegionLabel(b.region, locale)}{b.city ? ' - ' + b.city : ''}</span>
+                    <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]"><Glyph e="📍" /> {getRegionLabel(b.region, locale)}{b.city ? ' - ' + cityLabel(b.region, b.city) : ''}</span>
                     {b.latitude == null && <span className="text-amber-800 font-semibold">{L('No map pin', 'نقشے پر نشان نہیں', 'بلا موقع على الخريطة')}</span>}
                     {b.district && <span><Glyph e="🏘" /> {b.district}</span>}
                     {b.phone && <span dir="ltr"><Glyph e="📞" /> {b.phone}</span>}

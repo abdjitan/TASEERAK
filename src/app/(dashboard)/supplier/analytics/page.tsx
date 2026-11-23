@@ -9,6 +9,7 @@ import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 import Glyph from '@/components/shared/Glyph'
 import LoadError from '@/components/shared/LoadError'
+import { arCount } from '@/lib/text'
 
 // أداء المورّد: قمع (عرض → فوز/خسارة/انتظار) + نسبة الفوز حسب القطاع + اتجاه شهري.
 // بيانات المورّد نفسه فقط — لا أسعار منافسين (H2). المصدر: get_my_supplier_analytics().
@@ -39,55 +40,59 @@ export default function SupplierAnalyticsPage() {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const nav = getNav('supplier', locale, '/supplier/analytics')
 
+  // UX-017 (migration 269): counted per offer for the company (acting_uid); cancelled / expired requests are
+  // «ended without a choice», outside the win rate, which is won / (won + lost) like the home card
   const won = Number(a?.won) || 0
   const lost = Number(a?.lost) || 0
   const pending = Number(a?.pending) || 0
+  const endedNoChoice = Number(a?.ended_no_choice ?? ((Number(a?.cancelled) || 0) + (Number(a?.expired) || 0))) || 0
   const totalOffers = Number(a?.total_offers) || 0
-  const participated = Number(a?.participated) || 0
   const decided = won + lost
-  const winRate = decided ? Math.round((won / decided) * 100) : 0
+  const winRate: number | null = a?.win_rate != null ? Math.round(Number(a.win_rate) <= 1 ? Number(a.win_rate) * 100 : Number(a.win_rate)) : decided ? Math.round((won / decided) * 100) : null
   const sectors: any[] = Array.isArray(a?.by_sector) ? a.by_sector : []
   const monthly: any[] = Array.isArray(a?.monthly) ? a.monthly : []
-  const maxMonthOffers = Math.max(1, ...monthly.map((m: any) => Number(m.offers) || 0))
   // UX-144: sector names in the reader's language
   const SEC_EN: Record<string, string> = { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' }
   const SEC_UR: Record<string, string> = { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' }
   const SEC_AR: Record<string, string> = { ...(SECTOR_LABELS as any), mechanical: 'ميكانيكا', supply_store: 'مستلزمات عامة' }
   const sl = (s: string) => (locale === 'en' ? SEC_EN : locale === 'ur' ? SEC_UR : SEC_AR)[s] || s
-  // UX-144: «2026-11» → «نوفمبر 2026» in the reader's language
-  const monthLabel = (m: string) => { const [y, mo] = String(m || '').split('-').map(Number); if (!y || !mo) return m; return new Date(y, mo - 1, 1).toLocaleDateString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory-nu-latn', { month: 'short', year: 'numeric' }) }
+  // UX-034: «2026-11» → «نوفمبر 2026» in the reader's language (never ISO)
+  const monthLabel = (m: string) => { const [y, mo] = String(m || '').split('-').map(Number); if (!y || !mo) return m; return new Date(y, mo - 1, 1).toLocaleDateString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric' }) }
 
   const cards = [
     { label: L('Offers submitted', 'جمع کرائی گئی آفرز', 'العروض المقدَّمة'), value: totalOffers, color: '#0B2438' },
     { label: L('Chosen', 'منتخب', 'اختيرت'), value: won, color: '#0F6E56' },
-    { label: L('Not chosen', 'منتخب نہیں ہوئیں', 'لم تُختر'), value: lost, color: '#9AA3AD' },
+    { label: L('Not chosen', 'منتخب نہیں ہوئیں', 'لم تُختر'), value: lost, color: '#5B6B7C' },
     { label: L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري'), value: pending, color: '#8F6820' },
+    { label: L('Ended without a choice', 'کسی انتخاب کے بغیر ختم', 'انتهت دون اختيار'), value: endedNoChoice, color: '#5B6B7C' },
   ]
 
   return (
     <AppShell title={L('Performance', 'میری کارکردگی', 'أدائي')} nav={nav} dir={dir}>
       <div className="max-w-4xl mx-auto">
+        <h1 className="sr-only">{L('Performance', 'میری کارکردگی', 'أدائي')}</h1>
         {failed && <LoadError onRetry={() => { setLoading(true); load() }} className="mb-4" />}
         {failed ? null : totalOffers === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <div className="text-4xl mb-3"><Glyph e="🏆" /></div>
             <p className="font-bold text-gray-700 mb-1">{L('No offers yet', 'ابھی کوئی آفر نہیں', 'لا توجد عروض بعد')}</p>
-            <p className="text-sm text-gray-500">{L('Submit offers on requests and your win/loss stats will appear here.', 'درخواستوں پر آفرز دیں، آپ کی جیت اور ہار کے اعداد و شمار یہاں نظر آئیں گے۔', 'قدّم عروضاً على الطلبات وستظهر إحصاءات الفوز والخسارة هنا.')}</p>
+            <p className="text-sm text-gray-500">{L('Submit offers on requests and your results will appear here.', 'درخواستوں پر آفرز دیں، آپ کے نتائج یہاں نظر آئیں گے۔', 'قدّم عروضاً على الطلبات وستظهر نتائجك هنا.')}</p>
           </div>
         ) : (
           <>
-            {/* نسبة الفوز */}
-            <div className="rounded-2xl p-5 mb-4 text-white flex items-center justify-between" style={{ background: 'linear-gradient(120deg,#0B2438,#0F6E56)' }}>
+            {/* نسبة الفوز — خلفية كحلية (UX-034) */}
+            <div className="rounded-2xl p-5 mb-4 text-white flex items-center justify-between" style={{ background: 'linear-gradient(120deg,#071827,#0B2438)' }}>
               <div>
-                <div className="text-sm text-blue-50">{L('Win rate', 'جیت کی شرح', 'نسبة الفوز')}</div>
-                <div className="text-4xl font-extrabold mt-1">{winRate}%</div>
-                <div className="text-[12px] text-blue-100 mt-1">{L(`${won} won of ${decided} decided`, `${decided} طے شدہ میں سے ${won} جیتیں`, `${won} من ${decided} محسومة`)}</div>
+                <div className="text-sm text-white/80">{L('Win rate', 'جیت کی شرح', 'نسبة الفوز')}</div>
+                <div className="text-4xl font-extrabold mt-1">{winRate != null ? `${winRate}%` : '—'}</div>
+                <div className="text-[13px] text-white/80 mt-1">{decided ? L(`Chosen in ${won} of ${decided} decided offers`, `${decided} فیصلہ شدہ آفرز میں سے ${won} منتخب`, `اختيرت ${won} من ${arCount(decided, 'عرض واحد', 'عرضين', 'عروض', 'عرضاً')} حُسمت`) : L('No decided offers yet', 'ابھی کوئی آفر فیصلہ شدہ نہیں', 'لم يُحسم أي عرض بعد')}</div>
+                {endedNoChoice > 0 && <div className="text-[12px] text-white/70 mt-0.5">{L('Requests that ended without a choice are not counted.', 'بغیر انتخاب ختم ہونے والی درخواستیں شمار نہیں ہوتیں۔', 'لا تُحتسب الطلبات التي انتهت دون اختيار.')}</div>}
               </div>
-              <div className="text-6xl opacity-30"><Glyph e="🏆" /></div>
+              <div className="text-6xl opacity-30 text-[#D4A543]"><Glyph e="🏆" /></div>
             </div>
 
-            {/* بطاقات القمع */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+            {/* البطاقات */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5">
               {cards.map((c) => (
                 <div key={c.label} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 text-center">
                   <div className="text-2xl font-extrabold" style={{ color: c.color }}>{c.value.toLocaleString('en-US')}</div>
@@ -96,65 +101,45 @@ export default function SupplierAnalyticsPage() {
               ))}
             </div>
 
-            {/* حسب القطاع */}
+            {/* حسب القطاع — صفوف نصية بدل الأشرطة (UX-034: لا أعمدة للموردين) */}
             {sectors.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-                <div className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}><Glyph e="📊" /> {L('Win rate by sector', 'شعبے کے لحاظ سے جیت کی شرح', 'نسبة الفوز حسب القطاع')}</div>
-                <div className="space-y-3">
+                <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('By sector', 'شعبے کے لحاظ سے', 'حسب القطاع')}</h2>
+                <ul className="divide-y divide-gray-100">
                   {sectors.map((s: any) => {
                     const t = Number(s.total) || 0, w = Number(s.won) || 0, l = Number(s.lost) || 0
                     const dec = w + l
-                    const rate = dec ? Math.round((w / dec) * 100) : 0
-                    const pct = (n: number) => t ? `${(n / t) * 100}%` : '0%'
                     return (
-                      <div key={s.sector}>
-                        <div className="flex items-center justify-between text-xs mb-1">
-                          <span className="font-semibold text-gray-700">{sl(s.sector)}</span>
-                          <span className="text-gray-500">{dec ? `${rate}% ${L('win', 'جیت', 'فوز')}` : L('undecided', 'غیر طے شدہ', 'قيد الحسم')} · {L(`${t} total`, `کل ${t}`, `الإجمالي ${t}`)}</span>
-                        </div>
-                        <div className="h-2.5 rounded-full overflow-hidden bg-gray-100 flex">
-                          <div style={{ width: pct(w), background: '#0F6E56' }} title={L('Won', 'جیتی گئیں', 'مكسوبة')} />
-                          <div style={{ width: pct(l), background: '#9AA3AD' }} title={L('Not chosen', 'منتخب نہیں ہوئیں', 'لم تُختر')} />
-                          <div style={{ width: pct(t - w - l), background: '#e5e7eb' }} title={L('Pending', 'زیرِ التوا', 'قيد الانتظار')} />
-                        </div>
-                      </div>
+                      <li key={s.sector} className="py-2.5 flex items-center justify-between gap-3 text-sm">
+                        <span className="font-semibold text-[#0B2438]">{sl(s.sector)}</span>
+                        <span className="text-gray-700">{dec
+                          ? L(`Chosen in ${w} of ${dec}`, `${dec} میں سے ${w} منتخب`, `اختيرت ${w} من ${dec}`)
+                          : L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري')}
+                          <span className="text-gray-500"> · {L(`${t} offers`, `${t} آفرز`, arCount(t, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</span></span>
+                      </li>
                     )
                   })}
-                </div>
-                <div className="flex items-center gap-4 mt-3 text-[12px] text-gray-500">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#0F6E56' }} />{L('Won', 'جیتی گئیں', 'مكسوبة')}</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#9AA3AD' }} />{L('Not chosen', 'منتخب نہیں ہوئیں', 'لم تُختر')}</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full inline-block" style={{ background: '#e5e7eb' }} />{L('Pending', 'زیرِ التوا', 'قيد الانتظار')}</span>
-                </div>
+                </ul>
               </div>
             )}
 
-            {/* الاتجاه الشهري */}
+            {/* آخر ستة أشهر — صفوف نصية */}
             {monthly.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-                <div className="text-sm font-bold mb-4" style={{ color: '#0B2438' }}><Glyph e="📈" /> {L('Last 6 months', 'پچھلے چھ مہینے', 'آخر ستة أشهر')}</div>
-                <div className="flex items-end justify-around gap-2 h-36">
+                <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('Last 6 months', 'پچھلے چھ مہینے', 'آخر ستة أشهر')}</h2>
+                <ul className="divide-y divide-gray-100">
                   {monthly.map((m: any) => {
                     const offs = Number(m.offers) || 0, w = Number(m.won) || 0
-                    const h = Math.round((offs / maxMonthOffers) * 100)
-                    const wh = offs ? Math.round((w / offs) * h) : 0
                     return (
-                      <div key={m.month} className="flex flex-col items-center gap-1 flex-1">
-                        <div className="text-[12px] font-bold text-gray-500">{offs}</div>
-                        <div className="w-full max-w-[42px] rounded-t-md relative flex flex-col justify-end" style={{ height: '100px' }}>
-                          <div className="w-full rounded-t-md bg-[#0B2438]/15 relative" style={{ height: `${h}%` }}>
-                            <div className="absolute bottom-0 left-0 right-0 rounded-t-md" style={{ height: `${wh}%`, background: '#0F6E56' }} title={`${w} ${L('won', 'جیتیں', 'فوز')}`} />
-                          </div>
-                        </div>
-                        <div className="text-[12px] text-gray-500">{monthLabel(m.month)}</div>
-                      </div>
+                      <li key={m.month} className="py-2.5 flex items-center justify-between gap-3 text-sm">
+                        <span className="font-semibold text-[#0B2438]">{monthLabel(m.month)}</span>
+                        <span className="text-gray-700">{offs
+                          ? L(`${offs} offers, ${w} chosen`, `${offs} آفرز، ${w} منتخب`, `${arCount(offs, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً')}، اختير منها ${w}`)
+                          : L('No offers', 'کوئی آفر نہیں', 'لا عروض')}</span>
+                      </li>
                     )
                   })}
-                </div>
-                <div className="flex items-center gap-4 mt-3 text-[12px] text-gray-500 justify-center">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#0B243826' }} />{L('Offers', 'آفرز', 'العروض')}</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: '#0F6E56' }} />{L('Won', 'جیتی گئیں', 'مكسوبة')}</span>
-                </div>
+                </ul>
               </div>
             )}
 

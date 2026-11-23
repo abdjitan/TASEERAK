@@ -9,14 +9,16 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import LocationPicker from '@/components/shared/LocationPicker'
-import { REGIONS, getRegionLabel } from '@/types'
+import { REGIONS, getRegionLabel, CITIES_BY_REGION } from '@/types'
+import DistrictField from '@/components/shared/DistrictField'
+import { Check } from 'lucide-react'
 import Glyph from '@/components/shared/Glyph'
 import { friendlyError } from '@/lib/friendlyError'
 
 const txt = {
   ar: {
     title: 'الموقع والعنوان الوطني', sub: 'حدّد موقعك ليحسب الموردون تكلفة التوصيل بدقة', subBuyer: 'أضف عنوان التوصيل ليحسب الموردون تكلفة التوصيل بدقة',
-    back: '→ رجوع', save: 'حفظ الموقع والعنوان', saving: 'جارٍ الحفظ...', saved: '✓ تم الحفظ بنجاح',
+    back: '→ رجوع', save: 'حفظ الموقع والعنوان', saving: 'جارٍ الحفظ...', saved: 'تم الحفظ بنجاح',
     nationalAddr: 'العنوان الوطني السعودي', nationalSub: 'حسب نظام العنوان الوطني من البريد السعودي',
     shortAddr: 'الرمز المختصر', shortHint: 'مثال: RUH2343', buildingNo: 'رقم المبنى',
     street: 'اسم الشارع', district: 'الحي', region: 'المنطقة', city: 'المدينة',
@@ -27,7 +29,7 @@ const txt = {
   },
   en: {
     title: 'Location & National Address', sub: 'Set your location so suppliers can price delivery accurately', subBuyer: 'Add your delivery address so suppliers can price delivery accurately',
-    back: '← Back', save: 'Save Location & Address', saving: 'Saving...', saved: '✓ Saved successfully',
+    back: '← Back', save: 'Save Location & Address', saving: 'Saving...', saved: 'Saved successfully',
     nationalAddr: 'Saudi National Address', nationalSub: 'Per Saudi Post National Address system',
     shortAddr: 'Short Address', shortHint: 'e.g. RUH2343', buildingNo: 'Building Number',
     street: 'Street Name', district: 'District', region: 'Region', city: 'City',
@@ -38,7 +40,7 @@ const txt = {
   },
   ur: {
     title: 'مقام اور قومی پتہ', sub: 'اپنا مقام مقرر کریں تاکہ سپلائرز ڈیلیوری کی قیمت درست لگا سکیں', subBuyer: 'ڈیلیوری کا پتہ شامل کریں تاکہ سپلائرز ڈیلیوری کی قیمت درست لگا سکیں',
-    back: '→ واپس', save: 'محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: '✓ محفوظ ہو گیا',
+    back: '→ واپس', save: 'محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: 'محفوظ ہو گیا',
     nationalAddr: 'سعودی قومی پتہ', nationalSub: 'سعودی پوسٹ نیشنل ایڈریس سسٹم کے مطابق',
     shortAddr: 'مختصر پتہ', shortHint: 'مثال: RUH2343', buildingNo: 'عمارت نمبر',
     street: 'گلی کا نام', district: 'محلہ', region: 'علاقہ', city: 'شہر',
@@ -62,6 +64,7 @@ export default function LocationPage() {
   const [loadFailed, setLoadFailed] = useState(false)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
+  const [msgOk, setMsgOk] = useState(false)
   const [showNational, setShowNational] = useState(false)
 
   const [shortAddr, setShortAddr] = useState('')
@@ -119,6 +122,7 @@ export default function LocationPage() {
       longitude: lng,
     }).eq('id', user.id)
     setSaving(false)
+    setMsgOk(!error)
     setMsg(error ? friendlyError(error.message, L('Could not save, please try again.', 'محفوظ نہیں ہو سکا، دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.'), locale) : T.saved)
     setTimeout(() => setMsg(''), 6000)
   }
@@ -155,15 +159,22 @@ export default function LocationPage() {
         {field('loc-building', T.buildingNo, <input id="loc-building" value={buildingNo} onChange={e => setBuildingNo(e.target.value)} className="input-field" placeholder="1234" dir="ltr" inputMode="numeric" />)}
         {field('loc-additional', T.additionalNo, <input id="loc-additional" value={additionalNo} onChange={e => setAdditionalNo(e.target.value)} className="input-field" placeholder="5678" dir="ltr" inputMode="numeric" />)}
         {field('loc-street', T.street, <input id="loc-street" value={street} onChange={e => setStreet(e.target.value)} className="input-field" />, true)}
-        {field('loc-district', T.district, <input id="loc-district" value={district} onChange={e => setDistrict(e.target.value)} className="input-field" />)}
+        {field('loc-district', T.district, <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />)}
         {field('loc-postal', T.postalCode, <input id="loc-postal" value={postalCode} onChange={e => setPostalCode(e.target.value)} className="input-field" placeholder="12345" dir="ltr" maxLength={5} inputMode="numeric" />)}
         {field('loc-region', T.region, (
-          <select id="loc-region" value={region} onChange={e => setRegion(e.target.value)} className="input-field">
+          <select id="loc-region" value={region} onChange={e => { setRegion(e.target.value); setCity(''); setDistrict('') }} className="input-field">
             <option value="">{T.selectRegion}</option>
             {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
           </select>
         ))}
-        {field('loc-city', T.city, <input id="loc-city" value={city} onChange={e => setCity(e.target.value)} className="input-field" />)}
+        {/* a list from the region, so the city always matches the routing names (UX-121) */}
+        {field('loc-city', T.city, (
+          <select id="loc-city" value={city} onChange={e => { setCity(e.target.value); setDistrict('') }} className="input-field" disabled={!region}>
+            <option value="">{region ? L('Choose the city', 'شہر منتخب کریں', 'اختر المدينة') : L('Choose the region first', 'پہلے علاقہ منتخب کریں', 'اختر المنطقة أولاً')}</option>
+            {!!city && !(CITIES_BY_REGION[region] || []).some(c => c.ar === city) && <option value={city}>{city}</option>}
+            {(CITIES_BY_REGION[region] || []).map(c => <option key={c.ar} value={c.ar}>{locale === 'ar' ? c.ar : c.en}</option>)}
+          </select>
+        ))}
       </div>
     </div>
   )
@@ -202,7 +213,7 @@ export default function LocationPage() {
           {/* Save */}
           <div className="sticky bottom-[calc(72px+env(safe-area-inset-bottom))] lg:bottom-4">
             {/* an error shows in red, never in the success green (UX-140) */}
-            {msg && <div role={msg.startsWith('✓') ? 'status' : 'alert'} className={`text-sm rounded-xl p-3 mb-3 text-center border ${msg.startsWith('✓') ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>{msg}</div>}
+            {msg && <div role={msgOk ? 'status' : 'alert'} className={`text-sm rounded-xl p-3 mb-3 border flex items-center justify-center gap-1.5 ${msgOk ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>{msgOk && <Check className="w-4 h-4" aria-hidden />}{msg}</div>}
             <button onClick={handleSave} disabled={saving}
               className="w-full py-4 rounded-xl font-bold text-[#071827] text-base disabled:opacity-50 transition-all hover:shadow-lg shadow-lg"
               style={{ background: '#D4A543' }}>

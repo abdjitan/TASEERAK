@@ -76,7 +76,7 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
 
   return (
     <div className="mb-6 animate-fade-in">
-      <section className="market-hero relative rounded-[22px] text-white px-5 py-7 sm:px-8 sm:py-9 shadow-[0_24px_60px_-28px_rgba(5,11,18,.65)]">
+      <section className="market-hero relative z-20 rounded-[22px] text-white px-5 py-7 sm:px-8 sm:py-9 shadow-[0_24px_60px_-28px_rgba(5,11,18,.65)]">
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center gap-2 text-[13px] font-bold text-[#F5C55B]">
             <span className="w-2 h-2 rounded-full bg-[#F5C55B] shadow-[0_0_0_4px_rgba(245,197,91,.2)]" />
@@ -85,7 +85,7 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
           <h2 className="mt-2 text-[28px] sm:text-[38px] font-extrabold leading-tight drop-shadow">{L('What do you need today?', 'آج آپ کو کیا چاہیے؟', 'ماذا تحتاج اليوم؟')}</h2>
           <p className="mt-1.5 text-sm sm:text-[15px] text-white/85">
             {L('From a lamp for your home to furniture and building materials: search for the product and add it to your request, and suppliers send you offers to compare.',
-              'گھر کے لیمپ سے فرنیچر اور تعمیراتی سامان تک: چیز تلاش کریں اور درخواست میں شامل کریں، سپلائرز آپ کو پیشکشیں بھیجیں گے تاکہ آپ موازنہ کریں۔',
+              'گھر کے لیمپ سے فرنیچر اور تعمیراتی سامان تک: چیز تلاش کریں اور درخواست میں شامل کریں، سپلائرز آپ کو آفرز بھیجیں گے تاکہ آپ موازنہ کریں۔',
               'من مصباح لبيتك إلى الأثاث ومواد البناء: ابحث عن المنتج وأضفه إلى طلبك، فتصلك عروض الموردين لتقارن بينها.')}
           </p>
         </div>

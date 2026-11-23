@@ -28,7 +28,7 @@
   --mech:        #0F6E56;
 
   /* Type */
-  --font: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif;
+  --font: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, Arial, sans-serif; /* the brand font (Cairo was never loaded, UX-101) */
 
   /* Shape */
   --r-sm: 10px;
@@ -266,13 +266,14 @@ ul { list-style: none; }
 .trustbar { background: var(--navy-deep); padding: 26px 0; position: relative; z-index: 4; }
 .trustbar .wrap { display: flex; align-items: center; gap: 18px; }
 .trustbar .lbl { color: rgba(255,255,255,.55); font-size: 13px; font-weight: 700; white-space: nowrap; }
-.marquee { overflow: hidden; flex: 1; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.marquee { overflow: hidden; flex: 1; direction: ltr; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+/* the strip and its track are laid out LTR in every language so one negative keyframe always scrolls into view (UX-019);
+   each label keeps its own reading direction */
 .marquee ul { display: flex; gap: 46px; width: max-content; animation: scrollX 26s linear infinite; }
+[dir="rtl"] .marquee li { direction: rtl; }
 .marquee li { color: rgba(255,255,255,.62); font-weight: 800; font-size: 18px; letter-spacing: .02em; display: flex; align-items: center; gap: 9px; }
 .marquee li svg { width: 20px; height: 20px; opacity: .7; }
 @keyframes scrollX { to { transform: translateX(calc(-50% - 23px)); } }
-[dir="ltr"] .marquee ul { animation-name: scrollXltr; }
-@keyframes scrollXltr { to { transform: translateX(calc(-50% - 23px)); } }
 
 /* ============================================================
    HOW IT WORKS

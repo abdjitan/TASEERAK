@@ -133,8 +133,8 @@
 ::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:10px; }
 ::-webkit-scrollbar-thumb:hover { background:#9ca3af; }
 
-[dir="rtl"] { text-align: right; }
-[dir="ltr"] { text-align: left; }
+/* no global [dir] text-align: the default «start» already follows the direction, and the old rule
+   pulled every dir="ltr" block (phone numbers, codes) out of centred text (UX-142) */
 @media print { .print\:hidden { display:none !important; } body { background:white !important; } }
 @media print { .ts-dashboard-sidebar, .ts-dashboard-topbar, .ts-mobile-nav { display:none !important; } .ts-dashboard > div { margin:0 !important; } .ts-dashboard-main { padding:0 !important; } }
 

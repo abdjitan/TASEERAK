@@ -38,7 +38,8 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
     } catch {}
   }, [])
 
-  const href = `/register?role=supplier&kind=${kind}&email=1${carry ? '&' + carry : ''}`
+  // UX-103: an invite link opens a seller-only sign-up (no buyer switch)
+  const href = `/register?role=supplier&kind=${kind}&only=1&email=1${carry ? '&' + carry : ''}`
   const company = kind === 'company'
 
   const points = company
@@ -60,7 +61,7 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/" className="flex items-center" aria-label={L('Taseerak home', 'تسعیرک مرکزی صفحہ', 'تسعيرك، الرئيسية')}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-9 w-auto" />
+            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-11 w-auto" />
           </Link>
           <LanguageSwitcher variant="minimal" />
         </div>

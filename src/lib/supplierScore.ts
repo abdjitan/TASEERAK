@@ -42,3 +42,9 @@ export const APPROVAL_LABELS: Record<string, string> = {
 export function approvalLabel(key: string): string {
   return APPROVAL_LABELS[key] || key
 }
+
+// A supplier with almost no history (fewer than 3 offers and no rating) is shown as «جديد على المنصة»
+// instead of a low grey score: a new verified company is not an unreliable one (UX-104).
+export function isNewSupplier(row: any): boolean {
+  return (Number(row?.total_offers) || 0) < 3 && !((Number(row?.rating_count) || 0) > 0)
+}

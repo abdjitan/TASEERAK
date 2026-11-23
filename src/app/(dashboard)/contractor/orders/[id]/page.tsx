@@ -13,7 +13,8 @@ import { fileHref } from '@/lib/fileHref'
 import { SECTOR_LABELS, getProductLabel, getUnitLabelLong } from '@/types'
 import { useTranslation } from '@/i18n'
 import { rfqRef, rfqDesc } from '@/lib/rfqName'
-import { storedBuyerType } from '@/lib/buyerType'
+import { storedBuyerType, rememberBuyerType } from '@/lib/buyerType'
+import AutoTr from '@/components/shared/AutoTr'
 import { cleanArName } from '@/lib/displayName'
 import Glyph from '@/components/shared/Glyph'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
@@ -71,6 +72,8 @@ export default function OrderDetailPage() {
   const [maxOther, setMaxOther] = useState(0) // the highest offer on the request (for «وفّرت»)
   const [home, setHome] = useState(false)
   const [chatBusy, setChatBusy] = useState(false)
+  const [chatErr, setChatErr] = useState('')
+  const [justRated, setJustRated] = useState(false) // the rating card stays on top right after rating (UX-069)
 
   const load = useCallback(async () => {
     setLoadFailed(false)
@@ -105,7 +108,9 @@ export default function OrderDetailPage() {
           buyer ? supabase.from('offers').select('id, total_price, vat_included, vat_status, status').eq('rfq_id', rfqData.id) : Promise.resolve({ data: [] as any[] }),
         ])
         setContractor(contractorData)
-        setHome(buyer && (storedBuyerType() === 'individual' || contractorData?.buyer_type === 'individual'))
+        // the profile is the source of truth (a deal link opened on a new device, UX-068)
+        if (buyer && contractorData?.buyer_type) rememberBuyerType(contractorData.buyer_type)
+        setHome(buyer && (contractorData?.buyer_type ? contractorData.buyer_type === 'individual' : storedBuyerType() === 'individual'))
         const cmp = ((others as any[]) || []).filter((o: any) => o.status !== 'withdrawn').map((o: any) => offerComparable(o))
         if (cmp.length > 1) setMaxOther(Math.max(...cmp))
       }
@@ -166,16 +171,18 @@ export default function OrderDetailPage() {
       return
     }
     setExistingReview({ rating, comment })
+    setJustRated(true)
   }
 
   // open (or create) the conversation with the other side of the deal
   async function openChat() {
     if (!offer?.rfq_id) return
-    setChatBusy(true)
+    setChatBusy(true); setChatErr('')
     const { data, error } = await createClient().rpc('get_or_create_conversation', { p_rfq_id: offer.rfq_id, p_supplier_id: offer.supplier_id })
     setChatBusy(false)
     if (!error && data) router.push(`/messages?c=${data}`)
-    else router.push('/messages')
+    // say it failed instead of opening an empty inbox (UX-135)
+    else setChatErr(L('Could not open the conversation. Check your connection and try again.', 'گفتگو نہیں کھل سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر فتح المحادثة. تحقّق من الاتصال وحاول مرة أخرى.'))
   }
 
   if (loading) return <PageLoader />
@@ -297,7 +304,8 @@ export default function OrderDetailPage() {
   const phoneLine = (p: any) => !p ? null : (
     <div className="text-sm text-gray-600">{L('Mobile:', 'موبائل:', 'جوال:')} <a href={`tel:${String(p).replace(/[^0-9+]/g, '')}`} dir="ltr" className="font-semibold text-[#0B2438] hover:underline">{p}</a></div>
   )
-  const needsRating = isBuyer && offer.status === 'accepted' && !!offer.received_at && !existingReview
+  const disputeOpen = offer.dispute_status === 'open'
+  const needsRating = isBuyer && offer.status === 'accepted' && !!offer.received_at && !existingReview && !disputeOpen
 
 
   return (
@@ -362,6 +370,8 @@ export default function OrderDetailPage() {
               myId={myId}
               amount={dealGross}
               rfqRefNo={rfq.ref_no}
+              isHome={home}
+              onChange={(o: any) => setOffer((prev: any) => (prev ? { ...prev, ...o } : prev))}
             />
           </div>
         )}
@@ -380,6 +390,7 @@ export default function OrderDetailPage() {
               className="inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5 disabled:opacity-50">
               <Glyph e="✉" /> {isBuyer ? L('Message the supplier', 'سپلائر کو پیغام', 'راسل المورد') : L('Message the buyer', 'خریدار کو پیغام', 'راسل المشتري')}
             </button>
+            {chatErr && <p role="alert" className="basis-full text-sm text-red-700">{chatErr}</p>}
           </div>
         )}
 
@@ -396,9 +407,9 @@ export default function OrderDetailPage() {
               </div>
               <div className="text-end">
                 <div className="text-sm text-[#F5C55B] print:text-[#9D7425]">{home ? L('Deal no.', 'ڈیل نمبر', 'رقم الصفقة') : L('Order no.', 'آرڈر نمبر', 'رقم الأمر')}</div>
-                <div className="text-xl font-bold font-mono" dir="ltr">{dealNo}</div>
+                <div className="text-xl font-bold" dir="auto">{dealNo}</div>
                 <div className="text-sm text-[#F5C55B] print:text-[#9D7425] mt-1">{L('Date:', 'تاریخ:', 'التاريخ:')} {date}</div>
-                {!home && ref && <div className="text-sm text-[#F5C55B] print:text-[#9D7425] mt-1">{L('Request:', 'درخواست:', 'الطلب:')} <span className="font-mono" dir="ltr">{rfqRef(rfq)}</span></div>}
+                {!home && ref && <div className="text-sm text-[#F5C55B] print:text-[#9D7425] mt-1">{L('Request:', 'درخواست:', 'الطلب:')} <span dir="ltr">{rfqRef(rfq)}</span></div>}
               </div>
             </div>
           </div>
@@ -411,7 +422,7 @@ export default function OrderDetailPage() {
               {contractor?.commercial_registration && (
                 <div className="text-sm text-gray-600 mt-1">{L('CR:', 'کمرشل رجسٹریشن:', 'سجل تجاري:')} {contractor.commercial_registration}</div>
               )}
-              {phoneLine(contractor?.phone)}
+              {phoneLine(contractor?.contact_phone || contractor?.phone)}
               {(contractor?.city || contractor?.region) && <div className="text-sm text-gray-600">{contractor.city || contractor.region}</div>}
             </div>
             <div>
@@ -420,7 +431,7 @@ export default function OrderDetailPage() {
               {supplier?.commercial_registration && (
                 <div className="text-sm text-gray-600 mt-1">{L('CR:', 'کمرشل رجسٹریشن:', 'سجل تجاري:')} {supplier.commercial_registration}</div>
               )}
-              {phoneLine(supplier?.phone)}
+              {phoneLine(supplier?.contact_phone || supplier?.phone)}
               {offer?.id && <SourceShopBadge offerId={offer.id} locale={locale} />}
               {(supplier?.city || supplier?.region) && <div className="text-sm text-gray-600">{supplier.city || supplier.region}</div>}
               {supplier?.national_short_address && (
@@ -582,13 +593,13 @@ export default function OrderDetailPage() {
               {offer.delivery_days && (
                 <div className="flex items-center gap-2">
                   <span className="text-[#0B2438]"><Glyph e="📦" /></span>
-                  <span>{L('Delivery time:', 'ڈیلیوری کا وقت:', 'مدة التوصيل:')} {daysText(offer.delivery_days, locale)}</span>
+                  <span>{rfq.delivery_required ? L('Delivery time:', 'ڈیلیوری کا وقت:', 'مدة التوصيل:') : L('Ready for pickup within:', 'وصولی کے لیے تیار:', 'جاهز للاستلام خلال:')} {daysText(offer.delivery_days, locale)}</span>
                 </div>
               )}
             </div>
             {offer.notes && (
               <div className="mt-4 bg-gray-50 rounded-lg p-3 text-sm text-gray-700">
-                <strong>{L('Supplier notes:', 'سپلائر کے نوٹس:', 'ملاحظات المورد:')}</strong> {offer.notes}
+                <strong>{L('Supplier notes:', 'سپلائر کے نوٹس:', 'ملاحظات المورد:')}</strong> <AutoTr text={offer.notes} locale={locale} />
               </div>
             )}
           </div>
@@ -669,7 +680,7 @@ export default function OrderDetailPage() {
 
         {/* تقييم المورد — للمشتري فقط بعد تأكيد الاستلام (لا يكفي القبول). Moves up once it is due (UX-021). */}
         {offer.status === 'accepted' && myId && isBuyer && (
-          <div id="rate" className={`bg-white rounded-2xl shadow-sm border p-4 sm:p-6 print:hidden scroll-mt-20 ${needsRating ? 'order-1 border-[#D4A543]/60' : 'order-4 border-gray-200'}`} dir={dir}>
+          <div id="rate" className={`bg-white rounded-2xl shadow-sm border p-4 sm:p-6 print:hidden scroll-mt-20 ${needsRating ? 'order-1 border-[#D4A543]/60' : justRated ? 'order-1 border-[#0F6E56]/40' : 'order-4 border-gray-200'}`} dir={dir}>
             {existingReview ? (
               <div className="text-center">
                 <div className="text-sm font-bold text-gray-900 mb-2">{L('Thanks for your rating', 'ریٹنگ کا شکریہ', 'شكراً لتقييمك')}</div>
@@ -679,6 +690,12 @@ export default function OrderDetailPage() {
                   ))}
                 </div>
                 {existingReview.comment && <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">{existingReview.comment}</p>}
+                {justRated && <p className="text-sm font-semibold text-[#0F6E56] mt-2" role="status">{L('Your rating will show on the supplier’s page.', 'آپ کی ریٹنگ سپلائر کے صفحے پر نظر آئے گی۔', 'سيظهر تقييمك في صفحة المورد.')}</p>}
+              </div>
+            ) : offer.received_at && disputeOpen ? (
+              <div className="text-center py-2">
+                <div className="text-2xl mb-1 text-[#0B2438]"><Glyph e="⭐" /></div>
+                <p className="text-sm text-gray-700">{L('You can rate the supplier once the report is handled.', 'رپورٹ نمٹنے کے بعد آپ سپلائر کی ریٹنگ دے سکتے ہیں۔', 'يمكنك تقييم المورد بعد معالجة البلاغ.')}</p>
               </div>
             ) : offer.received_at ? (
               <div>

@@ -48,6 +48,7 @@ export default function JoinTeamPage() {
   }
   useEffect(() => { load() }, [token]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [alreadyMember, setAlreadyMember] = useState(false)
   async function join() {
     setBusy(true); setError('')
     const { data, error: e } = await createClient().rpc('accept_company_invite', { p_token: token })
@@ -61,11 +62,12 @@ export default function JoinTeamPage() {
     if (j.ok || j.error === 'invalid_invite' || j.error === 'already_member') { try { localStorage.removeItem(TEAM_INVITE_KEY) } catch {} }
     if (j.ok) { window.location.href = '/supplier/dashboard'; return }
     setBusy(false)
+    setAlreadyMember(j.error === 'already_member') // UX-137: a member already: offer the way to the dashboard
     setError(({
       invalid_invite: L('This invitation is no longer valid. Ask for a new link.', 'یہ دعوت اب درست نہیں۔ نیا لنک مانگیں۔', 'هذه الدعوة لم تعد صالحة. اطلب رابطاً جديداً.'),
-      already_member: L('You are already a member of a company team.', 'آپ پہلے سے ٹیم میں ہیں۔', 'أنت عضو في فريق شركة بالفعل.'),
+      already_member: L('You are already a member of a company team.', 'آپ پہلے سے کسی کمپنی کی ٹیم کے رکن ہیں۔', 'أنت عضو في فريق شركة بالفعل.'),
       has_activity: L('This account already has its own requests or offers. Sign in with another account to join the team.', 'اس اکاؤنٹ کی اپنی درخواستیں یا آفرز ہیں۔ شامل ہونے کے لیے دوسرے اکاؤنٹ سے سائن اِن کریں۔', 'لهذا الحساب طلبات أو عروض خاصة به. سجّل الدخول بحساب آخر للانضمام إلى الفريق.'),
-      not_allowed: L('This account cannot join the team.', 'یہ اکاؤنٹ شامل نہیں ہو سکتا۔', 'لا يمكن لهذا الحساب الانضمام إلى الفريق.'),
+      not_allowed: L('This account cannot join the team.', 'یہ اکاؤنٹ ٹیم میں شامل نہیں ہو سکتا۔', 'لا يمكن لهذا الحساب الانضمام إلى الفريق.'),
     } as Record<string, string>)[j.error] || L('Could not join. Try again.', 'شامل نہیں ہو سکے۔ دوبارہ کوشش کریں۔', 'تعذّر الانضمام. حاول مرة أخرى.'))
   }
 
@@ -112,7 +114,9 @@ export default function JoinTeamPage() {
               </p>
               {/* UX-146: the invited person knows the role before joining */}
               <p className="mt-3 inline-block text-[13px] font-semibold text-navy rounded-xl bg-[#0B2438]/5 px-3 py-2">{L('Your role: ', 'آپ کا کردار: ', 'دورك: ')}{invite.role === 'admin' ? L('Admin (prices requests and invites members)', 'ایڈمن (قیمتیں دیتا ہے اور اراکین بلاتا ہے)', 'مشرف (يسعّر الطلبات ويدعو أعضاء)') : L('Sales (prices requests)', 'سیلز (درخواستوں کی قیمت دیتا ہے)', 'مبيعات (يسعّر الطلبات)')}</p>
-              {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3" role="alert">{error}</div>}
+              {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3" role="alert">{error}
+                {alreadyMember && <Link href="/supplier/dashboard" className="mt-2 flex items-center justify-center min-h-[44px] rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{L('Go to your dashboard', 'اپنے ڈیش بورڈ پر جائیں', 'الانتقال إلى لوحتك')}</Link>}
+              </div>}
               {me ? (
                 <>
                   <p className="mt-4 text-[13px] text-gray-700">{L('You will join with the account:', 'آپ اس اکاؤنٹ سے شامل ہوں گے:', 'ستنضم بحساب:')} <b className="text-navy">{me.name || me.email}</b>{me.name && me.email ? <span className="text-gray-500" dir="ltr"> ({me.email})</span> : null}</p>
@@ -127,7 +131,7 @@ export default function JoinTeamPage() {
                 <div className="mt-5 space-y-2">
                   <Link href={registerHref} className="flex items-center justify-center w-full min-h-[48px] rounded-xl font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Create my employee account', 'میرا ملازم اکاؤنٹ بنائیں', 'أنشئ حسابي كموظف')}</Link>
                   <Link href={`/login?m=email&next=${next}`} className="flex items-center justify-center w-full min-h-[44px] rounded-xl font-bold border border-gray-200 text-gray-700">{L('I already have an account', 'میرا اکاؤنٹ ہے', 'لدي حساب')}</Link>
-                  <p className="text-[12px] text-gray-500">{L('After signing in you will come back here to join.', 'لاگ ان کے بعد یہاں واپس آئیں گے۔', 'بعد تسجيل الدخول ستعود إلى هنا لإتمام الانضمام.')}</p>
+                  <p className="text-[12px] text-gray-500">{L('After signing in you will come back here to join.', 'سائن اِن کے بعد آپ شامل ہونے کے لیے یہاں واپس آئیں گے۔', 'بعد تسجيل الدخول ستعود إلى هنا لإتمام الانضمام.')}</p>
                 </div>
               )}
             </>

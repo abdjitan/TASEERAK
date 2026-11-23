@@ -116,8 +116,8 @@ export default function NotificationsPage() {
                       <div className="flex items-start gap-3">
                         <span aria-hidden="true" className="w-9 h-9 shrink-0 rounded-full grid place-items-center bg-[#0B2438]/5 text-[#0B2438]"><Glyph e={notifGlyph(n.type, n.data, n.title)} /></span>
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold text-sm" style={{ color: '#0B2438' }}><AutoTr text={noEmoji(n.title)} locale={locale} /></div>
-                          {n.body && <div className="text-sm text-gray-600 mt-0.5"><AutoTr text={noEmoji(n.body)} locale={locale} /></div>}
+                          <div className="font-bold text-sm" style={{ color: '#0B2438' }}><AutoTr text={noEmoji(n.title)} locale={locale} noToggle /></div>
+                          {n.body && <div className="text-sm text-gray-600 mt-0.5"><AutoTr text={noEmoji(n.body)} locale={locale} noToggle /></div>}
                           <div className="text-xs text-gray-500 mt-1" title={new Date(n.created_at).toLocaleString(dateLocale(locale), { timeZone: 'Asia/Riyadh' })}>
                             {g.b === 'earlier' ? new Date(n.created_at).toLocaleDateString(dateLocale(locale), { timeZone: 'Asia/Riyadh', day: 'numeric', month: 'long' }) : timeAgo(n.created_at, locale)}
                           </div>

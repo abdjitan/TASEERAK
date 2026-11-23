@@ -26,7 +26,7 @@ function loadScript(): Promise<void> {
 }
 
 const Turnstile = forwardRef(function Turnstile(
-  { siteKey, onToken, onError, theme = 'light', dir = 'rtl' }: any,
+  { siteKey, onToken, onError, theme = 'light', dir = 'rtl', language }: any,
   ref,
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -65,6 +65,8 @@ const Turnstile = forwardRef(function Turnstile(
           theme,
           // 'flexible' fills the container width (min 300px) instead of a fixed 300px box that overflowed small phones
           size: 'flexible',
+          // the widget speaks the page language (it showed English to Arabic visitors, UX-143); Urdu → browser language
+          language: (() => { const l = String(language || lang || 'ar'); return l.startsWith('en') ? 'en' : l.startsWith('ar') ? 'ar' : 'auto' })(),
           callback: (token: string) => { gotToken.current = true; setStuck(false); setErrCode(''); onToken && onToken(token) },
           'expired-callback': () => onToken && onToken(''),
           'timeout-callback': () => onToken && onToken(''),

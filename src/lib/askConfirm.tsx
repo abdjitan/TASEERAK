@@ -38,13 +38,13 @@ function Dialog({ message, opts, done }: { message: string; opts: Opts; done: (v
     <div className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-4 bg-[#071827]/60 backdrop-blur-sm" dir={l.dir}
       onClick={() => done(false)} role="presentation">
       <div role="alertdialog" aria-modal="true" aria-label={(opts.title || message).slice(0, 80)} onClick={e => e.stopPropagation()}
-        className={`w-full max-w-sm rounded-2xl bg-white shadow-2xl border-t-4 ${opts.danger ? 'border-[#b91c1c]' : 'border-[#D4A543]'} p-5 animate-fade-in`}>
+        className={`w-full max-w-sm rounded-2xl bg-white shadow-2xl border-t-4 ${opts.danger ? 'border-[#B42318]' : 'border-[#D4A543]'} p-5 animate-fade-in`}>
         {opts.title && <h2 className="text-base font-bold text-[#071827] mb-1.5">{opts.title}</h2>}
         <p className="text-[15px] leading-relaxed text-[#071827] whitespace-pre-line">{message}</p>
         <div className="mt-5 flex gap-2">
           <button ref={okRef} type="button" onClick={() => done(true)}
             className="flex-1 min-h-11 rounded-xl text-sm font-bold"
-            style={opts.danger ? { background: '#b91c1c', color: '#fff' } : { background: '#D4A543', color: '#071827' }}>
+            style={opts.danger ? { background: '#B42318', color: '#fff' } : { background: '#D4A543', color: '#071827' }}>
             {opts.okLabel || l.ok}
           </button>
           <button ref={cancelRef} type="button" onClick={() => done(false)}
@@ -60,7 +60,7 @@ function Dialog({ message, opts, done }: { message: string; opts: Opts; done: (v
 const TONE: Record<NotifyTone, { border: string; Icon: LucideIcon; fg: string; bg: string }> = {
   info: { border: '#D4A543', Icon: Info, fg: '#0B2438', bg: '#F5EEDC' },
   success: { border: '#0F6E56', Icon: Check, fg: '#0F6E56', bg: '#E3F2EC' },
-  error: { border: '#b91c1c', Icon: AlertCircle, fg: '#b91c1c', bg: '#FDECEC' },
+  error: { border: '#B42318', Icon: AlertCircle, fg: '#B42318', bg: '#FDECEC' },
 }
 
 function Notice({ message, opts, done }: { message: string; opts: NotifyOpts; done: (v: boolean) => void }) {

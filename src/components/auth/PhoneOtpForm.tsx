@@ -17,10 +17,11 @@ const TX = {
   ar: {
     phone: 'رقم جوالك', phoneHint: 'سيصلك رمز التحقق برسالة نصية (SMS)', send: 'أرسل الرمز', sending: 'جارٍ الإرسال…',
     badPhone: 'اكتب رقم جوال سعودي بصيغة 05XXXXXXXX، أو رقماً إماراتياً أو أردنياً مع رمز الدولة (‎+971‎ أو ‎+962‎).', codeTitle: 'اكتب الرمز', codeSent: 'أرسلنا رمزاً من 6 أرقام برسالة نصية إلى',
-    verify: 'تأكيد والدخول', verifying: 'جارٍ التحقق…', badCode: 'الرمز غير صحيح أو انتهت صلاحيته. اطلب رمزاً جديداً.',
+    verify: 'تأكيد والدخول', verifying: 'جارٍ التحقق…', creating: 'جارٍ إنشاء حسابك…', badCode: 'الرمز غير صحيح. تحقّق منه وأعد كتابته، أو اطلب رمزاً جديداً.', expiredCode: 'انتهت صلاحية الرمز. اطلب رمزاً جديداً.', sessionGone: 'انتهت صلاحية التحقق. أعد إرسال الرمز إلى رقمك.',
     resend: 'أعد إرسال الرمز', resendIn: 'إعادة الإرسال بعد', sec: 'ثانية', change: 'تغيير الرقم', resent: 'أرسلنا رمزاً جديداً إلى',
     emailAccount: 'هذا الرقم مسجّل لحساب يدخل بالبريد الإلكتروني ولم يُوثَّق جواله بعد. ادخل بالبريد الإلكتروني وكلمة المرور.', emailBtn: 'الدخول بالبريد الإلكتروني',
     rate: 'محاولات كثيرة. انتظر قليلاً ثم أعد المحاولة.', sendFail: 'تعذّر إرسال الرمز. تأكد من الرقم ثم أعد المحاولة.',
+    smsDown: 'تعذّر إرسال الرمز الآن. يمكنك إنشاء حسابك بالبريد الإلكتروني بدلاً من ذلك.', smsDownCreate: 'أنشئ حساباً بالبريد', smsDownLogin: 'لديك حساب؟ ادخل بالبريد',
     newTitle: 'أهلاً بك في تسعيرك', newSub: 'هذا الرقم جديد. اكتب اسمك لإنشاء حساب مشتري.', name: 'الاسم', create: 'إنشاء الحساب والدخول',
     terms1: 'أوافق على', terms: 'الشروط والأحكام', and: 'و', privacy: 'سياسة الخصوصية', badName: 'اكتب اسمك.', needTerms: 'وافق على الشروط وسياسة الخصوصية للمتابعة.',
     useEmail: 'هذا الحساب يدخل بالبريد الإلكتروني وكلمة المرور.', failed: 'تعذّر الدخول. حاول مرة أخرى.',
@@ -28,10 +29,11 @@ const TX = {
   en: {
     phone: 'Your mobile number', phoneHint: 'You will get a code by text message (SMS)', send: 'Send code', sending: 'Sending…',
     badPhone: 'Type a Saudi mobile number like 05XXXXXXXX, or a UAE or Jordanian number with its country code (+971 or +962).', codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code by SMS to',
-    verify: 'Verify and continue', verifying: 'Verifying…', badCode: 'Wrong or expired code. Request a new one.',
+    verify: 'Verify and continue', verifying: 'Verifying…', creating: 'Creating your account…', badCode: 'The code is not correct. Check it and type it again, or request a new one.', expiredCode: 'The code has expired. Request a new one.', sessionGone: 'The verification has expired. Send the code to your number again.',
     resend: 'Resend code', resendIn: 'Resend in', sec: 'seconds', change: 'Change number', resent: 'We sent a new code to',
     emailAccount: 'This number belongs to an account that signs in with email and has not verified its mobile yet. Sign in with your email and password.', emailBtn: 'Sign in with email',
     rate: 'Too many attempts. Wait a little and try again.', sendFail: 'Could not send the code. Check the number and try again.',
+    smsDown: 'We cannot send the code right now. You can create your account with your email instead.', smsDownCreate: 'Create an account with email', smsDownLogin: 'Have an account? Sign in with email',
     newTitle: 'Welcome to Taseerak', newSub: 'This number is new. Write your name to create a buyer account.', name: 'Name', create: 'Create account and continue',
     terms1: 'I agree to the', terms: 'Terms', and: 'and', privacy: 'Privacy Policy', badName: 'Write your name.', needTerms: 'Accept the Terms and Privacy Policy to continue.',
     useEmail: 'This account signs in with email and password.', failed: 'Could not sign in. Try again.',
@@ -39,17 +41,18 @@ const TX = {
   ur: {
     phone: 'آپ کا موبائل نمبر', phoneHint: 'تصدیقی کوڈ ٹیکسٹ میسج (SMS) سے آئے گا', send: 'کوڈ بھیجیں', sending: 'بھیجا جا رہا ہے…',
     badPhone: 'سعودی موبائل نمبر 05XXXXXXXX کی صورت میں لکھیں، یا اماراتی یا اردنی نمبر ملک کے کوڈ کے ساتھ (‎+971‎ یا ‎+962‎)۔', codeTitle: 'کوڈ درج کریں', codeSent: 'ہم نے SMS سے 6 ہندسوں کا کوڈ بھیجا',
-    verify: 'تصدیق کریں اور جاری رکھیں', verifying: 'تصدیق ہو رہی ہے…', badCode: 'غلط یا ختم شدہ کوڈ۔ نیا کوڈ منگوائیں۔',
+    verify: 'تصدیق کریں اور جاری رکھیں', verifying: 'تصدیق ہو رہی ہے…', creating: 'آپ کا اکاؤنٹ بن رہا ہے…', badCode: 'کوڈ درست نہیں۔ اسے چیک کر کے دوبارہ لکھیں، یا نیا کوڈ منگوائیں۔', expiredCode: 'کوڈ کی مدت ختم ہو گئی۔ نیا کوڈ منگوائیں۔', sessionGone: 'تصدیق کی مدت ختم ہو گئی۔ اپنے نمبر پر کوڈ دوبارہ بھیجیں۔',
     resend: 'کوڈ دوبارہ بھیجیں', resendIn: 'دوبارہ بھیجیں', sec: 'سیکنڈ بعد', change: 'نمبر تبدیل کریں', resent: 'ہم نے نیا کوڈ بھیجا',
     emailAccount: 'یہ نمبر ایسے اکاؤنٹ کا ہے جو ای میل سے سائن اِن کرتا ہے اور جس کا موبائل ابھی تصدیق نہیں ہوا۔ اپنی ای میل اور پاسورڈ سے سائن اِن کریں۔', emailBtn: 'ای میل سے سائن اِن',
-    rate: 'بہت زیادہ کوششیں۔ تھوڑا انتظار کریں۔', sendFail: 'کوڈ نہیں بھیجا جا سکا۔ نمبر چیک کریں۔',
+    rate: 'بہت زیادہ کوششیں۔ تھوڑا انتظار کریں، پھر دوبارہ کوشش کریں۔', sendFail: 'کوڈ نہیں بھیجا جا سکا۔ نمبر چیک کر کے دوبارہ کوشش کریں۔',
+    smsDown: 'ابھی کوڈ نہیں بھیجا جا سکتا۔ آپ اس کے بجائے ای میل سے اپنا اکاؤنٹ بنا سکتے ہیں۔', smsDownCreate: 'ای میل سے اکاؤنٹ بنائیں', smsDownLogin: 'اکاؤنٹ ہے؟ ای میل سے سائن اِن کریں',
     newTitle: 'تسعیرک میں خوش آمدید', newSub: 'یہ نمبر نیا ہے۔ خریدار اکاؤنٹ بنانے کے لیے اپنا نام لکھیں۔', name: 'نام', create: 'اکاؤنٹ بنائیں اور جاری رکھیں',
     terms1: 'میں متفق ہوں', terms: 'شرائط', and: 'اور', privacy: 'رازداری کی پالیسی', badName: 'اپنا نام لکھیں۔', needTerms: 'جاری رکھنے کے لیے شرائط اور رازداری کی پالیسی قبول کریں۔',
     useEmail: 'یہ اکاؤنٹ ای میل اور پاسورڈ سے سائن اِن کرتا ہے۔', failed: 'سائن اِن نہیں ہو سکا۔ دوبارہ کوشش کریں۔',
   },
 }
 
-export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: () => void; onUseEmail?: () => void }) {
+export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/register' }: { onSignedIn: () => void; onUseEmail?: () => void; registerHref?: string }) {
   const { locale } = useTranslation()
   const t = (TX as any)[locale] || TX.ar
   const [step, setStep] = useState<'phone' | 'code' | 'name'>('phone')
@@ -64,6 +67,9 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: (
   const [cooldown, setCooldown] = useState(0)
   const [notice, setNotice] = useState('') // «we sent a new code to …»
   const [emailOnly, setEmailOnly] = useState(false) // the number belongs to an email account (UX-053)
+  // SMS cannot be sent for a reason that is not the user's (provider quota, billing, config): never blame
+  // the number; offer an email account instead (UX-004)
+  const [smsDown, setSmsDown] = useState(false)
   const codeRef = useRef<HTMLInputElement>(null)
   const confirmRef = useRef<any>(null)
   const verifierRef = useRef<any>(null)
@@ -93,10 +99,10 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: (
 
   async function sendCode(e?: any, resend = false) {
     e?.preventDefault()
-    setError(''); setNotice(''); setEmailOnly(false)
+    setError(''); setNotice(''); setEmailOnly(false); setSmsDown(false)
     const p = toE164(toLatinDigits(phone))
     if (!p) { setError(t.badPhone); return }
-    if (!firebaseReady()) { setError(t.sendFail); return }
+    if (!firebaseReady()) { setSmsDown(true); return }
     setLoading(true)
     try {
       const auth = await fb()
@@ -109,7 +115,11 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: (
     } catch (err: any) {
       const c = String(err?.code || '')
       console.error('phone sign-in send', c)
-      setError(c.includes('too-many-requests') || c.includes('quota') ? t.rate : c.includes('invalid-phone') ? t.badPhone : t.sendFail)
+      // only a wrong number reads as the user's fault; too-many-requests is a real per-user limit;
+      // anything else (quota-exceeded, billing, captcha/config, network on the provider side) is «SMS down»
+      if (c.includes('invalid-phone') || c.includes('missing-phone')) setError(t.badPhone)
+      else if (c.includes('too-many-requests')) setError(t.rate)
+      else { setSmsDown(true); if (resend) setStep('phone') }
       try { verifierRef.current?.clear?.() } catch {} ; verifierRef.current = null
     } finally { setLoading(false) }
   }
@@ -145,7 +155,8 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: (
       if (j?.error === 'use_email') setEmailOnly(true)
       setError(j?.error === 'use_email' ? t.useEmail : j?.error === 'rate_limited' ? t.rate : t.failed)
     } catch (err: any) {
-      setError(String(err?.code || '').includes('invalid-verification-code') ? t.badCode : t.failed)
+      const c = String(err?.code || '')
+      setError(c.includes('invalid-verification-code') ? t.badCode : c.includes('code-expired') ? t.expiredCode : t.failed)
     }
     setLoading(false)
   }
@@ -158,7 +169,7 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: (
     setLoading(true); setError('')
     const { ok, j } = await session('signup')
     if (ok) { onSignedIn(); return }
-    setError(j?.error === 'invalid_code' ? t.badCode : t.failed)
+    setError(j?.error === 'invalid_code' ? t.sessionGone : t.failed)
     if (j?.error === 'invalid_code') setStep('phone')
     setLoading(false)
   }
@@ -174,9 +185,21 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: (
     </div>
   )
 
+  // amber, not red: nothing is wrong with what the visitor typed (UX-004)
+  const smsDownBox = smsDown && (
+    <div className="bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-xl p-3 space-y-2" role="alert">
+      <p>{t.smsDown}</p>
+      <a href={registerHref} className="w-full min-h-[44px] rounded-xl font-bold text-sm grid place-items-center" style={{ background: '#D4A543', color: '#071827' }}>{t.smsDownCreate}</a>
+      {onUseEmail
+        ? <button type="button" onClick={onUseEmail} className="w-full min-h-[44px] rounded-xl font-bold text-sm border border-[#0B2438]/25 text-[#0B2438] bg-white">{t.smsDownLogin}</button>
+        : <a href="/login?m=email" className="w-full min-h-[44px] rounded-xl font-bold text-sm grid place-items-center border border-[#0B2438]/25 text-[#0B2438] bg-white">{t.smsDownLogin}</a>}
+    </div>
+  )
+
   if (step === 'phone') {
     return (
       <form onSubmit={sendCode} className="space-y-4">
+        {smsDownBox}
         {errorBox}
         <div>
           <label htmlFor="otp-phone" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.phone}</label>
@@ -210,7 +233,7 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: (
           <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 w-5 h-5 shrink-0 accent-[#0B2438]" />
           <span>{t.terms1} <Link href="/terms" target="_blank" className="font-bold underline">{t.terms}</Link> {t.and} <Link href="/privacy" target="_blank" className="font-bold underline">{t.privacy}</Link></span>
         </label>
-        <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">{loading ? t.verifying : t.create}</button>
+        <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">{loading ? t.creating : t.create}</button>
         <p className="text-sm text-center text-ink-2">{locale === 'en' ? 'Not a buyer?' : locale === 'ur' ? 'خریدار نہیں؟' : 'لست مشترياً؟'} <a href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{locale === 'en' ? 'Sign up as a supplier' : locale === 'ur' ? 'سپلائر کے طور پر رجسٹر کریں' : 'سجّل كمورد'}</a></p>
       </form>
     )

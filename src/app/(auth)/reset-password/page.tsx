@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
-import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Glyph from '@/components/shared/Glyph'
 import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
@@ -19,6 +18,7 @@ const txt = {
     short: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
     mismatch: 'كلمتا المرور غير متطابقتين',
     invalid: 'تعذّر فتح الرابط. افتحه في المتصفح نفسه الذي طلبت منه الاستعادة، أو اطلب رابطاً جديداً.',
+    expired: 'انتهت صلاحية هذا الرابط أو سبق استخدامه. اطلب رابطاً جديداً، فهو صالح لمدة ساعة واحدة.',
     requestNew: 'اطلب رابط استعادة جديد', err: 'تعذّر الحفظ، حاول مرة أخرى',
     checking: 'جارٍ التحقق من الرابط…', login: 'تسجيل الدخول',
   },
@@ -31,6 +31,7 @@ const txt = {
     short: 'Password must be at least 8 characters',
     mismatch: 'Passwords do not match',
     invalid: 'We could not open the link. Open it in the same browser you requested it from, or request a new link.',
+    expired: 'This link has expired or was already used. Request a new link; it stays valid for one hour.',
     requestNew: 'Request a new reset link', err: 'Could not save, try again',
     checking: 'Checking the link…', login: 'Sign in',
   },
@@ -43,6 +44,7 @@ const txt = {
     short: 'پاسورڈ کم از کم 8 حروف کا ہونا چاہیے',
     mismatch: 'پاسورڈ مماثل نہیں',
     invalid: 'لنک نہیں کھل سکا۔ اسے اسی براؤزر میں کھولیں جہاں سے آپ نے درخواست کی تھی، یا نیا لنک طلب کریں۔',
+    expired: 'اس لنک کی مدت ختم ہو گئی یا یہ پہلے استعمال ہو چکا ہے۔ نیا لنک منگوائیں، یہ ایک گھنٹے تک کارآمد رہتا ہے۔',
     requestNew: 'نیا ری سیٹ لنک طلب کریں', err: 'محفوظ نہیں ہوا، دوبارہ کوشش کریں',
     checking: 'لنک چیک ہو رہا ہے…', login: 'سائن ان',
   },
@@ -58,6 +60,8 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [ready, setReady] = useState(false)   // a valid recovery session exists
   const [checking, setChecking] = useState(true)
+  // an expired / already-used link is said as such, not «open it in the same browser» (UX-120)
+  const [expired, setExpired] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -72,10 +76,14 @@ export default function ResetPasswordPage() {
     // here directly, so the link also works on a phone other than the browser that asked for it
     // (the PKCE ?code= link only works in that same browser).
     const qs = new URLSearchParams(window.location.search)
+    const hs = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const errCode = qs.get('error_code') || hs.get('error_code') || ''
+    if (/otp_expired|expired/i.test(errCode) || /expired/i.test(qs.get('error_description') || hs.get('error_description') || '')) setExpired(true)
     const tokenHash = qs.get('token_hash')
     if (tokenHash && qs.get('type') === 'recovery') {
       supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }).then(({ data, error }) => {
         if (!error && data.session) setReady(true)
+        else if (error && /expired|invalid/i.test(String((error as any).code || error.message || ''))) setExpired(true)
         setChecking(false)
         try { window.history.replaceState(null, '', '/reset-password') } catch {}
       }, () => setChecking(false))
@@ -110,8 +118,9 @@ export default function ResetPasswordPage() {
 
       <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup mx-auto mb-4" />
-          <Logo theme="dark" size="lg" className="justify-center" variant="wordmark" />
+          {/* one logo, as on the sign-in page (UX-120) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup mx-auto" />
         </div>
 
         <div className="bg-white rounded-3xl p-8 shadow-2xl">
@@ -128,7 +137,7 @@ export default function ResetPasswordPage() {
           ) : !ready ? (
             <div className="text-center">
               <div className="text-4xl mb-3"><Glyph e="⚠" /></div>
-              <p className="text-sm text-gray-700 mb-6">{t.invalid}</p>
+              <p className="text-sm text-gray-700 mb-6" role="alert">{expired ? t.expired : t.invalid}</p>
               <a href="/forgot-password" className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{t.requestNew}</a>
               <a href="/login" className="mt-3 inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-[#0B2438] text-sm border border-gray-200">{t.login}</a>
             </div>

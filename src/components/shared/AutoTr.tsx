@@ -63,7 +63,9 @@ function isolateLatin(s: string): ReactNode {
   return out
 }
 
-export default function AutoTr({ text, locale, className }: { text: string | null | undefined; locale: string; className?: string }) {
+// noToggle: inside a clickable row (a <button> or <a>) the «original» toggle would be a button inside a
+// button, invalid HTML (UX-109); show the translation with a small non-interactive «مترجم» tag instead.
+export default function AutoTr({ text, locale, className, noToggle }: { text: string | null | undefined; locale: string; className?: string; noToggle?: boolean }) {
   const to = (['ar', 'en', 'ur'].includes(locale) ? locale : 'ar') as Lang
   const src = (text || '').trim()
   const need = needsTranslate(src, to)
@@ -79,11 +81,12 @@ export default function AutoTr({ text, locale, className }: { text: string | nul
   const tr = need ? mem.get(key(to, src)) : undefined
   if (!tr || tr === src) return <span className={className} dir="auto">{isolateLatin(src)}</span>
   const L = (en: string, ur: string, ar: string) => (to === 'en' ? en : to === 'ur' ? ur : ar)
+  if (noToggle) return <span className={className} dir="auto">{isolateLatin(tr)} <span className="text-[12px] font-bold text-[#8F6820] whitespace-nowrap">({L('translated', 'ترجمہ', 'مترجم')})</span></span>
   return (
     <span className={className} dir="auto">
       {isolateLatin(orig ? src : tr)}{' '}
       <button type="button" onClick={e => { e.preventDefault(); e.stopPropagation(); setOrig(o => !o) }}
-        className="text-[10px] font-bold text-[#8F6820] hover:underline align-middle whitespace-nowrap">
+        className="inline-flex items-center min-h-[32px] px-1 text-[12px] font-bold text-[#8F6820] hover:underline align-middle whitespace-nowrap">
         {orig ? L('Translation', 'ترجمہ', 'الترجمة') : L('Translated · original', 'ترجمہ · اصل', 'مترجم · الأصل')}
       </button>
     </span>

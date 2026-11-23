@@ -59,6 +59,7 @@ export default function CrClaimsOnMyAccountPage() {
   return (
     <AppShell title={L('Requests on my registration', 'میری رجسٹریشن پر درخواستیں', 'طلبات على سجلي التجاري')} nav={getNav(role, locale, '/settings')} dir={dir}>
       <div className="max-w-xl mx-auto space-y-3">
+        <h1 className="sr-only">{L('Requests on my registration', 'میری رجسٹریشن پر درخواستیں', 'طلبات على سجلي التجاري')}</h1>
         <p className="text-sm text-gray-500 leading-relaxed">
           {L('Someone said the commercial registration on your account is theirs. Tell the admin why it is yours; the admin may ask you for your documents, then decides. Nothing changes until then.',
              'کسی نے کہا ہے کہ آپ کے اکاؤنٹ کی تجارتی رجسٹریشن اس کی ہے۔ انتظامیہ کو بتائیں کہ یہ آپ کی کیوں ہے؛ انتظامیہ آپ سے دستاویزات مانگ سکتی ہے، پھر فیصلہ کرے گی۔ تب تک کچھ نہیں بدلے گا۔',
@@ -73,19 +74,19 @@ export default function CrClaimsOnMyAccountPage() {
         ) : claims.map((c: any) => (
           <div key={c.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="font-mono font-bold" style={{ color: '#0B2438' }} dir="ltr">{c.commercial_registration}</span>
+              <span className="font-bold" style={{ color: '#0B2438' }} dir="ltr">{c.commercial_registration}</span>
               <span className="text-[12px] text-gray-500">{statusLabel(c.status)}</span>
             </div>
             <div className="text-sm text-gray-600 mt-1">{L('Requested by', 'درخواست دہندہ', 'صاحب الطلب')}: <b>{c.claimant_name}</b></div>
-            <div className="text-[12px] text-gray-500 mt-0.5">{new Date(c.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</div>
+            <div className="text-[12px] text-gray-500 mt-0.5">{new Date(c.created_at).toLocaleString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory-nu-latn')}</div>
             {c.holder_response ? (
               <div className="mt-3 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-700"><Glyph e="💬" /> {L('Your answer', 'آپ کا جواب', 'ردّك')}: {c.holder_response}</div>
             ) : c.status === 'open' && (
               <div className="mt-3 space-y-2">
-                <textarea value={drafts[c.id] || ''} onChange={(e: any) => setDrafts({ ...drafts, [c.id]: e.target.value })} rows={3} maxLength={2000}
+                <textarea aria-label={L('Why is this registration yours?', 'یہ رجسٹریشن آپ کی کیوں ہے؟', 'لماذا هذا السجل لك؟')} value={drafts[c.id] || ''} onChange={(e: any) => setDrafts({ ...drafts, [c.id]: e.target.value })} rows={3} maxLength={2000}
                   className="input-field text-sm" placeholder={L('Why is this registration yours?', 'یہ رجسٹریشن آپ کی کیوں ہے؟', 'لماذا هذا السجل لك؟')} />
                 <button type="button" onClick={() => respond(c.id)} disabled={busy === c.id || !(drafts[c.id] || '').trim()}
-                  className="min-h-[44px] px-6 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#0B2438' }}>
+                  className="min-h-[44px] px-6 rounded-xl font-extrabold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
                   {busy === c.id ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send to the admin', 'انتظامیہ کو بھیجیں', 'إرسال إلى الإدارة')}
                 </button>
                 <div className="text-[12px] text-gray-500">{L('You can answer once.', 'آپ ایک بار جواب دے سکتے ہیں۔', 'يمكنك الرد مرة واحدة.')}</div>

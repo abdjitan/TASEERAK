@@ -117,7 +117,11 @@ export default function MarketPricePage() {
         <div className="text-4xl mb-3 text-[#0B2438]"><Glyph e="📊" /></div>
         <h1 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{L('The price index is not active yet', 'قیمتوں کا انڈیکس ابھی فعال نہیں', 'مؤشر الأسعار غير مفعّل حالياً')}</h1>
         <p className="text-sm text-gray-600">{L('To know today’s price of a material, send a price request: suppliers answer with their current prices.', 'کسی چیز کی آج کی قیمت جاننے کے لیے قیمت کی درخواست بھیجیں: سپلائرز اپنی موجودہ قیمتیں بتائیں گے۔', 'لمعرفة سعر مادة اليوم، أرسل طلب تسعير، فيرد الموردون بأسعارهم الحالية.')}</p>
-        <a href={backHref} className="btn-navy text-sm mt-5">{L('Back to the home page', 'ہوم پر واپس', 'العودة إلى الرئيسية')}</a>
+        {/* the next step is the request itself (UX-143); a supplier only goes back */}
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          {userRole !== 'supplier' && <a href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب تسعيرة')}</a>}
+          <a href={backHref} className={userRole !== 'supplier' ? 'btn-ghost text-sm' : 'btn-navy text-sm'}>{L('Back to the home page', 'ہوم پر واپس', 'العودة إلى الرئيسية')}</a>
+        </div>
       </div>
     </AppShell>
   )

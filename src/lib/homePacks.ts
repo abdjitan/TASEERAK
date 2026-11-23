@@ -8,7 +8,14 @@
 import type { Sector } from '@/types'
 import { cleanArName } from '@/lib/displayName'
 
-export type PackItem = { name: string; sector: Sector; qty: number | null; unit?: string; hint?: { ar: string; en: string; ur: string } }
+// calc (round-3 UX-061): how the quantity calculator works for this item.
+//   'room' = from a room's floor or walls (tiles, paint, wallpaper); 'area' = the buyer writes the area
+//   directly, no waste (outdoor shades, grass); 'none' = no calculator (curtains: window sizes, not a room).
+//   Without calc, an item ordered in م²/جالون/لفة gets the room calculator.
+// cover: square metres one unit covers in ONE coat (paint ≈ 30 m²/gallon/coat, primer ≈ 30, wallpaper ≈ 5);
+// coats: how many coats (paint 2, primer 1). The web and the app use the same numbers (calcQuantity).
+export type PackCalc = 'room' | 'area' | 'none'
+export type PackItem = { name: string; sector: Sector; qty: number | null; unit?: string; hint?: { ar: string; en: string; ur: string }; calc?: PackCalc; cover?: number; coats?: number }
 export type HomePack = {
   id: string
   img: string // /images/sections/<img>.webp (sheet header background)
@@ -22,7 +29,8 @@ export type HomePack = {
 const AREA = { ar: 'المساحة بالمتر المربع، أو احسبها من مقاس الغرفة', en: 'The area in square metres, or work it out from the room size', ur: 'رقبہ مربع میٹر میں، یا کمرے کے سائز سے حساب کریں' }
 const LEN = { ar: 'قِس الطول بالمتر', en: 'Measure the length in metres', ur: 'لمبائی میٹر میں ناپیں' }
 const HOW_MANY = { ar: 'اكتب العدد الذي تحتاجه', en: 'Write how many you need', ur: 'تعداد لکھیں' }
-const WINDOWS = { ar: 'اجمع مساحة النوافذ: العرض × الارتفاع بالمتر', en: 'Add up the window areas: width × height in metres', ur: 'کھڑکیوں کا رقبہ جمع کریں: چوڑائی × اونچائی میٹر میں' }
+const WINDOWS = { ar: 'اضرب عرض كل نافذة في ارتفاعها بالمتر، ثم اجمع النتائج', en: 'Multiply each window’s width by its height in metres, then add the results', ur: 'ہر کھڑکی کی چوڑائی کو اس کی اونچائی سے میٹر میں ضرب دیں، پھر نتائج جمع کریں' }
+const OUT_AREA = { ar: 'اكتب المساحة بالمتر المربع (مثلاً 4 × 5 = 20)', en: 'Write the area in square metres (e.g. 4 × 5 = 20)', ur: 'رقبہ مربع میٹر میں لکھیں (مثلاً 4 × 5 = 20)' }
 
 export const HOME_PACKS: HomePack[] = [
   {
@@ -36,7 +44,8 @@ export const HOME_PACKS: HomePack[] = [
       { name: 'خلاط شطاف', sector: 'mechanical', qty: 1 },
       { name: 'رأس دش', sector: 'mechanical', qty: 1 },
       { name: 'سيفون مغسلة', sector: 'mechanical', qty: 1 },
-      { name: 'بلاط سيراميك جدار', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
+      { name: 'بلاط سيراميك جدار', sector: 'architectural', qty: null, unit: 'م²', hint: AREA, calc: 'room' },
+      { name: 'بلاط سيراميك', sector: 'architectural', qty: null, unit: 'م²', hint: AREA, calc: 'room' }, // the floor tiles (UX-132)
       { name: 'غراء بلاط أسمنتي عادي C1 (Standard Tile Adhesive)', sector: 'architectural', qty: null, unit: 'كيس', hint: { ar: 'كيس لكل 4 أمتار مربعة تقريباً', en: 'About one bag per 4 square metres', ur: 'تقریباً ہر 4 مربع میٹر کے لیے ایک بوری' } },
       { name: 'عزل مائي سائل تحت البلاط للحمامات (Under-tile Liquid Membrane)', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
       { name: 'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)', sector: 'civil', qty: 2 },
@@ -46,8 +55,8 @@ export const HOME_PACKS: HomePack[] = [
     id: 'paint', img: 'finishing', cover: 'رولة دهان', photo: '/images/packs/paint.webp', ar: 'دهان شقة', en: 'Paint an apartment', ur: 'اپارٹمنٹ پینٹ',
     sub: { ar: 'دهان ومعجون وأدوات', en: 'Paint, filler and tools', ur: 'پینٹ، پٹی اور اوزار' },
     items: [
-      { name: 'دهان داخلي', sector: 'supply_store', qty: null, unit: 'جالون', hint: { ar: 'جالون لكل 15 متراً مربعاً من الجدران تقريباً (وجهان)، أو احسبها من مقاس الغرفة', en: 'About one gallon per 15 square metres of wall (two coats), or work it out from the room size', ur: 'تقریباً ہر 15 مربع میٹر دیوار کے لیے ایک گیلن (دو کوٹ)' } },
-      { name: 'دهان أساس (برايمر)', sector: 'architectural', qty: null, unit: 'جالون', hint: { ar: 'جالون لكل 30 متراً مربعاً تقريباً', en: 'About one gallon per 30 square metres', ur: 'تقریباً ہر 30 مربع میٹر کے لیے ایک گیلن' } },
+      { name: 'دهان داخلي', sector: 'supply_store', qty: null, unit: 'جالون', calc: 'room', cover: 30, coats: 2, hint: { ar: 'جالون لكل 15 متراً مربعاً من الجدران تقريباً (وجهان)، أو احسبها من مقاس الغرفة', en: 'About one gallon per 15 square metres of wall (two coats), or work it out from the room size', ur: 'تقریباً ہر 15 مربع میٹر دیوار کے لیے ایک گیلن (دو کوٹ)' } },
+      { name: 'دهان أساس (برايمر)', sector: 'architectural', qty: null, unit: 'جالون', calc: 'room', cover: 30, coats: 1, hint: { ar: 'جالون لكل 30 متراً مربعاً تقريباً (وجه واحد)', en: 'About one gallon per 30 square metres (one coat)', ur: 'تقریباً ہر 30 مربع میٹر کے لیے ایک گیلن (ایک کوٹ)' } },
       { name: 'معجون جدران جاهز (أكريليك – سطل)', sector: 'architectural', qty: 1, unit: 'سطل' },
       { name: 'معجون حشو شقوق جاهز (أنبوب/علبة)', sector: 'supply_store', qty: 1 },
       { name: 'ورق صنفرة', sector: 'supply_store', qty: 5 },
@@ -71,7 +80,7 @@ export const HOME_PACKS: HomePack[] = [
   },
   {
     id: 'ac', img: 'hvac_fire', cover: 'مكيف سبليت', photo: '/images/packs/ac.webp', ar: 'تكييف غرفة', en: 'Air-condition a room', ur: 'کمرے کا اے سی',
-    sub: { ar: 'مكيف سبليت وتركيبه', en: 'Split AC and its fittings', ur: 'اسپلٹ اے سی اور فٹنگ' },
+    sub: { ar: 'مكيف سبليت وملحقات تركيبه', en: 'Split AC and its mounting parts', ur: 'اسپلٹ اے سی اور اس کی فٹنگ' },
     items: [
       { name: 'مكيف سبليت', sector: 'mechanical', qty: 1 },
       { name: 'حامل وقاعدة مكيف', sector: 'mechanical', qty: 1 },
@@ -92,8 +101,8 @@ export const HOME_PACKS: HomePack[] = [
     id: 'curtains', img: 'furniture', cover: 'ستائر قماش', photo: '/images/packs/curtains.webp', ar: 'ستائر غرفة', en: 'Curtains for a room', ur: 'کمرے کے پردے',
     sub: { ar: 'ستائر وحوامل', en: 'Curtains and rails', ur: 'پردے اور ریلیں' },
     items: [
-      { name: 'ستائر قماش', sector: 'architectural', qty: null, unit: 'م.ط', hint: { ar: 'اكتب عرض النوافذ بالمتر', en: 'Write the window width in metres', ur: 'کھڑکی کی چوڑائی میٹر میں لکھیں' } },
-      { name: 'ستائر رول (بلاك آوت)', sector: 'architectural', qty: null, unit: 'م²', hint: WINDOWS },
+      { name: 'ستائر قماش', sector: 'architectural', qty: null, unit: 'م.ط', calc: 'none', hint: { ar: 'اكتب عرض النوافذ بالمتر', en: 'Write the window width in metres', ur: 'کھڑکی کی چوڑائی میٹر میں لکھیں' } },
+      { name: 'ستائر رول (بلاك آوت)', sector: 'architectural', qty: null, unit: 'م²', hint: WINDOWS, calc: 'none' },
       { name: 'مجاري وحوامل الستائر', sector: 'architectural', qty: null, unit: 'م.ط', hint: LEN },
     ],
   },
@@ -102,13 +111,13 @@ export const HOME_PACKS: HomePack[] = [
     id: 'outdoor', img: 'outdoor', cover: 'برجولات ومظلات حدائق', photo: '/images/packs/outdoor.webp', ar: 'جلسة خارجية', en: 'Outdoor sitting area', ur: 'بیرونی بیٹھک',
     sub: { ar: 'مظلة أو برجولا وجلسة وإنارة', en: 'Shade or pergola, seating, lights', ur: 'سائبان یا پرگولا، بیٹھک، روشنی' },
     items: [
-      { name: 'برجولات ومظلات حدائق', sector: 'civil', qty: null, unit: 'م²', hint: { ar: 'اكتب المساحة بالمتر المربع (مثلاً 4 × 5 = 20)', en: 'Write the area in square metres (e.g. 4 × 5 = 20)', ur: 'رقبہ مربع میٹر میں لکھیں' } },
-      { name: 'مظلات شراع (شد إنشائي)', sector: 'civil', qty: null, unit: 'م²', hint: AREA },
+      { name: 'برجولات ومظلات حدائق', sector: 'civil', qty: null, unit: 'م²', hint: OUT_AREA, calc: 'area' },
+      { name: 'مظلات شراع (شد إنشائي)', sector: 'civil', qty: null, unit: 'م²', hint: OUT_AREA, calc: 'area' },
       { name: 'أثاث خارجي (جلسات حدائق)', sector: 'architectural', qty: 1 },
       { name: 'إنارة حدائق وممرات', sector: 'electrical', qty: 4 },
       { name: 'سبوت حدائق بوتد (Spike Light)', sector: 'electrical', qty: 4 },
-      { name: 'عشب صناعي', sector: 'civil', qty: null, unit: 'م²', hint: AREA },
-      { name: 'إنترلوك رصف', sector: 'civil', qty: null, unit: 'م²', hint: AREA },
+      { name: 'عشب صناعي', sector: 'civil', qty: null, unit: 'م²', hint: OUT_AREA, calc: 'area' },
+      { name: 'إنترلوك رصف', sector: 'civil', qty: null, unit: 'م²', hint: OUT_AREA, calc: 'area' },
     ],
   },
   {
@@ -121,11 +130,11 @@ export const HOME_PACKS: HomePack[] = [
       { name: 'مكتبة ورفوف حسب الطلب', sector: 'architectural', qty: null, unit: 'م.ط', hint: LEN },
       { name: 'رفوف حائط ديكور', sector: 'architectural', qty: 3 },
       { name: 'قواطع زجاجية للمكاتب', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
-      { name: 'ورق جدران', sector: 'architectural', qty: null, unit: 'لفة', hint: { ar: 'لفة لكل 5 أمتار مربعة من الجدار تقريباً', en: 'About one roll per 5 square metres of wall', ur: 'تقریباً ہر 5 مربع میٹر دیوار کے لیے ایک رول' } },
+      { name: 'ورق جدران', sector: 'architectural', qty: null, unit: 'لفة', calc: 'room', cover: 5, coats: 1, hint: { ar: 'لفة لكل 5 أمتار مربعة من الجدار تقريباً', en: 'About one roll per 5 square metres of wall', ur: 'تقریباً ہر 5 مربع میٹر دیوار کے لیے ایک رول' } },
       { name: 'باركيه خشبي', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
       { name: 'سبوت متحرك COB للأسقف الجبسية', sector: 'electrical', qty: 6 },
       { name: 'مصباح طاولة ومكتب LED', sector: 'electrical', qty: 1 },
-      { name: 'ستائر شرائح (Blinds)', sector: 'architectural', qty: null, unit: 'م²', hint: WINDOWS },
+      { name: 'ستائر شرائح (Blinds)', sector: 'architectural', qty: null, unit: 'م²', hint: WINDOWS, calc: 'none' },
     ],
   },
 ]
@@ -157,6 +166,20 @@ const HOME_NAMES: Record<string, string> = {
   'مجموعة تثبيت حائط للسخان والغسالة (Wall-mount Group)': 'طقم تثبيت السخان على الحائط',
   'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)': 'سيليكون للحمامات والمطابخ',
   'أثاث خارجي (جلسات حدائق)': 'جلسة حديقة',
+  // round-3 UX-132: MSA names, the common word in brackets
+  'فيش كهرباء': 'مقبس كهربائي (فيش)',
+  'رولة دهان': 'أسطوانة دهان (رولة)',
+}
+
+/** One quantity rule for the web and the app (UX-061): area in m² → order quantity for the item's unit.
+ *  Paint/primer/wallpaper: area × coats ÷ cover, rounded up; tiles/floors from a room: +10% waste;
+ *  an outdoor area typed directly ('area'): no waste. */
+export function calcQuantity(area: number, unit: string, opts: { calc?: PackCalc; cover?: number; coats?: number } = {}): { qty: number; waste: boolean } {
+  if (!(area > 0)) return { qty: 0, waste: false }
+  if (unit === 'جالون') { const cover = opts.cover || 30, coats = opts.coats || 2; return { qty: Math.max(1, Math.ceil(area * coats / cover)), waste: false } }
+  if (unit === 'لفة') { const cover = opts.cover || 5, coats = opts.coats || 1; return { qty: Math.max(1, Math.ceil(area * coats / cover)), waste: false } }
+  const waste = unit === 'م²' && opts.calc !== 'area'
+  return { qty: Math.ceil(area * (waste ? 1.1 : 1)), waste }
 }
 /** A product name as a home buyer reads it (Arabic): the plain name above, else cleanArName. */
 export function homeName(name: string): string {
@@ -171,7 +194,7 @@ export function packUnitMismatches(): string[] {
     const h = it.hint?.ar || ''
     if (!h) continue
     const says = /جالون/.test(h) ? 'جالون' : /كيس/.test(h) ? 'كيس' : /لفة/.test(h) ? 'لفة'
-      : /بالمتر المربع|مساحة/.test(h) ? 'م²' : /عرض النوافذ|الطول بالمتر/.test(h) ? 'length' : /العدد/.test(h) ? 'count' : ''
+      : /بالمتر المربع|مساحة|ارتفاعها/.test(h) ? 'م²' : /عرض النوافذ|الطول بالمتر/.test(h) ? 'length' : /العدد/.test(h) ? 'count' : ''
     const u = it.unit || ''
     const ok = !says || (says === 'length' ? ['م.ط', 'متر'].includes(u) : says === 'count' ? (!u || ['حبة', 'عدد', 'طقم'].includes(u)) : says === u)
     if (!ok) out.push(p.id + ': ' + it.name)

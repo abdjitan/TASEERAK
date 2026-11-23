@@ -58,19 +58,25 @@ export default function CrClaimPage() {
     if (!name.trim()) { setMsg(L('Enter your name or the business name.', 'اپنا یا ادارے کا نام لکھیں۔', 'اكتب اسمك أو اسم المنشأة.')); return }
     if (!file) { setMsg(L('Upload a copy of the commercial registration.', 'تجارتی رجسٹریشن کی کاپی اپ لوڈ کریں۔', 'ارفع صورة السجل التجاري.')); return }
     setSaving(true)
-    const fd = new FormData(); fd.append('file', await compressImage(file, { maxSide: DOC_MAX_SIDE })); fd.append('kind', 'claim')
-    const res = await fetch('/api/upload-verification', { method: 'POST', body: fd })
-    const j = await res.json().catch(() => ({}))
-    if (!res.ok || !j.ok) { setSaving(false); setMsg(j?.message || L('Upload failed.', 'اپ لوڈ ناکام ہو گیا۔', 'تعذّر رفع الملف.')); return }
-    const supabase = createClient()
-    const { data: claimId, error } = await supabase.rpc('submit_cr_claim', { p_cr: digits, p_name: name.trim(), p_contact: contact.trim() || null, p_file_path: j.path })
-    setSaving(false)
-    if (error) { setMsg(friendlyError(error.message, L('Could not send the request — please try again.', 'درخواست نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال الطلب، حاول مرة أخرى.'), locale)); return }
-    setDone(true)
-    // 172: AI read of the claim file for the admin (fire and forget; manual when off/capped)
-    fetch('/api/verification/extract', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'claim', claimId }) }).catch(() => {})
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session) await loadMine(supabase, session.user.id)
+    // UX-137: a dropped connection (compression, upload, RPC) always releases the button and says so
+    try {
+      const fd = new FormData(); fd.append('file', await compressImage(file, { maxSide: DOC_MAX_SIDE })); fd.append('kind', 'claim')
+      const res = await fetch('/api/upload-verification', { method: 'POST', body: fd })
+      const j = await res.json().catch(() => ({}))
+      if (!res.ok || !j.ok) { setMsg(j?.message || L('Could not upload the file — please try again.', 'فائل اپ لوڈ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر رفع الملف، حاول مرة أخرى.')); return }
+      const supabase = createClient()
+      const { data: claimId, error } = await supabase.rpc('submit_cr_claim', { p_cr: digits, p_name: name.trim(), p_contact: contact.trim() || null, p_file_path: j.path })
+      if (error) { setMsg(friendlyError(error.message, L('Could not send the request — please try again.', 'درخواست نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال الطلب، حاول مرة أخرى.'), locale)); return }
+      setDone(true)
+      // 172: AI read of the claim file for the admin (fire and forget; manual when off/capped)
+      fetch('/api/verification/extract', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'claim', claimId }) }).catch(() => {})
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) await loadMine(supabase, session.user.id)
+    } catch {
+      setMsg(L('Could not send because of the connection — please try again.', 'کنکشن کی وجہ سے نہیں بھیجا جا سکا — دوبارہ کوشش کریں۔', 'تعذّر الإرسال بسبب الاتصال، حاول مرة أخرى.'))
+    } finally {
+      setSaving(false)
+    }
   }
 
   async function withdraw(id: string) {
@@ -104,16 +110,16 @@ export default function CrClaimPage() {
           ) : (
             <form onSubmit={submit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-2">{L('CR number', 'سی آر نمبر', 'رقم السجل التجاري')}</label>
-                <input value={cr} onChange={(e: any) => setCr(e.target.value)} inputMode="numeric" dir="ltr" maxLength={14} className="input-field font-mono" placeholder="7001234567" />
+                <label htmlFor="claim-cr" className="block text-xs font-bold text-gray-500 mb-2">{L('CR number', 'سی آر نمبر', 'رقم السجل التجاري')}</label>
+                <input id="claim-cr" value={cr} onChange={(e: any) => setCr(e.target.value)} inputMode="numeric" dir="ltr" maxLength={14} className="input-field" placeholder="7001234567" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-2">{L('Your name or the business name', 'آپ کا یا ادارے کا نام', 'اسمك أو اسم المنشأة')}</label>
-                <input value={name} onChange={(e: any) => setName(e.target.value)} maxLength={120} className="input-field" />
+                <label htmlFor="claim-name" className="block text-xs font-bold text-gray-500 mb-2">{L('Your name or the business name', 'آپ کا یا ادارے کا نام', 'اسمك أو اسم المنشأة')}</label>
+                <input id="claim-name" value={name} onChange={(e: any) => setName(e.target.value)} maxLength={120} className="input-field" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-500 mb-2">{L('Phone or email for the admin (optional)', 'انتظامیہ کے لیے فون یا ای میل (اختیاری)', 'جوال أو بريد للتواصل مع الإدارة (اختياري)')}</label>
-                <input value={contact} onChange={(e: any) => setContact(e.target.value)} maxLength={200} dir="ltr" className="input-field" />
+                <label htmlFor="claim-contact" className="block text-xs font-bold text-gray-500 mb-2">{L('Phone or email for the admin (optional)', 'انتظامیہ کے لیے فون یا ای میل (اختیاری)', 'جوال أو بريد للتواصل مع الإدارة (اختياري)')}</label>
+                <input id="claim-contact" value={contact} onChange={(e: any) => setContact(e.target.value)} maxLength={200} dir="ltr" className="input-field" />
               </div>
               <label className={`flex items-center gap-3 border-2 border-dashed rounded-xl p-4 cursor-pointer transition-all ${file ? 'border-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 hover:border-[#D4A543]/50'}`}>
                 <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={(e: any) => setFile(e.target.files?.[0] ?? null)} />
@@ -121,7 +127,7 @@ export default function CrClaimPage() {
                 <div className="text-sm font-semibold text-gray-700">{file ? file.name : L('Upload the CR certificate (PDF or image)', 'سی آر سرٹیفکیٹ اپ لوڈ کریں (PDF یا تصویر)', 'ارفع شهادة السجل التجاري (PDF أو صورة)')}</div>
               </label>
               {msg && <div role="alert" className="text-sm rounded-xl p-3 bg-red-50 text-red-600 border border-red-200">{msg}</div>}
-              <button type="submit" disabled={saving} className="px-8 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition-all hover:shadow-lg" style={{ background: '#D4A543', color: '#0B2438' }}>
+              <button type="submit" disabled={saving} className="min-h-[44px] px-8 py-3 rounded-xl font-extrabold text-sm disabled:opacity-50 transition-all hover:shadow-lg" style={{ background: '#D4A543', color: '#071827' }}>
                 {saving ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send the request', 'درخواست بھیجیں', 'إرسال الطلب')}
               </button>
             </form>
@@ -135,7 +141,7 @@ export default function CrClaimPage() {
               {mine.map((c: any) => (
                 <div key={c.id} className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 p-3 text-sm">
                   <div className="min-w-0">
-                    <div className="font-mono" dir="ltr">{c.commercial_registration}</div>
+                    <div dir="ltr">{c.commercial_registration}</div>
                     <div className="text-[12px] text-gray-500">{statusLabel(c.status)}{c.admin_note ? ' · ' + c.admin_note : ''}</div>
                   </div>
                   {c.status === 'open' && (

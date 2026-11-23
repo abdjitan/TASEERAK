@@ -14,6 +14,10 @@ import FixSignupEmail from '@/components/auth/FixSignupEmail'
 import { BUYER_PHONE_LOGIN as PHONE_OTP_ENABLED } from '@/lib/features'
 import { pendingTeamInvite } from '@/lib/sellers'
 import { captureRef } from '@/lib/referral'
+import { firebaseReady } from '@/lib/firebaseConfig'
+import { OPERATOR } from '@/lib/legal'
+
+const SUPPORT_WHATSAPP = '12135614366'
 
 const txt = {
   ar: { welcome:'أهلاً بعودتك', sub:'سجّل دخولك للمتابعة إلى حسابك', email:'البريد الإلكتروني', password:'كلمة المرور', login:'تسجيل الدخول', logging:'جارٍ الدخول...', noAccount:'ليس لديك حساب؟', register:'أنشئ حساباً جديداً', error:'البريد أو كلمة المرور غير صحيحة', copyright:'© 2026 تسعيرك · منصة التسعير والتوريد لمواد البناء', s_auth:'جارٍ تسجيل الدخول…', s_role:'الخطوة 2/3: جارٍ قراءة الصلاحية…', s_go:'جارٍ فتح حسابك…', err_timeout:'انتهت المهلة دون استجابة. قد يكون اتصالك بالإنترنت يحجب الخادم — جرّب شبكة أخرى (بيانات الجوال مثلاً) ثم أعد المحاولة.', brandH:'طلب تسعير واحد، ويتنافس عليه الموردون.', brandP:'سجّل دخولك وتابع طلباتك وعروضك في مكان واحد، من الطلب حتى الاستلام.', l1:'يظهر بجانب كل مورد توثيق سجلّه التجاري', l2:'قارن العروض واختر الأرخص لكل مادة', l3:'اكتب قائمة موادك أو صوّرها، ونرسلها إلى الموردين المناسبين', remember:'تذكّرني', forgot:'نسيت كلمة المرور؟', or:'أو', home:'الرئيسية', captchaErr:'يرجى إكمال خطوة التحقق (لستُ روبوتاً) ثم إعادة المحاولة.' },
@@ -26,10 +30,24 @@ function LoginForm() {
   const t = txt[locale] || txt.ar
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const searchParams = useSearchParams()
-  const [mode, setMode] = useState<'email' | 'phone'>(PHONE_OTP_ENABLED && searchParams.get('m') !== 'email' ? 'phone' : 'email')
+  const PHONE_READY = PHONE_OTP_ENABLED && firebaseReady()
+  const askedEmail = searchParams.get('m') === 'email'
+  const [mode, setMode] = useState<'email' | 'phone'>(PHONE_READY && !askedEmail ? 'phone' : 'email')
   // remote switch (app_flags, migration 228): buyer phone sign-in can be turned off at once if SMS breaks
-  const [phoneOn, setPhoneOn] = useState(PHONE_OTP_ENABLED)
+  const [phoneOn, setPhoneOn] = useState(PHONE_READY)
   useEffect(() => { createClient().rpc('app_flags').then(({ data }: any) => { if (data && data.buyer_phone_login === false) { setPhoneOn(false); setMode('email') } }, () => {}) }, [])
+  // Phone sign-in off and the visitor did not ask for the email sign-in: most arrive from «Start now», so
+  // open on «start free» with a clear «create an account» button; the «welcome back» form is one tap away (UX-003)
+  const [emailFormOpen, setEmailFormOpen] = useState(askedEmail)
+  const nextParam = searchParams.get('next') || ''
+  const registerHref = nextParam ? `/register?next=${encodeURIComponent(nextParam)}` : '/register'
+  // why the visitor is here when a link sent them (UX-097)
+  const nextNote = !nextParam ? ''
+    : /^\/contractor\/(rfq\/quick|project\/new)/.test(nextParam)
+      ? L('Create a free account or sign in to send your price request.', 'قیمت کی درخواست بھیجنے کے لیے مفت اکاؤنٹ بنائیں یا سائن اِن کریں۔', 'أنشئ حساباً مجانياً أو سجّل الدخول لإرسال طلب التسعير.')
+      : L('Sign in to open the page whose link you received.', 'جس صفحے کا لنک آپ کو ملا ہے اسے کھولنے کے لیے سائن اِن کریں۔', 'سجّل الدخول لفتح الصفحة التي وصلك رابطها.')
+  const [bannedErr, setBannedErr] = useState(false)
+  const intro = mode === 'email' && !phoneOn && !emailFormOpen
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -47,8 +65,8 @@ function LoginForm() {
     try {
       const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
       const code = searchParams.get('error_code') || hash.get('error_code') || ''
-      if (code || searchParams.get('error') === 'access_denied' || hash.get('error') === 'access_denied') { setConfirmNote('expired'); setMode('email') }
-      else if (searchParams.get('confirmed') === '1') { setConfirmNote('ok'); setMode('email') }
+      if (code || searchParams.get('error') === 'access_denied' || hash.get('error') === 'access_denied') { setConfirmNote('expired'); setMode('email'); setEmailFormOpen(true) }
+      else if (searchParams.get('confirmed') === '1') { setConfirmNote('ok'); setMode('email'); setEmailFormOpen(true) }
     } catch {}
   }, [])
 
@@ -125,7 +143,7 @@ function LoginForm() {
 
   async function handleLogin(e: any) {
     e.preventDefault()
-    setLoading(true); setError(''); setStatus(t.s_auth); setProgress(18)
+    setLoading(true); setError(''); setBannedErr(false); setStatus(t.s_auth); setProgress(18)
     const supabase = createClient()
     try {
       // STEP 1/3 — authenticate (with a hard 15s ceiling so it can never hang)
@@ -138,7 +156,8 @@ function LoginForm() {
         setUnconfirmed(/not confirmed/i.test(err.message || '') || (err as any).code === 'email_not_confirmed')
         // an account the admins closed or suspended must not read as a wrong password (UX-116)
         const banned = (err as any).code === 'user_banned' || /banned/i.test(err.message || '')
-        setError(banned ? L('This account has been suspended by the administration, so it cannot be signed in to. Contact support to find out why: WhatsApp +1 213 561 4366 or Taseerak@hotmail.com.', 'یہ اکاؤنٹ انتظامیہ نے معطل کر دیا ہے، اس لیے اس میں سائن اِن نہیں ہو سکتا۔ وجہ جاننے کے لیے سپورٹ سے رابطہ کریں: واٹس ایپ ‎+1 213 561 4366 یا Taseerak@hotmail.com', 'هذا الحساب موقوف من الإدارة، لذا لا يمكن الدخول إليه. تواصل مع الدعم لمعرفة السبب: واتساب ‎+1 213 561 4366 أو Taseerak@hotmail.com')
+        setBannedErr(banned)
+        setError(banned ? L('This account has been suspended by the administration, so it cannot be signed in to. Contact support to find out why.', 'یہ اکاؤنٹ انتظامیہ نے معطل کر دیا ہے، اس لیے اس میں سائن اِن نہیں ہو سکتا۔ وجہ جاننے کے لیے سپورٹ سے رابطہ کریں۔', 'هذا الحساب موقوف من الإدارة، لذا لا يمكن الدخول إليه. تواصل مع الدعم لمعرفة السبب.')
           : /captcha/i.test(err.message || '') ? t.captchaErr
           : /not confirmed/i.test(err.message || '') || (err as any).code === 'email_not_confirmed'
             ? L('Confirm your email first: open the link we sent to your inbox (check spam too), then sign in.', 'پہلے اپنی ای میل کی تصدیق کریں: ہمارا بھیجا ہوا لنک کھولیں (اسپام بھی دیکھیں)، پھر سائن اِن کریں۔', 'أكّد بريدك الإلكتروني أولاً من الرابط الذي أرسلناه إليك (تحقّق من مجلد الرسائل غير المرغوب فيها أيضاً)، ثم سجّل الدخول.')
@@ -207,9 +226,28 @@ function LoginForm() {
               <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
             </div>
 
-            {/* every «Start now» button lands here: the phone title says «start», not only «sign in» (UX-134) */}
-            <h1 className="text-[26px] font-bold text-navy mb-1">{mode === 'phone' ? L('Start with your mobile number', 'اپنے موبائل نمبر سے شروع کریں', 'ابدأ برقم جوالك') : t.welcome}</h1>
-            <p className="text-ink-2 text-sm mb-6">{mode === 'phone' ? L('We will send you a verification code by text message. If your number is new, we create a free buyer account for you.', 'ہم آپ کو ٹیکسٹ میسج سے تصدیقی کوڈ بھیجیں گے۔ اگر آپ کا نمبر نیا ہے تو ہم آپ کے لیے مفت خریدار اکاؤنٹ بنا دیں گے۔', 'سنرسل إليك رمز تحقق برسالة نصية. إن كان رقمك جديداً أنشأنا لك حساب مشتري مجاناً.') : t.sub}</p>
+            {/* every «Start now» button lands here: the phone title says «start», not only «sign in» (UX-134).
+                With phone sign-in off, a new visitor sees «start free» + «create an account», never «welcome back» first (UX-003) */}
+            <h1 className="text-[26px] font-bold text-navy mb-1">{mode === 'phone' ? L('Start with your mobile number', 'اپنے موبائل نمبر سے شروع کریں', 'ابدأ برقم جوالك') : intro ? L('Start free', 'مفت شروع کریں', 'ابدأ مجاناً') : t.welcome}</h1>
+            <p className="text-ink-2 text-sm mb-5">{mode === 'phone' ? L('We will send you a verification code by text message. If your number is new, we create a free buyer account for you.', 'ہم آپ کو ٹیکسٹ میسج سے تصدیقی کوڈ بھیجیں گے۔ اگر آپ کا نمبر نیا ہے تو ہم آپ کے لیے مفت خریدار اکاؤنٹ بنا دیں گے۔', 'سنرسل إليك رمز تحقق برسالة نصية. إن كان رقمك جديداً أنشأنا لك حساب مشتري مجاناً.') : intro ? L('Create your account with your email in less than a minute.', 'ای میل سے ایک منٹ سے کم میں اپنا اکاؤنٹ بنائیں۔', 'أنشئ حسابك بالبريد الإلكتروني في أقل من دقيقة.') : t.sub}</p>
+
+            {nextNote && (
+              <div className="flex items-start gap-2 text-sm rounded-xl p-3 mb-4 border" style={{ background: '#EEF2F6', borderColor: '#D5DEE8', color: '#0B2438' }} role="status">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0" aria-hidden><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
+                <span>{nextNote}</span>
+              </div>
+            )}
+
+            {/* two ways in, side by side at the top, while phone sign-in is on (UX-130) */}
+            {phoneOn && (
+              <div className="grid grid-cols-2 gap-1 p-1 rounded-xl mb-5" style={{ background: '#EEF2F6' }} role="tablist" aria-label={L('How to sign in', 'سائن اِن کا طریقہ', 'طريقة الدخول')}>
+                {([['phone', L('Mobile number (buyers)', 'موبائل نمبر (خریدار)', 'برقم الجوال (للمشترين)')], ['email', L('Email', 'ای میل', 'بالبريد الإلكتروني')]] as const).map(([m, label]) => (
+                  <button key={m} type="button" role="tab" aria-selected={mode === m}
+                    onClick={() => { setMode(m); setError(''); if (m === 'email') setEmailFormOpen(true) }}
+                    className={`min-h-[44px] rounded-lg text-[13px] font-bold transition-colors ${mode === m ? 'bg-white text-navy shadow-sm' : 'text-ink-2 hover:text-navy'}`}>{label}</button>
+                ))}
+              </div>
+            )}
 
             {confirmNote === 'ok' && (
               <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm rounded-xl p-3 mb-4" role="status">
@@ -225,17 +263,35 @@ function LoginForm() {
 
             {mode === 'phone' ? (
               <>
-              <PhoneOtpForm onSignedIn={async () => {
+              <PhoneOtpForm registerHref={registerHref} onSignedIn={async () => {
                 const { data: { user } } = await createClient().auth.getUser()
                 if (user) await routeSignedIn(user.id)
-              }} onUseEmail={() => { setMode('email'); setError('') }} />
+              }} onUseEmail={() => { setMode('email'); setEmailFormOpen(true); setError('') }} />
               {/* owner 2026-11-21: a new seller must not end up as a buyer through the phone sign-up.
                   One word for sellers everywhere: «مورد» (UX-134) */}
               <p className="mt-4 text-sm text-center text-ink-2">{L('Supplier or pricing agent?', 'سپلائر یا قیمت ایجنٹ؟', 'مورد أو وسيط تسعير؟')} <a href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</a></p>
               </>
+            ) : intro ? (
+              <div className="space-y-3">
+                <a href={registerHref} className="btn-orange w-full btn-lg inline-flex items-center justify-center gap-2">
+                  {L('Create a new account', 'نیا اکاؤنٹ بنائیں', 'أنشئ حساباً جديداً')}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className="w-[18px] h-[18px] rtl:rotate-180" aria-hidden><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+                </a>
+                <button type="button" onClick={() => { setEmailFormOpen(true); setError('') }} className="btn-ghost w-full min-h-[44px]">
+                  {L('Have an account? Sign in', 'اکاؤنٹ ہے؟ سائن اِن کریں', 'لديك حساب؟ سجّل الدخول')}
+                </button>
+                <p className="pt-2 text-sm text-center text-ink-2">{L('Supplier or pricing agent?', 'سپلائر یا قیمت ایجنٹ؟', 'مورد أو وسيط تسعير؟')} <a href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</a></p>
+              </div>
             ) : (
               <>
-                {error && <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg><span>{error}</span></div>}
+                {error && <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4 animate-fade-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" /><path d="M12 9v4M12 17h.01" /></svg>
+                  <span>{error}
+                    {/* suspended account: real support channels, not a raw number in the sentence (UX-130) */}
+                    {bannedErr && <span className="flex flex-wrap gap-x-4 mt-1">
+                      <a href={`https://wa.me/${SUPPORT_WHATSAPP}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] font-bold underline">{L('Support on WhatsApp', 'واٹس ایپ پر سپورٹ', 'واتساب الدعم')}</a>
+                      <a href={`mailto:${OPERATOR.email}`} dir="ltr" className="inline-flex items-center min-h-[44px] font-bold underline">{OPERATOR.email}</a>
+                    </span>}
+                  </span></div>}
                 {unconfirmed && email && password && <FixSignupEmail email={email} password={password} locale={locale} onFixed={(e) => { setEmail(e); setError('') }} />}
                 <form onSubmit={handleLogin} className="space-y-5">
                   <div>
@@ -257,7 +313,7 @@ function LoginForm() {
                     <Link href="/forgot-password" className="inline-flex items-center min-h-[44px] text-[13px] font-bold text-orange-dark hover:underline">{t.forgot}</Link>
                   </div>
                   <div className="flex justify-center">
-                    <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
+                    <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} language={locale} />
                   </div>
                   <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">
                     {loading ? (
@@ -270,23 +326,10 @@ function LoginForm() {
               </>
             )}
 
-            {/* «أو» only when a second sign-in method follows */}
-            {(mode === 'phone' || phoneOn) ? (
-              <div className="my-6 flex items-center gap-3 text-ink-3 text-xs">
-                <span className="h-px flex-1" style={{ background: 'var(--line)' }} />{t.or}<span className="h-px flex-1" style={{ background: 'var(--line)' }} />
-              </div>
-            ) : <div className="my-6" />}
-
-            {mode === 'phone' ? (
-              <button type="button" onClick={() => { setMode('email'); setError('') }} className="btn-ghost w-full">
-                {L('Sign in with email', 'ای میل سے سائن اِن کریں', 'ادخل بالبريد الإلكتروني')}
-              </button>
-            ) : (
-              <div className="space-y-3 text-center">
-                {phoneOn && <button type="button" onClick={() => { setMode('phone'); setError('') }} className="btn-ghost w-full">
-                  {L('Buyer? Sign in with your mobile number', 'خریدار؟ اپنے موبائل نمبر سے سائن اِن کریں', 'مشتري؟ سجّل الدخول برقم جوالك')}
-                </button>}
-                <p className="text-sm text-ink-2">{t.noAccount} <a href="/register" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
+            {/* below the email form: the way to a new account (the phone/email switch sits at the top) */}
+            {mode === 'email' && !intro && (
+              <div className="mt-6 pt-5 text-center border-t" style={{ borderColor: 'var(--line)' }}>
+                <p className="text-sm text-ink-2">{t.noAccount} <a href={registerHref} className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
               </div>
             )}
           </div>
@@ -308,10 +351,11 @@ function LoginSkeleton() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
         </div>
-        <h1 className="text-[26px] font-bold text-navy mb-1">{L('Start with your mobile number', 'اپنے موبائل نمبر سے شروع کریں', 'ابدأ برقم جوالك')}</h1>
+        {/* neutral frame: no phone field that then disappears when phone sign-in is off (UX-003) */}
+        <h1 className="text-[26px] font-bold text-navy mb-1">{L('Start free', 'مفت شروع کریں', 'ابدأ مجاناً')}</h1>
         <p className="text-ink-2 text-sm mb-6">{L('Loading…', 'لوڈ ہو رہا ہے…', 'جارٍ التحميل…')}</p>
-        <input className="input-field mb-4" disabled placeholder="05XXXXXXXX" aria-label={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} dir="ltr" />
-        <button type="button" disabled className="btn-orange w-full btn-lg">{L('Send the code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>
+        <div className="h-12 rounded-xl mb-3 animate-pulse" style={{ background: '#EEF2F6' }} />
+        <div className="h-12 rounded-xl animate-pulse" style={{ background: '#EEF2F6' }} />
       </div>
     </div>
   )

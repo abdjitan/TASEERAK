@@ -28,7 +28,8 @@ export function SourceShopFields({ value, onChange, locale }: { value: SourceVal
         <li>{L('Before the buyer chooses your offer, they see only the district of the shop.', 'خریدار کے آپ کی آفر چننے سے پہلے وہ صرف دکان کا علاقہ دیکھتا ہے۔', 'قبل أن يختار المشتري عرضك لا يرى إلا حي المحل.')}</li>
         <li>{L('After choosing, they see the shop’s name, never its phone.', 'انتخاب کے بعد وہ دکان کا نام دیکھتا ہے، فون کبھی نہیں۔', 'بعد اختياره يرى اسم المحل، ولا يرى رقم هاتفه أبداً.')}</li>
         <li>{L('The invoice is issued by the shop in the buyer’s name.', 'انوائس دکان سے خریدار کے نام جاری ہوتی ہے۔', 'تصدر الفاتورة من المحل باسم المشتري.')}</li>
-        <li>{L('At the same price as your offer, from a shop with a commercial registration.', 'آپ کی آفر کی قیمت پر، تجارتی رجسٹریشن والی دکان سے۔', 'بنفس سعر عرضك، ومن محل له سجل تجاري.')}</li>
+        {/* UX-135: the shop rule said plainly */}
+        <li>{L('The shop must have a commercial registration, and its invoice carries the same price as your offer.', 'دکان کی تجارتی رجسٹریشن ہونا ضروری ہے، اور اس کی انوائس میں وہی قیمت ہو جو آپ کی آفر میں ہے۔', 'يجب أن يكون للمحل سجل تجاري، وأن تحمل فاتورته السعر نفسه الذي في عرضك.')}</li>
         <li>{L('Attach the invoice when you deliver.', 'ڈیلیوری پر انوائس منسلک کریں۔', 'أرفق الفاتورة عند التسليم.')}</li>
       </ul>
       {/* UX-090: the current limit and the progress towards the next one */}
@@ -126,17 +127,17 @@ export function SourceShopBadge({ offerId, locale, compact }: { offerId: string;
   const where = [d.area, d.city].filter(Boolean).join('، ')
   if (d.revealed && d.name) {
     return (
-      <div className={`${compact ? 'text-[12px]' : 'text-xs'} mt-1 rounded-lg bg-emerald-50 border border-emerald-200 px-2 py-1 text-emerald-900`}>
+      <div className={`${compact ? 'text-[12px]' : 'text-xs'} mt-1 rounded-lg bg-[#0B2438]/5 border border-[#0B2438]/15 px-2 py-1 text-[#0B2438]`}>
         {/* UX-002: never the shop phone here (this badge is also printed on the deal page); the seller sees it in SourceShopCard */}
         {/* UX-138: one name everywhere («المحل المصدر»), and the invoice said once */}
         {L('Source shop:', 'ماخذ دکان:', 'المحل المصدر:')} <b>{d.name}</b>{where ? ` — ${where}` : ''}
-        {d.viewer === 'seller' && <div className="text-[12px] text-emerald-800">{L('The invoice is issued by the source shop in the buyer’s name.', 'انوائس ماخذ دکان سے خریدار کے نام جاری ہوگی۔', 'تصدر الفاتورة من المحل المصدر باسم المشتري.')}</div>}
+        {d.viewer === 'seller' && <div className="text-[12px] text-[#0B2438]/80">{L('The invoice is issued by the source shop in the buyer’s name.', 'انوائس ماخذ دکان سے خریدار کے نام جاری ہوگی۔', 'تصدر الفاتورة من المحل المصدر باسم المشتري.')}</div>}
       </div>
     )
   }
   return (
     <div className={`${compact ? 'text-[12px]' : 'text-xs'} mt-1 text-gray-500`}>
-      {where ? <>{L('Source shop:', 'ماخذ دکان:', 'المحل المصدر:')} {where}</> : L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}
+      {where ? <>{L('Source shop:', 'ماخذ دکان:', 'المحل المصدر:')} {where}</> : L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}
     </div>
   )
 }

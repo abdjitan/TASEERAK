@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { X } from 'lucide-react'
 
 // ── إقلاع PWA: تسجيل الـService Worker لكل الزوار + حثّ التثبيت ─────────────
 // التسجيل كان يحدث فقط عند تفعيل الإشعارات (push.ts)، فلا يظهر حثّ التثبيت
@@ -8,6 +10,11 @@ import { useEffect, useState } from 'react'
 // ونلتقط beforeinstallprompt لأندرويد، ونعرض إرشاد «أضف للشاشة الرئيسية» في iOS.
 const DISMISS_KEY = 'taseerak_install_dismissed'
 const DISMISS_DAYS = 14
+// never over the sign-in / sign-up / first-setup screens (UX-108)
+const HIDE_ON = ['/login', '/register', '/onboarding', '/welcome', '/forgot-password', '/reset-password', '/verify', '/banned', '/team/join', '/account/delete']
+// pages with the dashboard bottom bar: the banner sits above it; elsewhere it sits at the bottom
+const WITH_BAR = ['/contractor', '/supplier', '/admin', '/messages', '/notifications', '/settings', '/support', '/suggestions', '/invite-friends', '/market', '/location']
+const under = (p: string, list: string[]) => list.some((x) => p === x || p.startsWith(x + '/'))
 
 const TR: Record<string, { title: string; body: string; install: string; later: string; iosTitle: string; ios1: string; ios2: string }> = {
   ar: {
@@ -35,6 +42,7 @@ export default function PwaBoot() {
   const [show, setShow] = useState(false)
   const [ios, setIos] = useState(false)
   const [locale, setLocale] = useState('ar')
+  const pathname = usePathname() || '/'
 
   useEffect(() => {
     // 1) سجّل الـSW لكل زائر (شرط التثبيت وقاعدة الأوفلاين)
@@ -67,7 +75,8 @@ export default function PwaBoot() {
     return () => window.removeEventListener('beforeinstallprompt', onPrompt)
   }, [])
 
-  if (!show) return null
+  if (!show || under(pathname, HIDE_ON)) return null
+  const bottom = under(pathname, WITH_BAR) ? 'calc(76px + env(safe-area-inset-bottom))' : 'calc(12px + env(safe-area-inset-bottom))'
   const t = TR[locale] || TR.ar
   const dir = locale === 'en' ? 'ltr' : 'rtl'
 
@@ -85,36 +94,36 @@ export default function PwaBoot() {
 
   return (
     <div dir={dir} className="fixed inset-x-3 z-[70] lg:hidden animate-slide-up"
-      style={{ bottom: 'calc(76px + env(safe-area-inset-bottom))' }}>
+      style={{ bottom }}>
       <div className="mx-auto max-w-md rounded-2xl bg-white shadow-lg border border-gray-200 p-4">
         <div className="flex items-start gap-3">
           <img src="/icons/maskable-192.png" alt="" className="w-11 h-11 rounded-xl border border-gray-100 shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{ios ? t.iosTitle : t.title}</div>
             {ios ? (
-              <div className="text-xs text-gray-500 mt-1 leading-relaxed">
+              <div className="text-[12px] text-gray-600 mt-1 leading-relaxed">
                 <span className="inline-flex items-center gap-1">{t.ios1}
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 inline"><path d="M12 3v12" /><path d="m8 7 4-4 4 4" /><rect x="4" y="11" width="16" height="10" rx="2" /></svg>
                 </span>
                 <br />{t.ios2}
               </div>
             ) : (
-              <p className="text-xs text-gray-500 mt-1 leading-relaxed">{t.body}</p>
+              <p className="text-[12px] text-gray-600 mt-1 leading-relaxed">{t.body}</p>
             )}
             <div className="flex items-center gap-2 mt-2.5">
               {!ios && (
                 <button type="button" onClick={install}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-white"
-                  style={{ background: '#D4A543', boxShadow: '0 8px 20px -6px rgba(212,165,67,.5)' }}>
+                  className="px-4 min-h-[44px] rounded-xl text-[13px] font-bold"
+                  style={{ background: '#D4A543', color: '#071827', boxShadow: '0 8px 20px -6px rgba(212,165,67,.5)' }}>
                   {t.install}
                 </button>
               )}
-              <button type="button" onClick={dismiss} className="px-3 py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-gray-700">
+              <button type="button" onClick={dismiss} className="px-3 min-h-[44px] rounded-xl text-[13px] font-semibold text-gray-600 hover:text-gray-800">
                 {t.later}
               </button>
             </div>
           </div>
-          <button type="button" onClick={dismiss} aria-label={locale === 'en' ? 'Close' : locale === 'ur' ? 'بند کریں' : 'إغلاق'} className="text-gray-300 hover:text-gray-500 shrink-0 text-lg leading-none">×</button>
+          <button type="button" onClick={dismiss} aria-label={locale === 'en' ? 'Close' : locale === 'ur' ? 'بند کریں' : 'إغلاق'} className="-m-2 w-11 h-11 grid place-items-center rounded-xl text-gray-500 hover:text-[#0B2438] hover:bg-gray-100 shrink-0"><X className="w-5 h-5" aria-hidden /></button>
         </div>
       </div>
     </div>

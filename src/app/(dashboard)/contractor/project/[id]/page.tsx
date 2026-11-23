@@ -146,16 +146,27 @@ export default function ProjectResultsPage() {
           </div>
         </div>
 
+        {/* an old project with no saved items is not a dead end: its request is followed from «طلباتي» (UX-136) */}
+        {items.length === 0 && (
+          <div className="bg-white rounded-2xl p-6 border border-[#D4A543]/40 shadow-sm mb-5 text-center">
+            <p className="text-sm text-[#0B2438] font-semibold mb-3">{L('This project has no saved items here. Follow it from your requests.', 'اس پراجیکٹ کے آئٹمز یہاں محفوظ نہیں۔ اسے اپنی درخواستوں سے دیکھیں۔', 'لا توجد بنود محفوظة لهذا المشروع هنا، فتابعه من طلباتك.')}</p>
+            <Link href="/contractor/rfqs" className="inline-flex items-center min-h-11 px-5 rounded-xl font-bold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Follow it from your requests', 'اپنی درخواستوں سے دیکھیں', 'تابعه من طلباتك')}</Link>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 stagger">
           {[
-            { label: L('Total Items', 'کل آئٹمز', 'إجمالي البنود'), value: totalItems, icon: <Glyph e="📦" />, bg: '#0B2438' },
-            { label: L('Total Offers', 'کل پیشکشیں', 'إجمالي العروض'), value: totalOffers, icon: <Glyph e="💬" />, bg: '#D4A543' },
-            { label: L('Accepted', 'منظور شدہ', 'مقبولة'), value: acceptedItems, icon: <Glyph e="✅" />, bg: '#0F6E56' },
+            { label: L('Total Items', 'کل آئٹمز', 'إجمالي البنود'), value: totalItems, icon: <Glyph e="📦" />, bg: '#0B2438', f: 'all' },
+            { label: L('Total Offers', 'کل پیشکشیں', 'إجمالي العروض'), value: totalOffers, icon: <Glyph e="💬" />, bg: '#D4A543', f: 'has_offers' },
+            { label: L('Accepted', 'منظور شدہ', 'مقبولة'), value: acceptedItems, icon: <Glyph e="✅" />, bg: '#0F6E56', f: 'accepted' },
             // not the same count as the «بانتظار العروض» filter (items with no offer): this one counts every item not accepted yet
-            { label: L('Not accepted yet', 'ابھی قبول نہیں', 'لم يُقبل بعد'), value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#435A70' },
-          ].map(({ label, value, icon, bg }) => (
-            <div key={label} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
+            { label: L('Not accepted yet', 'ابھی قبول نہیں', 'لم يُقبل بعد'), value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#435A70', f: '' },
+          ].map(({ label, value, icon, bg, f }) => (
+            // a card with a matching filter is a button: a tap shows those items (UX-136)
+            <div key={label} role={f ? 'button' : undefined} tabIndex={f ? 0 : undefined} aria-pressed={f ? filter === f : undefined}
+              onClick={f ? () => setFilter(f) : undefined} onKeyDown={f ? (e: any) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setFilter(f) } } : undefined}
+              className={`bg-white rounded-xl p-4 border shadow-sm text-center ${f ? 'cursor-pointer hover:border-[#D4A543]' : ''} ${f && filter === f && f !== 'all' ? 'border-[#D4A543]' : 'border-gray-100'}`}>
               <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base mx-auto mb-2" style={{ background: bg, color: bg === '#D4A543' ? '#071827' : '#fff' }}>{icon}</div>
               <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{value}</div>
               <div className="text-xs text-gray-500 mt-0.5">{label}</div>

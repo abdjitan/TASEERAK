@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { SUB_CATEGORIES } from '@/types'
+import { normalizeText } from '@/lib/normalize'
 import {
   BrickWall, Zap, ShowerHead, PaintRoller, Wrench, Factory, Building2, Truck, Snowflake, DoorOpen, FireExtinguisher, Cctv,
   Layers, Trees, Sofa, Lightbulb, Sun, CookingPot, Briefcase, Landmark, Waves, Warehouse, Droplets, ArrowUpDown, Package, HardHat, Hammer, Check,
@@ -31,6 +33,14 @@ export default function SupplierPackPicker({
   const T = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const H = (p: SupplierPack) => (locale === 'en' ? p.hint.en : locale === 'ur' ? p.hint.ur : p.hint.ar)
 
+  // UX-041: on a phone 26 cards were ~1500px: the first 8 (plus any selected) show, the rest behind «عرض كل الأنواع»; a search finds a kind
+  const FIRST = 8
+  const [showAll, setShowAll] = useState(false)
+  const [q, setQ] = useState('')
+  const nq = normalizeText(q.trim()).toLowerCase()
+  const matches = (p: SupplierPack) => !nq || normalizeText([p.ar, p.en, p.ur, p.hint.ar, p.hint.en, p.hint.ur].join(' ')).toLowerCase().includes(nq)
+  const visible = SUPPLIER_PACKS.filter((p, i) => (nq ? matches(p) : showAll || i < FIRST || isPackSelected(p, specialties)))
+
   function toggle(p: SupplierPack) {
     const on = isPackSelected(p, specialties)
     if (!on) {
@@ -49,8 +59,12 @@ export default function SupplierPackPicker({
   }
 
   return (
+    <div>
+    <input type="search" value={q} onChange={(e: any) => setQ(e.target.value)} className="input-field mb-2.5"
+      placeholder={T('Search for your kind of shop', 'اپنی دکان کی قسم تلاش کریں', 'ابحث عن نوع محلك')} aria-label={T('Search for your kind of shop', 'اپنی دکان کی قسم تلاش کریں', 'ابحث عن نوع محلك')} />
+    {nq && visible.length === 0 && <p className="text-[13px] text-gray-600 mb-2">{T('No kind matches. Try another word, or pick the materials in detail below.', 'کوئی قسم نہیں ملی۔ کوئی اور لفظ آزمائیں یا نیچے تفصیل سے مال منتخب کریں۔', 'لا يوجد نوع مطابق. جرّب كلمة أخرى، أو اختر المواد بالتفصيل في الأسفل.')}</p>}
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-      {SUPPLIER_PACKS.map(p => {
+      {visible.map(p => {
         const on = isPackSelected(p, specialties)
         const all = packSpecialties(p)
         const have = all.filter(k => specialties.includes(k)).length
@@ -75,6 +89,13 @@ export default function SupplierPackPicker({
           </button>
         )
       })}
+    </div>
+    {!nq && SUPPLIER_PACKS.length > FIRST && (
+      <button type="button" onClick={() => setShowAll(v => !v)} aria-expanded={showAll}
+        className="mt-2.5 w-full min-h-[44px] rounded-xl border border-dashed border-gray-300 text-sm font-bold text-[#8F6820] hover:border-[#D4A543]">
+        {showAll ? T('Show less', 'کم دکھائیں', 'عرض أقل') : T(`Show all kinds (${SUPPLIER_PACKS.length})`, `تمام اقسام دکھائیں (${SUPPLIER_PACKS.length})`, `عرض كل الأنواع (${SUPPLIER_PACKS.length})`)}
+      </button>
+    )}
     </div>
   )
 }

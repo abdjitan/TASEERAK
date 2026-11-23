@@ -157,6 +157,18 @@ export default function QuickRequestPage() {
   const [hours, setHours] = useState(48)
   const [notes, setNotes] = useState('')
   const [vatRequired, setVatRequired] = useState(false)
+  // the usual market price per product + unit, before VAT, only with 3+ different suppliers (UX-149)
+  const [market, setMarket] = useState<Record<string, number>>({})
+  useEffect(() => {
+    createClient().rpc('get_market_prices').then(({ data }: any) => {
+      const m: Record<string, number> = {}
+      for (const r of (data || [])) if (Number(r?.supplier_count) >= 3 && Number(r?.avg_price) > 0) m[`${r.product_name}|${r.unit}`] = Number(r.avg_price)
+      setMarket(m)
+    }, () => {})
+  }, [])
+  // the specialty chooser waits until the buyer stops typing a hand-written name (UX-063)
+  const [typingKey, setTypingKey] = useState<string | null>(null)
+  const typingTimer = useRef<any>(null)
   const [verifiedOnly, setVerifiedOnly] = useState(false)
   // owner 2026-11-21: who receives the request: the nearest suppliers (245) or the whole region (capped)
   const [nearbyOnly, setNearbyOnly] = useState(true)
@@ -532,6 +544,7 @@ export default function QuickRequestPage() {
   // whether suppliers get the photo itself.
   async function addPhotos(files: FileList | null) {
     if (!files) return
+    if (files.length > 6) setInfo(L('You can add 6 photos at a time; the first 6 were added.', 'ایک وقت میں 6 تصاویر شامل کی جا سکتی ہیں؛ پہلی 6 شامل کر دی گئیں۔', 'يمكنك إضافة 6 صور في المرة الواحدة، وقد أُضيفت أول 6 صور.'))
     for (const file of Array.from(files).slice(0, 6)) {
       if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 6 * 1024 * 1024) {
         showError(L('Photos must be JPG, PNG or WEBP and under 6 MB.', 'تصویر JPG، PNG یا WEBP اور 6 میگا بائٹ سے کم ہو۔', 'يجب أن تكون الصورة بصيغة JPG أو PNG أو WEBP وأقل من 6 ميجابايت.'))
@@ -553,7 +566,12 @@ export default function QuickRequestPage() {
     const timer = ac ? setTimeout(() => ac.abort(), 45000) : null
     fetch('/api/quick-request/identify', { method: 'POST', body: fd, signal: ac?.signal })
       .finally(() => { if (timer) clearTimeout(timer) })
-      .then(r => r.json())
+      .then(r => {
+        // say why instead of a silent failure (UX-133)
+        if (r.status === 401) showError(sessionMsg())
+        else if (r.status === 429) showError(L('You have sent many photos in the last hour. Try again a little later, or write the material name.', 'آپ نے پچھلے گھنٹے میں بہت سی تصاویر بھیجیں۔ تھوڑی دیر بعد کوشش کریں یا سامان کا نام لکھیں۔', 'أرسلت صوراً كثيرة خلال الساعة الأخيرة. حاول بعد قليل، أو اكتب اسم المادة.'))
+        return r.json()
+      })
       .then(j => {
         const s = j?.suggestion
         setPhotos(prev => prev.map(p => p.id === id ? { ...p, status: s ? 'done' : 'failed', confidence: s?.confidence, localName: s?.local_name || undefined, question: s?.question || undefined } : p))
@@ -763,7 +781,7 @@ export default function QuickRequestPage() {
     try {
       const items = sendable.map(l => ({ sector: l.sector, product_name: l.product_name.trim(), sub_category: lineSub(l) }))
       const { data, error: e } = await createClient().rpc('preview_rfq_reach', {
-        p_items: items, p_region: region, p_city: city || null, p_geo: pickup || !geo ? null : `${geo.lat},${geo.lng}`, p_nearby: nearbyOnly,
+        p_items: items, p_region: region, p_city: city || null, p_geo: pickup || !geo ? null : `${geo.lat},${geo.lng}`, p_nearby: simple || nearbyOnly,
       })
       if (!e && data && typeof data === 'object') setReach({ reached: Number((data as any).reached) || 0, items: Array.isArray((data as any).items) ? (data as any).items : [] })
     } catch { /* optional */ }
@@ -842,8 +860,8 @@ export default function QuickRequestPage() {
         const prevF = l.prevFiles || []
         if (!fileUrl && !photoUrl && prevF.length) {
           fileUrl = prevF[0].url
-          for (const pf of prevF.slice(1)) attachments.push({ url: pf.url, name: pf.name || L('Attachment', 'فائل', 'مرفق') })
-        } else for (const pf of prevF) attachments.push({ url: pf.url, name: pf.name || L('Attachment', 'فائل', 'مرفق') })
+          for (const pf of prevF.slice(1)) attachments.push({ url: pf.url, name: pf.name || 'مرفق' })
+        } else for (const pf of prevF) attachments.push({ url: pf.url, name: pf.name || 'مرفق' })
         if (ph && ph.share) {
           const phFile = await (await import('@/lib/compressImage')).compressImage(ph.file)
           const ext = phFile.type === 'image/png' ? 'png' : phFile.type === 'image/webp' ? 'webp' : 'jpg'
@@ -867,7 +885,8 @@ export default function QuickRequestPage() {
           unit: l.unit,
           supplier_tiers: null, in_stock: false, max_days: needDays, specsObj,
           spec_file_url: fileUrl || photoUrl,
-          spec_file_name: fileUrl ? (l.fileName || (l.prevFiles?.[0]?.url === fileUrl ? l.prevFiles[0].name : '') || L('Attachment', 'فائل', 'مرفق')) : photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
+          // stored in Arabic whatever the buyer's language: suppliers read them (UX-133)
+          spec_file_name: fileUrl ? (l.fileName || (l.prevFiles?.[0]?.url === fileUrl ? l.prevFiles[0].name : '') || 'مرفق') : photoUrl ? 'صورة المادة' : null,
           photo_url: photoUrl || (fileUrl && (isImageName(l.fileName) || (!l.fileId && /\.(jpe?g|png|webp)(\?|$)/i.test(fileUrl))) ? fileUrl : null),
           // the buyer's own specialty choice for a hand-written item, so a reorder keeps it (round-2 UX-040)
           ...(l.spec?.section ? { section: l.spec.section } : {}),
@@ -886,12 +905,12 @@ export default function QuickRequestPage() {
         sectors: Array.from(new Set(items.map(it => it.sector))),
         sub_category: first.sub_category, specification: first.specification, quantity: first.quantity, unit: first.unit,
         items,
-        region, city: city || null, delivery_required: !pickup, vat_invoice_required: vatRequired,
+        region, city: city || null, delivery_required: !pickup, vat_invoice_required: !simple && vatRequired,
         delivery_location: pickup ? null : (address.trim().slice(0, 300) || null),
         delivery_geo: pickup || !geo ? null : `${geo.lat},${geo.lng}`,
         // the buyer's identity is always hidden from suppliers until an offer is accepted (UX-077)
-        hide_identity: true, verified_only: verifiedOnly, nearby_only: nearbyOnly,
-        target_tiers: tier === 'all' ? null : [tier],
+        hide_identity: true, verified_only: verifiedOnly, nearby_only: simple || nearbyOnly,
+        target_tiers: simple || tier === 'all' ? null : [tier],
         notes: notes.trim() || null,
         expires_at: expires,
       })
@@ -987,10 +1006,10 @@ export default function QuickRequestPage() {
   // one promise for a material no supplier covers yet (round-2 UX-070); before sending it is said in the future
   const uncoveredMsg = (n: string, sentAlready: boolean) => sentAlready
     ? L(`No supplier for «${nameLabel(n)}» is registered yet. We told our team to find one for you, and we will let you know as soon as an offer on it arrives.`,
-      `«${nameLabel(n)}» کا کوئی سپلائر ابھی رجسٹر نہیں۔ ہم نے اپنی ٹیم کو آپ کے لیے سپلائر تلاش کرنے کا کہہ دیا ہے، اور اس پر پیشکش آتے ہی آپ کو بتائیں گے۔`,
+      `«${nameLabel(n)}» کا کوئی سپلائر ابھی رجسٹر نہیں۔ ہم نے اپنی ٹیم کو آپ کے لیے سپلائر تلاش کرنے کا کہہ دیا ہے، اور اس پر آفر آتے ہی آپ کو بتائیں گے۔`,
       `لا يوجد بعد مورد مسجّل لـ«${nameLabel(n)}». أبلغنا فريقنا ليبحث لك عن مورد، وسنُعلمك فور وصول عرض عليه.`)
     : L(`No supplier for «${nameLabel(n)}» is registered yet. When you send, we tell our team to find one for you, and we will let you know as soon as an offer on it arrives.`,
-      `«${nameLabel(n)}» کا کوئی سپلائر ابھی رجسٹر نہیں۔ بھیجتے ہی ہم اپنی ٹیم کو آپ کے لیے سپلائر تلاش کرنے کا کہیں گے، اور اس پر پیشکش آتے ہی آپ کو بتائیں گے۔`,
+      `«${nameLabel(n)}» کا کوئی سپلائر ابھی رجسٹر نہیں۔ بھیجتے ہی ہم اپنی ٹیم کو آپ کے لیے سپلائر تلاش کرنے کا کہیں گے، اور اس پر آفر آتے ہی آپ کو بتائیں گے۔`,
       `لا يوجد بعد مورد مسجّل لـ«${nameLabel(n)}». عند الإرسال نُبلغ فريقنا ليبحث لك عن مورد، وسنُعلمك فور وصول عرض عليه.`)
 
   const shell = (children: ReactNode) => (
@@ -1009,26 +1028,26 @@ export default function QuickRequestPage() {
         {cov && reached > 0 ? (
           <p className="text-gray-700 font-semibold">{L(`Your request reached ${reached} supplier${reached === 1 ? '' : 's'}.`, `آپ کی درخواست ${reached} سپلائرز تک پہنچ گئی۔`, `وصل طلبك إلى ${suppliersAr(reached)}.`)}</p>
         ) : (
-          <p className="text-gray-600">{L('We will notify you as soon as an offer arrives.', 'کوئی بھی پیشکش آتے ہی ہم آپ کو اطلاع دیں گے۔', 'سنُبلغك فور وصول أي عرض.')}</p>
+          <p className="text-gray-600">{L('We will notify you as soon as an offer arrives.', 'کوئی بھی آفر آتے ہی ہم آپ کو اطلاع دیں گے۔', 'سنُبلغك فور وصول أي عرض.')}</p>
         )}
         {uncovered.length > 0 && (
           <div className="mt-3 text-start rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-1">
-            {uncovered.slice(0, 4).map(n => (
+            {uncovered.map(n => (
               <p key={n} className="text-[13px] text-amber-900">{uncoveredMsg(n, true)}</p>
             ))}
           </div>
         )}
         {sent?.expires && (
-          <p className="mt-3 text-[13px] text-gray-600">{L('Offers close: ', 'پیشکشیں بند ہوں گی: ', 'تُغلق العروض: ')}<b className="text-[#0B2438]">{whenText(new Date(sent.expires).getTime())}</b></p>
+          <p className="mt-3 text-[13px] text-gray-600">{L('The offer window ends: ', 'آفرز کی مہلت ختم ہو گی: ', 'تنتهي مهلة العروض: ')}<b className="text-[#0B2438]">{whenText(new Date(sent.expires).getTime())}</b></p>
         )}
         {/* «ماذا بعد؟» (round-2 UX-168): what happens next, in three plain steps */}
         <div className="mt-4 text-start rounded-xl bg-[#F7F4EC] p-3">
           <div className="text-[13px] font-extrabold text-[#0B2438] mb-2">{L('What happens next?', 'آگے کیا ہوگا؟', 'ماذا بعد؟')}</div>
           <ol className="space-y-1.5">
             {[
-              L('Suppliers send their prices; we notify you of each offer.', 'سپلائرز اپنی قیمتیں بھیجیں گے؛ ہر پیشکش پر ہم آپ کو اطلاع دیں گے۔', 'يرسل الموردون أسعارهم، ونُبلغك بكل عرض يصل.'),
-              L('Compare the offers side by side: price, delivery and rating.', 'پیشکشوں کا موازنہ کریں: قیمت، ڈیلیوری اور ریٹنگ۔', 'قارن العروض جنباً إلى جنب: السعر والتوصيل والتقييم.'),
-              L('Choose the offer that suits you; only then the supplier sees your name.', 'مناسب پیشکش منتخب کریں؛ تب ہی سپلائر آپ کا نام دیکھے گا۔', 'اختر العرض الأنسب لك، وعندها فقط يرى المورد اسمك.'),
+              L('Suppliers send their prices; we notify you of each offer.', 'سپلائرز اپنی قیمتیں بھیجیں گے؛ ہر آفر پر ہم آپ کو اطلاع دیں گے۔', 'يرسل الموردون أسعارهم، ونُبلغك بكل عرض يصل.'),
+              L('Compare the offers side by side: price, delivery and rating.', 'آفرز کا موازنہ کریں: قیمت، ڈیلیوری اور ریٹنگ۔', 'قارن العروض جنباً إلى جنب: السعر والتوصيل والتقييم.'),
+              L('Choose the offer that suits you; only then the supplier sees your name.', 'مناسب آفر منتخب کریں؛ تب ہی سپلائر آپ کا نام دیکھے گا۔', 'اختر العرض الأنسب لك، وعندها فقط يرى المورد اسمك.'),
             ].map((s, i) => (
               <li key={i} className="flex items-start gap-2 text-[13px] text-[#0B2438]">
                 <span className="w-6 h-6 rounded-full grid place-items-center shrink-0 text-[12px] font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>{i + 1}</span>
@@ -1090,7 +1109,7 @@ export default function QuickRequestPage() {
         {/* A: how to add (main column on desktop, first on mobile) */}
         <div className="space-y-5 lg:col-start-1 lg:row-start-1">
         <div>
-          <div className="text-[13px] font-bold text-[#9D7425] mb-1">{L('One request… and offers from several suppliers in your hands', 'ایک درخواست… اور کئی سپلائرز کی پیشکشیں آپ کے ہاتھ میں', 'طلب واحد… وعروض عدة موردين بين يديك')}</div>
+          <div className="text-[13px] font-bold text-[#9D7425] mb-1">{L('One request… and offers from several suppliers in your hands', 'ایک درخواست… اور کئی سپلائرز کی آفرز آپ کے ہاتھ میں', 'طلب واحد… وعروض عدة موردين بين يديك')}</div>
           <h1 className="text-2xl font-extrabold text-navy">{simple ? L('What does your home need?', 'آپ کے گھر کو کیا چاہیے؟', 'ماذا يحتاج بيتك؟') : L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
           {simple && <p className="mt-1 text-sm font-semibold text-[#0B2438]">{L('Three steps: what you need, how many, and where.', 'تین قدم: کیا، کتنا، اور کہاں۔', 'ثلاث خطوات: ماذا تحتاج، وكم، وأين.')}</p>}
           {buyerType === 'business' && canProjects && (
@@ -1205,7 +1224,12 @@ export default function QuickRequestPage() {
           </div>
         )}
 
-        {error && !errKey && !errField && <div id="quick-error" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 scroll-mt-24" role="alert">{error}</div>}
+        {error && !errKey && !errField && <div id="quick-error" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 scroll-mt-24" role="alert">
+          {error}
+          {error === sessionMsg() && (
+            <Link href="/login?next=/contractor/rfq/quick" className="mt-2 flex w-fit items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-white bg-[#0B2438]">{L('Sign in', 'سائن ان کریں', 'سجّل الدخول')}</Link>
+          )}
+        </div>}
         </div>
 
         {/* Desktop: the catalog fills the main column; phones open it as a sheet */}
@@ -1216,7 +1240,22 @@ export default function QuickRequestPage() {
         </div>
 
         {/* B: the chosen list + delivery, a side column on desktop (sticky), under the inputs on mobile */}
-        <div className="space-y-5 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-20 lg:max-h-[calc(100vh-11rem)] lg:overflow-y-auto">
+        <div className="space-y-5 lg:col-start-2 lg:row-start-1 lg:row-span-2">
+        {/* one line on what the request holds and where it goes, with a jump to the delivery step (UX-064) */}
+        {lines.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-[#0B2438]/5 border border-[#0B2438]/10 px-4 py-2">
+            <span className="text-[13px] font-bold text-[#0B2438]" dir="auto">
+              {countLabel(sendable.length || lines.length, locale, arMaterials, 'item', 'اشیاء')}
+              {' · '}{pickup ? L('Pickup from the supplier', 'سپلائر سے خود وصولی', 'استلام من المورد')
+                : region ? L(`Delivery to ${city ? (((CITIES_BY_REGION as any)[region] || []).find((c: any) => c.ar === city)?.en || city) : getRegionLabel(region, 'en')}`, `${city || getRegionLabel(region, 'ur')} تک ڈیلیوری`, `التوصيل إلى ${city || getRegionLabel(region, 'ar')}`)
+                : L('Delivery place not set yet', 'ڈیلیوری کی جگہ ابھی طے نہیں', 'لم يُحدَّد مكان التوصيل بعد')}
+            </span>
+            {!ready && (
+              <button type="button" onClick={() => document.getElementById('quick-delivery')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="min-h-[44px] px-3 rounded-xl text-[13px] font-bold text-[#0B2438] border border-[#0B2438]/30 bg-white">{L('Complete the details', 'تفصیلات مکمل کریں', 'أكمل البيانات')}</button>
+            )}
+          </div>
+        )}
         {lines.length === 0 ? (
           <div className="hidden lg:block bg-white rounded-2xl p-6 border border-dashed border-gray-200 text-center text-sm text-gray-500">
             <div className="text-3xl mb-2"><Glyph e="🧾" /></div>
@@ -1234,6 +1273,7 @@ export default function QuickRequestPage() {
                 {L('Start over', 'نئے سرے سے', 'ابدأ من جديد')}
               </button>
             </div>
+            <div className="space-y-3 lg:max-h-[60vh] lg:overflow-y-auto lg:pe-1">
             {lines.map(l => {
               const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
               const ring = flash === l.key ? ' ring-2 ring-[#D4A543] ring-offset-2' : ''
@@ -1262,6 +1302,15 @@ export default function QuickRequestPage() {
                       </span>
                       <span className="text-[12px] font-bold text-gray-600 shrink-0 inline-flex items-center gap-1"><Pencil className="w-3.5 h-3.5" aria-hidden /> {L('Edit', 'ترمیم', 'تعديل')}</span>
                     </button>
+                    {simple && COUNT_UNITS.includes(l.unit) && (
+                      <div className="flex items-center shrink-0 rounded-xl border border-gray-200 bg-white" role="group" aria-label={L('Quantity', 'مقدار', 'الكمية')}>
+                        <button type="button" onClick={() => updateLine(l.key, { quantity: String(Math.max(1, (parseFloat(l.quantity) || 1) - 1)) })} disabled={(parseFloat(l.quantity) || 1) <= 1}
+                          className="w-[44px] h-[44px] grid place-items-center text-lg font-bold text-[#0B2438] disabled:opacity-30" aria-label={L('Less', 'کم', 'أنقص')}>−</button>
+                        <span className="min-w-[2ch] text-center text-sm font-extrabold text-[#0B2438]" aria-live="polite">{l.quantity || '1'}</span>
+                        <button type="button" onClick={() => updateLine(l.key, { quantity: String((parseFloat(l.quantity) || 0) + 1) })}
+                          className="w-[44px] h-[44px] grid place-items-center text-lg font-bold text-[#0B2438]" aria-label={L('More', 'زیادہ', 'زِد')}>+</button>
+                      </div>
+                    )}
                     <button type="button" onClick={() => removeLine(l.key)} className="min-w-[44px] min-h-[44px] grid place-items-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 shrink-0" aria-label={L(`Remove ${nameLabel(l.product_name)}`, `${nameLabel(l.product_name)} ہٹائیں`, `حذف ${nameLabel(l.product_name)}`)}><X className="w-5 h-5" aria-hidden /></button>
                   </div>
                   {lineErr}
@@ -1273,8 +1322,22 @@ export default function QuickRequestPage() {
                       : l.product_name ? <img src={productImageUrl(l.product_name)} alt="" loading="lazy" className="w-16 h-16 rounded-lg object-contain shrink-0 border border-gray-100 bg-gray-50"
                           onError={(e: any) => imgFallback(e, detectSubCategory(l.product_name, l.sector as any))} /> : null}
                     <div className="flex-1 min-w-0 space-y-1">
-                      <input value={nameLabel(l.product_name)} onChange={e => updateLine(l.key, { product_name: e.target.value === nameLabel(l.product_name) ? l.product_name : e.target.value, spec: undefined, photoWarn: undefined })} aria-label={L('Item name', 'نام', 'اسم المادة')}
+                      {/* a material from the guide keeps its catalog name (what routes it and what suppliers read): read-only, changed as a whole (UX-063) */}
+                      {CATALOG_NAMES.has(l.product_name.trim()) ? (
+                        <div className="flex flex-wrap items-center gap-x-3">
+                          <span className="font-semibold text-sm text-navy" dir="auto">{nameLabel(l.product_name)}</span>
+                          <button type="button" onClick={() => updateLine(l.key, { product_name: '', spec: undefined, specs: undefined, suggestion: null, photoWarn: undefined })}
+                            className="min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Change the material', 'سامان بدلیں', 'تغيير المادة')}</button>
+                        </div>
+                      ) : (
+                      <input value={nameLabel(l.product_name)} onChange={e => {
+                        const v = e.target.value === nameLabel(l.product_name) ? l.product_name : e.target.value
+                        // the chosen specialty stays unless the name became a guide material (UX-063)
+                        updateLine(l.key, { product_name: v, spec: CATALOG_NAMES.has(v.trim()) ? undefined : l.spec, photoWarn: undefined })
+                        setTypingKey(l.key); clearTimeout(typingTimer.current); typingTimer.current = setTimeout(() => setTypingKey(null), 800)
+                      }} aria-label={L('Item name', 'نام', 'اسم المادة')}
                         className="input-field font-semibold text-[16px] sm:text-sm" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'جارٍ التعرّف على الصورة…') : L('Item name', 'نام', 'اسم المادة')} />
+                      )}
                       {locale !== 'ar' && l.original && !ph && (
                         <p className="text-[12px] font-semibold text-gray-700" dir="auto">= {l.original}</p>
                       )}
@@ -1313,7 +1376,7 @@ export default function QuickRequestPage() {
                               className="min-h-[44px] px-4 rounded-xl text-sm font-bold border border-gray-300 bg-white text-[#0B2438]">{L('No, keep what I wrote', 'نہیں، جو لکھا وہی رکھیں', 'لا، أبقِ ما كتبته')}</button>
                           </div>
                         </div>
-                      ) : l.product_name.trim() && !CATALOG_NAMES.has(l.product_name.trim())
+                      ) : l.product_name.trim().length >= 3 && typingKey !== l.key && !CATALOG_NAMES.has(l.product_name.trim())
                         ? <LineSpecialty name={l.product_name} sector={l.sector} value={l.spec} locale={locale} simple={simple}
                             onChange={v => updateLine(l.key, { spec: v, sector: v.sector })} />
                         : (!simple && l.product_name.trim() && !(ph && ph.status === 'identifying'))
@@ -1330,10 +1393,23 @@ export default function QuickRequestPage() {
                       {Array.from(new Set([...(unitChoicesFor(l.product_name, l.sector as any) || UNITS), ...(l.unit ? [l.unit] : [])])).map(u => <option key={u} value={u}>{getUnitLabelLong(u, locale) || u}</option>)}
                     </select>
                   </div>
+                  {(() => {
+                    const avg = market[`${l.product_name.trim()}|${l.unit}`]
+                    if (!avg) return null
+                    const q = parseFloat(l.quantity) || 0
+                    const ul = unitLabel(l.unit)
+                    const fmt = (n: number) => Math.round(n).toLocaleString('en-US')
+                    return (
+                      <p className="text-[12px] text-gray-600 leading-relaxed">
+                        {L(`Usual market price: about ${fmt(avg)} SAR per ${ul} before VAT`, `مارکیٹ کی عام قیمت: تقریباً ${fmt(avg)} ریال فی ${ul} VAT سے پہلے`, `السعر المعتاد في السوق: نحو ${fmt(avg)} ر.س لكل ${ul} قبل الضريبة`)}
+                        {q > 0 ? L(`, about ${fmt(avg * q * 1.15)} SAR for your quantity including VAT`, `، آپ کی مقدار کے لیے VAT سمیت تقریباً ${fmt(avg * q * 1.15)} ریال`, `، أي نحو ${fmt(avg * q * 1.15)} ر.س لكميتك شاملةً الضريبة`) : ''}.
+                      </p>
+                    )
+                  })()}
                   {/* «لا تعرف الكمية؟» from the room size: floor or walls, waste included (round-2 UX-006) */}
                   {calcSupported(l.unit) && (
                     calcFor === l.key ? (
-                      <QuantityCalc unit={l.unit} name={l.product_name} sub={lineSub(l)} locale={locale}
+                      <QuantityCalc unit={l.unit} name={l.product_name} sub={lineSub(l)} locale={locale} onClose={() => setCalcFor(null)}
                         onUse={q => { updateLine(l.key, { quantity: q, review: dropFlags(l.review, QTY_FLAGS) }); setCalcFor(null) }} />
                     ) : (
                       <button type="button" onClick={() => setCalcFor(l.key)} className="min-h-[44px] text-[13px] font-bold text-[#8F6820] inline-flex items-center gap-1.5 hover:underline">
@@ -1364,7 +1440,9 @@ export default function QuickRequestPage() {
                           aria-label={needWritten ? L('Size and specifications (required)', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب)') : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')}
                           placeholder={needWritten
                             ? L('e.g. length, width, thickness, grade', 'جیسے لمبائی، چوڑائی، موٹائی اور گریڈ', 'مثل الطول والعرض والسماكة والدرجة')
-                            : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
+                            : CATALOG_NAMES.has(l.product_name.trim())
+                              ? L('Add a description: colour, size…', 'تفصیل شامل کریں: رنگ، سائز…', 'أضف وصفاً: اللون، المقاس…')
+                              : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
                       </label>}
                       {!simple && <BudgetField value={l.budget || ''} visible={!!l.budgetVisible} unit={l.unit ? unitLabel(l.unit) : ''} locale={locale}
                         onChange={(budget, budgetVisible) => updateLine(l.key, { budget, budgetVisible })} />}
@@ -1472,6 +1550,7 @@ export default function QuickRequestPage() {
                 </div>
               )
             })}
+            </div>
             <button type="button" onClick={addMore}
               className="lg:hidden w-full min-h-[48px] rounded-xl border-2 border-dashed border-[#D4A543]/60 text-[#8F6820] font-bold text-sm hover:bg-[#D4A543]/5 transition-all">
               + {L('Add another material', 'ایک اور سامان شامل کریں', 'أضف مادة أخرى')}
@@ -1481,7 +1560,7 @@ export default function QuickRequestPage() {
 
         {/* C: delivery + options, under the list */}
         {lines.length > 0 && (
-          <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
+          <div id="quick-delivery" className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3 scroll-mt-24">
             {/* the step title comes first, then the choices (UX-078) */}
             <h2 className="font-bold text-navy flex items-center gap-1.5">{simple && stepBadge(3)}<SellerIcon name="pin" className="w-4 h-4 text-[#9D7425]" />{L('Where do you receive the materials?', 'سامان کہاں وصول کریں گے؟', 'أين تستلم المواد؟')}</h2>
             <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={L('Receiving', 'وصولی', 'طريقة الاستلام')}>
@@ -1544,7 +1623,7 @@ export default function QuickRequestPage() {
                 <div className="text-[12px] font-bold text-gray-600 mb-1.5">{L('Who should receive your request?', 'آپ کی درخواست کس کو بھیجی جائے؟', 'لمن نرسل طلبك؟')}</div>
                 <div role="radiogroup" className="grid grid-cols-2 gap-2">
                   {([[true, L('Suppliers nearest to me', 'میرے قریب ترین سپلائرز', 'الموردون الأقرب إليّ'), L('The closest ones that sell your materials', 'آپ کا سامان بیچنے والے قریب ترین', 'الأقرب ممن يبيعون موادك')],
-                     [false, L('The whole region', 'پورا علاقہ', 'المنطقة كلها'), L(`Suppliers across ${getRegionLabel(region, 'en')}`, `${getRegionLabel(region, 'ur')} بھر کے سپلائرز`, `موردون من أنحاء ${region}`)]] as const).map(([v, t, sub]) => (
+                     [false, L('The whole region', 'پورا علاقہ', 'المنطقة كلها'), L(`Suppliers across all of ${getRegionLabel(region, 'en')}`, `پورے ${getRegionLabel(region, 'ur')} کے سپلائرز`, `موردون من كل أنحاء ${getRegionLabel(region, 'ar')}`)]] as const).map(([v, t, sub]) => (
                     <button key={String(v)} type="button" role="radio" aria-checked={nearbyOnly === v} onClick={() => setNearbyOnly(v)}
                       className={`text-start rounded-xl border-2 px-3 py-2 min-h-[56px] ${nearbyOnly === v ? CHOICE_ON : CHOICE_OFF}`}>
                       <span className="flex items-center gap-1 text-sm font-bold text-navy">{nearbyOnly === v && <Check className="w-4 h-4" aria-hidden />}{t}</span>
@@ -1574,14 +1653,14 @@ export default function QuickRequestPage() {
             {/* how long suppliers have to send offers (a home buyer gets 24 or 48 hours by itself) */}
             {!simple && (
               <div>
-                <div id="hours-q" className="text-[12px] font-bold text-gray-600 mb-1.5">{L('How long do you give suppliers to send their offers?', 'آپ سپلائرز کو پیشکش بھیجنے کے لیے کتنی مہلت دیتے ہیں؟', 'ما المهلة التي تمنحها للموردين لإرسال العروض؟')}</div>
+                <div id="hours-q" className="text-[12px] font-bold text-gray-600 mb-1.5">{L('How long is the offer window for suppliers?', 'آپ سپلائرز کو آفرز کی کتنی مہلت دیتے ہیں؟', 'ما مهلة العروض التي تمنحها للموردين؟')}</div>
                 <div role="radiogroup" aria-labelledby="hours-q" className="flex flex-wrap gap-1.5">
                   {([[6, L('6 hours', '6 گھنٹے', '6 ساعات')], [24, L('24 hours', '24 گھنٹے', '24 ساعة')], [48, L('2 days', '2 دن', 'يومان')], [72, L('3 days', '3 دن', '3 أيام')], [168, L('A week', 'ایک ہفتہ', 'أسبوع')]] as [number, string][]).map(([h, lab]) => (
                     <button key={h} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)}
                       className={`min-h-[44px] px-3 rounded-full border-2 text-[13px] font-bold inline-flex items-center gap-1 ${hours === h ? CHOICE_ON : CHOICE_OFF}`}>{hours === h && <Check className="w-3.5 h-3.5" aria-hidden />}{lab}</button>
                   ))}
                 </div>
-                <p className="text-[12px] text-gray-600 mt-1">{L('Offers close: ', 'پیشکشیں بند ہوں گی: ', 'تُغلق العروض: ')}<b className="text-[#0B2438]">{whenText(Date.now() + hours * 3600 * 1000)}</b>. {L('The delivery date is a separate choice below.', 'ڈیلیوری کی تاریخ نیچے الگ ہے۔', 'موعد وصول المواد خيار منفصل في الأسفل.')}</p>
+                <p className="text-[12px] text-gray-600 mt-1">{L('The offer window ends: ', 'آفرز کی مہلت ختم ہو گی: ', 'تنتهي مهلة العروض: ')}<b className="text-[#0B2438]">{whenText(Date.now() + hours * 3600 * 1000)}</b>. {L('The delivery date is a separate choice below.', 'ڈیلیوری کی تاریخ نیچے الگ ہے۔', 'موعد وصول المواد خيار منفصل في الأسفل.')}</p>
               </div>
             )}
             {simple && needBlock}
@@ -1593,10 +1672,11 @@ export default function QuickRequestPage() {
               <div className={`mt-3 space-y-3 ${simple && !moreOpen ? 'hidden' : ''}`}>
                 {!simple && needBlock}
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-[16px] sm:text-sm" aria-label={L('Notes for suppliers (optional)', 'سپلائرز کے لیے نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} placeholder={L('Notes for suppliers (optional)', 'سپلائرز کے لیے نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
+                {!simple && (<>
                 <div>
                   <div className="text-sm font-bold text-[#0B2438] mb-2">{L('Who should price it?', 'کون قیمت دے؟', 'من تريد أن يسعّر لك؟')}</div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {([['all', L('All suppliers', 'سب سپلائرز', 'كل الموردين'), L('The most offers', 'سب سے زیادہ پیشکشیں', 'أكبر عدد من العروض')], ...TIERS.map(k => [k, tierLabel(k, locale as any, false), tierHint(k, locale as any)])] as [string, string, string][]).map(([k, label, hint]) => (
+                    {([['all', L('All suppliers', 'سب سپلائرز', 'كل الموردين'), L('The most offers', 'سب سے زیادہ آفرز', 'أكبر عدد من العروض')], ...TIERS.map(k => [k, tierLabel(k, locale as any, false), tierHint(k, locale as any)])] as [string, string, string][]).map(([k, label, hint]) => (
                       <button key={k} type="button" onClick={() => setTier(k as any)} aria-pressed={tier === k}
                         className={`p-2.5 rounded-xl border-2 text-start transition-colors ${tier === k ? CHOICE_ON : CHOICE_OFF}`}>
                         <div className="flex items-center gap-1 text-[13px] font-bold text-[#0B2438] leading-snug">{tier === k && <Check className="w-4 h-4 shrink-0" aria-hidden />}{label}</div>
@@ -1609,6 +1689,7 @@ export default function QuickRequestPage() {
                   <input type="checkbox" checked={vatRequired} onChange={e => setVatRequired(e.target.checked)} className="w-5 h-5 accent-[#0B2438]" />
                   {L('I need a VAT tax invoice', 'مجھے VAT ٹیکس انوائس چاہیے', 'أحتاج فاتورة ضريبية')}
                 </label>
+                </>)}
                 <label className="flex items-center gap-2 min-h-[44px] text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={verifiedOnly} onChange={e => setVerifiedOnly(e.target.checked)} className="w-5 h-5 accent-[#0B2438]" />
                   {L('Only verified suppliers', 'صرف تصدیق شدہ سپلائرز', 'الموردون الموثّقون فقط')}
@@ -1616,7 +1697,7 @@ export default function QuickRequestPage() {
               </div>
             </div>
             {/* the buyer's identity is always hidden until an offer is chosen (UX-077): a fact, not an option */}
-            <p className="text-[13px] text-gray-700 flex items-start gap-2"><Lock className="w-4 h-4 mt-0.5 shrink-0 text-[#0B2438]" aria-hidden />{L('Your name and contact details are hidden from suppliers until you choose an offer.', 'آپ کا نام اور رابطہ سپلائرز سے چھپا رہتا ہے جب تک آپ کوئی پیشکش منتخب نہ کریں۔', 'اسمك وبيانات تواصلك مخفية عن الموردين حتى تختار عرضاً.')}</p>
+            <p className="text-[13px] text-gray-700 flex items-start gap-2"><Lock className="w-4 h-4 mt-0.5 shrink-0 text-[#0B2438]" aria-hidden />{L('Your name and contact details are hidden from suppliers until you choose an offer.', 'آپ کا نام اور رابطہ سپلائرز سے چھپا رہتا ہے جب تک آپ کوئی آفر منتخب نہ کریں۔', 'اسمك وبيانات تواصلك مخفية عن الموردين حتى تختار عرضاً.')}</p>
           </div>
         )}
         </div>
@@ -1661,20 +1742,23 @@ export default function QuickRequestPage() {
               <button type="button" onClick={() => setConfirming(false)} disabled={sending} aria-label={L('Close', 'بند کریں', 'إغلاق')} className="w-[44px] h-[44px] grid place-items-center rounded-full bg-gray-100 text-[#0B2438] shrink-0 disabled:opacity-40"><X className="w-5 h-5" aria-hidden /></button>
             </div>
             <div className="p-5 overflow-y-auto space-y-4 text-sm">
+              {!reach && (
+                <p className="min-h-[40px] flex items-center rounded-xl bg-gray-50 border border-gray-100 px-3 text-[13px] text-gray-600" role="status">{L('Checking how many suppliers your request reaches…', 'جانچ رہے ہیں کہ درخواست کتنے سپلائرز تک پہنچے گی…', 'نتحقق من عدد الموردين الذين سيصلهم طلبك…')}</p>
+              )}
               {reach && (
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 min-h-[40px]">
                   {reach.reached >= 1 && (() => {
                     const cityName = city ? (((CITIES_BY_REGION as any)[region] || []).find((c: any) => c.ar === city)?.[locale === 'ar' ? 'ar' : 'en'] || city) : ''
                     const where = nearbyOnly && cityName
                       ? L(` in ${cityName}`, ` ${cityName} میں`, ` في ${cityName}`)
                       : region ? L(` in the ${getRegionLabel(region, 'en')} region`, ` ${getRegionLabel(region, 'ur')} علاقے میں`, ` في منطقة ${getRegionLabel(region, 'ar')}`) : ''
                     return (
-                      <p className="rounded-xl bg-[#0F6E56]/[.06] border border-[#0F6E56]/20 px-3 py-2 text-[13px] font-bold text-[#0F6E56]">
+                      <p className="rounded-xl bg-[#D4A543]/10 border border-[#D4A543]/40 px-3 py-2 text-[13px] font-bold text-[#0B2438]">
                         {L(`Your request will reach about ${reach.reached} supplier${reach.reached === 1 ? '' : 's'}${where}.`, `آپ کی درخواست تقریباً ${reach.reached} سپلائرز تک پہنچے گی${where}۔`, `سيصل طلبك إلى نحو ${arCount(reach.reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')}${where}.`)}
                       </p>
                     )
                   })()}
-                  {reach.items.filter(x => Number(x.suppliers) === 0).slice(0, 4).map(x => (
+                  {reach.items.filter(x => Number(x.suppliers) === 0).map(x => (
                     <p key={x.name} className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-[13px] text-amber-900">
                       {uncoveredMsg(x.name, false)}
                     </p>
@@ -1726,11 +1810,15 @@ export default function QuickRequestPage() {
                     {geo && address.trim() ? ' · ' : ''}{address.trim()}
                   </dd>
                 </>)}
-                <dt className="text-gray-600">{L('Offers close', 'پیشکشیں بند', 'تُغلق العروض')}</dt>
+                <dt className="text-gray-600">{L('Offer window ends', 'آفرز کی مہلت ختم', 'تنتهي مهلة العروض')}</dt>
                 <dd className="font-semibold">{whenText(Date.now() + effHours * 3600 * 1000)} <span className="text-gray-500 font-normal">({durationLabel(effHours)})</span></dd>
                 {needDays != null && (<>
                   <dt className="text-gray-600">{L('Delivery needed', 'ڈیلیوری', 'التسليم')}</dt>
                   <dd className="font-semibold">{needDays === 1 ? L('Within a day', 'ایک دن میں', 'خلال يوم') : needDays === 7 ? L('Within a week', 'ایک ہفتے میں', 'خلال أسبوع') : L(`Within ${needDays} days`, `${needDays} دن میں`, `خلال ${needDays} ${needDays <= 10 ? 'أيام' : 'يوماً'}`)}</dd>
+                </>)}
+                {!simple && region && (<>
+                  <dt className="text-gray-600">{L('Sent to', 'کس کو', 'يصل إلى')}</dt>
+                  <dd className="font-semibold">{nearbyOnly ? L('The suppliers nearest to you', 'آپ کے قریب ترین سپلائرز', 'الموردين الأقرب إليك') : L(`Suppliers across all of ${getRegionLabel(region, 'en')}`, `پورے ${getRegionLabel(region, 'ur')} کے سپلائرز`, `الموردين في كل أنحاء ${getRegionLabel(region, 'ar')}`)}{tier !== 'all' ? ' · ' + tierLabel(tier, locale as any, false) : ''}</dd>
                 </>)}
                 {notes.trim() && (<>
                   <dt className="text-gray-600">{L('Notes', 'نوٹس', 'ملاحظات')}</dt>
@@ -1739,9 +1827,9 @@ export default function QuickRequestPage() {
               </dl>
               <div className="flex flex-wrap gap-1.5 text-[12px]">
                 <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 inline-flex items-center gap-1"><Lock className="w-3 h-3" aria-hidden />{L('Name hidden until you choose', 'انتخاب تک نام پوشیدہ', 'الاسم مخفي حتى تختار')}</span>
-                {vatRequired && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700">{L('VAT invoice', 'VAT انوائس', 'فاتورة ضريبية')}</span>}
+                {!simple && vatRequired && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700">{L('VAT invoice', 'VAT انوائس', 'فاتورة ضريبية')}</span>}
                 {verifiedOnly && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700">{L('Verified suppliers only', 'صرف تصدیق شدہ', 'الموردون الموثّقون فقط')}</span>}
-                {tier !== 'all' && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700">{tierLabel(tier, locale as any, false)}</span>}
+                
                 {photos.some(p => p.share) && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 inline-flex items-center gap-1"><Paperclip className="w-3 h-3" aria-hidden />{L('Photos shared', 'تصاویر شیئر', 'الصور مرفقة')}</span>}
               </div>
             </div>

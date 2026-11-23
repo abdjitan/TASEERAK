@@ -1,6 +1,9 @@
 // Seller structure (migration 123): two account kinds, three buyer-facing tiers, and the
 // quote-level source/availability. One place for the labels so every page says the same thing.
 
+import { SUB_CATEGORIES } from '@/types'
+import { BROWSE_SECTIONS, sectionOfSub } from '@/lib/browseCategories'
+
 export type Locale = 'ar' | 'en' | 'ur' | string
 type T3 = { ar: string; en: string; ur: string }
 const pick = (t: T3, locale: Locale) => (locale === 'en' ? t.en : locale === 'ur' ? t.ur : t.ar)
@@ -111,6 +114,16 @@ export function sourceLabel(k: string | null | undefined, locale: Locale): strin
   if (s) return pick(s, locale)
   return LEGACY_SOURCE[k] ? pick(LEGACY_SOURCE[k], locale) : ''
 }
+/** The price sources a seller may choose (UX-014, round 3): a pricing agent («وسيط تسعير») has no stock,
+ *  so «من مخزوني» is never offered to an independent seller. */
+export function sourceTypesFor(independent: boolean) {
+  return independent ? SOURCE_TYPES.filter(o => o.k !== 'own_stock') : SOURCE_TYPES
+}
+/** A saved / restored source for an independent seller: own_stock becomes «من محل في السوق». */
+export function fixSourceFor(independent: boolean, k: string | null | undefined): string {
+  if (!k) return ''
+  return independent && k === 'own_stock' ? 'shop' : k
+}
 /** A quote straight from the seller's own stock (not sourced through someone else). */
 export function isDirectSource(k: string | null | undefined): boolean { return !k || k === 'own_stock' }
 
@@ -162,17 +175,22 @@ export function verifyLabel(p: any, locale: Locale): string {
 // ── Offer state for the supplier (one rule for the site and the app) ──────────────────────────
 /** The buyer is waiting on the supplier: an open discount request, or a question with no answer yet.
  *  (round-2 UX-009: an answered question no longer counts; needs offers.info_response in the query.) */
-export function offerNeedsSupplier(o: any, now: number = Date.now()): boolean {
-  if (!o || o.status !== 'pending') return false
+/** UX-042 (round 3): a cancelled or expired request never waits on the supplier. rfqStatus defaults to o.rfq.status. */
+function rfqClosed(o: any, rfqStatus?: string | null): boolean {
+  const st = rfqStatus ?? o?.rfq?.status ?? o?.rfqs?.status ?? null
+  return st === 'cancelled' || st === 'expired'
+}
+export function offerNeedsSupplier(o: any, now: number = Date.now(), rfqStatus?: string | null): boolean {
+  if (!o || o.status !== 'pending' || rfqClosed(o, rfqStatus)) return false
   const discountOpen = !!o.reduction_deadline && new Date(o.reduction_deadline).getTime() > now
   const openQuestion = !!String(o.info_request || '').trim() && !String(o.info_response || '').trim()
   return discountOpen || openQuestion
 }
-export function offerHasOpenDiscount(o: any, now: number = Date.now()): boolean {
-  return !!o && o.status === 'pending' && !!o.reduction_deadline && new Date(o.reduction_deadline).getTime() > now
+export function offerHasOpenDiscount(o: any, now: number = Date.now(), rfqStatus?: string | null): boolean {
+  return !!o && o.status === 'pending' && !rfqClosed(o, rfqStatus) && !!o.reduction_deadline && new Date(o.reduction_deadline).getTime() > now
 }
-export function offerHasOpenQuestion(o: any): boolean {
-  return !!o && o.status === 'pending' && !!String(o.info_request || '').trim() && !String(o.info_response || '').trim()
+export function offerHasOpenQuestion(o: any, rfqStatus?: string | null): boolean {
+  return !!o && o.status === 'pending' && !rfqClosed(o, rfqStatus) && !!String(o.info_request || '').trim() && !String(o.info_response || '').trim()
 }
 
 /** What happened to an offer, from the offer AND its request (round-2 UX-010): a cancelled or expired
@@ -203,3 +221,21 @@ export const OUTCOME_TITLE: Record<OfferOutcome, T3> = {
 }
 export function outcomeLabel(k: OfferOutcome, locale: Locale): string { return pick(OUTCOME_LABEL[k], locale) }
 export function outcomeTitle(k: OfferOutcome, locale: Locale): string { return pick(OUTCOME_TITLE[k], locale) }
+
+// ── Sectors & sections (one rule for onboarding, specialties and the pricing page) ──────────────
+/** UX-038 (round 3): a sector follows from the specialties chosen in it, so picking materials without
+ *  ticking the sector header still saves. */
+export function sectorsFor(secs: string[], specs: string[]): string[] {
+  const out = new Set<string>(secs)
+  for (const sec of Object.keys(SUB_CATEGORIES as any)) if (specs.some(k => k in (((SUB_CATEGORIES as any)[sec]) || {}))) out.add(sec)
+  return [...out]
+}
+/** UX-035 (round 3): the buyer-facing section of a request line («أدوات صحية», not the engineering
+ *  sector «ميكانيكا»), from its sub-category. '' when it cannot be told. */
+export function sectionLabelOf(sector: string | null | undefined, subKey: string | null | undefined, locale: Locale): string {
+  if (!sector || !subKey) return ''
+  const group = ((SUB_CATEGORIES as any)[sector] || {})[subKey]?.group || null
+  const sec = sectionOfSub(subKey, group)
+  const b = sec ? BROWSE_SECTIONS.find(x => x.key === sec) : null
+  return b ? pick(b, locale) : ''
+}

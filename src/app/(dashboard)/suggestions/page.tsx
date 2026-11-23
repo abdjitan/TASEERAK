@@ -59,7 +59,8 @@ export default function SuggestionsPage() {
     setVoting(id)
     const { data, error } = await createClient().rpc('toggle_suggestion_vote', { p_id: id })
     setVoting('')
-    if (error) return
+    // a failed vote says so instead of doing nothing (UX-142)
+    if (error) { setMsg({ ok: false, text: L('Could not record your vote. Try again.', 'آپ کا ووٹ درج نہیں ہو سکا۔ دوبارہ کوشش کریں۔', 'تعذّر تسجيل صوتك، حاول مرة أخرى.') }); return }
     setBoard(prev => prev.map(b => b.id === id ? { ...b, votes: Number(data) || 0, my_vote: !b.my_vote } : b))
   }
 

@@ -80,10 +80,11 @@ export function formatDate(d?: string | null): string {
 // Tailwind-ready colors per urgency for badges/banners.
 export function urgencyStyle(u: DeadlineUrgency): { bg: string; fg: string; border: string } {
   switch (u) {
-    case 'expired':  return { bg: '#f3f4f6', fg: '#6b7280', border: '#e5e7eb' }
-    case 'critical': return { bg: '#fef2f2', fg: '#dc2626', border: '#fecaca' }
-    case 'soon':     return { bg: '#fffbeb', fg: '#d97706', border: '#fde68a' }
-    default:         return { bg: '#ecfdf5', fg: '#0F6E56', border: '#a7f3d0' }
+    // round-3 UX-111: a normal deadline is navy (green read as success); every pair passes AA contrast
+    case 'expired':  return { bg: '#F1F3F6', fg: '#48596E', border: '#D9E0E8' }
+    case 'critical': return { bg: '#FEF3F2', fg: '#B42318', border: '#FECDCA' }
+    case 'soon':     return { bg: '#FBF3E1', fg: '#8F6820', border: '#EBD7A6' }
+    default:         return { bg: '#EEF2F6', fg: '#0B2438', border: '#D5DEE8' }
   }
 }
 

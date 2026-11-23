@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { rememberBuyerType, type BuyerType } from '@/lib/buyerType'
+import BuyerTypeCards, { buyerTypeText } from '@/components/auth/BuyerTypeCards'
 
 export default function BuyerTypePrompt({ userId, locale, onChosen }: { userId: string; locale: string; onChosen: (v: BuyerType) => void }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -17,27 +18,20 @@ export default function BuyerTypePrompt({ userId, locale, onChosen }: { userId: 
     rememberBuyerType(v)
     onChosen(v)
   }
-  const cards: [BuyerType, string, string][] = [
-    ['individual', L('For my home', 'اپنے گھر کے لیے', 'لبيتي'), L('A simple request in three steps, and ready lists to get your home ready', 'تین قدموں میں آسان درخواست', 'طلب بسيط بثلاث خطوات، وقوائم جاهزة لتجهيز البيت')],
-    ['business', L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'), L('All options: specifications, VAT invoice and bills of quantities', 'تمام اختیارات', 'كل الخيارات: المواصفات والفاتورة الضريبية وجداول الكميات')],
-  ]
+  // the same cards, names, descriptions and icons as at sign-up and in onboarding (UX-131)
+  const t = buyerTypeText(locale)
   return (
     <div className="fixed inset-0 z-[80] bg-[#071827]/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
       <div role="dialog" aria-modal="true" aria-labelledby="bt-title" className="w-full max-w-md rounded-2xl bg-white shadow-2xl border-t-4 border-[#D4A543] p-5">
-        <div className="text-[12px] font-bold text-[#9D7425]">{L('New in Taseerak', 'تسعیرک میں نیا', 'جديد في تسعيرك')}</div>
-        <h2 id="bt-title" className="text-xl font-extrabold text-[#0B2438] mt-0.5">{L('Who are you buying for?', 'آپ کس کے لیے خرید رہے ہیں؟', 'لمن تشتري؟')}</h2>
+        {/* the question itself is the cards' own label (one wording everywhere), so it is not repeated here */}
+        <h2 id="bt-title" className="text-xl font-extrabold text-[#0B2438]">{L('New in Taseerak', 'تسعیرک میں نیا', 'جديد في تسعيرك')}</h2>
         <p className="text-sm text-gray-600 mt-1">{L('We will show you the screens that suit you.', 'ہم آپ کے لیے موزوں اسکرین دکھائیں گے۔', 'سنعرض لك الصفحات التي تناسبك.')}</p>
-        <div className="mt-4 space-y-2.5">
-          {cards.map(([v, title, sub]) => (
-            <button key={v} type="button" disabled={!!busy} onClick={() => choose(v)}
-              className="w-full min-h-[56px] text-start rounded-xl border-2 border-gray-200 hover:border-[#D4A543] bg-white px-4 py-3 transition-colors disabled:opacity-60">
-              <span className="block text-base font-extrabold text-[#0B2438]">{busy === v ? '…' : title}</span>
-              <span className="block text-[13px] text-gray-600 mt-0.5">{sub}</span>
-            </button>
-          ))}
+        <div className="mt-4" aria-busy={!!busy}>
+          <BuyerTypeCards value={busy || ''} onChange={choose} locale={locale} disabled={!!busy} showHint={false} />
+          {busy && <p className="mt-1.5 text-[13px] font-semibold text-[#0B2438]" role="status">{L('Saving…', 'محفوظ کیا جا رہا ہے…', 'جارٍ الحفظ…')}</p>}
         </div>
         {error && <p className="mt-2 text-sm text-red-600" role="alert">{error}</p>}
-        <p className="mt-3 text-[12px] text-gray-600">{L('You can change it any time in Settings.', 'آپ اسے کسی بھی وقت ترتیبات میں بدل سکتے ہیں۔', 'يمكنك تغييره في أي وقت من الإعدادات.')}</p>
+        <p className="mt-3 text-[12px] text-gray-600">{t.changeLater}</p>
       </div>
     </div>
   )
