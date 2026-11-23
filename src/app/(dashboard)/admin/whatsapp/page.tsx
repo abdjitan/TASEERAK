@@ -69,10 +69,10 @@ function Inbox() {
               className={`w-full text-start px-4 py-3 border-b border-gray-50 hover:bg-gray-50 ${phone === c.phone ? 'bg-[#D4A543]/10' : ''}`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-bold text-sm text-[#0B2438] truncate">{c.name || c.phone}</span>
-                {c.unread > 0 && <span className="text-[10px] font-bold rounded-full bg-[#D4A543] text-[#071827] px-1.5">{c.unread}</span>}
+                {c.unread > 0 && <span className="text-xs font-bold rounded-full bg-[#D4A543] text-[#071827] px-1.5">{c.unread}</span>}
               </div>
-              <div className="text-[11px] text-gray-500" dir="ltr">+{c.phone}</div>
-              {c.last_message_at && <div className="text-[10px] text-gray-400">{new Date(c.last_message_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</div>}
+              <div className="text-xs text-gray-500" dir="ltr">+{c.phone}</div>
+              {c.last_message_at && <div className="text-xs text-gray-400">{new Date(c.last_message_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</div>}
             </button>
           ))}
         </div>
@@ -92,7 +92,7 @@ function Inbox() {
                     <div key={m.id} className={`flex ${out ? 'justify-start' : 'justify-end'}`}>
                       <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap ${out ? 'bg-[#0B2438] text-white' : 'bg-gray-100 text-gray-800'}`}>
                         {m.text || <span className="italic opacity-70">({m.type || 'مرفق'})</span>}
-                        <div className={`text-[10px] mt-1 ${out ? 'text-white/60' : 'text-gray-400'}`}>{new Date(m.received_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}{out ? ' · الإدارة' : ''}</div>
+                        <div className={`text-xs mt-1 ${out ? 'text-white/60' : 'text-gray-400'}`}>{new Date(m.received_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}{out ? ' · الإدارة' : ''}</div>
                       </div>
                     </div>
                   )

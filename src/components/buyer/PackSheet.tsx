@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { X, Calculator } from 'lucide-react'
 import QuantityCalc, { calcSupported } from '@/components/buyer/QuantityCalc'
-import { getUnitLabelLong, getDefaultUnit, getProductLabel } from '@/types'
+import { getUnitLabelLong, getDefaultUnit } from '@/types'
 import { productImageUrl } from '@/lib/productImage'
 import { homeName, packUnitMismatches, deriveQty, type HomePack } from '@/lib/homePacks'
 import { askConfirm } from '@/lib/askConfirm'
@@ -29,7 +29,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const pick = (o: { ar: string; en: string; ur: string }) => (locale === 'en' ? o.en : locale === 'ur' ? o.ur : o.ar)
   const [rows, setRows] = useState(() => pack.items.map(it => ({
-    ...it, on: true, quantity: it.qty != null ? String(it.qty) : '', unit: it.unit || getDefaultUnit(it.name, it.sector) || 'حبة', edited: false,
+    ...it, on: it.on !== false, quantity: it.qty != null ? String(it.qty) : '', unit: it.unit || getDefaultUnit(it.name, it.sector) || 'حبة', edited: false,
   })))
   const [dirty, setDirty] = useState(false) // something changed: closing asks first (round-4 UX-025)
   const chosen = rows.filter(r => r.on)
@@ -41,7 +41,7 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
       return next.map(r => (r.derive && !r.edited ? { ...r, quantity: deriveQty(r.derive, next) } : r))
     })
   }
-  const name = (n: string) => locale === 'ar' ? homeName(n) : getProductLabel(n, locale)
+  const name = (n: string) => homeName(n, locale) // plain names in every language (round-5 UX-123)
   const boxRef = useRef<HTMLDivElement>(null)
   const [calcFor, setCalcFor] = useState<number | null>(null)
   const ready = chosen.filter(r => parseFloat(r.quantity) > 0).length

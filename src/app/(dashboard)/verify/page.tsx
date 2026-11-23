@@ -116,10 +116,10 @@ function Verify() {
               'خدمة الرسائل متوقفة مؤقتاً، وقد أُبلغت الإدارة. يمكنك المتابعة بعد أن يوقف المشرف هذا الشرط مؤقتاً، أو التواصل مع الدعم.')}
           </p>
         )}
-        <p className="text-sm text-gray-600 text-center">
+        {!canGo && <p className="text-sm text-gray-600 text-center">
           {L('Did the code not arrive?', 'کوڈ نہیں ملا؟', 'لم يصلك الرمز؟')}{' '}
-          <Link href="/support" className="font-bold text-[#8F6820] underline underline-offset-2 inline-flex min-h-[44px] items-center">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
-        </p>
+          <Link href="/support?topic=sms" className="font-bold text-[#8F6820] underline underline-offset-2 inline-flex min-h-[44px] items-center">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
+        </p>}
         {/* deleting the account is a right (PDPL) and a store requirement, also before verifying (UX-024) */}
         <p className="text-sm text-gray-600 text-center">
           {L('Changed your mind?', 'ارادہ بدل گیا؟', 'غيّرت رأيك؟')}{' '}

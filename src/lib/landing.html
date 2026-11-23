@@ -18,7 +18,7 @@
           <button type="button" data-lang="en">EN</button>
           <button type="button" data-lang="ur">اردو</button>
         </div>
-        <a href="/login" class="btn btn-ghost" data-i18n="login">تسجيل الدخول</a>
+        <a href="/login" class="btn btn-ghost js-login" data-i18n="login">تسجيل الدخول</a>
       </div>
     </nav>
 
@@ -28,7 +28,7 @@
         <button type="button" data-lang="en">EN</button>
         <button type="button" data-lang="ur">اردو</button>
       </div>
-      <a href="/login" class="btn btn-ghost" data-i18n="login">تسجيل الدخول</a>
+      <a href="/login" class="btn btn-ghost js-login" data-i18n="login">تسجيل الدخول</a>
       <a href="/contractor/rfq/quick" class="btn btn-primary" data-i18n="register">ابدأ الآن</a>
       <button type="button" class="menu-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links"><span></span></button>
     </div>
@@ -121,7 +121,7 @@
       <div class="hero-trust hero-in d4">
         <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg><span data-i18n="trust1">حالة توثيق كل مورد ظاهرة أمامك</span></div>
         <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M7 12h10M11 18h2"/></svg><span data-i18n="trust2">يصل طلبك إلى الموردين المختصين فقط</span></div>
-        <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg><span data-i18n="trust3">ثلاث لغات: عربي · إنجليزي · أردو</span></div>
+        <div class="t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg><span data-i18n="trust3">كل الأسعار شاملة الضريبة</span></div>
       </div>
     </div>
 
@@ -142,17 +142,17 @@
         <div class="offer best" style="animation-delay:.2s">
           <div class="rank">1</div>
           <div class="sup"><div class="n" data-i18n="lc_s1">محل أدوات صحية (أ)</div><div class="m" data-i18n="lc_m1">محل · سجلّه موثّق</div></div>
-          <div class="price"><div class="v">172</div><div class="u" data-i18n="lc_unit">ر.س / قطعة</div></div>
+          <div class="price"><div class="v">172</div><div class="u" data-i18n="lc_unit">ر.س / قطعة، شامل الضريبة</div></div>
         </div>
         <div class="offer" style="animation-delay:.45s">
           <div class="rank">2</div>
           <div class="sup"><div class="n" data-i18n="lc_s2">موزّع أدوات صحية (ب)</div><div class="m" data-i18n="lc_m2">موزّع تجاري</div></div>
-          <div class="price"><div class="v">178</div><div class="u" data-i18n="lc_unit">ر.س / قطعة</div></div>
+          <div class="price"><div class="v">178</div><div class="u" data-i18n="lc_unit">ر.س / قطعة، شامل الضريبة</div></div>
         </div>
         <div class="offer" style="animation-delay:.7s">
           <div class="rank">3</div>
           <div class="sup"><div class="n" data-i18n="lc_s3">محل سباكة (ج)</div><div class="m" data-i18n="lc_m3">مورّد قريب منك</div></div>
-          <div class="price"><div class="v">181</div><div class="u" data-i18n="lc_unit">ر.س / قطعة</div></div>
+          <div class="price"><div class="v">181</div><div class="u" data-i18n="lc_unit">ر.س / قطعة، شامل الضريبة</div></div>
         </div>
 
         <div class="lc-foot">
@@ -296,14 +296,14 @@
     <div class="boq-copy reveal">
       <span class="eyebrow"><span class="dot"></span><span data-i18n="boq_eyebrow">طلب كبير؟</span></span>
       <h2 data-i18n="boq_h">ارفع قائمة المواد أو صوّرها… ونحن نوزّعها على الموردين</h2>
-      <p data-i18n="boq_p">لا داعي لكتابة كل مادة يدوياً. ارفع قائمتك بصيغة Excel أو PDF أو صورة، فيستخرج النظام كل مادة تلقائياً ويرسلها إلى الموردين الذين يبيعونها.</p>
+      <p data-i18n="boq_p">لا داعي لكتابة كل مادة يدوياً. ارفع قائمتك أو صوّرها، فيستخرج النظام كل مادة تلقائياً ويرسلها إلى الموردين الذين يبيعونها.</p>
       <ul class="boq-list">
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span data-i18n="boq_l1">استخراج تلقائي لكل مواد القائمة</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span data-i18n="boq_l2">تحديد القسم المناسب لكل مادة</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span data-i18n="boq_l3">طلب واحد بعدة بنود، وتختار أفضل سعر لكل مادة</span></li>
         <li><span class="ck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span><span data-i18n="boq_l4">مقارنة العروض لكل مادة مع الإجمالي</span></li>
       </ul>
-      <a href="/login?next=%2Fcontractor%2Fproject%2Fnew" class="btn btn-primary btn-lg boq-cta"><span data-i18n="boq_cta">ارفع قائمتك الآن</span>
+      <a href="/contractor/rfq/quick?upload=1" class="btn btn-primary btn-lg boq-cta"><span data-i18n="boq_cta">ارفع قائمتك الآن</span>
         <svg class="dir-arrow" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     </div>
 
@@ -369,7 +369,7 @@
       <div class="feature reveal">
         <div class="f-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></div>
         <h3 data-i18n="f4_t">رفع قائمة المواد</h3>
-        <p data-i18n="f4_p">قائمة موادك مكتوبة أو مصوّرة أو بملف Excel تتحوّل إلى طلب تسعير منظّم في ثوانٍ.</p>
+        <p data-i18n="f4_p">قائمة موادك مكتوبة أو مصوّرة تتحوّل إلى طلب تسعير منظّم في ثوانٍ.</p>
       </div>
       <div class="feature reveal d1">
         <div class="f-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/></svg></div>
@@ -397,6 +397,7 @@
       <details class="reveal"><summary data-i18n="faq_q2">من يوصل الطلب؟</summary><p data-i18n="faq_a2">المورد الذي تختار عرضه هو من يوصل المواد إلى موقعك، أو تستلمها منه بنفسك إن اخترت الاستلام. يظهر في العرض هل يشمل التوصيل وموعده.</p></details>
       <details class="reveal"><summary data-i18n="faq_q3">هل الخدمة مجانية؟</summary><p data-i18n="faq_a3">نعم. إرسال طلب التسعير ومقارنة العروض مجانيان خلال مرحلة الإطلاق، بلا رسوم ولا عمولة.</p></details>
       <details class="reveal"><summary data-i18n="faq_q4">كيف أعرف المورد؟</summary><p data-i18n="faq_a4">يظهر بجانب كل مورد ما إذا كان سجلّه التجاري موثّقاً، مع تقييمات المشترين السابقين. ولا يرى المورد اسمك أو رقمك حتى تختار عرضه.</p></details>
+      <details class="reveal"><summary data-i18n="faq_q5">هل الأسعار شاملة الضريبة؟</summary><p data-i18n="faq_a5">نعم، كل سعر يظهر لك شامل ضريبة القيمة المضافة، وسعر البائع غير المسجّل في الضريبة سعر نهائي.</p></details>
     </div>
     <p class="faq-more"><a href="/deal-protection" data-i18n="faq_more">اعرف كيف نحمي صفقتك</a></p>
   </div>
@@ -438,11 +439,12 @@
         <a href="/join" data-i18n="foot_c2_1">انضم كمورد</a>
         <a href="/join/seller" data-i18n="foot_c2_6">انضم كوسيط تسعير</a>
         <a href="/join/company" data-i18n="foot_c2_5">انضم كشركة أو محل</a>
-        <a href="/join" data-i18n="foot_c2_3">كيف تصلك الطلبات</a>
+        <a href="/join#how" data-i18n="foot_c2_3">كيف تصلك الطلبات</a>
       </div>
       <div class="foot-col">
         <h4 data-i18n="foot_c3">الشركة</h4>
         <a href="https://wa.me/12135614366" target="_blank" rel="noopener noreferrer" data-i18n="foot_c3_6">تواصل معنا عبر واتساب</a>
+        <span class="foot-note" data-i18n="foot_wa_note">رقم تسعيرك الرسمي على واتساب للأعمال</span>
         <a href="mailto:info@taseerak.com" data-i18n="foot_c3_2">راسلنا بالبريد</a>
         <a href="/privacy" data-i18n="foot_c3_3">الخصوصية</a>
         <a href="/terms" data-i18n="foot_c3_4">الشروط</a>

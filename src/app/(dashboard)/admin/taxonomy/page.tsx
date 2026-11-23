@@ -145,17 +145,17 @@ export default function AdminTaxonomyPage() {
             <h3 className="font-bold text-sm mb-3" style={{ color: '#0F6E56' }}><Glyph e="➕" /> تخصص جديد</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 mb-1">القطاع</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1">القطاع</label>
                 <select value={naSector} onChange={e => setNaSector(e.target.value)} className="input-field text-sm">
                   {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 mb-1">المفتاح (إنجليزي، بدون مسافات)</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1">المفتاح (إنجليزي، بدون مسافات)</label>
                 <input value={naKey} onChange={e => setNaKey(e.target.value)} className="input-field text-sm" placeholder="مثال: polyurea_insulation" />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 mb-1">الاسم بالعربية</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1">الاسم بالعربية</label>
                 <input value={naName} onChange={e => setNaName(e.target.value)} className="input-field text-sm" placeholder="مثال: عزل بولي يوريا" />
               </div>
               <div>
@@ -166,7 +166,7 @@ export default function AdminTaxonomyPage() {
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-bold text-gray-500 mb-1">الكلمات المفتاحية (مفصولة بفواصل)</label>
+                <label className="block text-xs font-bold text-gray-500 mb-1">الكلمات المفتاحية (مفصولة بفواصل)</label>
                 <textarea value={naKw} onChange={e => setNaKw(e.target.value)} rows={2} className="input-field text-sm" placeholder="بولي يوريا، polyurea، عزل رش" />
               </div>
             </div>
@@ -201,7 +201,7 @@ export default function AdminTaxonomyPage() {
           {Object.entries(bySector).map(([sector, list]) => (
             <div key={sector}>
               <h2 className="text-sm font-bold mb-2 flex items-center gap-2" style={{ color: '#0B2438' }}>
-                <span className="badge badge-blue text-[10px]">{(SECTOR_LABELS as any)[sector] || sector}</span>
+                <span className="badge badge-blue text-xs">{(SECTOR_LABELS as any)[sector] || sector}</span>
                 <span className="text-gray-400 font-normal">({list.length} تخصّص)</span>
               </h2>
               <div className="space-y-2">
@@ -215,7 +215,7 @@ export default function AdminTaxonomyPage() {
                             value={nameEdits[key] ?? ''}
                             onChange={e => setNameEdits(prev => ({ ...prev, [key]: e.target.value }))}
                             className="input-field text-sm font-bold py-1.5 max-w-[260px]" style={{ color: '#0B2438' }} />
-                          <span className="text-[11px] text-gray-400 shrink-0">{r.sub_key}{r.grp ? ` · ${r.grp}` : ''}</span>
+                          <span className="text-xs text-gray-400 shrink-0">{r.sub_key}{r.grp ? ` · ${r.grp}` : ''}</span>
                         </div>
                         <button onClick={() => save(r)} disabled={savingKey === key}
                           className="text-xs font-bold text-white px-4 py-1.5 rounded-lg disabled:opacity-50 shrink-0"

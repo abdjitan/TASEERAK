@@ -37,7 +37,7 @@ const arr = (x: any): any[] => (Array.isArray(x) ? x : [])
 function Field({ label, children }: { label: string; children?: ReactNode }) {
   return (
     <div className="py-1.5 border-b border-gray-50 last:border-0">
-      <div className="text-[11px] text-gray-400">{label}</div>
+      <div className="text-xs text-gray-400">{label}</div>
       <div className="text-sm text-gray-800 break-words">{children ?? '—'}</div>
     </div>
   )
@@ -59,10 +59,10 @@ function DealSteps({ d }: { d: any }) {
       {steps.map((s, i) => (
         <li key={s.label} className="flex-1 flex flex-col items-center text-center relative">
           {i > 0 && <span className="absolute top-3 right-1/2 w-full h-0.5" style={{ background: s.at ? '#0F6E56' : '#E5E7EB' }} />}
-          <span className="relative z-10 w-6 h-6 rounded-full grid place-items-center text-[11px] font-bold"
+          <span className="relative z-10 w-6 h-6 rounded-full grid place-items-center text-xs font-bold"
             style={s.at ? { background: '#0F6E56', color: '#fff' } : { background: '#fff', border: '2px solid #D1D5DB', color: '#9CA3AF' }}>{i + 1}</span>
-          <span className="text-[11px] font-semibold mt-1" style={{ color: s.at ? '#0F6E56' : '#9CA3AF' }}>{s.label}</span>
-          <span className="text-[10px] text-gray-400 tabular-nums">{s.at ? dt(s.at) : '—'}</span>
+          <span className="text-xs font-semibold mt-1" style={{ color: s.at ? '#0F6E56' : '#9CA3AF' }}>{s.label}</span>
+          <span className="text-xs text-gray-400 tabular-nums">{s.at ? dt(s.at) : '—'}</span>
         </li>
       ))}
     </ol>
@@ -186,7 +186,7 @@ export default function SupportView() {
               <div className="w-14 h-14 rounded-2xl grid place-items-center text-xl font-bold text-white shrink-0" style={{ background: '#0B2438' }}>{name[0] || '?'}</div>
               <div className="min-w-0 flex-1">
                 <div className="text-lg font-extrabold truncate" style={{ color: '#0B2438' }}>{name}</div>
-                <div className="flex items-center gap-2 flex-wrap mt-1 text-[11px]">
+                <div className="flex items-center gap-2 flex-wrap mt-1 text-xs">
                   <span className="badge badge-navy">{ROLE_AR[p.role] || p.role || '—'}</span>
                   {p.role === 'supplier' && p.supplier_tier && <span className="badge badge-gray">{tierLabel(p.supplier_tier, 'ar')}</span>}
                   <span className={`badge ${p.verification_status === 'verified' ? 'badge-green' : p.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'}`}>{VERIFY[p.verification_status] || p.verification_status || '—'}</span>
@@ -283,10 +283,10 @@ export default function SupportView() {
                 {arr(v.requests).map((r: any) => (
                   <Link key={r.id} href={`/contractor/rfq/${r.id}`} className={`${card} !p-4 block hover:shadow-md transition-shadow`}>
                     <div className="flex justify-between gap-2 flex-wrap">
-                      <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{r.product_name || '—'} {r.ref_no && <span className="text-[11px] text-gray-400 tabular-nums">#{r.ref_no}</span>}</span>
-                      <span className="badge badge-gray text-[10px]">{RFQ_STATUS[r.status] || r.status}</span>
+                      <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{r.product_name || '—'} {r.ref_no && <span className="text-xs text-gray-400 tabular-nums">#{r.ref_no}</span>}</span>
+                      <span className="badge badge-gray text-xs">{RFQ_STATUS[r.status] || r.status}</span>
                     </div>
-                    <div className="text-[11px] text-gray-500 mt-1.5 tabular-nums flex gap-3 flex-wrap">
+                    <div className="text-xs text-gray-500 mt-1.5 tabular-nums flex gap-3 flex-wrap">
                       <span>{fmt(r.items)} مادة</span><span>{fmt(r.offers)} عرض</span><span>{fmt(r.awards)} اختيار</span>
                       <span>{[r.region, r.city].filter(Boolean).join(' / ')}</span>
                       <span>أُنشئ {dt(r.created_at)}</span>{r.expires_at && <span>ينتهي {dtt(r.expires_at)}</span>}
@@ -301,10 +301,10 @@ export default function SupportView() {
                 {arr(v.offers).map((o: any) => (
                   <Link key={o.id} href={`/contractor/rfq/${o.rfq_id}`} className={`${card} !p-4 block hover:shadow-md transition-shadow`}>
                     <div className="flex justify-between gap-2 flex-wrap">
-                      <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{o.product_name || '—'} {o.ref_no && <span className="text-[11px] text-gray-400 tabular-nums">#{o.ref_no}</span>}</span>
-                      <span className="badge badge-gray text-[10px]">{OFFER_STATUS[o.status] || o.status}</span>
+                      <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{o.product_name || '—'} {o.ref_no && <span className="text-xs text-gray-400 tabular-nums">#{o.ref_no}</span>}</span>
+                      <span className="badge badge-gray text-xs">{OFFER_STATUS[o.status] || o.status}</span>
                     </div>
-                    <div className="text-[11px] text-gray-500 mt-1.5 tabular-nums flex gap-3 flex-wrap">
+                    <div className="text-xs text-gray-500 mt-1.5 tabular-nums flex gap-3 flex-wrap">
                       <span className="font-bold" style={{ color: '#0B2438' }}>{sar(o.total_price)}</span>
                       {o.vat_status && <span>الضريبة: {o.vat_status}</span>}
                       <span>{dtt(o.created_at)}</span>
@@ -320,10 +320,10 @@ export default function SupportView() {
                 {arr(v.deals).map((d: any) => (
                   <Link key={d.offer_id} href={`/contractor/orders/${d.offer_id}`} className={`${card} !p-4 block hover:shadow-md transition-shadow ${d.dispute_status === 'open' ? '!border-red-200' : ''}`}>
                     <div className="flex justify-between gap-2 flex-wrap">
-                      <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{d.product_name || '—'} {d.ref_no && <span className="text-[11px] text-gray-400 tabular-nums">#{d.ref_no}</span>}</span>
+                      <span className="font-bold text-sm" style={{ color: '#0B2438' }}>{d.product_name || '—'} {d.ref_no && <span className="text-xs text-gray-400 tabular-nums">#{d.ref_no}</span>}</span>
                       <span className="font-bold text-sm tabular-nums" style={{ color: '#0B2438' }}>{sar(d.value)}</span>
                     </div>
-                    <div className="text-[11px] text-gray-500 mt-1 flex gap-3 flex-wrap">
+                    <div className="text-xs text-gray-500 mt-1 flex gap-3 flex-wrap">
                       <span>{d.side === 'supplier' ? 'بائع' : 'مشتري'} · الطرف الآخر: {d.other_party || '—'}</span>
                       {d.invoice_number && <span className="tabular-nums">فاتورة {d.invoice_number}</span>}
                       {d.payment_status && <span>الدفع: {d.payment_status}</span>}
@@ -349,16 +349,16 @@ export default function SupportView() {
                       <button type="button" onClick={() => setOpenConv(isOpen ? null : c.id)} aria-expanded={isOpen}
                         className="w-full flex items-center justify-between gap-2 p-4 text-right hover:bg-gray-50">
                         <span className="font-bold text-sm" style={{ color: '#0B2438' }}><Glyph e="💬" /> {c.other_party || '—'}</span>
-                        <span className="text-[11px] text-gray-500 tabular-nums">{fmt(msgs.length)} رسالة · {ago(c.last_message_at)}</span>
+                        <span className="text-xs text-gray-500 tabular-nums">{fmt(msgs.length)} رسالة · {ago(c.last_message_at)}</span>
                       </button>
                       {isOpen && (
                         <div className="border-t border-gray-100 bg-[#f7f8fa] p-3 space-y-2 max-h-[60vh] overflow-y-auto">
-                          {c.rfq_id && <Link href={`/contractor/rfq/${c.rfq_id}`} className="text-[11px] hover:underline" style={{ color: '#8F6820' }}>الطلب المرتبط بالمحادثة</Link>}
+                          {c.rfq_id && <Link href={`/contractor/rfq/${c.rfq_id}`} className="text-xs hover:underline" style={{ color: '#8F6820' }}>الطلب المرتبط بالمحادثة</Link>}
                           {msgs.length ? msgs.map((m: any, i: number) => (
                             <div key={i} className={`flex ${m.mine ? 'justify-start' : 'justify-end'}`}>
                               <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${m.mine ? 'text-white' : 'bg-white border border-gray-200 text-gray-800'}`} style={m.mine ? { background: '#0B2438' } : {}}>
                                 <div className="whitespace-pre-wrap break-words">{m.body}</div>
-                                <div className={`text-[10px] mt-1 tabular-nums ${m.mine ? 'text-blue-100/70' : 'text-gray-400'}`}>
+                                <div className={`text-xs mt-1 tabular-nums ${m.mine ? 'text-blue-100/70' : 'text-gray-400'}`}>
                                   {m.mine ? 'صاحب الحساب' : c.other_party} · {dtt(m.created_at)}{m.read_at ? ' · مقروءة' : ' · غير مقروءة'}
                                 </div>
                               </div>
@@ -376,9 +376,9 @@ export default function SupportView() {
               <ul className={`${card} !p-0 divide-y divide-gray-50`}>
                 {arr(v.notifications).map((n: any, i: number) => (
                   <li key={i} className={`p-3 text-sm ${n.is_read ? '' : 'bg-amber-50/40'}`}>
-                    <div className="flex justify-between gap-2"><b style={{ color: '#0B2438' }}>{n.title || n.type}</b><span className="text-[11px] text-gray-400 shrink-0">{dtt(n.created_at)}</span></div>
+                    <div className="flex justify-between gap-2"><b style={{ color: '#0B2438' }}>{n.title || n.type}</b><span className="text-xs text-gray-400 shrink-0">{dtt(n.created_at)}</span></div>
                     {n.body && <p className="text-gray-600 text-xs mt-0.5">{n.body}</p>}
-                    <p className="text-[10px] text-gray-400 mt-0.5"><span dir="ltr">{n.type}</span> · {n.is_read ? 'مقروء' : 'غير مقروء'}</p>
+                    <p className="text-xs text-gray-400 mt-0.5"><span dir="ltr">{n.type}</span> · {n.is_read ? 'مقروء' : 'غير مقروء'}</p>
                   </li>
                 ))}
               </ul>
@@ -399,9 +399,9 @@ export default function SupportView() {
               <ul className={`${card} !p-0 divide-y divide-gray-50`}>
                 {arr(v.admin_history).map((h: any, i: number) => (
                   <li key={i} className="p-3 text-sm">
-                    <div className="flex justify-between gap-2"><b dir="ltr" style={{ color: '#0B2438' }}>{h.action}</b><span className="text-[11px] text-gray-400 shrink-0">{dtt(h.created_at)}</span></div>
-                    <p className="text-[11px] text-gray-500 mt-0.5">بواسطة: {h.actor || '—'}</p>
-                    {h.detail && <pre dir="ltr" className="text-[11px] text-gray-600 mt-1 bg-gray-50 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap break-words">{typeof h.detail === 'string' ? h.detail : JSON.stringify(h.detail, null, 1)}</pre>}
+                    <div className="flex justify-between gap-2"><b dir="ltr" style={{ color: '#0B2438' }}>{h.action}</b><span className="text-xs text-gray-400 shrink-0">{dtt(h.created_at)}</span></div>
+                    <p className="text-xs text-gray-500 mt-0.5">بواسطة: {h.actor || '—'}</p>
+                    {h.detail && <pre dir="ltr" className="text-xs text-gray-600 mt-1 bg-gray-50 rounded-lg p-2 overflow-x-auto whitespace-pre-wrap break-words">{typeof h.detail === 'string' ? h.detail : JSON.stringify(h.detail, null, 1)}</pre>}
                   </li>
                 ))}
               </ul>

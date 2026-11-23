@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import AutoTr from '@/components/shared/AutoTr'
 import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
@@ -24,8 +24,9 @@ import { dbMessage } from '@/lib/dbMessage'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
 import { askConfirm } from '@/lib/askConfirm'
 import { useHomeBuyer } from '@/components/buyer/useHomeBuyer'
-import { cleanArName } from '@/lib/displayName'
-import { daysText } from '@/lib/text'
+import { cleanArName, getPlaceLabel } from '@/lib/displayName'
+import { daysText, arCount } from '@/lib/text'
+import { useFocusTrap } from '@/components/shared/useFocusTrap'
 import { isExpired } from '@/lib/deadline'
 import { dealStage } from '@/lib/dealStage'
 
@@ -59,6 +60,23 @@ export default function OfferDetailPage() {
   const unitL = (u: string) => getUnitLabelLong(u, locale)
   const showErr = (m: string) => { setErr(m); setTimeout(() => document.getElementById('offer-err')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 30) }
   const [declinedNote, setDeclinedNote] = useState('') // after «رفض»: what happened (round-4 UX-123)
+  const [infoOpen, setInfoOpen] = useState(false)
+  const [infoText, setInfoText] = useState('')
+  const [infoBusy, setInfoBusy] = useState(false)
+  const [chosenId, setChosenId] = useState<string | null>(null) // another offer on this request is the deal (round-5 UX-041)
+  // the two dialogs keep focus inside, close with Escape and give focus back (round-5 UX-141)
+  const reqRef = useRef<HTMLDivElement>(null)
+  const infoRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(reqRef, reqOpen, { lockScroll: true })
+  useFocusTrap(infoRef, infoOpen, { lockScroll: true })
+  useEffect(() => {
+    if (!reqOpen && !infoOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { if (!reqBusy) setReqOpen(false); if (!infoBusy) setInfoOpen(false) } }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [reqOpen, infoOpen, reqBusy, infoBusy])
+  // one date format (round-5 UX-149): no seconds, Riyadh time
+  const fmtWhen = (d: any) => new Date(d).toLocaleString(dloc, { day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Riyadh' })
 
   async function submitReductionRequest() {
     setReqBusy(true)
@@ -87,9 +105,6 @@ export default function OfferDetailPage() {
     setOffer((o: any) => ({ ...o, reduction_deadline: null, reduction_note: null }))
   }
 
-  const [infoOpen, setInfoOpen] = useState(false)
-  const [infoText, setInfoText] = useState('')
-  const [infoBusy, setInfoBusy] = useState(false)
   async function submitInfoRequest() {
     if (!infoText.trim()) return
     setInfoBusy(true)
@@ -122,6 +137,10 @@ export default function OfferDetailPage() {
         if (contact) full = { ...offerData, supplier: { ...offerData.supplier, ...contact } }
       }
       setOffer(full)
+      if (offerData && offerData.status !== 'accepted') {
+        const { data: acc } = await supabase.from('offers').select('id').eq('rfq_id', id).eq('status', 'accepted').limit(1)
+        setChosenId(acc?.[0]?.id || null)
+      }
       setLoading(false)
     }
     load()
@@ -160,7 +179,9 @@ export default function OfferDetailPage() {
 
   async function rejectOffer() {
     // rejecting also removes any material you selected from this supplier (DB trigger, migration 183)
-    if (!(await askConfirm(L('Decline this offer? Any material you selected from this supplier will be unselected. This cannot be undone.', 'یہ آفر رد کریں؟ اس سپلائر سے منتخب کیا گیا سامان بھی غیر منتخب ہو جائے گا۔ یہ واپس نہیں ہو سکتا۔', 'رفض هذا العرض؟ سيُلغى اختيار أي مادة اخترتها من هذا المورد، ولا يمكن التراجع عن ذلك.'), { danger: true, okLabel: L('Yes, decline it', 'ہاں، رد کریں', 'نعم، ارفض العرض'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
+    // one name for the action: «لا يناسبني» (round-5 UX-146)
+    const who = offer?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
+    if (!(await askConfirm(L(`Is the offer from ${who} not right for you? The offer will be declined and the supplier told it was not accepted. This cannot be undone.`, `${who} کی آفر آپ کے لیے مناسب نہیں؟ آفر رد ہو جائے گی اور سپلائر کو بتا دیا جائے گا کہ اس کی آفر قبول نہیں ہوئی۔ یہ واپس نہیں ہو سکتا۔`, `عرض ${who} لا يناسبك؟ سيُرفض العرض ويُبلَّغ المورد بأن عرضه لم يُقبل، ولا يمكن التراجع عن ذلك.`), { danger: true, okLabel: L('Yes, not right for me', 'ہاں، مناسب نہیں', 'نعم، لا يناسبني'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setActing(true)
     const supabase = createClient()
     const { error } = await supabase.from('offers').update({ status: 'rejected' }).eq('id', offerId)
@@ -200,14 +221,19 @@ export default function OfferDetailPage() {
   // the buyer talks through the in-app chat only.
   const accepted = offer.status === 'accepted'
   const contactNum = s.contact_phone || s.phone || ''
-  const mapsUrl = (s.latitude && s.longitude) ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}` : null
+  // an independent seller is a private person: no map pin before (or after) a deal, the city only (round-5 UX-036)
+  const independentSeller = s.supplier_tier === 'independent'
+  const mapsUrl = (!independentSeller && s.latitude && s.longitude) ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}` : null
   const what = isMulti ? rfqDesc(rfq, locale) : pname(rfq.product_name)
   const wa = (accepted && contactNum) ? waLink(contactNum, L(`Hello, regarding your offer on «${what}» on Taseerak`, `السلام علیکم، تسعیرک پر «${what}» کے لیے آپ کی آفر کے بارے میں`, `السلام عليكم، بخصوص عرضكم على «${what}» في منصة تسعيرك`)) : ''
   const statusBadge = offer.status === 'accepted' ? { t: L('Chosen', 'منتخب', 'تم اختياره'), c: 'bg-emerald-100 text-emerald-800' }
     : offer.status === 'rejected' ? { t: L('Declined', 'رد شدہ', 'مرفوض'), c: 'bg-gray-100 text-gray-600' }
     : { t: L('Waiting for your decision', 'آپ کے فیصلے کا انتظار', 'بانتظار قرارك'), c: 'bg-amber-100 text-amber-800' }
   const fmt = (n: any) => (+Number(n).toFixed(2)).toLocaleString('en-US')
-  const reducing = reqDone || !!offer.reduction_deadline
+  // the reply deadline passed without a new price (round-5 UX-030): the request is over
+  const reductionLive = reqDone || (!!offer.reduction_deadline && new Date(offer.reduction_deadline).getTime() > Date.now())
+  const reductionLapsed = !reqDone && !!offer.reduction_deadline && !reductionLive
+  const reducing = reductionLive
 
   const Row = ({ label, value }: any) => value ? (
     <div className="flex justify-between gap-3 py-2 border-b border-gray-50 text-sm">
@@ -250,7 +276,7 @@ export default function OfferDetailPage() {
         {offer.status === 'pending' && offer.price_valid_until && (
           new Date(offer.price_valid_until) < new Date()
             ? <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-xl px-4 py-2.5 font-semibold"><Glyph e="⏱" /> {L('This offer price has expired. Confirm the price with the supplier in messages before choosing it.', 'اس آفر کی قیمت کی مدت ختم ہو گئی۔ منتخب کرنے سے پہلے پیغامات میں سپلائر سے قیمت کنفرم کریں۔', 'انتهت صلاحية سعر هذا العرض. تأكّد من السعر مع المورد عبر الرسائل قبل اختياره.')}</div>
-            : <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-sm rounded-xl px-4 py-2.5"><Glyph e="⏱" /> {L('The supplier committed to this price until', 'سپلائر نے اس قیمت کا وعدہ اس تاریخ تک کیا ہے:', 'التزم المورد بهذا السعر حتى')} {new Date(offer.price_valid_until).toLocaleDateString(dloc)}.</div>
+            : <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 text-[#0B2438] text-sm rounded-xl px-4 py-2.5"><Glyph e="⏱" /> {L('The supplier committed to this price until', 'سپلائر نے اس قیمت کا وعدہ اس تاریخ تک کیا ہے:', 'التزم المورد بهذا السعر حتى')} {new Date(offer.price_valid_until).toLocaleDateString(dloc, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' })}.</div>
         )}
 
         {/* After the choice: one way to the deal (UX-017) */}
@@ -288,7 +314,7 @@ export default function OfferDetailPage() {
             <Row label={L('Quantity', 'مقدار', 'الكمية')} value={`${(Number(rfq.quantity) || 0).toLocaleString('en-US')} ${unitL(rfq.unit)}`} />
           </>)}
           {!home && !isMulti && <Row label={L('Sector', 'شعبہ', 'القطاع')} value={(locale !== 'ar' && SECTOR_I18N[locale]?.[rfq.sector]) || (SECTOR_LABELS as any)[rfq.sector] || rfq.sector} />}
-          <Row label={L('Region', 'علاقہ', 'المنطقة')} value={rfq.region} />
+          <Row label={L('Delivery place', 'ڈیلیوری کی جگہ', 'مكان التسليم')} value={getPlaceLabel(rfq.city, rfq.region, locale)} />
           {!isMulti && <Row label={L('Specifications', 'اسپیسیفکیشن', 'المواصفات')} value={rfq.specification} />}
           <Row label={L('Request notes', 'درخواست کے نوٹس', 'ملاحظات الطلب')} value={rfq.notes} />
         </div>
@@ -319,8 +345,8 @@ export default function OfferDetailPage() {
             ))}
           </div>
           <Row label={L('Rating', 'ریٹنگ', 'التقييم')} value={s.rating_avg > 0 ? <span><Glyph e="⭐" /> {s.rating_avg} / 5</span> : null} />
-          <Row label={L('Location', 'مقام', 'الموقع')} value={[s.district, s.city, s.region].filter(Boolean).join(L(', ', '، ', '، '))} />
-          <Row label={L('National address', 'نیشنل ایڈریس', 'العنوان الوطني')} value={s.national_short_address} />
+          <Row label={L('Location', 'مقام', 'الموقع')} value={independentSeller ? getPlaceLabel(s.city, s.region, locale) : [s.district, getPlaceLabel(s.city, s.region, locale)].filter(Boolean).join(L(', ', '، ', '، '))} />
+          {!independentSeller && <Row label={L('National address', 'نیشنل ایڈریس', 'العنوان الوطني')} value={s.national_short_address} />}
           {accepted
             ? <Row label={L('Contact number', 'رابطہ نمبر', 'رقم التواصل')} value={contactNum} />
             : <div className="text-xs text-gray-500 py-2 border-b border-gray-50 leading-relaxed"><Glyph e="🔒" /> {L('The supplier’s number appears once you choose their offer. Until then, message them in the app.', 'سپلائر کا نمبر آفر منتخب کرنے کے بعد نظر آئے گا۔ تب تک ایپ میں پیغام بھیجیں۔', 'يظهر رقم المورد بعد اختيار عرضه. وحتى ذلك الحين راسله داخل المنصة.')}</div>}
@@ -341,7 +367,7 @@ export default function OfferDetailPage() {
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}><Glyph e="💰" /> {L('Price and delivery', 'قیمت اور ڈیلیوری', 'السعر والتوصيل')}</h2>
           {!isMulti && <Row label={L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')} value={Number(offer.unit_price) > 0 ? `${fmt(buyerLinePrice(offer.unit_price, offer))} ${SAR}` : null} />}
-          <Row label={L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')} value={Number(offer.delivery_days) > 0 ? L(`Within ${daysText(offer.delivery_days, locale)}`, `${daysText(offer.delivery_days, locale)} میں`, `خلال ${daysText(offer.delivery_days, locale)}`) : null} />
+          <Row label={L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')} value={Number(offer.delivery_days) > 0 ? L(`Within ${daysText(offer.delivery_days, locale)}`, `${daysText(offer.delivery_days, locale)} میں`, `خلال ${arCount(Number(offer.delivery_days), 'يوم واحد', 'يومين', 'أيام', 'يوماً')}`) : null} />
 
           {/* per-item pricing */}
           {ip.length > 0 && (
@@ -412,9 +438,14 @@ export default function OfferDetailPage() {
 
           {/* UX-053: the discount request and its state live with the price (the sticky bar keeps only the decision) */}
           {showBar && (<>
+          {reductionLapsed && (
+            <div role="status" className="text-sm text-[#0B2438] bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl px-3 py-2 mt-3">
+              <Glyph e="⏱" /> {L('The reply deadline ended without a discount. You can choose the offer at its current price or ask for a new discount.', 'جواب کی مہلت رعایت کے بغیر ختم ہو گئی۔ آپ آفر موجودہ قیمت پر منتخب کر سکتے ہیں یا نئی رعایت مانگ سکتے ہیں۔', 'انتهت مهلة الرد دون تخفيض. يمكنك اختيار العرض بسعره الحالي أو طلب تخفيض جديد.')}
+            </div>
+          )}
           {reducing ? (
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[#0B2438] bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl px-3 py-2 mt-3">
-              <span><Glyph e="⏳" /> {L('Discount request sent; waiting for the supplier', 'رعایت کی درخواست بھیج دی گئی؛ سپلائر کا انتظار', 'أُرسل طلب التخفيض، وبانتظار رد المورد')}{offer.reduction_deadline ? ` (${L('until', 'تک', 'حتى')} ${new Date(offer.reduction_deadline).toLocaleString(dloc)})` : ''}</span>
+              <span><Glyph e="⏳" /> {L('Discount request sent; waiting for the supplier', 'رعایت کی درخواست بھیج دی گئی؛ سپلائر کا انتظار', 'أُرسل طلب التخفيض، وبانتظار رد المورد')}{offer.reduction_deadline ? ` (${L('until', 'تک', 'حتى')} ${fmtWhen(offer.reduction_deadline)})` : ''}</span>
               <button type="button" onClick={cancelReduction} disabled={acting} className="min-h-11 px-3 text-sm font-semibold text-[#8F6820] hover:underline disabled:opacity-50">{L('Withdraw the request', 'درخواست واپس لیں', 'سحب الطلب')}</button>
             </div>
           ) : (
@@ -465,7 +496,13 @@ export default function OfferDetailPage() {
         )}
 
         {/* the request ended while the offer was still waiting: no actions, a way to ask again (UX-023) */}
-        {offer.status === 'pending' && !rfqOpen && (
+        {!accepted && chosenId && (
+          <div className="bg-white rounded-2xl p-4 border border-[#D4A543]/60 shadow-sm flex flex-wrap items-center justify-between gap-3">
+            <span className="text-sm font-semibold text-gray-800"><Glyph e="✅" /> {L('You chose another offer on this request.', 'آپ نے اس درخواست پر دوسری آفر منتخب کی ہے۔', 'اخترت عرضاً آخر في هذا الطلب.')}</span>
+            <Link href={`/contractor/orders/${chosenId}#deal`} className="min-h-11 inline-flex items-center gap-1 px-4 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>{L('Follow the deal', 'ڈیل دیکھیں', 'متابعة الصفقة')} <span aria-hidden="true">{FWD}</span></Link>
+          </div>
+        )}
+        {offer.status === 'pending' && !rfqOpen && !chosenId && (
           <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex flex-wrap items-center justify-between gap-3">
             <span className="text-sm font-semibold text-gray-700"><Glyph e="⏱" /> {rfq.status === 'cancelled' ? L('This request was cancelled.', 'یہ درخواست منسوخ ہو گئی۔', 'أُلغي هذا الطلب.') : L('This request has ended.', 'اس درخواست کی مدت ختم ہو گئی۔', 'انتهت مدة هذا الطلب.')}</span>
             <Link href={`/contractor/rfq/quick?from=${rfq.id}`} className="min-h-11 inline-flex items-center gap-1 px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}><Glyph e="🔁" /> {L('Request again', 'دوبارہ درخواست کریں', 'اطلب مرة أخرى')}</Link>
@@ -483,7 +520,7 @@ export default function OfferDetailPage() {
               ) : (
                 <button type="button" onClick={acceptOffer} disabled={acting} className="flex-[2] min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>{reducing ? L('Choose at the original price', 'اصل قیمت پر منتخب کریں', 'اختر العرض بالسعر الأصلي') : L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض')}</button>
               )}
-              <button type="button" onClick={rejectOffer} disabled={acting} className="min-h-12 px-4 rounded-xl font-semibold text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-800">{L('Not right for me', 'یہ آفر مناسب نہیں', 'لا يناسبني هذا العرض')}</button>
+              <button type="button" onClick={rejectOffer} disabled={acting} className="min-h-12 px-4 rounded-xl font-semibold text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-800">{L('Not right for me', 'مناسب نہیں', 'لا يناسبني')}</button>
             </div>
           </div>
         )}
@@ -491,8 +528,8 @@ export default function OfferDetailPage() {
         {/* the timed discount request */}
         {reqOpen && (
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !reqBusy && setReqOpen(false)}>
-            <div role="dialog" aria-modal="true" className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir={dir} onClick={(e: any) => e.stopPropagation()}>
-              <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="📉" /> {L('Ask for a further discount', 'مزید رعایت کی درخواست', 'طلب تخفيض إضافي')}</h3>
+            <div ref={reqRef} role="dialog" aria-modal="true" aria-labelledby="req-title" className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir={dir} onClick={(e: any) => e.stopPropagation()}>
+              <h3 id="req-title" className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="📉" /> {L('Ask for a further discount', 'مزید رعایت کی درخواست', 'طلب تخفيض إضافي')}</h3>
               <p className="text-xs text-gray-600 mb-4">{L('We ask the supplier to lower the price; they reply within the deadline you set.', 'ہم سپلائر سے قیمت کم کرنے کو کہیں گے، وہ آپ کے دیے گئے وقت میں جواب دے گا۔', 'نطلب من المورد تخفيض سعره، ويردّ خلال المهلة التي تحدّدها.')}</p>
               <label htmlFor="req-hours" className="block text-xs font-bold text-gray-600 mb-1">{L('Reply deadline', 'جواب کی مہلت', 'مهلة الرد')}</label>
               <select id="req-hours" value={reqHours} onChange={(e: any) => setReqHours(Number(e.target.value))} className="input-field mb-3 text-base sm:text-sm">
@@ -515,8 +552,8 @@ export default function OfferDetailPage() {
         {/* ask for more information */}
         {infoOpen && (
           <div className="fixed inset-0 z-[60] bg-black/40 flex items-center justify-center p-4" onClick={() => !infoBusy && setInfoOpen(false)}>
-            <div role="dialog" aria-modal="true" className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir={dir} onClick={(e: any) => e.stopPropagation()}>
-              <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="❓" /> {L('Ask the supplier', 'سپلائر سے پوچھیں', 'اسأل المورد')}</h3>
+            <div ref={infoRef} role="dialog" aria-modal="true" aria-labelledby="info-title" className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" dir={dir} onClick={(e: any) => e.stopPropagation()}>
+              <h3 id="info-title" className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="❓" /> {L('Ask the supplier', 'سپلائر سے پوچھیں', 'اسأل المورد')}</h3>
               <label htmlFor="info-q" className="block text-xs text-gray-600 mb-3">{L('What do you want to know about the product? (type, specs, origin, warranty…)', 'پروڈکٹ کے بارے میں کیا معلومات چاہیے؟ (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی…)', 'ما المعلومات التي تريدها عن المنتج؟ (النوع، المواصفات، المنشأ، الضمان…)')}</label>
               <textarea id="info-q" value={infoText} onChange={(e: any) => setInfoText(e.target.value)} rows={3} className="input-field mb-3 text-base sm:text-sm" placeholder={home
                 ? L('e.g. Where is it made? Does the warranty cover it?', 'مثال: یہ کہاں کا بنا ہے؟ کیا وارنٹی شامل ہے؟', 'مثال: ما بلد الصنع؟ هل يشمل الضمان؟')

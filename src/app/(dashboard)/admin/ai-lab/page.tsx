@@ -32,7 +32,7 @@ function Timing({ clientMs, lab }: { clientMs: number | null; lab: any }) {
     <div className="rounded-xl bg-gray-50 border border-gray-100 p-3 text-xs space-y-1">
       <div className="font-bold text-[#0B2438]"><Glyph e="⏱" /> الزمن: {clientMs} مللي ثانية في المتصفح{lab?.ms != null ? ` · ${lab.ms} على الخادم` : ''} · استدعاءات الذكاء: {calls.length}{lab?.cached ? ' (من الذاكرة المؤقتة)' : ''}</div>
       {calls.length > 0 && (
-        <table className="w-full text-[11px]"><tbody>
+        <table className="w-full text-xs"><tbody>
           {calls.map((c, i) => (
             <tr key={i} className="border-t border-gray-100">
               <td className="py-0.5">{c.kind}</td><td>{c.provider}</td><td>{c.ms} مللي ثانية</td>
@@ -53,16 +53,16 @@ function Raw({ data }: { data: any }) {
   return (
     <details className="rounded-xl border border-gray-100 bg-white">
       <summary className="cursor-pointer px-3 py-2 text-xs font-bold text-gray-600">الاستجابة الكاملة (JSON)</summary>
-      <pre className="text-[11px] leading-relaxed p-3 overflow-auto max-h-[420px] bg-gray-50" dir="ltr">{JSON.stringify(data, null, 2)}</pre>
+      <pre className="text-xs leading-relaxed p-3 overflow-auto max-h-[420px] bg-gray-50" dir="ltr">{JSON.stringify(data, null, 2)}</pre>
     </details>
   )
 }
 
 const Flags = ({ flags }: { flags?: string[] }) => (
-  <span className="flex flex-wrap gap-1">{(flags || []).map(f => <span key={f} className="badge text-[10px] bg-[#D4A543]/15 text-[#8F6820]">{FLAG_AR[f] || f}</span>)}</span>
+  <span className="flex flex-wrap gap-1">{(flags || []).map(f => <span key={f} className="badge text-xs bg-[#D4A543]/15 text-[#8F6820]">{FLAG_AR[f] || f}</span>)}</span>
 )
 const Specs = ({ specs }: { specs?: Record<string, string> }) => (
-  <span className="text-[11px] text-gray-600">{specs && Object.keys(specs).length ? Object.entries(specs).map(([k, v]) => `${k}: ${v}`).join('، ') : '—'}</span>
+  <span className="text-xs text-gray-600">{specs && Object.keys(specs).length ? Object.entries(specs).map(([k, v]) => `${k}: ${v}`).join('، ') : '—'}</span>
 )
 
 export default function AdminAiLabPage() {
@@ -243,7 +243,7 @@ export default function AdminAiLabPage() {
               return (
                 <div className="space-y-3 text-sm">
                   <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                    <div><span className="text-gray-500">المادة: </span><b>{s.product_name}</b> {s.in_catalog ? <span className="badge text-[10px] bg-emerald-50 text-emerald-700">من القائمة</span> : <span className="badge text-[10px] bg-gray-100 text-gray-600">نص حر</span>}</div>
+                    <div><span className="text-gray-500">المادة: </span><b>{s.product_name}</b> {s.in_catalog ? <span className="badge text-xs bg-emerald-50 text-emerald-700">من القائمة</span> : <span className="badge text-xs bg-gray-100 text-gray-600">نص حر</span>}</div>
                     <div><span className="text-gray-500">الثقة: </span><b>{CONF_AR[s.confidence] || s.confidence}</b>{res.lab?.model_confidence ? <span className="text-gray-500"> (تقدير النموذج: {CONF_AR[res.lab.model_confidence]})</span> : null}</div>
                     <div><span className="text-gray-500">القطاع: </span>{s.sector}</div>
                     <div><span className="text-gray-500">الوحدة: </span>{s.unit || '—'}{s.quantity_hint ? ` · عدد ظاهر: ${s.quantity_hint}` : ''}</div>
@@ -318,7 +318,7 @@ export default function AdminAiLabPage() {
                       return (
                         <tr key={i} className={`border-t border-gray-100 align-top ${it.needs_review ? 'bg-[#D4A543]/5' : ''}`}>
                           <td className="p-2" dir="ltr">{it.ref || '—'}</td>
-                          <td className="p-2"><b>{it.product_name}</b>{it.in_catalog ? <span className="badge text-[10px] bg-emerald-50 text-emerald-700 ms-1">من القائمة</span> : null}<div className="text-gray-500 line-clamp-2" dir="auto">{it.description}</div></td>
+                          <td className="p-2"><b>{it.product_name}</b>{it.in_catalog ? <span className="badge text-xs bg-emerald-50 text-emerald-700 ms-1">من القائمة</span> : null}<div className="text-gray-500 line-clamp-2" dir="auto">{it.description}</div></td>
                           <td className="p-2 whitespace-nowrap">{it.quantity ?? '—'} {it.unit}</td>
                           <td className="p-2">{it.sector}<div className="text-gray-500">{it.sub_category || 'بلا تخصص'}</div></td>
                           <td className="p-2"><span dir="auto">{it.specification || '—'}</span><div><Specs specs={it.specs} /></div></td>

@@ -83,7 +83,7 @@ export default function AdminReportsPage() {
           <div key={r.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-2 text-sm">
             <div className="flex flex-wrap items-center gap-2 justify-between">
               <div className="font-bold text-navy">{REASONS[r.reason] || r.reason}</div>
-              <span className={`text-[11px] px-2 py-0.5 rounded-lg ${r.status === 'open' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>{STATUS[r.status]}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-lg ${r.status === 'open' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>{STATUS[r.status]}</span>
             </div>
             <div className="text-gray-600">
               {/* links to both accounts and the conversation (UX-127) */}

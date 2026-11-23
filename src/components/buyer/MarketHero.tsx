@@ -76,7 +76,7 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
   // the list also opens with no match, so «لم تجد طلبك؟» is always there (owner 2026-10-24, as in the app)
   const showList = open && q.trim().length > 0
   const fwd = locale === 'en' ? '→' : '←' // forward arrow in the reading direction
-  const label = (n: string) => (homeBuyer && locale === 'ar' ? homeName(n) : getProductLabel(n, locale))
+  const label = (n: string) => (homeBuyer ? homeName(n, locale) : getProductLabel(n, locale))
 
   return (
     <div className="mb-6 animate-fade-in">

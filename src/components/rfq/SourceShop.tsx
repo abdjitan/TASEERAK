@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { sarLabel } from '@/lib/vat'
+import { agentCapText } from '@/lib/sellers'
 
 type Loc = 'ar' | 'en' | 'ur' | string
 const tr = (locale: Loc) => (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -35,18 +36,8 @@ export function SourceShopFields({ value, onChange, locale }: { value: SourceVal
       {/* UX-090: the current limit and the progress towards the next one */}
       {cap && (
         <p className="text-[12px] mb-2 font-semibold text-[#071827] leading-relaxed">
-          {cap.cap == null
-            ? L('Your deals have no amount limit.', 'آپ کے سودوں پر کوئی حد نہیں۔', 'لا حدّ لقيمة صفقاتك.')
-            : (() => {
-              const c = Number(cap.cap), d = Number(cap.deals) || 0
-              const target = c <= 15000 ? 3 : 10
-              const cur = sarLabel(locale)
-              const next = c <= 15000 ? `50,000 ${cur}` : L('no limit', 'کوئی حد نہیں', 'بلا حد')
-              return L(
-                `Your current limit is ${c.toLocaleString('en-US')} ${cur} per deal. You have completed ${Math.min(d, target)} of ${target} successful deals; after ${target} it becomes ${next}. A successful deal: the buyer confirmed receipt and no problem was reported.`,
-                `فی سودا آپ کی موجودہ حد ${c.toLocaleString('en-US')} ${cur} ہے۔ آپ نے ${target} میں سے ${Math.min(d, target)} کامیاب سودے مکمل کیے؛ ${target} کے بعد یہ ${next} ہو جائے گی۔ کامیاب سودا: خریدار نے وصولی کی تصدیق کی اور کوئی شکایت نہیں ہوئی۔`,
-                `حدّك الحالي ${c.toLocaleString('en-US')} ${cur} للصفقة. أكملتَ ${Math.min(d, target)} من ${target} صفقات ناجحة، وبعدها يصبح حدّك ${next}. الصفقة الناجحة: أكّد المشتري استلامها ولم يُفتح عليها بلاغ.`)
-            })()}
+          {agentCapText(cap, locale, sarLabel(locale))}
+          {cap.cap != null && ' ' + L('A successful deal: the buyer confirmed receipt and no problem was reported.', 'کامیاب سودا: خریدار نے وصولی کی تصدیق کی اور کوئی شکایت نہیں ہوئی۔', 'الصفقة الناجحة: أكّد المشتري استلامها ولم يُفتح عليها بلاغ.')}
         </p>
       )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

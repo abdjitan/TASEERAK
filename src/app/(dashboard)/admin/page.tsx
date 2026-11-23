@@ -410,11 +410,11 @@ export default function AdminPanel() {
     filePath ? crChecks.find((k: any) => k.file_path === filePath && (claimId ? k.claim_id === claimId : !k.claim_id)) : undefined
   const renderCheck = (k: any) => {
     if (!k) return null
-    if (!k.extracted) return <div className="mt-2 text-[11px] text-gray-400"><Glyph e="🤖" /> تعذّرت القراءة الآلية ({dt(k.created_at)})، راجِع المستند يدوياً.</div>
+    if (!k.extracted) return <div className="mt-2 text-xs text-gray-400"><Glyph e="🤖" /> تعذّرت القراءة الآلية ({dt(k.created_at)})، راجِع المستند يدوياً.</div>
     const f = k.flags || {}, x = k.extracted
     const warn = [f.not_cr_document && 'ليس شهادة سجل تجاري', f.cr_mismatch && 'الرقم يختلف عن رقم الحساب', f.name_mismatch && 'الاسم يختلف عن اسم الحساب', f.expired && 'السجل منتهي'].filter(Boolean)
     return (
-      <div className={`mt-2 rounded-lg p-2.5 text-[11px] border ${warn.length ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
+      <div className={`mt-2 rounded-lg p-2.5 text-xs border ${warn.length ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>
         <div className="font-bold mb-0.5"><Glyph e="🤖" /> قراءة آلية للمستند {warn.length ? '— تنبيه: ' + warn.join('، ') : '— لا تعارض'}</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0.5 text-gray-700">
           {x.entity_name && <span>الاسم: <b>{x.entity_name}</b></span>}
@@ -567,7 +567,7 @@ export default function AdminPanel() {
             <span className="text-xs text-gray-500">عرض:</span>
             <span className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-[#0B2438] text-white">
               {roleFilter === 'contractor' ? 'المشترون فقط' : 'الموردون فقط'} ({filtered.length})
-              <button onClick={() => setRoleFilter('')} className="hover:text-orange-300">✕</button>
+              <button type="button" onClick={() => setRoleFilter('')} aria-label="إزالة التصفية" className="min-w-[44px] min-h-[44px] inline-grid place-items-center hover:text-[#F5C55B]"><Glyph e="✕" /></button>
             </span>
           </div>
         )}
@@ -596,7 +596,7 @@ export default function AdminPanel() {
                     </div>
                     <div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}>
                       <div className="text-lg leading-none"><Glyph e={st.emoji} /></div>
-                      <div className="text-[10px] font-bold leading-tight mt-0.5">{st.label.split('—')[0].trim()}</div>
+                      <div className="text-xs font-bold leading-tight mt-0.5">{st.label.split('—')[0].trim()}</div>
                     </div>
                   </div>
                 )
@@ -619,7 +619,7 @@ export default function AdminPanel() {
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="badge text-[10px] bg-red-100 text-red-700"><Glyph e="⚠" /> نزاع مفتوح</span>
+                          <span className="badge text-xs bg-red-100 text-red-700"><Glyph e="⚠" /> نزاع مفتوح</span>
                           <span className="font-bold" style={{ color: '#0B2438' }}>{r?.product_name || 'طلب'}</span>
                         </div>
                         <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
@@ -633,7 +633,7 @@ export default function AdminPanel() {
                           <Link href={`/contractor/orders/${o.id}`} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">فتح صفحة الصفقة</Link>
                           {r?.id && <Link href={`/contractor/rfq/${r.id}`} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">فتح الطلب</Link>}
                         </div>
-                        <div className="text-[11px] text-gray-400 mt-1.5">
+                        <div className="text-xs text-gray-400 mt-1.5">
                           التسليم: {o.supplier_delivered_at ? '✓' : '—'} · الاستلام: {o.received_at ? '✓' : '—'} · الدفع: {o.payment_status === 'paid' ? '✓' : '—'}
                         </div>
                       </div>
@@ -665,7 +665,7 @@ export default function AdminPanel() {
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`badge text-[10px] ${open ? 'bg-amber-100 text-amber-700' : c.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <span className={`badge text-xs ${open ? 'bg-amber-100 text-amber-700' : c.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
                             {open ? 'طلب مفتوح' : c.status === 'approved' ? '✓ نُقل السجل' : c.status === 'withdrawn' ? 'سحبه صاحبه' : '✕ مرفوض'}
                           </span>
                           <span className="font-bold" style={{ color: '#0B2438' }} dir="ltr">سجل تجاري: {c.commercial_registration}</span>
@@ -678,8 +678,8 @@ export default function AdminPanel() {
                         </div>
                         {c.holder_response
                           ? <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-700"><Glyph e="💬" /> ردّ صاحب الحساب الحالي: {c.holder_response}</div>
-                          : open && <div className="mt-2 text-[11px] text-gray-400">لم يردّ صاحب الحساب الحالي بعد.</div>}
-                        {c.admin_note && <div className="mt-2 text-[11px] text-gray-500"><Glyph e="📝" /> ملاحظة الإدارة: {c.admin_note}</div>}
+                          : open && <div className="mt-2 text-xs text-gray-400">لم يردّ صاحب الحساب الحالي بعد.</div>}
+                        {c.admin_note && <div className="mt-2 text-xs text-gray-500"><Glyph e="📝" /> ملاحظة الإدارة: {c.admin_note}</div>}
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
                           <button type="button" onClick={() => openDoc(c.file_path)}
                             className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#8F6820] hover:bg-[#D4A543]/5 transition-all">
@@ -703,7 +703,7 @@ export default function AdminPanel() {
                             <Glyph e="🤖" /> {actionLoading === 'read-' + c.id ? '...' : 'قراءة آلية للمستند'}
                           </button>
                         )}
-                        <div className="mt-1.5 text-[11px] text-gray-400">{QR_HINT}</div>
+                        <div className="mt-1.5 text-xs text-gray-400">{QR_HINT}</div>
                       </div>
                       {open && (
                         <div className="flex flex-col gap-2 flex-shrink-0">
@@ -737,7 +737,7 @@ export default function AdminPanel() {
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`badge text-[10px] ${o.status === 'open' ? 'bg-red-100 text-red-700' : o.status === 'reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                        <span className={`badge text-xs ${o.status === 'open' ? 'bg-red-100 text-red-700' : o.status === 'reviewed' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
                           {o.status === 'open' ? 'بلاغ جديد' : o.status === 'reviewed' ? '✓ تمت المراجعة' : '✕ مرفوض'}
                         </span>
                         <span className="font-bold" style={{ color: '#0B2438' }} dir="ltr">سجل تجاري: {o.commercial_registration}</span>
@@ -789,10 +789,10 @@ export default function AdminPanel() {
                     <div className="flex items-start justify-between gap-3 flex-wrap">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`badge text-[10px] ${r.status === 'pending' ? 'bg-amber-100 text-amber-700' : r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <span className={`badge text-xs ${r.status === 'pending' ? 'bg-amber-100 text-amber-700' : r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
                             {r.status === 'pending' ? 'بانتظار المراجعة' : r.status === 'approved' ? '✓ معتمد' : '✕ مرفوض'}
                           </span>
-                          <span className="badge badge-blue text-[10px]">{isName ? 'تغيير الاسم' : 'تغيير التصنيف'}</span>
+                          <span className="badge badge-blue text-xs">{isName ? 'تغيير الاسم' : 'تغيير التصنيف'}</span>
                           <span className="font-bold" style={{ color: '#0B2438' }}>{nameOf(r.user_id)}</span>
                         </div>
                         <div className="mt-2 text-sm flex items-center gap-2 flex-wrap">
@@ -802,7 +802,7 @@ export default function AdminPanel() {
                         </div>
                         {r.reason && <div className="mt-2 bg-gray-50 rounded-lg p-2.5 text-sm text-gray-600"><Glyph e="📝" /> {r.reason}</div>}
                         {safeHttpUrl(r.document_url) && <a href={safeHttpUrl(r.document_url)} target="_blank" rel="noreferrer" className="text-xs underline text-[#8F6820] mt-1 inline-block"><Glyph e="📎" /> مستند مرفق</a>}
-                        <div className="text-[11px] text-gray-400 mt-1.5"><Glyph e="📅" /> {dt(r.created_at)}{r.admin_note ? ` · ملاحظة الإدارة: ${r.admin_note}` : ''}</div>
+                        <div className="text-xs text-gray-400 mt-1.5"><Glyph e="📅" /> {dt(r.created_at)}{r.admin_note ? ` · ملاحظة الإدارة: ${r.admin_note}` : ''}</div>
                       </div>
                       {r.status === 'pending' && (
                         <div className="flex flex-col gap-2 flex-shrink-0">
@@ -877,7 +877,7 @@ export default function AdminPanel() {
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between text-[10px] text-gray-400 mt-2">
+              <div className="flex justify-between text-xs text-gray-400 mt-2">
                 <span>{signupSeries[0]?.day}</span><span>اليوم →</span>
               </div>
             </div>
@@ -927,8 +927,8 @@ export default function AdminPanel() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
-                      {cv.unread > 0 && <span className="text-[10px] font-bold text-[#071827] rounded-full px-2 py-0.5" style={{ background: '#D4A543' }}>{cv.unread} جديد</span>}
-                      <span className="text-[10px] text-gray-400">{dt(cv.lastAt)}</span>
+                      {cv.unread > 0 && <span className="text-xs font-bold text-[#071827] rounded-full px-2 py-0.5" style={{ background: '#D4A543' }}>{cv.unread} جديد</span>}
+                      <span className="text-xs text-gray-400">{dt(cv.lastAt)}</span>
                     </div>
                   </div>
                 </a>
@@ -952,13 +952,13 @@ export default function AdminPanel() {
                         <div className="flex items-start justify-between gap-3 flex-wrap">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              {r.ref_no && <span className="badge text-[10px] bg-[#D4A543]/20 text-[#8F6820] font-mono" dir="ltr">RFQ-{r.ref_no}</span>}
+                              {r.ref_no && <span className="badge text-xs bg-[#D4A543]/20 text-[#8F6820] font-mono" dir="ltr">RFQ-{r.ref_no}</span>}
                               <span className="font-bold" style={{ color: '#0B2438' }}>{r.title || r.product_name}</span>
-                              <span className="text-[10px] text-gray-400">{r.created_at ? new Date(r.created_at).toLocaleString('ar-SA-u-ca-gregory', { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>
-                              {r.sector && <span className="badge text-[10px] badge-gray">{r.sector}</span>}
-                              {r.sub_category && <span className="badge text-[10px] badge-gray">{r.sub_category}</span>}
-                              <span className="badge text-[10px] badge-navy">{RFQ_STATUS[r.status] || r.status}</span>
-                              <span className="badge text-[10px] bg-orange-100 text-orange-700">{rOffers.length} عرض</span>
+                              <span className="text-xs text-gray-400">{r.created_at ? new Date(r.created_at).toLocaleString('ar-SA-u-ca-gregory', { dateStyle: 'medium', timeStyle: 'short' }) : ''}</span>
+                              {r.sector && <span className="badge text-xs badge-gray">{r.sector}</span>}
+                              {r.sub_category && <span className="badge text-xs badge-gray">{r.sub_category}</span>}
+                              <span className="badge text-xs badge-navy">{RFQ_STATUS[r.status] || r.status}</span>
+                              <span className="badge text-xs bg-warn-bg text-warn-text">{rOffers.length} عرض</span>
                             </div>
                             <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1">
                               <span><Glyph e="🏢" /> المشتري: <a href={'/admin/users/' + r.contractor_id} className="font-bold underline">{nameOf(r.contractor_id)}</a>{r.hide_identity ? ' (هوية مخفية)' : ''}</span>
@@ -970,14 +970,14 @@ export default function AdminPanel() {
                             </div>
                             {(r.target_tiers?.length || r.verified_only || r.nearby_only) && (
                               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
-                                {(r.target_tiers || []).map((t: string) => <span key={t} className="badge text-[10px] bg-[#0B2438]/10 text-[#0B2438]">{tierLabel(t, 'ar')}</span>)}
-                                {r.verified_only && <span className="badge text-[10px] bg-emerald-100 text-emerald-700">موثقون فقط</span>}
-                                {r.nearby_only && <span className="badge text-[10px] bg-blue-100 text-[#8F6820]">القريبون فقط</span>}
+                                {(r.target_tiers || []).map((t: string) => <span key={t} className="badge text-xs bg-[#0B2438]/10 text-[#0B2438]">{tierLabel(t, 'ar')}</span>)}
+                                {r.verified_only && <span className="badge text-xs bg-emerald-100 text-emerald-700">موثقون فقط</span>}
+                                {r.nearby_only && <span className="badge text-xs bg-blue-100 text-[#8F6820]">القريبون فقط</span>}
                               </div>
                             )}
                             {r.specification && <p className="text-xs text-gray-500 mt-1.5"><Glyph e="📋" /> {r.specification}</p>}
                             {r.notes && <p className="text-xs text-gray-400 mt-1"><Glyph e="📝" /> {r.notes}</p>}
-                            <div className="text-[10px] text-gray-400 mt-1.5">أُنشئ: {dt(r.created_at)} · ينتهي: {dt(r.expires_at)}</div>
+                            <div className="text-xs text-gray-400 mt-1.5">أُنشئ: {dt(r.created_at)} · ينتهي: {dt(r.expires_at)}</div>
                           </div>
                           {rOffers.length > 0 && (
                             <button onClick={() => setExpandedRfq(open ? null : r.id)}
@@ -992,7 +992,7 @@ export default function AdminPanel() {
                               <div key={o.id} className="bg-[#f4f6f9] rounded-xl p-3 text-xs">
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-semibold" style={{ color: '#0B2438' }}><Glyph e="🏪" /> {nameOf(o.supplier_id)}</span>
-                                  <span className="badge text-[10px] badge-gray">{OFFER_STATUS[o.status] || o.status}</span>
+                                  <span className="badge text-xs badge-gray">{OFFER_STATUS[o.status] || o.status}</span>
                                   <span className="text-emerald-700 font-bold">{sar(o.total_price)}</span>
                                   {o.delivery_days != null && <span className="text-gray-500"><Glyph e="⏱" /> {o.delivery_days} يوم</span>}
                                   {o.po_number && <span className="text-gray-400">PO: {o.po_number}</span>}
@@ -1002,7 +1002,7 @@ export default function AdminPanel() {
                                 )}
                                 {o.notes && <div className="text-gray-400 mt-1"><Glyph e="📝" /> {o.notes}</div>}
                                 {o.attachment_url && <button onClick={() => openBoq(o.attachment_url)} className="text-[#8F6820] hover:underline mt-1"><Glyph e="📎" /> {o.attachment_name || 'مرفق'}</button>}
-                                <div className="text-[10px] text-gray-400 mt-1">{dt(o.created_at)}{o.accepted_at ? ` · قُبل: ${dt(o.accepted_at)}` : ''}</div>
+                                <div className="text-xs text-gray-400 mt-1">{dt(o.created_at)}{o.accepted_at ? ` · قُبل: ${dt(o.accepted_at)}` : ''}</div>
                               </div>
                             ))}
                           </div>
@@ -1028,12 +1028,12 @@ export default function AdminPanel() {
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold" style={{ color: '#0B2438' }}><Glyph e="🏗" /> {p.title}</span>
-                              <span className="badge text-[10px] badge-navy">{RFQ_STATUS[p.status] || p.status}</span>
-                              <span className="badge text-[10px] bg-orange-100 text-orange-700">{items.length} بند</span>
+                              <span className="badge text-xs badge-navy">{RFQ_STATUS[p.status] || p.status}</span>
+                              <span className="badge text-xs bg-warn-bg text-warn-text">{items.length} بند</span>
                             </div>
                             <div className="text-xs text-gray-600 mt-1.5"><Glyph e="🏢" /> {nameOf(p.contractor_id)} · <Glyph e="📍" /> {p.region || '—'}{p.city ? ' / ' + p.city : ''}</div>
                             {p.notes && <p className="text-xs text-gray-400 mt-1"><Glyph e="📝" /> {p.notes}</p>}
-                            <div className="text-[10px] text-gray-400 mt-1.5">أُنشئ: {dt(p.created_at)}</div>
+                            <div className="text-xs text-gray-400 mt-1.5">أُنشئ: {dt(p.created_at)}</div>
                           </div>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             {p.boq_url && <button onClick={() => openBoq(p.boq_url)} className="text-xs px-3 py-1.5 rounded-lg border border-blue-200 text-[#8F6820] hover:bg-[#D4A543]/5"><Glyph e="📄" /> BOQ</button>}
@@ -1080,8 +1080,8 @@ export default function AdminPanel() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold" style={{ color: '#0B2438' }}>{r.name}</span>
-                        {r.sector && <span className="badge text-[10px] badge-gray">{r.sector}</span>}
-                        <span className={`badge text-[10px] ${
+                        {r.sector && <span className="badge text-xs badge-gray">{r.sector}</span>}
+                        <span className={`badge text-xs ${
                           r.status === 'approved' ? 'badge-green' : r.status === 'rejected' ? 'badge-red' : 'badge-amber'
                         }`}>
                           {r.status === 'approved' ? '✓ مقبولة' : r.status === 'rejected' ? '✕ مرفوضة' : 'قيد المراجعة'}
@@ -1090,7 +1090,7 @@ export default function AdminPanel() {
                       {r.description && <p className="text-sm text-gray-500 mt-1"><Glyph e="📝" /> {r.description}</p>}
                       {r.spec_file_url && <a href={fileHref(r.spec_file_url)} target="_blank" rel="noreferrer" className="text-xs text-[#8F6820] underline mt-0.5 inline-block"><Glyph e="📎" /> مرفق تفاصيل المنتج ←</a>}
                       {r.admin_note && <p className="text-xs text-[#0F6E56] bg-emerald-50 rounded-lg px-2 py-1 mt-1 inline-block">ملاحظة الإدارة: {r.admin_note}</p>}
-                      <div className="text-[11px] text-gray-400 mt-1">
+                      <div className="text-xs text-gray-400 mt-1">
                         من: {r.requester?.company_name_ar || r.supplier?.company_name_ar || '—'}
                         {r.requester?.role && ` (${r.requester.role === 'contractor' ? 'مشتري' : r.requester.role === 'supplier' ? 'مورد' : r.requester.role})`}
                         {r.sub_category && ` · مجموعة: ${r.sub_category}`} · {new Date(r.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}
@@ -1140,19 +1140,19 @@ export default function AdminPanel() {
                       <Link href={`/admin/users/${u.id}`} className="font-bold hover:underline decoration-dotted" style={{ color: '#0B2438' }}>{u.company_name_ar}</Link>
                       {u.company_name_en && <div className="text-xs text-gray-400">{u.company_name_en}</div>}
                       <div className="flex items-center gap-3 mt-1 flex-wrap">
-                        <span className={`badge text-[10px] ${u.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>
+                        <span className={`badge text-xs ${u.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>
                           {u.role === 'contractor' ? 'مشتري' : 'مورد'}
                         </span>
                         {u.role === 'contractor' && u.contractor_grade && (
-                          <span className="badge text-[10px] bg-[#0B2438]/10 text-[#0B2438]">درجة {u.contractor_grade}</span>
+                          <span className="badge text-xs bg-[#0B2438]/10 text-[#0B2438]">درجة {u.contractor_grade}</span>
                         )}
                         {u.role === 'supplier' && u.supplier_tier && (
-                          <span className="badge text-[10px] bg-[#0B2438]/10 text-[#0B2438]">
+                          <span className="badge text-xs bg-[#0B2438]/10 text-[#0B2438]">
                             {tierLabel(u.supplier_tier, 'ar')}
                           </span>
                         )}
                         {u.role === 'supplier' && u.auto_classification && (
-                          <span className={`badge text-[10px] ${
+                          <span className={`badge text-xs ${
                             u.auto_classification === 'match' ? 'bg-emerald-100 text-emerald-700' :
                             u.auto_classification === 'mismatch' ? 'bg-red-100 text-red-700' :
                             'bg-amber-100 text-amber-700'
@@ -1163,9 +1163,9 @@ export default function AdminPanel() {
                           </span>
                         )}
                         {u.role === 'supplier' && u.min_order_value > 0 && (
-                          <span className="badge text-[10px] badge-gray">حد أدنى: {Number(u.min_order_value).toLocaleString('en-US')} ر.س</span>
+                          <span className="badge text-xs badge-gray">حد أدنى: {Number(u.min_order_value).toLocaleString('en-US')} ر.س</span>
                         )}
-                        <span className={`badge text-[10px] ${
+                        <span className={`badge text-xs ${
                           u.verification_status === 'verified' ? 'badge-green' :
                           u.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'
                         }`}>
@@ -1174,28 +1174,28 @@ export default function AdminPanel() {
                             : u.verification_status === 'verified' ? '✓ موثق' : u.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
                         </span>
                         {(outsideSaudi(u.signup_country) || outsideSaudi(u.last_country)) && (
-                          <span className="badge text-[10px] bg-orange-100 text-orange-800" title={'التسجيل: ' + countryAr(u.signup_country) + ' · آخر دخول: ' + countryAr(u.last_country)}>خارج السعودية</span>
+                          <span className="badge text-xs bg-warn-bg text-warn-text" title={'التسجيل: ' + countryAr(u.signup_country) + ' · آخر دخول: ' + countryAr(u.last_country)}>خارج السعودية</span>
                         )}
                         {u.cr_verification_source === 'wathq' && (
-                          <span className="badge text-[10px] inline-flex items-center gap-0.5" style={{ background: '#0F6E56', color: '#fff' }}><Glyph e="🛡" /> واثق</span>
+                          <span className="badge text-xs inline-flex items-center gap-0.5" style={{ background: '#0F6E56', color: '#fff' }}><Glyph e="🛡" /> واثق</span>
                         )}
                         {u.commercial_registration && (
-                          <span className="text-[10px] text-gray-400">سجل: {u.commercial_registration}</span>
+                          <span className="text-xs text-gray-400">سجل: {u.commercial_registration}</span>
                         )}
                         {u.cr_official_name && (
-                          <span className="text-[10px] text-emerald-600"><Glyph e="🏛" /> {u.cr_official_name}</span>
+                          <span className="text-xs text-emerald-600"><Glyph e="🏛" /> {u.cr_official_name}</span>
                         )}
-                        {u.phone && <span className="text-[10px] text-gray-400"><Glyph e="📞" /> {u.phone}</span>}
-                        {u.region && <span className="text-[10px] text-gray-400"><Glyph e="📍" /> {u.region}</span>}
-                        {u.national_short_address && <span className="text-[10px] text-gray-400 font-mono" dir="ltr"><Glyph e="🏛" /> {u.national_short_address}</span>}
+                        {u.phone && <span className="text-xs text-gray-400"><Glyph e="📞" /> {u.phone}</span>}
+                        {u.region && <span className="text-xs text-gray-400"><Glyph e="📍" /> {u.region}</span>}
+                        {u.national_short_address && <span className="text-xs text-gray-400 font-mono" dir="ltr"><Glyph e="🏛" /> {u.national_short_address}</span>}
                       </div>
                       {u.role === 'supplier' && u.auto_classification_note && u.auto_classification !== 'match' && (
-                        <div className={`text-[11px] mt-1.5 rounded-lg px-2 py-1 inline-block ${u.auto_classification === 'mismatch' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'}`}>
+                        <div className={`text-xs mt-1.5 rounded-lg px-2 py-1 inline-block ${u.auto_classification === 'mismatch' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'}`}>
                           <Glyph e="🤖" /> {u.auto_classification_note}
                         </div>
                       )}
                       {/* Extra details */}
-                      <div className="text-[11px] text-gray-500 mt-2 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-0.5">
+                      <div className="text-xs text-gray-500 mt-2 grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-0.5">
                         {emails[u.id]?.email && <span><Glyph e="✉" /> <span dir="ltr">{emails[u.id].email}</span>{emails[u.id]?.email_confirmed ? ' ✓' : ' (غير مؤكد)'}</span>}
                         {emails[u.id]?.last_sign_in_at && <span><Glyph e="🕐" /> آخر دخول: {dt(emails[u.id].last_sign_in_at)}</span>}
                         {u.role === 'contractor' && <span><Glyph e="📋" /> طلبات التسعير: {rfqCountBy[u.id] || 0}</span>}
@@ -1346,7 +1346,7 @@ export default function AdminPanel() {
                   </div>
                 </div>
 
-                <div className="text-[10px] text-gray-300 mt-2">
+                <div className="text-xs text-gray-300 mt-2">
                   ID: {u.id} | تاريخ التسجيل: {new Date(u.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}
                 </div>
               </div>
@@ -1463,7 +1463,7 @@ export default function AdminPanel() {
                 className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#9D7425,#0B2438)' }}>
                 {matAi ? 'جارٍ...' : 'اقترح التصنيف بالذكاء الاصطناعي'}
               </button>
-              {matAiMsg && <span className="text-[11px] font-semibold text-emerald-700">{matAiMsg}</span>}
+              {matAiMsg && <span className="text-xs font-semibold text-emerald-700">{matAiMsg}</span>}
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-3">
@@ -1507,7 +1507,7 @@ export default function AdminPanel() {
                 className="px-4 py-2.5 rounded-xl font-semibold text-white text-sm bg-red-500 hover:bg-red-600 disabled:opacity-50">✕ رفض</button>
               <button type="button" onClick={() => setMatEdit(null)} className="px-4 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
             </div>
-            {!matGroup && <p className="text-[11px] text-amber-600 mt-2">اختر المجموعة قبل القبول حتى تظهر في المكان الصحيح.</p>}
+            {!matGroup && <p className="text-xs text-amber-600 mt-2">اختر المجموعة قبل القبول حتى تظهر في المكان الصحيح.</p>}
           </div>
         </div>
       )}

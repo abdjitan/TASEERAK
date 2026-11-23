@@ -19,6 +19,9 @@ module.exports = {
         ink: { DEFAULT: '#10243B', 2: '#48596E', 3: '#728196' },
         line: '#D9E0E8',
         canvas: { DEFAULT: '#F5F7FA', 2: '#E8EDF2' },
+        // Warning (brand gold family, round-5 UX-137): use instead of Tailwind amber-*.
+        //   bg-warn-bg  border-warn-border  text-warn-text  (text-/bg-warn = strong dark gold)
+        warn: { DEFAULT: '#9D7425', bg: '#FBF5E6', border: '#E9D9AE', text: '#6C531F' },
         // Sector accents
         sector: { civil: '#0B2438', arch: '#435A70', elec: '#D4A543', mech: '#102E45' },
         // Legacy scales kept for existing pages

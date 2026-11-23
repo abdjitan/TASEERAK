@@ -25,7 +25,8 @@ import { friendlyError } from '@/lib/friendlyError'
 import { passwordProblems, PASS_RULES_SUMMARY, passRuleList } from '@/lib/passwordPolicy'
 import { toLatinDigits } from '@/lib/phone'
 import { toE164 } from '@/lib/firebaseConfig'
-import { normalizeCrInput, crTakenText, isUnifiedCr, crFormatText, crSupportHref } from '@/lib/cr'
+import { normalizeCrInput, crTakenText, isUnifiedCr, crFormatText, crSupportHref, teamInviteHintText } from '@/lib/cr'
+import PublicFooter from '@/components/public/PublicFooter'
 
 // ── تسجيل مبسّط (خطوة واحدة) ──────────────────────────────────────────────
 // نجمع الحد الأدنى فقط: الدور + الاسم + اسم الشركة + الجوال + البريد + كلمة المرور.
@@ -156,6 +157,9 @@ export default function RegisterPage() {
   // round-2 UX-077: an invitation is checked first; an invalid or expired one never opens the form (no orphan account)
   const [teamInvalid, setTeamInvalid] = useState(false)
   const [teamRole, setTeamRole] = useState('')
+  // round-5 UX-086: the link (?role= / ?kind= / ?team=) is read before the form is drawn, so a seller on a slow
+  // in-app browser never sees (and taps) the buyer form first; a neutral skeleton shows until then
+  const [ready, setReady] = useState(false)
   const [showPass, setShowPass] = useState(false)
   const [termsErr, setTermsErr] = useState(false) // UX-133: the error sits under the box (the button is not disabled for it)
   // optional CR at sign-up for a company/shop (owner 2026-11-16, migration 216): one CR = one account.
@@ -166,16 +170,19 @@ export default function RegisterPage() {
   const [crCheckFailed, setCrCheckFailed] = useState(false)
   const [crErr, setCrErr] = useState('') // UX-137: the CR error sits under its field
   const crChecked = useRef('')
+  // round-5 UX-080: the last check's result lives in a ref (never a stale state value), and any edit clears both
+  const crResult = useRef<'taken' | 'free' | ''>('')
   async function checkCr(v: string): Promise<'taken' | 'free' | 'error' | 'invalid'> {
     const c = normalizeCrInput(v)
     if (!isUnifiedCr(c)) { setCrTaken(false); return 'invalid' }
-    if (crChecked.current === c) return crTaken ? 'taken' : 'free'
+    if (crChecked.current === c && crResult.current) { setCrTaken(crResult.current === 'taken'); return crResult.current }
     const { data, error } = await supabase.rpc('cr_exists', { p_cr: c })
     if (error) { setCrCheckFailed(true); return 'error' }
     setCrCheckFailed(false)
     crChecked.current = c
+    crResult.current = data === true ? 'taken' : 'free'
     setCrTaken(data === true)
-    return data === true ? 'taken' : 'free'
+    return crResult.current
   }
   const crCheckFailedText = locale === 'en' ? 'The commercial registration could not be checked right now. Try again in a few minutes.' : locale === 'ur' ? 'تجارتی رجسٹریشن کی ابھی تصدیق نہیں ہو سکی۔ چند منٹ بعد دوبارہ کوشش کریں۔' : 'تعذّر التحقق من السجل التجاري الآن. حاول مرة أخرى بعد دقائق.'
   const [submitting, setSubmitting] = useState(false)
@@ -223,6 +230,7 @@ export default function RegisterPage() {
         if (k === 'company' || k === 'independent') setSellerKind(k)
       }
     } catch {}
+    setReady(true)
   }, [])
 
   // فحص التكرار قبل الإنشاء — الجوال والبريد فريدان (خصوصية: نُرجع boolean فقط بلا اسم)
@@ -296,7 +304,7 @@ export default function RegisterPage() {
         // UX-039: say WHICH value is taken: check the phone and the CR again, otherwise a general message
         let said = false
         try { const { data: pt } = await supabase.rpc('phone_exists', { p_phone: data.phone }); if (pt === true) { setPhoneDup(true); setFormError(t.phoneTaken); said = true } } catch {}
-        if (!said && asksBusiness && cr) { crChecked.current = ''; if ((await checkCr(cr)) === 'taken') { setFormError(''); said = true } }
+        if (!said && asksBusiness && cr) { crChecked.current = ''; crResult.current = ''; if ((await checkCr(cr)) === 'taken') { setFormError(''); said = true } }
         if (!said) setFormError(failText)
       } else setFormError(friendlyError(msg, failText, locale))
     } finally { setSubmitting(false) }
@@ -307,7 +315,7 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-canvas" dir={dir}>
         <div className="absolute top-4 end-4"><LanguageSwitcher variant="minimal" /></div>
-        <a href="/" className="absolute top-4 start-4 text-sm font-medium text-gray-500 hover:text-navy transition-colors">{t.home}</a>
+        <a href="/" className="absolute top-4 start-4 inline-flex items-center min-h-[44px] text-sm font-medium text-gray-500 hover:text-navy transition-colors">{t.home}</a>
         <div className="w-full max-w-md bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
           <div className="text-5xl mb-4"><Glyph e="📬" /></div>
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
@@ -349,7 +357,7 @@ export default function RegisterPage() {
       {/* ===== Form panel ===== */}
       <div className="auth-form-side flex-1 flex flex-col">
         <div className="flex items-center justify-between p-5">
-          <a href="/" className="flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-navy transition-colors">
+          <a href="/" className="inline-flex items-center gap-1.5 min-h-[44px] px-1 text-sm font-semibold text-ink-2 hover:text-navy transition-colors">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M3 11.5 12 4l9 7.5" /><path d="M5 10v10h5v-6h4v6h5V10" /></svg>
             {t.home}
           </a>
@@ -365,6 +373,16 @@ export default function RegisterPage() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
             </div>
+            {!ready ? (
+              <div aria-busy="true" aria-live="polite" className="space-y-4 animate-pulse">
+                <span className="sr-only">{locale === 'en' ? 'Loading…' : locale === 'ur' ? 'لوڈ ہو رہا ہے…' : 'جارٍ التحميل…'}</span>
+                <div className="h-7 w-1/2 rounded-lg bg-gray-100" />
+                <div className="h-4 w-3/4 rounded bg-gray-100" />
+                <div className="h-12 rounded-xl bg-gray-100" />
+                <div className="h-12 rounded-xl bg-gray-100" />
+                <div className="h-12 rounded-xl bg-gray-100" />
+              </div>
+            ) : (<>
             <div className="mb-6">
               <h1 className="text-2xl font-extrabold text-navy">{teamToken
                 ? (locale === 'en' ? `Join the team of ${teamCompany || 'the company'}` : locale === 'ur' ? `${teamCompany || 'کمپنی'} کی ٹیم میں شامل ہوں` : `انضم إلى فريق ${teamCompany || 'الشركة'}`)
@@ -407,6 +425,8 @@ export default function RegisterPage() {
                     )
                   })}
                 </div>
+                {/* round-5 UX-097: an employee joins through the owner's invitation, not with the company's CR */}
+                <p className="text-[12px] text-gray-600 mt-2.5 leading-relaxed"><Glyph e="👥" /> {teamInviteHintText(locale)}</p>
             </div>
             )}
 
@@ -442,10 +462,10 @@ export default function RegisterPage() {
               <input id="reg-company" {...register('company_name_ar')} autoComplete="organization" className="input-field" aria-describedby="reg-company-hint" placeholder={locale === 'en' ? 'Al-Sakhr Building Materials' : locale === 'ur' ? 'الصخر بلڈنگ میٹریلز' : 'مؤسسة الصخر لمواد البناء'} />
               <p id="reg-company-hint" className="text-[12px] text-gray-500 mt-1">{t.companyHint}</p>
               {errors.company_name_ar && <p className="text-red-600 text-[13px] mt-1">{vmsg(errors.company_name_ar.message, locale)}</p>}
-              <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} <span className="text-red-500">*</span></label>
+              <label htmlFor="reg-cr" className="block text-xs font-semibold text-gray-600 mb-1 mt-3">{locale === 'en' ? 'Commercial registration no.' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر' : 'رقم السجل التجاري'} *</label>
               <input id="reg-cr" value={cr} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX"
                 aria-invalid={crTaken || !!crErr} aria-describedby={crTaken ? 'reg-cr-taken' : crErr ? 'reg-cr-err' : undefined}
-                onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); if (crTaken) setCrTaken(false); setCrErr(''); setCrCheckFailed(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
+                onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); crChecked.current = ''; crResult.current = ''; if (crTaken) setCrTaken(false); setCrErr(''); setCrCheckFailed(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
               <p className="text-[12px] text-gray-500 mt-1">{locale === 'en' ? 'The unified national number: 10 digits starting with 7.' : locale === 'ur' ? 'متحدہ قومی نمبر: 7 سے شروع ہونے والے 10 ہندسے۔' : 'الرقم الوطني الموحد: 10 أرقام يبدأ بـ7.'}</p>
               {crErr && <p id="reg-cr-err" role="alert" className="text-red-600 text-[13px] mt-1">{crErr}</p>}
               {/* round-4 UX-090: the check could not run (rate limit / offline): sign-up still waits, and support is one tap away */}
@@ -469,7 +489,7 @@ export default function RegisterPage() {
               )}
               <div className="mt-2 rounded-lg border border-[#D4A543]/40 bg-[#D4A543]/5 px-3 py-2 text-xs text-[#071827]">
                 {locale === 'en' ? 'No shop or commercial registration?' : locale === 'ur' ? 'دکان یا تجارتی رجسٹریشن نہیں؟' : 'ليس لديك محل أو سجل تجاري؟'}{' '}
-                <button type="button" className="inline-flex items-center min-h-[44px] font-extrabold text-[#8F6820] underline" onClick={() => { setSellerKind('independent'); setCr(''); setCrTaken(false); setCrErr(''); setFormError('') }}>
+                <button type="button" className="inline-flex items-center min-h-[44px] font-extrabold text-[#8F6820] underline" onClick={() => { setSellerKind('independent'); setCr(''); crChecked.current = ''; crResult.current = ''; setCrTaken(false); setCrErr(''); setFormError('') }}>
                   {locale === 'en' ? 'Sign up as a pricing agent' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر رجسٹر کریں' : 'سجّل كوسيط تسعير'}
                 </button>
               </div>
@@ -513,9 +533,9 @@ export default function RegisterPage() {
               <input type="checkbox" checked={agreedToTerms} onChange={(e: any) => { setAgreedToTerms(e.target.checked); if (e.target.checked) setTermsErr(false) }} aria-invalid={termsErr} aria-describedby={termsErr ? 'reg-terms-err' : undefined} className="mt-0.5 w-5 h-5 accent-[#0B2438] flex-shrink-0" />
               <span className="text-[13px] text-gray-700 leading-relaxed">
                 {t.agreePre}
-                <a href="/terms" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{t.terms}</a>
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.terms}</a>
                 {t.and}
-                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{t.privacy}</a>
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.privacy}</a>
               </span>
             </label>
             {termsErr && <p id="reg-terms-err" role="alert" className="text-red-600 text-[13px] font-semibold ms-7">{t.agreeErr}</p>}
@@ -540,14 +560,17 @@ export default function RegisterPage() {
               {selectedType === 'supplier' ? t.toBuyer : t.toSupplier}{' '}
               <span className="font-extrabold" style={{ color: '#8F6820' }}>{selectedType === 'supplier' ? t.toBuyerCta : t.toSupplierCta}</span>
             </button>}
+            </>)}
             <p className="mt-3 text-sm text-ink-2 text-center">{t.haveAccount} <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="inline-flex items-center min-h-[44px] font-extrabold text-orange-dark hover:underline">{t.login}</Link></p>
 
             {/* company accounts with several procurement staff are set up with us, not here */}
             {selectedType === 'contractor' && <p className="mt-5 pt-4 border-t border-line text-xs text-gray-500 text-center">
-              {t.corpQ} <a href="mailto:info@taseerak.com?subject=%D8%AD%D8%B3%D8%A7%D8%A8%20%D8%B4%D8%B1%D9%83%D8%A9" className="font-bold hover:underline" style={{ color: '#8F6820' }}>{t.corpA}</a>
+              {t.corpQ} <a href="mailto:info@taseerak.com?subject=%D8%AD%D8%B3%D8%A7%D8%A8%20%D8%B4%D8%B1%D9%83%D8%A9" className="inline-flex items-center min-h-[44px] font-bold hover:underline" style={{ color: '#8F6820' }}>{t.corpA}</a>
             </p>}
           </div>
         </div>
+        {/* round-5 UX-202: the same footer as the other public pages */}
+        <PublicFooter />
       </div>
     </div>
   )

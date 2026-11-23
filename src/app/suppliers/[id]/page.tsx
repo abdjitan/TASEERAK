@@ -25,7 +25,7 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   const name = s.company_name_ar || 'مورد'
   return {
     title: `${name} — مورد مواد بناء${s.region ? ' في ' + s.region : ''} | تسعيرك`,
-    description: `${name}: مورد ${s.supplier_tier ? tierLabel(s.supplier_tier, 'ar', false) : ''} لمواد البناء${s.region ? ' في ' + s.region : ''} على منصة تسعيرك${s.verification_status === 'verified' ? '، موثّق عبر واثق' : ''}. اطلب تسعيرة الآن.`,
+    description: `${name}: مورد ${s.supplier_tier ? tierLabel(s.supplier_tier, 'ar', false) : ''} لمواد البناء${s.region ? ' في ' + s.region : ''} على منصة تسعيرك${s.verification_status === 'verified' ? '، سجلّه التجاري موثّق' : ''}. اطلب تسعيرة الآن.`,
     alternates: { canonical: `/suppliers/${params.id}` },
     // a member's profile stays out of search results until they opt in (UX-115)
     robots: { index: false, follow: true },

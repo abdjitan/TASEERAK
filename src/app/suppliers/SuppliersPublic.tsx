@@ -39,8 +39,8 @@ export default function SuppliersPublic({ ranked, listings }: { ranked: any[]; l
       {ranked.length === 0 && listings.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center">
           <div className="text-4xl mb-3 text-[#0B2438]"><Glyph e="🏗" /></div>
-          <p className="font-bold text-gray-800 mb-1">{L('Coming soon', 'جلد آ رہا ہے', 'قريباً')}</p>
-          <p className="text-sm text-gray-600">{L('The top-rated suppliers will appear here once deals start on the platform. You can already send a price request.', 'پلیٹ فارم پر سودے شروع ہوتے ہی یہاں سب سے زیادہ ریٹنگ والے سپلائرز نظر آئیں گے۔ آپ ابھی قیمت کی درخواست بھیج سکتے ہیں۔', 'سيظهر هنا الموردون الأعلى تقييماً بمجرد بدء الصفقات على المنصة. ويمكنك الآن إرسال طلب تسعير.')}</p>
+          <p className="font-bold text-gray-800 mb-1">{L('Supplier directory coming soon', 'سپلائر ڈائریکٹری جلد', 'دليل الموردين قريباً')}</p>
+          <p className="text-sm text-gray-600">{L('You can already send a price request: it reaches the suppliers who specialise in your materials.', 'آپ ابھی قیمت کی درخواست بھیج سکتے ہیں: یہ آپ کے سامان کے ماہر سپلائرز تک پہنچتی ہے۔', 'يمكنك الآن إرسال طلب تسعير، فيصل إلى الموردين المختصين بموادك.')}</p>
           <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
             <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب سعراً')}</Link>
             <Link href="/join" className="btn-ghost text-sm">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</Link>

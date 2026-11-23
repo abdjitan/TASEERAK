@@ -3,6 +3,19 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation, locales, type Locale } from '@/i18n'
 import { Check, Globe } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
+
+// The switcher also saves the language on the profile when signed in, so notifications (written in
+// preferred_language) follow the language the user reads (round-5 UX-076). Fire and forget.
+function savePreferredLanguage(l: Locale) {
+  try {
+    const sb = createClient()
+    sb.auth.getSession().then(({ data }) => {
+      const uid = data?.session?.user?.id
+      if (uid) sb.from('profiles').update({ preferred_language: l }).eq('id', uid).then(() => {}, () => {})
+    }, () => {})
+  } catch {}
+}
 
 // Short, readable codes in each language's own script (UX-162): «ع / EN / اردو»
 const FLAGS: Record<Locale, string> = {
@@ -23,6 +36,8 @@ export default function LanguageSwitcher({ variant = 'nav', compact = false }: P
   const langAria = (l: Locale) => `${L('Language', 'زبان', 'اللغة')}: ${locales[l].name}`
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const pick = (l: Locale) => { setLocale(l); if (l !== locale) savePreferredLanguage(l) }
 
   // Close on outside click
   useEffect(() => {
@@ -32,6 +47,15 @@ export default function LanguageSwitcher({ variant = 'nav', compact = false }: P
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+  // Escape closes the menu and returns the focus to its button (round-5 UX-196)
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') { setOpen(false); btnRef.current?.focus() }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
 
   if (variant === 'minimal') {
     return (
@@ -39,7 +63,7 @@ export default function LanguageSwitcher({ variant = 'nav', compact = false }: P
         {(Object.keys(locales) as Locale[]).map(l => (
           <button
             key={l}
-            onClick={() => setLocale(l)}
+            onClick={() => pick(l)}
             title={locales[l].name}
             aria-label={langAria(l)}
             aria-pressed={locale === l}
@@ -63,7 +87,7 @@ export default function LanguageSwitcher({ variant = 'nav', compact = false }: P
         {(Object.keys(locales) as Locale[]).map(l => (
           <button
             key={l}
-            onClick={() => setLocale(l)}
+            onClick={() => pick(l)}
             aria-label={langAria(l)}
             aria-pressed={locale === l}
             lang={locales[l].lang}
@@ -88,6 +112,8 @@ export default function LanguageSwitcher({ variant = 'nav', compact = false }: P
   return (
     <div className="relative" ref={ref}>
       <button
+        ref={btnRef}
+        type="button"
         onClick={() => setOpen(!open)}
         aria-label={langAria(locale)}
         aria-expanded={open}
@@ -109,10 +135,11 @@ export default function LanguageSwitcher({ variant = 'nav', compact = false }: P
           {(Object.keys(locales) as Locale[]).map(l => (
             <button
               key={l}
-              onClick={() => { setLocale(l); setOpen(false) }}
+              type="button"
+              onClick={() => { pick(l); setOpen(false); btnRef.current?.focus() }}
               aria-pressed={locale === l}
               lang={locales[l].lang}
-              className={`w-full min-h-[44px] flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-start ${
+              className={`w-full min-h-[44px] flex items-center gap-3 px-3 py-2.5 text-sm transition-colors text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0B2438] ${
                 locale === l
                   ? 'bg-[#D4A543]/5 text-[#8F6820] font-semibold'
                   : 'text-gray-700 hover:bg-gray-50'

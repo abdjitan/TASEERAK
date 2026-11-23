@@ -51,7 +51,7 @@ function Kpi({ label, value, sub, icon, pulse }: { label: string; value: string;
         </span>
       </div>
       <div className="text-2xl font-extrabold mt-2 tabular-nums" style={{ color: NAVY }}>{value}</div>
-      {sub && <div className="text-[11px] text-gray-500 mt-1 tabular-nums">{sub}</div>}
+      {sub && <div className="text-xs text-gray-500 mt-1 tabular-nums">{sub}</div>}
     </div>
   )
 }
@@ -132,7 +132,7 @@ export default function OwnerOverview() {
           </div>
         </div>
         {err && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3">{err}</div>}
-        {d?.generated_at && <p className="text-[11px] text-gray-400 -mt-2">آخر تحديث: {new Date(d.generated_at).toLocaleTimeString('ar-SA-u-ca-gregory-nu-latn')} · يتجدد تلقائياً كل دقيقة · الفترة: {periodLabel}</p>}
+        {d?.generated_at && <p className="text-xs text-gray-400 -mt-2">آخر تحديث: {new Date(d.generated_at).toLocaleTimeString('ar-SA-u-ca-gregory-nu-latn')} · يتجدد تلقائياً كل دقيقة · الفترة: {periodLabel}</p>}
 
         {d && (<>
           {/* KPI row */}
@@ -151,13 +151,13 @@ export default function OwnerOverview() {
                 <div className="flex gap-1 flex-wrap justify-end">
                   {METRICS.map((x) => (
                     <button key={x.key} type="button" onClick={() => setMetric(x.key)} aria-pressed={metric === x.key}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold ${metric === x.key ? '' : 'text-gray-500 hover:bg-gray-50'}`}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold ${metric === x.key ? '' : 'text-gray-500 hover:bg-gray-50'}`}
                       style={metric === x.key ? { background: GOLD, color: NAVY } : {}}>{x.label}</button>
                   ))}
                 </div>
               }>
               <LineChart money={'money' in m && m.money} points={series.map((s: any) => ({ day: String(s.day), v: Number(s[metric]) || 0 }))} />
-              <p className="text-[11px] text-gray-400 mt-2 tabular-nums">
+              <p className="text-xs text-gray-400 mt-2 tabular-nums">
                 المجموع خلال الفترة: <b style={{ color: NAVY }}>{('money' in m && m.money) ? sar(series.reduce((a, s: any) => a + (Number(s[metric]) || 0), 0)) : fmt(series.reduce((a, s: any) => a + (Number(s[metric]) || 0), 0))}</b>
               </p>
             </Card>
@@ -184,7 +184,7 @@ export default function OwnerOverview() {
           </div>
 
           {/* Liquidity */}
-          <Card title="سيولة السوق" icon="⚡" extra={<span className="text-[11px] text-gray-400 tabular-nums">الطلبات: {fmt(rq.total)} · خلال الفترة {fmt(rq.in_period)} · سطور {fmt(rq.lines)}</span>}>
+          <Card title="سيولة السوق" icon="⚡" extra={<span className="text-xs text-gray-400 tabular-nums">الطلبات: {fmt(rq.total)} · خلال الفترة {fmt(rq.in_period)} · سطور {fmt(rq.lines)}</span>}>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
                 { label: 'طلبات وصلها عرض واحد على الأقل', v: rq.with_offer_pct, pct: true },
@@ -195,20 +195,20 @@ export default function OwnerOverview() {
                 return (
                   <div key={x.label} className="rounded-2xl p-4" style={{ background: t.bg }}>
                     <div className="text-2xl font-extrabold tabular-nums" style={{ color: t.fg }}>{isNum(x.v) ? `${fmt(x.v)}%` : '—'}</div>
-                    <div className="text-[11px] mt-1 text-gray-600">{x.label}</div>
+                    <div className="text-xs mt-1 text-gray-600">{x.label}</div>
                   </div>
                 )
               })}
               <div className="rounded-2xl p-4 bg-gray-50">
                 <div className="text-2xl font-extrabold tabular-nums" style={{ color: NAVY }}>{isNum(rq.median_first_offer_hours) ? `${fmt(rq.median_first_offer_hours, 1)} س` : '—'}</div>
-                <div className="text-[11px] mt-1 text-gray-600">الزمن الوسيط لوصول أول عرض</div>
+                <div className="text-xs mt-1 text-gray-600">الزمن الوسيط لوصول أول عرض</div>
               </div>
               <div className="rounded-2xl p-4 bg-gray-50">
                 <div className="text-2xl font-extrabold tabular-nums" style={{ color: NAVY }}>{fmt(rq.open_now)}</div>
-                <div className="text-[11px] mt-1 text-gray-600">طلبات مفتوحة الآن</div>
+                <div className="text-xs mt-1 text-gray-600">طلبات مفتوحة الآن</div>
               </div>
             </div>
-            <p className="text-[11px] text-gray-400 mt-3 tabular-nums">العروض: {fmt(of.total)} · خلال الفترة {fmt(of.in_period)} · بانتظار القرار {fmt(of.pending)} · موردون قدّموا عروضاً خلال الفترة {fmt(of.suppliers_quoting)}</p>
+            <p className="text-xs text-gray-400 mt-3 tabular-nums">العروض: {fmt(of.total)} · خلال الفترة {fmt(of.in_period)} · بانتظار القرار {fmt(of.pending)} · موردون قدّموا عروضاً خلال الفترة {fmt(of.suppliers_quoting)}</p>
           </Card>
 
           {/* Funnels */}
@@ -230,7 +230,7 @@ export default function OwnerOverview() {
 
           {/* Deals status + concentration */}
           <div className="grid lg:grid-cols-3 gap-5">
-            <Card title="حالة الصفقات" icon="📦" className="lg:col-span-2" extra={<span className="text-[11px] text-gray-400 tabular-nums">متوسط قيمة الصفقة: {sar(dl.avg_value)}</span>}>
+            <Card title="حالة الصفقات" icon="📦" className="lg:col-span-2" extra={<span className="text-xs text-gray-400 tabular-nums">متوسط قيمة الصفقة: {sar(dl.avg_value)}</span>}>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
                   { label: 'قيد التنفيذ', v: dl.in_progress },
@@ -244,7 +244,7 @@ export default function OwnerOverview() {
                   const inner = (
                     <>
                       <div className="text-2xl font-extrabold tabular-nums" style={{ color: bad ? '#B42318' : NAVY }}>{fmt(x.v)}</div>
-                      <div className="text-[11px] mt-1" style={{ color: bad ? '#B42318' : '#6B7A8C' }}>{x.label}{bad && x.href ? ' — اعرضها' : ''}</div>
+                      <div className="text-xs mt-1" style={{ color: bad ? '#B42318' : '#6B7A8C' }}>{x.label}{bad && x.href ? ' — اعرضها' : ''}</div>
                     </>
                   )
                   const cls = `block rounded-2xl p-4 ${bad ? 'bg-red-50 border border-red-200 hover:bg-red-100' : 'bg-gray-50'}`
@@ -269,7 +269,7 @@ export default function OwnerOverview() {
               {Array.isArray(dl.top_suppliers) && dl.top_suppliers.length ? (
                 <div className="overflow-x-auto -mx-1">
                   <table className="w-full text-sm">
-                    <thead><tr className="text-[11px] text-gray-400 text-right"><th className="font-semibold p-1.5">#</th><th className="font-semibold p-1.5">المورد</th><th className="font-semibold p-1.5">الصفقات</th><th className="font-semibold p-1.5">القيمة</th></tr></thead>
+                    <thead><tr className="text-xs text-gray-400 text-right"><th className="font-semibold p-1.5">#</th><th className="font-semibold p-1.5">المورد</th><th className="font-semibold p-1.5">الصفقات</th><th className="font-semibold p-1.5">القيمة</th></tr></thead>
                     <tbody>
                       {dl.top_suppliers.map((s: any, i: number) => (
                         <tr key={s.id || i} className="border-t border-gray-50">
@@ -291,14 +291,14 @@ export default function OwnerOverview() {
 
           {/* Online + health */}
           <div className="grid lg:grid-cols-2 gap-5">
-            <Card title="المتصلون الآن" icon="🟢" extra={<span className="text-[11px] text-gray-400">آخر 15 دقيقة</span>}>
+            <Card title="المتصلون الآن" icon="🟢" extra={<span className="text-xs text-gray-400">آخر 15 دقيقة</span>}>
               {Array.isArray(u.online_list) && u.online_list.length ? (
                 <ul className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
                   {u.online_list.map((o: any) => (
                     <li key={o.id} className="flex items-center justify-between gap-2 py-2 text-sm">
                       <Link href={`/admin/users/${o.id}`} className="font-semibold hover:underline truncate" style={{ color: DARK_GOLD }}>{o.name || '—'}</Link>
-                      <span className="flex items-center gap-2 shrink-0 text-[11px] text-gray-500">
-                        <span className="badge badge-gray text-[10px]">{ROLE_AR[o.role] || o.role}</span>
+                      <span className="flex items-center gap-2 shrink-0 text-xs text-gray-500">
+                        <span className="badge badge-gray text-xs">{ROLE_AR[o.role] || o.role}</span>
                         <span className="tabular-nums">{ago(o.last_seen_at)}</span>
                       </span>
                     </li>
@@ -316,7 +316,7 @@ export default function OwnerOverview() {
                 ].map((x) => (
                   <div key={x.label} className={`rounded-2xl p-3 ${x.bad ? 'bg-red-50' : x.warn ? 'bg-amber-50' : 'bg-gray-50'}`}>
                     <div className="text-xl font-extrabold tabular-nums" style={{ color: x.bad ? '#B42318' : x.warn ? '#9A6A10' : NAVY }}>{fmt(x.v)}</div>
-                    <div className="text-[11px] text-gray-600 mt-0.5">{x.label}</div>
+                    <div className="text-xs text-gray-600 mt-0.5">{x.label}</div>
                   </div>
                 ))}
               </div>
@@ -325,7 +325,7 @@ export default function OwnerOverview() {
                   <h3 className="text-xs font-bold text-gray-500 mb-2">آخر الأخطاء</h3>
                   <ul className="space-y-1.5 max-h-56 overflow-y-auto">
                     {hl.recent_errors.map((e: any, i: number) => (
-                      <li key={i} className="text-[11px] rounded-lg bg-gray-50 p-2">
+                      <li key={i} className="text-xs rounded-lg bg-gray-50 p-2">
                         <div className="flex justify-between gap-2"><b className="text-gray-700" dir="ltr">{e.context || '—'}</b><span className="text-gray-400 tabular-nums shrink-0">{ago(e.created_at)}</span></div>
                         <div className="text-gray-500 break-words mt-0.5" dir="ltr">{e.message}</div>
                       </li>
@@ -337,7 +337,7 @@ export default function OwnerOverview() {
           </div>
 
           {/* Broadcast */}
-          <Card title="إعلان للمستخدمين" icon="🔔" extra={<span className="text-[11px] text-gray-400">يصل كإشعار داخل المنصة فقط</span>}>
+          <Card title="إعلان للمستخدمين" icon="🔔" extra={<span className="text-xs text-gray-400">يصل كإشعار داخل المنصة فقط</span>}>
             <BroadcastForm counts={{ all: u.total, buyers: u.buyers, suppliers: u.suppliers }} />
           </Card>
         </>)}

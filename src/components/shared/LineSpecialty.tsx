@@ -45,9 +45,9 @@ export default function LineSpecialty({ name, sector, value, onChange, locale, s
   if (!open) {
     const chosen = choiceDone(value)
     return (
-      <div className={`rounded-xl border p-3 flex items-center justify-between gap-3 flex-wrap ${chosen ? 'border-[#0F6E56]/30 bg-[#0F6E56]/[.05]' : 'border-[#D4A543]/60 bg-[#D4A543]/[.07]'}`}>
+      <div className={`rounded-xl border p-3 flex items-center justify-between gap-3 flex-wrap ${chosen ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-[#D4A543]/60 bg-[#D4A543]/[.07]'}`}>
         <div className="min-w-0 text-sm">
-          <span className="text-gray-600">{chosen ? L('Specialty: ', 'شعبہ: ', 'التخصص: ') : fromPhoto ? L('Which section is this material in? We suggest: ', 'یہ سامان کس شعبے میں ہے؟ ہماری تجویز: ', 'في أي قسم تقع هذه المادة؟ نقترح: ') : L('Not found in the materials guide. Is it from: ', 'مواد کی فہرست میں نہیں ملا۔ کیا یہ اس میں سے ہے: ', 'لم نجدها في دليل المواد. هل هي من: ')}</span>
+          <span className="text-gray-600">{chosen ? (simple ? L('Sent to suppliers of: ', 'ان سپلائرز کو جائے گا: ', 'يُرسَل إلى موردي: ') : L('Specialty: ', 'شعبہ: ', 'التخصص: ')) : fromPhoto ? L('Which section is this material in? We suggest: ', 'یہ سامان کس شعبے میں ہے؟ ہماری تجویز: ', 'في أي قسم تقع هذه المادة؟ نقترح: ') : L('Not found in the materials guide. Is it from: ', 'مواد کی فہرست میں نہیں ملا۔ کیا یہ اس میں سے ہے: ', 'لم نجدها في دليل المواد. هل هي من: ')}</span>
           <b className="text-[#0B2438]">{curLabel || (chosen ? L(`${sectionName(value?.section)} (all its suppliers)`, `${sectionName(value?.section)} (سب سپلائرز)`, `${sectionName(value?.section)} (كل موردي القسم)`) : '')}</b>
           {!chosen && curLabel && <span className="text-gray-600">{L('?', '؟', '؟')}</span>}
         </div>
@@ -58,7 +58,7 @@ export default function LineSpecialty({ name, sector, value, onChange, locale, s
           )}
           <button type="button" onClick={startChange}
             className="min-h-[44px] px-4 rounded-xl text-sm font-bold border border-gray-300 bg-white text-[#0B2438] hover:border-[#D4A543]">
-            {chosen || curLabel ? L('Change', 'تبدیل', 'تغيير') : L('Choose its specialty', 'شعبہ چنیں', 'اختر تخصصها')}
+            {chosen || curLabel ? L('Change', 'تبدیل', 'تغيير') : simple ? L('Choose its kind', 'اس کی قسم چنیں', 'اختر نوعها') : L('Choose its specialty', 'شعبہ چنیں', 'اختر تخصصها')}
           </button>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function LineSpecialty({ name, sector, value, onChange, locale, s
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-bold text-[#0B2438]">
           {section
-            ? L('Which specialty?', 'کون سا شعبہ؟', 'اختر التخصص')
+            ? (simple ? L('Choose its kind', 'اس کی قسم چنیں', 'اختر نوعها') : L('Which specialty?', 'کون سا شعبہ؟', 'اختر التخصص'))
             : L('Which section is it from? (so it reaches the right suppliers)', 'کس شعبے کا ہے؟ (تاکہ صحیح سپلائرز تک پہنچے)', 'من أي قسم هذه المادة؟ (لتصل إلى الموردين المختصين)')}
         </p>
         {(section || canClose) && (

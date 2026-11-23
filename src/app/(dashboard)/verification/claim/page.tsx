@@ -10,6 +10,7 @@ import Glyph from '@/components/shared/Glyph'
 import { normalizeCrInput, crTakenText, crSupportHref } from '@/lib/cr'
 import { friendlyError } from '@/lib/friendlyError'
 import { askConfirm } from '@/lib/askConfirm'
+import LoadError from '@/components/shared/LoadError'
 
 // «هذا السجل مستخدم في حساب آخر». Owner 2026-11-23 (round-4 UX-061): new ownership claims go through
 // support (/support?topic=cr&cr=…); this page only lists the requests already sent, with their status.
@@ -21,10 +22,13 @@ export default function CrClaimPage() {
   const [cr, setCr] = useState('')
   const [msg, setMsg] = useState('')
   const [mine, setMine] = useState<any[]>([])
+  const [loadFailed, setLoadFailed] = useState(false) // round-5 UX-164: a failed load is never «no requests»
 
   async function loadMine(supabase: any, uid: string) {
-    const { data } = await supabase.from('cr_claims').select('id, commercial_registration, status, created_at, admin_note')
+    const { data, error } = await supabase.from('cr_claims').select('id, commercial_registration, status, created_at, admin_note')
       .eq('claimant_id', uid).order('created_at', { ascending: false }).limit(20)
+    if (error) { setLoadFailed(true); return }
+    setLoadFailed(false)
     setMine(data || [])
   }
 
@@ -43,7 +47,7 @@ export default function CrClaimPage() {
   }, [])
 
   async function withdraw(id: string) {
-    if (!(await askConfirm(L('Withdraw the registration request? You will need to upload the certificate again.', 'رجسٹریشن کی درخواست واپس لیں؟ آپ کو سرٹیفکیٹ دوبارہ اپ لوڈ کرنا ہوگا۔', 'سحب طلب التحقق من السجل؟ ستحتاج إلى رفع الشهادة من جديد.'), { okLabel: L('Withdraw', 'واپس لیں', 'سحب الطلب'), cancelLabel: L('Keep it', 'رہنے دیں', 'إبقاء الطلب') }))) return
+    if (!(await askConfirm(L('Withdraw the request to prove ownership of the registration? If you need it later, contact support again.', 'رجسٹریشن کی ملکیت ثابت کرنے کی درخواست واپس لیں؟ اگر بعد میں ضرورت ہو تو دوبارہ سپورٹ سے رابطہ کریں۔', 'سحب طلب إثبات ملكية السجل؟ إن احتجت إليه لاحقاً فتواصل مع الدعم من جديد.'), { okLabel: L('Withdraw', 'واپس لیں', 'سحب الطلب'), cancelLabel: L('Keep it', 'رہنے دیں', 'إبقاء الطلب') }))) return
     const supabase = createClient()
     const { error } = await supabase.rpc('withdraw_cr_claim', { p_claim_id: id })
     if (error) { setMsg(friendlyError(error.message, L('Could not withdraw the request. Check your connection and try again.', 'درخواست واپس نہیں لی جا سکی۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر سحب الطلب. تحقّق من اتصالك وحاول مرة أخرى.'), locale)); return }
@@ -71,7 +75,8 @@ export default function CrClaimPage() {
           {msg && <div role="alert" className="mt-4 text-sm rounded-xl p-3 bg-red-50 text-red-700 border border-red-200">{msg}</div>}
         </div>
 
-        {mine.length > 0 && (
+        {loadFailed && <LoadError onRetry={async () => { const supabase = createClient(); const { data: { session } } = await supabase.auth.getSession(); if (session) await loadMine(supabase, session.user.id) }} />}
+        {!loadFailed && mine.length > 0 && (
           <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
             <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('My requests', 'میری درخواستیں', 'طلباتي')}</h2>
             <div className="space-y-2">

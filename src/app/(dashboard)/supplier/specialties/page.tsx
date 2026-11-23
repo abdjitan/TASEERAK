@@ -24,7 +24,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react'
 
 const txt = {
   ar: {
-    title: 'تخصصاتي الدقيقة', sub: 'اختر المواد التي تتعامل بها بالضبط — ستصلك الطلبات المطابقة فقط',
+    title: 'تخصصاتي', sub: 'اختر المواد التي تتعامل بها بالضبط — ستصلك الطلبات المطابقة فقط',
     back: '→ رجوع', save: 'احفظ التغييرات', saving: 'جارٍ الحفظ...', saved: 'حُفظت تخصصاتك.',
     selectSectors: 'أو اختر المواد بالتفصيل', thenSpecialties: 'ثم اختر تخصصاتك الدقيقة',
     selected: 'تخصص محدد', noSectors: 'اختر قطاعاً واحداً على الأقل من الأعلى لعرض التخصصات',
@@ -296,7 +296,7 @@ export default function SpecialtiesPage() {
             {locale === 'en' ? "These are your company's specialties, shown for reading. The account owner edits them." : locale === 'ur' ? 'یہ آپ کی کمپنی کی تخصصات ہیں، صرف دیکھنے کے لیے۔ اکاؤنٹ کا مالک انہیں بدلتا ہے۔' : 'هذه تخصصات شركتك للاطّلاع فقط، ويعدّلها صاحب الحساب.'}
           </div>
         )}
-        <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl p-3 mb-5 text-sm text-[#0B2438]">{T.hint}</div>
+        {/* round-5 UX-161: the hint box repeated the subtitle; removed */}
 
         {loadFailed && (
           <LoadError onRetry={load} className="mb-5"
@@ -304,7 +304,8 @@ export default function SpecialtiesPage() {
         )}
 
         {/* تحليل النشاط التجاري — يُحدّد التخصصات تلقائياً من السجل التجاري */}
-        {crActivity && (
+        {/* round-5 UX-161: a team member reads the list only, so no analysis card with a disabled button */}
+        {crActivity && !isMember && (
           <div className="rounded-2xl p-4 mb-5 border shadow-sm bg-white" style={{ borderColor: '#0B243826' }}>
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="min-w-0">
@@ -322,7 +323,7 @@ export default function SpecialtiesPage() {
                 </div>
                 {detectMsg && <div className="text-[13px] font-semibold mt-1.5 text-[#0B2438]">{detectMsg}</div>}
               </div>
-              <button onClick={() => analyzeFromCR(crActivity, companyName)} disabled={isMember}
+              <button onClick={() => analyzeFromCR(crActivity, companyName)}
                 className="min-h-[44px] px-4 rounded-xl font-bold text-white text-sm shrink-0 hover:shadow transition-all disabled:opacity-50" style={{ background: '#0B2438' }}>
                 {autoDetected ? (locale === 'en' ? 'Re-analyze' : locale === 'ur' ? 'دوبارہ تجزیہ' : 'إعادة التحليل') : (locale === 'en' ? 'Suggest from my CR' : locale === 'ur' ? 'میری رجسٹریشن سے تجویز کریں' : 'اقترح من سجلي')}
               </button>

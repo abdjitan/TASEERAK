@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import PublicFooter from '@/components/public/PublicFooter'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -100,7 +101,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-slate-50" dir={dir}>
       <nav className="bg-white/90 backdrop-blur sticky top-0 z-50 border-b border-gray-100">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <a href="/" className="shrink-0" aria-label="تسعيرك">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="h-11 w-auto" /></a>
+          <a href="/" className="shrink-0" aria-label="تسعيرك">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/taseerak-metallic-logo.webp" alt="تسعيرك" className="h-14 w-auto" /></a>
           <div className="flex items-center gap-2">
             <LanguageSwitcher variant="minimal" />
             <HomeOrAccountLink homeLabel={t.home} />
@@ -138,6 +139,7 @@ export default function TermsPage() {
           <Link href="/privacy" className="inline-flex items-center min-h-[44px] hover:underline">{t.privacyLink}</Link> · <Link href="/deal-protection" className="inline-flex items-center min-h-[44px] hover:underline">{locale === 'en' ? 'How we protect your deal' : locale === 'ur' ? 'سودے کا تحفظ' : 'كيف نحمي صفقتك'}</Link> · © 2026 تسعيرك — Taseerak
         </p>
       </div>
+      <PublicFooter />
     </div>
   )
 }

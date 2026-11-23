@@ -83,9 +83,9 @@ export default function InviteFriendsPage() {
             </div>
           ) : (<>
             <div className="mt-5">
-              <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>{L('Who are you inviting?', 'آپ کس کو دعوت دے رہے ہیں؟', 'من تدعو؟')}</div>
+              <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>{L('Who are you inviting?', 'آپ کس کو دعوت دے رہے ہیں؟', 'من تريد أن تدعو؟')}</div>
               <div role="radiogroup" className="grid grid-cols-2 gap-2">
-                {([['supplier', L('A supplier', 'سپلائر', 'مورداً'), L('a shop, factory or seller', 'دکان، فیکٹری یا بیچنے والا', 'محل أو مصنع أو بائع')], ['contractor', L('A buyer', 'خریدار', 'مشترياً'), L('a contractor or a customer', 'ٹھیکیدار یا گاہک', 'مقاول أو عميل')]] as const).map(([k, label, hint]) => (
+                {([['supplier', L('A supplier', 'سپلائر', 'مورد'), L('a shop, factory or seller', 'دکان، فیکٹری یا بیچنے والا', 'محل أو مصنع أو بائع')], ['contractor', L('A buyer', 'خریدار', 'مشتري'), L('a contractor or a customer', 'ٹھیکیدار یا گاہک', 'مقاول أو عميل')]] as const).map(([k, label, hint]) => (
                   <button key={k} type="button" role="radio" aria-checked={who === k} onClick={() => setWho(k)}
                     className={`text-start px-3 py-2.5 rounded-xl border-2 min-h-[44px] ${who === k ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white'}`}>
                     <div className="text-sm font-bold" style={{ color: '#0B2438' }}>{label}</div>
@@ -121,8 +121,9 @@ export default function InviteFriendsPage() {
               <div className="text-sm font-bold" style={{ color: '#0B2438' }}>{L('Joined through your invite', 'آپ کی دعوت سے شامل ہوئے', 'انضمّوا عن طريق دعوتك')}</div>
               {/* a thank-you, not a bare number (UX-155) */}
               <div className="text-[13px] text-[#0B2438] mt-0.5">{joined > 0
-                ? L(`Thank you: ${joined === 1 ? '1 person' : `${joined} people`} joined through your invite.`, `شکریہ، آپ کی دعوت سے ${joined} افراد شامل ہوئے۔`, `شكراً لك، انضمّ عن طريق دعوتك ${arCount(joined, 'شخص واحد', 'شخصان', 'أشخاص', 'شخصاً')}.`)
-                : L('Every new supplier means more price offers on everyone’s requests.', 'ہر نیا سپلائر یعنی سب کی درخواستوں پر زیادہ قیمتیں۔', 'كل مورد جديد يعني عروض أسعار أكثر على طلبات الجميع.')}</div>
+                ? L(`Thank you: ${joined === 1 ? '1 person' : `${joined} people`} joined through your invite.`, `شکریہ، آپ کی دعوت سے ${joined} افراد شامل ہوئے۔`, `شكراً لك، انضمّ ${arCount(joined, 'شخص واحد', 'شخصان', 'أشخاص', 'شخصاً')} عن طريق دعوتك.`)
+                : who === 'supplier' ? L('Every new supplier means more price offers on everyone’s requests.', 'ہر نیا سپلائر یعنی سب کی درخواستوں پر زیادہ قیمتیں۔', 'كل مورد جديد يعني عروض أسعار أكثر على طلبات الجميع.')
+                : L('Every new buyer means more price requests for suppliers.', 'ہر نیا خریدار یعنی سپلائرز کے لیے زیادہ درخواستیں۔', 'كل مشتري جديد يعني طلبات تسعير أكثر للموردين.')}</div>
               <div className="text-[12px] text-gray-600">{L('Counted when the new account signs in for the first time.', 'نیا اکاؤنٹ پہلی بار لاگ ان ہونے پر شمار ہوتا ہے۔', 'يُحتسب عند أول دخول للحساب الجديد.')}</div>
             </div>
             <div className="text-3xl font-bold tabular-nums" style={{ color: '#0B2438' }}>{joined}</div>

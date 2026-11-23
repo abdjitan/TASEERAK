@@ -8,6 +8,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
 import { friendlyError } from '@/lib/friendlyError'
+import LoadError from '@/components/shared/LoadError'
 
 // The current holder's view (171): someone asked for the CR on this account. He sees the
 // claimant's name (never the contact or file) and may answer once before the admin decides.
@@ -20,10 +21,13 @@ export default function CrClaimsOnMyAccountPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState('')
+  const [loadFailed, setLoadFailed] = useState(false) // round-5 UX-164: a failed load is never «no requests»
 
   async function load() {
     const supabase = createClient()
-    const { data } = await supabase.rpc('get_my_cr_claims')
+    const { data, error } = await supabase.rpc('get_my_cr_claims')
+    if (error) { setLoadFailed(true); return }
+    setLoadFailed(false)
     setClaims((data as any[]) || [])
   }
 
@@ -60,16 +64,19 @@ export default function CrClaimsOnMyAccountPage() {
     <AppShell title={L('Requests on my registration', 'میری رجسٹریشن پر درخواستیں', 'طلبات على سجلي التجاري')} nav={getNav(role, locale, '/settings')} dir={dir}>
       <div className="max-w-xl mx-auto space-y-3">
         <h1 className="sr-only">{L('Requests on my registration', 'میری رجسٹریشن پر درخواستیں', 'طلبات على سجلي التجاري')}</h1>
-        <p className="text-sm text-gray-500 leading-relaxed">
+        {/* round-5 UX-164: the explanation only when there is a request to answer */}
+        {!loadFailed && claims.length > 0 && <p className="text-sm text-gray-500 leading-relaxed">
           {L('Someone said the commercial registration on your account is theirs. Tell the admin why it is yours; the admin may ask you for your documents, then decides. Nothing changes until then.',
              'کسی نے کہا ہے کہ آپ کے اکاؤنٹ کی تجارتی رجسٹریشن اس کی ہے۔ انتظامیہ کو بتائیں کہ یہ آپ کی کیوں ہے؛ انتظامیہ آپ سے دستاویزات مانگ سکتی ہے، پھر فیصلہ کرے گی۔ تب تک کچھ نہیں بدلے گا۔',
              'قال شخص إن السجل التجاري المسجّل في حسابك يخصّه. وضّح للإدارة لماذا السجل لك؛ قد تطلب منك الإدارة مستنداتك، ثم تقرر، ولا يتغير شيء قبل ذلك.')}
-        </p>
+        </p>}
         {msg && <div role="alert" className="text-sm rounded-xl p-3 bg-red-50 text-red-600 border border-red-200">{msg}</div>}
-        {claims.length === 0 ? (
+        {loadFailed ? (
+          <LoadError onRetry={load} />
+        ) : claims.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
             <div className="text-5xl mb-3"><Glyph e="📋" /></div>
-            <p className="text-gray-500">{L('No requests on your registration.', 'آپ کی رجسٹریشن پر کوئی درخواست نہیں۔', 'لا توجد طلبات على سجلك.')}</p>
+            <p className="text-gray-500">{L('No one is claiming your commercial registration.', 'کوئی آپ کی تجارتی رجسٹریشن کا دعویٰ نہیں کر رہا۔', 'لا أحد يطالب بسجلك التجاري.')}</p>
           </div>
         ) : claims.map((c: any) => (
           <div key={c.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">

@@ -403,7 +403,7 @@ export default function AppShell({
               {sessionUid && <NotificationBell userId={sessionUid} />}
               {/* Log out is on EVERY dashboard page (pages that don't pass onSignOut get the default);
                   on phones it sits in the menu instead, the top bar has no room for it. */}
-              <button type="button" onClick={signOut} className="hidden sm:inline-flex items-center gap-1 text-sm min-h-[44px] px-2 rounded-lg transition-colors hover:text-red-700 hover:bg-gray-50" style={{ color: '#5B6B7C' }}>
+              <button type="button" onClick={signOut} className={`hidden sm:inline-flex ${collapsed ? "" : "lg:hidden"} items-center gap-1 text-sm min-h-[44px] px-2 rounded-lg transition-colors hover:text-red-700 hover:bg-gray-50`} style={{ color: '#5B6B7C' }}>
                 <LogOut className="w-4 h-4" aria-hidden />{L('Log out', 'لاگ آؤٹ', 'تسجيل الخروج')}
               </button>
             </div>

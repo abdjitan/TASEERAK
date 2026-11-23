@@ -78,6 +78,13 @@ export function dealStage(offer: any, who: Who = 'buyer', locale: string = 'ar')
     if (due) {
       // «آجل»: the label names the due date instead of asking for payment at once (round-4 UX-034)
       const dt = due.toLocaleDateString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' })
+      // past the agreed date (round-5 UX-180): «تأخّر الدفع», for both sides
+      if (Date.now() > due.getTime()) {
+        const late = who === 'supplier'
+          ? pick([`تأخّر الدفع — كان مستحقاً في ${dt}`, `Payment late — it was due on ${dt}`, `ادائیگی میں تاخیر — آخری تاریخ ${dt} تھی`], locale)
+          : pick([`تأخّر الدفع — كان مستحقاً في ${dt}`, `Payment late — it was due on ${dt}`, `ادائیگی میں تاخیر — آخری تاریخ ${dt} تھی`], locale)
+        return { step: 3, key: 'received', label: late, short: pick(['تأخّر الدفع', 'Payment late', 'ادائیگی میں تاخیر'], locale), emoji: '⏰', done: false, tone: '#9D7425', payDue: due.toISOString() }
+      }
       const label = pick([`تمّ الاستلام — الدفع مستحق في ${dt}`, `Received — payment due on ${dt}`, `وصول ہو گیا — ادائیگی کی تاریخ ${dt}`], locale)
       const short = payDueSoon(offer) ? sh('received', who, locale) : pick([`الدفع مستحق في ${dt}`, `Payment due ${dt}`, `ادائیگی ${dt}`], locale)
       return { step: 3, key: 'received', label, short, emoji: '📥', done: false, tone: '#0B2438', payDue: due.toISOString() }

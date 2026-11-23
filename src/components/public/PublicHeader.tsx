@@ -19,10 +19,10 @@ export default function PublicHeader({ active }: { active?: string }) {
   ]
   return (
     <header className="bg-white border-b border-gray-100 sticky top-0 z-30" dir={dir}>
-      <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      <div className="max-w-4xl mx-auto px-4 h-[72px] flex items-center justify-between gap-2">
         <Link href="/" className="flex items-center shrink-0 min-h-[44px]" aria-label={L('Taseerak', 'تسعیرک', 'تسعيرك')}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/taseerak-metallic-logo.webp" alt={L('Taseerak', 'تسعیرک', 'تسعيرك')} className="h-11 w-auto" />
+          <img src="/taseerak-metallic-logo.webp" alt={L('Taseerak', 'تسعیرک', 'تسعيرك')} className="h-14 w-auto" />
         </Link>
 
         <nav className="flex items-center gap-1 text-sm font-semibold">

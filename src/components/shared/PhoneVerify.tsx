@@ -172,14 +172,14 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
       {step === 'enter' && !busy && (<>
         <p className="text-[12px] text-gray-600">{L('We will send a 6-digit code by SMS. Use a number that has WhatsApp: platform notifications arrive there.', 'ہم SMS سے 6 ہندسوں کا کوڈ بھیجیں گے۔ ایسا نمبر استعمال کریں جس پر واٹس ایپ ہو: پلیٹ فارم کی اطلاعات وہیں آتی ہیں۔', 'سنرسل رمزاً من 6 أرقام برسالة نصية. استخدم رقماً عليه واتساب، فإشعارات المنصة تصل إليه.')}</p>
         <div className="flex gap-2">
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" dir="ltr" className="input-field flex-1 min-w-0" placeholder="05XXXXXXXX" aria-label={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} />
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (!busy) send() } }} inputMode="tel" autoComplete="tel" dir="ltr" className="input-field flex-1 min-w-0" placeholder="05XXXXXXXX" aria-label={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} />
           <button type="button" onClick={send} disabled={busy} className="min-h-[48px] text-sm px-4 rounded-xl font-bold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>{busy ? '…' : L('Send code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>
         </div>
       </>)}
       {step === 'code' && (<>
         <p className="text-[12px] text-gray-600">{L(`Enter the code sent to ${toE164(phone)}`, `${toE164(phone)} پر بھیجا گیا کوڈ لکھیں`, `أدخل الرمز المرسل إلى ${toE164(phone)}`)}</p>
         <div className="flex gap-2">
-          <input value={code} onChange={(e) => setCode(e.target.value)} inputMode="numeric" autoComplete="one-time-code" dir="ltr" maxLength={6} className="input-field flex-1 min-w-0 tracking-[0.4em] text-center font-bold" placeholder="______" aria-label={L('Verification code', 'تصدیقی کوڈ', 'رمز التحقق')} />
+          <input value={code} onChange={(e) => setCode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); if (!busy) confirm() } }} inputMode="numeric" autoComplete="one-time-code" dir="ltr" maxLength={6} className="input-field flex-1 min-w-0 tracking-[0.4em] text-center font-bold" placeholder="______" aria-label={L('Verification code', 'تصدیقی کوڈ', 'رمز التحقق')} />
           <button type="button" onClick={confirm} disabled={busy} className="min-h-[48px] text-sm px-5 rounded-xl font-bold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>{busy ? '…' : L('Confirm', 'تصدیق', 'تأكيد')}</button>
         </div>
         <div className="flex flex-wrap items-center gap-x-4">

@@ -87,7 +87,7 @@ export default function AdminLearningPage() {
               ['عمليات بحث مسجّلة', stats.events], ['هذا الأسبوع', stats.week],
               ['كلمات معتمدة', counts.approved], ['تعلّمها من الناس', counts.fromPeople],
             ].map(([l, v]) => (
-              <div key={l as string} className="rounded-xl bg-gray-50 p-3"><div className="text-2xl font-extrabold text-navy">{v as number}</div><div className="text-[11px] text-gray-500">{l as string}</div></div>
+              <div key={l as string} className="rounded-xl bg-gray-50 p-3"><div className="text-2xl font-extrabold text-navy">{v as number}</div><div className="text-xs text-gray-500">{l as string}</div></div>
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-4">
@@ -126,7 +126,7 @@ export default function AdminLearningPage() {
                       <td className="py-2 px-2" dir="auto">{r.product_name}</td>
                       <td className="py-2 px-2 text-center">{r.users}</td>
                       <td className="py-2 px-2 text-center">{r.hits}</td>
-                      <td className="py-2 px-2 text-center text-[11px] text-gray-500">{r.source === 'seed' ? 'القاموس' : r.source === 'admin' ? 'الإدارة' : 'الناس'}</td>
+                      <td className="py-2 px-2 text-center text-xs text-gray-500">{r.source === 'seed' ? 'القاموس' : r.source === 'admin' ? 'الإدارة' : 'الناس'}</td>
                       <td className="py-2 px-2 text-end whitespace-nowrap">
                         {r.status !== 'approved' && <button type="button" onClick={() => review(r.id, 'approved')} className="text-xs font-bold px-2.5 py-1 rounded-lg text-white me-1" style={{ background: '#0F6E56' }}>اعتماد</button>}
                         {r.status !== 'rejected' && <button type="button" onClick={() => review(r.id, 'rejected')} className="text-xs font-bold px-2.5 py-1 rounded-lg border border-red-200 text-red-600">رفض</button>}

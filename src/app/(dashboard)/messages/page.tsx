@@ -48,6 +48,8 @@ function Messages() {
   const [role, setRole] = useState('contractor')
   const [isMember, setIsMember] = useState(false) // a company team member: chats belong to the owner (UX-126)
   const [vatRegistered, setVatRegistered] = useState(false)
+  // a pricing agent quotes from a source shop: his ready reply never claims own stock (round-5 UX-043)
+  const [agent, setAgent] = useState(false)
   const [convos, setConvos] = useState<any[]>([])
   const [unread, setUnread] = useState<Record<string, number>>({}) // unread messages from the other side, per conversation (UX-037)
   const [lastMine, setLastMine] = useState<Record<string, boolean>>({}) // the latest message is mine → «أنت: »
@@ -119,10 +121,11 @@ function Messages() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setMe(session.user.id)
-      const { data: p } = await supabase.from('profiles').select('role, vat_number').eq('id', session.user.id).single()
+      const { data: p } = await supabase.from('profiles').select('role, vat_number, provider_type').eq('id', session.user.id).single()
       const r = p?.role || 'contractor'
       setRole(r)
       setVatRegistered(!!p?.vat_number)
+      setAgent(['individual', 'price_agent', 'broker'].includes(String(p?.provider_type || '')))
       if (r === 'supplier') {
         const { data: acting } = await supabase.rpc('acting_uid')
         if (acting && acting !== session.user.id) setIsMember(true)
@@ -327,7 +330,9 @@ function Messages() {
       ? L('Prices include 15% VAT.', 'قیمتوں میں 15% VAT شامل ہے۔', 'الأسعار تشمل ضريبة القيمة المضافة 15%.')
       : L('The price is final; no VAT is added.', 'قیمت حتمی ہے؛ اس پر VAT شامل نہیں کیا جاتا۔', 'السعر نهائي، ولا تُضاف إليه ضريبة القيمة المضافة.'),
     L('Delivery within two days.', 'دو دن میں ڈیلیوری۔', 'التوصيل خلال يومين.'),
-    L('The material is available now.', 'مال ابھی دستیاب ہے۔', 'المادة متوفرة الآن.'),
+    agent
+      ? L('The material is available at the source shop right now.', 'مال اس وقت ماخذ دکان پر دستیاب ہے۔', 'المادة متوفرة لدى المحل المصدر حالياً.')
+      : L('We have the material in stock right now.', 'مال اس وقت ہمارے پاس دستیاب ہے۔', 'المادة متوفرة لدينا حالياً.'),
     L('The price is valid for 3 days.', 'قیمت 3 دن کے لیے ہے۔', 'السعر صالح لمدة 3 أيام.'),
     L('Please send the exact size or specs.', 'براہ کرم درست سائز یا تفصیل بھیجیں۔', 'أرسل المقاس أو المواصفات بدقة من فضلك.'),
   ]
@@ -385,7 +390,7 @@ function Messages() {
                     ? <div className={`text-xs truncate ${n ? 'text-gray-800 font-semibold' : 'text-gray-500'}`} dir="auto">{lastMine[c.id] ? L('You: ', 'آپ: ', 'أنت: ') : ''}{c.last_message}</div>
                     : <span />}
                   {n > 0 && (
-                    <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold grid place-items-center" style={{ background: '#D4A543', color: '#071827' }}
+                    <span className="shrink-0 min-w-[20px] h-5 px-1.5 rounded-full text-[12px] leading-none font-bold grid place-items-center" style={{ background: '#D4A543', color: '#071827' }}
                       aria-label={L(`${n} unread`, `${n} نئے`, `${n} غير مقروءة`)}>{n > 99 ? '99+' : n}</span>
                   )}
                 </div>

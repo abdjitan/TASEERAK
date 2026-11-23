@@ -52,7 +52,11 @@ const TX = {
   },
 }
 
-export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/register' }: { onSignedIn: () => void; onUseEmail?: () => void; registerHref?: string }) {
+export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/register', onStep }: {
+  onSignedIn: () => void; onUseEmail?: () => void; registerHref?: string
+  /** told when the step changes, so the page can hide its tabs and title during the code step (round-5 UX-121) */
+  onStep?: (step: 'phone' | 'code' | 'name') => void
+}) {
   const { locale } = useTranslation()
   const t = (TX as any)[locale] || TX.ar
   const [step, setStep] = useState<'phone' | 'code' | 'name'>('phone')
@@ -76,6 +80,10 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
   const tokenRef = useRef<string>('')
   const boxId = useRef('recaptcha-' + Math.random().toString(36).slice(2)).current
 
+  useEffect(() => { onStep?.(step) }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
+  // the first countdown has run out: a quiet way out when the text message never arrives (round-5 UX-024)
+  const [waited, setWaited] = useState(false)
+  useEffect(() => { if (step === 'code' && cooldown === 0) setWaited(true) }, [step, cooldown])
   useEffect(() => {
     if (cooldown <= 0) return
     const id = setTimeout(() => setCooldown((c) => c - 1), 1000)
@@ -187,7 +195,7 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
 
   // amber, not red: nothing is wrong with what the visitor typed (UX-004)
   const smsDownBox = smsDown && (
-    <div className="bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-xl p-3 space-y-2" role="alert">
+    <div className="bg-warn-bg border border-warn-border text-warn-text text-sm rounded-xl p-3 space-y-2" role="alert">
       <p>{t.smsDown}</p>
       <a href={registerHref} className="w-full min-h-[44px] rounded-xl font-bold text-sm grid place-items-center" style={{ background: '#D4A543', color: '#071827' }}>{t.smsDownCreate}</a>
       {onUseEmail
@@ -263,6 +271,17 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail, registerHref = '/
           ? <span className="text-ink-2" aria-live="polite">{t.resendIn} {cooldown} {t.sec}</span>
           : <button type="button" disabled={loading} className="min-h-[44px] font-bold text-orange-dark hover:underline disabled:opacity-50" onClick={() => sendCode(undefined, true)}>{t.resend}</button>}
       </div>
+      {waited && (
+        <div className="border-t border-line pt-3 text-[13px] text-ink-2">
+          <p className="font-bold text-navy">{locale === 'en' ? 'The code did not arrive?' : locale === 'ur' ? 'کوڈ نہیں ملا؟' : 'لم يصلك الرمز؟'}</p>
+          <div className="flex flex-wrap gap-x-4">
+            <a href={registerHref} className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.smsDownCreate}</a>
+            {onUseEmail
+              ? <button type="button" onClick={onUseEmail} className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.smsDownLogin}</button>
+              : <a href="/login?m=email" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.smsDownLogin}</a>}
+          </div>
+        </div>
+      )}
     </form>
   )
 }

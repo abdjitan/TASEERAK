@@ -24,6 +24,7 @@ import { rfqState, rfqStatusLabel, rfqStateTone, type RfqState } from '@/lib/rfq
 import { dealStage, buyerTodo, buyerActionLabel } from '@/lib/dealStage'
 import { offerComparable, lineComparable, sarLabel } from '@/lib/vat'
 import { fileHref } from '@/lib/fileHref'
+import { normalizedIncludes } from '@/lib/normalize'
 
 // «طلباتي»: every request of the buyer with its details — reference, date, materials (with
 // pictures), offers received, deadline and status — filterable and searchable; a card opens the
@@ -86,7 +87,7 @@ function MyRequests() {
         const closed = list.filter((r: any) => r.status === 'closed').map((r: any) => r.id).slice(0, 120)
         const [offs, acc] = await Promise.all([
           waiting.length ? sb.from('offers').select('rfq_id, status, total_price, vat_included, vat_status, item_prices').in('rfq_id', waiting) : Promise.resolve({ data: [] } as any),
-          closed.length ? sb.from('offers').select('id, rfq_id, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status').in('rfq_id', closed).eq('status', 'accepted') : Promise.resolve({ data: [] } as any),
+          closed.length ? sb.from('offers').select('id, rfq_id, supplier_delivered_at, received_at, payment_status, payment_confirmed_at, dispute_status, payment_terms, deal_closed_at').in('rfq_id', closed).eq('status', 'accepted') : Promise.resolve({ data: [] } as any),
         ])
         const om: Record<string, any[]> = {}
         for (const o of (offs?.data || [])) if (!['rejected', 'withdrawn', 'cancelled'].includes(o.status)) (om[o.rfq_id] ||= []).push(o)
@@ -112,7 +113,9 @@ function MyRequests() {
     return s === 'cancelled' ? 'cancelled' : s === 'closed' ? 'closed' : s === 'offers_expired' ? 'choose' : s === 'expired_empty' ? 'ended' : 'open'
   }
   // every accepted deal of a chosen request is paid and confirmed (UX-048)
-  const dealDoneOf = (r: any) => { const d = dealsBy[r.id] || []; return d.length > 0 && d.every((o: any) => dealStage(o).done) }
+  // a deal the admins cancelled counts as finished, not «جارية» (round-5 UX-009)
+  const dealDoneOf = (r: any) => { const d = dealsBy[r.id] || []; return d.length > 0 && d.some((o: any) => dealStage(o).done) && d.every((o: any) => dealStage(o).done || !!o.deal_closed_at) }
+  const dealsCancelledOf = (r: any) => { const d = dealsBy[r.id] || []; return d.length > 0 && d.every((o: any) => !!o.deal_closed_at) }
   // the first deal of a chosen request that waits on the buyer (confirm receipt / record payment) (UX-055)
   const dealTodoOf = (r: any) => (dealsBy[r.id] || []).find((o: any) => !!buyerTodo(dealStage(o)))
   // an open request past its deadline with no offers can still be extended: it is not deleted in bulk (UX-056)
@@ -132,7 +135,8 @@ function MyRequests() {
     for (const o of offs) {
       const list = (Array.isArray(o.item_prices) ? o.item_prices : []).filter((e: any) => Number(e?.total) > 0)
       list.forEach((e: any, i: number) => priced.add(Number.isInteger(e.item_index) ? e.item_index : i))
-      if (list.length >= n) { const tot = list.reduce((sum: number, e: any) => sum + lineComparable(e.total, o), 0); if (tot > 0 && tot < best) best = tot }
+      // an offer that prices every material: what the buyer pays for it (offerComparable, delivery charges included) (round-5 UX-032)
+      if (list.length >= n) { const tot = offerComparable(o) || list.reduce((sum: number, e: any) => sum + lineComparable(e.total, o), 0); if (tot > 0 && tot < best) best = tot }
     }
     if (isFinite(best)) return L(`Best total: ${sar(best)}`, `بہترین کل: ${sar(best)}`, `أفضل مجموع: ${sar(best)}`)
     const k = Math.min(priced.size, n)
@@ -149,11 +153,12 @@ function MyRequests() {
 
   const shown = rfqs.filter(r => {
     if (filter === 'all' ? stateOf(r) === 'cancelled' : stateOf(r) !== filter) return false
-    const t = q.trim().toLowerCase()
+    const t = q.trim()
     if (!t) return true
     const items = Array.isArray(r.items) ? r.items : []
-    const has = (v: any) => String(v || '').toLowerCase().includes(t)
-    return has(rfqRef(r)) || has(rfqRef(r, locale)) || has(r.ref_no) || has(r.title) || has(r.product_name)
+    // hamza, taa marbuta and alef maqsura folded: «اسمنت» finds «إسمنت» (round-5 UX-033)
+    const has = (v: any) => normalizedIncludes(String(v || ''), t)
+    return has(rfqRef(r)) || has(rfqRef(r, locale)) || has(r.ref_no) || has(`RFQ-${r.ref_no}`) || has(r.title) || has(r.product_name)
       || items.some((it: any) => has(it.product_name) || has(getProductLabel(it.product_name, locale)))
   })
     // what needs the buyer first (a choice to make, a deal step to do), newest first otherwise (UX-055)
@@ -234,6 +239,7 @@ function MyRequests() {
   // for the buyer, navy = running, green = completed, neutral = ended; never red
   const badge = (r: any) => {
     const s = rstate(r)
+    if (s === 'closed' && dealsCancelledOf(r)) return { t: L('Deal cancelled', 'ڈیل منسوخ', 'أُلغيت الصفقة'), bg: '#F3F4F6', fg: '#4B5563' }
     const done = s === 'closed' && dealDoneOf(r)
     const tone = rfqStateTone(s, done)
     return { t: rfqStatusLabel(r.status === 'expired' ? { ...r, offer_count: 0 } : r, locale, { dealDone: done }), bg: tone.bg, fg: tone.fg }
@@ -401,7 +407,7 @@ function MyRequests() {
                           </div>
                         </div>
                       ))}
-                      {items.length > 6 && <span className="self-center text-xs text-gray-500">+{items.length - 6}</span>}
+                      {items.length > 6 && <span className="self-center text-xs text-gray-500">{L(`+ ${items.length - 6} more`, `+ ${items.length - 6} مزید`, '+ ' + arCount(items.length - 6, 'مادة أخرى', 'مادتان أخريان', 'مواد أخرى', 'مادة أخرى'))}</span>}
                     </div>
                     {best && <div className="mt-3 text-[13px] font-extrabold text-[#0B2438]">{best}</div>}
                     {rs === 'offers' && st !== 'choose' && <div className="mt-1 text-[13px] font-bold text-[#8F6820]">{L('You can compare and choose now', 'آپ ابھی موازنہ اور انتخاب کر سکتے ہیں', 'يمكنك المقارنة والاختيار الآن')} <span aria-hidden="true">{dir === 'rtl' ? '←' : '→'}</span></div>}
@@ -443,8 +449,8 @@ function MyRequests() {
                   {st === 'closed' && !selecting && (
                     <div className="px-4 sm:px-5 pb-4 -mt-1 flex justify-end">
                       <Link href={todoDeal ? `/contractor/orders/${todoDeal.id}` : deals.length === 1 ? `/contractor/orders/${deals[0].id}` : `/contractor/orders${r.ref_no ? `?q=${encodeURIComponent(String(r.ref_no))}` : ''}`}
-                        className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>
-                        {todoDeal ? buyerActionLabel(dealStage(todoDeal), locale) : L('Follow the deal', 'ڈیل دیکھیں', 'متابعة الصفقة')} <span aria-hidden="true" className="ms-1.5 inline-block rtl:rotate-180">→</span>
+                        className={`inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold ${todoDeal ? '' : 'border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5'}`} style={todoDeal ? { background: '#D4A543', color: '#071827' } : undefined}>
+                        {todoDeal ? buyerActionLabel(dealStage(todoDeal), locale) : L('View the deal', 'ڈیل دیکھیں', 'عرض الصفقة')} <span aria-hidden="true" className="ms-1.5 inline-block rtl:rotate-180">→</span>
                       </Link>
                     </div>
                   )}

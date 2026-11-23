@@ -36,7 +36,7 @@ export default function BudgetField({ value, visible, unit, locale, onChange }: 
         <span className="block text-[12px] font-semibold text-gray-700 mb-1">{label}</span>
         <div className="flex items-center gap-2">
           <input type="text" inputMode="decimal" value={value}
-            onChange={e => onChange(e.target.value.replace(/[^\d.,٠-٩٫]/g, '').slice(0, 12), visible)}
+            onChange={e => onChange(e.target.value.replace(/[^\d.,٠-٩۰-۹٫،]/g, '') /* Urdu (Persian) digits too (round-5 UX-135) */.slice(0, 12), visible)}
             className="input-field text-base sm:text-sm flex-1" placeholder={L('e.g. 150', 'مثلاً 150', 'مثلاً 150')}
             aria-label={label} />
           <span className="text-[12px] text-gray-600 whitespace-nowrap">{L('SAR', 'ریال', 'ر.س')}{unit ? ` / ${unit}` : ''}</span>

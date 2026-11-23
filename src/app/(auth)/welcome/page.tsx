@@ -24,6 +24,8 @@ export default function WelcomePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [converted, setConverted] = useState(false) // admin turned this buyer into a supplier (238): no buyer choice
+  // a former company team member: both choices again, with a word on why he is here (round-5 UX-104)
+  const [leftTeam, setLeftTeam] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -33,7 +35,15 @@ export default function WelcomePage() {
       const { data: p } = await supabase.from('profiles').select('role, role_chosen_at, full_name').eq('id', user.id).single()
       if (p?.role_chosen_at || p?.role === 'admin') { window.location.href = '/onboarding'; return }
       if (p?.full_name) setName(p.full_name)
-      if (p?.role === 'supplier') { setConverted(true); setIntent('provider') }
+      let former = new URLSearchParams(window.location.search).get('left') === 'team'
+      if (!former && p?.role === 'supplier') {
+        try {
+          const { data: m } = await supabase.from('company_members').select('status').eq('user_id', user.id).neq('status', 'active').limit(1)
+          former = (m || []).length > 0
+        } catch {}
+      }
+      if (former) setLeftTeam(true)
+      else if (p?.role === 'supplier') { setConverted(true); setIntent('provider') }
       const k = new URLSearchParams(window.location.search).get('kind') || rememberedSignupKind()
       if (k === 'company' || k === 'independent') { setIntent('provider'); setKind(k) }
       setReady(true)
@@ -71,7 +81,9 @@ export default function WelcomePage() {
         <div className="w-full max-w-[460px] space-y-6 animate-slide-up">
           <div>
             <h1 className="text-[26px] font-bold text-navy">{L('Welcome to Taseerak', 'تسعیرک میں خوش آمدید', 'أهلاً بك في تسعيرك')}</h1>
-            <p className="text-ink-2 text-sm mt-1">{L('A few short steps and you are in.', 'چند مختصر قدم اور آپ شروع کر سکتے ہیں۔', 'خطوات قليلة وتبدأ.')}</p>
+            <p className="text-ink-2 text-sm mt-1">{leftTeam
+              ? L('You left the company team. Choose how you want to use Taseerak now.', 'آپ نے کمپنی کی ٹیم چھوڑ دی ہے۔ اب منتخب کریں کہ آپ تسعیرک کیسے استعمال کرنا چاہتے ہیں۔', 'غادرت فريق الشركة. اختر كيف تريد استخدام تسعيرك الآن.')
+              : L('A few short steps and you are in.', 'چند مختصر قدم اور آپ شروع کر سکتے ہیں۔', 'خطوات قليلة وتبدأ.')}</p>
           </div>
 
           {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3" role="alert">{error}</div>}

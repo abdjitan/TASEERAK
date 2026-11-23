@@ -348,7 +348,7 @@ ul { list-style: none; }
 @keyframes rowIn { to { opacity: 1; transform: none; } }
 .demo-row .mat { font-weight: 700; font-size: 14px; }
 .demo-row .qty { font-size: 12.5px; color: rgba(255,255,255,.6); font-variant-numeric: tabular-nums; }
-.demo-row .badge { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 100px; color: #fff; white-space: nowrap; }
+.demo-row .badge { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 100px; color: #fff; white-space: nowrap; }
 .demo-arrow { text-align: center; margin: 4px 0 12px; color: rgba(255,255,255,.4); }
 .demo-arrow svg { width: 22px; height: 22px; }
 .demo-foot { margin-top: 14px; display: flex; align-items: center; justify-content: space-between; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,.16); font-size: 13px; }
@@ -519,7 +519,7 @@ ul { list-style: none; }
 .seller-pill { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 100px; border: 1.5px solid #D4A543; color: #F5C55B; font-weight: 800; transition: background .2s; }
 .seller-pill:hover { background: rgba(212,165,67,.14); }
 /* the chips no longer cover «مثال توضيحي» */
-#taseerak-landing .hero-visual .float-chip.c1 { inset-inline-end: auto !important; inset-inline-start: 18px; top: -22px; }
+#taseerak-landing .hero-visual .float-chip.c1 { inset-inline-end: auto !important; inset-inline-start: 18px; top: -50px; } /* round-5 UX-087: clear of the card title */
 
 /* UX-136: nav links never wrap; the open mobile menu carries the languages and «تسجيل الدخول» */
 .nav-links a { white-space: nowrap; }
@@ -571,3 +571,7 @@ ul { list-style: none; }
   .stat-grid, .foot-top { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
   .foot-brand { grid-column: 1 / -1; }
 }
+/* round-5 UX-129: the section badges in the demo stay readable on phones, on their own line */
+@media (max-width: 480px) { .demo-row .badge { font-size: 12.5px; display: inline-block; margin-top: 4px; } }
+/* round-5 UX-128: the note under the WhatsApp footer link */
+.footer .foot-note { display: block; font-size: 12px; opacity: .7; margin-top: -4px; }

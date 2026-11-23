@@ -12,6 +12,8 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { Check } from 'lucide-react'
 import PublicFooter from '@/components/public/PublicFooter'
+import Glyph from '@/components/shared/Glyph'
+import { teamInviteHintText } from '@/lib/cr'
 
 export const INVITE_CODE_KEY = 'tsk_invite_code'
 
@@ -19,7 +21,7 @@ export default function JoinSupplier() {
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [href, setHref] = useState('/register?role=supplier&only=1&email=1')
-  const [carry, setCarry] = useState('') // ?ref= and ?i= passed on to the kind links
+  const [carry, setCarry] = useState('') // ?ref= passed on to the kind links (round-5 UX-162: straight to the sign-up form)
 
   useEffect(() => {
     const qs = new URLSearchParams(window.location.search)
@@ -30,14 +32,13 @@ export default function JoinSupplier() {
     if (ref) setHref('/register?role=supplier&only=1&email=1&ref=' + encodeURIComponent(ref))
     const keep = new URLSearchParams()
     if (ref) keep.set('ref', ref)
-    if (raw && code !== 'direct') keep.set('i', code)
-    setCarry(keep.toString() ? '?' + keep.toString() : '')
+    setCarry(keep.toString() ? '&' + keep.toString() : '')
     createClient().rpc('log_invite_open', { p_code: code }).then(() => {}, () => {})
   }, [])
 
   const points: [string, string][] = [
     [L('Requests that match what you sell', 'آپ کے سامان کے مطابق درخواستیں', 'طلبات تناسب ما تبيعه'), L('Only requests for your materials and your area reach you.', 'صرف آپ کے سامان اور علاقے کی درخواستیں۔', 'لا تصلك إلا طلبات موادك ومنطقتك.')],
-    [L('Price from your phone', 'اپنے فون سے قیمت دیں', 'سعّر من جوالك'), L('A price per item, with VAT and delivery, in a minute.', 'ہر آئٹم کی قیمت، ٹیکس اور ڈیلیوری کے ساتھ، ایک منٹ میں۔', 'سعر لكل مادة، مع الضريبة والتوصيل، خلال دقيقة.')],
+    [L('Price from your phone', 'اپنے فون سے قیمت دیں', 'سعّر من جوالك'), L('A final price per item, delivery included, in a minute.', 'ہر آئٹم کی حتمی قیمت، ڈیلیوری سمیت، ایک منٹ میں۔', 'سعر نهائي لكل مادة شامل التوصيل، خلال دقيقة.')],
     [L('Competitors never see your prices', 'حریف آپ کی قیمتیں نہیں دیکھتے', 'منافسوك لا يرون أسعارك'), L('Only the buyer sees your offer.', 'آپ کی پیشکش صرف خریدار دیکھتا ہے۔', 'لا يرى عرضك إلا المشتري.')],
     [L('Free during launch', 'لانچ کے دوران مفت', 'مجاني خلال الإطلاق'), L('No commission and no subscription.', 'کوئی کمیشن یا سبسکرپشن نہیں۔', 'بلا عمولة ولا اشتراك.')],
   ]
@@ -45,10 +46,10 @@ export default function JoinSupplier() {
   return (
     <div className="min-h-screen bg-canvas" dir={dir}>
       <header className="bg-white border-b border-line">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center" aria-label={L('Taseerak home', 'تسعیرک مرکزی صفحہ', 'تسعيرك، الرئيسية')}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-11 w-auto" />
+            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-14 w-auto" />
           </Link>
           <LanguageSwitcher variant="minimal" />
         </div>
@@ -80,14 +81,16 @@ export default function JoinSupplier() {
           <div className="bg-white rounded-2xl p-4 border border-line">
             <div className="font-bold text-navy text-sm flex items-center gap-1.5"><SellerIcon name="building" /> {L('Company or shop', 'کمپنی یا دکان', 'شركة أو محل')}</div>
             <p className="text-[13px] text-ink-2 mt-1 leading-relaxed">{L('Your commercial registration (the unified number, 10 digits starting with 7). You can add your sales team later.', 'آپ کی تجارتی رجسٹریشن (متحدہ نمبر، 7 سے شروع 10 ہندسے)۔ سیلز ٹیم بعد میں شامل کر سکتے ہیں۔', 'سجلك التجاري (الرقم الوطني الموحد: 10 أرقام يبدأ بـ7)، ويمكنك إضافة فريق المبيعات لاحقاً.')}</p>
-            <Link href={`/join/company${carry}`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a company or shop', 'کمپنی یا دکان کے طور پر رجسٹر کریں', 'سجّل كشركة أو محل')}</Link>
+            <Link href={`/register?role=supplier&kind=company&only=1&email=1${carry}`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a company or shop', 'کمپنی یا دکان کے طور پر رجسٹر کریں', 'سجّل كشركة أو محل')}</Link>
           </div>
           <div className="bg-white rounded-2xl p-4 border border-line">
             <div className="font-bold text-navy text-sm flex items-center gap-1.5"><SellerIcon name="user" /> {L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}</div>
             <p className="text-[13px] text-ink-2 mt-1 leading-relaxed">{L('No registration needed. The deal is done with the source shop’s invoice in the buyer’s name, up to 15,000 SAR per deal at first.', 'رجسٹریشن کی ضرورت نہیں۔ سودا خریدار کے نام ماخذ دکان کی انوائس سے ہوتا ہے، شروع میں فی سودا 15,000 ریال تک۔', 'لا تحتاج سجلاً تجارياً. تتم الصفقة بفاتورة المحل المصدر باسم المشتري، وحدّك في البداية 15,000 ر.س للصفقة.')}</p>
-            <Link href={`/join/seller${carry}`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a pricing agent', 'قیمت ایجنٹ کے طور پر رجسٹر کریں', 'سجّل كوسيط تسعير')}</Link>
+            <Link href={`/register?role=supplier&kind=independent&only=1&email=1${carry}`} className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Sign up as a pricing agent', 'قیمت ایجنٹ کے طور پر رجسٹر کریں', 'سجّل كوسيط تسعير')}</Link>
           </div>
         </div>
+        {/* round-5 UX-097: an employee joins through the owner's invitation, not with the company's CR */}
+        <p className="mt-2.5 text-[13px] text-ink-2 leading-relaxed"><Glyph e="👥" /> {teamInviteHintText(locale)}</p>
 
         {/* UX-103: three steps */}
         <h2 className="mt-8 mb-3 text-lg font-extrabold text-navy">{L('How it works', 'یہ کیسے کام کرتا ہے', 'كيف يعمل؟')}</h2>

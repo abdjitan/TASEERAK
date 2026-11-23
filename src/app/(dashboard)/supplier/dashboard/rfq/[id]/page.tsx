@@ -1,10 +1,12 @@
 'use client'
 
-import { loadVisibleBudgets } from '@/lib/budget'
+import LoadError from '@/components/shared/LoadError'
+import { useFocusTrap } from '@/components/shared/useFocusTrap'
+import { loadVisibleBudgets, budgetShown } from '@/lib/budget'
 import { useEffect, useRef, useState } from 'react'
 import { friendlyError } from '@/lib/friendlyError'
 import { arCount, daysText } from '@/lib/text'
-import { Check, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronUp, Star, X } from 'lucide-react'
 import AutoTr from '@/components/shared/AutoTr'
 import PageLoader from '@/components/shared/PageLoader'
 import Link from 'next/link'
@@ -19,7 +21,8 @@ import { getNav } from '@/lib/nav'
 import DealProtection from '@/components/shared/DealProtection'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { getProductLabel, getSubCategoryLabel, getUnitLabel, detectSubCategory, getRegionLabel, CITIES_BY_REGION } from '@/types'
-import { lineComparable } from '@/lib/vat'
+
+import { dealTotal } from '@/lib/dealTotal'
 import { validateUploadFile } from '@/lib/fileSafety'
 import { isExpired, formatTimeLeft, formatDateTime, deadlineUrgency, urgencyStyle } from '@/lib/deadline'
 import { tierAllowed, SOURCE_TYPES, AVAILABILITY, sellerKindOf, WARRANTY_OPTIONS, offerOutcome, outcomeTitle, offerHasOpenDiscount, sourceTypesFor, fixSourceFor, sectionLabelOf } from '@/lib/sellers'
@@ -168,7 +171,7 @@ export default function SupplierRFQPage() {
     setNewPrice('')
     // UX-138: the server scales the line prices too: read the offer again so the lines match the new total
     Promise.resolve(supabase.from('offers').select('*').eq('id', existingOffer.id).maybeSingle()).then(({ data }: any) => { if (data) setExistingOffer(data) }, () => {})
-    const tag = existingOffer?.vat_status === 'not_registered' ? L(' (final price)', ' (حتمی قیمت)', ' (سعر نهائي)') : L(' incl. VAT', ' ٹیکس سمیت', ' شاملة الضريبة')
+    const tag = existingOffer?.vat_status === 'not_registered' ? L(' (final price)', ' (حتمی قیمت)', ' (سعر نهائي)') : L(' incl. VAT', ' VAT سمیت', ' شاملة الضريبة')
     setActionNotice(L(`Your new price was sent to the buyer: ${shown} SAR${tag}`, `آپ کی نئی قیمت خریدار کو بھیج دی گئی: ${shown} ریال${tag}`, `أُرسل السعر الجديد إلى المشتري: ${shown} ر.س${tag}`))
   }
   // UX-030 / round-2 UX-033: «I can't lower the price» closes the discount request (decline_price_reduction:
@@ -196,7 +199,7 @@ export default function SupplierRFQPage() {
     }
     setExistingOffer((o: any) => o ? { ...o, reduction_deadline: null } : o)
     setDeclinedConv(!isMember)
-    setActionNotice(L('The buyer was told that your current price is the best you can offer.', 'خریدار کو بتا دیا گیا کہ آپ کی موجودہ قیمت آپ کی بہترین پیشکش ہے۔', 'أُبلغ المشتري أن سعرك الحالي هو أفضل ما تقدّمه.'))
+    setActionNotice(L('The buyer was told that your current price is the best you can offer.', 'خریدار کو بتا دیا گیا کہ آپ کی موجودہ قیمت آپ کی بہترین آفر ہے۔', 'أُبلغ المشتري أن سعرك الحالي هو أفضل ما تقدّمه.'))
   }
 
   // UX-031: «تعديل العرض» within 15 minutes: the sent offer becomes a draft on this device first, so
@@ -291,8 +294,15 @@ export default function SupplierRFQPage() {
     setActionNotice(L('Your reply was sent to the buyer.', 'آپ کا جواب خریدار کو بھیج دیا گیا۔', 'أُرسل ردّك إلى المشتري.'))
   }
 
+  // round-5 UX-047: a failed load says so (with a retry) instead of «no longer available» or an empty form
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   useEffect(() => {
     async function load() {
+      setLoadFailed(false)
+      try { await loadInner() } catch (e) { console.error('supplier rfq load', e); setLoadFailed(true) } finally { setLoading(false) }
+    }
+    async function loadInner() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
@@ -305,13 +315,14 @@ export default function SupplierRFQPage() {
       // suppliers, H1; null if this supplier may not see it) and the buyer identity (revealed by the
       // server only after acceptance).
       // round-4 UX-013: the CR gate is read in this first round, so the form never shows and then disappears
-      const [{ data: canQuote }, { data: actRaw }, { data: rfqData }, { data: cInfo }, gateRes] = await Promise.all([
+      const [{ data: canQuote }, { data: actRaw }, { data: rfqData, error: rfqErr }, { data: cInfo }, gateRes] = await Promise.all([
         supabase.rpc('can_submit_quote'),
         supabase.rpc('acting_uid'),
         supabase.rpc('get_rfq_for_viewer', { p_rfq_id: id }),
         supabase.rpc('get_rfq_contractor', { p_rfq_id: id }),
         Promise.resolve(supabase.rpc('my_pricing_gate')).then((r: any) => r, () => ({ data: null })),
       ])
+      if (rfqErr) throw rfqErr
       setCrRequired((gateRes as any)?.data?.cr_required === true)
       setVerified(canQuote === true)
       if (canQuote !== true) {
@@ -339,13 +350,14 @@ export default function SupplierRFQPage() {
         }).catch(() => {})
 
       // Round 2 — everything about this supplier and its offer on this request.
-      const [{ data: me }, { data: secRows }, { data: specRows }, { data: myPrices }, { data: offerData }] = await Promise.all([
+      const [{ data: me }, { data: secRows }, { data: specRows }, { data: myPrices }, { data: offerData, error: offerErr }] = await Promise.all([
         supabase.from('profiles').select('provider_type, supplier_tier, vat_number').eq('id', actId).single(),
         supabase.from('profile_sectors').select('sector').eq('profile_id', actId),
         supabase.from('profile_specialties').select('specialty').eq('profile_id', actId),
         supabase.from('live_prices').select('product_name, price, unit, region').eq('supplier_id', actId),
         supabase.from('offers').select('*').eq('rfq_id', id).eq('supplier_id', actId).maybeSingle(),
       ])
+      if (offerErr) throw offerErr
       // A company quotes from its own stock by default; an independent seller must say where the
       // price comes from.
       const indep = sellerKindOf(me?.provider_type) === 'independent'
@@ -380,7 +392,9 @@ export default function SupplierRFQPage() {
         // skip saved prices tied to a different region (region-agnostic saved prices still apply).
         const rfqRegion = rfqData?.region || null
         const priceMap: Record<string, number> = {}
-        try { Object.assign(priceMap, JSON.parse(localStorage.getItem('tsk_myprices_' + actId) || '{}')) } catch {}
+        // round-5 UX-005: v2 keeps every remembered price on the «أسعاري» basis (VAT-inclusive / final);
+        // the old tsk_myprices_ record mixed bases, so it is ignored.
+        try { Object.assign(priceMap, JSON.parse(localStorage.getItem('tsk_myprices2_' + actId) || '{}')) } catch {}
         for (const pr of (myPrices || [])) {
           if (rfqRegion && pr.region && pr.region !== rfqRegion) continue
           const key = `${pr.product_name}__${pr.unit || ''}`
@@ -445,6 +459,12 @@ export default function SupplierRFQPage() {
           }, () => {})
         }
         if (offerData.status === 'accepted') {
+          // round-5 UX-050: after the award the seller issues the invoice in the buyer's name: read the buyer's
+          // profile (phone for WhatsApp, VAT number) as the deal statement does; quiet if RLS refuses it
+          const ci: any = Array.isArray(cInfo) ? cInfo[0] : cInfo
+          const buyerId = (rfqData as any)?.contractor_id || ci?.id
+          if (buyerId) Promise.resolve(supabase.from('profiles').select('full_name, company_name_ar, company_name_en, phone, contact_phone, vat_number').eq('id', buyerId).maybeSingle())
+            .then(({ data: bp }: any) => { if (bp) setContractorInfo((c: any) => ({ ...(c || {}), ...Object.fromEntries(Object.entries(bp).filter(([, v]) => v != null && v !== '')) })) }, () => {})
           const { data: rev } = await supabase.from('reviews').select('id').eq('reviewer_id', offerData.supplier_id).eq('offer_id', offerData.id).limit(1)
           if (rev && rev.length) setCDone(true)
           // round-4 UX-087: the rating the buyer gave me on this deal (reviews are readable by signed-in users)
@@ -453,10 +473,9 @@ export default function SupplierRFQPage() {
         }
       }
 
-      setLoading(false)
     }
     load()
-  }, [id])
+  }, [id, reloadKey])
 
   useEffect(() => {
     if (loading || typeof window === 'undefined' || window.location.hash !== '#deal') return
@@ -657,6 +676,9 @@ export default function SupplierRFQPage() {
     singleWarranty, attributes, extras, delivMode, delivAmount, payTerms, vatIncluded, src, allDays,
   })
   const draftBase = useRef<string | null>(null)
+  // round-5 UX-141: the hide dialog keeps focus inside, closes on Escape, and returns focus to its opener
+  const dismissRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(dismissRef, showDismiss, { lockScroll: true })
   useEffect(() => {
     if (loading || !draftKey || existingOffer || success) return
     if (draftBase.current === null) { draftBase.current = draftJson; return } // the state as loaded
@@ -891,7 +913,7 @@ export default function SupplierRFQPage() {
         : (insertError as any).hint === 'EMAIL_NOT_VERIFIED' || (insertError.message || '').includes('وثّق بريدك')
         ? L('Verify your email first (Settings → a code by email), then send the offer.', 'پہلے اپنی ای میل تصدیق کریں (ترتیبات ← ای میل کوڈ)، پھر آفر بھیجیں۔', 'وثّق بريدك الإلكتروني أولاً من الإعدادات (يصلك رمز على البريد)، ثم أرسل العرض.')
         : (insertError as any).hint === 'PHONE_NOT_VERIFIED' || (insertError.message || '').includes('وثّق رقم جوالك')
-        ? L('Verify your mobile number first (Settings → a code by text message), then send the offer.', 'پہلے اپنا موبائل نمبر تصدیق کریں (ترتیبات ← ٹیکسٹ میسج کوڈ)، پھر آفر بھیجیں۔', 'وثّق رقم جوالك أولاً من الإعدادات (يصلك رمز برسالة نصية)، ثم أرسل العرض.')
+        ? L('Verify your mobile number first (Settings → a code by text message), then send the offer.', 'پہلے اپنا موبائل نمبر تصدیق کریں (ترتیبات ← VATٹ میسج کوڈ)، پھر آفر بھیجیں۔', 'وثّق رقم جوالك أولاً من الإعدادات (يصلك رمز برسالة نصية)، ثم أرسل العرض.')
         : (insertError.message || '').includes('خارج نطاق مناطق تغطيتك')
         ? L('This request is outside the regions you cover.', 'یہ درخواست آپ کے علاقوں سے باہر ہے۔', 'هذا الطلب خارج نطاق مناطق تغطيتك.')
         : L('Could not send the offer — please try again.', 'آفر نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال العرض — حاول مرة أخرى.'))
@@ -900,9 +922,9 @@ export default function SupplierRFQPage() {
     }
     setNextRfq(findNextRfq(id as string))
     try {
-      const k = 'tsk_myprices_' + (actingId || user.id)
+      const k = 'tsk_myprices2_' + (actingId || user.id) // round-5 UX-005
       const mem = JSON.parse(localStorage.getItem(k) || '{}')
-      for (const it of (itemPricesPayload || []) as any[]) if (Number(it.unit_price) > 0) mem[`${it.product_name}__${it.unit || ''}`] = Number(it.unit_price)
+      for (const it of (itemPricesPayload || []) as any[]) if (Number(it.unit_price) > 0) { const up = Number(it.unit_price); mem[`${it.product_name}__${it.unit || ''}`] = +(noVat || vatIncluded !== false ? up : up * 1.15).toFixed(2) }
       const keys = Object.keys(mem); if (keys.length > 400) for (const x of keys.slice(0, keys.length - 400)) delete mem[x]
       localStorage.setItem(k, JSON.stringify(mem))
     } catch {}
@@ -1016,15 +1038,15 @@ export default function SupplierRFQPage() {
     ur: {
       back: '→ واپس', details: 'درخواست کی تفصیلات', sector: 'زمرہ', qty: 'مقدار',
       location: 'مقام', contractor: 'خریدار', spec: 'تفصیلات', notes: 'نوٹس',
-      delivery: 'ڈیلیوری', vat: 'ٹیکس انوائس', required: 'ضروری', notRequired: 'غیر ضروری',
-      submitOffer: 'قیمت پیش کریں', totalPrice: 'کل قیمت (SAR)', unitPrice: 'فی یونٹ قیمت (SAR)',
-      verifyFirst: 'پیشکش دینے کے لیے پروفائل مکمل کریں', verifyFirstSub: 'اپنا مقام اور تخصصات منتخب کریں اور ای میل یا موبائل کی تصدیق کریں، پھر واپس آ کر قیمت دیں۔', verifyFirstCta: 'پروفائل مکمل کریں ←',
+      delivery: 'ڈیلیوری', vat: 'VAT انوائس', required: 'ضروری', notRequired: 'غیر ضروری',
+      submitOffer: 'قیمت پیش کریں', totalPrice: 'کل قیمت (ریال)', unitPrice: 'فی یونٹ قیمت (ریال)',
+      verifyFirst: 'آفر دینے کے لیے پروفائل مکمل کریں', verifyFirstSub: 'اپنا مقام اور تخصصات منتخب کریں اور ای میل یا موبائل کی تصدیق کریں، پھر واپس آ کر قیمت دیں۔', verifyFirstCta: 'پروفائل مکمل کریں ←',
       deliveryDays: 'ڈیلیوری وقت (دن)', attributes: 'پروڈکٹ کی خصوصیات',
       attrHint: 'خصوصیات شامل کریں: برانڈ، ملک، وارنٹی...',
       attrKey: 'خصوصیت', attrValue: 'تفصیل', addAttr: '+ خصوصیت شامل کریں',
       attachTitle: 'فائل منسلک کریں (کیٹلاگ)', attachHint: 'PDF، تصویر، Excel',
       attachBtn: 'کیٹلاگ یا فائل اپلوڈ کریں', removeAttach: 'ہٹائیں',
-      offerNotes: 'اضافی نوٹس', send: 'پیشکش بھیجیں ←', sending: 'بھیجا جا رہا ہے...',
+      offerNotes: 'اضافی نوٹس', send: 'آفر بھیجیں ←', sending: 'بھیجا جا رہا ہے...',
       dismiss: 'یہ درخواست میرے لیے نہیں', dismissTitle: 'یہ درخواست نظر انداز کریں؟',
       dismissSub: 'یہ درخواست دوبارہ نظر نہیں آئے گی', dismissReason: 'وجہ (اختیاری)',
       confirmDismiss: 'ہاں، درخواست چھپائیں', cancel: 'واپس',
@@ -1033,7 +1055,7 @@ export default function SupplierRFQPage() {
       dismissedTitle: 'درخواست نظر انداز', dismissedSub: 'یہ درخواست نظر نہیں آئے گی',
       backDash: 'ہوم پر واپس',
       alreadyTitle: { accepted: 'مبارک ہو، خریدار نے آپ کی آفر چن لی', rejected: 'اس بار آپ کی آفر منتخب نہیں ہوئی', pending: 'آپ کی آفر خریدار کے فیصلے کی منتظر ہے' },
-      closed: 'یہ درخواست بند ہے', closedSub: 'نئی پیشکشیں قبول نہیں',
+      closed: 'یہ درخواست بند ہے', closedSub: 'نئی آفرز قبول نہیں',
     },
   }[locale] || {}
 
@@ -1051,6 +1073,14 @@ export default function SupplierRFQPage() {
   const cleanNotes = rfq?.notes?.replace(/\n?\[مواصفات مرفقة:[^\]]+\]/, '').trim()
 
   if (loading) return <PageLoader />
+
+  if (loadFailed) return (
+    <AppShell title={L('Request details', 'درخواست کی تفصیل', 'تفاصيل الطلب')} nav={getNav('supplier', locale, '/supplier/dashboard')} dir={dir}>
+      <div className="max-w-md mx-auto">
+        <LoadError message={L('Could not load the request. Check your connection.', 'درخواست لوڈ نہیں ہو سکی۔ اپنا کنکشن چیک کریں۔', 'تعذّر تحميل الطلب، تحقّق من اتصالك.')} onRetry={() => { setLoading(true); setReloadKey(k => k + 1) }} />
+      </div>
+    </AppShell>
+  )
 
   // UX-114: a request this supplier can no longer open: inside the app shell, with a way back
   if (!rfq) return (
@@ -1072,14 +1102,15 @@ export default function SupplierRFQPage() {
           <div className="text-5xl mb-4">{success ? <Glyph e="✅" /> : <span className="text-gray-500"><Glyph e="🔒" /></span>}</div>
           <h2 className="text-xl font-bold mb-2" style={{ color: '#0B2438' }}>
             {success
-              ? (sentSummary ? L(`Offer sent: ${sentSummary.n} material${sentSummary.n === 1 ? '' : 's'}, total ${(+sentSummary.gross.toFixed(2)).toLocaleString('en-US')} SAR`, `آفر بھیج دی گئی: ${sentSummary.n} اشیاء، کل ${(+sentSummary.gross.toFixed(2)).toLocaleString('en-US')} ریال`, `أُرسل عرضك: ${arCount(sentSummary.n, 'مادة واحدة', 'مادتان', 'مواد', 'مادة')}، والإجمالي ${(+sentSummary.gross.toFixed(2)).toLocaleString('en-US')} ر.س`) : T.successTitle)
+              ? (sentSummary ? L(`Offer sent: ${sentSummary.n} material${sentSummary.n === 1 ? '' : 's'}, total ${(+sentSummary.gross.toFixed(2)).toLocaleString('en-US')} SAR${noVat ? ' (final price)' : ' incl. VAT'}`, `آفر بھیج دی گئی: ${sentSummary.n} اشیاء، کل ${(+sentSummary.gross.toFixed(2)).toLocaleString('en-US')} ریال${noVat ? ' (حتمی قیمت)' : ' VAT سمیت'}`, `أُرسل عرضك: ${arCount(sentSummary.n, 'مادة واحدة', 'مادتان', 'مواد', 'مادة')}، والإجمالي ${(+sentSummary.gross.toFixed(2)).toLocaleString('en-US')} ر.س${noVat ? ' (سعر نهائي)' : ' شاملة الضريبة'}`) : T.successTitle)
               : T.dismissedTitle}
           </h2>
           <p className={`text-sm text-gray-500 ${success && (Number(rfq?.offer_count) > 0 || rfq?.expires_at) ? 'mb-2' : 'mb-6'}`}>{success ? T.successSub : T.dismissedSub}</p>
           {/* UX-151: the competition and when the buyer decides */}
           {success && (Number(rfq?.offer_count) > 0 || (rfq?.expires_at && !isExpired(rfq.expires_at))) && (
             <div className="text-[13px] text-gray-700 mb-6 space-y-1 leading-relaxed">
-              {Number(rfq?.offer_count) > 0 && <p>{L(`Your offer is one of ${Number(rfq.offer_count)} offers on this request so far.`, `اس درخواست پر اب تک کی ${Number(rfq.offer_count)} آفرز میں سے ایک آپ کی ہے۔`, `عرضك واحد من ${arCount(Number(rfq.offer_count), 'عرض واحد', 'عرضين', 'عروض', 'عرضاً')} على هذا الطلب حتى الآن.`)}</p>}
+              {/* round-5 UX-170: offer_count was read before this offer was sent, so count it in */}
+              {Number(rfq?.offer_count) > 0 && <p>{L(`Your offer is one of ${Number(rfq.offer_count) + 1} offers on this request so far.`, `اس درخواست پر اب تک کی ${Number(rfq.offer_count) + 1} آفرز میں سے ایک آپ کی ہے۔`, `عرضك واحد من ${arCount(Number(rfq.offer_count) + 1, 'عرض واحد', 'عرضين', 'عروض', 'عرضاً')} على هذا الطلب حتى الآن.`)}</p>}
               {rfq?.expires_at && !isExpired(rfq.expires_at) && <p>{L(`Pricing closes in ${formatTimeLeft(rfq.expires_at, 'en')}; the buyer usually chooses after that.`, `قیمت دینے کی مہلت ${formatTimeLeft(rfq.expires_at, 'ur')} میں ختم ہوگی؛ خریدار عموماً اس کے بعد انتخاب کرتا ہے۔`, `تنتهي مهلة التسعير بعد ${formatTimeLeft(rfq.expires_at, 'ar')}، ويختار المشتري عادةً بعد انتهائها.`)}</p>}
             </div>
           )}
@@ -1091,8 +1122,8 @@ export default function SupplierRFQPage() {
           )}
           {dismissed && dismissError && <p role="alert" className="text-sm text-red-600 mb-3">{dismissError}</p>}
           {success && srcSaveFailed && (
-            <div role="alert" className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-start">
-              <p className="text-sm font-semibold text-amber-900 leading-relaxed">{L('Your offer was sent, but the source shop name could not be saved. Add it now, or the buyer will not be able to choose your offer.', 'آپ کی آفر بھیج دی گئی، لیکن ماخذ دکان کا نام محفوظ نہیں ہو سکا۔ ابھی شامل کریں، ورنہ خریدار آپ کی آفر منتخب نہیں کر سکے گا۔', 'أُرسل عرضك، لكن تعذّر حفظ اسم المحل المصدر. أضِفه الآن وإلا فلن يستطيع المشتري اختيار عرضك.')}</p>
+            <div role="alert" className="mb-4 rounded-xl border border-warn-border bg-warn-bg p-3 text-start">
+              <p className="text-sm font-semibold text-warn-text leading-relaxed">{L('Your offer was sent, but the source shop name could not be saved. Add it now, or the buyer will not be able to choose your offer.', 'آپ کی آفر بھیج دی گئی، لیکن ماخذ دکان کا نام محفوظ نہیں ہو سکا۔ ابھی شامل کریں، ورنہ خریدار آپ کی آفر منتخب نہیں کر سکے گا۔', 'أُرسل عرضك، لكن تعذّر حفظ اسم المحل المصدر. أضِفه الآن وإلا فلن يستطيع المشتري اختيار عرضك.')}</p>
               <a href={`/supplier/dashboard/rfq/${id}`} className="mt-2 flex items-center justify-center min-h-[44px] rounded-xl font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Add the shop now', 'ابھی دکان شامل کریں', 'أضف المحل الآن')}</a>
             </div>
           )}
@@ -1170,9 +1201,35 @@ export default function SupplierRFQPage() {
     const ds = myItems.map((_: any, k: number) => (parseFloat(itemForms[k]?.line_total) > 0 ? (parseInt(itemForms[k]?.delivery_days) || parseInt(allDays) || 0) : -1)).filter((d: number) => d >= 0)
     return ds.length && ds.every((d: number) => d > 0) ? Math.max(...ds) : 0
   }
-  function deliveryMissing(): boolean { return maxDaysAsked > 0 && !(offeredDays() > 0) }
+  // round-5 UX-176: the delivery time is required on every offer (as in the app), not only when the buyer set a maximum
+  function deliveryMissing(): boolean { return !(offeredDays() > 0) }
   // remembered prices not taken yet (UX-113: «استخدم أسعارك السابقة» in one tap)
   const prevCount = isMultiItem ? myItems.filter((_: any, i: number) => !skipped.has(i) && !(parseFloat(itemForms[i]?.line_total) > 0) && Number(itemForms[i]?.suggest) > 0 && sameUnit(itemForms[i], i)).length : 0
+  // round-5 UX-045: switching the VAT basis after prices were typed changes what the buyer pays by 15%:
+  // ask whether to convert the typed numbers to the new basis or keep them as they are.
+  async function changeVatBasis(v: boolean) {
+    if (vatIncluded === v) return
+    const had = vatIncluded
+    const typed = isMultiItem ? itemForms.some((f: any) => parseFloat(f?.line_total) > 0 || parseFloat(f?.unit_price) > 0) : (parseFloat(unitPrice) > 0 || parseFloat(totalPrice) > 0)
+    setVatIncluded(v)
+    if (had === null || !typed) return
+    const convert = await askConfirm(L('You have prices entered. Convert them to the new basis?', 'آپ نے قیمتیں درج کی ہیں۔ کیا انہیں نئی بنیاد پر بدل دیں؟', 'لديك أسعار مدخلة. هل نحوّلها إلى الأساس الجديد؟'), {
+      title: v ? L('Prices include VAT', 'قیمتیں VAT سمیت', 'الأسعار شاملة الضريبة') : L('Prices before VAT', 'قیمتیں VAT سے پہلے', 'الأسعار قبل الضريبة'),
+      okLabel: L('Convert the prices', 'قیمتیں بدلیں', 'حوّل الأسعار'),
+      cancelLabel: L('Keep the numbers as they are', 'اعداد ویسے ہی رکھیں', 'أبقِ الأرقام كما هي'),
+    })
+    if (!convert) return
+    const k = v ? 1.15 : 1 / 1.15 // before VAT → incl. VAT multiplies by 1.15
+    const sc = (x: any, d = 2) => { const n = parseFloat(x); return n > 0 ? String(+(n * k).toFixed(d)) : x }
+    if (isMultiItem) {
+      setItemForms(prev => {
+        const next = prev.map((f: any) => ({ ...f, unit_price: sc(f.unit_price, 4), line_total: sc(f.line_total), install_total: sc(f.install_total), saved: false }))
+        recomputeGoods(next)
+        return next
+      })
+    } else if (parseFloat(unitPrice) > 0 && !singleByTotal) handleSingleUnitChange(sc(unitPrice, 4))
+    else if (parseFloat(totalPrice) > 0) handleTotalChange(sc(totalPrice))
+  }
   function takeAllPrev() {
     myItems.forEach((_: any, i: number) => {
       const f = itemForms[i]
@@ -1192,8 +1249,8 @@ export default function SupplierRFQPage() {
   const vatHint = noVat
     ? L('Enter the final price the buyer pays; nothing is added to it.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا؛ اس پر کچھ اضافہ نہیں ہوگا۔', 'أدخل السعر النهائي الذي يدفعه المشتري؛ لا يُضاف إليه أي مبلغ.')
     : vatIncluded
-      ? L('Your prices include 15% VAT. This is what the buyer pays.', 'آپ کی قیمتیں 15% ٹیکس سمیت ہیں۔ یہی رقم خریدار ادا کرے گا۔', 'أسعارك شاملة ضريبة القيمة المضافة (15%)، وهذا ما يدفعه المشتري.')
-      : L('Your prices are before VAT; 15% is added on top for the buyer.', 'آپ کی قیمتیں ٹیکس سے پہلے ہیں؛ خریدار کے لیے 15% اوپر شامل ہوگا۔', 'أسعارك قبل الضريبة، وتُضاف إليها 15% للمشتري.')
+      ? L('Your prices include 15% VAT. This is what the buyer pays.', 'آپ کی قیمتیں 15% VAT سمیت ہیں۔ یہی رقم خریدار ادا کرے گا۔', 'أسعارك شاملة ضريبة القيمة المضافة (15%)، وهذا ما يدفعه المشتري.')
+      : L('Your prices are before VAT; 15% is added on top for the buyer.', 'آپ کی قیمتیں VAT سے پہلے ہیں؛ خریدار کے لیے 15% اوپر شامل ہوگا۔', 'أسعارك قبل الضريبة، وتُضاف إليها 15% للمشتري.')
   const vatBlock = (
     <div id="vat-basis" className="mb-4 space-y-2">
       {/* the buyer asked for a VAT invoice (quick request option): the seller must see it before pricing */}
@@ -1204,14 +1261,23 @@ export default function SupplierRFQPage() {
             : L('Issue it with your VAT number.', 'اپنے VAT نمبر سے جاری کریں۔', 'أصدرها له برقمك الضريبي.')}</span>
         </p>
       )}
+      {/* round-5 UX-046: a company without a VAT number is priced as «سعر نهائي»: say so before it prices */}
+      {noVat && !isIndependent && (
+        <div role="status" className="rounded-xl border border-warn-border bg-warn-bg px-3 py-2 text-[13px] text-warn-text leading-relaxed">
+          <p className="font-semibold"><Glyph e="⚠" /> {L('You have not added your VAT number, so your price will be treated as a final price with no VAT. If your business is VAT-registered, add the number first.', 'آپ نے اپنا VAT نمبر شامل نہیں کیا، اس لیے آپ کی قیمت VAT کے بغیر حتمی قیمت سمجھی جائے گی۔ اگر آپ کا ادارہ VAT میں رجسٹرڈ ہے تو پہلے نمبر شامل کریں۔', 'لم تُضف رقمك الضريبي، فسيُعامل سعرك كسعر نهائي بلا ضريبة. إن كانت منشأتك مسجّلة فأضف الرقم أولاً.')}</p>
+          {actingId && user?.id && actingId !== user.id
+            ? <p className="mt-1">{L('The account owner adds the VAT number.', 'VAT نمبر اکاؤنٹ کا مالک شامل کرتا ہے۔', 'يضيف مالك الحساب الرقم الضريبي.')}</p>
+            : <Link href="/settings?tab=profile" className="mt-1.5 inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Add the VAT number', 'VAT نمبر شامل کریں', 'أضف الرقم الضريبي')}</Link>}
+        </div>
+      )}
       {/* UX-148: a neutral note (not a warning colour); the chips come right after it */}
       <p className="text-[13px] rounded-xl bg-[#f4f6f9] px-3 py-2 text-gray-700"><Glyph e="🧾" /> {vatHint}</p>
       {/* owner 2026-11-19: a VAT-registered seller may type net prices (price lists are often before VAT) */}
       {!noVat && (
-        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={L('VAT basis of your prices', 'قیمتوں میں ٹیکس', 'أساس الضريبة في أسعارك')}>
+        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={L('VAT basis of your prices', 'قیمتوں میں VAT', 'أساس الضريبة في أسعارك')}>
           {([true, false] as const).map(v => (
-            <button key={String(v)} type="button" role="radio" aria-checked={vatIncluded === v} onClick={() => setVatIncluded(v)} className={chip(vatIncluded === v) + ' justify-center'}>
-              {vatIncluded === v && <Check className="w-4 h-4" aria-hidden />}{v ? L('Prices include VAT', 'قیمتیں ٹیکس سمیت', 'الأسعار شاملة الضريبة') : L('Prices before VAT', 'قیمتیں ٹیکس سے پہلے', 'الأسعار قبل الضريبة')}
+            <button key={String(v)} type="button" role="radio" aria-checked={vatIncluded === v} onClick={() => changeVatBasis(v)} className={chip(vatIncluded === v) + ' justify-center'}>
+              {vatIncluded === v && <Check className="w-4 h-4" aria-hidden />}{v ? L('Prices include VAT', 'قیمتیں VAT سمیت', 'الأسعار شاملة الضريبة') : L('Prices before VAT', 'قیمتیں VAT سے پہلے', 'الأسعار قبل الضريبة')}
             </button>
           ))}
         </div>
@@ -1248,7 +1314,7 @@ export default function SupplierRFQPage() {
                 <Glyph e="⏰" /> {L('Pricing deadline', 'قیمت دینے کی آخری تاریخ', 'مهلة التسعير')}: {expired ? L('ended', 'ختم', 'انتهت') : formatTimeLeft(rfq.expires_at, locale)}
               </div>
             )}
-            <div className={`rounded-lg px-2.5 py-1.5 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200 text-amber-900 font-semibold' : 'bg-[#f4f6f9] text-gray-600'}`}>
+            <div className={`rounded-lg px-2.5 py-1.5 ${rfq.delivery_required ? 'bg-warn-bg border border-warn-border text-warn-text font-semibold' : 'bg-[#f4f6f9] text-gray-600'}`}>
               <Glyph e="🚚" /> {L('Delivery', 'ڈیلیوری', 'التوصيل')}: {rfq.delivery_required ? `${L('required', 'ضروری', 'مطلوب')}${placeLabel(rfq) ? ` — ${placeLabel(rfq)}` : ''}` : L('not required', 'ضروری نہیں', 'غير مطلوب')}
             </div>
             {cleanNotes && (
@@ -1263,7 +1329,8 @@ export default function SupplierRFQPage() {
           </div>
           {/* the materials table is for the read-only states; while pricing, the cards below show them */}
           {!pricingOpen && (<>
-          {rfqIsMulti && myItems.length > 0 && (
+          {/* round-5 UX-170: once an offer exists, its own item list shows the materials (no second table) */}
+          {rfqIsMulti && myItems.length > 0 && !existingOffer && (
             <div className="my-4">
               <h3 className="font-bold text-sm mb-2 text-[#0B2438]"><Glyph e="🧾" /> {L('Materials in your specialty', 'آپ کے تخصص کا مال', 'المواد ضمن تخصصك')} ({myItems.length})</h3>
               <p className="text-[12px] text-gray-500 mb-2">{L('You only see the materials in your specialty.', 'آپ کو صرف آپ کے تخصص کا مال دکھایا جاتا ہے۔', 'تظهر لك فقط المواد ضمن تخصصك.')}</p>
@@ -1332,7 +1399,12 @@ export default function SupplierRFQPage() {
             // round-2 UX-010: the outcome reads the request status too: a cancelled or expired request is not a loss
             const oc = offerOutcome(st, rfq.status)
             const ended = oc === 'cancelled' || oc === 'expired'
-            const tone = oc === 'won' ? 'border-emerald-300 bg-emerald-50' : oc !== 'pending' ? 'border-gray-200 bg-gray-50' : 'border-[#D4A543]/50 bg-[#D4A543]/5'
+            // round-5 UX-049: the buyer declined this offer while the request is still open (no rival won yet)
+            const declinedOpen = oc === 'lost' && rfq.status === 'open'
+            // round-5 UX-052: a deal the admins closed; UX-053: an advance payment is still awaited
+            const dealClosed = st === 'accepted' && !!existingOffer.deal_closed_at
+            const advanceDue = st === 'accepted' && existingOffer.payment_terms === 'advance' && existingOffer.payment_status !== 'paid' && !existingOffer.supplier_delivered_at && !existingOffer.received_at
+            const tone = dealClosed ? 'border-gray-200 bg-gray-50' : oc === 'won' ? 'border-emerald-300 bg-emerald-50' : oc !== 'pending' ? 'border-gray-200 bg-gray-50' : 'border-[#D4A543]/50 bg-[#D4A543]/5'
             const partial = myAwards && Array.isArray(existingOffer.item_prices) && myAwards.idx.size < existingOffer.item_prices.length
             const shownTotal = Number(partial ? myAwards!.total : existingOffer.total_price) || 0
             const fmt = (n: number) => (+n.toFixed(2)).toLocaleString('en-US')
@@ -1340,9 +1412,9 @@ export default function SupplierRFQPage() {
             const net = existingOffer.vat_included === false && !notReg
             return (
           <div className={`rounded-2xl p-5 sm:p-6 shadow-sm border text-center ${tone}`}>
-            <div className="text-4xl mb-2">{oc === 'won' ? <Glyph e="🎉" /> : ended ? <span className="text-gray-500"><Glyph e="🔒" /></span> : oc === 'lost' ? <span className="text-gray-500"><Glyph e="📭" /></span> : <Glyph e="⏳" />}</div>
+            <div className="text-4xl mb-2">{dealClosed ? <span className="text-gray-500"><Glyph e="🔒" /></span> : oc === 'won' ? <Glyph e="🎉" /> : ended ? <span className="text-gray-500"><Glyph e="🔒" /></span> : oc === 'lost' ? <span className="text-gray-500"><Glyph e="📭" /></span> : <Glyph e="⏳" />}</div>
             <h3 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>
-              {outcomeTitle(oc, locale)}
+              {dealClosed ? L('This deal was cancelled by an admin decision', 'یہ سودا انتظامیہ کے فیصلے سے منسوخ کر دیا گیا', 'أُلغيت هذه الصفقة بقرار الإدارة') : declinedOpen ? L('The buyer declined your offer', 'خریدار نے آپ کی آفر سے معذرت کر لی', 'اعتذر المشتري عن عرضك') : outcomeTitle(oc, locale)}
             </h3>
             {partial && (
               <p className="text-sm font-bold text-emerald-800 mb-1">{L(`Chosen for ${myAwards!.idx.size} of ${existingOffer.item_prices.length} items — supply only those`, `${existingOffer.item_prices.length} میں سے ${myAwards!.idx.size} اشیاء کے لیے منتخب — صرف وہی سپلائی کریں`, `اختيرت في ${myAwards!.idx.size} من ${arCount(existingOffer.item_prices.length, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')}، فورّد هذه المواد فقط`)}</p>
@@ -1352,16 +1424,16 @@ export default function SupplierRFQPage() {
               {notReg
                 ? L(`${fmt(shownTotal)} SAR (final price)`, `${fmt(shownTotal)} ریال (حتمی قیمت)`, `${fmt(shownTotal)} ر.س (سعر نهائي)`)
                 : net
-                  ? L(`${fmt(shownTotal)} SAR before VAT · ${fmt(shownTotal * 1.15)} SAR incl. VAT, which is what the buyer sees`, `${fmt(shownTotal)} ریال ٹیکس سے پہلے · ${fmt(shownTotal * 1.15)} ریال ٹیکس سمیت، جو خریدار دیکھتا ہے`, `${fmt(shownTotal)} ر.س قبل الضريبة · ${fmt(shownTotal * 1.15)} ر.س شاملة الضريبة، وهو ما يراه المشتري`)
-                  : L(`${fmt(shownTotal)} SAR incl. VAT`, `${fmt(shownTotal)} ریال ٹیکس سمیت`, `${fmt(shownTotal)} ر.س شاملة الضريبة`)}
+                  ? L(`${fmt(shownTotal)} SAR before VAT · ${fmt(shownTotal * 1.15)} SAR incl. VAT, which is what the buyer sees`, `${fmt(shownTotal)} ریال VAT سے پہلے · ${fmt(shownTotal * 1.15)} ریال VAT سمیت، جو خریدار دیکھتا ہے`, `${fmt(shownTotal)} ر.س قبل الضريبة · ${fmt(shownTotal * 1.15)} ر.س شاملة الضريبة، وهو ما يراه المشتري`)
+                  : L(`${fmt(shownTotal)} SAR incl. VAT`, `${fmt(shownTotal)} ریال VAT سمیت`, `${fmt(shownTotal)} ر.س شاملة الضريبة`)}
             </p>
             {/* UX-016: the price guarantee: until when, and a renewal once it ran out (the buyer sees «expired») */}
             {oc === 'pending' && existingOffer.price_valid_until && (() => {
               const until = new Date(existingOffer.price_valid_until).getTime()
               if (until > Date.now()) return <p className="text-[13px] text-gray-600 mt-1">{L(`Your price is guaranteed until ${formatDateTime(existingOffer.price_valid_until)}.`, `آپ کی قیمت ${formatDateTime(existingOffer.price_valid_until)} تک پکی ہے۔`, `سعرك مضمون حتى ${formatDateTime(existingOffer.price_valid_until)}.`)}</p>
               return (
-                <div role="status" className="mt-3 text-start rounded-xl border border-amber-300 bg-amber-50 p-3">
-                  <p className="text-sm font-semibold text-amber-900 leading-relaxed">{L('Your price guarantee has ended, and the buyer sees this. Renew the price so your offer can still be chosen.', 'آپ کی قیمت کی ضمانت ختم ہو گئی ہے اور خریدار یہ دیکھتا ہے۔ قیمت کی تجدید کریں تاکہ آپ کی آفر منتخب ہو سکے۔', 'انتهت مدة ضمان سعرك، ويرى المشتري ذلك. جدّد السعر ليبقى عرضك قابلاً للاختيار.')}</p>
+                <div role="status" className="mt-3 text-start rounded-xl border border-warn-border bg-warn-bg p-3">
+                  <p className="text-sm font-semibold text-warn-text leading-relaxed">{L('Your price guarantee has ended, and the buyer sees this. Renew the price so your offer can still be chosen.', 'آپ کی قیمت کی ضمانت ختم ہو گئی ہے اور خریدار یہ دیکھتا ہے۔ قیمت کی تجدید کریں تاکہ آپ کی آفر منتخب ہو سکے۔', 'انتهت مدة ضمان سعرك، ويرى المشتري ذلك. جدّد السعر ليبقى عرضك قابلاً للاختيار.')}</p>
                   {isMember ? (
                     <p className="text-[13px] text-gray-600 mt-1">{L('The account owner can renew it.', 'اکاؤنٹ کا مالک اس کی تجدید کر سکتا ہے۔', 'يستطيع صاحب الحساب تجديده.')}</p>
                   ) : (
@@ -1384,7 +1456,13 @@ export default function SupplierRFQPage() {
             {ended && (
               <p className="text-[13px] text-gray-600 mt-2 leading-relaxed">{L('This does not count against your results. We will alert you when a new matching request arrives.', 'یہ آپ کے نتائج میں شمار نہیں ہوگا۔ نئی مماثل درخواست آنے پر ہم آپ کو بتائیں گے۔', 'لا يُحتسب هذا في نتائجك، وسننبّهك فور وصول طلب جديد مطابق.')}</p>
             )}
-            {oc === 'lost' && (
+            {declinedOpen && (
+              <div className="mt-2">
+                <p className="text-[13px] text-gray-600 leading-relaxed">{L('The request is still open. You can message the buyer to find out what suits them.', 'درخواست ابھی کھلی ہے۔ آپ خریدار کو پیغام بھیج کر جان سکتے ہیں کہ انہیں کیا مناسب ہے۔', 'ما زال الطلب مفتوحاً، ويمكنك مراسلة المشتري لمعرفة ما يناسبه.')}</p>
+                {!isMember && <button type="button" onClick={() => openConversation()} className="mt-2 inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{L('Message the buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>}
+              </div>
+            )}
+            {oc === 'lost' && !declinedOpen && (
               <div className="mt-2">
                 <p className="text-[13px] text-gray-600 leading-relaxed">
                   {lostReason === 'price'
@@ -1414,13 +1492,21 @@ export default function SupplierRFQPage() {
                 <a href="#deal-dispute" className="mt-1 inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-red-800 underline underline-offset-2">{isMember ? L('See the report', 'رپورٹ دیکھیں', 'اطّلع على البلاغ') : L('See the report and reply', 'رپورٹ دیکھیں اور جواب دیں', 'اطّلع على البلاغ وردّ عليه')} <span aria-hidden="true">{FWD}</span></a>
               </div>
             )}
-            {st === 'accepted' && (
+            {dealClosed && (
+              <div className="mt-2 text-[13px] text-gray-600 leading-relaxed">
+                {existingOffer.dispute_resolution && <p><span className="font-semibold">{L('Reason: ', 'وجہ: ', 'السبب: ')}</span><span dir="auto">{existingOffer.dispute_resolution}</span></p>}
+                <p>{L('Do not deliver the goods for this deal. Steps that were not completed stay as they are.', 'اس سودے کا سامان نہ پہنچائیں۔ جو مراحل مکمل نہیں ہوئے وہ ویسے ہی رہیں گے۔', 'لا تسلّم بضاعة هذه الصفقة، وتبقى الخطوات غير المكتملة كما هي.')}</p>
+              </div>
+            )}
+            {st === 'accepted' && !dealClosed && (
               isMember ? (
                 // round-4 UX-079: one observer note for a team member (no owner-only instructions)
                 <p className="text-[13px] font-semibold text-gray-600 mt-2 leading-relaxed">{L('The account owner manages this deal (invoice, delivery, payment and rating); you can follow its stages here.', 'یہ سودا اکاؤنٹ کا مالک سنبھالتا ہے (انوائس، ڈیلیوری، ادائیگی اور ریٹنگ)؛ آپ اس کے مراحل یہاں دیکھ سکتے ہیں۔', 'يدير صاحب الحساب هذه الصفقة (الفاتورة والتسليم والدفع والتقييم)، ويمكنك متابعة مراحلها هنا.')}</p>
               ) : (
                 <div className="mt-3">
-                  <p className="text-[13px] font-semibold text-gray-700 mb-2">{existingOffer.supplier_delivered_at
+                  <p className="text-[13px] font-semibold text-gray-700 mb-2">{advanceDue
+                    ? L('Waiting for the buyer’s advance payment. You can upload your invoice now, and deliver the goods after you receive the payment.', 'خریدار کی پیشگی ادائیگی کا انتظار ہے۔ آپ ابھی اپنی انوائس اپ لوڈ کر سکتے ہیں، اور ادائیگی ملنے کے بعد سامان پہنچائیں۔', 'بانتظار دفعة المشتري المقدّمة. يمكنك رفع فاتورتك الآن، وسلّم البضاعة بعد استلام الدفعة.')
+                    : existingOffer.supplier_delivered_at
                     ? L('Delivery confirmed. Follow the receipt and payment in the deal.', 'ڈیلیوری کی تصدیق ہو گئی۔ وصولی اور ادائیگی سودے میں دیکھیں۔', 'تمّ تأكيد التسليم. تابِع الاستلام والدفع في الصفقة.')
                     : (existingOffer.invoice_url || existingOffer.supplier_invoice_url)
                       ? L('You uploaded the invoice — confirm the delivery once you deliver the goods.', 'آپ نے انوائس اپ لوڈ کر دی — مال پہنچانے پر ڈیلیوری کی تصدیق کریں۔', 'رفعتَ الفاتورة — أكّد التسليم عند إيصال البضاعة.')
@@ -1451,7 +1537,7 @@ export default function SupplierRFQPage() {
                 {existingOffer.reduction_note && <div className="text-sm text-gray-700 mb-2">«{existingOffer.reduction_note}»</div>}
                 <label htmlFor="new-price" className="block text-[13px] font-bold text-gray-700 mb-1">
                   {net
-                    ? L(`New total before VAT (less than ${fmt(cur)} SAR)`, `نئی کل رقم ٹیکس سے پہلے (${fmt(cur)} ریال سے کم)`, `الإجمالي الجديد قبل الضريبة (أقل من ${fmt(cur)} ر.س)`)
+                    ? L(`New total before VAT (less than ${fmt(cur)} SAR)`, `نئی کل رقم VAT سے پہلے (${fmt(cur)} ریال سے کم)`, `الإجمالي الجديد قبل الضريبة (أقل من ${fmt(cur)} ر.س)`)
                     : L(`New total price (less than ${fmt(cur)} SAR)`, `نئی کل قیمت (${fmt(cur)} ریال سے کم)`, `السعر الإجمالي الجديد (أقل من ${fmt(cur)} ر.س)`)}
                 </label>
                 {/* UX-169: ready discounts in one tap, with what the buyer saves */}
@@ -1465,11 +1551,11 @@ export default function SupplierRFQPage() {
                 <input id="new-price" type="text" inputMode="decimal" value={newPrice} onChange={(e: any) => { setNewPrice(latinNum(e.target.value)); setActionError('') }} aria-invalid={bad}
                   className={`input-field text-base sm:text-sm ${bad ? 'border-red-400' : ''}`} />
                 {np > 0 && np < cur && (
-                  <p className="text-[13px] font-semibold text-[#0F6E56] mt-1">{L(`The buyer saves ${fmt((cur - np) * (net ? 1.15 : 1))} SAR${notReg ? '' : ' incl. VAT'} at this price`, `اس قیمت پر خریدار ${fmt((cur - np) * (net ? 1.15 : 1))} ریال${notReg ? '' : ' (ٹیکس سمیت)'} بچائے گا`, `سيوفّر المشتري ${fmt((cur - np) * (net ? 1.15 : 1))} ر.س${notReg ? '' : ' شاملة الضريبة'} بهذا السعر`)}</p>
+                  <p className="text-[13px] font-semibold text-[#0F6E56] mt-1">{L(`The buyer saves ${fmt((cur - np) * (net ? 1.15 : 1))} SAR${notReg ? '' : ' incl. VAT'} at this price`, `اس قیمت پر خریدار ${fmt((cur - np) * (net ? 1.15 : 1))} ریال${notReg ? '' : ' (VAT سمیت)'} بچائے گا`, `سيوفّر المشتري ${fmt((cur - np) * (net ? 1.15 : 1))} ر.س${notReg ? '' : ' شاملة الضريبة'} بهذا السعر`)}</p>
                 )}
                 {bad
                   ? <p className="text-[13px] font-semibold text-red-600 mt-1">{L('The new price must be lower than your current price.', 'نئی قیمت آپ کی موجودہ قیمت سے کم ہونی چاہیے۔', 'يجب أن يكون السعر الجديد أقل من سعرك الحالي.')}</p>
-                  : np > 0 && net && <p className="text-[13px] text-gray-600 mt-1">{L(`The buyer will see ${fmt(np * 1.15)} SAR incl. VAT.`, `خریدار ${fmt(np * 1.15)} ریال ٹیکس سمیت دیکھے گا۔`, `سيرى المشتري ${fmt(np * 1.15)} ر.س شاملة الضريبة.`)}</p>}
+                  : np > 0 && net && <p className="text-[13px] text-gray-600 mt-1">{L(`The buyer will see ${fmt(np * 1.15)} SAR incl. VAT.`, `خریدار ${fmt(np * 1.15)} ریال VAT سمیت دیکھے گا۔`, `سيرى المشتري ${fmt(np * 1.15)} ر.س شاملة الضريبة.`)}</p>}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button type="button" onClick={submitReduction} disabled={reducing || bad || !(np > 0)} className="flex-1 min-w-[10rem] min-h-[44px] px-4 rounded-xl font-extrabold text-[#071827] text-sm disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{reducing ? L('Sending...', 'بھیجا جا رہا ہے...', 'جارٍ الإرسال...') : L('Send the new price', 'نئی قیمت بھیجیں', 'إرسال السعر الجديد')}</button>
                   {/* round-2 UX-033: closes the discount request for the owner and team members alike */}
@@ -1510,7 +1596,7 @@ export default function SupplierRFQPage() {
             {canEditOffer && !expired && (
               <div className="mt-4 bg-white border border-[#0B2438]/15 rounded-xl p-3 text-start">
                 {isMember && existingOffer.submitted_by && existingOffer.submitted_by !== user?.id && (
-                  <div className="text-[13px] font-bold text-amber-800 mb-2">{L('This is a colleague\'s offer — check with them before editing it.', 'یہ ساتھی کی آفر ہے — بدلنے سے پہلے ان سے بات کریں۔', 'هذا عرض زميلك؛ تواصل معه قبل تعديله.')}</div>
+                  <div className="text-[13px] font-bold text-warn-text mb-2">{L('This is a colleague\'s offer — check with them before editing it.', 'یہ ساتھی کی آفر ہے — بدلنے سے پہلے ان سے بات کریں۔', 'هذا عرض زميلك؛ تواصل معه قبل تعديله.')}</div>
                 )}
                 <p className="text-[13px] text-gray-700 mb-1 leading-relaxed">
                   <Glyph e="⏱" /> <strong>{L(`${editMinsLeft} min left to edit.`, `ترمیم کے لیے ${editMinsLeft} منٹ باقی۔`, `باقي ${arCount(editMinsLeft, 'دقيقة واحدة', 'دقيقتان', 'دقائق', 'دقيقة')} للتعديل.`)}</strong> {L('You can edit your offer within 15 minutes of sending it.', 'بھیجنے کے 15 منٹ کے اندر آپ اپنی آفر میں ترمیم کر سکتے ہیں۔', 'يمكنك تعديل عرضك خلال 15 دقيقة من إرساله.')}
@@ -1549,7 +1635,7 @@ export default function SupplierRFQPage() {
                       {it.install_offered === false && <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 whitespace-nowrap">{L('without installation', 'تنصیب کے بغیر', 'بدون تركيب')}</span>}
                       <span className={`font-bold text-sm whitespace-nowrap ${won === false ? 'line-through' : ''}`} style={{ color: '#0B2438' }}>{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}
                         {/* round-4 UX-142: the VAT basis of each line */}
-                        <span className="ms-1 text-[12px] font-semibold text-gray-500">{notReg ? L('(final)', '(حتمی)', '(نهائي)') : net ? L('(before VAT)', '(ٹیکس سے پہلے)', '(قبل الضريبة)') : L('(incl. VAT)', '(ٹیکس سمیت)', '(شامل الضريبة)')}</span>
+                        <span className="ms-1 text-[12px] font-semibold text-gray-500">{notReg ? L('(final)', '(حتمی)', '(نهائي)') : net ? L('(before VAT)', '(VAT سے پہلے)', '(قبل الضريبة)') : L('(incl. VAT)', '(VAT سمیت)', '(شامل الضريبة)')}</span>
                       </span>
                     </span>
                   </div>
@@ -1560,11 +1646,11 @@ export default function SupplierRFQPage() {
 
             {isIndependent && <SourceShopCard offerId={existingOffer.id} editable={st === 'pending'} locale={locale} />}
             {/* partial award: confirm or lower the delivery / other charges for the materials won (191) */}
-            {st === 'accepted' && existingOffer.extras_pending && !isMember && (
+            {st === 'accepted' && !dealClosed && existingOffer.extras_pending && !isMember && (
               <PartialExtrasConfirm offer={existingOffer} locale={locale} wonCount={myAwards?.idx.size} onDone={(o: any) => setExistingOffer(o)} />
             )}
-            {st === 'accepted' && existingOffer.extras_pending && isMember && (
-              <p className="mt-3 text-[13px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-start">{L('The delivery charges for the chosen materials are waiting for the account owner to confirm them.', 'منتخب مال کی ڈیلیوری فیس اکاؤنٹ کے مالک کی تصدیق کی منتظر ہے۔', 'رسوم التوصيل للمواد المختارة بانتظار تأكيد صاحب الحساب.')}</p>
+            {st === 'accepted' && !dealClosed && existingOffer.extras_pending && isMember && (
+              <p className="mt-3 text-[13px] font-semibold text-warn-text bg-warn-bg border border-warn-border rounded-xl px-3 py-2 text-start">{L('The delivery charges for the chosen materials are waiting for the account owner to confirm them.', 'منتخب مال کی ڈیلیوری فیس اکاؤنٹ کے مالک کی تصدیق کی منتظر ہے۔', 'رسوم التوصيل للمواد المختارة بانتظار تأكيد صاحب الحساب.')}</p>
             )}
 
             {/* 🛡 حماية الصفقة — إدارة الصفقة وتتبّعها؛ عضو الفريق يراها للقراءة (UX-126) */}
@@ -1576,7 +1662,7 @@ export default function SupplierRFQPage() {
                   isSupplier={true}
                   otherParty={contractorInfo}
                   poNumber={`PO-${existingOffer.id.slice(0, 8).toUpperCase()}`}
-                  amount={lineComparable(myAwards && Array.isArray(existingOffer.item_prices) && myAwards.idx.size < existingOffer.item_prices.length ? myAwards.total : existingOffer.total_price, existingOffer)}
+                  amount={dealTotal(existingOffer, myAwards && Array.isArray(existingOffer.item_prices) && myAwards.idx.size < existingOffer.item_prices.length ? myAwards.total : null)}
                   myId={user?.id}
                   sellerTier={myTier}
                   rfqRefNo={rfq.ref_no}
@@ -1591,7 +1677,7 @@ export default function SupplierRFQPage() {
                 {buyerReview ? (<>
                   <p className="font-bold text-[#0B2438]">
                     {L('The buyer\'s rating of you: ', 'خریدار کی آپ کو ریٹنگ: ', 'تقييم المشتري لك: ')}
-                    <span className="text-[#D4A543]" aria-label={`${buyerReview.rating}/5`}>{'★'.repeat(buyerReview.rating)}<span className="text-gray-300">{'★'.repeat(5 - buyerReview.rating)}</span></span>
+                    <span className="inline-flex items-center gap-0.5 align-middle" role="img" aria-label={`${buyerReview.rating}/5`}>{[1, 2, 3, 4, 5].map(n => <Star key={n} aria-hidden className={`w-4 h-4 ${n <= buyerReview.rating ? 'text-[#9D7425] fill-[#9D7425]' : 'text-[#C7CED6]'}`} />)}</span>
                     <span className="ms-1 text-gray-600 font-semibold">({buyerReview.rating}/5)</span>
                   </p>
                   {buyerReview.comment && <p className="mt-1 text-gray-700 leading-relaxed whitespace-pre-line" dir="auto">{buyerReview.comment}</p>}
@@ -1612,7 +1698,7 @@ export default function SupplierRFQPage() {
                     <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>{L('Rate the buyer', 'خریدار کی ریٹنگ دیں', 'قيّم المشتري')} <Glyph e="⭐" /></div>
                     <div className="flex gap-1 mb-2" role="radiogroup" aria-label={L('Rating', 'ریٹنگ', 'التقييم')}>
                       {[1, 2, 3, 4, 5].map((n) => (
-                        <button key={n} type="button" role="radio" aria-checked={cRating === n} aria-label={`${n}/5`} onClick={() => setCRating(n)} className={`w-11 h-11 text-2xl leading-none ${n <= cRating ? 'text-[#D4A543]' : 'text-gray-300'}`}>★</button>
+                        <button key={n} type="button" role="radio" aria-checked={cRating === n} aria-label={`${n}/5`} onClick={() => setCRating(n)} className={`w-11 h-11 grid place-items-center ${n <= cRating ? 'text-[#9D7425]' : 'text-[#C7CED6]'}`}><Star aria-hidden className={`w-7 h-7 ${n <= cRating ? 'fill-[#9D7425]' : ''}`} /></button>
                       ))}
                     </div>
                     <textarea value={cComment} onChange={(e: any) => setCComment(e.target.value)} rows={2} className="input-field text-base sm:text-sm" aria-label={L('Comment', 'تبصرہ', 'تعليق')} placeholder={L('Optional comment about the buyer…', 'خریدار کے بارے میں اختیاری تبصرہ…', 'تعليق اختياري عن المشتري…')} />
@@ -1744,7 +1830,7 @@ export default function SupplierRFQPage() {
                   {/* round-4: a path forward when the text message does not arrive (the SMS provider may be down) */}
                   {!ok && k === 'contact' && (
                     <p className="text-[12px] text-gray-600 mt-1 leading-relaxed">
-                      {L('No code by text message? Confirm your email instead; either one is enough. Still stuck? ', 'ٹیکسٹ میسج سے کوڈ نہیں آیا؟ اس کے بجائے ای میل کی تصدیق کریں؛ دونوں میں سے ایک کافی ہے۔ پھر بھی مسئلہ ہے؟ ', 'لم يصلك رمز الرسالة النصية؟ أكّد بريدك الإلكتروني بدلاً منه، فأحدهما يكفي. ما زلت متوقفاً؟ ')}
+                      {L('No code by text message? Confirm your email instead; either one is enough. Still stuck? ', 'VATٹ میسج سے کوڈ نہیں آیا؟ اس کے بجائے ای میل کی تصدیق کریں؛ دونوں میں سے ایک کافی ہے۔ پھر بھی مسئلہ ہے؟ ', 'لم يصلك رمز الرسالة النصية؟ أكّد بريدك الإلكتروني بدلاً منه، فأحدهما يكفي. ما زلت متوقفاً؟ ')}
                       <Link href="/support" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline underline-offset-2">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
                     </p>
                   )}
@@ -1755,9 +1841,12 @@ export default function SupplierRFQPage() {
         ) : (
           <form id="offer-form" onSubmit={handleSubmit} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 scroll-mt-24">
             <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{T.submitOffer}</h3>
+            {rfq?.buyer_is_home === true && (
+              <p className="text-[13px] rounded-xl bg-[#0B2438]/5 border border-[#0B2438]/15 px-3 py-2 mb-4 text-[#0B2438] leading-relaxed"><Glyph e="🏘" /> {L('This request is from an individual buyer for their home: write in plain words, and state the brand and the final price.', 'یہ درخواست ایک انفرادی خریدار کی اپنے گھر کے لیے ہے: سادہ الفاظ میں لکھیں، اور برانڈ اور حتمی قیمت بتائیں۔', 'الطلب من مشتري فرد لمنزله: اكتب بلغة بسيطة، واذكر العلامة التجارية والسعر النهائي.')}</p>
+            )}
             {/* round-2 UX-081: warn in the last 15 minutes (the form closes at the deadline) */}
             {lastMinutes && (
-              <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-sm font-bold px-3 py-2 mb-4">
+              <div role="alert" className="rounded-xl border border-warn-border bg-warn-bg text-warn-text text-sm font-bold px-3 py-2 mb-4">
                 <Glyph e="⏰" /> {L(`${formatTimeLeft(rfq.expires_at, locale)} left before pricing closes. Send your offer now.`, `قیمت دینے کی مہلت ختم ہونے میں ${formatTimeLeft(rfq.expires_at, locale)} باقی۔ ابھی اپنی آفر بھیجیں۔`, `باقي ${formatTimeLeft(rfq.expires_at, locale)} على انتهاء مهلة التسعير، أرسل عرضك الآن.`)}
               </div>
             )}
@@ -1770,7 +1859,7 @@ export default function SupplierRFQPage() {
             )}
             {/* UX-043: the buyer edited the request after my offer, which cleared it: say so, and refill matching lines */}
             {prevSent && !draftRestored && (
-              <div role="status" className="rounded-xl border border-amber-300 bg-amber-50 text-amber-900 text-sm px-3 py-2.5 mb-4">
+              <div role="status" className="rounded-xl border border-warn-border bg-warn-bg text-warn-text text-sm px-3 py-2.5 mb-4">
                 <p className="font-semibold leading-relaxed">{L('The buyer edited this request after you sent your offer, so the previous offer was cancelled. Review the materials and quantities, then send your offer again.', 'آپ کی آفر بھیجنے کے بعد خریدار نے یہ درخواست بدل دی، اس لیے پچھلی آفر منسوخ ہو گئی۔ مال اور مقداریں دیکھیں، پھر اپنی آفر دوبارہ بھیجیں۔', 'عدّل المشتري هذا الطلب بعد إرسال عرضك، فأُلغي العرض السابق. راجِع المواد والكميات ثم أرسل عرضك من جديد.')}</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button type="button" onClick={() => {
@@ -1789,7 +1878,7 @@ export default function SupplierRFQPage() {
                     setPrevSent(null)
                     try { localStorage.removeItem(`tsk_offer_sent_${actingId || user?.id}_${id}`) } catch {}
                   }} className="inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{L('Fill in my previous prices', 'میری پچھلی قیمتیں بھریں', 'املأ أسعاري السابقة')}</button>
-                  <button type="button" onClick={() => { setPrevSent(null); try { localStorage.removeItem(`tsk_offer_sent_${actingId || user?.id}_${id}`) } catch {} }} className="inline-flex items-center min-h-[44px] px-3 text-sm font-semibold text-amber-900 underline">{L('Dismiss', 'بند کریں', 'إخفاء')}</button>
+                  <button type="button" onClick={() => { setPrevSent(null); try { localStorage.removeItem(`tsk_offer_sent_${actingId || user?.id}_${id}`) } catch {} }} className="inline-flex items-center min-h-[44px] px-3 text-sm font-semibold text-warn-text underline">{L('Dismiss', 'بند کریں', 'إخفاء')}</button>
                 </div>
               </div>
             )}
@@ -1813,6 +1902,8 @@ export default function SupplierRFQPage() {
                   <p className="text-[13px] text-gray-600 mb-3">
                     {L('Enter the unit price of each material you can supply; the total is calculated for you, and you do not have to price them all.', 'جو مال آپ دے سکتے ہیں اس کی فی یونٹ قیمت درج کریں؛ کل رقم خود بنے گی، اور سب کی قیمت دینا ضروری نہیں۔', 'أدخل سعر الوحدة لكل مادة تستطيع توفيرها، ويُحسب الإجمالي تلقائياً، ولست ملزماً بتسعير الكل.')}
                   </p>
+                  {/* round-5 UX-045: the VAT basis comes before the saved-prices strip */}
+                  {vatBlock}
                   {/* round-4 UX-142: saved prices are offered at the top of the list, not after every card */}
                   {prevCount > 0 && (
                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/5 px-3 py-2">
@@ -1820,7 +1911,6 @@ export default function SupplierRFQPage() {
                       <button type="button" onClick={takeAllPrev} className="min-h-[44px] px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Fill them', 'بھریں', 'املأها')}</button>
                     </div>
                   )}
-                  {vatBlock}
                   <div className="space-y-3">
                     {myItems.map((it: any, i: any) => {
                       const form = itemForms[i] || {}
@@ -1879,8 +1969,8 @@ export default function SupplierRFQPage() {
                                   </p>
                                 )}
                                 {nt.missing.length > 0 && (
-                                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5 flex flex-wrap items-center gap-2">
-                                    <span className="text-xs text-amber-800 flex-1 min-w-[12rem]">
+                                  <div className="rounded-xl border border-warn-border bg-warn-bg p-2.5 flex flex-wrap items-center gap-2">
+                                    <span className="text-xs text-warn-text flex-1 min-w-[12rem]">
                                       <Glyph e="⚠" /> <b>{L('Not specified by the buyer:', 'خریدار نے نہیں بتایا:', 'لم يحدّد المشتري:')}</b> {nt.missing.join(L(', ', '، ', '، '))}
                                     </span>
                                     {isMember ? (
@@ -1915,7 +2005,7 @@ export default function SupplierRFQPage() {
                           {/* the price, right away: the unit price (the total follows); a custom unit prices the total */}
                           {skipped.has(i) ? (
                             <div className="mt-3 flex items-center justify-between gap-2 rounded-xl bg-gray-50 border border-dashed border-gray-300 px-3 py-2.5">
-                              <span className="text-xs font-bold text-gray-500">{L("You don't carry this item — it won't be in your offer", 'یہ آئٹم آپ کے پاس نہیں — پیشکش میں شامل نہیں', 'لا توفّر هذه المادة — لن تدخل في عرضك')}</span>
+                              <span className="text-xs font-bold text-gray-500">{L("You don't carry this item — it won't be in your offer", 'یہ آئٹم آپ کے پاس نہیں — آفر میں شامل نہیں', 'لا توفّر هذه المادة — لن تدخل في عرضك')}</span>
                               <button type="button" onClick={() => {
                                 // round-4 UX-063: «تراجع» brings back what the line held (price, install, details)
                                 const bk = skipBackup[i]
@@ -1956,13 +2046,20 @@ export default function SupplierRFQPage() {
                             // R23: the buyer chose to show a cap (before VAT). Pricing above it is allowed; soft warning only.
                             const b = buyerBudgets[it.item_index]
                             const up = +form.unit_price || 0
+                            // round-5 UX-003: an unregistered seller's price is final (what the buyer pays), so compare it
+                            // with the budget as the buyer typed it (VAT-inclusive), not with the stored pre-VAT value.
+                            const bShown = budgetShown(b)
                             const upPre = noVat ? up : (vatIncluded ? up / 1.15 : up)
-                            const over = sameUnit(form, i) && up > 0 && upPre - b > 0.005
+                            const over = sameUnit(form, i) && up > 0 && (noVat ? up - bShown > 0.005 : upPre - b > 0.005)
                             return (
                               <div className="mt-1.5 text-[12px] leading-relaxed">
+                                {noVat ? (
+                                  <span className="font-semibold text-gray-700">{L('Buyer budget', 'خریدار کا بجٹ', 'ميزانية المشتري')}: {L('up to', 'تک', 'حتى')} {bShown.toLocaleString('en-US')} {SAR} / {getUnitLabel(it.unit, locale)} <span className="text-gray-500 font-normal">({L('the amount the buyer pays', 'وہ رقم جو خریدار ادا کرتا ہے', 'المبلغ الذي يدفعه المشتري')})</span></span>
+                                ) : (<>
                                 <span className="font-semibold text-gray-700">{L('Buyer budget', 'خریدار کا بجٹ', 'ميزانية المشتري')}: {L('up to', 'تک', 'حتى')} {b.toLocaleString('en-US')} {SAR} / {getUnitLabel(it.unit, locale)}</span>{' '}
-                                <span className="text-gray-500">({L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')}{!noVat ? ` · ≈ ${(b * 1.15).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}` : ''})</span>
-                                {over && <div className="text-amber-700 font-semibold mt-0.5">{L('Your price is above the buyer budget. You can still send it.', 'آپ کی قیمت خریدار کے بجٹ سے زیادہ ہے۔ آپ پھر بھی بھیج سکتے ہیں۔', 'سعرك أعلى من ميزانية المشتري، ويمكنك إرساله مع ذلك.')}</div>}
+                                <span className="text-gray-500">({L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')} · ≈ {bShown.toLocaleString('en-US', { maximumFractionDigits: 2 })} {L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')})</span>
+                                </>)}
+                                {over && <div className="text-warn-text font-semibold mt-0.5">{L('Your price is above the buyer budget. You can still send it.', 'آپ کی قیمت خریدار کے بجٹ سے زیادہ ہے۔ آپ پھر بھی بھیج سکتے ہیں۔', 'سعرك أعلى من ميزانية المشتري، ويمكنك إرساله مع ذلك.')}</div>}
                               </div>
                             )
                           })()}
@@ -1982,7 +2079,7 @@ export default function SupplierRFQPage() {
                               {(() => {
                                 // UX-030: the amount on the button is the one that will be filled, with its VAT basis
                                 const v = prevVal(Number(form.suggest)).toLocaleString('en-US')
-                                const b = noVat ? '' : vatIncluded === false ? L(' before VAT', ' ٹیکس سے پہلے', ' قبل الضريبة') : L(' incl. VAT', ' ٹیکس سمیت', ' شامل الضريبة')
+                                const b = noVat ? '' : vatIncluded === false ? L(' before VAT', ' VAT سے پہلے', ' قبل الضريبة') : L(' incl. VAT', ' VAT سمیت', ' شامل الضريبة')
                                 return form.suggestSub
                                   ? L(`Use your saved price for ${getSubCategoryLabel(it.sector, form.suggestSub, 'en')} (${v} ${SAR}${b})`, `${getSubCategoryLabel(it.sector, form.suggestSub, 'ur')} کی محفوظ قیمت استعمال کریں (${v} ${SAR}${b})`, `استخدم سعرك المحفوظ لفئة ${getSubCategoryLabel(it.sector, form.suggestSub, 'ar')} (${v} ${SAR}${b})`)
                                   : L(`Use your previous price (${v} ${SAR}${b})`, `اپنی پچھلی قیمت استعمال کریں (${v} ${SAR}${b})`, `استخدم سعرك السابق (${v} ${SAR}${b})`)
@@ -1995,13 +2092,27 @@ export default function SupplierRFQPage() {
                             const up = +form.unit_price || 0
                             if (!mk || !(up > 0) || !sameUnit(form, i)) return null
                             // round-2 UX-080: compare before VAT on both sides, and say so
-                            const upPre = noVat ? up : (vatIncluded ? up / 1.15 : up)
+                            // round-5 UX-003: an unregistered seller's final price is compared with what buyers pay
+                            // (the pre-VAT market average × 1.15); registered sellers keep the before-VAT comparison.
+                            if (noVat) {
+                              const paid = mk.avg * 1.15
+                              const dn = Math.round(((up - paid) / paid) * 100)
+                              const avgN = `(${paid.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${SAR})`
+                              if (Math.abs(dn) < 3) return <p className="text-[12px] mt-1 text-gray-500">{L('In line with the average buyers pay', 'خریداروں کی ادا کردہ اوسط کے مطابق', 'سعرك قريب من متوسط ما يدفعه المشترون')} {avgN}</p>
+                              return (
+                                <p className={`text-[12px] mt-1 font-semibold ${dn > 0 ? 'text-[#8F6820]' : 'text-[#0B2438]'}`}>
+                                  {dn > 0 ? L(`Your price is ${dn}% above the average buyers pay`, `آپ کی قیمت خریداروں کی ادا کردہ اوسط سے ${dn}% زیادہ ہے`, `سعرك أعلى من متوسط ما يدفعه المشترون بـ ${dn}%`) : L(`Your price is ${-dn}% below the average buyers pay`, `آپ کی قیمت خریداروں کی ادا کردہ اوسط سے ${-dn}% کم ہے`, `سعرك أقل من متوسط ما يدفعه المشترون بـ ${-dn}%`)}
+                                  <span className="text-gray-500 font-normal"> {avgN}</span>
+                                </p>
+                              )
+                            }
+                            const upPre = vatIncluded ? up / 1.15 : up
                             const d = Math.round(((upPre - mk.avg) / mk.avg) * 100)
-                            const avg = `(${mk.avg.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${SAR} ${L('before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')})`
-                            if (Math.abs(d) < 3) return <p className="text-[12px] mt-1 text-gray-500">{L('In line with the market average before VAT', 'ٹیکس سے پہلے مارکیٹ اوسط کے مطابق', 'سعرك قريب من متوسط السوق قبل الضريبة')} {avg}</p>
+                            const avg = `(${mk.avg.toLocaleString('en-US', { maximumFractionDigits: 2 })} ${SAR} ${L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')})`
+                            if (Math.abs(d) < 3) return <p className="text-[12px] mt-1 text-gray-500">{L('In line with the market average before VAT', 'VAT سے پہلے مارکیٹ اوسط کے مطابق', 'سعرك قريب من متوسط السوق قبل الضريبة')} {avg}</p>
                             return (
                               <p className={`text-[12px] mt-1 font-semibold ${d > 0 ? 'text-[#8F6820]' : 'text-[#0B2438]'}`}>
-                                {d > 0 ? L(`Your price is ${d}% above the market average before VAT`, `آپ کی قیمت ٹیکس سے پہلے مارکیٹ اوسط سے ${d}% زیادہ ہے`, `سعرك أعلى من متوسط السوق قبل الضريبة بـ ${d}%`) : L(`Your price is ${-d}% below the market average before VAT`, `آپ کی قیمت ٹیکس سے پہلے مارکیٹ اوسط سے ${-d}% کم ہے`, `سعرك أقل من متوسط السوق قبل الضريبة بـ ${-d}%`)}
+                                {d > 0 ? L(`Your price is ${d}% above the market average before VAT`, `آپ کی قیمت VAT سے پہلے مارکیٹ اوسط سے ${d}% زیادہ ہے`, `سعرك أعلى من متوسط السوق قبل الضريبة بـ ${d}%`) : L(`Your price is ${-d}% below the market average before VAT`, `آپ کی قیمت VAT سے پہلے مارکیٹ اوسط سے ${-d}% کم ہے`, `سعرك أقل من متوسط السوق قبل الضريبة بـ ${-d}%`)}
                                 <span className="text-gray-500 font-normal"> {avg}</span>
                               </p>
                             )
@@ -2025,12 +2136,12 @@ export default function SupplierRFQPage() {
                               </div>
                               <p className="text-[12px] text-gray-500">
                                 {form.no_install
-                                  ? L('Your offer will show this item without installation.', 'آپ کی پیشکش میں یہ آئٹم تنصیب کے بغیر دکھے گا۔', 'سيظهر عرضك لهذه المادة بدون تركيب.')
+                                  ? L('Your offer will show this item without installation.', 'آپ کی آفر میں یہ آئٹم تنصیب کے بغیر دکھے گا۔', 'سيظهر عرضك لهذه المادة بدون تركيب.')
                                   : noVat
                                     ? L('The installation amount for the whole quantity; 0 if it is included in the price.', 'پوری مقدار کی تنصیب کی رقم؛ قیمت میں شامل ہو تو 0۔', 'مبلغ التركيب للكمية كاملة؛ اكتب 0 إن كان مشمولاً في السعر.')
                                     : vatIncluded
                                       ? L('The installation amount for the whole quantity, including 15% VAT; 0 if it is included in the price.', 'پوری مقدار کی تنصیب کی رقم، 15% VAT سمیت؛ قیمت میں شامل ہو تو 0۔', 'مبلغ التركيب للكمية كاملة شاملاً ضريبة القيمة المضافة 15%؛ اكتب 0 إن كان مشمولاً في السعر.')
-                                      : L('The installation amount for the whole quantity, before VAT; 0 if it is included.', 'پوری مقدار کی تنصیب کی رقم، ٹیکس سے پہلے؛ شامل ہو تو 0۔', 'مبلغ التركيب للكمية كاملة قبل الضريبة؛ اكتب 0 إن كان مشمولاً.')}
+                                      : L('The installation amount for the whole quantity, before VAT; 0 if it is included.', 'پوری مقدار کی تنصیب کی رقم، VAT سے پہلے؛ شامل ہو تو 0۔', 'مبلغ التركيب للكمية كاملة قبل الضريبة؛ اكتب 0 إن كان مشمولاً.')}
                                 {line > 0 && installPart(form, it) > 0 && <> · {L('Item total', 'آئٹم کل', 'إجمالي البند')}: <b className="text-[#0B2438]">{(line + installPart(form, it)).toLocaleString('en-US')} {SAR}</b></>}
                               </p>
                             </div>
@@ -2134,7 +2245,7 @@ export default function SupplierRFQPage() {
                     const q = Number(rfq?.quantity) || 0
                     const uLabel = getUnitLabel(rfq?.unit, locale) || L('unit', 'یونٹ', 'وحدة')
                     const qtyTxt = `${q.toLocaleString('en-US')} ${getUnitLabel(rfq?.unit, locale)}`
-                    const basis = noVat ? L('final price', 'حتمی قیمت', 'سعر نهائي') : vatIncluded ? L('incl. VAT', 'ٹیکس سمیت', 'شامل الضريبة') : L('before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')
+                    const basis = noVat ? L('final price', 'حتمی قیمت', 'سعر نهائي') : vatIncluded ? L('incl. VAT', 'VAT سمیت', 'شامل الضريبة') : L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')
                     const tot = parseFloat(totalPrice) || 0
                     const byTotal = singleByTotal || !(q > 0)
                     return (
@@ -2233,11 +2344,11 @@ export default function SupplierRFQPage() {
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold"><Glyph e="🏗" /> {T.sector}</span><br/><strong>{(rfqIsMulti ? [...new Set(myItems.map((it: any) => sectionOf(it)).filter(Boolean))] : [sectionOf(rfq)].filter(Boolean)).join(' + ') || '—'}</strong></div>
             {(!Array.isArray(rfq.items) || rfq.items.length <= 1) && <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold"><Glyph e="📦" /> {T.qty}</span><br/><strong>{rfq.quantity} {getUnitLabel(rfq.unit, locale)}</strong></div>}
             <div className="bg-[#f4f6f9] rounded-lg p-3"><span className="text-gray-500 text-[12px] font-semibold"><Glyph e="📍" /> {T.location}</span><br/><strong>{placeLabel(rfq)}</strong></div>
-            <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-amber-50 border border-amber-200' : 'bg-[#f4f6f9]'}`}>
+            <div className={`rounded-lg p-3 col-span-2 ${rfq.delivery_required ? 'bg-warn-bg border border-warn-border' : 'bg-[#f4f6f9]'}`}>
               <span className="text-gray-500 text-[12px] font-semibold"><Glyph e="🚚" /> {T.delivery}</span><br/>
               {rfq.delivery_required ? (
                 <div className="flex items-center justify-between gap-2 flex-wrap mt-0.5">
-                  <strong className="text-amber-800">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
+                  <strong className="text-warn-text">{T.required}{rfq.delivery_location ? ` — ${rfq.delivery_location}` : ''}</strong>
                   {(rfq.delivery_geo || rfq.delivery_location) && (
                     <a href={rfq.delivery_geo ? `https://www.google.com/maps?q=${rfq.delivery_geo}` : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(rfq.delivery_location)}`}
                       target="_blank" rel="noopener noreferrer"
@@ -2314,9 +2425,9 @@ export default function SupplierRFQPage() {
               )}
               {/* UX-113: one delivery time for every material (a per-material time in «Details» still wins) */}
               <div id="delivery-time" className="border-t border-gray-100 pt-4">
-                <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="⏱" /> {isMultiItem ? L('Delivery time for all materials', 'تمام مال کی ڈیلیوری کا وقت', 'مدة التوصيل لكل المواد') : L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')}{maxDaysAsked > 0 && <span className="text-red-500"> *</span>}</div>
+                <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="⏱" /> {isMultiItem ? L('Delivery time for all materials', 'تمام مال کی ڈیلیوری کا وقت', 'مدة التوصيل لكل المواد') : L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')}<span aria-hidden="true"> *</span></div>
                 {maxDaysAsked > 0 && (
-                  <p className="mb-2 text-[13px] font-semibold rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-amber-800">
+                  <p className="mb-2 text-[13px] font-semibold rounded-lg bg-warn-bg border border-warn-border px-2.5 py-1.5 text-warn-text">
                     <Glyph e="⚠" /> {L(`The buyer asked for delivery within ${daysText(maxDaysAsked, 'en')} at most.`, `خریدار نے زیادہ سے زیادہ ${daysText(maxDaysAsked, 'ur')} میں ڈیلیوری مانگی ہے۔`, `طلب المشتري التوصيل خلال ${daysText(maxDaysAsked, 'ar')} كحدٍّ أقصى.`)}
                   </p>
                 )}
@@ -2332,7 +2443,7 @@ export default function SupplierRFQPage() {
                   )}
                 </div>
                 {maxDaysAsked > 0 && offeredDays() > maxDaysAsked && (
-                  <p className="mt-2 text-[13px] font-semibold rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-amber-900">
+                  <p className="mt-2 text-[13px] font-semibold rounded-lg bg-warn-bg border border-warn-border px-2.5 py-1.5 text-warn-text">
                     {L(`Your time is longer than the buyer asked for (${daysText(maxDaysAsked, 'en')}), which may lower the chance of your offer being chosen.`, `آپ کا وقت خریدار کے مانگے ہوئے وقت (${daysText(maxDaysAsked, 'ur')}) سے زیادہ ہے، اس سے آپ کی آفر چنے جانے کا امکان کم ہو سکتا ہے۔`, `مدتك أطول مما طلبه المشتري (${daysText(maxDaysAsked, 'ar')})، وقد يقلّل ذلك فرصة اختيار عرضك.`)}
                   </p>
                 )}
@@ -2386,7 +2497,7 @@ export default function SupplierRFQPage() {
                 ) : vatIncluded !== null ? (
                   <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl p-3 text-sm space-y-1.5">
                     <div className="flex items-center justify-between text-gray-600">
-                      <span>{L('Net (before VAT)', 'خالص (ٹیکس سے پہلے)', 'الصافي (قبل الضريبة)')}</span>
+                      <span>{L('Net (before VAT)', 'خالص (VAT سے پہلے)', 'الصافي (قبل الضريبة)')}</span>
                       <span className="font-semibold">{fmt(net)} {SAR}</span>
                     </div>
                     <div className="flex items-center justify-between text-gray-600">
@@ -2401,7 +2512,14 @@ export default function SupplierRFQPage() {
                 ) : null
               })()}
               {/* round-4 UX-082: the pricing agent's cap, shown while typing (not only at send) */}
-              {isIndependent && agentCap && offerTotals().gross > agentCap.cap && (
+              {/* round-5 UX-175: with several materials this is a soft note (gold, role=status): the offer can still be sent */}
+              {isIndependent && agentCap && offerTotals().gross > agentCap.cap && isMultiItem && (
+                <div role="status" className="rounded-xl border border-warn-border bg-warn-bg px-3 py-2 text-[13px] text-warn-text leading-relaxed">
+                  <p className="font-semibold"><Glyph e="⚠" /> {L(`Your offer total is above your current per-deal limit (${agentCap.cap.toLocaleString('en-US')} SAR). You can send it, but the buyer will only be able to choose from you materials whose total is within your limit.`, `آپ کی آفر کا کل آپ کی موجودہ فی سودا حد (${agentCap.cap.toLocaleString('en-US')} ریال) سے زیادہ ہے۔ آپ اسے بھیج سکتے ہیں، لیکن خریدار آپ سے صرف وہی مال منتخب کر سکے گا جس کا کل آپ کی حد سے زیادہ نہ ہو۔`, `مجموع عرضك أكبر من حدّك الحالي للصفقة (${agentCap.cap.toLocaleString('en-US')} ر.س). يمكنك إرساله، لكن لن يختار المشتري منك إلا مواد لا يتجاوز مجموعها حدّك.`)}</p>
+                  <p className="mt-0.5">{L('The limit rises with successful deals (the buyer confirmed receipt and no problem was reported).', 'حد کامیاب سودوں کے ساتھ بڑھتی ہے (خریدار نے وصولی کی تصدیق کی اور کوئی شکایت نہیں ہوئی)۔', 'يرتفع الحد مع الصفقات الناجحة (أكّد المشتري استلامها ولم يُفتح عليها بلاغ).')}</p>
+                </div>
+              )}
+              {isIndependent && agentCap && offerTotals().gross > agentCap.cap && !isMultiItem && (
                 <div role="alert" className="rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-[13px] text-red-800">
                   <p className="font-bold">{L(`Above your current per-deal limit (${agentCap.cap.toLocaleString('en-US')} SAR).`, `آپ کی موجودہ فی سودا حد (${agentCap.cap.toLocaleString('en-US')} ریال) سے زیادہ۔`, `أكبر من حدّك الحالي للصفقة (${agentCap.cap.toLocaleString('en-US')} ر.س).`)}</p>
                   <p className="mt-0.5 leading-relaxed">{L('The limit rises with successful deals (the buyer confirmed receipt and no problem was reported).', 'حد کامیاب سودوں کے ساتھ بڑھتی ہے (خریدار نے وصولی کی تصدیق کی اور کوئی شکایت نہیں ہوئی)۔', 'يرتفع الحد مع الصفقات الناجحة (أكّد المشتري استلامها ولم يُفتح عليها بلاغ).')}</p>
@@ -2420,7 +2538,8 @@ export default function SupplierRFQPage() {
                 <div>
                   <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}><Glyph e="💳" /> {L('Payment terms (optional)', 'ادائیگی کی شرائط (اختیاری)', 'شروط الدفع (اختياري)')}</div>
                   <div role="radiogroup" aria-label={L('Payment terms', 'ادائیگی کی شرائط', 'شروط الدفع')} className="flex flex-wrap gap-2">
-                    {PAYMENT_TERMS.map(pt => (
+                    {/* round-5 UX-174: no credit terms for a home buyer (needs buyer_is_home from get_rfq_for_viewer) */}
+                    {PAYMENT_TERMS.filter(pt => !(rfq?.buyer_is_home === true && (pt.key === 'net30' || pt.key === 'net60'))).map(pt => (
                       <button key={pt.key} type="button" role="radio" aria-checked={payTerms === pt.key} onClick={() => setPayTerms(payTerms === pt.key ? null : pt.key)} className={chip(payTerms === pt.key)}>
                         {payTerms === pt.key && <Check className="w-4 h-4" aria-hidden />}{locale === 'en' ? pt.en : locale === 'ur' ? pt.ur : pt.ar}
                       </button>
@@ -2476,7 +2595,7 @@ export default function SupplierRFQPage() {
                 <div className="rounded-xl px-3 py-2.5 text-sm font-bold text-center border bg-[#0B2438]/5 border-[#0B2438]/15 text-[#0B2438]" aria-live="polite">
                   {/* UX-110: the same wording the buyer reads on the offer */}
                   {noVat
-                    ? L(`The buyer will see: ${fmtG} SAR (final price, no VAT is added)`, `خریدار دیکھے گا: ${fmtG} ریال (حتمی قیمت، کوئی ٹیکس شامل نہیں ہوگا)`, `سيرى المشتري: ${fmtG} ر.س (سعر نهائي، لا تُضاف إليه ضريبة)`)
+                    ? L(`The buyer will see: ${fmtG} SAR (final price, no VAT is added)`, `خریدار دیکھے گا: ${fmtG} ریال (حتمی قیمت، کوئی VAT شامل نہیں ہوگا)`, `سيرى المشتري: ${fmtG} ر.س (سعر نهائي، لا تُضاف إليه ضريبة)`)
                     : L(`The buyer will see: ${fmtG} SAR incl. 15% VAT`, `خریدار دیکھے گا: ${fmtG} ریال (15% VAT سمیت)`, `سيرى المشتري: ${fmtG} ر.س (يشمل ضريبة القيمة المضافة 15%)`)}
                 </div>
               )}
@@ -2486,7 +2605,7 @@ export default function SupplierRFQPage() {
                 {submitting ? T.sending : T.send}
               </button>
               {block && !submitting && (
-                <button type="button" id="offer-block-reason" onClick={() => goToField(block.target)} className="flex items-start justify-center gap-1.5 w-full min-h-[44px] text-[13px] text-center font-bold text-amber-800 underline underline-offset-2" aria-live="polite"><Glyph e="⚠" /> <span>{block.text}</span></button>
+                <button type="button" id="offer-block-reason" onClick={() => goToField(block.target)} className="flex items-start justify-center gap-1.5 w-full min-h-[44px] text-[13px] text-center font-bold text-warn-text underline underline-offset-2" aria-live="polite"><Glyph e="⚠" /> <span>{block.text}</span></button>
               )}
               {error && <p role="alert" className="text-[13px] text-center font-semibold text-red-600">{error}</p>}
               <p className="text-[12px] text-center text-gray-500">{L('You can edit your offer within 15 minutes of sending; your prices and details stay as they are.', 'بھیجنے کے 15 منٹ تک آپ اپنی آفر بدل سکتے ہیں؛ آپ کی قیمتیں اور تفصیلات ویسی ہی رہیں گی۔', 'يمكنك تعديل عرضك خلال 15 دقيقة من إرساله، وتبقى أسعارك وتفاصيلك كما هي.')}</p>
@@ -2512,8 +2631,8 @@ export default function SupplierRFQPage() {
               <div className="flex-1 min-w-0 text-[13px] leading-tight">
                 {isMultiItem && <div className="font-bold" style={{ color: pricedCount ? '#0F6E56' : '#5B6B7C' }}>{L(`${pricedCount} of ${myItems.length} priced`, `${myItems.length} میں سے ${pricedCount}`, `سعّرت ${pricedCount} من ${myItems.length}`)}</div>}
                 {error && !submitting ? <div role="alert" className="text-red-600 font-semibold line-clamp-2">{error}</div>
-                  : block ? <button type="button" onClick={() => goToField(block.target)} className="block max-w-full text-start text-amber-800 font-bold line-clamp-2 underline underline-offset-2">{block.text}</button>
-                  : <div className="font-extrabold text-[14px]" style={{ color: '#0B2438' }}>{(+gross.toFixed(2)).toLocaleString('en-US')} {SAR}</div>}
+                  : block ? <button type="button" onClick={() => goToField(block.target)} className="block max-w-full text-start text-warn-text font-bold line-clamp-2 underline underline-offset-2">{block.text}</button>
+                  : <div className="font-extrabold text-[14px]" style={{ color: '#0B2438' }}>{(+gross.toFixed(2)).toLocaleString('en-US')} {SAR} <span className="text-[12px] font-semibold text-gray-500">{noVat ? L('(final price)', '(حتمی قیمت)', '(سعر نهائي)') : L('incl. VAT', 'VAT سمیت', 'شاملة الضريبة')}</span></div>}
               </div>
               <button type="submit" form="offer-form" disabled={submitting || !!block}
                 className="shrink-0 min-h-[44px] px-5 rounded-xl font-extrabold text-[#071827] text-sm disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
@@ -2527,13 +2646,13 @@ export default function SupplierRFQPage() {
       {/* Dismiss Modal */}
       {showDismiss && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" dir={dir} onClick={() => { setShowDismiss(false); setDismissError('') }} onKeyDown={(e: any) => { if (e.key === 'Escape') { setShowDismiss(false); setDismissError('') } }}>
-          <div role="dialog" aria-modal="true" aria-labelledby="dismiss-title" onClick={(e: any) => e.stopPropagation()} className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
+          <div ref={dismissRef} role="dialog" aria-modal="true" aria-labelledby="dismiss-title" onClick={(e: any) => e.stopPropagation()} className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl animate-slide-up">
             <div className="text-4xl text-center mb-3 text-gray-500"><Glyph e="📭" /></div>
             <h3 id="dismiss-title" className="text-lg font-bold text-center mb-1" style={{ color: '#0B2438' }}>{T.dismissTitle}</h3>
             <p className="text-sm text-gray-500 text-center mb-4">{T.dismissSub}</p>
             {/* round-2 UX-091: a team member hides it for the whole company */}
             {isMember && (
-              <p className="text-[13px] font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3">{L('This request will disappear from your whole company’s list, for the account owner and every colleague.', 'یہ درخواست آپ کی پوری کمپنی کی فہرست سے ہٹ جائے گی، اکاؤنٹ کے مالک اور تمام ساتھیوں کے لیے۔', 'سيختفي هذا الطلب من قائمة شركتك كلها، لدى مالك الحساب وجميع الزملاء.')}</p>
+              <p className="text-[13px] font-semibold text-warn-text bg-warn-bg border border-warn-border rounded-xl px-3 py-2 mb-3">{L('This request will disappear from your whole company’s list, for the account owner and every colleague.', 'یہ درخواست آپ کی پوری کمپنی کی فہرست سے ہٹ جائے گی، اکاؤنٹ کے مالک اور تمام ساتھیوں کے لیے۔', 'سيختفي هذا الطلب من قائمة شركتك كلها، لدى مالك الحساب وجميع الزملاء.')}</p>
             )}
             {/* UX-148: quick reasons */}
             <div className="flex flex-wrap gap-2 mb-2" role="group" aria-label={T.dismissReason}>

@@ -3,6 +3,7 @@
 import { sellerKindOf, rememberSellerKind } from '@/lib/sellers'
 import { useState, useEffect } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
+import LoadError from '@/components/shared/LoadError'
 import { createClient } from '@/lib/supabase/client'
 import { rememberBuyerType } from '@/lib/buyerType'
 import { useTranslation } from '@/i18n'
@@ -16,7 +17,7 @@ import SellerKindPicker from '@/components/shared/SellerKindPicker'
 import { REGIONS, CITIES_BY_REGION, getRegionLabel } from '@/types'
 import Link from 'next/link'
 import { Check, Circle, LogOut, LifeBuoy, Eye, EyeOff } from 'lucide-react'
-import { CONTRACTOR_FEATURES } from '@/lib/features'
+import { CONTRACTOR_FEATURES, FEATURES } from '@/lib/features'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { normalizeCrInput, crTakenText, crClaimHref, isUnifiedCr, crFormatText } from '@/lib/cr'
@@ -27,6 +28,7 @@ import { friendlyError } from '@/lib/friendlyError'
 import { passwordProblems, passRuleList, passwordAuthError, PASS_RULES_SUMMARY } from '@/lib/passwordPolicy'
 import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
 import { askConfirm } from '@/lib/askConfirm'
+import { readProjectDraft } from '@/lib/tender/projectDraft'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { buyerTypeText } from '@/components/auth/BuyerTypeCards'
 
@@ -48,7 +50,7 @@ const txt = {
     role: 'نوع الحساب', contractor: 'مشتري', supplier: 'مورد',
     verStatus: 'حالة التحقق', pending: 'قيد المراجعة', verified: 'موثق', rejected: 'مرفوض',
     docsTitle: 'المستندات الرسمية', docsSub: 'ارفع مستنداتك لإتمام عملية التحقق',
-    licenseLabel: 'الرخصة البلدية أو رخصة النشاط (اختياري)', crLabel: 'شهادة السجل التجاري',
+    licenseLabel: 'الرخصة البلدية أو رخصة النشاط (اختياري)', crLabel: 'شهادة السجل التجاري (اختياري، لشارة «موثّق»)',
     uploadDoc: 'اضغط لرفع الملف', docHint: 'ملف PDF أو صورة، بحجم 5 ميجابايت على الأكثر',
     uploadBtn: 'رفع المستندات', uploaded: '✓ تم رفع المستندات بنجاح',
     currentDoc: 'المستند الحالي', viewDoc: 'عرض',
@@ -71,7 +73,7 @@ const txt = {
     role: 'Account Type', contractor: 'Buyer', supplier: 'Supplier',
     verStatus: 'Verification Status', pending: 'Pending', verified: 'Verified', rejected: 'Rejected',
     docsTitle: 'Official Documents', docsSub: 'Upload your documents to complete verification',
-    licenseLabel: 'Municipal or activity licence (optional)', crLabel: 'Commercial registration certificate',
+    licenseLabel: 'Municipal or activity licence (optional)', crLabel: 'Commercial registration certificate (optional, for the «Verified» badge)',
     uploadDoc: 'Click to upload file', docHint: 'PDF or image — max 5MB',
     uploadBtn: 'Upload Documents', uploaded: '✓ Documents uploaded successfully',
     currentDoc: 'Current document', viewDoc: 'View',
@@ -94,7 +96,7 @@ const txt = {
     role: 'اکاؤنٹ کی قسم', contractor: 'خریدار', supplier: 'سپلائر',
     verStatus: 'تصدیق کی حیثیت', pending: 'زیر التواء', verified: 'تصدیق شدہ', rejected: 'مسترد',
     docsTitle: 'سرکاری دستاویزات', docsSub: 'تصدیق مکمل کرنے کے لیے دستاویزات اپلوڈ کریں',
-    licenseLabel: 'بلدیہ یا سرگرمی کا لائسنس (اختیاری)', crLabel: 'تجارتی رجسٹریشن سرٹیفکیٹ',
+    licenseLabel: 'بلدیہ یا سرگرمی کا لائسنس (اختیاری)', crLabel: 'تجارتی رجسٹریشن سرٹیفکیٹ (اختیاری، «تصدیق شدہ» بیج کے لیے)',
     uploadDoc: 'فائل اپلوڈ کرنے کے لیے کلک کریں', docHint: 'PDF یا تصویر — زیادہ سے زیادہ 5MB',
     uploadBtn: 'دستاویزات اپلوڈ کریں', uploaded: '✓ دستاویزات کامیابی سے اپلوڈ',
     currentDoc: 'موجودہ دستاویز', viewDoc: 'دیکھیں',
@@ -119,6 +121,31 @@ function Msg({ m }: { m: string }) {
       {ok && <Check className="w-4 h-4 shrink-0" aria-hidden />}{m.replace(/^✓\s*/, '')}
     </div>
   )
+}
+
+// The CR check result in the reader's language (round-5 UX-084). The route answers in Arabic; the
+// meaning is read from its stable fields (error / mode / verified / httpStatus), so no raw ✓ or 🧪.
+// A result built on this page (no error, no mode) already carries a translated message.
+function crCheckText(j: any, locale: string): string {
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  const code = String(j?.code || j?.error || '')
+  const unavailable = L('The Wathq check is not available right now. Try later, or upload the certificate photo.', 'واثق سے تصدیق ابھی دستیاب نہیں۔ بعد میں کوشش کریں یا سرٹیفکیٹ کی تصویر اپلوڈ کریں۔', 'تعذّر التحقق عبر واثق حالياً. حاول لاحقاً أو ارفع صورة الشهادة.')
+  if (code === 'rate_limited') return L('Too many tries. Try again in a little while.', 'بہت زیادہ کوششیں۔ تھوڑی دیر بعد کوشش کریں۔', 'محاولات كثيرة، حاول بعد قليل.')
+  if (code === 'INVALID_FORMAT') return crFormatText(locale)
+  if (code === 'FORBIDDEN') return L('You can check only the commercial registration saved on your account.', 'آپ صرف اپنے اکاؤنٹ میں محفوظ تجارتی رجسٹریشن کی تصدیق کر سکتے ہیں۔', 'يمكنك التحقق من السجل التجاري المحفوظ في حسابك فقط.')
+  if (code === 'NETWORK') return unavailable
+  if (code === 'SERVER_ERROR') return L('An unexpected error happened during the check. Try again.', 'تصدیق کے دوران غیر متوقع خرابی ہوئی۔ دوبارہ کوشش کریں۔', 'حدث خطأ غير متوقع أثناء التحقق، حاول مرة أخرى.')
+  if (code === 'WATHQ_ERROR') {
+    if (!/^7\d{9}$/.test(String(j?.cr || ''))) return crFormatText(locale)
+    if (j?.httpStatus === 404) return L('No commercial registration with this number was found in Wathq.', 'واثق میں اس نمبر کا کوئی تجارتی رجسٹریشن نہیں ملا۔', 'لم يُعثر في واثق على سجل تجاري بهذا الرقم.')
+    return unavailable
+  }
+  if (j?.raw?.demo) return L('Test mode: sample data for display only.', 'آزمائشی موڈ: صرف دکھانے کے لیے نمونہ ڈیٹا۔', 'وضع تجريبي: بيانات نموذجية للعرض فقط.')
+  if (j?.mode === 'manual') return L('The automatic Wathq link is not active yet. Your account is verified after you upload the certificate photo and the team reviews it.', 'واثق سے خودکار ربط ابھی فعال نہیں۔ سرٹیفکیٹ کی تصویر اپلوڈ کرنے اور ٹیم کے جائزے کے بعد آپ کا اکاؤنٹ تصدیق ہوگا۔', 'الربط الآلي مع واثق غير مفعّل بعد، ويُوثَّق حسابك بعد رفع صورة الشهادة ومراجعة الفريق لها.')
+  if (j?.mode === 'wathq') return j?.verified
+    ? L('The commercial registration was verified through Wathq.', 'تجارتی رجسٹریشن کی واثق کے ذریعے تصدیق ہو گئی۔', 'تم التحقق من السجل التجاري عبر واثق.')
+    : L('Wathq shows this commercial registration as not active, so it needs a review.', 'واثق کے مطابق یہ تجارتی رجسٹریشن فعال نہیں، اس لیے جائزہ درکار ہے۔', 'السجل التجاري غير ساري المفعول حسب واثق، ويحتاج إلى مراجعة.')
+  return String(j?.message || '').replace(/[✓🧪]/gu, '').replace(/\s*—\s*/g, '، ').trim()
 }
 
 export default function SettingsPage() {
@@ -200,13 +227,18 @@ export default function SettingsPage() {
     setTimeout(() => setNotifMsg(null), 2500)
   }
 
+  // a failed load shows an error with a retry, never an empty form (round-5 UX-113)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
   useEffect(() => {
     async function init() {
+      setLoadFailed(false)
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
       setUser(session.user)
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+      const { data: p, error: pErr } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+      if (pErr || !p) throw pErr || new Error('no profile')
       if (p) {
         setProfile(p)
         if (p.role === 'contractor') rememberBuyerType(p.buyer_type)
@@ -220,6 +252,8 @@ export default function SettingsPage() {
         setCrNumber(p.commercial_registration || '')
         setDistrict(p.district || '')
         setPrefLang(p.preferred_language || 'ar')
+        // the display language follows the saved one on the first load (round-5 UX-076)
+        if (p.preferred_language && ['ar', 'en', 'ur'].includes(p.preferred_language) && p.preferred_language !== locale) setLocale(p.preferred_language as any)
         setEmailOn(p.email_notifications !== false)
         setWaOn(p.whatsapp_notifications !== false)
         setSupplierTier(p.supplier_tier || 'shop')
@@ -240,10 +274,11 @@ export default function SettingsPage() {
       } catch {}
       const { data: reqs } = await supabase.from('profile_change_requests').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false })
       setMyRequests(reqs || [])
-      setLoading(false)
     }
-    init()
-  }, [])
+    setLoading(true)
+    init().catch(() => setLoadFailed(true)).finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reloadKey])
 
   // Links like /settings#phone or #email (verify banner, gates) open the profile tab, scroll to the
   // field and highlight it for a moment (UX-138).
@@ -281,7 +316,7 @@ export default function SettingsPage() {
     setCrqSaving(false)
     if (error || !data?.ok) {
       const map = {
-        pending_exists: L('You already have a pending request for this field.', 'اس خانے کے لیے آپ کی درخواست پہلے سے زیرِ جائزہ ہے۔', 'لديك طلب قيد المراجعة لنفس الحقل بالفعل.'),
+        pending_exists: L('You already have a pending request for this field.', 'اس خانے کے لیے آپ کی درخواست پہلے سے زیرِ جائزہ ہے۔', 'لديك طلب قيد المراجعة للحقل نفسه.'),
         cooldown: L('This field can be changed only 90 days after the last approved change.', 'یہ خانہ آخری منظور شدہ تبدیلی کے 90 دن بعد ہی بدلا جا سکتا ہے۔', 'لا يمكن طلب تغيير هذا الحقل إلا بعد 90 يوماً من آخر تغيير معتمد.'),
         empty: L('The value is empty.', 'قدر خالی ہے۔', 'القيمة فارغة.'),
         unauthorized: L('Sign in first.', 'پہلے لاگ ان کریں۔', 'سجّل الدخول أولاً.'),
@@ -320,8 +355,12 @@ export default function SettingsPage() {
         return
       }
       updateData.company_name_ar = companyAr.trim()
+      // a person's own name (home buyer, independent seller, team member) is also the profile's full_name (round-5 UX-214)
+      const personal = (profile?.role === 'contractor' && profile?.buyer_type === 'individual')
+        || (profile?.role === 'supplier' && (['individual', 'price_agent', 'broker'].includes(profile?.provider_type) || !!teamOf))
+      if (personal) updateData.full_name = companyAr.trim()
     }
-    if (profile?.role === 'supplier') {
+    if (profile?.role === 'supplier' && !teamOf) {
       updateData.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
       // إذا اختار رقم مختلف نخزّنه، وإلا نُفرّغه ليُستخدم رقم الجوال تلقائياً بعد الترسية
       if (useDiffContact) {
@@ -509,25 +548,36 @@ export default function SettingsPage() {
   }
 
   if (loading) return <PageLoader />
+  if (loadFailed || !profile) return (
+    <AppShell title={t.title} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} dir={dir}>
+      <div className="max-w-xl mx-auto">
+        <LoadError onRetry={() => setReloadKey(k => k + 1)}
+          message={L('We could not load your account details. Check your connection.', 'آپ کے اکاؤنٹ کی تفصیلات لوڈ نہیں ہو سکیں۔ اپنا کنکشن چیک کریں۔', 'تعذّر تحميل بيانات حسابك. تحقّق من اتصالك.')} />
+      </div>
+    </AppShell>
+  )
 
   const isSupplier = profile?.role === 'supplier'
   const isBuyer = profile?.role === 'contractor'
   const homeBuyer = isBuyer && profile?.buyer_type === 'individual'
   const independent = ['individual', 'price_agent', 'broker'].includes(profile?.provider_type)
-  const nameLocked = isSupplier && (profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq')
+  const teamMember = isSupplier && !!teamOf
+  // a team member's name is his own, never tied to the company's CR (round-5 UX-110)
+  const nameLocked = isSupplier && !teamMember && (profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq')
   const placeholderEmail = isPlaceholderEmail(user?.email)
   // a phone sign-up has no password: it signs in with a code (UX-040)
   const phoneAccount = placeholderEmail || user?.user_metadata?.signup_method === 'phone'
   // documents are for selling businesses only (company / shop), not buyers or independents (UX-043)
-  const teamMember = isSupplier && !!teamOf
   const showDocs = isSupplier && !independent && !teamMember
-  const profileTitle = isSupplier && independent ? L('Account details', 'اکاؤنٹ کی تفصیلات', 'بيانات الحساب')
+  const profileTitle = teamMember ? L('My details', 'میری تفصیلات', 'بياناتي')
+    : isSupplier && independent ? L('Account details', 'اکاؤنٹ کی تفصیلات', 'بيانات الحساب')
     : isSupplier ? t.profileTab
     : homeBuyer ? L('My details', 'میری تفصیلات', 'بياناتي')
     : L('Account details', 'اکاؤنٹ کی تفصیلات', 'بيانات الحساب')
-  const nameLabel = isSupplier ? (independent ? L('Name', 'نام', 'الاسم') : t.companyAr)
+  const nameLabel = teamMember ? L('Your name', 'آپ کا نام', 'اسمك')
+    : isSupplier ? (independent ? L('Name', 'نام', 'الاسم') : t.companyAr)
     : homeBuyer ? L('Name', 'نام', 'الاسم') : L('Company or establishment name', 'کمپنی یا ادارے کا نام', 'اسم الشركة أو المؤسسة')
-  const namePlaceholder = homeBuyer || (isSupplier && independent) ? L('Your full name', 'آپ کا پورا نام', 'اسمك الكامل')
+  const namePlaceholder = homeBuyer || teamMember || (isSupplier && independent) ? L('Your full name', 'آپ کا پورا نام', 'اسمك الكامل')
     : L('Company or establishment name', 'کمپنی یا ادارے کا نام', 'اسم الشركة أو المؤسسة')
   const showVat = teamMember ? false : isSupplier ? !(independent && !vatNumber) : homeBuyer ? !!profile?.vat_number : true
   const crDigits = normalizeCrInput(crNumber)
@@ -563,10 +613,14 @@ export default function SettingsPage() {
     ? <p className="text-[12px] text-gray-600 mt-1">{L('Your deal cap rises with every successful deal.', 'ہر کامیاب ڈیل کے ساتھ آپ کی ڈیل کی حد بڑھتی ہے۔', 'يرتفع حدّ صفقاتك مع كل صفقة ناجحة.')}</p>
     : null
   // status pill under the avatar: a buyer sees the phone state, a seller the review state
-  const statusPill = isSupplier
+  const statusPill = teamMember
+    ? <span className="inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-[#0B2438] text-white">
+        {L(`Member of the «${teamOf?.name || 'company'}» team`, `«${teamOf?.name || 'کمپنی'}» کی ٹیم کے رکن`, `عضو في فريق «${teamOf?.name || 'الشركة'}»`)}
+      </span>
+    : isSupplier
     ? <span className={`inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold ${
         profile?.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-800' :
-        profile?.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : independent ? 'bg-[#0B2438] text-white' : 'bg-amber-100 text-amber-800'
+        profile?.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : independent ? 'bg-[#0B2438] text-white' : 'bg-warn-bg text-warn-text'
       }`}>
         {profile?.verification_status === 'verified' ? t.verified : profile?.verification_status === 'rejected' ? t.rejected
           : independent ? <span title={L('Your deal cap rises with every successful deal', 'ہر کامیاب ڈیل کے ساتھ آپ کی ڈیل کی حد بڑھتی ہے', 'يرتفع حدّ صفقاتك مع كل صفقة ناجحة')}>{L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}</span>
@@ -575,7 +629,7 @@ export default function SettingsPage() {
     : profile?.phone_verified_at
       ? <span className="inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800"><Check className="w-3.5 h-3.5" aria-hidden />{L('Mobile verified', 'موبائل تصدیق شدہ', 'الجوال موثّق')}</span>
       : !phoneRequired ? null
-      : <a href="#phone" onClick={() => setTab('profile')} className="inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-800">{L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'وثّق جوالك')}</a>
+      : <a href="#phone" onClick={() => setTab('profile')} className="inline-flex items-center mt-2 text-xs px-2.5 py-1 rounded-full font-semibold bg-warn-bg text-warn-text">{L('Verify your mobile', 'اپنا موبائل تصدیق کریں', 'وثّق جوالك')}</a>
 
   return (
     <AppShell title={t.title} company={companyAr} userId={user?.id} nav={getNav(profile?.role, locale, '/settings')} dir={dir}>
@@ -658,7 +712,7 @@ export default function SettingsPage() {
             {(tab === 'profile' || (tab === 'docs' && !showDocs)) && (
               <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
                 <h2 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>{profileTitle}</h2>
-                <p className="text-sm text-gray-600 mb-6">{t.role}: <span className="font-semibold text-[#0B2438]">{isBuyer ? t.contractor : independent ? L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير') : t.supplier}</span></p>
+                <p className="text-sm text-gray-600 mb-6">{t.role}: <span className="font-semibold text-[#0B2438]">{isBuyer ? t.contractor : teamMember ? L('Company team member', 'کمپنی کی ٹیم کا رکن', 'عضو في فريق شركة') : independent ? L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير') : t.supplier}</span></p>
                 {teamMember && (
                   <div className="mb-6 rounded-xl border border-gray-200 bg-[#EEF2F6] p-4 text-sm text-[#0B2438] leading-relaxed" role="note">
                     {L(`You are a member of the «${teamOf?.name || 'company'}» team. The company details and documents are managed by the account owner.`, `آپ «${teamOf?.name || 'کمپنی'}» کی ٹیم کے رکن ہیں۔ کمپنی کی تفصیلات اور دستاویزات اکاؤنٹ کا مالک سنبھالتا ہے۔`, `أنت عضو في فريق «${teamOf?.name || 'الشركة'}». بيانات الشركة ومستنداتها يديرها مالك الحساب.`)}
@@ -680,11 +734,17 @@ export default function SettingsPage() {
                               // work in progress is hidden (not deleted) in home mode: say so first (round-4 UX-098)
                               if (v === 'individual') {
                                 let busy = false
-                                try { const d = JSON.parse(localStorage.getItem('tsk_project_draft') || 'null'); busy = Array.isArray(d?.items) && d.items.length > 0 } catch {}
+                                try { const d = readProjectDraft(profile.id); busy = Array.isArray(d?.items) && d.items.length > 0 } catch {}
+                                // the same check as the app (round-5 UX-094): open quantity lists + tenders in draft or review
                                 if (!busy) {
                                   try {
-                                    const { count } = await createClient().from('tenders').select('id', { count: 'exact', head: true }).eq('contractor_id', profile.id).in('status', ['draft', 'review'])
-                                    busy = (count || 0) > 0
+                                    const sb = createClient()
+                                    const [{ count }, { data: projs }] = await Promise.all([
+                                      sb.from('tenders').select('id', { count: 'exact', head: true }).eq('contractor_id', profile.id).in('status', ['draft', 'review']),
+                                      sb.from('project_rfqs').select('id, status').eq('contractor_id', profile.id).limit(50),
+                                    ])
+                                    const openProjects = (projs || []).filter((p: any) => !['closed', 'completed', 'cancelled', 'done'].includes(String(p?.status || '')))
+                                    busy = (count || 0) > 0 || openProjects.length > 0
                                   } catch {}
                                 }
                                 if (busy && !(await askConfirm(L(
@@ -744,11 +804,11 @@ export default function SettingsPage() {
                     )}
                   </div>
                   {/* the lock note is for sellers only: a buyer's name is never tied to a CR (UX-044) */}
-                  {isSupplier && (
+                  {isSupplier && !teamMember && (
                     <div className="-mt-3">
                       {nameLocked ? (
                         pendingFor('name')
-                          ? <p className="text-[12px] text-amber-800"><Glyph e="⏳" /> {L('Name change request under review (to', 'نام کی تبدیلی کی درخواست زیرِ جائزہ (نیا نام', 'طلب تغيير الاسم قيد مراجعة الإدارة (إلى')} «{pendingFor('name').new_value}»).</p>
+                          ? <p className="text-[12px] text-warn-text"><Glyph e="⏳" /> {L('Name change request under review (to', 'نام کی تبدیلی کی درخواست زیرِ جائزہ (نیا نام', 'طلب تغيير الاسم قيد مراجعة الإدارة (إلى')} «{pendingFor('name').new_value}»).</p>
                           : <button type="button" onClick={() => { setCrqModal('name'); setCrqValue(companyAr); setCrqReason(''); setCrqMsg('') }} className="min-h-[44px] text-[12px] font-semibold underline text-start" style={{ color: '#0B2438' }}><Glyph e="🔒" /> {L('The name is tied to your commercial registration. Request a change', 'نام تجارتی رجسٹریشن سے جڑا ہے۔ تبدیلی کی درخواست دیں', 'الاسم مرتبط بالسجل التجاري. اطلب تعديله')}</button>
                       ) : (
                         <p className="text-[12px] text-gray-600"><Glyph e="✏" /> {L('You can edit your name until your account is verified.', 'اکاؤنٹ کی تصدیق تک آپ نام بدل سکتے ہیں، پھر یہ مقفل ہو جائے گا۔', 'يمكنك تعديل الاسم حتى يتم توثيق حسابك، ثم يُقفل.')}</p>
@@ -773,17 +833,19 @@ export default function SettingsPage() {
                       onDone={(ph: string) => { setPhone(ph); setProfile({ ...profile, phone: ph, phone_verified_at: new Date().toISOString() }) }} />
                     <p className="text-[12px] text-gray-600 mt-1">{L('Changing the number needs a new SMS code.', 'نمبر بدلنے کے لیے نیا SMS کوڈ درکار ہے۔', 'تغيير الرقم يتطلّب توثيقه من جديد برمز SMS.')}</p>
                     {isSupplier && (
-                      <p className="text-[12px] text-gray-600 mt-1"><Glyph e="🔒" /> {L('This WhatsApp number is for the platform and alerts only. Buyers do not see it.', 'یہ واٹس ایپ نمبر صرف پلیٹ فارم اور اطلاعات کے لیے ہے۔ خریدار اسے نہیں دیکھتا۔', 'رقم الواتساب للمنصة والإشعارات فقط، ولا يظهر للمشتري.')}</p>
+                      <p className="text-[12px] text-gray-600 mt-1"><Glyph e="🔒" /> {teamMember
+                        ? L('This number is for signing in and notifications. Buyers do not see it.', 'یہ نمبر سائن اِن اور اطلاعات کے لیے ہے۔ خریدار اسے نہیں دیکھتا۔', 'يُستخدم هذا الرقم للدخول والإشعارات، ولا يراه المشتري.')
+                        : L('This number is for signing in and notifications. Buyers see it only if you choose it as the contact number below, and only after choosing your offer.', 'یہ نمبر سائن اِن اور اطلاعات کے لیے ہے۔ خریدار اسے صرف اسی صورت دیکھتا ہے جب آپ اسے نیچے رابطہ نمبر کے طور پر منتخب کریں، اور وہ بھی آپ کی آفر منتخب کرنے کے بعد۔', 'يُستخدم هذا الرقم للدخول والإشعارات، ولا يراه المشتري إلا إذا اخترته رقماً للتواصل أدناه، وبعد اختيار عرضك فقط.')}</p>
                     )}
                   </div>
 
                   {/* رقم التواصل الرسمي — يظهر للمشتري بعد الاختيار فقط (المورد فقط) */}
-                  {isSupplier && (
+                  {isSupplier && !teamMember && (
                     <fieldset className="rounded-xl border border-gray-100 bg-gray-50/60 p-3.5">
                       <legend className="px-1 text-xs font-bold text-gray-700"><Glyph e="📞" /> {L('Official contact number for buyers', 'خریدار کے لیے رابطہ نمبر', 'رقم التواصل الرسمي مع المشتري')}</legend>
                       <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
                         <input type="radio" name="contact-mode" checked={!useDiffContact} onChange={() => setUseDiffContact(false)} className="w-5 h-5 accent-[#0B2438]" />
-                        <span className="text-[13px] text-gray-800">{L('Same as WhatsApp', 'واٹس ایپ والا نمبر', 'نفس رقم الواتساب')}</span>
+                        <span className="text-[13px] text-gray-800">{L('The same mobile number', 'یہی موبائل نمبر', 'رقم الجوال نفسه')}</span>
                       </label>
                       <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
                         <input type="radio" name="contact-mode" checked={useDiffContact} onChange={() => setUseDiffContact(true)} className="w-5 h-5 accent-[#0B2438]" />
@@ -801,14 +863,14 @@ export default function SettingsPage() {
                       invoice); a home buyer only sees it when one was saved (UX-043) */}
                   {showVat && <div>
                     <label htmlFor="set-vat" className="block text-xs font-bold text-gray-600 mb-1.5">
-                      {isSupplier ? L('VAT number', 'ٹیکس نمبر', 'الرقم الضريبي (ضريبة القيمة المضافة)') : L('VAT number (optional)', 'ٹیکس نمبر (اختیاری)', 'الرقم الضريبي (اختياري)')}
+                      {isSupplier ? L('VAT number (if your business is VAT-registered)', 'ٹیکس نمبر (اگر آپ کا ادارہ VAT میں رجسٹرڈ ہے)', 'الرقم الضريبي (إن كانت منشأتك مسجّلة في ضريبة القيمة المضافة)') : L('VAT number (optional)', 'ٹیکس نمبر (اختیاری)', 'الرقم الضريبي (اختياري)')}
                     </label>
                     <input id="set-vat" value={vatNumber} onChange={e => setVatNumber(e.target.value)} inputMode="numeric"
                       className="input-field font-mono" dir="ltr" placeholder="3XXXXXXXXXXXXX3" maxLength={15} />
                     <p className="text-[12px] text-gray-600 mt-1">
                       {isSupplier
-                        ? L('Required to issue ZATCA tax invoices.', 'ٹیکس انوائس کے لیے ضروری۔', 'يلزم لإصدار الفواتير الضريبية وفق هيئة الزكاة والضريبة.')
-                        : L('It is shown with your request so the seller can write it on your invoice.', 'یہ آپ کی درخواست کے ساتھ دکھایا جاتا ہے تاکہ فروخت کنندہ اسے آپ کی انوائس پر لکھ سکے۔', 'يظهر مع طلبك ليكتبه البائع في فاتورتك.')}
+                        ? L('With a VAT number you choose, when pricing, whether your price includes VAT, and the buyer sees the price including 15% VAT. Without it, your price is shown as you type it, as a final price with no VAT.', 'ٹیکس نمبر کے ساتھ آپ قیمت دیتے وقت طے کرتے ہیں کہ آپ کی قیمت میں VAT شامل ہے یا نہیں، اور خریدار قیمت 15% VAT سمیت دیکھتا ہے۔ اس کے بغیر آپ کی قیمت جیسے آپ لکھیں ویسے ہی بغیر VAT کے حتمی قیمت کے طور پر دکھائی جاتی ہے۔', 'مع الرقم الضريبي تحدّد عند التسعير هل سعرك شامل الضريبة، ويرى المشتري السعر شاملاً ضريبة 15%. ومن دونه يُعرض سعرك كما تكتبه سعراً نهائياً بلا ضريبة.')
+                        : L('It is shown with your request so the supplier can write it on your invoice.', 'یہ آپ کی درخواست کے ساتھ دکھایا جاتا ہے تاکہ سپلائر اسے آپ کی انوائس پر لکھ سکے۔', 'يظهر مع طلبك ليكتبه المورد في فاتورتك.')}
                     </p>
                   </div>}
 
@@ -834,7 +896,7 @@ export default function SettingsPage() {
                   <div>
                     <div className="block text-xs font-bold text-gray-600 mb-1.5">{L('District', 'محلہ', 'الحي')}</div>
                     <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
-                    <Link href="/location" className="inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Set your location on the map (optional)', 'نقشے پر اپنا مقام منتخب کریں (اختیاری)', 'حدّد موقعك على الخريطة (اختياري)')}</Link>
+                    {FEATURES.locationNav && <Link href="/location" className="inline-flex items-center gap-1 min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Set your location on the map (optional)', 'نقشے پر اپنا مقام منتخب کریں (اختیاری)', 'حدّد موقعك على الخريطة (اختياري)')}</Link>}
                   </div>
 
                   {/* Seller kind + company activity (the buyer-facing tier is derived from it) */}
@@ -863,7 +925,7 @@ export default function SettingsPage() {
                         </span>
                       </div>
                       {pendingFor('classification')
-                        ? <p className="text-[12px] text-amber-800"><Glyph e="⏳" /> طلب تغيير الدرجة قيد مراجعة الإدارة.</p>
+                        ? <p className="text-[12px] text-warn-text"><Glyph e="⏳" /> طلب تغيير الدرجة قيد مراجعة الإدارة.</p>
                         : <button type="button" onClick={() => { setCrqModal('classification'); setCrqValue(contractorGrade || 'C'); setCrqReason(''); setCrqMsg('') }} className="min-h-[44px] text-[12px] font-semibold underline" style={{ color: '#0B2438' }}><Glyph e="🔒" /> الدرجة ثابتة، اطلب تعديلها</button>}
                     </div>
                   )}
@@ -909,6 +971,13 @@ export default function SettingsPage() {
                     </label>
                   )}
 
+                  {/* an unverified email: say why the email switch is missing (round-5 UX-192) */}
+                  {!(profile?.email_verified_at && !placeholderEmail) && (
+                    <p className="rounded-xl border border-gray-200 bg-gray-50 p-3 text-[13px] leading-relaxed text-gray-700" role="note">
+                      {L('To receive notifications by email, verify your email first.', 'ای میل پر اطلاعات کے لیے پہلے اپنی ای میل کی تصدیق کریں۔', 'لتصلك الإشعارات على البريد الإلكتروني، وثّق بريدك أولاً.')}{' '}
+                      <button type="button" onClick={() => { setTab('profile'); setTimeout(() => document.getElementById('email')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60) }} className="inline-flex items-center min-h-[44px] font-bold underline text-[#0B2438]">{L('Verify your email', 'اپنی ای میل کی تصدیق کریں', 'وثّق بريدك')}</button>
+                    </p>
+                  )}
                   {/* nothing reaches WhatsApp before the mobile is verified and WhatsApp confirmed on it (UX-106) */}
                   {waOn && !(profile?.phone_verified_at && profile?.whatsapp_verified_at) && (
                     <p className="rounded-xl border p-3 text-[13px] leading-relaxed" style={{ background: '#FBF3E1', borderColor: '#EBD7A6', color: '#6C531F' }} role="note">
@@ -1068,11 +1137,16 @@ export default function SettingsPage() {
               <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
                 <h2 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}>{t.docsTitle}</h2>
                 <p className="text-sm text-gray-600 mb-4">{t.docsSub}</p>
-                {/* التوثيق اختياري: يوضّح فايدته وفي خيار «لاحقاً» */}
+                {/* The CR NUMBER is required to price (companies and shops); only the certificate upload,
+                    for the «Verified» badge, is optional (round-5 UX-006). «Later» only once the number is saved. */}
                 <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6 bg-[#F5F7FA] border border-gray-200">
-                  <p className="text-sm text-gray-800 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {L('Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.', 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں، جس سے آپ پر اعتماد بڑھتا ہے اور زیادہ درخواستیں جیتنے میں مدد ملتی ہے۔', 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}{supplierTier !== 'shop' && ' ' + L('Verified companies also appear under «Approved companies and factories».', 'تصدیق شدہ کمپنیاں «منظور شدہ کمپنیاں اور فیکٹریاں» میں بھی نظر آتی ہیں۔', 'وتظهر الشركات الموثّقة كذلك ضمن «شركات ومصانع معتمدة».')}</p>
+                  <p className="text-sm text-gray-800 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {!profile?.commercial_registration
+                    ? L('The commercial registration number (unified national number) is required to price requests. Uploading the certificate to get the «Verified» badge is optional.', 'درخواستوں کی قیمت دینے کے لیے تجارتی رجسٹریشن نمبر (متحدہ قومی نمبر) ضروری ہے۔ «تصدیق شدہ» بیج کے لیے سرٹیفکیٹ اپلوڈ کرنا اختیاری ہے۔', 'رقم السجل التجاري (الرقم الوطني الموحد) مطلوب لتسعير الطلبات. أما رفع الشهادة للحصول على شارة «موثّق» فاختياري.')
+                    : L('Uploading the certificate is optional. Once verified, buyers see a «Verified» badge next to your offers, which raises their trust and your chances of winning requests.', 'سرٹیفکیٹ اپلوڈ کرنا اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفرز کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں، جس سے ان کا اعتماد اور آپ کے درخواستیں جیتنے کے امکانات بڑھتے ہیں۔', 'رفع الشهادة اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى المشترين، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}{supplierTier !== 'shop' && ' ' + L('Verified companies also appear under «Approved companies and factories».', 'تصدیق شدہ کمپنیاں «منظور شدہ کمپنیاں اور فیکٹریاں» کے حصے میں بھی دکھائی دیتی ہیں۔', 'وتظهر الشركات الموثّقة كذلك ضمن «شركات ومصانع معتمدة».')}</p>
                   {/* «لاحقاً» stays on this page: it goes back to the profile tab instead of leaving (UX-160) */}
-                  <button type="button" onClick={() => setTab('profile')} className="min-h-[44px] inline-flex items-center text-sm font-bold px-4 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{L('Later', 'بعد میں', 'لاحقاً')}</button>
+                  {!!profile?.commercial_registration && (
+                    <button type="button" onClick={() => setTab('profile')} className="min-h-[44px] inline-flex items-center text-sm font-bold px-4 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{L('Later', 'بعد میں', 'لاحقاً')}</button>
+                  )}
                 </div>
 
                 {profile?.verification_status === 'rejected' && (
@@ -1090,7 +1164,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="text-[13px] text-gray-600 mt-0.5 mb-3">{cv.sub}</div>
                     <label htmlFor="set-cr" className="block text-xs font-bold text-gray-600 mb-1.5">
-                      {L('Unified national number (10 digits, starts with 7)', 'متحدہ قومی نمبر (7 سے شروع، 10 ہندسے)', 'الرقم الوطني الموحد للمنشأة (10 أرقام يبدأ بـ7)')}
+                      {L('Unified national number (10 digits, starts with 7) (required)', 'متحدہ قومی نمبر (7 سے شروع، 10 ہندسے) (ضروری)', 'الرقم الوطني الموحد للمنشأة (10 أرقام يبدأ بـ7) (مطلوب)')}
                     </label>
                     <div className="flex flex-col sm:flex-row gap-2">
                       <input id="set-cr" value={crNumber} inputMode="numeric" dir="ltr" maxLength={14}
@@ -1114,18 +1188,18 @@ export default function SettingsPage() {
                       <div className={`text-[13px] rounded-lg p-2.5 mt-3 flex items-start gap-2 ${
                         crCheck.verified ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                         : crCheck.mode === 'manual' ? 'bg-[#D4A543]/10 text-[#6C531F] border border-[#D4A543]/40'
-                        : 'bg-amber-50 text-amber-800 border border-amber-200'
+                        : 'bg-warn-bg text-warn-text border border-warn-border'
                       }`} role="status">
                         <span>{crCheck.verified ? <Glyph e="🛡" /> : crCheck.mode === 'manual' ? <Glyph e="ℹ" /> : <Glyph e="⚠" />}</span>
                         <div>
                           {crCheck.name && <div className="font-bold">{crCheck.name}</div>}
                           {crCheck.activity && <div className="opacity-80">{crCheck.activity}</div>}
-                          <div>{crCheck.message}</div>
+                          <div>{crCheckText(crCheck, locale)}</div>
                         </div>
                       </div>
                     )}
                     {crRead?.extracted && (
-                      <div className={`mt-2 text-[13px] rounded-xl p-3 border ${crRead.flags?.not_cr_document || crRead.flags?.cr_mismatch || crRead.flags?.expired ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
+                      <div className={`mt-2 text-[13px] rounded-xl p-3 border ${crRead.flags?.not_cr_document || crRead.flags?.cr_mismatch || crRead.flags?.expired ? 'bg-warn-bg text-warn-text border-warn-border' : 'bg-emerald-50 text-emerald-800 border-emerald-200'}`}>
                         <div className="font-bold mb-0.5">{L('Read from your certificate', 'آپ کے سرٹیفکیٹ سے پڑھا گیا', 'قُرئ من شهادتك')}:</div>
                         {crRead.extracted.entity_name && <div>{crRead.extracted.entity_name}</div>}
                         {crRead.extracted.cr_number && <div dir="ltr" className="font-mono">CR: {crRead.extracted.cr_number}</div>}
@@ -1139,7 +1213,7 @@ export default function SettingsPage() {
                       </div>
                     )}
                     {crTaken && (
-                      <div className="mt-2 text-sm rounded-xl p-3 bg-amber-50 text-amber-800 border border-amber-200" role="alert">
+                      <div className="mt-2 text-sm rounded-xl p-3 bg-warn-bg text-warn-text border border-warn-border" role="alert">
                         {crTakenText(locale).msg}{' '}
                         <a href={crClaimHref(crTaken)} className="font-bold underline">{crTakenText(locale).cta}</a>
                       </div>
@@ -1215,7 +1289,7 @@ export default function SettingsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4" role="radiogroup" aria-label={t.langTab}>
                   {langOptions.map(lang => {
-                    const on = locale === lang.key
+                    const on = prefLang === lang.key
                     return (
                       <button key={lang.key} type="button" role="radio" aria-checked={on} lang={lang.key} onClick={() => pickLanguage(lang.key)}
                         className={`min-h-[56px] p-4 sm:p-6 rounded-2xl border-2 text-start sm:text-center transition-all flex sm:block items-center justify-between gap-3 ${

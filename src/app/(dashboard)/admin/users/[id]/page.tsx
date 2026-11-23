@@ -141,7 +141,7 @@ export default function AdminUserDetail() {
 
   const Field = ({ label, children }: any) => (
     <div className="py-1.5 border-b border-gray-50 last:border-0">
-      <div className="text-[11px] text-gray-400">{label}</div>
+      <div className="text-xs text-gray-400">{label}</div>
       <div className="text-sm text-gray-800 break-words">{children ?? '—'}</div>
     </div>
   )
@@ -173,20 +173,20 @@ export default function AdminUserDetail() {
                 <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{p.company_name_ar || '—'}</div>
                 {p.company_name_en && <div className="text-sm text-gray-400">{p.company_name_en}</div>}
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <span className={`badge text-[10px] ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? 'مشتري' : p.role === 'supplier' ? 'مورد' : p.role}</span>
-                  <span className={`badge text-[10px] ${isVerified ? 'badge-green' : p.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'}`}>
+                  <span className={`badge text-xs ${p.role === 'contractor' ? 'badge-navy' : 'badge-gray'}`}>{p.role === 'contractor' ? 'مشتري' : p.role === 'supplier' ? 'مورد' : p.role}</span>
+                  <span className={`badge text-xs ${isVerified ? 'badge-green' : p.verification_status === 'rejected' ? 'badge-red' : 'badge-amber'}`}>
                     {p.role === 'contractor' && p.verification_status !== 'rejected'
                       ? (isVerified ? '✓ مفعّل' : !p.phone_verified_at ? 'بانتظار توثيق الجوال' : !p.email_verified_at ? 'بانتظار توثيق البريد' : '✓ مفعّل')
                       : isVerified ? '✓ موثق' : p.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
                   </span>
                   {!active && <span className="badge text-[12px] bg-red-100 text-red-700"><Glyph e="⛔" /> موقوف</span>}
                   {active && bannedUntil && <span className="badge text-[12px] bg-red-100 text-red-700"><Glyph e="⛔" /> موقوف حتى {dt(bannedUntil)}</span>}
-                  {(outsideSaudi(p.signup_country) || outsideSaudi(p.last_country)) && <span className="badge text-[10px] bg-orange-100 text-orange-800"><Glyph e="🌍" /> خارج السعودية</span>}
+                  {(outsideSaudi(p.signup_country) || outsideSaudi(p.last_country)) && <span className="badge text-xs bg-warn-bg text-warn-text"><Glyph e="🌍" /> خارج السعودية</span>}
                 </div>
-                <div className="text-[11px] text-gray-500 mt-1">
+                <div className="text-xs text-gray-500 mt-1">
                   التسجيل من: <b>{[p.signup_city, countryAr(p.signup_country)].filter(Boolean).join('، ')}</b>
                   {p.last_country && <> · آخر دخول من: <b>{[p.last_city, countryAr(p.last_country)].filter(Boolean).join('، ')}</b>{p.last_location_at ? ' (' + new Date(p.last_location_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn') + ')' : ''}</>}
-                  {p.cr_verification_source === 'wathq' && <span className="badge text-[10px] text-white" style={{ background: '#0F6E56' }}><Glyph e="🛡" /> واثق</span>}
+                  {p.cr_verification_source === 'wathq' && <span className="badge text-xs text-white" style={{ background: '#0F6E56' }}><Glyph e="🛡" /> واثق</span>}
                 </div>
               </div>
             </div>
@@ -265,7 +265,7 @@ export default function AdminUserDetail() {
             <Field label="آخر دخول">{dtt(authInfo?.last_sign_in_at)}</Field>
             <Field label="تاريخ التسجيل">{dtt(p.created_at)}</Field>
             <Field label="آخر تحديث">{dtt(p.updated_at)}</Field>
-            <Field label="معرّف الحساب (ID)"><span className="font-mono text-[11px]" dir="ltr">{p.id}</span></Field>
+            <Field label="معرّف الحساب (ID)"><span className="font-mono text-xs" dir="ltr">{p.id}</span></Field>
           </Section>
 
           <Section title="الموقع والعنوان الوطني" icon={<Glyph e="📍" />}>
@@ -283,7 +283,7 @@ export default function AdminUserDetail() {
             <Field label="نوع الحساب">{p.role === 'contractor' ? 'مشتري' : 'مورد'}</Field>
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
-                <div className="text-[11px] text-gray-400 mb-1">نوع الحساب · الفئة: <b className="text-[#0B2438]">{tierLabel(p.supplier_tier, 'ar')}</b> <span className="text-gray-300">(تلقائية)</span></div>
+                <div className="text-xs text-gray-400 mb-1">نوع الحساب · الفئة: <b className="text-[#0B2438]">{tierLabel(p.supplier_tier, 'ar')}</b> <span className="text-gray-300">(تلقائية)</span></div>
                 <select value={p.provider_type || 'company'} onChange={(e: any) => setField('provider_type', e.target.value)} className="text-xs border border-[#0B2438]/20 text-[#0B2438] bg-[#0B2438]/5 rounded-lg px-2 py-1.5">
                   <option value="individual">وسيط تسعير (فرد)</option>
                   <option value="company">شركة (النشاط غير محدد)</option>
@@ -293,7 +293,7 @@ export default function AdminUserDetail() {
             )}
             {p.role === 'contractor' && (
               <div className="py-1.5 border-b border-gray-50">
-                <div className="text-[11px] text-gray-400 mb-1">درجة التصنيف (للمقاولين)</div>
+                <div className="text-xs text-gray-400 mb-1">درجة التصنيف (للمقاولين)</div>
                 <select value={p.contractor_grade || ''} onChange={(e: any) => setField('contractor_grade', e.target.value || null)} className="text-xs border border-[#0B2438]/20 text-[#0B2438] bg-[#0B2438]/5 rounded-lg px-2 py-1.5">
                   <option value="">-- الدرجة --</option><option value="A">أ — فوق 100M</option><option value="B">ب — 30–100M</option><option value="C">ج — 5–30M</option><option value="D">د — أقل من 5M</option>
                 </select>
@@ -301,7 +301,7 @@ export default function AdminUserDetail() {
             )}
             {p.role === 'supplier' && (
               <div className="py-1.5 border-b border-gray-50">
-                <div className="text-[11px] text-gray-400 mb-1.5"><Glyph e="🏅" /> اعتمادات المورد (تظهر للمشترين كدليل ثقة)</div>
+                <div className="text-xs text-gray-400 mb-1.5"><Glyph e="🏅" /> اعتمادات المورد (تظهر للمشترين كدليل ثقة)</div>
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(APPROVAL_LABELS).map(([key, label]) => {
                     const on = Array.isArray(p.approvals) && p.approvals.includes(key)
@@ -312,7 +312,7 @@ export default function AdminUserDetail() {
                           const next = on ? cur.filter((x: string) => x !== key) : [...cur, key]
                           setField('approvals', next)
                         }}
-                        className={`text-[11px] px-2.5 py-1 rounded-full border font-semibold transition-all ${on ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 hover:border-gray-300'}`}
+                        className={`text-xs px-2.5 py-1 rounded-full border font-semibold transition-all ${on ? 'text-white border-transparent' : 'text-gray-500 border-gray-200 hover:border-gray-300'}`}
                         style={on ? { background: '#0F6E56' } : {}}>
                         {on ? '✓ ' : '+ '}{label}
                       </button>
@@ -328,7 +328,7 @@ export default function AdminUserDetail() {
                   {p.auto_classification === 'match' ? 'مطابق' : p.auto_classification === 'mismatch' ? 'مشكوك' : 'يحتاج مراجعة'}
                   {p.auto_classification_confidence ? ` (${p.auto_classification_confidence}%)` : ''}{p.auto_classification_source === 'ai' ? ' — ذكاء' : ''}
                 </span>
-                {p.auto_classification_note && <div className="text-[11px] text-gray-500 mt-0.5">{p.auto_classification_note}</div>}
+                {p.auto_classification_note && <div className="text-xs text-gray-500 mt-0.5">{p.auto_classification_note}</div>}
               </Field>
             )}
           </Section>
@@ -361,15 +361,15 @@ export default function AdminUserDetail() {
                     <div key={r.id} className="flex items-center justify-between gap-2 text-xs bg-[#f4f6f9] rounded-lg p-2.5 flex-wrap">
                       <span className="font-semibold" style={{ color: '#0B2438' }}>{r.product_name}</span>
                       <span className="text-gray-500">{r.quantity} {r.unit}</span>
-                      <span className="badge text-[10px] badge-gray">{RFQ_STATUS[r.status] || r.status}</span>
-                      <span className="text-orange-600">{r.offer_count || 0} عرض</span>
+                      <span className="badge text-xs badge-gray">{RFQ_STATUS[r.status] || r.status}</span>
+                      <span className="text-warn-text">{r.offer_count || 0} عرض</span>
                       <span className="text-gray-400">{dt(r.created_at)}</span>
                     </div>
                   ))}
                   {projects.map((pr: any) => (
                     <div key={pr.id} className="flex items-center justify-between gap-2 text-xs bg-[#D4A543]/5 rounded-lg p-2.5 flex-wrap">
                       <span className="font-semibold" style={{ color: '#0B2438' }}><Glyph e="🏗" /> {pr.title}</span>
-                      <span className="badge text-[10px] badge-gray">{RFQ_STATUS[pr.status] || pr.status}</span>
+                      <span className="badge text-xs badge-gray">{RFQ_STATUS[pr.status] || pr.status}</span>
                       <span className="text-gray-400">{dt(pr.created_at)}</span>
                     </div>
                   ))}
@@ -385,7 +385,7 @@ export default function AdminUserDetail() {
                       <span className="font-semibold" style={{ color: '#0B2438' }}>{o.rfqs?.product_name || 'طلب'}</span>
                       <span className="text-emerald-700 font-bold">{sar(o.total_price)}</span>
                       {o.delivery_days != null && <span className="text-gray-500"><Glyph e="⏱" /> {o.delivery_days} يوم</span>}
-                      <span className="badge text-[10px] badge-gray">{OFFER_STATUS[o.status] || o.status}</span>
+                      <span className="badge text-xs badge-gray">{OFFER_STATUS[o.status] || o.status}</span>
                       <span className="text-gray-400">{dt(o.created_at)}</span>
                     </div>
                   ))}

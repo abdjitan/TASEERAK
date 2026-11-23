@@ -2,7 +2,7 @@
 // (the existing project → request path in /contractor/project/new sends it).
 import type { TenderItem, TenderFlag } from './types'
 import type { Routed } from './classify'
-import { SUB_CATEGORIES } from '@/types'
+import { SUB_CATEGORIES, missingSpecs, type Sector } from '@/types'
 
 export function itemToRow(tenderId: string, it: TenderItem, routed: Routed | null, flags: TenderFlag[], links: any): Record<string, any> {
   return {
@@ -18,7 +18,7 @@ export function itemToRow(tenderId: string, it: TenderItem, routed: Routed | nul
 
 /** Flags as stored (sources keep refs, quotes shortened). */
 export function slimFlags(flags: TenderFlag[]): any[] {
-  return flags.map(f => ({ code: f.code, severity: f.severity, ar: f.ar, en: f.en, sources: f.sources.map(s => ({ ...s, quote: s.quote ? s.quote.slice(0, 160) : undefined })) }))
+  return flags.map(f => ({ code: f.code, severity: f.severity, ar: f.ar, en: f.en, ...(f.ur ? { ur: f.ur } : {}), sources: f.sources.map(s => ({ ...s, quote: s.quote ? s.quote.slice(0, 160) : undefined })) }))
 }
 
 /** A stored row back to the reader's shape (with the company's edits applied) for the checks. */
@@ -66,18 +66,22 @@ export function draftItemFromRow(r: any, i: number): Record<string, any> {
   const qty = r.qty == null ? (r.lump_sum ? 1 : '') : Number(r.qty)
   // round-4 UX-023: a specialty that does not belong to the sector is never carried over
   const sub = r.sub_category && (SUB_CATEGORIES as any)[r.sector || 'civil']?.[r.sub_category] ? r.sub_category : null
+  const name = (r.product_name || r.item_text || '').slice(0, 120)
+  const specification = composeSpecification(r)
+  // round-5 UX-091: a line still missing a required spec (size, grade…) is not «done»: the sending page asks for it
+  const specsOk = missingSpecs(name, (r.sector || 'civil') as Sector, r.specs || {}, specification).length === 0
   return {
     id: `tender-${i}`,
-    product_name: (r.product_name || r.item_text || '').slice(0, 120),
+    product_name: name,
     sector: r.sector || 'civil',
     quantity: qty === '' ? '' : String(qty),
     unit: r.lump_sum ? 'مقطوعية' : (r.unit || 'عدد'),
-    specification: composeSpecification(r),
+    specification,
     specs: r.specs || {},
     sub_category: sub,
     needs_classification: !sub,
     selected: true,
-    done: Number(qty) > 0 && !!sub,
+    done: Number(qty) > 0 && !!sub && specsOk,
     custom: !r.links?.catalog,
     description: r.description,
     ref: (r.codes || [])[0] || r.ref || '',

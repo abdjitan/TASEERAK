@@ -2,7 +2,9 @@
 // Public supplier profile body, translated (UX-115). Honest numbers (UX-115): «requests won», not
 // «completed deals», and the score is named «درجة الموثوقية» as on the leaderboard.
 import Link from 'next/link'
-import { Check } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Check, Star } from 'lucide-react'
 import { useTranslation } from '@/i18n'
 import { getRegionLabel } from '@/types'
 import { scoreColor, approvalLabel, isNewSupplier } from '@/lib/supplierScore'
@@ -11,7 +13,28 @@ import AutoTr from '@/components/shared/AutoTr'
 import { tierLabel, tierIcon } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
-import { FEATURES } from '@/lib/features'
+import { getSectorLabel } from '@/types'
+
+// The rating chips, stored in Arabic at the start of the comment («نقاط القوة: …»): shown as chips in
+// the reader's language, and only the free text goes to the translation (round-5 UX-035).
+// Same list as the deal page; to move into src/lib/reviews.ts (shared with the app).
+const REVIEW_TAGS: { key: string; ar: string; en: string; ur: string }[] = [
+  { key: 'on_time', ar: 'الالتزام بالموعد', en: 'On time', ur: 'وقت کی پابندی' },
+  { key: 'quality', ar: 'جودة المواد', en: 'Material quality', ur: 'سامان کا معیار' },
+  { key: 'dealing', ar: 'حسن التعامل', en: 'Good dealing', ur: 'اچھا برتاؤ' },
+]
+function splitReview(comment: any): { tags: string[]; text: string } {
+  const s = String(comment || '')
+  const m = s.match(/^نقاط القوة:\s*([^\n]*)\n?/)
+  if (!m) return { tags: [], text: s }
+  const tags = m[1].split('،').map(x => x.trim()).map(ar => REVIEW_TAGS.find(t => t.ar === ar)?.key).filter(Boolean) as string[]
+  return { tags, text: s.slice(m[0].length).trim() }
+}
+// a same-site path only (the deal page passes ?from=/contractor/orders/<id>), UX-070
+function safeFrom(v: string | null): string | null {
+  if (!v || v[0] !== '/' || v[1] === '/' || /[\\\s]/.test(v)) return null
+  return /^\/(contractor|supplier)\//.test(v) ? v.slice(0, 200) : null
+}
 
 // navy text on the gold/grey score circle, white only on green (UX-103)
 const scoreText = (s: number) => (s >= 75 ? '#fff' : '#071827')
@@ -27,12 +50,23 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
   const name = s.company_name_ar || L('Supplier', 'سپلائر', 'مورد')
   const fresh = isNewSupplier(s)
   const ratingCount = Number(s.rating_count) || 0
+  const router = useRouter()
+  const [from, setFrom] = useState<string | null>(null)
+  useEffect(() => { try { setFrom(safeFrom(new URLSearchParams(window.location.search).get('from'))) } catch {} }, [])
+  const sectors: string[] = Array.isArray(s.sectors) ? s.sectors.filter(Boolean) : []
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8" dir={dir}>
-      <Link href="/suppliers" className="inline-flex items-center gap-1 min-h-[44px] text-sm font-semibold text-[#0B2438] hover:underline">
-        <span aria-hidden className="inline-block ltr:rotate-180">→</span> {FEATURES.gamification ? L('Supplier leaderboard', 'سپلائرز کی درجہ بندی', 'لوحة شرف الموردين') : L('Supplier directory', 'سپلائر ڈائریکٹری', 'دليل الموردين')}
-      </Link>
+      {/* back to the deal it was opened from; never to the directory, which is off (round-5 UX-070) */}
+      {from ? (
+        <Link href={from} className="inline-flex items-center gap-1 min-h-[44px] text-sm font-semibold text-[#0B2438] hover:underline">
+          <span aria-hidden className="inline-block ltr:rotate-180">→</span> {L('Back to the deal', 'سودے پر واپس', 'العودة إلى الصفقة')}
+        </Link>
+      ) : (
+        <button type="button" onClick={() => router.back()} className="inline-flex items-center gap-1 min-h-[44px] text-sm font-semibold text-[#0B2438] hover:underline">
+          <span aria-hidden className="inline-block ltr:rotate-180">→</span> {L('Back', 'واپس', 'رجوع')}
+        </button>
+      )}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-4">
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 shrink-0 grid place-items-center rounded-2xl text-2xl text-[#F5C55B]" style={{ background: '#0B2438' }}><SellerIcon name={s.supplier_tier ? tierIcon(s.supplier_tier) : 'store'} /></div>
@@ -77,6 +111,16 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
           ))}
         </div>
 
+        {/* what the supplier supplies (round-5 UX-071; needs sectors in get_supplier_public) */}
+        {sectors.length > 0 && (
+          <div className="mt-5">
+            <div className="text-[13px] font-bold text-gray-700 mb-2">{L('What they supply', 'کیا سپلائی کرتے ہیں', 'ما يورّده')}</div>
+            <div className="flex gap-1.5 flex-wrap">
+              {sectors.map((sc: string) => <span key={sc} className="text-[13px] px-2.5 py-1 rounded-lg font-semibold" style={{ background: '#0B24380d', color: '#0B2438' }}>{getSectorLabel(sc as any, lc)}</span>)}
+            </div>
+          </div>
+        )}
+
         {Array.isArray(s.approvals) && s.approvals.length > 0 && (
           <div className="mt-5">
             <div className="text-[13px] font-bold text-gray-700 mb-2"><Glyph e="🏅" /> {L('Approvals from major bodies', 'بڑے اداروں کی منظوریاں', 'اعتمادات جهات كبرى')}</div>
@@ -90,24 +134,29 @@ export default function SupplierProfile({ s, score }: { s: any; score: number })
           <div className="mt-6 pt-5 border-t border-gray-100">
             <div className="text-[13px] font-bold text-gray-700 mb-3"><Glyph e="💬" /> {L('What buyers say', 'خریداروں کی رائے', 'آراء المشترين')}</div>
             <div className="space-y-3">
-              {s.recent_reviews.map((rv: any, i: number) => (
+              {s.recent_reviews.map((rv: any, i: number) => { const rvs = splitReview(rv.comment); return (
                 <div key={i} className="rounded-xl bg-[#f7f8fa] p-3">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1 text-sm font-bold text-[#0B2438]" aria-label={L(`${rv.rating} out of 5`, `5 میں سے ${rv.rating}`, `${rv.rating} من 5`)}>
-                      <span className="text-[#D4A543]"><Glyph e="⭐" /></span> {rv.rating}/5
+                      <Star className="w-4 h-4" fill="#9D7425" stroke="#9D7425" aria-hidden /> {rv.rating}/5
                     </div>
                     {rv.created_at && <span className="text-[12px] text-gray-600">{new Date(rv.created_at).toLocaleDateString(dateLocale)}</span>}
                   </div>
-                  {rv.comment && <p className="text-sm text-gray-700 mt-1.5 leading-relaxed"><AutoTr text={rv.comment} locale={locale} /></p>}
+                  {rvs.tags.length > 0 && (
+                    <div className="flex gap-1.5 flex-wrap mt-1.5">
+                      {rvs.tags.map(k => { const tg = REVIEW_TAGS.find(x => x.key === k)!; return <span key={k} className="text-[12px] px-2 py-0.5 rounded-full font-semibold bg-white border border-gray-200 text-[#0B2438]">{L(tg.en, tg.ur, tg.ar)}</span> })}
+                    </div>
+                  )}
+                  {rvs.text && <p className="text-sm text-gray-700 mt-1.5 leading-relaxed"><AutoTr text={rvs.text} locale={locale} /></p>}
                 </div>
-              ))}
+              ) })}
             </div>
           </div>
         )}
 
         <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-          <p className="text-sm text-gray-600 mb-3">{L('Send a free price request: it reaches the suppliers who specialise in your materials in your region.', 'مفت قیمت کی درخواست بھیجیں: یہ آپ کے علاقے میں آپ کے سامان کے ماہر سپلائرز تک پہنچتی ہے۔', 'أرسل طلب تسعير مجاناً، فيصل إلى الموردين المختصين بموادك في منطقتك.')}</p>
-          <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request a price', 'قیمت معلوم کریں', 'اطلب سعراً')}</Link>
+          <p className="text-sm text-gray-600 mb-3">{L('Your request reaches this supplier if your materials are in their specialty and region. It reaches all the specialised suppliers.', 'آپ کی درخواست اس سپلائر تک پہنچتی ہے اگر آپ کا سامان اس کے شعبے اور علاقے میں ہو۔ یہ تمام ماہر سپلائرز تک پہنچتی ہے۔', 'يصل طلبك إلى هذا المورد إذا كانت موادك ضمن تخصصه وفي منطقته، ويصل إلى كل الموردين المختصين.')}</p>
+          <Link href="/contractor/rfq/quick" className="btn-orange text-sm">{L('Request new prices', 'نئی قیمتیں منگوائیں', 'اطلب تسعيراً جديداً')}</Link>
         </div>
       </div>
       {s.member_since && <p className="text-center text-[12px] text-gray-600 mt-6">{L('Member since', 'رکن از', 'عضو منذ')} {new Date(s.member_since).toLocaleDateString(dateLocale)}</p>}

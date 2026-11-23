@@ -38,7 +38,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
     const sec = L('Supplier', 'سپلائر', 'المورّد')
     items = [
       { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
-      { href: '/supplier/deals', icon: '📦', label: L('My offers and deals', 'آفرز اور ڈیلز', 'عروضي وصفقاتي'), mobileLabel: L('My offers', 'میری آفرز', 'عروضي'), section: sec, mobile: 2 },
+      { href: '/supplier/deals', icon: '📦', label: L('My offers and deals', 'آفرز اور ڈیلز', 'عروضي وصفقاتي'), mobileLabel: L('My deals', 'میری ڈیلز', 'صفقاتي'), section: sec, mobile: 2 },
       { href: '/supplier/specialties', icon: '🎯', label: L('My specialties', 'میرے تخصصات', 'تخصصاتي'), section: sec },
       // «أسعاري» is private since migration 160 and the only place to save pack prices: always in the menu (UX-031)
       { href: '/supplier/prices', icon: '📈', label: L('My prices', 'میری قیمتیں', 'أسعاري'), section: sec },

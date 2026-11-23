@@ -17,7 +17,7 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: ReactN
     <div className="rounded-2xl border border-gray-200 p-4 bg-white break-inside-avoid">
       <div className="text-[12px] text-gray-500 font-semibold">{label}</div>
       <div className="text-[26px] font-extrabold tabular-nums mt-1" style={{ color: NAVY }}>{value}</div>
-      {sub && <div className="text-[11px] text-gray-500 mt-0.5">{sub}</div>}
+      {sub && <div className="text-xs text-gray-500 mt-0.5">{sub}</div>}
     </div>
   )
 }
@@ -282,7 +282,7 @@ export default function OwnerReport() {
           </ul>
         </Section>
 
-        <footer className="mt-8 pt-3 border-t border-gray-200 text-[11px] text-gray-400 flex justify-between">
+        <footer className="mt-8 pt-3 border-t border-gray-200 text-xs text-gray-400 flex justify-between">
           <span>taseerak.com</span>
           <span>{includeTest ? 'يشمل حسابات تجريبية' : 'لا يشمل الحسابات التجريبية'} · قيم الصفقات بالريال السعودي</span>
         </footer>

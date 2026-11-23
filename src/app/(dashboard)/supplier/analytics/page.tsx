@@ -49,7 +49,7 @@ export default function SupplierAnalyticsPage() {
   const endedNoChoice = Number(a?.ended_no_choice ?? ((Number(a?.cancelled) || 0) + (Number(a?.expired) || 0))) || 0
   const totalOffers = Number(a?.total_offers) || 0
   const decided = won + lost
-  const winRate: number | null = a?.win_rate != null ? Math.round(Number(a.win_rate) <= 1 ? Number(a.win_rate) * 100 : Number(a.win_rate)) : decided ? Math.round((won / decided) * 100) : null
+  const winRate: number | null = a?.win_rate != null ? Math.round(Number(a.win_rate)) /* round-5 UX-169: already a percent (migration 269) */ : decided ? Math.round((won / decided) * 100) : null
   const sectors: any[] = Array.isArray(a?.by_sector) ? a.by_sector : []
   const monthly: any[] = Array.isArray(a?.monthly) ? a.monthly : []
   // UX-144: sector names in the reader's language
@@ -106,7 +106,7 @@ export default function SupplierAnalyticsPage() {
             {/* حسب القطاع — صفوف نصية بدل الأشرطة (UX-034: لا أعمدة للموردين) */}
             {sectors.length > 0 && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 mb-4">
-                <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('By sector', 'شعبے کے لحاظ سے', 'حسب القطاع')}</h2>
+                <h2 className="text-sm font-bold mb-3" style={{ color: '#0B2438' }}>{L('By field', 'شعبے کے لحاظ سے', 'حسب المجال')}</h2>
                 <ul className="divide-y divide-gray-100">
                   {sectors.map((s: any) => {
                     const t = Number(s.total) || 0, w = Number(s.won) || 0, l = Number(s.lost) || 0

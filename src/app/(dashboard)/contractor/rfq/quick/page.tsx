@@ -39,6 +39,8 @@ import { nearestSaCity } from '@/lib/saCityCoords'
 import { toLatinNumber } from '@/lib/number' // «2,500» = 2500: commas are thousands separators (round-4 UX-002)
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { realtimeTopic } from '@/lib/realtimeTopic'
+import { getPlaceLabel } from '@/lib/displayName'
+import { useFocusTrap } from '@/components/shared/useFocusTrap'
 
 // Every catalog product name — a line outside it gets the «which specialty?» chooser.
 const CATALOG_NAMES = new Set<string>(Object.values(SECTOR_PRODUCTS).flat() as string[])
@@ -165,7 +167,8 @@ export default function QuickRequestPage() {
   useEffect(() => {
     createClient().rpc('get_market_prices').then(({ data }: any) => {
       const m: Record<string, number> = {}
-      for (const r of (data || [])) if (Number(r?.supplier_count) >= 3 && Number(r?.avg_price) > 0) m[`${r.product_name}|${r.unit}`] = Number(r.avg_price)
+      // round-5 UX-134: avg_buyer_price is what buyers paid (a final price is not raised by 15%); older servers: avg × 1.15
+      for (const r of (data || [])) if (Number(r?.supplier_count) >= 3 && Number(r?.avg_price) > 0) m[`${r.product_name}|${r.unit}`] = Number(r.avg_buyer_price) > 0 ? Number(r.avg_buyer_price) : Number(r.avg_price) * 1.15
       setMarket(m)
     }, () => {})
   }, [])
@@ -214,7 +217,8 @@ export default function QuickRequestPage() {
   const [undo, setUndo] = useState<{ line: Line; index: number; photo?: Photo } | null>(null)
   const undoTimer = useRef<any>(null)
   const [done, setDone] = useState(false)
-  const [sent, setSent] = useState<{ id: string; expires: string; coverage: any; stale?: boolean } | null>(null)
+  const [sent, setSent] = useState<{ id: string; expires: string; coverage: any; stale?: boolean; budgetFailed?: boolean } | null>(null)
+  const [views, setViews] = useState<number | null>(null) // live «اطّلع على طلبك» on the success screen (round-5 UX-216)
   const [firstHours, setFirstHours] = useState<number | null>(null) // «يصل أول عرض عادةً خلال X ساعات» (round-4 UX-186)
   const [firstOffer, setFirstOffer] = useState(false)               // an offer arrived while the success screen is open
   const recRef = useRef<any>(null)
@@ -247,7 +251,7 @@ export default function QuickRequestPage() {
     const sl = (qs.get('line') || '').trim().slice(0, 80)
     if (sl) setLines(prev => prev.some(l => l.product_name === sl) ? prev : [...prev, { key: uid(), product_name: sl, sector: 'supply_store', quantity: '', unit: 'حبة', details: '' }])
     // browsers block opening the file picker without a tap, so show a big button instead
-    if (qs.get('start') === 'photo') setStartPhoto(true)
+    if (qs.get('start') === 'photo' || qs.get('upload') === '1') setStartPhoto(true) // round-5 UX-013
     const pk = packById(qs.get('pack'))
     if (pk) setPack(pk)
     const sq = (qs.get('q') || '').slice(0, 80), ss = qs.get('section')
@@ -297,6 +301,7 @@ export default function QuickRequestPage() {
       // 1) bring back what the buyer had entered before leaving the page; a list built before signing up
       //    (quick:guest) moves into the account's draft (round-4 UX-056)
       let localCount = 0
+      let localDraftId: string | null = null // the saved draft the unsent list came from (round-5 UX-011)
       const own = loadLocalDraft<any>('quick:' + user.id)
       const gd = loadLocalDraft<any>(GUEST_KEY)
       const d = gd && Array.isArray(gd.lines) && gd.lines.length
@@ -311,6 +316,7 @@ export default function QuickRequestPage() {
         if (d.hours) setHours(d.hours)
         if (typeof d.needDays === 'number') setNeedDays(d.needDays)
         if (typeof d.rfqId === 'string') rfqIdRef.current = d.rfqId
+        if (typeof d.draftId === 'string' && d.draftId) { localDraftId = d.draftId; setDraftId(d.draftId) }
         if (typeof d.notes === 'string') setNotes(d.notes)
         if (typeof d.vatRequired === 'boolean') setVatRequired(d.vatRequired)
         if (typeof d.verifiedOnly === 'boolean') setVerifiedOnly(d.verifiedOnly)
@@ -373,9 +379,23 @@ export default function QuickRequestPage() {
       } else if (dId) {
         const { data: dr } = await supabase.from('rfq_drafts').select('*').eq('id', dId).single()
         const dd: any = dr?.data
+        if (dd?.kind === 'boq') { window.location.replace(`/contractor/project/new?draft=${dr.id}`); return }
         if (dd) {
           setDraftId(dr.id)
-          if (Array.isArray(dd.items)) { added = dd.items.length; setLines(prev => [...prev, ...dd.items.map(lineFromItem)]) }
+          if (Array.isArray(dd.items)) {
+            const fromDraft: Line[] = dd.items.map(lineFromItem)
+            if (localDraftId && localDraftId === dr.id) {
+              // the unsent list IS this draft: open it in place, never twice (round-5 UX-011)
+              setLines(fromDraft); localCount = 0; added = 0
+            } else {
+              // another unsent list: add only the materials it does not have yet
+              const sig = (l: any) => `${String(l.product_name || '').trim()}|${String(l.quantity || '').trim()}|${String(l.unit || '').trim()}`
+              const have = new Set((Array.isArray(d?.lines) ? d.lines : []).map(sig))
+              const extra = fromDraft.filter(l => !have.has(sig(l)))
+              added = extra.length
+              setLines(prev => [...prev, ...extra])
+            }
+          }
           // a recurring list is a starting point: sending a request from it never deletes it (round-4 UX-187)
           if (dd.is_template) setDraftId(null)
           if (dd.region) { setRegion(dd.region); setCity(dd.city || '') }
@@ -391,10 +411,14 @@ export default function QuickRequestPage() {
       }
       if (fromId || dId) {
         window.history.replaceState(null, '', '/contractor/rfq/quick')
-        if (added && localCount) setInfo(L(
+        if (fromId && added && localCount) setInfo(L(
           `We added the earlier request's items to your current unsent request (${added} items).`,
           `پچھلی درخواست کی اشیاء آپ کی موجودہ غیر ارسال شدہ درخواست میں شامل کر دی گئیں (${added})۔`,
           `أضفنا مواد الطلب السابق إلى طلبك الحالي غير المُرسل (${arMaterials(added)}).`))
+        // a draft has its own words; «الطلب السابق» is for ?from= only (round-5 UX-011)
+        else if (dId) setInfo(added && localCount
+          ? L(`We added the draft's items to your current unsent request (${added}).`, `مسودے کی اشیاء آپ کی موجودہ غیر ارسال شدہ درخواست میں شامل کر دی گئیں (${added})۔`, `أضفنا مواد المسودة إلى طلبك الحالي غير المُرسل (${arMaterials(added)}).`)
+          : L('We opened your draft.', 'ہم نے آپ کا مسودہ کھول دیا۔', 'فتحنا مسودتك.'))
       }
       setRestored(true)
     })()
@@ -452,20 +476,23 @@ export default function QuickRequestPage() {
   useEffect(() => {
     if (!restored || (!userId && !guest) || done) return
     const t = setTimeout(() => saveLocalDraft(userId ? 'quick:' + userId : GUEST_KEY, {
-      text, lines, region, city, hours, needDays, rfqId: rfqIdRef.current, notes, vatRequired, verifiedOnly, nearbyOnly, tier, pickup, geo, address,
+      text, lines, region, city, hours, needDays, rfqId: rfqIdRef.current, notes, vatRequired, verifiedOnly, nearbyOnly, tier, pickup, geo, address, draftId,
       photos: photos.map(p => ({ id: p.id, name: p.file.name, type: p.file.type, status: p.status, share: p.share, confidence: p.confidence, localName: p.localName })),
     }), 300)
     return () => clearTimeout(t)
-  }, [restored, userId, guest, done, text, lines, region, city, hours, needDays, notes, vatRequired, verifiedOnly, nearbyOnly, tier, pickup, geo, address, photos])
+  }, [restored, userId, guest, done, text, lines, region, city, hours, needDays, notes, vatRequired, verifiedOnly, nearbyOnly, tier, pickup, geo, address, photos, draftId])
 
   // the success screen: the usual time to a first offer, and a gold banner when one arrives (round-4 UX-186)
   useEffect(() => {
     if (!sent?.id) return
     const supabase = createClient()
-    supabase.rpc('get_rfq_activity', { p_rfq_id: sent.id }).then(({ data }: any) => {
+    const readActivity = () => supabase.rpc('get_rfq_activity', { p_rfq_id: sent.id }).then(({ data }: any) => {
       const h = Number(data?.typical_first_offer_hours)
       setFirstHours(h > 0 ? h : null)
+      if (data?.views != null) setViews(Number(data.views) || 0)
     }, () => {})
+    readActivity()
+    const poll = setInterval(readActivity, 60000) // the minutes after sending are not silent (round-5 UX-216)
     let ch: any
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) return
@@ -473,11 +500,11 @@ export default function QuickRequestPage() {
       ch = supabase.channel(realtimeTopic(`quick-sent-${sent.id}-${session.user.id}`))
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${session.user.id}` }, (payload: any) => {
           const n = payload.new
-          if (n && JSON.stringify(n.data || {}).includes(sent.id)) setFirstOffer(true)
+          if (n && n.type === 'rfq_offer' && String(n.data?.rfq_id || '') === String(sent.id)) setFirstOffer(true)
         })
         .subscribe()
     })
-    return () => { if (ch) supabase.removeChannel(ch) }
+    return () => { clearInterval(poll); if (ch) supabase.removeChannel(ch) }
   }, [sent?.id])
 
   // the floating assistant hides while the send bar is on screen (UX-006)
@@ -489,8 +516,9 @@ export default function QuickRequestPage() {
   }, [hasBar])
 
   // the status line after adding goes away by itself
-  useEffect(() => { if (!info) { setInfoWarn(false); return } const t = setTimeout(() => setInfo(''), 7000); return () => clearTimeout(t) }, [info])
+  useEffect(() => { if (!info) { setInfoWarn(false); return } if (infoWarn) return; const t = setTimeout(() => setInfo(''), 7000); return () => clearTimeout(t) }, [info, infoWarn])
 
+  useFocusTrap(confirmRef, confirming) // round-5 UX-141
   // the review dialog: Escape closes, focus starts inside (UX-174)
   useEffect(() => {
     if (!confirming) return
@@ -658,7 +686,7 @@ export default function QuickRequestPage() {
       const toCheck = add.filter(l => !l.done).length
       setInfoWarn(toCheck > 0)
       setInfo(locale === 'ar'
-        ? `أضفنا ${arMaterials(add.length)}${toCheck ? `، منها ${arCount(toCheck, 'مادة واحدة تحتاج', 'مادتان تحتاجان', 'مواد تحتاج', 'مادة تحتاج')} إلى مراجعة` : ''}.`
+        ? `أضفنا ${arCount(add.length, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')}${toCheck ? `، منها ${arCount(toCheck, 'مادة واحدة تحتاج', 'مادتان تحتاجان', 'مواد تحتاج', 'مادة تحتاج')} إلى مراجعة` : ''}.`
         : L(`We added ${countLabel(add.length, 'en', arMaterials, 'item', '')}${toCheck ? `, ${toCheck} need a check` : ''}.`,
             `${add.length} اشیاء شامل کی گئیں${toCheck ? `، ${toCheck} کو چیک کریں` : ''}۔`, ''))
       setTimeout(() => document.getElementById('request-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150)
@@ -1102,7 +1130,11 @@ export default function QuickRequestPage() {
       // R23: per-item budgets go to their own owner-only table (index = position in items); skipped for a stale resend
       const budgets = sendable.map((l, i) => ({ item_index: i, budget_unit_price: budgetToStored(parseBudget(l.budget)), budget_visible: !!l.budgetVisible }))
         .filter(b => b.budget_unit_price != null) as ItemBudget[]
-      if (budgets.length && !stale) await saveRfqBudgets(supabase, sentId, budgets)
+      let budgetFailed = false
+      if (budgets.length && !stale) {
+        const ok = (await saveRfqBudgets(supabase, sentId, budgets)) || (await saveRfqBudgets(supabase, sentId, budgets))
+        budgetFailed = !ok // round-5 UX-092
+      }
       deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[], ...lines.flatMap(l => (l.moreFiles || []).map(m => m.id))])
       clearLocalDraft('quick:' + userId)
       rfqIdRef.current = ''
@@ -1117,7 +1149,7 @@ export default function QuickRequestPage() {
       let coverage: any = null
       try { const { data: cv } = await supabase.rpc('get_rfq_coverage', { p_rfq: sentId }); coverage = cv || null } catch {}
       sentOk = true
-      setSent({ id: sentId, expires, coverage, stale })
+      setSent({ id: sentId, expires, coverage, stale, budgetFailed })
       setFirstHours(null); setFirstOffer(false)
       setDone(true)
     } catch {
@@ -1142,7 +1174,7 @@ export default function QuickRequestPage() {
   }
   // the specialty under a catalog line for a business buyer (a home buyer sees none: UX-068)
   const specialtyLabel = (l: Line) => { const sb = lineSub(l); return sb ? getSubCategoryLabel(l.sector as Sector, sb, locale) : sectorLabel(l.sector) }
-  function nameLabel(name: string) { return !name ? name : simple && locale === 'ar' ? homeName(name) : getProductLabel(name, locale) }
+  function nameLabel(name: string) { return !name ? name : simple ? homeName(name, locale) : getProductLabel(name, locale) }
   const unitLabel = (u: string) => getUnitLabelLong(u, locale) || u
   // a spec field's name in the reader's language (Urdu falls back to English only when it has no Urdu label)
   const fieldLabel = (f: any) => locale === 'ar' ? f.ar : locale === 'ur' ? (f.ur || f.en) : f.en
@@ -1205,6 +1237,23 @@ export default function QuickRequestPage() {
       `«${nameLabel(n)}» کا کوئی سپلائر ابھی رجسٹر نہیں۔ بھیجتے ہی ہم اپنی ٹیم کو آپ کے لیے سپلائر تلاش کرنے کا کہیں گے، اور اس پر آفر آتے ہی آپ کو بتائیں گے۔`,
       `لا يوجد بعد مورد مسجّل لـ«${nameLabel(n)}». عند الإرسال نُبلغ فريقنا ليبحث لك عن مورد، وسنُعلمك فور وصول عرض عليه.`)
 
+  // «جهّز بيتك»: the room packs, on the desktop guide and under the list on phones too (round-5 UX-132)
+  const packsRow = (
+    <div>
+      <h3 className="text-sm font-bold text-navy mb-2">{L('Get your home ready', 'اپنا گھر تیار کریں', 'جهّز بيتك')}</h3>
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+        {HOME_ROOM_PACKS.map(p => (
+          <button key={p.id} type="button" onClick={() => setPack(p)}
+            className="shrink-0 inline-flex items-center gap-2 ps-1 pe-3 min-h-[44px] rounded-full border border-gray-200 bg-white text-[13px] font-bold text-[#0B2438] hover:border-[#D4A543]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.photo || productImageUrl(p.cover)} alt="" className="w-9 h-9 rounded-full object-cover bg-gray-50" />
+            {locale === 'en' ? p.en : locale === 'ur' ? p.ur : p.ar}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
   const shell = (children: ReactNode) => (
     <AppShell title={L('Price request', 'قیمت کی درخواست', 'طلب تسعير')} nav={getNav('contractor', locale, '/contractor/rfq/quick')} dir={dir} hideAssistant={hasBar}>{children}</AppShell>
   )
@@ -1222,6 +1271,15 @@ export default function QuickRequestPage() {
           <p className="mb-3 rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]" role="status">
             {L('Your request was sent before your last change. Open it to add what you changed.', 'آپ کی درخواست آخری تبدیلی سے پہلے بھیجی جا چکی تھی۔ جو بدلا ہے وہ شامل کرنے کے لیے اسے کھولیں۔', 'أُرسل طلبك قبل آخر تعديل. افتحه لإضافة ما عدّلته.')}
           </p>
+        )}
+        {sent?.budgetFailed && sent?.id && (
+          <p className="mb-3 rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]" role="status">
+            {L('Your request was sent, but the most you pay per unit could not be saved. Add it from the request page.', 'آپ کی درخواست بھیج دی گئی، لیکن فی یونٹ زیادہ سے زیادہ رقم محفوظ نہیں ہو سکی۔ اسے درخواست کے صفحے سے شامل کریں۔', 'أُرسل طلبك، لكن تعذّر حفظ أقصى مبلغ للوحدة. أضفه من صفحة الطلب.')}{' '}
+            <Link href={`/contractor/rfq/${sent.id}`} className="underline">{L('Open the request', 'درخواست کھولیں', 'افتح الطلب')}</Link>
+          </p>
+        )}
+        {views != null && views > 0 && !firstOffer && (
+          <p className="mb-3 text-[13px] font-bold text-[#0B2438]" aria-live="polite">{L(`${views} supplier${views === 1 ? '' : 's'} have seen your request so far`, `اب تک ${views} سپلائرز نے آپ کی درخواست دیکھی`, `اطّلع على طلبك حتى الآن ${arCount(views, 'مورد واحد', 'موردان', 'موردين', 'مورداً')}`)}</p>
         )}
         {firstOffer && sent?.id && (
           <div className="mb-3 rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/15 p-3 flex flex-wrap items-center justify-between gap-2 text-start" role="status">
@@ -1331,6 +1389,11 @@ export default function QuickRequestPage() {
               <span className="text-[#8F6820] font-bold" aria-hidden="true">{dir === 'rtl' ? '←' : '→'}</span>
             </a>
           )}
+          {buyerType === 'business' && canProjects && (
+            <a href="/contractor/tender" className="mt-2 inline-flex items-center min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">
+              {L('Have a full tender with drawings and specifications? Tender pricing', 'ڈرائنگز اور تفصیلات کے ساتھ مکمل ٹینڈر ہے؟ ٹینڈر کی قیمت', 'لديك مناقصة كاملة بمخططاتها ومواصفاتها؟ تسعير مناقصة')} <span aria-hidden="true" className="ms-1">{dir === 'rtl' ? '←' : '→'}</span>
+            </a>
+          )}
           {/* the mode, with a way out if it was chosen by mistake (UX-085) */}
           {buyerType && !chooseType && (
             <div className="mt-2 flex items-center gap-2 text-[13px] text-gray-600">
@@ -1395,7 +1458,7 @@ export default function QuickRequestPage() {
           </div>
           <p className="text-[12px] text-gray-600">{L('We turn what you wrote into a list of materials that you check before sending.', 'آپ کی لکھی ہوئی چیزوں کو ہم سامان کی فہرست میں بدلیں گے جسے آپ بھیجنے سے پہلے دیکھیں گے۔', 'سنحوّل ما كتبته إلى قائمة مواد تراجعها قبل الإرسال.')}</p>
           {micError && <p className="text-[13px] text-red-700" role="alert">{micError}</p>}
-          {info && <p className={'text-[13px] font-bold ' + (infoWarn ? 'text-[#0B2438]' : 'text-[#0F6E56]')} role="status">{infoWarn && <Glyph e="⚠" />} {info}</p>}
+          {info && lines.length === 0 && <p className={'text-[13px] font-bold ' + (infoWarn ? 'text-[#0B2438]' : 'text-[#0F6E56]')} role="status">{infoWarn && <Glyph e="⚠" />} {info}</p>}
           {/* «طلبتَها سابقاً» (round-2 UX-167): one tap adds a material from the last requests */}
           {pastItems.some(p => !lines.some(l => l.product_name === p.name)) && (
             <div>
@@ -1447,10 +1510,11 @@ export default function QuickRequestPage() {
           <h2 className="font-bold text-navy"><Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
           {replaceKey && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 px-3 py-1.5 text-[13px] font-bold text-[#0B2438]" role="status">
-              <span>{L('Choose the material that replaces', 'وہ سامان منتخب کریں جو اس کی جگہ لے', 'اختر المادة التي تحلّ محلّ')} «{nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}»</span>
+              <span>{L(`You are choosing a replacement for «${nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}»; the quantity stays the same`, `آپ «${nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}» کا متبادل چن رہے ہیں؛ مقدار وہی رہے گی`, `تختار الآن بديلاً لـ«${nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '')}»، وتبقى الكمية كما هي`)}</span>
               <button type="button" onClick={() => { replaceRef.current = null; setReplaceKey(null); setInfo('') }} className="min-h-[44px] px-2 underline">{L('Cancel', 'منسوخ', 'إلغاء')}</button>
             </div>
           )}
+          {simple && packsRow}
           <CatalogBrowser key={startQ + '|' + (startSection || '')} simple={simple} inline initialQuery={startQ} initialSection={startSection as any} locale={locale}
             picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity, unit: l.unit }))} onPick={addFromCatalog} onRemove={removeLine} onQty={(k, q) => updateLine(k, { quantity: q })} />
         </div>
@@ -1463,7 +1527,7 @@ export default function QuickRequestPage() {
             <span className="text-[13px] font-bold text-[#0B2438]" dir="auto">
               {countLabel(sendable.length || lines.length, locale, arMaterials, 'item', 'اشیاء')}
               {' · '}{pickup ? L('Pickup from the supplier', 'سپلائر سے خود وصولی', 'استلام من المورد')
-                : region ? L(`Delivery to ${city ? (((CITIES_BY_REGION as any)[region] || []).find((c: any) => c.ar === city)?.en || city) : getRegionLabel(region, 'en')}`, `${city || getRegionLabel(region, 'ur')} تک ڈیلیوری`, `التوصيل إلى ${city || getRegionLabel(region, 'ar')}`)
+                : region ? L(`Delivery to ${getPlaceLabel(city, city ? null : region, 'en')}`, `${getPlaceLabel(city, city ? null : region, 'ur')} تک ڈیلیوری`, `التوصيل إلى ${getPlaceLabel(city, city ? null : region, 'ar')}`)
                 : L('Delivery place not set yet', 'ڈیلیوری کی جگہ ابھی طے نہیں', 'لم يُحدَّد مكان التوصيل بعد')}
             </span>
             {!ready && (
@@ -1483,6 +1547,8 @@ export default function QuickRequestPage() {
               <h2 id="request-list" className="font-bold text-navy scroll-mt-24">{simple && stepBadge(2)}{simple ? L('How many?', 'کتنا؟', 'كم تحتاج؟') : L('Your request', 'آپ کی درخواست', 'طلبك')} <span className="text-gray-500 font-normal">({lines.length})</span></h2>
               <span className="text-[12px] text-gray-500">{L('Check each line before sending', 'بھیجنے سے پہلے ہر لائن چیک کریں', 'راجع كل سطر قبل الإرسال')}</span>
             </div>
+            {info && <p className={'text-[13px] font-bold rounded-lg px-2 py-1 ' + (infoWarn ? 'text-[#0B2438] bg-[#D4A543]/10' : 'text-[#0F6E56] bg-[#E1F5EE]')} role="status">{infoWarn && <Glyph e="⚠" />} {info}</p>}
+            {simple && <div className="lg:hidden">{packsRow}</div>}
             <div className="flex items-center justify-between gap-2 text-[12px] text-gray-500">
               <span className="inline-flex items-center gap-1.5"><SellerIcon name="checkCircle" className="w-4 h-4 text-[#0F6E56]" />{L('Saved on this device, you can leave and come back', 'اس ڈیوائس پر محفوظ ہے، واپس آ سکتے ہیں', 'محفوظ على جهازك، يمكنك المغادرة والعودة لاحقاً')}</span>
               <button type="button" onClick={async () => { if ((await askConfirm(L('Clear the whole request? This cannot be undone.', 'پوری درخواست صاف کریں؟ یہ واپس نہیں ہو سکتا۔', 'هل تريد مسح الطلب بالكامل؟ لا يمكن التراجع عن ذلك.'), { danger: true }))) startOver() }} className="min-h-[44px] px-1 font-bold text-gray-600 hover:text-red-600">
@@ -1497,7 +1563,7 @@ export default function QuickRequestPage() {
               </button>
               {!simple && !tplOpen && (
                 <button type="button" onClick={() => setTplOpen(true)} className="min-h-[44px] px-3 rounded-xl text-[13px] font-bold border border-[#0B2438]/40 bg-white text-[#0B2438]">
-                  {L('Save as a recurring list', 'بار بار کی فہرست کے طور پر محفوظ کریں', 'احفظ كقائمة متكرّرة')}
+                  {L('Save it in my lists', 'میری فہرستوں میں محفوظ کریں', 'احفظها في قوائمي')}
                 </button>
               )}
             </div>
@@ -1644,8 +1710,8 @@ export default function QuickRequestPage() {
                     // owner 2026-11-23: business buyers too)
                     return (
                       <p className="text-[12px] text-gray-600 leading-relaxed">
-                        {L(`Usual market price: about ${fmt(avg * 1.15)} SAR per ${ul} incl. VAT`, `مارکیٹ کی عام قیمت: تقریباً ${fmt(avg * 1.15)} ریال فی ${ul} VAT سمیت`, `السعر المعتاد في السوق: نحو ${fmt(avg * 1.15)} ر.س لكل ${ul} شامل الضريبة`)}
-                        {q > 0 ? L(`, about ${fmt(avg * q * 1.15)} SAR for your quantity`, `، آپ کی مقدار کے لیے تقریباً ${fmt(avg * q * 1.15)} ریال`, `، أي نحو ${fmt(avg * q * 1.15)} ر.س لكميتك`) : ''}.
+                        {L(`Usual market price: about ${fmt(avg)} SAR per ${ul} (incl. VAT)`, `مارکیٹ کی عام قیمت: تقریباً ${fmt(avg)} ریال فی ${ul} (VAT سمیت)`, `السعر المعتاد في السوق: نحو ${fmt(avg)} ر.س لكل ${ul} (شامل الضريبة)`)}
+                        {q > 0 ? L(`, about ${fmt(avg * q)} SAR for your quantity`, `، آپ کی مقدار کے لیے تقریباً ${fmt(avg * q)} ریال`, `، أي نحو ${fmt(avg * q)} ر.س لكميتك`) : ''}.
                       </p>
                     )
                   })()}
@@ -1713,13 +1779,17 @@ export default function QuickRequestPage() {
                               <Glyph e="⚠" /> {l.photoWarn} <button type="button" className="underline font-bold min-h-[44px] px-1" onClick={() => updateLine(l.key, { photoWarn: undefined })}>{L('Keep it', 'رکھیں', 'أبقِها')}</button>
                             </div>
                           )}
-                          {/* one attach button; on a line written by hand it asks for a photo (UX-174) */}
+                          {/* one attach button; on a line written by hand it asks for a photo (UX-174); an attached file is a chip (round-5 UX-133) */}
+                          {l.fileId ? (
+                            <span className="inline-flex items-center min-h-[44px] text-[12px] font-bold px-3 rounded-lg border border-[#0B2438]/30 text-[#0B2438] bg-[#0B2438]/5 max-w-[16rem]"><span className="truncate"><Glyph e="📎" /> {l.fileName || fileWord(l.fileName)}</span></span>
+                          ) : (
                           <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
                             className={`min-h-[44px] text-[12px] font-bold px-3 rounded-lg border max-w-[16rem] truncate ${l.fileId ? 'border-[#0B2438]/30 text-[#0B2438] bg-[#0B2438]/5' : custom && !hasPhoto ? 'border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10' : 'border-gray-200 text-gray-700'}`}>
                             <Glyph e={custom && !l.fileId ? '📷' : '📎'} /> {l.fileId ? (l.fileName || fileWord(l.fileName))
                               : custom && !hasPhoto ? L('Add a photo so suppliers understand your request', 'تصویر لگائیں تاکہ سپلائرز آپ کی درخواست سمجھیں', 'أضف صورة ليفهم الموردون طلبك')
                               : simple ? L('Attach a photo', 'تصویر منسلک کریں', 'أرفق صورة') : L('Attach a drawing or file', 'ڈرائنگ یا فائل منسلک کریں', 'أرفق مخططاً أو ملفاً')}
                           </button>
+                          )}
                           {l.fileId && (
                             <button type="button" onClick={() => { deleteDraftBlobs([l.fileId!]); const [nx, ...rest] = l.moreFiles || []; updateLine(l.key, nx ? { fileId: nx.id, fileName: nx.name, moreFiles: rest, photoWarn: undefined } : { fileId: undefined, fileName: undefined, photoWarn: undefined }) }}
                               className="min-w-[44px] min-h-[44px] grid place-items-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}><X className="w-4 h-4" aria-hidden /></button>
@@ -1752,7 +1822,7 @@ export default function QuickRequestPage() {
                                 <label key={f.key} className="block">
                                   <span className="block text-[12px] font-semibold text-gray-700 mb-0.5">{fieldLabel(f)}{req ? ' *' : ''}</span>
                                   <select value={isCustom ? '__other' : v} aria-invalid={(req && !v.trim() && errKey === l.key) || undefined} onChange={e => setV(e.target.value === '__other' ? ' ' : e.target.value)} className={`input-field text-[16px] sm:text-sm ${req && !v.trim() ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
-                                    <option value="">{req ? L('Choose', 'منتخب کریں', 'اختر') : L('Any', 'کوئی بھی', 'أي')}</option>
+                                    <option value="">{req ? L('Choose', 'منتخب کریں', 'اختر') : L('No preference', 'کوئی شرط نہیں', 'بلا تحديد')}</option>
                                     {f.options.map(o => <option key={o} value={o}>{getOptionLabel(o, locale)}</option>)}
                                     <option value={SPEC_UNSURE}>{specUnsureLabel(locale)}</option>
                                     <option value="__other">{L('Other…', 'دیگر…', 'أخرى…')}</option>
@@ -1921,7 +1991,6 @@ export default function QuickRequestPage() {
                 : <div className="text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')}</div>}
               <div className={`mt-3 space-y-3 ${simple && !moreOpen ? 'hidden' : ''}`}>
                 {!simple && needBlock}
-                {windowNote}
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-[16px] sm:text-sm" aria-label={L('Notes for suppliers (optional)', 'سپلائرز کے لیے نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} placeholder={L('Notes for suppliers (optional)', 'سپلائرز کے لیے نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
                 {!simple && (<>
                 <div>
@@ -1975,7 +2044,7 @@ export default function QuickRequestPage() {
 
       {/* «حُذفت X · تراجع» for 5 seconds */}
       {undo && (
-        <div className="fixed z-[46] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 bottom-[calc(9.5rem+env(safe-area-inset-bottom))] lg:bottom-24 sm:w-[26rem] rounded-xl bg-[#0B2438] text-white shadow-xl px-4 py-2 flex items-center justify-between gap-3 print:hidden" role="status">
+        <div className="fixed z-[70] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 bottom-[calc(9.5rem+env(safe-area-inset-bottom))] lg:bottom-24 sm:w-[26rem] rounded-xl bg-[#0B2438] text-white shadow-xl px-4 py-2 flex items-center justify-between gap-3 print:hidden" role="status">
           <span className="text-sm truncate">{L(`Removed «${nameLabel(undo.line.product_name) || 'item'}»`, `«${nameLabel(undo.line.product_name)}» ہٹا دیا گیا`, `حُذفت «${nameLabel(undo.line.product_name) || 'المادة'}»`)}</span>
           <button type="button" onClick={undoRemove} className="min-h-[44px] px-3 rounded-lg font-extrabold text-[#F5C55B] hover:bg-white/10 shrink-0">{L('Undo', 'واپس لائیں', 'تراجع')}</button>
         </div>
@@ -1999,26 +2068,28 @@ export default function QuickRequestPage() {
               {reach && (
                 <div className="space-y-1.5 min-h-[40px]">
                   {reach.reached >= 1 && (() => {
-                    const cityName = city ? (((CITIES_BY_REGION as any)[region] || []).find((c: any) => c.ar === city)?.[locale === 'ar' ? 'ar' : 'en'] || city) : ''
+                    const cityName = city ? getPlaceLabel(city, null, locale) : ''
                     const where = nearbyOnly && cityName
                       ? L(` in ${cityName}`, ` ${cityName} میں`, ` في ${cityName}`)
                       : region ? L(` in the ${getRegionLabel(region, 'en')} region`, ` ${getRegionLabel(region, 'ur')} علاقے میں`, ` في منطقة ${getRegionLabel(region, 'ar')}`) : ''
                     return (
                       <p className="rounded-xl bg-[#D4A543]/10 border border-[#D4A543]/40 px-3 py-2 text-[13px] font-bold text-[#0B2438]">
-                        {L(`Your request will reach about ${reach.reached} supplier${reach.reached === 1 ? '' : 's'}${where}.`, `آپ کی درخواست تقریباً ${reach.reached} سپلائرز تک پہنچے گی${where}۔`, `سيصل طلبك إلى نحو ${arCount(reach.reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')}${where}.`)}
+                        {L(`Your request will reach about ${reach.reached} supplier${reach.reached === 1 ? '' : 's'}${where}.`, `آپ کی درخواست تقریباً ${reach.reached} سپلائرز تک پہنچے گی${where}۔`, `سيصل طلبك إلى ${reach.reached > 2 ? 'نحو ' : ''}${arCount(reach.reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')}${where}.`)}
                       </p>
                     )
                   })()}
-                  {reach.reached === 0 && (
-                    <p className="rounded-xl bg-[#D4A543]/10 border border-[#D4A543]/40 px-3 py-2 text-[13px] font-bold text-[#0B2438]">
-                      {L('We have not found suppliers for your materials in your area yet, and we will look for them for you.', 'آپ کے علاقے میں آپ کے سامان کے سپلائرز ابھی نہیں ملے، ہم آپ کے لیے تلاش کریں گے۔', 'لم نجد بعد موردين لموادك في منطقتك، وسنبحث لك عنهم.')}
-                    </p>
-                  )}
-                  {reach.items.filter(x => Number(x.suppliers) === 0).map(x => (
-                    <p key={x.name} className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-[13px] text-amber-900">
-                      {uncoveredMsg(x.name, false)}
-                    </p>
-                  ))}
+                  {(() => {
+                    const none = reach.items.filter(x => Number(x.suppliers) === 0).map(x => nameLabel(x.name))
+                    if (!none.length) return null
+                    const list = none.join(locale === 'en' ? ', ' : '، ')
+                    return (
+                      <p className="rounded-xl bg-[#D4A543]/10 border border-[#D4A543]/40 px-3 py-2 text-[13px] font-bold text-[#0B2438]">
+                        {L(`We have not found suppliers for these materials in your area yet: ${list}. When you send, we tell our team to look for them, and we will let you know as soon as any offer arrives.`,
+                          `آپ کے علاقے میں ان اشیاء کے سپلائرز ابھی نہیں ملے: ${list}۔ بھیجتے ہی ہم اپنی ٹیم کو تلاش کا کہیں گے، اور کوئی بھی آفر آتے ہی آپ کو بتائیں گے۔`,
+                          `لم نجد بعد موردين لهذه المواد في منطقتك: ${list}. عند الإرسال نُبلغ فريقنا ليبحث لك عنهم، وسنُعلمك فور وصول أي عرض.`)}
+                      </p>
+                    )
+                  })()}
                 </div>
               )}
               <div>
@@ -2060,7 +2131,7 @@ export default function QuickRequestPage() {
                 <dt className="text-gray-600">{L('Receiving', 'وصولی', 'الاستلام')}</dt>
                 <dd className="font-semibold"><span className="inline-flex items-center gap-1.5"><SellerIcon name={pickup ? 'store' : 'truck'} className="w-4 h-4 text-[#0B2438]" />{pickup ? L('Pickup from the supplier', 'سپلائر سے خود', 'استلام من المورد') : L('Delivery', 'ڈیلیوری', 'توصيل')}</span></dd>
                 <dt className="text-gray-600">{L('Area', 'علاقہ', 'المنطقة')}</dt>
-                <dd className="font-semibold">{[city ? ((CITIES_BY_REGION as any)[region] || []).find((c: any) => c.ar === city)?.[locale === 'ar' ? 'ar' : 'en'] || city : '', getRegionLabel(region, locale)].filter(Boolean).join(locale === 'en' ? ', ' : '، ')}</dd>
+                <dd className="font-semibold">{getPlaceLabel(city, region, locale)}</dd>
                 {!pickup && (<>
                   <dt className="text-gray-600">{L('Location', 'مقام', 'الموقع')}</dt>
                   <dd className="font-semibold" dir="auto">
@@ -2120,7 +2191,9 @@ export default function QuickRequestPage() {
           picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity, unit: l.unit }))}
           onRemove={(key: string) => removeLine(key)}
           onQty={(k, q) => updateLine(k, { quantity: q })}
-          onPick={addFromCatalog} />
+          onPick={addFromCatalog}
+          replacing={replaceKey ? nameLabel(lines.find(x => x.key === replaceKey)?.product_name || '') : ''}
+          onCancelReplace={() => { replaceRef.current = null; setReplaceKey(null); setInfo('') }} />
       )}
       {pack && <PackSheet pack={pack} locale={locale} onAdd={addPack} onClose={() => setPack(null)} />}
     </div>

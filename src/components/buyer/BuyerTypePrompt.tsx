@@ -50,8 +50,8 @@ export default function BuyerTypePrompt({ userId, locale, onChosen }: { userId: 
     <div className="fixed inset-0 z-[80] bg-[#071827]/70 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
       <div ref={boxRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="bt-title" aria-describedby="bt-desc" className="outline-none w-full max-w-md rounded-2xl bg-white shadow-2xl border-t-4 border-[#D4A543] p-5">
         {/* the question itself is the cards' own label (one wording everywhere), so it is not repeated here */}
-        <h2 id="bt-title" className="text-xl font-extrabold text-[#0B2438]">{L('New in Taseerak', 'تسعیرک میں نیا', 'جديد في تسعيرك')}</h2>
-        <p id="bt-desc" className="text-sm text-gray-600 mt-1">{L('We will show you the screens that suit you.', 'ہم آپ کے لیے موزوں اسکرین دکھائیں گے۔', 'سنعرض لك الصفحات التي تناسبك.')}</p>
+        <h2 id="bt-title" className="text-xl font-extrabold text-[#0B2438]">{L('One step to personalise Taseerak', 'تسعیرک کو اپنے لیے ترتیب دینے کا ایک قدم', 'خطوة واحدة لتخصيص تسعيرك')}</h2>
+        <p id="bt-desc" className="text-sm text-gray-600 mt-1">{L('Tell us who you buy for so we show you the right pages.', 'ہمیں بتائیں آپ کس کے لیے خریدتے ہیں تاکہ ہم آپ کو مناسب صفحات دکھائیں۔', 'أخبرنا لمن تشتري لنعرض لك الصفحات المناسبة.')}</p>
         <div className="mt-4" aria-busy={!!busy}>
           <BuyerTypeCards value={busy || ''} onChange={choose} locale={locale} disabled={!!busy} showHint={false} />
           {busy && <p className="mt-1.5 text-[13px] font-semibold text-[#0B2438]" role="status">{L('Saving…', 'محفوظ کیا جا رہا ہے…', 'جارٍ الحفظ…')}</p>}

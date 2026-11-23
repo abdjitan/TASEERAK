@@ -21,17 +21,37 @@ export function isCrTaken(err: any): boolean {
  *  settings, the app). Owner 2026-11-23: support handles ownership proofs; there is no self-service claim. */
 export function crTakenText(locale: string): { msg: string; cta: string } {
   if (locale === 'en') return {
-    msg: 'This commercial registration is registered to another account. If it is yours, contact support to prove ownership.',
+    msg: 'This commercial registration is registered to another account. If it is yours, contact support to prove ownership. If you are an employee of this business, ask the account owner for an invitation link from the Team page; you will not need a commercial registration then.',
     cta: 'Contact support',
   }
   if (locale === 'ur') return {
-    msg: 'یہ تجارتی رجسٹریشن کسی دوسرے اکاؤنٹ میں رجسٹرڈ ہے۔ اگر یہ آپ کی ہے تو ملکیت ثابت کرنے کے لیے سپورٹ سے رابطہ کریں۔',
+    msg: 'یہ تجارتی رجسٹریشن کسی دوسرے اکاؤنٹ میں رجسٹرڈ ہے۔ اگر یہ آپ کی ہے تو ملکیت ثابت کرنے کے لیے سپورٹ سے رابطہ کریں۔ اور اگر آپ اس ادارے کے ملازم ہیں تو اکاؤنٹ کے مالک سے ٹیم کے صفحے سے دعوتی لنک مانگیں؛ پھر آپ کو تجارتی رجسٹریشن کی ضرورت نہیں ہوگی۔',
     cta: 'سپورٹ سے رابطہ کریں',
   }
   return {
-    msg: 'هذا السجل التجاري مسجّل بحساب آخر. إن كان السجل لك، تواصل مع الدعم لإثبات ملكيته.',
+    msg: 'هذا السجل التجاري مسجّل بحساب آخر. إن كان السجل لك، تواصل مع الدعم لإثبات ملكيته. وإن كنت موظفاً في هذه المنشأة، فاطلب من صاحب الحساب رابط دعوة من صفحة فريق العمل، ولا تحتاج حينها إلى سجل تجاري.',
     cta: 'تواصل مع الدعم',
   }
+}
+
+/** UX-079 (round 5): the prefilled support message for a CR held by another account. */
+export function crSupportMessage(cr: string, locale: string): string {
+  const c = normalizeCrInput(cr)
+  if (locale === 'en') return `The commercial registration ${c} is registered to another account, and it is mine. I can send proof of that.`
+  if (locale === 'ur') return `تجارتی رجسٹریشن ${c} کسی دوسرے اکاؤنٹ میں رجسٹرڈ ہے، اور یہ میری ہے۔ میں اس کا ثبوت بھیج سکتا ہوں۔`
+  return `السجل التجاري ${c} مسجّل بحساب آخر، وهو لي. يمكنني إرسال ما يثبت ذلك.`
+}
+/** UX-079: the note under that message (which document to attach and what happens next). */
+export function crSupportNote(locale: string): string {
+  if (locale === 'en') return 'Attach a photo of the commercial registration certificate. The team reviews it and moves the registration to your account if it is shown to be yours.'
+  if (locale === 'ur') return 'تجارتی رجسٹریشن سرٹیفکیٹ کی تصویر منسلک کریں۔ ٹیم اس کا جائزہ لے گی اور اگر ثابت ہو گیا کہ یہ آپ کی ہے تو رجسٹریشن آپ کے اکاؤنٹ میں منتقل کر دے گی۔'
+  return 'أرفق صورة شهادة السجل التجاري، وسيراجعها الفريق وينقل السجل إلى حسابك إن ثبت أنه لك.'
+}
+/** UX-097 (round 5): the line under the seller-kind cards (sign-up, /join): employees join through an invite. */
+export function teamInviteHintText(locale: string): string {
+  if (locale === 'en') return 'A sales employee of a registered business? Ask the account owner for the invitation link.'
+  if (locale === 'ur') return 'کسی رجسٹرڈ ادارے میں سیلز ملازم ہیں؟ اکاؤنٹ کے مالک سے دعوتی لنک مانگیں۔'
+  return 'موظف مبيعات في منشأة مسجّلة؟ اطلب رابط الدعوة من صاحب الحساب.'
 }
 
 /** Where «تواصل مع الدعم» goes for a CR held by another account.
@@ -40,7 +60,7 @@ export function crSupportHref(cr: string, opts: { signedIn: boolean; email?: str
   const c = normalizeCrInput(cr)
   if (opts.signedIn) return `/support?topic=cr${c ? '&cr=' + encodeURIComponent(c) : ''}`
   const subject = opts.locale === 'en' ? 'Commercial registration already registered' : opts.locale === 'ur' ? 'تجارتی رجسٹریشن پہلے سے رجسٹرڈ' : 'سجل تجاري مسجّل بحساب آخر'
-  const body = opts.locale === 'en' ? `Commercial registration: ${c}` : opts.locale === 'ur' ? `تجارتی رجسٹریشن: ${c}` : `رقم السجل التجاري: ${c}`
+  const body = crSupportMessage(c, opts.locale || 'ar')
   return `mailto:${opts.email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
 }
 

@@ -9,7 +9,9 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import Turnstile from '@/components/shared/Turnstile'
 import { TURNSTILE_SITE_KEY } from '@/lib/turnstile'
 import PhoneOtpForm from '@/components/auth/PhoneOtpForm'
-import { rememberPostSignupNext } from '@/lib/postSignupNext'
+import { rememberPostSignupNext, takePostSignupNext } from '@/lib/postSignupNext'
+import { packById } from '@/lib/homePacks'
+import { BROWSE_SECTIONS } from '@/lib/browseCategories'
 import FixSignupEmail from '@/components/auth/FixSignupEmail'
 import { BUYER_PHONE_LOGIN as PHONE_OTP_ENABLED } from '@/lib/features'
 import { pendingTeamInvite } from '@/lib/sellers'
@@ -42,13 +44,25 @@ function LoginForm() {
   const nextParam = searchParams.get('next') || ''
   const registerHref = nextParam ? `/register?next=${encodeURIComponent(nextParam)}` : '/register'
   // why the visitor is here when a link sent them (UX-097)
+  // the pack or section the visitor picked on the landing page (round-5 UX-127)
+  const nextQuery = (() => { try { return new URLSearchParams(nextParam.split('?')[1] || '') } catch { return new URLSearchParams() } })()
+  const pickedPack = packById(nextQuery.get('pack'))
+  const pickedSection = BROWSE_SECTIONS.find(s => s.key === nextQuery.get('section')) || null
+  const pickedLabel = pickedPack ? L(pickedPack.en, pickedPack.ur, pickedPack.ar) : pickedSection ? L(pickedSection.en, pickedSection.ur, pickedSection.ar) : ''
   const nextNote = !nextParam ? ''
     // a visitor who built a list on the request page and pressed «إرسال» (round-4 UX-056)
     : /^\/contractor\/rfq\/quick\?(.*&)?guest=1/.test(nextParam)
       ? L('Create your account with your mobile number to send the request. You will not lose your list.', 'درخواست بھیجنے کے لیے اپنے موبائل نمبر سے اکاؤنٹ بنائیں۔ آپ کی فہرست محفوظ رہے گی۔', 'أنشئ حسابك برقم جوالك لإرسال الطلب، ولن تفقد قائمتك.')
+    : pickedPack
+      ? L(`You chose: ${pickedLabel}. Create your account with your mobile number, and the materials list will be ready for you to edit and send.`, `آپ نے منتخب کیا: ${pickedLabel}۔ اپنے موبائل نمبر سے اکاؤنٹ بنائیں، اشیاء کی فہرست تیار ملے گی جسے آپ بدل کر بھیج سکتے ہیں۔`, `اخترت: ${pickedLabel}. أنشئ حسابك برقم جوالك، وستجد قائمة المواد جاهزة لتعدّلها وترسلها.`)
+    : pickedSection
+      ? L(`You chose: ${pickedLabel}. Create your account with your mobile number to pick the materials and send your request.`, `آپ نے منتخب کیا: ${pickedLabel}۔ اشیاء چننے اور درخواست بھیجنے کے لیے اپنے موبائل نمبر سے اکاؤنٹ بنائیں۔`, `اخترت: ${pickedLabel}. أنشئ حسابك برقم جوالك لتختار المواد وترسل طلبك.`)
     : /^\/contractor\/(rfq\/quick|project\/new)/.test(nextParam)
-      ? L('Create a free account or sign in to send your price request.', 'قیمت کی درخواست بھیجنے کے لیے مفت اکاؤنٹ بنائیں یا سائن اِن کریں۔', 'أنشئ حساباً مجانياً أو سجّل الدخول لإرسال طلب التسعير.')
+      ? L('Create a free account to request prices for what you need.', 'جو آپ کو چاہیے اس کی قیمتیں منگوانے کے لیے مفت اکاؤنٹ بنائیں۔', 'أنشئ حساباً مجانياً لتطلب أسعار ما تحتاجه.')
       : L('Sign in to open the page whose link you received.', 'جس صفحے کا لنک آپ کو ملا ہے اسے کھولنے کے لیے سائن اِن کریں۔', 'سجّل الدخول لفتح الصفحة التي وصلك رابطها.')
+  // the phone form's step: its code and name steps hide the tabs and the title (round-5 UX-121)
+  const [otpStep, setOtpStep] = useState<'phone' | 'code' | 'name'>('phone')
+  const otpBusy = mode === 'phone' && otpStep !== 'phone'
   const [bannedErr, setBannedErr] = useState(false)
   const intro = mode === 'email' && !phoneOn && !emailFormOpen
   const [email, setEmail] = useState('')
@@ -112,7 +126,10 @@ function LoginForm() {
     const role = p?.role || metaRole || 'contractor'
     if (role !== 'admin' && p && !p.role_chosen_at) { window.location.href = '/welcome'; return }
     const fallback = (role !== 'admin' && p && !p.region) ? '/onboarding' : roleHome(role)
-    window.location.href = safeRedirect(searchParams.get('next'), fallback)
+    const target = safeRedirect(searchParams.get('next'), fallback)
+    // used now: forget the remembered copy, so it never opens days later after onboarding (round-5 UX-120)
+    if (target !== fallback) takePostSignupNext()
+    window.location.href = target
   }
 
   useEffect(() => {
@@ -187,7 +204,7 @@ function LoginForm() {
     <div className="auth-screen min-h-screen flex" dir={dir}>
       {/* ===== Brand panel (hidden on small screens) ===== */}
       <div className="auth-brand-panel hidden lg:flex lg:w-[46%] relative overflow-hidden flex-col justify-between p-12 text-white"
-        style={{ background: 'linear-gradient(135deg,#0a1530 0%,#0B2438 55%,#102E45 100%)' }}>
+        style={{ background: 'linear-gradient(135deg,#071827 0%,#0B2438 55%,#102E45 100%)' }}>
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[8%] right-[8%] w-[420px] h-[420px] rounded-full blur-3xl" style={{ background: 'rgba(212,165,67,.12)' }} />
           <div className="absolute bottom-[6%] left-[6%] w-[480px] h-[480px] rounded-full blur-3xl bg-white/5" />
@@ -198,10 +215,10 @@ function LoginForm() {
         </div>
         <div className="relative z-10 max-w-md">
           <h2 className="text-3xl xl:text-[40px] font-extrabold leading-[1.25] mb-4">{t.brandH}</h2>
-          <p className="text-blue-100/80 text-base mb-8 leading-relaxed">{t.brandP}</p>
+          <p className="text-white/80 text-base mb-8 leading-relaxed">{t.brandP}</p>
           <ul className="space-y-4">
             {[t.l1, t.l2, t.l3].map((it, i) => (
-              <li key={i} className="flex items-center gap-3 text-[15px] text-blue-50">
+              <li key={i} className="flex items-center gap-3 text-[15px] text-white/90">
                 <span className="w-6 h-6 rounded-full grid place-items-center shrink-0" style={{ background: '#D4A543' }}>
                   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="#071827" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                 </span>{it}
@@ -209,7 +226,7 @@ function LoginForm() {
             ))}
           </ul>
         </div>
-        <div className="relative z-10 text-xs text-blue-200/50">{t.copyright}</div>
+        <div className="relative z-10 text-xs text-white/50">{t.copyright}</div>
       </div>
 
       {/* ===== Form panel ===== */}
@@ -234,10 +251,12 @@ function LoginForm() {
 
             {/* every «Start now» button lands here: the phone title says «start», not only «sign in» (UX-134).
                 With phone sign-in off, a new visitor sees «start free» + «create an account», never «welcome back» first (UX-003) */}
+            {!otpBusy && <>
             <h1 className="text-[26px] font-bold text-navy mb-1">{mode === 'phone' ? L('Start with your mobile number', 'اپنے موبائل نمبر سے شروع کریں', 'ابدأ برقم جوالك') : intro ? L('Start free', 'مفت شروع کریں', 'ابدأ مجاناً') : t.welcome}</h1>
-            <p className="text-ink-2 text-sm mb-5">{mode === 'phone' ? L('We will send you a verification code by text message. If your number is new, we create a free buyer account for you.', 'ہم آپ کو ٹیکسٹ میسج سے تصدیقی کوڈ بھیجیں گے۔ اگر آپ کا نمبر نیا ہے تو ہم آپ کے لیے مفت خریدار اکاؤنٹ بنا دیں گے۔', 'سنرسل إليك رمز تحقق برسالة نصية. إن كان رقمك جديداً أنشأنا لك حساب مشتري مجاناً.') : intro ? L('Create your account with your email in less than a minute.', 'ای میل سے ایک منٹ سے کم میں اپنا اکاؤنٹ بنائیں۔', 'أنشئ حسابك بالبريد الإلكتروني في أقل من دقيقة.') : t.sub}</p>
+            <p className="text-ink-2 text-sm mb-5">{mode === 'phone' ? L('We will send you a verification code by text message. If your number is new, we create a free buyer account for you.', 'ہم آپ کو ٹیکسٹ میسج سے تصدیقی کوڈ بھیجیں گے۔ اگر آپ کا نمبر نیا ہے تو ہم آپ کے لیے مفت خریدار اکاؤنٹ بنا دیں گے۔', 'سنرسل إليك رمز تحقق برسالة نصية. إن كان رقمك جديداً أنشأنا لك حساب مشتري مجاناً.') : intro ? L('Create your account with your email.', 'ای میل سے اپنا اکاؤنٹ بنائیں۔', 'أنشئ حسابك بالبريد الإلكتروني.') : t.sub}</p>
+            </>}
 
-            {nextNote && (
+            {nextNote && !otpBusy && (
               <div className="flex items-start gap-2 text-sm rounded-xl p-3 mb-4 border" style={{ background: '#EEF2F6', borderColor: '#D5DEE8', color: '#0B2438' }} role="status">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 mt-0.5 shrink-0" aria-hidden><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg>
                 <span>{nextNote}</span>
@@ -245,7 +264,7 @@ function LoginForm() {
             )}
 
             {/* two ways in, side by side at the top, while phone sign-in is on (UX-130) */}
-            {phoneOn && (
+            {phoneOn && !otpBusy && (
               <div className="grid grid-cols-2 gap-1 p-1 rounded-xl mb-5" style={{ background: '#EEF2F6' }} role="tablist" aria-label={L('How to sign in', 'سائن اِن کا طریقہ', 'طريقة الدخول')}>
                 {([['phone', L('Mobile number (buyers)', 'موبائل نمبر (خریدار)', 'برقم الجوال (للمشترين)')], ['email', L('Email', 'ای میل', 'بالبريد الإلكتروني')]] as const).map(([m, label]) => (
                   <button key={m} type="button" role="tab" aria-selected={mode === m}
@@ -262,17 +281,22 @@ function LoginForm() {
               </div>
             )}
             {confirmNote === 'expired' && (
-              <div className="bg-amber-50 border border-amber-200 text-amber-900 text-sm rounded-xl p-3 mb-4" role="alert">
+              <div className="bg-warn-bg border border-warn-border text-warn-text text-sm rounded-xl p-3 mb-4" role="alert">
                 {L('The confirmation link has expired or was already used. Sign in with your email and password: if the email is not confirmed yet, we will offer to send a new link.', 'تصدیقی لنک کی مدت ختم ہو گئی یا یہ پہلے استعمال ہو چکا ہے۔ اپنی ای میل اور پاسورڈ سے سائن اِن کریں: اگر ای میل ابھی تصدیق نہیں ہوئی تو ہم نیا لنک بھیجنے کی پیشکش کریں گے۔', 'انتهت صلاحية رابط التأكيد أو سبق استخدامه. سجّل الدخول ببريدك وكلمة المرور، فإن لم يكن البريد مؤكَّداً بعد عرضنا عليك إرسال رابط جديد.')}
               </div>
             )}
 
+            {/* the phone form stays mounted while the email tab is open, so a code already sent is not lost (round-5 UX-121) */}
+            {phoneOn && (
+              <div hidden={mode !== 'phone'}>
+                <PhoneOtpForm registerHref={registerHref} onStep={setOtpStep} onSignedIn={async () => {
+                  const { data: { user } } = await createClient().auth.getUser()
+                  if (user) await routeSignedIn(user.id)
+                }} onUseEmail={() => { setMode('email'); setEmailFormOpen(true); setError('') }} />
+              </div>
+            )}
             {mode === 'phone' ? (
-              <>
-              <PhoneOtpForm registerHref={registerHref} onSignedIn={async () => {
-                const { data: { user } } = await createClient().auth.getUser()
-                if (user) await routeSignedIn(user.id)
-              }} onUseEmail={() => { setMode('email'); setEmailFormOpen(true); setError('') }} />
+              !otpBusy && <>
               {/* owner 2026-11-21: a new seller must not end up as a buyer through the phone sign-up.
                   One word for sellers everywhere: «مورد» (UX-134) */}
               <p className="mt-4 text-sm text-center text-ink-2">{L('Supplier or pricing agent?', 'سپلائر یا قیمت ایجنٹ؟', 'مورد أو وسيط تسعير؟')} <a href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</a></p>

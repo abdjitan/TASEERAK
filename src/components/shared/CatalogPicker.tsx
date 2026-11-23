@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import CatIcon from '@/components/shared/CatIcon'
 import Glyph from '@/components/shared/Glyph'
+import { useFocusTrap } from '@/components/shared/useFocusTrap'
 
 // Pick materials from the catalog inside the request page (the 4th way to add a line, next to
 // writing, speaking and a photo). Search across everything, or browse the 8 user-facing sections
@@ -78,16 +79,17 @@ export function CatalogBrowser({ locale, onPick, onRemove, onQty, picked = [], i
     try { touch = window.matchMedia('(pointer: coarse)').matches } catch {}
     if (!touch) searchRef.current?.focus()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-  const nameOf = (n: string) => (simple && locale === 'ar' ? homeName(n) : getProductLabel(n, locale))
+  const nameOf = (n: string) => (simple ? homeName(n, locale) : getProductLabel(n, locale))
 
   // Exact/prefix/synonym matches score >= ~10; loose typo matches (بلك → بلدوزر) ~6. Show only
   // the confident ones unless that leaves almost nothing.
   const { hits, confident } = useMemo(() => {
     if (!q.trim()) return { hits: [], confident: 0 }
-    const all = searchProducts(q, { limit: 40 })
+    // a home buyer: no heavy machinery in the results (round-5 UX-138)
+    const all = searchProducts(q, { limit: 40 }).filter(h => !simple || h.sector !== 'equipment')
     const good = all.filter(h => h.score >= 7)
     return { hits: good.length >= 3 ? good.slice(0, 30) : all.slice(0, 8), confident: good.length }
-  }, [q])
+  }, [q, simple])
 
   // Not understood by the catalog or the dictionary → ask the AI, which may search the web
   // (/api/understand; answers are remembered, so a repeat costs nothing).
@@ -351,7 +353,7 @@ export function CatalogBrowser({ locale, onPick, onRemove, onQty, picked = [], i
                         <div className="flex flex-wrap gap-2">
                           <input value={ownG} onChange={e => setOwnG(e.target.value)} className="input-field text-[16px] sm:text-sm flex-1 min-w-[10rem]" aria-label={L('Material name', 'سامان کا نام', 'اسم المادة')}
                             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); add() } }} placeholder={L('Material name', 'سامان کا نام', 'اسم المادة')} />
-                          {subs.length > 1 && (
+                          {subs.length > 1 && !simple && ( /* a home buyer: the main specialty, no technical list (round-5 UX-138) */
                             <select value={chosen.sector + ':' + chosen.sub} onChange={e => setOwnSub(e.target.value)} className="input-field w-auto max-w-full text-[16px] sm:text-sm"
                               aria-label={L('Specialty', 'شعبہ', 'التخصص')}>
                               {subs.map(x => <option key={x.sector + ':' + x.sub} value={x.sector + ':' + x.sub}>{getSubCategoryLabel(x.sector, x.sub, locale)}</option>)}
@@ -395,8 +397,11 @@ function sectionSector(section: BrowseSection): Sector {
   return (Object.entries(n).sort((a, b) => b[1] - a[1])[0]?.[0] || 'supply_store') as Sector
 }
 
-export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove, onQty, initialQuery = '', initialSection = null, simple = false }: {
+export default function CatalogPicker({ locale, onPick, onClose, picked = [], onRemove, onQty, initialQuery = '', initialSection = null, simple = false, replacing = '', onCancelReplace }: {
   locale: string
+  /** «تغيير المادة»: the name of the line the next pick replaces (round-5 UX-025) */
+  replacing?: string
+  onCancelReplace?: () => void
   onQty?: (key: string, qty: string) => void
   simple?: boolean
   initialQuery?: string
@@ -408,9 +413,11 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [showPicked, setShowPicked] = useState(false)
-  const nameOf = (n: string) => (simple && locale === 'ar' ? homeName(n) : getProductLabel(n, locale))
+  const nameOf = (n: string) => (simple ? homeName(n, locale) : getProductLabel(n, locale))
   const closeRef = useRef(onClose)
   closeRef.current = onClose
+  const sheetRef = useRef<HTMLDivElement>(null)
+  useFocusTrap(sheetRef, true) // round-5 UX-141: focus stays in the sheet and goes back to its button
   // a real sheet: Escape closes, the page behind does not scroll
   useEffect(() => {
     const prev = document.body.style.overflow
@@ -422,7 +429,7 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
 
   return (
     <div className="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center" onClick={onClose}>
-      <div className="bg-white w-full sm:max-w-3xl max-h-[92vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
+      <div ref={sheetRef} className="bg-white w-full sm:max-w-3xl max-h-[92vh] sm:max-h-[85vh] rounded-t-3xl sm:rounded-3xl flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="catalog-sheet-title">
         <div className="px-4 pt-3 pb-2 flex items-center justify-between gap-2 border-b border-gray-100">
           <h2 id="catalog-sheet-title" className="font-extrabold text-navy"><Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
@@ -434,6 +441,12 @@ export default function CatalogPicker({ locale, onPick, onClose, picked = [], on
                 <X className="w-5 h-5" aria-hidden />
               </button>}
         </div>
+        {replacing && (
+          <div className="mx-4 mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 px-3 py-1.5 text-[13px] font-bold text-[#0B2438]" role="status">
+            <span>{L(`You are choosing a replacement for «${replacing}»; the quantity stays the same`, `آپ «${replacing}» کا متبادل چن رہے ہیں؛ مقدار وہی رہے گی`, `تختار الآن بديلاً لـ«${replacing}»، وتبقى الكمية كما هي`)}</span>
+            {onCancelReplace && <button type="button" onClick={onCancelReplace} className="min-h-[44px] px-2 underline">{L('Cancel', 'منسوخ', 'إلغاء')}</button>}
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto p-4">
           <CatalogBrowser locale={locale} onPick={onPick} onRemove={onRemove} onQty={onQty} picked={picked} initialQuery={initialQuery} initialSection={initialSection} simple={simple} />
         </div>

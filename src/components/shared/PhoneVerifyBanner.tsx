@@ -117,6 +117,11 @@ export default function PhoneVerifyBanner() {
         <div className="text-[13px] text-gray-600 mt-0.5">{isBuyer
           ? L('Verify your mobile once to send your request and receive prices. The code arrives by text message.', 'اپنی درخواست بھیجنے اور قیمتیں حاصل کرنے کے لیے ایک بار اپنا موبائل نمبر تصدیق کریں۔ کوڈ ٹیکسٹ میسج سے آئے گا۔', 'وثّق رقم جوالك مرة واحدة لترسل طلبك وتصلك الأسعار، ويصلك الرمز برسالة نصية.')
           : L('Required to send prices and confirm deals. The code arrives by text message.', 'قیمتیں بھیجنے اور سودے طے کرنے کے لیے ضروری ہے۔ کوڈ ٹیکسٹ میسج سے آئے گا۔', 'مطلوب لإرسال الأسعار وإتمام الصفقات، ويصلك الرمز برسالة نصية.')}</div>
+        {/* a way forward when the text message does not arrive (round-5 UX-044) */}
+        <div className="text-[13px] text-gray-600 mt-0.5">
+          {L('The message did not arrive?', 'پیغام نہیں ملا؟', 'لم تصلك الرسالة؟')}{' '}
+          <Link href="/support?topic=sms" className="inline-flex items-center min-h-[44px] font-bold text-[#0B2438] underline">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         {isBuyer && (

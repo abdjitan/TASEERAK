@@ -23,11 +23,13 @@ export default function PublicFooter() {
             <Link href="/prices" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Material prices', 'سامان کی قیمتیں', 'أسعار المواد')}</Link>
           </>)}
           <span className="text-gray-300" aria-hidden>·</span>
-          <Link href="/deal-protection" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Deal protection', 'سودے کا تحفظ', 'حماية الصفقة')}</Link>
+          <Link href="/deal-protection" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('How we protect your deal', 'ہم آپ کے سودے کی حفاظت کیسے کرتے ہیں', 'كيف نحمي صفقتك')}</Link>
           <span className="text-gray-300" aria-hidden>·</span>
-          <Link href="/privacy" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Privacy', 'رازداری', 'الخصوصية')}</Link>
+          <Link href="/privacy" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Privacy policy', 'رازداری کی پالیسی', 'سياسة الخصوصية')}</Link>
           <span className="text-gray-300" aria-hidden>·</span>
-          <Link href="/terms" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Terms', 'شرائط', 'الشروط')}</Link>
+          <Link href="/terms" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Terms and conditions', 'شرائط و ضوابط', 'الشروط والأحكام')}</Link>
+          <span className="text-gray-300" aria-hidden>·</span>
+          <Link href="/account/delete" className="inline-flex items-center min-h-[44px] px-2 hover:text-[#0B2438]">{L('Delete an account', 'اکاؤنٹ حذف کریں', 'حذف الحساب')}</Link>
         </div>
         <p className="text-[12px] text-gray-600 mt-4">© {new Date().getFullYear()} {L('Taseerak. All rights reserved.', 'تسعیرک۔ جملہ حقوق محفوظ ہیں۔', 'تسعيرك. جميع الحقوق محفوظة.')}</p>
       </div>

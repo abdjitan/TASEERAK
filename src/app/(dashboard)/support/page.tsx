@@ -19,6 +19,7 @@ import { friendlyError } from '@/lib/friendlyError'
 import { storedBuyerType } from '@/lib/buyerType'
 import GateHeader from '../verify/GateHeader'
 import { isSellerVerified } from '@/components/shared/verifyRule'
+import { crSupportMessage, crSupportNote } from '@/lib/cr'
 
 const SUPPORT_WHATSAPP = '12135614366'
 
@@ -64,8 +65,13 @@ function Support() {
     setConvMsg('')
   }
   const topic = search.get('topic')
+  // ?topic=cr&cr=… : a CR held by another account, the only way to recover it (round-5 UX-079)
+  const topicCr = search.get('cr') || ''
   const prefill = topic === 'kind'
     ? L('I would like to change my account type (company / pricing agent). Reason: ', 'میں اپنے اکاؤنٹ کی قسم بدلنا چاہتا ہوں (کمپنی / قیمت ایجنٹ)۔ وجہ: ', 'أرغب في تغيير نوع حسابي (شركة / وسيط تسعير). السبب: ')
+    : topic === 'cr' && topicCr ? crSupportMessage(topicCr, locale)
+    : topic === 'deal' ? L('I need to coordinate a deal in progress (request number: ', 'مجھے ایک جاری سودے میں رابطہ کرنا ہے (درخواست نمبر: ', 'أحتاج إلى التنسيق في صفقة جارية (رقم الطلب: ')
+    : topic === 'sms' ? L('The verification text message does not reach my mobile. ', 'تصدیقی ٹیکسٹ میسج میرے موبائل پر نہیں پہنچ رہا۔ ', 'لا تصل رسالة رمز التحقق إلى جوالي. ')
     : ''
   const waText = encodeURIComponent(L('Hello Taseerak, I need help with: ', 'السلام علیکم تسعیرک، مجھے مدد چاہیے: ', 'مرحباً تسعيرك، أحتاج مساعدة بخصوص: '))
 
@@ -92,7 +98,10 @@ function Support() {
         <h2 className="text-lg font-bold text-[#0B2438] mb-1">{L('Message the admin team', 'انتظامیہ کو پیغام', 'رسالة إلى الإدارة')}</h2>
         <p className="text-sm text-gray-600 mb-4">{L('Write about any issue or request; the team replies here and you get a notification.', 'کسی بھی مسئلے یا درخواست کے بارے میں لکھیں؛ ٹیم یہیں جواب دے گی اور آپ کو اطلاع ملے گی۔', 'اكتب عن أي مشكلة أو طلب، وسيردّ الفريق هنا ويصلك إشعار.')}</p>
         {topic === 'kind' && (
-          <p className="text-[13px] text-amber-900 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3">{L('Changing the account type needs the admin’s approval. Tell us why; we may ask for documents.', 'اکاؤنٹ کی قسم بدلنے کے لیے انتظامیہ کی منظوری ضروری ہے۔ وجہ بتائیں؛ ہم دستاویزات مانگ سکتے ہیں۔', 'تغيير نوع الحساب يحتاج موافقة الإدارة. اذكر السبب، وقد نطلب منك مستندات.')}</p>
+          <p className="text-[13px] text-warn-text bg-warn-bg border border-warn-border rounded-lg p-2 mb-3">{L('Changing the account type needs the admin’s approval. Tell us why; we may ask for documents.', 'اکاؤنٹ کی قسم بدلنے کے لیے انتظامیہ کی منظوری ضروری ہے۔ وجہ بتائیں؛ ہم دستاویزات مانگ سکتے ہیں۔', 'تغيير نوع الحساب يحتاج موافقة الإدارة. اذكر السبب، وقد نطلب منك مستندات.')}</p>
+        )}
+        {topic === 'cr' && (
+          <p className="text-[13px] text-warn-text bg-warn-bg border border-warn-border rounded-lg p-2 mb-3" role="note">{crSupportNote(locale)}{' '}{L('Send the photo over WhatsApp (below), and write your message here.', 'تصویر نیچے واٹس ایپ پر بھیجیں، اور اپنا پیغام یہاں لکھیں۔', 'أرسل الصورة عبر واتساب (أدناه)، واكتب رسالتك هنا.')}</p>
         )}
         {userId
           ? <SupportThread userId={userId} viewerRole="user" initialText={prefill} />
@@ -112,7 +121,7 @@ function Support() {
 
       {/* the rules behind the platform, one tap away (UX-160) */}
       <nav aria-label={L('Policies', 'پالیسیاں', 'السياسات')} className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        <a href="/terms" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Terms of use', 'شرائط استعمال', 'شروط الاستخدام')}</a>
+        <a href="/terms" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Terms and conditions', 'شرائط و ضوابط', 'الشروط والأحكام')}</a>
         <a href="/privacy" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Privacy policy', 'رازداری کی پالیسی', 'سياسة الخصوصية')}</a>
         <a href="/deal-protection" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('How we protect your deal', 'ہم آپ کے سودے کی حفاظت کیسے کرتے ہیں', 'كيف نحمي صفقتك')}</a>
       </nav>

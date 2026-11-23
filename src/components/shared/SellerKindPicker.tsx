@@ -75,12 +75,12 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
         <p className="text-xs text-[#8F6820] font-semibold">{L('Choose carefully: the account type can only be changed later through Support.', 'احتیاط سے منتخب کریں: اکاؤنٹ کی قسم بعد میں صرف سپورٹ کے ذریعے بدلی جا سکتی ہے۔', 'اختر بعناية: لا يمكن تغيير نوع الحساب لاحقاً إلا عن طريق الدعم.')}</p>
       )}
       {kindLocked && (
-        <p className="text-xs text-gray-500">{L('The account type is fixed. To change it, ', 'اکاؤنٹ کی قسم مقرر ہے۔ بدلنے کے لیے ', 'نوع الحساب ثابت. لتغييره ')}<a href="/support?topic=kind" className="font-bold underline text-navy">{L('request it from Support', 'سپورٹ سے درخواست کریں', 'اطلب ذلك من الدعم')}</a>{L(' (admin approval).', ' (انتظامیہ کی منظوری)۔', ' (بموافقة الإدارة).')}</p>
+        <p className="text-xs text-gray-500">{L('The account type is fixed. To change it, ', 'اکاؤنٹ کی قسم مقرر ہے۔ بدلنے کے لیے ', 'نوع الحساب ثابت. لتغيير النوع ')}<a href="/support?topic=kind" className="font-bold underline text-navy">{L('request it from Support', 'سپورٹ سے درخواست کریں', 'اطلب ذلك من الدعم')}</a>{L(' (admin approval).', ' (انتظامیہ کی منظوری)۔', ' (بموافقة الإدارة).')}</p>
       )}
 
       {kind === 'company' && (
         <div>
-          <p id="skp-activity" className="text-xs font-bold text-gray-600 mb-1.5">{L('What is your main activity?', 'آپ کی بنیادی سرگرمی کیا ہے؟', 'ما نشاطك الرئيسي؟')} <span className="text-red-500">*</span></p>
+          <p id="skp-activity" className="text-xs font-bold text-gray-600 mb-1.5">{L('What is your main activity?', 'آپ کی بنیادی سرگرمی کیا ہے؟', 'ما نشاطك الرئيسي؟')} *</p>
           {/* UX-038: the star is enforced: the generic «company» has no activity yet */}
           {!COMPANY_ACTIVITIES.some(a => a.k === ptype) && <p className="text-[12px] font-semibold text-[#8F6820] mb-1.5">{L('Required: choose one to finish your profile.', 'ضروری: پروفائل مکمل کرنے کے لیے ایک منتخب کریں۔', 'مطلوب: اختر نشاطاً لإكمال ملفك.')}</p>}
           <div className="flex flex-wrap gap-2" role="group" aria-labelledby="skp-activity">
@@ -106,7 +106,9 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
           <div className="mt-1 text-gray-500">
             {ptype === 'retail_shop'
               ? L('Verify your commercial registration so your offers carry the «Verified» badge.', 'اپنی تجارتی رجسٹریشن کی تصدیق کریں تاکہ آپ کی آفرز پر «تصدیق شدہ» بیج آئے۔', 'وثّق سجلك التجاري لتحمل عروضك شارة «موثّق».')
-              : L('Verify your commercial registration to appear under "Verified companies & factories".', 'تصدیق شدہ کمپنیوں اور فیکٹریوں میں آنے کے لیے اپنی تجارتی رجسٹریشن کی تصدیق کریں۔', 'وثّق سجلك التجاري لتظهر ضمن «شركات ومصانع معتمدة».')}
+              : L('Verify your commercial registration to appear under "Verified companies & factories".', 'تصدیق شدہ کمپنیوں اور فیکٹریوں میں آنے کے لیے اپنی تجارتی رجسٹریشن کی تصدیق کریں۔', 'وثّق سجلك التجاري لتظهر ضمن «شركات ومصانع موثّقة».')}
+            {/* round-5 UX-163: the way to verification, one tap away */}
+            {' '}<a href="/settings?tab=docs" className="inline-flex items-center min-h-[44px] font-bold underline text-[#8F6820]">{L('Verify now', 'ابھی تصدیق کریں', 'وثّق الآن')}</a>
           </div>
         )}
         {kind === 'independent' && (

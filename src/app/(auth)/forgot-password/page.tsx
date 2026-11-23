@@ -44,6 +44,7 @@ const txt = {
 
 export default function ForgotPasswordPage() {
   const { locale, dir } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const t = txt[locale] || txt.ar
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -65,6 +66,15 @@ export default function ForgotPasswordPage() {
     if (focus) setTimeout(() => emailRef.current?.focus(), 50)
   }
 
+  // one message per cause (round-5 UX-116): the limit, the human check, anything else
+  function errText(err: any): string {
+    const m = String(err?.message || '') + ' ' + String(err?.code || '')
+    if (err?.status === 429 || /rate|limit|seconds|too many/i.test(m)) return L('We sent a link a moment ago. Wait a minute and try again, and check your inbox.', 'ہم نے ابھی لنک بھیجا ہے۔ ایک منٹ انتظار کریں اور دوبارہ کوشش کریں، اور اپنا ان باکس دیکھیں۔', 'أرسلنا رابطاً قبل قليل. انتظر دقيقة ثم أعد المحاولة، وتفقّد بريدك.')
+    if (/captcha/i.test(m)) return L('Complete the check above, then send again.', 'اوپر والی تصدیق مکمل کریں، پھر دوبارہ بھیجیں۔', 'أكمل التحقق أعلاه ثم أعد الإرسال.')
+    return L('Could not send. Try again in a little while.', 'بھیجا نہیں جا سکا۔ تھوڑی دیر بعد دوبارہ کوشش کریں۔', 'تعذّر الإرسال. حاول مرة أخرى بعد قليل.')
+  }
+  const needCaptcha = !!TURNSTILE_SITE_KEY && !captchaToken
+
   // «send again» really sends (it only went back to the form before, UX-120)
   async function resend() {
     setLoading(true); setError(''); setResent(false)
@@ -74,9 +84,9 @@ export default function ForgotPasswordPage() {
         captchaToken: captchaToken || undefined,
       })
       captchaRef.current?.reset(); setCaptchaToken('')
-      if (err) setError(t.err)
+      if (err) setError(errText(err))
       else { setResent(true); setWait(60) }
-    } catch { setError(t.err) }
+    } catch { setError(errText(null)) }
     setLoading(false)
   }
 
@@ -89,9 +99,9 @@ export default function ForgotPasswordPage() {
         redirectTo: `${window.location.origin}/reset-password`,
         captchaToken: captchaToken || undefined,
       })
-      if (err) { captchaRef.current?.reset(); setCaptchaToken(''); setError(t.err); setLoading(false); return }
+      if (err) { captchaRef.current?.reset(); setCaptchaToken(''); setError(errText(err)); setLoading(false); return }
       setSent(true); setWait(60)
-    } catch { captchaRef.current?.reset(); setCaptchaToken(''); setError(t.err) }
+    } catch { captchaRef.current?.reset(); setCaptchaToken(''); setError(errText(null)) }
     setLoading(false)
   }
 
@@ -140,8 +150,8 @@ export default function ForgotPasswordPage() {
                 <div className="flex justify-center mb-5">
                   <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} language={locale} />
                 </div>
-                <button type="submit" disabled={loading}
-                  className="w-full py-3.5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"
+                <button type="submit" disabled={loading || needCaptcha}
+                  className="w-full min-h-[48px] py-3.5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50 transition-all active:scale-[0.98] hover:shadow-lg"
                   style={{ background: '#D4A543' }}>
                   {loading ? t.sending : t.send}
                 </button>

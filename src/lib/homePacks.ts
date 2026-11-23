@@ -6,6 +6,7 @@
 // unit: the order unit the hint talks about (UX-005: the hint and the unit must agree, otherwise the buyer
 // sends «40 جالون» for 40 m² of wall); without it the catalog default unit is used.
 import type { Sector } from '@/types'
+import { getProductLabel } from '@/types'
 import { cleanArName } from '@/lib/displayName'
 
 // calc (round-3 UX-061): how the quantity calculator works for this item.
@@ -14,10 +15,11 @@ import { cleanArName } from '@/lib/displayName'
 //   Without calc, an item ordered in م²/جالون/لفة gets the room calculator.
 // cover: square metres one unit covers in ONE coat (paint ≈ 30 m²/gallon/coat, primer ≈ 30, wallpaper ≈ 5);
 // coats: how many coats (paint 2, primer 1). The web and the app use the same numbers (calcQuantity).
+// on: false = listed but unticked by default (an alternative to another row, round-5 UX-122).
 // derive (round-4 UX-185): the quantity follows other rows of the pack (sum ÷ per, rounded up) until the buyer edits it,
 //   e.g. tile adhesive = one bag per 4 m² of the wall and floor tiles.
 export type PackCalc = 'room' | 'area' | 'none'
-export type PackItem = { name: string; sector: Sector; qty: number | null; unit?: string; hint?: { ar: string; en: string; ur: string }; calc?: PackCalc; cover?: number; coats?: number; derive?: { from: string[]; per: number } }
+export type PackItem = { name: string; sector: Sector; qty: number | null; unit?: string; on?: boolean; hint?: { ar: string; en: string; ur: string }; calc?: PackCalc; cover?: number; coats?: number; derive?: { from: string[]; per: number } }
 export type HomePack = {
   id: string
   img: string // /images/sections/<img>.webp (sheet header background)
@@ -48,7 +50,7 @@ export const HOME_PACKS: HomePack[] = [
       { name: 'سيفون مغسلة', sector: 'mechanical', qty: 1 },
       { name: 'بلاط سيراميك جدار', sector: 'architectural', qty: null, unit: 'م²', hint: AREA, calc: 'room' },
       { name: 'بلاط سيراميك', sector: 'architectural', qty: null, unit: 'م²', hint: AREA, calc: 'room' }, // the floor tiles (UX-132)
-      { name: 'غراء بلاط أسمنتي عادي C1 (Standard Tile Adhesive)', sector: 'architectural', qty: null, unit: 'كيس', derive: { from: ['بلاط سيراميك جدار', 'بلاط سيراميك'], per: 4 }, hint: { ar: 'كيس لكل 4 أمتار مربعة من البلاط. حسبناها من مساحة البلاط، ويمكنك تعديلها', en: 'One bag per 4 square metres of tiles. We worked it out from the tile area; you can change it', ur: 'ہر 4 مربع میٹر ٹائل کے لیے ایک بوری۔ ہم نے ٹائل کے رقبے سے حساب کیا ہے، آپ بدل سکتے ہیں' } },
+      { name: 'غراء بلاط أسمنتي عادي C1 (Standard Tile Adhesive)', sector: 'architectural', qty: null, unit: 'كيس', derive: { from: ['بلاط سيراميك جدار', 'بلاط سيراميك'], per: 4 }, hint: { ar: 'كيس لكل 4 أمتار مربعة من البلاط. تُحسب تلقائياً عند كتابة مساحة البلاط، ويمكنك تعديلها', en: 'One bag per 4 square metres of tiles. Worked out automatically once you write the tile area; you can change it', ur: 'ہر 4 مربع میٹر ٹائل کے لیے ایک بوری۔ ٹائل کا رقبہ لکھنے پر خود حساب ہو جائے گی، آپ بدل سکتے ہیں' } },
       { name: 'عزل مائي سائل تحت البلاط للحمامات (Under-tile Liquid Membrane)', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
       { name: 'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)', sector: 'civil', qty: 2 },
     ],
@@ -114,7 +116,7 @@ export const HOME_PACKS: HomePack[] = [
     sub: { ar: 'مظلة أو برجولا وجلسة وإنارة', en: 'Shade or pergola, seating, lights', ur: 'سائبان یا پرگولا، بیٹھک، روشنی' },
     items: [
       { name: 'برجولات ومظلات حدائق', sector: 'civil', qty: null, unit: 'م²', hint: OUT_AREA, calc: 'area' },
-      { name: 'مظلات شراع (شد إنشائي)', sector: 'civil', qty: null, unit: 'م²', hint: OUT_AREA, calc: 'area' },
+      { name: 'مظلات شراع (شد إنشائي)', sector: 'civil', qty: null, unit: 'م²', on: false, calc: 'area', hint: { ar: 'بديل عن البرجولا، اختر أحدهما. اكتب المساحة بالمتر المربع', en: 'An alternative to the pergola: choose one of them. Write the area in square metres', ur: 'پرگولا کا متبادل، ان میں سے ایک چنیں۔ رقبہ مربع میٹر میں لکھیں' } }, // round-5 UX-122
       { name: 'أثاث خارجي (جلسات حدائق)', sector: 'architectural', qty: 1 },
       { name: 'إنارة حدائق وممرات', sector: 'electrical', qty: 4 },
       { name: 'سبوت حدائق بوتد (Spike Light)', sector: 'electrical', qty: 4 },
@@ -192,9 +194,33 @@ export function calcQuantity(area: number, unit: string, opts: { calc?: PackCalc
   const waste = unit === 'م²' && opts.calc !== 'area'
   return { qty: Math.ceil(area * (waste ? 1.1 : 1)), waste }
 }
-/** A product name as a home buyer reads it (Arabic): the plain name above, else cleanArName. */
-export function homeName(name: string): string {
-  return HOME_NAMES[(name || '').trim()] || cleanArName(name)
+// The same plain names in English and Urdu (round-5 UX-123): no model codes (GU10 / MR16, C1) for any reader.
+const HOME_NAMES_I18N: Record<string, { en: string; ur: string }> = {
+  'لمبة سبوت GU10 / MR16': { en: 'Ceiling spotlights', ur: 'چھت کی اسپاٹ لائٹس' },
+  'لمبة LED': { en: 'LED bulb', ur: 'ایل ای ڈی بلب' },
+  'غراء بلاط أسمنتي عادي C1 (Standard Tile Adhesive)': { en: 'Tile adhesive', ur: 'ٹائل گوند' },
+  'سلك كهرباء 2.5مم': { en: 'Electric wire (2.5 mm thick)', ur: 'بجلی کی تار (2.5 ملی میٹر موٹی)' },
+  'سخانات مياه كهربائية': { en: 'Electric water heater', ur: 'بجلی کا گیزر' },
+  'مفتاح مكيّف ثنائي القطب بلمبة (20A/45A DP Switch)': { en: 'AC switch', ur: 'اے سی سوئچ' },
+  'شريط ليد مرن (SMD)': { en: 'Flexible LED strip', ur: 'لچکدار ایل ای ڈی پٹی' },
+  'سبوت متحرك COB للأسقف الجبسية': { en: 'Adjustable spotlight for a gypsum ceiling', ur: 'جپسم چھت کے لیے گھومنے والی اسپاٹ لائٹ' },
+  'مرحاض WC مع خزان': { en: 'Toilet with cistern', ur: 'ٹینک والا کموڈ' },
+  'مغسلة Wash Basin': { en: 'Wash basin', ur: 'واش بیسن' },
+  'إنارة سقف مودرن (بلافونيير)': { en: 'Modern ceiling light', ur: 'جدید چھت کی لائٹ' },
+  'سبوت حدائق بوتد (Spike Light)': { en: 'Garden light fixed in the soil', ur: 'مٹی میں لگنے والی باغ کی لائٹ' },
+  'عزل مائي سائل تحت البلاط للحمامات (Under-tile Liquid Membrane)': { en: 'Liquid waterproofing under tiles', ur: 'ٹائل کے نیچے مائع واٹر پروفنگ' },
+  'مجموعة تثبيت حائط للسخان والغسالة (Wall-mount Group)': { en: 'Wall-mount kit for the heater', ur: 'گیزر کو دیوار پر لگانے کا سیٹ' },
+  'ستائر رول (بلاك آوت)': { en: 'Blackout roller blinds', ur: 'اندھیرا کرنے والے رول پردے' },
+  'ستائر شرائح (Blinds)': { en: 'Slat blinds', ur: 'پٹیوں والے پردے' },
+  'بلاط سيراميك جدار': { en: 'Wall tiles (ceramic)', ur: 'دیوار کی ٹائلیں (سیرامک)' },
+  'بلاط سيراميك': { en: 'Floor tiles (ceramic)', ur: 'فرش کی ٹائلیں (سیرامک)' },
+}
+
+/** A product name as a home buyer reads it: the plain name above (Arabic, or English/Urdu), else the catalog label. */
+export function homeName(name: string, locale: string = 'ar'): string {
+  const key = (name || '').trim()
+  if (locale === 'en' || locale === 'ur') return HOME_NAMES_I18N[key]?.[locale] || getProductLabel(name, locale)
+  return HOME_NAMES[key] || cleanArName(name)
 }
 
 // The hint and the unit must agree (UX-005). Checked in development by PackSheet; returns the items

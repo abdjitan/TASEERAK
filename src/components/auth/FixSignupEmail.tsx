@@ -1,7 +1,7 @@
 'use client'
 // An account whose e-mail is not confirmed yet: resend the link, or correct a mistyped address
 // (owner 2026-11-22: «gmail.comm» left a seller stuck). Uses the e-mail + password typed at sign-up/sign-in.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { emailTypoSuggestion } from '@/lib/emailTypo'
 
 export default function FixSignupEmail({ email, password, locale, captchaToken, onFixed }: {
@@ -12,13 +12,21 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
   const [newEmail, setNewEmail] = useState(emailTypoSuggestion(email) || '')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  // what is happening and when a resend is possible again (round-5 UX-130)
+  const [busyKind, setBusyKind] = useState<'' | 'resend' | 'fix'>('')
+  const [wait, setWait] = useState(0)
+  useEffect(() => {
+    if (wait <= 0) return
+    const id = setTimeout(() => setWait(w => w - 1), 1000)
+    return () => clearTimeout(id)
+  }, [wait])
 
   async function resend() {
-    setBusy(true); setMsg(null)
+    setBusy(true); setBusyKind('resend'); setMsg(null)
     // through our API (the browser's own resend needs a CAPTCHA); the password proves the account
     const r = await fetch('/api/auth/fix-signup-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, action: 'resend' }) })
     const j = await r.json().catch(() => ({}))
-    setBusy(false)
+    setBusy(false); setBusyKind(''); setWait(60)
     setMsg(!j?.ok ? { ok: false, text: L('Could not resend now. Try again in a minute.', 'ابھی دوبارہ نہیں بھیج سکے۔ ایک منٹ بعد کوشش کریں۔', 'تعذّر الإرسال الآن. حاول بعد دقيقة.') }
       : { ok: true, text: L(`We sent a new link to ${email}.`, `${email} پر نیا لنک بھیج دیا۔`, `أرسلنا رابطاً جديداً إلى ${email}.`) })
   }
@@ -26,10 +34,10 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
   async function fix() {
     const target = newEmail.trim()
     if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(target)) { setMsg({ ok: false, text: L('Write a valid email.', 'درست ای میل لکھیں۔', 'اكتب بريداً صحيحاً.') }); return }
-    setBusy(true); setMsg(null)
+    setBusy(true); setBusyKind('fix'); setMsg(null)
     const r = await fetch('/api/auth/fix-signup-email', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, newEmail: target, captchaToken }) })
     const j = await r.json().catch(() => ({}))
-    setBusy(false)
+    setBusy(false); setBusyKind('')
     if (j?.ok) {
       setMsg({ ok: true, text: L(`Done. We sent the confirmation link to ${target}. Open it, then sign in with this email.`, `ہو گیا۔ ہم نے تصدیقی لنک ${target} پر بھیج دیا۔ اسے کھولیں، پھر اسی ای میل سے سائن اِن کریں۔`, `تم. أرسلنا رابط التأكيد إلى ${target}. افتحه، ثم سجّل الدخول بهذا البريد.`) })
       onFixed?.(target)
@@ -48,7 +56,11 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
   return (
     <div className="mt-3 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/5 p-3 text-start text-sm">
       <div className="flex flex-wrap gap-x-4 gap-y-1">
-        <button type="button" onClick={resend} disabled={busy} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline disabled:opacity-50">{L('Resend the link', 'لنک دوبارہ بھیجیں', 'أعد إرسال الرابط')}</button>
+        <button type="button" onClick={resend} disabled={busy || wait > 0} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline disabled:opacity-50 disabled:no-underline">
+          {busyKind === 'resend' ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…')
+            : wait > 0 ? L(`You can resend in ${wait} seconds`, `${wait} سیکنڈ بعد دوبارہ بھیج سکتے ہیں`, `يمكنك إعادة الإرسال بعد ${wait} ثانية`)
+            : L('Resend the link', 'لنک دوبارہ بھیجیں', 'أعد إرسال الرابط')}
+        </button>
         <button type="button" onClick={() => setOpen(o => !o)} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline">{L('Wrong email? Correct it', 'ای میل غلط ہے؟ درست کریں', 'كتبت بريدك خطأ؟ صحّحه')}</button>
       </div>
       {open && (
@@ -56,7 +68,7 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
           <div className="text-[12px] text-gray-600">{L('Your account was saved with:', 'آپ کا اکاؤنٹ اس ای میل سے محفوظ ہے:', 'حُفظ حسابك بالبريد:')} <b dir="ltr">{email}</b></div>
           <input type="email" dir="ltr" value={newEmail} onChange={e => setNewEmail(e.target.value)} className="input-field text-sm" placeholder="name@gmail.com" autoComplete="email" aria-label={L('The correct email', 'درست ای میل', 'البريد الصحيح')} />
           <button type="button" onClick={fix} disabled={busy} className="w-full min-h-11 rounded-xl text-sm font-extrabold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
-            {busy ? '…' : L('Correct and send the link', 'درست کریں اور لنک بھیجیں', 'صحّح وأرسل الرابط')}
+            {busyKind === 'fix' ? L('Correcting…', 'درست کیا جا رہا ہے…', 'جارٍ التصحيح…') : L('Correct and send the link', 'درست کریں اور لنک بھیجیں', 'صحّح وأرسل الرابط')}
           </button>
         </div>
       )}

@@ -85,7 +85,7 @@ export default function AdminInvitesPage() {
               ['محادثات مدعوّة', counts.all], ['ردّت', replied], ['مهتمة', counts.interested || 0],
               [`تكلفة الذكاء الاصطناعي هذا الشهر (من ${CAP_USD}$)`, `$${monthCost.toFixed(2)}`],
             ].map(([l, v]) => (
-              <div key={l as string} className="rounded-xl bg-gray-50 p-3"><div className="text-2xl font-extrabold text-navy" dir="ltr">{v as string | number}</div><div className="text-[11px] text-gray-500">{l as string}</div></div>
+              <div key={l as string} className="rounded-xl bg-gray-50 p-3"><div className="text-2xl font-extrabold text-navy" dir="ltr">{v as string | number}</div><div className="text-xs text-gray-500">{l as string}</div></div>
             ))}
           </div>
           <p className="text-xs text-gray-400 mt-2">{aiReplies} ردًّا ذكيًّا هذا الشهر. عند بلوغ الحد يرد الآلي بالنصوص الثابتة حتى بداية الشهر التالي.</p>
@@ -127,7 +127,7 @@ export default function AdminInvitesPage() {
                     <div className="mt-3 space-y-2 rounded-xl bg-gray-50 p-3">
                       {thread.length === 0 ? <p className="text-xs text-gray-400">لا رسائل.</p> : thread.map(m => (
                         <div key={m.id} className={`rounded-xl px-3 py-2 text-sm whitespace-pre-wrap ${m.role === 'shop' ? 'bg-white border border-gray-200' : 'bg-[#0B2438] text-white'}`}>
-                          <div className="text-[10px] opacity-60 mb-1">{ROLES[m.role] || m.role} · {new Date(m.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}{m.ai_input_tokens != null ? ' · ذكاء اصطناعي' : ''}</div>
+                          <div className="text-xs opacity-60 mb-1">{ROLES[m.role] || m.role} · {new Date(m.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}{m.ai_input_tokens != null ? ' · ذكاء اصطناعي' : ''}</div>
                           {m.text || '(وسائط بلا نص)'}
                         </div>
                       ))}

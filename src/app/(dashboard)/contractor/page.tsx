@@ -27,6 +27,7 @@ import { normalizeText } from '@/lib/normalize'
 import { offerComparable, lineComparable } from '@/lib/vat'
 import Glyph from '@/components/shared/Glyph'
 import { askConfirm } from '@/lib/askConfirm'
+import { readProjectDraft } from '@/lib/tender/projectDraft'
 
 const txt = {
   ar: {
@@ -118,6 +119,19 @@ export default function ContractorDashboard() {
   const [reviewTenders, setReviewTenders] = useState<any[]>([])
 
   const [reloadKey, setReloadKey] = useState(0)
+  // after cancelling or deleting a request on its page: one neutral notice here (round-5 UX-148)
+  const [doneNote, setDoneNote] = useState('')
+  useEffect(() => {
+    try {
+      const u = new URL(window.location.href)
+      const d = u.searchParams.get('done')
+      if (d !== 'cancelled' && d !== 'deleted') return
+      setDoneNote(d === 'cancelled'
+        ? L('The request was cancelled; it stays in your history.', 'درخواست منسوخ ہو گئی؛ یہ آپ کے ریکارڈ میں رہے گی۔', 'أُلغي الطلب، ويبقى في سجلك.')
+        : L('The request was deleted.', 'درخواست حذف ہو گئی۔', 'حُذف الطلب.'))
+      u.searchParams.delete('done'); window.history.replaceState(null, '', u.pathname + u.search + u.hash)
+    } catch {}
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     setSeen(readSeen())
     async function init() {
@@ -155,7 +169,8 @@ export default function ContractorDashboard() {
       safe(supabase.rpc('my_savings')).then((x: any) => setMySavings(x?.data || null))
       safe(supabase.from('tenders').select('id, title, status').eq('contractor_id', uid).eq('status', 'review').order('created_at', { ascending: false }).limit(3))
         .then((x: any) => setReviewTenders(x?.data || []))
-      try { const d = JSON.parse(localStorage.getItem('tsk_project_draft') || 'null'); setBoqDraftItems(Array.isArray(d?.items) ? d.items.length : 0) } catch { setBoqDraftItems(0) }
+      // the BOQ draft of THIS account (round-5 UX-096: the key is per user)
+      try { const d = readProjectDraft(uid); setBoqDraftItems(Array.isArray(d?.items) ? d.items.length : 0) } catch { setBoqDraftItems(0) }
       // a failed refresh (weak connection) must not wipe the page or the «لبيتي» mode: keep the cached copy (UX-015)
       if (pErr || rErr || !p) {
         setLoadErr(snap ? 'stale' : 'empty')
@@ -298,7 +313,7 @@ export default function ContractorDashboard() {
     }
     if (isFinite(bestFull)) return L(`Best total: ${sar(bestFull)}`, `بہترین کل: ${sar(bestFull)}`, `أفضل مجموع: ${sar(bestFull)}`)
     const k = Math.min(pricedIdx.size, n)
-    return k ? L(`${k} of ${n} items priced`, `${n} میں سے ${k} اشیاء کی قیمت آئی`, `سُعّرت ${k} من ${arMaterials(n)}`) : ''
+    return k ? L(`${k} of ${n} items priced`, `${n} میں سے ${k} اشیاء کی قیمت آئی`, `سُعّرت ${k} من ${arCount(n, 'مادة واحدة', 'مادتين', 'مواد', 'مادة')}`) : ''
   }
   // an offer price that ends within 48 hours on an open request (one row, the soonest)
   const expiring = (() => {
@@ -381,6 +396,12 @@ export default function ContractorDashboard() {
           </div>
         )}
 
+        {doneNote && (
+          <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#0B2438]/20 bg-white px-4 py-2 text-sm font-semibold text-[#0B2438]">
+            <span>{doneNote}</span>
+            <button type="button" onClick={() => setDoneNote('')} className="min-w-11 min-h-11 -my-2 text-lg leading-none" aria-label={L('Close', 'بند کریں', 'إغلاق')}>×</button>
+          </div>
+        )}
         {/* a returning buyer: their requests come first, above the market (UX-065) */}
         {rfqs.length > 0 && (
           <section className="mb-5 bg-white rounded-2xl p-4 border border-gray-100 shadow-sm animate-fade-in" aria-labelledby="my-req-strip">
@@ -402,6 +423,23 @@ export default function ContractorDashboard() {
                 <span className="font-bold text-sm text-[#8F6820]" aria-hidden>{fwd}</span>
               </button>
             )}
+            {(() => {
+              // round-5 UX-023: a deal that waits on the buyer (confirm receipt, record a payment)
+              const waiting = rfqs.filter((r: any) => r.status === 'closed' && dealOf(r)?.todo)
+              if (!waiting.length) return null
+              const one = waiting.length === 1 ? waiting[0] : null
+              const d1 = one ? dealOf(one) : null
+              return (
+                <Link href={one && d1?.offerId ? `/contractor/orders/${d1.offerId}#deal` : '/contractor/rfqs?filter=closed'}
+                  className="w-full mb-2 rounded-xl p-3 flex items-center gap-3 text-start border hover:shadow-md" style={{ background: '#D4A54318', borderColor: '#D4A543' }}>
+                  <span className="w-10 h-10 rounded-xl grid place-items-center text-[#071827] shrink-0" style={{ background: '#D4A543' }}><Glyph e="✅" /></span>
+                  <span className="flex-1 text-sm font-bold text-[#0B2438]">{one && d1
+                    ? `${buyerActionLabel(d1.st, locale)}: ${rfqDesc(one, locale)}`
+                    : L(`${waiting.length} requests wait for a step from you`, `${waiting.length} درخواستیں آپ کے اگلے قدم کی منتظر ہیں`, `${arCount(waiting.length, 'طلب واحد ينتظر', 'طلبان ينتظران', 'طلبات تنتظر', 'طلباً ينتظر')} خطوة منك`)}</span>
+                  <span className="font-bold text-sm text-[#8F6820]" aria-hidden>{fwd}</span>
+                </Link>
+              )
+            })()}
             {expiring && (
               <Link href={`/contractor/rfq/${expiring.rfq.id}`} onClick={() => openRfq(expiring.rfq)}
                 className="mb-2 flex items-center gap-2 rounded-xl border border-[#D4A543]/60 bg-[#FBF5E6] px-3 py-2 text-[13px] font-bold text-[#0B2438]">
@@ -429,7 +467,8 @@ export default function ContractorDashboard() {
                       <span className="block text-sm font-bold text-[#0B2438] truncate">{rfqDesc(rfq, locale)}</span>
                       <span className="block text-[12px] text-gray-600 truncate">{status}</span>
                     </span>
-                    {hasNew(rfq) ? <span className="shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{L('New offers', 'نئی آفرز', 'عروض جديدة')}</span>
+                    {d?.todo ? <span className="shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{buyerActionLabel(d.st, locale)}</span>
+                      : hasNew(rfq) ? <span className="shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{L('New offers', 'نئی آفرز', 'عروض جديدة')}</span>
                       : stt === 'offers_expired' ? <span className="shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{L('Choose an offer', 'آفر منتخب کریں', 'اختر عرضاً')}</span> : null}
                   </Link>
                 )
@@ -574,7 +613,7 @@ export default function ContractorDashboard() {
               <span className="block font-extrabold text-[15px]" style={{ color: '#0F6E56' }}>
                 {L(`You have saved ${Number(mySavings.saved).toLocaleString('en-US')} SAR with Taseerak`, `آپ نے تسعیرک سے ${Number(mySavings.saved).toLocaleString('en-US')} ریال بچائے`, `وفّرت ${Number(mySavings.saved).toLocaleString('en-US')} ر.س مع تسعيرك`)}
               </span>
-              <span className="block text-[13px] text-gray-700">{L(`Across ${countLabel(Number(mySavings.requests) || 0, 'en', arRequests, 'request', '')}, compared with the highest quote for each material.`, `${mySavings.requests} درخواستوں میں، ہر مواد کی سب سے زیادہ قیمت کے مقابلے میں۔`, `في ${arRequests(Number(mySavings.requests) || 0)}، مقارنةً بأعلى عرض لكل مادة.`)}</span>
+              <span className="block text-[13px] text-gray-700">{L(`Across ${countLabel(Number(mySavings.requests) || 0, 'en', arRequests, 'request', '')}, compared with the highest quote for each material.`, `${mySavings.requests} درخواستوں میں، ہر مواد کی سب سے زیادہ قیمت کے مقابلے میں۔`, `في ${arCount(Number(mySavings.requests) || 0, 'طلب واحد', 'طلبين', 'طلبات', 'طلباً')}، مقارنةً بأعلى عرض لكل مادة.`)}</span>
             </span>
           </div>
         )}
@@ -703,6 +742,23 @@ export default function ContractorDashboard() {
           </div>
         )}
 
+        {/* round-5 UX-154: a new business buyer finds the BOQ and tender tools */}
+        {!homeBuyer && projects.length === 0 && canUseProjects(profile) && (
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6">
+            <h2 className="font-bold text-sm mb-2" style={{ color: '#0B2438' }}><Glyph e="📊" /> {L('Business tools', 'کاروباری اوزار', 'أدوات الشركات')}</h2>
+            <div className="grid sm:grid-cols-2 gap-2">
+              <Link href="/contractor/project/new" className="rounded-xl border border-gray-100 px-3 py-2.5 min-h-[52px] hover:border-[#D4A543]/60">
+                <span className="block text-sm font-bold text-[#0B2438]">{L('Bill of quantities', 'مقداروں کا جدول', 'جدول الكميات')}</span>
+                <span className="block text-[12px] text-gray-600">{L('Upload Excel, PDF or a photo; every item goes to the right suppliers', 'Excel، PDF یا تصویر اپ لوڈ کریں؛ ہر چیز متعلقہ سپلائرز کو جاتی ہے', 'ارفع Excel أو PDF أو صورة، ويصل كل بند إلى الموردين المختصين')}</span>
+              </Link>
+              <Link href="/contractor/tender" className="rounded-xl border border-gray-100 px-3 py-2.5 min-h-[52px] hover:border-[#D4A543]/60">
+                <span className="block text-sm font-bold text-[#0B2438]">{L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة')}</span>
+                <span className="block text-[12px] text-gray-600">{L('A full tender with its drawings and specifications', 'ڈرائنگز اور تفصیلات کے ساتھ مکمل ٹینڈر', 'مناقصة كاملة بمخططاتها ومواصفاتها')}</span>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Drafts — saved, not yet published (invisible to suppliers) */}
         {plainDrafts.length > 0 && (
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-6 animate-slide-up">
@@ -716,7 +772,7 @@ export default function ContractorDashboard() {
                     <div className="text-[12px] text-gray-500">{countLabel(d.data?.items?.length || 0, locale, arMaterials, 'item', 'اشیاء')} · {new Date(d.updated_at).toLocaleDateString(dateLocale(locale))}</div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Link href={`/contractor/rfq/quick?draft=${d.id}`} className="min-h-[44px] inline-flex items-center gap-1 text-[13px] font-bold px-3 rounded-lg text-white" style={{ background: '#0B2438' }}>{L('Continue', 'جاری رکھیں', 'إكمال')} <span aria-hidden="true">{fwd}</span></Link>
+                    <Link href={d.data?.kind === 'boq' ? `/contractor/project/new?draft=${d.id}` : `/contractor/rfq/quick?draft=${d.id}`} className="min-h-[44px] inline-flex items-center gap-1 text-[13px] font-bold px-3 rounded-lg text-white" style={{ background: '#0B2438' }}>{L('Continue', 'جاری رکھیں', 'إكمال')} <span aria-hidden="true">{fwd}</span></Link>
                     <button onClick={async () => {
                       if (!(await askConfirm(L('Delete this draft? This cannot be undone.', 'یہ مسودہ حذف کریں؟ یہ واپس نہیں ہو سکتا۔', 'هل تريد حذف المسودة؟ لا يمكن التراجع عن ذلك.'), { danger: true }))) return
                       let failed = false
@@ -734,10 +790,13 @@ export default function ContractorDashboard() {
 
         {/* RFQs */}
         {loadErr === 'empty' ? null : rfqs.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-gray-100 text-center animate-slide-up">
+          <div className={`bg-white rounded-2xl ${homeBuyer ? 'p-4' : 'p-8 sm:p-12'} shadow-sm border border-gray-100 text-center animate-slide-up`}>
             {/* a home buyer saw the three steps under the market: one quiet line here (round-4 UX-110) */}
             {homeBuyer ? (
-              <p className="text-sm font-semibold text-gray-600">{L('You have not sent any request yet.', 'آپ نے ابھی کوئی درخواست نہیں بھیجی۔', 'لم ترسل أي طلب بعد.')}</p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <p className="text-sm font-semibold text-gray-600">{L('You have not sent any request yet.', 'آپ نے ابھی کوئی درخواست نہیں بھیجی۔', 'لم ترسل أي طلب بعد.')}</p>
+                <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[44px] px-4 rounded-xl text-sm font-bold text-[#071827]" style={{ background: '#D4A543' }}>{L('Ask the price of your first product', 'اپنی پہلی چیز کی قیمت پوچھیں', 'اطلب سعر أول منتج')}</Link>
+              </div>
             ) : (<>
               <h2 className="text-xl font-bold mb-3" style={{ color: '#0B2438' }}>{t.noRfqs}</h2>
               <p className="text-gray-600 mb-6 text-sm">{t.noRfqsSub}</p>

@@ -21,6 +21,15 @@ export default function EmailVerify({ currentEmail, verified, locale, onDone, op
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [done, setDone] = useState(!!verified)
+  // «Change» on a verified email can be cancelled (round-5 UX-214)
+  const [changing, setChanging] = useState(false)
+  const [savedEmail, setSavedEmail] = useState(placeholder ? '' : String(currentEmail))
+  // Enter inside the settings form confirms THIS step instead of saving the whole form (round-5 UX-075)
+  const onEnter = (fn: () => void, ok: boolean) => (e: any) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    if (ok) fn()
+  }
 
   async function send() {
     setErr(''); setBusy(true)
@@ -49,7 +58,7 @@ export default function EmailVerify({ currentEmail, verified, locale, onDone, op
       return
     }
     try { sessionStorage.removeItem('tsk_pvb') } catch {} // the verify banner re-checks
-    setDone(true); setStep('idle'); onDone?.(j.email)
+    setDone(true); setStep('idle'); setChanging(false); setSavedEmail(j.email || email); onDone?.(j.email)
   }
 
   if (done && step === 'idle') {
@@ -57,7 +66,7 @@ export default function EmailVerify({ currentEmail, verified, locale, onDone, op
       <div className="flex flex-wrap items-center gap-2 text-[12px]">
         <span dir="ltr" className="font-semibold text-gray-700">{email || currentEmail}</span>
         <span className="font-bold text-[#0F6E56] inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" aria-hidden />{L('Email verified', 'ای میل تصدیق شدہ', 'البريد موثّق')}</span>
-        <button type="button" onClick={() => { setDone(false); setStep('enter') }} className="min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Change', 'تبدیل کریں', 'تغيير')}</button>
+        <button type="button" onClick={() => { setDone(false); setChanging(true); setStep('enter') }} className="min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Change', 'تبدیل کریں', 'تغيير')}</button>
       </div>
     )
   }
@@ -68,14 +77,17 @@ export default function EmailVerify({ currentEmail, verified, locale, onDone, op
           ? L('Optional. We send a 6-digit code to your email to verify it; quotes and deal documents can then reach you there too.', 'اختیاری۔ ہم تصدیق کے لیے آپ کی ای میل پر 6 ہندسوں کا کوڈ بھیجیں گے؛ پھر قیمتیں اور دستاویزات وہاں بھی آئیں گی۔', 'اختياري. نرسل رمزاً من 6 أرقام إلى بريدك لتوثيقه، ثم تصلك عليه العروض ومستندات الصفقات أيضاً.')
           : L('We send a 6-digit code to your email to verify it. It is also your backup way to sign in.', 'ہم تصدیق کے لیے آپ کی ای میل پر 6 ہندسوں کا کوڈ بھیجیں گے۔ یہ سائن اِن کا متبادل طریقہ بھی ہے۔', 'نرسل رمزاً من 6 أرقام إلى بريدك لتوثيقه، وهو أيضاً طريقك الاحتياطي لتسجيل الدخول.')}</p>
         <div className="flex gap-2">
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" inputMode="email" autoComplete="email" dir="ltr" className="input-field flex-1 min-w-0" placeholder="name@example.com" aria-label={L('Email', 'ای میل', 'البريد الإلكتروني')} />
-          <button type="button" onClick={send} disabled={busy || !email} className="min-h-[48px] text-sm px-4 rounded-xl font-bold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>{busy ? '…' : L('Send code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>
+          <input value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={onEnter(send, !busy && !!email)} type="email" inputMode="email" autoComplete="email" dir="ltr" className="input-field flex-1 min-w-0" placeholder="name@example.com" aria-label={L('Email', 'ای میل', 'البريد الإلكتروني')} />
+          <button type="button" onClick={send} disabled={busy || !email} className="min-h-[48px] text-sm px-4 rounded-xl font-bold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>{busy ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>
         </div>
+        {changing && (
+          <button type="button" onClick={() => { setEmail(savedEmail); setErr(''); setChanging(false); setDone(true); setStep('idle') }} className="min-h-[44px] text-[13px] font-bold text-[#0B2438] hover:underline">{L('Cancel', 'منسوخ کریں', 'إلغاء')}</button>
+        )}
       </>) : (<>
         <p className="text-[12px] text-gray-600">{L(`Enter the code sent to ${email}`, `${email} پر بھیجا گیا کوڈ لکھیں`, `أدخل الرمز المرسل إلى ${email}`)}</p>
         <div className="flex gap-2">
-          <input value={code} onChange={(e) => setCode(e.target.value.replace(/[^\d٠-٩]/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" dir="ltr" maxLength={6} className="input-field flex-1 min-w-0 tracking-[0.4em] text-center font-bold" placeholder="______" aria-label={L('Verification code', 'تصدیقی کوڈ', 'رمز التحقق')} />
-          <button type="button" onClick={confirm} disabled={busy || code.length < 6} className="min-h-[48px] text-sm px-5 rounded-xl font-bold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>{busy ? '…' : L('Confirm', 'تصدیق', 'تأكيد')}</button>
+          <input value={code} onChange={(e) => setCode(e.target.value.replace(/[^\d٠-٩]/g, '').slice(0, 6))} onKeyDown={onEnter(confirm, !busy && code.length >= 6)} inputMode="numeric" autoComplete="one-time-code" dir="ltr" maxLength={6} className="input-field flex-1 min-w-0 tracking-[0.4em] text-center font-bold" placeholder="______" aria-label={L('Verification code', 'تصدیقی کوڈ', 'رمز التحقق')} />
+          <button type="button" onClick={confirm} disabled={busy || code.length < 6} className="min-h-[48px] text-sm px-5 rounded-xl font-bold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>{busy ? L('Checking…', 'جانچ ہو رہی ہے…', 'جارٍ التحقق…') : L('Confirm', 'تصدیق', 'تأكيد')}</button>
         </div>
         <button type="button" onClick={() => setStep('enter')} className="min-h-[44px] text-[13px] font-bold text-[#8F6820] hover:underline">{L('Change the email or resend', 'ای میل بدلیں یا دوبارہ بھیجیں', 'تغيير البريد أو إعادة الإرسال')}</button>
       </>)}

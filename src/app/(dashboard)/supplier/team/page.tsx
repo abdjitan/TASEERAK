@@ -26,6 +26,9 @@ export default function SupplierTeamPage() {
   const [msg, setMsg] = useState('')
   const [newRole, setNewRole] = useState<'member' | 'admin'>('member')
   const [lastLink, setLastLink] = useState('')
+  // round-5 UX-165: who the link is for (optional); used in the WhatsApp message and the ready card
+  const [inviteFor, setInviteFor] = useState('')
+  const [lastFor, setLastFor] = useState('')
   const [copied, setCopied] = useState('')
   const [loadFailed, setLoadFailed] = useState(false) // UX-126: a failed load is said, never swallowed
   // round-4 UX-151: each error names the action that failed
@@ -56,7 +59,7 @@ export default function SupplierTeamPage() {
     const { data, error } = await createClient().rpc('create_company_invite', { p_role: newRole })
     const j: any = error ? { ok: false } : (data || {})
     if (j.ok) {
-      setLastLink(linkFor(j.token))
+      setLastLink(linkFor(j.token)); setLastFor(inviteFor.trim()); setInviteFor('')
       // UX-137: no employee name kept on one device only (it was lost on another device); the member's own name shows once joined
       await load()
     }
@@ -95,8 +98,8 @@ export default function SupplierTeamPage() {
       setCopyFail(text)
     }
   }
-  const waShare = (link: string) => `https://wa.me/?text=${encodeURIComponent(
-    L(`Join our team on Taseerak to price requests on behalf of ${team?.company_name || 'the company'}: ${link}`,
+  const waShare = (link: string, who: string = '') => `https://wa.me/?text=${encodeURIComponent(
+    (who ? L(`Hello ${who}. `, `السلام علیکم ${who}۔ `, `مرحباً ${who}، `) : '') + L(`Join our team on Taseerak to price requests on behalf of ${team?.company_name || 'the company'}: ${link}`,
       `تسعیرک پر ${team?.company_name || 'کمپنی'} کی ٹیم میں شامل ہوں اور کمپنی کی جانب سے درخواستوں کی قیمت دیں: ${link}`,
       `انضم إلى فريق ${team?.company_name || 'الشركة'} في تسعيرك لتسعير الطلبات باسم الشركة: ${link}`))}`
 
@@ -131,6 +134,10 @@ export default function SupplierTeamPage() {
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
             <h2 className="font-bold text-navy">{L('Invite a team member', 'رکن کو مدعو کریں', 'دعوة عضو جديد')}</h2>
             <p className="text-[13px] text-gray-600">{L('Each link works once and expires after 7 days. Send it to the employee on WhatsApp.', 'ہر لنک ایک بار استعمال ہوتا ہے اور 7 دن بعد ختم ہو جاتا ہے۔ اسے واٹس ایپ پر ملازم کو بھیجیں۔', 'كل رابط يُستخدم مرة واحدة وينتهي بعد 7 أيام. أرسله إلى الموظف عبر واتساب.')}</p>
+            <div>
+              <label htmlFor="inv-for" className="block text-xs font-bold text-gray-600 mb-1">{L('Who is this link for? (employee name, optional)', 'یہ لنک کس کے لیے ہے؟ (ملازم کا نام، اختیاری)', 'لمن هذا الرابط؟ (اسم الموظف، اختياري)')}</label>
+              <input id="inv-for" value={inviteFor} onChange={e => setInviteFor(e.target.value.slice(0, 60))} className="input-field" placeholder={L('e.g. Ahmed, sales', 'مثلاً احمد، سیلز', 'مثال: أحمد، المبيعات')} />
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="input-field w-auto" aria-label={L('Role', 'کردار', 'الدور')}>
                 <option value="member">{roleLabel('member')}: {L('prices requests', 'قیمتیں دیتا ہے', 'يسعّر الطلبات')}</option>
@@ -142,11 +149,11 @@ export default function SupplierTeamPage() {
             </div>
             {lastLink && (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 space-y-2">
-                <div className="inline-flex items-center gap-1 text-[13px] font-bold text-emerald-700"><Check className="w-4 h-4" aria-hidden />{L('Link ready', 'لنک تیار', 'الرابط جاهز')}</div>
+                <div className="inline-flex items-center gap-1 text-[13px] font-bold text-emerald-700"><Check className="w-4 h-4" aria-hidden />{lastFor ? L(`Link ready for ${lastFor}`, `${lastFor} کے لیے لنک تیار`, `رابط ${lastFor} جاهز`) : L('Link ready', 'لنک تیار', 'الرابط جاهز')}</div>
                 <div className="text-xs text-gray-700 break-all select-all" dir="ltr">{lastLink}</div>
                 <div className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => copy(lastLink)} className="min-h-[44px] text-sm font-bold px-3 rounded-lg border border-gray-200 bg-white">{copied === lastLink ? L('Copied', 'کاپی ہو گیا', 'تم النسخ') : L('Copy', 'کاپی', 'نسخ')}</button>
-                  <a href={waShare(lastLink)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] text-sm font-bold px-3 rounded-lg text-white" style={{ background: '#0B2438' }}>{L('Send on WhatsApp', 'واٹس ایپ پر بھیجیں', 'إرسال عبر واتساب')}</a>
+                  <a href={waShare(lastLink, lastFor)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] text-sm font-bold px-3 rounded-lg text-white" style={{ background: '#0B2438' }}>{L('Send on WhatsApp', 'واٹس ایپ پر بھیجیں', 'إرسال عبر واتساب')}</a>
                 </div>
               </div>
             )}
@@ -159,9 +166,11 @@ export default function SupplierTeamPage() {
                 <div className="space-y-1.5">
                   {team.invites.map((i: any) => (
                     <div key={i.id} className="flex flex-wrap items-center justify-between gap-2 text-[13px] rounded-lg border border-gray-100 px-3 py-1">
-                      <span className="text-gray-600">{roleLabel(i.role)} · {L('expires', 'ختم ہوگا', 'ينتهي')} {new Date(i.expires_at).toLocaleDateString(locale === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : 'en-GB')}</span>
+                      <span className="text-gray-600">{i.label ? <b className="text-[#0B2438]">{i.label} · </b> : null}{roleLabel(i.role)} · {L('expires', 'ختم ہوگا', 'ينتهي')} {new Date(i.expires_at).toLocaleDateString(locale === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : 'en-GB')}</span>
                       <span className="flex gap-2">
                         <button type="button" onClick={() => copy(linkFor(i.token))} className="min-h-[44px] px-2 font-bold text-navy">{copied === linkFor(i.token) ? L('Copied', 'کاپی ہو گیا', 'تم النسخ') : L('Copy', 'کاپی', 'نسخ')}</button>
+                        {/* round-5 UX-165: send any open link on WhatsApp, not only the newest */}
+                        <a href={waShare(linkFor(i.token), i.label || '')} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-[44px] px-2 font-bold text-[#8F6820]">{L('Send on WhatsApp', 'واٹس ایپ پر بھیجیں', 'إرسال عبر واتساب')}</a>
                         <button type="button" onClick={() => revoke(i.id)} disabled={busy === i.id} className="min-h-[44px] px-2 font-bold text-[#B42318]">{L('Revoke the link', 'لنک منسوخ کریں', 'إبطال الرابط')}</button>
                       </span>
                     </div>
@@ -184,7 +193,7 @@ export default function SupplierTeamPage() {
                     <div key={m.user_id} className="flex items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
                         <div className="font-semibold text-sm text-gray-800 truncate">{m.name || '—'}</div>
-                        <div className="text-[12px] text-gray-500">{roleLabel(m.role)}{m.phone ? ` · ${m.phone}` : ''} · {L(`${Number(m.offers) || 0} offer${(Number(m.offers) || 0) === 1 ? '' : 's'}`, `${Number(m.offers) || 0} آفر`, (Number(m.offers) || 0) === 0 ? 'لا توجد عروض' : arCount(Number(m.offers), 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</div>
+                        <div className="text-[12px] text-gray-500">{roleLabel(m.role)}{m.phone && team.can_manage ? ` · ${m.phone}` : ''} · {L(`${Number(m.offers) || 0} offer${(Number(m.offers) || 0) === 1 ? '' : 's'}`, `${Number(m.offers) || 0} آفر`, (Number(m.offers) || 0) === 0 ? 'لا توجد عروض' : arCount(Number(m.offers), 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'))}</div>
                       </div>
                       {team.can_manage && (
                         <button type="button" onClick={() => remove(m.user_id, false)} disabled={busy === m.user_id} className="min-h-[44px] px-2 text-sm font-bold text-red-600 shrink-0">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
@@ -212,7 +221,7 @@ export default function SupplierTeamPage() {
             <li>{L('Price requests in the company name; each offer shows who sent it.', 'کمپنی کے نام سے قیمت دینا؛ ہر آفر پر بھیجنے والے کا نام۔', 'تسعير الطلبات باسم الشركة، ويظهر على كل عرض من أرسله.')}</li>
             <li>{L('Answer a discount request or a buyer question, edit an offer within 15 minutes, and hide a request for the whole company.', 'رعایت کی درخواست یا خریدار کے سوال کا جواب دینا، 15 منٹ میں آفر میں ترمیم، اور پوری کمپنی کے لیے درخواست چھپانا۔', 'الرد على طلب التخفيض وسؤال المشتري، وتعديل العرض خلال 15 دقيقة، وإخفاء الطلب عن الشركة كلها.')}</li>
             <li>{L('See the company deals and their stages.', 'کمپنی کے سودے اور ان کے مراحل دیکھنا۔', 'الاطّلاع على صفقات الشركة ومراحلها.')}</li>
-            <li>{L('Only the account owner: managing a deal after the buyer chooses (delivery charges, invoice, delivery), conversations with buyers, specialties, branches and the company profile.', 'صرف اکاؤنٹ کا مالک: خریدار کے انتخاب کے بعد سودے کا انتظام (ڈیلیوری فیس، انوائس، ڈیلیوری)، خریداروں سے بات چیت، سامان، شاخیں اور کمپنی پروفائل۔', 'لصاحب الحساب فقط: إدارة الصفقة بعد اختيار المشتري (رسوم التوصيل والفاتورة والتسليم)، والمحادثات مع المشترين، والتخصصات، والفروع، وملف الشركة.')}</li>
+            <li>{L('Only the account owner: managing a deal after the buyer chooses (delivery charges, invoice, delivery), conversations with buyers, specialties, branches, the company map location and the company profile.', 'صرف اکاؤنٹ کا مالک: خریدار کے انتخاب کے بعد سودے کا انتظام (ڈیلیوری فیس، انوائس، ڈیلیوری)، خریداروں سے بات چیت، تخصصات، شاخیں، نقشے پر کمپنی کا مقام اور کمپنی پروفائل۔', 'لصاحب الحساب فقط: إدارة الصفقة بعد اختيار المشتري (رسوم التوصيل والفاتورة والتسليم)، والمحادثات مع المشترين، والتخصصات، والفروع، وموقع الشركة على الخريطة، وملف الشركة.')}</li>
           </ul>
         </div>
       </div>

@@ -9,6 +9,9 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { SIGNUP_KIND_KEY } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { Check } from 'lucide-react'
+import PublicFooter from '@/components/public/PublicFooter'
+import Glyph from '@/components/shared/Glyph'
+import { teamInviteHintText } from '@/lib/cr'
 
 // Invitation landing pages: /join/company (factories, distributors, trading companies, shops)
 // and /join/seller (pricing agents). They are ordinary public pages: the link only pre-selects the
@@ -41,11 +44,15 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
   // UX-103: an invite link opens a seller-only sign-up (no buyer switch)
   const href = `/register?role=supplier&kind=${kind}&only=1&email=1${carry ? '&' + carry : ''}`
   const company = kind === 'company'
+  // round-5 UX-162: the button names the kind (a pricing agent is not called a «supplier»)
+  const cta = company
+    ? L('Create your company or shop account for free', 'اپنا کمپنی یا دکان کا اکاؤنٹ مفت بنائیں', 'أنشئ حساب شركتك أو محلك مجاناً')
+    : L('Create your account as a pricing agent for free', 'قیمت ایجنٹ کے طور پر اپنا اکاؤنٹ مفت بنائیں', 'أنشئ حسابك كوسيط تسعير مجاناً')
 
   const points = company
     ? [
         [L('Requests from buyers near you', 'قریبی خریداروں کی درخواستیں', 'طلبات من مشترين قريبين منك'), L('Only the materials you sell reach you.', 'صرف آپ کے سامان کی درخواستیں۔', 'لا تصلك إلا طلبات المواد التي تبيعها.')],
-        [L('Quote from your phone in a minute', 'ایک منٹ میں فون سے قیمت', 'سعّر من جوالك خلال دقيقة'), L('Per item, with VAT and delivery.', 'ہر آئٹم کی قیمت، ٹیکس اور ڈیلیوری کے ساتھ۔', 'سعر لكل مادة، مع الضريبة والتوصيل.')],
+        [L('Quote from your phone in a minute', 'ایک منٹ میں فون سے قیمت', 'سعّر من جوالك خلال دقيقة'), L('A price per item, delivery included, in a minute.', 'ہر آئٹم کی قیمت، ڈیلیوری سمیت، ایک منٹ میں۔', 'سعر لكل مادة شامل التوصيل، خلال دقيقة.')],
         [L('«Verified» badge', '«تصدیق شدہ» بیج', 'شارة «موثّق»'), L('Verify your commercial registration and your offers carry the «Verified» badge.', 'اپنی تجارتی رجسٹریشن کی تصدیق کریں اور آپ کی آفرز پر «تصدیق شدہ» بیج آئے گا۔', 'وثّق سجلك التجاري لتحمل عروضك شارة «موثّق».')],
         [L('Your team', 'آپ کی ٹیم', 'فريق مبيعاتك'), L('Add your sales staff so they quote on behalf of the company.', 'اپنے سیلز ملازمین شامل کریں تاکہ وہ کمپنی کی جانب سے قیمت دیں۔', 'أضف موظفي المبيعات ليقدّموا العروض باسم الشركة.')],
       ]
@@ -58,10 +65,10 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
   return (
     <div className="min-h-screen bg-canvas" dir={dir}>
       <header className="bg-white border-b border-line">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center" aria-label={L('Taseerak home', 'تسعیرک مرکزی صفحہ', 'تسعيرك، الرئيسية')}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-11 w-auto" />
+            <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="h-14 w-auto" />
           </Link>
           <LanguageSwitcher variant="minimal" />
         </div>
@@ -81,7 +88,7 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
               : L('For those who know the market and have no shop: bring shop prices to buyers.', 'جو مارکیٹ جانتے ہیں اور دکان نہیں رکھتے: دکانوں کی قیمتیں خریداروں تک لائیں۔', 'لمن يعرف السوق ولا يملك محلاً: اجلب أسعار المحلات للمشترين.')}
           </p>
           <Link href={href} className="mt-5 flex items-center justify-center w-full sm:max-w-sm sm:mx-auto min-h-[52px] rounded-xl font-extrabold text-[#071827] text-base" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
-            {L('Create a free supplier account', 'مفت سپلائر اکاؤنٹ بنائیں', 'أنشئ حساب مورد مجاناً')}
+            {cta}
           </Link>
           <p className="text-sm text-ink-2 mt-3">
             {L('Already have an account?', 'پہلے سے اکاؤنٹ ہے؟', 'لديك حساب؟')} <Link href="/login?m=email" className="inline-flex items-center min-h-[44px] font-extrabold text-orange-dark hover:underline">{L('Sign in', 'سائن اِن', 'تسجيل الدخول')}</Link>
@@ -103,7 +110,18 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
             ? <Link href={`/join/seller${carry ? "?" + carry : ""}`} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('No shop? Join as a pricing agent', 'دکان نہیں؟ قیمت ایجنٹ کے طور پر شامل ہوں', 'ليس لديك محل؟ سجّل كوسيط تسعير')}</Link>
             : <Link href={`/join/company${carry ? "?" + carry : ""}`} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Representing a company or shop? Join here', 'کمپنی یا دکان؟ یہاں شامل ہوں', 'تمثّل شركة أو محلاً؟ سجّل من هنا')}</Link>}
         </p>
+        {company && <p className="text-center text-[13px] text-ink-2 mt-1"><Glyph e="👥" /> {teamInviteHintText(locale)}</p>}
+
+        {/* round-5 UX-162: a closing call to action, as on /join */}
+        <div className="mt-8 rounded-2xl p-6 text-center text-white" style={{ background: 'linear-gradient(135deg,#071827,#102E45)' }}>
+          <h2 className="text-xl font-extrabold">{L('Ready to start?', 'شروع کرنے کے لیے تیار ہیں؟', 'جاهز للبدء؟')}</h2>
+          <Link href={href} className="mt-4 flex items-center justify-center w-full sm:max-w-sm sm:mx-auto min-h-[52px] px-4 rounded-xl font-extrabold text-[#071827] text-base" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+            {cta}
+          </Link>
+          <p className="text-sm text-white/80 mt-3">{L('Already have an account?', 'پہلے سے اکاؤنٹ ہے؟', 'لديك حساب؟')} <Link href="/login?m=email" className="inline-flex items-center min-h-[44px] font-extrabold text-[#F5C55B] hover:underline">{L('Sign in', 'سائن اِن', 'تسجيل الدخول')}</Link></p>
+        </div>
       </main>
+      <PublicFooter />
     </div>
   )
 }

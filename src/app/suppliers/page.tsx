@@ -8,12 +8,21 @@ import SuppliersPublic from './SuppliersPublic'
 
 export const dynamic = 'force-dynamic' // عرض وقت الطلب — يتفادى إنشاء عميل Supabase وقت البناء (build-safe)
 
-export const metadata: Metadata = {
+// The public directory is off at launch, as in the app (round-5 UX-069): no ranking and no
+// «reliability out of 100» circles, only the «coming soon» card. Reads FEATURES.suppliersDirectory
+// once that switch exists in src/lib/features.ts; until then it stays off.
+const DIRECTORY_ON = (FEATURES as any).suppliersDirectory === true
+
+export const metadata: Metadata = DIRECTORY_ON ? {
   title: 'أفضل موردي مواد البناء في السعودية | تسعيرك',
   description: 'لوحة شرف الموردين على منصة تسعيرك: موردون لمواد البناء مرتّبون حسب التوثيق والتقييم ودرجة الموثوقية في جميع مناطق المملكة.',
   alternates: { canonical: '/suppliers' },
-  // «قريباً» while the price board is off: keep the placeholder out of search results
   ...(FEATURES.priceBoard ? {} : { robots: { index: false, follow: true } }),
+} : {
+  title: 'دليل الموردين قريباً | تسعيرك',
+  description: 'دليل موردي مواد البناء على تسعيرك قريباً. يمكنك الآن إرسال طلب تسعير فيصل إلى الموردين المختصين بموادك.',
+  alternates: { canonical: '/suppliers' },
+  robots: { index: false, follow: true },
 }
 
 export default async function SuppliersLeaderboard() {
@@ -22,7 +31,7 @@ export default async function SuppliersLeaderboard() {
   // price board is off (UX-022): no consent from them yet, and it inflated the supplier count.
   let rows: any[] = []
   let listings: any[] = []
-  try {
+  if (DIRECTORY_ON) try {
     const supabase = createPublicClient()
     const [{ data: lb }, dl] = await Promise.all([
       supabase.rpc('get_supplier_leaderboard'),

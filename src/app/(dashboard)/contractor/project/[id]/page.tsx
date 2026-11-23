@@ -14,7 +14,8 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, getProductLabel, getUnitLabel } from '@/types'
+import { SECTOR_LABELS, getProductLabel, getUnitLabel, getRegionLabel, getProductSpecs } from '@/types'
+import { fmtNum } from '@/components/tender/labels'
 import { tierLabel, tierIcon, sourceLabel, isDirectSource } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
@@ -47,6 +48,7 @@ export default function ProjectResultsPage() {
   const [sectorFilter, setSectorFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [contactsById, setContactsById] = useState<any>({}) // أرقام الموردين المقبولين فقط
+  const [tenderRfq, setTenderRfq] = useState<string | null>(null) // the request of the tender behind this project (UX-158)
 
   useEffect(() => {
     async function load() {
@@ -68,6 +70,10 @@ export default function ProjectResultsPage() {
       // every project sent as one request (also a one-material project) is followed on the request page
       if (rfqIds.length === 1) { window.location.replace(`/contractor/rfq/${rfqIds[0]}`); return }
       setItems(projItems || [])
+      // no saved items: the tender that made this project may know its request (tenders.rfq_id, round-5 UX-158)
+      if (!(projItems || []).length) {
+        try { const { data: tt } = await supabase.from('tenders').select('*').eq('project_rfq_id', id).limit(1); const r = (tt as any)?.[0]?.rfq_id; if (r) setTenderRfq(String(r)) } catch {}
+      }
 
       // أرقام تواصل الموردين المقبولين فقط (RLS يسمح بعد القبول) — لا أرقام قبل الترسية
       const acceptedIds = [...new Set((projItems || []).flatMap((it: any) =>
@@ -83,18 +89,20 @@ export default function ProjectResultsPage() {
 
   async function acceptOffer(offerId: any, rfqId: any, itemId: any) {
     // same wording as the request page: accepting rejects the other offers and closes the request
-    if (!(await askConfirm(L('Accept this offer? All other offers will be rejected and the request will close.', 'یہ آفر قبول کریں؟ باقی تمام آفرز رد ہو جائیں گی اور درخواست بند ہو جائے گی۔', 'تأكيد قبول هذا العرض؟ سيتم رفض باقي العروض وإغلاق الطلب.'), { okLabel: L('Accept', 'قبول کریں', 'قبول') }))) return
+    if (!(await askConfirm(L('Choose this offer? The other offers will be declined and the request will close.', 'یہ آفر منتخب کریں؟ باقی آفرز رد ہو جائیں گی اور درخواست بند ہو جائے گی۔', 'اختيار هذا العرض؟ ستُرفض العروض الأخرى ويُغلق الطلب.'), { okLabel: L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض') }))) return
     if (!(await ensureVerified())) return
     const supabase = createClient()
     // Atomic: accept + reject the competing offers + close the RFQ in one
     // transaction (same as the single-RFQ flow) — prevents double-accept and
     // leaving rival offers "pending".
     const { error } = await supabase.rpc('accept_offer', { p_offer_id: offerId })
-    if (error) { await notify(L('Could not accept the offer: it may already be accepted. Refresh the page and try again.', 'پیشکش قبول نہیں ہو سکی: شاید پہلے ہی قبول ہو چکی ہے۔ صفحہ تازہ کر کے دوبارہ کوشش کریں۔', 'تعذّر قبول العرض، فقد يكون قُبل مسبقاً. حدّث الصفحة وحاول مرة أخرى.'), { tone: 'error' }); return }
+    if (error) { await notify(L('Could not choose the offer: another one may already be chosen. Refresh the page and try again.', 'پیشکش منتخب نہیں ہو سکی: شاید پہلے ہی کوئی منتخب ہو چکی ہے۔ صفحہ تازہ کر کے دوبارہ کوشش کریں۔', 'تعذّر اختيار العرض، فقد يكون اختير عرض مسبقاً. حدّث الصفحة وحاول مرة أخرى.'), { tone: 'error' }); return }
     setSelectedOffers((prev: any) => ({ ...prev, [itemId]: offerId }))
     window.location.reload()
   }
 
+  // a spec key («dia») shown by its label in the page's language (round-5 UX-158)
+  const attrLabel = (name: string, k: string) => { const f = getProductSpecs(name || '').find(x => x.key === k); return f ? (locale === 'en' ? f.en : f.ar) : k }
   const totalItems = items.length
   const totalOffers = items.reduce((s: any, i: any) => s + (i.rfq?.offers?.length || 0), 0)
   const acceptedItems = items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
@@ -127,7 +135,7 @@ export default function ProjectResultsPage() {
                 <h1 className="text-xl font-bold" style={{ color: '#0B2438' }}>{project?.title}</h1>
               </div>
               <div className="flex items-center gap-3 text-xs text-gray-500">
-                <span><Glyph e="📍" /> {project?.city || project?.region}</span>
+                <span><Glyph e="📍" /> {project?.city || (project?.region ? getRegionLabel(project.region, locale) : '')}</span>
                 {project?.created_at && <span><Glyph e="📅" /> {new Date(project.created_at).toLocaleDateString(dateLocale(locale))}</span>}
               </div>
               {project?.boq_url && (
@@ -141,7 +149,7 @@ export default function ProjectResultsPage() {
               <div className="text-2xl font-bold" style={{ color: '#8F6820' }}>
                 {totalAcceptedCost > 0 ? totalAcceptedCost.toLocaleString('en-US') + ' ' + SAR : '—'}
               </div>
-              <div className="text-xs text-gray-500">{L('Total accepted (comparable, after VAT)', 'کل منظور شدہ (VAT کے بعد)', 'إجمالي المقبول (بعد الضريبة إن وُجدت)')}</div>
+              <div className="text-xs text-gray-500">{L('Total of the chosen offers (final price incl. VAT)', 'منتخب پیشکشوں کا کل (حتمی قیمت، VAT سمیت)', 'إجمالي العروض المختارة (السعر النهائي شامل الضريبة)')}</div>
             </div>
           </div>
         </div>
@@ -149,8 +157,8 @@ export default function ProjectResultsPage() {
         {/* an old project with no saved items is not a dead end: its request is followed from «طلباتي» (UX-136) */}
         {items.length === 0 && (
           <div className="bg-white rounded-2xl p-6 border border-[#D4A543]/40 shadow-sm mb-5 text-center">
-            <p className="text-sm text-[#0B2438] font-semibold mb-3">{L('This project has no saved items here. Follow it from your requests.', 'اس پراجیکٹ کے آئٹمز یہاں محفوظ نہیں۔ اسے اپنی درخواستوں سے دیکھیں۔', 'لا توجد بنود محفوظة لهذا المشروع هنا، فتابعه من طلباتك.')}</p>
-            <Link href="/contractor/rfqs" className="inline-flex items-center min-h-11 px-5 rounded-xl font-bold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{L('Follow it from your requests', 'اپنی درخواستوں سے دیکھیں', 'تابعه من طلباتك')}</Link>
+            <p className="text-sm text-[#0B2438] font-semibold mb-3">{tenderRfq ? L('This project has no saved items here. Follow it on its request page.', 'اس پراجیکٹ کے آئٹمز یہاں محفوظ نہیں۔ اسے اس کی درخواست کے صفحے پر دیکھیں۔', 'لا توجد بنود محفوظة لهذا المشروع هنا، فتابعه من صفحة طلبه.') : L('This project has no saved items here. Follow it from your requests.', 'اس پراجیکٹ کے آئٹمز یہاں محفوظ نہیں۔ اسے اپنی درخواستوں سے دیکھیں۔', 'لا توجد بنود محفوظة لهذا المشروع هنا، فتابعه من طلباتك.')}</p>
+            <Link href={tenderRfq ? `/contractor/rfq/${tenderRfq}` : '/contractor/rfqs'} className="inline-flex items-center min-h-11 px-5 rounded-xl font-bold text-sm text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{tenderRfq ? L('Open the request', 'درخواست کھولیں', 'فتح الطلب') : L('Follow it from your requests', 'اپنی درخواستوں سے دیکھیں', 'تابعه من طلباتك')}</Link>
           </div>
         )}
 
@@ -161,9 +169,9 @@ export default function ProjectResultsPage() {
           {[
             { label: L('Total Items', 'کل آئٹمز', 'إجمالي البنود'), value: totalItems, icon: <Glyph e="📦" />, bg: '#0B2438', f: 'all' },
             { label: L('Total Offers', 'کل پیشکشیں', 'إجمالي العروض'), value: totalOffers, icon: <Glyph e="💬" />, bg: '#D4A543', f: 'has_offers' },
-            { label: L('Accepted', 'منظور شدہ', 'مقبولة'), value: acceptedItems, icon: <Glyph e="✅" />, bg: '#0F6E56', f: 'accepted' },
+            { label: L('Chosen', 'منتخب', 'مختارة'), value: acceptedItems, icon: <Glyph e="✅" />, bg: '#0F6E56', f: 'accepted' },
             // not the same count as the «بانتظار العروض» filter (items with no offer): this one counts every item not accepted yet
-            { label: L('Not accepted yet', 'ابھی قبول نہیں', 'لم يُقبل بعد'), value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#435A70', f: '' },
+            { label: L('Not chosen yet', 'ابھی منتخب نہیں', 'لم يُختر بعد'), value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#435A70', f: '' },
           ].map(({ label, value, icon, bg, f }) => (
             // a card with a matching filter is a button: a tap shows those items (UX-136)
             <div key={label} role={f ? 'button' : undefined} tabIndex={f ? 0 : undefined} aria-pressed={f ? filter === f : undefined}
@@ -185,7 +193,7 @@ export default function ProjectResultsPage() {
                 { key: 'all', label: L('All', 'سب', 'الكل'), icon: <Glyph e="📋" /> },
                 { key: 'has_offers', label: L('Has Offers', 'قیمت موصول', 'وصل تسعير'), icon: <Glyph e="💬" /> },
                 { key: 'pending', label: L('Awaiting', 'پیشکشوں کا انتظار', 'بانتظار العروض'), icon: <Glyph e="⏳" /> },
-                { key: 'accepted', label: L('Accepted', 'منظور شدہ', 'تم القبول'), icon: <Glyph e="✅" /> },
+                { key: 'accepted', label: L('Chosen', 'منتخب', 'مختارة'), icon: <Glyph e="✅" /> },
               ].map((f: any) => {
                 const count = f.key === 'all' ? items.length
                   : f.key === 'has_offers' ? items.filter((i: any) => (i.rfq?.offers?.length || 0) > 0 && !i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
@@ -236,7 +244,7 @@ export default function ProjectResultsPage() {
             if (filtered.length === 0) return (
               <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
                 <div className="text-5xl mb-4"><Glyph e="🔍" /></div>
-                <p className="text-gray-500">{L('No matching items', 'کوئی مماثل آئٹم نہیں', 'لا توجد بنود مطابقة للفلتر')}</p>
+                <p className="text-gray-500">{L('No items match the filter', 'فلٹر سے کوئی آئٹم میل نہیں کھاتا', 'لا توجد بنود تطابق التصفية')}</p>
               </div>
             )
             return filtered.map((item: any) => {
@@ -267,7 +275,7 @@ export default function ProjectResultsPage() {
                           <span className="badge text-xs text-white" style={{ background: (SECTOR_COLORS as any)[item.sector] }}>
                             {sectorName(item.sector, locale)}
                           </span>
-                          {item.quantity && <span className="text-xs text-gray-500"><Glyph e="📦" /> {item.quantity} {getUnitLabel(item.unit, locale)}</span>}
+                          {item.quantity && <span className="text-xs text-gray-500"><Glyph e="📦" /> {fmtNum(Number(item.quantity))} {getUnitLabel(item.unit, locale)}</span>}
                           {item.specification && <span className="text-xs text-gray-500"><Glyph e="⚙" /> {item.specification}</span>}
                         </div>
                       </div>
@@ -276,11 +284,11 @@ export default function ProjectResultsPage() {
                       {acceptedOffer ? (
                         <div>
                           <div className="text-base font-bold text-[#0F6E56]">{offerComparable(acceptedOffer).toLocaleString('en-US')} {SAR}</div>
-                          <div className="badge badge-green text-xs"><Glyph e="✓" /> {L('Accepted', 'منظور شدہ', 'مقبول')}</div>
+                          <div className="badge badge-green text-xs"><Glyph e="✓" /> {L('Chosen', 'منتخب', 'مختار')}</div>
                         </div>
                       ) : (
                         <div className="text-center">
-                          <div className="text-sm font-bold" style={{ color: '#8F6820' }}>{L(`${offers.length} offers`, `${offers.length} پیشکشیں`, offers.length ? arOffers(offers.length) : 'لا عروض بعد')}</div>
+                          <div className="text-sm font-bold" style={{ color: '#8F6820' }}>{offers.length ? L(offers.length === 1 ? '1 offer' : `${offers.length} offers`, `${offers.length} پیشکشیں`, arOffers(offers.length)) : L('No offers yet', 'ابھی کوئی پیشکش نہیں', 'لا عروض بعد')}</div>
                         </div>
                       )}
                     </div>
@@ -319,7 +327,7 @@ export default function ProjectResultsPage() {
                         )}
                         {acceptedOffer.attributes && Object.entries(acceptedOffer.attributes).map(([k, v]: any) => (
                           <span key={k} className="text-xs bg-white text-gray-600 px-2 py-1 rounded-lg border border-gray-100">
-                            {k}: {v}
+                            {attrLabel(item.product_name, k)}: {String(v)}
                           </span>
                         ))}
                       </div>
@@ -386,12 +394,12 @@ export default function ProjectResultsPage() {
                                 )}
                               </div>
                               {offer.status === 'accepted' ? (
-                                <span className="badge badge-green text-xs" aria-label={L('Accepted', 'منظور شدہ', 'مقبول')}><Glyph e="✓" /></span>
+                                <span className="badge badge-green text-xs" aria-label={L('Chosen', 'منتخب', 'مختار')}><Glyph e="✓" /></span>
                               ) : !acceptedOffer && (
                                 <button type="button" onClick={() => acceptOffer(offer.id, item.rfq_id, item.id)}
                                   className="min-h-11 text-sm px-4 rounded-xl font-bold text-[#071827] transition-all hover:shadow"
                                   style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
-                                  {L('Accept', 'قبول کریں', 'قبول')}
+                                  {L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض')}
                                 </button>
                               )}
                             </div>

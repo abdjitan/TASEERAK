@@ -77,14 +77,14 @@ export default function AiAssistant() {
     <div className="print:hidden">
       {/* الزر العائم */}
       <button type="button" onClick={() => setOpen(o => !o)} aria-label={open ? T.close : T.title} aria-expanded={open}
-        className="fixed z-[45] w-14 h-14 rounded-full grid place-items-center text-[#F5C55B] shadow-xl hover:scale-105 transition-transform bottom-[84px] lg:bottom-5 ring-2 ring-[#D4A543]/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D4A543]"
+        className="fixed z-[45] w-14 h-14 rounded-full grid place-items-center text-[#F5C55B] shadow-xl hover:scale-105 transition-transform bottom-[calc(84px+env(safe-area-inset-bottom))] lg:bottom-5 ring-2 ring-[#D4A543]/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#D4A543]"
         style={{ ...sideStyle, background: '#0B2438' }}>
         {open ? <X className="w-6 h-6" aria-hidden /> : <Sparkles className="w-6 h-6" aria-hidden />}
       </button>
 
       {/* نافذة المحادثة */}
       {open && (
-        <div dir={dir} role="dialog" aria-label={T.title} className="fixed z-[45] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bottom-[150px] lg:bottom-[86px]"
+        <div dir={dir} role="dialog" aria-label={T.title} className="fixed z-[45] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden bottom-[calc(150px+env(safe-area-inset-bottom))] lg:bottom-[86px]"
           style={{ ...sideStyle, width: 'min(380px, calc(100vw - 32px))', height: 'min(560px, calc(100vh - 210px))' }}>
           {/* رأس */}
           <div className="px-4 py-2 text-white flex items-center gap-2 border-b-2 border-[#D4A543]" style={{ background: '#0B2438' }}>

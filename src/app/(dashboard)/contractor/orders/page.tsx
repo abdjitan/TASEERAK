@@ -18,6 +18,7 @@ import Glyph from '@/components/shared/Glyph'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { rfqDesc, rfqRefLine } from '@/lib/rfqName'
 import { arDeals, countLabel } from '@/lib/text'
+import { normalizedIncludes } from '@/lib/normalize'
 
 // The deal's amount, the same as the deal page shows it (UX-018): a per-item award counts only the
 // awarded materials, plus the delivery/other charges once confirmed (not while extras_pending),
@@ -47,7 +48,7 @@ function ContractorDeals() {
   const [deals, setDeals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
-  const [filter, setFilter] = useState<'all' | 'active' | 'done' | 'disputed'>('all')
+  const [filter, setFilter] = useState<'all' | 'active' | 'done' | 'disputed' | 'cancelled'>('all')
   const [search, setSearch] = useState(() => params.get('q') || '') // «متابعة الصفقة» from «طلباتي» (UX-141)
   const [reviewed, setReviewed] = useState<Set<string> | null>(null) // deals the buyer already rated (null = not loaded: no «قيّم المورد» flash, UX-071)
   const home = useHomeBuyer()
@@ -103,11 +104,14 @@ function ContractorDeals() {
   const shown = deals.filter((d: any) => {
     const st = dealStage(d, 'buyer', locale)
     if (filter === 'done' && !st.done) return false
-    if (filter === 'active' && (st.done || st.key === 'disputed')) return false
+    // a deal the admins cancelled is not «جارية» (round-5 UX-031): it has its own filter
+    if (filter === 'active' && (st.done || st.key === 'disputed' || st.key === 'closed')) return false
     if (filter === 'disputed' && st.key !== 'disputed') return false
+    if (filter === 'cancelled' && st.key !== 'closed') return false
     if (q) {
-      const hay = `${d.rfq?.title || ''} ${d.rfq?.product_name || ''} ${d.rfq ? rfqDesc(d.rfq, locale) : ''} ${d.rfq?.ref_no || ''} ${d.supplier?.company_name_ar || ''} ${d.invoice_number || ''} ${statementNo(d)} ${poNo(d)}`.toLowerCase()
-      if (!hay.includes(q)) return false
+      // hamza/taa marbuta/alef maqsura folded: «اسمنت» finds «إسمنت» (round-5 UX-033)
+      const hay = `${d.rfq?.title || ''} ${d.rfq?.product_name || ''} ${d.rfq ? rfqDesc(d.rfq, locale) : ''} ${d.rfq?.ref_no || ''} RFQ-${d.rfq?.ref_no || ''} ${d.supplier?.company_name_ar || ''} ${d.invoice_number || ''} ${statementNo(d)} ${poNo(d)}`
+      if (!normalizedIncludes(hay, q)) return false
     }
     return true
   })
@@ -129,7 +133,7 @@ function ContractorDeals() {
             ? L('Search by material, supplier or request number…', 'سامان، سپلائر یا درخواست نمبر سے تلاش کریں…', 'ابحث بالمادة أو المورد أو رقم الطلب…')
             : L('Search deals (material, supplier, request or statement no.)…', 'ڈیلز تلاش کریں (سامان، سپلائر، درخواست یا بیان نمبر)…', 'ابحث في الصفقات (مادة، مورد، رقم الطلب أو البيان)…')} />
         <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
-          {[{ k: 'all', l: L('All', 'سب', 'الكل') }, { k: 'active', l: L('Active', 'جاری', 'جارية') }, { k: 'done', l: L('Completed', 'مکمل', 'مكتملة') }, { k: 'disputed', l: L('Problems', 'مسائل', 'مشكلات') }].map((f: any) => (
+          {[{ k: 'all', l: L('All', 'سب', 'الكل') }, { k: 'active', l: L('Active', 'جاری', 'جارية') }, { k: 'done', l: L('Completed', 'مکمل', 'مكتملة') }, { k: 'disputed', l: L('Problems', 'مسائل', 'مشكلات') }, ...(deals.some((d: any) => !!d.deal_closed_at) ? [{ k: 'cancelled', l: L('Cancelled', 'منسوخ', 'ملغاة') }] : [])].map((f: any) => (
             <button key={f.k} onClick={() => setFilter(f.k)} aria-pressed={filter === f.k}
               className={`shrink-0 min-h-[44px] px-3.5 rounded-xl text-sm font-semibold border transition-all ${filter === f.k ? 'text-white border-transparent' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
               style={filter === f.k ? { background: f.k === 'disputed' ? '#B91C1C' : '#0B2438' } : {}}>{f.l}</button>
@@ -168,7 +172,7 @@ function ContractorDeals() {
               const todo = buyerTodo(st, locale)
               const amount = typeof d._amount === 'number' ? d._amount : offerComparable(d)
               const refLine = d.rfq ? rfqRefLine(d.rfq, locale) : ''
-              const rateDue = !!reviewed && !!d.received_at && !reviewed.has(d.id) && st.key !== 'disputed'
+              const rateDue = !!reviewed && !!d.received_at && !reviewed.has(d.id) && st.key !== 'disputed' && st.key !== 'closed'
               return (
                 <Link key={d.id} href={`/contractor/orders/${d.id}${!todo && rateDue ? '#rate' : ''}`}
                   className={`block bg-white rounded-2xl p-4 border shadow-sm transition-colors ${todo ? 'border-[#D4A543]/60' : 'border-gray-100 hover:border-[#D4A543]/40'}`}>
@@ -187,12 +191,12 @@ function ContractorDeals() {
                   </div>
                   {/* the stage in full (it says what happens next) with a four-step indicator (UX-101) */}
                   <div className="mt-3 flex items-center gap-2 flex-wrap">
-                    {st.key !== 'disputed' && (
+                    {st.key !== 'disputed' && st.key !== 'closed' && (
                       <span className="flex items-center gap-1" aria-hidden="true">
                         {[1, 2, 3, 4].map(n => <span key={n} className="w-2 h-2 rounded-full" style={{ background: n <= st.step ? (st.done ? '#0F6E56' : '#D4A543') : '#E5E7EB' }} />)}
                       </span>
                     )}
-                    <span className="text-xs font-bold" style={{ color: st.key === 'disputed' ? '#B91C1C' : st.done ? '#0F6E56' : '#0B2438' }}>{st.label}</span>
+                    <span className="text-xs font-bold" style={{ color: st.key === 'disputed' ? '#B91C1C' : st.done ? '#0F6E56' : st.key === 'closed' ? st.tone : '#0B2438' }}>{st.label}</span>
                   </div>
                   {todo && (
                     <span className="inline-block mt-2 text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: '#D4A543', color: '#071827' }}>{todo}</span>

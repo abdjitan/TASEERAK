@@ -14,7 +14,7 @@ export const TIERS: SupplierTier[] = ['company', 'shop', 'independent']
 
 export const TIER_INFO: Record<SupplierTier, T3 & { icon: string; hint: T3 }> = {
   company: {
-    icon: 'building', ar: 'شركات ومصانع معتمدة', en: 'Verified companies & factories', ur: 'تصدیق شدہ کمپنیاں اور فیکٹریاں',
+    icon: 'building', ar: 'شركات ومصانع موثّقة', en: 'Verified companies & factories', ur: 'تصدیق شدہ کمپنیاں اور فیکٹریاں',
     hint: { ar: 'مصانع ووكلاء وموزّعون موثّقون بالسجل التجاري', en: 'Factories, agents and distributors verified by CR', ur: 'سی آر سے تصدیق شدہ فیکٹریاں اور ڈسٹری بیوٹرز' },
   },
   shop: {
@@ -129,7 +129,7 @@ export function isDirectSource(k: string | null | undefined): boolean { return !
 
 export const AVAILABILITY: { k: string; icon: string; ar: string; en: string; ur: string }[] = [
   { k: 'now', icon: 'checkCircle', ar: 'متوفر الآن', en: 'Available now', ur: 'ابھی دستیاب' },
-  { k: 'confirm', icon: 'hourglass', ar: 'يحتاج تأكيد التوفّر', en: 'Needs confirmation', ur: 'تصدیق درکار' },
+  { k: 'confirm', icon: 'hourglass', ar: 'يحتاج إلى تأكيد التوفّر', en: 'Availability to be confirmed', ur: 'دستیابی کی تصدیق درکار' },
   { k: 'made_to_order', icon: 'hammer', ar: 'حسب الطلب', en: 'Made to order', ur: 'آرڈر پر' },
 ]
 export function availabilityLabel(k: string | null | undefined, locale: Locale): string {
@@ -238,4 +238,36 @@ export function sectionLabelOf(sector: string | null | undefined, subKey: string
   const sec = sectionOfSub(subKey, group)
   const b = sec ? BROWSE_SECTIONS.find(x => x.key === sec) : null
   return b ? pick(b, locale) : ''
+}
+
+// ── Pricing-agent deal cap (migrations 213/214) ────────────────────────────────────────────────
+// 15,000 SAR per deal for a new agent → 50,000 after 3 successful deals → no cap after 10.
+// A successful deal: chosen, receipt confirmed, no dispute. Feed it the row of rpc('my_agent_deal_cap').
+export const AGENT_CAP_STEPS: { cap: number; target: number; next: number | null }[] = [
+  { cap: 15000, target: 3, next: 50000 },
+  { cap: 50000, target: 10, next: null },
+]
+export type AgentCapInfo = { cap: number | null; deals: number; target: number | null; next: number | null }
+/** cap null = no limit; target = successful deals needed for the next step; next null = no limit next. */
+export function agentCapProgress(row: { cap?: number | string | null; deals?: number | string | null } | null | undefined): AgentCapInfo | null {
+  if (!row) return null
+  const deals = Number(row.deals) || 0
+  if (row.cap == null || row.cap === '') return { cap: null, deals, target: null, next: null }
+  const cap = Number(row.cap)
+  const step = AGENT_CAP_STEPS.find(s => cap <= s.cap) || AGENT_CAP_STEPS[AGENT_CAP_STEPS.length - 1]
+  return { cap, deals, target: step.target, next: step.next }
+}
+/** «حدّك الحالي 15,000 ر.س للصفقة. أكملتَ 2 من 3 صفقات ناجحة، وبعدها يصبح حدّك 50,000 ر.س.» */
+export function agentCapText(row: { cap?: number | string | null; deals?: number | string | null } | null | undefined, locale: Locale, currency?: string): string {
+  const i = agentCapProgress(row)
+  if (!i) return ''
+  const cur = currency || (locale === 'en' ? 'SAR' : locale === 'ur' ? 'ریال' : 'ر.س')
+  if (i.cap == null) return locale === 'en' ? 'Your deals have no amount limit.' : locale === 'ur' ? 'آپ کے سودوں پر کوئی حد نہیں۔' : 'لا حدّ لقيمة صفقاتك.'
+  const c = i.cap.toLocaleString('en-US'), t = i.target || 0, d = Math.min(i.deals, t)
+  const nx = i.next == null
+    ? (locale === 'en' ? 'no limit' : locale === 'ur' ? 'کوئی حد نہیں' : 'بلا حد')
+    : `${i.next.toLocaleString('en-US')} ${cur}`
+  if (locale === 'en') return `Your current limit is ${c} ${cur} per deal. You have completed ${d} of ${t} successful deals; after that your limit becomes ${nx}.`
+  if (locale === 'ur') return `فی سودا آپ کی موجودہ حد ${c} ${cur} ہے۔ آپ نے ${t} میں سے ${d} کامیاب سودے مکمل کیے؛ اس کے بعد آپ کی حد ${nx} ہو جائے گی۔`
+  return `حدّك الحالي ${c} ${cur} للصفقة. أكملتَ ${d} من ${t} صفقات ناجحة، وبعدها يصبح حدّك ${nx}.`
 }

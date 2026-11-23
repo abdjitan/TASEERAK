@@ -48,10 +48,10 @@ export default function SuggestionsPage() {
     const { error } = await supabase.from('suggestions').insert({ kind, body: body.trim() })
     setSending(false)
     if (error) {
-      setMsg({ ok: false, text: /rate_limited/.test(error.message || '') ? L('You reached today’s limit of suggestions. Try again tomorrow.', 'آج کی تجاویز کی حد پوری ہو گئی۔ کل دوبارہ کوشش کریں۔', 'بلغت الحد اليومي للاقتراحات. حاول غداً.') : L('Could not send — please try again.', 'نہیں بھیجا جا سکا — دوبارہ کوشش کریں۔', 'تعذّر الإرسال — حاول مرة ثانية.') })
+      setMsg({ ok: false, text: /rate_limited/.test(error.message || '') ? L('You reached today’s limit of suggestions. Try again tomorrow.', 'آج کی تجاویز کی حد پوری ہو گئی۔ کل دوبارہ کوشش کریں۔', 'بلغت الحد اليومي للاقتراحات. حاول غداً.') : L('Could not send. Try again.', 'نہیں بھیجا جا سکا، دوبارہ کوشش کریں۔', 'تعذّر الإرسال، حاول مرة أخرى.') })
       return
     }
-    setBody(''); setMsg({ ok: true, text: L('Thank you — the team will read it.', 'شکریہ — ٹیم اسے پڑھے گی۔', 'شكراً لك، سيطّلع عليه فريق تسعيرك.') })
+    setBody(''); setMsg({ ok: true, text: L('Thank you. The team will read it.', 'شکریہ، ٹیم اسے پڑھے گی۔', 'شكراً لك، سيطّلع عليه فريق تسعيرك.') })
     load()
   }
 
@@ -59,7 +59,7 @@ export default function SuggestionsPage() {
   const [voteErr, setVoteErr] = useState('')
   const statusView = (k: string) => {
     const base = SUGGESTION_STATUS[k] || SUGGESTION_STATUS.new
-    if (k === 'planned') return { ...base, ar: 'مُخطّط له', en: 'Planned', ur: 'منصوبے میں' }
+    if (k === 'planned') return { ...base, ar: 'مُخطّط له', en: 'Planned', ur: 'منصوبے میں', tone: '#8F6820' }
     if (k === 'declined') return { ...base, tone: '#5B6B7C' }
     return base
   }
@@ -83,7 +83,7 @@ export default function SuggestionsPage() {
             <span className="w-11 h-11 rounded-xl grid place-items-center shrink-0" style={{ background: '#D4A54322', color: '#8F6820' }}><Lightbulb className="w-5 h-5" /></span>
             <div>
               <h1 className="text-lg font-extrabold" style={{ color: '#0B2438' }}>{L('Help us improve Taseerak', 'تسعیرک کو بہتر بنانے میں مدد کریں', 'ساعدنا في تحسين تسعيرك')}</h1>
-              <p className="text-sm text-gray-500 mt-1">{L('A feature you need, a material we don’t have, or a problem you met — tell us.', 'کوئی سہولت، غائب مواد یا مسئلہ — ہمیں بتائیں۔', 'ميزة تحتاجها، أو مادة غير موجودة، أو مشكلة واجهتك — أخبرنا بها.')}</p>
+              <p className="text-sm text-gray-500 mt-1">{L('A feature you need, a material we don’t have, or a problem you met: tell us.', 'کوئی سہولت، غائب مواد یا مسئلہ: ہمیں بتائیں۔', 'ميزة تحتاجها، أو مادة غير موجودة، أو مشكلة واجهتك: أخبرنا بها.')}</p>
             </div>
           </div>
           <div role="radiogroup" aria-label={L('Type', 'قسم', 'النوع')} className="grid grid-cols-2 sm:grid-cols-4 gap-2">

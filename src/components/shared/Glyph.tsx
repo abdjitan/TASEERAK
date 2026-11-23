@@ -17,7 +17,7 @@ const MAP: Record<string, [any, string?]> = {
   '🔍': [Search], '📈': [TrendingUp], '📊': [BarChart3], '🏆': [Trophy, 'text-[#D4A543]'], '📦': [Package],
   '🎉': [Sparkles, 'text-[#D4A543]'], '🧾': [ReceiptText], '🔔': [Bell], '🔒': [Lock], '⚠': [AlertTriangle, 'text-[#9D7425]'],
   '❌': [XCircle, 'text-red-500'], '✅': [CheckCircle2, 'text-emerald-600'], '📋': [ClipboardList], '📤': [Upload],
-  '🎯': [Target], '⏳': [Hourglass, 'text-[#9D7425]'], '⭐': [Star, 'text-[#D4A543]'], '👋': [Hand, 'text-[#D4A543]'],
+  '🎯': [Target], '⏳': [Hourglass, 'text-[#9D7425]'], '⭐': [Star, 'text-[#9D7425] fill-[#9D7425]'], '👋': [Hand, 'text-[#D4A543]'],
   '📥': [Inbox], '💵': [Wallet],
   '📭': [Inbox], '🟢': [Circle, 'text-emerald-500 fill-emerald-500'], '🔴': [Circle, 'text-red-500 fill-red-500'],
   '🟠': [Circle, 'text-[#D4A543] fill-[#D4A543]'], '⏰': [AlarmClock], '🗓': [CalendarDays], '📅': [CalendarDays],

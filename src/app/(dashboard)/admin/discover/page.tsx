@@ -292,7 +292,7 @@ export default function DiscoverSuppliersPage() {
             ].map(([l, v, c]: any) => (
               <div key={l} className="bg-white rounded-xl border border-gray-100 p-2.5 text-center">
                 <div className="text-lg font-bold" style={{ color: c }}>{(v ?? 0).toLocaleString('en')}</div>
-                <div className="text-[11px] text-gray-500">{l}</div>
+                <div className="text-xs text-gray-500">{l}</div>
               </div>
             ))}
           </div>
@@ -324,7 +324,7 @@ export default function DiscoverSuppliersPage() {
             </div>
 
             <div className="overflow-x-auto bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <table className="text-[11px] border-collapse min-w-full">
+              <table className="text-xs border-collapse min-w-full">
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="p-2 text-right sticky right-0 bg-gray-50 z-10">المنطقة</th>
@@ -365,7 +365,7 @@ export default function DiscoverSuppliersPage() {
             </div>
 
             {batchLog.length > 0 && (
-              <div className="mt-3 bg-gray-900 text-gray-100 rounded-xl p-3 text-[11px] font-mono max-h-64 overflow-y-auto leading-relaxed">
+              <div className="mt-3 bg-gray-900 text-gray-100 rounded-xl p-3 text-xs font-mono max-h-64 overflow-y-auto leading-relaxed">
                 {batchLog.map((l, i) => <div key={i}>{l}</div>)}
               </div>
             )}
@@ -409,14 +409,14 @@ export default function DiscoverSuppliersPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="font-bold truncate" style={{ color: NAVY }}>{row.name}</div>
-                        <div className="flex items-center gap-2 mt-0.5 flex-wrap text-[11px] text-gray-500">
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap text-xs text-gray-500">
                           <span>{packIcon(row.pack)} {packLabel(row.pack)}</span>
                           {row.district && <span>· {row.district}</span>}
                           {row.google_type && <span className="text-gray-400">· {row.google_type}</span>}
                           {row.google_rating != null && <span>· <Glyph e="⭐" /> {row.google_rating} ({row.google_reviews || 0})</span>}
                         </div>
                       </div>
-                      <div className="text-[10px] font-bold whitespace-nowrap text-left">
+                      <div className="text-xs font-bold whitespace-nowrap text-left">
                         {row.claimed_by && <div className="text-emerald-600">✓ سجّل</div>}
                         {row.invited && !row.claimed_by && <div className="text-amber-600">دُعي {row.invite_count > 1 ? `×${row.invite_count}` : ''} · {String(row.invited_at || '').slice(0, 10)}</div>}
                         {row.opted_out && <div className="text-red-500">أوقف</div>}
@@ -434,12 +434,12 @@ export default function DiscoverSuppliersPage() {
                         : <span className="flex-1 text-center py-2 rounded-xl text-xs text-gray-400 border border-gray-200">{row.claimed_by ? 'مسجّل' : row.opted_out ? 'طلب الإيقاف' : 'لا يوجد جوال'}</span>}
                       {!row.claimed_by && !row.opted_out && !recent &&
                         <button onClick={() => markInvited(row)} className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600" title="زيارة ميدانية أو اتصال"><Glyph e="🚶" /> دُعي يدوياً</button>}
-                      {safeHttpUrl(row.maps_url) && <a href={safeHttpUrl(row.maps_url)} target="_blank" rel="noreferrer" className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600"><Glyph e="🗺" /></a>}
-                      {safeHttpUrl(row.website) && <a href={safeHttpUrl(row.website)} target="_blank" rel="noreferrer" className="px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600"><Glyph e="🌐" /></a>}
+                      {safeHttpUrl(row.maps_url) && <a href={safeHttpUrl(row.maps_url)} target="_blank" rel="noreferrer" aria-label="الموقع على الخريطة" className="min-w-[44px] min-h-[44px] inline-grid place-items-center px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600"><Glyph e="🗺" /></a>}
+                      {safeHttpUrl(row.website) && <a href={safeHttpUrl(row.website)} target="_blank" rel="noreferrer" aria-label="الموقع الإلكتروني" className="min-w-[44px] min-h-[44px] inline-grid place-items-center px-2.5 py-2 rounded-xl text-xs border border-gray-200 text-gray-600"><Glyph e="🌐" /></a>}
                     </div>
-                    <div className="mt-2 flex items-center gap-2 flex-wrap text-[11px]">
+                    <div className="mt-2 flex items-center gap-2 flex-wrap text-xs">
                       <select value={row.pack || ''} onChange={(e: any) => updateRow(row, { pack: e.target.value || null, sector: packSector(e.target.value) }, '✓ تعدّل النوع')}
-                        className="border border-gray-200 rounded-lg px-1.5 py-1 text-[11px]">
+                        className="border border-gray-200 rounded-lg px-1.5 py-1 text-xs">
                         <option value="">غير مصنّف</option>
                         {SUPPLIER_PACKS.map(p => <option key={p.id} value={p.id}>{p.icon} {p.ar}</option>)}
                       </select>

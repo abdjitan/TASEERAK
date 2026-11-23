@@ -48,7 +48,7 @@ const txt = {
   ur: {
     title: 'میری قیمتیں', sub: 'آپ کی محفوظ قیمتیں نجی ہیں — خریدار اور حریف نہیں دیکھتے؛ یہ آفر میں خود بھر جاتی ہیں',
     back: '→ واپس', addPrice: '+ آئٹم شامل کریں', myPrices: 'میری محفوظ قیمتیں',
-    product: 'مال', sector: 'سیکشن', unit: 'یونٹ', price: 'قیمت ٹیکس سمیت (ریال)',
+    product: 'مال', sector: 'سیکشن', unit: 'یونٹ', price: 'قیمت VAT سمیت (ریال)',
     region: 'علاقہ', selectSector: 'سیکشن منتخب کریں', selectUnit: 'یونٹ', selectRegion: 'تمام علاقے',
     save: 'قیمت محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', update: 'اپ ڈیٹ', updated: 'اپ ڈیٹ ہو گیا',
     noPrices: 'ابھی کوئی محفوظ قیمت نہیں', noPricesSub: 'جو بیچتے ہیں اس کی قیمتیں محفوظ کریں تاکہ آفر خود بھر جائے',
@@ -89,7 +89,12 @@ export default function SupplierPricesPage() {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
   const [loadFailed, setLoadFailed] = useState(false) // UX-083: a failed load is never «no saved prices»
   // UX-030: a seller without a VAT number keeps final prices; a registered one keeps prices incl. VAT
-  const [noVat, setNoVat] = useState(false)
+  // round-5 UX-173: unknown until the profile answers (null), so the VAT tag never flips after load
+  const [noVat, setNoVat] = useState<boolean | null>(null)
+  // round-5 UX-173: a search over a long list of saved prices
+  const [listQ, setListQ] = useState('')
+  // round-5 UX-173: a typed material picks one of the 10 buyer-facing sections, not an engineering sector
+  const [manualSection, setManualSection] = useState('')
   // UX-083: the unit fills in from the item (still editable)
   useEffect(() => { if (product && sector && !unit) { try { const u = getDefaultUnit(product, sector as any); if (u) setUnit(u) } catch {} } }, [product, sector]) // eslint-disable-line react-hooks/exhaustive-deps
   // UX-144: sector names in the reader's language
@@ -129,7 +134,7 @@ export default function SupplierPricesPage() {
     const { data: act } = await supabase.rpc('acting_uid')
     const aid: string = (act as any) || session.user.id
     setActId(aid)
-    supabase.from('profiles').select('vat_number').eq('id', aid).maybeSingle().then(({ data: pr }: any) => setNoVat(!String(pr?.vat_number || '').trim()), () => {})
+    supabase.from('profiles').select('vat_number').eq('id', aid).maybeSingle().then(({ data: pr }: any) => setNoVat(!String(pr?.vat_number || '').trim()), () => setNoVat(false))
     const { data, error } = await supabase.from('live_prices').select('*')
       .eq('supplier_id', aid).order('updated_at', { ascending: false })
     setLoadFailed(!!error)
@@ -157,7 +162,7 @@ export default function SupplierPricesPage() {
       })
     setSaving(false)
     if (error) { console.error('live_prices save', error); failMsg(); return }
-    setProduct(''); setSector(''); setUnit(''); setPrice(''); setRegion(''); setPgroup(''); setPsearch(''); setPsection(''); setProductOther(false)
+    setProduct(''); setSector(''); setUnit(''); setPrice(''); setRegion(''); setPgroup(''); setPsearch(''); setPsection(''); setProductOther(false); setManualSection('')
     setShowForm(false)
     setMsg({ ok: true, text: dup ? L('The current price was updated.', 'موجودہ قیمت اپ ڈیٹ ہو گئی۔', 'حُدّث السعر الحالي.') : L('Price saved. It will fill in automatically when you price a matching request.', 'قیمت محفوظ ہو گئی۔ مماثل درخواست کی قیمت دیتے وقت یہ خود بھر جائے گی۔', 'حُفظ السعر، وسيُعبَّأ تلقائياً عند تسعير طلب مطابق.') })
     load()
@@ -202,13 +207,14 @@ export default function SupplierPricesPage() {
           </div>
         </div>
 
-        <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl p-3 mb-5 text-sm text-[#0B2438]">{T.hint}</div>
+        {prices.length > 0 && <div className="bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl p-3 mb-5 text-sm text-[#0B2438]">{T.hint}</div>}
         {msg && <div role={msg.ok ? 'status' : 'alert'} className={`rounded-xl p-3 mb-4 text-sm font-semibold border ${msg.ok ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-700'}`}>{msg.text}</div>}
 
-        {!showForm && (
+        {/* round-5 UX-173: the main action is gold; on a first visit the empty card carries it instead */}
+        {!showForm && (prices.length > 0 || loadFailed) && (
           <button onClick={() => setShowForm(true)}
-            className="w-full mb-5 min-h-[44px] py-3 rounded-xl font-semibold text-white text-sm transition-all hover:shadow-lg"
-            style={{ background: '#0B2438' }}>
+            className="w-full mb-5 min-h-[44px] py-3 rounded-xl font-extrabold text-[#071827] text-sm transition-all hover:shadow-lg"
+            style={{ background: '#D4A543' }}>
             {T.addPrice}
           </button>
         )}
@@ -225,13 +231,21 @@ export default function SupplierPricesPage() {
                     <div className="flex gap-2">
                       <input id="lp-product" value={product} onChange={e => setProduct(e.target.value)} className="input-field flex-1"
                         placeholder={L('Material name', 'مال کا نام', 'اسم المادة')} required />
-                      <button type="button" onClick={() => { setProductOther(false); setProduct('') }} className="inline-flex items-center min-h-[44px] text-xs text-gray-600 whitespace-nowrap px-3"><Glyph e="↩" /> {L('List', 'فہرست', 'القائمة')}</button>
+                      <button type="button" onClick={() => { setProductOther(false); setProduct(''); setManualSection('') }} className="inline-flex items-center min-h-[44px] text-xs text-gray-600 whitespace-nowrap px-3"><Glyph e="↩" /> {L('List', 'فہرست', 'القائمة')}</button>
                     </div>
-                    <label htmlFor="lp-sector" className="block text-xs font-bold text-gray-600">{T.sector}</label>
-                    <select id="lp-sector" value={sector} onChange={e => setSector(e.target.value)} className="input-field" required>
-                      <option value="">{T.selectSector}</option>
-                      {Object.keys(SECTOR_LABELS).map(sc => <option key={sc} value={sc}>{secLabel(sc)}</option>)}
-                    </select>
+                    <div className="block text-xs font-bold text-gray-600" id="lp-sector-label">{T.sector}</div>
+                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-labelledby="lp-sector-label">
+                      {BROWSE_SECTIONS.map(sec => {
+                        const on = manualSection === sec.key
+                        return (
+                          <button key={sec.key} type="button" role="radio" aria-checked={on}
+                            onClick={() => { const first: any = subsOfSection(sec.key as any)[0]; setManualSection(sec.key); setSector(first?.sector || '') }}
+                            className={`min-h-[44px] px-3 rounded-lg text-[13px] font-semibold border-2 transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                            <span className="me-1"><Glyph e={sec.icon} /></span>{L(sec.en, sec.ur, sec.ar)}
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                 ) : (
                   <div className="border border-gray-100 rounded-xl p-3 bg-gray-50/50">
@@ -270,7 +284,7 @@ export default function SupplierPricesPage() {
                     )}
                     <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
                       <span className="text-[13px] text-gray-600">{product ? <span className="inline-flex items-center gap-1"><Check className="w-4 h-4 text-[#0B2438]" aria-hidden /><span className="font-bold text-[#0B2438]">{nameOf({ product_name: product, sector })}</span></span> : L('Pick a material above', 'اوپر سے مال منتخب کریں', 'اختر مادة من الأعلى')}</span>
-                      <button type="button" onClick={() => { setProductOther(true) }} className="inline-flex items-center min-h-[44px] px-2 text-xs font-semibold text-[#8F6820]"><Glyph e="✏" /> {L('Type manually', 'خود لکھیں', 'اكتب يدوياً')}</button>
+                      <button type="button" onClick={() => { setProductOther(true); setSector(''); setManualSection('') }} className="inline-flex items-center min-h-[44px] px-2 text-xs font-semibold text-[#8F6820]"><Glyph e="✏" /> {L('Type manually', 'خود لکھیں', 'اكتب يدوياً')}</button>
                     </div>
                   </div>
                 )}
@@ -286,7 +300,7 @@ export default function SupplierPricesPage() {
                 <label htmlFor="lp-price" className="block text-xs font-bold text-gray-600 mb-1">{noVat ? L('Final price (SAR)', 'حتمی قیمت (ریال)', 'السعر النهائي (ر.س)') : T.price}</label>
                 <input id="lp-price" type="text" inputMode="decimal" value={price} onChange={e => setPrice(latinNum(e.target.value))}
                   className="input-field text-base sm:text-sm" placeholder="2750" required aria-describedby="lp-price-hint" />
-                <p id="lp-price-hint" className="text-[12px] text-gray-500 mt-1">{noVat ? L('Enter the final price the buyer pays; nothing is added to it.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا؛ اس پر کچھ شامل نہیں ہوگا۔', 'أدخل السعر النهائي الذي يدفعه المشتري، ولا يُضاف إليه شيء.') : L('Enter the final price the buyer pays, including 15% VAT.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا، 15% ٹیکس سمیت۔', 'أدخل السعر النهائي الذي يدفعه المشتري، شاملاً الضريبة 15%.')}</p>
+                <p id="lp-price-hint" className="text-[12px] text-gray-500 mt-1">{noVat ? L('Enter the final price the buyer pays; nothing is added to it.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا؛ اس پر کچھ شامل نہیں ہوگا۔', 'أدخل السعر النهائي الذي يدفعه المشتري، ولا يُضاف إليه شيء.') : L('Enter the final price the buyer pays, including 15% VAT.', 'وہ حتمی قیمت درج کریں جو خریدار ادا کرے گا، 15% VAT سمیت۔', 'أدخل السعر النهائي الذي يدفعه المشتري، شاملاً الضريبة 15%.')}</p>
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="lp-region" className="block text-xs font-bold text-gray-600 mb-1">{T.region}</label>
@@ -315,11 +329,19 @@ export default function SupplierPricesPage() {
             <div className="text-5xl mb-3 animate-float"><Glyph e="📈" /></div>
             <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{T.noPrices}</h3>
             <p className="text-sm text-gray-500">{T.noPricesSub}</p>
+            {!showForm && <button type="button" onClick={() => setShowForm(true)} className="inline-flex items-center mt-4 min-h-[44px] px-5 rounded-xl text-sm font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>{L('Add your first material', 'اپنا پہلا مال شامل کریں', 'أضف أول مادة')}</button>}
           </div>
         ) : (
           <div className="space-y-3">
             <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{T.myPrices} <span className="ms-1 inline-grid place-items-center min-w-[1.4rem] h-[1.4rem] px-1 rounded-full bg-[#0B2438]/10 text-[12px]">{prices.length}</span></h2>
-            {prices.map(p => {
+            {prices.length > 8 && (
+              <input type="search" value={listQ} onChange={e => setListQ(e.target.value)} className="input-field text-base sm:text-sm"
+                aria-label={L('Search my prices', 'میری قیمتیں تلاش کریں', 'ابحث في أسعاري')} placeholder={L('Search my prices…', 'میری قیمتیں تلاش کریں…', 'ابحث في أسعاري…')} />
+            )}
+            {(() => { const q = normalizeText(listQ.trim()).toLowerCase(); return q && !prices.some((p: any) => normalizeText([p.product_name, nameOf(p)].join(' ')).toLowerCase().includes(q)) })() && (
+              <p className="text-sm text-gray-600 text-center py-4">{L('No saved price matches this search.', 'اس تلاش سے کوئی محفوظ قیمت نہیں ملتی۔', 'لا يوجد سعر محفوظ يطابق هذا البحث.')}</p>
+            )}
+            {prices.filter((p: any) => { const q = normalizeText(listQ.trim()).toLowerCase(); return !q || normalizeText([p.product_name, nameOf(p)].join(' ')).toLowerCase().includes(q) }).map(p => {
               return (
                 <div key={p.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-3">
@@ -334,7 +356,7 @@ export default function SupplierPricesPage() {
                     <div className="text-end flex-shrink-0">
                       <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{p.price?.toLocaleString('en-US')}</div>
                       <div className="text-[12px] text-gray-500">{L('SAR', 'ریال', 'ر.س')} / {getUnitLabel(p.unit, locale) || p.unit}</div>
-                      <div className="text-[12px] text-gray-500">{noVat ? L('final price', 'حتمی قیمت', 'سعر نهائي') : L('incl. VAT', 'ٹیکس سمیت', 'شامل الضريبة')}</div>
+                      {noVat != null && <div className="text-[12px] text-gray-500">{noVat ? L('final price', 'حتمی قیمت', 'سعر نهائي') : L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')}</div>}
                       {p.previous_price && Number(p.previous_price) !== Number(p.price) && <div className="text-[12px] text-gray-500">{L('was', 'پہلے', 'كان')} {Number(p.previous_price).toLocaleString('en-US')}</div>}
                     </div>
                   </div>

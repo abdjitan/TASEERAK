@@ -24,6 +24,9 @@ a { text-decoration: none; }
 :focus-visible { outline: 2px solid var(--ts-navy-850); outline-offset: 2px; box-shadow: 0 0 0 5px rgba(212,165,67,.45); }
 .ts-dashboard-sidebar :focus-visible, .ts-dashboard-topbar :focus-visible, .public-header :focus-visible,
 .public-footer :focus-visible, .market-hero :focus-visible, .auth-brand :focus-visible { outline-color: var(--ts-gold-400); box-shadow: 0 0 0 5px rgba(245,197,91,.25); }
+/* The language menu is a white panel inside the dark top bar: its focus is navy again (round-5 UX-196) */
+.ts-lang-menu :focus-visible,
+:is(.ts-dashboard-topbar, .public-header, .public-footer, .auth-brand) .ts-lang-menu :focus-visible { outline-color: var(--ts-navy-850); box-shadow: 0 0 0 5px rgba(212,165,67,.45); }
 
 .input-field {
   min-height: 48px;
@@ -245,6 +248,8 @@ a { text-decoration: none; }
   background: linear-gradient(90deg, var(--ts-gold-500), rgba(212,165,67,0));
   opacity: .72;
 }
+/* RTL: the accent starts at the right edge, so it fades toward the left (round-5 UX-195) */
+[dir="rtl"] .ts-dashboard main button.bg-white.rounded-2xl::before { background: linear-gradient(270deg, var(--ts-gold-500), rgba(212,165,67,0)); }
 .ts-dashboard main button.bg-white.rounded-2xl > * { position: relative; z-index: 1; }
 .ts-dashboard main h1, .ts-dashboard main h2, .ts-dashboard main h3 { letter-spacing: -.012em; }
 /* Field defaults (round-4 UX-019): low specificity, so a Tailwind border class on a field (gold for a missing value,
@@ -398,10 +403,7 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 .ts-dashboard main .bg-white.rounded-3xl {
   box-shadow: 0 13px 34px rgba(7,24,39,.085), inset 0 2px rgba(212,165,67,.28), inset 0 1px rgba(255,255,255,.92);
 }
-.ts-dashboard main .bg-white.rounded-xl:hover,
-.ts-dashboard main .bg-white.rounded-2xl:hover {
-  box-shadow: 0 17px 38px rgba(7,24,39,.12), inset 0 2px rgba(212,165,67,.52), inset 0 1px rgba(255,255,255,.95);
-}
+/* No hover lift on every card (round-5 UX-195): only links and buttons react to the pointer (rule above). */
 :where(.ts-dashboard main) .bg-gray-50 { background-color: #F0F2F2; }
 :where(.ts-dashboard main) .bg-gray-100 { background-color: #E4E9EC; }
 :where(.ts-dashboard main) .text-gray-500 { color: #526579; }
@@ -496,6 +498,8 @@ input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outlin
 .ts-dashboard main table tbody tr:hover { background-color: rgba(212,165,67,.065); }
 .ts-dashboard main input::placeholder, .ts-dashboard main textarea::placeholder { color: #8894A0; }
 .ts-dashboard main label:not([class*="text-"]) { color: #34485B; font-weight: 700; }
+/* a field inside a label keeps a regular weight: the value typed is not bold (round-5 UX-195) */
+.ts-dashboard main label :where(input, select, textarea):not([class*="font-bold"]):not([class*="font-semibold"]) { font-weight: 400; }
 .ts-dashboard .ts-sidebar-link { border-radius: 13px; }
 .ts-dashboard .ts-sidebar-link.is-active { box-shadow: inset 0 1px rgba(255,255,255,.08), 0 7px 18px rgba(0,0,0,.12) !important; }
 

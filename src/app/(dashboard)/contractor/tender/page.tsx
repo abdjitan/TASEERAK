@@ -21,6 +21,7 @@ export default function TendersPage() {
   const [rows, setRows] = useState<any[] | null>(null)
   const [error, setError] = useState('')
   const [homeMode, setHomeMode] = useState(false)
+  const [sentCounts, setSentCounts] = useState<Record<string, { done: number; all: number }>>({})
 
   useEffect(() => {
     // «لبيتي» mode hides tenders (never deletes them): say so, with the way back, instead of a silent redirect (UX-098)
@@ -30,10 +31,22 @@ export default function TendersPage() {
       if (!data.session) { window.location.href = '/login'; return }
       const { data: bt } = await supabase.from('profiles').select('buyer_type').eq('id', data.session.user.id).maybeSingle()
       if ((bt as any)?.buyer_type === 'individual') { setHomeMode(true); return }
-      const { data: t, error: e } = await supabase.from('tenders').select('id, title, status, summary, created_at, project_rfq_id').eq('contractor_id', data.session.user.id).order('created_at', { ascending: false }).limit(100)
+      const { data: t, error: e } = await supabase.from('tenders').select('*').eq('contractor_id', data.session.user.id).order('created_at', { ascending: false }).limit(100)
       // a missing table = not enabled on the server; anything else = the real error (connection…), with a retry
       if (e) setError(/relation|does not exist|schema cache/i.test(e.message || '') ? L('Tender pricing is not enabled yet.', 'ٹینڈر کی قیمت ابھی فعال نہیں۔', 'تسعير المناقصات غير مفعّل بعد.') : friendlyError(e.message, L('Could not load your tenders. Check your connection and try again.', 'آپ کے ٹینڈرز لوڈ نہیں ہو سکے۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر تحميل مناقصاتك. تحقّق من الاتصال وحاول مرة أخرى.'), locale))
       setRows(t || [])
+      // a partly sent tender (round-5 UX-021): «أُرسل جزء منها (X من Y)», counted per tender when the column exists
+      const partial = (t || []).filter((x: any) => x.status !== 'sent' && x.project_rfq_id).slice(0, 20)
+      for (const x of partial) {
+        try {
+          const [{ count: all, error: e1 }, { count: done, error: e2 }] = await Promise.all([
+            supabase.from('tender_items').select('id', { count: 'exact', head: true }).eq('tender_id', x.id).eq('kind', 'material'),
+            supabase.from('tender_items').select('id', { count: 'exact', head: true }).eq('tender_id', x.id).eq('kind', 'material').not('sent_rfq_id', 'is', null),
+          ])
+          if (e1 || e2 || typeof all !== 'number' || typeof done !== 'number') continue
+          setSentCounts(m => ({ ...m, [x.id]: { done, all } }))
+        } catch { /* the chip then shows without numbers */ }
+      }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -52,10 +65,21 @@ export default function TendersPage() {
     setRows(rs => (rs || []).filter(r => r.id !== t.id))
   }
 
-  const statusLabel = (s: string) => (s === 'sent' ? L('Sent for pricing', 'قیمت کے لیے بھیجا', 'أُرسل للتسعير') : s === 'review' ? L('Awaiting your approval', 'آپ کی منظوری کا منتظر', 'بانتظار اعتمادك') : L('Draft', 'مسودہ', 'مسودة'))
+  // a tender with a request but not «sent» was sent in part and stays open (round-5 UX-021)
+  const isPartial = (t: any) => t.status !== 'sent' && !!t.project_rfq_id
+  const statusLabel = (t: any) => {
+    if (t.status === 'sent') return L('Sent for pricing', 'قیمت کے لیے بھیجا', 'أُرسل للتسعير')
+    if (isPartial(t)) {
+      const c = sentCounts[t.id]
+      return c ? L(`Partly sent (${c.done} of ${c.all})`, `جزوی طور پر بھیجا گیا (${c.all} میں سے ${c.done})`, `أُرسل جزء منها (${c.done} من ${c.all})`) : L('Partly sent', 'جزوی طور پر بھیجا گیا', 'أُرسل جزء منها')
+    }
+    return t.status === 'review' ? L('Awaiting your approval', 'آپ کی منظوری کا منتظر', 'بانتظار اعتمادك') : L('Draft', 'مسودہ', 'مسودة')
+  }
+  // the offers: straight to the request when the tender knows it (round-5 UX-158), else the project page
+  const offersHref = (t: any) => (t.rfq_id ? `/contractor/rfq/${t.rfq_id}` : `/contractor/project/${t.project_rfq_id}`)
 
   return (
-    <AppShell title={L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
+    <AppShell title={homeMode ? L('Company tools', 'کمپنی کے ٹولز', 'أدوات الشركات') : L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
       {homeMode ? <HomeModeNotice locale={locale} what="tender" /> : (
       <div className="max-w-4xl mx-auto space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -92,7 +116,7 @@ export default function TendersPage() {
             <Link href={`/contractor/tender/${t.id}`} className="block p-4">
               <div className="flex items-center justify-between gap-2">
                 <b className="text-[#0B2438]">{t.title}</b>
-                <span className={`text-xs font-bold px-2 py-1 rounded-lg ${t.status === 'sent' ? 'bg-[#0F6E56]/10 text-[#0F6E56]' : 'bg-[#D4A543]/15 text-[#8F6820]'}`}>{statusLabel(t.status)}</span>
+                <span className={`text-xs font-bold px-2 py-1 rounded-lg ${t.status === 'sent' ? 'bg-[#0F6E56]/10 text-[#0F6E56]' : 'bg-[#D4A543]/15 text-[#8F6820]'}`}>{statusLabel(t)}</span>
               </div>
               <p className="text-xs text-gray-500 mt-1">
                 {new Date(t.created_at).toLocaleDateString(dateLocale(locale))}
@@ -100,8 +124,8 @@ export default function TendersPage() {
                 {t.summary?.flags ? ` · ${L('flags', 'نشانات', 'تنبيهات')} ${Object.values(t.summary.flags as Record<string, number>).reduce((s, n) => s + n, 0)}` : ''}
               </p>
             </Link>
-            {t.status === 'sent' && t.project_rfq_id && (
-              <Link href={`/contractor/project/${t.project_rfq_id}`} className="flex items-center min-h-11 px-4 border-t border-gray-100 text-sm font-bold text-[#8F6820] hover:underline">
+            {(t.status === 'sent' || isPartial(t)) && t.project_rfq_id && (
+              <Link href={offersHref(t)} className="flex items-center min-h-11 px-4 border-t border-gray-100 text-sm font-bold text-[#8F6820] hover:underline">
                 {L('View the offers received →', 'موصول آفرز دیکھیں ←', 'عرض العروض الواردة ←')}
               </Link>
             )}
@@ -110,9 +134,10 @@ export default function TendersPage() {
                 <Link href={`/contractor/tender/${t.id}`} className="flex items-center min-h-11 text-sm font-bold text-[#8F6820] hover:underline">
                   {L('Continue the review →', 'جائزہ جاری رکھیں ←', 'متابعة المراجعة ←')}
                 </Link>
-                <button type="button" onClick={() => removeTender(t)} className="min-h-11 px-3 text-sm font-bold text-red-700 hover:underline">
+                {/* a partly sent tender points at a request: it is kept, like a sent one */}
+                {!isPartial(t) && <button type="button" onClick={() => removeTender(t)} className="min-h-11 px-3 text-sm font-bold text-red-700 hover:underline">
                   <Glyph e="🗑" /> {L('Delete', 'حذف کریں', 'حذف')}
-                </button>
+                </button>}
               </div>
             )}
 

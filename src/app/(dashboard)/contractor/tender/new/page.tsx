@@ -16,7 +16,9 @@ import { arItems, arCount } from '@/lib/text'
 
 // Arabic counted nouns for the reading summary (UX-153: «1 صفحة» → «صفحة واحدة», «11 صفحةً»)
 const arPages = (n: number) => arCount(n, 'صفحة واحدة', 'صفحتان', 'صفحات', 'صفحةً')
-const arSheets = (n: number) => arCount(n, 'ورقة واحدة', 'ورقتان', 'أوراق', 'ورقةً')
+const arSheets = (n: number) => arCount(n, 'ورقة واحدة', 'ورقتان', 'أوراق', 'ورقةً') // workbook tabs
+// drawing sheets are «لوحات», never «أوراق» (round-5 UX-157: one word, one meaning)
+const arDrawingSheets = (n: number) => arCount(n, 'لوحة واحدة', 'لوحتان', 'لوحات', 'لوحةً')
 const arCodes = (n: number) => arCount(n, 'رمز واحد', 'رمزان', 'رموز', 'رمزاً')
 const arHeadings = (n: number) => arCount(n, 'عنوان واحد', 'عنوانان', 'عناوين', 'عنواناً')
 import { readBoqWorkbook, readNrmBoq } from '@/lib/tender/boqNrm'
@@ -277,7 +279,7 @@ export default function NewTenderPage() {
   const boqCodes = boq ? new Set(boq.items.flatMap(i => i.codes)).size : 0
 
   return (
-    <AppShell title={L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
+    <AppShell title={homeMode ? L('Company tools', 'کمپنی کے ٹولز', 'أدوات الشركات') : L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة')} nav={getNav('contractor', locale, '/contractor/tender')} dir={dir}>
       {homeMode ? <HomeModeNotice locale={locale} what="tender" /> : (
       <div className="max-w-4xl mx-auto space-y-5">
         <div>
@@ -399,7 +401,7 @@ export default function NewTenderPage() {
                         return (
                       <details>
                         <summary className="cursor-pointer min-h-11 flex items-center font-semibold text-[#0B2438]">
-                          {L(`${ds.length} sheets: ${rooms} rooms, ${tags} tags. Show the sheets`, `${ds.length} شیٹس: ${rooms} کمرے، ${tags} ٹیگز۔ شیٹس دکھائیں`, `${arSheets(ds.length)}: الغرف ${rooms}، والوسوم ${tags}. عرض اللوحات`)}
+                          {L(`${ds.length} sheets: ${rooms} rooms, ${tags} tags. Show the sheets`, `${ds.length} شیٹس: ${rooms} کمرے، ${tags} ٹیگز۔ شیٹس دکھائیں`, `${arDrawingSheets(ds.length)}: الغرف ${rooms}، والوسوم ${tags}. عرض اللوحات`)}
                         </summary>
                         <div className="mt-1 space-y-1">
                       {ds.map(d => (

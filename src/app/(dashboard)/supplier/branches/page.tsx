@@ -32,7 +32,9 @@ export default function SupplierBranchesPage() {
   const [err, setErr] = useState('')
   const [loadFailed, setLoadFailed] = useState(false) // UX-137: a failed load is said, never «no branches»
   // UX-137: city names in the reader's language
-  const cityLabel = (reg: string, c: string) => { if (!c || locale === 'ar') return c; const hit = (CITIES_BY_REGION[reg] || []).find((x: any) => x.ar === c); return hit ? hit.en : c }
+  // round-5 UX-166: Urdu reads the Urdu name when there is one
+  const cityName = (x: any): string => (locale === 'ar' ? x.ar : locale === 'ur' ? (x.ur || x.en) : x.en)
+  const cityLabel = (reg: string, c: string) => { if (!c || locale === 'ar') return c; const hit = (CITIES_BY_REGION[reg] || []).find((x: any) => x.ar === c); return hit ? cityName(hit) : c }
 
   const [name, setName] = useState('')
   const [region, setRegion] = useState('')
@@ -100,6 +102,7 @@ export default function SupplierBranchesPage() {
     const supabase = createClient()
     const { error } = await supabase.from('branches').delete().eq('id', id)
     if (error) { setErr(L('Could not delete the branch — please try again.', 'شاخ حذف نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حذف الفرع. تحقّق من اتصالك وحاول مرة أخرى.')); return }
+    toast.success(L('Branch deleted', 'شاخ حذف ہو گئی', 'حُذف الفرع')) // round-5 UX-166
     load()
   }
 
@@ -113,14 +116,15 @@ export default function SupplierBranchesPage() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl text-[#F5C55B]" style={{ background: '#0B2438' }}><Glyph e="🏢" /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{L('Company branches', 'کمپنی کی شاخیں', 'فروع الشركة')}</h1>
-              <p className="text-gray-500 text-xs sm:text-sm">{L('Add your branches in different regions — buyers in every region with a branch will see your company.', 'مختلف علاقوں میں اپنی شاخیں شامل کریں — ہر اس علاقے کے خریدار آپ کی کمپنی دیکھیں گے جہاں شاخ ہے۔', 'أضف فروعك في المناطق المختلفة — تظهر شركتك للمشترين في كل منطقة فيها فرع.')}</p>
+              <p className="text-gray-500 text-xs sm:text-sm">{readOnly ? L('Your company appears to buyers in every region where it has a branch.', 'آپ کی کمپنی ہر اس علاقے کے خریداروں کو نظر آتی ہے جہاں اس کی شاخ ہے۔', 'تظهر شركتك للمشترين في كل منطقة لها فيها فرع.') : L('Add your branches in different regions — buyers in every region with a branch will see your company.', 'مختلف علاقوں میں اپنی شاخیں شامل کریں — ہر اس علاقے کے خریدار آپ کی کمپنی دیکھیں گے جہاں شاخ ہے۔', 'أضف فروعك في المناطق المختلفة — تظهر شركتك للمشترين في كل منطقة فيها فرع.')}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-amber-700">
+        {/* round-5 UX-105: the example is advice for the owner, not for a team member */}
+        {!readOnly && <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5 text-sm text-[#6C531F]">
           <Glyph e="💡" /> {L('Example: with branches in Riyadh, Jeddah and Dammam, add all three — you will receive price requests from buyers in all of them.', 'مثال: اگر ریاض، جدہ اور دمام میں شاخیں ہیں تو تینوں شامل کریں — ان سب علاقوں کے خریداروں کی درخواستیں آپ کو ملیں گی۔', 'مثال: إذا كانت لديك فروع في الرياض وجدة والدمام، فأضف الثلاثة — وستصلك طلبات التسعير من المشترين في جميع هذه المناطق.')}
-        </div>
+        </div>}
 
         {/* UX-122: the main location (from the profile) */}
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-5 flex items-start justify-between gap-3">
@@ -161,7 +165,7 @@ export default function SupplierBranchesPage() {
                 <label htmlFor="br-city" className="block text-xs font-bold text-gray-600 mb-1">{L('City', 'شہر', 'المدينة')}</label>
                 <select id="br-city" value={city} onChange={e => setCity(e.target.value)} className="input-field" disabled={!region}>
                   <option value="">{region ? L('-- Choose --', '-- منتخب کریں --', '-- اختر --') : '—'}</option>
-                  {(CITIES_BY_REGION[region] || []).map(c => <option key={c.ar} value={c.ar}>{locale === 'ar' ? c.ar : c.en}</option>)}
+                  {(CITIES_BY_REGION[region] || []).map(c => <option key={c.ar} value={c.ar}>{cityName(c)}</option>)}
                 </select>
               </div>
               <div>
@@ -169,7 +173,7 @@ export default function SupplierBranchesPage() {
                 <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
               </div>
               <div>
-                <label htmlFor="br-phone" className="block text-xs font-bold text-gray-600 mb-1">{L('Branch mobile', 'شاخ کا موبائل', 'جوال الفرع')}</label>
+                <label htmlFor="br-phone" className="block text-xs font-bold text-gray-600 mb-1">{L('Branch mobile (optional)', 'شاخ کا موبائل (اختیاری)', 'جوال الفرع (اختياري)')}</label>
                 <input id="br-phone" type="tel" inputMode="tel" value={phone} onChange={e => setPhone(toLatinDigits(e.target.value).replace(/[^0-9+ ]/g, '').slice(0, 16))} className="input-field" placeholder="05XXXXXXXX" dir="ltr" maxLength={16} />
               </div>
               <div className="sm:col-span-2">
@@ -178,7 +182,7 @@ export default function SupplierBranchesPage() {
               </div>
               <div className="sm:col-span-2">
                 <div className="block text-xs font-bold text-gray-600 mb-1">{L('Branch location on the map', 'نقشے پر شاخ کا مقام', 'موقع الفرع على الخريطة')} *</div>
-                <LocationPicker lat={lat} lng={lng} onChange={(a: number, b: number) => { setLat(a); setLng(b); setErr(''); const near = nearestSaCity(a, b); if (near) { setRegion(near.region); setCity(near.city) } }} locale={locale} />
+                <LocationPicker lat={lat} lng={lng} onChange={(a: number, b: number) => { setLat(a); setLng(b); setErr(''); const near = nearestSaCity(a, b); if (near) { if (near.city !== city) { const shown = cityLabel(near.region, near.city); toast(L(`We updated the city to ${shown} from the pin`, `پن کے مقام کے مطابق شہر ${shown} کر دیا گیا`, `حدّثنا المدينة إلى ${shown} حسب موقع الدبوس`)) } setRegion(near.region); setCity(near.city) } }} locale={locale} />
               </div>
             </div>
             <div className="flex gap-2">
@@ -194,8 +198,12 @@ export default function SupplierBranchesPage() {
         {loadFailed && branches.length === 0 ? null : branches.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 sm:p-12 border border-gray-100 text-center">
             <div className="text-5xl mb-3 animate-float"><Glyph e="🏢" /></div>
-            <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{L('You have not added other branches yet', 'آپ نے ابھی دوسری شاخیں شامل نہیں کیں', 'لم تُضف فروعاً أخرى بعد')}</h3>
-            <p className="text-sm text-gray-500">{L('Add your branches to receive price requests from their regions.', 'اپنی شاخیں شامل کریں تاکہ ان علاقوں کی درخواستیں آپ کو ملیں۔', 'أضف فروعك لتصلك طلبات التسعير من مناطقها.')}</p>
+            {readOnly ? (
+              <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{L('Your company has not added branches yet.', 'آپ کی کمپنی نے ابھی شاخیں شامل نہیں کیں۔', 'لم تُضف شركتك فروعاً بعد.')}</h3>
+            ) : (<>
+              <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{L('You have not added other branches yet', 'آپ نے ابھی دوسری شاخیں شامل نہیں کیں', 'لم تُضف فروعاً أخرى بعد')}</h3>
+              <p className="text-sm text-gray-500">{L('Add your branches to receive price requests from their regions.', 'اپنی شاخیں شامل کریں تاکہ ان علاقوں کی درخواستیں آپ کو ملیں۔', 'أضف فروعك لتصلك طلبات التسعير من مناطقها.')}</p>
+            </>)}
           </div>
         ) : (
           <div className="space-y-3">

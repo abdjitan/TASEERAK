@@ -51,6 +51,7 @@ export type TenderFlag = {
   item_key?: string    // TenderItem.key the flag belongs to (none = tender-wide)
   ar: string
   en: string
+  ur?: string         // optional Urdu text (round-5 UX-157); pages fall back to the English one
   sources: SourceRef[]
 }
 

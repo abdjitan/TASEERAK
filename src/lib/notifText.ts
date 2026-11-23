@@ -119,7 +119,7 @@ const TITLES: Record<string, Tri> = {
   info_request: { ar: 'طلب معلومات إضافية', en: 'More information requested', ur: 'مزید معلومات کی درخواست' },
   info_response: { ar: 'ردّ على طلب المعلومات', en: 'Reply to your information request', ur: 'معلومات کی درخواست کا جواب' },
   award: { ar: 'اختار المشتري عرضك', en: 'The buyer chose your offer', ur: 'خریدار نے آپ کی آفر منتخب کی' },
-  not_selected: { ar: 'لم يُقبل عرضك', en: 'Your offer was not chosen', ur: 'آپ کی آفر منتخب نہیں ہوئی' },
+  not_selected: { ar: 'لم يُختر عرضك', en: 'Your offer was not chosen', ur: 'آپ کی آفر منتخب نہیں ہوئی' },
   rfq_cancelled: { ar: 'أُلغي طلب التسعير', en: 'The price request was cancelled', ur: 'قیمت کی درخواست منسوخ ہو گئی' },
   extras_confirm: { ar: 'أكّد رسوم التوصيل للمواد التي فزت بها', en: 'Confirm delivery fees for the materials you won', ur: 'جیتی ہوئی اشیاء کی ڈیلیوری فیس کی تصدیق کریں' },
   extras_confirmed: { ar: 'أكّد المورد رسوم التوصيل', en: 'The supplier confirmed the delivery fees', ur: 'سپلائر نے ڈیلیوری فیس کی تصدیق کر دی' },
@@ -130,7 +130,7 @@ const TITLES: Record<string, Tri> = {
   payment_confirmed: { ar: 'أكّد المورد استلام الدفعة', en: 'The supplier confirmed receiving the payment', ur: 'سپلائر نے ادائیگی وصول ہونے کی تصدیق کر دی' },
   rfq_deadline: { ar: 'انتهت مهلة التسعير', en: 'The pricing window has closed', ur: 'قیمت دینے کی مدت ختم ہو گئی' },
   price_expiring: { ar: 'سعر أحد العروض ينتهي قريباً', en: 'An offer’s price expires soon', ur: 'ایک آفر کی قیمت جلد ختم ہو رہی ہے' },
-  price_expiring_supplier: { ar: 'ينتهي ضمان سعرك قريباً', en: 'Your price guarantee ends soon', ur: 'آپ کی قیمت کی ضمانت جلد ختم ہو رہی ہے' },
+  price_expiring_supplier: { ar: 'ينتهي التزامك بسعرك قريباً', en: 'Your price commitment ends soon', ur: 'آپ کی قیمت کی پابندی جلد ختم ہو رہی ہے' },
   rfq_changed: { ar: 'عدّل المشتري طلبه', en: 'The buyer changed the request', ur: 'خریدار نے درخواست میں تبدیلی کی' },
   deadline_extended: { ar: 'مُدّدت مهلة التسعير', en: 'The pricing deadline was extended', ur: 'قیمت دینے کی مدت بڑھا دی گئی' },
   rfq_expired: { ar: 'انتهى الطلب دون اختيار', en: 'The request ended without a choice', ur: 'درخواست کسی انتخاب کے بغیر ختم ہو گئی' },
@@ -154,6 +154,7 @@ export function notifKey(n: NotifLike): string {
 const OLD_TITLES: Record<string, string> = {
   'اختار المشتري عرضك': 'award',
   'لم يُقبل عرضك': 'not_selected',
+  'لم يُختر عرضك': 'not_selected',
   'أُلغي طلب التسعير': 'rfq_cancelled',
   'أكّد المورد رسوم التوصيل': 'extras_confirmed',
   'أرفق المورد فاتورته': 'invoice_attached',
@@ -301,7 +302,7 @@ function body(key: string, d: any, l: NotifLocale): string | null {
         : pick({ ar: `ينتهي التزام المورد بسعر عرضه على ${L} خلال ساعات. اختر قبل أن يتغيّر السعر.`, en: `The supplier’s price on ${L} expires within hours. Choose before it changes.`, ur: `${L} پر سپلائر کی قیمت چند گھنٹوں میں ختم ہو رہی ہے۔ قیمت بدلنے سے پہلے منتخب کریں۔` })
     case 'price_expiring_supplier':
       if (!L || !until) return null
-      return pick({ ar: `ينتهي ضمان سعرك على ${L} في ${until}. جدّد السعر ليبقى عرضك قابلاً للاختيار.`, en: `Your price guarantee on ${L} ends ${until}. Renew it so your offer can still be chosen.`, ur: `${L} پر آپ کی قیمت کی ضمانت ${until} کو ختم ہو رہی ہے۔ قیمت کی تجدید کریں تاکہ آپ کی آفر منتخب ہو سکے۔` })
+      return pick({ ar: `ينتهي التزامك بسعرك على ${L} في ${until}. جدّد السعر ليبقى عرضك قابلاً للاختيار.`, en: `Your price commitment on ${L} ends ${until}. Renew it so your offer can still be chosen.`, ur: `${L} پر آپ کی قیمت کی پابندی ${until} کو ختم ہو رہی ہے۔ قیمت کی تجدید کریں تاکہ آپ کی آفر منتخب ہو سکے۔` })
     case 'rfq_changed':
       if (!L) return null
       return pick({ ar: `عدّل المشتري طلبه، فسعّره من جديد: ${L}. تغيّرت المواد أو الكميات فأُلغي عرضك السابق.`, en: `The buyer changed the request, so price it again: ${L}. The materials or quantities changed, so your previous offer was cancelled.`, ur: `خریدار نے درخواست بدل دی، دوبارہ قیمت دیں: ${L}۔ اشیاء یا مقدار بدلنے سے آپ کی پچھلی آفر منسوخ ہو گئی۔` })
@@ -337,6 +338,57 @@ function title(key: string, d: any, l: NotifLocale): string | null {
   return t ? t[l] : null
 }
 
+// ── team copies (round-5 UX-109) ──
+// A company team member gets a copy of the owner's work notices (data.team_copy = true). The
+// actions below belong to the account owner only (deals after the choice, payment, fees), so the
+// member reads an observer text instead of an instruction he has no button for.
+const isTeamCopy = (d: any) => d?.team_copy === true || d?.team_copy === 'true' || d?.team_copy === 't' || d?.team_copy === '1'
+function observer(key: string, type: string, d: any, l: NotifLocale): { title: string; body: string } | null {
+  const label = notifRfqLabel(d, l)
+  const L = label ? q(label, l) : null
+  const pick = (t: Tri) => t[l]
+  const k = key || type
+  switch (k) {
+    case 'paid':
+      return {
+        title: pick({ ar: 'أكّد المشتري الدفع', en: 'The buyer confirmed payment', ur: 'خریدار نے ادائیگی کی تصدیق کر دی' }),
+        body: L
+          ? pick({ ar: `أكّد المشتري دفع مبلغ صفقة ${L}، وبانتظار تأكيد صاحب الحساب لاستلام الدفعة.`, en: `The buyer confirmed paying for ${L}; the account owner will confirm receiving the payment.`, ur: `خریدار نے ${L} کی ادائیگی کی تصدیق کی؛ اکاؤنٹ کے مالک ادائیگی وصول ہونے کی تصدیق کریں گے۔` })
+          : pick({ ar: 'أكّد المشتري دفع مبلغ صفقة، وبانتظار تأكيد صاحب الحساب لاستلام الدفعة.', en: 'The buyer confirmed paying for a deal; the account owner will confirm receiving the payment.', ur: 'خریدار نے ایک ڈیل کی ادائیگی کی تصدیق کی؛ اکاؤنٹ کے مالک ادائیگی وصول ہونے کی تصدیق کریں گے۔' }),
+      }
+    case 'extras_confirm':
+      return {
+        title: pick({ ar: 'اختار المشتري مواد من عرض الشركة', en: 'The buyer chose materials from the company’s offer', ur: 'خریدار نے کمپنی کی آفر سے اشیاء منتخب کیں' }),
+        body: L
+          ? pick({ ar: `اختار المشتري بعض المواد التي سعّرتها الشركة في ${L}، وبانتظار تأكيد صاحب الحساب لرسوم التوصيل.`, en: `The buyer chose some of the materials the company priced in ${L}; the account owner will confirm the delivery fees.`, ur: `خریدار نے ${L} میں کمپنی کی قیمت والی کچھ اشیاء منتخب کیں؛ اکاؤنٹ کے مالک ڈیلیوری فیس کی تصدیق کریں گے۔` })
+          : pick({ ar: 'اختار المشتري بعض المواد التي سعّرتها الشركة، وبانتظار تأكيد صاحب الحساب لرسوم التوصيل.', en: 'The buyer chose some of the materials the company priced; the account owner will confirm the delivery fees.', ur: 'خریدار نے کمپنی کی قیمت والی کچھ اشیاء منتخب کیں؛ اکاؤنٹ کے مالک ڈیلیوری فیس کی تصدیق کریں گے۔' }),
+      }
+    case 'award':
+    case 'offer_accepted':
+      return {
+        title: pick({ ar: 'اختار المشتري عرض الشركة', en: 'The buyer chose the company’s offer', ur: 'خریدار نے کمپنی کی آفر منتخب کی' }),
+        body: L
+          ? pick({ ar: `اختار المشتري مواد من عرض الشركة على ${L}. يتابع صاحب الحساب الصفقة والتسليم.`, en: `The buyer chose materials from the company’s offer on ${L}. The account owner handles the deal and delivery.`, ur: `خریدار نے ${L} پر کمپنی کی آفر سے اشیاء منتخب کیں۔ اکاؤنٹ کے مالک ڈیل اور ڈیلیوری سنبھالیں گے۔` })
+          : pick({ ar: 'اختار المشتري مواد من عرض الشركة. يتابع صاحب الحساب الصفقة والتسليم.', en: 'The buyer chose materials from the company’s offer. The account owner handles the deal and delivery.', ur: 'خریدار نے کمپنی کی آفر سے اشیاء منتخب کیں۔ اکاؤنٹ کے مالک ڈیل اور ڈیلیوری سنبھالیں گے۔' }),
+      }
+    case 'reminder_deliver':
+      return {
+        title: pick({ ar: 'تذكير بتسليم صفقة', en: 'Delivery reminder for a deal', ur: 'ڈیل کی ڈیلیوری کی یاد دہانی' }),
+        body: L
+          ? pick({ ar: `لم يُسجَّل تسليم صفقة ${L} بعد، ويتابعه صاحب الحساب.`, en: `Delivery of ${L} is not recorded yet; the account owner follows it up.`, ur: `${L} کی ڈیلیوری ابھی درج نہیں ہوئی؛ اکاؤنٹ کے مالک اسے دیکھ رہے ہیں۔` })
+          : pick({ ar: 'لم يُسجَّل تسليم إحدى صفقات الشركة بعد، ويتابعه صاحب الحساب.', en: 'Delivery of one of the company’s deals is not recorded yet; the account owner follows it up.', ur: 'کمپنی کی ایک ڈیل کی ڈیلیوری ابھی درج نہیں ہوئی؛ اکاؤنٹ کے مالک اسے دیکھ رہے ہیں۔' }),
+      }
+    case 'reminder_receipt':
+      return {
+        title: pick({ ar: 'بانتظار تأكيد المشتري للاستلام', en: 'Waiting for the buyer to confirm receipt', ur: 'خریدار کی وصولی کی تصدیق کا انتظار' }),
+        body: L
+          ? pick({ ar: `لم يؤكّد المشتري استلام صفقة ${L} بعد، ويتابعه صاحب الحساب.`, en: `The buyer has not confirmed receiving ${L} yet; the account owner follows it up.`, ur: `خریدار نے ${L} کی وصولی کی ابھی تصدیق نہیں کی؛ اکاؤنٹ کے مالک اسے دیکھ رہے ہیں۔` })
+          : pick({ ar: 'لم يؤكّد المشتري استلام إحدى صفقات الشركة بعد، ويتابعه صاحب الحساب.', en: 'The buyer has not confirmed receiving one of the company’s deals yet; the account owner follows it up.', ur: 'خریدار نے کمپنی کی ایک ڈیل کی وصولی کی ابھی تصدیق نہیں کی؛ اکاؤنٹ کے مالک اسے دیکھ رہے ہیں۔' }),
+      }
+  }
+  return null
+}
+
 /**
  * The texts of one notice for a reader. Each field is the templated text, or null when the
  * caller should show the stored Arabic text (through AutoTr for en/ur readers).
@@ -344,8 +396,15 @@ function title(key: string, d: any, l: NotifLocale): string | null {
 export function notifText(n: NotifLike, locale: string): { title: string | null; body: string | null } {
   const l = loc(locale)
   const key = notifKey(n)
-  if (!key) return { title: null, body: null }
   const d = n?.data || {}
+  // a team member's copy of an owner-only action reads as an observer text (Arabic too)
+  if (isTeamCopy(d)) {
+    try {
+      const o = observer(key, str(n?.type) || '', d, l)
+      if (o) return o
+    } catch { /* fall through to the usual texts */ }
+  }
+  if (!key) return { title: null, body: null }
   let t: string | null = null, b: string | null = null
   try { t = title(key, d, l) } catch { t = null }
   try { b = body(key, d, l) } catch { b = null }

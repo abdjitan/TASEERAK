@@ -20,10 +20,10 @@ const C: Record<string, any> = {
     title: 'حذف الحساب', home: 'الرئيسية',
     intro: 'يمكنك حذف حسابك في «تسعيرك» في أي وقت، من الموقع أو من تطبيق الجوال. يتم الحذف فوراً ولا يمكن التراجع عنه.',
     howTitle: 'طريقة الحذف',
-    how: ['من التطبيق: الإعدادات ← حذف حسابي.', 'من الموقع: سجّل الدخول ثم افتح هذه الصفحة واضغط «احذف حسابي نهائياً».', 'إن تعذّر عليك ذلك، أو لم يكن لديك التطبيق، راسلنا من بريدك المسجّل على العنوان أدناه، وننفّذ الطلب خلال 30 يوماً.'],
+    how: ['من التطبيق: الإعدادات ← حذف حسابي.', 'من الموقع: سجّل الدخول ثم افتح هذه الصفحة واضغط «احذف حسابي نهائياً».', 'إن تعذّر عليك ذلك، أو لم يكن لديك التطبيق، راسلنا من بريدك المسجّل على العنوان أدناه، وننفّذ الطلب خلال 30 يوماً.', 'إن سجّلت برقم الجوال فقط، فراسلنا من أي بريد، واذكر رقم جوالك المسجّل واسمك في الحساب، وسنتحقق من ملكيتك للحساب قبل الحذف.'],
     mailTitle: 'البريد الإلكتروني للدعم', mailHint: 'أرسل طلب الحذف من البريد المسجّل في حسابك.',
     delTitle: 'ما الذي يُحذف',
-    del: ['اسمك واسم منشأتك ورقم جوالك وعنوانك وموقعك.', 'مستندات التوثيق التي رفعتها (الرخصة والسجل التجاري).', 'المسودات والإشعارات وتخصصاتك وفروعك وأسعارك المنشورة.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول (البريد وكلمة المرور)، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى طلباتك المفتوحة وعروضك التي لم يُبتّ فيها.'],
+    del: ['اسمك واسم منشأتك ورقم جوالك وعنوانك وموقعك.', 'مستندات التوثيق التي رفعتها (الرخصة والسجل التجاري).', 'المسودات والإشعارات وتخصصاتك وفروعك وأسعارك المحفوظة.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول (البريد وكلمة المرور)، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى طلباتك المفتوحة وعروضك التي لم يُبتّ فيها.'],
     keepTitle: 'ما الذي يُحتفظ به ولماذا',
     keep: ['سجلّات الصفقات المكتملة (أوامر الشراء والفواتير والمراسلات المرتبطة بها) تبقى لدى الطرف الآخر باسم «حساب محذوف»، لأنها جزء من سجلّاته.', 'البيانات التي يُلزمنا النظام بحفظها، مثل بيانات الفواتير الضريبية، تُحفظ للمدة التي يحددها النظام ثم تُحذف.'],
     signedOut: 'لحذف حسابك من هنا، سجّل الدخول أولاً.', login: 'تسجيل الدخول',
@@ -38,15 +38,17 @@ const C: Record<string, any> = {
     team: (n: number) => `لديك ${arCount(n, 'عضو واحد', 'عضوان', 'أعضاء', 'عضواً')} في فريق الشركة، وسيفقدون الوصول إلى حساب الشركة فور الحذف.`,
     delBiz: ['اسمك واسم منشأتك ورقم جوالك وعنوانك وموقعك.', 'المسودات والإشعارات.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول (البريد وكلمة المرور)، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى طلباتك المفتوحة.'],
     backHome: 'العودة إلى الصفحة الرئيسية',
+    delMember: ['يُحذف اسمك ورقم جوالك وبيانات دخولك، وتخرج من فريق الشركة.', 'المسودات والإشعارات ورموز الإشعارات على أجهزتك.'],
+    keepMember: ['تبقى عروض الشركة وصفقاتها وفروعها كما هي لدى مالك الحساب.'],
   },
   en: {
     title: 'Delete your account', home: 'Home',
     intro: 'You can delete your Taseerak account at any time, on the website or in the mobile app. Deletion is immediate and cannot be undone.',
     howTitle: 'How to delete',
-    how: ['In the app: Settings → Delete my account.', 'On the website: sign in, open this page and press "Delete my account permanently".', 'If you cannot, or you do not have the app, email us from your registered address at the address below and we will complete it within 30 days.'],
+    how: ['In the app: Settings → Delete my account.', 'On the website: sign in, open this page and press "Delete my account permanently".', 'If you cannot, or you do not have the app, email us from your registered address at the address below and we will complete it within 30 days.', 'If you signed up with your mobile number only, email us from any address with your registered mobile number and the name on the account; we check that the account is yours before deleting it.'],
     mailTitle: 'Support email', mailHint: 'Send the deletion request from the email registered on your account.',
     delTitle: 'What is deleted',
-    del: ['Your name, business name, phone number, address and location.', 'The verification documents you uploaded (licence and commercial registration).', 'Drafts, notifications, specialties, branches and published prices.', 'Your devices’ notification tokens and your sign-in (email and password), so the account can no longer be used.', 'Your open requests and undecided offers are cancelled.'],
+    del: ['Your name, business name, phone number, address and location.', 'The verification documents you uploaded (licence and commercial registration).', 'Drafts, notifications, specialties, branches and saved prices.', 'Your devices’ notification tokens and your sign-in (email and password), so the account can no longer be used.', 'Your open requests and undecided offers are cancelled.'],
     keepTitle: 'What is kept, and why',
     keep: ['Completed deals (purchase orders, invoices and the messages about them) stay with the other party under the name "Deleted account", because they are part of their records.', 'Data the law requires us to keep, such as tax-invoice data, is kept for the legally required period and then deleted.'],
     signedOut: 'To delete your account here, sign in first.', login: 'Sign in',
@@ -61,15 +63,17 @@ const C: Record<string, any> = {
     team: (n: number) => `You have ${n} company team ${n === 1 ? 'member' : 'members'}; they lose access to the company account as soon as you delete it.`,
     delBiz: ['Your name, business name, phone number, address and location.', 'Drafts and notifications.', 'Your devices’ notification tokens and your sign-in (email and password), so the account can no longer be used.', 'Your open requests are cancelled.'],
     backHome: 'Back to the home page',
+    delMember: ['Your name, mobile number and sign-in are deleted, and you leave the company team.', 'Drafts, notifications and your devices’ notification tokens.'],
+    keepMember: ['The company’s offers, deals and branches stay as they are with the account owner.'],
   },
   ur: {
     title: 'اکاؤنٹ حذف کریں', home: 'مرکزی صفحہ',
     intro: 'آپ کسی بھی وقت ویب سائٹ یا موبائل ایپ سے اپنا تسعیرک اکاؤنٹ حذف کر سکتے ہیں۔ حذف فوری ہوتا ہے اور واپس نہیں ہو سکتا۔',
     howTitle: 'حذف کرنے کا طریقہ',
-    how: ['ایپ میں: ترتیبات ← میرا اکاؤنٹ حذف کریں۔', 'ویب سائٹ پر: لاگ اِن کریں، یہ صفحہ کھولیں اور «میرا اکاؤنٹ مستقل حذف کریں» دبائیں۔', 'اگر ممکن نہ ہو یا آپ کے پاس ایپ نہیں ہے تو اپنی رجسٹرڈ ای میل سے نیچے دیے گئے پتے پر لکھیں، ہم 30 دن کے اندر حذف کر دیں گے۔'],
+    how: ['ایپ میں: ترتیبات ← میرا اکاؤنٹ حذف کریں۔', 'ویب سائٹ پر: لاگ اِن کریں، یہ صفحہ کھولیں اور «میرا اکاؤنٹ مستقل حذف کریں» دبائیں۔', 'اگر ممکن نہ ہو یا آپ کے پاس ایپ نہیں ہے تو اپنی رجسٹرڈ ای میل سے نیچے دیے گئے پتے پر لکھیں، ہم 30 دن کے اندر حذف کر دیں گے۔', 'اگر آپ نے صرف موبائل نمبر سے رجسٹر کیا ہے تو کسی بھی ای میل سے لکھیں، اپنا رجسٹرڈ موبائل نمبر اور اکاؤنٹ کا نام بتائیں؛ حذف سے پہلے ہم تصدیق کریں گے کہ اکاؤنٹ آپ کا ہے۔'],
     mailTitle: 'سپورٹ ای میل', mailHint: 'حذف کی درخواست اپنے اکاؤنٹ میں رجسٹرڈ ای میل سے بھیجیں۔',
     delTitle: 'کیا حذف ہوتا ہے',
-    del: ['آپ کا نام، ادارے کا نام، فون نمبر، پتہ اور مقام۔', 'آپ کی اپ لوڈ کردہ تصدیقی دستاویزات (لائسنس اور تجارتی رجسٹریشن)۔', 'ڈرافٹ، اطلاعات، مہارتیں، شاخیں اور شائع شدہ قیمتیں۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن (ای میل اور پاس ورڈ)، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی کھلی درخواستیں اور زیرِ غور پیشکشیں منسوخ ہو جاتی ہیں۔'],
+    del: ['آپ کا نام، ادارے کا نام، فون نمبر، پتہ اور مقام۔', 'آپ کی اپ لوڈ کردہ تصدیقی دستاویزات (لائسنس اور تجارتی رجسٹریشن)۔', 'ڈرافٹ، اطلاعات، مہارتیں، شاخیں اور محفوظ قیمتیں۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن (ای میل اور پاس ورڈ)، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی کھلی درخواستیں اور زیرِ غور پیشکشیں منسوخ ہو جاتی ہیں۔'],
     keepTitle: 'کیا محفوظ رہتا ہے اور کیوں',
     keep: ['مکمل سودے (خریداری آرڈر، انوائس اور متعلقہ پیغامات) دوسرے فریق کے پاس «حذف شدہ اکاؤنٹ» کے نام سے رہتے ہیں کیونکہ وہ اس کے ریکارڈ کا حصہ ہیں۔', 'جو ڈیٹا قانوناً رکھنا لازم ہے، جیسے ٹیکس انوائس کا ڈیٹا، مقررہ مدت تک رکھا جاتا ہے پھر حذف کر دیا جاتا ہے۔'],
     signedOut: 'یہاں سے اکاؤنٹ حذف کرنے کے لیے پہلے لاگ اِن کریں۔', login: 'لاگ اِن',
@@ -84,6 +88,8 @@ const C: Record<string, any> = {
     team: (n: number) => `کمپنی کی ٹیم میں آپ کے ${n} رکن ہیں، اور حذف کرتے ہی وہ کمپنی کے اکاؤنٹ تک رسائی کھو دیں گے۔`,
     delBiz: ['آپ کا نام، ادارے کا نام، فون نمبر، پتہ اور مقام۔', 'ڈرافٹ اور اطلاعات۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن (ای میل اور پاسورڈ)، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی کھلی درخواستیں منسوخ ہو جاتی ہیں۔'],
     backHome: 'مرکزی صفحے پر واپس جائیں',
+    delMember: ['آپ کا نام، موبائل نمبر اور لاگ اِن حذف ہو جاتے ہیں، اور آپ کمپنی کی ٹیم سے نکل جاتے ہیں۔', 'ڈرافٹ، اطلاعات اور آپ کے آلات کے اطلاعاتی ٹوکن۔'],
+    keepMember: ['کمپنی کی پیشکشیں، سودے اور شاخیں اکاؤنٹ کے مالک کے پاس ویسے ہی رہتی ہیں۔'],
   },
 }
 
@@ -100,6 +106,7 @@ export default function DeleteAccountPage() {
   const [activeDeals, setActiveDeals] = useState(0)
   const [role, setRole] = useState('')
   const [teamCount, setTeamCount] = useState(0)
+  const [member, setMember] = useState(false)
 
   useEffect(() => {
     const sb = createClient()
@@ -113,6 +120,7 @@ export default function DeleteAccountPage() {
         setRole(p?.role || '')
         // the company's team members lose access at once (UX-119)
         if (p?.role === 'supplier') {
+          try { const { data: acting } = await sb.rpc('acting_uid'); if (acting && acting !== uid) setMember(true) } catch {}
           const { count } = await sb.from('company_members').select('user_id', { count: 'exact', head: true }).eq('company_id', uid).eq('status', 'active')
           setTeamCount(count || 0)
         }
@@ -163,8 +171,8 @@ export default function DeleteAccountPage() {
           <a href={`mailto:${OPERATOR.email}`} dir="ltr" className="inline-block font-mono text-base font-bold text-[#8F6820] hover:underline select-all break-all">{OPERATOR.email}</a>
           <p className="text-xs text-gray-500 mt-1">{t.mailHint}</p>
         </section>
-        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={homeBuyer ? t.delHome : role === 'contractor' ? t.delBiz : t.del} /></section>
-        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.keepTitle}</h2><List items={homeBuyer ? t.keepHome : t.keep} /></section>
+        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={member ? t.delMember : homeBuyer ? t.delHome : role === 'contractor' ? t.delBiz : t.del} /></section>
+        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.keepTitle}</h2><List items={member ? t.keepMember : homeBuyer ? t.keepHome : t.keep} /></section>
 
         <div className="bg-white rounded-2xl border border-red-100 p-5">
           {done ? (
@@ -182,12 +190,12 @@ export default function DeleteAccountPage() {
           ) : signedIn ? (
             <div className="space-y-3">
               {activeDeals > 0 && (
-                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alert">{t.activeDeals(activeDeals)}{' '}
+                <div className="rounded-xl border border-warn-border bg-warn-bg p-3 text-sm text-warn-text" role="alert">{t.activeDeals(activeDeals)}{' '}
                   <a href={role === 'supplier' ? '/supplier/deals' : '/contractor/rfqs'} className="inline-flex items-center min-h-[44px] font-bold underline">{t.openDeals}</a>
                 </div>
               )}
               {teamCount > 0 && (
-                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alert">{t.team(teamCount)}</div>
+                <div className="rounded-xl border border-warn-border bg-warn-bg p-3 text-sm text-warn-text" role="alert">{t.team(teamCount)}</div>
               )}
               <label className="block text-sm font-semibold text-gray-700" htmlFor="confirm-word">{t.confirmLabel}</label>
               <input id="confirm-word" value={word} onChange={e => setWord(e.target.value)} className="input-field max-w-xs" autoComplete="off" />

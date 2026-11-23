@@ -15,6 +15,8 @@ export default function BannedPage() {
   // undefined = loading, null = no suspension, 'error' = the check failed
   const [ban, setBan] = useState<any>(undefined)
   const [home, setHome] = useState('/contractor')
+  // deals in progress while suspended (round-5 UX-074): saved, coordinated through support
+  const [activeDeals, setActiveDeals] = useState(0)
 
   async function load() {
     setBan(undefined)
@@ -23,6 +25,9 @@ export default function BannedPage() {
       const { data, error } = await sb.rpc('my_ban')
       if (error) throw error
       setBan(data || null)
+      if (data) {
+        try { const { data: n, error: e2 } = await sb.rpc('my_active_deal_count'); if (!e2 && typeof n === 'number') setActiveDeals(n) } catch {}
+      }
       if (!data) {
         const { data: { user } } = await sb.auth.getUser()
         if (user) {
@@ -67,6 +72,7 @@ export default function BannedPage() {
         </p>
         {/* what a suspension means (UX-117) */}
         <p className="text-sm text-red-900 mt-2">{L('While suspended you cannot send requests, offers or messages. You can still read this page, contact support or delete your account.', 'معطلی کے دوران آپ درخواستیں، آفرز یا پیغامات نہیں بھیج سکتے۔ آپ یہ صفحہ دیکھ سکتے ہیں، سپورٹ سے رابطہ کر سکتے ہیں یا اپنا اکاؤنٹ حذف کر سکتے ہیں۔', 'خلال الإيقاف لا يمكنك إرسال طلبات أو عروض أو رسائل. ويمكنك قراءة هذه الصفحة والتواصل مع الدعم أو حذف حسابك.')}</p>
+        <p className="text-sm text-red-900 mt-2">{L('Your open requests and offers are paused during the suspension, and your deals in progress are kept. To coordinate an existing deal, contact support.', 'معطلی کے دوران آپ کی کھلی درخواستیں اور آفرز رکی رہیں گی، اور جاری سودے محفوظ ہیں۔ کسی موجودہ سودے کے لیے سپورٹ سے رابطہ کریں۔', 'طلباتك وعروضك المفتوحة متوقفة خلال الإيقاف، وصفقاتك الجارية محفوظة. للتنسيق في صفقة قائمة تواصل مع الدعم.')}</p>
         {ban.reason && (
           <div className="mt-4 rounded-xl bg-white border border-red-100 p-3 text-sm text-gray-800">
             <div className="text-xs font-bold text-gray-600 mb-1">{L('Message from the administration', 'انتظامیہ کا پیغام', 'رسالة الإدارة')}</div>
@@ -74,7 +80,9 @@ export default function BannedPage() {
           </div>
         )}
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Link href="/support" className="btn-orange text-sm">{L('Contact support', 'سپورٹ سے رابطہ', 'تواصل مع الدعم')}</Link>
+          {activeDeals > 0
+            ? <Link href="/support?topic=deal" className="btn-orange text-sm">{L(`Contact support about a deal (${activeDeals})`, `سودے کے بارے میں سپورٹ سے رابطہ (${activeDeals})`, `تواصل مع الدعم بخصوص صفقة (${activeDeals})`)}</Link>
+            : <Link href="/support" className="btn-orange text-sm">{L('Contact support', 'سپورٹ سے رابطہ', 'تواصل مع الدعم')}</Link>}
           {/* deleting the account is a right (PDPL) and a store requirement, also while suspended (UX-024) */}
           <a href="/account/delete" className="inline-flex items-center min-h-[44px] px-2 text-sm font-bold text-red-800 underline underline-offset-2">{L('Delete my account', 'میرا اکاؤنٹ حذف کریں', 'حذف حسابي')}</a>
         </div>

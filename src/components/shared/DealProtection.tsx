@@ -23,7 +23,7 @@ import { payDueAt, payDueSoon } from '@/lib/dealStage'
 // only for what is complete. The seller uploads the invoice BEFORE confirming delivery, so on the
 // seller's side the invoice comes first and is a tracker step.
 
-type Party = { company_name_ar?: string; company_name_en?: string; phone?: string; contact_phone?: string; supplier_tier?: string; provider_type?: string } | null
+type Party = { company_name_ar?: string; company_name_en?: string; full_name?: string; phone?: string; contact_phone?: string; supplier_tier?: string; provider_type?: string; vat_number?: string | null } | null
 
 const GOLD = { background: '#D4A543', color: '#071827' }
 // the shared button (round-4 UX-103): gold = the next step, navy outline = the rest, 44px tall
@@ -161,7 +161,11 @@ export default function DealProtection({
   const dueTextPay = dueAtPay ? dueAtPay.toLocaleDateString(dloc, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' }) : ''
   // the buyer's payment button is gold when paying is the next step
   const payIsNext = !paid && (advanceDue || (!!offer.received_at && (!dueAtPay || dueSoon)))
-  const fmtDate = (d: any) => new Date(d).toLocaleString(dloc)
+  // one date format on the deal (round-5 UX-149): day, month name, hour:minute, Riyadh time, no seconds
+  const fmtDate = (d: any) => new Date(d).toLocaleString(dloc, { day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Riyadh' })
+  const dueLate = !closed && !paid && !!dueAtPay && Date.now() > dueAtPay.getTime()
+  // a step still open on a deal the admins cancelled (round-5 UX-052)
+  const notDone = L('This step was not completed before the cancellation', 'یہ مرحلہ منسوخی سے پہلے مکمل نہیں ہوا', 'لم تكتمل هذه الخطوة قبل الإلغاء')
   const SAR = sarLabel(locale)
   const dealAmount = amount != null && amount > 0 ? amount
     : (!Array.isArray(offer.item_prices) || offer.item_prices.length <= 1) ? offerComparable(vo) : null
@@ -172,6 +176,8 @@ export default function DealProtection({
   // UX-055: a home buyer sees the short «فاتورة البائع» (the source shop wording only on a pricing agent's offer)
   const invoiceTitle = home && !isIndependentOffer(vo) ? L('The supplier’s invoice', 'سپلائر کی انوائس', 'فاتورة المورد') : sellerInvoiceLabel(vo, locale, isSupplier ? 'supplier' : 'buyer')
   // who reported the open problem: the supplier side or the buyer (UX-045)
+  // the buyer's name for the seller's invoice (round-5 UX-050; the page passes the buyer's profile after the award)
+  const buyerName = isSupplier ? (otherParty?.company_name_ar || otherParty?.company_name_en || otherParty?.full_name || '') : ''
   const reportedBySupplier = !!offer.dispute_by && offer.dispute_by === offer.supplier_id
   async function messageOtherSide() {
     const { data, error } = await createClient().rpc('get_or_create_conversation', { p_rfq_id: offer.rfq_id, p_supplier_id: offer.supplier_id })
@@ -207,6 +213,7 @@ export default function DealProtection({
         <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
           {offer.supplier_invoice_url
             ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isSupplier ? (observer ? L('The account owner attached it', 'اکاؤنٹ کے مالک نے منسلک کر دی', 'أرفقها صاحب الحساب') : L('You attached it', 'آپ نے منسلک کر دی', 'أرفقتَها')) : L('Attached by the supplier', 'سپلائر نے منسلک کر دی', 'أرفقها المورد')} · {fmtDate(offer.supplier_invoice_at)}</>
+            : closed ? notDone
             : isSupplier
               ? (observer ? L('Waiting for the account owner to upload the invoice', 'اکاؤنٹ کے مالک کی طرف سے انوائس اپ لوڈ کا انتظار', 'بانتظار رفع صاحب الحساب للفاتورة') : invoiceGateText(vo, locale))
               : L('The supplier attaches it before confirming delivery, and it will show here.', 'سپلائر ڈیلیوری کی تصدیق سے پہلے اسے منسلک کرے گا، اور یہ یہاں نظر آئے گی۔', 'يرفقها المورد قبل تأكيد التسليم، وستظهر هنا.')}
@@ -224,6 +231,12 @@ export default function DealProtection({
           </label>
         )}
       </div>
+      {isSupplier && !closed && !offer.supplier_invoice_url && buyerName && (
+        <div className="basis-full text-xs text-[#0B2438] leading-relaxed">
+          {L('Invoice in the name of: ', 'انوائس اس نام پر: ', 'تصدر الفاتورة باسم: ')}<b dir="auto">{buyerName}</b>
+          {otherParty?.vat_number ? <> · {L('VAT number: ', 'VAT نمبر: ', 'الرقم الضريبي: ')}<b dir="ltr">{otherParty.vat_number}</b></> : null}
+        </div>
+      )}
       {invErr && <p className="text-xs text-red-600 basis-full" role="alert">{invErr}</p>}
     </div>
   )
@@ -235,6 +248,7 @@ export default function DealProtection({
         <div className="text-xs text-gray-500 mt-0.5">
           {offer.supplier_delivered_at
             ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isSupplier ? (observer ? L('The account owner confirmed delivery', 'اکاؤنٹ کے مالک نے ڈیلیوری کنفرم کر دی', 'أكّد صاحب الحساب التسليم') : L('You confirmed delivery', 'آپ نے ڈیلیوری کنفرم کر دی', 'أكّدتَ التسليم')) : L('Delivery confirmed', 'ڈیلیوری کی تصدیق ہو گئی', 'تمّ تأكيد التسليم')} — {fmtDate(offer.supplier_delivered_at)}</>
+            : closed ? notDone
             : isSupplier
               ? (observer ? L('Waiting for the account owner to confirm delivery', 'اکاؤنٹ کے مالک کی طرف سے ڈیلیوری کی تصدیق کا انتظار', 'بانتظار تأكيد صاحب الحساب للتسليم')
                 : advanceDue ? L('Waiting for the buyer’s advance payment; then deliver the goods.', 'خریدار کی پیشگی ادائیگی کا انتظار؛ پھر سامان پہنچائیں۔', 'بانتظار دفعة المشتري المقدّمة، ثم تسلّم البضاعة.')
@@ -246,9 +260,10 @@ export default function DealProtection({
       {!offer.supplier_delivered_at && isSupplier && canAct && offer.supplier_invoice_url && (
         <div className={actions}>
           <button type="button" onClick={async () => { if ((await askConfirm(L('Have you delivered all the goods of this order to the buyer?\n\nThis confirmation is recorded with its date and cannot be undone.', 'کیا آپ نے اس آرڈر کا سارا مال خریدار کو پہنچا دیا ہے؟\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔', 'هل سلّمت جميع بضاعة هذا الطلب إلى المشتري؟\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.'), { okLabel: L('Yes, delivered', 'ہاں، ڈیلیور کر دیا', 'نعم، سلّمتها'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) callRpc('confirm_delivery', { p_offer_id: offer.id }, 'deliver') }}
-            disabled={busy === 'deliver'} className={PRIMARY} style={GOLD}>
+            disabled={busy === 'deliver'} className={advanceDue ? OUTLINE : PRIMARY} style={advanceDue ? undefined : GOLD}>
             <Check className="w-4 h-4" aria-hidden="true" /> {L('Confirm delivery', 'ڈیلیوری کی تصدیق کریں', 'تأكيد التسليم')}
           </button>
+          {advanceDue && <span className="text-xs text-gray-600">{L('Better to deliver after the buyer’s advance payment.', 'بہتر ہے کہ خریدار کی پیشگی ادائیگی کے بعد سامان دیں۔', 'يُفضَّل التسليم بعد دفعة المشتري المقدّمة.')}</span>}
         </div>
       )}
     </div>
@@ -260,7 +275,8 @@ export default function DealProtection({
         <div className="font-semibold text-gray-700">{L('Receipt confirmation', 'وصولی کی تصدیق', 'تأكيد الاستلام')}</div>
         <div className="text-xs text-gray-500 mt-0.5">
           {offer.received_at
-            ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isContractor ? L('Recorded: you confirmed receipt', 'ریکارڈ ہو گیا: آپ نے وصولی کنفرم کر دی', 'موثّق: أكّدتَ الاستلام') : L('Recorded: the buyer confirmed receipt', 'ریکارڈ ہو گیا: خریدار نے وصولی کنفرم کر دی', 'موثّق: أكّد المشتري الاستلام')} · {fmtDate(offer.received_at)}</>
+            ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isContractor ? L('Recorded: you confirmed receipt', 'ریکارڈ ہو گیا: آپ نے وصولی کنفرم کر دی', 'سُجّل: أكّدتَ الاستلام') : L('Recorded: the buyer confirmed receipt', 'ریکارڈ ہو گیا: خریدار نے وصولی کنفرم کر دی', 'سُجّل: أكّد المشتري الاستلام')} · {fmtDate(offer.received_at)}</>
+            : closed ? notDone
             : isContractor && !offer.supplier_delivered_at && !deliverOverdue
               // the buyer can confirm before the supplier does: the goods may already be there (round-4 UX-003)
               ? (pickup
@@ -292,7 +308,7 @@ export default function DealProtection({
       )}
     </div>
   )
-  const rateCta = isContractor && (justReceived) && (
+  const rateCta = isContractor && justReceived && !closed && (
     <a key="rate" href={`/contractor/orders/${offer.id}#rate`} className={`${PRIMARY} w-full`} style={GOLD}>
       <Glyph e="⭐" /> {L('Rate the supplier now', 'ابھی سپلائر کی ریٹنگ دیں', 'قيّم المورد الآن')}
     </a>
@@ -303,7 +319,8 @@ export default function DealProtection({
       <div className="text-sm min-w-0">
         <div className="font-semibold text-gray-700">{L('Payment', 'ادائیگی', 'الدفع')}</div>
         <div className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-          {paid
+          {!paid && closed ? notDone
+            : paid
             ? (offer.payment_confirmed_at
               ? <><Check className="inline w-3.5 h-3.5 text-[#0F6E56]" aria-hidden="true" /> {isSupplier ? (observer ? L('The account owner confirmed receiving the payment', 'اکاؤنٹ کے مالک نے ادائیگی وصول ہونا کنفرم کر دیا', 'أكّد صاحب الحساب استلام الدفعة') : L('You confirmed receiving the payment', 'آپ نے ادائیگی وصول ہونا کنفرم کر دیا', 'أكّدتَ استلام الدفعة')) : L('Supplier confirmed receiving the payment', 'سپلائر نے ادائیگی وصول ہونا کنفرم کر دیا', 'أكّد المورد استلام الدفعة')} — {fmtDate(offer.payment_confirmed_at)}</>
               : (isSupplier
@@ -312,7 +329,10 @@ export default function DealProtection({
             : <>
                 {dealAmount ? <>{L('Amount', 'رقم', 'المبلغ')}: <b className="text-[#0B2438]">{dealAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</b> <span className="text-gray-600">({buyerBasisTag(vo, locale)})</span>{extrasPending ? <span className="font-semibold text-[#8F6820]"> {isSupplier ? L('+ delivery charges once you confirm them', '+ آپ کی تصدیق کے بعد ڈیلیوری چارجز', '+ رسوم التوصيل بعد تأكيدك لها') : L('+ delivery charges once the supplier confirms them', '+ سپلائر کی تصدیق کے بعد ڈیلیوری چارجز', '+ رسوم التوصيل بعد تأكيد المورد')}</span> : null}{terms ? ` · ${terms}` : ''}. </> : terms ? <>{terms}. </> : null}
                 {/* «آجل»: the due date; «مقدّم»: paid before delivery (round-4 UX-034) */}
-                {dueAtPay && <span className="block mt-1 font-bold text-[#0B2438]">{L(`Payment is due on ${dueTextPay}.`, `ادائیگی کی آخری تاریخ: ${dueTextPay}۔`, `الدفع مستحق في ${dueTextPay}.`)}</span>}
+                {dueAtPay && !dueLate && <span className="block mt-1 font-bold text-[#0B2438]">{L(`Payment is due on ${dueTextPay}.`, `ادائیگی کی آخری تاریخ: ${dueTextPay}۔`, `الدفع مستحق في ${dueTextPay}.`)}</span>}
+                {dueLate && <span className="block mt-1 font-bold text-[#6C531F]">{isSupplier
+                  ? L(`The agreed payment date has passed (${dueTextPay}). Contact the buyer, or report a problem.`, `ادائیگی کی طے شدہ تاریخ گزر گئی (${dueTextPay})۔ خریدار سے رابطہ کریں، یا مسئلہ بتائیں۔`, `تجاوز موعد الدفع المتّفق عليه (${dueTextPay}). تواصل مع المشتري، أو أبلغ عن مشكلة.`)
+                  : L(`The agreed payment date has passed (${dueTextPay}). Pay the supplier and record it here.`, `ادائیگی کی طے شدہ تاریخ گزر گئی (${dueTextPay})۔ سپلائر کو ادائیگی کریں اور یہاں درج کریں۔`, `تجاوز موعد الدفع المتّفق عليه (${dueTextPay}). ادفع للمورد وسجّل الدفع هنا.`)}</span>}
                 {advanceDue && (isContractor
                   ? <span className="block mt-1 font-bold text-[#0B2438]">{L('Waiting for your advance payment; then the supplier delivers. Do not pay before agreeing on the delivery date in messages.', 'آپ کی پیشگی ادائیگی کا انتظار ہے؛ پھر سپلائر سامان پہنچائے گا۔ پیغامات میں ڈیلیوری کی تاریخ طے کیے بغیر ادائیگی نہ کریں۔', 'بانتظار دفعتك المقدّمة، ثم يسلّم المورد. لا تدفع قبل الاتفاق على موعد التسليم عبر الرسائل.')}</span>
                   : <span className="block mt-1 font-bold text-[#0B2438]">{L('This offer asks for payment in advance: waiting for the buyer’s payment.', 'اس آفر میں پیشگی ادائیگی ہے: خریدار کی ادائیگی کا انتظار ہے۔', 'يطلب هذا العرض الدفع مقدّماً: بانتظار دفعة المشتري.')}</span>)}
@@ -328,6 +348,22 @@ export default function DealProtection({
           <button type="button" onClick={async () => { if ((await askConfirm(dealAmount ? L(`Have you paid the supplier ${fmtAmt(dealAmount)} SAR for this order?${extrasPending ? '\n\nDelivery charges may still be added once the supplier confirms them, so it is better to pay after that.' : ''}\n\nThis confirmation is recorded with its date and cannot be undone.`, `کیا آپ نے اس آرڈر کے لیے سپلائر کو ${fmtAmt(dealAmount)} ریال ادا کر دیے ہیں؟${extrasPending ? '\n\nسپلائر کی تصدیق کے بعد ڈیلیوری چارجز شامل ہو سکتے ہیں، اس لیے بہتر ہے کہ اس کے بعد ادائیگی کریں۔' : ''}\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔`, `هل دفعت للمورد مبلغ ${fmtAmt(dealAmount)} ر.س لهذا الطلب؟${extrasPending ? '\n\nقد تُضاف رسوم التوصيل بعد تأكيد المورد لها، فيُفضّل الدفع بعد تأكيدها.' : ''}\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.`) : L('Have you paid the supplier the amount of this order?\n\nThis confirmation is recorded with its date and cannot be undone.', 'کیا آپ نے اس آرڈر کی رقم سپلائر کو ادا کر دی ہے؟\n\nیہ تصدیق تاریخ کے ساتھ ریکارڈ ہو گی اور واپس نہیں لی جا سکتی۔', 'هل دفعت للمورد مبلغ هذا الطلب؟\n\nسيُسجَّل هذا التأكيد بتاريخه ولا يمكن التراجع عنه.'), { okLabel: L('Yes, I paid', 'ہاں، ادا کر دیا', 'نعم، دفعت'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) callRpc('mark_paid', { p_offer_id: offer.id }, 'paid') }}
             disabled={busy === 'paid'} className={payIsNext ? PRIMARY : OUTLINE} style={payIsNext ? GOLD : undefined}>
             <Check className="w-4 h-4" aria-hidden="true" /> {advanceDue ? L('Record the advance payment', 'پیشگی ادائیگی درج کریں', 'سجّل الدفع') : L('Confirm payment', 'ادائیگی کی تصدیق کریں', 'تأكيد الدفع')}
+          </button>
+        )}
+        {/* round-5 UX-008: cash at the door is common and a home buyer rarely comes back to record it, so the
+            supplier records receiving the full amount itself (the deal becomes paid and confirmed; the buyer is told) */}
+        {!paid && isSupplier && canAct && (
+          <button type="button" onClick={async () => {
+            const amt = dealAmount ? `${fmtAmt(dealAmount)} ` : ''
+            if (!(await askConfirm(
+              L(`Have you received from the buyer the full amount of this order${amt ? ` (${amt}SAR)` : ''}? The payment will be recorded and the buyer told.`,
+                `کیا آپ کو خریدار سے اس آرڈر کی پوری رقم${amt ? ` (${amt}ریال)` : ''} مل گئی ہے؟ ادائیگی درج ہو جائے گی اور خریدار کو اطلاع دی جائے گی۔`,
+                `هل استلمت من المشتري كامل مبلغ هذا الطلب${amt ? ` (${amt}ر.س)` : ''}؟ سيُسجَّل الدفع ويُبلَّغ المشتري.`),
+              { okLabel: L('Yes, received', 'ہاں، مل گئی', 'نعم، استلمته'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
+            if (await callRpc('supplier_confirm_cash_payment', { p_offer_id: offer.id }, 'cash'))
+              setNotice(L('Payment recorded, and the buyer was told.', 'ادائیگی درج ہو گئی، اور خریدار کو اطلاع دے دی گئی۔', 'سُجّل الدفع، وأُبلغ المشتري.'))
+          }} disabled={busy === 'cash'} className={OUTLINE}>
+            <Check className="w-4 h-4" aria-hidden="true" /> {L('I received the amount', 'مجھے رقم مل گئی', 'استلمتُ المبلغ')}
           </button>
         )}
         {paid && !offer.payment_confirmed_at && isSupplier && canAct && (
@@ -388,7 +424,9 @@ export default function DealProtection({
       )}
       {receiptOverdue && (
         <div className="mb-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold px-3 py-2 leading-relaxed">
-          <Glyph e="⏰" /> {isContractor ? L('More than 48 hours since delivery was confirmed. Please confirm receipt or report a problem.', 'ڈیلیوری کنفرم ہوئے 48 گھنٹے سے زیادہ ہو گئے۔ براہ کرم وصولی کنفرم کریں یا مسئلہ بتائیں۔', 'مضى أكثر من 48 ساعة على تأكيد التسليم. يُرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.') : L('Waiting for the buyer to confirm receipt of the goods.', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے۔', 'بانتظار تأكيد المشتري لاستلام البضاعة.')}
+          <Glyph e="⏰" /> {isContractor ? L('More than 48 hours since delivery was confirmed. Please confirm receipt or report a problem.', 'ڈیلیوری کنفرم ہوئے 48 گھنٹے سے زیادہ ہو گئے۔ براہ کرم وصولی کنفرم کریں یا مسئلہ بتائیں۔', 'مضى أكثر من 48 ساعة على تأكيد التسليم. يُرجى تأكيد الاستلام أو الإبلاغ عن مشكلة.') : (observer ? L('Waiting for the buyer to confirm receipt of the goods.', 'خریدار کی طرف سے مال کی وصولی کی تصدیق کا انتظار ہے۔', 'بانتظار تأكيد المشتري لاستلام البضاعة.')
+            : <>{L('More than 48 hours since you delivered. Remind the buyer to confirm receipt.', 'آپ کی ڈیلیوری کو 48 گھنٹے سے زیادہ ہو گئے۔ خریدار کو وصولی کی تصدیق یاد دلائیں۔', 'مضى أكثر من 48 ساعة على تسليمك. ذكّر المشتري بتأكيد الاستلام.')}
+              <button type="button" onClick={messageOtherSide} className={`${OUTLINE} mt-2 flex`}><Glyph e="💬" /> {L('Message the buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button></>)}
         </div>
       )}
       {w && !hideContact && !observer && !closed && (
@@ -409,7 +447,7 @@ export default function DealProtection({
                 {s.done ? <Check className="w-4 h-4" aria-hidden="true" /> : i + 1}
               </div>
               <div className={`mt-1 leading-tight ${s.done || isCur ? 'text-gray-800 font-semibold' : 'text-gray-500'}`}>{s.label}</div>
-              {s.at && <div className="text-xs text-gray-500">{new Date(s.at).toLocaleDateString(dloc)}</div>}
+              {s.at && <div className="text-xs text-gray-500">{new Date(s.at).toLocaleDateString(dloc, { day: 'numeric', month: 'short', timeZone: 'Asia/Riyadh' })}</div>}
             </li>
           )
         })}
@@ -432,13 +470,13 @@ export default function DealProtection({
               </div>
               <div className="text-xs text-gray-600 mt-1 leading-relaxed">{observer
                 ? L('The Taseerak team will contact the account owner.', 'تسعیرک کی ٹیم اکاؤنٹ کے مالک سے رابطہ کرے گی۔', 'سيتواصل فريق تسعيرك مع صاحب الحساب.')
-                : L('The Taseerak team will contact you. You can explain your side to the buyer and attach the invoice or a delivery photo.', 'تسعیرک کی ٹیم آپ سے رابطہ کرے گی۔ آپ خریدار کو اپنا موقف سمجھا سکتے ہیں اور انوائس یا ڈیلیوری کی تصویر منسلک کر سکتے ہیں۔', 'سيتواصل معك فريق تسعيرك. يمكنك توضيح موقفك للمشتري، وإرفاق الفاتورة أو صورة التسليم.')}</div>
+                : L('The Taseerak team will contact you. You can explain your side to the buyer in messages and send the delivery photo there, and attach the invoice in the invoice step above.', 'تسعیرک کی ٹیم آپ سے رابطہ کرے گی۔ آپ پیغامات میں خریدار کو اپنا موقف سمجھا سکتے ہیں اور وہیں ڈیلیوری کی تصویر بھیج سکتے ہیں، اور انوائس اوپر انوائس کے مرحلے میں منسلک کریں۔', 'سيتواصل معك فريق تسعيرك. يمكنك توضيح موقفك للمشتري في الرسائل وإرسال صورة التسليم فيها، وإرفاق الفاتورة في خطوة الفاتورة أعلاه.')}</div>
               {canAct && (
                 <button type="button" onClick={messageOtherSide} className={`${OUTLINE} mt-2`}><Glyph e="💬" /> {L('Message the buyer', 'خریدار کو پیغام بھیجیں', 'راسل المشتري')}</button>
               )}
             </>) : (<>
               <div className="text-xs text-red-700 mt-1" dir="auto">
-                {isContractor && reportedBySupplier ? L('The supplier reported: ', 'سپلائر نے رپورٹ کیا: ', 'أبلغ المورد: ') : isSupplier ? L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ') : L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ')}{offer.dispute_reason}
+                {isContractor && reportedBySupplier ? L('The supplier reported: ', 'سپلائر نے رپورٹ کیا: ', 'أبلغ المورد: ') : isSupplier ? (observer ? L('The account owner reported: ', 'اکاؤنٹ کے مالک نے رپورٹ کیا: ', 'أبلغ صاحب الحساب: ') : L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ')) : L('You reported: ', 'آپ نے رپورٹ کیا: ', 'أبلغتَ: ')}{offer.dispute_reason}
               </div>
               <div className="text-xs text-gray-600 mt-1">{L('The Taseerak team will contact both sides to mediate.', 'تسعیرک کی ٹیم صلح کے لیے دونوں فریقوں سے رابطہ کرے گی۔', 'سيتواصل فريق تسعيرك مع الطرفين للوساطة.')}</div>
             </>)}
