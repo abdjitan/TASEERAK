@@ -263,7 +263,15 @@ begin
   if not exists (select 1 from messages where conversation_id = v_conv and body like '%٠٥٥٩٨٧٦٥٤٣%')
     then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL award alone unmasks contact'; end if;
   perform public.unaward_rfq_item(v_rfq, 0);   -- still allowed while open and nothing accepted
-  -- H3: a request with no deal can still be deleted by its owner
+  -- 278 (round-5 UX-048): an open request with a live offer cannot be deleted, only cancelled
+  begin
+    perform public.delete_rfq(v_rfq);
+    bad := bad + 1; log := log || ' FAIL deleted an open request with live offers';
+  exception when others then ok := ok + 1; end;
+  update rfqs set status = 'cancelled' where id = v_rfq;
+  -- the cancel trigger sets transaction-local bypass flags; one request = one transaction in production, so reset them here
+  perform set_config('app.bypass_locks', 'off', true); perform set_config('app.deal_write', 'off', true);
+  -- H3: a request with no deal can still be deleted by its owner (once cancelled)
   perform public.delete_rfq(v_rfq);
   reset role;
   select count(*) into n from rfqs where id = v_rfq;
