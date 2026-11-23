@@ -244,10 +244,9 @@ export default function RegisterPage() {
     }
     if (asksBusiness && !cr.trim()) { setFormError(locale === 'en' ? 'A company or shop needs its commercial registration number. No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'الشركة أو المحل تحتاج رقم السجل التجاري. ليس لديك سجل؟ اختر «وسيط تسعير».'); return }
     if (asksBusiness && cr && !isUnifiedCr(normalizeCrInput(cr))) { setFormError(crFormatText(locale)); return }
-    // round-2 UX-021: a CR already used by another account no longer blocks the real owner: the account is
-    // created without it, and right after signing in he is taken to /verification/claim to upload the certificate.
-    const crClaim = !!(asksBusiness && cr && await checkCr(cr))
-    if (crClaim) rememberPostSignupNext(`/verification/claim?cr=${normalizeCrInput(cr)}`)
+    // owner 2026-11-23: one CR = one account. A CR held by another account blocks sign-up; the real owner
+    // contacts support, who opens an ownership claim (cr_claims) after checking.
+    if (asksBusiness && cr && await checkCr(cr)) { setFormError((locale === 'en' ? 'This commercial registration is registered to another account. If it is yours, contact support to prove ownership.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن کسی دوسرے اکاؤنٹ میں رجسٹرڈ ہے۔ اگر یہ آپ کی ہے تو ملکیت ثابت کرنے کے لیے سپورٹ سے رابطہ کریں۔' : 'هذا السجل التجاري مسجّل بحساب آخر. إن كان السجل لك، تواصل مع الدعم لإثبات ملكيته.')); return }
     if (phoneDup) { setFormError(t.phoneTaken); return }
     // check again at submit, whatever the format (owner 2026-11-21): never create an account on a taken number
     try { const { data: taken } = await supabase.rpc('phone_exists', { p_phone: data.phone }); if (taken === true) { setPhoneDup(true); setFormError(t.phoneTaken); return } } catch {}
@@ -263,8 +262,7 @@ export default function RegisterPage() {
         preferred_language: locale,
         ...(data.role === 'supplier' && !teamToken ? { seller_kind: sellerKind } : {}),
         ...(teamToken ? { team_invite: teamToken } : {}),
-        ...(asksBusiness && !crClaim && isUnifiedCr(normalizeCrInput(cr)) ? { commercial_registration: normalizeCrInput(cr) } : {}),
-        ...(crClaim ? { cr_claim: normalizeCrInput(cr) } : {}),
+        ...(asksBusiness && isUnifiedCr(normalizeCrInput(cr)) ? { commercial_registration: normalizeCrInput(cr) } : {}),
         terms_version: TERMS_VERSION, client: 'web',
       }
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -277,7 +275,7 @@ export default function RegisterPage() {
       // تأكيد البريد مفعّل → لا جلسة: نعرض شاشة «فعّل بريدك».
       if (!authData.session) { setSentTo({ email: data.email, password: data.password }); setEmailSent(true); return }
       // تأكيد البريد معطّل → لدينا جلسة: نوجّه مباشرة لإكمال الملف (عضو الفريق يعود إلى الدعوة).
-      window.location.href = teamToken ? `/team/join/${teamToken}` : crClaim ? `/verification/claim?cr=${normalizeCrInput(cr)}` : '/onboarding'
+      window.location.href = teamToken ? `/team/join/${teamToken}` : '/onboarding'
     } catch (err: any) {
       captchaRef.current?.reset(); setCaptchaToken('')
       const msg = err?.message || ''
@@ -296,9 +294,6 @@ export default function RegisterPage() {
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
           {sentTo && <p className="text-sm font-bold text-navy mb-2" dir="ltr">{sentTo.email}</p>}
-          {crTaken && !teamToken && (
-            <p className="text-[13px] font-semibold text-[#071827] bg-[#D4A543]/10 border border-[#D4A543]/40 rounded-lg p-2.5 mb-2">{locale === 'en' ? 'After signing in, upload your commercial registration certificate so the team can review it.' : locale === 'ur' ? 'سائن اِن کے بعد اپنا تجارتی رجسٹریشن سرٹیفکیٹ اپ لوڈ کریں تاکہ ٹیم جائزہ لے سکے۔' : 'بعد الدخول ارفع شهادة سجلك التجاري لتراجعها الإدارة.'}</p>
-          )}
           <p className="text-[13px] text-gray-600 mb-2">{teamToken ? (locale === 'en' ? 'After confirming, sign in and you will come back to the invitation to join.' : locale === 'ur' ? 'تصدیق کے بعد سائن اِن کریں، آپ شامل ہونے کے لیے دعوت پر واپس آئیں گے۔' : 'بعد التأكيد سجّل الدخول، وستعود إلى الدعوة لإتمام الانضمام.') : t.verifyNext}</p>
           <p className="text-[13px] text-gray-600 mb-6">{t.junk}</p>
           <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="flex items-center justify-center w-full min-h-[44px] py-3 rounded-xl font-extrabold text-[#071827] text-sm" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{t.goSignIn}</Link>
@@ -432,10 +427,10 @@ export default function RegisterPage() {
                 onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); if (crTaken) setCrTaken(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
               {crTaken && (
                 <div role="status" className="text-[#071827] text-[13px] bg-[#D4A543]/10 border border-[#D4A543]/50 rounded-lg p-2.5 mt-1">
-                  <p><Glyph e="⚠" /> {locale === 'en' ? 'This registration is used in another account. Complete the sign-up, and after signing in upload your registration certificate for the team to review.' : locale === 'ur' ? 'یہ رجسٹریشن کسی دوسرے اکاؤنٹ میں استعمال ہو رہی ہے۔ رجسٹریشن مکمل کریں، اور سائن اِن کے بعد اپنا سرٹیفکیٹ اپ لوڈ کریں تاکہ انتظامیہ جائزہ لے۔' : 'هذا السجل مستخدم في حساب آخر. أكمل التسجيل، وبعد الدخول ارفع شهادة سجلك لتراجعها الإدارة.'}</p>
+                  <p><Glyph e="⚠" /> {(locale === 'en' ? 'This commercial registration is registered to another account. If it is yours, contact support to prove ownership.' : locale === 'ur' ? 'یہ تجارتی رجسٹریشن کسی دوسرے اکاؤنٹ میں رجسٹرڈ ہے۔ اگر یہ آپ کی ہے تو ملکیت ثابت کرنے کے لیے سپورٹ سے رابطہ کریں۔' : 'هذا السجل التجاري مسجّل بحساب آخر. إن كان السجل لك، تواصل مع الدعم لإثبات ملكيته.')}</p>
                   <a href={`mailto:${OPERATOR.email}?subject=${encodeURIComponent(locale === 'en' ? 'Commercial registration already used' : 'سجل تجاري مستخدم')}`}
                     className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold underline text-[#8F6820]">
-                    {locale === 'en' ? 'Questions? Email support' : locale === 'ur' ? 'سوال؟ سپورٹ کو ای میل کریں' : 'لديك سؤال؟ راسل الدعم'}
+                    {locale === 'en' ? 'Contact support' : locale === 'ur' ? 'سپورٹ سے رابطہ کریں' : 'تواصل مع الدعم'}
                   </a>
                 </div>
               )}
