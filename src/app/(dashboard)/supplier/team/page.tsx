@@ -42,6 +42,9 @@ export default function SupplierTeamPage() {
     setLoading(false)
   }
   useEffect(() => { load() }, [])
+  const [newLabel, setNewLabel] = useState('')
+  const [labels, setLabels] = useState<Record<string, string>>({})
+  useEffect(() => { try { setLabels(JSON.parse(localStorage.getItem('tsk_invite_labels') || '{}') || {}) } catch {} }, [])
 
   const linkFor = (token: string) => `${typeof window !== 'undefined' ? window.location.origin : ''}/team/join/${token}`
 
@@ -49,7 +52,13 @@ export default function SupplierTeamPage() {
     setBusy('invite'); setMsg('')
     const { data, error } = await createClient().rpc('create_company_invite', { p_role: newRole })
     const j: any = error ? { ok: false } : (data || {})
-    if (j.ok) { setLastLink(linkFor(j.token)); await load() }
+    if (j.ok) {
+      setLastLink(linkFor(j.token))
+      // UX-146: a name for the invitation, kept on this device until company_invites.label exists
+      if (newLabel.trim()) { const m = { ...labels, [j.token]: newLabel.trim().slice(0, 60) }; setLabels(m); try { localStorage.setItem('tsk_invite_labels', JSON.stringify(m)) } catch {} }
+      setNewLabel('')
+      await load()
+    }
     else setMsg(j.error === 'too_many_invites'
       ? L('Too many open invitations. Revoke some first.', 'بہت زیادہ دعوتیں کھلی ہیں۔', 'لديك دعوات مفتوحة كثيرة. ألغِ بعضها أولاً.')
       : L('Could not create the link. Try again.', 'لنک نہیں بن سکا۔', 'تعذّر إنشاء الرابط. حاول مرة أخرى.'))
@@ -81,7 +90,7 @@ export default function SupplierTeamPage() {
   }
   const waShare = (link: string) => `https://wa.me/?text=${encodeURIComponent(
     L(`Join our team on Taseerak to price requests on behalf of ${team?.company_name || 'the company'}: ${link}`,
-      `تسعیرک پر ہماری ٹیم میں شامل ہوں: ${link}`,
+      `تسعیرک پر ${team?.company_name || 'کمپنی'} کی ٹیم میں شامل ہوں اور کمپنی کی جانب سے درخواستوں کی قیمت دیں: ${link}`,
       `انضم إلى فريق ${team?.company_name || 'الشركة'} في تسعيرك لتسعير الطلبات باسم الشركة: ${link}`))}`
 
   const roleLabel = (r: string) => r === 'admin' ? L('Admin', 'ایڈمن', 'مشرف') : L('Sales', 'سیلز', 'مبيعات')
@@ -95,9 +104,14 @@ export default function SupplierTeamPage() {
           <h1 className="text-2xl font-extrabold text-navy"><Glyph e="👥" /> {L('Team', 'ٹیم', 'فريق العمل')}{team?.company_name ? ` · ${team.company_name}` : ''}</h1>
           <p className="text-sm text-gray-500 mt-1 leading-relaxed">
             {L('Your sales staff sign in with their own accounts and price requests on behalf of the company. Every offer they send belongs to the company and shows who sent it.',
-              'آپ کا عملہ اپنے اکاؤنٹ سے کمپنی کی جانب سے قیمتیں دیتا ہے۔',
+              'آپ کا سیلز عملہ اپنے اکاؤنٹس سے سائن اِن کر کے کمپنی کی جانب سے درخواستوں کی قیمت دیتا ہے۔ ان کی بھیجی ہر آفر کمپنی کی ہوتی ہے اور اس پر بھیجنے والے کا نام دکھتا ہے۔',
               'يدخل موظفو المبيعات بحساباتهم الخاصة ويسعّرون الطلبات باسم الشركة. كل عرض يرسلونه يُسجَّل للشركة مع اسم من أرسله.')}
           </p>
+          {/* one clear list of what a member can do (the same on every supplier page) */}
+          <ul className="mt-2 text-[13px] text-gray-600 leading-relaxed list-disc ps-5 space-y-0.5">
+            <li>{L('A member can price requests, answer a discount request or a buyer question, edit an offer within 15 minutes, and hide a request for the whole company.', 'رکن درخواستوں کی قیمت دے سکتا ہے، رعایت کی درخواست یا خریدار کے سوال کا جواب دے سکتا ہے، 15 منٹ میں آفر میں ترمیم کر سکتا ہے، اور پوری کمپنی کے لیے درخواست چھپا سکتا ہے۔', 'يستطيع العضو تسعير الطلبات، والرد على طلب التخفيض وسؤال المشتري، وتعديل العرض خلال 15 دقيقة، وإخفاء الطلب عن الشركة كلها.')}</li>
+            <li>{L('Messages with buyers and managing a deal after the buyer chooses stay with the account owner.', 'خریداروں سے پیغامات اور انتخاب کے بعد سودے کا انتظام اکاؤنٹ کے مالک کے پاس رہتا ہے۔', 'تبقى المحادثات مع المشترين وإدارة الصفقة بعد الاختيار لدى مالك الحساب.')}</li>
+          </ul>
         </div>
 
         {loadFailed && <LoadError onRetry={() => { setLoading(true); load() }} />}
@@ -114,8 +128,9 @@ export default function SupplierTeamPage() {
         {team && team.can_manage && (
           <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
             <h2 className="font-bold text-navy">{L('Invite a team member', 'رکن کو مدعو کریں', 'دعوة عضو جديد')}</h2>
-            <p className="text-[13px] text-gray-600">{L('Each link works once and expires after 7 days. Send it to the employee on WhatsApp.', 'ہر لنک ایک بار اور 7 دن کے لیے۔', 'كل رابط يُستخدم مرة واحدة وينتهي بعد 7 أيام. أرسله إلى الموظف عبر واتساب.')}</p>
+            <p className="text-[13px] text-gray-600">{L('Each link works once and expires after 7 days. Send it to the employee on WhatsApp.', 'ہر لنک ایک بار استعمال ہوتا ہے اور 7 دن بعد ختم ہو جاتا ہے۔ اسے واٹس ایپ پر ملازم کو بھیجیں۔', 'كل رابط يُستخدم مرة واحدة وينتهي بعد 7 أيام. أرسله إلى الموظف عبر واتساب.')}</p>
             <div className="flex flex-wrap items-center gap-2">
+              <input value={newLabel} onChange={(e: any) => setNewLabel(e.target.value)} maxLength={60} className="input-field w-full sm:w-56" aria-label={L('Employee name (optional)', 'ملازم کا نام (اختیاری)', 'اسم الموظف (اختياري)')} placeholder={L('Employee name (optional)', 'ملازم کا نام (اختیاری)', 'اسم الموظف (اختياري)')} />
               <select value={newRole} onChange={e => setNewRole(e.target.value as any)} className="input-field w-auto" aria-label={L('Role', 'کردار', 'الدور')}>
                 <option value="member">{roleLabel('member')}: {L('prices requests', 'قیمتیں دیتا ہے', 'يسعّر الطلبات')}</option>
                 <option value="admin">{roleLabel('admin')}: {L('also invites members', 'اراکین بھی بلاتا ہے', 'يسعّر ويدعو أعضاء')}</option>
@@ -142,7 +157,7 @@ export default function SupplierTeamPage() {
                 <div className="space-y-1.5">
                   {team.invites.map((i: any) => (
                     <div key={i.id} className="flex items-center justify-between gap-2 text-[13px] rounded-lg border border-gray-100 px-3 py-1">
-                      <span className="text-gray-600">{roleLabel(i.role)} · {L('expires', 'ختم', 'ينتهي')} {new Date(i.expires_at).toLocaleDateString(locale === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : 'en-GB')}</span>
+                      <span className="text-gray-600">{labels[i.token] ? <b className="text-navy">{labels[i.token]} · </b> : null}{roleLabel(i.role)} · {L('expires', 'ختم ہوگا', 'ينتهي')} {new Date(i.expires_at).toLocaleDateString(locale === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : 'en-GB')}</span>
                       <span className="flex gap-2">
                         <button type="button" onClick={() => copy(linkFor(i.token))} className="min-h-[44px] px-2 font-bold text-navy">{copied === linkFor(i.token) ? L('Copied', 'کاپی ہو گیا', 'تم النسخ') : L('Copy', 'کاپی', 'نسخ')}</button>
                         <button type="button" onClick={() => revoke(i.id)} disabled={busy === i.id} className="min-h-[44px] px-2 font-bold text-red-600">{L('Revoke the link', 'لنک منسوخ کریں', 'إبطال الرابط')}</button>

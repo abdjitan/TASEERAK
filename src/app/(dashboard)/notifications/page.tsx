@@ -12,7 +12,8 @@ import LoadError from '@/components/shared/LoadError'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
 import AutoTr from '@/components/shared/AutoTr'
-import { notifGlyph } from '@/components/shared/NotificationBell'
+import { notifGlyph, safeNotifUrl, NOTIFS_READ_EVENT } from '@/components/shared/NotificationBell'
+import { realtimeTopic } from '@/lib/realtimeTopic'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 
 // صفحة الإشعارات الكاملة — كانت متاحة فقط عبر قائمة الجرس المنسدلة.
@@ -25,6 +26,7 @@ export default function NotificationsPage() {
   const [notifs, setNotifs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
+  const [uid, setUid] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoadFailed(false)
@@ -33,6 +35,7 @@ export default function NotificationsPage() {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
+      setUid(session.user.id)
       const ck = 'notifs_' + session.user.id // last list at once (page cache), refreshed below
       const snap = readPageCache(ck)
       if (snap) { setRole(snap.role); setNotifs(snap.list || []); setLoading(false); shown = true } else setLoading(true)
@@ -42,7 +45,9 @@ export default function NotificationsPage() {
       if (error) throw error
       setNotifs(data || [])
       writePageCache(ck, { role: p?.role || 'contractor', list: data || [] })
-      await supabase.from('notifications').update({ is_read: true }).eq('user_id', session.user.id).eq('is_read', false)
+      const { error: readErr } = await supabase.from('notifications').update({ is_read: true }).eq('user_id', session.user.id).eq('is_read', false)
+      // the bell's badge clears as well (UX-056)
+      if (!readErr) window.dispatchEvent(new Event(NOTIFS_READ_EVENT))
     } catch (e) {
       console.error('[notifications] load failed:', e)
       if (!shown) setLoadFailed(true)
@@ -52,11 +57,30 @@ export default function NotificationsPage() {
   }, [])
   useEffect(() => { load() }, [load])
 
+  // new notifications appear here at once (per-user filtered subscription, UX-056); they stay
+  // highlighted as unread on screen and are marked read in the database, like the rest of the page
+  useEffect(() => {
+    if (!uid) return
+    const supabase = createClient()
+    const channel = supabase
+      .channel(realtimeTopic(`notifs-page-${uid}`))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${uid}` }, (payload: any) => {
+        const n = payload.new
+        if (!n?.id) return
+        setNotifs(prev => (prev.some(x => x.id === n.id) ? prev : [n, ...prev]))
+        supabase.from('notifications').update({ is_read: true }).eq('id', n.id).then(({ error }) => {
+          if (!error) window.dispatchEvent(new Event(NOTIFS_READ_EVENT))
+        })
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [uid])
+
   if (loading) return <PageLoader />
 
   const go = (n: any) => {
-    const url = n.data?.url
-    if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//') && !url.includes('\\')) router.push(url)
+    const url = safeNotifUrl(n.data?.url)
+    if (url) router.push(url)
   }
 
   const groups: { b: DayBucket; list: any[] }[] = []
@@ -88,9 +112,9 @@ export default function NotificationsPage() {
                 <div className="space-y-2">
                   {g.list.map((n: any) => (
                     <button key={n.id} onClick={() => go(n)}
-                      className={`w-full text-start rounded-2xl p-4 border transition-colors ${n.data?.url ? 'hover:border-[#D4A543]/40 cursor-pointer' : 'cursor-default'} ${n.is_read ? 'bg-white border-gray-100' : 'bg-[#D4A543]/5 border-[#D4A543]/30'}`}>
+                      className={`w-full text-start rounded-2xl p-4 min-h-[56px] border transition-colors ${n.data?.url ? 'hover:border-[#D4A543]/40 cursor-pointer' : 'cursor-default'} ${n.is_read ? 'bg-white border-gray-100' : 'bg-[#D4A543]/5 border-[#D4A543]/30'}`}>
                       <div className="flex items-start gap-3">
-                        <span aria-hidden="true" className="w-9 h-9 shrink-0 rounded-full grid place-items-center bg-[#0B2438]/5 text-[#0B2438]"><Glyph e={notifGlyph(n.type)} /></span>
+                        <span aria-hidden="true" className="w-9 h-9 shrink-0 rounded-full grid place-items-center bg-[#0B2438]/5 text-[#0B2438]"><Glyph e={notifGlyph(n.type, n.data, n.title)} /></span>
                         <div className="min-w-0 flex-1">
                           <div className="font-bold text-sm" style={{ color: '#0B2438' }}><AutoTr text={noEmoji(n.title)} locale={locale} /></div>
                           {n.body && <div className="text-sm text-gray-600 mt-0.5"><AutoTr text={noEmoji(n.body)} locale={locale} /></div>}

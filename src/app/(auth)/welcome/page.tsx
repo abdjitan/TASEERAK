@@ -7,6 +7,7 @@ import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { SELLER_KINDS, rememberedSignupKind, type SellerKind } from '@/lib/sellers'
 import SellerIcon from '@/components/shared/SellerIcon'
 import { Check } from 'lucide-react'
+import PageLoader from '@/components/shared/PageLoader'
 
 // After the first WhatsApp OTP: "Do you need prices or provide them?", and for a provider
 // "independent or company?", plus a name. Everything else (location, categories, company
@@ -56,7 +57,8 @@ export default function WelcomePage() {
     window.location.href = '/onboarding'
   }
 
-  if (!ready) return <div className="min-h-screen" style={{ background: 'var(--bg)' }} />
+  // the branded loader instead of an empty page while the account is read (UX-135)
+  if (!ready) return <PageLoader />
 
   return (
     <div className="min-h-screen flex flex-col" dir={dir} style={{ background: 'var(--bg)' }}>
@@ -69,7 +71,7 @@ export default function WelcomePage() {
         <div className="w-full max-w-[460px] space-y-6 animate-slide-up">
           <div>
             <h1 className="text-[26px] font-bold text-navy">{L('Welcome to Taseerak', 'تسعیرک میں خوش آمدید', 'أهلاً بك في تسعيرك')}</h1>
-            <p className="text-ink-2 text-sm mt-1">{L('Two quick answers and you are in.', 'دو جواب اور آپ اندر ہیں۔', 'إجابتان سريعتان وتبدأ.')}</p>
+            <p className="text-ink-2 text-sm mt-1">{L('A few short steps and you are in.', 'چند مختصر قدم اور آپ شروع کر سکتے ہیں۔', 'خطوات قليلة وتبدأ.')}</p>
           </div>
 
           {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl p-3" role="alert">{error}</div>}

@@ -97,10 +97,17 @@ function Support() {
         style={{ background: 'linear-gradient(120deg,#071827,#0B2438)' }}>
         <div className="min-w-0">
           <div className="font-bold flex items-center gap-2"><MessageCircle className="w-5 h-5 text-[#F5C55B]" aria-hidden />{L('Message the Taseerak team on WhatsApp', 'تسعیرک ٹیم کو واٹس ایپ پر پیغام بھیجیں', 'راسل فريق تسعيرك على واتساب')}</div>
-          <div className="text-[13px] text-[#C7CED6] mt-0.5">{L('The official Taseerak number', 'تسعیرک کا سرکاری نمبر', 'الرقم الرسمي لتسعيرك')}: <span dir="ltr">+1 213 561 4366</span></div>
+          <div className="text-[13px] text-[#C7CED6] mt-0.5">{L('Taseerak’s official WhatsApp number (an international business number)', 'تسعیرک کا سرکاری واٹس ایپ نمبر (بین الاقوامی کاروباری نمبر)', 'رقم واتساب تسعيرك الرسمي (رقم أعمال دولي)')}: <span dir="ltr">+1 213 561 4366</span></div>
         </div>
         <span className="shrink-0 min-h-[44px] inline-flex items-center px-4 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>{L('Open', 'کھولیں', 'فتح')}</span>
       </a>
+
+      {/* the rules behind the platform, one tap away (UX-160) */}
+      <nav aria-label={L('Policies', 'پالیسیاں', 'السياسات')} className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <a href="/terms" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Terms of use', 'شرائط استعمال', 'شروط الاستخدام')}</a>
+        <a href="/privacy" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Privacy policy', 'رازداری کی پالیسی', 'سياسة الخصوصية')}</a>
+        <a href="/deal-protection" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('How we protect your deal', 'ہم آپ کے سودے کی حفاظت کیسے کرتے ہیں', 'كيف نحمي صفقتك')}</a>
+      </nav>
 
       {showConversion && (
         <div className="rounded-2xl border border-[#D4A543]/40 bg-white p-4">

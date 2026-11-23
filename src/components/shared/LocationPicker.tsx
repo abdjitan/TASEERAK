@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Check, LocateFixed } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Check, LocateFixed, Minus, Plus, MapPin } from 'lucide-react'
 import Glyph from '@/components/shared/Glyph'
 
 interface LocationPickerProps {
@@ -26,6 +26,8 @@ const txt = {
     invalidLink: 'لم نجد إحداثيات في هذا الرابط. افتح الموقع في خرائط Google ثم انسخ الرابط من شريط العنوان.',
     shortLink: 'هذا رابط مختصر. افتحه في المتصفح، ثم انسخ الرابط الكامل من شريط العنوان والصقه هنا.',
     more: 'خيارات أخرى', resolving: 'جارٍ قراءة الرابط...',
+    drag: 'اسحب الخريطة حتى يقع الدبوس على مكان التسليم بالضبط', accuracy: (m: number) => `الدقة: نحو ${m} م. تأكّد من موضع الدبوس.`,
+    zoomIn: 'تكبير', zoomOut: 'تصغير',
   },
   en: {
     title: 'Location', detect: 'Use my current location', detecting: 'Finding your location...',
@@ -37,6 +39,8 @@ const txt = {
     invalidLink: 'No coordinates found in this link. Open the place in Google Maps and copy the link from the address bar.',
     shortLink: 'This is a short link. Open it in the browser, then copy the full link from the address bar and paste it here.',
     more: 'More options', resolving: 'Reading the link...',
+    drag: 'Drag the map until the pin sits exactly on the delivery spot', accuracy: (m: number) => `Accuracy: about ${m} m. Check where the pin is.`,
+    zoomIn: 'Zoom in', zoomOut: 'Zoom out',
   },
   ur: {
     title: 'مقام', detect: 'میرا موجودہ مقام استعمال کریں', detecting: 'مقام تلاش ہو رہا ہے...',
@@ -48,6 +52,8 @@ const txt = {
     invalidLink: 'اس لنک میں مقام نہیں ملا۔ Google Maps میں جگہ کھول کر ایڈریس بار سے لنک کاپی کریں۔',
     shortLink: 'یہ مختصر لنک ہے۔ اسے براؤزر میں کھولیں اور ایڈریس بار سے پورا لنک کاپی کریں۔',
     more: 'مزید اختیارات', resolving: 'لنک پڑھا جا رہا ہے...',
+    drag: 'نقشہ کھینچیں یہاں تک کہ پن بالکل ڈیلیوری کی جگہ پر ہو', accuracy: (m: number) => `درستگی: تقریباً ${m} میٹر۔ پن کی جگہ چیک کریں۔`,
+    zoomIn: 'بڑا کریں', zoomOut: 'چھوٹا کریں',
   },
 }
 
@@ -57,6 +63,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
   const [error, setError] = useState('')
   const [mapLink, setMapLink] = useState('')
   const [resolving, setResolving] = useState(false)
+  const [accuracy, setAccuracy] = useState<number | null>(null) // indoor GPS can be far off: say so (round-2 UX-045)
 
   function detectLocation() {
     setError('')
@@ -64,6 +71,8 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
     setDetecting(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const acc = Math.round(pos.coords.accuracy || 0)
+        setAccuracy(acc > 50 ? acc : null)
         onChange(
           parseFloat(pos.coords.latitude.toFixed(7)),
           parseFloat(pos.coords.longitude.toFixed(7))
@@ -95,7 +104,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
       const m = link.match(p)
       if (m) {
         onChange(parseFloat(parseFloat(m[1]).toFixed(7)), parseFloat(parseFloat(m[2]).toFixed(7)))
-        setMapLink('')
+        setMapLink(''); setAccuracy(null)
         return
       }
     }
@@ -107,7 +116,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
         const j: any = await res.json().catch(() => null)
         if (res.ok && typeof j?.lat === 'number' && typeof j?.lng === 'number') {
           onChange(j.lat, j.lng)
-          setMapLink('')
+          setMapLink(''); setAccuracy(null)
           return
         }
       } catch { /* fall through to the explanation */ } finally { setResolving(false) }
@@ -126,8 +135,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
         <input id="loc-map-link" value={mapLink} onChange={e => setMapLink(e.target.value)}
           className="input-field text-[16px] sm:text-sm flex-1 min-w-0" placeholder="https://maps.google.com/..." dir="ltr" />
         <button type="button" onClick={extractFromLink} disabled={!mapLink || resolving} aria-busy={resolving}
-          className="px-4 min-h-[44px] rounded-xl text-sm font-bold text-[#071827] disabled:opacity-40 transition-all shrink-0"
-          style={{ background: '#D4A543' }}>
+          className="px-4 min-h-[44px] rounded-xl text-sm font-bold text-[#0B2438] bg-white border-2 border-[#0B2438]/40 disabled:opacity-40 transition-all shrink-0">
           {resolving ? T.resolving : T.extract}
         </button>
       </div>
@@ -155,7 +163,7 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
       {/* أو لصق رابط */}
       {simple ? (
         <details className="rounded-xl border border-gray-200 px-3 py-2">
-          <summary className="cursor-pointer min-h-[36px] flex items-center text-sm font-bold text-[#0B2438]">{T.more}</summary>
+          <summary className="cursor-pointer min-h-[44px] flex items-center text-sm font-bold text-[#0B2438]">{T.more}</summary>
           <div className="pt-2">{linkBox}</div>
         </details>
       ) : linkBox}
@@ -172,19 +180,86 @@ export default function LocationPicker({ lat, lng, onChange, locale = 'ar', simp
               {T.openGoogle}
             </a>
           </div>
-          {/* خريطة OpenStreetMap مجانية بدون API key */}
-          <div className="rounded-lg overflow-hidden border border-gray-200">
-            <iframe title={T.viewMap}
-              width="100%" height="200" frameBorder="0" style={{ border: 0 }}
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.005}%2C${lat - 0.005}%2C${lng + 0.005}%2C${lat + 0.005}&layer=mapnik&marker=${lat}%2C${lng}`}
-            />
-          </div>
+          {accuracy != null && <p className="mb-2 rounded-lg border border-[#D4A543] bg-[#D4A543]/10 px-2 py-1.5 text-[13px] font-bold text-[#0B2438]" role="status">{T.accuracy(accuracy)}</p>}
+          {/* a map the buyer can drag under a fixed pin (OpenStreetMap tiles, no script or key, round-2 UX-045) */}
+          <PinMap lat={lat!} lng={lng!} label={T.viewMap} zoomIn={T.zoomIn} zoomOut={T.zoomOut}
+            onMove={(a, b) => { setAccuracy(null); onChange(a, b) }} />
+          <p className="text-[12px] text-gray-600 mt-1.5">{T.drag}</p>
         </div>
       ) : (
         <div className="bg-gray-50 rounded-xl p-4 text-center text-gray-500 text-sm border border-dashed border-gray-200">
           <Glyph e="📍" /> {T.noLocation}
         </div>
       )}
+    </div>
+  )
+}
+
+// ── A small slippy map with a fixed centre pin: the buyer drags the map (mouse or finger) until the pin sits
+// on the delivery spot; on release the new centre is the location. OpenStreetMap tiles as plain images.
+const TILE = 256
+const project = (lat: number, lng: number, z: number) => {
+  const s = TILE * Math.pow(2, z)
+  const r = (Math.max(-85, Math.min(85, lat)) * Math.PI) / 180
+  return { x: ((lng + 180) / 360) * s, y: ((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * s }
+}
+const unproject = (x: number, y: number, z: number) => {
+  const s = TILE * Math.pow(2, z)
+  const lng = (x / s) * 360 - 180
+  const lat = (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / s))) * 180) / Math.PI
+  return { lat: parseFloat(lat.toFixed(7)), lng: parseFloat(lng.toFixed(7)) }
+}
+
+function PinMap({ lat, lng, onMove, label, zoomIn, zoomOut }: { lat: number; lng: number; onMove: (lat: number, lng: number) => void; label: string; zoomIn: string; zoomOut: string }) {
+  const H = 220
+  const box = useRef<HTMLDivElement>(null)
+  const [w, setW] = useState(320)
+  const [z, setZ] = useState(17)
+  const [off, setOff] = useState({ dx: 0, dy: 0 })
+  const drag = useRef<{ x: number; y: number; id: number } | null>(null)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const upd = () => setW(el.clientWidth || 320)
+    upd()
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(upd) : null
+    ro?.observe(el)
+    return () => ro?.disconnect()
+  }, [])
+  const c = project(lat, lng, z)
+  const cx = c.x - off.dx, cy = c.y - off.dy
+  const n = Math.pow(2, z)
+  const tiles: { k: string; src: string; left: number; top: number }[] = []
+  for (let tx = Math.floor((cx - w / 2) / TILE); tx <= Math.floor((cx + w / 2) / TILE); tx++) {
+    for (let ty = Math.floor((cy - H / 2) / TILE); ty <= Math.floor((cy + H / 2) / TILE); ty++) {
+      if (ty < 0 || ty >= n) continue
+      const wx = ((tx % n) + n) % n
+      tiles.push({ k: `${z}/${tx}/${ty}`, src: `https://tile.openstreetmap.org/${z}/${wx}/${ty}.png`, left: tx * TILE - cx + w / 2, top: ty * TILE - cy + H / 2 })
+    }
+  }
+  const end = () => {
+    if (!drag.current) return
+    drag.current = null
+    if (Math.abs(off.dx) + Math.abs(off.dy) > 2) { const p = unproject(cx, cy, z); onMove(p.lat, p.lng) }
+    setOff({ dx: 0, dy: 0 })
+  }
+  return (
+    <div className="relative rounded-lg overflow-hidden border border-gray-200 bg-[#e8eef3] select-none" dir="ltr">
+      <div ref={box} role="application" aria-label={label} className="relative w-full cursor-grab active:cursor-grabbing" style={{ height: H, touchAction: 'none' }}
+        onPointerDown={e => { drag.current = { x: e.clientX + off.dx, y: e.clientY + off.dy, id: e.pointerId }; (e.target as Element).setPointerCapture?.(e.pointerId) }}
+        onPointerMove={e => { if (drag.current) setOff({ dx: drag.current.x - e.clientX, dy: drag.current.y - e.clientY }) }}
+        onPointerUp={end} onPointerCancel={end}>
+        {tiles.map(t => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={t.k} src={t.src} alt="" draggable={false} className="absolute max-w-none pointer-events-none" style={{ left: t.left, top: t.top, width: TILE, height: TILE }} />
+        ))}
+        <MapPin className="absolute w-9 h-9 text-[#0B2438] fill-[#D4A543] pointer-events-none drop-shadow" style={{ left: w / 2 - 18, top: H / 2 - 34 }} aria-hidden />
+      </div>
+      <div className="absolute top-2 right-2 flex flex-col gap-1">
+        <button type="button" onClick={() => setZ(v => Math.min(19, v + 1))} aria-label={zoomIn} className="w-[44px] h-[44px] grid place-items-center rounded-lg bg-white shadow text-[#0B2438]"><Plus className="w-4 h-4" aria-hidden /></button>
+        <button type="button" onClick={() => setZ(v => Math.max(10, v - 1))} aria-label={zoomOut} className="w-[44px] h-[44px] grid place-items-center rounded-lg bg-white shadow text-[#0B2438]"><Minus className="w-4 h-4" aria-hidden /></button>
+      </div>
+      <span className="absolute bottom-0 left-0 bg-white/80 px-1 text-[12px] text-gray-700">© OpenStreetMap</span>
     </div>
   )
 }

@@ -98,7 +98,7 @@ export const SOURCE_TYPES: { k: string; icon: string; direct: boolean; ar: strin
   { k: 'own_stock', icon: 'box', direct: true, ar: 'من مخزوني', en: 'From my stock', ur: 'میرے اسٹاک سے' },
   { k: 'direct_supplier', icon: 'factory', direct: false, ar: 'من مصنع أو مورد', en: 'From a factory or supplier', ur: 'فیکٹری یا سپلائر سے' },
   { k: 'shop', icon: 'store', direct: false, ar: 'من محل في السوق', en: 'From a shop in the market', ur: 'مارکیٹ کی دکان سے' },
-  { k: 'intermediary', icon: 'handshake', direct: false, ar: 'عن طريق وسيط', en: 'Through an intermediary', ur: 'ایک بروکر کے ذریعے' },
+  { k: 'intermediary', icon: 'handshake', direct: false, ar: 'عن طريق جهة أخرى', en: 'Through another party', ur: 'کسی اور فریق کے ذریعے' },
 ]
 // Older values that may exist on offers.
 const LEGACY_SOURCE: Record<string, T3> = {
@@ -158,3 +158,48 @@ export const VERIFY_INFO: Record<VerifyLevel, T3 & { icon: string; tone: 'green'
 export function verifyLabel(p: any, locale: Locale): string {
   return pick(VERIFY_INFO[verifyLevel(p)], locale)
 }
+
+// ── Offer state for the supplier (one rule for the site and the app) ──────────────────────────
+/** The buyer is waiting on the supplier: an open discount request, or a question with no answer yet.
+ *  (round-2 UX-009: an answered question no longer counts; needs offers.info_response in the query.) */
+export function offerNeedsSupplier(o: any, now: number = Date.now()): boolean {
+  if (!o || o.status !== 'pending') return false
+  const discountOpen = !!o.reduction_deadline && new Date(o.reduction_deadline).getTime() > now
+  const openQuestion = !!String(o.info_request || '').trim() && !String(o.info_response || '').trim()
+  return discountOpen || openQuestion
+}
+export function offerHasOpenDiscount(o: any, now: number = Date.now()): boolean {
+  return !!o && o.status === 'pending' && !!o.reduction_deadline && new Date(o.reduction_deadline).getTime() > now
+}
+export function offerHasOpenQuestion(o: any): boolean {
+  return !!o && o.status === 'pending' && !!String(o.info_request || '').trim() && !String(o.info_response || '').trim()
+}
+
+/** What happened to an offer, from the offer AND its request (round-2 UX-010): a cancelled or expired
+ *  request is not a loss, and is left out of the win rate. */
+export type OfferOutcome = 'won' | 'lost' | 'cancelled' | 'expired' | 'pending'
+export function offerOutcome(offerStatus: string | null | undefined, rfqStatus: string | null | undefined): OfferOutcome {
+  if (offerStatus === 'accepted') return 'won'
+  if (rfqStatus === 'cancelled') return 'cancelled'
+  if (rfqStatus === 'expired') return 'expired'
+  if (offerStatus === 'rejected') return 'lost'
+  return 'pending'
+}
+/** Short label for badges and filters. */
+export const OUTCOME_LABEL: Record<OfferOutcome, T3> = {
+  won: { ar: 'اختيرت', en: 'Chosen', ur: 'منتخب' },
+  pending: { ar: 'بانتظار قرار المشتري', en: 'Waiting for the buyer', ur: 'خریدار کے فیصلے کی منتظر' },
+  lost: { ar: 'لم تُختر', en: 'Not chosen', ur: 'منتخب نہیں ہوئی' },
+  cancelled: { ar: 'ألغى المشتري الطلب', en: 'Request cancelled', ur: 'درخواست منسوخ' },
+  expired: { ar: 'انتهت المهلة', en: 'Request expired', ur: 'مہلت ختم' },
+}
+/** The full sentence on the offer page. */
+export const OUTCOME_TITLE: Record<OfferOutcome, T3> = {
+  won: { ar: 'تهانينا، اختار المشتري عرضك', en: 'Congratulations, the buyer chose your offer', ur: 'مبارک ہو، خریدار نے آپ کی آفر چن لی' },
+  pending: { ar: 'عرضك بانتظار قرار المشتري', en: 'Your offer is waiting for the buyer', ur: 'آپ کی آفر خریدار کے فیصلے کی منتظر ہے' },
+  lost: { ar: 'انتهى التسعير، واختار المشتري عرضاً آخر', en: 'Pricing closed: the buyer chose another offer', ur: 'قیمتیں بند: خریدار نے دوسری آفر چن لی' },
+  cancelled: { ar: 'ألغى المشتري الطلب، ولم يُختر أي عرض', en: 'The buyer cancelled the request; no offer was chosen', ur: 'خریدار نے درخواست منسوخ کر دی؛ کوئی آفر منتخب نہیں ہوئی' },
+  expired: { ar: 'انتهت مهلة الطلب دون اختيار أي عرض', en: 'The request ended without any offer being chosen', ur: 'درخواست کی مہلت کسی آفر کے انتخاب کے بغیر ختم ہو گئی' },
+}
+export function outcomeLabel(k: OfferOutcome, locale: Locale): string { return pick(OUTCOME_LABEL[k], locale) }
+export function outcomeTitle(k: OfferOutcome, locale: Locale): string { return pick(OUTCOME_TITLE[k], locale) }

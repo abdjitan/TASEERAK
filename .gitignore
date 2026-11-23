@@ -32,3 +32,6 @@ scripts/migrate/.copied.json
 # temporary env pulls (never commit)
 .env.vercel.tmp
 .env*.tmp
+
+# local AI tool configs (may hold keys)
+.codex/

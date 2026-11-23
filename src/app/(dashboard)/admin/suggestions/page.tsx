@@ -57,6 +57,26 @@ export default function AdminSuggestionsPage() {
     setRows(prev => prev.map(x => x.id === r.id ? { ...x, status, admin_note: note } : x))
   }
 
+  async function sendReply(r: any) {
+    const note = (notes[r.id] ?? '').trim()
+    if (!note) return
+    setBusy(r.id); setErr('')
+    const { error } = await createClient().from('suggestions').update({ admin_note: note }).eq('id', r.id)
+    setBusy('')
+    if (error) { setErr('تعذّر إرسال الرد، حاول مرة أخرى.'); return }
+    setRows(prev => prev.map(x => x.id === r.id ? { ...x, admin_note: note } : x))
+    setNotes(n => { const m = { ...n }; delete m[r.id]; return m })
+  }
+
+  // «أضِف إلى الكتالوج» really adds the product (materials, admin policy), then marks the line added (UX-129)
+  async function addGapToCatalog(g: any) {
+    setErr('')
+    if (!g.sector) { setErr('لا يمكن الإضافة دون قطاع: أضِفها من «طلبات المواد» في لوحة الإدارة.'); return }
+    const { error } = await createClient().from('materials').insert({ sector: g.sector, sub_category: g.sub_category || null, name: String(g.product_name || '').trim() })
+    if (error && !/duplicate|unique/i.test(error.message || '')) { setErr('تعذّرت الإضافة إلى الكتالوج: ' + error.message); return }
+    await setGap(g.id, 'added')
+  }
+
   // «انشر للتصويت»: everyone sees the text (never the author) and can vote on it
   async function togglePublic(r: any) {
     setBusy(r.id); setErr('')
@@ -99,8 +119,8 @@ export default function AdminSuggestionsPage() {
                 </div>
                 <div className="flex gap-2 shrink-0">
                   {g.status === 'new' ? (<>
-                    <button type="button" onClick={() => setGap(g.id, 'added')} className="px-3 py-1.5 rounded-xl text-xs font-bold text-white" style={{ background: '#0F6E56' }}>أُضيفت للكتالوج</button>
-                    <button type="button" onClick={() => setGap(g.id, 'ignored')} className="px-3 py-1.5 rounded-xl text-xs font-bold border border-gray-200 text-gray-600">تجاهل</button>
+                    <button type="button" onClick={() => addGapToCatalog(g)} className="min-h-[44px] px-3 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>أضِف إلى الكتالوج</button>
+                    <button type="button" onClick={() => setGap(g.id, 'ignored')} className="min-h-[44px] px-3 rounded-xl text-sm font-bold border border-gray-200 text-gray-600">تجاهل</button>
                   </>) : <span className="text-xs font-bold text-gray-500">{g.status === 'added' ? 'أُضيفت' : 'متجاهلة'}</span>}
                 </div>
               </div>
@@ -125,18 +145,20 @@ export default function AdminSuggestionsPage() {
             <div key={r.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-2">
               <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
                 <span className="font-bold text-gray-600">{k.ar} · {p ? (p.company_name_ar || p.full_name || '—') : '—'} ({p?.role === 'supplier' ? 'مورد' : 'مشتري'}) · {formatDateTime(r.created_at)}</span>
-                <span className="flex items-center gap-2">{r.is_public && <span className="font-bold text-[#0F6E56]">▲ {votes[r.id] || 0} صوت</span>}<span className="font-bold px-2 py-0.5 rounded-full" style={{ color: st.tone, background: st.tone + '14' }}>{st.ar}</span></span>
+                <span className="flex items-center gap-2">{r.is_public && <span className="font-bold text-[#0B2438]">{votes[r.id] || 0} صوت</span>}<span className="font-bold px-2 py-0.5 rounded-full" style={{ color: st.tone, background: st.tone + '14' }}>{st.ar}</span></span>
               </div>
               <p className="text-sm text-gray-800 whitespace-pre-line">{r.body}</p>
               <textarea value={notes[r.id] ?? r.admin_note ?? ''} onChange={(e: any) => setNotes(n => ({ ...n, [r.id]: e.target.value }))} rows={2} maxLength={1000}
-                className="input-field text-sm" placeholder="رد يظهر لصاحب الاقتراح (اختياري)" />
+                className="input-field text-sm" placeholder="رد يظهر لصاحب الاقتراح (اختياري)" aria-label="الرد على الاقتراح" />
               <div className="flex flex-wrap gap-2">
+                <button type="button" disabled={busy === r.id || !(notes[r.id] ?? '').trim()} onClick={() => sendReply(r)}
+                  className="min-h-[44px] px-3 rounded-xl text-sm font-bold text-white bg-[#0B2438] disabled:opacity-40">إرسال الرد</button>
                 {[['planned', 'قيد التنفيذ'], ['done', 'تمّ التنفيذ'], ['declined', 'لن يُنفّذ']].map(([s, l]) => (
                   <button key={s} type="button" disabled={busy === r.id || r.status === s} onClick={() => setStatus(r, s)}
                     className="px-3 py-1.5 rounded-xl text-xs font-bold border border-gray-200 hover:border-[#0B2438] disabled:opacity-40">{l}</button>
                 ))}
                 <button type="button" disabled={busy === r.id} onClick={() => togglePublic(r)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${r.is_public ? 'border-[#0F6E56] text-[#0F6E56]' : 'border-gray-200'} disabled:opacity-40`}>{r.is_public ? 'منشور للتصويت ✓ (إخفاء)' : 'انشر للتصويت'}</button>
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${r.is_public ? 'border-[#0F6E56] text-[#0F6E56]' : 'border-gray-200'} disabled:opacity-40`}>{r.is_public ? 'منشور للتصويت (إخفاء)' : 'انشر للتصويت'}</button>
               </div>
             </div>
           )

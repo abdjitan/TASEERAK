@@ -7,7 +7,7 @@ import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import { formatDateTime } from '@/lib/deadline'
-import { Lightbulb } from 'lucide-react'
+import { Lightbulb, ChevronUp } from 'lucide-react'
 import { SUGGESTION_KINDS, SUGGESTION_STATUS } from '@/lib/suggestions'
 // «اقتراحاتك» (owner 2026-10-19): buyers and suppliers suggest features, missing materials or
 // report problems; they see the status the admin sets (migration 169).
@@ -83,6 +83,7 @@ export default function SuggestionsPage() {
                 className={`min-h-[44px] rounded-xl border-2 text-sm font-bold ${kind === k.k ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#0B2438]' : 'border-gray-200 bg-white text-gray-700'}`}>{pick(k)}</button>
             ))}
           </div>
+          <label htmlFor="suggestion-body" className="sr-only">{L('Your suggestion', 'آپ کی تجویز', 'اقتراحك')}</label>
           <textarea id="suggestion-body" value={body} onChange={(e: any) => setBody(e.target.value)} maxLength={2000} rows={5} className="input-field"
             placeholder={kind === 'material' ? L('Which material, and how is it usually sold (unit, sizes)?', 'کون سی مواد، اور کیسے بکتی ہے؟', 'ما المادة، وكيف تُباع عادةً (الوحدة، المقاسات)؟') : L('Write your suggestion…', 'اپنی تجویز لکھیں…', 'اكتب اقتراحك…')} />
           {msg && <p role={msg.ok ? 'status' : 'alert'} className={`text-sm font-semibold ${msg.ok ? 'text-emerald-700' : 'text-red-600'}`}>{msg.text}</p>}
@@ -101,11 +102,11 @@ export default function SuggestionsPage() {
                   <button type="button" onClick={() => vote(b.id)} disabled={voting === b.id} aria-pressed={!!b.my_vote}
                     aria-label={b.my_vote ? L('Remove my vote', 'ووٹ واپس لیں', 'ألغِ صوتي') : L('Vote', 'ووٹ دیں', 'صوّت')}
                     className={`shrink-0 w-14 min-h-[44px] rounded-xl border-2 py-1.5 text-center transition-colors disabled:opacity-50 ${b.my_vote ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#0B2438]' : 'border-gray-200 text-[#0B2438] hover:border-[#D4A543]'}`}>
-                    <div className="text-sm leading-none">▲</div>
+                    <ChevronUp className="w-4 h-4 mx-auto" strokeWidth={2.6} aria-hidden />
                     <div className="text-base font-extrabold leading-tight">{b.votes}</div>
                   </button>
                   <div className="min-w-0 flex-1">
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ color: st.tone, background: st.tone + '14' }}>{pick(st)}</span>
+                    <span className="text-[12px] font-bold px-2 py-0.5 rounded-full" style={{ color: st.tone, background: st.tone + '14' }}>{pick(st)}</span>
                     <p className="text-sm text-gray-700 mt-1.5 whitespace-pre-line">{b.body}</p>
                     {b.admin_note && <p className="text-xs mt-1.5 text-gray-500"><b style={{ color: '#0B2438' }}>{L('Taseerak team:', 'تسعیرک ٹیم:', 'فريق تسعيرك:')}</b> {b.admin_note}</p>}
                   </div>

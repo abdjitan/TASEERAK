@@ -80,7 +80,7 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
 
       {kind === 'company' && (
         <div>
-          <p className="text-xs font-bold text-gray-600 mb-1.5">{L('Main activity', 'بنیادی سرگرمی', 'النشاط الرئيسي')}</p>
+          <p className="text-xs font-bold text-gray-600 mb-1.5">{L('What is your main activity? *', 'آپ کی بنیادی سرگرمی کیا ہے؟ *', 'ما نشاطك الرئيسي؟ *')}</p>
           <div className="flex flex-wrap gap-2">
             {COMPANY_ACTIVITIES.map(a => {
               const on = ptype === a.k
@@ -99,11 +99,12 @@ export default function SellerKindPicker({ providerType, supplierTier, locale, o
         <div>
           {L('How buyers see you:', 'خریدار آپ کو اس طرح دیکھتے ہیں:', 'تظهر للمشترين ضمن:')} <b className="text-navy">{tierLabel(tier, locale)}</b>
         </div>
+        {/* round-2 UX-076: a shop never reaches the «companies & factories» tier, so it is promised the badge only */}
         {kind === 'company' && tier !== 'company' && (
           <div className="mt-1 text-gray-500">
-            {L('Verify your commercial registration to appear under "Verified companies & factories".',
-              'تصدیق شدہ کمپنیوں میں آنے کے لیے اپنا سی آر تصدیق کریں۔',
-              'وثّق سجلك التجاري لتظهر ضمن «شركات ومصانع معتمدة».')}
+            {ptype === 'retail_shop'
+              ? L('Verify your commercial registration so your offers carry the «Verified» badge.', 'اپنی تجارتی رجسٹریشن کی تصدیق کریں تاکہ آپ کی آفرز پر «تصدیق شدہ» بیج آئے۔', 'وثّق سجلك التجاري لتحمل عروضك شارة «موثّق».')
+              : L('Verify your commercial registration to appear under "Verified companies & factories".', 'تصدیق شدہ کمپنیوں اور فیکٹریوں میں آنے کے لیے اپنی تجارتی رجسٹریشن کی تصدیق کریں۔', 'وثّق سجلك التجاري لتظهر ضمن «شركات ومصانع معتمدة».')}
           </div>
         )}
         {kind === 'independent' && (

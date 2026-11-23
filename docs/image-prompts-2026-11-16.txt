@@ -1,0 +1,28 @@
+صور الكتالوج — الدفعة الثالثة (2026-11-16)
+31 مادة جديدة: خلاط شطاف + 30 نوع إنارة. 8 صور، كل صورة فيها 4 مواد (شبكة 2×2).
+الطريقة: انسخ الرسالة كاملة من السطر «I will ask you…» حتى آخر الملف، والصقها في ChatGPT. بعد كل صورة اكتب «التالي».
+احفظ كل صورة باسم رقمها (مثلاً set-01.png) وأرسلها لي، وأنا أقصّها وأربطها بالمواد.
+
+------------------------------------------------------------------------------------------
+
+I will ask you for catalog images one at a time. Below is a numbered list of 8 image sets (#1 to #8). When I write a number (like 3) or the word «التالي» (next), create ONLY that one image and nothing else, then wait.
+
+Rules for EVERY image: ONE square image, 1024×1024, divided into a 2×2 grid of four equal squares (no lines, no borders, no gaps drawn). TL = top-left, TR = top-right, BL = bottom-left, BR = bottom-right. Each square shows ONE product as a clean studio catalog photo: centered in its square, filling about 60% of the square, on the same plain light grey-white seamless background, soft natural shadow, realistic materials, sharp focus. Keep each product fully inside its own square with empty space around it. No text, no letters, no numbers, no labels, no logos, no brand colours, no watermark, no people, no boxes or packaging unless the description says so. Electrical plugs and sockets are the Saudi/UK BS1363 type. If a square is marked (empty square), leave it as plain background.
+
+Start now with #1.
+
+#1 — TL: A chrome bidet shower mixer valve (wall-mounted single-lever mixer) with a handheld bidet spray (shattaf) on a short flexible steel hose and a small wall holder | TR: A slim white integrated LED batten light fixture, about 120 cm long, with a frosted diffuser, lying diagonally | BL: An empty twin T8 fluorescent tube fixture: a long white metal channel with two pairs of lamp holders and no tubes | BR: A thin white T5 linear LED light bar, about 90 cm, with a short connector cable, used under kitchen cabinets
+
+#2 — TL: A black 48-volt magnetic track rail segment with two small black adjustable magnetic spotlights attached | TR: A round white adjustable COB recessed spotlight for gypsum ceilings, tilted slightly to show the deep reflector | BL: A long linear LED high bay warehouse light: an aluminium body with a long opal diffuser and two hanging chains | BR: An LED emergency kit: a small grey metal driver box connected by wires to a slim battery pack
+
+#3 — TL: A square flat white cleanroom / hospital LED ceiling panel with a sealed smooth frame, seen at a slight angle | TR: A heavy cast-aluminium explosion-proof light fixture with a thick glass dome protected by a metal guard cage | BL: A slim brass picture light (artwork light) with a horizontal arm and a long shade, as mounted above a painting | BR: A dark grey cylindrical outdoor bollard light, knee height, with a louvred top, standing upright
+
+#4 — TL: A round stainless-steel in-ground uplight with a flush glass top, shown at an angle so the body below ground is visible | TR: A small black garden spike spotlight with an adjustable head on a ground stake | BL: A long black linear wall washer light bar for building facades, with a mounting bracket and short cable | BR: A grey aluminium LED street light head (the luminaire only, no pole), seen from below at an angle
+
+#5 — TL: A square flat white LED canopy light for fuel stations and car parks, slim, seen at an angle | TR: A small grey twist-lock photocell sensor (dusk-to-dawn switch) with a clear dome on top | BL: Decorative Ramadan and Eid lights: a coiled string of small warm white bulbs and a short curtain of light strands, unlit, neatly arranged | BR: A red aviation obstruction light for towers: a compact red dome lamp on a metal base
+
+#6 — TL: A standard white LED light bulb with an E27 screw base | TR: A clear candle-shaped LED bulb with an E14 small screw base | BL: Two LED spot bulbs side by side: one GU10 with twist pins and one MR16 with two thin pins | BR: A small rectangular 12-volt electronic transformer for halogen and LED spotlights, with short input and output wires
+
+#7 — TL: A white rechargeable LED emergency bulb with an E27 base and a small hook on top | TR: A white LED bulb with a built-in motion sensor (a small round sensor window on the side), E27 base | BL: A linear double-ended halogen R7s floodlight lamp: a clear quartz tube with metal caps at both ends | BR: Two lamp holders (bulb sockets) side by side: one E27 and one smaller E14, white ceramic with screw terminals
+
+#8 — TL: A traditional white fluorescent T8 tube, about 120 cm, with two-pin ends, lying diagonally | TR: A fluorescent lamp starter (small cylinder) next to a rectangular ballast (choke) with screw terminals | BL: A complete 120 cm LED neon fixture: a slim white batten body with the LED tube already installed | BR: (empty square)

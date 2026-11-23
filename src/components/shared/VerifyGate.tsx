@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import PhoneVerify from '@/components/shared/PhoneVerify'
 import EmailVerify from '@/components/shared/EmailVerify'
+import { notify } from '@/lib/askConfirm'
 
 type Ensure = () => Promise<boolean>
 const Ctx = createContext<Ensure>(async () => true)
@@ -52,6 +53,8 @@ export default function VerifyGateProvider({ children }: { children: React.React
     setOpen(false)
     const r = resolver.current; resolver.current = null
     r?.(ok)
+    // closing without verifying never cancels silently: say what is still needed (UX-102)
+    if (!ok) notify(L('The action is not finished yet: verify your contact details to continue.', 'عمل ابھی مکمل نہیں ہوا: جاری رکھنے کے لیے اپنی رابطہ تفصیلات تصدیق کریں۔', 'لم يكتمل الإجراء بعد؛ وثّق بيانات التواصل للمتابعة.'), { tone: 'info' })
   }
 
   async function refresh() {
@@ -77,8 +80,9 @@ export default function VerifyGateProvider({ children }: { children: React.React
     <Ctx.Provider value={ensure}>
       {children}
       {open && p && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-[#071827]/60 p-0 sm:p-4" onClick={() => finish(false)}>
-          <div dir={dir} role="dialog" aria-modal="true" aria-labelledby="vg-title" onClick={e => e.stopPropagation()}
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-[#071827]/60 p-0 sm:p-4">
+          {/* a tap on the backdrop no longer closes the sheet (it cancelled the action silently, UX-102) */}
+          <div dir={dir} role="dialog" aria-modal="true" aria-labelledby="vg-title"
             className="w-full sm:max-w-lg max-h-[92vh] overflow-y-auto bg-white rounded-t-3xl sm:rounded-3xl p-5 space-y-4 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div>

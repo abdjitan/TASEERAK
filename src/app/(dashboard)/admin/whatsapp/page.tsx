@@ -5,11 +5,14 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import AppShell from '@/components/shared/AppShell'
+import PageLoader from '@/components/shared/PageLoader'
+import { getNav } from '@/lib/nav'
 
 const DAY = 24 * 3600 * 1000
 
 export default function AdminWhatsAppPage() {
-  return <Suspense fallback={null}><Inbox /></Suspense>
+  return <Suspense fallback={<PageLoader />}><Inbox /></Suspense>
 }
 
 function Inbox() {
@@ -54,7 +57,8 @@ function Inbox() {
 
   const current = contacts.find((c) => c.phone === phone)
   return (
-    <div dir="rtl" className="p-4 sm:p-6">
+    <AppShell title="واتساب الدعم" nav={getNav('admin', 'ar', '/admin/whatsapp')} dir="rtl">
+    <div dir="rtl">
       <h1 className="text-2xl font-extrabold text-[#071827] mb-1">واتساب الدعم</h1>
       <p className="text-sm text-gray-500 mb-4">الرسائل الواصلة إلى رقم تسعيرك (+1 213 561 4366). يمكن الرد الحر خلال 24 ساعة من آخر رسالة للعميل.</p>
       <div className="grid md:grid-cols-[280px_1fr] gap-4">
@@ -111,5 +115,6 @@ function Inbox() {
         </div>
       </div>
     </div>
+    </AppShell>
   )
 }

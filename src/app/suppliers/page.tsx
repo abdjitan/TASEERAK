@@ -1,18 +1,16 @@
 import type { Metadata } from 'next'
 import { FEATURES } from '@/lib/features'
-import Link from 'next/link'
 import { createPublicClient } from '@/lib/supabase/server'
 import { supplierScore } from '@/lib/supplierScore'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
-import SuppliersDirectory from './SuppliersDirectory'
-import Glyph from '@/components/shared/Glyph'
+import SuppliersPublic from './SuppliersPublic'
 
 export const dynamic = 'force-dynamic' // عرض وقت الطلب — يتفادى إنشاء عميل Supabase وقت البناء (build-safe)
 
 export const metadata: Metadata = {
   title: 'أفضل موردي مواد البناء في السعودية | تسعيرك',
-  description: 'لوحة شرف الموردين على منصة تسعيرك — موردون موثّقون لمواد البناء مرتّبون حسب التقييم والموثوقية والصفقات المنجزة في جميع مناطق المملكة.',
+  description: 'لوحة شرف الموردين على منصة تسعيرك: موردون لمواد البناء مرتّبون حسب التوثيق والتقييم ودرجة الموثوقية في جميع مناطق المملكة.',
   alternates: { canonical: '/suppliers' },
   // «قريباً» while the price board is off: keep the placeholder out of search results
   ...(FEATURES.priceBoard ? {} : { robots: { index: false, follow: true } }),
@@ -20,16 +18,18 @@ export const metadata: Metadata = {
 
 export default async function SuppliersLeaderboard() {
   // جلب غير قاتل: حالة فارغة بدل كسر البناء إذا تعذّر الاتصال
+  // The directory of businesses that never joined (gathered from public maps) is not shown while the
+  // price board is off (UX-022): no consent from them yet, and it inflated the supplier count.
   let rows: any[] = []
   let listings: any[] = []
   try {
     const supabase = createPublicClient()
-    const [{ data: lb }, { data: dl }] = await Promise.all([
+    const [{ data: lb }, dl] = await Promise.all([
       supabase.rpc('get_supplier_leaderboard'),
-      supabase.rpc('get_directory_listings'),
+      FEATURES.priceBoard ? supabase.rpc('get_directory_listings') : Promise.resolve({ data: [] as any[] }),
     ])
     rows = Array.isArray(lb) ? lb : []
-    listings = Array.isArray(dl) ? dl : []
+    listings = Array.isArray(dl?.data) ? dl.data.filter((l: any) => !l.opted_out) : []
   } catch { rows = []; listings = [] }
 
   // احسب درجة كل مورد ثم رتّب تنازلياً
@@ -40,70 +40,10 @@ export default async function SuppliersLeaderboard() {
     return { ...r, score: supplierScore({ verification_status: r.verification_status, rating_avg: r.rating_avg }, stats) }
   }).sort((a: any, b: any) => b.score - a.score)
 
-  const verifiedCount = ranked.filter((r: any) => r.verification_status === 'verified').length
-
   return (
-    <div className="min-h-screen bg-[#f7f8fa]" dir="rtl">
+    <div className="min-h-screen bg-[#f7f8fa]">
       <PublicHeader active="suppliers" />
-
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* الترويسة */}
-        <div className="text-center mb-8">
-          <h1 className="text-2xl sm:text-3xl font-extrabold mb-2" style={{ color: '#0B2438' }}><Glyph e="🏆" /> لوحة شرف الموردين</h1>
-          <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed">
-            موردون لمواد البناء على منصة تسعيرك، مرتّبون حسب التوثيق والتقييم والصفقات المنجزة. كل مورد يحصل على «درجة موثوقية» من ١٠٠.
-          </p>
-          {(ranked.length > 0 || listings.length > 0) && (
-            <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-500">
-              <span><Glyph e="👥" /> {ranked.length + listings.length} مورد</span>
-              {verifiedCount > 0 && <span><Glyph e="✅" /> {verifiedCount} موثّق</span>}
-            </div>
-          )}
-        </div>
-
-        {ranked.length === 0 && listings.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <div className="text-4xl mb-3"><Glyph e="🏗" /></div>
-            <p className="font-bold text-gray-700 mb-1">قريباً</p>
-            <p className="text-sm text-gray-600">سيظهر هنا الموردون الأعلى تقييماً بمجرد بدء الصفقات على المنصّة.</p>
-            <Link href="/register?role=supplier" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>سجّل كمورّد</Link>
-          </div>
-        ) : (
-          <>
-            {ranked.length > 0 && <SuppliersDirectory suppliers={ranked} />}
-            {listings.length > 0 && (
-              <section className="mt-8">
-                <h2 className="text-sm font-bold mb-1" style={{ color: '#0B2438' }}>موردون في دليلنا</h2>
-                <p className="text-[12px] text-gray-600 mb-3 leading-relaxed">
-                  موردون معروفون في السوق لم يسجّلوا بعد. هل أحدها نشاطك؟{' '}
-                  <Link href="/register?role=supplier" className="underline font-semibold" style={{ color: '#8F6820' }}>سجّله مجاناً</Link>{' '}
-                  لاستقبال طلبات التسعير.
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {listings.map((l: any) => (
-                    <div key={l.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-bold text-sm text-gray-800 truncate">{l.name}</div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap text-[12px] text-gray-500">
-                          {l.category && <span className="badge badge-gray text-[12px]">{l.category}</span>}
-                          {l.region && <span><Glyph e="📍" /> {l.region}{l.city ? ` · ${l.city}` : ''}</span>}
-                          {l.google_rating != null && <span><Glyph e="⭐" /> {l.google_rating}{l.google_reviews ? ` (${l.google_reviews})` : ''}</span>}
-                        </div>
-                      </div>
-                      <span className="text-[12px] font-semibold text-gray-600 whitespace-nowrap border border-gray-200 rounded-lg px-2 py-1">لم ينضمّ بعد</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-          </>
-        )}
-
-        <p className="text-center text-[12px] text-gray-600 mt-8 leading-relaxed">
-          الدرجة تُحسب من: التوثيق عبر واثق + التقييم + نسبة الفوز بالعروض + النشاط. تتحدّث تلقائياً.
-        </p>
-      </main>
-
+      <SuppliersPublic ranked={ranked} listings={listings} />
       <PublicFooter />
     </div>
   )

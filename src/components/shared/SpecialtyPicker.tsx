@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { SECTOR_LABELS, SUB_CATEGORIES, GROUP_LABELS, SECTOR_PRODUCTS, sortGroupKeys, detectSubCategory, hydrateTaxonomy } from '@/types'
 import CatIcon from './CatIcon'
+import Glyph from './Glyph'
 import { Check, ChevronDown } from 'lucide-react'
 import { productImageUrl, specialtyImageUrl, groupImageUrl } from '@/lib/productImage'
 
@@ -148,7 +149,7 @@ export default function SpecialtyPicker({
                                     el.style.display = 'none'; const s = el.nextElementSibling as HTMLElement | null; if (s) s.style.display = 'block'
                                   }}
                                   className="w-full object-contain rounded-lg bg-white" style={{ height: 54 }} />
-                                <span className="text-3xl leading-none" style={{ display: 'none' }}>{sub.icon}</span>
+                                <span className="text-3xl leading-none text-[#8F6820]" style={{ display: 'none' }}><Glyph e={sub.icon} /></span>
                                 <span className="leading-tight flex items-center gap-1 justify-center">{active && <Check className="w-3.5 h-3.5 shrink-0" strokeWidth={2.5} aria-hidden="true" />}{subLabel}</span>
                               </button>
                             )

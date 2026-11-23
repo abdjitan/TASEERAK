@@ -34,8 +34,7 @@ a { text-decoration: none; }
 .input-field:focus { border-color: var(--ts-gold-500); box-shadow: var(--ts-focus-ring); }
 .btn-orange, .btn-primary { color: var(--ts-navy-950); font-weight: 800; }
 .btn-orange:hover, .btn-primary:hover { color: var(--ts-navy-950); }
-.bg-orange.text-[#071827], .bg-orange-dark.text-[#071827], [style*="background: '#D4A543'"].text-[#071827],
-[style*="background: '#D4A543'"] .text-[#071827], [class*="bg-[#D4A543]"].text-[#071827] { color: #050B12 !important; }
+.bg-orange.text-[#071827], .bg-orange-dark.text-[#071827], [class*="bg-[#D4A543]"].text-[#071827] { color: #050B12 !important; }
 .text-orange { color: #8F6820; }
 .auth-brand-panel .text-orange, .ts-dashboard aside .text-orange { color: #F5C55B !important; }
 .card { border-radius: 18px; border-color: #D9E0E8; box-shadow: 0 6px 22px rgba(7,24,39,.045); }
@@ -148,15 +147,7 @@ a { text-decoration: none; }
 .public-document-content .text-red-800 { color: #6F2E2B; }
 
 /* Workspace shell and dense operational screens stay calm; only the brand moments use imagery. */
-.ts-dashboard {
-  color: #10243B;
-  background-color: #F2F4F6;
-  background-image:
-    radial-gradient(ellipse at 78% -12%, rgba(212,165,67,.14), transparent 34%),
-    radial-gradient(ellipse at 0% 30%, rgba(11,36,56,.045), transparent 28%),
-    linear-gradient(180deg, #F6F7F8 0%, #EFF2F4 100%);
-  background-attachment: fixed;
-}
+.ts-dashboard { color: #10243B; background-attachment: fixed; }
 .ts-dashboard-sidebar {
   isolation: isolate;
   overflow: hidden;
@@ -298,12 +289,13 @@ a { text-decoration: none; }
   color: #10243B;
   background-color: rgba(255,255,255,.96);
 }
-.ts-dashboard main input:focus, .ts-dashboard main select:focus, .ts-dashboard main textarea:focus {
+.ts-dashboard main input:not([type="checkbox"]):not([type="radio"]):focus, .ts-dashboard main select:focus, .ts-dashboard main textarea:focus {
   outline: none;
   border-color: var(--ts-navy-850);
   box-shadow: var(--ts-focus-ring);
 }
 .ts-dashboard main input[type="checkbox"], .ts-dashboard main input[type="radio"] { accent-color: var(--ts-gold-500); }
+input[type="checkbox"]:focus-visible, input[type="radio"]:focus-visible { outline: 2px solid var(--ts-navy-850) !important; outline-offset: 2px; box-shadow: 0 0 0 5px rgba(212,165,67,.45) !important; }
 .ts-dashboard main thead { background: #F5F7FA; }
 .ts-dashboard .text-gray-400 { color: #5B6B7C !important; }
 .public-page .text-gray-400, .register-screen .text-gray-400 { color: #667085 !important; }
@@ -318,9 +310,7 @@ a { text-decoration: none; }
 .ts-dashboard .btn-orange, .ts-dashboard .btn-primary {
   box-shadow: 0 9px 22px rgba(157,116,37,.22), inset 0 1px rgba(255,255,255,.22);
 }
-.ts-mobile-nav { box-shadow: 0 -8px 24px rgba(7,24,39,.08); }
 .ts-mobile-nav-link { transition: color .16s ease, background .16s ease; }
-.ts-mobile-nav-link.is-active { color: #0B2438 !important; }
 .ts-mobile-nav-link.is-active::after {
   content: "";
   position: absolute;
@@ -337,7 +327,7 @@ a { text-decoration: none; }
 
 @media (max-width: 640px) {
   .ts-dashboard-topbar > div { padding-block: 10px; }
-  .ts-dashboard-topbar h1 { font-size: 15px; }
+  .ts-dashboard-topbar h1, .ts-dashboard-topbar .ts-topbar-title { font-size: 15px; }
   .ts-dashboard-greeting { padding: 20px 19px; border-radius: 18px; }
   .ts-dashboard main .bg-white.rounded-2xl { border-radius: 17px; }
 }
@@ -403,13 +393,6 @@ a { text-decoration: none; }
 }
 
 /* High-contrast workspace polish shared by every signed-in route. */
-.ts-dashboard {
-  background-color: #E5E8EB;
-  background-image:
-    radial-gradient(ellipse at 78% -14%, rgba(245,197,91,.22), transparent 30%),
-    radial-gradient(ellipse at 4% 48%, rgba(24,91,124,.09), transparent 33%),
-    linear-gradient(135deg, #EEF0F0 0%, #E5E8EB 52%, #E9E7E1 100%);
-}
 .ts-dashboard-topbar {
   position: sticky;
   overflow: visible; /* the notifications dropdown hangs below the bar (was clipped) */
@@ -429,7 +412,7 @@ a { text-decoration: none; }
   pointer-events: none;
   background: linear-gradient(90deg, transparent, rgba(245,197,91,.85), rgba(255,255,255,.14), transparent);
 }
-.ts-dashboard-topbar h1 { color: #fff !important; text-shadow: 0 2px 14px rgba(0,0,0,.22); }
+.ts-dashboard-topbar h1, .ts-dashboard-topbar .ts-topbar-title { color: #fff !important; text-shadow: 0 2px 14px rgba(0,0,0,.22); }
 .ts-dashboard-topbar p { color: rgba(232,237,242,.75) !important; }
 .ts-dashboard-topbar button:not(.btn-orange) { color: #F2F5F7 !important; }
 .ts-dashboard-topbar button:not(.btn-orange):hover { background: rgba(255,255,255,.1) !important; }
@@ -467,7 +450,7 @@ a { text-decoration: none; }
 .ts-dashboard main textarea {
   box-shadow: inset 0 1px 2px rgba(7,24,39,.045), 0 1px rgba(255,255,255,.88);
 }
-.ts-dashboard main input:focus,
+.ts-dashboard main input:not([type="checkbox"]):not([type="radio"]):focus,
 .ts-dashboard main select:focus,
 .ts-dashboard main textarea:focus {
   box-shadow: 0 0 0 4px rgba(212,165,67,.16), 0 6px 18px rgba(7,24,39,.08) !important;
@@ -574,7 +557,7 @@ a { text-decoration: none; }
 .ts-category-card:nth-child(2) { --ts-category-accent: #3982B8; --ts-category-wash: #E1F2FC; }
 .ts-category-card:nth-child(3) { --ts-category-accent: #C86C59; --ts-category-wash: #FCEAE4; }
 .ts-category-card:nth-child(4) { --ts-category-accent: #168E91; --ts-category-wash: #DDF5F1; }
-.ts-category-card:nth-child(5) { --ts-category-accent: #7862B8; --ts-category-wash: #EEE8FC; }
+.ts-category-card:nth-child(5) { --ts-category-accent: #9D7425; --ts-category-wash: #FBF3E1; }
 .ts-category-card:nth-child(6) { --ts-category-accent: #37835D; --ts-category-wash: #E1F2E6; }
 .ts-category-icon {
   width: 46px;
@@ -595,7 +578,7 @@ a { text-decoration: none; }
   .ts-dashboard .ts-marketplace-hero { min-height: 0; background-position: 55% center; }
   .ts-dashboard .ts-marketplace-hero::before { background: linear-gradient(90deg, rgba(5,11,18,.88), rgba(7,24,39,.66)); }
   .ts-dashboard .ts-marketplace-search { background: #fff; }
-  .ts-mobile-nav-link { font-size: 11.5px; }
+  .ts-mobile-nav-link { font-size: 12px; }
 }
 
 /* A welcoming buyer workspace for home shoppers and project teams. */
@@ -630,6 +613,18 @@ a { text-decoration: none; }
 .ts-dashboard-topbar .ts-lang-menu button { color: #0B2438 !important; }
 .ts-dashboard-topbar .ts-lang-menu button[aria-pressed="true"] { background: rgba(212,165,67,.14) !important; color: #071827 !important; }
 .ts-dashboard-topbar .ts-lang-menu button:hover { background: #F5F7FA !important; }
+/* the notifications dropdown (and any dialog opened from the bar) opens on white: dark text (UX-018) */
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) { background: #fff !important; border-color: #D9E0E8 !important; color: #0B2438; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) button:not(.btn-orange) { color: #0B2438 !important; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) button:not(.btn-orange):hover { background: #F5F7FA !important; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) button[class*="text-[#8F6820]"] { color: #8F6820 !important; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) .text-gray-800 { color: #10243B !important; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) :is(.text-gray-700, .text-gray-600) { color: #34485B !important; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) .text-gray-500 { color: #526579 !important; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) .bg-white { background: #fff !important; border-color: #D9E0E8 !important; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) .bg-gray-100 { background: #F0F2F2 !important; border-color: #D9E0E8 !important; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) a:not(.btn-orange):not([class*="bg-"]) { color: #0B2438; }
+.ts-dashboard-topbar :is(.ts-notif-panel, [role="dialog"]) p { color: #526579 !important; }
 .ts-dashboard-main { padding-inline: clamp(18px, 2.6vw, 42px); }
 .ts-dashboard .ts-dashboard-greeting {
   color: #10243B;
@@ -842,7 +837,7 @@ a { text-decoration: none; }
 .ts-dashboard main table tbody tr { transition: background-color .15s ease; }
 .ts-dashboard main table tbody tr:hover { background-color: rgba(212,165,67,.065); }
 .ts-dashboard main input::placeholder, .ts-dashboard main textarea::placeholder { color: #8894A0; }
-.ts-dashboard main label { color: #34485B; font-weight: 700; }
+.ts-dashboard main label:not([class*="text-"]) { color: #34485B; font-weight: 700; }
 .ts-dashboard-main .text-gray-400 { color: #5B6B7C !important; }
 .ts-dashboard .ts-sidebar-link { border-radius: 13px; }
 .ts-dashboard .ts-sidebar-link.is-active { box-shadow: inset 0 1px rgba(255,255,255,.08), 0 7px 18px rgba(0,0,0,.12) !important; }

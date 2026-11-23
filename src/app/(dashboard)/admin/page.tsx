@@ -15,6 +15,9 @@ import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { countryAr, outsideSaudi } from '@/lib/countries'
+import { getNav } from '@/lib/nav'
+import { FEATURES } from '@/lib/features'
+import { askConfirm } from '@/lib/askConfirm'
 
 // Free official checks for the manual CR review (no scraping: the admin opens them himself).
 // ZATCA's public VAT-registration check searches by VAT number OR the unified CR number (700…).
@@ -53,6 +56,10 @@ export default function AdminPanel() {
   const [pwValue, setPwValue] = useState('')
   const [pwConfirm, setPwConfirm] = useState('')
   const [pwMsg, setPwMsg] = useState('')
+  // dispute resolution: a required text with a preview of what both parties receive (UX-127)
+  const [dispModal, setDispModal] = useState<any>(null) // { id, text }
+  // ?filter=stuck (from the owner dashboard «متأخرة» tile): only late deals, same rule as admin_overview (UX-128)
+  const [dealFilter, setDealFilter] = useState('')
 
   useEffect(() => {
     async function init() {
@@ -67,6 +74,7 @@ export default function AdminPanel() {
       setUser(session.user)
       const qTab = new URLSearchParams(window.location.search).get('tab')
       if (qTab) setTab(qTab)
+      setDealFilter(new URLSearchParams(window.location.search).get('filter') || '')
       const qq = new URLSearchParams(window.location.search).get('q')
       if (qq) setSearch(qq)
       await loadData(supabase)
@@ -189,10 +197,13 @@ export default function AdminPanel() {
       })
       if (error) { setMsg('تعذّر الاعتماد — حاول مجدداً'); setTimeout(() => setMsg(''), 3000); setActionLoading(''); return }
     } else {
-      await supabase.from('material_requests').update({ status, reviewed_at: new Date().toISOString(), admin_note: edits?.note || null }).eq('id', reqId)
+      const reason = String(edits?.note || '').trim()
+      if (!reason) { setMsg('تعذّر الرفض: اكتب سبب الرفض، فهو يصل إلى مقدّم الطلب.'); setTimeout(() => setMsg(''), 5000); setActionLoading(''); return }
+      const { error } = await supabase.rpc('admin_reject_material_request', { p_id: reqId, p_reason: reason })
+      if (error) { setMsg('تعذّر الرفض: ' + (error.message || 'خطأ')); setTimeout(() => setMsg(''), 8000); setActionLoading(''); return }
     }
     setMatEdit(null)
-    setMsg(`✓ تم ${status === 'approved' ? 'قبول وإضافة' : 'رفض'} المادة`)
+    setMsg(`✓ تم ${status === 'approved' ? 'قبول المادة وإضافتها' : 'رفض المادة وإبلاغ مقدّم الطلب'}`)
     setTimeout(() => setMsg(''), 3000)
     await loadData()
     setActionLoading('')
@@ -280,13 +291,14 @@ export default function AdminPanel() {
     URL.revokeObjectURL(a.href)
   }
 
-  async function resolveDispute(offerId: string) {
-    const resolution = prompt('ملخص حل النزاع (يظهر للطرفين ويصلهما إشعار):')
-    if (resolution === null) return
+  async function resolveDispute(offerId: string, text: string) {
+    const resolution = text.trim()
+    if (!resolution) return
+    setDispModal(null)
     setActionLoading('disp-' + offerId)
     const supabase = createClient()
     // عبر RPC خاصّ بالإدارة: يوثّق الحل ويُشعِر الطرفين (إشعار داخلي + web-push).
-    const { error } = await supabase.rpc('admin_resolve_dispute', { p_offer_id: offerId, p_resolution: resolution || '' })
+    const { error } = await supabase.rpc('admin_resolve_dispute', { p_offer_id: offerId, p_resolution: resolution })
     setMsg(error ? ('تعذّر حل النزاع: ' + (error.message || 'خطأ')) : '✓ تم حل النزاع وإشعار الطرفين')
     setTimeout(() => setMsg(''), 3000)
     await loadData()
@@ -307,7 +319,7 @@ export default function AdminPanel() {
     const note = prompt(decision === 'approved'
       ? 'سيُنقل السجل إلى صاحب الطلب ويعود صاحبه الحالي إلى «قيد المراجعة». ملاحظة (اختيارية):'
       : 'سبب الرفض (يظهر لصاحب الطلب، اختياري):')
-    if (note === null) return
+    if (note === null) return // «إلغاء» cancels the whole action (UX-127)
     setActionLoading('claim-' + id)
     const supabase = createClient()
     const { error } = await supabase.rpc('admin_resolve_cr_claim', { p_claim_id: id, p_decision: decision, p_note: note || null })
@@ -330,7 +342,12 @@ export default function AdminPanel() {
   }
 
   async function reviewChangeReq(id: string, approve: boolean) {
-    const note = approve ? '' : (prompt('سبب الرفض (يظهر للمستخدم، اختياري):') ?? '')
+    let note = ''
+    if (!approve) {
+      const v = prompt('سبب الرفض (يظهر للمستخدم، اختياري):')
+      if (v === null) return // «إلغاء» no longer rejects anyway (UX-127)
+      note = v
+    }
     setActionLoading('pcr-' + id)
     const supabase = createClient()
     const { data, error } = await supabase.rpc('review_profile_change', { p_id: id, p_approve: approve, p_note: note || null })
@@ -428,7 +445,9 @@ export default function AdminPanel() {
   const topSectors = countBy(rfqs, 'sector').slice(0, 6)
   const tierBreakdown = countBy(users.filter((u: any) => u.role === 'supplier'), 'supplier_tier')
   const offersPerRfq = rfqs.length ? (offers.length / rfqs.length).toFixed(1) : '0'
-  const dealsList = offers.filter((o: any) => o.status === 'accepted')
+  const isStuck = (o: any) => !o.received_at && o.dispute_status !== 'open' && !!o.accepted_at
+    && new Date(o.accepted_at).getTime() + (Math.max(Number(o.delivery_days) || 3, 1) + 3) * 86400000 < Date.now()
+  const dealsList = offers.filter((o: any) => o.status === 'accepted' && (dealFilter !== 'stuck' || isStuck(o)))
   const acceptedOffers = dealsList.length
 
   const rfqSearch = (r: any) => {
@@ -452,11 +471,12 @@ export default function AdminPanel() {
     return true
   })
 
-  const adminNav = [
-    { href: '/admin', label: 'لوحة الإدارة', icon: <Glyph e="🛡" />, active: true },
-    { href: '/admin/overview', label: 'لوحة المالك', icon: <Glyph e="📊" /> },
-    { href: '/admin/discover', label: 'اكتشاف موردين', icon: <Glyph e="🔍" /> },
-  ]
+  // the full admin menu, the same as every other admin page (UX-127)
+  const adminNav = getNav('admin', 'ar', '/admin')
+  // errors read as errors (red), not as green success (UX-127)
+  const msgIsErr = /تعذّر|تعذر|خطأ|فشل/.test(msg)
+  const suspendedUntil = (u: any) => (u?.banned_until && new Date(u.banned_until).getTime() > Date.now() ? u.banned_until : null)
+  const userIdByCr = (cr: any) => (cr ? users.find((x: any) => x.commercial_registration === cr)?.id : null)
 
   return (
     <AppShell title="لوحة الإدارة" userId={user?.id} nav={adminNav} onSignOut={handleSignOut} dir="rtl">
@@ -483,7 +503,7 @@ export default function AdminPanel() {
           {[
             { label: 'إجمالي المستخدمين', value: stats.total, icon: <Glyph e="👥" />, bg: '#0B2438', go: () => { setTab('all'); setRoleFilter('') } },
             { label: 'مشترون', value: stats.contractors, icon: <Glyph e="👷" />, bg: '#102E45', go: () => { setTab('all'); setRoleFilter('contractor') } },
-            { label: 'موردون', value: stats.suppliers, icon: <Glyph e="🏪" />, bg: '#7c3aed', go: () => { setTab('all'); setRoleFilter('supplier') } },
+            { label: 'موردون', value: stats.suppliers, icon: <Glyph e="🏪" />, bg: '#9D7425', go: () => { setTab('all'); setRoleFilter('supplier') } },
             { label: 'قيد المراجعة', value: stats.pending, icon: <Glyph e="⏳" />, bg: '#D4A543', go: () => { setTab('pending'); setRoleFilter('') } },
             { label: 'موثقون', value: stats.verified, icon: <Glyph e="✅" />, bg: '#0F6E56', go: () => { setTab('verified'); setRoleFilter('') } },
           ].map(({ label, value, icon, bg, go }) => (
@@ -502,12 +522,12 @@ export default function AdminPanel() {
         </div>
 
         {msg && (
-          <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl p-3 animate-fade-in">{msg}</div>
+          <div role={msgIsErr ? 'alert' : 'status'} className={`mb-4 text-sm rounded-xl p-3 animate-fade-in border ${msgIsErr ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>{msg}</div>
         )}
 
         {/* Search + Tabs */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-5">
-          <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 mb-5">
+          <div className="flex gap-2 overflow-x-auto sm:flex-wrap pb-1 -mx-1 px-1">
             {[
               { key: 'analytics', label: 'الإحصائيات' },
               { key: 'pending', label: `قيد المراجعة (${stats.pending})` },
@@ -524,19 +544,20 @@ export default function AdminPanel() {
               { key: 'materials', label: `طلبات المواد (${materialReqs.filter((r: any) => r.status === 'pending').length})` },
             ].map((t: any) => (
               <button key={t.key} onClick={() => { setTab(t.key); setRoleFilter('') }}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${tab === t.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
+                aria-pressed={tab === t.key}
+                className={`shrink-0 whitespace-nowrap px-4 min-h-[44px] rounded-xl text-sm font-semibold transition-all ${tab === t.key ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'}`}
                 style={tab === t.key ? { background: '#0B2438' } : {}}>
                 {t.label}
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Link href="/admin/discover" className="text-xs px-3 py-2 rounded-xl font-semibold text-white whitespace-nowrap transition-all hover:shadow-md" style={{ background: '#0F6E56' }}><Glyph e="🔎" /> اكتشاف موردين</Link>
             {['pending', 'verified', 'rejected', 'all'].includes(tab) && filtered.length > 0 && (
-              <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-all">⬇ تصدير CSV</button>
+              <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 whitespace-nowrap transition-all">تصدير CSV</button>
             )}
             <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-              className="input-field max-w-xs text-sm" placeholder={tab === 'rfqs' ? 'بحث برقم الطلب (RFQ-2688) أو الاسم أو المدينة' : 'بحث بالاسم أو الجوال'} />
+              className="input-field w-full sm:max-w-xs text-sm" placeholder={tab === 'rfqs' ? 'بحث برقم الطلب (RFQ-2688) أو الاسم أو المدينة' : 'بحث بالاسم أو الجوال'} />
           </div>
         </div>
 
@@ -552,6 +573,12 @@ export default function AdminPanel() {
         )}
 
         {/* Deals oversight — كل الصفقات المُرساة بمراحلها (إشراف الأدمن) */}
+        {tab === 'deals' && dealFilter === 'stuck' && (
+          <div className="mb-3 flex items-center gap-2 text-sm">
+            <span className="font-bold text-red-800">الصفقات المتأخرة فقط ({dealsList.length})</span>
+            <button type="button" onClick={() => setDealFilter('')} className="min-h-[44px] px-3 rounded-xl border border-gray-200 bg-white font-bold text-[#0B2438]">عرض كل الصفقات</button>
+          </div>
+        )}
         {tab === 'deals' ? (
           dealsList.length === 0 ? (
             <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center"><div className="text-5xl mb-3"><Glyph e="📦" /></div><p className="text-gray-500">لا صفقات مُرساة بعد.</p></div>
@@ -596,19 +623,23 @@ export default function AdminPanel() {
                           <span className="font-bold" style={{ color: '#0B2438' }}>{r?.product_name || 'طلب'}</span>
                         </div>
                         <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
-                          <span><Glyph e="🏢" /> المشتري: <b>{nameOf(r?.contractor_id)}</b></span>
-                          <span><Glyph e="🏪" /> المورد: <b>{nameOf(o.supplier_id)}</b></span>
+                          <span><Glyph e="🏢" /> المشتري: {r?.contractor_id ? <Link href={`/admin/users/${r.contractor_id}`} className="font-bold underline">{nameOf(r?.contractor_id)}</Link> : <b>—</b>}</span>
+                          <span><Glyph e="🏪" /> المورد: <Link href={`/admin/users/${o.supplier_id}`} className="font-bold underline">{nameOf(o.supplier_id)}</Link></span>
                           <span><Glyph e="💰" /> القيمة: {sar(o.total_price)}</span>
                           <span><Glyph e="📅" /> فُتح: {dt(o.dispute_opened_at)}</span>
                         </div>
                         <div className="mt-2 bg-red-50 rounded-lg p-2.5 text-sm text-red-700"><Glyph e="📝" /> {o.dispute_reason}</div>
+                        <div className="mt-1.5 flex flex-wrap gap-x-4 text-[13px]">
+                          <Link href={`/contractor/orders/${o.id}`} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">فتح صفحة الصفقة</Link>
+                          {r?.id && <Link href={`/contractor/rfq/${r.id}`} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">فتح الطلب</Link>}
+                        </div>
                         <div className="text-[11px] text-gray-400 mt-1.5">
                           التسليم: {o.supplier_delivered_at ? '✓' : '—'} · الاستلام: {o.received_at ? '✓' : '—'} · الدفع: {o.payment_status === 'paid' ? '✓' : '—'}
                         </div>
                       </div>
-                      <button onClick={() => resolveDispute(o.id)} disabled={actionLoading === 'disp-' + o.id}
-                        className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50 flex-shrink-0" style={{ background: '#0F6E56' }}>
-                        {actionLoading === 'disp-' + o.id ? '...' : '✓ حل النزاع'}
+                      <button onClick={() => setDispModal({ id: o.id, text: '' })} disabled={actionLoading === 'disp-' + o.id}
+                        className="text-sm min-h-[44px] px-4 rounded-xl font-semibold text-white disabled:opacity-50 flex-shrink-0" style={{ background: '#0B2438' }}>
+                        {actionLoading === 'disp-' + o.id ? '...' : 'حل النزاع'}
                       </button>
                     </div>
                   </div>
@@ -712,7 +743,10 @@ export default function AdminPanel() {
                         <span className="font-bold" style={{ color: '#0B2438' }} dir="ltr">سجل تجاري: {o.commercial_registration}</span>
                       </div>
                       <div className="text-xs text-gray-600 mt-1.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
-                        <span><Glyph e="🏢" /> الحساب المُبلَّغ عنه: <b>{o.existing_company || '—'}</b></span>
+                        <span><Glyph e="🏢" /> الحساب المُبلَّغ عنه: {userIdByCr(o.commercial_registration)
+                          ? <Link href={`/admin/users/${userIdByCr(o.commercial_registration)}`} className="font-bold underline">{o.existing_company || 'فتح الحساب'}</Link>
+                          : <b>{o.existing_company || '—'}</b>}
+                          {(() => { const ru = users.find((x: any) => x.id === userIdByCr(o.commercial_registration)); return ru ? <span className="ms-1 text-[12px]">({ru.verification_status === 'verified' ? 'موثّق' : ru.verification_status === 'rejected' ? 'مرفوض' : 'قيد المراجعة'})</span> : null })()}</span>
                         <span><Glyph e="🙍" /> المُبلِّغ: <b>{o.reporter_name || '—'}</b></span>
                         {o.reporter_phone && <span dir="ltr"><Glyph e="📞" /> {o.reporter_phone}</span>}
                         {o.reporter_email && <span dir="ltr"><Glyph e="✉" /> {o.reporter_email}</span>}
@@ -791,8 +825,8 @@ export default function AdminPanel() {
         ) : tab === 'analytics' ? (
           <div className="space-y-6">
             <UsageStats />
-            {/* وضع الإطلاق المجاني — التحكّم ببدء تحصيل رسوم الاشتراك */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            {/* وضع الإطلاق المجاني — التحكّم ببدء تحصيل رسوم الاشتراك؛ مخفي ما دامت الاشتراكات مطفأة (UX-166) */}
+            {FEATURES.subscription && <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="font-bold text-sm mb-1" style={{ color: '#0B2438' }}><Glyph e="🎉" /> فترة الإطلاق المجانية</div>
               <div className="text-xs text-gray-500 mb-3">
                 {(!launchUntil || new Date(launchUntil) > new Date())
@@ -809,17 +843,17 @@ export default function AdminPanel() {
                   className="input-field max-w-[180px] text-sm" title="تاريخ نهاية فترة الإطلاق المجانية" />
                 <button onClick={async () => { const s = createClient(); await s.from('app_config').update({ launch_free_until: null, updated_at: new Date().toISOString() }).eq('id', true); await loadData() }}
                   className="text-xs px-3 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">مجاني بلا تاريخ نهاية</button>
-                <button onClick={async () => { if (!confirm('إنهاء فترة الإطلاق المجانية الآن وتفعيل الباقات المدفوعة؟')) return; const s = createClient(); await s.from('app_config').update({ launch_free_until: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', true); await loadData() }}
+                <button onClick={async () => { if (!(await askConfirm('إنهاء فترة الإطلاق المجانية الآن وتفعيل الباقات المدفوعة؟', { danger: true }))) return; const s = createClient(); await s.from('app_config').update({ launch_free_until: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', true); await loadData() }}
                   className="text-xs px-3 py-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50">إنهاء الآن</button>
               </div>
-            </div>
+            </div>}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'تسجيلات آخر 7 أيام', value: newLast7, icon: '🆕', bg: '#0F6E56' },
                 { label: 'تسجيلات آخر 30 يوم', value: newLast30, icon: <Glyph e="📈" />, bg: '#0B2438' },
                 { label: 'طلبات التسعير', value: rfqs.length, icon: <Glyph e="📋" />, bg: '#D4A543' },
                 { label: 'المشاريع (BOQ)', value: projects.length, icon: <Glyph e="🏗" />, bg: '#102E45' },
-                { label: 'إجمالي العروض', value: offers.length, icon: <Glyph e="📨" />, bg: '#7c3aed' },
+                { label: 'إجمالي العروض', value: offers.length, icon: <Glyph e="📨" />, bg: '#9D7425' },
                 { label: 'عروض مقبولة', value: acceptedOffers, icon: <Glyph e="✅" />, bg: '#0F6E56' },
                 { label: 'متوسط العروض/طلب', value: offersPerRfq, icon: <Glyph e="⚖" />, bg: '#0B2438' },
                 { label: 'رسائل الدعم', value: support.length, icon: <Glyph e="💬" />, bg: '#D4A543' },
@@ -884,7 +918,7 @@ export default function AdminPanel() {
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold flex-shrink-0"
-                        style={{ background: profileById[cv.userId]?.role === 'supplier' ? '#7c3aed' : '#0B2438' }}>
+                        style={{ background: profileById[cv.userId]?.role === 'supplier' ? '#9D7425' : '#0B2438' }}>
                         {nameOf(cv.userId)?.[0] || '?'}
                       </div>
                       <div className="min-w-0">
@@ -1068,7 +1102,7 @@ export default function AdminPanel() {
                           className="text-xs px-4 py-2 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0F6E56' }}>
                           ✎ مراجعة وتعديل
                         </button>
-                        <button onClick={() => reviewMaterial(r.id, 'rejected')} disabled={actionLoading === r.id}
+                        <button onClick={() => openMatEdit(r)} disabled={actionLoading === r.id}
                           className="text-xs px-4 py-2 rounded-xl font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-50">
                           ✕ رفض
                         </button>
@@ -1099,7 +1133,7 @@ export default function AdminPanel() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold text-white flex-shrink-0"
-                      style={{ background: u.role === 'contractor' ? '#0B2438' : '#7c3aed' }}>
+                      style={{ background: u.role === 'contractor' ? '#0B2438' : '#9D7425' }}>
                       {u.company_name_ar?.[0] || '?'}
                     </div>
                     <div>
@@ -1167,11 +1201,12 @@ export default function AdminPanel() {
                         {u.role === 'contractor' && <span><Glyph e="📋" /> طلبات التسعير: {rfqCountBy[u.id] || 0}</span>}
                         {u.role === 'supplier' && <span><Glyph e="📨" /> العروض المقدّمة: {offerCountBy[u.id] || 0}</span>}
                         {u.vat_number && <span><Glyph e="🧾" /> الرقم الضريبي: {u.vat_number}</span>}
-                        {u.subscription_plan && <span><Glyph e="💳" /> {u.subscription_plan}{u.subscription_expires_at ? ' · حتى ' + dt(u.subscription_expires_at) : ''}</span>}
+                        {FEATURES.subscription && u.subscription_plan && <span><Glyph e="💳" /> {u.subscription_plan}{u.subscription_expires_at ? ' · حتى ' + dt(u.subscription_expires_at) : ''}</span>}
                         {u.rating_count > 0 && <span><Glyph e="⭐" /> {Number(u.rating_avg).toFixed(1)} ({u.rating_count} تقييم)</span>}
                         {u.cr_expiry_date && <span><Glyph e="📅" /> انتهاء السجل: {dt(u.cr_expiry_date)}</span>}
                         {u.commercial_registration && <span dir="ltr"><Glyph e="📋" /> CR: {u.commercial_registration}</span>}
-                        {u.is_active === false && <span className="text-red-500 font-semibold"><Glyph e="⛔" /> حساب غير نشط</span>}
+                        {u.is_active === false && <span className="text-red-700 font-semibold"><Glyph e="⛔" /> حساب غير نشط</span>}
+                        {suspendedUntil(u) && <span className="text-red-700 font-semibold"><Glyph e="⛔" /> موقوف حتى {dt(suspendedUntil(u))}</span>}
                       </div>
                       {u.cr_url && !String(u.cr_url).startsWith('http') && u.verification_status !== 'verified' && (
                         <>
@@ -1233,8 +1268,11 @@ export default function AdminPanel() {
                       <select
                         value={u.provider_type || 'company'}
                         onChange={async (e) => {
+                          const v = e.target.value
+                          if (!(await askConfirm('تغيير نوع حساب هذا البائع؟ تتغيّر فئته وما يظهر له تبعاً لذلك.', { okLabel: 'تغيير النوع' }))) return
                           const supabase = createClient()
-                          await supabase.from('profiles').update({ provider_type: e.target.value }).eq('id', u.id)
+                          const { error } = await supabase.from('profiles').update({ provider_type: v }).eq('id', u.id)
+                          setMsg(error ? 'تعذّر تغيير النوع: ' + error.message : '✓ تم تغيير نوع الحساب'); setTimeout(() => setMsg(''), 4000)
                           await loadData()
                         }}
                         title="نوع الحساب (الفئة تُحسب تلقائياً من النوع والتوثيق)"
@@ -1246,7 +1284,7 @@ export default function AdminPanel() {
                     )}
 
                     {/* Subscription plan — manual activation (until a payment gateway is wired) */}
-                    {u.role === 'supplier' && (
+                    {FEATURES.subscription && u.role === 'supplier' && (
                       <select
                         value={u.subscription_plan || 'free'}
                         onChange={async (e) => {
@@ -1268,8 +1306,10 @@ export default function AdminPanel() {
                       <select
                         value={u.contractor_grade || ''}
                         onChange={async (e) => {
+                          const v = e.target.value
+                          if (!(await askConfirm('تغيير درجة هذا المقاول؟', { okLabel: 'تغيير الدرجة' }))) return
                           const supabase = createClient()
-                          await supabase.from('profiles').update({ contractor_grade: e.target.value || null }).eq('id', u.id)
+                          await supabase.from('profiles').update({ contractor_grade: v || null }).eq('id', u.id)
                           await loadData()
                         }}
                         className="text-xs border border-[#0B2438]/20 text-[#0B2438] bg-[#0B2438]/5 rounded-lg px-2 py-1.5 cursor-pointer">
@@ -1420,7 +1460,7 @@ export default function AdminPanel() {
 
             <div className="flex items-center gap-2 mb-3 flex-wrap">
               <button type="button" onClick={aiSuggestMaterial} disabled={matAi || !matName.trim()}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#7C3AED,#0B2438)' }}>
+                className="text-xs font-bold px-3 py-1.5 rounded-lg text-white disabled:opacity-60" style={{ background: 'linear-gradient(135deg,#9D7425,#0B2438)' }}>
                 {matAi ? 'جارٍ...' : 'اقترح التصنيف بالذكاء الاصطناعي'}
               </button>
               {matAiMsg && <span className="text-[11px] font-semibold text-emerald-700">{matAiMsg}</span>}
@@ -1453,8 +1493,8 @@ export default function AdminPanel() {
               </div>
             )}
 
-            <label className="block text-xs font-bold text-gray-500 mb-1.5">ملاحظة الإدارة (اختياري — تظهر لك)</label>
-            <textarea value={matNote} onChange={(e: any) => setMatNote(e.target.value)} rows={2} className="input-field mb-4 text-sm" placeholder="مثال: نقلتها لمجموعة الخرسانة، أو سبب الرفض…" />
+            <label htmlFor="mat-note" className="block text-xs font-bold text-gray-600 mb-1.5">ملاحظة الإدارة، وهي سبب الرفض عند الرفض (مطلوبة للرفض، وتصل إلى مقدّم الطلب)</label>
+            <textarea id="mat-note" value={matNote} onChange={(e: any) => setMatNote(e.target.value)} rows={2} className="input-field mb-4 text-sm" placeholder="مثال: نقلتها إلى مجموعة الخرسانة، أو: المادة موجودة باسم «…»" />
 
             <div className="flex gap-2">
               <button type="button" disabled={actionLoading === matEdit.id || !matName.trim() || !matGroup}
@@ -1462,12 +1502,40 @@ export default function AdminPanel() {
                 className="flex-1 py-2.5 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0F6E56' }}>
                 {actionLoading === matEdit.id ? '...' : '✓ قبول وإضافة'}
               </button>
-              <button type="button" disabled={actionLoading === matEdit.id}
+              <button type="button" disabled={actionLoading === matEdit.id || !matNote.trim()} title={!matNote.trim() ? 'اكتب سبب الرفض أولاً' : ''}
                 onClick={() => reviewMaterial(matEdit.id, 'rejected', { note: matNote.trim() })}
                 className="px-4 py-2.5 rounded-xl font-semibold text-white text-sm bg-red-500 hover:bg-red-600 disabled:opacity-50">✕ رفض</button>
               <button type="button" onClick={() => setMatEdit(null)} className="px-4 py-2.5 rounded-xl text-sm border border-gray-200 text-gray-600">إلغاء</button>
             </div>
             {!matGroup && <p className="text-[11px] text-amber-600 mt-2">اختر المجموعة قبل القبول حتى تظهر في المكان الصحيح.</p>}
+          </div>
+        </div>
+      )}
+
+      {/* حل النزاع: نص إلزامي مع معاينة ما يصل إلى الطرفين (UX-127) */}
+      {dispModal && (
+        <div className="fixed inset-0 z-[70] bg-[#071827]/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div role="dialog" aria-modal="true" aria-labelledby="disp-title" className="w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl">
+            <h2 id="disp-title" className="text-lg font-bold text-[#071827]">حل النزاع</h2>
+            <p className="text-sm text-gray-600 mt-1">اكتب ملخص الحل. يصل نصاً إلى المشتري والمورد مع إشعار، ولا يمكن الإرسال وهو فارغ.</p>
+            <label htmlFor="disp-text" className="block text-xs font-bold text-gray-600 mt-3 mb-1.5">ملخص الحل (مطلوب)</label>
+            <textarea id="disp-text" autoFocus rows={4} value={dispModal.text} onChange={(e: any) => setDispModal((d: any) => ({ ...d, text: e.target.value }))}
+              className="input-field text-sm" placeholder="مثال: اتفق الطرفان على استبدال الكمية التالفة خلال ثلاثة أيام، دون رسوم إضافية." />
+            {dispModal.text.trim() && (
+              <div className="mt-3 rounded-xl border border-gray-200 bg-[#F5F7FA] p-3 text-sm">
+                <div className="text-xs font-bold text-gray-600 mb-1">معاينة ما يصل إلى الطرفين</div>
+                <div className="font-bold text-[#0B2438]">تم حل النزاع على صفقتك</div>
+                <div className="text-gray-700 mt-0.5 whitespace-pre-wrap">{dispModal.text.trim()}</div>
+              </div>
+            )}
+            <div className="flex gap-2 mt-4">
+              <button type="button" disabled={!dispModal.text.trim() || actionLoading === 'disp-' + dispModal.id}
+                onClick={() => resolveDispute(dispModal.id, dispModal.text)}
+                className="flex-1 min-h-[44px] rounded-xl font-bold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
+                إرسال الحل وإغلاق النزاع
+              </button>
+              <button type="button" onClick={() => setDispModal(null)} className="px-4 min-h-[44px] rounded-xl text-sm border border-gray-200 text-gray-700">إلغاء</button>
+            </div>
           </div>
         </div>
       )}

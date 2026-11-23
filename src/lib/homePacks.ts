@@ -19,7 +19,7 @@ export type HomePack = {
   items: PackItem[]
 }
 
-const AREA = { ar: 'قِس المساحة بالمتر المربع', en: 'Measure the area in square metres', ur: 'رقبہ مربع میٹر میں ناپیں' }
+const AREA = { ar: 'المساحة بالمتر المربع، أو احسبها من مقاس الغرفة', en: 'The area in square metres, or work it out from the room size', ur: 'رقبہ مربع میٹر میں، یا کمرے کے سائز سے حساب کریں' }
 const LEN = { ar: 'قِس الطول بالمتر', en: 'Measure the length in metres', ur: 'لمبائی میٹر میں ناپیں' }
 const HOW_MANY = { ar: 'اكتب العدد الذي تحتاجه', en: 'Write how many you need', ur: 'تعداد لکھیں' }
 const WINDOWS = { ar: 'اجمع مساحة النوافذ: العرض × الارتفاع بالمتر', en: 'Add up the window areas: width × height in metres', ur: 'کھڑکیوں کا رقبہ جمع کریں: چوڑائی × اونچائی میٹر میں' }
@@ -37,7 +37,7 @@ export const HOME_PACKS: HomePack[] = [
       { name: 'رأس دش', sector: 'mechanical', qty: 1 },
       { name: 'سيفون مغسلة', sector: 'mechanical', qty: 1 },
       { name: 'بلاط سيراميك جدار', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
-      { name: 'غراء بلاط أسمنتي عادي C1 (Standard Tile Adhesive)', sector: 'architectural', qty: null, unit: 'كيس', hint: { ar: 'كيس لكل ٤ م² تقريباً', en: 'About one bag per 4 m²', ur: 'تقریباً ہر 4 مربع میٹر کے لیے ایک بوری' } },
+      { name: 'غراء بلاط أسمنتي عادي C1 (Standard Tile Adhesive)', sector: 'architectural', qty: null, unit: 'كيس', hint: { ar: 'كيس لكل 4 أمتار مربعة تقريباً', en: 'About one bag per 4 square metres', ur: 'تقریباً ہر 4 مربع میٹر کے لیے ایک بوری' } },
       { name: 'عزل مائي سائل تحت البلاط للحمامات (Under-tile Liquid Membrane)', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
       { name: 'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)', sector: 'civil', qty: 2 },
     ],
@@ -46,8 +46,8 @@ export const HOME_PACKS: HomePack[] = [
     id: 'paint', img: 'finishing', cover: 'رولة دهان', photo: '/images/packs/paint.webp', ar: 'دهان شقة', en: 'Paint an apartment', ur: 'اپارٹمنٹ پینٹ',
     sub: { ar: 'دهان ومعجون وأدوات', en: 'Paint, filler and tools', ur: 'پینٹ، پٹی اور اوزار' },
     items: [
-      { name: 'دهان داخلي', sector: 'supply_store', qty: null, unit: 'جالون', hint: { ar: 'جالون لكل ١٥ م² من الجدران تقريباً (وجهان)', en: 'About one gallon per 15 m² of wall (two coats)', ur: 'تقریباً ہر 15 مربع میٹر دیوار کے لیے ایک گیلن (دو کوٹ)' } },
-      { name: 'دهان أساس (برايمر)', sector: 'architectural', qty: null, unit: 'جالون', hint: { ar: 'جالون لكل ٣٠ م² تقريباً', en: 'About one gallon per 30 m²', ur: 'تقریباً ہر 30 مربع میٹر کے لیے ایک گیلن' } },
+      { name: 'دهان داخلي', sector: 'supply_store', qty: null, unit: 'جالون', hint: { ar: 'جالون لكل 15 متراً مربعاً من الجدران تقريباً (وجهان)، أو احسبها من مقاس الغرفة', en: 'About one gallon per 15 square metres of wall (two coats), or work it out from the room size', ur: 'تقریباً ہر 15 مربع میٹر دیوار کے لیے ایک گیلن (دو کوٹ)' } },
+      { name: 'دهان أساس (برايمر)', sector: 'architectural', qty: null, unit: 'جالون', hint: { ar: 'جالون لكل 30 متراً مربعاً تقريباً', en: 'About one gallon per 30 square metres', ur: 'تقریباً ہر 30 مربع میٹر کے لیے ایک گیلن' } },
       { name: 'معجون جدران جاهز (أكريليك – سطل)', sector: 'architectural', qty: 1, unit: 'سطل' },
       { name: 'معجون حشو شقوق جاهز (أنبوب/علبة)', sector: 'supply_store', qty: 1 },
       { name: 'ورق صنفرة', sector: 'supply_store', qty: 5 },
@@ -102,7 +102,7 @@ export const HOME_PACKS: HomePack[] = [
     id: 'outdoor', img: 'outdoor', cover: 'برجولات ومظلات حدائق', photo: '/images/packs/outdoor.webp', ar: 'جلسة خارجية', en: 'Outdoor sitting area', ur: 'بیرونی بیٹھک',
     sub: { ar: 'مظلة أو برجولا وجلسة وإنارة', en: 'Shade or pergola, seating, lights', ur: 'سائبان یا پرگولا، بیٹھک، روشنی' },
     items: [
-      { name: 'برجولات ومظلات حدائق', sector: 'civil', qty: null, unit: 'م²', hint: { ar: 'اكتب المساحة بالمتر المربع (مثلاً ٤×٥ = ٢٠)', en: 'Write the area in m² (e.g. 4×5 = 20)', ur: 'رقبہ مربع میٹر میں لکھیں' } },
+      { name: 'برجولات ومظلات حدائق', sector: 'civil', qty: null, unit: 'م²', hint: { ar: 'اكتب المساحة بالمتر المربع (مثلاً 4 × 5 = 20)', en: 'Write the area in square metres (e.g. 4 × 5 = 20)', ur: 'رقبہ مربع میٹر میں لکھیں' } },
       { name: 'مظلات شراع (شد إنشائي)', sector: 'civil', qty: null, unit: 'م²', hint: AREA },
       { name: 'أثاث خارجي (جلسات حدائق)', sector: 'architectural', qty: 1 },
       { name: 'إنارة حدائق وممرات', sector: 'electrical', qty: 4 },
@@ -121,7 +121,7 @@ export const HOME_PACKS: HomePack[] = [
       { name: 'مكتبة ورفوف حسب الطلب', sector: 'architectural', qty: null, unit: 'م.ط', hint: LEN },
       { name: 'رفوف حائط ديكور', sector: 'architectural', qty: 3 },
       { name: 'قواطع زجاجية للمكاتب', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
-      { name: 'ورق جدران', sector: 'architectural', qty: null, unit: 'لفة', hint: { ar: 'لفة لكل ٥ م² من الجدار تقريباً', en: 'About one roll per 5 m² of wall', ur: 'تقریباً ہر 5 مربع میٹر دیوار کے لیے ایک رول' } },
+      { name: 'ورق جدران', sector: 'architectural', qty: null, unit: 'لفة', hint: { ar: 'لفة لكل 5 أمتار مربعة من الجدار تقريباً', en: 'About one roll per 5 square metres of wall', ur: 'تقریباً ہر 5 مربع میٹر دیوار کے لیے ایک رول' } },
       { name: 'باركيه خشبي', sector: 'architectural', qty: null, unit: 'م²', hint: AREA },
       { name: 'سبوت متحرك COB للأسقف الجبسية', sector: 'electrical', qty: 6 },
       { name: 'مصباح طاولة ومكتب LED', sector: 'electrical', qty: 1 },
@@ -143,6 +143,20 @@ const HOME_NAMES: Record<string, string> = {
   'سبوت متحرك COB للأسقف الجبسية': 'مصباح سبوت متحرك للسقف الجبسي',
   'مرحاض WC مع خزان': 'مرحاض مع خزان',
   'مغسلة Wash Basin': 'مغسلة',
+  // round-2 UX-036: no trade words a home buyer does not know
+  'إنارة سقف مودرن (بلافونيير)': 'إنارة سقف حديثة',
+  'سبوت حدائق بوتد (Spike Light)': 'كشاف حديقة يُثبَّت في التربة',
+  'ستائر رول (بلاك آوت)': 'ستائر رول معتمة',
+  'ستائر شرائح (Blinds)': 'ستائر شرائح',
+  'دهان أساس (برايمر)': 'دهان أساس',
+  'معجون جدران جاهز (أكريليك – سطل)': 'معجون جدران جاهز',
+  'معجون حشو شقوق جاهز (أنبوب/علبة)': 'معجون حشو الشقوق',
+  'مظلات شراع (شد إنشائي)': 'مظلات شراعية',
+  'إنترلوك رصف': 'بلاط رصف متداخل (إنترلوك)',
+  'عزل مائي سائل تحت البلاط للحمامات (Under-tile Liquid Membrane)': 'عازل مائي سائل تحت البلاط',
+  'مجموعة تثبيت حائط للسخان والغسالة (Wall-mount Group)': 'طقم تثبيت السخان على الحائط',
+  'سيليكون صحي مضاد للفطريات (حمامات ومطابخ)': 'سيليكون للحمامات والمطابخ',
+  'أثاث خارجي (جلسات حدائق)': 'جلسة حديقة',
 }
 /** A product name as a home buyer reads it (Arabic): the plain name above, else cleanArName. */
 export function homeName(name: string): string {
@@ -166,3 +180,5 @@ export function packUnitMismatches(): string[] {
 }
 
 export const packById = (id: string | null | undefined) => HOME_PACKS.find(p => p.id === id) || null
+/** The packs shown under «جهّز بيتك»: home rooms only, not the office (round-2 UX-133). */
+export const HOME_ROOM_PACKS = HOME_PACKS.filter(p => p.id !== 'office')

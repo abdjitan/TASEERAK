@@ -17,7 +17,7 @@ import { tierLabel, sourceLabel, availabilityLabel, isDirectSource, sourceIcon, 
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
-import { vatStatusOf, totalLabel, offerComparable, vatTag, priceBasisLabel } from '@/lib/vat'
+import { vatStatusOf, totalLabel, offerComparable, vatTag, priceBasisLabel, sarLabel, buyerLinePrice, preVatNote, lineComparable } from '@/lib/vat'
 import { installTotalOf, materialTotalOf } from '@/lib/installation'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { dbMessage } from '@/lib/dbMessage'
@@ -41,7 +41,7 @@ export default function OfferDetailPage() {
   const ensureVerified = useEnsureVerified()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
-  const SAR = L('SAR', 'SAR', 'ر.س')
+  const SAR = sarLabel(locale) // UX-140
   const FWD = dir === 'rtl' ? '←' : '→', BACK = dir === 'rtl' ? '→' : '←'
   const [rfq, setRfq] = useState<any>(null)
   const [offer, setOffer] = useState<any>(null)
@@ -126,7 +126,9 @@ export default function OfferDetailPage() {
   }, [id, offerId])
 
   const isMulti = Array.isArray(rfq?.items) && rfq.items.length > 1
-  const rfqOpen = rfq?.status === 'open' && !(rfq?.expires_at && isExpired(rfq.expires_at))
+  // UX-004: the server accepts a choice while the request is open, even after the pricing deadline
+  const rfqOpen = rfq?.status === 'open'
+  const pastDeadline = rfqOpen && !!rfq?.expires_at && isExpired(rfq.expires_at)
   const showBar = offer?.status === 'pending' && rfqOpen
   // the floating assistant bubble steps aside while a sticky action bar is on screen
   useEffect(() => {
@@ -140,9 +142,9 @@ export default function OfferDetailPage() {
     const who = offer?.supplier?.company_name_ar || L('this supplier', 'اس سپلائر', 'هذا المورد')
     const total = offerComparable(offer).toLocaleString('en-US', { maximumFractionDigits: 0 })
     if (!(await askConfirm(L(
-      `Choose the offer from ${who} for ${total} SAR?\nWe will tell the other suppliers and close the request, and a deal opens with this supplier.`,
-      `${who} کی آفر ${total} ریال میں منتخب کریں؟\nہم باقی سپلائرز کو بتا دیں گے اور درخواست بند ہو جائے گی، اور اس سپلائر کے ساتھ ڈیل کھل جائے گی۔`,
-      `اختيار عرض ${who} بمبلغ ${total} ر.س؟\nسنُبلغ بقية الموردين ويُغلق الطلب، وتُفتح صفقة مع هذا المورد.`),
+      `Choose the offer from ${who} for ${total} SAR (${vatTag(offer, 'en')})?\nWe will tell the other suppliers and close the request, and a deal opens with this supplier.`,
+      `${who} کی آفر ${total} ریال (${vatTag(offer, 'ur')}) میں منتخب کریں؟\nہم باقی سپلائرز کو بتا دیں گے اور درخواست بند ہو جائے گی، اور اس سپلائر کے ساتھ ڈیل کھل جائے گی۔`,
+      `اختيار عرض ${who} بمبلغ ${total} ر.س (${vatTag(offer, 'ar')})؟\nسنُبلغ بقية الموردين ويُغلق الطلب، وتُفتح صفقة مع هذا المورد.`),
       { okLabel: L('Choose this offer', 'یہ آفر منتخب کریں', 'اختر هذا العرض'), cancelLabel: L('Go back', 'واپس', 'تراجع') }))) return
     setActing(true)
     const supabase = createClient()
@@ -280,7 +282,7 @@ export default function OfferDetailPage() {
             )}
             {offer.source_type && (
               <span className={`badge text-xs ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
-                {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct price from the supplier', 'سپلائر سے براہ راست قیمت', 'سعر مباشر من المورد')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {sourceLabel(offer.source_type, locale)}</>}
+                {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct price from the supplier', 'سپلائر سے براہ راست قیمت', 'سعر مباشر من المورد')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {L(`Goods source: ${sourceLabel(offer.source_type, locale)}`, `سامان کا ماخذ: ${sourceLabel(offer.source_type, locale)}`, `مصدر البضاعة: ${sourceLabel(offer.source_type, locale)}`)}</>}
               </span>
             )}
             {offer.availability && <span className="badge text-xs bg-gray-50 text-gray-700"><SellerIcon name={availabilityIcon(offer.availability)} /> {availabilityLabel(offer.availability, locale)}</span>}
@@ -311,14 +313,14 @@ export default function OfferDetailPage() {
         {/* price and delivery */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}><Glyph e="💰" /> {L('Price and delivery', 'قیمت اور ڈیلیوری', 'السعر والتوصيل')}</h2>
-          {!isMulti && <Row label={L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')} value={Number(offer.unit_price) > 0 ? `${Number(offer.unit_price).toLocaleString('en-US')} ${SAR}` : null} />}
+          {!isMulti && <Row label={L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')} value={Number(offer.unit_price) > 0 ? `${fmt(buyerLinePrice(offer.unit_price, offer, home))} ${SAR}${!home && preVatNote(offer, locale) ? ' ' + preVatNote(offer, locale) : ''}` : null} />}
           <Row label={L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')} value={Number(offer.delivery_days) > 0 ? L(`Within ${daysText(offer.delivery_days, locale)}`, `${daysText(offer.delivery_days, locale)} میں`, `خلال ${daysText(offer.delivery_days, locale)}`) : null} />
 
           {/* per-item pricing */}
           {ip.length > 0 && (
             <div className="border border-gray-200 rounded-xl overflow-hidden mb-3">
               <div className="bg-gray-50 px-3 py-2 text-xs font-bold text-gray-600 flex justify-between">
-                <span>{L('Item pricing', 'آئٹمز کی قیمتیں', 'تسعير المواد')} ({ip.length})</span><span>{home ? L('Price', 'قیمت', 'السعر') : priceBasisLabel(offer, locale)}</span>
+                <span>{L('Item pricing', 'آئٹمز کی قیمتیں', 'تسعير المواد')} ({ip.length})</span><span>{home ? L('What you pay', 'آپ کی ادائیگی', 'المبلغ الذي تدفعه') : priceBasisLabel(offer, locale)}</span>
               </div>
               {ip.map((it: any, i: any) => (
                 <div key={i} className="px-3 py-2.5 border-t border-gray-100 text-sm">
@@ -327,17 +329,17 @@ export default function OfferDetailPage() {
                       <div className="font-semibold text-gray-800">{pname(it.product_name)}</div>
                       <div className="text-xs text-gray-500">
                         {Number(it.unit_price) > 0
-                          ? `${Number(it.unit_price).toLocaleString('en-US')} ${SAR} × ${(Number(it.quantity) || 0).toLocaleString('en-US')} ${unitL(it.unit)}`
+                          ? `${fmt(buyerLinePrice(it.unit_price, offer, home))} ${SAR} × ${(Number(it.quantity) || 0).toLocaleString('en-US')} ${unitL(it.unit)}`
                           : `${(Number(it.quantity) || 0).toLocaleString('en-US')} ${unitL(it.unit)}`}
                       </div>
                     </div>
-                    <div className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</div>
+                    <div className="font-bold text-gray-900 whitespace-nowrap">{fmt(buyerLinePrice(it.total, offer, home))} {SAR}</div>
                   </div>
                   {/* «with installation»: the line total split into material + installation */}
                   {it.install_offered === true && (
                     <div className="mt-1.5 rounded-lg bg-[#0F6E56]/5 px-2 py-1.5 text-xs space-y-0.5">
-                      <div className="flex justify-between gap-2 text-gray-600"><span>{L('Material', 'سامان', 'المادة')}</span><span>{materialTotalOf(it).toLocaleString('en-US')} {SAR}</span></div>
-                      <div className="flex justify-between gap-2 font-semibold text-[#0F6E56]"><span><Glyph e="🔧" /> {L('Installation', 'تنصیب', 'التركيب')}</span><span>{installTotalOf(it) > 0 ? `${installTotalOf(it).toLocaleString('en-US')} ${SAR}` : L('included in the price', 'قیمت میں شامل', 'مشمول في السعر')}</span></div>
+                      <div className="flex justify-between gap-2 text-gray-600"><span>{L('Material', 'سامان', 'المادة')}</span><span>{fmt(buyerLinePrice(materialTotalOf(it), offer, home))} {SAR}</span></div>
+                      <div className="flex justify-between gap-2 font-semibold text-[#0F6E56]"><span><Glyph e="🔧" /> {L('Installation', 'تنصیب', 'التركيب')}</span><span>{installTotalOf(it) > 0 ? `${fmt(buyerLinePrice(installTotalOf(it), offer, home))} ${SAR}` : L('included in the price', 'قیمت میں شامل', 'مشمول في السعر')}</span></div>
                     </div>
                   )}
                   {it.install_offered === false && <p className="text-xs font-semibold text-gray-600 mt-1">{L('Without installation (the supplier does not install)', 'تنصیب کے بغیر (سپلائر تنصیب نہیں کرتا)', 'بدون تركيب (المورد لا يقدّم التركيب)')}</p>}
@@ -358,7 +360,7 @@ export default function OfferDetailPage() {
             {home ? (
               <>
                 <div className="flex justify-between items-baseline gap-3 font-extrabold text-gray-900"><span>{L('The amount you pay', 'آپ کی ادا کردہ رقم', 'المبلغ الذي تدفعه')}</span><span className="text-lg">{fmt(offerComparable(offer))} {SAR}</span></div>
-                <div className="text-xs text-gray-600 mt-0.5">{vatTag(offer, locale)}{exSum > 0 ? ` · ${L(`includes delivery and charges ${fmt(exSum)} SAR`, `ڈیلیوری اور چارجز ${fmt(exSum)} ریال شامل`, `يشمل التوصيل والرسوم ${fmt(exSum)} ر.س`)}` : ''}</div>
+                <div className="text-xs text-gray-600 mt-0.5">{vatTag(offer, locale)}{exSum > 0 ? ` · ${L(`includes delivery and charges ${fmt(lineComparable(exSum, offer))} SAR`, `ڈیلیوری اور چارجز ${fmt(lineComparable(exSum, offer))} ریال شامل`, `يشمل التوصيل والرسوم ${fmt(lineComparable(exSum, offer))} ر.س`)}` : ''}</div>
               </>
             ) : (<>
               <div className="flex justify-between text-gray-600"><span>{ip.length > 0 ? L('Goods total', 'مال کا کل', 'إجمالي البضاعة') : L('Goods', 'مال', 'البضاعة')}</span><span>{goods.toLocaleString('en-US')} {SAR}</span></div>
@@ -384,6 +386,20 @@ export default function OfferDetailPage() {
             </>)}
           </div>
 
+          {/* UX-053: the discount request and its state live with the price (the sticky bar keeps only the decision) */}
+          {showBar && (<>
+          {reducing ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[#0B2438] bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl px-3 py-2 mt-3">
+              <span><Glyph e="⏳" /> {L('Discount request sent; waiting for the supplier', 'رعایت کی درخواست بھیج دی گئی؛ سپلائر کا انتظار', 'أُرسل طلب التخفيض، وبانتظار رد المورد')}{offer.reduction_deadline ? ` (${L('until', 'تک', 'حتى')} ${new Date(offer.reduction_deadline).toLocaleString(dloc)})` : ''}</span>
+              <button type="button" onClick={cancelReduction} disabled={acting} className="min-h-11 px-3 text-sm font-semibold text-[#8F6820] hover:underline disabled:opacity-50">{L('Withdraw the request', 'درخواست واپس لیں', 'سحب الطلب')}</button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setReqOpen(true)} className="block w-full min-h-11 text-center text-sm mt-3 px-4 rounded-xl font-semibold border border-[#0B2438]/30 text-[#8F6820] hover:bg-[#D4A543]/5">
+              <Glyph e="📉" /> {L('Ask for a further discount (with a deadline)', 'مزید رعایت مانگیں (مقررہ وقت کے ساتھ)', 'اطلب تخفيضاً إضافياً (بمهلة محدّدة)')}
+            </button>
+          )}
+          </>)}
+
           {offer.attributes && Object.keys(offer.attributes).length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-2">
               {Object.entries(offer.attributes).map(([k, v]) => (
@@ -407,6 +423,8 @@ export default function OfferDetailPage() {
               <button type="button" onClick={() => setInfoOpen(true)} className="min-h-11 text-sm px-4 rounded-xl border border-[#0B2438]/30 text-[#0B2438] font-semibold">{L('Ask the supplier', 'سپلائر سے پوچھیں', 'اسأل المورد')}</button>
             )}
           </div>
+          {/* UX-139: say how this differs from «راسل المورد» */}
+          <p className="text-xs text-gray-600 mb-2">{L('One question; its answer appears here. For other questions use «Message the supplier».', 'ایک سوال؛ اس کا جواب یہیں نظر آئے گا۔ دوسرے سوالات کے لیے «سپلائر کو پیغام» استعمال کریں۔', 'سؤال واحد يظهر جوابه هنا. للأسئلة الأخرى استخدم «راسل المورد».')}</p>
           {offer.info_request ? (
             <div className="space-y-2">
               <div className="bg-gray-50 rounded-lg p-2.5 text-sm"><span className="text-gray-500 text-xs">{L('Your question:', 'آپ کا سوال:', 'سؤالك:')}</span><div>{offer.info_request}</div></div>
@@ -415,7 +433,7 @@ export default function OfferDetailPage() {
                 : <div className="text-xs text-amber-700"><Glyph e="⏳" /> {L('Waiting for the supplier reply…', 'سپلائر کے جواب کا انتظار ہے…', 'بانتظار رد المورد…')}</div>}
             </div>
           ) : (
-            <p className="text-xs text-gray-500">{L('Ask the supplier for more product details (type, specs, origin, warranty…).', 'سپلائر سے پروڈکٹ کی مزید تفصیل مانگیں (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی…)۔', 'اطلب من المورد تفاصيل إضافية عن المنتج (النوع، المواصفات، المنشأ، الضمان…).')}</p>
+            <p className="text-xs text-gray-600">{L('Ask the supplier for more product details (type, specs, origin, warranty…).', 'سپلائر سے پروڈکٹ کی مزید تفصیل مانگیں (قسم، اسپیسیفکیشن، کہاں کا بنا ہے، وارنٹی…)۔', 'اطلب من المورد تفاصيل إضافية عن المنتج (النوع، المواصفات، المنشأ، الضمان…).')}</p>
           )}
         </div>
 
@@ -429,17 +447,8 @@ export default function OfferDetailPage() {
 
         {/* actions: sticky above the phone's bottom bar (UX-023) */}
         {showBar && (
-          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-lg sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-3 z-30">
-            {reducing ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-[#0B2438] bg-[#0B2438]/5 border border-[#0B2438]/15 rounded-xl px-3 py-2 mb-3">
-                <span><Glyph e="⏳" /> {L('Discount request sent; waiting for the supplier', 'رعایت کی درخواست بھیج دی گئی؛ سپلائر کا انتظار', 'أُرسل طلب التخفيض، وبانتظار رد المورد')}{offer.reduction_deadline ? ` (${L('until', 'تک', 'حتى')} ${new Date(offer.reduction_deadline).toLocaleString(dloc)})` : ''}</span>
-                <button type="button" onClick={cancelReduction} disabled={acting} className="min-h-11 px-3 text-sm font-semibold text-[#8F6820] hover:underline disabled:opacity-50">{L('Withdraw the request', 'درخواست واپس لیں', 'سحب الطلب')}</button>
-              </div>
-            ) : (
-              <button type="button" onClick={() => setReqOpen(true)} className="block w-full min-h-11 text-center text-sm mb-2 px-4 rounded-xl font-semibold border border-[#0B2438]/30 text-[#8F6820] hover:bg-[#D4A543]/5">
-                <Glyph e="📉" /> {L('Ask for a further discount (with a deadline)', 'مزید رعایت مانگیں (مقررہ وقت کے ساتھ)', 'اطلب تخفيضاً إضافياً (بمهلة محدّدة)')}
-              </button>
-            )}
+          <div className="bg-white rounded-2xl p-3 sm:p-4 border border-gray-200 shadow-lg sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-3 z-30">
+            {pastDeadline && <p className="text-xs font-semibold text-amber-900 mb-2"><Glyph e="⏱" /> {L('The pricing deadline has passed, and you can still choose this offer.', 'قیمت کی مہلت ختم ہو گئی، اور آپ اب بھی یہ آفر منتخب کر سکتے ہیں۔', 'انتهت مهلة التسعير، وما زال بإمكانك اختيار هذا العرض.')}</p>}
             <div className="flex flex-wrap gap-2">
               {/* a multi-item request is chosen per item on the request page (177: accept_offer refuses it) */}
               {isMulti ? (

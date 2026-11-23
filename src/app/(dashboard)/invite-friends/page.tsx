@@ -21,6 +21,7 @@ export default function InviteFriendsPage() {
   const [joined, setJoined] = useState(0)
   const [who, setWho] = useState<'supplier' | 'contractor'>('supplier')
   const [copied, setCopied] = useState(false)
+  const [copyFailed, setCopyFailed] = useState(false) // the browser refused the clipboard: say how to copy by hand (UX-160)
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function InviteFriendsPage() {
     : `أدعوك لتجربة «تسعيرك»: أرسل قائمة مواد البناء التي تحتاجها، وتصلك أسعار عدة موردين لتختار الأنسب. التسجيل مجاني:\n${link}`
 
   async function copy() {
-    try { await navigator.clipboard.writeText(message); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch {}
+    try { await navigator.clipboard.writeText(message); setCopyFailed(false); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { setCopyFailed(true) }
   }
   async function share() {
     try { if ((navigator as any).share) await (navigator as any).share({ title: 'تسعيرك', text: message }); else await copy() } catch {}
@@ -75,7 +76,10 @@ export default function InviteFriendsPage() {
           </div>
 
           {failed ? (
-            <p role="alert" className="mt-5 text-sm rounded-xl bg-red-50 border border-red-200 text-red-700 p-3">{L('Could not load your invite link — please try again.', 'دعوتی لنک نہیں کھل سکا — دوبارہ کوشش کریں۔', 'تعذّر تحميل رابط الدعوة — حاول مرة ثانية.')}</p>
+            <div role="alert" className="mt-5 text-sm rounded-xl bg-red-50 border border-red-200 text-red-700 p-3">
+              {L('Could not load your invite link. Check your connection and try again.', 'دعوتی لنک نہیں کھل سکا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔', 'تعذّر تحميل رابط الدعوة. تأكّد من اتصالك وحاول مرة أخرى.')}
+              <button type="button" onClick={() => window.location.reload()} className="mt-2 block min-h-[44px] px-4 rounded-xl bg-[#0B2438] text-white font-bold">{L('Try again', 'دوبارہ کوشش کریں', 'أعد المحاولة')}</button>
+            </div>
           ) : (<>
             <div className="mt-5">
               <div className="text-sm font-bold mb-2" style={{ color: '#0B2438' }}>{L('Who are you inviting?', 'آپ کس کو دعوت دے رہے ہیں؟', 'من تدعو؟')}</div>
@@ -106,6 +110,7 @@ export default function InviteFriendsPage() {
                 </button>
               </div>
             </div>
+            {copyFailed && <p role="alert" className="mt-2 text-[13px] text-red-700">{L('Copying is blocked in this browser: select the text above and copy it by hand.', 'اس براؤزر میں کاپی بند ہے: اوپر کا متن منتخب کر کے خود کاپی کریں۔', 'تعذّر النسخ في هذا المتصفح: حدّد النص أعلاه وانسخه يدوياً.')}</p>}
           </>)}
         </div>
 

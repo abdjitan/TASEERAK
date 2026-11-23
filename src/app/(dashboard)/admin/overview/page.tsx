@@ -138,7 +138,7 @@ export default function OwnerOverview() {
           {/* KPI row */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <Kpi icon="👥" label="إجمالي المسجّلين" value={fmt(u.total)} sub={<>جديد خلال الفترة: <b>{fmt(u.new_in_period)}</b></>} />
-            <Kpi icon="🟢" pulse label="أونلاين الآن" value={fmt(u.online_now)} sub={<>نشطون اليوم {fmt(u.active_24h)} · 7 أيام {fmt(u.active_7d)}</>} />
+            <Kpi icon="🟢" pulse label="المتصلون الآن" value={fmt(u.online_now)} sub={<>نشطون اليوم {fmt(u.active_24h)} · 7 أيام {fmt(u.active_7d)}</>} />
             <Kpi icon="🤝" label="الصفقات" value={fmt(dl.count)} sub={<>خلال الفترة: <b>{fmt(dl.count_in_period)}</b></>} />
             <Kpi icon="💰" label="قيمة الصفقات" value={sar(dl.value)} sub={<>خلال الفترة: <b>{sar(dl.value_in_period)}</b></>} />
             <Kpi icon="💵" label="المبالغ المستلَمة" value={sar(dl.received_value)} sub={<>المدفوعة: <b>{sar(dl.paid_value)}</b></>} />
@@ -238,7 +238,7 @@ export default function OwnerOverview() {
                   { label: 'استُلمت', v: dl.received },
                   { label: 'دُفعت', v: dl.paid },
                   { label: 'نزاعات مفتوحة', v: dl.disputes_open, alert: true, href: '/admin?tab=disputes' },
-                  { label: 'متأخرة', v: dl.stuck, alert: true, href: '/admin?tab=deals' },
+                  { label: 'متأخرة', v: dl.stuck, alert: true, href: '/admin?tab=deals&filter=stuck' },
                 ].map((x) => {
                   const bad = x.alert && Number(x.v) > 0
                   const inner = (
@@ -291,7 +291,7 @@ export default function OwnerOverview() {
 
           {/* Online + health */}
           <div className="grid lg:grid-cols-2 gap-5">
-            <Card title="أونلاين الآن" icon="🟢" extra={<span className="text-[11px] text-gray-400">آخر 15 دقيقة</span>}>
+            <Card title="المتصلون الآن" icon="🟢" extra={<span className="text-[11px] text-gray-400">آخر 15 دقيقة</span>}>
               {Array.isArray(u.online_list) && u.online_list.length ? (
                 <ul className="divide-y divide-gray-50 max-h-80 overflow-y-auto">
                   {u.online_list.map((o: any) => (

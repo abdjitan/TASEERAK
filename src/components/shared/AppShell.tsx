@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, ReactNode } from 'react'
+import { useState, useEffect, useRef, ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -32,10 +32,13 @@ function hasLocalDraft(): boolean {
 const unreadCache = { uid: '', n: 0, at: 0 }
 // Last touch_last_seen call (heartbeat below), so page changes do not re-send it every time.
 const lastSeenTouch = { at: 0 }
+// Shell state read from this device (folded sidebar, seller kind, buyer type), kept for the whole visit
+// so a page change does not make the sidebar jump or the menu items flash (UX-098). ready = read once.
+const shellCache: { ready: boolean; collapsed: boolean; kind: string | null; buyerType: string | null } = { ready: false, collapsed: false, kind: null, buyerType: null }
 
 // mobile: رتبة العنصر في شريط التنقّل السفلي (١–٤) — العناصر بلا رتبة تبقى في «المزيد»
 // only: 'company' = hidden for an independent seller; 'business' = hidden for a home buyer («لبيتي»).
-export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number; only?: 'company' | 'business' }
+export type ShellNavItem = { href: string; label: string; icon: ReactNode; active?: boolean; section?: string; badge?: number | string; mobile?: number; mobileLabel?: string; only?: 'company' | 'business' }
 
 // Shared dashboard shell — navy gradient sidebar (244px) + frosted topbar +
 // off-canvas drawer on mobile. Pages pass their own nav items + header actions.
@@ -58,11 +61,29 @@ export default function AppShell({
 }) {
   const { locale } = useTranslation()
   // An independent seller has no branches or team: company-only items leave the menu.
-  const [kind, setKind] = useState<string | null>(null)
+  const [kind, setKind] = useState<string | null>(shellCache.kind)
   // The buyer type is read after mount (not during render), so the server and first client render
-  // agree and a home buyer never sees the business tools flash in (UX-144).
-  const [buyerType, setBuyerType] = useState<string | null>(null)
-  useEffect(() => { setKind(storedSellerKind()); setBuyerType(storedBuyerType()) }, [])
+  // agree and a home buyer never sees the business tools flash in (UX-144). Later pages start from
+  // the module cache, and restricted items stay hidden until the type is known (UX-098).
+  const [buyerType, setBuyerType] = useState<string | null>(shellCache.buyerType)
+  const [typeReady, setTypeReady] = useState(shellCache.ready)
+  useEffect(() => {
+    const read = () => {
+      const k = storedSellerKind(); const b = storedBuyerType()
+      Object.assign(shellCache, { kind: k, buyerType: b })
+      setKind(k); setBuyerType(b)
+    }
+    read()
+    if (!shellCache.ready) { try { shellCache.collapsed = localStorage.getItem('taseerak_nav_collapsed') === '1' } catch {} }
+    shellCache.ready = true
+    setCollapsed(shellCache.collapsed); setTypeReady(true)
+    // switching the buyer type (settings, the home prompt) updates the menu at once
+    const onType = () => read()
+    const onStorage = (e: StorageEvent) => { if (!e.key || e.key === 'taseerak_buyer_type' || e.key.startsWith('taseerak_seller')) read() }
+    window.addEventListener('tsk:buyer-type', onType)
+    window.addEventListener('storage', onStorage)
+    return () => { window.removeEventListener('tsk:buyer-type', onType); window.removeEventListener('storage', onStorage) }
+  }, [])
   // where this session connects from (approximate, from the connection; migration 229), once per session
   useEffect(() => {
     try { if (sessionStorage.getItem('tsk_loc') === '1') return; sessionStorage.setItem('tsk_loc', '1') } catch { return }
@@ -76,7 +97,7 @@ export default function AppShell({
     const full = pathname + (typeof window !== 'undefined' ? window.location.search : '')
     createClient().rpc('mark_notifications_read_for_url', { p_path: pathname, p_full: full }).then(() => {}, () => {})
   }, [pathname])
-  const nav = navIn.filter(n => !(n.only === 'company' && kind === 'independent') && !(n.only === 'business' && buyerType === 'individual'))
+  const nav = navIn.filter(n => !(n.only && !typeReady) && !(n.only === 'company' && kind === 'independent') && !(n.only === 'business' && buyerType === 'individual'))
   // Remember which menu this device shows, so PageLoader can draw the same frame on shared pages
   // (messages, settings…) while their data loads. Key = ROLE_HINT_KEY in PageLoader.
   const roleHint = navIn.some(n => n.href.startsWith('/admin')) ? 'admin'
@@ -85,10 +106,9 @@ export default function AppShell({
   useEffect(() => { if (roleHint) try { localStorage.setItem('tsk_role_hint', roleHint) } catch {} }, [roleHint])
   const [open, setOpen] = useState(false)
   // desktop: the sidebar can be folded away (☰ in the top bar) to give the page more room
-  const [collapsed, setCollapsed] = useState(false)
-  useEffect(() => { try { setCollapsed(localStorage.getItem('taseerak_nav_collapsed') === '1') } catch {} }, [])
+  const [collapsed, setCollapsed] = useState(shellCache.collapsed)
   function toggleCollapsed() {
-    setCollapsed(c => { const v = !c; try { localStorage.setItem('taseerak_nav_collapsed', v ? '1' : '0') } catch {} ; return v })
+    setCollapsed(c => { const v = !c; shellCache.collapsed = v; try { localStorage.setItem('taseerak_nav_collapsed', v ? '1' : '0') } catch {} ; return v })
   }
   async function defaultSignOut() {
     clearAllLocalDrafts()
@@ -117,14 +137,31 @@ export default function AppShell({
     createClient().auth.getSession().then(({ data: { session } }) => { if (!gone) setSessionUid(session?.user?.id) }, () => {})
     return () => { gone = true }
   }, [userId])
-  // Mobile drawer: Escape closes it and the page behind does not scroll while it is open (UX-156).
+  // Mobile drawer: Escape closes it, the page behind does not scroll, Tab stays inside the menu, and
+  // focus returns to the button that opened it when it closes (UX-156, UX-106).
+  const drawerRef = useRef<HTMLElement | null>(null)
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    const opener = document.activeElement as HTMLElement | null
+    const focusables = () => Array.from(drawerRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])') || [])
+    const t = setTimeout(() => { focusables()[0]?.focus() }, 30)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { setOpen(false); return }
+      if (e.key !== 'Tab') return
+      const f = focusables(); if (f.length === 0) return
+      const first = f[0], last = f[f.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+      else if (!drawerRef.current?.contains(document.activeElement)) { e.preventDefault(); first.focus() }
+    }
     window.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    return () => { window.removeEventListener('keydown', onKey); document.body.style.overflow = prev }
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('keydown', onKey); document.body.style.overflow = prev
+      try { opener?.focus?.() } catch {}
+    }
   }, [open])
   // The closed drawer on a phone is off-screen: keep it out of the tab order (inert) until opened.
   const [isDesk, setIsDesk] = useState(true)
@@ -221,6 +258,7 @@ export default function AppShell({
       {/* ===== Sidebar ===== */}
       <aside
         id="ts-drawer"
+        ref={drawerRef}
         aria-label={L('Main menu', 'مرکزی مینو', 'القائمة الرئيسية')}
         {...(drawerInert ? { inert: true as any, 'aria-hidden': true } : {})}
         {...(!isDesk && open ? { role: 'dialog', 'aria-modal': true } : {})}
@@ -298,7 +336,7 @@ export default function AppShell({
       {open && <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setOpen(false)} aria-hidden />}
 
       {/* ===== Main column ===== */}
-      <div className={`${mainPush} flex flex-col min-h-screen transition-[margin] duration-300`}>
+      <div className={`${mainPush} flex flex-col min-h-screen transition-[margin] duration-300`} {...(!isDesk && open ? { inert: true as any } : {})}>
         <header className="ts-dashboard-topbar sticky top-0 z-30 backdrop-blur-md border-b">
           <div className="flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -308,7 +346,8 @@ export default function AppShell({
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
               </button>
               <div className="min-w-0">
-                {title && <h1 className="text-base sm:text-lg font-bold leading-tight truncate" style={{ color: '#0B2438' }}>{title}</h1>}
+                {/* the page has its own h1; the bar title is a plain line so there is one h1 per page (UX-159) */}
+                {title && <p className="ts-topbar-title text-base sm:text-lg font-bold leading-tight truncate" style={{ color: '#0B2438' }}>{title}</p>}
                 {subtitle && <p className="text-xs truncate" style={{ color: '#48596E' }}>{subtitle}</p>}
               </div>
             </div>
@@ -332,43 +371,42 @@ export default function AppShell({
 
       {/* ===== Bottom nav (mobile only) — 4 وجهات مُنسّقة (رتبة mobile) + «المزيد» يفتح القائمة الكاملة ===== */}
       <nav aria-label={L('Quick links', 'فوری لنکس', 'روابط سريعة')} className="ts-mobile-nav lg:hidden print:hidden fixed bottom-0 inset-x-0 z-40 flex backdrop-blur-md border-t"
-        style={{ background: 'rgba(255,255,255,.96)', borderColor: 'var(--line)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {(() => {
           // وجهات الشريط: المُرتّبة بـmobile أولاً (منسّقة لكل دور)، وإلا أول ٤ عناصر كاحتياط
           const curated = nav.filter((n) => n.mobile != null).sort((a, b) => (a.mobile! - b.mobile!)).slice(0, 4)
           return curated.length > 0 ? curated : nav.slice(0, 4)
         })().map((n) => {
           const badge = (n.href === '/messages' && unreadMsgs > 0) ? unreadMsgs : n.badge
+          const label = n.mobileLabel || n.label
           // The buyer's main action (new price request) is a raised gold circle, not one more tab (UX-196).
+          // Its label is light on the navy bar (gold when open), the ring matches the bar (UX-019).
           if (n.href === '/contractor/rfq/quick') return (
             <Link key={n.href} href={n.href} prefetch onClick={() => setOpen(false)} aria-current={n.active ? 'page' : undefined}
-              className="flex-1 flex flex-col items-center justify-end gap-0.5 pb-1.5 relative min-h-[56px]" style={{ color: '#0B2438' }}>
-              <span className="-mt-5 w-[52px] h-[52px] rounded-full grid place-items-center shadow-[0_8px_20px_-8px_rgba(157,116,37,.7)] ring-4 ring-white"
+              className="flex-1 flex flex-col items-center justify-end gap-0.5 pb-1.5 relative min-h-[56px]" style={{ color: n.active ? '#F5C55B' : '#E8EDF2' }}>
+              <span className="-mt-5 w-[52px] h-[52px] rounded-full grid place-items-center shadow-[0_8px_20px_-8px_rgba(157,116,37,.7)] ring-4 ring-[#071827]"
                 style={{ background: 'linear-gradient(180deg,#F5C55B,#D4A543)', color: '#071827' }}>
                 <Plus className="w-6 h-6" strokeWidth={2.4} aria-hidden />
               </span>
-              <span className="text-[11.5px] font-bold truncate max-w-[76px]">{L('Request', 'درخواست', 'اطلب سعراً')}</span>
+              <span className="text-[12px] font-bold truncate max-w-[84px]">{label}</span>
             </Link>
           )
           return (
             <Link key={n.href} href={n.href} prefetch onClick={() => setOpen(false)} aria-current={n.active ? 'page' : undefined}
-              className={`ts-mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] relative ${n.active ? 'is-active' : ''}`}
-              style={{ color: n.active ? '#0B2438' : '#5B6B7C' }}>
-              {n.active && <span className="absolute top-0 inset-x-5 h-0.5 rounded-full" style={{ background: '#D4A543' }} />}
+              className={`ts-mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] relative ${n.active ? 'is-active' : ''}`}>
               <NavIcon href={n.href} fallback={n.icon} className="w-[21px] h-[21px]" />
-              <span className="text-[11.5px] font-bold truncate max-w-[76px]">{n.label}</span>
+              <span className="text-[12px] font-bold truncate max-w-[84px]">{label}</span>
               {badge != null && badge !== 0 && (
-                <span className="absolute top-1 end-[calc(50%-22px)] min-w-[18px] h-[18px] px-1 grid place-items-center rounded-full text-[10px] font-bold" style={{ background: '#D4A543', color: '#050B12' }}>{badge}</span>
+                <span className="absolute top-0.5 end-[calc(50%-24px)] min-w-[20px] h-[20px] px-1 grid place-items-center rounded-full text-[12px] font-bold" style={{ background: '#D4A543', color: '#050B12' }}>{badge}</span>
               )}
             </Link>
           )
         })}
         {/* «المزيد» يفتح القائمة الجانبية كاملة — يضمن الوصول لكل الوجهات (الإعدادات إلخ) على الجوّال */}
         <button type="button" onClick={() => setOpen(true)} aria-controls="ts-drawer" aria-expanded={open}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px]"
-          style={{ color: '#5B6B7C' }}>
+          className="ts-mobile-nav-link flex-1 flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px]">
           <span className="text-[19px] leading-none"><Glyph e="☰" /></span>
-          <span className="text-[11.5px] font-bold">{L('More', 'مزید', 'المزيد')}</span>
+          <span className="text-[12px] font-bold">{L('More', 'مزید', 'المزيد')}</span>
         </button>
       </nav>
 

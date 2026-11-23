@@ -15,7 +15,7 @@ import EmailVerify from '@/components/shared/EmailVerify'
 import GateHeader from './GateHeader'
 
 export default function VerifyPage() {
-  return <Suspense fallback={null}><Verify /></Suspense>
+  return <Suspense fallback={<div className="min-h-screen bg-[#F5F7FA]"><GateHeader /></div>}><Verify /></Suspense>
 }
 
 function Verify() {
@@ -102,6 +102,11 @@ function Verify() {
         <p className="text-sm text-gray-600 text-center">
           {L('Did the code not arrive?', 'کوڈ نہیں ملا؟', 'لم يصلك الرمز؟')}{' '}
           <Link href="/support" className="font-bold text-[#8F6820] underline underline-offset-2 inline-flex min-h-[44px] items-center">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
+        </p>
+        {/* deleting the account is a right (PDPL) and a store requirement, also before verifying (UX-024) */}
+        <p className="text-sm text-gray-600 text-center">
+          {L('Changed your mind?', 'ارادہ بدل گیا؟', 'غيّرت رأيك؟')}{' '}
+          <a href="/account/delete" className="font-bold text-red-700 underline underline-offset-2 inline-flex min-h-[44px] items-center">{L('Delete my account', 'میرا اکاؤنٹ حذف کریں', 'حذف حسابي')}</a>
         </p>
       </div>
     </div>

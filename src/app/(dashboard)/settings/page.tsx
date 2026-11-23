@@ -47,7 +47,7 @@ const txt = {
     verStatus: 'حالة التحقق', pending: 'قيد المراجعة', verified: 'موثق', rejected: 'مرفوض',
     docsTitle: 'المستندات الرسمية', docsSub: 'ارفع مستنداتك لإتمام عملية التحقق',
     licenseLabel: 'الرخصة البلدية أو رخصة النشاط (اختياري)', crLabel: 'شهادة السجل التجاري',
-    uploadDoc: 'اضغط لرفع الملف', docHint: 'PDF أو صورة — حجم أقصى 5MB',
+    uploadDoc: 'اضغط لرفع الملف', docHint: 'ملف PDF أو صورة، بحجم 5 ميجابايت على الأكثر',
     uploadBtn: 'رفع المستندات', uploaded: '✓ تم رفع المستندات بنجاح',
     currentDoc: 'المستند الحالي', viewDoc: 'عرض',
     rejectedBanner: 'تم رفض حسابك — يرجى رفع المستندات المطلوبة مرة أخرى',
@@ -142,7 +142,7 @@ export default function SettingsPage() {
   // فتح تبويب محدّد عبر ?tab= (مثلاً من «أكمل التوثيق» في «أكمل ملفك» → ?tab=docs)
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get('tab')
-    if (p && ['profile', 'docs', 'password', 'language'].includes(p)) setTab(p)
+    if (p && ['profile', 'notifications', 'docs', 'password', 'language'].includes(p)) setTab(p)
   }, [])
 
   // Profile fields
@@ -295,13 +295,26 @@ export default function SettingsPage() {
     const updateData: any = { region, city, vat_number: vat || null, district: district || null }
     // the name is editable for buyers always, and for sellers until verification (UX-044)
     const locked = profile?.role === 'supplier' && (profile?.verification_status === 'verified' || profile?.cr_verification_source === 'wathq')
-    if (!locked && companyAr.trim()) {
+    if (!locked) {
+      if (!companyAr.trim()) {
+        setProfileSaving(false)
+        setProfileMsg(L('Write your name before saving.', 'محفوظ کرنے سے پہلے اپنا نام لکھیں۔', 'اكتب اسمك قبل الحفظ.'))
+        return
+      }
       updateData.company_name_ar = companyAr.trim()
     }
     if (profile?.role === 'supplier') {
       updateData.min_order_value = minOrderValue ? parseFloat(minOrderValue) : 0
       // إذا اختار رقم مختلف نخزّنه، وإلا نُفرّغه ليُستخدم رقم الجوال تلقائياً بعد الترسية
-      updateData.contact_phone = useDiffContact ? (contactPhone.trim() || null) : null
+      if (useDiffContact) {
+        const digits = toLatinDigits(contactPhone).replace(/[^\d+]/g, '')
+        if (!/^(\+9665\d{8}|9665\d{8}|05\d{8}|\+9661\d{7,8}|01\d{7,8}|800\d{7}|9200\d{5})$/.test(digits)) {
+          setProfileSaving(false)
+          setProfileMsg(L('The contact number is not valid. Write it like 0551234567.', 'رابطہ نمبر درست نہیں۔ اسے 0551234567 کی طرح لکھیں۔', 'رقم التواصل غير صحيح، اكتبه مثل 0551234567.'))
+          return
+        }
+        updateData.contact_phone = digits
+      } else updateData.contact_phone = null
     }
     const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id)
     setProfileSaving(false)
@@ -503,6 +516,8 @@ export default function SettingsPage() {
 
   const tabs = [
     { key: 'profile', icon: <Glyph e="👤" />, label: profileTitle },
+    // notifications have their own tab (?tab=notifications), not the bottom of the profile (UX-099)
+    { key: 'notifications', icon: <Glyph e="🔔" />, label: L('Notifications', 'اطلاعات', 'الإشعارات') },
     ...(showDocs ? [{ key: 'docs', icon: <Glyph e="📄" />, label: t.docsTab }] : []),
     { key: 'password', icon: <Glyph e="🔒" />, label: phoneAccount ? L('Sign-in', 'سائن اِن', 'تسجيل الدخول') : t.passwordTab },
     { key: 'language', icon: <Glyph e="🌐" />, label: t.langTab },
@@ -517,7 +532,9 @@ export default function SettingsPage() {
         profile?.verification_status === 'verified' ? 'bg-emerald-100 text-emerald-800' :
         profile?.verification_status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'
       }`}>
-        {profile?.verification_status === 'verified' ? t.verified : profile?.verification_status === 'rejected' ? t.rejected : t.pending}
+        {profile?.verification_status === 'verified' ? t.verified : profile?.verification_status === 'rejected' ? t.rejected
+          : independent ? L('Independent seller', 'آزاد فروخت کنندہ', 'بائع مستقل')
+          : !profile?.cr_url ? L('Upload your commercial registration', 'اپنا تجارتی رجسٹریشن اپلوڈ کریں', 'ارفع السجل التجاري') : t.pending}
       </span>
     : profile?.phone_verified_at
       ? <span className="inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800"><Check className="w-3.5 h-3.5" aria-hidden />{L('Mobile verified', 'موبائل تصدیق شدہ', 'الجوال موثّق')}</span>
@@ -530,7 +547,7 @@ export default function SettingsPage() {
 
         {/* Phones: one horizontal tab row that stays under the top bar, so a tab never changes content
             out of sight below a tall menu card (UX-138) */}
-        <div className="lg:hidden sticky top-[61px] z-20 -mx-4 px-4 py-2 mb-4 bg-[#F4F3EF]/95 backdrop-blur border-b border-gray-200/70">
+        <div className="lg:hidden sticky top-[61px] sm:top-[69px] z-20 -mx-4 px-4 py-2 mb-4 bg-[#F4F3EF]/95 backdrop-blur border-b border-gray-200/70">
           <div role="tablist" aria-label={t.title} className="flex gap-2 overflow-x-auto">
             {tabs.map(item => (
               <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} onClick={() => setTab(item.key)}
@@ -542,6 +559,15 @@ export default function SettingsPage() {
             <Link href="/support" className="shrink-0 min-h-[44px] inline-flex items-center gap-1.5 px-3.5 rounded-xl text-sm font-bold whitespace-nowrap border bg-white text-[#0B2438] border-gray-200">
               <LifeBuoy className="w-4 h-4" aria-hidden />{supportLabel}
             </Link>
+          </div>
+        </div>
+
+        <div className="lg:hidden mb-4 flex items-center gap-3 rounded-2xl bg-white border border-gray-100 p-3">
+          <div className="w-11 h-11 shrink-0 rounded-full grid place-items-center text-white font-bold" style={{ background: '#0B2438' }}>{companyAr?.[0] || '?'}</div>
+          <div className="min-w-0">
+            <div className="font-bold text-sm truncate text-[#0B2438]">{companyAr || '—'}</div>
+            <div className="text-[12px] text-gray-600 truncate" dir="ltr">{placeholderEmail ? (profile?.phone || '') : user?.email}</div>
+            {statusPill}
           </div>
         </div>
 
@@ -605,7 +631,7 @@ export default function SettingsPage() {
                         const on = profile?.buyer_type === v
                         return (
                           <button key={v} type="button" role="radio" aria-checked={on}
-                            onClick={async () => { const prev = profile?.buyer_type; setProfile((p: any) => ({ ...p, buyer_type: v })); rememberBuyerType(v); const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id); if (error) { setProfile((p: any) => ({ ...p, buyer_type: prev })); rememberBuyerType(prev) } flashNotif(!error) }}
+                            onClick={async () => { const prev = profile?.buyer_type; setProfile((p: any) => ({ ...p, buyer_type: v })); rememberBuyerType(v); window.dispatchEvent(new Event('tsk:buyer-type')); const { error } = await createClient().from('profiles').update({ buyer_type: v }).eq('id', profile.id); if (error) { setProfile((p: any) => ({ ...p, buyer_type: prev })); rememberBuyerType(prev); window.dispatchEvent(new Event('tsk:buyer-type')) } flashNotif(!error) }}
                             className={`min-h-[56px] text-start rounded-xl border-2 px-3 py-2.5 flex items-start gap-2 ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
                             <span className={`mt-0.5 w-5 h-5 shrink-0 rounded-full border-2 grid place-items-center ${on ? 'border-[#0B2438] bg-[#0B2438] text-white' : 'border-gray-300'}`}>{on && <Check className="w-3 h-3" strokeWidth={3} aria-hidden />}</span>
                             <span>
@@ -657,9 +683,6 @@ export default function SettingsPage() {
                   {/* the mobile is read-only here: it changes only with an SMS code (UX-046) */}
                   <div id="phone" className="scroll-mt-32">
                     <div className="block text-xs font-bold text-gray-600 mb-1.5">{t.phone}</div>
-                    {profile?.phone && (
-                      <div className="input-field bg-gray-50 text-gray-800 flex items-center min-h-[44px] font-semibold"><span dir="ltr">{profile.phone}</span></div>
-                    )}
                     <PhoneVerify initialPhone={profile?.phone || ''} locale={locale}
                       verified={!!profile?.phone_verified_at}
                       waVerified={!!profile?.whatsapp_verified_at}
@@ -684,7 +707,7 @@ export default function SettingsPage() {
                       </label>
                       {useDiffContact && (
                         <input value={contactPhone} onChange={e => setContactPhone(e.target.value)} aria-label={L('Contact number', 'رابطہ نمبر', 'رقم التواصل')}
-                          className="input-field" dir="ltr" inputMode="tel" placeholder="+966 1X XXX XXXX" />
+                          className="input-field" dir="ltr" inputMode="tel" placeholder="0551234567" />
                       )}
                       <p className="text-[12px] text-gray-600 mt-1.5">{L('Buyers see this number only after choosing your offer; before that, contact is through the in-app chat.', 'خریدار یہ نمبر آپ کی آفر منتخب کرنے کے بعد ہی دیکھتا ہے؛ اس سے پہلے بات چیت ایپ کے اندر ہوتی ہے۔', 'يظهر هذا الرقم للمشتري بعد اختيار العرض فقط، وقبلها يكون التواصل عبر الدردشة الداخلية.')}</p>
                     </fieldset>
@@ -769,9 +792,14 @@ export default function SettingsPage() {
                   </button>
                 </form>
 
-                {/* Notifications: instant switches, kept out of the form above so «Save» is not
-                    mistaken for what saves them (UX-138) */}
-                <section className="mt-8 border-t border-gray-100 pt-6 space-y-5" aria-labelledby="set-notif-title">
+              </div>
+            )}
+
+            {/* Notifications tab: instant switches, kept out of the profile form so «Save» is not
+                mistaken for what saves them (UX-138, UX-099) */}
+            {tab === 'notifications' && (
+              <div className="bg-white rounded-2xl p-4 sm:p-7 border border-gray-100 shadow-sm animate-fade-in">
+                <section className="space-y-5" aria-labelledby="set-notif-title">
                   <div>
                     <h3 id="set-notif-title" className="text-base font-bold text-[#0B2438]">{L('Notifications', 'اطلاعات', 'الإشعارات')}</h3>
                     <p className="text-[13px] text-gray-600 mt-0.5">{L('These options are saved at once.', 'یہ اختیارات فوراً محفوظ ہوتے ہیں۔', 'تُحفظ هذه الخيارات فوراً.')}</p>
@@ -819,7 +847,11 @@ export default function SettingsPage() {
                     </p>
                   )}
                 </section>
+              </div>
+            )}
 
+            {tab === 'profile' && (
+              <div>
                 {/* Locked-field change request modal */}
                 {crqModal && (
                   <div className="fixed inset-0 z-[60] bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => !crqSaving && setCrqModal(null)}>
@@ -928,7 +960,8 @@ export default function SettingsPage() {
                 {/* التوثيق اختياري: يوضّح فايدته وفي خيار «لاحقاً» */}
                 <div className="flex flex-wrap items-start justify-between gap-3 rounded-xl p-4 mb-6 bg-[#F5F7FA] border border-gray-200">
                   <p className="text-sm text-gray-800 leading-relaxed flex-1 min-w-[220px]"><Glyph e="🛡" /> {L('Verification is optional. Once verified, buyers see a «Verified» badge next to your quotes, which makes your shop highly trusted and helps you win more requests.', 'تصدیق اختیاری ہے۔ تصدیق کے بعد خریدار آپ کی آفر کے ساتھ «تصدیق شدہ» بیج دیکھتے ہیں۔', 'التوثيق اختياري. بعد التوثيق تظهر شارة «موثّق» بجانب عروضك لدى طالبي الأسعار، وتظهر ضمن «شركات ومصانع معتمدة»، مما يرفع موثوقيتك وفرصك في الفوز بالطلبات.')}</p>
-                  <a href="/supplier/dashboard" className="min-h-[44px] inline-flex items-center text-sm font-bold px-4 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{L('Later', 'بعد میں', 'لاحقاً')}</a>
+                  {/* «لاحقاً» stays on this page: it goes back to the profile tab instead of leaving (UX-160) */}
+                  <button type="button" onClick={() => setTab('profile')} className="min-h-[44px] inline-flex items-center text-sm font-bold px-4 rounded-xl border bg-white hover:bg-gray-50 shrink-0" style={{ borderColor: '#e5e7eb', color: '#0B2438' }}>{L('Later', 'بعد میں', 'لاحقاً')}</button>
                 </div>
 
                 {profile?.verification_status === 'rejected' && (

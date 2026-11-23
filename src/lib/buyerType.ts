@@ -5,6 +5,7 @@ const KEY = 'taseerak_buyer_type'
 export type BuyerType = 'individual' | 'business'
 export function rememberBuyerType(v: string | null | undefined) {
   try { if (v === 'individual' || v === 'business') localStorage.setItem(KEY, v); else localStorage.removeItem(KEY) } catch {}
+  try { window.dispatchEvent(new Event('tsk:buyer-type')) } catch {}
 }
 export function storedBuyerType(): BuyerType | null {
   try { const v = typeof window !== 'undefined' ? localStorage.getItem(KEY) : null; return v === 'individual' || v === 'business' ? v : null } catch { return null }

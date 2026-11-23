@@ -8,7 +8,7 @@ export type ItemBudget = { item_index: number; budget_unit_price: number; budget
 /** Parse a typed budget ("150", "١٥٠", "80.5") → a positive number or null. */
 export function parseBudget(v: string | number | null | undefined): number | null {
   if (v == null) return null
-  const s = String(v).replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[,،\s]/g, '').replace('٫', '.')
+  const s = String(v).replace(/[۰-۹]/g, d => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))).replace(/[٠-٩]/g, d => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d))).replace(/[,،\s]/g, '').replace('٫', '.')
   const n = Number(s)
   return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null
 }

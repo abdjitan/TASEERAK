@@ -62,7 +62,7 @@ export default async function PricesPage() {
             <div className="text-4xl mb-3"><Glyph e="📊" /></div>
             <p className="font-bold text-gray-700 mb-1">قريباً</p>
             <p className="text-sm text-gray-600 max-w-sm mx-auto">سيظهر هنا مؤشّر أسعار مواد البناء بمجرد إتمام صفقات على المنصّة. كل صفقة تُغذّي المؤشّر تلقائياً.</p>
-            <Link href="/register" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>ابدأ الآن مجاناً</Link>
+            <Link href="/login" className="inline-block mt-5 px-6 py-2.5 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>ابدأ الآن مجاناً</Link>
           </div>
         ) : (
           <div className="space-y-6">
@@ -99,7 +99,7 @@ export default async function PricesPage() {
             يوفّر مؤشّر تسعيرك متوسّط أسعار أهم مواد البناء في السوق السعودي — مثل حديد التسليح، والأسمنت، والخرسانة الجاهزة، والبلوك، والبلاط والسيراميك، والمواد الكهربائية والميكانيكية — اعتماداً على أسعار فعلية من صفقات بين مشترين وموردين موثّقين.
           </p>
           <p>
-            للحصول على سعر دقيق لمشروعك، <Link href="/register" className="font-semibold underline" style={{ color: '#8F6820' }}>أنشئ طلب تسعير</Link> مجاناً، وسيتنافس عليه الموردون في منطقتك.
+            للحصول على سعر دقيق لمشروعك، <Link href="/login" className="font-semibold underline" style={{ color: '#8F6820' }}>أنشئ طلب تسعير</Link> مجاناً، وسيتنافس عليه الموردون في منطقتك.
           </p>
         </div>
       </main>

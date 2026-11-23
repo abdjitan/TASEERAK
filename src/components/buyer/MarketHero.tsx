@@ -10,7 +10,7 @@ import { getProductLabel } from '@/types'
 import { BROWSE_SECTIONS } from '@/lib/browseCategories'
 import { createClient } from '@/lib/supabase/client'
 import { sectionRank, bySectionRank, type DemandRow } from '@/lib/sectionOrder'
-import { HOME_PACKS, homeName } from '@/lib/homePacks'
+import { HOME_PACKS, HOME_ROOM_PACKS, homeName } from '@/lib/homePacks'
 import { productImageUrl } from '@/lib/productImage'
 
 // All sections, building first (owner 2026-10-19: show every category photo, building materials first)
@@ -113,12 +113,12 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
         {showList && (
           <ul id="hero-suggest" role="listbox" className="absolute inset-x-0 top-full mt-1.5 overflow-hidden rounded-2xl bg-white text-[#0B2438] shadow-xl ring-1 ring-black/5">
             {hits.map((h, i) => (
-              <li key={h.name} id={`hero-suggest-${i}`} role="option" aria-selected={i === active}>
-                <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => open_(h.name)} onMouseEnter={() => setActive(i)}
-                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-start text-[15px] ${i === active ? 'bg-[#F7F1E3]' : 'hover:bg-[#F7F1E3]'}`}>
-                  <Search className="w-4 h-4 text-[#8F6820] shrink-0" aria-hidden />
-                  <span className="truncate">{label(h.name)}</span>
-                </button>
+              /* the option itself is the tap target, no button inside an option (round-2 UX-133) */
+              <li key={h.name} id={`hero-suggest-${i}`} role="option" aria-selected={i === active}
+                onMouseDown={e => e.preventDefault()} onClick={() => open_(h.name)} onMouseEnter={() => setActive(i)}
+                className={`flex w-full min-h-[44px] cursor-pointer items-center gap-3 px-4 py-2.5 text-start text-[15px] ${i === active ? 'bg-[#F7F1E3]' : 'hover:bg-[#F7F1E3]'}`}>
+                <Search className="w-4 h-4 text-[#8F6820] shrink-0" aria-hidden />
+                <span className="truncate">{label(h.name)}</span>
               </li>
             ))}
             <li>
@@ -126,8 +126,8 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
                 onClick={() => router.push(`/contractor/rfq/quick?line=${encodeURIComponent(q.trim().slice(0, 80))}`)}
                 className="flex w-full items-center gap-3 px-4 py-3 text-start text-[14px] font-bold border-t border-gray-100 bg-[#D4A543]/10 text-[#0B2438] hover:bg-[#D4A543]/20">
                 <Plus className="w-4 h-4 shrink-0 text-[#8F6820]" aria-hidden />
-                <span className="min-w-0"><span className="block">{L('Didn’t find the material? Tap here', 'مطلوبہ چیز نہیں ملی؟ یہاں دبائیں', 'لم تجد المادة؟ اضغط هنا')}</span>
-                  <span className="block text-[12px] font-semibold text-[#48596E] truncate">{L(`Request «${q.trim()}» as you want it, with a photo and its section`, `«${q.trim()}» جیسا چاہیں منگوائیں، تصویر اور شعبے کے ساتھ`, `اطلب «${q.trim()}» كما تريده، مع صورة وقسمه`)}</span></span>
+                <span className="min-w-0"><span className="block">{L('Didn’t find what you are looking for? Request it as you want it', 'جو تلاش کر رہے ہیں نہیں ملا؟ جیسا چاہیں منگوائیں', 'لم تجد ما تبحث عنه؟ اطلبه كما تريده')}</span>
+                  <span className="block text-[12px] font-semibold text-[#48596E] truncate">{L(`Request «${q.trim()}», you can add a photo`, `«${q.trim()}» منگوائیں، تصویر بھی لگا سکتے ہیں`, `اطلب «${q.trim()}»، ويمكنك إضافة صورة`)}</span></span>
               </button>
             </li>
           </ul>
@@ -140,7 +140,7 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
           {/* business buyers: the two list tools, with one consistent name each (UX-144) */}
           {!homeBuyer && (<>
             <Link href="/contractor/project/new" className="inline-flex items-center gap-1.5 min-h-[44px] text-sm font-semibold text-white/90 hover:text-[#F5C55B] transition-colors">
-              <FileSpreadsheet className="w-4 h-4" aria-hidden />{L('Bill of quantities: upload your materials list', 'مقداروں کی فہرست: سامان کی فہرست اپ لوڈ کریں', 'جدول الكميات: ارفع قائمة موادك')}
+              <FileSpreadsheet className="w-4 h-4" aria-hidden />{L('Bill of quantities: upload your materials list', 'مقداروں کا جدول: سامان کی فہرست اپ لوڈ کریں', 'جدول الكميات: ارفع قائمة موادك')}
             </Link>
             <Link href="/contractor/tender" className="inline-flex items-center gap-1.5 min-h-[44px] text-sm font-semibold text-white/90 hover:text-[#F5C55B] transition-colors">
               <ClipboardList className="w-4 h-4" aria-hidden />{L('Tender pricing: price a tender’s items', 'ٹینڈر کی قیمت: ٹینڈر کی اشیاء کی قیمت', 'تسعير مناقصة: سعّر بنود مناقصة')}
@@ -166,7 +166,7 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
           <h3 className="text-lg font-extrabold text-[#0B2438]">{L('Start with what you need', 'جو چاہیے وہاں سے شروع کریں', 'ابدأ من الشيء الذي تحتاجه')}</h3>
           <p className="text-[13px] text-[#48596E]">{homeBuyer ? L('The sections homes ask for most come first', 'گھروں کی سب سے زیادہ مانگ والے حصے پہلے', 'الأقسام الأكثر طلباً للبيوت أولاً') : L('For your home, a renovation or a whole project', 'گھر، مرمت یا پورے پراجیکٹ کے لیے', 'للبيت أو التجديد أو مشروع كامل')}</p>
         </div>
-        <Link href="/contractor/rfq/quick" className="text-sm font-bold text-[#8F6820] hover:underline whitespace-nowrap min-h-[44px] inline-flex items-center">{L('All categories', 'تمام زمرے', 'كل التصنيفات')} {fwd}</Link>
+        <Link href="/contractor/rfq/quick?browse=1" className="text-sm font-bold text-[#8F6820] hover:underline whitespace-nowrap min-h-[44px] inline-flex items-center">{L('All categories', 'تمام زمرے', 'كل التصنيفات')} {fwd}</Link>
       </div>
       <div className={`mt-3 grid gap-2 sm:gap-3 ${homeBuyer ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3 lg:grid-cols-9'}`}>
         {cats.map(c => (
@@ -200,7 +200,7 @@ export default function MarketHero({ locale, homeBuyer = false, greeting }: { lo
         <h3 className="text-lg font-extrabold text-[#0B2438]">{homeBuyer ? L('Get your home ready', 'اپنا گھر تیار کریں', 'جهّز بيتك') : L('Ready material lists', 'سامان کی تیار فہرستیں', 'قوائم مواد جاهزة')}</h3>
         <p className="text-[13px] text-[#48596E]">{L('Pick a list, remove what you don’t need and set the quantities', 'فہرست چنیں، غیر ضروری ہٹائیں اور مقدار لکھیں', 'اختر قائمة، وأزل ما لا تحتاجه، وحدّد الكميات')}</p>
         <div className="mt-2 flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
-          {HOME_PACKS.map(p => (
+          {(homeBuyer ? HOME_ROOM_PACKS : HOME_PACKS).map(p => (
             <Link key={p.id} href={`/contractor/rfq/quick?pack=${p.id}`}
               className="shrink-0 w-36 sm:w-40 rounded-2xl border border-gray-200 bg-white overflow-hidden hover:border-[#D4A543] hover:shadow-md transition-all">
               <span className="block aspect-[4/3] bg-gray-50">

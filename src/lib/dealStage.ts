@@ -46,3 +46,27 @@ export function dealStage(offer: any, who: Who = 'buyer', locale: string = 'ar')
 
   return { step: 1, key: 'accepted', label: lbl('accepted', who, locale), emoji: '🚚', done: false, tone: '#D4A543' }
 }
+
+// One name per request status for the buyer, on every list and page (UX-048).
+//   open        → «يستقبل العروض»
+//   open, past the deadline → «انتهت المهلة — اختر عرضاً» (or «… — مدّد المهلة» with no offers yet)
+//   chosen      → «الصفقة جارية» until every deal is paid and confirmed → «اكتملت الصفقة»
+//   cancelled   → «ملغى»; ended with nothing chosen → «انتهى دون اختيار»
+export type RfqStatusKey = 'open' | 'expired_choose' | 'expired_empty' | 'deal_ongoing' | 'deal_done' | 'cancelled' | 'ended'
+export function rfqStatusLabel(
+  rfq: any,
+  opts: { dealStarted?: boolean; dealComplete?: boolean; hasOffers?: boolean; expired?: boolean },
+  locale: string = 'ar',
+): { key: RfqStatusKey; label: string } {
+  const T = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  if (opts.dealComplete) return { key: 'deal_done', label: T('Deal complete', 'ڈیل مکمل', 'اكتملت الصفقة') }
+  if (opts.dealStarted) return { key: 'deal_ongoing', label: T('Deal in progress', 'ڈیل جاری ہے', 'الصفقة جارية') }
+  if (rfq?.status === 'cancelled') return { key: 'cancelled', label: T('Cancelled', 'منسوخ', 'ملغى') }
+  if (rfq?.status === 'open') {
+    if (!opts.expired) return { key: 'open', label: T('Receiving offers', 'آفرز آ رہی ہیں', 'يستقبل العروض') }
+    return opts.hasOffers
+      ? { key: 'expired_choose', label: T('Deadline passed — choose an offer', 'مہلت ختم — آفر منتخب کریں', 'انتهت المهلة — اختر عرضاً') }
+      : { key: 'expired_empty', label: T('Deadline passed — extend it', 'مہلت ختم — مہلت بڑھائیں', 'انتهت المهلة — مدّد المهلة') }
+  }
+  return { key: 'ended', label: T('Ended without a choice', 'انتخاب کے بغیر ختم', 'انتهى دون اختيار') }
+}

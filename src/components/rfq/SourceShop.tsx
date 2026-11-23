@@ -4,6 +4,7 @@
 // invoice); the seller and admins see everything.
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { sarLabel } from '@/lib/vat'
 
 type Loc = 'ar' | 'en' | 'ur' | string
 const tr = (locale: Loc) => (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -22,18 +23,31 @@ export function SourceShopFields({ value, onChange, locale }: { value: SourceVal
       <div className="text-xs font-bold text-[#071827] mb-1">
         {L('The shop you will buy from', 'وہ دکان جہاں سے آپ خریدیں گے', 'المحل الذي ستشتري منه')} <span className="text-red-500">*</span>
       </div>
-      <p className="text-[12px] text-gray-700 mb-2 leading-relaxed">
-        {L('You are a pricing agent: before the buyer chooses your offer they see only the district; after it, the shop’s name (never its phone). Make sure the tax invoice is issued in the buyer’s name, at your quoted price, by a shop with a commercial registration, and attach it at delivery.',
-           'آپ قیمت ایجنٹ ہیں: خریدار کے آپ کی آفر چننے سے پہلے وہ صرف علاقہ دیکھتا ہے؛ بعد میں دکان کا نام (فون کبھی نہیں)۔ یقینی بنائیں کہ ٹیکس انوائس خریدار کے نام، آپ کی آفر کی قیمت پر، کمرشل رجسٹریشن والی دکان سے جاری ہو، اور ڈیلیوری پر اسے منسلک کریں۔',
-           'أنت وسيط تسعير: قبل أن يختار المشتري عرضك لا يرى إلا الحي، وبعد اختياره يرى اسم المحل (دون رقم هاتفه). تأكّد أن الفاتورة الضريبية تصدر باسم المشتري وبنفس سعر عرضك، من محل له سجل تجاري، وأرفقها عند التسليم.')}
-        {cap && (
-          <span className="block mt-1 font-semibold text-[#071827]">
-            {cap.cap == null
-              ? L('Your deals have no amount limit.', 'آپ کے سودوں پر کوئی حد نہیں۔', 'لا حدّ لقيمة صفقاتك.')
-              : L(`Your current limit per deal: ${cap.cap.toLocaleString('en-US')} SAR (it rises after successful deals).`, `فی سودا آپ کی موجودہ حد: ${cap.cap.toLocaleString('en-US')} ریال (کامیاب سودوں کے بعد بڑھتی ہے)۔`, `حدّك الحالي للصفقة: ${cap.cap.toLocaleString('en-US')} ريال (يرتفع بعد الصفقات الناجحة).`)}
-          </span>
-        )}
-      </p>
+      {/* UX-144: the rules as five short points instead of one long paragraph */}
+      <ul className="text-[12px] text-gray-700 mb-2 leading-relaxed list-disc ps-5 space-y-0.5">
+        <li>{L('Before the buyer chooses your offer, they see only the district of the shop.', 'خریدار کے آپ کی آفر چننے سے پہلے وہ صرف دکان کا علاقہ دیکھتا ہے۔', 'قبل أن يختار المشتري عرضك لا يرى إلا حي المحل.')}</li>
+        <li>{L('After choosing, they see the shop’s name, never its phone.', 'انتخاب کے بعد وہ دکان کا نام دیکھتا ہے، فون کبھی نہیں۔', 'بعد اختياره يرى اسم المحل، ولا يرى رقم هاتفه أبداً.')}</li>
+        <li>{L('The invoice is issued by the shop in the buyer’s name.', 'انوائس دکان سے خریدار کے نام جاری ہوتی ہے۔', 'تصدر الفاتورة من المحل باسم المشتري.')}</li>
+        <li>{L('At the same price as your offer, from a shop with a commercial registration.', 'آپ کی آفر کی قیمت پر، تجارتی رجسٹریشن والی دکان سے۔', 'بنفس سعر عرضك، ومن محل له سجل تجاري.')}</li>
+        <li>{L('Attach the invoice when you deliver.', 'ڈیلیوری پر انوائس منسلک کریں۔', 'أرفق الفاتورة عند التسليم.')}</li>
+      </ul>
+      {/* UX-090: the current limit and the progress towards the next one */}
+      {cap && (
+        <p className="text-[12px] mb-2 font-semibold text-[#071827] leading-relaxed">
+          {cap.cap == null
+            ? L('Your deals have no amount limit.', 'آپ کے سودوں پر کوئی حد نہیں۔', 'لا حدّ لقيمة صفقاتك.')
+            : (() => {
+              const c = Number(cap.cap), d = Number(cap.deals) || 0
+              const target = c <= 15000 ? 3 : 10
+              const cur = sarLabel(locale)
+              const next = c <= 15000 ? `50,000 ${cur}` : L('no limit', 'کوئی حد نہیں', 'بلا حد')
+              return L(
+                `Your current limit is ${c.toLocaleString('en-US')} ${cur} per deal. You have completed ${Math.min(d, target)} of ${target} successful deals; after ${target} it becomes ${next}.`,
+                `فی سودا آپ کی موجودہ حد ${c.toLocaleString('en-US')} ${cur} ہے۔ آپ نے ${target} میں سے ${Math.min(d, target)} کامیاب سودے مکمل کیے؛ ${target} کے بعد یہ ${next} ہو جائے گی۔`,
+                `حدّك الحالي ${c.toLocaleString('en-US')} ${cur} للصفقة. أكملتَ ${Math.min(d, target)} من ${target} صفقات ناجحة، وبعدها يصبح حدّك ${next}.`)
+            })()}
+        </p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {/* id="shop-name": the pricing page's «why can't I send» link scrolls here (UX-032) */}
         <input id="shop-name" value={value.name} onChange={set('name')} maxLength={120} className="input-field text-base sm:text-sm sm:col-span-2"
@@ -73,9 +87,9 @@ export function SourceShopCard({ offerId, editable, locale }: { offerId: string;
   }
   const missing = !data
   return (
-    <div className={`mt-3 rounded-xl border p-3 text-start ${missing ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}>
+    <div className={`mt-3 rounded-xl border p-3 text-start ${missing && editable ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}>
       <div className="text-xs font-bold text-[#071827]">{L('Source shop (pricing agent)', 'ماخذ دکان (قیمت ایجنٹ)', 'المحل المصدر (وسيط تسعير)')}</div>
-      {missing && !edit && (
+      {missing && editable && !edit && (
         <p className="text-[13px] font-semibold text-amber-900 mt-1">{L('Add the shop you buy from, or the buyer can’t choose your offer.', 'جس دکان سے آپ خریدتے ہیں وہ شامل کریں، ورنہ خریدار آپ کی آفر منتخب نہیں کر سکے گا۔', 'أضف المحل الذي ستشتري منه، وإلا فلن يستطيع المشتري اختيار عرضك.')}</p>
       )}
       {!missing && !edit && (
@@ -114,19 +128,15 @@ export function SourceShopBadge({ offerId, locale, compact }: { offerId: string;
     return (
       <div className={`${compact ? 'text-[12px]' : 'text-xs'} mt-1 rounded-lg bg-emerald-50 border border-emerald-200 px-2 py-1 text-emerald-900`}>
         {/* UX-002: never the shop phone here (this badge is also printed on the deal page); the seller sees it in SourceShopCard */}
-        {L('Seller (source shop):', 'فروخت کنندہ (ماخذ دکان):', 'البائع (المحل المصدر):')} <b>{d.name}</b>{where ? ` — ${where}` : ''}
-        <div className="text-[12px] text-emerald-800">{d.viewer === 'seller'
-          ? L('The tax invoice is issued by this shop in the buyer’s name.', 'ٹیکس انوائس یہی دکان خریدار کے نام جاری کرے گی۔', 'تصدر الفاتورة الضريبية من هذا المحل باسم المشتري.')
-          : L('The tax invoice is issued by this shop in your name.', 'ٹیکس انوائس یہی دکان آپ کے نام جاری کرے گی۔', 'الفاتورة الضريبية تصدر من هذا المحل باسمك.')}</div>
+        {/* UX-138: one name everywhere («المحل المصدر»), and the invoice said once */}
+        {L('Source shop:', 'ماخذ دکان:', 'المحل المصدر:')} <b>{d.name}</b>{where ? ` — ${where}` : ''}
+        {d.viewer === 'seller' && <div className="text-[12px] text-emerald-800">{L('The invoice is issued by the source shop in the buyer’s name.', 'انوائس ماخذ دکان سے خریدار کے نام جاری ہوگی۔', 'تصدر الفاتورة من المحل المصدر باسم المشتري.')}</div>}
       </div>
     )
   }
-  return where ? (
+  return (
     <div className={`${compact ? 'text-[12px]' : 'text-xs'} mt-1 text-gray-500`}>
-      {L('Pricing agent · goods from a shop in', 'قیمت ایجنٹ · سامان اس علاقے کی دکان سے', 'وسيط تسعير · البضاعة من محل في')} {where}
-      <span className="text-gray-500"> · {L('tax invoice from the shop in your name', 'ٹیکس انوائس دکان سے آپ کے نام', 'الفاتورة الضريبية من المحل باسمك')}</span>
+      {where ? <>{L('Source shop:', 'ماخذ دکان:', 'المحل المصدر:')} {where}</> : L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}
     </div>
-  ) : (
-    <div className={`${compact ? 'text-[12px]' : 'text-xs'} mt-1 text-gray-500`}>{L('Pricing agent · tax invoice from the shop in your name', 'قیمت ایجنٹ · ٹیکس انوائس دکان سے آپ کے نام', 'وسيط تسعير · الفاتورة الضريبية من المحل باسمك')}</div>
   )
 }

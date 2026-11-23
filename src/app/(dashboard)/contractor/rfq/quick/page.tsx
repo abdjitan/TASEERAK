@@ -14,7 +14,7 @@ import { SPEC_UNSURE, specUnsureLabel, REGIONS, CITIES_BY_REGION, SECTOR_LABELS,
 import CatalogPicker, { CatalogBrowser } from '@/components/shared/CatalogPicker'
 import { rememberBuyerType, storedBuyerType } from '@/lib/buyerType'
 import PackSheet, { type PackLine } from '@/components/buyer/PackSheet'
-import { packById, homeName, HOME_PACKS, type HomePack } from '@/lib/homePacks'
+import { packById, homeName, HOME_ROOM_PACKS, type HomePack } from '@/lib/homePacks'
 import LocationPicker from '@/components/shared/LocationPicker'
 import SellerIcon from '@/components/shared/SellerIcon'
 import EnablePush from '@/components/shared/EnablePush'
@@ -28,6 +28,8 @@ import LineSpecialty, { choiceDone } from '@/components/shared/LineSpecialty'
 import { isInstallable } from '@/lib/installation'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
 import { askConfirm } from '@/lib/askConfirm'
+import { canUseProjects } from '@/lib/plans'
+import QuantityCalc, { calcSupported } from '@/components/buyer/QuantityCalc'
 import { nearestSaCity } from '@/lib/saCityCoords'
 
 // The one request page, for anyone: write, dictate, photograph or pick from the catalog; we turn
@@ -67,8 +69,15 @@ type Line = {
   with_install?: boolean // «اطلب السعر مع التركيب» (only on an installable specialty, src/lib/installation.ts)
   budget?: string         // R23: «ميزانيتي للوحدة قبل الضريبة (اختياري)», SAR; saved to rfq_item_budgets, never in items
   budgetVisible?: boolean // shown to suppliers only when ticked (off by default)
-  review?: string[]       // UX-064: what to check on a line read from the text (quantity/unit guessed)
+  review?: string[]       // UX-064: what to check on a line read from the text: keys 'qty_missing' | 'qty_guess' | 'unit_guess' (round-2 UX-136)
+  prevFiles?: { url: string; name: string }[] // attachments carried from an earlier request («اطلب مرة أخرى», round-2 UX-040), sent as they are
+  extraOpen?: boolean     // home mode: «أضف ملاحظة أو صورة» opened (round-2 UX-042)
 }
+// a line's review flags: a quantity fix clears only the quantity flags, a unit fix only the unit flag (round-2 UX-136)
+const QTY_FLAGS = ['qty_missing', 'qty_guess']
+const MAX_FILES = 5
+const fileCount = (l: Line) => (l.fileId ? 1 : 0) + (l.moreFiles || []).length + (l.prevFiles || []).length
+const dropFlags = (review: string[] | undefined, drop: string[]) => { const r = (review || []).filter(x => !drop.includes(x)); return r.length ? r : undefined }
 type Photo = {
   id: string
   file: File
@@ -104,11 +113,27 @@ function lineFromItem(it: any): Line {
   const brand = String(it.brand || '').trim()
   if (brand && details.startsWith(`الماركة: ${brand}`)) details = details.slice(`الماركة: ${brand}`.length).replace(/^\s*—\s*/, '')
   if (st && details.startsWith(st)) details = details.slice(st.length).replace(/^\s*—\s*/, '')
+  const name = String(it.product_name || '').trim()
+  const sector = it.sector || 'supply_store'
+  // a hand-written item keeps the specialty the buyer chose, so a reorder never asks again (round-2 UX-040)
+  const custom = !!name && (it.custom === true || !CATALOG_NAMES.has(name))
+  const spec = it.spec && typeof it.spec === 'object' ? it.spec
+    : custom && (it.sub_category || it.section) ? { sector, sub: it.sub_category || null, ...(it.section ? { section: it.section } : {}) } : undefined
+  // the earlier request's attachments travel with the line («مرفق من الطلب السابق»)
+  const prev: { url: string; name: string }[] = []
+  const seen = new Set<string>()
+  const push = (url: any, nm: any) => { const u = String(url || ''); if (/^https?:\/\//.test(u) && !seen.has(u)) { seen.add(u); prev.push({ url: u, name: String(nm || '') }) } }
+  if (Array.isArray(it.prevFiles)) for (const f of it.prevFiles) push(f?.url, f?.name)
+  push(it.spec_file_url, it.spec_file_name)
+  if (it.photo_url && it.photo_url !== it.spec_file_url) push(it.photo_url, '')
+  if (Array.isArray(it.attachments)) for (const a of it.attachments) push(a?.url, a?.name)
   return {
-    key: uid(), product_name: it.product_name || '', sector: it.sector || 'supply_store',
+    key: uid(), product_name: name, sector,
     quantity: it.quantity ? String(it.quantity) : '', unit: it.unit || '', details, specs, ...(brand ? { brand } : {}),
     ...(it.with_install ? { with_install: true } : {}),
-    done: !!(it.product_name && Number(it.quantity) > 0 && it.unit),
+    ...(spec ? { spec } : {}),
+    ...(prev.length ? { prevFiles: prev.slice(0, 5) } : {}),
+    done: !!(name && Number(it.quantity) > 0 && it.unit),
   }
 }
 
@@ -140,7 +165,9 @@ export default function QuickRequestPage() {
   const [buyerType, setBuyerType] = useState<'individual' | 'business' | null | undefined>(undefined)
   const [chooseType, setChooseType] = useState(false) // «تغيير» next to the mode label (UX-085)
   const [moreOpen, setMoreOpen] = useState(false)
-  const simple = buyerType === 'individual'
+  const [canProjects, setCanProjects] = useState(false)
+  // an unknown buyer type gets the simple flow, never mandatory specs (round-2 UX-043)
+  const simple = buyerType !== 'business'
   // who prices it (owner 2026-10-24): all / companies & factories / shops / independents — rfqs.target_tiers
   const [tier, setTier] = useState<'all' | 'company' | 'shop' | 'independent'>('all')
   const [pickup, setPickup] = useState(false) // the buyer collects from the supplier instead of delivery
@@ -151,7 +178,6 @@ export default function QuickRequestPage() {
   const [pastPlaces, setPastPlaces] = useState<{ label: string; geo: { lat: number; lng: number } | null; address: string; region: string; city: string }[]>([])
   const [specsOpen, setSpecsOpen] = useState<string | null>(null) // line key whose specifications are open
   const [calcFor, setCalcFor] = useState<string | null>(null)     // line key whose «احسبها من مقاس الغرفة» is open
-  const [calc, setCalc] = useState({ l: '', w: '', h: '' })
   const [draftId, setDraftId] = useState<string | null>(null)     // a saved draft (rfq_drafts) opened here
   const specFileRef = useRef<HTMLInputElement>(null)
   const [fileFor, setFileFor] = useState<string | null>(null)
@@ -160,6 +186,9 @@ export default function QuickRequestPage() {
   const [reach, setReach] = useState<{ reached: number; items: { name: string; suppliers: number }[] } | null>(null)
   const [error, setError] = useState('')
   const [errKey, setErrKey] = useState<string | null>(null)   // the line the error is about (shown under it)
+  const [errField, setErrField] = useState<'region' | 'location' | null>(null) // a delivery field error, shown under that field (round-2 UX-041)
+  const [upload, setUpload] = useState<{ done: number; total: number } | null>(null) // attachments being uploaded on send (round-2 UX-044)
+  const [pastItems, setPastItems] = useState<{ name: string; sector: string }[]>([]) // «طلبتَها سابقاً» (round-2 UX-167)
   const [flash, setFlash] = useState<string | null>(null)     // a gold ring for 2 s on the line we scrolled to
   const [undo, setUndo] = useState<{ line: Line; index: number; photo?: Photo } | null>(null)
   const undoTimer = useRef<any>(null)
@@ -199,7 +228,8 @@ export default function QuickRequestPage() {
     const sq = (qs.get('q') || '').slice(0, 80), ss = qs.get('section')
     if (sq) setStartQ(sq)
     if (ss && /^[a-z_]{3,20}$/.test(ss)) setStartSection(ss)
-    if (sq || ss) {
+    // «كل التصنيفات» from the market home (?browse=1): the guide itself, not an empty form (round-2 UX-034)
+    if (sq || ss || qs.get('browse') === '1') {
       // phones show the guide as a sheet; desktop has it inline on the page
       if (window.matchMedia('(min-width: 1024px)').matches) setTimeout(() => document.getElementById('catalog-inline')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
       else setShowCatalog(true)
@@ -212,13 +242,15 @@ export default function QuickRequestPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { window.location.href = '/login?next=/contractor/rfq/quick'; return }
       setUserId(user.id)
-      const { data: p } = await supabase.from('profiles').select('region, city, latitude, longitude, buyer_type').eq('id', user.id).single()
+      const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      setCanProjects(canUseProjects(p)) // the bill-of-quantities tool only for accounts that can use it (round-2 UX-143)
       setBuyerType(p?.buyer_type === 'individual' || p?.buyer_type === 'business' ? p.buyer_type : null)
       rememberBuyerType(p?.buyer_type)
       if (p?.region) setRegion(p.region)
       if (p?.city) setCity(p.city)
       if (p?.latitude != null && p?.longitude != null) { setGeo({ lat: p.latitude, lng: p.longitude }); setGeoFromProfile(true) }
       loadPastPlaces(supabase, user.id)
+      loadPastItems(supabase, user.id)
 
       // 1) bring back what the buyer had entered before leaving the page
       let localCount = 0
@@ -261,7 +293,16 @@ export default function QuickRequestPage() {
           const its: any[] = Array.isArray(r.items) && r.items.length ? r.items
             : r.product_name ? [{ sector: r.sector, product_name: r.product_name, specification: r.specification, quantity: r.quantity, unit: r.unit }] : []
           added = its.length
-          setLines(prev => [...prev, ...its.map(lineFromItem)])
+          const back = its.map(lineFromItem)
+          // the per-item budgets (owner-only table) come back too (round-2 UX-040)
+          try {
+            const { data: bs } = await supabase.from('rfq_item_budgets').select('item_index, budget_unit_price, budget_visible').eq('rfq_id', fromId)
+            for (const b of bs || []) {
+              const ln = back[Number(b.item_index)]
+              if (ln && Number(b.budget_unit_price) > 0) { ln.budget = String(b.budget_unit_price); ln.budgetVisible = !!b.budget_visible }
+            }
+          } catch { /* optional */ }
+          setLines(prev => [...prev, ...back])
           const md = Number(its.find((x: any) => Number(x?.max_days) > 0)?.max_days)
           if (md > 0) setNeedDays(md)
           if (r.region && r.region !== 'كل المناطق') { setRegion(r.region); setCity(r.city || '') }
@@ -328,6 +369,26 @@ export default function QuickRequestPage() {
     } catch { /* optional */ }
   }
 
+  // «طلبتَها سابقاً» (round-2 UX-167): catalog materials from the buyer's last 20 requests, newest first
+  async function loadPastItems(supabase: any, uid: string) {
+    try {
+      const { data: rs } = await supabase.from('rfqs').select('items, product_name, sector').eq('contractor_id', uid).order('created_at', { ascending: false }).limit(20)
+      const out: { name: string; sector: string }[] = []
+      const seen = new Set<string>()
+      for (const r of rs || []) {
+        const its: any[] = Array.isArray(r.items) && r.items.length ? r.items : r.product_name ? [{ product_name: r.product_name, sector: r.sector }] : []
+        for (const it of its) {
+          const n = String(it?.product_name || '').trim()
+          if (!n || seen.has(n) || !CATALOG_NAMES.has(n)) continue
+          seen.add(n); out.push({ name: n, sector: it.sector || r.sector || 'supply_store' })
+          if (out.length >= 8) break
+        }
+        if (out.length >= 8) break
+      }
+      setPastItems(out)
+    } catch { /* optional */ }
+  }
+
   // Auto-save on this device so going to another page never loses the list.
   useEffect(() => {
     if (!restored || !userId || done) return
@@ -353,7 +414,7 @@ export default function QuickRequestPage() {
   useEffect(() => {
     if (!confirming) return
     confirmRef.current?.focus()
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setConfirming(false) }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !sendingRef.current) setConfirming(false) }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [confirming])
@@ -361,7 +422,8 @@ export default function QuickRequestPage() {
   function startOver() {
     deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[], ...lines.flatMap(l => (l.moreFiles || []).map(m => m.id))])
     if (userId) clearLocalDraft('quick:' + userId)
-    setLines([]); setPhotos([]); setText(''); setNotes(''); setError(''); setErrKey(null); rfqIdRef.current = ''
+    setLines([]); setPhotos([]); setText(''); setNotes(''); setError(''); setErrKey(null); setErrField(null); rfqIdRef.current = ''
+    setDraftId(null) // «ابدأ من جديد» must never delete the saved draft it was opened from (round-2 UX-136)
   }
 
   // a line the buyer finished is folded into one row when the next material comes in (UX-174)
@@ -378,7 +440,7 @@ export default function QuickRequestPage() {
     setMicError('')
     heardRef.current = false
     const rec = new SR()
-    rec.lang = locale === 'en' ? 'en-US' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA'
+    rec.lang = locale === 'en' ? 'en-US' : locale === 'ur' ? 'ur-PK' : 'ar-SA'
     rec.interimResults = false
     rec.continuous = true
     rec.onresult = (e: any) => {
@@ -408,20 +470,33 @@ export default function QuickRequestPage() {
     try { rec.start() } catch { setListening(false) }
   }
 
+  const sessionMsg = () => L('Your session has ended. Sign in again; your list stays saved.', 'آپ کا سیشن ختم ہو گیا۔ دوبارہ سائن ان کریں؛ آپ کی فہرست محفوظ رہے گی۔', 'انتهت جلستك. سجّل الدخول من جديد، وستبقى قائمتك محفوظة.')
+  // the review flags of a line, as the buyer reads them (older drafts may still hold plain text)
+  const reviewText = (k: string) => k === 'qty_missing' ? L('Enter the quantity', 'مقدار لکھیں', 'أدخل الكمية')
+    : k === 'qty_guess' ? L('The quantity is a guess, check it', 'مقدار اندازہ ہے، چیک کریں', 'الكمية مقترحة، تأكّد منها')
+    : k === 'unit_guess' ? L('The unit is a suggestion, check it', 'یونٹ تجویز ہے، چیک کریں', 'الوحدة مقترحة، تأكّد منها') : k
+
   async function parseText(input?: string) {
     const src = (input ?? text).trim()
     if (!src) return
     setParsing(true); setError(''); setErrKey(null); setInfo('')
     try {
       const r = await fetch('/api/quick-request/parse', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: src }) })
+      // an expired session: never the raw «unauthorized» (round-2 UX-136); the list stays saved on this device
+      if (r.status === 401) { showError(sessionMsg()); return }
       const j = await r.json()
-      if (!r.ok) { showError(j?.error || L('Could not read the list. Try again.', 'فہرست نہیں پڑھ سکے۔ دوبارہ کوشش کریں۔', 'تعذّرت قراءة القائمة. حاول مرة أخرى.')); return }
+      if (!r.ok) {
+        showError(r.status === 429
+          ? L('You have read many lists in the last hour. Try again a little later; your list stays saved.', 'آپ نے پچھلے گھنٹے میں بہت سی فہرستیں پڑھوائیں۔ تھوڑی دیر بعد دوبارہ کوشش کریں؛ فہرست محفوظ ہے۔', 'قرأت قوائم كثيرة خلال الساعة الأخيرة. حاول بعد قليل، وستبقى قائمتك محفوظة.')
+          : L('Could not read the list. Try again.', 'فہرست نہیں پڑھ سکے۔ دوبارہ کوشش کریں۔', 'تعذّرت قراءة القائمة. حاول مرة أخرى.'))
+        return
+      }
       const add: Line[] = (j.items || []).filter((it: any) => it?.product_name).map((it: any) => {
         const flags: string[] = Array.isArray(it.flags) ? it.flags : []
         const review: string[] = []
-        if (flags.includes('quantity_missing')) review.push(L('Enter the quantity', 'مقدار لکھیں', 'أدخل الكمية'))
-        else if (flags.includes('quantity_implied')) review.push(L('The quantity is a guess, check it', 'مقدار اندازہ ہے، چیک کریں', 'الكمية مقترحة، تأكّد منها'))
-        if (flags.includes('unit_default') || flags.includes('unit_missing')) review.push(L('The unit is a suggestion, check it', 'یونٹ تجویز ہے، چیک کریں', 'الوحدة مقترحة، تأكّد منها'))
+        if (flags.includes('quantity_missing')) review.push('qty_missing')
+        else if (flags.includes('quantity_implied')) review.push('qty_guess')
+        if (flags.includes('unit_default') || flags.includes('unit_missing')) review.push('unit_guess')
         const specs = it.specs && Object.keys(it.specs).length ? it.specs : undefined
         const ln: Line = {
           key: uid(), product_name: it.product_name, sector: it.sector,
@@ -459,7 +534,7 @@ export default function QuickRequestPage() {
     if (!files) return
     for (const file of Array.from(files).slice(0, 6)) {
       if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 6 * 1024 * 1024) {
-        showError(L('Photos must be JPG, PNG or WEBP and under 6 MB.', 'تصویر JPG، PNG یا WEBP اور 6MB سے کم ہو۔', 'يجب أن تكون الصورة بصيغة JPG أو PNG أو WEBP وأقل من ٦ ميغابايت.'))
+        showError(L('Photos must be JPG, PNG or WEBP and under 6 MB.', 'تصویر JPG، PNG یا WEBP اور 6 میگا بائٹ سے کم ہو۔', 'يجب أن تكون الصورة بصيغة JPG أو PNG أو WEBP وأقل من 6 ميجابايت.'))
         continue
       }
       const id = uid()
@@ -536,7 +611,7 @@ export default function QuickRequestPage() {
   function attachFile(key: string, file: File | undefined) {
     if (!file) return
     if (!/^(image\/(jpeg|png|webp)|application\/pdf)$/.test(file.type) || file.size > 10 * 1024 * 1024) {
-      showError(L('Files must be PDF, JPG, PNG or WEBP and under 10 MB.', 'فائل PDF یا تصویر اور 10MB سے کم ہو۔', 'يجب أن يكون الملف PDF أو صورة وأقل من ١٠ ميغابايت.'), key)
+      showError(L('Files must be PDF, JPG, PNG or WEBP and under 10 MB.', 'فائل PDF یا تصویر اور 10 میگا بائٹ سے کم ہو۔', 'يجب أن يكون الملف PDF أو صورة وأقل من 10 ميجابايت.'), key)
       return
     }
     const id = uid()
@@ -545,10 +620,20 @@ export default function QuickRequestPage() {
     if (/^image\//.test(file.type) && owner?.product_name?.trim()) checkLinePhoto(key, file, nameLabel(owner.product_name) || owner.product_name)
     setLines(prev => prev.map(l => {
       if (l.key !== key) return l
-      if (!l.fileId) return { ...l, fileId: id, fileName: file.name }
-      if ((l.moreFiles || []).length >= 4) { deleteDraftBlobs([id]); return l }
-      return { ...l, moreFiles: [...(l.moreFiles || []), { id, name: file.name }] }
+      if (fileCount(l) >= MAX_FILES) { deleteDraftBlobs([id]); return l }
+      // a new photo replaces the old «this photo does not look like…» warning (round-2 UX-136)
+      if (!l.fileId) return { ...l, fileId: id, fileName: file.name, photoWarn: undefined }
+      return { ...l, moreFiles: [...(l.moreFiles || []), { id, name: file.name }], photoWarn: undefined }
     }))
+  }
+  // several files picked at once: attach what fits and say how many were left out (round-2 UX-044)
+  function attachFiles(key: string, files: File[]) {
+    const owner = lines.find(l => l.key === key)
+    if (!owner || !files.length) return
+    const room = Math.max(0, MAX_FILES - fileCount(owner))
+    files.slice(0, room).forEach(f => attachFile(key, f))
+    const left = files.length - room
+    if (left > 0) showError(L(`You can attach up to ${MAX_FILES} files per item; ${left} not added.`, `ہر چیز کے ساتھ زیادہ سے زیادہ ${MAX_FILES} فائلیں لگ سکتی ہیں؛ ${left} شامل نہیں ہوئیں۔`, `يمكن إرفاق ${MAX_FILES} ملفات لكل مادة كحدّ أقصى؛ لم ${left === 1 ? 'يُضَف ملف واحد' : left === 2 ? 'يُضَف ملفان' : `تُضَف ${left} ملفات`}.`), key)
   }
 
   function addMore() {
@@ -561,6 +646,7 @@ export default function QuickRequestPage() {
   // after the catalog sheet closes, show the list so the buyer sees what was added
   function closeCatalog() {
     setShowCatalog(false)
+    setStartQ('') // the next opening starts fresh, not on the old search (round-2 UX-136)
     setTimeout(() => document.getElementById('request-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120)
   }
 
@@ -684,7 +770,7 @@ export default function QuickRequestPage() {
   }
 
   function validate(): boolean {
-    setError(''); setErrKey(null)
+    setError(''); setErrKey(null); setErrField(null)
     const p = firstProblem()
     if (!p) return true
     if (p.key) {
@@ -693,8 +779,9 @@ export default function QuickRequestPage() {
       setLines(prev => prev.map(x => x.key === p.key ? { ...x, done: false } : x))
       showError(p.msg, p.key)
     } else if (p.field) {
-      setError(p.msg); setErrKey(null)
-      setTimeout(() => document.getElementById(p.field === 'region' ? 'quick-region' : 'quick-location')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
+      // shown under the field itself, with a gold frame (round-2 UX-041)
+      setError(p.msg); setErrKey(null); setErrField(p.field)
+      setTimeout(() => document.getElementById(p.field === 'region' ? 'quick-region' : 'quick-location-box')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 60)
     } else showError(p.msg)
     return false
   }
@@ -706,6 +793,16 @@ export default function QuickRequestPage() {
     if (!(await ensureVerified())) return // buyers browse freely; verify the mobile/email here (owner 2026-11-18)
     sendingRef.current = true
     setSending(true)
+    // the review stays open while sending and shows the upload progress (round-2 UX-044)
+    const totalUploads = sendable.reduce((s, l) => {
+      const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
+      return s + (l.fileId ? 1 : 0) + (l.moreFiles || []).length + (ph && ph.share ? 1 : 0)
+    }, 0)
+    let uploaded = 0
+    const tick = () => { uploaded++; setUpload({ done: uploaded, total: totalUploads }) }
+    if (totalUploads) setUpload({ done: 0, total: totalUploads })
+    setConfirming(true)
+    let sentOk = false
     const supabase = createClient()
     if (!rfqIdRef.current) {
       rfqIdRef.current = typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID()
@@ -728,6 +825,7 @@ export default function QuickRequestPage() {
             if (!up) { showError(L(`Could not upload the attachment of «${nameLabel(l.product_name)}». Check your connection and try again, or remove the attachment.`, `«${nameLabel(l.product_name)}» کی فائل اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں یا فائل ہٹا دیں۔`, `تعذّر رفع مرفق «${nameLabel(l.product_name)}». تحقّق من الاتصال وحاول مرة أخرى، أو احذف المرفق.`), l.key); return }
             fileUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
           }
+          tick()
         }
         const attachments: { url: string; name: string }[] = []
         for (const [k, mf] of (l.moreFiles || []).entries()) {
@@ -738,7 +836,14 @@ export default function QuickRequestPage() {
           const { data: up } = await supabase.storage.from('licenses').upload(`${userId}/spec-${Date.now()}-${i}-${k + 2}.${ext}`, blob, { upsert: false, contentType: blob.type })
           if (!up) { showError(L(`Could not upload «${mf.name}». Try again, or remove it.`, `«${mf.name}» اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں یا ہٹا دیں۔`, `تعذّر رفع «${mf.name}». حاول مرة أخرى، أو احذفه.`), l.key); return }
           attachments.push({ url: supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl, name: mf.name })
+          tick()
         }
+        // files carried from the earlier request are already uploaded: sent as they are
+        const prevF = l.prevFiles || []
+        if (!fileUrl && !photoUrl && prevF.length) {
+          fileUrl = prevF[0].url
+          for (const pf of prevF.slice(1)) attachments.push({ url: pf.url, name: pf.name || L('Attachment', 'فائل', 'مرفق') })
+        } else for (const pf of prevF) attachments.push({ url: pf.url, name: pf.name || L('Attachment', 'فائل', 'مرفق') })
         if (ph && ph.share) {
           const phFile = await (await import('@/lib/compressImage')).compressImage(ph.file)
           const ext = phFile.type === 'image/png' ? 'png' : phFile.type === 'image/webp' ? 'webp' : 'jpg'
@@ -746,6 +851,7 @@ export default function QuickRequestPage() {
           const { data: up } = await supabase.storage.from('licenses').upload(path, phFile, { upsert: false, contentType: phFile.type })
           if (!up) { showError(L(`Could not upload the photo of «${nameLabel(l.product_name)}». Try again, or untick «send the photo».`, `«${nameLabel(l.product_name)}» کی تصویر اپ لوڈ نہیں ہو سکی۔ دوبارہ کوشش کریں۔`, `تعذّر رفع صورة «${nameLabel(l.product_name)}». حاول مرة أخرى، أو ألغِ خيار إرسال الصورة.`), l.key); return }
           photoUrl = supabase.storage.from('licenses').getPublicUrl(up.path).data.publicUrl
+          tick()
         }
         const st = specText(l.product_name, l.specs)
         const specsObj: Record<string, string> = {}
@@ -761,8 +867,10 @@ export default function QuickRequestPage() {
           unit: l.unit,
           supplier_tiers: null, in_stock: false, max_days: needDays, specsObj,
           spec_file_url: fileUrl || photoUrl,
-          spec_file_name: fileUrl ? (l.fileName || L('Attachment', 'فائل', 'مرفق')) : photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
-          photo_url: photoUrl || (fileUrl && isImageName(l.fileName) ? fileUrl : null),
+          spec_file_name: fileUrl ? (l.fileName || (l.prevFiles?.[0]?.url === fileUrl ? l.prevFiles[0].name : '') || L('Attachment', 'فائل', 'مرفق')) : photoUrl ? L('Photo of the item', 'تصویر', 'صورة المادة') : null,
+          photo_url: photoUrl || (fileUrl && (isImageName(l.fileName) || (!l.fileId && /\.(jpe?g|png|webp)(\?|$)/i.test(fileUrl))) ? fileUrl : null),
+          // the buyer's own specialty choice for a hand-written item, so a reorder keeps it (round-2 UX-040)
+          ...(l.spec?.section ? { section: l.spec.section } : {}),
           ...(attachments.length ? { attachments } : {}),
           quick: true,
           // a line written by hand (not a catalog product): admins hear about it when an offer is chosen (174)
@@ -790,7 +898,7 @@ export default function QuickRequestPage() {
       // 23505 on the primary key: this same request already went through on an earlier try
       const already = !!insErr && (insErr as any).code === '23505' && /rfqs_pkey/.test(insErr.message || '')
       if (insErr && !already) {
-        showError((insErr.message || '').includes('rfq_daily_limit')
+        showError(/jwt|session/i.test(insErr.message || '') ? sessionMsg() : (insErr.message || '').includes('rfq_daily_limit')
           ? L('Daily request limit reached. Try again later.', 'آپ درخواستوں کی روزانہ حد تک پہنچ گئے ہیں۔ بعد میں دوبارہ کوشش کریں۔', 'وصلت إلى الحد اليومي للطلبات. حاول لاحقاً.')
           : L('Could not send. Try again.', 'نہیں بھیج سکے۔ دوبارہ کوشش کریں۔', 'تعذّر إرسال الطلب. حاول مرة أخرى.'))
         return
@@ -813,11 +921,15 @@ export default function QuickRequestPage() {
       // who it reached and which materials no supplier covers yet (UX-016)
       let coverage: any = null
       try { const { data: cv } = await supabase.rpc('get_rfq_coverage', { p_rfq: sentId }); coverage = cv || null } catch {}
+      sentOk = true
       setSent({ id: sentId, expires, coverage })
       setDone(true)
     } catch {
       showError(L('Network problem: your request was not sent. It is still saved here; try again.', 'نیٹ ورک کا مسئلہ: درخواست نہیں گئی۔ یہ یہاں محفوظ ہے؛ دوبارہ کوشش کریں۔', 'حدثت مشكلة في الاتصال ولم يُرسل الطلب. ما زال محفوظاً هنا؛ حاول مرة أخرى.'))
-    } finally { setSending(false); sendingRef.current = false }
+    } finally {
+      setSending(false); sendingRef.current = false; setUpload(null)
+      if (!sentOk) setConfirming(false) // the error is shown on the page, next to the line or field it is about
+    }
   }
 
   // Lines keep the Arabic catalog name/unit (that is what routes the request and what suppliers
@@ -825,7 +937,7 @@ export default function QuickRequestPage() {
   const SECTOR_I18N: Record<string, { en: string; ur: string }> = {
     civil: { en: 'Civil', ur: 'سول' }, architectural: { en: 'Architectural', ur: 'آرکیٹیکچرل' },
     electrical: { en: 'Electrical', ur: 'بجلی' }, mechanical: { en: 'Mechanical', ur: 'مکینیکل' },
-    equipment: { en: 'Machinery & equipment', ur: 'مشینری اور آلات' }, supply_store: { en: 'Supply store', ur: 'سپلائی اسٹور' },
+    equipment: { en: 'Machinery & equipment', ur: 'مشینری اور آلات' }, supply_store: { en: 'General supplies', ur: 'عام سامان' },
   }
   const sectorLabel = (s: string) => {
     if (locale !== 'ar' && SECTOR_I18N[s]) return (SECTOR_I18N[s] as any)[locale] || SECTOR_I18N[s].en
@@ -836,23 +948,21 @@ export default function QuickRequestPage() {
   const specialtyLabel = (l: Line) => { const sb = lineSub(l); return sb ? getSubCategoryLabel(l.sector as Sector, sb, locale) : sectorLabel(l.sector) }
   function nameLabel(name: string) { return !name ? name : simple && locale === 'ar' ? homeName(name) : getProductLabel(name, locale) }
   const unitLabel = (u: string) => getUnitLabelLong(u, locale) || u
+  // a spec field's name in the reader's language (Urdu falls back to English only when it has no Urdu label)
+  const fieldLabel = (f: any) => locale === 'ar' ? f.ar : locale === 'ur' ? (f.ur || f.en) : f.en
+  // the chosen specifications with their field names («اللون: أبيض»), shown to every buyer since suppliers see them (round-2 UX-039)
+  const specPairs = (l: Line): string[] => {
+    const fields = getProductSpecs(l.product_name).filter(f => f.key !== 'unit')
+    const known = new Set(fields.map(f => f.key))
+    const val = (v: string) => v === SPEC_UNSURE ? specUnsureLabel(locale) : getOptionLabel(v, locale)
+    return [
+      ...fields.filter(f => (l.specs?.[f.key] || '').trim()).map(f => `${fieldLabel(f)}: ${val(l.specs![f.key].trim())}`),
+      ...Object.entries(l.specs || {}).filter(([k, v]) => !known.has(k) && k !== 'unit' && (v || '').trim()).map(([, v]) => val(v.trim())),
+    ]
+  }
   const qtyText = (l: Line) => `${l.quantity} ${unitLabel(l.unit)}`
   const fileWord = (n?: string) => isImageName(n) ? L('Photo attached', 'تصویر منسلک', 'صورة مرفقة') : L('File attached', 'فائل منسلک', 'ملف مرفق')
   const stepBadge = (n: number) => <span className="inline-grid place-items-center w-6 h-6 me-1.5 rounded-full bg-[#D4A543] text-[#071827] text-[12px] font-extrabold align-middle">{n}</span>
-
-  // «لا تعرف الكمية؟» (UX-189): paint from the walls of a room (two coats ≈ 15 m² a gallon), floors by area
-  const calcResult = (unit: string) => {
-    const lv = parseFloat(calc.l), wv = parseFloat(calc.w), hv = parseFloat(calc.h)
-    if (!(lv > 0 && wv > 0)) return null
-    if (unit === 'جالون') {
-      if (!(hv > 0)) return null
-      const area = Math.round(2 * (lv + wv) * hv)
-      return { area, qty: Math.max(1, Math.ceil(area / 15)) }
-    }
-    return { area: Math.round(lv * wv * 10) / 10, qty: Math.ceil(lv * wv) }
-  }
-  const sqm = (n: number) => locale === 'en' ? `${n} square metres` : locale === 'ur' ? `${n} مربع میٹر` : arCount(Math.round(n), 'متر مربع واحد', 'متران مربعان', 'أمتار مربعة', 'متراً مربعاً')
-  const gallons = (n: number) => locale === 'en' ? `${n} gallon${n === 1 ? '' : 's'}` : locale === 'ur' ? `${n} گیلن` : arCount(n, 'جالون واحد', 'جالونان', 'جالونات', 'جالوناً')
 
   async function switchType(v: 'individual' | 'business') {
     if (v === buyerType) { setChooseType(false); return }
@@ -866,13 +976,22 @@ export default function QuickRequestPage() {
 
   // a map pin / GPS fix also fills the region and city (UX-073)
   function onGeo(a: number, b: number) {
-    setGeo({ lat: a, lng: b }); setGeoFromProfile(false)
+    setGeo({ lat: a, lng: b }); setGeoFromProfile(false); if (errField) { setErrField(null); setError('') }
     const n = nearestSaCity(a, b)
     if (n && n.km < 80) {
       setRegion(n.region); setCity(n.city)
       setGeoFilled(L(`We set the region and city from your location: ${n.city}.`, `ہم نے آپ کے مقام سے علاقہ اور شہر منتخب کیا: ${n.city}۔`, `حدّدنا المنطقة والمدينة من موقعك: ${n.city}.`))
     }
   }
+
+  // one promise for a material no supplier covers yet (round-2 UX-070); before sending it is said in the future
+  const uncoveredMsg = (n: string, sentAlready: boolean) => sentAlready
+    ? L(`No supplier for «${nameLabel(n)}» is registered yet. We told our team to find one for you, and we will let you know as soon as an offer on it arrives.`,
+      `«${nameLabel(n)}» کا کوئی سپلائر ابھی رجسٹر نہیں۔ ہم نے اپنی ٹیم کو آپ کے لیے سپلائر تلاش کرنے کا کہہ دیا ہے، اور اس پر پیشکش آتے ہی آپ کو بتائیں گے۔`,
+      `لا يوجد بعد مورد مسجّل لـ«${nameLabel(n)}». أبلغنا فريقنا ليبحث لك عن مورد، وسنُعلمك فور وصول عرض عليه.`)
+    : L(`No supplier for «${nameLabel(n)}» is registered yet. When you send, we tell our team to find one for you, and we will let you know as soon as an offer on it arrives.`,
+      `«${nameLabel(n)}» کا کوئی سپلائر ابھی رجسٹر نہیں۔ بھیجتے ہی ہم اپنی ٹیم کو آپ کے لیے سپلائر تلاش کرنے کا کہیں گے، اور اس پر پیشکش آتے ہی آپ کو بتائیں گے۔`,
+      `لا يوجد بعد مورد مسجّل لـ«${nameLabel(n)}». عند الإرسال نُبلغ فريقنا ليبحث لك عن مورد، وسنُعلمك فور وصول عرض عليه.`)
 
   const shell = (children: ReactNode) => (
     <AppShell title={L('Price request', 'قیمت کی درخواست', 'طلب تسعير')} nav={getNav('contractor', locale, '/contractor/rfq/quick')} dir={dir} hideAssistant={hasBar}>{children}</AppShell>
@@ -895,13 +1014,29 @@ export default function QuickRequestPage() {
         {uncovered.length > 0 && (
           <div className="mt-3 text-start rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-1">
             {uncovered.slice(0, 4).map(n => (
-              <p key={n} className="text-[13px] text-amber-900">{L(`No supplier for «${nameLabel(n)}» has joined yet. We will notify you as soon as one does.`, `«${nameLabel(n)}» کا کوئی سپلائر ابھی شامل نہیں ہوا۔ شامل ہوتے ہی اطلاع دیں گے۔`, `لم ينضم بعد مورد لـ«${nameLabel(n)}»، وسنُبلغك فور انضمام أحدهم.`)}</p>
+              <p key={n} className="text-[13px] text-amber-900">{uncoveredMsg(n, true)}</p>
             ))}
           </div>
         )}
         {sent?.expires && (
           <p className="mt-3 text-[13px] text-gray-600">{L('Offers close: ', 'پیشکشیں بند ہوں گی: ', 'تُغلق العروض: ')}<b className="text-[#0B2438]">{whenText(new Date(sent.expires).getTime())}</b></p>
         )}
+        {/* «ماذا بعد؟» (round-2 UX-168): what happens next, in three plain steps */}
+        <div className="mt-4 text-start rounded-xl bg-[#F7F4EC] p-3">
+          <div className="text-[13px] font-extrabold text-[#0B2438] mb-2">{L('What happens next?', 'آگے کیا ہوگا؟', 'ماذا بعد؟')}</div>
+          <ol className="space-y-1.5">
+            {[
+              L('Suppliers send their prices; we notify you of each offer.', 'سپلائرز اپنی قیمتیں بھیجیں گے؛ ہر پیشکش پر ہم آپ کو اطلاع دیں گے۔', 'يرسل الموردون أسعارهم، ونُبلغك بكل عرض يصل.'),
+              L('Compare the offers side by side: price, delivery and rating.', 'پیشکشوں کا موازنہ کریں: قیمت، ڈیلیوری اور ریٹنگ۔', 'قارن العروض جنباً إلى جنب: السعر والتوصيل والتقييم.'),
+              L('Choose the offer that suits you; only then the supplier sees your name.', 'مناسب پیشکش منتخب کریں؛ تب ہی سپلائر آپ کا نام دیکھے گا۔', 'اختر العرض الأنسب لك، وعندها فقط يرى المورد اسمك.'),
+            ].map((s, i) => (
+              <li key={i} className="flex items-start gap-2 text-[13px] text-[#0B2438]">
+                <span className="w-6 h-6 rounded-full grid place-items-center shrink-0 text-[12px] font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>{i + 1}</span>
+                <span className="pt-0.5">{s}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
         <div className="mt-5 text-start"><EnablePush variant="card" /></div>
         <div className="mt-5 space-y-2">
           {sent?.id && (
@@ -910,7 +1045,7 @@ export default function QuickRequestPage() {
             </Link>
           )}
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => { setDone(false); setSent(null); setLines([]); setPhotos([]); setNotes(''); setText(''); setError(''); setErrKey(null); setNeedDays(null); setReach(null) }}
+            <button type="button" onClick={() => { setDone(false); setSent(null); setLines([]); setPhotos([]); setNotes(''); setText(''); setError(''); setErrKey(null); setErrField(null); setNeedDays(null); setReach(null) }}
               className="min-h-12 py-3 rounded-xl font-bold border border-[#0B2438]/30 text-[#0B2438] bg-white">{L('New request', 'نئی درخواست', 'طلب جديد')}</button>
             <Link href="/contractor/rfqs" className="min-h-12 py-3 grid place-items-center rounded-xl font-bold border border-[#0B2438]/30 text-[#0B2438] bg-white">{L('My requests', 'میری درخواستیں', 'طلباتي')}</Link>
           </div>
@@ -930,6 +1065,22 @@ export default function QuickRequestPage() {
     )
   }
 
+  // «متى تحتاج المواد؟» (round-2 UX-046): it sets how long suppliers have to reply, so a home buyer sees it in step 3
+  const needBlock = (
+    <div>
+      <div id="need-q" className="text-sm font-bold text-[#0B2438] mb-2">{simple ? L('When do you need the materials?', 'سامان کب چاہیے؟', 'متى تحتاج المواد؟') : L('When should the materials reach you?', 'سامان کب تک پہنچے؟', 'متى تريد أن تصلك المواد؟')}</div>
+      <div role="radiogroup" aria-labelledby="need-q" className="flex flex-wrap gap-1.5">
+        {([[1, L('Within a day', 'ایک دن میں', 'خلال يوم')], [3, L('Within 3 days', '3 دن میں', 'خلال 3 أيام')], [7, L('Within a week', 'ایک ہفتے میں', 'خلال أسبوع')], [null, L('Not urgent', 'جلدی نہیں', 'غير مستعجل')]] as [number | null, string][]).map(([d, lab]) => (
+          <button key={String(d)} type="button" role="radio" aria-checked={needDays === d} onClick={() => setNeedDays(d)}
+            className={`min-h-[44px] px-3 rounded-full border-2 text-[13px] font-bold inline-flex items-center gap-1 ${needDays === d ? CHOICE_ON : CHOICE_OFF}`}>{needDays === d && <Check className="w-3.5 h-3.5" aria-hidden />}{lab}</button>
+        ))}
+      </div>
+      <p className="text-[12px] text-gray-600 mt-1">{simple
+        ? L('If you choose «Within a day», we ask suppliers to reply within 24 hours.', 'اگر آپ «ایک دن میں» منتخب کریں تو ہم سپلائرز سے 24 گھنٹے میں جواب مانگیں گے۔', 'إذا اخترت «خلال يوم» نطلب من الموردين الرد خلال 24 ساعة.')
+        : L('Suppliers see it on every item, so they quote only what they can deliver in time.', 'سپلائرز اسے ہر چیز پر دیکھتے ہیں تاکہ وہی قیمت دیں جو وقت پر پہنچا سکیں۔', 'يظهر للموردين على كل مادة ليسعّروا ما يستطيعون تسليمه في الوقت المطلوب.')}</p>
+    </div>
+  )
+
   // a home buyer: the guide with photos stays on the page (phones) once they start picking from it
   const emptySimple = simple && (lines.length === 0 || inlinePick)
 
@@ -942,10 +1093,10 @@ export default function QuickRequestPage() {
           <div className="text-[13px] font-bold text-[#9D7425] mb-1">{L('One request… and offers from several suppliers in your hands', 'ایک درخواست… اور کئی سپلائرز کی پیشکشیں آپ کے ہاتھ میں', 'طلب واحد… وعروض عدة موردين بين يديك')}</div>
           <h1 className="text-2xl font-extrabold text-navy">{simple ? L('What does your home need?', 'آپ کے گھر کو کیا چاہیے؟', 'ماذا يحتاج بيتك؟') : L('What do you need?', 'آپ کو کیا چاہیے؟', 'ماذا تحتاج؟')}</h1>
           {simple && <p className="mt-1 text-sm font-semibold text-[#0B2438]">{L('Three steps: what you need, how many, and where.', 'تین قدم: کیا، کتنا، اور کہاں۔', 'ثلاث خطوات: ماذا تحتاج، وكم، وأين.')}</p>}
-          {buyerType === 'business' && (
+          {buyerType === 'business' && canProjects && (
             <a href="/contractor/project/new" className="mt-3 flex items-center justify-between gap-3 rounded-xl border-2 border-[#D4A543] bg-[#D4A543]/10 px-4 py-3 hover:bg-[#D4A543]/20">
               <span>
-                <span className="block text-sm font-extrabold text-navy"><Glyph e="📊" /> {L('Bill of quantities: upload it', 'مقداروں کی فہرست اپ لوڈ کریں', 'جدول الكميات: ارفعه')}</span>
+                <span className="block text-sm font-extrabold text-navy"><Glyph e="📊" /> {L('Bill of quantities: upload it', 'مقداروں کا جدول اپ لوڈ کریں', 'جدول الكميات: ارفعه')}</span>
                 <span className="block text-[12px] text-gray-600">{L('Excel, PDF or a photo: every item is extracted and sent to the right suppliers', 'Excel، PDF یا تصویر: ہر چیز نکال کر متعلقہ سپلائرز کو بھیجی جاتی ہے', 'Excel أو PDF أو صورة: نستخرج كل بند ونرسله إلى الموردين المختصين')}</span>
               </span>
               <span className="text-[#8F6820] font-bold" aria-hidden="true">{dir === 'rtl' ? '←' : '→'}</span>
@@ -963,7 +1114,7 @@ export default function QuickRequestPage() {
               <div className="text-sm font-bold text-navy mb-2">{L('Who are you buying for?', 'آپ کس کے لیے خرید رہے ہیں؟', 'لمن تشتري؟')}</div>
               <div className="grid grid-cols-2 gap-2">
                 {([['individual', L('My home', 'اپنا گھر', 'لبيتي'), L('Simple request, no technical details', 'آسان درخواست، تکنیکی تفصیلات کے بغیر', 'طلب بسيط بلا تفاصيل فنية')],
-                   ['business', L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'), L('Full options: specs, VAT invoice, bill of quantities', 'مکمل اختیارات: تفصیلات، VAT انوائس، مقداروں کی فہرست', 'خيارات كاملة: مواصفات وفاتورة ضريبية وجدول كميات')]] as const).map(([v, t, sub]) => (
+                   ['business', L('Contractor or company', 'ٹھیکیدار یا کمپنی', 'مقاول أو شركة'), L('Full options: specs, VAT invoice, bill of quantities', 'مکمل اختیارات: تفصیلات، VAT انوائس، مقداروں کا جدول', 'خيارات كاملة: مواصفات وفاتورة ضريبية وجدول كميات')]] as const).map(([v, t, sub]) => (
                   <button key={v} type="button" aria-pressed={buyerType === v} className={`text-start rounded-xl border-2 px-3 py-2 min-h-[56px] ${buyerType === v ? CHOICE_ON : CHOICE_OFF}`}
                     onClick={() => switchType(v)}>
                     <span className="flex items-center gap-1 text-sm font-bold text-navy">{buyerType === v && <Check className="w-4 h-4" aria-hidden />}{t}</span>
@@ -988,7 +1139,7 @@ export default function QuickRequestPage() {
           <label htmlFor="quick-text" className="block text-sm font-bold text-navy">{simple && stepBadge(1)}{simple ? L('What do you need? Pick it from the materials guide, write it or photograph it', 'کیا چاہیے؟ مواد کی فہرست سے چنیں، لکھیں یا تصویر لیں', 'ماذا تحتاج؟ اختره من دليل المواد أو اكتبه أو صوّره') : L('Write or paste your list', 'اپنی فہرست لکھیں یا پیسٹ کریں', 'اكتب قائمتك أو الصقها')}</label>
           <textarea id="quick-text" value={text} onChange={e => setText(e.target.value)} rows={simple ? 3 : 4}
             className="input-field text-[16px] leading-relaxed"
-            placeholder={simple ? L('e.g. 6 ceiling spotlights, a basin mixer, 2 gallons of white paint', 'مثلاً: 6 سیلنگ اسپاٹ لائٹس، ایک مکسر، 2 گیلن سفید پینٹ', 'مثلاً: ٦ مصابيح سقف موجّهة، خلاط مغسلة، ٢ جالون دهان أبيض') : L('e.g. 10 bags cement, 500 hollow blocks 20cm, 2 tons rebar 12mm', 'مثلاً: 10 بوری سیمنٹ، 500 بلاک', 'مثلاً: ١٠ أكياس أسمنت، ٥٠٠ بلك ٢٠، ٢ طن حديد ١٢')} />
+            placeholder={simple ? L('e.g. 6 ceiling spotlights, a basin mixer, 2 gallons of white paint', 'مثلاً: 6 سیلنگ اسپاٹ لائٹس، ایک مکسر، 2 گیلن سفید پینٹ', 'مثلاً: 6 مصابيح سقف موجّهة، خلاط مغسلة، 2 جالون دهان أبيض') : L('e.g. 10 bags cement, 500 hollow blocks 20cm, 2 tons rebar 12mm', 'مثلاً: 10 بوری سیمنٹ، 500 بلاک', 'مثلاً: 10 أكياس أسمنت، 500 بلوك 20 سم، 2 طن حديد 12 مم')} />
           <div className="flex flex-wrap gap-2">
             {/* the guide first on phones (UX-075); desktop shows it inline below */}
             {!emptySimple && (
@@ -1001,7 +1152,7 @@ export default function QuickRequestPage() {
             </button>
             {canListen && (
               <button type="button" onClick={toggleMic} aria-pressed={listening}
-                className={`min-h-[44px] px-4 rounded-xl font-bold border transition-all ${listening ? 'bg-red-50 border-red-300 text-red-700 animate-pulse' : 'bg-white border-gray-200 text-gray-700'}`}>
+                className={`min-h-[44px] px-4 rounded-xl font-bold border transition-all ${listening ? 'bg-[#D4A543]/15 border-[#D4A543] text-[#0B2438] animate-pulse' : 'bg-white border-gray-200 text-gray-700'}`}>
                 <Glyph e="⏺" /> {listening ? L('Listening… tap to stop', 'سن رہے ہیں… روکنے کے لیے دبائیں', 'جارٍ الاستماع… اضغط للإيقاف') : L('Say it', 'بولیں', 'تحدّث')}
               </button>
             )}
@@ -1011,11 +1162,25 @@ export default function QuickRequestPage() {
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden"
               onChange={e => { addPhotos(e.target.files); e.target.value = '' }} />
             <input ref={specFileRef} type="file" accept="application/pdf,image/jpeg,image/png,image/webp" multiple className="hidden"
-              onChange={e => { if (fileFor) Array.from(e.target.files || []).forEach(f => attachFile(fileFor, f)); e.target.value = '' }} />
+              onChange={e => { if (fileFor) attachFiles(fileFor, Array.from(e.target.files || [])); e.target.value = '' }} />
           </div>
           <p className="text-[12px] text-gray-600">{L('We turn what you wrote into a list of materials that you check before sending.', 'آپ کی لکھی ہوئی چیزوں کو ہم سامان کی فہرست میں بدلیں گے جسے آپ بھیجنے سے پہلے دیکھیں گے۔', 'سنحوّل ما كتبته إلى قائمة مواد تراجعها قبل الإرسال.')}</p>
           {micError && <p className="text-[13px] text-red-700" role="alert">{micError}</p>}
           {info && <p className="text-[13px] font-bold text-[#0F6E56]" role="status">{info}</p>}
+          {/* «طلبتَها سابقاً» (round-2 UX-167): one tap adds a material from the last requests */}
+          {pastItems.some(p => !lines.some(l => l.product_name === p.name)) && (
+            <div>
+              <div className="text-[12px] font-bold text-gray-600 mb-1">{L('Ordered before:', 'پہلے منگوایا:', 'طلبتَها سابقاً:')}</div>
+              <div className="flex flex-wrap gap-1.5">
+                {pastItems.filter(p => !lines.some(l => l.product_name === p.name)).map(p => (
+                  <button key={p.name} type="button" onClick={() => addFromCatalog({ name: p.name, sector: p.sector as Sector })}
+                    className="min-h-[44px] max-w-[16rem] truncate px-3 rounded-full border-2 border-gray-200 bg-white text-[13px] font-bold text-[#0B2438] hover:border-[#D4A543]" dir="auto">
+                    + {nameLabel(p.name)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* a home buyer with an empty request: the guide with photos and the ready lists right here (UX-075) */}
@@ -1023,11 +1188,11 @@ export default function QuickRequestPage() {
           <div className="lg:hidden bg-white rounded-2xl p-4 border border-gray-100 shadow-sm space-y-3">
             <h2 className="font-bold text-navy">{L('Or choose by photos', 'یا تصاویر سے چنیں', 'أو اختر بالصور')}</h2>
             <CatalogBrowser key={'m|' + startQ + '|' + (startSection || '')} simple inline initialQuery={startQ} initialSection={startSection as any} locale={locale}
-              picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity }))} onPick={it => { setInlinePick(true); addFromCatalog(it) }} onRemove={removeLine} onQty={(k, q) => updateLine(k, { quantity: q })} />
+              picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity, unit: l.unit }))} onPick={it => { setInlinePick(true); addFromCatalog(it) }} onRemove={removeLine} onQty={(k, q) => updateLine(k, { quantity: q })} />
             <div>
               <h3 className="text-sm font-bold text-navy mb-2">{L('Get your home ready', 'اپنا گھر تیار کریں', 'جهّز بيتك')}</h3>
               <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-                {HOME_PACKS.map(p => (
+                {HOME_ROOM_PACKS.map(p => (
                   <button key={p.id} type="button" onClick={() => setPack(p)}
                     className="shrink-0 inline-flex items-center gap-2 ps-1 pe-3 min-h-[44px] rounded-full border border-gray-200 bg-white text-[13px] font-bold text-[#0B2438] hover:border-[#D4A543]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1040,14 +1205,14 @@ export default function QuickRequestPage() {
           </div>
         )}
 
-        {error && !errKey && <div id="quick-error" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 scroll-mt-24" role="alert">{error}</div>}
+        {error && !errKey && !errField && <div id="quick-error" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 scroll-mt-24" role="alert">{error}</div>}
         </div>
 
         {/* Desktop: the catalog fills the main column; phones open it as a sheet */}
         <div id="catalog-inline" className="hidden lg:block lg:col-start-1 lg:row-start-2 lg:mt-5 bg-white rounded-2xl p-5 border border-gray-100 shadow-sm space-y-3">
           <h2 className="font-bold text-navy"><Glyph e="🔍" /> {L('Browse the materials guide', 'مواد کی فہرست دیکھیں', 'تصفّح دليل المواد')}</h2>
           <CatalogBrowser key={startQ + '|' + (startSection || '')} simple={simple} inline initialQuery={startQ} initialSection={startSection as any} locale={locale}
-            picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity }))} onPick={addFromCatalog} onRemove={removeLine} onQty={(k, q) => updateLine(k, { quantity: q })} />
+            picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity, unit: l.unit }))} onPick={addFromCatalog} onRemove={removeLine} onQty={(k, q) => updateLine(k, { quantity: q })} />
         </div>
 
         {/* B: the chosen list + delivery, a side column on desktop (sticky), under the inputs on mobile */}
@@ -1072,8 +1237,9 @@ export default function QuickRequestPage() {
             {lines.map(l => {
               const ph = l.photoId ? photos.find(p => p.id === l.photoId) : undefined
               const ring = flash === l.key ? ' ring-2 ring-[#D4A543] ring-offset-2' : ''
+              const showExtra = !simple || !!l.extraOpen || !!(l.details.trim() || Object.values(l.specs || {}).some(v => (v || '').trim()) || l.fileId || l.prevFiles?.length || l.photoWarn
+                || (l.product_name.trim() && !CATALOG_NAMES.has(l.product_name.trim())))
               const lineErr = errKey === l.key && error ? <p className="text-[13px] font-bold text-red-700 basis-full" role="alert">{error}</p> : null
-              const specVals = Object.values(l.specs || {}).filter(v => (v || '').trim())
               return (
                 l.done ? (
                   <div key={l.key} id={'line-' + l.key} className={'rounded-xl border border-[#0F6E56]/30 bg-[#0F6E56]/[0.03] p-2 scroll-mt-28 transition-shadow' + ring}>
@@ -1087,11 +1253,11 @@ export default function QuickRequestPage() {
                         <span className="block font-bold text-sm text-navy truncate" dir="auto">{nameLabel(l.product_name)}</span>
                         <span className="block text-[12px] text-gray-600 truncate" dir="auto">
                           <b className="text-[#8F6820]">{qtyText(l)}</b>
-                          {!simple && specVals.length ? ' · ' + specVals.join('، ') : ''}
+                          {specPairs(l).length ? ' · ' + specPairs(l).join('، ') : ''}
                           {l.brand?.trim() ? ' · ' + L('Brand: ', 'برانڈ: ', 'الماركة: ') + l.brand.trim() : ''}
                           {l.details.trim() ? ' · ' + l.details.trim() : ''}
                           {wantsInstall(l) ? ' · ' + L('with installation', 'تنصیب سمیت', 'مع التركيب') : ''}
-                          {l.fileId ? ' · ' + fileWord(l.fileName) : ''}
+                          {l.fileId ? ' · ' + fileWord(l.fileName) : l.prevFiles?.length ? ' · ' + L('Attachment from the earlier request', 'پچھلی درخواست کی فائل', 'مرفق من الطلب السابق') : ''}
                         </span>
                       </span>
                       <span className="text-[12px] font-bold text-gray-600 shrink-0 inline-flex items-center gap-1"><Pencil className="w-3.5 h-3.5" aria-hidden /> {L('Edit', 'ترمیم', 'تعديل')}</span>
@@ -1107,13 +1273,13 @@ export default function QuickRequestPage() {
                       : l.product_name ? <img src={productImageUrl(l.product_name)} alt="" loading="lazy" className="w-16 h-16 rounded-lg object-contain shrink-0 border border-gray-100 bg-gray-50"
                           onError={(e: any) => imgFallback(e, detectSubCategory(l.product_name, l.sector as any))} /> : null}
                     <div className="flex-1 min-w-0 space-y-1">
-                      <input value={nameLabel(l.product_name)} onChange={e => updateLine(l.key, { product_name: e.target.value === nameLabel(l.product_name) ? l.product_name : e.target.value, spec: undefined })} aria-label={L('Item name', 'نام', 'اسم المادة')}
+                      <input value={nameLabel(l.product_name)} onChange={e => updateLine(l.key, { product_name: e.target.value === nameLabel(l.product_name) ? l.product_name : e.target.value, spec: undefined, photoWarn: undefined })} aria-label={L('Item name', 'نام', 'اسم المادة')}
                         className="input-field font-semibold text-[16px] sm:text-sm" placeholder={ph?.status === 'identifying' ? L('Recognising the photo…', 'تصویر پہچان رہے ہیں…', 'جارٍ التعرّف على الصورة…') : L('Item name', 'نام', 'اسم المادة')} />
                       {locale !== 'ar' && l.original && !ph && (
                         <p className="text-[12px] font-semibold text-gray-700" dir="auto">= {l.original}</p>
                       )}
                       {l.review?.length ? (
-                        <p className="text-[12px] font-bold text-[#8F6820]"><Glyph e="⚠" /> {l.review.join(' · ')}</p>
+                        <p className="text-[12px] font-bold text-[#8F6820]"><Glyph e="⚠" /> {l.review.map(reviewText).join(' · ')}</p>
                       ) : null}
                       {ph && ph.status === 'identifying' && (
                         <p className="text-[12px] text-gray-600 inline-flex items-center gap-1.5" role="status">
@@ -1156,48 +1322,31 @@ export default function QuickRequestPage() {
                     <button type="button" onClick={() => removeLine(l.key)} className="min-w-[44px] min-h-[44px] grid place-items-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 shrink-0" aria-label={L(`Remove ${nameLabel(l.product_name) || 'item'}`, `${nameLabel(l.product_name)} ہٹائیں`, `حذف ${nameLabel(l.product_name) || 'المادة'}`)}><X className="w-5 h-5" aria-hidden /></button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    <input type="text" inputMode="decimal" value={l.quantity} onChange={e => updateLine(l.key, { quantity: toLatinNumber(e.target.value), review: undefined })}
+                    <input type="text" inputMode="decimal" value={l.quantity} onChange={e => updateLine(l.key, { quantity: toLatinNumber(e.target.value), review: dropFlags(l.review, QTY_FLAGS) })}
                       className={`input-field text-[16px] sm:text-sm ${!(parseFloat(l.quantity) > 0) && errKey === l.key ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`} placeholder={L('Quantity', 'مقدار', 'الكمية')} aria-label={L('Quantity', 'مقدار', 'الكمية')} />
-                    <select value={l.unit} onChange={e => updateLine(l.key, { unit: e.target.value, review: undefined })} className="input-field text-[16px] sm:text-sm" aria-label={L('Unit', 'یونٹ', 'الوحدة')}>
+                    <select value={l.unit} onChange={e => updateLine(l.key, { unit: e.target.value, review: dropFlags(l.review, ['unit_guess']) })} className="input-field text-[16px] sm:text-sm" aria-label={L('Unit', 'یونٹ', 'الوحدة')}>
                       <option value="">{L('Unit', 'یونٹ', 'الوحدة')}</option>
                       {/* a product with its own order units shows only those; otherwise its specialty's logical units (owner 2026-10-19) */}
                       {Array.from(new Set([...(unitChoicesFor(l.product_name, l.sector as any) || UNITS), ...(l.unit ? [l.unit] : [])])).map(u => <option key={u} value={u}>{getUnitLabelLong(u, locale) || u}</option>)}
                     </select>
                   </div>
-                  {/* «لا تعرف الكمية؟» from the room size (UX-189): paint by gallon, floors and walls by m² */}
-                  {(l.unit === 'جالون' || l.unit === 'م²') && (
+                  {/* «لا تعرف الكمية؟» from the room size: floor or walls, waste included (round-2 UX-006) */}
+                  {calcSupported(l.unit) && (
                     calcFor === l.key ? (
-                      <div className="rounded-xl bg-gray-50 border border-gray-200 p-2.5 space-y-2">
-                        <div className="text-[13px] font-bold text-[#0B2438]">{l.unit === 'جالون' ? L('Room size in metres (we count the walls, two coats)', 'کمرے کا سائز میٹر میں (دیواریں، دو کوٹ)', 'مقاس الغرفة بالمتر (نحسب الجدران، وجهان)') : L('Room size in metres', 'کمرے کا سائز میٹر میں', 'مقاس الغرفة بالمتر')}</div>
-                        <div className={`grid gap-2 ${l.unit === 'جالون' ? 'grid-cols-3' : 'grid-cols-2'}`}>
-                          {([['l', L('Length', 'لمبائی', 'الطول')], ['w', L('Width', 'چوڑائی', 'العرض')], ...(l.unit === 'جالون' ? [['h', L('Height', 'اونچائی', 'الارتفاع')]] : [])] as [keyof typeof calc, string][]).map(([k, lab]) => (
-                            <label key={k} className="block">
-                              <span className="block text-[12px] text-gray-600 mb-0.5">{lab}</span>
-                              <input type="text" inputMode="decimal" value={calc[k]} onChange={e => setCalc(c => ({ ...c, [k]: toLatinNumber(e.target.value).slice(0, 6) }))} className="input-field text-[16px] sm:text-sm" />
-                            </label>
-                          ))}
-                        </div>
-                        {(() => {
-                          const r = calcResult(l.unit)
-                          if (!r) return null
-                          return (
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="text-[13px] text-[#0B2438]">
-                                {l.unit === 'جالون'
-                                  ? <>{L('Wall area: ', 'دیواروں کا رقبہ: ', 'مساحة الجدران: ')}<b>{sqm(r.area)}</b> {dir === 'rtl' ? '←' : '→'} <b>{gallons(r.qty)}</b> {L('(two coats)', '(دو کوٹ)', '(وجهان)')}</>
-                                  : <>{L('Floor area: ', 'فرش کا رقبہ: ', 'مساحة الأرضية: ')}<b>{sqm(r.area)}</b></>}
-                              </span>
-                              <button type="button" onClick={() => { updateLine(l.key, { quantity: String(r.qty), review: undefined }); setCalcFor(null) }}
-                                className="min-h-[44px] px-4 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Use this quantity', 'یہ مقدار استعمال کریں', 'استخدم هذه الكمية')}</button>
-                            </div>
-                          )
-                        })()}
-                      </div>
+                      <QuantityCalc unit={l.unit} name={l.product_name} sub={lineSub(l)} locale={locale}
+                        onUse={q => { updateLine(l.key, { quantity: q, review: dropFlags(l.review, QTY_FLAGS) }); setCalcFor(null) }} />
                     ) : (
-                      <button type="button" onClick={() => { setCalcFor(l.key); setCalc({ l: '', w: '', h: '' }) }} className="min-h-[36px] text-[13px] font-bold text-[#8F6820] inline-flex items-center gap-1.5 hover:underline">
+                      <button type="button" onClick={() => setCalcFor(l.key)} className="min-h-[44px] text-[13px] font-bold text-[#8F6820] inline-flex items-center gap-1.5 hover:underline">
                         <Calculator className="w-4 h-4" aria-hidden />{L('Not sure of the quantity? Work it out from the room size', 'مقدار معلوم نہیں؟ کمرے کے سائز سے حساب کریں', 'لا تعرف الكمية؟ احسبها من مقاس الغرفة')}
                       </button>
                     )
+                  )}
+                  {/* home mode: notes, details and attachments behind one button, open by itself when they hold something (round-2 UX-042) */}
+                  {simple && !showExtra && (
+                    <button type="button" onClick={() => updateLine(l.key, { extraOpen: true })} aria-expanded={false}
+                      className="min-h-[44px] text-[13px] font-bold text-[#0B2438] inline-flex items-center gap-1.5 hover:underline">
+                      <Paperclip className="w-4 h-4" aria-hidden />{L('Add a note or a photo (optional)', 'نوٹ یا تصویر شامل کریں (اختیاری)', 'أضف ملاحظة أو صورة (اختياري)')}
+                    </button>
                   )}
                   {(() => {
                     const needWritten = !simple && specsRequired(l.product_name, l.sector as any) && !getProductSpecs(l.product_name).some(f => f.key !== 'unit')
@@ -1208,7 +1357,7 @@ export default function QuickRequestPage() {
                           aria-label={L('Brand or product name (optional)', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)')}
                           placeholder={L('Brand or product name (optional), e.g. Fosroc Renderoc', 'برانڈ یا پروڈکٹ کا نام (اختیاری)', 'الماركة أو اسم المنتج (اختياري)، مثل: فوسروك رندروك')} />
                       )}
-                      <label className="block">
+                      {showExtra && <label className="block">
                         {needWritten && <span className="block text-[12px] font-bold text-[#0B2438] mb-0.5">{L('Size and specifications (required)', 'سائز اور تفصیل (ضروری)', 'المقاس والمواصفات (مطلوب)')}</span>}
                         <input value={l.details} onChange={e => updateLine(l.key, { details: e.target.value })}
                           className={`input-field text-[16px] sm:text-sm ${miss ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}
@@ -1216,42 +1365,42 @@ export default function QuickRequestPage() {
                           placeholder={needWritten
                             ? L('e.g. length, width, thickness, grade', 'جیسے لمبائی، چوڑائی، موٹائی اور گریڈ', 'مثل الطول والعرض والسماكة والدرجة')
                             : L('Notes for the supplier (optional)', 'سپلائر کے لیے نوٹ (اختیاری)', 'ملاحظات للمورد (اختياري)')} />
-                      </label>
+                      </label>}
                       {!simple && <BudgetField value={l.budget || ''} visible={!!l.budgetVisible} unit={l.unit ? unitLabel(l.unit) : ''} locale={locale}
                         onChange={(budget, budgetVisible) => updateLine(l.key, { budget, budgetVisible })} />}
                     </>)
                   })()}
-                  {(() => {
+                  {showExtra && (() => {
                     const fields = getProductSpecs(l.product_name).filter(f => f.key !== 'unit')
                     const n = fields.filter(f => (l.specs?.[f.key] || '').trim()).length
                     const req = !simple && fields.length > 0 && specsRequired(l.product_name, l.sector as any)
                     const missing = req && n < fields.length
                     const open = specsOpen === l.key || missing
                     const custom = !CATALOG_NAMES.has(l.product_name.trim())
-                    const hasPhoto = !!l.photoId || (!!l.fileId && isImageName(l.fileName))
+                    const hasPhoto = !!l.photoId || (!!l.fileId && isImageName(l.fileName)) || !!l.prevFiles?.length
                     return (
                       <>
                         <div className="flex flex-wrap items-center gap-2">
                           {fields.length > 0 && (
                             <button type="button" onClick={() => setSpecsOpen(open ? null : l.key)} aria-expanded={open}
-                              className={`min-h-[40px] text-[12px] font-bold px-2.5 rounded-lg border inline-flex items-center gap-1 ${missing ? 'border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10' : n ? 'border-[#0B2438]/40 text-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 text-gray-700'}`}>
+                              className={`min-h-[44px] text-[12px] font-bold px-3 rounded-lg border inline-flex items-center gap-1 ${missing ? 'border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10' : n ? 'border-[#0B2438]/40 text-[#0B2438] bg-[#0B2438]/5' : 'border-gray-200 text-gray-700'}`}>
                               <Glyph e="⚙" /> {simple ? L('More details (optional)', 'مزید تفصیل (اختیاری)', 'تفاصيل إضافية (اختياري)') : L('Specifications', 'تفصیلات', 'المواصفات')}{req ? L(' (required)', ' (ضروری)', ' (مطلوبة)') : ''}{n ? ` (${n})` : ''} {open ? <ChevronUp className="w-3.5 h-3.5" aria-hidden /> : <ChevronDown className="w-3.5 h-3.5" aria-hidden />}
                             </button>
                           )}
                           {l.photoWarn && (
                             <div className="basis-full text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
-                              <Glyph e="⚠" /> {l.photoWarn} <button type="button" className="underline font-bold min-h-[36px]" onClick={() => updateLine(l.key, { photoWarn: undefined })}>{L('Keep it', 'رکھیں', 'أبقِها')}</button>
+                              <Glyph e="⚠" /> {l.photoWarn} <button type="button" className="underline font-bold min-h-[44px] px-1" onClick={() => updateLine(l.key, { photoWarn: undefined })}>{L('Keep it', 'رکھیں', 'أبقِها')}</button>
                             </div>
                           )}
                           {/* one attach button; on a line written by hand it asks for a photo (UX-174) */}
                           <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
-                            className={`min-h-[40px] text-[12px] font-bold px-2.5 rounded-lg border max-w-[16rem] truncate ${l.fileId ? 'border-[#0B2438]/30 text-[#0B2438] bg-[#0B2438]/5' : custom && !hasPhoto ? 'border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10' : 'border-gray-200 text-gray-700'}`}>
+                            className={`min-h-[44px] text-[12px] font-bold px-3 rounded-lg border max-w-[16rem] truncate ${l.fileId ? 'border-[#0B2438]/30 text-[#0B2438] bg-[#0B2438]/5' : custom && !hasPhoto ? 'border-[#D4A543] text-[#8F6820] bg-[#D4A543]/10' : 'border-gray-200 text-gray-700'}`}>
                             <Glyph e={custom && !l.fileId ? '📷' : '📎'} /> {l.fileId ? (l.fileName || fileWord(l.fileName))
                               : custom && !hasPhoto ? L('Add a photo so suppliers understand your request', 'تصویر لگائیں تاکہ سپلائرز آپ کی درخواست سمجھیں', 'أضف صورة ليفهم الموردون طلبك')
                               : simple ? L('Attach a photo', 'تصویر منسلک کریں', 'أرفق صورة') : L('Attach a drawing or file', 'ڈرائنگ یا فائل منسلک کریں', 'أرفق مخططاً أو ملفاً')}
                           </button>
                           {l.fileId && (
-                            <button type="button" onClick={() => { deleteDraftBlobs([l.fileId!]); const [nx, ...rest] = l.moreFiles || []; updateLine(l.key, nx ? { fileId: nx.id, fileName: nx.name, moreFiles: rest } : { fileId: undefined, fileName: undefined }) }}
+                            <button type="button" onClick={() => { deleteDraftBlobs([l.fileId!]); const [nx, ...rest] = l.moreFiles || []; updateLine(l.key, nx ? { fileId: nx.id, fileName: nx.name, moreFiles: rest, photoWarn: undefined } : { fileId: undefined, fileName: undefined, photoWarn: undefined }) }}
                               className="min-w-[44px] min-h-[44px] grid place-items-center rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}><X className="w-4 h-4" aria-hidden /></button>
                           )}
                           {(l.moreFiles || []).map(mf => (
@@ -1260,9 +1409,16 @@ export default function QuickRequestPage() {
                               <button type="button" onClick={() => { deleteDraftBlobs([mf.id]); updateLine(l.key, { moreFiles: (l.moreFiles || []).filter(x => x.id !== mf.id) }) }} className="min-w-[44px] min-h-[44px] grid place-items-center text-gray-500 hover:text-red-600" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}><X className="w-4 h-4" aria-hidden /></button>
                             </span>
                           ))}
-                          {l.fileId && (l.moreFiles || []).length < 4 && (
+                          {/* attachments carried from the earlier request (round-2 UX-040) */}
+                          {(l.prevFiles || []).map(pf => (
+                            <span key={pf.url} className="inline-flex items-center gap-1 text-[12px] font-bold ps-2.5 rounded-lg border border-[#0B2438]/30 text-[#0B2438] bg-[#0B2438]/5 max-w-[14rem]">
+                              <span className="truncate"><Glyph e="📎" /> {pf.name || L('Attachment from the earlier request', 'پچھلی درخواست کی فائل', 'مرفق من الطلب السابق')}</span>
+                              <button type="button" onClick={() => updateLine(l.key, { prevFiles: (l.prevFiles || []).filter(x => x.url !== pf.url) })} className="min-w-[44px] min-h-[44px] grid place-items-center text-gray-500 hover:text-red-600" aria-label={L('Remove file', 'فائل ہٹائیں', 'احذف الملف')}><X className="w-4 h-4" aria-hidden /></button>
+                            </span>
+                          ))}
+                          {(!!l.fileId || !!l.prevFiles?.length) && fileCount(l) < MAX_FILES && (
                             <button type="button" onClick={() => { setFileFor(l.key); specFileRef.current?.click() }}
-                              className="min-h-[40px] text-[12px] font-bold px-2.5 rounded-lg border border-dashed border-gray-300 text-gray-700">+ {L('Another file or photo', 'ایک اور فائل یا تصویر', 'ملف أو صورة أخرى')}</button>
+                              className="min-h-[44px] text-[12px] font-bold px-3 rounded-lg border border-dashed border-gray-300 text-gray-700">+ {L('Another file or photo', 'ایک اور فائل یا تصویر', 'ملف أو صورة أخرى')}</button>
                           )}
                         </div>
                         {open && fields.length > 0 && (
@@ -1273,7 +1429,7 @@ export default function QuickRequestPage() {
                               const setV = (val: string) => updateLine(l.key, { specs: { ...(l.specs || {}), [f.key]: val } })
                               return (
                                 <label key={f.key} className="block">
-                                  <span className="block text-[12px] font-semibold text-gray-700 mb-0.5">{locale === 'ar' ? f.ar : f.en}{req ? ' *' : ''}</span>
+                                  <span className="block text-[12px] font-semibold text-gray-700 mb-0.5">{fieldLabel(f)}{req ? ' *' : ''}</span>
                                   <select value={isCustom ? '__other' : v} onChange={e => setV(e.target.value === '__other' ? ' ' : e.target.value)} className={`input-field text-[16px] sm:text-sm ${req && !v.trim() ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`}>
                                     <option value="">{req ? L('Choose', 'منتخب کریں', 'اختر') : L('Any', 'کوئی بھی', 'أي')}</option>
                                     {f.options.map(o => <option key={o} value={o}>{getOptionLabel(o, locale)}</option>)}
@@ -1282,7 +1438,7 @@ export default function QuickRequestPage() {
                                   </select>
                                   {isCustom && (
                                     <input value={v.trim()} onChange={e => setV(e.target.value || ' ')} className="input-field text-[16px] sm:text-sm mt-1"
-                                      aria-label={locale === 'ar' ? f.ar : f.en} placeholder={L('Write it', 'لکھیں', 'اكتبها')} />
+                                      aria-label={fieldLabel(f)} placeholder={L('Write it', 'لکھیں', 'اكتبها')} />
                                   )}
                                 </label>
                               )
@@ -1359,8 +1515,8 @@ export default function QuickRequestPage() {
                   {pastPlaces.map((pp, i) => {
                     const on = !!pp.geo && !!geo && Math.abs(pp.geo.lat - geo.lat) < 1e-4 && Math.abs(pp.geo.lng - geo.lng) < 1e-4
                     return (
-                      <button key={i} type="button" aria-pressed={on} onClick={() => { if (pp.geo) { setGeo(pp.geo); setGeoFromProfile(false) } setAddress(pp.address); if (pp.region) { setRegion(pp.region); setCity(pp.city) } }}
-                        className={`min-h-[40px] px-3 rounded-full border-2 text-[13px] font-bold max-w-[16rem] truncate ${on ? CHOICE_ON : CHOICE_OFF}`}>
+                      <button key={i} type="button" aria-pressed={on} onClick={() => { if (pp.geo) { setGeo(pp.geo); setGeoFromProfile(false) } setAddress(pp.address); if (pp.region) { setRegion(pp.region); setCity(pp.city) } if (errField) { setErrField(null); setError('') } }}
+                        className={`min-h-[44px] px-3 rounded-full border-2 text-[13px] font-bold max-w-[16rem] truncate ${on ? CHOICE_ON : CHOICE_OFF}`}>
                         <Glyph e="📍" /> {pp.label}
                       </button>
                     )
@@ -1371,7 +1527,7 @@ export default function QuickRequestPage() {
             <div id="quick-region" className="scroll-mt-28">
               <div className="text-[12px] font-bold text-gray-600 mb-1">{simple && !pickup ? L('Or choose by hand: region and city', 'یا خود منتخب کریں: علاقہ اور شہر', 'أو اختر يدوياً: المنطقة والمدينة') : L('Region and city', 'علاقہ اور شہر', 'المنطقة والمدينة')}</div>
               <div className="grid grid-cols-2 gap-2">
-                <select value={region} onChange={e => { setRegion(e.target.value); setCity(''); setGeoFilled('') }} className={`input-field text-[16px] sm:text-sm ${!region && error && !errKey ? 'border-[#D4A543] bg-[#D4A543]/5' : ''}`} aria-label={L('Region', 'علاقہ', 'المنطقة')}>
+                <select value={region} onChange={e => { setRegion(e.target.value); setCity(''); setGeoFilled(''); if (errField === 'region') { setErrField(null); setError('') } }} className={`input-field text-[16px] sm:text-sm ${errField === 'region' ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`} aria-label={L('Region', 'علاقہ', 'المنطقة')}>
                   <option value="">{L('Region', 'علاقہ', 'المنطقة')}</option>
                   {REGIONS.map(r => <option key={r} value={r}>{getRegionLabel(r, locale)}</option>)}
                 </select>
@@ -1381,6 +1537,7 @@ export default function QuickRequestPage() {
                 </select>
               </div>
               {geoFilled && <p className="text-[12px] text-[#0F6E56] mt-1" role="status">{geoFilled}</p>}
+              {errField === 'region' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
             </div>
             {region && !simple && (
               <div>
@@ -1403,12 +1560,14 @@ export default function QuickRequestPage() {
               </div>
             )}
             {!pickup && (
-              <div className="space-y-2">
-                <input value={address} onChange={e => setAddress(e.target.value)} maxLength={300} className="input-field text-[16px] sm:text-sm"
+              <div id="quick-location-box" className="space-y-2 scroll-mt-28">
+                <input value={address} onChange={e => { setAddress(e.target.value); if (errField === 'location') { setErrField(null); setError('') } }} maxLength={300}
+                  className={`input-field text-[16px] sm:text-sm ${errField === 'location' ? 'border-2 border-[#D4A543] bg-[#D4A543]/5' : ''}`}
                   aria-label={L('Address details', 'پتے کی تفصیل', 'تفاصيل العنوان')}
                   placeholder={geo ? L('Address details: district, street, landmark (optional)', 'پتہ: محلہ، گلی، نشانی (اختیاری)', 'تفاصيل العنوان: الحي، الشارع، علامة مميزة (اختياري)')
                     : L('Address: district, street, landmark (required if no map location)', 'پتہ (اگر نقشے پر مقام نہیں تو ضروری)', 'العنوان: الحي، الشارع، علامة مميزة (مطلوب إن لم تحدّد الموقع)')} />
                 {geo && geoFromProfile && <p className="text-[12px] text-gray-600">{L('Location filled from your profile. Change it if this delivery goes elsewhere.', 'مقام آپ کی پروفائل سے لیا گیا۔ ضرورت ہو تو بدلیں۔', 'عُبّئ الموقع من ملفك الشخصي. غيّره إن كان التوصيل إلى مكان آخر.')}</p>}
+                {errField === 'location' && error && <p role="alert" className="mt-1.5 rounded-lg border-2 border-[#D4A543] bg-[#D4A543]/10 px-3 py-2 text-[13px] font-bold text-[#0B2438]">{error}</p>}
                 <p className="text-[12px] text-gray-600"><Glyph e="🔒" /> {L('Only the supplier you choose sees the exact location.', 'صرف منتخب سپلائر درست مقام دیکھے گا۔', 'لا يرى الموقع الدقيق إلا المورد الذي تختاره.')}</p>
               </div>
             )}
@@ -1417,35 +1576,27 @@ export default function QuickRequestPage() {
               <div>
                 <div id="hours-q" className="text-[12px] font-bold text-gray-600 mb-1.5">{L('How long do you give suppliers to send their offers?', 'آپ سپلائرز کو پیشکش بھیجنے کے لیے کتنی مہلت دیتے ہیں؟', 'ما المهلة التي تمنحها للموردين لإرسال العروض؟')}</div>
                 <div role="radiogroup" aria-labelledby="hours-q" className="flex flex-wrap gap-1.5">
-                  {([[6, L('Within 6 hours', '6 گھنٹے میں', 'خلال 6 ساعات')], [24, L('24 hours', '24 گھنٹے', '24 ساعة')], [48, L('2 days', '2 دن', 'يومان')], [72, L('3 days', '3 دن', '3 أيام')], [168, L('A week', 'ایک ہفتہ', 'أسبوع')]] as [number, string][]).map(([h, lab]) => (
+                  {([[6, L('6 hours', '6 گھنٹے', '6 ساعات')], [24, L('24 hours', '24 گھنٹے', '24 ساعة')], [48, L('2 days', '2 دن', 'يومان')], [72, L('3 days', '3 دن', '3 أيام')], [168, L('A week', 'ایک ہفتہ', 'أسبوع')]] as [number, string][]).map(([h, lab]) => (
                     <button key={h} type="button" role="radio" aria-checked={hours === h} onClick={() => setHours(h)}
-                      className={`min-h-[40px] px-3 rounded-full border-2 text-[13px] font-bold inline-flex items-center gap-1 ${hours === h ? CHOICE_ON : CHOICE_OFF}`}>{hours === h && <Check className="w-3.5 h-3.5" aria-hidden />}{lab}</button>
+                      className={`min-h-[44px] px-3 rounded-full border-2 text-[13px] font-bold inline-flex items-center gap-1 ${hours === h ? CHOICE_ON : CHOICE_OFF}`}>{hours === h && <Check className="w-3.5 h-3.5" aria-hidden />}{lab}</button>
                   ))}
                 </div>
                 <p className="text-[12px] text-gray-600 mt-1">{L('Offers close: ', 'پیشکشیں بند ہوں گی: ', 'تُغلق العروض: ')}<b className="text-[#0B2438]">{whenText(Date.now() + hours * 3600 * 1000)}</b>. {L('The delivery date is a separate choice below.', 'ڈیلیوری کی تاریخ نیچے الگ ہے۔', 'موعد وصول المواد خيار منفصل في الأسفل.')}</p>
               </div>
             )}
+            {simple && needBlock}
             {/* always visible for a business buyer (owner 2026-10-19: a folded «خيارات إضافية» went unnoticed) */}
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
               {simple
                 ? <button type="button" onClick={() => setMoreOpen(o => !o)} aria-expanded={moreOpen} className="w-full min-h-[44px] text-start text-sm font-bold text-[#0B2438] flex items-center justify-between">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')} {moreOpen ? <ChevronUp className="w-4 h-4" aria-hidden /> : <ChevronDown className="w-4 h-4" aria-hidden />}</button>
                 : <div className="text-sm font-bold text-[#0B2438]">{L('More options (optional)', 'مزید اختیارات (اختیاری)', 'خيارات إضافية (اختياري)')}</div>}
               <div className={`mt-3 space-y-3 ${simple && !moreOpen ? 'hidden' : ''}`}>
-                <div>
-                  <div id="need-q" className="text-sm font-bold text-[#0B2438] mb-2">{L('When should the materials reach you?', 'سامان کب تک پہنچے؟', 'متى تريد أن تصلك المواد؟')}</div>
-                  <div role="radiogroup" aria-labelledby="need-q" className="flex flex-wrap gap-1.5">
-                    {([[1, L('Within a day', 'ایک دن میں', 'خلال يوم')], [3, L('Within 3 days', '3 دن میں', 'خلال 3 أيام')], [7, L('Within a week', 'ایک ہفتے میں', 'خلال أسبوع')], [null, L('Not urgent', 'جلدی نہیں', 'غير مستعجل')]] as [number | null, string][]).map(([d, lab]) => (
-                      <button key={String(d)} type="button" role="radio" aria-checked={needDays === d} onClick={() => setNeedDays(d)}
-                        className={`min-h-[40px] px-3 rounded-full border-2 text-[13px] font-bold inline-flex items-center gap-1 ${needDays === d ? CHOICE_ON : CHOICE_OFF}`}>{needDays === d && <Check className="w-3.5 h-3.5" aria-hidden />}{lab}</button>
-                    ))}
-                  </div>
-                  <p className="text-[12px] text-gray-600 mt-1">{L('Suppliers see it on every item, so they quote only what they can deliver in time.', 'سپلائرز اسے ہر چیز پر دیکھتے ہیں تاکہ وہی قیمت دیں جو وقت پر پہنچا سکیں۔', 'يظهر للموردين على كل مادة ليسعّروا ما يستطيعون تسليمه في الوقت المطلوب.')}</p>
-                </div>
+                {!simple && needBlock}
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} className="input-field text-[16px] sm:text-sm" aria-label={L('Notes for suppliers (optional)', 'سپلائرز کے لیے نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} placeholder={L('Notes for suppliers (optional)', 'سپلائرز کے لیے نوٹس (اختیاری)', 'ملاحظات للموردين (اختياري)')} />
                 <div>
                   <div className="text-sm font-bold text-[#0B2438] mb-2">{L('Who should price it?', 'کون قیمت دے؟', 'من تريد أن يسعّر لك؟')}</div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {([['all', L('All suppliers', 'سب سپلائرز', 'كل الموردين'), L('The most offers', 'زیادہ پیشکشیں', 'أكثر عروض')], ...TIERS.map(k => [k, tierLabel(k, locale as any, false), tierHint(k, locale as any)])] as [string, string, string][]).map(([k, label, hint]) => (
+                    {([['all', L('All suppliers', 'سب سپلائرز', 'كل الموردين'), L('The most offers', 'سب سے زیادہ پیشکشیں', 'أكبر عدد من العروض')], ...TIERS.map(k => [k, tierLabel(k, locale as any, false), tierHint(k, locale as any)])] as [string, string, string][]).map(([k, label, hint]) => (
                       <button key={k} type="button" onClick={() => setTier(k as any)} aria-pressed={tier === k}
                         className={`p-2.5 rounded-xl border-2 text-start transition-colors ${tier === k ? CHOICE_ON : CHOICE_OFF}`}>
                         <div className="flex items-center gap-1 text-[13px] font-bold text-[#0B2438] leading-snug">{tier === k && <Check className="w-4 h-4 shrink-0" aria-hidden />}{label}</div>
@@ -1460,7 +1611,7 @@ export default function QuickRequestPage() {
                 </label>
                 <label className="flex items-center gap-2 min-h-[44px] text-sm text-gray-700 cursor-pointer select-none">
                   <input type="checkbox" checked={verifiedOnly} onChange={e => setVerifiedOnly(e.target.checked)} className="w-5 h-5 accent-[#0B2438]" />
-                  {L('Only verified (trusted) suppliers', 'صرف تصدیق شدہ سپلائرز', 'الموردون الموثّقون والمعتمدون فقط')}
+                  {L('Only verified suppliers', 'صرف تصدیق شدہ سپلائرز', 'الموردون الموثّقون فقط')}
                 </label>
               </div>
             </div>
@@ -1492,14 +1643,14 @@ export default function QuickRequestPage() {
 
       {/* «حُذفت X · تراجع» for 5 seconds */}
       {undo && (
-        <div className="fixed z-[46] inset-x-4 sm:inset-x-auto sm:start-1/2 bottom-[calc(9.5rem+env(safe-area-inset-bottom))] lg:bottom-24 sm:w-[26rem] rounded-xl bg-[#0B2438] text-white shadow-xl px-4 py-2 flex items-center justify-between gap-3 print:hidden" role="status">
+        <div className="fixed z-[46] inset-x-4 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 bottom-[calc(9.5rem+env(safe-area-inset-bottom))] lg:bottom-24 sm:w-[26rem] rounded-xl bg-[#0B2438] text-white shadow-xl px-4 py-2 flex items-center justify-between gap-3 print:hidden" role="status">
           <span className="text-sm truncate">{L(`Removed «${nameLabel(undo.line.product_name) || 'item'}»`, `«${nameLabel(undo.line.product_name)}» ہٹا دیا گیا`, `حُذفت «${nameLabel(undo.line.product_name) || 'المادة'}»`)}</span>
           <button type="button" onClick={undoRemove} className="min-h-[44px] px-3 rounded-lg font-extrabold text-[#F5C55B] hover:bg-white/10 shrink-0">{L('Undo', 'واپس لائیں', 'تراجع')}</button>
         </div>
       )}
 
       {confirming && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setConfirming(false)}>
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => { if (!sending) setConfirming(false) }}>
           <div ref={confirmRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={e => e.stopPropagation()}
             className="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-xl max-h-[90vh] flex flex-col outline-none">
             <div className="p-5 border-b border-gray-100 flex items-start justify-between gap-2">
@@ -1507,19 +1658,25 @@ export default function QuickRequestPage() {
                 <h2 id="confirm-title" className="font-extrabold text-navy text-lg">{L('Review your request', 'درخواست کا جائزہ لیں', 'راجع طلبك قبل الإرسال')}</h2>
                 <p className="text-[13px] text-gray-600 mt-1">{L('Check every detail; suppliers price exactly what is here.', 'ہر تفصیل اچھی طرح چیک کریں، کیونکہ سپلائرز بالکل وہی قیمت لگاتے ہیں جو یہاں لکھا ہے۔', 'تأكّد من كل التفاصيل، فالموردون يسعّرون ما هو مكتوب هنا بالضبط.')}</p>
               </div>
-              <button type="button" onClick={() => setConfirming(false)} aria-label={L('Close', 'بند کریں', 'إغلاق')} className="w-[44px] h-[44px] grid place-items-center rounded-full bg-gray-100 text-[#0B2438] shrink-0"><X className="w-5 h-5" aria-hidden /></button>
+              <button type="button" onClick={() => setConfirming(false)} disabled={sending} aria-label={L('Close', 'بند کریں', 'إغلاق')} className="w-[44px] h-[44px] grid place-items-center rounded-full bg-gray-100 text-[#0B2438] shrink-0 disabled:opacity-40"><X className="w-5 h-5" aria-hidden /></button>
             </div>
             <div className="p-5 overflow-y-auto space-y-4 text-sm">
               {reach && (
                 <div className="space-y-1.5">
-                  {reach.reached >= 3 && (
-                    <p className="rounded-xl bg-[#0F6E56]/[.06] border border-[#0F6E56]/20 px-3 py-2 text-[13px] font-bold text-[#0F6E56]">
-                      {L(`Your request will reach about ${reach.reached} suppliers${city ? ` in ${city}` : ''}.`, `آپ کی درخواست تقریباً ${reach.reached} سپلائرز تک پہنچے گی۔`, `سيصل طلبك إلى نحو ${arCount(reach.reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')}${city ? ` في ${city}` : ''}.`)}
-                    </p>
-                  )}
+                  {reach.reached >= 1 && (() => {
+                    const cityName = city ? (((CITIES_BY_REGION as any)[region] || []).find((c: any) => c.ar === city)?.[locale === 'ar' ? 'ar' : 'en'] || city) : ''
+                    const where = nearbyOnly && cityName
+                      ? L(` in ${cityName}`, ` ${cityName} میں`, ` في ${cityName}`)
+                      : region ? L(` in the ${getRegionLabel(region, 'en')} region`, ` ${getRegionLabel(region, 'ur')} علاقے میں`, ` في منطقة ${getRegionLabel(region, 'ar')}`) : ''
+                    return (
+                      <p className="rounded-xl bg-[#0F6E56]/[.06] border border-[#0F6E56]/20 px-3 py-2 text-[13px] font-bold text-[#0F6E56]">
+                        {L(`Your request will reach about ${reach.reached} supplier${reach.reached === 1 ? '' : 's'}${where}.`, `آپ کی درخواست تقریباً ${reach.reached} سپلائرز تک پہنچے گی${where}۔`, `سيصل طلبك إلى نحو ${arCount(reach.reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')}${where}.`)}
+                      </p>
+                    )
+                  })()}
                   {reach.items.filter(x => Number(x.suppliers) === 0).slice(0, 4).map(x => (
                     <p key={x.name} className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-[13px] text-amber-900">
-                      {L(`No supplier for «${nameLabel(x.name)}» is registered yet; we will look for one for you.`, `«${nameLabel(x.name)}» کا کوئی سپلائر ابھی رجسٹر نہیں؛ ہم آپ کے لیے تلاش کریں گے۔`, `لا يوجد بعد مورد مسجّل لـ«${nameLabel(x.name)}»، وسنبحث لك عن مورد.`)}
+                      {uncoveredMsg(x.name, false)}
                     </p>
                   ))}
                 </div>
@@ -1528,8 +1685,9 @@ export default function QuickRequestPage() {
                 <div className="text-[12px] font-bold text-gray-600 mb-2">{L('Materials', 'سامان', 'المواد')} ({sendable.length})</div>
                 <ol className="space-y-2">
                   {sendable.map((l, i) => {
-                    const sp = simple ? [] : Object.values(l.specs || {}).filter(v => (v || '').trim())
-                    const files = (l.fileId ? 1 : 0) + (l.moreFiles || []).length
+                    const sp = specPairs(l)
+                    const files = fileCount(l)
+                    const bud = parseBudget(l.budget)
                     return (
                       <li key={l.key} className="rounded-xl bg-gray-50 border border-gray-100 p-2.5">
                         <div className="flex items-start justify-between gap-2">
@@ -1540,6 +1698,12 @@ export default function QuickRequestPage() {
                           <div className="text-[12px] text-gray-600 mt-1" dir="auto">
                             {[sp.join('، '), l.brand?.trim() ? L('Brand: ', 'برانڈ: ', 'الماركة: ') + l.brand.trim() : '', l.details.trim(),
                               files > 1 ? L(`${files} attachments`, `${files} منسلکات`, arCount(files, 'مرفق واحد', 'مرفقان', 'مرفقات', 'مرفقاً')) : files === 1 ? fileWord(l.fileName) : ''].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                        {bud != null && (
+                          <div className="text-[12px] font-bold text-[#8F6820] mt-1">
+                            {L(`Your budget: ${bud} SAR/${unitLabel(l.unit)}`, `آپ کا بجٹ: ${bud} ریال/${unitLabel(l.unit)}`, `ميزانيتك: ${bud} ر.س/${unitLabel(l.unit)}`)}
+                            {' · '}{l.budgetVisible ? L('visible to suppliers', 'سپلائرز کو نظر آئے گا', 'ظاهرة للموردين') : L('(hidden from suppliers)', '(سپلائرز سے پوشیدہ)', '(مخفية عن الموردين)')}
                           </div>
                         )}
                         {wantsInstall(l) && (
@@ -1581,6 +1745,18 @@ export default function QuickRequestPage() {
                 {photos.some(p => p.share) && <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700 inline-flex items-center gap-1"><Paperclip className="w-3 h-3" aria-hidden />{L('Photos shared', 'تصاویر شیئر', 'الصور مرفقة')}</span>}
               </div>
             </div>
+            {sending ? (
+              <div className="p-4 border-t border-gray-100 space-y-2" role="status" aria-live="polite" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
+                <p className="text-[13px] font-bold text-[#0B2438]">
+                  {upload && upload.total > 0 && upload.done < upload.total
+                    ? L(`Uploading attachments (${upload.done + 1} of ${upload.total})…`, `فائلیں اپ لوڈ ہو رہی ہیں (${upload.total} میں سے ${upload.done + 1})…`, `جارٍ رفع المرفقات (${upload.done + 1} من ${upload.total})…`)
+                    : L('Sending your request…', 'آپ کی درخواست بھیجی جا رہی ہے…', 'جارٍ إرسال طلبك…')}
+                </p>
+                <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-300" style={{ background: '#D4A543', width: `${upload && upload.total ? Math.max(8, Math.round((upload.done / upload.total) * 90)) : 90}%` }} />
+                </div>
+              </div>
+            ) : (
             <div className="p-4 border-t border-gray-100 grid grid-cols-2 gap-2" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
               <button type="button" onClick={() => setConfirming(false)} className="min-h-[48px] rounded-xl border border-gray-200 font-bold text-gray-700 inline-flex items-center justify-center gap-1.5">
                 <Pencil className="w-4 h-4" aria-hidden /> {L('Edit', 'ترمیم', 'تعديل')}
@@ -1589,12 +1765,13 @@ export default function QuickRequestPage() {
                 {L('Confirm and send', 'تصدیق کر کے بھیجیں', 'تأكيد وإرسال')}
               </button>
             </div>
+            )}
           </div>
         </div>
       )}
       {showCatalog && (
         <CatalogPicker simple={simple} locale={locale} onClose={closeCatalog} initialQuery={startQ} initialSection={startSection as any}
-          picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity }))}
+          picked={lines.map(l => ({ key: l.key, name: l.product_name, qty: l.quantity, unit: l.unit }))}
           onRemove={(key: string) => removeLine(key)}
           onQty={(k, q) => updateLine(k, { quantity: q })}
           onPick={addFromCatalog} />

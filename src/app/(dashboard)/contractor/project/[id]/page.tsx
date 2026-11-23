@@ -152,10 +152,11 @@ export default function ProjectResultsPage() {
             { label: L('Total Items', 'کل آئٹمز', 'إجمالي البنود'), value: totalItems, icon: <Glyph e="📦" />, bg: '#0B2438' },
             { label: L('Total Offers', 'کل پیشکشیں', 'إجمالي العروض'), value: totalOffers, icon: <Glyph e="💬" />, bg: '#D4A543' },
             { label: L('Accepted', 'منظور شدہ', 'مقبولة'), value: acceptedItems, icon: <Glyph e="✅" />, bg: '#0F6E56' },
-            { label: L('Pending', 'زیرِ جائزہ', 'قيد المراجعة'), value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#435A70' },
+            // not the same count as the «بانتظار العروض» filter (items with no offer): this one counts every item not accepted yet
+            { label: L('Not accepted yet', 'ابھی قبول نہیں', 'لم يُقبل بعد'), value: totalItems - acceptedItems, icon: <Glyph e="⏳" />, bg: '#435A70' },
           ].map(({ label, value, icon, bg }) => (
             <div key={label} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm text-center">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white mx-auto mb-2" style={{ background: bg }}>{icon}</div>
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base mx-auto mb-2" style={{ background: bg, color: bg === '#D4A543' ? '#071827' : '#fff' }}>{icon}</div>
               <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{value}</div>
               <div className="text-xs text-gray-500 mt-0.5">{label}</div>
             </div>
@@ -163,7 +164,7 @@ export default function ProjectResultsPage() {
         </div>
 
         {/* Filters */}
-        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4 sticky top-[60px] z-40">
+        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm mb-4 sticky top-[60px] z-20">
           <div className="flex flex-col gap-3">
             {/* Status filter */}
             <div className="flex gap-2 overflow-x-auto pb-1">
@@ -178,7 +179,7 @@ export default function ProjectResultsPage() {
                   : f.key === 'pending' ? items.filter((i: any) => (i.rfq?.offers?.length || 0) === 0).length
                   : items.filter((i: any) => i.rfq?.offers?.some((o: any) => o.status === 'accepted')).length
                 return (
-                  <button key={f.key} onClick={() => setFilter(f.key)}
+                  <button key={f.key} type="button" onClick={() => setFilter(f.key)} aria-pressed={filter === f.key}
                     className={`min-h-11 px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                       filter === f.key ? 'text-white' : 'bg-gray-50 text-gray-600 border border-gray-200'
                     }`} style={filter === f.key ? { background: '#0B2438' } : {}}>
@@ -191,12 +192,12 @@ export default function ProjectResultsPage() {
             {/* Sector + Search */}
             <div className="flex gap-2">
               <select value={sectorFilter} onChange={(e: any) => setSectorFilter(e.target.value)}
-                className="input-field text-xs flex-shrink-0 w-auto py-2">
+                className="input-field text-sm flex-shrink-0 w-auto min-h-11" aria-label={L('Sector', 'سیکٹر', 'القطاع')}>
                 <option value="all">{L('All Sectors', 'تمام شعبے', 'كل القطاعات')}</option>
                 {Object.keys(SECTOR_LABELS).map((s: any) => <option key={s} value={s}>{sectorName(s, locale)}</option>)}
               </select>
               <input value={search} onChange={(e: any) => setSearch(e.target.value)}
-                className="input-field text-xs flex-1 py-2" placeholder={`${L('Search material...', 'مواد تلاش کریں...', 'ابحث عن مادة...')}`} />
+                className="input-field text-sm flex-1 min-h-11" aria-label={L('Search material', 'مواد تلاش کریں', 'ابحث عن مادة')} placeholder={`${L('Search material...', 'مواد تلاش کریں...', 'ابحث عن مادة...')}`} />
             </div>
           </div>
         </div>
@@ -235,10 +236,10 @@ export default function ProjectResultsPage() {
 
             return (
               <div key={item.id} className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${
-                acceptedOffer ? 'border-emerald-200' : 'border-gray-100'
+                acceptedOffer ? 'border-[#0F6E56]/30' : 'border-gray-100'
               }`}>
                 {/* Item Header */}
-                <div className="p-4 sm:p-5" style={{ background: acceptedOffer ? '#ecfdf5' : (SECTOR_COLORS as any)[item.sector] + '08' }}>
+                <div className="p-4 sm:p-5" style={{ background: acceptedOffer ? 'rgba(15,110,86,.06)' : (SECTOR_COLORS as any)[item.sector] + '08' }}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg text-white flex-shrink-0"
@@ -259,8 +260,8 @@ export default function ProjectResultsPage() {
                     <div className="text-end flex-shrink-0">
                       {acceptedOffer ? (
                         <div>
-                          <div className="text-base font-bold text-emerald-600">{offerComparable(acceptedOffer).toLocaleString('en-US')} {SAR}</div>
-                          <div className="badge badge-green text-xs">✓ {L('Accepted', 'منظور شدہ', 'مقبول')}</div>
+                          <div className="text-base font-bold text-[#0F6E56]">{offerComparable(acceptedOffer).toLocaleString('en-US')} {SAR}</div>
+                          <div className="badge badge-green text-xs"><Glyph e="✓" /> {L('Accepted', 'منظور شدہ', 'مقبول')}</div>
                         </div>
                       ) : (
                         <div className="text-center">
@@ -274,7 +275,7 @@ export default function ProjectResultsPage() {
                 {/* Accepted offer details + PO link */}
                 {acceptedOffer && (
                   <div className="px-4 sm:px-5 pt-3 pb-1">
-                    <div className="bg-emerald-50 rounded-xl p-3 border border-emerald-200">
+                    <div className="bg-[#0F6E56]/[.06] rounded-xl p-3 border border-[#0F6E56]/25">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="text-sm">
                           <span className="text-gray-500">{L('Supplier: ', 'سپلائر: ', 'المورد: ')}</span>
@@ -290,14 +291,14 @@ export default function ProjectResultsPage() {
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {acceptedOffer.attachment_url && (
                           <a href={fileHref(acceptedOffer.attachment_url)} target="_blank" rel="noopener noreferrer"
-                            className="text-xs bg-white text-[#0B2438] px-2 py-1 rounded-lg font-semibold border border-gray-200">
+                            className="inline-flex items-center gap-1 min-h-11 text-xs bg-white text-[#0B2438] px-3 rounded-lg font-semibold border border-gray-200">
                             <Glyph e="📎" /> {acceptedOffer.attachment_name || L('Catalog', 'کیٹلاگ', 'كتالوج')}
                           </a>
                         )}
                         {acceptedOffer.supplier?.latitude && acceptedOffer.supplier?.longitude && (
                           <a href={`https://www.google.com/maps?q=${acceptedOffer.supplier.latitude},${acceptedOffer.supplier.longitude}`}
                             target="_blank" rel="noopener noreferrer"
-                            className="text-xs bg-white text-[#0B2438] px-2 py-1 rounded-lg font-semibold border border-gray-200">
+                            className="inline-flex items-center gap-1 min-h-11 text-xs bg-white text-[#0B2438] px-3 rounded-lg font-semibold border border-gray-200">
                             <Glyph e="🗺" /> {L('Supplier location', 'سپلائر کا مقام', 'موقع المورد')}
                           </a>
                         )}
@@ -323,7 +324,7 @@ export default function ProjectResultsPage() {
                     <div className="space-y-2">
                       {displayOffers.map((offer: any, rank: any) => (
                         <div key={offer.id} className={`rounded-xl p-3 border transition-all ${
-                          offer.status === 'accepted' ? 'border-emerald-300 bg-emerald-50' :
+                          offer.status === 'accepted' ? 'border-[#0F6E56]/40 bg-[#0F6E56]/[.06]' :
                           rank === 0 && !acceptedOffer ? 'border-[#D4A543]/40 bg-[#D4A543]/5' : 'border-gray-100'
                         }`}>
                           <div className="flex items-center justify-between gap-2">
@@ -341,7 +342,7 @@ export default function ProjectResultsPage() {
                                   )}
                                   {offer.supplier?.verification_status === 'verified' && (
                                     <span title={offer.supplier?.cr_verification_source === 'wathq' ? L('Verified through Wathq', 'واثق کے ذریعے تصدیق شدہ', 'موثّق عبر واثق') : L('Verified', 'تصدیق شدہ', 'موثّق')} style={{ color: '#0F6E56', fontWeight: 700 }}>
-                                      {offer.supplier?.cr_verification_source === 'wathq' ? <Glyph e="🛡" /> : '✓'}
+                                      {offer.supplier?.cr_verification_source === 'wathq' ? <Glyph e="🛡" /> : <Glyph e="✓" />}
                                     </span>
                                   )}
                                   {offer.supplier?.rating_avg > 0 && <span><Glyph e="⭐" /> {offer.supplier.rating_avg}</span>}
@@ -363,17 +364,17 @@ export default function ProjectResultsPage() {
                                   <div className="text-xs text-gray-500">{offer.unit_price?.toLocaleString('en-US')} / {getUnitLabel(item.unit, locale)}</div>
                                 )}
                                 {offer.extra_charges && offer.extra_charges.length > 0 && (
-                                  <div className="text-xs text-amber-700"
+                                  <div className="text-xs text-[#8F6820]"
                                     title={offer.extra_charges.map((e: any) => `${e.label}: ${Number(e.amount).toLocaleString('en-US')} ${SAR}`).join('  •  ')}>
                                     {L('incl. ', 'شامل ', 'شامل ')}
-                                    {offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US')} {L('extras', 'اضافی', 'إضافات')} ⓘ
+                                    {offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US')} {L('extras', 'اضافی', 'إضافات')} <Glyph e="ℹ" />
                                   </div>
                                 )}
                               </div>
                               {offer.status === 'accepted' ? (
-                                <span className="badge badge-green text-xs">✓</span>
+                                <span className="badge badge-green text-xs" aria-label={L('Accepted', 'منظور شدہ', 'مقبول')}><Glyph e="✓" /></span>
                               ) : !acceptedOffer && (
-                                <button onClick={() => acceptOffer(offer.id, item.rfq_id, item.id)}
+                                <button type="button" onClick={() => acceptOffer(offer.id, item.rfq_id, item.id)}
                                   className="min-h-11 text-sm px-4 rounded-xl font-bold text-[#071827] transition-all hover:shadow"
                                   style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                                   {L('Accept', 'قبول کریں', 'قبول')}
@@ -388,11 +389,11 @@ export default function ProjectResultsPage() {
 
                     {/* Show more/less */}
                     {offers.length > 3 && !acceptedOffer && (
-                      <button onClick={() => setShowAllOffers((prev: any) => ({ ...prev, [item.id]: !showAll }))}
+                      <button type="button" onClick={() => setShowAllOffers((prev: any) => ({ ...prev, [item.id]: !showAll }))}
                         className="mt-2 min-h-11 text-xs font-semibold w-full text-center py-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all">
                         {showAll
-                          ? (L(`▲ Show top 3 only`, `▲ صرف بہترین 3 دکھائیں`, '▲ عرض أفضل 3 فقط'))
-                          : (L(`▼ Show all ${offers.length} offers`, `▼ تمام ${offers.length} پیشکشیں دکھائیں`, `▼ عرض كل العروض (${arOffers(offers.length)})`))}
+                          ? <><Glyph e="▴" /> {L('Show the top 3 only', 'صرف بہترین 3 دکھائیں', 'عرض أفضل 3 فقط')}</>
+                          : <><Glyph e="▾" /> {L(`Show all ${offers.length} offers`, `تمام ${offers.length} پیشکشیں دکھائیں`, `عرض كل العروض (${arOffers(offers.length)})`)}</>}
                       </button>
                     )}
                   </div>
@@ -409,8 +410,8 @@ export default function ProjectResultsPage() {
 
         {/* Summary if all accepted */}
         {acceptedItems > 0 && (
-          <div className="mt-5 bg-emerald-50 rounded-2xl p-5 border border-emerald-200">
-            <h3 className="font-bold text-emerald-800 mb-3">
+          <div className="mt-5 bg-[#0F6E56]/[.06] rounded-2xl p-5 border border-[#0F6E56]/25">
+            <h3 className="font-bold text-[#0B2438] mb-3">
               <Glyph e="📊" /> {L('Project Cost Summary', 'پراجیکٹ کی لاگت کا خلاصہ', 'ملخص تكلفة المشروع')}
             </h3>
             <div className="space-y-2">
@@ -419,11 +420,11 @@ export default function ProjectResultsPage() {
                 return (
                   <div key={item.id} className="flex justify-between text-sm">
                     <span className="text-gray-600 truncate me-4">{getProductLabel(item.product_name, locale)}</span>
-                    <span className="font-semibold text-emerald-700 flex-shrink-0">{offerComparable(acc).toLocaleString('en-US')} {SAR}</span>
+                    <span className="font-semibold text-[#0F6E56] flex-shrink-0">{offerComparable(acc).toLocaleString('en-US')} {SAR}</span>
                   </div>
                 )
               })}
-              <div className="border-t border-emerald-200 pt-2 flex justify-between font-bold">
+              <div className="border-t border-[#0F6E56]/25 pt-2 flex justify-between font-bold">
                 <span style={{ color: '#0B2438' }}>{L('Total', 'کل', 'الإجمالي')}</span>
                 <span style={{ color: '#8F6820' }}>{totalAcceptedCost.toLocaleString('en-US')} {SAR}</span>
               </div>

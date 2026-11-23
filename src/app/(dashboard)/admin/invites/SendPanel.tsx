@@ -1,5 +1,6 @@
 'use client'
 
+import { askConfirm } from '@/lib/askConfirm'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -65,7 +66,7 @@ export default function InviteSendPanel() {
   async function send() {
     const list = rows.filter(r => (results || []).some(x => x.status === 'would_send' && x.phone.endsWith(r.phone.replace(/\D/g, '').slice(-9))))
     if (!list.length) return
-    if (!window.confirm(`سيُرسل القالب إلى ${list.length} محلًا بتكلفة تقريبية ${estimate}$. هل وافق المالك على ذلك؟`)) return
+    if (!(await askConfirm(`سيُرسل القالب إلى ${list.length} محلًا بتكلفة تقريبية ${estimate}$. هل وافق المالك على ذلك؟`))) return
     const d = await call(false, list)
     if (!d) return
     setResults(d.results || []); setSentDone(true); setApproved(false)

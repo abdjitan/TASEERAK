@@ -12,6 +12,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { APPROVAL_LABELS } from '@/lib/supplierScore'
 import { tierLabel, COMPANY_ACTIVITIES } from '@/lib/sellers'
 import Glyph from '@/components/shared/Glyph'
+import { askConfirm } from '@/lib/askConfirm'
 import AccountModeration from '@/components/admin/AccountModeration'
 import { countryAr, outsideSaudi } from '@/lib/countries'
 
@@ -95,7 +96,7 @@ export default function AdminUserDetail() {
   }
   async function toggleActive() {
     const next = !(p?.is_active !== false)
-    if (!confirm(next ? 'إعادة تفعيل هذا الحساب والسماح له بتسجيل الدخول؟' : 'إيقاف هذا الحساب؟ لن يتمكّن صاحبه من تسجيل الدخول حتى يُعاد تفعيله.')) return
+    if (!(await askConfirm(next ? 'إعادة تفعيل هذا الحساب والسماح له بتسجيل الدخول؟' : 'إيقاف هذا الحساب؟ لن يتمكّن صاحبه من تسجيل الدخول حتى يُعاد تفعيله.', { danger: !next }))) return
     // is_active alone hid the account but did not stop sign-in: also ban/unban in Auth (admin function)
     try {
       const { data, error } = await createClient().functions.invoke('admin', { body: { action: 'set_banned', userId: id, banned: !next } })
@@ -153,18 +154,21 @@ export default function AdminUserDetail() {
 
   const isVerified = p.verification_status === 'verified'
   const active = p.is_active !== false
+  // a timed or permanent suspension (admin_ban_user) counts as suspended, not «active» (UX-127)
+  const bannedUntil = p.banned_until && new Date(p.banned_until).getTime() > Date.now() ? p.banned_until : null
+  const msgIsErr = /تعذّر|تعذر|خطأ|فشل/.test(msg)
 
   return (
     <AppShell title="تفاصيل المستخدم" nav={getNav('admin', 'ar', '/admin')} dir="rtl">
       <div className="max-w-5xl mx-auto">
-        {msg && <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl p-3">{msg}</div>}
+        {msg && <div role={msgIsErr ? 'alert' : 'status'} className={`mb-4 border text-sm rounded-xl p-3 ${msgIsErr ? 'bg-red-50 border-red-200 text-red-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'}`}>{msg}</div>}
 
         {/* Header */}
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm mb-5">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
-                style={{ background: p.role === 'contractor' ? '#0B2438' : '#7c3aed' }}>{p.company_name_ar?.[0] || '?'}</div>
+                style={{ background: p.role === 'contractor' ? '#0B2438' : '#9D7425' }}>{p.company_name_ar?.[0] || '?'}</div>
               <div>
                 <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{p.company_name_ar || '—'}</div>
                 {p.company_name_en && <div className="text-sm text-gray-400">{p.company_name_en}</div>}
@@ -175,7 +179,8 @@ export default function AdminUserDetail() {
                       ? (isVerified ? '✓ مفعّل' : !p.phone_verified_at ? 'بانتظار توثيق الجوال' : !p.email_verified_at ? 'بانتظار توثيق البريد' : '✓ مفعّل')
                       : isVerified ? '✓ موثق' : p.verification_status === 'rejected' ? '✕ مرفوض' : 'قيد المراجعة'}
                   </span>
-                  {!active && <span className="badge text-[10px] bg-red-100 text-red-700"><Glyph e="⛔" /> موقوف</span>}
+                  {!active && <span className="badge text-[12px] bg-red-100 text-red-700"><Glyph e="⛔" /> موقوف</span>}
+                  {active && bannedUntil && <span className="badge text-[12px] bg-red-100 text-red-700"><Glyph e="⛔" /> موقوف حتى {dt(bannedUntil)}</span>}
                   {(outsideSaudi(p.signup_country) || outsideSaudi(p.last_country)) && <span className="badge text-[10px] bg-orange-100 text-orange-800"><Glyph e="🌍" /> خارج السعودية</span>}
                 </div>
                 <div className="text-[11px] text-gray-500 mt-1">
@@ -206,11 +211,11 @@ export default function AdminUserDetail() {
               <div className={`rounded-xl border p-3 text-sm ${p.supplier_conversion_requested_at ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}>
                 <div className="font-bold text-[#0B2438]">تحويل الحساب إلى مورد</div>
                 <div className="text-xs text-gray-600 mt-0.5">{p.supplier_conversion_requested_at
-                  ? 'طلب المستخدم تحويل حسابه إلى مورد بتاريخ ' + new Date(p.supplier_conversion_requested_at).toLocaleDateString('ar-SA-u-ca-gregory') + '.'
+                  ? 'طلب المستخدم تحويل حسابه إلى مورد بتاريخ ' + new Date(p.supplier_conversion_requested_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn') + '.'
                   : 'لم يطلب المستخدم التحويل.'} يبقى الرقم والبريد نفسيهما، ويُكمل نوع الحساب والتخصصات بعد التحويل.</div>
                 <button type="button" className="mt-2 px-3 py-1.5 rounded-lg text-white text-xs font-bold bg-[#0B2438]"
                   onClick={async () => {
-                    if (!confirm('تحويل هذا الحساب إلى مورد؟ يُرفض إن كان لديه طلب مفتوح أو صفقة لم يُؤكَّد استلامها.')) return
+                    if (!(await askConfirm('تحويل هذا الحساب إلى مورد؟ يُرفض إن كان لديه طلب مفتوح أو صفقة لم يُؤكَّد استلامها.'))) return
                     const { error } = await createClient().rpc('admin_convert_to_supplier', { p_user: id })
                     if (error) { alert(error.message); return }
                     loadAll()
@@ -342,7 +347,7 @@ export default function AdminUserDetail() {
           <Section title="الاشتراك والتقييم" icon={<Glyph e="⭐" />}>
             <Field label="الباقة">{p.subscription_plan || 'free'}{p.subscription_expires_at ? ` · حتى ${dt(p.subscription_expires_at)}` : ''}</Field>
             <Field label="التقييم">{p.rating_count > 0 ? `${Number(p.rating_avg).toFixed(1)} من 5 (${p.rating_count} تقييم)` : 'لا توجد تقييمات'}</Field>
-            <Field label="حالة النشاط">{active ? 'نشط' : 'موقوف'}</Field>
+            <Field label="حالة النشاط">{!active ? 'موقوف' : bannedUntil ? 'موقوف حتى ' + dt(bannedUntil) : 'نشط'}</Field>
           </Section>
         </div>
 

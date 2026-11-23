@@ -17,7 +17,8 @@ import { storedBuyerType } from '@/lib/buyerType'
 import { cleanArName } from '@/lib/displayName'
 import Glyph from '@/components/shared/Glyph'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
-import { showsVatBreakdown, totalLabel, vatTag, offerComparable, isIndependentOffer, sellerInvoiceLabel } from '@/lib/vat'
+import { showsVatBreakdown, totalLabel, vatTag, offerComparable, isIndependentOffer, sellerInvoiceLabel, sarLabel } from '@/lib/vat'
+import { Star, Check } from 'lucide-react'
 import { installTotalOf } from '@/lib/installation'
 import { daysText } from '@/lib/text'
 import { waLink } from '@/lib/wa'
@@ -27,6 +28,13 @@ const SECTOR_I18N: Record<string, Record<string, string>> = {
   en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
   ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'سپلائی اسٹور' },
 }
+// the optional rating chips: stored in one form (Arabic) whatever the reader's language, so every
+// review reads the same on the supplier's profile (UX-141)
+const REVIEW_TAGS: { key: string; ar: string; en: string; ur: string }[] = [
+  { key: 'on_time', ar: 'الالتزام بالموعد', en: 'On time', ur: 'وقت کی پابندی' },
+  { key: 'quality', ar: 'جودة المواد', en: 'Material quality', ur: 'سامان کا معیار' },
+  { key: 'dealing', ar: 'حسن التعامل', en: 'Good dealing', ur: 'اچھا برتاؤ' },
+]
 const STAR_WORDS: Record<string, string[]> = {
   ar: ['ضعيف', 'مقبول', 'جيد', 'جيد جداً', 'ممتاز'],
   en: ['Poor', 'Fair', 'Good', 'Very good', 'Excellent'],
@@ -43,7 +51,7 @@ export default function OrderDetailPage() {
   const { locale, dir } = useTranslation()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
-  const SAR = L('SAR', 'SAR', 'ر.س')
+  const SAR = sarLabel(locale) // one currency name per language (UX-140)
   const [offer, setOffer] = useState<any>(null)
   const [rfq, setRfq] = useState<any>(null)
   const [supplier, setSupplier] = useState<any>(null)
@@ -114,6 +122,15 @@ export default function OrderDetailPage() {
     try { setIsNew(new URLSearchParams(window.location.search).get('new') === '1') } catch {}
   }, [])
 
+  // a link that ends in #deal or #rate opens at that part once the page has loaded (UX-059)
+  useEffect(() => {
+    if (loading || !offer) return
+    const h = typeof window !== 'undefined' ? window.location.hash : ''
+    if (h !== '#deal' && h !== '#rate') return
+    const t = setTimeout(() => document.getElementById(h.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120)
+    return () => clearTimeout(t)
+  }, [loading, !!offer]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // DealProtection's «قيّم المورد الآن» (after confirming receipt) jumps to #rate on this page: refresh
   // the receipt time so the rating form opens without a reload (UX-021).
   useEffect(() => {
@@ -132,7 +149,7 @@ export default function OrderDetailPage() {
     setReviewSubmitting(true); setReviewMsg('')
     const supabase = createClient()
     // the optional chips are kept with the comment (no separate column)
-    const tagsLine = reviewTags.length ? `${L('Good at:', 'خوبیاں:', 'نقاط القوة:')} ${reviewTags.join(locale === 'en' ? ', ' : '، ')}` : ''
+    const tagsLine = reviewTags.length ? `نقاط القوة: ${REVIEW_TAGS.filter(t => reviewTags.includes(t.key)).map(t => t.ar).join('، ')}` : ''
     const comment = [tagsLine, reviewComment.trim()].filter(Boolean).join('\n') || null
     const { error } = await supabase.from('reviews').insert({
       reviewer_id: myId,
@@ -164,13 +181,13 @@ export default function OrderDetailPage() {
   if (loading) return <PageLoader />
 
   if (loadFailed) return (
-    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={getNav('contractor', locale, '/contractor/orders')} dir={dir}>
+    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-xl mx-auto mt-6"><LoadError onRetry={() => { setLoading(true); load() }} /></div>
     </AppShell>
   )
 
   if (!offer || !rfq) return (
-    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={getNav('contractor', locale, '/contractor/orders')} dir={dir}>
+    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-xl mx-auto mt-6 bg-white rounded-2xl p-10 text-center border border-gray-100 shadow-sm">
         <div className="text-4xl mb-2 text-[#0B2438]"><Glyph e="🔎" /></div>
         <p className="text-gray-700 font-semibold mb-4">{L('This deal was not found, or you do not have access to it.', 'یہ ڈیل نہیں ملی، یا آپ کو اس تک رسائی نہیں ہے۔', 'لم نجد هذه الصفقة، أو لا تملك صلاحية الاطلاع عليها.')}</p>
@@ -181,6 +198,20 @@ export default function OrderDetailPage() {
 
   const FWD = dir === 'rtl' ? '←' : '→', BACK = dir === 'rtl' ? '→' : '←'
   const isBuyer = rfq.contractor_id === myId
+
+  // the offer is no longer a deal (cancelled, withdrawn or never chosen): no document to print (UX-059)
+  if (offer.status !== 'accepted') return (
+    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={isBuyer ? getNav('contractor', locale, '/contractor/rfqs') : getNav('supplier', locale, '/supplier/deals')} dir={dir}>
+      <div className="max-w-xl mx-auto mt-6 bg-white rounded-2xl p-8 sm:p-10 text-center border border-gray-100 shadow-sm">
+        <div className="text-4xl mb-2 text-[#0B2438]"><Glyph e="📄" /></div>
+        <p className="text-gray-800 font-bold mb-1">{L('This deal is no longer active.', 'یہ ڈیل اب فعال نہیں ہے۔', 'لم تعد هذه الصفقة سارية.')}</p>
+        <p className="text-sm text-gray-600 mb-4">{L('The offer was cancelled or is no longer chosen. You can review the request and its offers.', 'آفر منسوخ ہو گئی یا اب منتخب نہیں ہے۔ آپ درخواست اور اس کی آفرز دیکھ سکتے ہیں۔', 'أُلغي العرض أو لم يعد مختاراً. يمكنك مراجعة الطلب وعروضه.')}</p>
+        <Link href={isBuyer ? `/contractor/rfq/${rfq.id}` : `/supplier/dashboard/rfq/${rfq.id}`} className="inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl text-sm font-bold" style={{ background: '#D4A543', color: '#071827' }}>
+          {L('Open the request', 'درخواست کھولیں', 'افتح الطلب')}
+        </Link>
+      </div>
+    </AppShell>
+  )
   const isSupplierView = !isBuyer
   const backHref = isBuyer ? '/contractor/orders' : '/supplier/deals'
   const manageHref = `/supplier/dashboard/rfq/${offer.rfq_id}#deal`
@@ -238,11 +269,11 @@ export default function OrderDetailPage() {
   const independent = isIndependentOffer(offer)
   const disclosure = independent
     ? (isBuyer
-      ? L('Taseerak’s quotation of the agreed amount, not a tax invoice. The tax invoice is issued by the source shop in your name and attached below.', 'تسعیرک کی کوٹیشن جو طے شدہ رقم دکھاتی ہے، ٹیکس انوائس نہیں۔ ٹیکس انوائس ماخذ دکان آپ کے نام جاری کرتی ہے اور نیچے منسلک ہوتی ہے۔', 'عرض سعر من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها المحل المصدر باسمك، وتُرفق أدناه.')
-      : L('Taseerak’s quotation of the agreed amount, not a tax invoice. The tax invoice is issued by the source shop in the buyer’s name; you attach it on the deal page.', 'تسعیرک کی کوٹیشن، ٹیکس انوائس نہیں۔ ٹیکس انوائس ماخذ دکان خریدار کے نام جاری کرتی ہے؛ آپ اسے ڈیل کے صفحے پر منسلک کرتے ہیں۔', 'عرض سعر من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها المحل المصدر باسم المشتري، وترفقها أنت من صفحة إدارة الصفقة.'))
+      ? L('Taseerak’s deal statement of the agreed amount, not a tax invoice. The tax invoice is issued by the source shop in your name and attached below.', 'تسعیرک کا ڈیل بیان جو طے شدہ رقم دکھاتا ہے، ٹیکس انوائس نہیں۔ ٹیکس انوائس ماخذ دکان آپ کے نام جاری کرتی ہے اور نیچے منسلک ہوتی ہے۔', 'بيان من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها المحل المصدر باسمك، وتُرفق أدناه.')
+      : L('Taseerak’s deal statement of the agreed amount, not a tax invoice. The tax invoice is issued by the source shop in the buyer’s name; you attach it on the deal page.', 'تسعیرک کا ڈیل بیان، ٹیکس انوائس نہیں۔ ٹیکس انوائس ماخذ دکان خریدار کے نام جاری کرتی ہے؛ آپ اسے ڈیل کے صفحے پر منسلک کرتے ہیں۔', 'بيان من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها المحل المصدر باسم المشتري، وترفقها أنت من صفحة إدارة الصفقة.'))
     : vatBreak
-      ? L('Taseerak’s quotation of the agreed amount, not a tax invoice. The tax invoice is issued by the seller and attached below.', 'تسعیرک کی کوٹیشن جو طے شدہ رقم دکھاتی ہے، ٹیکس انوائس نہیں۔ ٹیکس انوائس فروخت کنندہ جاری کرتا ہے اور نیچے منسلک ہوتی ہے۔', 'عرض سعر من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها البائع، وتُرفق أدناه.')
-      : L('Taseerak’s quotation of the agreed amount. The seller is not VAT-registered, so the price is final and the seller attaches a sales invoice (not a tax invoice) below.', 'تسعیرک کی کوٹیشن۔ فروخت کنندہ VAT میں رجسٹرڈ نہیں، اس لیے قیمت حتمی ہے اور وہ نیچے سیلز انوائس (ٹیکس انوائس نہیں) منسلک کرتا ہے۔', 'عرض سعر من تسعيرك بالمبلغ المتفق عليه. البائع غير مسجّل في ضريبة القيمة المضافة، فالسعر نهائي، ويرفق فاتورة بيع (ليست فاتورة ضريبية) أدناه.')
+      ? L('Taseerak’s deal statement of the agreed amount, not a tax invoice. The tax invoice is issued by the seller and attached below.', 'تسعیرک کا ڈیل بیان جو طے شدہ رقم دکھاتا ہے، ٹیکس انوائس نہیں۔ ٹیکس انوائس فروخت کنندہ جاری کرتا ہے اور نیچے منسلک ہوتی ہے۔', 'بيان من تسعيرك بالمبلغ المتفق عليه، وليس فاتورة ضريبية. الفاتورة الضريبية يصدرها البائع، وتُرفق أدناه.')
+      : L('Taseerak’s deal statement of the agreed amount. The seller is not VAT-registered, so the price is final and the seller attaches a sales invoice (not a tax invoice) below.', 'تسعیرک کا ڈیل بیان۔ فروخت کنندہ VAT میں رجسٹرڈ نہیں، اس لیے قیمت حتمی ہے اور وہ نیچے سیلز انوائس (ٹیکس انوائس نہیں) منسلک کرتا ہے۔', 'بيان من تسعيرك بالمبلغ المتفق عليه. البائع غير مسجّل في ضريبة القيمة المضافة، فالسعر نهائي، ويرفق فاتورة بيع (ليست فاتورة ضريبية) أدناه.')
 
   // the other side's phone (after the choice) and a WhatsApp text in plain words for a home buyer
   const otherPhone = isBuyer ? (supplier?.contact_phone || supplier?.phone) : (contractor?.contact_phone || contractor?.phone)
@@ -250,13 +281,15 @@ export default function OrderDetailPage() {
     ? (home && rfq.ref_no
       ? L(`About my deal on request no. ${rfq.ref_no} on Taseerak`, `تسعیرک پر درخواست نمبر ${rfq.ref_no} کی میری ڈیل کے بارے میں`, `بخصوص صفقتي على الطلب رقم ${rfq.ref_no} في منصة تسعيرك`)
       : L(`Regarding purchase order ${poNumber} on Taseerak`, `تسعیرک پر پرچیز آرڈر ${poNumber} کے بارے میں`, `بخصوص أمر الشراء ${poNumber} في منصة تسعيرك`))
-    : L(`Regarding your request ${rfqRef(rfq) || poNumber} on Taseerak`, `تسعیرک پر آپ کی درخواست ${rfqRef(rfq) || poNumber} کے بارے میں`, `بخصوص طلبك ${rfqRef(rfq) || poNumber} في منصة تسعيرك`)
+    : (rfq.ref_no
+      ? L(`Regarding your request no. ${rfq.ref_no} on Taseerak`, `تسعیرک پر آپ کی درخواست نمبر ${rfq.ref_no} کے بارے میں`, `بخصوص طلبك رقم ${rfq.ref_no} في منصة تسعيرك`)
+      : L(`Regarding your request on Taseerak`, `تسعیرک پر آپ کی درخواست کے بارے میں`, `بخصوص طلبك في منصة تسعيرك`))
   const wa = waLink(otherPhone, waText)
 
   function handlePrint() {
-    // the saved PDF's name: «ملخص الصفقة …» for a home buyer, «أمر شراء PO-…» otherwise
+    // the saved PDF's name: «تفاصيل الصفقة …» for a home buyer, «أمر شراء PO-…» otherwise (one name, UX-055)
     const prev = document.title
-    document.title = home ? `${L('Deal summary', 'ڈیل کا خلاصہ', 'ملخص الصفقة')} ${dealNo}` : `${docTitle} ${poNumber}`
+    document.title = `${docTitle} ${dealNo}`
     window.print()
     setTimeout(() => { document.title = prev }, 500)
   }
@@ -265,10 +298,10 @@ export default function OrderDetailPage() {
     <div className="text-sm text-gray-600">{L('Mobile:', 'موبائل:', 'جوال:')} <a href={`tel:${String(p).replace(/[^0-9+]/g, '')}`} dir="ltr" className="font-semibold text-[#0B2438] hover:underline">{p}</a></div>
   )
   const needsRating = isBuyer && offer.status === 'accepted' && !!offer.received_at && !existingReview
-  const tags = [L('On time', 'وقت کی پابندی', 'الالتزام بالموعد'), L('Material quality', 'سامان کا معیار', 'جودة المواد'), L('Good dealing', 'اچھا برتاؤ', 'حسن التعامل')]
+
 
   return (
-    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={isBuyer ? getNav('contractor', locale, '/contractor/orders') : getNav('supplier', locale, '/supplier/deals')} dir={dir}>
+    <AppShell title={L('Deal', 'ڈیل', 'الصفقة')} nav={isBuyer ? getNav('contractor', locale, '/contractor/rfqs') : getNav('supplier', locale, '/supplier/deals')} dir={dir}>
     <div className="print:bg-white print:p-0" dir={dir}>
       <div className="max-w-3xl mx-auto flex flex-col gap-5">
 
@@ -333,10 +366,11 @@ export default function OrderDetailPage() {
           </div>
         )}
 
-        {/* the other side: call, WhatsApp or message (UX-104) */}
+        {/* the other side: WhatsApp or message (UX-104). The buyer's WhatsApp button is in the deal
+            steps above, so it shows once (UX-054). */}
         {offer.status === 'accepted' && (
           <div className="print:hidden flex flex-wrap gap-2">
-            {wa && (
+            {wa && !isBuyer && (
               <a href={wa} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5">
                 <Glyph e="💬" /> {L('WhatsApp', 'واٹس ایپ', 'واتساب')}
@@ -506,6 +540,13 @@ export default function OrderDetailPage() {
                   <span className="font-bold text-[#8F6820] text-lg whitespace-nowrap">{money(dealGross)}</span>
                 </div>
                 {home && <div className="text-xs text-gray-500 text-end">{vatTag(offer, locale)}</div>}
+                {extrasPending && allExtras.length > 0 && (
+                  <div className="text-xs font-semibold text-[#8F6820] text-end print:hidden">
+                    {isBuyer
+                      ? L('+ delivery charges, waiting for the supplier’s confirmation', '+ ڈیلیوری چارجز، سپلائر کی تصدیق کا انتظار', '+ رسوم التوصيل بانتظار تأكيد المورد')
+                      : L('+ delivery charges, waiting for your confirmation', '+ ڈیلیوری چارجز، آپ کی تصدیق کا انتظار', '+ رسوم التوصيل بانتظار تأكيدك')}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -567,10 +608,15 @@ export default function OrderDetailPage() {
         {/* 🧾 بيان الصفقة: مستند صوري غير رسمي لمبلغ الصفقة. الفاتورة الرسمية يصدرها البائع
             (من عنده، أو من المحل الذي اشترى منه) ويرفعها في صفحة الصفقة، وتظهر هنا للمشتري. */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden order-3">
+          {home ? (
+            <div className="p-4 sm:p-6 pb-3">
+              <h2 className="text-base font-bold" style={{ color: '#0B2438' }}>{invLabel}</h2>
+            </div>
+          ) : (<>
           <div className="p-4 sm:p-6 border-b border-gray-100">
-            <h2 className="text-lg font-bold" style={{ color: '#0B2438' }}>{L('Quotation — not a tax invoice', 'کوٹیشن — ٹیکس انوائس نہیں', 'عرض سعر — ليس فاتورة ضريبية')}</h2>
+            <h2 className="text-lg font-bold" style={{ color: '#0B2438' }}>{L('Deal statement — not a tax invoice', 'ڈیل بیان — ٹیکس انوائس نہیں', 'بيان الصفقة — ليس فاتورة ضريبية')}</h2>
             <p className="text-sm text-gray-600 mt-1 leading-relaxed">{disclosure}</p>
-            {!home && <div className="text-xs text-gray-600 mt-2">{L('Quotation no.:', 'کوٹیشن نمبر:', 'رقم عرض السعر:')} <span className="font-mono" dir="ltr">{(offer.invoice_number || '').replace(/^INV-/, 'ST-') || `ST-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>}
+            <div className="text-xs text-gray-600 mt-2">{L('Statement no.:', 'بیان نمبر:', 'رقم البيان:')} <span className="font-mono" dir="ltr">{(offer.invoice_number || '').replace(/^INV-/, 'ST-') || `ST-${offer.id.slice(0, 8).toUpperCase()}`}</span></div>
             <div className="text-xs text-gray-600">{L('Date:', 'تاریخ:', 'التاريخ:')} {new Date(offer.accepted_at || offer.created_at).toLocaleString(dloc, { timeZone: 'Asia/Riyadh' })}</div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 sm:p-6 border-b border-gray-100 text-sm">
@@ -599,6 +645,7 @@ export default function OrderDetailPage() {
               </div>
             </div>
           </div>
+          </>)}
           {/* the seller's invoice */}
           <div className="px-4 sm:px-6 pb-6">
             {offer.supplier_invoice_url ? (
@@ -609,7 +656,7 @@ export default function OrderDetailPage() {
               </a>
             ) : isBuyer ? (
               <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 leading-relaxed">
-                <Glyph e="🧾" /> {L(`The supplier has not attached it yet («${invLabel}»). It is usually attached on delivery and will show here.`, `سپلائر نے ابھی منسلک نہیں کی («${invLabel}»)۔ عام طور پر ڈیلیوری پر منسلک کی جاتی ہے اور یہاں نظر آئے گی۔`, `لم يرفق المورد «${invLabel}» بعد. يرفقها عادةً عند التوصيل، وستظهر هنا.`)}
+                <Glyph e="🧾" /> {L(`The supplier has not attached it yet («${invLabel}»). They attach it before confirming delivery, and it will show here.`, `سپلائر نے ابھی منسلک نہیں کی («${invLabel}»)۔ وہ ڈیلیوری کی تصدیق سے پہلے منسلک کرتا ہے، اور یہ یہاں نظر آئے گی۔`, `لم يرفق المورد «${invLabel}» بعد. يرفقها قبل تأكيد التسليم، وستظهر هنا.`)}
               </div>
             ) : (
               <div className="rounded-xl border border-dashed border-[#D4A543]/60 bg-[#D4A543]/5 p-3 text-sm text-gray-700 leading-relaxed print:hidden">
@@ -628,7 +675,7 @@ export default function OrderDetailPage() {
                 <div className="text-sm font-bold text-gray-900 mb-2">{L('Thanks for your rating', 'ریٹنگ کا شکریہ', 'شكراً لتقييمك')}</div>
                 <div className="flex items-center justify-center gap-0.5 text-2xl" aria-label={L(`${existingReview.rating} of 5 stars`, `5 میں سے ${existingReview.rating} ستارے`, `${existingReview.rating} من 5 نجوم`)}>
                   {[1, 2, 3, 4, 5].map((n: any) => (
-                    <span key={n} aria-hidden="true" style={{ color: n <= existingReview.rating ? '#D4A543' : '#E5E7EB' }}>★</span>
+                    <Star key={n} aria-hidden="true" className="w-6 h-6" style={{ color: n <= existingReview.rating ? '#D4A543' : '#E5E7EB' }} fill="currentColor" strokeWidth={1.5} />
                   ))}
                 </div>
                 {existingReview.comment && <p className="text-sm text-gray-600 mt-2 whitespace-pre-line">{existingReview.comment}</p>}
@@ -645,23 +692,23 @@ export default function OrderDetailPage() {
                       onMouseEnter={() => setHoverRating(n)}
                       onMouseLeave={() => setHoverRating(0)}
                       className="w-11 h-11 grid place-items-center text-[34px] leading-none transition-transform hover:scale-110">
-                      <span aria-hidden="true" style={{ color: n <= (hoverRating || rating) ? '#D4A543' : '#E5E7EB' }}>★</span>
+                      <Star aria-hidden="true" className="w-8 h-8" style={{ color: n <= (hoverRating || rating) ? '#D4A543' : '#E5E7EB' }} fill="currentColor" strokeWidth={1.5} />
                     </button>
                   ))}
                 </div>
                 <div className="text-sm font-bold text-[#8F6820] min-h-[20px] mb-3">{(hoverRating || rating) ? (STAR_WORDS[locale] || STAR_WORDS.ar)[(hoverRating || rating) - 1] : ''}</div>
                 <div className="flex flex-wrap gap-2 mb-3" aria-label={L('What went well (optional)', 'کیا اچھا رہا (اختیاری)', 'ما الذي أعجبك (اختياري)')}>
-                  {tags.map(t => {
-                    const on = reviewTags.includes(t)
+                  {REVIEW_TAGS.map(t => {
+                    const on = reviewTags.includes(t.key)
                     return (
-                      <button key={t} type="button" aria-pressed={on} onClick={() => setReviewTags(p => on ? p.filter(x => x !== t) : [...p, t])}
-                        className={`min-h-[40px] px-3.5 rounded-full text-sm font-semibold border transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/15 text-[#071827]' : 'border-gray-200 bg-white text-gray-600'}`}>
-                        {on ? '✓ ' : ''}{t}
+                      <button key={t.key} type="button" aria-pressed={on} onClick={() => setReviewTags(p => on ? p.filter(x => x !== t.key) : [...p, t.key])}
+                        className={`inline-flex items-center gap-1 min-h-[44px] px-3.5 rounded-full text-sm font-semibold border transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/15 text-[#071827]' : 'border-gray-200 bg-white text-gray-600'}`}>
+                        {on && <Check aria-hidden="true" className="w-4 h-4" />}{L(t.en, t.ur, t.ar)}
                       </button>
                     )
                   })}
                 </div>
-                <textarea value={reviewComment} onChange={(e: any) => setReviewComment(e.target.value)}
+                <textarea value={reviewComment} onChange={(e: any) => setReviewComment(e.target.value)} aria-label={L('Comment (optional)', 'تبصرہ (اختیاری)', 'تعليق (اختياري)')}
                   className="w-full border border-gray-200 rounded-xl p-3 text-base sm:text-sm mb-3 focus:border-[#D4A543] outline-none" rows={2}
                   placeholder={L('Optional comment on product quality and service...', 'پروڈکٹ کی کوالٹی اور معاملے کے بارے میں اختیاری تبصرہ...', 'تعليق اختياري عن جودة المنتج والتعامل...')} />
                 {reviewMsg && <p className="text-sm text-red-700 mb-2" role="alert">{reviewMsg}</p>}

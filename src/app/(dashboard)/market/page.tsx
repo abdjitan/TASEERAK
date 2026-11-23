@@ -7,7 +7,8 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS } from '@/types'
+import { SECTOR_LABELS, getProductLabel, getUnitLabel, getSectorLabel, getRegionLabel } from '@/types'
+import { FEATURES } from '@/lib/features'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
 import { timeAgo } from '@/lib/text'
@@ -50,27 +51,34 @@ export default function MarketPricePage() {
   const [selectedSector, setSelectedSector] = useState('all')
   const [search, setSearch] = useState('')
   const [userRole, setUserRole] = useState('')
+  // a failed load is an error, not «no data yet» (UX-119)
+  const [loadErr, setLoadErr] = useState(false)
 
   useEffect(() => {
     async function load() {
+      try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
 
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
       setUserRole(profile?.role || 'contractor')
+      // the board is switched off for launch: say so instead of loading old prices (UX-119)
+      if (!FEATURES.priceBoard) { setLoading(false); return }
 
       // الأسعار اللحظية المباشرة من المصانع/الموردين
-      const { data: live } = await supabase
+      const { data: live, error: liveErr } = await supabase
         .from('live_prices')
         .select('*, supplier:profiles_public(company_name_ar, supplier_tier)')
         .order('updated_at', { ascending: false })
         .limit(500) // bound the live-price board (aggregate averages come from get_market_prices)
+      if (liveErr) throw liveErr
       setLivePrices(live || [])
 
       // متوسط الأسعار عبر دالة آمنة (SECURITY DEFINER) ترجّع المتوسطات فقط
       // بدون كشف أي عرض فردي أو هوية مورد — لذلك جدول العروض يبقى مقفلاً.
-      const { data: rows } = await supabase.rpc('get_market_prices')
+      const { data: rows, error: rowsErr } = await supabase.rpc('get_market_prices')
+      if (rowsErr) throw rowsErr
 
       if (!rows || rows.length === 0) { setLoading(false); return }
 
@@ -88,6 +96,7 @@ export default function MarketPricePage() {
 
       setPriceData(result)
       setLoading(false)
+      } catch { setLoadErr(true); setLoading(false) }
     }
     load()
   }, [])
@@ -101,6 +110,17 @@ export default function MarketPricePage() {
   })
 
   const sectors = ['all', ...Object.keys(SECTOR_LABELS)]
+
+  if (!FEATURES.priceBoard && !loading) return (
+    <AppShell title={T.title} nav={getNav(userRole, locale, '/market')} dir={dir}>
+      <div className="max-w-xl mx-auto bg-white rounded-2xl p-8 border border-gray-100 text-center">
+        <div className="text-4xl mb-3 text-[#0B2438]"><Glyph e="📊" /></div>
+        <h1 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{L('The price index is not active yet', 'قیمتوں کا انڈیکس ابھی فعال نہیں', 'مؤشر الأسعار غير مفعّل حالياً')}</h1>
+        <p className="text-sm text-gray-600">{L('To know today’s price of a material, send a price request: suppliers answer with their current prices.', 'کسی چیز کی آج کی قیمت جاننے کے لیے قیمت کی درخواست بھیجیں: سپلائرز اپنی موجودہ قیمتیں بتائیں گے۔', 'لمعرفة سعر مادة اليوم، أرسل طلب تسعير، فيرد الموردون بأسعارهم الحالية.')}</p>
+        <a href={backHref} className="btn-navy text-sm mt-5">{L('Back to the home page', 'ہوم پر واپس', 'العودة إلى الرئيسية')}</a>
+      </div>
+    </AppShell>
+  )
 
   return (
     <AppShell title={T.title} nav={getNav(userRole, locale, '/market')} dir={dir}>
@@ -126,7 +146,7 @@ export default function MarketPricePage() {
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
               </span>
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
-                {locale === 'en' ? 'LIVE Prices from Factories' : locale === 'ur' ? 'لائیو قیمتیں' : 'أسعار مباشرة من المصانع'}
+                {L('Latest supplier prices', 'سپلائرز کی تازہ قیمتیں', 'أحدث أسعار الموردين')}
               </h2>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger">
@@ -140,8 +160,8 @@ export default function MarketPricePage() {
                     <div key={p.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition-all">
                       <div className="flex items-start justify-between mb-2">
                         <div className="min-w-0 flex-1">
-                          <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{p.product_name}</div>
-                          <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
+                          <div className="font-bold text-sm truncate" style={{ color: '#0B2438' }}>{getProductLabel(p.product_name || '', locale)}</div>
+                          <span className="badge badge-blue text-[12px] mt-1">{getSectorLabel(p.sector, locale)}</span>
                         </div>
                         {p.supplier?.supplier_tier === 'manufacturer' && <span className="text-[#0B2438]" title={L('Factory', 'فیکٹری', 'مصنع')}><SellerIcon name="factory" /></span>}
                       </div>
@@ -154,14 +174,14 @@ export default function MarketPricePage() {
                               {p.price?.toLocaleString('en-US')}
                             </span>
                           </div>
-                          <div className="text-[10px] text-gray-400">{T.sar} / {p.unit}{pct ? ` · ${trend === 'up' ? '+' : '-'}${pct}%` : ''}</div>
+                          <div className="text-[12px] text-gray-400">{T.sar} / {getUnitLabel(p.unit, locale)}{pct ? ` · ${trend === 'up' ? '+' : '-'}${pct}%` : ''}</div>
                         </div>
                         <div className="text-end">
-                          <div className="text-[10px] text-gray-400"><Glyph e="🕐" /> {timeAgo(p.updated_at, locale)}</div>
-                          {p.region && <div className="text-[10px] text-gray-400"><Glyph e="📍" /> {p.region}</div>}
+                          <div className="text-[12px] text-gray-400"><Glyph e="🕐" /> {timeAgo(p.updated_at, locale)}</div>
+                          {p.region && <div className="text-[12px] text-gray-500"><Glyph e="📍" /> {getRegionLabel(p.region, locale)}</div>}
                         </div>
                       </div>
-                      <div className="text-[10px] text-gray-400 mt-2 pt-2 border-t border-gray-50 truncate">
+                      <div className="text-[12px] text-gray-400 mt-2 pt-2 border-t border-gray-50 truncate">
                         {p.supplier?.company_name_ar}
                       </div>
                     </div>
@@ -196,7 +216,7 @@ export default function MarketPricePage() {
                 className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex-shrink-0 ${
                   selectedSector === s ? 'text-white' : 'bg-white text-gray-600 border border-gray-200'
                 }`} style={selectedSector === s ? { background: '#0B2438' } : {}}>
-                {s === 'all' ? T.all : (SECTOR_LABELS as any)[s]}
+                {s === 'all' ? T.all : getSectorLabel(s, locale)}
               </button>
             ))}
           </div>
@@ -205,7 +225,12 @@ export default function MarketPricePage() {
         </div>
 
         {/* Price Table */}
-        {loading ? (
+        {loadErr ? (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-center" role="alert">
+            <div className="font-bold text-red-800">{L('We could not load the prices.', 'قیمتیں لوڈ نہیں ہو سکیں۔', 'تعذّر تحميل الأسعار.')}</div>
+            <button type="button" onClick={() => window.location.reload()} className="btn-navy text-sm mt-3">{L('Try again', 'دوبارہ کوشش کریں', 'إعادة المحاولة')}</button>
+          </div>
+        ) : loading ? (
           <div className="text-center py-20 animate-pulse text-gray-500">{L('Loading…', 'لوڈ ہو رہا ہے…', 'جارٍ التحميل…')}</div>
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center animate-fade-in">
@@ -228,11 +253,11 @@ export default function MarketPricePage() {
                 <tbody>
                   {filtered.map((p, i) => (
                     <tr key={i} className={`border-b border-gray-50 hover:bg-[#0B2438]/2 transition-colors ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
-                      <td className="px-4 py-3 font-semibold text-sm" style={{ color: '#0B2438' }}>{p.name}</td>
+                      <td className="px-4 py-3 font-semibold text-sm" style={{ color: '#0B2438' }}>{getProductLabel(p.name, locale)}</td>
                       <td className="px-4 py-3">
-                        <span className="badge badge-blue text-[10px]">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
+                        <span className="badge badge-blue text-[12px]">{getSectorLabel(p.sector, locale)}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-500">{p.unit}</td>
+                      <td className="px-4 py-3 text-xs text-gray-600">{getUnitLabel(p.unit, locale)}</td>
                       <td className="px-4 py-3 text-sm text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
                         <div className="text-base font-bold" style={{ color: '#8F6820' }}>{p.avg?.toLocaleString('en-US')} {T.sar}</div>
@@ -240,7 +265,7 @@ export default function MarketPricePage() {
                       <td className="px-4 py-3 text-sm text-red-500 font-semibold">{p.max?.toLocaleString('en-US')} {T.sar}</td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                          <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-bold">{p.count}</span>
+                          <span className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center text-[12px] font-bold">{p.count}</span>
                           {T.offers}
                         </span>
                       </td>
@@ -256,29 +281,29 @@ export default function MarketPricePage() {
                 <div key={i} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                   <div className="flex items-start justify-between mb-3">
                     <div>
-                      <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{p.name}</div>
-                      <span className="badge badge-blue text-[10px] mt-1">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
+                      <div className="font-bold text-sm" style={{ color: '#0B2438' }}>{getProductLabel(p.name, locale)}</div>
+                      <span className="badge badge-blue text-[12px] mt-1">{getSectorLabel(p.sector, locale)}</span>
                     </div>
                     <div className="text-end">
                       <div className="text-lg font-bold" style={{ color: '#8F6820' }}>{p.avg?.toLocaleString('en-US')}</div>
-                      <div className="text-[10px] text-gray-400">{T.sar} / {p.unit}</div>
+                      <div className="text-[12px] text-gray-500">{T.sar} / {getUnitLabel(p.unit, locale)}</div>
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-2 text-center text-xs">
                     <div className="bg-emerald-50 rounded-lg p-2">
                       <div className="text-emerald-600 font-semibold">{p.min?.toLocaleString('en-US')}</div>
-                      <div className="text-gray-400 text-[10px]">{T.minPrice}</div>
+                      <div className="text-gray-400 text-[12px]">{T.minPrice}</div>
                     </div>
                     <div className="rounded-lg p-2" style={{ background: '#D4A54315' }}>
                       <div className="font-bold" style={{ color: '#8F6820' }}>{p.avg?.toLocaleString('en-US')}</div>
-                      <div className="text-gray-400 text-[10px]">{T.avgPrice}</div>
+                      <div className="text-gray-400 text-[12px]">{T.avgPrice}</div>
                     </div>
                     <div className="bg-red-50 rounded-lg p-2">
                       <div className="text-red-500 font-semibold">{p.max?.toLocaleString('en-US')}</div>
-                      <div className="text-gray-400 text-[10px]">{T.maxPrice}</div>
+                      <div className="text-gray-400 text-[12px]">{T.maxPrice}</div>
                     </div>
                   </div>
-                  <div className="text-[10px] text-gray-400 mt-2 text-center">{p.count} {T.offers}</div>
+                  <div className="text-[12px] text-gray-400 mt-2 text-center">{p.count} {T.offers}</div>
                 </div>
               ))}
             </div>

@@ -14,8 +14,8 @@ const txt = {
     title: 'تعيين كلمة مرور جديدة', sub: 'اكتب كلمة المرور الجديدة لحسابك',
     pass: 'كلمة المرور الجديدة', confirm: 'تأكيد كلمة المرور',
     save: 'حفظ كلمة المرور', saving: 'جارٍ الحفظ...',
-    doneTitle: 'تم بنجاح ', doneSub: 'تم تغيير كلمة مرورك. يمكنك تسجيل الدخول الآن.',
-    toLogin: 'تسجيل الدخول ←',
+    doneTitle: 'تم تغيير كلمة المرور', doneSub: 'تم تغيير كلمة مرورك، وأنت الآن مسجّل الدخول.',
+    toLogin: 'متابعة إلى حسابي',
     short: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل',
     mismatch: 'كلمتا المرور غير متطابقتين',
     invalid: 'تعذّر فتح الرابط. افتحه في المتصفح نفسه الذي طلبت منه الاستعادة، أو اطلب رابطاً جديداً.',
@@ -26,8 +26,8 @@ const txt = {
     title: 'Set a new password', sub: 'Enter a new password for your account',
     pass: 'New password', confirm: 'Confirm password',
     save: 'Save password', saving: 'Saving...',
-    doneTitle: 'Success ', doneSub: 'Your password has been changed. You can sign in now.',
-    toLogin: 'Sign in →',
+    doneTitle: 'Password changed', doneSub: 'Your password has been changed, and you are now signed in.',
+    toLogin: 'Continue to my account',
     short: 'Password must be at least 8 characters',
     mismatch: 'Passwords do not match',
     invalid: 'We could not open the link. Open it in the same browser you requested it from, or request a new link.',
@@ -38,8 +38,8 @@ const txt = {
     title: 'نیا پاسورڈ مقرر کریں', sub: 'اپنے اکاؤنٹ کے لیے نیا پاسورڈ درج کریں',
     pass: 'نیا پاسورڈ', confirm: 'پاسورڈ کی تصدیق',
     save: 'پاسورڈ محفوظ کریں', saving: 'محفوظ ہو رہا ہے...',
-    doneTitle: 'کامیاب ', doneSub: 'آپ کا پاسورڈ تبدیل ہو گیا۔ اب سائن ان کریں۔',
-    toLogin: 'سائن ان ←',
+    doneTitle: 'پاسورڈ تبدیل ہو گیا', doneSub: 'آپ کا پاسورڈ تبدیل ہو گیا، اور آپ اب سائن اِن ہیں۔',
+    toLogin: 'اپنے اکاؤنٹ پر جائیں',
     short: 'پاسورڈ کم از کم 8 حروف کا ہونا چاہیے',
     mismatch: 'پاسورڈ مماثل نہیں',
     invalid: 'لنک نہیں کھل سکا۔ اسے اسی براؤزر میں کھولیں جہاں سے آپ نے درخواست کی تھی، یا نیا لنک طلب کریں۔',
@@ -117,9 +117,10 @@ export default function ResetPasswordPage() {
         <div className="bg-white rounded-3xl p-8 shadow-2xl">
           {done ? (
             <div className="text-center">
-              <div className="text-5xl mb-4"><Glyph e="🎉" /></div>
+              <div className="text-5xl mb-4 text-[#0F6E56]"><Glyph e="✅" /></div>
               <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.doneTitle}</h2>
-              <p className="text-sm text-gray-500 mb-6">{t.doneSub}</p>
+              <p className="text-sm text-gray-600 mb-6" role="status">{t.doneSub}</p>
+              {/* signed in already: /login forwards to the account's home */}
               <a href="/login" className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>{t.toLogin}</a>
             </div>
           ) : checking ? (

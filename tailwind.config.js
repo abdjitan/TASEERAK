@@ -5,6 +5,12 @@ module.exports = {
     extend: {
       // IBM Plex Sans Arabic ships up to 700: heavier weights only faked bold (UX-183)
       fontWeight: { extrabold: '700', black: '700' },
+      // The dashboard root is 14.5px on desktop, which made text-xs ~10.9px: small text never goes
+      // under 12px / 13.5px, and stays 12px / 14px on a 16px root (UX-103).
+      fontSize: {
+        xs: ['max(12px, 0.75rem)', { lineHeight: 'max(16px, 1rem)' }],
+        sm: ['max(13.5px, 0.875rem)', { lineHeight: 'max(20px, 1.25rem)' }],
+      },
       colors: {
         // Brand (matches the new design system tokens)
         navy: { DEFAULT: '#0B2438', dark: '#071827', deep: '#050B12', soft: '#102E45', light: '#102E45' },

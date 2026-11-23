@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { INVITE_CODE_KEY } from '@/components/public/JoinSupplier'
 import Link from 'next/link'
 import { useTranslation } from '@/i18n'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -20,8 +22,23 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
 
   // Remember the kind through the signup.
   useEffect(() => { try { localStorage.setItem(SIGNUP_KIND_KEY, kind) } catch {} }, [kind])
+  // round-2 UX-077: keep ?ref= and ?i= through to the sign-up (and between the two join pages), and count the open
+  const [carry, setCarry] = useState('')
+  useEffect(() => {
+    try {
+      const qs = new URLSearchParams(window.location.search)
+      const raw = (qs.get('i') || '').toLowerCase()
+      const code = /^[a-z0-9_-]{1,24}$/.test(raw) ? raw : ''
+      const ref = qs.get('ref') || ''
+      const keep = new URLSearchParams()
+      if (code) { keep.set('i', code); try { localStorage.setItem(INVITE_CODE_KEY, code) } catch {} }
+      if (ref) keep.set('ref', ref)
+      setCarry(keep.toString())
+      if (code) createClient().rpc('log_invite_open', { p_code: code }).then(() => {}, () => {})
+    } catch {}
+  }, [])
 
-  const href = `/register?role=supplier&kind=${kind}&email=1`
+  const href = `/register?role=supplier&kind=${kind}&email=1${carry ? '&' + carry : ''}`
   const company = kind === 'company'
 
   const points = company
@@ -82,8 +99,8 @@ export default function JoinLanding({ kind }: { kind: 'company' | 'independent' 
         <p className="text-center text-[13px] text-ink-2">
           {L('Free to join. No commission during launch.', 'رجسٹریشن مفت، لانچ کے دوران کوئی کمیشن نہیں۔', 'التسجيل مجاني، ولا عمولة خلال فترة الإطلاق.')}{' '}
           {company
-            ? <Link href="/join/seller" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('No shop? Join as a pricing agent', 'دکان نہیں؟ قیمت ایجنٹ کے طور پر شامل ہوں', 'ليس لديك محل؟ سجّل كوسيط تسعير')}</Link>
-            : <Link href="/join/company" className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Representing a company or shop? Join here', 'کمپنی یا دکان؟ یہاں شامل ہوں', 'تمثّل شركة أو محلاً؟ سجّل من هنا')}</Link>}
+            ? <Link href={`/join/seller${carry ? "?" + carry : ""}`} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('No shop? Join as a pricing agent', 'دکان نہیں؟ قیمت ایجنٹ کے طور پر شامل ہوں', 'ليس لديك محل؟ سجّل كوسيط تسعير')}</Link>
+            : <Link href={`/join/company${carry ? "?" + carry : ""}`} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] hover:underline">{L('Representing a company or shop? Join here', 'کمپنی یا دکان؟ یہاں شامل ہوں', 'تمثّل شركة أو محلاً؟ سجّل من هنا')}</Link>}
         </p>
       </main>
     </div>

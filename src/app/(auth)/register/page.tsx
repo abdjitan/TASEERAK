@@ -81,7 +81,7 @@ const TR = {
     verifyNext: 'بعد الدخول ستكمل بياناتك (الموقع، القطاعات، والتوثيق) بخطوات سهلة.',
     junk: 'لم تجد الرسالة؟ افحص مجلد البريد غير الهام (Junk أو Spam).',
     supBrandH: 'تصلك طلبات المواد التي تبيعها.', supBrandP: 'سعّر طلبات المشترين في منطقتك من جوالك، وتابع صفقاتك من العرض إلى التسليم.',
-    sl1: 'طلبات مطابقة لتخصصك ومنطقتك فقط', sl2: 'تسعير سريع لكل مادة مع عرض واحد', sl3: 'مجاني للموردين، بلا عمولة',
+    sl1: 'طلبات مطابقة لتخصصك ومنطقتك فقط', sl2: 'تسعير سريع لكل مادة مع عرض واحد', sl3: 'مجاني خلال الإطلاق، بلا عمولة ولا اشتراك',
     goSignIn: 'الذهاب لتسجيل الدخول', home: 'الرئيسية',
   },
   en: {
@@ -108,7 +108,7 @@ const TR = {
     verifyNext: 'After signing in you will complete your details (location, sectors, verification) in easy steps.',
     junk: 'No email? Check your Junk or Spam folder.',
     supBrandH: 'Requests for the materials you sell reach you.', supBrandP: 'Price buyers’ requests in your region from your phone and follow your deals from offer to delivery.',
-    sl1: 'Only requests that match your specialty and region', sl2: 'Quick pricing, one offer for all materials', sl3: 'Free for suppliers, no commission',
+    sl1: 'Only requests that match your specialty and region', sl2: 'Quick pricing, one offer for all materials', sl3: 'Free during launch, no commission and no subscription',
     goSignIn: 'Go to sign in', home: 'Home',
   },
   ur: {
@@ -135,7 +135,7 @@ const TR = {
     verifyNext: 'سائن اِن کے بعد آپ اپنی تفصیلات (مقام، شعبے، تصدیق) آسان مراحل میں مکمل کریں گے۔',
     junk: 'ای میل نہیں ملی؟ Junk یا Spam فولڈر دیکھیں۔',
     supBrandH: 'جو سامان آپ بیچتے ہیں اس کی درخواستیں آپ تک پہنچتی ہیں۔', supBrandP: 'اپنے علاقے کے خریداروں کی درخواستوں کی قیمت فون سے دیں اور سودے آفر سے ڈیلیوری تک دیکھیں۔',
-    sl1: 'صرف آپ کی مہارت اور علاقے کی درخواستیں', sl2: 'تمام مال کے لیے ایک آفر، تیز قیمت', sl3: 'سپلائرز کے لیے مفت، کوئی کمیشن نہیں',
+    sl1: 'صرف آپ کی مہارت اور علاقے کی درخواستیں', sl2: 'تمام مال کے لیے ایک آفر، تیز قیمت', sl3: 'لانچ کے دوران مفت، نہ کمیشن نہ سبسکرپشن',
     goSignIn: 'سائن ان پر جائیں', home: 'مرکزی صفحہ',
   },
 }
@@ -153,6 +153,9 @@ export default function RegisterPage() {
   // UX-027: a company employee invited by link (/register?team=<token>): no kind step, no CR, no business name
   const [teamToken, setTeamToken] = useState('')
   const [teamCompany, setTeamCompany] = useState('')
+  // round-2 UX-077: an invitation is checked first; an invalid or expired one never opens the form (no orphan account)
+  const [teamInvalid, setTeamInvalid] = useState(false)
+  const [teamRole, setTeamRole] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [termsErr, setTermsErr] = useState(false) // UX-133: the error sits under the box (the button is not disabled for it)
   // optional CR at sign-up for a company/shop (owner 2026-11-16, migration 216): one CR = one account.
@@ -203,7 +206,12 @@ export default function RegisterPage() {
       if (/^[0-9a-f-]{36}$/.test(tt)) {
         setTeamToken(tt); setSellerOnly(true); switchTo('supplier')
         try { localStorage.setItem(TEAM_INVITE_KEY, tt) } catch {}
-        Promise.resolve(supabase.rpc('get_company_invite', { p_token: tt })).then(({ data }: any) => { if (data?.company_name) setTeamCompany(String(data.company_name)) }).catch(() => {})
+        Promise.resolve(supabase.rpc('get_company_invite', { p_token: tt })).then(({ data, error }: any) => {
+          const bad = !!error || !data || data.ok === false || data.valid === false
+          if (bad) { setTeamInvalid(true); try { localStorage.removeItem(TEAM_INVITE_KEY) } catch {}; return }
+          if (data.company_name) setTeamCompany(String(data.company_name))
+          if (data.role) setTeamRole(String(data.role))
+        }).catch(() => {})
       }
       if (qs.get('role') === 'supplier' || k === 'company' || k === 'independent') {
         switchTo('supplier')
@@ -236,7 +244,10 @@ export default function RegisterPage() {
     }
     if (asksBusiness && !cr.trim()) { setFormError(locale === 'en' ? 'A company or shop needs its commercial registration number. No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'الشركة أو المحل تحتاج رقم السجل التجاري. ليس لديك سجل؟ اختر «وسيط تسعير».'); return }
     if (asksBusiness && cr && !isUnifiedCr(normalizeCrInput(cr))) { setFormError(crFormatText(locale)); return }
-    if (asksBusiness && cr && await checkCr(cr)) { setFormError(crTakenText(locale).msg); return }
+    // round-2 UX-021: a CR already used by another account no longer blocks the real owner: the account is
+    // created without it, and right after signing in he is taken to /verification/claim to upload the certificate.
+    const crClaim = !!(asksBusiness && cr && await checkCr(cr))
+    if (crClaim) rememberPostSignupNext(`/verification/claim?cr=${normalizeCrInput(cr)}`)
     if (phoneDup) { setFormError(t.phoneTaken); return }
     // check again at submit, whatever the format (owner 2026-11-21): never create an account on a taken number
     try { const { data: taken } = await supabase.rpc('phone_exists', { p_phone: data.phone }); if (taken === true) { setPhoneDup(true); setFormError(t.phoneTaken); return } } catch {}
@@ -252,7 +263,8 @@ export default function RegisterPage() {
         preferred_language: locale,
         ...(data.role === 'supplier' && !teamToken ? { seller_kind: sellerKind } : {}),
         ...(teamToken ? { team_invite: teamToken } : {}),
-        ...(asksBusiness && isUnifiedCr(normalizeCrInput(cr)) ? { commercial_registration: normalizeCrInput(cr) } : {}),
+        ...(asksBusiness && !crClaim && isUnifiedCr(normalizeCrInput(cr)) ? { commercial_registration: normalizeCrInput(cr) } : {}),
+        ...(crClaim ? { cr_claim: normalizeCrInput(cr) } : {}),
         terms_version: TERMS_VERSION, client: 'web',
       }
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -265,7 +277,7 @@ export default function RegisterPage() {
       // تأكيد البريد مفعّل → لا جلسة: نعرض شاشة «فعّل بريدك».
       if (!authData.session) { setSentTo({ email: data.email, password: data.password }); setEmailSent(true); return }
       // تأكيد البريد معطّل → لدينا جلسة: نوجّه مباشرة لإكمال الملف (عضو الفريق يعود إلى الدعوة).
-      window.location.href = teamToken ? `/team/join/${teamToken}` : '/onboarding'
+      window.location.href = teamToken ? `/team/join/${teamToken}` : crClaim ? `/verification/claim?cr=${normalizeCrInput(cr)}` : '/onboarding'
     } catch (err: any) {
       captchaRef.current?.reset(); setCaptchaToken('')
       const msg = err?.message || ''
@@ -284,6 +296,9 @@ export default function RegisterPage() {
           <h1 className="text-xl font-bold text-navy mb-2">{t.verifyTitle}</h1>
           <p className="text-sm text-gray-500 mb-2">{t.verifyBody}</p>
           {sentTo && <p className="text-sm font-bold text-navy mb-2" dir="ltr">{sentTo.email}</p>}
+          {crTaken && !teamToken && (
+            <p className="text-[13px] font-semibold text-[#071827] bg-[#D4A543]/10 border border-[#D4A543]/40 rounded-lg p-2.5 mb-2">{locale === 'en' ? 'After signing in, upload your commercial registration certificate so the team can review it.' : locale === 'ur' ? 'سائن اِن کے بعد اپنا تجارتی رجسٹریشن سرٹیفکیٹ اپ لوڈ کریں تاکہ ٹیم جائزہ لے سکے۔' : 'بعد الدخول ارفع شهادة سجلك التجاري لتراجعها الإدارة.'}</p>
+          )}
           <p className="text-[13px] text-gray-600 mb-2">{teamToken ? (locale === 'en' ? 'After confirming, sign in and you will come back to the invitation to join.' : locale === 'ur' ? 'تصدیق کے بعد سائن اِن کریں، آپ شامل ہونے کے لیے دعوت پر واپس آئیں گے۔' : 'بعد التأكيد سجّل الدخول، وستعود إلى الدعوة لإتمام الانضمام.') : t.verifyNext}</p>
           <p className="text-[13px] text-gray-600 mb-6">{t.junk}</p>
           <Link href={selectedType === 'supplier' ? '/login?m=email' : '/login'} className="flex items-center justify-center w-full min-h-[44px] py-3 rounded-xl font-extrabold text-[#071827] text-sm" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>{t.goSignIn}</Link>
@@ -345,7 +360,16 @@ export default function RegisterPage() {
                 : selectedType === 'supplier' ? t.supSub : t.sub}</p>
             </div>
 
+          {teamToken && teamInvalid ? (
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+              <p className="font-bold">{locale === 'en' ? 'This invitation is not valid. Ask the company for a new link.' : locale === 'ur' ? 'یہ دعوت درست نہیں۔ کمپنی سے نیا لنک مانگیں۔' : 'الدعوة غير صالحة. اطلب من الشركة رابطاً جديداً.'}</p>
+              <Link href="/login?m=email" className="mt-3 inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.haveAccount} {t.login}</Link>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 text-start">
+            {teamToken && teamRole && (
+              <p className="text-[13px] font-semibold text-navy rounded-xl bg-[#0B2438]/5 px-3 py-2">{locale === 'en' ? 'Your role: ' : locale === 'ur' ? 'آپ کا کردار: ' : 'دورك: '}{teamRole === 'admin' ? (locale === 'en' ? 'Admin (prices requests and invites members)' : locale === 'ur' ? 'ایڈمن (قیمتیں دیتا ہے اور اراکین بلاتا ہے)' : 'مشرف (يسعّر الطلبات ويدعو أعضاء)') : (locale === 'en' ? 'Sales (prices requests)' : locale === 'ur' ? 'سیلز (درخواستوں کی قیمت دیتا ہے)' : 'مبيعات (يسعّر الطلبات)')}</p>
+            )}
             {selectedType === 'supplier' && sellerKind && !teamToken && (
               <div className="flex items-center justify-between gap-2 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-3 py-2">
                 <span className="text-sm font-bold text-navy"><SellerIcon name={SELLER_KINDS[sellerKind].icon} /> {locale === 'en' ? SELLER_KINDS[sellerKind].en : locale === 'ur' ? SELLER_KINDS[sellerKind].ur : SELLER_KINDS[sellerKind].ar}</span>
@@ -407,12 +431,11 @@ export default function RegisterPage() {
               <input id="reg-cr" value={cr} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX"
                 onChange={(e) => { setCr(normalizeCrInput(e.target.value).slice(0, 10)); if (crTaken) setCrTaken(false) }} onBlur={(e) => { checkCr(e.target.value) }} />
               {crTaken && (
-                <div role="alert" className="text-red-700 text-[13px] bg-red-50 border border-red-200 rounded-lg p-2.5 mt-1">
-                  <p><Glyph e="⚠" /> {crTakenText(locale).msg}{' '}
-                  {locale === 'en' ? 'If the registration is yours, write to us and we will help you prove it.' : locale === 'ur' ? 'اگر رجسٹریشن آپ کی ہے تو ہمیں لکھیں، ہم ملکیت ثابت کرنے میں مدد کریں گے۔' : 'إن كان السجل سجلّك، راسلنا وسنساعدك في إثبات ملكيته.'}</p>
-                  <a href={`mailto:${OPERATOR.email}?subject=${encodeURIComponent(locale === 'en' ? 'Commercial registration already used' : 'سجل تجاري مستخدم')}&body=${encodeURIComponent((locale === 'en' ? 'Hello, my commercial registration is already used by another account: ' : 'مرحباً، سجلي التجاري مستخدم في حساب آخر: ') + cr)}`}
-                    className="mt-2 inline-flex items-center min-h-[44px] px-4 rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>
-                    {locale === 'en' ? 'Email Support' : locale === 'ur' ? 'سپورٹ کو ای میل کریں' : 'راسل الدعم بالبريد'}
+                <div role="status" className="text-[#071827] text-[13px] bg-[#D4A543]/10 border border-[#D4A543]/50 rounded-lg p-2.5 mt-1">
+                  <p><Glyph e="⚠" /> {locale === 'en' ? 'This registration is used in another account. Complete the sign-up, and after signing in upload your registration certificate for the team to review.' : locale === 'ur' ? 'یہ رجسٹریشن کسی دوسرے اکاؤنٹ میں استعمال ہو رہی ہے۔ رجسٹریشن مکمل کریں، اور سائن اِن کے بعد اپنا سرٹیفکیٹ اپ لوڈ کریں تاکہ انتظامیہ جائزہ لے۔' : 'هذا السجل مستخدم في حساب آخر. أكمل التسجيل، وبعد الدخول ارفع شهادة سجلك لتراجعها الإدارة.'}</p>
+                  <a href={`mailto:${OPERATOR.email}?subject=${encodeURIComponent(locale === 'en' ? 'Commercial registration already used' : 'سجل تجاري مستخدم')}`}
+                    className="mt-1 inline-flex items-center min-h-[44px] text-[13px] font-bold underline text-[#8F6820]">
+                    {locale === 'en' ? 'Questions? Email support' : locale === 'ur' ? 'سوال؟ سپورٹ کو ای میل کریں' : 'لديك سؤال؟ راسل الدعم'}
                   </a>
                 </div>
               )}
@@ -481,6 +504,7 @@ export default function RegisterPage() {
             </button>
             </div>
           </form>
+          )}
 
             {/* switch buyer ⇄ supplier, then «have an account?» */}
             {!sellerOnly && <button type="button" onClick={() => switchTo(selectedType === 'supplier' ? 'contractor' : 'supplier')}

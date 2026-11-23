@@ -1,13 +1,11 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createPublicClient } from '@/lib/supabase/server'
-import { supplierScore, scoreColor, approvalLabel } from '@/lib/supplierScore'
+import { supplierScore } from '@/lib/supplierScore'
 import PublicHeader from '@/components/public/PublicHeader'
 import PublicFooter from '@/components/public/PublicFooter'
-import { tierLabel, tierIcon } from '@/lib/sellers'
-import SellerIcon from '@/components/shared/SellerIcon'
-import Glyph from '@/components/shared/Glyph'
+import { tierLabel } from '@/lib/sellers'
+import SupplierProfile from './SupplierProfile'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,12 +21,14 @@ async function getSupplier(id: string) {
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const params = await props.params
   const s = await getSupplier(params.id)
-  if (!s) return { title: 'مورد | تسعيرك' }
+  if (!s) return { title: 'مورد | تسعيرك', robots: { index: false, follow: true } }
   const name = s.company_name_ar || 'مورد'
   return {
     title: `${name} — مورد مواد بناء${s.region ? ' في ' + s.region : ''} | تسعيرك`,
     description: `${name}: مورد ${s.supplier_tier ? tierLabel(s.supplier_tier, 'ar', false) : ''} لمواد البناء${s.region ? ' في ' + s.region : ''} على منصة تسعيرك${s.verification_status === 'verified' ? '، موثّق عبر واثق' : ''}. اطلب تسعيرة الآن.`,
     alternates: { canonical: `/suppliers/${params.id}` },
+    // a member's profile stays out of search results until they opt in (UX-115)
+    robots: { index: false, follow: true },
   }
 }
 
@@ -40,81 +40,10 @@ export default async function SupplierProfilePage(props: { params: Promise<{ id:
   const won = Number(s.won_deals) || 0
   const stats = { total_offers: total, won_rate: total > 0 ? (won / total) * 100 : 0, avg_response_hours: null }
   const score = supplierScore({ verification_status: s.verification_status, rating_avg: s.rating_avg }, stats)
-  const rating = Number(s.rating_avg) || 0
-
   return (
-    <div className="min-h-screen bg-[#f7f8fa]" dir="rtl">
+    <div className="min-h-screen bg-[#f7f8fa]">
       <PublicHeader active="suppliers" />
-      <main className="max-w-3xl mx-auto px-4 py-8">
-        <Link href="/suppliers" className="inline-flex items-center min-h-[44px] text-sm font-semibold text-[#0B2438] hover:underline">→ لوحة شرف الموردين</Link>
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mt-4">
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 shrink-0 grid place-items-center rounded-2xl text-2xl" style={{ background: '#0B2438' }}><Glyph e="🏢" /></div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-extrabold" style={{ color: '#0B2438' }}>{s.company_name_ar || 'مورد'}</h1>
-                {s.verification_status === 'verified' && <span className="badge text-[12px]" style={{ background: '#0F6E5614', color: '#0F6E56' }}>{s.cr_verification_source === 'wathq' ? 'موثّق عبر واثق' : 'موثّق'}</span>}
-              </div>
-              <div className="text-sm text-gray-500 mt-1 flex items-center gap-3 flex-wrap">
-                <span><SellerIcon name={s.supplier_tier ? tierIcon(s.supplier_tier) : 'store'} /> {s.supplier_tier ? tierLabel(s.supplier_tier, 'ar') : 'مورد'}</span>
-                {s.region && <span><Glyph e="📍" /> {s.region}{s.city ? ` · ${s.city}` : ''}</span>}
-              </div>
-            </div>
-            <div className="shrink-0 text-center">
-              <div className="w-16 h-16 grid place-items-center rounded-full font-bold text-lg text-white" style={{ background: scoreColor(score) }}>{score}<span className="text-[11px] opacity-80">/100</span></div>
-              <div className="text-[12px] text-gray-600 mt-1">مؤشر الأداء</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 mt-6">
-            {[
-              { l: 'التقييم', v: rating > 0 ? `${rating.toFixed(1)}` : '—', sub: s.rating_count ? `${s.rating_count} تقييم` : '' },
-              { l: 'العروض', v: total.toLocaleString('en-US'), sub: 'عرض مقدَّم' },
-              { l: 'الصفقات', v: won.toLocaleString('en-US'), sub: 'صفقة منجزة' },
-            ].map((k: any) => (
-              <div key={k.l} className="rounded-xl bg-[#f7f8fa] p-3 text-center">
-                <div className="text-lg font-extrabold" style={{ color: '#0B2438' }}>{k.v}</div>
-                <div className="text-[12px] text-gray-500">{k.l}</div>
-                {k.sub && <div className="text-[12px] text-gray-600">{k.sub}</div>}
-              </div>
-            ))}
-          </div>
-
-          {Array.isArray(s.approvals) && s.approvals.length > 0 && (
-            <div className="mt-5">
-              <div className="text-xs font-bold text-gray-600 mb-2"><Glyph e="🏅" /> اعتمادات جهات كبرى</div>
-              <div className="flex gap-1.5 flex-wrap">
-                {s.approvals.map((a: string) => <span key={a} className="text-[12px] px-2 py-1 rounded-lg" style={{ background: '#0B24380d', color: '#0B2438' }}><Glyph e="🏅" /> {approvalLabel(a)}</span>)}
-              </div>
-            </div>
-          )}
-
-          {Array.isArray(s.recent_reviews) && s.recent_reviews.length > 0 && (
-            <div className="mt-6 pt-5 border-t border-gray-100">
-              <div className="text-xs font-bold text-gray-600 mb-3"><Glyph e="💬" /> آراء المشترين</div>
-              <div className="space-y-3">
-                {s.recent_reviews.map((rv: any, i: number) => (
-                  <div key={i} className="rounded-xl bg-[#f7f8fa] p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-0.5 text-sm" aria-label={`${rv.rating} من 5`}>
-                        {[1, 2, 3, 4, 5].map((n) => <span key={n} className={n <= rv.rating ? 'text-yellow-400' : 'text-gray-200'}>★</span>)}
-                      </div>
-                      {rv.created_at && <span className="text-[12px] text-gray-600">{new Date(rv.created_at).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</span>}
-                    </div>
-                    {rv.comment && <p className="text-sm text-gray-600 mt-1.5 leading-relaxed">{rv.comment}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-            <p className="text-sm text-gray-500 mb-3">اطلب تسعيرة ينافس عليها {s.company_name_ar || 'هذا المورد'} وغيره من الموردين.</p>
-            <Link href="/register" className="inline-block px-6 py-3 rounded-xl font-bold text-[#071827] text-sm" style={{ background: '#D4A543' }}>اطلب تسعيرة مجاناً</Link>
-          </div>
-        </div>
-        <p className="text-center text-[12px] text-gray-600 mt-6">عضو منذ {new Date(s.member_since).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn')}</p>
-      </main>
+      <SupplierProfile s={s} score={score} />
       <PublicFooter />
     </div>
   )

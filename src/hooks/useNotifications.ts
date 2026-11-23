@@ -46,6 +46,9 @@ export function useNotifications(userId?: string) {
   }
 
   async function markAsRead(notificationId: string) {
+    // only an unread item lowers the count (round-2 UX-056)
+    const wasUnread = notifications.some(n => n.id === notificationId && !n.is_read)
+    if (!wasUnread) return
     await supabase
       .from('notifications')
       .update({ is_read: true })

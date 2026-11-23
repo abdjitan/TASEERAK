@@ -1,0 +1,191 @@
+<title>صور الكتالوج — الدفعة الثانية</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+<style>
+/* Layout: one column — how-to, one copy button for the master message, then 33 set cards with a progress bar */
+:root{--bg:#F5F6F8;--paper:#FFFFFF;--fg:#0B2438;--muted:#5B6B7B;--line:#E2E6EB;--gold:#D4A543;--gold-ink:#8A6418;--ok:#0F6E56;--ok-bg:#E6F3EE;--f:"IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#071827;--paper:#0B2438;--fg:#E9EEF2;--muted:#A3B3C1;--line:#1C3A52;--gold-ink:#F5C55B;--ok:#6FD3B4;--ok-bg:#0F3329;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#071827;--paper:#0B2438;--fg:#E9EEF2;--muted:#A3B3C1;--line:#1C3A52;--gold-ink:#F5C55B;--ok:#6FD3B4;--ok-bg:#0F3329;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f);line-height:1.7;padding-inline:16px;margin:0}
+.wrap{max-width:720px;margin:0 auto;padding-block:20px 60px;display:flex;flex-direction:column;gap:14px}
+h1{font-size:22px;margin:0;text-wrap:balance}
+.how{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:14px}
+.how ol{margin:6px 0 0;padding-inline-start:20px}
+.how .note{color:var(--muted);font-size:13px;margin-top:6px}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:8px;z-index:2;display:flex;align-items:center;gap:10px;font-size:13px;font-variant-numeric:tabular-nums}
+.track{flex:1;height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.fill{height:100%;background:var(--gold);width:0}
+.master{display:flex;flex-direction:column;gap:8px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.master .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+button{font:inherit;font-size:14px;font-weight:700;border-radius:10px;padding:8px 16px;cursor:pointer;border:1px solid var(--gold);background:var(--gold);color:#0B2438}
+button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.msg{font-size:13px;color:var(--ok)}
+textarea{width:100%;height:140px;font:12px/1.5 ui-monospace,Consolas,monospace;direction:ltr;border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--bg);color:var(--fg)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.card.done{background:var(--ok-bg);border-color:var(--ok)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.num{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.tick{font-size:13px;display:flex;gap:6px;align-items:center;cursor:pointer}
+.items{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;font-size:13px}
+.items span{min-width:0;overflow-wrap:anywhere}
+.items b{color:var(--gold-ink);font-weight:600;font-family:ui-monospace,Consolas,monospace;font-size:11px}
+@media (max-width:480px){.items{grid-template-columns:1fr}}
+</style>
+<div class="wrap" dir="rtl" lang="ar">
+  <h1>صور الكتالوج — الدفعة الثانية (150 صورة في 39 دفعة)</h1>
+  <div class="how">نفس طريقة المرة الماضية:
+    <ol>
+      <li>اضغط «نسخ الرسالة» والصقها في محادثة جديدة في ChatGPT.</li>
+      <li>سيرسم الدفعة #1 (أربع صور في صورة واحدة). نزّلها، ثم اكتب له «التالي».</li>
+      <li>أرسل لي الصور كلها (بالترتيب أو مع رقم الدفعة) وأنا أقصّها وأرفعها.</li>
+    </ol>
+    <div class="note">علّم «وصلتني» على كل دفعة لتتابع تقدّمك (يُحفظ على جهازك). إذا أخطأ في منتج، اكتب له رقم الدفعة مرة أخرى ليعيد رسمها.</div>
+  </div>
+  <div class="master">
+    <div class="row"><button type="button" id="copy">نسخ الرسالة</button><span class="msg" id="msg" role="status"></span></div>
+    <textarea id="text" readonly aria-label="رسالة ChatGPT">I will ask you for catalog images one at a time. Below is a numbered list of 33 image sets (#1 to #33). When I write a number (like 7) or the word «التالي» (next), create ONLY that one image and nothing else, then wait.
+
+Rules for EVERY image: ONE square image, 1024×1024, divided into a 2×2 grid of four equal squares (no lines, no borders, no gaps drawn). TL = top-left, TR = top-right, BL = bottom-left, BR = bottom-right. Each square shows ONE product as a clean studio catalog photo: centered in its square, filling about 60% of the square, on the same plain light grey-white seamless background, soft natural shadow, realistic materials, sharp focus. Keep each product fully inside its own square with empty space around it. No text, no letters, no numbers, no labels, no logos, no brand colours, no watermark, no people, no boxes or packaging unless the description says so (bags, cans and pails must be plain and unbranded). Electrical sockets and plugs are the Saudi/UK BS1363 type. If a square is marked (empty square), leave it as plain background.
+
+Start now with #1.
+
+#1 — TL: A stack of galvanized steel Z-section and C-section roof purlins with punched holes | TR: A two-component epoxy tank-lining coating kit: two plain metal cans and a brush next to a small blue-coated steel sample panel | BL: A microcement kit: a plain bag of grey microcement powder, a bucket of resin, a steel trowel and a small smooth grey sample board | BR: A loose pile of assorted grey nylon wall plugs (wall dowels) in several sizes
+
+#2 — TL: A long precast concrete stepped raker beam used for stadium seating, lying on timber blocks | TR: Close-up of a flat concrete roof partly covered with a sprayed yellow-beige polyurethane foam layer, a spray gun hose lying on it | BL: A bundle of zinc-plated steel threaded rods (studding), close-up, filling most of the square | BR: A stack of glossy PVC marble-effect wall panels with visible grey veining
+
+#3 — TL: Three pre-painted coloured steel coils (white, blue and red) standing side by side | TR: Galvanized J-type and L-type cast-in anchor bolts with nuts and washers | BL: A large coil of ribbed reinforcing steel wire rod | BR: A pile of angular crushed stone aggregate, 20 mm grey pieces
+
+#4 — TL: A pile of graded road base material: grey crushed stone mixed with fines | TR: A pile of sandy gravel structural fill material, beige-brown | BL: A white paint bucket with a paint roller next to a small exposed concrete ceiling sample painted matte black | BR: Several galvanized steel plaster angle beads (corner beads) with expanded-mesh wings, laid side by side
+
+#5 — TL: A two-component polyurethane cement floor kit: a plain resin pail, a hardener can and a filler bag, with a small red textured floor sample tile | TR: A two-component flexible polyurethane floor coating kit: a plain pail and a can with a small grey satin floor sample tile | BL: An anti-static ESD epoxy floor coating kit: a plain pail and a can with a small grey floor sample tile crossed by a thin copper strip | BR: A wide 600 mm perforated galvanized steel cable tray section with 100 mm high sides
+
+#6 — TL: A floor-standing multi-section main electrical distribution board, grey steel cabinet about 2 m tall with breaker compartments | TR: A large draw-out air circuit breaker (ACB) in its withdrawable cradle, black front control panel and charging handle | BL: A heavy steel exterior security door with embossed metal panels, painted dark grey, in its steel frame | BR: A cantilever tensile-fabric car parking shade with steel columns covering several parking bays
+
+#7 — TL: A 40 kg plain paper bag of ready-mix cement plaster with a small pile of grey powder in front | TR: A 25 kg plain bag of heavy-duty cementitious floor screed with a small pile of grey powder | BL: An interior staircase with white marble treads and a wooden handrail balustrade | BR: A stack of thin natural wood veneer leaves with slightly curled edges
+
+#8 — TL: A painted black wrought-iron window security grille with a decorative scroll pattern | TR: A white digital wall-mounted room thermostat with a blank screen and buttons | BL: A white round ceiling-mounted PIR motion sensor | BR: A white digital plug-in timer with a UK 3-pin BS1363 plug and socket
+
+#9 — TL: A straight busbar trunking section with grey steel housing and a joint at one end | TR: A short length of the electrical power cable «كابل 1Cx16mm² CU/LSZH», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely | BL: A short length of the electrical power cable «كابل 1Cx35mm² CU/LSZH», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely | BR: A short length of the electrical power cable «كابل 3Cx10mm² CU/XLPE/SWA/LSZH», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely
+
+#10 — TL: A short length of the electrical power cable «كابل 3Cx16mm² CU/XLPE/SWA/LSZH», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely | TR: A short length of the electrical power cable «كابل 4Cx10mm² CU/XLPE/SWA/LSZH», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely | BL: A short length of the electrical power cable «كابل 4Cx16mm² CU/XLPE/SWA/LSZH», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely | BR: A short length of the electrical power cable «كابل 4Cx70mm² CU/XLPE/SWA/LSZH», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely
+
+#11 — TL: A short length of the electrical power cable «كابل 4Cx95mm² CU/XLPE/SWA/LSZH», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely | TR: A short length of the electrical power cable «مفتاح فندقي بالبطاقة (Key-card Switch)», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely | BL: A short length of the electrical power cable «وحدة تحكم الطبّاخ 45A (Cooker Control Unit)», its cut end showing the insulated copper cores with exactly the number of cores in the name, black outer sheath, coiled loosely | BR: A white travel plug adapter with a UK 3-pin BS1363 plug and universal socket openings
+
+#12 — TL: A very large sectional GRP panel water tank, many panels long and wide, with external steel bracing and a ladder, on a concrete plinth | TR: A pear-shaped cable float level switch with a long electrical cable | BL: A white flexible WC pan connector (toilet outlet connector pipe) | BR: A complete exposed shower set: chrome wall mixer, riser rail, hand shower and round overhead shower head
+
+#13 — TL: A custom-cut decorative wall mirror with a bevelled edge and a thin brass frame, reflective surface | TR: A double-wall steel underground diesel storage tank, cylindrical, with a manway and fill pipe on top | BL: A wall-mounted exposed white plastic flush cistern with a flush pipe going down, without a toilet bowl | BR: A 2-port motorised zone valve: straight brass body with one inlet and one outlet and a grey actuator on top
+
+#14 — TL: A solar water pumping set: stainless steel submersible pump, a controller box and a solar panel | TR: An aluminium solar panel mounting kit: rails, triangular tilt legs and clamps assembled into a frame | BL: A facade lighting controller: a grey DIN-rail control box with a small touch panel | BR: A white smart Wi-Fi wall plug with a UK 3-pin BS1363 socket
+
+#15 — TL: A white 4-gang extension lead with UK BS1363 sockets and a coiled cable with a UK plug | TR: Pre-insulated steel chilled-water pipe lengths with a black insulation jacket | BL: Straight plain copper pipe lengths in a small bundle | BR: A coil of 2.5 mm² single-core red PVC insulated copper wire
+
+#16 — TL: A plain tin of PVC solvent cement with a brush lid next to white PVC pipe fittings | TR: An assortment of steel pipe hangers: split-ring hanger, threaded rod and clevis hanger | BL: VRF air-conditioning indoor units: a 4-way ceiling cassette unit and a wall-mounted unit together | BR: A recessed aluminium LED linear profile with an opal diffuser, glowing
+
+#17 — TL: A coiled red high-pressure rubber air hose with brass couplings | TR: A brushed brass lever door handle mounted on a long vertical backplate with a key hole below the lever | BL: A compact plastic household electric pressure washer with small wheels, a hose reel and a short spray gun | BR: Black flexible rubber foam pipe insulation tubes of several diameters
+
+#18 — TL: A pile of mixed decorative garden pebbles in white, black and beige | TR: Drip irrigation fittings and pop-up sprinkler heads with black drip tubing | BL: A cordless drill driver in neutral grey and blue colours with its battery attached | BR: Rectangular galvanized sheet-metal HVAC duct sections with flanged joints
+
+#19 — TL: Multi-level steel frame scaffolding along a building facade with planks, guardrails and stairs | TR: A galvanized steel mesh swing gate with frame, hinges and latch between two posts | BL: A stainless steel floor pivot hinge set for a door: floor bearing plate and top pivot | BR: A brass passage door knob set without a keyhole
+
+#20 — TL: Stack of brushed stainless steel sheets (flat plates) | TR: Bundle of polished stainless steel round pipes, product photo on white background | BL: Bag and a handful of macro synthetic (polypropylene) structural fibres for concrete | BR: Pile of hooked-end steel fibres for concrete reinforcement
+
+#21 — TL: Bundle of raw mill-finish aluminium extrusion profiles (bars, angles, tubes) | TR: Stack of plain mill-finish aluminium sheets | BL: White wall socket outlet, UK-type 13A (BS 1363), front view | BR: White wall light switch plate (one and two gang), front view
+
+#22 — TL: Red fire blanket pouch with pull tabs, wall-mounted | TR: Red metal fire extinguisher cabinet with glass door, extinguisher inside | BL: Heavy-duty red pipe wrench (Stillson type) | BR: Pipe cutter tool with cutting wheel for copper/steel pipes
+
+#23 — TL: Steel construction shovel with wooden handle | TR: Wide street/yard push broom with stiff bristles and long handle | BL: Carpenter hand saw for wood with plastic grip | BR: Metal hacksaw frame with blade
+
+#24 — TL: Steel carpenter's try square / framing square | TR: Stainless steel vernier caliper | BL: Electric circular saw with blade guard | BR: Electric jigsaw power tool
+
+#25 — TL: Orange and white reflective plastic traffic drum (channelizer barrel) | TR: Red and white plastic barrier chain coil | BL: Roll of orange plastic barrier safety mesh fencing | BR: Gate closer (spring/hydraulic) for a steel fence gate
+
+#26 — TL: Pair of heavy-duty weld-on steel gate hinges for fence gates | TR: A prefabricated porta-cabin site office with a door and windows | BL: A tensile fabric car-park shade structure with steel columns | BR: An outdoor swimming pool with a tiled edge and a stainless steel ladder
+
+#27 — TL: A built-in oven, a ceramic cooktop and a stainless range hood shown together | TR: An office desk with an ergonomic chair and a filing cabinet | BL: Solar photovoltaic panels on a mounting frame with a grid inverter | BR: A smart home wall touch panel, a smart light switch and a motion sensor
+
+#28 — TL: A central gas manifold: two gas cylinders connected with a regulator and copper piping | TR: A set of drill bits, cutting discs and screwdriver bits | BL: A ceiling speaker and a rack amplifier | BR: An excavated trench in sandy soil with a pile of dug soil beside it
+
+#29 — TL: Concrete admixture drums, a jerrycan and sealant cartridges | TR: Open paint buckets of different colours with a paint roller | BL: A wall-mounted access control card reader with a keypad | BR: Heavy steel I-beams (HEA/HEB wide-flange beams) stacked
+
+#30 — TL: A roll of fiberglass duct wrap insulation with reinforced aluminium foil facing, partly unrolled | TR: Wooden slatted acoustic wall panels on black felt backing | BL: White UK BS1363 wall sockets and light switches | BR: White wall outlets: USB socket, data socket and TV outlet
+
+#31 — TL: A copper earth rod with a clamp and a coil of copper earthing tape | TR: An outdoor children's playground set with a slide and climbing frame | BL: Bundled pressure pipes: copper, PEX and black HDPE | BR: Pre-insulated steel chilled-water pipes with black insulation
+
+#32 — TL: A generator fuel day tank with a transfer pump and a fuel filter unit | TR: A concrete power trowel (helicopter) and a rebar bending machine | BL: Portable site toilet cabins and a small site office cabin | BR: A recessed LED downlight and a square LED panel light
+
+#33 — TL: Solar photovoltaic panels on a roof frame | TR: (empty square) | BL: (empty square) | BR: (empty square)
+</textarea>
+  </div>
+  <div class="master">
+    <div class="row"><button type="button" id="copy2">نسخ رسالة الطاقة الشمسية (#34–#39)</button><span class="msg" id="msg2" role="status"></span></div>
+    <div class="note" style="font-size:13px;color:var(--muted)">بعد الدفعة #33 الصق هذه الرسالة في المحادثة نفسها، ثم اكتب «التالي».</div>
+    <textarea id="text2" readonly aria-label="رسالة الطاقة الشمسية">Continue with these extra sets in the same way and the same rules (one set per request when I write its number or «التالي»):
+
+#34 — TL: A complete home solar kit shown together: a few black solar panels, a wall-mounted inverter and a white lithium battery unit | TR: A solar water pumping system for a farm well: a row of solar panels on a ground frame, a pump controller box and a stainless submersible pump | BL: A monocrystalline solar panel with black cells and a silver aluminium frame, leaning slightly | BR: A bifacial glass-glass solar panel with transparent gaps between the dark cells, frameless edge, light passing through
+
+#35 — TL: A modern all-black N-type solar panel with a black frame and fine cell lines | TR: A white wall-mounted on-grid solar inverter with a small display and cooling fins | BL: A grey hybrid solar inverter with a display and battery terminals at the bottom | BR: A compact off-grid solar inverter charger with an LCD screen and front sockets
+
+#36 — TL: A small black aluminium micro inverter with two short cables and connectors | TR: A solar pump drive (VFD inverter) in a grey box with a keypad and display | BL: Two sealed deep-cycle gel batteries, dark grey cases with terminals on top | BR: A steel battery rack cabinet holding several lithium battery modules
+
+#37 — TL: An open grey DC combiner box with fuses, breakers and cable glands | TR: A DC isolator switch box and two DIN-rail DC circuit breakers | BL: A DIN-rail DC surge protection device module with replaceable cartridges | BR: Several pairs of MC4 solar connectors, male and female, black plastic
+
+#38 — TL: A galvanized steel ground-mount frame for solar panels with angled legs, without panels | TR: A steel solar carport structure with solar panels on the roof over two parking spaces | BL: A white bi-directional digital electricity meter with an LCD display, wall-mounted | BR: A small Wi-Fi data logger stick for a solar inverter next to a tablet showing an energy chart
+
+#39 — TL: Solar panel cleaning equipment: a long telescopic pole with a soft rotating brush and a water hose | TR: (empty square) | BL: (empty square) | BR: (empty square)
+
+</textarea>
+  </div>
+  <div class="bar"><span id="count">0 / 33</span><div class="track"><div class="fill" id="fill"></div></div></div>
+  <div class="card" data-n="1"><div class="top"><span class="num">#1</span><label class="tick"><input type="checkbox" id="done1"> وصلتني</label></div><div class="items"><span><b>TL</b> مدادات حديد مجلفنة (Z/C)</span><span><b>TR</b> بطانة خزانات سائلة (Tank Lining)</span><span><b>BL</b> مايكروسمنت للأرضيات والجدران (Microcement)</span><span><b>BR</b> خوابير بلاستيك</span></div></div>
+<div class="card" data-n="2"><div class="top"><span class="num">#2</span><label class="tick"><input type="checkbox" id="done2"> وصلتني</label></div><div class="items"><span><b>TL</b> جسور مدرجات مائلة (Raker Beams)</span><span><b>TR</b> رش فوم بولي يوريثان للأسطح</span><span><b>BL</b> سيخ مسنن (قضيب ملولب)</span><span><b>BR</b> ألواح بديل الرخام</span></div></div>
+<div class="card" data-n="3"><div class="top"><span class="num">#3</span><label class="tick"><input type="checkbox" id="done3"> وصلتني</label></div><div class="items"><span><b>TL</b> صاج ملوّن مسبق الدهان (PPGI / PPGL)</span><span><b>TR</b> مسامير تأسيس (أنكر بولت J/L) لقواعد الأعمدة</span><span><b>BL</b> لفائف حديد تسليح (Wire Rod)</span><span><b>BR</b> كسارة</span></div></div>
+<div class="card" data-n="4"><div class="top"><span class="num">#4</span><label class="tick"><input type="checkbox" id="done4"> وصلتني</label></div><div class="items"><span><b>TL</b> طبقة أساس حصوية (Base Course)</span><span><b>TR</b> ردم إنشائي مصنّف (Structural Fill)</span><span><b>BL</b> دهان أسقف مكشوفة (للخرسانة والمعدن)</span><span><b>BR</b> زاوية لياسة مجلفنة بشبك (Angle Bead)</span></div></div>
+<div class="card" data-n="5"><div class="top"><span class="num">#5</span><label class="tick"><input type="checkbox" id="done5"> وصلتني</label></div><div class="items"><span><b>TL</b> أرضية بولي يوريثان أسمنتية (PU Cement / Urethane Cement Floor)</span><span><b>TR</b> أرضية بولي يوريثان مرنة (Elastic PU Floor)</span><span><b>BL</b> أرضية إيبوكسي مضادة للكهرباء الساكنة (ESD / Antistatic Epoxy)</span><span><b>BR</b> صينية كابل Tray 600×100</span></div></div>
+<div class="card" data-n="6"><div class="top"><span class="num">#6</span><label class="tick"><input type="checkbox" id="done6"> وصلتني</label></div><div class="items"><span><b>TL</b> لوحة رئيسية MDB</span><span><b>TR</b> قاطع هوائي ACB</span><span><b>BL</b> باب حديد خارجي</span><span><b>BR</b> مظلة سيارات</span></div></div>
+<div class="card" data-n="7"><div class="top"><span class="num">#7</span><label class="tick"><input type="checkbox" id="done7"> وصلتني</label></div><div class="items"><span><b>TL</b> خلطة لياسة جاهزة</span><span><b>TR</b> سكريد أرضيات للأحمال الثقيلة</span><span><b>BL</b> درج داخلي خشب ورخام ودرابزين</span><span><b>BR</b> قشرة خشب طبيعي</span></div></div>
+<div class="card" data-n="8"><div class="top"><span class="num">#8</span><label class="tick"><input type="checkbox" id="done8"> وصلتني</label></div><div class="items"><span><b>TL</b> حماية حديد للنوافذ</span><span><b>TR</b> ثرموستات (منظّم حرارة تكييف/تدفئة)</span><span><b>BL</b> حساس حركة PIR</span><span><b>BR</b> تايمر ديجيتال (مؤقّت زمني)</span></div></div>
+<div class="card" data-n="9"><div class="top"><span class="num">#9</span><label class="tick"><input type="checkbox" id="done9"> وصلتني</label></div><div class="items"><span><b>TL</b> مجرى قضبان توزيع (Busbar Trunking) 2500A 4P</span><span><b>TR</b> كابل 1Cx16mm² CU/LSZH</span><span><b>BL</b> كابل 1Cx35mm² CU/LSZH</span><span><b>BR</b> كابل 3Cx10mm² CU/XLPE/SWA/LSZH</span></div></div>
+<div class="card" data-n="10"><div class="top"><span class="num">#10</span><label class="tick"><input type="checkbox" id="done10"> وصلتني</label></div><div class="items"><span><b>TL</b> كابل 3Cx16mm² CU/XLPE/SWA/LSZH</span><span><b>TR</b> كابل 4Cx10mm² CU/XLPE/SWA/LSZH</span><span><b>BL</b> كابل 4Cx16mm² CU/XLPE/SWA/LSZH</span><span><b>BR</b> كابل 4Cx70mm² CU/XLPE/SWA/LSZH</span></div></div>
+<div class="card" data-n="11"><div class="top"><span class="num">#11</span><label class="tick"><input type="checkbox" id="done11"> وصلتني</label></div><div class="items"><span><b>TL</b> كابل 4Cx95mm² CU/XLPE/SWA/LSZH</span><span><b>TR</b> مفتاح فندقي بالبطاقة (Key-card Switch)</span><span><b>BL</b> وحدة تحكم الطبّاخ 45A (Cooker Control Unit)</span><span><b>BR</b> محوّل أفياش (أدابتر)</span></div></div>
+<div class="card" data-n="12"><div class="top"><span class="num">#12</span><label class="tick"><input type="checkbox" id="done12"> وصلتني</label></div><div class="items"><span><b>TL</b> خزان مياه GRP مقطعي كبير (حسب السعة)</span><span><b>TR</b> عوامة كهربائية (حساس منسوب)</span><span><b>BL</b> سيفون مرحاض</span><span><b>BR</b> دش Shower</span></div></div>
+<div class="card" data-n="13"><div class="top"><span class="num">#13</span><label class="tick"><input type="checkbox" id="done13"> وصلتني</label></div><div class="items"><span><b>TL</b> مرايا ديكور حسب المقاس</span><span><b>TR</b> خزان وقود ديزل تحت أرضي</span><span><b>BL</b> خزان طرد ظاهر (Exposed Cistern)</span><span><b>BR</b> صمامات موتورية 2-Port</span></div></div>
+<div class="card" data-n="14"><div class="top"><span class="num">#14</span><label class="tick"><input type="checkbox" id="done14"> وصلتني</label></div><div class="items"><span><b>TL</b> مضخة مياه بالطاقة الشمسية</span><span><b>TR</b> هياكل تثبيت الألواح الشمسية</span><span><b>BL</b> تحكم إضاءة واجهات</span><span><b>BR</b> مقابس ذكية</span></div></div>
+<div class="card" data-n="15"><div class="top"><span class="num">#15</span><label class="tick"><input type="checkbox" id="done15"> وصلتني</label></div><div class="items"><span><b>TL</b> كابل تمديد</span><span><b>TR</b> أنابيب مياه مبردة Chilled Water</span><span><b>BL</b> أنابيب نحاس مياه حارة</span><span><b>BR</b> سلك كهرباء 2.5مم</span></div></div>
+<div class="card" data-n="16"><div class="top"><span class="num">#16</span><label class="tick"><input type="checkbox" id="done16"> وصلتني</label></div><div class="items"><span><b>TL</b> غراء مواسير PVC</span><span><b>TR</b> حوامل وتعليقات أنابيب</span><span><b>BL</b> وحدات مكيف VRF داخلية</span><span><b>BR</b> إنارة مخفية خطية (لينير)</span></div></div>
+<div class="card" data-n="17"><div class="top"><span class="num">#17</span><label class="tick"><input type="checkbox" id="done17"> وصلتني</label></div><div class="items"><span><b>TL</b> خرطوم هواء وغاز ضغط عالٍ (Air &amp; Gas Hose)</span><span><b>TR</b> مقبض باب على لوحة مع قفل</span><span><b>BL</b> غسالة ضغط عالي كهربائية منزلية</span><span><b>BR</b> عازل مطاطي رغوي للأنابيب</span></div></div>
+<div class="card" data-n="18"><div class="top"><span class="num">#18</span><label class="tick"><input type="checkbox" id="done18"> وصلتني</label></div><div class="items"><span><b>TL</b> حصى زينة وأحجار ديكور</span><span><b>TR</b> رشاشات وتنقيط الري</span><span><b>BL</b> دريل شحن</span><span><b>BR</b> مجاري هواء مجلفنة 0.8mm</span></div></div>
+<div class="card" data-n="19"><div class="top"><span class="num">#19</span><label class="tick"><input type="checkbox" id="done19"> وصلتني</label></div><div class="items"><span><b>TL</b> سقالة كاملة (توريد وتصميم وتركيب)</span><span><b>TR</b> بوابة سياج جاهزة</span><span><b>BL</b> محور أرضي للباب (بيفوت)</span><span><b>BR</b> مقبض باب بدون قفل</span></div></div>
+<div class="card" data-n="20"><div class="top"><span class="num">#20</span><label class="tick"><input type="checkbox" id="done20"> وصلتني</label></div><div class="items"><span><b>TL</b> صاج ستانلس ستيل</span><span><b>TR</b> مواسير ستانلس ستيل</span><span><b>BL</b> ألياف ماكرو صناعية (Macro Synthetic Fibres)</span><span><b>BR</b> ألياف حديدية (Steel Fibres)</span></div></div>
+<div class="card" data-n="21"><div class="top"><span class="num">#21</span><label class="tick"><input type="checkbox" id="done21"> وصلتني</label></div><div class="items"><span><b>TL</b> قطاعات ألمنيوم خام</span><span><b>TR</b> ألواح ألمنيوم خام</span><span><b>BL</b> مقابس 13A</span><span><b>BR</b> مفاتيح إنارة</span></div></div>
+<div class="card" data-n="22"><div class="top"><span class="num">#22</span><label class="tick"><input type="checkbox" id="done22"> وصلتني</label></div><div class="items"><span><b>TL</b> بطانية حريق</span><span><b>TR</b> صندوق طفاية حريق</span><span><b>BL</b> مفتاح مواسير (Pipe Wrench)</span><span><b>BR</b> قطّاعة مواسير (Pipe Cutter)</span></div></div>
+<div class="card" data-n="23"><div class="top"><span class="num">#23</span><label class="tick"><input type="checkbox" id="done23"> وصلتني</label></div><div class="items"><span><b>TL</b> مجرفة (كريك)</span><span><b>TR</b> مكنسة شارع (Street Broom)</span><span><b>BL</b> منشار يدوي للخشب (Hand Saw)</span><span><b>BR</b> قوس منشار حديد (Hacksaw)</span></div></div>
+<div class="card" data-n="24"><div class="top"><span class="num">#24</span><label class="tick"><input type="checkbox" id="done24"> وصلتني</label></div><div class="items"><span><b>TL</b> زاوية نجار (Carpenter Square)</span><span><b>TR</b> قدمة قياس (Caliper)</span><span><b>BL</b> منشار كهربائي دائري</span><span><b>BR</b> منشار أركت كهربائي</span></div></div>
+<div class="card" data-n="25"><div class="top"><span class="num">#25</span><label class="tick"><input type="checkbox" id="done25"> وصلتني</label></div><div class="items"><span><b>TL</b> برميل مروري (Traffic Drum)</span><span><b>TR</b> سلسلة بلاستيكية للحواجز (Barrier Chain)</span><span><b>BL</b> شبك حاجز بلاستيكي (Barrier Mesh)</span><span><b>BR</b> كباس باب سياج</span></div></div>
+<div class="card" data-n="26"><div class="top"><span class="num">#26</span><label class="tick"><input type="checkbox" id="done26"> وصلتني</label></div><div class="items"><span><b>TL</b> مفصلات باب سياج</span><span><b>TR</b> تخصص: prefab_buildings</span><span><b>BL</b> تخصص: shades_screens</span><span><b>BR</b> تخصص: pools</span></div></div>
+<div class="card" data-n="27"><div class="top"><span class="num">#27</span><label class="tick"><input type="checkbox" id="done27"> وصلتني</label></div><div class="items"><span><b>TL</b> تخصص: kitchen_appliances</span><span><b>TR</b> تخصص: office_furniture</span><span><b>BL</b> تخصص: solar_pv</span><span><b>BR</b> تخصص: smart_home</span></div></div>
+<div class="card" data-n="28"><div class="top"><span class="num">#28</span><label class="tick"><input type="checkbox" id="done28"> وصلتني</label></div><div class="items"><span><b>TL</b> تخصص: central_gas</span><span><b>TR</b> تخصص: store_bits</span><span><b>BL</b> تخصص: sound_systems</span><span><b>BR</b> تخصص: earthworks</span></div></div>
+<div class="card" data-n="29"><div class="top"><span class="num">#29</span><label class="tick"><input type="checkbox" id="done29"> وصلتني</label></div><div class="items"><span><b>TL</b> تخصص: construction_chemicals</span><span><b>TR</b> تخصص: paint</span><span><b>BL</b> تخصص: access_control</span><span><b>BR</b> تخصص: structural_steel</span></div></div>
+<div class="card" data-n="30"><div class="top"><span class="num">#30</span><label class="tick"><input type="checkbox" id="done30"> وصلتني</label></div><div class="items"><span><b>TL</b> تخصص: duct_insulation</span><span><b>TR</b> تخصص: acoustic_timber</span><span><b>BL</b> تخصص: switches</span><span><b>BR</b> تخصص: wiring_devices</span></div></div>
+<div class="card" data-n="31"><div class="top"><span class="num">#31</span><label class="tick"><input type="checkbox" id="done31"> وصلتني</label></div><div class="items"><span><b>TL</b> تخصص: earthing</span><span><b>TR</b> تخصص: playground</span><span><b>BL</b> تخصص: pressure_pipes</span><span><b>BR</b> تخصص: chilled_water_pipes</span></div></div>
+<div class="card" data-n="32"><div class="top"><span class="num">#32</span><label class="tick"><input type="checkbox" id="done32"> وصلتني</label></div><div class="items"><span><b>TL</b> تخصص: fuel_systems</span><span><b>TR</b> تخصص: concrete_finishing</span><span><b>BL</b> تخصص: site_services</span><span><b>BR</b> مجموعة: lighting</span></div></div>
+<div class="card" data-n="33"><div class="top"><span class="num">#33</span><label class="tick"><input type="checkbox" id="done33"> وصلتني</label></div><div class="items"><span><b>TL</b> مجموعة: solar</span></div></div>
+<div class="card" data-n="34"><div class="top"><span class="num">#34 (طاقة شمسية)</span><label class="tick"><input type="checkbox" id="done34"> وصلتني</label></div><div class="items"><span><b>TL</b> نظام طاقة شمسية متكامل للمنازل (حسب القدرة)</span><span><b>TR</b> نظام طاقة شمسية للمزارع والآبار</span><span><b>BL</b> ألواح شمسية أحادية البلورة (Mono PERC)</span><span><b>BR</b> ألواح شمسية ثنائية الوجه (Bifacial)</span></div></div>
+<div class="card" data-n="35"><div class="top"><span class="num">#35 (طاقة شمسية)</span><label class="tick"><input type="checkbox" id="done35"> وصلتني</label></div><div class="items"><span><b>TL</b> ألواح شمسية من نوع N (TOPCon)</span><span><b>TR</b> إنفرتر متصل بالشبكة (On-Grid)</span><span><b>BL</b> إنفرتر هجين (Hybrid)</span><span><b>BR</b> إنفرتر منفصل عن الشبكة (Off-Grid)</span></div></div>
+<div class="card" data-n="36"><div class="top"><span class="num">#36 (طاقة شمسية)</span><label class="tick"><input type="checkbox" id="done36"> وصلتني</label></div><div class="items"><span><b>TL</b> مايكرو إنفرتر (Micro Inverter)</span><span><b>TR</b> إنفرتر مضخات شمسية (VFD)</span><span><b>BL</b> بطاريات جل للطاقة الشمسية (Gel/AGM)</span><span><b>BR</b> خزانة ورفوف بطاريات</span></div></div>
+<div class="card" data-n="37"><div class="top"><span class="num">#37 (طاقة شمسية)</span><label class="tick"><input type="checkbox" id="done37"> وصلتني</label></div><div class="items"><span><b>TL</b> صندوق تجميع DC للألواح (Combiner Box)</span><span><b>TR</b> قواطع ومفاتيح فصل DC للطاقة الشمسية</span><span><b>BL</b> حماية من الصواعق والتيار الزائد DC (SPD)</span><span><b>BR</b> موصلات MC4 للألواح الشمسية</span></div></div>
+<div class="card" data-n="38"><div class="top"><span class="num">#38 (طاقة شمسية)</span><label class="tick"><input type="checkbox" id="done38"> وصلتني</label></div><div class="items"><span><b>TL</b> هياكل تثبيت أرضية للألواح الشمسية</span><span><b>TR</b> مظلات سيارات بالطاقة الشمسية (Solar Carport)</span><span><b>BL</b> عداد كهرباء ثنائي الاتجاه (صافي القياس)</span><span><b>BR</b> نظام مراقبة أداء الطاقة الشمسية (Wi-Fi)</span></div></div>
+<div class="card" data-n="39"><div class="top"><span class="num">#39 (طاقة شمسية)</span><label class="tick"><input type="checkbox" id="done39"> وصلتني</label></div><div class="items"><span><b>TL</b> معدات تنظيف الألواح الشمسية</span></div></div>
+</div>
+<script>
+(function(){
+  var KEY='tsk_img_batch2_done', done={};
+  try{done=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+  var boxes=document.querySelectorAll('.card input[type=checkbox]');
+  function paint(){var n=0;boxes.forEach(function(b){var c=b.closest('.card');var on=!!done[c.dataset.n];b.checked=on;c.classList.toggle('done',on);if(on)n++});document.getElementById('count').textContent=n+' / '+boxes.length;document.getElementById('fill').style.width=(100*n/boxes.length)+'%'}
+  boxes.forEach(function(b){b.addEventListener('change',function(){done[b.closest('.card').dataset.n]=b.checked;try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}paint()})});
+  paint();
+  function cp(b,t,m){document.getElementById(b).addEventListener('click',function(){var x=document.getElementById(t),y=document.getElementById(m);if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(x.value).then(function(){y.textContent='نُسخت. الصقها في ChatGPT.'},function(){x.select();y.textContent='حدّد النص وانسخه يدوياً.'})}else{x.select();y.textContent='حدّد النص وانسخه يدوياً.'}})}cp('copy2','text2','msg2');
+document.getElementById('copy').addEventListener('click',function(){var t=document.getElementById('text');var m=document.getElementById('msg');
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t.value).then(function(){m.textContent='نُسخت. الصقها في ChatGPT.'},function(){t.select();m.textContent='حدّد النص وانسخه يدوياً.'})}else{t.select();m.textContent='حدّد النص وانسخه يدوياً.'}});
+})();
+</script>

@@ -6,8 +6,11 @@
 // changes `confirm(x)` → `await askConfirm(x)` and `alert(x)` → `notify(x)` (no provider to wire).
 // Escape / backdrop = cancel; Enter = the focused button.
 // A destructive confirm (danger) focuses «تراجع», so a stray Enter never deletes anything.
+// Focus stays inside the open dialog (Tab cycles, the page behind is inert) and returns to the
+// control that opened it when it closes (UX-106).
 import { createRoot } from 'react-dom/client'
 import { useEffect, useRef, type ReactElement } from 'react'
+import { Info, Check, AlertCircle, type LucideIcon } from 'lucide-react'
 
 type Opts = { danger?: boolean; okLabel?: string; cancelLabel?: string; title?: string }
 export type NotifyTone = 'info' | 'success' | 'error'
@@ -54,10 +57,10 @@ function Dialog({ message, opts, done }: { message: string; opts: Opts; done: (v
   )
 }
 
-const TONE: Record<NotifyTone, { border: string; icon: string; fg: string; bg: string }> = {
-  info: { border: '#D4A543', icon: 'i', fg: '#0B2438', bg: '#F5EEDC' },
-  success: { border: '#0F6E56', icon: '✓', fg: '#0F6E56', bg: '#E3F2EC' },
-  error: { border: '#b91c1c', icon: '!', fg: '#b91c1c', bg: '#FDECEC' },
+const TONE: Record<NotifyTone, { border: string; Icon: LucideIcon; fg: string; bg: string }> = {
+  info: { border: '#D4A543', Icon: Info, fg: '#0B2438', bg: '#F5EEDC' },
+  success: { border: '#0F6E56', Icon: Check, fg: '#0F6E56', bg: '#E3F2EC' },
+  error: { border: '#b91c1c', Icon: AlertCircle, fg: '#b91c1c', bg: '#FDECEC' },
 }
 
 function Notice({ message, opts, done }: { message: string; opts: NotifyOpts; done: (v: boolean) => void }) {
@@ -76,7 +79,7 @@ function Notice({ message, opts, done }: { message: string; opts: NotifyOpts; do
       <div role={opts.tone === 'error' ? 'alertdialog' : 'dialog'} aria-modal="true" aria-label={(opts.title || message).slice(0, 80)} onClick={e => e.stopPropagation()}
         className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border-t-4 p-5 animate-fade-in" style={{ borderTopColor: t.border }}>
         <div className="flex items-start gap-3">
-          <span aria-hidden="true" className="w-8 h-8 shrink-0 rounded-full grid place-items-center text-sm font-bold" style={{ background: t.bg, color: t.fg }}>{t.icon}</span>
+          <span aria-hidden="true" className="w-8 h-8 shrink-0 rounded-full grid place-items-center" style={{ background: t.bg, color: t.fg }}><t.Icon className="w-4 h-4" strokeWidth={2.2} /></span>
           <div className="min-w-0">
             {opts.title && <h2 className="text-base font-bold text-[#071827] mb-1">{opts.title}</h2>}
             <p className="text-[15px] leading-relaxed text-[#071827] whitespace-pre-line">{message}</p>
@@ -94,15 +97,36 @@ function Notice({ message, opts, done }: { message: string; opts: NotifyOpts; do
 function mount(render: (done: (v: boolean) => void) => ReactElement): Promise<boolean> {
   if (typeof document === 'undefined') return Promise.resolve(false)
   return new Promise(resolve => {
+    // remember where the focus was, make the page behind inert and keep Tab inside the dialog (UX-106)
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const host = document.createElement('div')
     document.body.appendChild(host)
+    const behind = Array.from(document.body.children).filter(el => el !== host && !el.hasAttribute('inert')) as HTMLElement[]
+    behind.forEach(el => el.setAttribute('inert', ''))
+    const trap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return
+      const f = Array.from(host.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+      if (!f.length) return
+      const first = f[0], last = f[f.length - 1]
+      const at = document.activeElement
+      if (e.shiftKey && (at === first || !host.contains(at))) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && (at === last || !host.contains(at))) { e.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', trap)
     const root = createRoot(host)
     let settled = false
     const done = (v: boolean) => {
       if (settled) return
       settled = true
+      document.removeEventListener('keydown', trap)
+      behind.forEach(el => el.removeAttribute('inert'))
       resolve(v)
-      setTimeout(() => { root.unmount(); host.remove() }, 0)
+      setTimeout(() => {
+        root.unmount(); host.remove()
+        // unless the caller already moved the focus somewhere on purpose
+        const now = document.activeElement
+        if (opener && opener.isConnected && (!now || now === document.body)) { try { opener.focus() } catch {} }
+      }, 0)
     }
     root.render(render(done))
   })

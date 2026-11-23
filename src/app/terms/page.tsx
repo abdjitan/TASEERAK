@@ -112,12 +112,12 @@ export default function TermsPage() {
 
         <p className="text-sm text-gray-700 leading-relaxed mb-4">{t.intro}</p>
 
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-lg"><Glyph e="⚠" /></span>
-            <h2 className="text-base font-extrabold text-amber-800">{t.betaTitle}</h2>
+            <span className="text-lg text-[#0B2438]"><Glyph e="ℹ" /></span>
+            <h2 className="text-base font-bold text-[#0B2438]">{t.betaTitle}</h2>
           </div>
-          <p className="text-sm text-amber-900 leading-relaxed">{t.beta}</p>
+          <p className="text-sm text-gray-700 leading-relaxed">{t.beta}</p>
         </div>
 
         <div className="space-y-5">
@@ -133,7 +133,7 @@ export default function TermsPage() {
           <a href={`mailto:${OPERATOR.email}`} dir="ltr" className="inline-flex items-center min-h-[44px] font-semibold text-[#8F6820] hover:underline">{OPERATOR.email}</a>
         </p>
         <p className="text-center text-[12px] text-gray-600">
-          <Link href="/privacy" className="inline-flex items-center min-h-[44px] hover:underline">{t.privacyLink}</Link> · © 2026 تسعيرك — Taseerak
+          <Link href="/privacy" className="inline-flex items-center min-h-[44px] hover:underline">{t.privacyLink}</Link> · <Link href="/deal-protection" className="inline-flex items-center min-h-[44px] hover:underline">{locale === 'en' ? 'How we protect your deal' : locale === 'ur' ? 'سودے کا تحفظ' : 'كيف نحمي صفقتك'}</Link> · © 2026 تسعيرك — Taseerak
         </p>
       </div>
     </div>

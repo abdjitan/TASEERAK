@@ -22,6 +22,7 @@ export default function SupplierDealsPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'active' | 'done' | 'disputed'>('all')
   const [search, setSearch] = useState('')
+  // round-2 UX-002: never fetch rfqs.title (the buyer's project name stays hidden from suppliers)
   // UX-119: a failed load is said as such (never «no deals yet»); with a cached list, say it may be old
   const [failed, setFailed] = useState(false)
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -40,7 +41,7 @@ export default function SupplierDealsPage() {
       const actId: string = (actRaw as any) || session.user.id
       const { data, error } = await supabase
         .from('offers')
-        .select('*, rfq:rfqs(id, product_name, title, ref_no, items, contractor:profiles!contractor_id(company_name_ar))')
+        .select('*, rfq:rfqs(id, product_name, ref_no, items, contractor:profiles!contractor_id(company_name_ar))')
         .eq('supplier_id', actId)
         .eq('status', 'accepted')
         .order('accepted_at', { ascending: false })
@@ -73,14 +74,14 @@ export default function SupplierDealsPage() {
     if (filter === 'active' && (st.done || st.key === 'disputed')) return false
     if (filter === 'disputed' && st.key !== 'disputed') return false
     if (search.trim()) {
-      const hay = `${d.rfq?.title || ''} ${d.rfq?.product_name || ''} ${d.rfq?.contractor?.company_name_ar || ''} ${d.invoice_number || ''}`.toLowerCase()
+      const hay = `${d.rfq?.product_name || ''} ${d.rfq?.contractor?.company_name_ar || ''} ${d.invoice_number || ''}`.toLowerCase()
       if (!hay.includes(search.trim().toLowerCase())) return false
     }
     return true
   })
 
   return (
-    <AppShell title={L('My Deals', 'میری ڈیلز', 'صفقاتي')} nav={getNav('supplier', locale, '/supplier/deals')} dir={dir}>
+    <AppShell title={L('My offers and deals', 'میری آفرز اور ڈیلز', 'عروضي وصفقاتي')} nav={getNav('supplier', locale, '/supplier/deals')} dir={dir}>
       <div className="max-w-4xl mx-auto">
         {/* «عروضي وصفقاتي» (owner 2026-10-17, same as the app): offers waiting for the buyer live on the home list */}
         <div role="tablist" className="inline-flex p-1 rounded-xl bg-gray-100 mb-4">

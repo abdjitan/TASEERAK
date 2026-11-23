@@ -26,7 +26,7 @@ const txt = {
   ar: {
     title: 'تخصصاتي الدقيقة', sub: 'اختر المواد التي تتعامل بها بالضبط — ستصلك الطلبات المطابقة فقط',
     back: '→ رجوع', save: 'احفظ التغييرات', saving: 'جارٍ الحفظ...', saved: 'حُفظت تخصصاتك.',
-    selectSectors: 'أولاً، اختر القطاعات الرئيسية', thenSpecialties: 'ثم اختر تخصصاتك الدقيقة',
+    selectSectors: 'أو اختر المواد بالتفصيل', thenSpecialties: 'ثم اختر تخصصاتك الدقيقة',
     selected: 'تخصص محدد', noSectors: 'اختر قطاعاً واحداً على الأقل من الأعلى لعرض التخصصات',
     hint: 'كلما حددت تخصصك بدقة، وصلتك طلبات أكثر صلة بعملك',
     loading: 'جارٍ التحميل...',
@@ -44,7 +44,7 @@ const txt = {
   en: {
     title: 'My Specialties', sub: 'Select exactly what you supply — you only get matching requests',
     back: '← Back', save: 'Save changes', saving: 'Saving...', saved: 'Your specialties were saved.',
-    selectSectors: 'First, select main sectors', thenSpecialties: 'Then pick your exact specialties',
+    selectSectors: 'Or choose the materials in detail', thenSpecialties: 'Then pick your exact specialties',
     selected: 'selected', noSectors: 'Select at least one sector above to show specialties',
     hint: 'The more precise your specialties, the more relevant requests you receive',
     loading: 'Loading...',
@@ -62,7 +62,7 @@ const txt = {
   ur: {
     title: 'میری مہارتیں', sub: 'بالکل وہی منتخب کریں جو آپ فراہم کرتے ہیں',
     back: '→ واپس', save: 'تبدیلیاں محفوظ کریں', saving: 'محفوظ ہو رہا ہے...', saved: 'آپ کی مہارتیں محفوظ ہو گئیں۔',
-    selectSectors: 'پہلے، اہم شعبے منتخب کریں', thenSpecialties: 'پھر اپنی مہارتیں منتخب کریں',
+    selectSectors: 'یا تفصیل سے مال منتخب کریں', thenSpecialties: 'پھر اپنی مہارتیں منتخب کریں',
     selected: 'منتخب', noSectors: 'مہارتیں دکھانے کے لیے کم از کم ایک شعبہ منتخب کریں',
     hint: 'جتنی درست مہارت، اتنی متعلقہ درخواستیں',
     loading: 'لوڈ ہو رہا ہے...',
@@ -82,6 +82,8 @@ const txt = {
 export default function SpecialtiesPage() {
   const { locale, dir } = useTranslation()
   const T = txt[locale] || txt.ar
+  // UX-144: sector names in the reader's language
+  const secLabel = (k: string) => (locale === 'en' ? ({ civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' } as any)[k] : locale === 'ur' ? ({ civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' } as any)[k] : ({ ...(SECTOR_LABELS as any), mechanical: 'ميكانيكا', supply_store: 'مستلزمات عامة' } as any)[k]) || k
 
   const [user, setUser] = useState<any>(null)
   const [isMember, setIsMember] = useState(false) // team member: sees the company's list, the owner edits it
@@ -357,7 +359,7 @@ export default function SpecialtiesPage() {
                   if (!keys.length) return null
                   return (
                     <div key={sec}>
-                      <div className="text-[13px] font-bold text-gray-600 mb-1">{(SECTOR_LABELS as any)[sec]}</div>
+                      <div className="text-[13px] font-bold text-gray-600 mb-1">{secLabel(sec)}</div>
                       <div className="flex flex-wrap gap-1.5">
                         {keys.map(k => <span key={k} className="text-[12px] px-2 py-1 rounded-full bg-[#D4A543]/10 border border-[#D4A543]/40 text-[#071827]">{getSubCategoryLabel(sec as any, k, locale)}</span>)}
                       </div>
@@ -384,7 +386,7 @@ export default function SpecialtiesPage() {
             <select value={suggestSector} onChange={e => setSuggestSector(e.target.value)} className="input-field" aria-label={T.sSectorPh}>
               <option value="">{T.sSectorPh}</option>
               {Object.keys(SECTOR_LABELS).map(s => (
-                <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>
+                <option key={s} value={s}>{secLabel(s)}</option>
               ))}
             </select>
           </div>
@@ -393,7 +395,7 @@ export default function SpecialtiesPage() {
             return (
               <select value={suggestGroup} onChange={e => setSuggestGroup(e.target.value)} className="input-field mt-3">
                 <option value="">{locale === 'en' ? 'Which group / list fits it?' : locale === 'ur' ? 'یہ کس گروپ میں آتا ہے؟' : 'أي مجموعة/قائمة تناسبها؟'}</option>
-                {gks.map((g: string) => <option key={g} value={g}>{(GROUP_LABELS as any)[g]?.ar || g}</option>)}
+                {gks.map((g: string) => <option key={g} value={g}>{(() => { const gl = (GROUP_LABELS as any)[g]; return gl ? (locale === 'en' ? gl.en : locale === 'ur' ? gl.ur : gl.ar) : g })()}</option>)}
                 <option value="__other__">{locale === 'en' ? 'Not listed — I will describe below' : locale === 'ur' ? 'فہرست میں نہیں — نیچے وضاحت کروں گا' : 'غير مذكورة — أوضّح بالوصف'}</option>
               </select>
             )
@@ -443,7 +445,7 @@ export default function SpecialtiesPage() {
             style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', color: '#071827' }}>
             {saving ? T.saving : `${T.save} (${mySpecialties.length})`}
           </button>
-          ) : !loadFailed && (
+          ) : !loadFailed && mySpecialties.length > 0 && (
             <div className="w-full min-h-[52px] py-3 rounded-xl text-center font-bold text-base bg-white border border-emerald-200 text-emerald-700 shadow" aria-live="polite">
               {locale === 'en' ? `Specialties saved (${mySpecialties.length})` : locale === 'ur' ? `مہارتیں محفوظ ہیں (${mySpecialties.length})` : `التخصصات محفوظة (${mySpecialties.length})`}
             </div>

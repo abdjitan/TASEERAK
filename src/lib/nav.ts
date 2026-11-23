@@ -13,7 +13,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const secTools = L('Tools', 'اوزار', 'الأدوات')
   const secAccount = L('Account', 'اکاؤنٹ', 'الحساب')
-  let items: { href: string; icon: string | ReactNode; label: string; section?: string; mobile?: number; only?: 'company' | 'business'; off?: boolean }[]
+  let items: { href: string; icon: string | ReactNode; label: string; mobileLabel?: string; section?: string; mobile?: number; only?: 'company' | 'business'; off?: boolean }[]
   // every role reaches its notifications from the menu, not only from the bell (UX-100)
   const notifItem = { href: '/notifications', icon: createElement(Glyph, { e: '🔔' }), label: L('Notifications', 'اطلاعات', 'الإشعارات'), section: secAccount }
   if (role === 'admin') {
@@ -38,7 +38,7 @@ export function getNav(role: string | undefined, locale: string, active: string)
     const sec = L('Supplier', 'سپلائر', 'المورّد')
     items = [
       { href: '/supplier/dashboard', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
-      { href: '/supplier/deals', icon: '📦', label: L('My offers and deals', 'آفرز اور ڈیلز', 'عروضي وصفقاتي'), section: sec, mobile: 2 },
+      { href: '/supplier/deals', icon: '📦', label: L('My offers and deals', 'آفرز اور ڈیلز', 'عروضي وصفقاتي'), mobileLabel: L('My offers', 'میری آفرز', 'عروضي'), section: sec, mobile: 2 },
       { href: '/supplier/specialties', icon: '🎯', label: L('Specialties', 'مہارتیں', 'تخصصاتي'), section: sec },
       { href: '/supplier/prices', icon: '📈', label: L('Live Prices', 'لائیو قیمتیں', 'أسعاري'), section: sec, mobile: 3, off: !FEATURES.livePrices },
       { href: '/supplier/analytics', icon: '🏆', label: L('Performance', 'کارکردگی', 'أدائي'), section: sec, off: !FEATURES.analyticsNav },
@@ -58,11 +58,11 @@ export function getNav(role: string | undefined, locale: string, active: string)
     const sec = L('Buyer', 'خریدار', 'المشتري')
     items = [
       { href: '/contractor', icon: '🏠', label: L('Dashboard', 'ڈیش بورڈ', 'الرئيسية'), section: sec, mobile: 1 },
-      { href: '/contractor/rfq/quick', icon: '📝', label: L('Price request', 'قیمت کی درخواست', 'طلب تسعير'), section: sec, mobile: 3 },
-      { href: '/contractor/rfqs', icon: '🧾', label: L('My requests and deals', 'درخواستیں اور ڈیلز', 'طلباتي وصفقاتي'), section: sec, mobile: 2 },
+      { href: '/contractor/rfq/quick', icon: '📝', label: L('Request a price', 'قیمت معلوم کریں', 'اطلب سعراً'), section: sec, mobile: 3 },
+      { href: '/contractor/rfqs', icon: '🧾', label: L('My requests and deals', 'درخواستیں اور ڈیلز', 'طلباتي وصفقاتي'), mobileLabel: L('My requests', 'میری درخواستیں', 'طلباتي'), section: sec, mobile: 2 },
       // a home buyer («لبيتي») does not see the business tools (UX study 2026-11-22); still reachable by URL.
       // One name for each tool everywhere (UX-144): «جدول الكميات» and «تسعير مناقصة».
-      { href: '/contractor/project/new', icon: '📋', label: L('Bill of quantities', 'مقداروں کی فہرست', 'جدول الكميات'), section: sec, only: 'business' },
+      { href: '/contractor/project/new', icon: '📋', label: L('Bill of quantities', 'مقداروں کا جدول', 'جدول الكميات'), section: sec, only: 'business' },
       { href: '/contractor/tender', icon: '📑', label: L('Tender pricing', 'ٹینڈر کی قیمت', 'تسعير مناقصة'), section: sec, only: 'business' },
       { href: '/messages', icon: '💬', label: L('Messages', 'پیغامات', 'الرسائل'), section: secTools, mobile: 4 },
       { href: '/market', icon: '📈', label: L('Price Index', 'بورس', 'البورصة'), section: secTools, off: !FEATURES.priceBoard },

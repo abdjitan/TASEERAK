@@ -12,14 +12,15 @@ import { toast } from 'sonner'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import { useTranslation } from '@/i18n'
-import { getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel } from '@/types'
+import { getSubCategoryLabel, getProductLabel, getUnitLabel, getRegionLabel, SUB_CATEGORIES } from '@/types'
+import { sectionOfSub, BROWSE_SECTIONS } from '@/lib/browseCategories'
 import { rfqDisplayName } from '@/lib/rfqName'
 import AppShell from '@/components/shared/AppShell'
 import { isSubscribed, isLaunchFree } from '@/lib/plans'
 import { getNav } from '@/lib/nav'
 import { AppIcon } from '@/components/AppIcon'
 import { isExpired, formatTimeLeft, deadlineUrgency, urgencyStyle, formatDateTime } from '@/lib/deadline'
-import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind } from '@/lib/sellers'
+import { tierLabel, tierAllowed, sellerKindOf, rememberSellerKind, offerNeedsSupplier, offerHasOpenDiscount, offerHasOpenQuestion, offerOutcome, outcomeLabel } from '@/lib/sellers'
 import { clearAllLocalDrafts } from '@/lib/localDraft'
 import Glyph from '@/components/shared/Glyph'
 import { daysText, arMaterials, arCount } from '@/lib/text'
@@ -30,30 +31,30 @@ import { realtimeTopic } from '@/lib/realtimeTopic'
 const txt = {
   ar: {
     welcome: 'أهلاً', subtitle: 'تصفح طلبات التسعير المتاحة وقدم عروضك',
-    logout: 'خروج', openRfqs: 'طلبات مفتوحة', pendingOffers: 'عروض بانتظار قرار المشتري',
-    acceptedOffers: 'عروض مقبولة', revenue: 'بحاجة لردّك',
+    logout: 'خروج', openRfqs: 'بانتظار تسعيرك', pendingOffers: 'عروض بانتظار قرار المشتري',
+    acceptedOffers: 'عروض اختيرت', revenue: 'بحاجة لردّك',
     tabRfqs: 'طلبات التسعير', tabOffers: 'عروضي',
     noRfqs: 'لا توجد طلبات مفتوحة الآن', noRfqsSub: 'تأكّد أن تخصصاتك وموقعك مكتملة ليصلك أول طلب مطابق. تصل الطلبات عادةً خلال ساعات، وسننبّهك فوراً.',
     noOffers: 'لم ترسل أي عرض بعد', noOffersSub: 'تصفّح طلبات التسعير وأرسل عرضك الأول.',
-    submitOffer: 'سعّر الآن', offerSubmitted: 'أُرسل عرضك', accepted: 'مقبول', rejected: 'لم يُختر عرضك', pending: 'بانتظار قرار المشتري',
+    submitOffer: 'سعّر الآن', offerSubmitted: 'أُرسل عرضك', accepted: 'اختيرت', rejected: 'لم تُختر', pending: 'بانتظار قرار المشتري',
     day: 'يوم', offer: 'عرض', loading: 'جارٍ التحميل...',
     sar: 'ر.س',
   },
   en: {
     welcome: 'Hello', subtitle: 'Browse available RFQs and submit your offers',
-    logout: 'Logout', openRfqs: 'Open RFQs', pendingOffers: 'Pending Offers',
-    acceptedOffers: 'Accepted Offers', revenue: 'Need your reply',
-    tabRfqs: 'RFQ Requests', tabOffers: 'My Offers',
+    logout: 'Logout', openRfqs: 'Waiting for your price', pendingOffers: 'Waiting for the buyer',
+    acceptedOffers: 'Chosen offers', revenue: 'Need your reply',
+    tabRfqs: 'Price requests', tabOffers: 'My Offers',
     noRfqs: 'No open requests', noRfqsSub: 'Make sure your specialties and location are complete so the first matching request reaches you; requests usually arrive within hours, and we will alert you at once.',
     noOffers: 'No offers submitted yet', noOffersSub: 'Browse RFQs and submit your first offer',
-    submitOffer: 'Price now', offerSubmitted: 'Offer sent', accepted: 'Accepted', rejected: 'Not chosen', pending: 'Waiting for the buyer',
+    submitOffer: 'Price now', offerSubmitted: 'Offer sent', accepted: 'Chosen', rejected: 'Not chosen', pending: 'Waiting for the buyer',
     day: 'days', offer: 'offer', loading: 'Loading...',
     sar: 'SAR',
   },
   ur: {
     welcome: 'خوش آمدید', subtitle: 'دستیاب درخواستیں دیکھیں اور اپنی پیشکشیں جمع کریں',
-    logout: 'لاگ آؤٹ', openRfqs: 'کھلی درخواستیں', pendingOffers: 'زیر التواء پیشکشیں',
-    acceptedOffers: 'قبول شدہ پیشکشیں', revenue: 'آپ کے جواب کی منتظر',
+    logout: 'لاگ آؤٹ', openRfqs: 'آپ کی قیمت کی منتظر', pendingOffers: 'خریدار کے فیصلے کی منتظر',
+    acceptedOffers: 'منتخب آفرز', revenue: 'آپ کے جواب کی منتظر',
     tabRfqs: 'قیمت کی درخواستیں', tabOffers: 'میری پیشکشیں',
     noRfqs: 'کوئی کھلی درخواست نہیں', noRfqsSub: 'یقینی بنائیں کہ آپ کی مہارتیں اور مقام مکمل ہیں تاکہ پہلی مماثل درخواست آپ تک پہنچے؛ ہم فوراً آپ کو بتائیں گے۔',
     noOffers: 'ابھی تک کوئی پیشکش نہیں', noOffersSub: 'درخواستیں دیکھیں اور پہلی پیشکش جمع کریں',
@@ -64,9 +65,9 @@ const txt = {
 }
 
 const sectorLabels = {
-  ar: { civil: 'مدني', architectural: 'معماري', electrical: 'كهرباء', mechanical: 'ميكانيك', equipment: 'آليات ومعدات', supply_store: 'محل توريد' },
-  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply Store' },
-  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'سپلائی اسٹور' },
+  ar: { civil: 'مدني', architectural: 'معماري', electrical: 'كهرباء', mechanical: 'ميكانيكا', equipment: 'آليات ومعدات', supply_store: 'مستلزمات عامة' },
+  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' },
+  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' },
 }
 
 export default function SupplierDashboard() {
@@ -80,6 +81,10 @@ export default function SupplierDashboard() {
   const [isMember, setIsMember] = useState(false) // عضو في فريق شركة: يعمل باسمها
   const [launchUntil, setLaunchUntil] = useState<any>(null)
   const [pricesCount, setPricesCount] = useState<any>(null)
+  // UX-169: product names with a saved price, so a card can say «لديك أسعار محفوظة لـ X من Y»
+  const [savedNames, setSavedNames] = useState<Set<string>>(new Set())
+  // UX-082: filter chips on «عروضي» (?status=pending|won|lost|reply)
+  const [offerFilter, setOfferFilter] = useState<'all' | 'pending' | 'won' | 'lost' | 'reply'>('all')
   const [openRfqs, setOpenRfqs] = useState<any[]>([])
   const [myOffers, setMyOffers] = useState<any[]>([])
   // company team: who sent each offer (offers.submitted_by → name), so colleagues don't price twice
@@ -92,8 +97,15 @@ export default function SupplierDashboard() {
   const [welcome, setWelcome] = useState(false)
   useEffect(() => { try { if (new URLSearchParams(window.location.search).get('welcome') === '1') { setWelcome(true); window.history.replaceState(null, '', '/supplier/dashboard') } } catch {} }, [])
   // ?tab=offers opens «عروضي» (from «عروضي وصفقاتي»)
-  useEffect(() => { try { if (new URLSearchParams(window.location.search).get('tab') === 'offers') { setTab('offers'); setTimeout(() => document.getElementById('sup-list')?.scrollIntoView({ block: 'start' }), 400) } } catch {} }, [])
-  const [rfqFilter, setRfqFilter] = useState('all') // all | expiring
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search)
+      const st = q.get('status')
+      if (st === 'pending' || st === 'won' || st === 'lost' || st === 'reply') { setOfferFilter(st); autoTabDone.current = true }
+      if (q.get('tab') === 'offers' || st) { setTab('offers'); setTimeout(() => document.getElementById('sup-list')?.scrollIntoView({ block: 'start' }), 400) }
+    } catch {}
+  }, [])
+  const [rfqFilter, setRfqFilter] = useState('all') // all | toprice | expiring
   const [hasSpecialties, setHasSpecialties] = useState(true)
   const [hasSectors, setHasSectors] = useState(true)
   const [showMoreBanners, setShowMoreBanners] = useState(false) // باقي التنبيهات خلف «عرض المزيد»
@@ -123,6 +135,7 @@ export default function SupplierDashboard() {
       if (snap) {
         setProfile(snap.p); setIsMember(!!snap.isMember); setLaunchUntil(snap.launchUntil ?? null); setPricesCount(snap.pricesCount ?? 0)
         setMyOffers(snap.offers || []); setHasSectors(snap.hasSectors !== false); setHasSpecialties(snap.hasSpecialties !== false)
+        if (Array.isArray(snap.savedNames)) setSavedNames(new Set(snap.savedNames))
         setOpenRfqs(snap.openRfqs || []); setLoading(false)
       }
       // A team member works on behalf of their company: everything below reads the company.
@@ -143,7 +156,7 @@ export default function SupplierDashboard() {
       // the company id goes out at once instead of one after another (was 11 sequential requests).
       const [
         { data: p, error: pErr }, { data: cfg }, { data: sectorRows, error: secErr }, { data: specRows, error: specErr },
-        { data: myBranches }, { data: dismissals }, { data: offersRaw, error: offersErr }, { count: lpCount },
+        { data: myBranches }, { data: dismissals }, { data: offersRaw, error: offersErr }, { data: lpRows, count: lpCount },
       ] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', actId).single(),
         supabase.from('app_config').select('launch_free_until').maybeSingle(),
@@ -151,8 +164,8 @@ export default function SupplierDashboard() {
         supabase.from('profile_specialties').select('specialty').eq('profile_id', actId),
         supabase.from('branches').select('region').eq('supplier_id', actId),
         supabase.from('rfq_dismissals').select('rfq_id').eq('supplier_id', actId),
-        supabase.from('offers').select('*, rfq:rfqs(product_name, sector, quantity, unit, region, status, ref_no, items, created_at)').eq('supplier_id', actId).order('created_at', { ascending: false }).limit(200),
-        supabase.from('live_prices').select('id', { count: 'exact', head: true }).eq('supplier_id', actId),
+        supabase.from('offers').select('*, rfq:rfqs(product_name, sector, sub_category, quantity, unit, region, status, ref_no, items, created_at)').eq('supplier_id', actId).order('created_at', { ascending: false }).limit(200),
+        supabase.from('live_prices').select('product_name', { count: 'exact' }).eq('supplier_id', actId).limit(1000),
       ])
       // a failed read must not look like «no requests / no offers»: keep what is shown and say so
       if (pErr || secErr || specErr || offersErr) throw (pErr || secErr || specErr || offersErr)
@@ -170,10 +183,13 @@ export default function SupplierDashboard() {
       setLaunchUntil(cfg?.launch_free_until || null)
       setMyOffers(offers)
       setPricesCount(lpCount ?? 0)
+      const savedList: string[] = [...new Set<string>((lpRows || []).map((r: any) => String(r.product_name || '')).filter(Boolean))]
+      setSavedNames(new Set(savedList))
       // UX-030: the buyer is waiting for a reply: open «عروضي» first (once per visit)
+      // round-2 UX-009: an answered question or a closed discount request no longer counts
       if (!autoTabDone.current) {
         autoTabDone.current = true
-        if ((offers || []).some((o: any) => o.status === 'pending' && ((o.reduction_deadline && new Date(o.reduction_deadline).getTime() > Date.now()) || !!(o.info_request || '').trim()))) setTab('offers')
+        if ((offers || []).some((o: any) => offerNeedsSupplier(o))) setTab('offers')
       }
 
       // جلب قطاعات المورد المتخصص فيها
@@ -240,7 +256,7 @@ export default function SupplierDashboard() {
       if ((await actPromise) !== actId) { writePageCache(cacheKey, null); return load() }
       writePageCache(cacheKey, {
         actId, isMember: actId !== session.user.id, p, launchUntil: cfg?.launch_free_until || null, pricesCount: lpCount ?? 0,
-        offers: offers || [], hasSectors: mySectors.length > 0, hasSpecialties: mySpecialties.length > 0, openRfqs: visibleRfqs,
+        offers: offers || [], hasSectors: mySectors.length > 0, hasSpecialties: mySpecialties.length > 0, openRfqs: visibleRfqs, savedNames: savedList,
       })
     } catch (e) {
       console.error('[supplier/dashboard] load failed:', e)
@@ -310,8 +326,11 @@ export default function SupplierDashboard() {
     const n = team.names[o.submitted_by]
     return n ? L(`Sent by ${n}`, `${n} نے بھیجی`, `أرسله ${n}`) : ''
   }
+  // round-2 UX-010: the outcome reads the request too: a cancelled or expired request is not a loss
+  const outcomeOf = (o: any) => offerOutcome(o.status, o.rfq?.status)
   const accepted = myOffers.filter((o: any) => o.status === 'accepted').length
-  const pending = myOffers.filter((o: any) => o.status === 'pending').length
+  const pending = myOffers.filter((o: any) => outcomeOf(o) === 'pending').length
+  const lostCount = myOffers.filter((o: any) => outcomeOf(o) === 'lost').length
   const totalRevenue = myOffers.filter((o: any) => o.status === 'accepted').reduce((s: any, o: any) => s + (o.total_price || 0), 0)
 
   // Requests still waiting for this supplier's price: shown first, the unopened ones glow.
@@ -329,7 +348,7 @@ export default function SupplierDashboard() {
     const b = months.find(x => x.y === d.getFullYear() && x.m === d.getMonth())
     if (b) { b.sales += Number(o.total_price) || 0; b.deals += 1 }
   }
-  const decided = myOffers.filter((o: any) => o.status === 'accepted' || o.status === 'rejected').length
+  const decided = accepted + lostCount // cancelled / expired requests are left out of the win rate
   const winRate = decided ? Math.round((accepted / decided) * 100) : 0
   const avgDeal = accepted ? Math.round(totalRevenue / accepted) : 0
 
@@ -340,12 +359,33 @@ export default function SupplierDashboard() {
     const more = names.length - 2
     return more > 0 ? `${two} ${L(`and ${more} more`, `اور ${more} مزید`, `و${arCount(more, 'مادة أخرى', 'مادتان أخريان', 'مواد أخرى', 'مادة أخرى')}`)}` : two
   }
-  const needsMe = (o: any) => o.status === 'pending' && ((o.reduction_deadline && new Date(o.reduction_deadline).getTime() > Date.now()) || !!(o.info_request || '').trim())
-  const offerStatusLabel = (status: any) => {
-    if (status === 'accepted') return t.accepted
-    if (status === 'rejected') return t.rejected
-    return t.pending
+  const needsMe = (o: any) => offerNeedsSupplier(o)
+  const offerStatusLabel = (o: any) => outcomeLabel(outcomeOf(o), locale)
+  // UX-108: the browse section (10 sections) instead of the old engineering sector names
+  const sectionName = (sector: string, sub?: string | null): string => {
+    const g = sub ? (SUB_CATEGORIES as any)[sector]?.[sub]?.group : null
+    const k = sectionOfSub(sub || null, g || null)
+    const s = k ? BROWSE_SECTIONS.find(x => x.key === k) : null
+    return s ? L(s.en, s.ur, s.ar) : ((sectors as any)[sector] || sector)
   }
+  const rfqSection = (rfq: any): string => {
+    const its: any[] = Array.isArray(rfq?.items) && rfq.items.length ? rfq.items : []
+    const first = its.find((it: any) => it?.sub_category) || null
+    return first ? sectionName(first.sector || rfq.sector, first.sub_category) : sectionName(rfq?.sector, rfq?.sub_category)
+  }
+  // UX-169: how many of my materials in this request already have a saved price
+  const savedOf = (rfq: any): { have: number; of: number } => {
+    const names: string[] = Array.isArray(rfq._myNames) ? rfq._myNames : []
+    return { have: names.filter((n: string) => savedNames.has(n)).length, of: names.length }
+  }
+  const shownOffers = myOffers.filter((o: any) => {
+    const k = outcomeOf(o)
+    if (offerFilter === 'pending') return k === 'pending'
+    if (offerFilter === 'won') return k === 'won'
+    if (offerFilter === 'lost') return k === 'lost' || k === 'cancelled' || k === 'expired'
+    if (offerFilter === 'reply') return needsMe(o)
+    return true
+  })
 
   const companyName = locale === 'en' && profile?.company_name_en ? profile.company_name_en : profile?.company_name_ar
 
@@ -379,7 +419,7 @@ export default function SupplierDashboard() {
               <div className="font-extrabold text-[#0B2438] mb-3"><Glyph e="🔔" /> {L(`The buyer is waiting for your reply on ${n === 1 ? 'one offer' : n + ' offers'}`, `خریدار ${n} آفر پر آپ کے جواب کا منتظر ہے`, `المشتري ينتظر ردّك على ${arCount(n, 'عرض واحد', 'عرضين', 'عروض', 'عرضاً')}`)}</div>
               <div className="space-y-2">
                 {waiting.slice(0, 5).map((o: any) => {
-                  const disc = o.reduction_deadline && new Date(o.reduction_deadline).getTime() > Date.now()
+                  const disc = offerHasOpenDiscount(o)
                   return (
                     <div key={o.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#D4A543]/10 px-3 py-2">
                       <div className="min-w-0">
@@ -409,7 +449,7 @@ export default function SupplierDashboard() {
                   <div className="text-[13px] text-white/80">{freshCount ? L(`${freshCount} new — price early to stand out`, `${freshCount} نئی — جلد قیمت دیں`, `منها ${freshCount === 1 ? 'طلب جديد لم تفتحه' : `${arCount(freshCount, 'طلب', 'طلبان', 'طلبات', 'طلباً')} جديدة لم تفتحها`}، والتسعير المبكر يرفع فرصتك`) : L('Price early to raise your chances', 'جلد قیمت دیں', 'التسعير المبكر يرفع فرصتك')}</div>
                 </div>
               </div>
-              <button type="button" onClick={() => { setTab('rfqs'); setRfqFilter('all'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+              <button type="button" onClick={() => { setTab('rfqs'); setRfqFilter('toprice'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
                 className="inline-flex items-center gap-1 min-h-[44px] text-sm font-extrabold text-[#071827] px-4 rounded-xl" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                 {L('Show them', 'دیکھیں', 'اعرضها')} <span aria-hidden="true">{FWD}</span>
               </button>
@@ -450,13 +490,17 @@ export default function SupplierDashboard() {
               </div>
             </Link>
           ) })
+          // UX-093: the next step depends on the seller kind (an independent seller has no CR to upload),
+          // a gold main action and a way to reach support
           if (profile?.verification_status === 'rejected') banners.push({ key: 'rejected', node: (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
               <div className="flex items-start gap-3 mb-3">
                 <span className="text-2xl"><Glyph e="❌" /></span>
                 <div>
-                  <div className="font-bold text-red-700 mb-1">{L('Account Rejected', 'اکاؤنٹ مسترد', 'تم رفض حسابك')}</div>
-                  <div className="text-sm text-red-600">{L('Your account has been rejected. Please review the reason and reupload your documents.', 'آپ کا اکاؤنٹ مسترد ہو گیا۔ وجہ دیکھیں اور دستاویزات دوبارہ اپلوڈ کریں۔', 'تم رفض حسابك. يرجى مراجعة السبب وإعادة رفع المستندات.')}</div>
+                  <div className="font-bold text-red-700 mb-1">{L('Your account was not approved', 'آپ کا اکاؤنٹ منظور نہیں ہوا', 'لم يُقبل حسابك')}</div>
+                  <div className="text-sm text-red-700">{sellerKindOf(profile?.provider_type) === 'independent'
+                    ? L('Review the reason below, update your details, and we will review them again.', 'نیچے وجہ دیکھیں، اپنی تفصیلات اپ ڈیٹ کریں، اور ہم دوبارہ جائزہ لیں گے۔', 'راجِع السبب أدناه، وحدّث بياناتك، وسنراجعها من جديد.')
+                    : L('Review the reason below, update your commercial registration, and we will review it again.', 'نیچے وجہ دیکھیں، اپنی تجارتی رجسٹریشن اپ ڈیٹ کریں، اور ہم دوبارہ جائزہ لیں گے۔', 'راجِع السبب أدناه، وحدّث سجلك التجاري، وسنراجعه من جديد.')}</div>
                   {profile?.rejection_reason && (
                     <div className="mt-2 bg-red-100 rounded-lg px-3 py-2 text-sm text-red-800 font-medium">
                       <Glyph e="📋" /> {L('Reason: ', 'وجہ: ', 'السبب: ')}{profile.rejection_reason}
@@ -464,9 +508,14 @@ export default function SupplierDashboard() {
                   )}
                 </div>
               </div>
-              <Link href="/settings" className="inline-block text-xs px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
-                {L('Reupload Documents', 'دستاویزات دوبارہ اپلوڈ کریں', 'إعادة رفع المستندات')}
-              </Link>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/settings" className="inline-flex items-center min-h-[44px] text-sm px-5 rounded-xl font-extrabold text-[#071827]" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                  {sellerKindOf(profile?.provider_type) === 'independent' ? L('Update my details', 'میری تفصیلات اپ ڈیٹ کریں', 'تحديث بياناتي') : L('Update my commercial registration', 'تجارتی رجسٹریشن اپ ڈیٹ کریں', 'تحديث السجل التجاري')}
+                </Link>
+                <Link href="/support" className="inline-flex items-center min-h-[44px] text-sm px-5 rounded-xl font-bold text-white" style={{ background: '#0B2438' }}>
+                  {L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}
+                </Link>
+              </div>
             </div>
           ) })
           // حدّد تخصصاتك الدقيقة
@@ -490,6 +539,9 @@ export default function SupplierDashboard() {
                 <div className="text-sm text-amber-600">{sellerKindOf(profile?.provider_type) === 'independent'
                   ? L('We are reviewing your details. This usually takes up to 24 hours.', 'ہم آپ کی تفصیلات کا جائزہ لے رہے ہیں۔ اس میں عموماً 24 گھنٹے لگتے ہیں۔', 'نراجع بياناتك، وعادةً يستغرق ذلك 24 ساعة.')
                   : L('We are reviewing your details and documents; this usually takes 24 hours.', 'ہم آپ کی تفصیلات اور دستاویزات کا جائزہ لے رہے ہیں؛ اس میں عموماً 24 گھنٹے لگتے ہیں۔', 'نراجع بياناتك ومستنداتك، وتستغرق المراجعة عادةً 24 ساعة.')}</div>
+                {/* UX-093: what to do meanwhile, and when to ask for help */}
+                <div className="text-sm text-amber-800 mt-1.5">{L('Meanwhile you can complete your specialties, location and prices. If the review takes more than 24 hours, contact support.', 'اس دوران آپ اپنی مہارتیں، مقام اور قیمتیں مکمل کر سکتے ہیں۔ اگر جائزے میں 24 گھنٹے سے زیادہ لگیں تو سپورٹ سے رابطہ کریں۔', 'يمكنك خلال المراجعة إكمال تخصصاتك وموقعك وأسعارك. إن تجاوزت المراجعة 24 ساعة فتواصل مع الدعم.')}</div>
+                <Link href="/support" className="inline-flex items-center min-h-[44px] mt-1 text-sm font-bold text-[#8F6820] underline">{L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}</Link>
               </div>
             </div>
           ) })
@@ -569,8 +621,7 @@ export default function SupplierDashboard() {
             { cr: true, ok: profile?.verification_status === 'verified', w: 35, label: L('Verify your CR', 'اپنا سی آر تصدیق کریں', 'وثّق سجلّك التجاري'), href: '/settings' },
             { ok: hasSpecialties, w: 25, label: L('Add specialties', 'مہارتیں شامل کریں', 'أضف تخصصاتك'), href: '/supplier/specialties' },
             { ok: !!(profile?.latitude || profile?.national_short_address), w: 20, label: L('Add map location', 'نقشے پر مقام شامل کریں', 'حدّد موقعك'), href: '/location' },
-            // التقييم يأتي من المشتري بعد إتمام صفقة — نوجّه إلى الصفقات لا إلى التخصصات
-            { ok: (profile?.rating_avg || 0) > 0, w: 20, label: L('Your first rating comes after your first completed deal', 'پہلی ریٹنگ پہلا سودا مکمل ہونے کے بعد آتی ہے', 'يأتي أول تقييم بعد أول صفقة مكتملة'), href: '', info: true },
+            // UX-149: the rating comes from buyers after a deal, so it is not part of «completing» the profile
           ]
           const checks = allChecks.filter((c: any) => !(isIndependent && c.cr))
           const totalW = checks.reduce((s: number, c: any) => s + c.w, 0) || 1
@@ -618,14 +669,15 @@ export default function SupplierDashboard() {
 
         {/* numbers and the sales chart wait for the first offer (persona review: zeros on day one) */}
         {myOffers.length > 0 && <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 stagger">
+          {/* UX-082: each card opens its own filtered list, and the numbers match the list and the tabs */}
           {[
-            { label: t.openRfqs, value: openRfqs.length, icon: 'orders', tone: 'brand', go: 'rfqs' },
-            { label: t.pendingOffers, value: pending, icon: 'waiting', tone: 'warning', go: 'offers' },
-            { label: t.acceptedOffers, value: accepted, icon: 'completed', tone: 'success', go: 'offers' },
-            { label: t.revenue, value: myOffers.filter(needsMe).length, icon: 'waiting', tone: 'warning', go: 'offers' },
-          ].map(({ label, value, icon, tone, go }) => (
-            <button key={label} type="button" onClick={() => { setTab(go); if (go === 'rfqs') setRfqFilter('all'); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
-              className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${tab === go ? 'border-[#D4A543] ring-1 ring-[#D4A543]/30' : 'border-gray-100'}`}>
+            { label: t.openRfqs, value: toPrice.length, icon: 'orders', tone: 'brand', go: 'rfqs', f: 'toprice' },
+            { label: t.pendingOffers, value: pending, icon: 'waiting', tone: 'warning', go: 'offers', f: 'pending' },
+            { label: t.acceptedOffers, value: accepted, icon: 'completed', tone: 'success', go: 'offers', f: 'won' },
+            { label: t.revenue, value: myOffers.filter(needsMe).length, icon: 'waiting', tone: 'warning', go: 'offers', f: 'reply' },
+          ].map(({ label, value, icon, tone, go, f }) => (
+            <button key={label} type="button" onClick={() => { setTab(go); if (go === 'rfqs') setRfqFilter(f); else setOfferFilter(f as any); document.getElementById('sup-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
+              className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${tab === go && (go === 'rfqs' ? rfqFilter === f : offerFilter === f) ? 'border-[#D4A543] ring-1 ring-[#D4A543]/30' : 'border-gray-100'}`}>
               <div className="flex items-start justify-between gap-2 min-w-0">
                 <AppIcon name={icon} tone={tone} variant="tone" size={44} />
                 <div className="text-xl sm:text-2xl font-bold truncate tabular-nums" style={{ color: '#0B2438' }}>{value}</div>
@@ -637,13 +689,14 @@ export default function SupplierDashboard() {
 
         {/* مبيعاتك (اختيار المالك: دائرة نتائج العروض + بطاقات بأسهم مقارنة بالشهر الماضي) */}
         {myOffers.length > 0 && (() => {
-          const rejected = myOffers.filter((o: any) => o.status === 'rejected').length
+          // round-2 UX-010: cancelled / expired requests are not «not chosen» and stay out of the chart
+          const rejected = lostCount
           const totalOffers = accepted + pending + rejected
           const C = 2 * Math.PI * 58
           const seg = (n: number) => (totalOffers ? (n / totalOffers) * C : 0)
           const parts = [
-            { n: accepted, color: '#0F6E56', label: L('Accepted', 'قبول', 'مقبولة') },
-            { n: pending, color: '#D4A543', label: L('Waiting', 'منتظر', 'بانتظار القرار') },
+            { n: accepted, color: '#0F6E56', label: L('Chosen', 'منتخب', 'اختيرت') },
+            { n: pending, color: '#D4A543', label: L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري') },
             { n: rejected, color: '#B4B2A9', label: L('Not chosen', 'منتخب نہیں', 'لم تُختر') }, // neutral grey (UX-116)
           ]
           const thisM = months[months.length - 1], lastM = months[months.length - 2]
@@ -665,7 +718,7 @@ export default function SupplierDashboard() {
               <div className="grid sm:grid-cols-[minmax(0,220px)_1fr] gap-5 items-center">
                 {/* donut: how many offers won, waiting, not chosen; win rate in the middle */}
                 <div className="flex flex-col items-center">
-                  <svg viewBox="0 0 160 160" className="w-40 h-40" role="img" aria-label={L(`Offers: ${accepted} accepted, ${pending} waiting, ${rejected} not chosen`, '', `العروض: ${accepted} مقبولة، ${pending} بانتظار القرار، ${rejected} لم تُختر`)}>
+                  <svg viewBox="0 0 160 160" className="w-40 h-40" role="img" aria-label={L(`Offers: ${accepted} chosen, ${pending} waiting, ${rejected} not chosen`, `آفرز: ${accepted} منتخب، ${pending} منتظر، ${rejected} منتخب نہیں`, `العروض: ${accepted} اختيرت، ${pending} بانتظار قرار المشتري، ${rejected} لم تُختر`)}>
                     <circle cx="80" cy="80" r="58" fill="none" stroke="#EEF1F5" strokeWidth="18" />
                     {totalOffers > 0 && parts.map((p, k) => {
                       const len = seg(p.n); const el = len > 0 ? (
@@ -696,7 +749,7 @@ export default function SupplierDashboard() {
                     <div className="text-[12px] text-gray-500">{L('Deals this month', 'اس ماہ کی ڈیلز', 'صفقات هذا الشهر')}</div>
                     <div className="text-xl sm:text-2xl font-extrabold text-[#0B2438] tabular-nums">{thisM.deals}</div>
                     {dealsDelta !== 0
-                      ? <Arrow up={dealsDelta > 0} text={L(`${Math.abs(dealsDelta)} vs last month`, `${Math.abs(dealsDelta)} پچھلے ماہ سے`, `${Math.abs(dealsDelta) === 1 ? 'صفقة' : Math.abs(dealsDelta) + ' صفقات'} ${dealsDelta > 0 ? 'أكثر' : 'أقل'} من الماضي`)} />
+                      ? <Arrow up={dealsDelta > 0} text={L(`${Math.abs(dealsDelta)} ${dealsDelta > 0 ? 'more' : 'fewer'} than last month`, `پچھلے ماہ سے ${Math.abs(dealsDelta)} ${dealsDelta > 0 ? 'زیادہ' : 'کم'}`, `${arCount(Math.abs(dealsDelta), 'صفقة واحدة', 'صفقتان', 'صفقات', 'صفقة')} ${dealsDelta > 0 ? 'أكثر' : 'أقل'} من الشهر الماضي`)} />
                       : <div className="text-xs text-gray-500 mt-0.5">{L('Same as last month', 'پچھلے ماہ جتنی', 'مثل الشهر الماضي')}</div>}
                   </div>
                   <div className="rounded-xl bg-[#F6F7F9] p-3.5">
@@ -714,7 +767,7 @@ export default function SupplierDashboard() {
         })()}
 
         <div className="flex gap-2 mb-6" id="sup-list" style={{ scrollMarginTop: '70px' }}>
-          {[{ key: 'rfqs', label: t.tabRfqs, n: openRfqs.length, alert: 0 }, { key: 'offers', label: t.tabOffers, n: myOffers.length, alert: myOffers.filter(needsMe).length }].map((tab_: any) => (
+          {[{ key: 'rfqs', label: t.tabRfqs, n: toPrice.length, alert: 0 }, { key: 'offers', label: t.tabOffers, n: myOffers.length, alert: myOffers.filter(needsMe).length }].map((tab_: any) => (
             <button key={tab_.key} onClick={() => setTab(tab_.key)} aria-pressed={tab === tab_.key}
               className={`inline-flex items-center gap-1.5 min-h-[44px] px-4 sm:px-5 rounded-xl text-sm font-semibold transition-all ${tab === tab_.key ? 'text-white' : 'bg-white text-gray-700 border border-gray-200'}`}
               style={tab === tab_.key ? { background: '#0B2438' } : {}}>
@@ -727,12 +780,13 @@ export default function SupplierDashboard() {
 
         {tab === 'rfqs' && (() => {
           const expiringList = openRfqs.filter((r: any) => { const u = deadlineUrgency(r.expires_at); return u === 'soon' || u === 'critical' })
-          const displayedRfqs = rfqFilter === 'expiring' ? expiringList : sortedOpen
+          const displayedRfqs = rfqFilter === 'expiring' ? expiringList : rfqFilter === 'toprice' ? sortedOpen.filter((r: any) => !offeredRfqIds.has(r.id)) : sortedOpen
           return (
           <div className="stagger">
             {/* فلاتر الطلبات — منها «تنتهي قريباً» (قابلة للضغط) */}
             <div className="flex gap-2 mb-4 flex-wrap">
               {[
+                { key: 'toprice', label: `${L('Waiting for your price', 'آپ کی قیمت کی منتظر', 'بانتظار تسعيرك')} (${toPrice.length})`, icon: <Glyph e="💰" /> },
                 { key: 'all', label: `${L('All', 'سب', 'الكل')} (${openRfqs.length})`, icon: <Glyph e="📋" /> },
                 { key: 'expiring', label: `${L('Ending soon', 'جلد ختم ہونے والی', 'تنتهي قريباً')} (${expiringList.length})`, icon: <Glyph e="⏰" /> },
               ].map((f: any) => (
@@ -747,9 +801,10 @@ export default function SupplierDashboard() {
             {loadFailed && displayedRfqs.length === 0 ? null : displayedRfqs.length === 0 ? (
               <div className="bg-white rounded-2xl p-8 sm:p-16 border border-gray-100 text-center">
                 <div className="text-5xl mb-4 animate-float">{rfqFilter === 'expiring' ? <Glyph e="⏰" /> : <Glyph e="📭" />}</div>
-                <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{rfqFilter === 'expiring' ? L('Nothing ending soon', 'کوئی درخواست جلد ختم نہیں ہو رہی', 'لا توجد طلبات تنتهي قريباً') : t.noRfqs}</h3>
-                <p className="text-sm text-gray-600">{rfqFilter === 'expiring' ? L('All open requests still have time.', 'تمام کھلی درخواستوں کے پاس ابھی کافی وقت ہے۔', 'ما زال لدى كل الطلبات المفتوحة متّسع من الوقت.') : t.noRfqsSub}</p>
-                {rfqFilter !== 'expiring' && !isMember && <Link href="/supplier/specialties" className="inline-flex items-center mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Review my specialties', 'میری مہارتیں دیکھیں', 'راجِع تخصصاتي')}</Link>}
+                <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{rfqFilter === 'expiring' ? L('Nothing ending soon', 'کوئی درخواست جلد ختم نہیں ہو رہی', 'لا توجد طلبات تنتهي قريباً') : rfqFilter === 'toprice' && openRfqs.length > 0 ? L('You have priced every open request', 'آپ نے ہر کھلی درخواست کی قیمت دے دی ہے', 'سعّرتَ كل الطلبات المفتوحة') : t.noRfqs}</h3>
+                <p className="text-sm text-gray-600">{rfqFilter === 'expiring' ? L('All open requests still have time.', 'تمام کھلی درخواستوں کے پاس ابھی کافی وقت ہے۔', 'ما زال لدى كل الطلبات المفتوحة متّسع من الوقت.') : rfqFilter === 'toprice' && openRfqs.length > 0 ? L('We will alert you as soon as a new matching request arrives.', 'نئی مماثل درخواست آتے ہی ہم آپ کو بتائیں گے۔', 'سننبّهك فور وصول طلب جديد مطابق.') : t.noRfqsSub}</p>
+                {rfqFilter === 'toprice' && openRfqs.length > 0 && <button type="button" onClick={() => setRfqFilter('all')} className="inline-flex items-center mt-4 me-2 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Show all requests', 'تمام درخواستیں دکھائیں', 'عرض كل الطلبات')}</button>}
+                {rfqFilter === 'all' && !isMember && <Link href="/supplier/specialties" className="inline-flex items-center mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Review my specialties', 'میری مہارتیں دیکھیں', 'راجِع تخصصاتي')}</Link>}
               </div>
             ) : (
               <div className="space-y-3">
@@ -762,10 +817,16 @@ export default function SupplierDashboard() {
                         <div className="min-w-0">
                           <div className="font-bold line-clamp-2" style={{ color: '#0B2438' }}>{cardTitle(rfq)}</div>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            {!offeredRfqIds.has(rfq.id) && (isFresh(rfq) || (rfq.created_at && Date.now() - new Date(rfq.created_at).getTime() < 12 * 3600 * 1000)) && (
-                              <span className="badge text-[12px] font-bold" style={{ background: '#0F6E5615', color: '#0F6E56' }}><Glyph e="🟢" /> {L('New', 'نیا', 'جديد')}</span>
+                            {/* UX-149: one rule for «جديد» (not opened yet), gold like the top card */}
+                            {isFresh(rfq) && (
+                              <span className="badge text-[12px] font-bold text-[#071827]" style={{ background: '#F5C55B' }}>{L('New', 'نیا', 'جديد')}</span>
                             )}
-                            <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{sectors[rfq.sector] || rfq.sector}</span>
+                            <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{rfqSection(rfq)}</span>
+                            {!offeredRfqIds.has(rfq.id) && (() => { const sv = savedOf(rfq); return sv.have > 0 ? (
+                              <span className="badge text-[12px] font-semibold bg-[#0F6E56]/10 text-[#0F6E56]">{sv.of > 1
+                                ? L(`Saved prices for ${sv.have} of ${sv.of}`, `${sv.of} میں سے ${sv.have} کی محفوظ قیمتیں`, `لديك أسعار محفوظة لـ ${sv.have} من ${sv.of}`)
+                                : L('You have a saved price', 'آپ کی محفوظ قیمت موجود ہے', 'لديك سعر محفوظ')}</span>
+                            ) : null })()}
                             {rfq.vat_invoice_required && <span className="badge text-[12px] font-semibold bg-[#0B2438]/5 text-[#0B2438]"><Glyph e="🧾" /> {L('VAT invoice', 'VAT انوائس', 'فاتورة ضريبية')}</span>}
                             {rfq.sub_category && !(Array.isArray(rfq.items) && rfq.items.length > 1) && (
                               <span className="badge text-[12px] bg-[#D4A543]/10 text-[#8F6820] font-semibold">
@@ -817,8 +878,31 @@ export default function SupplierDashboard() {
 
         {tab === 'offers' && (
           <div className="stagger">
+            {myOffers.length > 0 && (
+              <div className="flex gap-2 mb-4 flex-wrap" role="group" aria-label={L('Filter offers', 'آفرز فلٹر کریں', 'تصفية العروض')}>
+                {([
+                  { k: 'all', l: L('All', 'سب', 'الكل'), n: myOffers.length },
+                  { k: 'pending', l: L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري'), n: pending },
+                  { k: 'won', l: L('Chosen', 'منتخب', 'اختيرت'), n: accepted },
+                  { k: 'lost', l: L('Not chosen or ended', 'منتخب نہیں یا ختم', 'لم تُختر أو انتهت'), n: myOffers.filter((o: any) => { const k = outcomeOf(o); return k === 'lost' || k === 'cancelled' || k === 'expired' }).length },
+                  { k: 'reply', l: L('Need your reply', 'آپ کے جواب کی منتظر', 'بحاجة لردّك'), n: myOffers.filter(needsMe).length },
+                ] as const).map((f) => (
+                  <button key={f.k} type="button" onClick={() => setOfferFilter(f.k)} aria-pressed={offerFilter === f.k}
+                    className={`min-h-[44px] px-4 rounded-xl text-[13px] font-bold transition-all border ${offerFilter === f.k ? 'text-white border-transparent' : 'bg-white text-gray-600 border-gray-200'}`}
+                    style={offerFilter === f.k ? { background: '#0B2438' } : {}}>
+                    {f.l} ({f.n})
+                  </button>
+                ))}
+                <Link href="/supplier/deals" className="inline-flex items-center gap-1 min-h-[44px] px-3 text-[13px] font-bold text-[#8F6820] hover:underline ms-auto">{L('My deals', 'میری ڈیلز', 'صفقاتي')} <span aria-hidden="true">{FWD}</span></Link>
+              </div>
+            )}
             {loadFailed && <LoadError onRetry={() => { load() }} className="mb-4" message={myOffers.length ? staleMsg : undefined} />}
-            {loadFailed && myOffers.length === 0 ? null : myOffers.length === 0 ? (
+            {loadFailed && myOffers.length === 0 ? null : myOffers.length > 0 && shownOffers.length === 0 ? (
+              <div className="bg-white rounded-2xl p-8 border border-gray-100 text-center">
+                <p className="text-sm text-gray-600">{L('No offers in this list.', 'اس فہرست میں کوئی آفر نہیں۔', 'لا توجد عروض في هذه القائمة.')}</p>
+                <button type="button" onClick={() => setOfferFilter('all')} className="inline-flex items-center mt-4 min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>{L('Show all offers', 'تمام آفرز دکھائیں', 'عرض كل العروض')}</button>
+              </div>
+            ) : myOffers.length === 0 ? (
               <div className="bg-white rounded-2xl p-16 border border-gray-100 text-center">
                 <div className="text-5xl mb-4 animate-float"><Glyph e="📤" /></div>
                 <h3 className="text-lg font-bold mb-2" style={{ color: '#0B2438' }}>{t.noOffers}</h3>
@@ -826,33 +910,33 @@ export default function SupplierDashboard() {
               </div>
             ) : (
               <div className="space-y-3">
-                {[...myOffers].sort((a: any, b: any) => Number(needsMe(b)) - Number(needsMe(a))).map((offer: any) => (
+                {[...shownOffers].sort((a: any, b: any) => Number(needsMe(b)) - Number(needsMe(a))).map((offer: any) => { const oc = outcomeOf(offer); return (
                   <Link key={offer.id} href={`/supplier/dashboard/rfq/${offer.rfq_id}`} className={`block bg-white rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md hover:border-[#D4A543]/40 ${
-                    offer.status === 'accepted' ? 'border-emerald-200 bg-emerald-50/50' :
-                    offer.status === 'rejected' ? 'border-gray-200 bg-gray-50' : 'border-gray-100'
+                    oc === 'won' ? 'border-emerald-200 bg-emerald-50/50' :
+                    oc !== 'pending' ? 'border-gray-200 bg-gray-50' : 'border-gray-100'
                   }`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${
-                          offer.status === 'accepted' ? 'bg-emerald-100' : offer.status === 'rejected' ? 'bg-gray-100 text-gray-500' : 'bg-amber-50'
-                        }`}>{offer.status === 'accepted' ? <Glyph e="✅" /> : offer.status === 'rejected' ? <Glyph e="📭" /> : <Glyph e="⏳" />}</div>
+                          oc === 'won' ? 'bg-emerald-100' : oc !== 'pending' ? 'bg-gray-100 text-gray-500' : 'bg-amber-50'
+                        }`}>{oc === 'won' ? <Glyph e="✅" /> : oc !== 'pending' ? <Glyph e="📭" /> : <Glyph e="⏳" />}</div>
                         <div>
                           <span className="font-bold line-clamp-2" style={{ color: '#0B2438' }}>{offer.rfq ? rfqDisplayName({ ...offer.rfq, title: null }, locale) : '—'}</span>
                           {offer.rfq?.sector && (
-                            <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438] mx-2">{sectors[offer.rfq.sector] || offer.rfq.sector}</span>
+                            <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438] mx-2">{rfqSection(offer.rfq)}</span>
                           )}
                         </div>
                       </div>
                       <div className="text-end">
                         <div className="text-lg font-bold" style={{ color: '#0B2438' }}>{offer.total_price?.toLocaleString('en-US')} <span className="text-xs text-gray-500">{t.sar}</span></div>
                         <span className={`badge text-[12px] ${
-                          offer.status === 'accepted' ? 'badge-green' : offer.status === 'rejected' ? 'bg-gray-100 text-gray-600' : 'badge-amber'
-                        }`}>{offerStatusLabel(offer.status)}</span>
-                        {/* the buyer is waiting on the supplier: a discount request or a question (same badges as the app) */}
-                        {offer.status === 'pending' && offer.reduction_deadline && new Date(offer.reduction_deadline).getTime() > Date.now() && (
+                          oc === 'won' ? 'badge-green' : oc !== 'pending' ? 'bg-gray-100 text-gray-600' : 'badge-amber'
+                        }`}>{offerStatusLabel(offer)}</span>
+                        {/* the buyer is waiting on the supplier: a discount request or an unanswered question (same badges as the app) */}
+                        {offerHasOpenDiscount(offer) && (
                           <span className="block mt-1 badge text-[12px] font-bold" style={{ background: '#D4A543', color: '#071827' }}><Glyph e="📉" /> {L('Buyer asked for a discount', 'خریدار نے رعایت مانگی', 'طلب المشتري خصماً')}</span>
                         )}
-                        {offer.status === 'pending' && (offer.info_request || '').trim() && (
+                        {offerHasOpenQuestion(offer) && (
                           <span className="block mt-1 badge text-[12px] font-bold" style={{ background: '#D4A54318', color: '#8F6820' }}><Glyph e="❓" /> {L('Buyer has a question', 'خریدار کا سوال', 'سؤال من المشتري')}</span>
                         )}
                       </div>
@@ -868,7 +952,7 @@ export default function SupplierDashboard() {
                         : needsMe(offer) ? L('Reply now', 'ابھی جواب دیں', 'ردّ الآن') : L('View my offer', 'میری آفر دیکھیں', 'اطّلع على عرضي')} <span aria-hidden="true">{FWD}</span>
                     </div>
                   </Link>
-                ))}
+                ) })}
               </div>
             )}
           </div>

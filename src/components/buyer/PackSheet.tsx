@@ -2,7 +2,8 @@
 // A home project pack (src/lib/homePacks.ts) as a checklist: everything ticked, the buyer unticks what
 // they don't need, sets the quantities (measured items show a hint), then adds them all to the request.
 import { useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { X, Calculator } from 'lucide-react'
+import QuantityCalc, { calcSupported } from '@/components/buyer/QuantityCalc'
 import { getUnitLabelLong, getDefaultUnit, getProductLabel } from '@/types'
 import { productImageUrl } from '@/lib/productImage'
 import { homeName, packUnitMismatches, type HomePack } from '@/lib/homePacks'
@@ -33,16 +34,22 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
   const set = (i: number, patch: Partial<(typeof rows)[number]>) => setRows(prev => prev.map((r, k) => k === i ? { ...r, ...patch } : r))
   const name = (n: string) => locale === 'ar' ? homeName(n) : getProductLabel(n, locale)
   const boxRef = useRef<HTMLDivElement>(null)
+  const [calcFor, setCalcFor] = useState<number | null>(null)
+  const ready = chosen.filter(r => parseFloat(r.quantity) > 0).length
+  const noQty = chosen.length - ready
+  // a new onClose on every parent render must not re-run the effect (focus jumped while typing, round-2 UX-036)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
 
-  // a real dialog: Escape closes, the page behind does not scroll, focus starts inside
+  // a real dialog: Escape closes, the page behind does not scroll, focus starts inside (once)
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeRef.current() }
     window.addEventListener('keydown', onKey)
     boxRef.current?.focus()
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', onKey) }
-  }, [onClose])
+  }, [])
 
   return (
     <div className="fixed inset-0 z-[70] bg-[#071827]/60 flex items-end sm:items-center justify-center" onClick={onClose}>
@@ -62,7 +69,8 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
         </div>
         <ul className="flex-1 overflow-y-auto divide-y divide-gray-100">
           {rows.map((r, i) => (
-            <li key={r.name} className={`flex items-center gap-2 px-3 py-1.5 ${r.on ? '' : 'opacity-60'}`}>
+            <li key={r.name} className={`px-3 py-1.5 ${r.on ? '' : 'opacity-60'}`}>
+              <div className="flex items-center gap-2">
               {/* the whole picture + name toggles the row (not only the small box) */}
               <label className="flex-1 min-w-0 min-h-[52px] flex items-center gap-3 cursor-pointer select-none rounded-xl px-1">
                 <input type="checkbox" checked={r.on} onChange={e => set(i, { on: e.target.checked })} className="w-5 h-5 accent-[#D4A543] shrink-0" />
@@ -80,15 +88,32 @@ export default function PackSheet({ pack, locale, onAdd, onClose }: {
                   placeholder={L('Qty', 'مقدار', 'الكمية')} aria-label={L(`Quantity of ${name(r.name)}`, `${name(r.name)} کی مقدار`, `كمية ${name(r.name)}`)} />
                 <span className="text-[12px] text-gray-600 w-full text-center truncate mt-0.5">{getUnitLabelLong(r.unit, locale)}</span>
               </div>
+              </div>
+              {/* «احسبها من مقاس الغرفة» for measured items (shared calculator) */}
+              {r.on && calcSupported(r.unit) && (calcFor === i ? (
+                <div className="mt-1 mb-1"><QuantityCalc compact unit={r.unit} name={r.name} locale={locale} onUse={q => { set(i, { quantity: q }); setCalcFor(null) }} /></div>
+              ) : (
+                <button type="button" onClick={() => setCalcFor(i)} className="min-h-[44px] ms-9 text-[13px] font-bold text-[#8F6820] inline-flex items-center gap-1.5 hover:underline">
+                  <Calculator className="w-4 h-4" aria-hidden />{L('Work it out from the room size', 'کمرے کے سائز سے حساب کریں', 'احسبها من مقاس الغرفة')}
+                </button>
+              ))}
             </li>
           ))}
         </ul>
         <div className="p-4 border-t border-gray-100 shrink-0" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}>
+          {noQty > 0 && (
+            <p className="text-[13px] font-bold text-[#8F6820] mb-1.5" role="status">{L(
+              `${noQty} item${noQty === 1 ? '' : 's'} without a quantity; you can complete ${noQty === 1 ? 'it' : 'them'} in your request.`,
+              `${noQty} اشیاء بغیر مقدار؛ آپ انہیں درخواست میں مکمل کر سکتے ہیں۔`,
+              `${noQty === 1 ? 'مادة واحدة بلا كمية' : noQty === 2 ? 'مادتان بلا كمية' : `${noQty} مواد بلا كمية`}، يمكنك إكمالها في طلبك.`)}</p>
+          )}
           <p className="text-[12px] text-gray-600 mb-2">{L('Each material goes to the suppliers who sell it. You can still edit everything in your request.', 'ہر چیز اس کے سپلائرز تک جاتی ہے۔ درخواست میں سب بدل سکتے ہیں۔', 'تصل كل مادة إلى الموردين المختصين بها، ويمكنك تعديل كل شيء في طلبك.')}</p>
           <button type="button" disabled={!chosen.length}
             onClick={() => onAdd(chosen.map(r => ({ name: r.name, sector: r.sector, quantity: r.quantity, unit: r.unit })))}
             className="w-full min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)', color: '#071827' }}>
-            {L(`Add to my request (${chosen.length})`, `میری درخواست میں شامل کریں (${chosen.length})`, `أضف إلى طلبي (${chosen.length})`)}
+            {noQty > 0
+              ? L(`Add to my request (${ready} ready, ${noQty} without quantity)`, `میری درخواست میں شامل کریں (${ready} تیار، ${noQty} بغیر مقدار)`, `أضف إلى طلبي (${ready} جاهزة، ${noQty} بلا كمية)`)
+              : L(`Add to my request (${chosen.length})`, `میری درخواست میں شامل کریں (${chosen.length})`, `أضف إلى طلبي (${chosen.length})`)}
           </button>
         </div>
       </div>

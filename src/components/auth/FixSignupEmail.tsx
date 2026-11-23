@@ -48,8 +48,8 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
   return (
     <div className="mt-3 rounded-xl border border-[#D4A543]/40 bg-[#D4A543]/5 p-3 text-start text-sm">
       <div className="flex flex-wrap gap-x-4 gap-y-1">
-        <button type="button" onClick={resend} disabled={busy} className="font-bold text-[#8F6820] underline disabled:opacity-50">{L('Resend the link', 'لنک دوبارہ بھیجیں', 'أعد إرسال الرابط')}</button>
-        <button type="button" onClick={() => setOpen(o => !o)} className="font-bold text-[#8F6820] underline">{L('Wrong email? Correct it', 'ای میل غلط ہے؟ درست کریں', 'كتبت بريدك خطأ؟ صحّحه')}</button>
+        <button type="button" onClick={resend} disabled={busy} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline disabled:opacity-50">{L('Resend the link', 'لنک دوبارہ بھیجیں', 'أعد إرسال الرابط')}</button>
+        <button type="button" onClick={() => setOpen(o => !o)} className="inline-flex items-center min-h-[44px] font-bold text-[#8F6820] underline">{L('Wrong email? Correct it', 'ای میل غلط ہے؟ درست کریں', 'كتبت بريدك خطأ؟ صحّحه')}</button>
       </div>
       {open && (
         <div className="mt-2 space-y-2">
@@ -60,7 +60,7 @@ export default function FixSignupEmail({ email, password, locale, captchaToken, 
           </button>
         </div>
       )}
-      {msg && <p className={`mt-2 text-[12px] font-semibold ${msg.ok ? 'text-[#0F6E56]' : 'text-red-600'}`} role="status">{msg.text}</p>}
+      {msg && <p className={`mt-2 text-[13px] font-semibold ${msg.ok ? 'text-[#0F6E56]' : 'text-red-700'}`} role={msg.ok ? 'status' : 'alert'}>{msg.text}</p>}
     </div>
   )
 }

@@ -20,6 +20,8 @@ import { REGIONS, SECTOR_LABELS, SUB_CATEGORIES, getRegionLabel, CITIES_BY_REGIO
 import { CONTRACTOR_FEATURES } from '@/lib/features'
 import Glyph from '@/components/shared/Glyph'
 import { takePostSignupNext } from '@/lib/postSignupNext'
+import { toast } from 'sonner'
+import { normalizeCrInput, isUnifiedCr, crTakenText } from '@/lib/cr'
 
 // ── إعداد ملفك التجاري (Progressive profiling) ────────────────────────────
 // تُعبّأ هنا البيانات المنقولة خارج التسجيل: الموقع + القطاعات + (للمقاول: الدرجة)
@@ -123,6 +125,12 @@ export default function OnboardingPage() {
   const [supplierTier, setSupplierTier] = useState<string | null>(null)
   const [providerType, setProviderType] = useState('')
   const [crNo, setCrNo] = useState('') // UX-125: say which CR was entered at sign-up
+  // round-2 UX-076: choosing «company or shop» asks for the CR when none was given at sign-up
+  const [crInput, setCrInput] = useState('')
+  const [crAsk, setCrAsk] = useState(false)
+  // round-2 UX-037: the map pin changed the city: say so
+  const [cityNote, setCityNote] = useState('')
+  const [editBuyer, setEditBuyer] = useState(false)
   const [buyerType, setBuyerType] = useState<string>('') // UX-072: asked first when empty
   const [kindBusy, setKindBusy] = useState(false)
   // فرد / وكيل أسعار / سمسار: ما عنده محل ولا سجل — ثقته من التقييمات، فما نسأله تصنيف ولا توثيق
@@ -200,11 +208,27 @@ export default function OnboardingPage() {
   // UX-125: the account kind starts empty and is confirmed before it is locked
   async function chooseKind(k: 'company' | 'independent') {
     const label = sellerKindLabel(k, locale)
+    let newCr = ''
+    if (k === 'company' && !crNo) {
+      const c = normalizeCrInput(crInput)
+      if (!isUnifiedCr(c)) {
+        setCrAsk(true)
+        showErr(locale === 'en' ? 'A company or shop needs its commercial registration number (10 digits starting with 7). No registration? Choose «Pricing agent».' : locale === 'ur' ? 'کمپنی یا دکان کے لیے تجارتی رجسٹریشن نمبر ضروری ہے (7 سے شروع، 10 ہندسے)۔ رجسٹریشن نہیں؟ «قیمت ایجنٹ» منتخب کریں۔' : 'الشركة أو المحل تحتاج رقم السجل التجاري (10 أرقام يبدأ بـ7). ليس لديك سجل؟ اختر «وسيط تسعير».')
+        setTimeout(() => document.getElementById('ob-cr')?.focus(), 50)
+        return
+      }
+      newCr = c
+    }
     if (!(await askConfirm(locale === 'en' ? `Set your account type to «${label}»? It can only be changed later through Support.` : locale === 'ur' ? `اکاؤنٹ کی قسم «${label}» مقرر کریں؟ بعد میں صرف سپورٹ کے ذریعے بدلی جا سکتی ہے۔` : `تحديد نوع حسابك «${label}»؟ لا يمكن تغييره لاحقاً إلا بطلب من الدعم.`, { okLabel: locale === 'en' ? 'Yes, confirm' : locale === 'ur' ? 'ہاں، تصدیق کریں' : 'نعم، أكّد', cancelLabel: locale === 'en' ? 'Go back' : locale === 'ur' ? 'واپس' : 'تراجع' }))) return
     setKindBusy(true)
     const { data: np, error } = await supabase.rpc('set_seller_kind', { p_kind: k, p_activity: k === 'company' ? 'company' : null })
     setKindBusy(false)
     if (error) { showErr(t.kindFailed); return }
+    if (newCr) {
+      const { error: crErr } = await supabase.from('profiles').update({ commercial_registration: newCr }).eq('id', uid)
+      if (crErr) showErr(/duplicate|unique|23505/i.test(crErr.message || '') ? crTakenText(locale).msg : t.profileFailed)
+      else setCrNo(newCr)
+    }
     setProviderType(String(np || (k === 'independent' ? 'individual' : 'company')))
   }
 
@@ -263,7 +287,7 @@ export default function OnboardingPage() {
         const failed: { sector: string; name: string }[] = []
         for (const m of extraMaterials) {
           try {
-            const { error: mErr } = await supabase.from('material_requests').insert({ supplier_id: uid, name: m.name })
+            const { error: mErr } = await supabase.from('material_requests').insert({ supplier_id: uid, name: m.name, sector: m.sector || null })
             if (mErr) failed.push(m)
           } catch { failed.push(m) }
         }
@@ -273,7 +297,16 @@ export default function OnboardingPage() {
         if (failed.length) { showErr(t.matFailed); setSaving(false); return }
       }
       const after = takePostSignupNext() // e.g. /contractor/rfq/quick?section=… from a landing card
-      window.location.href = typeof dest === 'string' ? dest : (role === 'supplier' ? '/supplier/dashboard?welcome=1' : (after && after.startsWith('/contractor') ? after : '/contractor'))
+      // a CR used by another account at sign-up (round-2 UX-021): straight to the claim page
+      const claimNext = after && after.startsWith('/verification/claim') ? after : null
+      const go = typeof dest === 'string' ? dest : claimNext || (role === 'supplier' ? '/supplier/dashboard?welcome=1' : (after && after.startsWith('/contractor') ? after : '/contractor'))
+      if (role !== 'supplier' && typeof dest !== 'string') {
+        // round-2 UX-037: confirm the save before leaving
+        toast.success(locale === 'en' ? 'Delivery address saved' : locale === 'ur' ? 'ڈیلیوری پتہ محفوظ ہو گیا' : 'حُفظ عنوان التوصيل')
+        setTimeout(() => { window.location.href = go }, 700)
+        return
+      }
+      window.location.href = go
     } catch {
       // خطأ شبكة غير متوقّع: تبقى اختيارات المستخدم كما هي على الشاشة.
       showErr(t.saveFailed); setSaving(false)
@@ -354,26 +387,64 @@ export default function OnboardingPage() {
           <div className="flex-1 min-w-0 space-y-4 pb-28 lg:pb-0">
             {role !== 'supplier' && (
               <div className={cardCls}>
+                {/* round-2 UX-130: asked once; when already chosen it is one line with «تغيير» */}
+                {buyerType && !editBuyer ? (
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold text-navy flex items-center gap-2">{buyerType === 'individual' ? <Glyph e="🏘" /> : <SellerIcon name="building" />}{buyerType === 'individual' ? (locale === 'en' ? 'You are buying for your home' : locale === 'ur' ? 'آپ اپنے گھر کے لیے خرید رہے ہیں' : 'تشتري لبيتك') : (locale === 'en' ? 'You are buying as a contractor or company' : locale === 'ur' ? 'آپ ٹھیکیدار یا کمپنی کے طور پر خرید رہے ہیں' : 'تشتري كمقاول أو شركة')}</p>
+                    <button type="button" onClick={() => setEditBuyer(true)} className="min-h-[44px] px-2 text-sm font-bold text-[#8F6820] underline shrink-0">{locale === 'en' ? 'Change' : locale === 'ur' ? 'تبدیل کریں' : 'تغيير'}</button>
+                  </div>
+                ) : (<>
                 <h2 className="text-sm font-bold text-navy mb-3">{locale === 'en' ? 'Who are you buying for?' : locale === 'ur' ? 'آپ کس کے لیے خرید رہے ہیں؟' : 'لمن تشتري؟'}</h2>
                 <div className="grid grid-cols-2 gap-3" role="radiogroup">
                   {([['individual', locale === 'en' ? 'For my home' : locale === 'ur' ? 'اپنے گھر کے لیے' : 'لبيتي', 'home'], ['business', locale === 'en' ? 'Contractor or company' : locale === 'ur' ? 'ٹھیکیدار یا کمپنی' : 'مقاول أو شركة', 'building']] as const).map(([k, label, icon]) => {
                     const on = buyerType === k
                     return (
-                      <button key={k} type="button" role="radio" aria-checked={on} onClick={() => chooseBuyerType(k)}
+                      <button key={k} type="button" role="radio" aria-checked={on} onClick={() => { chooseBuyerType(k); setEditBuyer(false) }}
                         className={`min-h-[56px] p-3 rounded-xl border-2 text-start font-bold text-sm text-[#071827] flex items-center gap-2 transition-all ${on ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-[#D4A543]/50'}`}>
                         {on ? <Check className="w-4 h-4 shrink-0" aria-hidden /> : icon === 'home' ? <Glyph e="🏘" /> : <SellerIcon name={icon} />}{label}
                       </button>
                     )
                   })}
                 </div>
+                </>)}
               </div>
             )}
             {/* الموقع (مطلوب) */}
+            {(() => {
+              // round-2 UX-037: a buyer starts with «use my current location», then «or choose manually»
+              const mapFirst = role !== 'supplier'
+              const mapBlock = (
+              <div className={mapFirst ? 'mb-4' : 'mt-4'}>
+                <label className="block text-xs font-semibold text-gray-600 mb-1">
+                  <Glyph e="📍" /> {mapFirst ? (locale === 'en' ? 'Use my current location' : locale === 'ur' ? 'میرا موجودہ مقام استعمال کریں' : 'استخدم موقعي الحالي') : (locale === 'en' ? 'Your location on the map' : locale === 'ur' ? 'نقشے پر آپ کا مقام' : 'موقعك على الخريطة')}
+                  {role === 'supplier' && !isIndividual
+                    ? <span className="text-red-500"> *</span>
+                    : <span className="font-normal text-gray-500"> ({locale === 'en' ? 'optional, recommended' : locale === 'ur' ? 'اختیاری، تجویز کردہ' : 'اختياري، ويُنصح به'})</span>}
+                </label>
+                <LocationPicker lat={lat} lng={lng} locale={locale} simple={role !== 'supplier' && homeBuyer} detectHint={role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'If you are at home now, we fill in the region and city for you.' : locale === 'ur' ? 'اگر آپ ابھی گھر پر ہیں تو ہم علاقہ اور شہر خود بھر دیں گے۔' : 'إذا كنت في البيت الآن نملأ المنطقة والمدينة تلقائياً.') : undefined} onChange={(a: number, b: number) => {
+                  setLat(a); setLng(b)
+                  // owner 2026-11-21: the pin fills the region and city by itself (still editable)
+                  const near = nearestSaCity(a, b)
+                  if (near) {
+                    if (city && near.city !== city) {
+                      const cl = (CITIES_BY_REGION[near.region] || []).find((c: any) => c.ar === near.city)
+                      const shown = locale === 'en' && cl ? cl.en : near.city
+                      setCityNote(locale === 'en' ? `We updated the city to ${shown} from your location.` : locale === 'ur' ? `آپ کے مقام کے مطابق شہر ${shown} کر دیا گیا۔` : `حدّثنا المدينة إلى ${shown} حسب موقعك.`)
+                    } else setCityNote('')
+                    setRegion(near.region); setCity(near.city)
+                  }
+                }} />
+                {cityNote && <p role="status" className="mt-1.5 text-[13px] font-semibold text-[#8F6820]">{cityNote}</p>}
+              </div>
+              )
+              return (
             <div className={cardCls} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-bold text-navy"><Glyph e="📍" /> {t.location}</h2>
                 <span className="text-[12px] font-bold text-navy bg-navy/5 rounded-full px-2 py-0.5">{t.required}</span>
               </div>
+              {mapFirst && mapBlock}
+              {mapFirst && <p className="text-xs font-bold text-gray-600 mb-2">{locale === 'en' ? 'Or choose manually' : locale === 'ur' ? 'یا خود منتخب کریں' : 'أو اختر يدوياً'}</p>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label htmlFor="ob-region" className="block text-xs font-semibold text-gray-600 mb-1">{t.region} *</label>
@@ -384,7 +455,7 @@ export default function OnboardingPage() {
                 </div>
                 <div>
                   <label htmlFor="ob-city" className="block text-xs font-semibold text-gray-600 mb-1">{t.city} *</label>
-                  <select id="ob-city" value={city} onChange={e => setCity(e.target.value)} className="input-field" disabled={!region}>
+                  <select id="ob-city" value={city} onChange={e => { setCity(e.target.value); setCityNote('') }} className="input-field" disabled={!region}>
                     <option value="">{region ? t.selectRegion : '—'}</option>
                     {(CITIES_BY_REGION[region] || []).map((c: any) => <option key={c.ar} value={c.ar}>{locale === 'en' ? c.en : c.ar}</option>)}
                   </select>
@@ -396,22 +467,11 @@ export default function OnboardingPage() {
                   <DistrictField city={city} value={district} onChange={setDistrict} locale={locale} />
                 </div>
               )}
-              {/* موقعك على الخريطة (اختياري): المقاول بيشوف الأقرب، والمورد بتوصله طلبات منطقته */}
-              <div className="mt-4">
-                <label className="block text-xs font-semibold text-gray-600 mb-1">
-                  <Glyph e="📍" /> {locale === 'en' ? 'Your location on the map' : locale === 'ur' ? 'نقشے پر آپ کا مقام' : 'موقعك على الخريطة'}
-                  {role === 'supplier' && !isIndividual
-                    ? <span className="text-red-500"> *</span>
-                    : <span className="font-normal text-gray-500"> ({locale === 'en' ? 'optional, recommended' : locale === 'ur' ? 'اختیاری' : 'اختياري، ويُنصح به'})</span>}
-                </label>
-                <LocationPicker lat={lat} lng={lng} locale={locale} simple={role !== 'supplier' && homeBuyer} detectHint={role !== 'supplier' && homeBuyer ? (locale === 'en' ? 'If you are at home now, we fill in the region and city for you.' : locale === 'ur' ? 'اگر آپ ابھی گھر پر ہیں تو ہم علاقہ اور شہر خود بھر دیں گے۔' : 'إذا كنت في البيت الآن نملأ المنطقة والمدينة تلقائياً.') : undefined} onChange={(a: number, b: number) => {
-                  setLat(a); setLng(b)
-                  // owner 2026-11-21: the pin fills the region and city by itself (still editable above)
-                  const near = nearestSaCity(a, b)
-                  if (near) { setRegion(near.region); setCity(near.city) }
-                }} />
-              </div>
+              {/* موقعك على الخريطة: المورد بتوصله طلبات منطقته (للمشتري يأتي أولاً) */}
+              {!mapFirst && mapBlock}
             </div>
+              )
+            })()}
 
             {/* القطاعات / التخصصات (مطلوب للمورّد، اختياري للمشتري؛ مخفي لصاحب البيت) */}
             <div className={`${cardCls} ${role !== 'supplier' && homeBuyer ? 'hidden' : ''}`} style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#0B2438' }}>
@@ -493,6 +553,13 @@ export default function OnboardingPage() {
                 </div>
                 {!providerType ? (<>
                   <p className="text-[13px] text-gray-600 mb-3 leading-relaxed">{t.classHint}</p>
+                  {/* round-2 UX-076: the CR is asked before a company / shop kind is locked */}
+                  {!crNo && (
+                    <div className={`mb-3 ${crAsk ? 'rounded-xl ring-2 ring-[#D4A543] p-2' : ''}`}>
+                      <label htmlFor="ob-cr" className="block text-xs font-bold text-navy mb-1">{locale === 'en' ? 'Commercial registration no. (for a company or shop)' : locale === 'ur' ? 'تجارتی رجسٹریشن نمبر (کمپنی یا دکان کے لیے)' : 'رقم السجل التجاري (للشركة أو المحل)'} <span className="text-red-500">*</span></label>
+                      <input id="ob-cr" value={crInput} onChange={(e: any) => setCrInput(normalizeCrInput(e.target.value).slice(0, 10))} inputMode="numeric" dir="ltr" maxLength={10} className="input-field" placeholder="7XXXXXXXXX" />
+                    </div>
+                  )}
                   <div className="grid sm:grid-cols-2 gap-2">
                     {(['company', 'independent'] as const).map(k => (
                       <button key={k} type="button" disabled={kindBusy} onClick={() => chooseKind(k)}
@@ -503,7 +570,8 @@ export default function OnboardingPage() {
                     ))}
                   </div>
                 </>) : (<>
-                  <p className="text-sm text-navy"><b>{locale === 'en' ? 'Account type:' : locale === 'ur' ? 'اکاؤنٹ کی قسم:' : 'نوع الحساب:'}</b> {sellerKindLabel(sellerKindOf(providerType), locale)}</p>
+                  {/* round-2 UX-076: for a company the picker below already names the kind; say it once */}
+                  {isIndividual && <p className="text-sm text-navy"><b>{locale === 'en' ? 'Account type:' : locale === 'ur' ? 'اکاؤنٹ کی قسم:' : 'نوع الحساب:'}</b> {sellerKindLabel(sellerKindOf(providerType), locale)}</p>}
                   {crNo && <p className="text-sm text-navy mt-1"><b>{locale === 'en' ? 'Your commercial registration no.:' : locale === 'ur' ? 'آپ کا تجارتی رجسٹریشن نمبر:' : 'رقم سجلك التجاري:'}</b> <span dir="ltr">{crNo}</span></p>}
                   <p className="text-[13px] text-gray-600 mt-1">{locale === 'en' ? 'To change it, ' : locale === 'ur' ? 'بدلنے کے لیے ' : 'لتغييره '}<a href="/support?topic=kind" className="font-bold underline text-navy">{locale === 'en' ? 'ask Support' : locale === 'ur' ? 'سپورٹ سے درخواست کریں' : 'اطلب ذلك من الدعم'}</a>.</p>
                   {!isIndividual && (
@@ -546,7 +614,14 @@ export default function OnboardingPage() {
             {role === 'supplier' && isIndividual && (
               <div className="rounded-2xl p-5 shadow-sm" style={{ borderInlineStartWidth: 4, borderInlineStartColor: '#D4A543', background: 'rgba(212,165,67,0.06)', border: '1px solid rgba(212,165,67,0.3)' }}>
                 <div className="text-sm font-bold text-navy mb-1"><Glyph e="⭐" /> {locale === 'en' ? 'Your trust comes from ratings' : locale === 'ur' ? 'آپ کا اعتماد ریٹنگ سے بنتا ہے' : 'تُبنى ثقتك من التقييمات'}</div>
-                <p className="text-xs text-gray-600 leading-relaxed">{locale === 'en' ? 'As a pricing agent you bring shop prices to buyers without a shop of your own. Before choosing your offer the buyer sees only the district; after it, the shop name (never its phone). The shop issues a tax invoice in the buyer’s name at your quoted price, and your deal limit rises with successful deals. After every deal the buyer rates your price accuracy and service.' : locale === 'ur' ? 'قیمت ایجنٹ کے طور پر آپ اپنی دکان کے بغیر دکانوں کی قیمتیں خریداروں تک لاتے ہیں۔ آپ کی آفر چننے سے پہلے خریدار صرف علاقہ دیکھتا ہے، بعد میں دکان کا نام (فون کبھی نہیں)؛ دکان آپ کی قیمت پر خریدار کے نام ٹیکس انوائس جاری کرتی ہے، اور کامیاب سودوں کے ساتھ آپ کی حد بڑھتی ہے۔ ہر ڈیل کے بعد خریدار آپ کو ریٹ کرتا ہے۔' : 'بصفتك وسيط تسعير تجلب أسعار المحلات للمشترين دون أن تملك محلاً. قبل اختيار عرضك لا يرى المشتري إلا الحي، وبعده يرى اسم المحل (دون رقم هاتفه). يُصدر المحل فاتورة ضريبية باسم المشتري بنفس سعر عرضك، ويرتفع حدّ صفقاتك مع الصفقات الناجحة. بعد كل صفقة يقيّم المشتري دقة سعرك وخدمتك.'}</p>
+                {/* UX-144: five short points instead of one long paragraph */}
+                <ul className="text-xs text-gray-600 leading-relaxed list-disc ps-5 space-y-0.5">
+                  <li>{locale === 'en' ? 'You bring shop prices to buyers without a shop of your own.' : locale === 'ur' ? 'آپ اپنی دکان کے بغیر دکانوں کی قیمتیں خریداروں تک لاتے ہیں۔' : 'تجلب أسعار المحلات للمشترين دون أن تملك محلاً.'}</li>
+                  <li>{locale === 'en' ? 'Before choosing your offer the buyer sees only the district; after it, the shop name (never its phone).' : locale === 'ur' ? 'آپ کی آفر چننے سے پہلے خریدار صرف علاقہ دیکھتا ہے؛ بعد میں دکان کا نام (فون کبھی نہیں)۔' : 'قبل اختيار عرضك لا يرى المشتري إلا الحي، وبعده يرى اسم المحل دون رقم هاتفه.'}</li>
+                  <li>{locale === 'en' ? 'The shop issues the invoice in the buyer’s name at your quoted price.' : locale === 'ur' ? 'دکان آپ کی قیمت پر خریدار کے نام انوائس جاری کرتی ہے۔' : 'يُصدر المحل الفاتورة باسم المشتري بنفس سعر عرضك.'}</li>
+                  <li>{locale === 'en' ? 'Your deal limit rises with successful deals.' : locale === 'ur' ? 'کامیاب سودوں کے ساتھ آپ کی حد بڑھتی ہے۔' : 'يرتفع حدّ صفقاتك مع الصفقات الناجحة.'}</li>
+                  <li>{locale === 'en' ? 'After every deal the buyer rates your price accuracy and service.' : locale === 'ur' ? 'ہر سودے کے بعد خریدار آپ کی قیمت کی درستی اور سروس کو ریٹ کرتا ہے۔' : 'بعد كل صفقة يقيّم المشتري دقة سعرك وخدمتك.'}</li>
+                </ul>
               </div>
             )}
             {role === 'supplier' && !isIndividual && (
@@ -586,7 +661,7 @@ export default function OnboardingPage() {
           {/* ═══ السايدبار: التقدّم + الحفظ (ديسكتوب) ═══ */}
           <aside className="hidden lg:block w-80 shrink-0">
             <div className="sticky top-24 rounded-2xl p-5 text-white shadow-lg" style={{ background: 'linear-gradient(160deg,#0B2438,#071827)' }}>
-              <div className="flex items-center gap-4 mb-4">
+              <div className={`flex items-center gap-4 mb-4 ${role === 'supplier' ? '' : 'hidden'}`}>
                 <svg width="60" height="60" viewBox="0 0 56 56" className="shrink-0">
                   <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="6" />
                   <circle cx="28" cy="28" r="24" fill="none" stroke={pct === 100 ? '#22c55e' : '#D4A543'} strokeWidth="6" strokeLinecap="round"
@@ -599,7 +674,7 @@ export default function OnboardingPage() {
                 </div>
               </div>
 
-              <div className="space-y-2 mb-3">
+              <div className={`space-y-2 mb-3 ${role === 'supplier' ? '' : 'hidden'}`}>
                 {steps.map((s, i) => (
                   <div key={i} className="flex items-center gap-2 text-sm">
                     <span className={`w-5 h-5 grid place-items-center rounded-full shrink-0 ${s.done ? 'bg-emerald-500' : 'bg-white/15'}`}>{s.done ? <Check className="w-3.5 h-3.5" aria-hidden /> : ''}</span>
@@ -614,7 +689,7 @@ export default function OnboardingPage() {
                 )}
               </div>
 
-              {role === 'supplier' && <div className="text-[12px] text-white bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed"><Glyph e="⚠" /> {t.warn}</div>}
+              {role === 'supplier' && pct < 100 && <div className="text-[12px] text-white bg-white/10 rounded-lg p-2.5 mb-4 leading-relaxed"><Glyph e="⚠" /> {t.warn}</div>}
 
               <SaveBtn full />
               <a href={roleHome} className="flex items-center justify-center min-h-[44px] text-sm text-white/80 hover:text-white mt-1">{t.later}</a>
@@ -626,17 +701,17 @@ export default function OnboardingPage() {
       {/* ═══ شريط الحفظ الثابت — موبايل/تابلت فقط (الديسكتوب لديه سايدبار لاصق) ═══ */}
       <div className="lg:hidden fixed inset-x-0 bottom-0 z-30" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="bg-white/95 backdrop-blur border-t border-line" style={{ boxShadow: '0 -8px 24px -12px rgba(15,27,52,.18)' }}>
-          {/* شريط تقدّم رفيع */}
-          <div className="h-1 w-full bg-canvas-2">
+          {/* شريط تقدّم رفيع (المورد فقط: المشتري له خطوة واحدة، UX-037) */}
+          {role === 'supplier' && <div className="h-1 w-full bg-canvas-2">
             <div className="h-full transition-all duration-300" style={{ width: pct + '%', background: pct === 100 ? '#22c55e' : '#D4A543' }} />
-          </div>
+          </div>}
           {role === 'supplier' && pct < 100 && <div className="max-w-6xl mx-auto px-4 pt-2 text-[12px] font-semibold text-amber-900"><Glyph e="⚠" /> {t.warn}</div>}
           <div className="max-w-6xl mx-auto px-4 py-2.5 flex items-center gap-3">
-            {/* النسبة + عدّاد الخطوات */}
-            <div className="shrink-0 leading-tight">
+            {/* النسبة + عدّاد الخطوات (المورد فقط) */}
+            {role === 'supplier' && <div className="shrink-0 leading-tight">
               <div className="text-[15px] font-extrabold text-navy">{pct}%</div>
               <div className="text-[12px] text-ink-3">{steps.filter(s => s.done).length}/{steps.length} · {t.progress}</div>
-            </div>
+            </div>}
             {/* لاحقاً (ثانوي) */}
             <a href={roleHome} className="shrink-0 inline-flex items-center min-h-[44px] text-sm font-semibold text-ink-2 px-3 rounded-xl border border-line hover:border-navy hover:text-navy transition-colors">{t.later}</a>
             {/* حفظ — الزر الأساسي الوحيد ذو البرتقالي القوي على الموبايل */}

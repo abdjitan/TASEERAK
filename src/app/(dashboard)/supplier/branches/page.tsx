@@ -14,6 +14,8 @@ import Glyph from '@/components/shared/Glyph'
 import { askConfirm } from '@/lib/askConfirm'
 import LocationPicker from '@/components/shared/LocationPicker'
 import { X } from 'lucide-react'
+import { toast } from 'sonner'
+import { nearestSaCity } from '@/lib/saCityCoords'
 
 export default function SupplierBranchesPage() {
   const { dir, locale } = useTranslation()
@@ -78,6 +80,7 @@ export default function SupplierBranchesPage() {
     setSaving(false)
     // keep what was typed when the save fails
     if (error) { setErr(L('Could not save the branch — please try again.', 'شاخ محفوظ نہیں ہو سکی — دوبارہ کوشش کریں۔', 'تعذّر حفظ الفرع، حاول مرة أخرى.')); return }
+    toast.success(L('Branch saved', 'شاخ محفوظ ہو گئی', 'حُفظ الفرع'))
     reset(); load()
   }
 
@@ -97,7 +100,7 @@ export default function SupplierBranchesPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-4">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ background: '#0B2438' }}><Glyph e="🏢" /></div>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl text-[#F5C55B]" style={{ background: '#0B2438' }}><Glyph e="🏢" /></div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold" style={{ color: '#0B2438' }}>{L('Company branches', 'کمپنی کی شاخیں', 'فروع الشركة')}</h1>
               <p className="text-gray-500 text-xs sm:text-sm">{L('Add your branches in different regions — buyers in every region with a branch will see your company.', 'مختلف علاقوں میں اپنی شاخیں شامل کریں — ہر اس علاقے کے خریدار آپ کی کمپنی دیکھیں گے جہاں شاخ ہے۔', 'أضف فروعك في المناطق المختلفة — تظهر شركتك للمشترين في كل منطقة فيها فرع.')}</p>
@@ -165,7 +168,7 @@ export default function SupplierBranchesPage() {
               </div>
               <div className="sm:col-span-2">
                 <div className="block text-xs font-bold text-gray-600 mb-1">{L('Branch location on the map', 'نقشے پر شاخ کا مقام', 'موقع الفرع على الخريطة')} *</div>
-                <LocationPicker lat={lat} lng={lng} onChange={(a: number, b: number) => { setLat(a); setLng(b); setErr('') }} locale={locale} />
+                <LocationPicker lat={lat} lng={lng} onChange={(a: number, b: number) => { setLat(a); setLng(b); setErr(''); const near = nearestSaCity(a, b); if (near) { setRegion(near.region); setCity(near.city) } }} locale={locale} />
               </div>
             </div>
             <div className="flex gap-2">

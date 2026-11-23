@@ -7,7 +7,7 @@ import { toLatinDigits } from '@/lib/phone'
 import { FIREBASE_CONFIG, firebaseReady, toE164 } from '@/lib/firebaseConfig'
 import { TERMS_VERSION } from '@/lib/legal'
 import { createClient } from '@/lib/supabase/client'
-import { Check } from 'lucide-react'
+import BuyerTypeCards from '@/components/auth/BuyerTypeCards'
 
 // Buyer phone entry (owner 2026-11-17): one form for sign-in and sign-up. A Google SMS code
 // (Firebase phone auth) proves the number; /api/auth/phone-session signs the buyer in, or — when the
@@ -16,7 +16,7 @@ import { Check } from 'lucide-react'
 const TX = {
   ar: {
     phone: 'رقم جوالك', phoneHint: 'سيصلك رمز التحقق برسالة نصية (SMS)', send: 'أرسل الرمز', sending: 'جارٍ الإرسال…',
-    badPhone: 'رقم الجوال غير مقبول. نقبل أرقام السعودية والإمارات والأردن (الرقم الإماراتي يُكتب مع ‎+971‎).', codeTitle: 'اكتب الرمز', codeSent: 'أرسلنا رمزاً من 6 أرقام برسالة نصية إلى',
+    badPhone: 'اكتب رقم جوال سعودي بصيغة 05XXXXXXXX، أو رقماً إماراتياً أو أردنياً مع رمز الدولة (‎+971‎ أو ‎+962‎).', codeTitle: 'اكتب الرمز', codeSent: 'أرسلنا رمزاً من 6 أرقام برسالة نصية إلى',
     verify: 'تأكيد والدخول', verifying: 'جارٍ التحقق…', badCode: 'الرمز غير صحيح أو انتهت صلاحيته. اطلب رمزاً جديداً.',
     resend: 'أعد إرسال الرمز', resendIn: 'إعادة الإرسال بعد', sec: 'ثانية', change: 'تغيير الرقم', resent: 'أرسلنا رمزاً جديداً إلى',
     emailAccount: 'هذا الرقم مسجّل لحساب يدخل بالبريد الإلكتروني ولم يُوثَّق جواله بعد. ادخل بالبريد الإلكتروني وكلمة المرور.', emailBtn: 'الدخول بالبريد الإلكتروني',
@@ -27,7 +27,7 @@ const TX = {
   },
   en: {
     phone: 'Your mobile number', phoneHint: 'You will get a code by text message (SMS)', send: 'Send code', sending: 'Sending…',
-    badPhone: 'This mobile number is not accepted. We accept Saudi, UAE and Jordanian numbers (type UAE numbers with +971).', codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code by SMS to',
+    badPhone: 'Type a Saudi mobile number like 05XXXXXXXX, or a UAE or Jordanian number with its country code (+971 or +962).', codeTitle: 'Enter the code', codeSent: 'We sent a 6-digit code by SMS to',
     verify: 'Verify and continue', verifying: 'Verifying…', badCode: 'Wrong or expired code. Request a new one.',
     resend: 'Resend code', resendIn: 'Resend in', sec: 'seconds', change: 'Change number', resent: 'We sent a new code to',
     emailAccount: 'This number belongs to an account that signs in with email and has not verified its mobile yet. Sign in with your email and password.', emailBtn: 'Sign in with email',
@@ -38,7 +38,7 @@ const TX = {
   },
   ur: {
     phone: 'آپ کا موبائل نمبر', phoneHint: 'تصدیقی کوڈ ٹیکسٹ میسج (SMS) سے آئے گا', send: 'کوڈ بھیجیں', sending: 'بھیجا جا رہا ہے…',
-    badPhone: 'یہ موبائل نمبر قبول نہیں۔ ہم سعودی، اماراتی اور اردنی نمبر قبول کرتے ہیں (اماراتی نمبر ‎+971‎ کے ساتھ لکھیں)۔', codeTitle: 'کوڈ درج کریں', codeSent: 'ہم نے SMS سے 6 ہندسوں کا کوڈ بھیجا',
+    badPhone: 'سعودی موبائل نمبر 05XXXXXXXX کی صورت میں لکھیں، یا اماراتی یا اردنی نمبر ملک کے کوڈ کے ساتھ (‎+971‎ یا ‎+962‎)۔', codeTitle: 'کوڈ درج کریں', codeSent: 'ہم نے SMS سے 6 ہندسوں کا کوڈ بھیجا',
     verify: 'تصدیق کریں اور جاری رکھیں', verifying: 'تصدیق ہو رہی ہے…', badCode: 'غلط یا ختم شدہ کوڈ۔ نیا کوڈ منگوائیں۔',
     resend: 'کوڈ دوبارہ بھیجیں', resendIn: 'دوبارہ بھیجیں', sec: 'سیکنڈ بعد', change: 'نمبر تبدیل کریں', resent: 'ہم نے نیا کوڈ بھیجا',
     emailAccount: 'یہ نمبر ایسے اکاؤنٹ کا ہے جو ای میل سے سائن اِن کرتا ہے اور جس کا موبائل ابھی تصدیق نہیں ہوا۔ اپنی ای میل اور پاسورڈ سے سائن اِن کریں۔', emailBtn: 'ای میل سے سائن اِن',
@@ -182,8 +182,8 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: (
           <label htmlFor="otp-phone" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.phone}</label>
           <input id="otp-phone" type="tel" inputMode="tel" dir="ltr" autoComplete="tel" value={phone}
             onChange={(e) => setPhone(e.target.value.slice(0, 18))}
-            className="input-field text-lg tracking-wide" placeholder={locale === 'en' ? 'Mobile number' : locale === 'ur' ? 'موبائل نمبر' : 'رقم الجوال'} required disabled={loading} />
-          <p className="text-[12px] text-ink-3 mt-1.5">{t.phoneHint}</p>
+            className="input-field text-lg tracking-wide" placeholder="05XXXXXXXX" required disabled={loading} aria-describedby="otp-phone-hint" />
+          <p id="otp-phone-hint" className="text-[12px] text-ink-2 mt-1.5">{t.phoneHint}</p>
         </div>
         <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">{loading ? t.sending : t.send}</button>
       </form>
@@ -197,31 +197,21 @@ export default function PhoneOtpForm({ onSignedIn, onUseEmail }: { onSignedIn: (
         <div>
           <h2 className="text-lg font-extrabold text-navy">{t.newTitle}</h2>
           <p className="text-sm text-ink-2 mt-1">{t.newSub}</p>
+          {/* the verified number, with a way back if it is the wrong one (UX-131) */}
+          <p className="text-sm text-ink-2 flex items-center gap-2 flex-wrap"><span dir="ltr" className="font-bold text-navy">{e164}</span>
+            <button type="button" className="min-h-[44px] font-bold text-orange-dark hover:underline" onClick={() => { setStep('phone'); setError(''); setNotice('') }}>{t.change}</button></p>
         </div>
         <div>
           <label htmlFor="otp-name" className="block text-[13px] font-bold text-ink-2 mb-1.5">{t.name}</label>
           <input id="otp-name" value={name} onChange={(e) => setName(e.target.value.slice(0, 80))} autoComplete="name" className="input-field" required disabled={loading} autoFocus />
         </div>
-        <div role="radiogroup" aria-label={locale === 'en' ? 'Who are you buying for?' : locale === 'ur' ? 'آپ کس کے لیے خرید رہے ہیں؟' : 'لمن تشتري؟'}>
-          <div className="block text-[13px] font-bold text-ink-2 mb-1.5">{locale === 'en' ? 'Who are you buying for?' : locale === 'ur' ? 'آپ کس کے لیے خرید رہے ہیں؟' : 'لمن تشتري؟'}</div>
-          <div className="grid grid-cols-2 gap-2">
-            {([['individual', locale === 'en' ? 'My home' : locale === 'ur' ? 'اپنا گھر' : 'لبيتي', locale === 'en' ? 'A simple, quick request' : locale === 'ur' ? 'آسان اور تیز درخواست' : 'طلب بسيط وسريع'],
-               ['business', locale === 'en' ? 'Contractor or company' : locale === 'ur' ? 'ٹھیکیدار یا کمپنی' : 'مقاول أو شركة', locale === 'en' ? 'Specs, VAT invoice, quantities' : locale === 'ur' ? 'تفصیلات، VAT انوائس' : 'مواصفات وفاتورة ضريبية وجدول كميات']] as const).map(([v, label, sub]) => (
-              <button key={v} type="button" role="radio" aria-checked={buyerType === v} onClick={() => setBuyerType(v)} disabled={loading}
-                className={`min-h-[56px] text-start rounded-xl border-2 px-3 py-2.5 transition-colors ${buyerType === v ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white hover:border-gray-300'}`}>
-                <span className="flex items-center gap-1 text-sm font-bold text-navy">{buyerType === v && <Check className="w-4 h-4 text-[#0B2438]" strokeWidth={3} aria-hidden />}{label}</span>
-                <span className="block text-[12px] text-ink-2">{sub}</span>
-              </button>
-            ))}
-          </div>
-          <p className="text-[12px] text-ink-2 mt-1">{locale === 'en' ? 'You can change it any time in Settings.' : locale === 'ur' ? 'آپ اسے کسی بھی وقت ترتیبات میں بدل سکتے ہیں۔' : 'يمكنك تغييره في أي وقت من الإعدادات.'}</p>
-        </div>
+        <BuyerTypeCards value={buyerType} onChange={setBuyerType} locale={locale} disabled={loading} />
         <label className="flex items-start gap-2 text-[13px] text-ink-2 min-h-[44px] cursor-pointer">
           <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} className="mt-0.5 w-5 h-5 shrink-0 accent-[#0B2438]" />
           <span>{t.terms1} <Link href="/terms" target="_blank" className="font-bold underline">{t.terms}</Link> {t.and} <Link href="/privacy" target="_blank" className="font-bold underline">{t.privacy}</Link></span>
         </label>
         <button type="submit" disabled={loading} className="btn-orange w-full btn-lg">{loading ? t.verifying : t.create}</button>
-        <p className="text-sm text-center text-ink-2">{locale === 'en' ? 'Not a buyer?' : locale === 'ur' ? 'خریدار نہیں؟' : 'لست مشترياً؟'} <a href="/join" className="font-bold text-orange-dark hover:underline">{locale === 'en' ? 'Sign up as a supplier' : locale === 'ur' ? 'سپلائر کے طور پر رجسٹر کریں' : 'سجّل كمورد'}</a></p>
+        <p className="text-sm text-center text-ink-2">{locale === 'en' ? 'Not a buyer?' : locale === 'ur' ? 'خریدار نہیں؟' : 'لست مشترياً؟'} <a href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{locale === 'en' ? 'Sign up as a supplier' : locale === 'ur' ? 'سپلائر کے طور پر رجسٹر کریں' : 'سجّل كمورد'}</a></p>
       </form>
     )
   }

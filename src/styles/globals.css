@@ -60,12 +60,17 @@
     transition-all duration-200;
   }
 
-  /* ---- Buttons (pill, design-system) ---- */
-  .btn-navy, .btn-orange, .btn-primary, .btn-ghost, .btn-light {
-    @apply inline-flex items-center justify-center gap-2 font-bold text-[15px] rounded-[100px]
-    px-6 py-3 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
-    active:scale-[0.98] whitespace-nowrap;
+  /* ---- Buttons (design system, UX-105): one shape for every button: 12px corners, 44px tall,
+     long labels wrap instead of overflowing. Gold = main action, navy = secondary, red = destructive.
+     The React wrapper is src/components/shared/Button.tsx. ---- */
+  .btn-navy, .btn-orange, .btn-primary, .btn-ghost, .btn-light, .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 font-bold text-[15px] rounded-[12px]
+    px-5 py-2.5 min-h-[44px] text-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+    active:scale-[0.98];
+    text-wrap: balance;
   }
+  .btn-danger { background: #B42318; color: #fff; }
+  .btn-danger:hover { background: #912018; }
   .btn-navy { background: var(--navy); color: #fff; box-shadow: var(--sh-md); }
   .btn-navy:hover { background: var(--navy-dark); transform: translateY(-2px); }
   .btn-orange, .btn-primary { background: var(--orange); color: #071827; box-shadow: var(--sh-orange); }

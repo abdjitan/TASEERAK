@@ -136,7 +136,10 @@ function LoginForm() {
         // A used/expired CAPTCHA token can't be reused — refresh it for the retry.
         captchaRef.current?.reset(); setCaptchaToken('')
         setUnconfirmed(/not confirmed/i.test(err.message || '') || (err as any).code === 'email_not_confirmed')
-        setError(/captcha/i.test(err.message || '') ? t.captchaErr
+        // an account the admins closed or suspended must not read as a wrong password (UX-116)
+        const banned = (err as any).code === 'user_banned' || /banned/i.test(err.message || '')
+        setError(banned ? L('This account has been suspended by the administration, so it cannot be signed in to. Contact support to find out why: WhatsApp +1 213 561 4366 or Taseerak@hotmail.com.', 'یہ اکاؤنٹ انتظامیہ نے معطل کر دیا ہے، اس لیے اس میں سائن اِن نہیں ہو سکتا۔ وجہ جاننے کے لیے سپورٹ سے رابطہ کریں: واٹس ایپ ‎+1 213 561 4366 یا Taseerak@hotmail.com', 'هذا الحساب موقوف من الإدارة، لذا لا يمكن الدخول إليه. تواصل مع الدعم لمعرفة السبب: واتساب ‎+1 213 561 4366 أو Taseerak@hotmail.com')
+          : /captcha/i.test(err.message || '') ? t.captchaErr
           : /not confirmed/i.test(err.message || '') || (err as any).code === 'email_not_confirmed'
             ? L('Confirm your email first: open the link we sent to your inbox (check spam too), then sign in.', 'پہلے اپنی ای میل کی تصدیق کریں: ہمارا بھیجا ہوا لنک کھولیں (اسپام بھی دیکھیں)، پھر سائن اِن کریں۔', 'أكّد بريدك الإلكتروني أولاً من الرابط الذي أرسلناه إليك (تحقّق من مجلد الرسائل غير المرغوب فيها أيضاً)، ثم سجّل الدخول.')
             : t.error)
@@ -229,7 +232,6 @@ function LoginForm() {
               {/* owner 2026-11-21: a new seller must not end up as a buyer through the phone sign-up.
                   One word for sellers everywhere: «مورد» (UX-134) */}
               <p className="mt-4 text-sm text-center text-ink-2">{L('Supplier or pricing agent?', 'سپلائر یا قیمت ایجنٹ؟', 'مورد أو وسيط تسعير؟')} <a href="/join" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Sign up as a supplier', 'سپلائر کے طور پر رجسٹر کریں', 'سجّل كمورد')}</a></p>
-              <p className="text-sm text-center text-ink-2">{L('Have a password?', 'پاسورڈ ہے؟', 'لديك كلمة مرور؟')} <Link href="/forgot-password" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{t.forgot}</Link></p>
               </>
             ) : (
               <>
@@ -276,13 +278,13 @@ function LoginForm() {
             ) : <div className="my-6" />}
 
             {mode === 'phone' ? (
-              <button type="button" onClick={() => { setMode('email'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
-                {L('Sign in with email', 'ای میل سے سائن اِن کریں', 'الدخول بالبريد الإلكتروني')}
+              <button type="button" onClick={() => { setMode('email'); setError('') }} className="btn-ghost w-full">
+                {L('Sign in with email', 'ای میل سے سائن اِن کریں', 'ادخل بالبريد الإلكتروني')}
               </button>
             ) : (
               <div className="space-y-3 text-center">
-                {phoneOn && <button type="button" onClick={() => { setMode('phone'); setError('') }} className="w-full btn-lg rounded-xl border font-bold text-ink-2 hover:text-navy transition-colors" style={{ borderColor: 'var(--line)' }}>
-                  {L('Buyer? Use my mobile number', 'خریدار؟ موبائل نمبر استعمال کریں', 'مشتري؟ استخدم رقم جوالي')}
+                {phoneOn && <button type="button" onClick={() => { setMode('phone'); setError('') }} className="btn-ghost w-full">
+                  {L('Buyer? Sign in with your mobile number', 'خریدار؟ اپنے موبائل نمبر سے سائن اِن کریں', 'مشتري؟ سجّل الدخول برقم جوالك')}
                 </button>}
                 <p className="text-sm text-ink-2">{t.noAccount} <a href="/register" className="inline-flex items-center min-h-[44px] font-bold text-orange-dark hover:underline">{L('Create an account with email', 'ای میل سے اکاؤنٹ بنائیں', 'أنشئ حساباً بالبريد')}</a></p>
               </div>
@@ -294,11 +296,32 @@ function LoginForm() {
   )
 }
 
+// While the page code loads: a still frame with the logo, the title and a disabled field and button,
+// never a blank white page (every «Start now» button lands here, UX-017).
+function LoginSkeleton() {
+  const { locale, dir } = useTranslation()
+  const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
+  return (
+    <div className="auth-screen min-h-screen flex items-center justify-center px-4" dir={dir} style={{ background: 'var(--bg)' }} aria-busy="true">
+      <div className="w-full max-w-[480px]">
+        <div className="flex items-center justify-center mb-7">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/taseerak-metallic-logo.webp" alt="تسعيرك — Taseerak" className="auth-mobile-lockup" />
+        </div>
+        <h1 className="text-[26px] font-bold text-navy mb-1">{L('Start with your mobile number', 'اپنے موبائل نمبر سے شروع کریں', 'ابدأ برقم جوالك')}</h1>
+        <p className="text-ink-2 text-sm mb-6">{L('Loading…', 'لوڈ ہو رہا ہے…', 'جارٍ التحميل…')}</p>
+        <input className="input-field mb-4" disabled placeholder="05XXXXXXXX" aria-label={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} dir="ltr" />
+        <button type="button" disabled className="btn-orange w-full btn-lg">{L('Send the code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>
+      </div>
+    </div>
+  )
+}
+
 // useSearchParams() must sit inside a Suspense boundary, otherwise Next.js
 // fails to prerender the page (missing-suspense-with-csr-bailout).
 export default function LoginPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoginSkeleton />}>
       <LoginForm />
     </Suspense>
   )

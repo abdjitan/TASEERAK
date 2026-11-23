@@ -109,6 +109,14 @@ function AdminMfa() {
             </button>
           </form>
         )}
+        {/* never a dead end (UX-128): how to recover a lost phone, and a way out */}
+        {stage !== 'loading' && (
+          <div className="mt-4 border-t border-gray-100 pt-3 text-[13px] text-gray-600 space-y-2">
+            <p>فقدت جوالك أو حذفت التطبيق؟ يستطيع مالك المنصة إعادة ضبط التحقق بخطوتين من لوحة Supabase (حذف عامل المصادقة من حسابك)، ثم تربط تطبيقاً جديداً هنا.</p>
+            <button type="button" onClick={async () => { try { await supabase.auth.signOut() } catch {} ; window.location.assign('/login') }}
+              className="min-h-[44px] px-4 rounded-xl border border-gray-200 font-bold text-[#0B2438] hover:bg-gray-50">تسجيل الخروج</button>
+          </div>
+        )}
 
         {err && <p className="mt-3 text-sm text-red-600">{err}</p>}
         {stage === 'error' && (

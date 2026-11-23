@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n'
 
 export const VERIFY_BANNER_CACHE = 'tsk_pvb'
 const SNOOZE_KEY = 'tsk_email_snooze_until'
+const PHONE_SNOOZE_KEY = 'tsk_phone_snooze_until'
 
 type State = { uid: string; show: '' | 'phone' | 'email'; role: string }
 
@@ -23,17 +24,27 @@ function readCache(): State | null {
 function emailSnoozed(): boolean {
   try { return Number(localStorage.getItem(SNOOZE_KEY) || 0) > Date.now() } catch { return false }
 }
+function phoneSnoozed(): boolean {
+  try { return Number(localStorage.getItem(PHONE_SNOOZE_KEY) || 0) > Date.now() } catch { return false }
+}
+// A buyer sees the mobile banner on the home page and the pages that show their requests and offers
+// only, never on the request form itself (the send step asks for it there), UX-097.
+function buyerPhonePage(path: string): boolean {
+  if (path === '/contractor' || path === '/contractor/rfqs') return true
+  return path.startsWith('/contractor/rfq/') && !path.startsWith('/contractor/rfq/quick') && !path.startsWith('/contractor/rfq/new')
+}
 
 export default function PhoneVerifyBanner() {
   const { locale } = useTranslation()
   const pathname = usePathname() || ''
   const [st, setSt] = useState<State | null>(null)
   const [snoozed, setSnoozed] = useState(false)
+  const [phoneLater, setPhoneLater] = useState(false)
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
 
   useEffect(() => {
     let on = true
-    setSnoozed(emailSnoozed())
+    setSnoozed(emailSnoozed()); setPhoneLater(phoneSnoozed())
     ;(async () => {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -93,17 +104,30 @@ export default function PhoneVerifyBanner() {
       </Link>
     </div>
   )
+  // buyers: only on the home and view pages, with «Later» (3 days); the wording matches what it gates (UX-097)
+  if (isBuyer && (phoneLater || !buyerPhonePage(pathname))) return null
+  const laterPhone = () => {
+    try { localStorage.setItem(PHONE_SNOOZE_KEY, String(Date.now() + 3 * 24 * 3600 * 1000)) } catch {}
+    setPhoneLater(true)
+  }
   return (
     <div className="ts-no-print print:hidden mb-4 rounded-2xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <div className="text-sm min-w-0">
         <div className="font-bold text-[#071827]">{L('Verify your mobile number', 'اپنا موبائل نمبر تصدیق کریں', 'وثّق رقم جوالك')}</div>
         <div className="text-[13px] text-gray-600 mt-0.5">{isBuyer
-          ? L('You need it to choose an offer and confirm a deal; a code arrives by text message.', 'آفر منتخب کرنے اور سودا طے کرنے کے لیے ضروری ہے؛ کوڈ ٹیکسٹ میسج سے آئے گا۔', 'مطلوب لاختيار العرض وإتمام الصفقة، ويصلك الرمز برسالة نصية.')
-          : L('To verify your account and protect deals. You need it to send quotes and confirm deals; a code arrives by text message.', 'اکاؤنٹ کی تصدیق اور سودوں کے تحفظ کے لیے۔ قیمت بھیجنے اور سودا طے کرنے کے لیے ضروری ہے؛ کوڈ ٹیکسٹ میسج سے آئے گا۔', 'للتحقق من الحساب وحماية الصفقات. مطلوب لتقديم العروض وإتمام الصفقات، ويصلك الرمز برسالة نصية.')}</div>
+          ? L('Verify your mobile once to send your request and receive prices. The code arrives by text message.', 'اپنی درخواست بھیجنے اور قیمتیں حاصل کرنے کے لیے ایک بار اپنا موبائل نمبر تصدیق کریں۔ کوڈ ٹیکسٹ میسج سے آئے گا۔', 'وثّق رقم جوالك مرة واحدة لترسل طلبك وتصلك الأسعار، ويصلك الرمز برسالة نصية.')
+          : L('Required to send prices and confirm deals. The code arrives by text message.', 'قیمتیں بھیجنے اور سودے طے کرنے کے لیے ضروری ہے۔ کوڈ ٹیکسٹ میسج سے آئے گا۔', 'مطلوب لإرسال الأسعار وإتمام الصفقات، ويصلك الرمز برسالة نصية.')}</div>
       </div>
-      <Link href="/settings#phone" className="min-h-[44px] inline-flex items-center px-4 rounded-xl bg-[#D4A543] text-[#071827] text-sm font-bold whitespace-nowrap">
-        {L('Verify now', 'ابھی تصدیق کریں', 'وثّق الآن')}
-      </Link>
+      <div className="flex items-center gap-2">
+        {isBuyer && (
+          <button type="button" onClick={laterPhone} className="min-h-[44px] px-4 rounded-xl border border-gray-200 text-sm font-bold text-[#0B2438] bg-white hover:bg-gray-50">
+            {L('Later', 'بعد میں', 'لاحقاً')}
+          </button>
+        )}
+        <Link href="/settings#phone" className="min-h-[44px] inline-flex items-center px-4 rounded-xl bg-[#D4A543] text-[#071827] text-sm font-bold whitespace-nowrap">
+          {L('Verify now', 'ابھی تصدیق کریں', 'وثّق الآن')}
+        </Link>
+      </div>
     </div>
   )
 }

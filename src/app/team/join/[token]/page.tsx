@@ -110,6 +110,8 @@ export default function JoinTeamPage() {
               <p className="text-sm text-gray-600 mt-2 leading-relaxed">
                 {L('You will price requests in the company name from your own account. You do not need a commercial registration.', 'آپ اپنے اکاؤنٹ سے کمپنی کے نام پر قیمتیں دیں گے۔ تجارتی رجسٹریشن کی ضرورت نہیں۔', 'ستسعّر الطلبات باسم الشركة من حسابك الخاص، ولا تحتاج سجلاً تجارياً.')}
               </p>
+              {/* UX-146: the invited person knows the role before joining */}
+              <p className="mt-3 inline-block text-[13px] font-semibold text-navy rounded-xl bg-[#0B2438]/5 px-3 py-2">{L('Your role: ', 'آپ کا کردار: ', 'دورك: ')}{invite.role === 'admin' ? L('Admin (prices requests and invites members)', 'ایڈمن (قیمتیں دیتا ہے اور اراکین بلاتا ہے)', 'مشرف (يسعّر الطلبات ويدعو أعضاء)') : L('Sales (prices requests)', 'سیلز (درخواستوں کی قیمت دیتا ہے)', 'مبيعات (يسعّر الطلبات)')}</p>
               {error && <div className="mt-4 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3" role="alert">{error}</div>}
               {me ? (
                 <>

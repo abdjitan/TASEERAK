@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Check, RotateCcw } from 'lucide-react'
+import { Check, RotateCcw, Plus } from 'lucide-react'
 import { noEmoji, timeAgo as timeAgoText, arCount, arMaterials, arRequests, countLabel, dateLocale } from '@/lib/text'
 import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
-import { getProductLabel, getUnitLabelLong } from '@/types'
+import { getProductLabel, getUnitLabelLong, getRegionLabel } from '@/types'
 import { useTranslation } from '@/i18n'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
@@ -17,6 +17,7 @@ import { AppIcon } from '@/components/AppIcon'
 import { rfqRef, rfqDesc, arItems, rfqDate } from '@/lib/rfqName'
 import { formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired } from '@/lib/deadline'
 import { dealStage } from '@/lib/dealStage'
+import { rfqState, rfqStatusLabel, rfqStateTone, needsChoice } from '@/lib/rfqState'
 import { readPageCache, writePageCache } from '@/lib/pageCache'
 import { FEATURES } from '@/lib/features'
 import { canUseProjects } from '@/lib/plans'
@@ -37,7 +38,7 @@ const txt = {
     rfqList: 'طلبات التسعير',
     noRfqs: 'لا توجد طلبات بعد',
     noRfqsSub: 'أرسل أول طلب تسعير لتصلك عروض الموردين المختصين بموادك',
-    newRfqBtn: '+ طلب تسعير جديد',
+    newRfqBtn: 'اطلب سعر أي منتج',
     viewDetails: 'عرض التفاصيل',
     open: 'مفتوح', expired: 'انتهت المهلة', cancelled: 'ملغى',
   },
@@ -50,7 +51,7 @@ const txt = {
     rfqList: 'Price requests',
     noRfqs: 'No requests yet',
     noRfqsSub: 'Send your first price request to get offers from suppliers of your materials',
-    newRfqBtn: '+ New price request',
+    newRfqBtn: 'Get a price for any product',
     viewDetails: 'View details',
     open: 'Open', expired: 'Deadline passed', cancelled: 'Cancelled',
   },
@@ -63,16 +64,16 @@ const txt = {
     rfqList: 'قیمت کی درخواستیں',
     noRfqs: 'ابھی تک کوئی درخواست نہیں',
     noRfqsSub: 'پہلی قیمت کی درخواست بھیجیں تاکہ متعلقہ سپلائرز سے پیشکشیں ملیں',
-    newRfqBtn: '+ نئی قیمت کی درخواست',
+    newRfqBtn: 'کسی بھی چیز کی قیمت معلوم کریں',
     viewDetails: 'تفصیلات دیکھیں',
     open: 'کھلا', expired: 'مہلت ختم', cancelled: 'منسوخ',
   },
 }
 
 const sectorLabels = {
-  ar: { civil: 'مدني', architectural: 'معماري', electrical: 'كهرباء', mechanical: 'ميكانيك', equipment: 'آليات ومعدات', supply_store: 'محل توريد' },
-  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'Supply store' },
-  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'سپلائی اسٹور' },
+  ar: { civil: 'مدني', architectural: 'معماري', electrical: 'كهرباء', mechanical: 'ميكانيكا', equipment: 'آليات ومعدات', supply_store: 'مستلزمات عامة' },
+  en: { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' },
+  ur: { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' },
 }
 
 // «عروض جديدة» only for offers the buyer has not seen yet (UX-066): the offer count seen per request,
@@ -106,12 +107,14 @@ export default function ContractorDashboard() {
   const [openOffers, setOpenOffers] = useState<Record<string, any[]>>({}) // offers on open requests (best price, UX-194)
   const [seen, setSeen] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
+  const [loadErr, setLoadErr] = useState<'' | 'stale' | 'empty'>('') // the refresh failed: '' ok · stale = showing the cached copy · empty = nothing to show (UX-015)
   const [mySavings, setMySavings] = useState<any>(null) // «وفّرت X ريال» across all requests (210)
   const [filter, setFilter] = useState('all') // all | has_offers | pending | closed
   const [sectorFilter, setSectorFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('newest') // newest | expiry
 
+  const [reloadKey, setReloadKey] = useState(0)
   useEffect(() => {
     setSeen(readSeen())
     async function init() {
@@ -133,7 +136,7 @@ export default function ContractorDashboard() {
         setLoading(false)
       }
       const safe = (q: any) => Promise.resolve(q).catch(() => ({ data: null }))
-      const [{ data: p }, { data: r }, { data: dr }, { data: proj }, { data: notifs }, { data: mp }, { data: tr }] = await Promise.all([
+      const [{ data: p, error: pErr }, { data: r, error: rErr }, { data: dr }, { data: proj }, { data: notifs }, { data: mp }, { data: tr }] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', uid).single(),
         supabase.from('rfqs').select('*').eq('contractor_id', uid).order('created_at', { ascending: false }).limit(200),
         supabase.from('rfq_drafts').select('id, title, updated_at, data').order('updated_at', { ascending: false }).limit(50),
@@ -143,6 +146,13 @@ export default function ContractorDashboard() {
         safe(supabase.rpc('get_market_price_trend')),
       ])
       safe(supabase.rpc('my_savings')).then((x: any) => setMySavings(x?.data || null))
+      // a failed refresh (weak connection) must not wipe the page or the «لبيتي» mode: keep the cached copy (UX-015)
+      if (pErr || rErr || !p) {
+        setLoadErr(snap ? 'stale' : 'empty')
+        setLoading(false)
+        return
+      }
+      setLoadErr('')
       rememberBuyerType(p?.buyer_type) // before the profile renders (UX-171)
       setProfile(p); setProfileFresh(true)
       setRfqs(r || [])
@@ -178,7 +188,7 @@ export default function ContractorDashboard() {
       writePageCache('home_' + uid, { p, r, dr, proj, notifs, marketTop, trend: map, deals, oo })
     }
     init()
-  }, [])
+  }, [reloadKey])
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -188,7 +198,7 @@ export default function ContractorDashboard() {
   }
 
   // remember the buyer type on this device (the sidebar menu hides project tools for a home buyer)
-  useEffect(() => { if (profile) rememberBuyerType(profile.buyer_type) }, [profile])
+  useEffect(() => { if (profile?.buyer_type) rememberBuyerType(profile.buyer_type) }, [profile])
   if (loading) return <PageLoader />
 
   const homeBuyer = profile?.buyer_type === 'individual'
@@ -232,7 +242,7 @@ export default function ContractorDashboard() {
     switch (type) {
       case 'offer': case 'new_offer': return { name: 'offers', tone: 'warning' }
       case 'offer_accepted': case 'accepted': return { name: 'completed', tone: 'success' }
-      case 'new_message': return { name: 'quoted', tone: 'info' }
+      case 'new_message': return { name: 'quoted', tone: 'brand' }
       case 'new_rfq': return { name: 'orders', tone: 'brand' }
       case 'price_reduction': case 'price_reduced': return { name: 'pricing', tone: 'warning' }
       default: return { name: 'active', tone: 'neutral' }
@@ -306,29 +316,45 @@ export default function ContractorDashboard() {
           <BuyerTypePrompt userId={user.id} locale={locale} onChosen={(v) => { rememberBuyerType(v); setProfile((p: any) => ({ ...p, buyer_type: v })) }} />
         )}
 
+        {/* the refresh failed: say so and offer a retry instead of an empty «لا توجد طلبات» (UX-015) */}
+        {loadErr && (
+          <div role="alert" className="mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-[#D4A543]/60 bg-[#FBF5E6] px-4 py-3">
+            <Glyph e="⚠" />
+            <span className="flex-1 min-w-[200px] text-[13px] font-bold text-[#0B2438]">
+              {loadErr === 'stale'
+                ? L('Could not refresh the data. Showing the last saved copy.', 'ڈیٹا تازہ نہیں ہو سکا۔ آخری محفوظ نقل دکھائی جا رہی ہے۔', 'تعذّر تحديث البيانات، تُعرض آخر نسخة محفوظة.')
+                : L('Could not load your data. Check your connection and try again.', 'آپ کا ڈیٹا لوڈ نہیں ہو سکا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔', 'تعذّر تحميل بياناتك. تحقّق من الاتصال وأعد المحاولة.')}
+            </span>
+            <button type="button" onClick={() => setReloadKey((k) => k + 1)}
+              className="min-h-[44px] px-4 rounded-xl text-[13px] font-bold text-white bg-[#0B2438] inline-flex items-center gap-1.5">
+              <RotateCcw className="w-4 h-4" aria-hidden />{L('Try again', 'دوبارہ کوشش کریں', 'أعد المحاولة')}
+            </button>
+          </div>
+        )}
+
         {/* Verification Status Banner (buyers are not reviewed; only a rejected account is told) */}
         {profile?.verification_status === 'rejected' && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 animate-fade-in">
+          <div className="mb-6 bg-white border border-[#0B2438]/20 rounded-2xl p-5 animate-fade-in">
             <div className="flex items-start gap-3 mb-3">
-              <span className="text-2xl"><Glyph e="❌" /></span>
+              <span className="text-2xl text-[#0B2438]"><Glyph e="⚠" /></span>
               <div>
-                <div className="font-bold text-red-700 mb-1">
-                  {locale === 'en' ? 'Account rejected' : locale === 'ur' ? 'اکاؤنٹ مسترد' : 'تم رفض حسابك'}
+                <div className="font-bold text-[#0B2438] mb-1">
+                  {L('Your account has been suspended', 'آپ کا اکاؤنٹ معطل کر دیا گیا ہے', 'تم إيقاف حسابك')}
                 </div>
-                <div className="text-sm text-red-700">
-                  {locale === 'en' ? 'Your account has been rejected. Please review the reason below and upload your documents again.'
-                  : locale === 'ur' ? 'آپ کا اکاؤنٹ مسترد ہو گیا۔ وجہ دیکھیں اور دستاویزات دوبارہ اپلوڈ کریں۔'
-                  : 'تم رفض حسابك. يرجى مراجعة السبب وإعادة رفع المستندات المطلوبة.'}
+                <div className="text-sm text-gray-700">
+                  {L('You cannot send new requests for now. Contact support to find out why and how to restore your account.',
+                    'آپ فی الحال نئی درخواستیں نہیں بھیج سکتے۔ وجہ اور اکاؤنٹ بحال کرنے کا طریقہ جاننے کے لیے سپورٹ سے رابطہ کریں۔',
+                    'لا يمكنك إرسال طلبات جديدة حالياً. تواصل مع الدعم لمعرفة السبب وطريقة استعادة حسابك.')}
                 </div>
                 {profile?.rejection_reason && (
-                  <div className="mt-2 bg-red-100 rounded-lg px-3 py-2 text-sm text-red-800 font-medium">
+                  <div className="mt-2 bg-gray-50 rounded-lg px-3 py-2 text-sm text-[#0B2438] font-medium">
                     <Glyph e="📋" /> {locale === 'en' ? 'Reason: ' : locale === 'ur' ? 'وجہ: ' : 'السبب: '}{profile.rejection_reason}
                   </div>
                 )}
               </div>
             </div>
-            <Link href="/settings" className="inline-flex items-center min-h-[44px] text-sm px-4 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-all">
-              {locale === 'en' ? 'Upload documents again' : locale === 'ur' ? 'دستاویزات دوبارہ اپلوڈ کریں' : 'إعادة رفع المستندات'}
+            <Link href="/support" className="inline-flex items-center min-h-[44px] text-sm px-4 rounded-lg font-semibold text-white bg-[#0B2438] hover:bg-[#102E45] transition-all">
+              {L('Contact support', 'سپورٹ سے رابطہ کریں', 'تواصل مع الدعم')}
             </Link>
           </div>
         )}
@@ -366,9 +392,14 @@ export default function ContractorDashboard() {
             <div className="grid sm:grid-cols-2 gap-2">
               {rfqs.slice(0, 2).map((rfq: any) => {
                 const d = rfq.status === 'closed' ? dealOf(rfq) : null
-                const status = rfq.status === 'closed' ? (d ? d.st.label : L('Offer chosen', 'پیشکش منتخب ہو گئی', 'تم اختيار العرض'))
-                  : rfq.status === 'open' && !isExpired(rfq.expires_at) ? ((rfq.offer_count || 0) > 0 ? countLabel(rfq.offer_count, locale, (n: number) => arCount(n, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'), 'offer', 'پیشکش') : L('Awaiting offers', 'پیشکشوں کا انتظار', 'بانتظار العروض'))
-                  : rfq.status === 'cancelled' ? t.cancelled : t.expired
+                const stt = rfqState(rfq)
+                const offersTxt = countLabel(rfq.offer_count || 0, locale, (n: number) => arCount(n, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً'), 'offer', 'پیشکش')
+                const status = stt === 'closed' ? (d ? d.st.label : rfqStatusLabel(rfq, locale))
+                  : stt === 'offers' ? offersTxt
+                  : stt === 'offers_expired' ? `${rfqStatusLabel(rfq, locale)} · ${offersTxt}`
+                  : stt === 'awaiting' ? L('Awaiting offers', 'پیشکشوں کا انتظار', 'بانتظار العروض')
+                  : stt === 'expired_empty' ? rfqStatusLabel(rfq, locale)
+                  : t.cancelled
                 return (
                   <Link key={rfq.id} href={`/contractor/rfq/${rfq.id}`} onClick={() => openRfq(rfq)}
                     className="flex items-center justify-between gap-2 rounded-xl border border-gray-100 px-3 py-2 min-h-[52px] hover:border-[#D4A543]/50">
@@ -376,7 +407,8 @@ export default function ContractorDashboard() {
                       <span className="block text-sm font-bold text-[#0B2438] truncate">{rfqDesc(rfq, locale)}</span>
                       <span className="block text-[12px] text-gray-600 truncate">{status}</span>
                     </span>
-                    {hasNew(rfq) && <span className="shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{L('New offers', 'نئی پیشکشیں', 'عروض جديدة')}</span>}
+                    {hasNew(rfq) ? <span className="shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{L('New offers', 'نئی پیشکشیں', 'عروض جديدة')}</span>
+                      : stt === 'offers_expired' ? <span className="shrink-0 text-[12px] font-bold px-2 py-0.5 rounded-full text-[#071827]" style={{ background: '#D4A543' }}>{L('Choose an offer', 'پیشکش منتخب کریں', 'اختر عرضاً')}</span> : null}
                   </Link>
                 )
               })}
@@ -418,7 +450,8 @@ export default function ContractorDashboard() {
         ) : null}
 
         {/* تنبيه سعري — أكبر تغيّر شهري (يخلق قيمة عودة يومية) */}
-        {!homeBuyer && (() => {
+        {/* only while the price board is on: it links to /market (UX-119) */}
+        {!homeBuyer && FEATURES.priceBoard && (() => {
           let best: { name: string; pct: number } | null = null
           for (const k of Object.keys(marketTrend)) {
             const tr = marketTrend[k]
@@ -488,13 +521,14 @@ export default function ContractorDashboard() {
             { label: t.activeRfqs, value: active.length, name: 'active', tone: 'brand', f: 'pending', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${L('this week', 'اس ہفتے', 'هذا الأسبوع')}` : '' },
             { label: t.totalOffers, value: totalOffers, name: 'offers', tone: 'warning', f: 'has_offers', sub: awaitingReply > 0 ? `${awaitingReply} ${L('with new offers', 'نئی پیشکشوں کے ساتھ', 'فيها عروض جديدة')}` : '' },
             { label: t.completed, value: closed.length, name: 'completed', tone: 'success', f: 'closed', sub: L(`${dealsDone} completed`, `${dealsDone} مکمل`, `${dealsDone} مكتملة`) },
-            { label: t.total, value: rfqs.length, name: 'all', tone: 'info', f: 'all', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${L('new', 'نئی', 'جديد')}` : '' },
+            { label: t.total, value: rfqs.length, name: 'all', tone: 'neutral', f: 'all', sub: rfqsThisWeek > 0 ? `+${rfqsThisWeek} ${L('new', 'نئی', 'جديد')}` : '' },
           ].map(({ label, value, name, tone, f, sub }) => (
             <button key={label} type="button" onClick={() => { setFilter(f); document.getElementById('rfq-list')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}
               aria-pressed={filter === f}
               className={`text-start bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ${filter === f ? 'border-[#D4A543] ring-1 ring-[#D4A543]/30' : 'border-gray-100'}`}>
               <div className="flex items-start justify-between">
-                <AppIcon name={name} tone={tone} variant="solid" size={44} />
+                {/* tinted, never a white glyph on gold (UX-020) */}
+                <AppIcon name={name} tone={tone} variant="tone" size={44} />
                 <div className="text-3xl font-bold" style={{ color: '#0B2438' }}>{value}</div>
               </div>
               <div className="text-[13px] text-gray-600 mt-3 font-medium">{label}</div>
@@ -556,10 +590,10 @@ export default function ContractorDashboard() {
           <div className="mb-6 animate-fade-in">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>
-                <Glyph e="📋" /> {L('My bills of quantities', 'میری مقداروں کی فہرستیں', 'جداول الكميات')}
+                <Glyph e="📋" /> {L('My bills of quantities', 'مقداروں کا جدول', 'جداول الكميات')}
               </h2>
               <Link href="/contractor/project/new" className="min-h-[44px] inline-flex items-center text-[13px] font-semibold" style={{ color: '#8F6820' }}>
-                + {L('New bill of quantities', 'نئی مقداروں کی فہرست', 'جدول كميات جديد')}
+                + {L('New bill of quantities', 'نیا مقداروں کا جدول', 'جدول كميات جديد')}
               </Link>
             </div>
             <div className="space-y-2 stagger">
@@ -570,7 +604,7 @@ export default function ContractorDashboard() {
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base text-white" style={{ background: '#0B2438' }}><Glyph e="📋" /></div>
                     <div>
                       <div className="font-semibold text-sm" style={{ color: '#0B2438' }}>{p.title}</div>
-                      <div className="text-[12px] text-gray-500"><Glyph e="📍" /> {p.region} • {new Date(p.created_at).toLocaleDateString(dateLocale(locale))}</div>
+                      <div className="text-[12px] text-gray-500"><Glyph e="📍" /> {getRegionLabel(p.region || '', locale)} • {new Date(p.created_at).toLocaleDateString(dateLocale(locale))}</div>
                     </div>
                   </div>
                   <div className="text-[12px] font-semibold" style={{ color: '#8F6820' }}>
@@ -612,17 +646,34 @@ export default function ContractorDashboard() {
         )}
 
         {/* RFQs */}
-        {rfqs.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 sm:p-16 shadow-sm border border-gray-100 text-center animate-slide-up">
-            <div className="text-6xl mb-5 animate-float"><Glyph e="📋" /></div>
-            <h2 className="text-xl font-bold mb-3" style={{ color: '#0B2438' }}>{t.noRfqs}</h2>
-            <p className="text-gray-600 mb-6 text-sm">{t.noRfqsSub}</p>
-            <Link href="/contractor/rfq/quick" className="inline-flex items-center min-h-[48px] px-8 text-base font-bold rounded-2xl text-white" style={{ background: '#0B2438' }}>{t.newRfqBtn}</Link>
+        {loadErr === 'empty' ? null : rfqs.length === 0 ? (
+          <div className="bg-white rounded-2xl p-8 sm:p-12 shadow-sm border border-gray-100 text-center animate-slide-up">
+            <h2 className="text-xl font-bold mb-3" style={{ color: '#0B2438' }}>{homeBuyer ? L('How it works', 'یہ کیسے کام کرتا ہے', 'كيف يعمل تسعيرك؟') : t.noRfqs}</h2>
+            {homeBuyer ? (
+              /* three plain steps for a home buyer, one gold button (UX-035) */
+              <ol className="grid sm:grid-cols-3 gap-3 mb-6 text-start">
+                {[
+                  L('Write what you need or take a photo of it', 'جو چاہیے لکھیں یا اس کی تصویر لیں', 'اكتب ما تحتاجه أو صوّره'),
+                  L('Offers from the right suppliers reach you', 'متعلقہ سپلائرز کی پیشکشیں آپ تک پہنچتی ہیں', 'تصلك عروض الموردين المختصين'),
+                  L('Choose the offer that suits you best', 'اپنے لیے بہترین پیشکش منتخب کریں', 'اختر العرض الأنسب لك'),
+                ].map((s, i) => (
+                  <li key={i} className="flex items-start gap-3 rounded-xl bg-[#F7F4EC] p-3">
+                    <span className="w-8 h-8 rounded-full grid place-items-center shrink-0 text-[14px] font-extrabold text-[#071827]" style={{ background: '#D4A543' }}>{i + 1}</span>
+                    <span className="text-[14px] font-bold text-[#0B2438] leading-snug pt-1">{s}</span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-gray-600 mb-6 text-sm">{t.noRfqsSub}</p>
+            )}
+            <Link href="/contractor/rfq/quick" className="inline-flex items-center gap-2 min-h-[48px] px-8 text-base font-bold rounded-2xl text-[#071827]" style={{ background: '#D4A543' }}>
+              <Plus className="w-5 h-5" aria-hidden />{t.newRfqBtn}
+            </Link>
           </div>
         ) : (
           <div className="animate-fade-in" id="rfq-list" style={{ scrollMarginTop: '70px' }}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{homeBuyer ? L('My requests', 'میری درخواستیں', 'طلباتي') : t.rfqList}</h2>
+              <h2 className="text-sm font-bold" style={{ color: '#0B2438' }}>{homeBuyer ? L('All my requests', 'میری تمام درخواستیں', 'كل طلباتي') : t.rfqList}</h2>
               <span className="text-[12px] text-gray-500">{countLabel(rfqs.length, locale, arRequests, 'request', 'درخواستیں')}</span>
             </div>
 
@@ -632,13 +683,14 @@ export default function ContractorDashboard() {
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {[
                     { key: 'all', label: L('All', 'سب', 'الكل'), icon: <Glyph e="📋" /> },
-                    { key: 'has_offers', label: L('Has offers', 'پیشکشیں موصول', 'وصلتها عروض'), icon: <Glyph e="💬" /> },
+                    { key: 'has_offers', label: L('Awaiting your choice', 'آپ کے انتخاب کی منتظر', 'بانتظار اختيارك'), icon: <Glyph e="💬" /> },
                     { key: 'pending', label: L('Awaiting offers', 'پیشکشوں کے منتظر', 'بانتظار العروض'), icon: <Glyph e="⏳" /> },
                     { key: 'closed', label: L('Deals', 'ڈیلز', 'الصفقات'), icon: <Glyph e="🤝" /> },
                   ].map((f: any) => {
+                    // one shared reading of the state (UX-003): an ended request WITH offers still waits for the buyer
                     const count = f.key === 'all' ? rfqs.length
-                      : f.key === 'has_offers' ? rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) > 0).length
-                      : f.key === 'pending' ? rfqs.filter((r: any) => r.status === 'open' && (r.offer_count || 0) === 0).length
+                      : f.key === 'has_offers' ? rfqs.filter((r: any) => needsChoice(rfqState(r))).length
+                      : f.key === 'pending' ? rfqs.filter((r: any) => rfqState(r) === 'awaiting').length
                       : rfqs.filter((r: any) => r.status === 'closed').length
                     return (
                       <button key={f.key} type="button" onClick={() => setFilter(f.key)} aria-pressed={filter === f.key}
@@ -673,8 +725,8 @@ export default function ContractorDashboard() {
               {(() => {
                 const q = normalizeText(search.trim())
                 const filtered = rfqs.filter((rfq: any) => {
-                  if (filter === 'has_offers' && !(rfq.status === 'open' && (rfq.offer_count || 0) > 0)) return false
-                  if (filter === 'pending' && !(rfq.status === 'open' && (rfq.offer_count || 0) === 0)) return false
+                  if (filter === 'has_offers' && !needsChoice(rfqState(rfq))) return false
+                  if (filter === 'pending' && rfqState(rfq) !== 'awaiting') return false
                   if (filter === 'closed' && rfq.status !== 'closed') return false
                   if (sectorFilter !== 'all' && rfq.sector !== sectorFilter && !(Array.isArray(rfq.sectors) && rfq.sectors.includes(sectorFilter))) return false
                   if (q && !haystack(rfq).includes(q)) return false
@@ -694,13 +746,14 @@ export default function ContractorDashboard() {
                 )
                 return filtered.map((rfq: any) => {
                   const isNew = hasNew(rfq)
-                  const openNow = rfq.status === 'open' && !isExpired(rfq.expires_at)
+                  const stt = rfqState(rfq)
+                  const openNow = stt === 'awaiting' || stt === 'offers'
                   const items = itemsOf(rfq)
-                  const best = openNow ? bestLine(rfq) : ''
+                  const best = needsChoice(stt) ? bestLine(rfq) : '' // the lowest price stays visible after the deadline (UX-003)
                   return (
                 <div key={rfq.id} className="relative">
                 <Link href={`/contractor/rfq/${rfq.id}`} onClick={() => openRfq(rfq)}
-                  className={`block bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative ${rfq.status === 'closed' ? 'pb-[4.5rem]' : ''} ${
+                  className={`block bg-white rounded-2xl p-5 border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 relative ${rfq.status === 'closed' || stt === 'expired_empty' ? 'pb-[4.5rem]' : ''} ${
                     isNew ? 'border-[#D4A543] ring-2 ring-[#D4A543]/20' : 'border-gray-100 hover:border-[#D4A543]/30'
                   }`}>
                   {/* «عروض جديدة» only for offers not seen yet (UX-066) */}
@@ -715,10 +768,11 @@ export default function ContractorDashboard() {
                   <div className="flex items-center justify-between mb-3 gap-2">
                     <div className="flex items-center gap-3 min-w-0">
                       {(() => {
-                        const m = rfq.status === 'open' && (rfq.offer_count || 0) > 0 ? { name: 'quoted', tone: 'info' }
-                          : rfq.status === 'open' ? { name: 'waiting', tone: 'warning' }
-                          : rfq.status === 'closed' ? { name: 'completed', tone: 'success' }
-                          : { name: 'clock', tone: 'danger' }
+                        // brand tones only: gold = needs you, navy = waiting, green = deal, neutral = ended (UX-020)
+                        const m = needsChoice(stt) ? { name: 'quoted', tone: 'warning' }
+                          : stt === 'awaiting' ? { name: 'waiting', tone: 'brand' }
+                          : stt === 'closed' ? { name: 'completed', tone: 'success' }
+                          : { name: 'clock', tone: 'neutral' }
                         return <AppIcon name={m.name} tone={m.tone} variant="tone" size={44} />
                       })()}
                       <div className="min-w-0">
@@ -727,8 +781,11 @@ export default function ContractorDashboard() {
                         <div className="flex items-center flex-wrap gap-2 mt-1">
                           {/* a home buyer sees no engineering sector tags (UX-068) */}
                           {!homeBuyer && <span className="text-[12px] px-2 py-0.5 rounded-full font-semibold bg-[#0B2438]/[.07] text-[#0B2438]">{sectors[rfq.sector] || rfq.sector}</span>}
-                          {rfq.status === 'open' && isExpired(rfq.expires_at) && <span className="badge badge-red text-[12px]">{t.expired}</span>}
-                          {rfq.status === 'cancelled' && <span className="badge badge-gray text-[12px]">{t.cancelled}</span>}
+                          {(stt === 'offers_expired' || stt === 'expired_empty' || stt === 'cancelled') && (() => {
+                            const tone = rfqStateTone(stt)
+                            const label = rfqStatusLabel(rfq, locale) // the shared label (dealStage.rfqStatusLabel), same as the request page and «طلباتي»
+                            return <span className="badge text-[12px] font-bold" style={{ background: tone.bg, color: tone.fg }}>{label}</span>
+                          })()}
                           {openNow && rfq.expires_at && (() => {
                             const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
                             return (
@@ -745,17 +802,19 @@ export default function ContractorDashboard() {
                       if (!d) return (
                         <div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px] bg-[#0F6E56]/10 text-[#0F6E56]">
                           <div className="text-lg leading-none"><Check className="w-5 h-5 inline" aria-hidden /></div>
-                          <div className="text-[12px] font-bold leading-tight mt-0.5">{L('Offer chosen', 'پیشکش منتخب', 'تم اختيار العرض')}</div>
+                          <div className="text-[12px] font-bold leading-tight mt-0.5">{rfqStatusLabel(rfq, locale)}</div>
                         </div>
                       )
                       const { st, allDone, n } = d
                       const lbl = st.key === 'disputed' ? L('Dispute', 'تنازع', 'نزاع')
-                        : allDone ? L('Completed', 'مکمل', 'مكتملة')
-                        : st.step >= 3 ? L('Awaiting payment', 'ادائیگی کا انتظار', 'بانتظار الدفع')
+                        : allDone ? L('Deal completed', 'ڈیل مکمل', 'اكتملت الصفقة')
+                        // the buyer pays the supplier directly; the platform never waits for a payment (UX-132)
+                        : st.step >= 4 ? L('Paid, awaiting the supplier', 'ادائیگی ہو گئی، سپلائر کا انتظار', 'دُفع، بانتظار المورد')
+                        : st.step >= 3 ? L('Pay the supplier', 'سپلائر کو ادائیگی کریں', 'ادفع للمورد')
                         : st.step >= 2 ? L('Delivered', 'ڈیلیور ہو گیا', 'تم التسليم')
                         : L('Being delivered', 'ڈیلیوری جاری ہے', 'جارٍ التوصيل')
                       return (<div className="text-center rounded-xl px-3 py-2 shrink-0 min-w-[92px]" style={{ background: st.tone + '14', color: st.tone }}><div className="text-lg leading-none"><Glyph e={st.emoji} /></div><div className="text-[12px] font-bold leading-tight mt-0.5">{lbl}{n > 1 ? ` (${n})` : ''}</div></div>)
-                    })() : (rfq.offer_count || 0) > 0 ? (
+                    })() : stt === 'expired_empty' || stt === 'cancelled' ? null : (rfq.offer_count || 0) > 0 ? (
                       <div className="text-center rounded-xl px-4 py-2 text-[#071827] shrink-0" style={{ background: '#D4A543' }}>
                         <div className="text-xl font-bold">{rfq.offer_count}</div>
                         <div className="text-[12px] text-[#071827]">{L(rfq.offer_count === 1 ? 'offer' : 'offers', 'پیشکش', rfq.offer_count === 1 ? 'عرض' : rfq.offer_count === 2 ? 'عرضان' : rfq.offer_count <= 10 ? 'عروض' : 'عرضاً')}</div>
@@ -770,7 +829,7 @@ export default function ContractorDashboard() {
                   {best && <div className="mb-2 text-[13px] font-extrabold text-[#0B2438]">{best}</div>}
                   <div className="flex items-center gap-x-4 gap-y-1 text-[12px] text-gray-600 font-medium flex-wrap">
                     <span><Glyph e="📦" /> {items.length > 1 ? arItems(items.length, locale) : `${rfq.quantity} ${getUnitLabelLong(rfq.unit, locale)}`}</span>
-                    <span><Glyph e="📍" /> {rfq.region}</span>
+                    <span><Glyph e="📍" /> {getRegionLabel(rfq.region || '', locale)}</span>
                     {openNow && rfq.expires_at && <span><Glyph e="⏰" /> {L('Offers deadline: ', 'پیشکشوں کی آخری تاریخ: ', 'آخر موعد للعروض: ')}{whenShort(rfq.expires_at)}</span>}
                     {!homeBuyer && rfq.specification && <span className="truncate max-w-[200px]"><Glyph e="⚙" /> {rfq.specification}</span>}
                     <span className="ms-auto" style={{ color: '#8F6820' }}>{t.viewDetails} {fwd}</span>
@@ -789,10 +848,10 @@ export default function ContractorDashboard() {
                   })()}
                 </Link>
                 {/* «اطلب مرة أخرى» on a finished request (UX-195): a sibling link, never nested in the card link */}
-                {rfq.status === 'closed' && (
+                {(rfq.status === 'closed' || stt === 'expired_empty') && (
                   <Link href={`/contractor/rfq/quick?from=${rfq.id}`}
                     className="absolute bottom-4 start-5 inline-flex items-center gap-1.5 min-h-[44px] px-4 rounded-xl text-[13px] font-bold text-white" style={{ background: '#0B2438' }}>
-                    <RotateCcw className="w-4 h-4" aria-hidden />{L('Order again', 'دوبارہ منگوائیں', 'اطلب مرة أخرى')}
+                    <RotateCcw className="w-4 h-4" aria-hidden />{stt === 'expired_empty' ? L('Send the request again', 'درخواست دوبارہ بھیجیں', 'أعد إرسال الطلب') : L('Order again', 'دوبارہ منگوائیں', 'اطلب مرة أخرى')}
                   </Link>
                 )}
                 </div>

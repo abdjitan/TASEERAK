@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
@@ -107,7 +108,10 @@ export default function PrivacyPage() {
         </div>
 
         {OPERATOR_EMAIL && <p className="text-center text-sm mt-10"><a href={`mailto:${OPERATOR_EMAIL}`} dir="ltr" className="inline-flex items-center min-h-[44px] font-semibold text-[#8F6820] hover:underline">{OPERATOR_EMAIL}</a></p>}
-        <p className="text-center text-[12px] text-gray-600">© 2026 تسعيرك — Taseerak</p>
+        {/* links between the three policy pages (UX-096) */}
+        <p className="text-center text-[12px] text-gray-600">
+          <Link href="/terms" className="inline-flex items-center min-h-[44px] hover:underline">{locale === 'en' ? 'Terms and Conditions' : locale === 'ur' ? 'شرائط و ضوابط' : 'الشروط والأحكام'}</Link> · <Link href="/deal-protection" className="inline-flex items-center min-h-[44px] hover:underline">{locale === 'en' ? 'How we protect your deal' : locale === 'ur' ? 'سودے کا تحفظ' : 'كيف نحمي صفقتك'}</Link> · © 2026 تسعيرك — Taseerak
+        </p>
       </div>
     </div>
   )

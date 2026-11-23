@@ -9,6 +9,8 @@ import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
 import { normalizeCrInput } from '@/lib/cr'
 import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
+import { friendlyError } from '@/lib/friendlyError'
+import { askConfirm } from '@/lib/askConfirm'
 
 // «هذا السجل مستخدم في حساب آخر»: the claimant uploads his CR and asks for it (171).
 // The current holder is told (with the claimant's name only) and the admin decides.
@@ -63,7 +65,7 @@ export default function CrClaimPage() {
     const supabase = createClient()
     const { data: claimId, error } = await supabase.rpc('submit_cr_claim', { p_cr: digits, p_name: name.trim(), p_contact: contact.trim() || null, p_file_path: j.path })
     setSaving(false)
-    if (error) { setMsg(error.message); return }
+    if (error) { setMsg(friendlyError(error.message, L('Could not send the request — please try again.', 'درخواست نہیں بھیجی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر إرسال الطلب، حاول مرة أخرى.'), locale)); return }
     setDone(true)
     // 172: AI read of the claim file for the admin (fire and forget; manual when off/capped)
     fetch('/api/verification/extract', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'claim', claimId }) }).catch(() => {})
@@ -72,9 +74,10 @@ export default function CrClaimPage() {
   }
 
   async function withdraw(id: string) {
+    if (!(await askConfirm(L('Withdraw the registration request? You will need to upload the certificate again.', 'رجسٹریشن کی درخواست واپس لیں؟ آپ کو سرٹیفکیٹ دوبارہ اپ لوڈ کرنا ہوگا۔', 'سحب طلب التحقق من السجل؟ ستحتاج إلى رفع الشهادة من جديد.'), { okLabel: L('Withdraw', 'واپس لیں', 'سحب الطلب'), cancelLabel: L('Keep it', 'رہنے دیں', 'إبقاء الطلب') }))) return
     const supabase = createClient()
     const { error } = await supabase.rpc('withdraw_cr_claim', { p_claim_id: id })
-    if (error) { setMsg(error.message); return }
+    if (error) { setMsg(friendlyError(error.message, L('Could not withdraw the request — please try again.', 'درخواست واپس نہیں لی جا سکی — دوبارہ کوشش کریں۔', 'تعذّر سحب الطلب، حاول مرة أخرى.'), locale)); return }
     const { data: { session } } = await supabase.auth.getSession()
     if (session) await loadMine(supabase, session.user.id)
   }
@@ -90,9 +93,9 @@ export default function CrClaimPage() {
         <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
           <h1 className="text-lg font-bold mb-1" style={{ color: '#0B2438' }}><Glyph e="📋" /> {L('Is this registration yours?', 'کیا یہ رجسٹریشن آپ کی ہے؟', 'هل هذا السجل لك؟')}</h1>
           <p className="text-sm text-gray-500 mb-5 leading-relaxed">
-            {L('Each commercial registration can be used by one account only. If it is registered in another account and it belongs to you, upload a copy and the admin will review it. The other account is told your name only, never your contact details.',
-               'ہر تجارتی رجسٹریشن صرف ایک اکاؤنٹ میں استعمال ہو سکتی ہے۔ اگر یہ کسی دوسرے اکاؤنٹ میں درج ہے اور آپ کی ہے تو اس کی کاپی اپ لوڈ کریں، انتظامیہ جائزہ لے گی۔ دوسرے اکاؤنٹ کو صرف آپ کا نام بتایا جاتا ہے، رابطہ نہیں۔',
-               'لا يُستخدم السجل التجاري إلا في حساب واحد. إن كان مسجّلاً في حساب آخر وهو لك، فارفع صورته وستراجعه الإدارة. يُبلَّغ الحساب الآخر باسمك فقط، دون بيانات التواصل.')}
+            {L('Each commercial registration can be used by one account only. If it is registered in another account and it belongs to you, upload a copy and the admin will review it (and may ask you for more documents). The other account is told your name only, never your contact details.',
+               'ہر تجارتی رجسٹریشن صرف ایک اکاؤنٹ میں استعمال ہو سکتی ہے۔ اگر یہ کسی دوسرے اکاؤنٹ میں درج ہے اور آپ کی ہے تو اس کی کاپی اپ لوڈ کریں، انتظامیہ جائزہ لے گی (اور مزید دستاویزات مانگ سکتی ہے)۔ دوسرے اکاؤنٹ کو صرف آپ کا نام بتایا جاتا ہے، رابطہ نہیں۔',
+               'لا يُستخدم السجل التجاري إلا في حساب واحد. إن كان مسجّلاً في حساب آخر وهو لك، فارفع صورته وستراجعه الإدارة، وقد تطلب منك مستندات إضافية. يُبلَّغ الحساب الآخر باسمك فقط، دون بيانات التواصل.')}
           </p>
           {done ? (
             <div className="text-sm rounded-xl p-4 bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -117,7 +120,7 @@ export default function CrClaimPage() {
                 <span className="text-2xl">{file ? <Glyph e="📎" /> : <Glyph e="📋" />}</span>
                 <div className="text-sm font-semibold text-gray-700">{file ? file.name : L('Upload the CR certificate (PDF or image)', 'سی آر سرٹیفکیٹ اپ لوڈ کریں (PDF یا تصویر)', 'ارفع شهادة السجل التجاري (PDF أو صورة)')}</div>
               </label>
-              {msg && <div className="text-sm rounded-xl p-3 bg-red-50 text-red-600 border border-red-200">{msg}</div>}
+              {msg && <div role="alert" className="text-sm rounded-xl p-3 bg-red-50 text-red-600 border border-red-200">{msg}</div>}
               <button type="submit" disabled={saving} className="px-8 py-3 rounded-xl font-semibold text-sm disabled:opacity-50 transition-all hover:shadow-lg" style={{ background: '#D4A543', color: '#0B2438' }}>
                 {saving ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send the request', 'درخواست بھیجیں', 'إرسال الطلب')}
               </button>
@@ -136,7 +139,7 @@ export default function CrClaimPage() {
                     <div className="text-[12px] text-gray-500">{statusLabel(c.status)}{c.admin_note ? ' · ' + c.admin_note : ''}</div>
                   </div>
                   {c.status === 'open' && (
-                    <button type="button" onClick={() => withdraw(c.id)} className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50">
+                    <button type="button" onClick={() => withdraw(c.id)} className="min-h-[44px] text-xs px-4 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 shrink-0">
                       {L('Withdraw', 'واپس لیں', 'سحب الطلب')}
                     </button>
                   )}

@@ -160,7 +160,10 @@ html[dir="ltr"] #taseerak-landing .hero::after {
   border: 1px solid rgba(255,255,255,.38);
   border-radius: 22px;
   padding: clamp(18px, 2vw, 26px);
-  background: rgba(247,250,252,.26);
+  /* round-2 UX-114: a readable card over the busy photo, above the ribbon */
+  position: relative;
+  z-index: 3;
+  background: rgba(255,255,255,.92);
   box-shadow: 0 30px 80px rgba(0,0,0,.28), 0 0 0 8px rgba(255,255,255,.035);
   backdrop-filter: blur(18px) saturate(135%);
   -webkit-backdrop-filter: blur(18px) saturate(135%);
@@ -169,11 +172,11 @@ html[dir="ltr"] #taseerak-landing .hero::after {
 #taseerak-landing .live-card .lc-head { margin-bottom: 18px; }
 #taseerak-landing .lc-rfq .t1 { color: #0b2438; font-size: 16px; }
 #taseerak-landing .lc-live { color: #17654d; }
-#taseerak-landing .offer { padding: 14px; border-radius: 13px; background: rgba(255,255,255,.14); backdrop-filter: blur(9px); -webkit-backdrop-filter: blur(9px); }
-#taseerak-landing .offer.best { border-color: rgba(23,101,77,.22); background: linear-gradient(90deg, rgba(23,101,77,.07), rgba(255,255,255,.18)); }
+#taseerak-landing .offer { padding: 14px; border-radius: 13px; background: #fff; }
+#taseerak-landing .offer.best { border-color: rgba(23,101,77,.22); background: linear-gradient(90deg, rgba(23,101,77,.07), #fff); }
 #taseerak-landing .offer .sup .n { color: #10243b; }
 #taseerak-landing .offer .sup .m,
-#taseerak-landing .offer .price .u { color: #66768a; }
+#taseerak-landing .offer .price .u { color: #48596E; font-size: 12px; }
 #taseerak-landing .offer .price .v { color: #0b2438; }
 #taseerak-landing .offer.best .price .v,
 #taseerak-landing .lc-foot .saved b { color: #17654d; }
@@ -201,7 +204,7 @@ html[dir="ltr"] #taseerak-landing .hero::after {
 #taseerak-landing .stat:hover { border-color: rgba(212,165,67,.48); box-shadow: 0 18px 42px rgba(7,24,39,.1); }
 #taseerak-landing .step .s-ic { background: linear-gradient(145deg,#0b2438,#102e45); box-shadow: 0 10px 22px rgba(11,36,56,.2); }
 #taseerak-landing .step:nth-child(2) .s-ic { color: #071827; background: linear-gradient(145deg,#f5c55b,#d4a543); }
-#taseerak-landing .step:nth-child(3) .s-ic { background: #17654d; }
+#taseerak-landing .step:nth-child(3) .s-ic { background: linear-gradient(145deg,#102e45,#0b2438); }
 #taseerak-landing .step:nth-child(4) .s-ic { background: #102e45; }
 #taseerak-landing .sectors { background: #f5f7fa; }
 #taseerak-landing .sector { padding: 30px 26px; }
@@ -220,7 +223,7 @@ html[dir="ltr"] #taseerak-landing .hero::after {
 #taseerak-landing .feature:nth-child(2) .f-ic,
 #taseerak-landing .feature:nth-child(4) .f-ic { color: #071827; background: linear-gradient(145deg,#f5c55b,#d4a543); }
 #taseerak-landing .feature:nth-child(3) .f-ic,
-#taseerak-landing .feature:nth-child(5) .f-ic { background: linear-gradient(145deg,#24765c,#12543f); }
+#taseerak-landing .feature:nth-child(5) .f-ic { background: linear-gradient(145deg,#102e45,#0b2438); }
 #taseerak-landing .feature:nth-child(6) .f-ic { background: linear-gradient(145deg,#102e45,#102e45); }
 #taseerak-landing .cta-sec { background: #fff; }
 #taseerak-landing .cta {
@@ -302,3 +305,6 @@ html[dir="ltr"] #taseerak-landing .hero::after {
 
 /* CTA arrow points the reading direction: ← in RTL, → in LTR */
 html[dir="rtl"] #taseerak-landing .dir-arrow { transform: scaleX(-1); }
+
+/* round-2 UX-134: printing (or a browser without IntersectionObserver) never hides the sections */
+@media print { #taseerak-landing .reveal { opacity: 1 !important; transform: none !important; } }

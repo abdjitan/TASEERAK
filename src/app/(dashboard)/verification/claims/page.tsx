@@ -7,6 +7,7 @@ import AppShell from '@/components/shared/AppShell'
 import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import Glyph from '@/components/shared/Glyph'
+import { friendlyError } from '@/lib/friendlyError'
 
 // The current holder's view (171): someone asked for the CR on this account. He sees the
 // claimant's name (never the contact or file) and may answer once before the admin decides.
@@ -46,24 +47,24 @@ export default function CrClaimsOnMyAccountPage() {
     const supabase = createClient()
     const { error } = await supabase.rpc('respond_cr_claim', { p_claim_id: id, p_text: text })
     setBusy('')
-    if (error) { setMsg(error.message); return }
+    if (error) { setMsg(friendlyError(error.message, L('Could not send your answer — please try again.', 'آپ کا جواب نہیں بھیجا جا سکا — دوبارہ کوشش کریں۔', 'تعذّر إرسال ردّك، حاول مرة أخرى.'), locale)); return }
     await load()
   }
 
   if (loading) return <PageLoader />
 
   const statusLabel = (s: string) => s === 'open' ? L('Under admin review', 'انتظامیہ کے زیرِ جائزہ', 'قيد مراجعة الإدارة')
-    : s === 'approved' ? L('Moved to the requester', 'درخواست دہندہ کو منتقل', 'نُقل إلى صاحب الطلب') : s === 'withdrawn' ? L('Withdrawn', 'واپس لیا گیا', 'سُحب الطلب') : L('Rejected', 'مسترد', 'مرفوض')
+    : s === 'approved' ? L('Moved to the requester', 'درخواست دہندہ کو منتقل', 'نُقل إلى صاحب الطلب') : s === 'withdrawn' ? L('Withdrawn', 'واپس لیا گیا', 'سُحب الطلب') : L('Request rejected; the registration stays on your account', 'درخواست مسترد؛ رجسٹریشن آپ کے اکاؤنٹ میں رہے گی', 'رُفض الطلب، وبقي السجل في حسابك')
 
   return (
     <AppShell title={L('Requests on my registration', 'میری رجسٹریشن پر درخواستیں', 'طلبات على سجلي التجاري')} nav={getNav(role, locale, '/settings')} dir={dir}>
       <div className="max-w-xl mx-auto space-y-3">
         <p className="text-sm text-gray-500 leading-relaxed">
-          {L('Someone said the commercial registration on your account is theirs. Tell the admin why it is yours; the admin reviews the documents of both sides and decides. Nothing changes until then.',
-             'کسی نے کہا ہے کہ آپ کے اکاؤنٹ کی تجارتی رجسٹریشن اس کی ہے۔ انتظامیہ کو بتائیں کہ یہ آپ کی کیوں ہے؛ انتظامیہ دونوں طرف کی دستاویزات دیکھ کر فیصلہ کرے گی۔ تب تک کچھ نہیں بدلے گا۔',
-             'قال شخص إن السجل التجاري المسجّل في حسابك يخصّه. وضّح للإدارة لماذا السجل لك؛ ستراجع الإدارة مستندات الطرفين وتقرر، ولا يتغير شيء قبل ذلك.')}
+          {L('Someone said the commercial registration on your account is theirs. Tell the admin why it is yours; the admin may ask you for your documents, then decides. Nothing changes until then.',
+             'کسی نے کہا ہے کہ آپ کے اکاؤنٹ کی تجارتی رجسٹریشن اس کی ہے۔ انتظامیہ کو بتائیں کہ یہ آپ کی کیوں ہے؛ انتظامیہ آپ سے دستاویزات مانگ سکتی ہے، پھر فیصلہ کرے گی۔ تب تک کچھ نہیں بدلے گا۔',
+             'قال شخص إن السجل التجاري المسجّل في حسابك يخصّه. وضّح للإدارة لماذا السجل لك؛ قد تطلب منك الإدارة مستنداتك، ثم تقرر، ولا يتغير شيء قبل ذلك.')}
         </p>
-        {msg && <div className="text-sm rounded-xl p-3 bg-red-50 text-red-600 border border-red-200">{msg}</div>}
+        {msg && <div role="alert" className="text-sm rounded-xl p-3 bg-red-50 text-red-600 border border-red-200">{msg}</div>}
         {claims.length === 0 ? (
           <div className="bg-white rounded-2xl p-14 text-center border border-gray-100 shadow-sm">
             <div className="text-5xl mb-3"><Glyph e="📋" /></div>
@@ -84,8 +85,8 @@ export default function CrClaimsOnMyAccountPage() {
                 <textarea value={drafts[c.id] || ''} onChange={(e: any) => setDrafts({ ...drafts, [c.id]: e.target.value })} rows={3} maxLength={2000}
                   className="input-field text-sm" placeholder={L('Why is this registration yours?', 'یہ رجسٹریشن آپ کی کیوں ہے؟', 'لماذا هذا السجل لك؟')} />
                 <button type="button" onClick={() => respond(c.id)} disabled={busy === c.id || !(drafts[c.id] || '').trim()}
-                  className="px-6 py-2 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#0B2438' }}>
-                  {busy === c.id ? '…' : L('Send to the admin', 'انتظامیہ کو بھیجیں', 'إرسال إلى الإدارة')}
+                  className="min-h-[44px] px-6 rounded-xl font-semibold text-sm disabled:opacity-50" style={{ background: '#D4A543', color: '#0B2438' }}>
+                  {busy === c.id ? L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…') : L('Send to the admin', 'انتظامیہ کو بھیجیں', 'إرسال إلى الإدارة')}
                 </button>
                 <div className="text-[12px] text-gray-500">{L('You can answer once.', 'آپ ایک بار جواب دے سکتے ہیں۔', 'يمكنك الرد مرة واحدة.')}</div>
               </div>

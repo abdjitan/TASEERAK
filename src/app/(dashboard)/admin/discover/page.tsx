@@ -1,5 +1,6 @@
 'use client'
 
+import { askConfirm } from '@/lib/askConfirm'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import PageLoader from '@/components/shared/PageLoader'
 import { createClient } from '@/lib/supabase/client'
@@ -142,12 +143,12 @@ export default function DiscoverSuppliersPage() {
     const todo = redo ? jobs : jobs.filter(j => !done.has(doneKey(j.zone, j.query)))
     if (todo.length === 0) { setBatchLog(l => ['✓ سبق تشغيل هذه الدفعة كاملة. فعّل «إعادة» إن أردت تشغيلها مجدداً.', ...l]); return }
     const est = (todo.length * 2 * USD_PER_PAGE).toFixed(2)
-    if (!window.confirm(`سيُنفَّذ ${todo.length} من عمليات البحث على Google (نحو ${todo.length * 2} صفحة ≈ ${est}). هل تريد المتابعة؟`)) return
+    if (!(await askConfirm(`سيُنفَّذ ${todo.length} من عمليات البحث على Google (نحو ${todo.length * 2} صفحة ≈ ${est}). هل تريد المتابعة؟`))) return
     stopRef.current = false
     setRunning(true)
     let ins = 0
     for (let i = 0; i < todo.length; i++) {
-      if (stopRef.current) { setBatchLog(l => ['⏸ توقّف بطلبك.', ...l]); break }
+      if (stopRef.current) { setBatchLog(l => ['توقّف بطلبك.', ...l]); break }
       const j = todo[i]
       setProgress({ i: i + 1, n: todo.length, label: `${j.zone} · ${j.query}` })
       try {
@@ -168,7 +169,7 @@ export default function DiscoverSuppliersPage() {
         setBatchLog(l => [`✗ ${j.zone} · ${j.query}: انقطع الاتصال`, ...l])
       }
     }
-    setBatchLog(l => [`■ خلصت الدفعة — ${ins} محل جديد.`, ...l])
+    setBatchLog(l => [`■ انتهت الدفعة — ${ins} محل جديد.`, ...l])
     setRunning(false); setProgress(null)
     loadStats()
   }
@@ -310,13 +311,13 @@ export default function DiscoverSuppliersPage() {
           <div>
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-3 text-xs text-amber-800 leading-relaxed">
               كل خانة = نوع محلات بمنطقة. الرقم <b>x/y</b> = كلمات البحث التي نُفّذت، و<b>+n</b> = المحلات الجديدة المضافة.
-              البحث عبر Google Places API الرسمي فقط؛ كل صفحة نتائج ≈ ${USD_PER_PAGE}. المكرر (نفس المحل أو نفس الجوال) ما بينضاف مرتين.
+              البحث عبر Google Places API الرسمي فقط؛ كل صفحة نتائج ≈ ${USD_PER_PAGE}. المكرر (نفس المحل أو نفس الجوال) لا يُضاف مرتين.
             </div>
             <div className="flex flex-wrap items-center gap-2 mb-3">
               <button disabled={running} onClick={() => runJobs(jobsFor(priorityZones, packIds))}
-                className="px-3 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-50" style={{ background: NAVY }}>▶ شغّل مناطق الأولوية (كل الأنواع)</button>
+                className="px-3 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-50" style={{ background: NAVY }}>شغّل مناطق الأولوية (كل الأنواع)</button>
               <button disabled={running} onClick={() => runJobs(jobsFor(zones.map(z => z.name), packIds))}
-                className="px-3 py-2 rounded-xl text-xs font-bold border border-gray-300 text-gray-700 disabled:opacity-50">▶ شغّل كل المدينة</button>
+                className="px-3 py-2 rounded-xl text-xs font-bold border border-gray-300 text-gray-700 disabled:opacity-50">شغّل كل المدينة</button>
               {running && <button onClick={() => { stopRef.current = true }} className="px-3 py-2 rounded-xl text-xs font-bold text-white bg-red-500">■ أوقف</button>}
               <label className="flex items-center gap-1 text-xs text-gray-600"><input type="checkbox" checked={redo} onChange={(e: any) => setRedo(e.target.checked)} /> إعادة البحث الذي نُفّذ سابقاً</label>
               {progress && <span className="text-xs font-semibold" style={{ color: ORANGE }}>{progress.i}/{progress.n} — {progress.label}</span>}
@@ -396,7 +397,7 @@ export default function DiscoverSuppliersPage() {
 
             <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
               <h2 className="text-sm font-bold" style={{ color: NAVY }}>{listBusy ? 'جارٍ التحميل…' : `${count.toLocaleString('en')} محل`}</h2>
-              <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold">⬇ تصدير القائمة (CSV)</button>
+              <button onClick={exportCSV} className="text-xs px-3 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-semibold">تصدير القائمة (CSV)</button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">

@@ -12,7 +12,7 @@ export function kindLabel(k: ItemKind | string, L: Lfn): string {
 }
 
 export const KIND_TONE: Record<string, string> = {
-  material: 'bg-[#0F6E56]/10 text-[#0F6E56]',
+  material: 'bg-[#0B2438]/5 text-[#0B2438]',
   works: 'bg-gray-100 text-gray-600',
   provisional: 'bg-[#D4A543]/15 text-[#8F6820]',
   header: 'bg-gray-100 text-gray-500',
@@ -27,8 +27,8 @@ export function severityLabel(s: FlagSeverity | string, L: Lfn): string {
 
 export const SEVERITY_TONE: Record<string, string> = {
   error: 'bg-red-50 text-red-700 border-red-200',
-  warning: 'bg-amber-50 text-amber-800 border-amber-200',
-  review: 'bg-sky-50 text-sky-800 border-sky-200',
+  warning: 'bg-[#D4A543]/10 text-[#8F6820] border-[#D4A543]/40',
+  review: 'bg-[#0B2438]/5 text-[#0B2438] border-[#0B2438]/20',
   info: 'bg-gray-50 text-gray-600 border-gray-200',
 }
 

@@ -86,8 +86,10 @@ export default function AdminReportsPage() {
               <span className={`text-[11px] px-2 py-0.5 rounded-lg ${r.status === 'open' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-600'}`}>{STATUS[r.status]}</span>
             </div>
             <div className="text-gray-600">
-              المُبلِّغ: <b>{names[r.reporter_id] || '—'}</b> · المُبلَّغ عنه: <b>{names[r.reported_id] || '—'}</b>
-              <span className="text-gray-400"> · {new Date(r.created_at).toLocaleString('ar-SA')}</span>
+              {/* links to both accounts and the conversation (UX-127) */}
+              المُبلِّغ: {r.reporter_id ? <a href={`/admin/users/${r.reporter_id}`} className="font-bold underline">{names[r.reporter_id] || '—'}</a> : <b>—</b>} · المُبلَّغ عنه: {r.reported_id ? <a href={`/admin/users/${r.reported_id}`} className="font-bold underline">{names[r.reported_id] || '—'}</a> : <b>—</b>}
+              {r.conversation_id && <> · <a href={`/messages?c=${r.conversation_id}`} className="font-bold text-[#8F6820] underline">فتح المحادثة</a></>}
+              <span className="text-gray-400"> · {new Date(r.created_at).toLocaleString('ar-SA-u-ca-gregory-nu-latn')}</span>
             </div>
             {r.message_body && <div className="bg-gray-50 rounded-xl p-3 text-gray-700 whitespace-pre-wrap break-words">«{r.message_body}»</div>}
             {r.details && <div className="text-gray-700">تفاصيل: {r.details}</div>}

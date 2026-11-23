@@ -8,7 +8,8 @@ import Logo from '@/components/shared/Logo'
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
-import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, SUB_CATEGORIES, getGroupedSubCategories, getUnitLabel, getRegionLabel } from '@/types'
+import { SECTOR_LABELS, UNIT_OPTIONS, REGIONS, SUB_CATEGORIES, getGroupedSubCategories, getUnitLabel, getRegionLabel, getDefaultUnit } from '@/types'
+import LoadError from '@/components/shared/LoadError'
 import Glyph from '@/components/shared/Glyph'
 import { timeAgo as timeAgoText } from '@/lib/text'
 import { askConfirm } from '@/lib/askConfirm'
@@ -78,6 +79,11 @@ export default function SupplierPricesPage() {
   // UX-121: a team member saves prices for the company (acting_uid), and every result is said
   const [actId, setActId] = useState('')
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false) // UX-083: a failed load is never «no saved prices»
+  // UX-083: the unit fills in from the item (still editable)
+  useEffect(() => { if (product && sector && !unit) { try { const u = getDefaultUnit(product, sector as any); if (u) setUnit(u) } catch {} } }, [product, sector]) // eslint-disable-line react-hooks/exhaustive-deps
+  // UX-144: sector names in the reader's language
+  const secLabel = (s: string) => (locale === 'en' ? ({ civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' } as any)[s] : locale === 'ur' ? ({ civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' } as any)[s] : ({ ...(SECTOR_LABELS as any), mechanical: 'ميكانيكا', supply_store: 'مستلزمات عامة' } as any)[s]) || s
 
   // تصفّح متدرّج + بحث للسلع (نفس شكل صفحة طلب التسعير)
   const subGroups = useMemo(() => (sector ? getGroupedSubCategories(sector as any) : []), [sector])
@@ -100,8 +106,8 @@ export default function SupplierPricesPage() {
     setActId(aid)
     const { data, error } = await supabase.from('live_prices').select('*')
       .eq('supplier_id', aid).order('updated_at', { ascending: false })
-    if (error) setMsg({ ok: false, text: L('Could not load your prices. Check your connection and try again.', 'آپ کی قیمتیں لوڈ نہیں ہو سکیں۔ کنکشن چیک کر کے دوبارہ کوشش کریں۔', 'تعذّر تحميل أسعارك. تحقّق من اتصالك ثم أعد المحاولة.') })
-    else setPrices(data || [])
+    setLoadFailed(!!error)
+    if (!error) setPrices(data || [])
     setLoading(false)
   }
   const failMsg = () => setMsg({ ok: false, text: L('Could not save — please try again.', 'محفوظ نہیں ہو سکا — دوبارہ کوشش کریں۔', 'تعذّر الحفظ، حاول مرة أخرى.') })
@@ -112,15 +118,20 @@ export default function SupplierPricesPage() {
     if (!product || !sector || !unit || !(parseFloat(price) > 0)) { setMsg({ ok: false, text: L('Choose the item, the unit and the price.', 'آئٹم، یونٹ اور قیمت منتخب کریں۔', 'اختر السلعة والوحدة والسعر.') }); return }
     setSaving(true)
     const supabase = createClient()
-    const { error } = await supabase.from('live_prices').insert({
-      supplier_id: actId || user.id, product_name: product, sector, unit,
-      price: parseFloat(price), region: region || null,
-    })
+    // UX-083: the same item, unit and region already saved: update that row instead of adding a copy
+    const dup = prices.find((p: any) => p.product_name === product && (p.unit || '') === unit && (p.region || '') === (region || ''))
+    const np = parseFloat(price)
+    const { error } = dup
+      ? await supabase.from('live_prices').update({ price: np, previous_price: dup.price, updated_at: new Date().toISOString() }).eq('id', dup.id)
+      : await supabase.from('live_prices').insert({
+        supplier_id: actId || user.id, product_name: product, sector, unit,
+        price: np, region: region || null,
+      })
     setSaving(false)
-    if (error) { console.error('live_prices insert', error); failMsg(); return }
+    if (error) { console.error('live_prices save', error); failMsg(); return }
     setProduct(''); setSector(''); setUnit(''); setPrice(''); setRegion(''); setPgroup(''); setPsearch(''); setProductOther(false)
     setShowForm(false)
-    setMsg({ ok: true, text: L('Price saved. It will fill in automatically when you price a matching request.', 'قیمت محفوظ ہو گئی۔ مماثل درخواست کی قیمت دیتے وقت یہ خود بھر جائے گی۔', 'حُفظ السعر، وسيُعبَّأ تلقائياً عند تسعير طلب مطابق.') })
+    setMsg({ ok: true, text: dup ? L('The current price was updated.', 'موجودہ قیمت اپ ڈیٹ ہو گئی۔', 'حُدّث السعر الحالي.') : L('Price saved. It will fill in automatically when you price a matching request.', 'قیمت محفوظ ہو گئی۔ مماثل درخواست کی قیمت دیتے وقت یہ خود بھر جائے گی۔', 'حُفظ السعر، وسيُعبَّأ تلقائياً عند تسعير طلب مطابق.') })
     load()
   }
 
@@ -181,7 +192,7 @@ export default function SupplierPricesPage() {
                 <label className="block text-xs font-bold text-gray-500 mb-1">{T.sector}</label>
                 <select value={sector} onChange={e => { setSector(e.target.value); setProduct(''); setProductOther(false); setPgroup(''); setPsearch('') }} className="input-field" required>
                   <option value="">{T.selectSector}</option>
-                  {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{(SECTOR_LABELS as any)[s]}</option>)}
+                  {Object.keys(SECTOR_LABELS).map(s => <option key={s} value={s}>{secLabel(s)}</option>)}
                 </select>
               </div>
               <div className="sm:col-span-2">
@@ -206,7 +217,7 @@ export default function SupplierPricesPage() {
                     {psq ? (
                       <div className="flex flex-wrap gap-2">
                         {subResults.length ? subResults.map(x => (
-                          <button key={x.key} type="button" onClick={() => setProduct(x.ar)}
+                          <button key={x.key} type="button" onClick={() => { setProduct(x.ar); setUnit('') }}
                             className={`inline-flex items-center gap-1 min-h-[44px] px-3 rounded-full text-[13px] font-medium border-2 transition-all ${product === x.ar ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>{product === x.ar ? <Check className="w-4 h-4" aria-hidden /> : <Glyph e={x.icon} />} {subLabel(x)}</button>
                         )) : <p className="text-xs text-gray-500">{L('No match. Type it manually.', 'کوئی نتیجہ نہیں، خود لکھیں۔', 'لا نتائج، اكتبها يدوياً.')}</p>}
                       </div>
@@ -223,7 +234,7 @@ export default function SupplierPricesPage() {
                         {activeSubGroup && (
                           <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
                             {activeSubGroup.subs.map(x => (
-                              <button key={x.key} type="button" onClick={() => setProduct(x.ar)}
+                              <button key={x.key} type="button" onClick={() => { setProduct(x.ar); setUnit('') }}
                                 className={`inline-flex items-center gap-1 min-h-[44px] px-3 rounded-full text-[13px] font-medium border-2 transition-all ${product === x.ar ? 'border-[#D4A543] bg-[#D4A543]/10 text-[#071827]' : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}>{product === x.ar ? <Check className="w-4 h-4" aria-hidden /> : <Glyph e={x.icon} />} {subLabel(x)}</button>
                             ))}
                           </div>
@@ -271,7 +282,8 @@ export default function SupplierPricesPage() {
         )}
 
         {/* My prices */}
-        {prices.length === 0 ? (
+        {loadFailed && <LoadError onRetry={() => { setLoading(true); load() }} className="mb-4" />}
+        {loadFailed && prices.length === 0 ? null : prices.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 border border-gray-100 text-center">
             <div className="text-5xl mb-3 animate-float"><Glyph e="📈" /></div>
             <h3 className="font-bold mb-1" style={{ color: '#0B2438' }}>{T.noPrices}</h3>
@@ -287,7 +299,7 @@ export default function SupplierPricesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="font-bold" style={{ color: '#0B2438' }}>{p.product_name}</div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap text-xs text-gray-500">
-                        <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{(SECTOR_LABELS as any)[p.sector] || p.sector}</span>
+                        <span className="badge text-[12px] bg-[#0B2438]/5 text-[#0B2438]">{secLabel(p.sector)}</span>
                         {p.region && <span><Glyph e="📍" /> {getRegionLabel(p.region, locale)}</span>}
                         <span><Glyph e="🕐" /> {T.lastUpdate}: {timeAgoText(p.updated_at, locale)}</span>
                       </div>

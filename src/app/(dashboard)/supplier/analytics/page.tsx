@@ -8,6 +8,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import { getNav } from '@/lib/nav'
 import { SECTOR_LABELS } from '@/types'
 import Glyph from '@/components/shared/Glyph'
+import LoadError from '@/components/shared/LoadError'
 
 // أداء المورّد: قمع (عرض → فوز/خسارة/انتظار) + نسبة الفوز حسب القطاع + اتجاه شهري.
 // بيانات المورّد نفسه فقط — لا أسعار منافسين (H2). المصدر: get_my_supplier_analytics().
@@ -15,17 +16,24 @@ export default function SupplierAnalyticsPage() {
   const { locale, dir } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [a, setA] = useState<any>(null)
+  const [failed, setFailed] = useState(false) // UX-083: a failed load is never «no offers yet»
 
-  useEffect(() => {
-    (async () => {
+  async function load() {
+    setFailed(false)
+    try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { window.location.href = '/login'; return }
-      const { data } = await supabase.rpc('get_my_supplier_analytics')
+      const { data, error } = await supabase.rpc('get_my_supplier_analytics')
+      if (error) throw error
       setA(data || {})
-      setLoading(false)
-    })()
-  }, [])
+    } catch (e) {
+      console.error('[supplier/analytics] load failed:', e)
+      setFailed(true)
+    }
+    setLoading(false)
+  }
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <PageLoader />
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -41,19 +49,26 @@ export default function SupplierAnalyticsPage() {
   const sectors: any[] = Array.isArray(a?.by_sector) ? a.by_sector : []
   const monthly: any[] = Array.isArray(a?.monthly) ? a.monthly : []
   const maxMonthOffers = Math.max(1, ...monthly.map((m: any) => Number(m.offers) || 0))
-  const sl = (s: string) => (SECTOR_LABELS as any)[s] || s
+  // UX-144: sector names in the reader's language
+  const SEC_EN: Record<string, string> = { civil: 'Civil', architectural: 'Architectural', electrical: 'Electrical', mechanical: 'Mechanical', equipment: 'Machinery', supply_store: 'General supplies' }
+  const SEC_UR: Record<string, string> = { civil: 'سول', architectural: 'تعمیراتی', electrical: 'برقی', mechanical: 'مکینیکل', equipment: 'مشینری', supply_store: 'عام سامان' }
+  const SEC_AR: Record<string, string> = { ...(SECTOR_LABELS as any), mechanical: 'ميكانيكا', supply_store: 'مستلزمات عامة' }
+  const sl = (s: string) => (locale === 'en' ? SEC_EN : locale === 'ur' ? SEC_UR : SEC_AR)[s] || s
+  // UX-144: «2026-11» → «نوفمبر 2026» in the reader's language
+  const monthLabel = (m: string) => { const [y, mo] = String(m || '').split('-').map(Number); if (!y || !mo) return m; return new Date(y, mo - 1, 1).toLocaleDateString(locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK' : 'ar-SA-u-ca-gregory-nu-latn', { month: 'short', year: 'numeric' }) }
 
   const cards = [
     { label: L('Offers submitted', 'جمع کرائی گئی آفرز', 'العروض المقدَّمة'), value: totalOffers, color: '#0B2438' },
-    { label: L('Won', 'جیتی گئیں', 'مكسوبة'), value: won, color: '#0F6E56' },
+    { label: L('Chosen', 'منتخب', 'اختيرت'), value: won, color: '#0F6E56' },
     { label: L('Not chosen', 'منتخب نہیں ہوئیں', 'لم تُختر'), value: lost, color: '#9AA3AD' },
-    { label: L('Pending', 'زیرِ التوا', 'قيد الانتظار'), value: pending, color: '#8F6820' },
+    { label: L('Waiting for the buyer', 'خریدار کے فیصلے کی منتظر', 'بانتظار قرار المشتري'), value: pending, color: '#8F6820' },
   ]
 
   return (
     <AppShell title={L('Performance', 'میری کارکردگی', 'أدائي')} nav={nav} dir={dir}>
       <div className="max-w-4xl mx-auto">
-        {totalOffers === 0 ? (
+        {failed && <LoadError onRetry={() => { setLoading(true); load() }} className="mb-4" />}
+        {failed ? null : totalOffers === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
             <div className="text-4xl mb-3"><Glyph e="🏆" /></div>
             <p className="font-bold text-gray-700 mb-1">{L('No offers yet', 'ابھی کوئی آفر نہیں', 'لا توجد عروض بعد')}</p>
@@ -131,7 +146,7 @@ export default function SupplierAnalyticsPage() {
                             <div className="absolute bottom-0 left-0 right-0 rounded-t-md" style={{ height: `${wh}%`, background: '#0F6E56' }} title={`${w} ${L('won', 'جیتیں', 'فوز')}`} />
                           </div>
                         </div>
-                        <div className="text-[12px] text-gray-500" dir="ltr">{m.month}</div>
+                        <div className="text-[12px] text-gray-500">{monthLabel(m.month)}</div>
                       </div>
                     )
                   })}

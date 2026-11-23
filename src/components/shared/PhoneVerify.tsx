@@ -78,8 +78,10 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
       setError(c.includes('too-many-requests') || c.includes('quota')
         ? L('Too many attempts. Try again later.', 'بہت زیادہ کوششیں۔ بعد میں کوشش کریں۔', 'محاولات كثيرة. حاول لاحقاً.')
         : c.includes('invalid-phone')
-          ? L('This number is not valid.', 'یہ نمبر درست نہیں۔', 'هذا الرقم غير صحيح.')
-          : L('Could not send the code. Try again.', 'کوڈ نہیں بھیجا جا سکا۔', 'تعذّر إرسال الرمز. حاول مرة أخرى.'))
+          ? L('This number is not valid. Type a Saudi number like 05XXXXXXXX.', 'یہ نمبر درست نہیں۔ سعودی نمبر 05XXXXXXXX کی صورت میں لکھیں۔', 'هذا الرقم غير صحيح. اكتب رقماً سعودياً بصيغة 05XXXXXXXX.')
+          : c.includes('operation-not-allowed') || c.includes('region')
+            ? L('Codes cannot be sent to this country yet. Use a Saudi, UAE or Jordanian number.', 'اس ملک میں ابھی کوڈ نہیں بھیجا جا سکتا۔ سعودی، اماراتی یا اردنی نمبر استعمال کریں۔', 'لا يمكن إرسال الرمز إلى هذه الدولة حالياً. استخدم رقماً سعودياً أو إماراتياً أو أردنياً.')
+            : L('Could not send the code. Check your connection and try again.', 'کوڈ نہیں بھیجا جا سکا۔ کنکشن چیک کریں اور دوبارہ کوشش کریں۔', 'تعذّر إرسال الرمز. تأكّد من اتصالك وحاول مرة أخرى.'))
       try { verifierRef.current?.clear?.() } catch {} ; verifierRef.current = null
     } finally { setBusy(false) }
   }
@@ -100,7 +102,11 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
           ? L('This number is already verified on another account.', 'یہ نمبر کسی اور اکاؤنٹ پر تصدیق شدہ ہے۔', 'هذا الرقم موثّق في حساب آخر.')
           : j?.error === 'link_expired'
             ? L('This link has expired. Go back to the app and try again.', 'یہ لنک ختم ہو گیا۔ ایپ میں واپس جا کر دوبارہ کوشش کریں۔', 'انتهت صلاحية هذا الرابط. ارجع إلى التطبيق وحاول مرة أخرى.')
-            : L('Could not verify. Try again.', 'تصدیق نہیں ہو سکی۔', 'تعذّر التوثيق. حاول مرة أخرى.'))
+            : j?.error === 'country_not_allowed'
+              ? L('Numbers from this country are not accepted yet. Use a Saudi, UAE or Jordanian number.', 'اس ملک کے نمبر ابھی قبول نہیں۔ سعودی، اماراتی یا اردنی نمبر استعمال کریں۔', 'لا نقبل أرقام هذه الدولة حالياً. استخدم رقماً سعودياً أو إماراتياً أو أردنياً.')
+              : j?.error === 'stale' || j?.error === 'token_expired'
+                ? L('The code took too long. Request a new code and enter it within a few minutes.', 'کوڈ کی مدت ختم ہو گئی۔ نیا کوڈ منگوائیں اور چند منٹ میں درج کریں۔', 'انتهت مهلة الرمز. اطلب رمزاً جديداً وأدخله خلال دقائق.')
+                : L('Could not verify. Try again.', 'تصدیق نہیں ہو سکی۔', 'تعذّر التوثيق. حاول مرة أخرى.'))
         return
       }
       clearBannerCache()
@@ -133,6 +139,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
   if (verified && !open) {
     return (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[12px]">
+        {initialPhone && <span dir="ltr" className="text-sm font-bold text-[#0B2438]">{initialPhone}</span>}
         <span className="font-bold text-[#0F6E56] inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" aria-hidden />{L('Mobile verified', 'موبائل تصدیق شدہ', 'الجوال موثّق')}</span>
         {waVerified
           ? <span className="font-bold text-[#0F6E56] inline-flex items-center gap-1"><Check className="w-3.5 h-3.5" aria-hidden />{L('WhatsApp confirmed', 'واٹس ایپ تصدیق شدہ', 'واتساب مؤكَّد')}</span>
@@ -156,7 +163,7 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
       {step === 'enter' && !busy && (<>
         <p className="text-[12px] text-gray-600">{L('We will send a 6-digit code by SMS. Use a number that has WhatsApp: platform notifications arrive there.', 'ہم SMS سے 6 ہندسوں کا کوڈ بھیجیں گے۔ واٹس ایپ والا نمبر استعمال کریں۔', 'سنرسل رمزاً من 6 أرقام برسالة نصية. استخدم رقماً عليه واتساب، فإشعارات المنصة تصل إليه.')}</p>
         <div className="flex gap-2">
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" dir="ltr" className="input-field flex-1 min-w-0" placeholder={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} aria-label={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} />
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" autoComplete="tel" dir="ltr" className="input-field flex-1 min-w-0" placeholder="05XXXXXXXX" aria-label={L('Mobile number', 'موبائل نمبر', 'رقم الجوال')} />
           <button type="button" onClick={send} disabled={busy} className="min-h-[48px] text-sm px-4 rounded-xl font-bold text-white disabled:opacity-50 whitespace-nowrap" style={{ background: '#0B2438' }}>{busy ? '…' : L('Send code', 'کوڈ بھیجیں', 'أرسل الرمز')}</button>
         </div>
       </>)}
@@ -182,7 +189,11 @@ export default function PhoneVerify({ initialPhone, locale, verified, waVerified
           {handoff ? ' ' + L('You can go back to the app now.', 'اب آپ ایپ میں واپس جا سکتے ہیں۔', 'يمكنك الآن الرجوع إلى التطبيق.') : ''}
         </p>
       )}
-      {error && <p className="text-[12px] font-semibold text-red-600" role="alert">{error}</p>}
+      {error && <p className="text-[12px] font-semibold text-red-700" role="alert">{error}</p>}
+      {verified && step !== 'checking' && step !== 'done' && (
+        <button type="button" onClick={() => { setOpen(false); setStep('enter'); setCode(''); setError(''); setPhone(initialPhone || '') }}
+          className="min-h-[44px] text-[13px] font-bold text-[#48596E] hover:underline">{L('Cancel', 'منسوخ کریں', 'إلغاء')}</button>
+      )}
     </div>
   )
 }

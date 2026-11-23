@@ -11,6 +11,7 @@ import PageLoader from '@/components/shared/PageLoader'
 import LoadError from '@/components/shared/LoadError'
 import { rfqDisplayName } from '@/lib/rfqName'
 import Glyph from '@/components/shared/Glyph'
+import { Flag } from 'lucide-react'
 import AutoTr from '@/components/shared/AutoTr'
 import { realtimeTopic } from '@/lib/realtimeTopic'
 import { useEnsureVerified } from '@/components/shared/VerifyGate'
@@ -45,7 +46,9 @@ function Messages() {
   const [convosFailed, setConvosFailed] = useState(false)
   const [sending, setSending] = useState(false)
   const [awarded, setAwarded] = useState(true) // افتراضياً نسمح؛ نتحقق عند فتح المحادثة
+  const [dealId, setDealId] = useState<string | null>(null) // the accepted offer of this chat → «متابعة الصفقة» (UX-057)
   const endRef = useRef<any>(null)
+  const boxRef = useRef<HTMLTextAreaElement>(null)
   // report / block (migration 201): {other_id, i_blocked, blocked_me}
   const [bstate, setBstate] = useState<any>(null)
   const [menuOpen, setMenuOpen] = useState(false)
@@ -116,7 +119,7 @@ function Messages() {
     let cancelled = false
     let ch: any
     // switching: never show the previous chat's messages under the new person (UX-102)
-    setMsgs([]); setMsgsLoading(true)
+    setMsgs([]); setMsgsLoading(true); setDealId(null)
     ;(async () => {
       // Fetch the conversation directly — do NOT read the possibly-stale `convos` closure,
       // which made an awarded chat wrongly show the "20-message limit" lock (B9).
@@ -135,6 +138,7 @@ function Messages() {
           supabase.from('offers').select('id').eq('rfq_id', conv.rfq_id).eq('supplier_id', conv.supplier_id).eq('status', 'accepted').limit(1),
         ])
         aw = !!((aws && aws.length) || (ofs && ofs.length))
+        if (!cancelled) setDealId((ofs && ofs[0]?.id) || null)
       }
       if (cancelled) return
       setAwarded(aw)
@@ -164,6 +168,14 @@ function Messages() {
   }, [activeId, me])
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [msgs])
+
+  // the message box grows with its text up to about five lines (UX-057)
+  useEffect(() => {
+    const el = boxRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`
+  }, [body, activeId])
 
   async function send(e: any) {
     e?.preventDefault()
@@ -251,12 +263,24 @@ function Messages() {
   const sorted = convos.map((c, i) => ({ c, i })).sort((a, b) => ((unread[b.c.id] || 0) > 0 ? 1 : 0) - ((unread[a.c.id] || 0) > 0 ? 1 : 0) || a.i - b.i).map(x => x.c)
 
   // ready-made replies (the app's chips, UX-192): a tap writes the text into the box, the user sends it
-  const quick: string[] = !active ? [] : iAmBuyer(active) ? [
+  // after the choice they are about the delivery, before it about the offer (UX-057); a photo cannot
+  // be sent in a chat, so no reply asks for one
+  const quick: string[] = !active ? [] : awarded && iAmBuyer(active) ? [
+    L('When will the order arrive?', 'آرڈر کب پہنچے گا؟', 'متى يصل الطلب؟'),
+    L('I will send you the delivery location.', 'میں آپ کو ڈیلیوری کی جگہ بھیجتا ہوں۔', 'سأرسل لك موقع التسليم.'),
+    L('Please call me before you arrive.', 'پہنچنے سے پہلے مجھے کال کریں۔', 'اتصل بي قبل الوصول من فضلك.'),
+    L('Please attach the invoice on the deal page.', 'براہ کرم ڈیل کے صفحے پر انوائس منسلک کریں۔', 'أرفق الفاتورة في صفحة الصفقة من فضلك.'),
+  ] : awarded ? [
+    L('Your order is ready.', 'آپ کا آرڈر تیار ہے۔', 'طلبك جاهز.'),
+    L('When does delivery suit you?', 'ڈیلیوری آپ کے لیے کب مناسب ہے؟', 'متى يناسبك التسليم؟'),
+    L('Please send me the delivery location.', 'براہ کرم ڈیلیوری کی جگہ بھیجیں۔', 'أرسل لي موقع التسليم من فضلك.'),
+    L('The order is on its way.', 'آرڈر راستے میں ہے۔', 'الطلب في الطريق إليك.'),
+  ] : iAmBuyer(active) ? [
     L('Does the price include delivery?', 'کیا قیمت میں ڈیلیوری شامل ہے؟', 'هل السعر شامل التوصيل؟'),
     L('When can you deliver?', 'آپ کب ڈیلیور کر سکتے ہیں؟', 'متى يمكنك التوصيل؟'),
     L('Is the material available now?', 'کیا مال ابھی دستیاب ہے؟', 'هل المادة متوفرة الآن؟'),
     L('Can you lower the price a little?', 'کیا قیمت تھوڑی کم ہو سکتی ہے؟', 'هل يمكن تخفيض السعر قليلاً؟'),
-    L('Please send a photo of the product.', 'براہ کرم پروڈکٹ کی تصویر بھیجیں۔', 'أرسل صورة المنتج من فضلك.'),
+    L('What is the brand, and where is it made?', 'برانڈ کیا ہے اور کہاں بنا ہے؟', 'ما الماركة وما بلد الصنع؟'),
   ] : [
     vatRegistered
       ? L('Prices include 15% VAT.', 'قیمتوں میں 15% VAT شامل ہے۔', 'الأسعار تشمل ضريبة القيمة المضافة 15%.')
@@ -330,7 +354,17 @@ function Messages() {
 
         {/* المحادثة */}
         <section className={`lg:col-span-2 min-h-0 bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col ${activeId ? '' : 'hidden lg:flex'}`}>
-          {!active ? (
+          {!active && activeId && !convosFailed ? (
+            <div className="flex-1 grid place-items-center p-6 text-center">
+              <div>
+                <div className="text-3xl mb-2 text-[#0B2438]"><Glyph e="🔎" /></div>
+                <p className="text-sm font-semibold text-gray-700">{L('We could not find this conversation.', 'یہ گفتگو نہیں ملی۔', 'تعذّر العثور على هذه المحادثة.')}</p>
+                <button type="button" onClick={() => setActiveId('')} className="mt-4 inline-flex items-center justify-center min-h-[44px] px-5 rounded-xl text-sm font-bold text-white" style={{ background: '#0B2438' }}>
+                  <span aria-hidden="true">{BACK}</span>&nbsp;{L('Back to conversations', 'گفتگو کی فہرست پر واپس', 'رجوع إلى المحادثات')}
+                </button>
+              </div>
+            </div>
+          ) : !active ? (
             <div className="flex-1 grid place-items-center text-sm text-gray-500">{L('Select a conversation', 'کوئی گفتگو منتخب کریں', 'اختر محادثة')}</div>
           ) : (
             <>
@@ -342,8 +376,13 @@ function Messages() {
                     ? <Link href={rfqHref(active)} className="block text-xs text-[#8F6820] truncate hover:underline" dir="auto"><Glyph e="📦" /> {ctx(active)} · <span className="font-bold">{L('View request', 'درخواست دیکھیں', 'عرض الطلب')}</span></Link>
                     : <div className="text-xs text-gray-500 truncate"><Glyph e="📦" /> {ctx(active)}</div>)}
                 </div>
+                {dealId && (
+                  <Link href={`/contractor/orders/${dealId}`} className={`${bstate?.other_id ? 'ms-auto' : 'ms-auto me-1'} shrink-0 inline-flex items-center min-h-[44px] px-3 rounded-xl text-xs font-bold`} style={{ background: '#D4A543', color: '#071827' }}>
+                    {L('Follow the deal', 'ڈیل دیکھیں', 'متابعة الصفقة')}
+                  </Link>
+                )}
                 {bstate?.other_id && (
-                  <div className="relative ms-auto">
+                  <div className={`relative ${dealId ? '' : 'ms-auto'}`}>
                     <button type="button" onClick={() => setMenuOpen(o => !o)} disabled={busy} aria-label={L('More options', 'مزید اختیارات', 'خيارات أخرى')} aria-expanded={menuOpen}
                       className="min-w-[44px] min-h-[44px] grid place-items-center rounded-lg hover:bg-gray-100 text-gray-600 text-lg leading-none">⋮</button>
                     {menuOpen && (
@@ -357,14 +396,14 @@ function Messages() {
                   </div>
                 )}
               </div>
-              {notice && <div className="px-3 py-1 text-sm bg-amber-50 text-amber-900 border-b border-amber-100 flex items-center justify-between gap-2"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label={L('Close', 'بند کریں', 'إغلاق')} className="min-w-[36px] min-h-[36px] grid place-items-center text-amber-700">×</button></div>}
+              {notice && <div className="px-3 py-1 text-sm bg-amber-50 text-amber-900 border-b border-amber-100 flex items-center justify-between gap-2"><span>{notice}</span><button type="button" onClick={() => setNotice('')} aria-label={L('Close', 'بند کریں', 'إغلاق')} className="min-w-[44px] min-h-[44px] grid place-items-center text-amber-700"><Glyph e="✕" /></button></div>}
               {reportOpen && (
                 <form onSubmit={submitReport} className="p-3 border-b border-gray-100 bg-gray-50 space-y-1 text-sm">
                   <div className="font-bold" style={{ color: '#0B2438' }}>{reportMsgId ? L('Report this message', 'اس پیغام کی رپورٹ کریں', 'الإبلاغ عن هذه الرسالة') : L('Report user', 'صارف کی رپورٹ کریں', 'الإبلاغ عن المستخدم')}</div>
                   {REASONS.map(([k, label]) => (
-                    <label key={k} className="flex items-center gap-2 cursor-pointer min-h-[40px]"><input type="radio" name="reason" className="w-5 h-5" checked={reason === k} onChange={() => setReason(k)} /> {label}</label>
+                    <label key={k} className="flex items-center gap-2 cursor-pointer min-h-[44px]"><input type="radio" name="reason" className="w-5 h-5" checked={reason === k} onChange={() => setReason(k)} /> {label}</label>
                   ))}
-                  <textarea value={details} onChange={e => setDetails(e.target.value.slice(0, 1000))} rows={2} className="input-field text-base sm:text-sm w-full" placeholder={L('Details (optional)', 'تفصیل (اختیاری)', 'تفاصيل (اختياري)')} />
+                  <textarea value={details} onChange={e => setDetails(e.target.value.slice(0, 1000))} rows={2} className="input-field text-base sm:text-sm w-full" aria-label={L('Details (optional)', 'تفصیل (اختیاری)', 'تفاصيل (اختياري)')} placeholder={L('Details (optional)', 'تفصیل (اختیاری)', 'تفاصيل (اختياري)')} />
                   <div className="flex gap-2 pt-1">
                     <button type="submit" disabled={busy} className="min-h-[44px] px-4 rounded-xl font-bold text-white text-sm disabled:opacity-50" style={{ background: '#0B2438' }}>{L('Send report', 'رپورٹ بھیجیں', 'إرسال البلاغ')}</button>
                     <button type="button" onClick={() => setReportOpen(false)} className="min-h-[44px] px-4 rounded-xl text-sm text-gray-700 border border-gray-200">{L('Close', 'بند کریں', 'إغلاق')}</button>
@@ -385,8 +424,11 @@ function Messages() {
                         <div className={`text-xs mt-1 ${mine ? 'text-white/80' : 'text-gray-500'}`}>
                           {m._status === 'pending' ? `${L('Sending…', 'بھیجا جا رہا ہے…', 'جارٍ الإرسال…')}`
                             : m._status === 'failed'
-                              ? <button type="button" onClick={() => retry(m)} className="underline font-semibold text-white min-h-[32px]"><Glyph e="⚠" /> {L('Failed to send — retry', 'نہیں بھیجا جا سکا — دوبارہ کوشش کریں', 'تعذّر الإرسال — إعادة المحاولة')} ↻</button>
-                              : <>{fmtTime(m.created_at, locale)}{mine ? ' ✓' : ''}{!mine && bstate?.other_id && typeof m.id === 'string' && !m.id.startsWith('temp-') && <button type="button" onClick={() => openReport(m.id)} className="ms-2 underline hover:text-red-600">{L('Report', 'رپورٹ', 'إبلاغ')}</button>}</>}
+                              ? <button type="button" onClick={() => retry(m)} className="underline font-semibold text-white min-h-[44px] inline-flex items-center gap-1"><Glyph e="⚠" /> {L('Failed to send — retry', 'نہیں بھیجا جا سکا — دوبارہ کوشش کریں', 'تعذّر الإرسال — إعادة المحاولة')}</button>
+                              : <span className="inline-flex items-center gap-1">{fmtTime(m.created_at, locale)}{mine && <span aria-label={L('Sent', 'بھیج دیا', 'أُرسلت')}><Glyph e="✓" /></span>}{!mine && bstate?.other_id && typeof m.id === 'string' && !m.id.startsWith('temp-') && (
+                                <button type="button" onClick={() => openReport(m.id)} aria-label={L('Report this message', 'اس پیغام کی رپورٹ کریں', 'الإبلاغ عن هذه الرسالة')} title={L('Report', 'رپورٹ', 'إبلاغ')}
+                                  className="-my-3 -me-2 ms-1 min-w-[44px] min-h-[44px] grid place-items-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"><Flag aria-hidden className="w-4 h-4" /></button>
+                              )}</span>}
                         </div>
                       </div>
                     </div>
@@ -413,12 +455,18 @@ function Messages() {
                 <div className="px-3 pt-2 flex gap-2 overflow-x-auto" aria-label={L('Quick replies', 'فوری جوابات', 'ردود جاهزة')}>
                   {quick.map(t => (
                     <button key={t} type="button" onClick={() => setBody(t)}
-                      className="shrink-0 min-h-[36px] px-3 rounded-full text-xs font-semibold border border-[#0B2438]/15 bg-white text-[#0B2438] hover:border-[#D4A543]">{t}</button>
+                      className="shrink-0 min-h-[44px] px-3.5 rounded-full text-sm font-semibold border border-[#0B2438]/15 bg-white text-[#0B2438] hover:border-[#D4A543]">{t}</button>
                   ))}
                 </div>
               )}
-              <form onSubmit={send} className="p-3 border-t border-gray-100 flex gap-2 mt-2">
-                <input value={body} onChange={e => setBody(e.target.value)} disabled={blocked} aria-label={L('Message', 'پیغام', 'نص الرسالة')} className="input-field flex-1 text-base sm:text-sm disabled:bg-gray-50" placeholder={chatBlocked ? L('Messaging is blocked', 'پیغام رسانی بند ہے', 'المراسلة محظورة') : blocked ? L('Limit reached before an offer is chosen', 'آفر منتخب ہونے سے پہلے کی حد پوری ہو گئی', 'انتهى الحد المسموح قبل اختيار العرض') : L('Type a message…', 'پیغام لکھیں…', 'اكتب رسالة…')} />
+              <form onSubmit={send} className="p-3 border-t border-gray-100 flex items-end gap-2 mt-2">
+                <textarea ref={boxRef} rows={1} value={body} onChange={e => setBody(e.target.value)} disabled={blocked} aria-label={L('Message', 'پیغام', 'نص الرسالة')}
+                  onKeyDown={(e: any) => {
+                    if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent?.isComposing) return
+                    if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) return // phones: Enter is a new line
+                    e.preventDefault(); send(null)
+                  }}
+                  className="input-field flex-1 text-base sm:text-sm disabled:bg-gray-50 resize-none leading-relaxed min-h-[44px] max-h-[140px] overflow-y-auto" placeholder={chatBlocked ? L('Messaging is blocked', 'پیغام رسانی بند ہے', 'المراسلة محظورة') : blocked ? L('Limit reached before an offer is chosen', 'آفر منتخب ہونے سے پہلے کی حد پوری ہو گئی', 'انتهى الحد المسموح قبل اختيار العرض') : L('Type a message…', 'پیغام لکھیں…', 'اكتب رسالة…')} />
                 <button type="submit" disabled={sending || blocked || !body.trim()} className="min-h-[44px] px-5 rounded-xl font-bold text-[#071827] text-sm disabled:opacity-50" style={{ background: '#D4A543' }}>
                   {L('Send', 'بھیجیں', 'إرسال')}
                 </button>

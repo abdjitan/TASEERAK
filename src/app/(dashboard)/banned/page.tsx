@@ -62,16 +62,22 @@ export default function BannedPage() {
         <h1 className="text-xl font-bold text-red-800">{L('Your account is suspended', 'آپ کا اکاؤنٹ معطل ہے', 'حسابك موقوف')}</h1>
         <p className="text-sm text-red-900 mt-2">
           {ban.permanent
-            ? L('The suspension has no end date.', 'معطلی کی کوئی آخری تاریخ نہیں۔', 'الإيقاف دون تاريخ انتهاء.')
-            : L(`Until ${until}.`, `${until} تک۔`, `حتى ${until}.`)}
+            ? L('The suspension is permanent until the administration reviews it.', 'معطلی مستقل ہے جب تک انتظامیہ اس کا جائزہ نہ لے۔', 'الإيقاف دائم إلى أن تراجعه الإدارة.')
+            : L(`The suspension ends on ${until}.`, `معطلی ${until} کو ختم ہوگی۔`, `ينتهي الإيقاف في ${until}.`)}
         </p>
+        {/* what a suspension means (UX-117) */}
+        <p className="text-sm text-red-900 mt-2">{L('While suspended you cannot send requests, offers or messages. You can still read this page, contact support or delete your account.', 'معطلی کے دوران آپ درخواستیں، آفرز یا پیغامات نہیں بھیج سکتے۔ آپ یہ صفحہ دیکھ سکتے ہیں، سپورٹ سے رابطہ کر سکتے ہیں یا اپنا اکاؤنٹ حذف کر سکتے ہیں۔', 'خلال الإيقاف لا يمكنك إرسال طلبات أو عروض أو رسائل. ويمكنك قراءة هذه الصفحة والتواصل مع الدعم أو حذف حسابك.')}</p>
         {ban.reason && (
           <div className="mt-4 rounded-xl bg-white border border-red-100 p-3 text-sm text-gray-800">
             <div className="text-xs font-bold text-gray-600 mb-1">{L('Message from the administration', 'انتظامیہ کا پیغام', 'رسالة الإدارة')}</div>
             {ban.reason}
           </div>
         )}
-        <Link href="/support" className="inline-flex items-center mt-4 min-h-[44px] px-5 rounded-xl bg-[#0B2438] text-white text-sm font-bold">{L('Contact support', 'سپورٹ سے رابطہ', 'تواصل مع الدعم')}</Link>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Link href="/support" className="btn-orange text-sm">{L('Contact support', 'سپورٹ سے رابطہ', 'تواصل مع الدعم')}</Link>
+          {/* deleting the account is a right (PDPL) and a store requirement, also while suspended (UX-024) */}
+          <a href="/account/delete" className="inline-flex items-center min-h-[44px] px-2 text-sm font-bold text-red-800 underline underline-offset-2">{L('Delete my account', 'میرا اکاؤنٹ حذف کریں', 'حذف حسابي')}</a>
+        </div>
       </div>
     )
   }

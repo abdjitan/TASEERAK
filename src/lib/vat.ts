@@ -38,14 +38,14 @@ export const isIndependentOffer = (o: any) =>
   o?.supplier?.supplier_tier === 'independent' || INDEPENDENT_TYPES.includes(o?.supplier?.provider_type)
 
 export function vatTag(o: any, locale: string): string {
-  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Final price; the tax invoice is issued by the supplying shop' : locale === 'ur' ? 'حتمی قیمت؛ ٹیکس انوائس سپلائی کرنے والی دکان جاری کرے گی' : 'سعر نهائي، وتصدر الفاتورة الضريبية من المحل المورّد'
+  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Final price; the invoice comes from the source shop' : locale === 'ur' ? 'حتمی قیمت؛ انوائس ماخذ دکان سے' : 'سعر نهائي، والفاتورة من المحل المصدر'
   if (!showsVatBreakdown(o)) return locale === 'en' ? 'Final price, no VAT added' : locale === 'ur' ? 'حتمی قیمت، اس پر VAT شامل نہیں کیا جاتا' : 'سعر نهائي، لا تُضاف إليه ضريبة القيمة المضافة'
   return locale === 'en' ? 'incl. 15% VAT' : locale === 'ur' ? '15% VAT سمیت' : 'يشمل ضريبة القيمة المضافة 15%'
 }
 
 // The label of an offer's grand total: «يشمل ضريبة القيمة المضافة 15%» only when the seller charges it.
 export function totalLabel(o: any, locale: string): string {
-  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Total (final; tax invoice from the supplying shop)' : locale === 'ur' ? 'کل (حتمی؛ ٹیکس انوائس سپلائی کرنے والی دکان سے)' : 'الإجمالي (نهائي، والفاتورة الضريبية من المحل المورّد)'
+  if (!showsVatBreakdown(o) && isIndependentOffer(o)) return locale === 'en' ? 'Total (final; invoice from the source shop)' : locale === 'ur' ? 'کل (حتمی؛ انوائس ماخذ دکان سے)' : 'الإجمالي (نهائي، والفاتورة من المحل المصدر)'
   if (!showsVatBreakdown(o)) return locale === 'en' ? 'Total (final, no VAT)' : locale === 'ur' ? 'کل (حتمی، VAT کے بغیر)' : 'الإجمالي (نهائي، دون ضريبة القيمة المضافة)'
   return locale === 'en' ? 'Total incl. 15% VAT' : locale === 'ur' ? 'کل رقم (15% VAT سمیت)' : 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)'
 }
@@ -74,7 +74,21 @@ export function sellerInvoiceLabel(o: any, locale: string, who: 'buyer' | 'suppl
 
 // What the seller is asked to do before confirming delivery (UX-025 / UX-127).
 export function invoiceGateText(o: any, locale: string): string {
-  if (isIndependentOffer(o)) return locale === 'en' ? 'Upload the supplying shop’s invoice in the buyer’s name below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے خریدار کے نام سپلائی کرنے والی دکان کی انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة المحل المورّد باسم المشتري أدناه أولاً، ثم أكّد التسليم.'
+  if (isIndependentOffer(o)) return locale === 'en' ? 'Upload the source shop’s invoice in the buyer’s name below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے خریدار کے نام سپلائی کرنے والی دکان کی انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة المحل المصدر باسم المشتري أدناه أولاً، ثم أكّد التسليم.'
   if (showsVatBreakdown(o)) return locale === 'en' ? 'Upload your tax invoice below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے اپنی ٹیکس انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورتك الضريبية أدناه أولاً، ثم أكّد التسليم.'
   return locale === 'en' ? 'Upload your sales invoice below first, then confirm delivery.' : locale === 'ur' ? 'پہلے نیچے اپنی سیلز انوائس اپ لوڈ کریں، پھر ڈیلیوری کی تصدیق کریں۔' : 'ارفع فاتورة البيع أدناه أولاً، ثم أكّد التسليم.'
+}
+
+// The currency name, one per language everywhere (UX-140): «ر.س» / «SAR» / «ریال».
+export const sarLabel = (locale: string): string => (locale === 'en' ? 'SAR' : locale === 'ur' ? 'ریال' : 'ر.س')
+
+// A line or unit price on the buyer's basis (UX-005): a home buyer sees every number as what they pay
+// (lineComparable), so the lines add up to the total; a business sees the price as the seller entered it.
+export const buyerLinePrice = (amount: any, o: any, home: boolean): number =>
+  home ? lineComparable(amount, o) : Number(amount) || 0
+
+// «(قبل الضريبة)» after a business buyer's line price when it differs from the VAT-inclusive total (UX-005).
+export function preVatNote(o: any, locale: string): string {
+  if (!showsVatBreakdown(o) || o?.vat_included) return ''
+  return locale === 'en' ? '(before VAT)' : locale === 'ur' ? '(VAT سے پہلے)' : '(قبل الضريبة)'
 }

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import PageLoader from '@/components/shared/PageLoader'
-import { SECTOR_LABELS } from '@/types'
+import { SECTOR_LABELS, GROUP_LABELS } from '@/types'
 import Glyph from '@/components/shared/Glyph'
 
 type Row = {
@@ -37,6 +37,8 @@ export default function AdminTaxonomyPage() {
   const [naKw, setNaKw] = useState('')
   const [naMsg, setNaMsg] = useState('')
   const [naBusy, setNaBusy] = useState(false)
+  const [naActive, setNaActive] = useState(true) // «مفعّل» (UX-129)
+  const [naOk, setNaOk] = useState('')
 
   useEffect(() => {
     (async () => {
@@ -97,11 +99,13 @@ export default function AdminTaxonomyPage() {
     const supabase = createClient()
     const { error } = await supabase.from('taxonomy').insert({
       sector: naSector, sub_key: key, name_ar: naName.trim(),
-      grp: naGroup.trim() || '_other', keywords: parseKw(naKw), is_active: true,
+      grp: naGroup.trim() || '_other', keywords: parseKw(naKw), is_active: naActive,
     })
     setNaBusy(false)
     if (error) { setNaMsg('تعذّرت الإضافة: ' + error.message); return }
-    setNaKey(''); setNaName(''); setNaGroup(''); setNaKw(''); setShowAdd(false)
+    setNaOk(`✓ أُضيف التخصص «${naName.trim()}»${naActive ? '' : ' (غير مفعّل)'}.`)
+    setTimeout(() => setNaOk(''), 5000)
+    setNaKey(''); setNaName(''); setNaGroup(''); setNaKw(''); setNaActive(true); setShowAdd(false)
     await load()
   }
 
@@ -134,6 +138,7 @@ export default function AdminTaxonomyPage() {
           </button>
         </div>
 
+        {naOk && <div role="status" className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{naOk}</div>}
         {/* إضافة تخصص جديد */}
         {showAdd && (
           <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-4 mb-5">
@@ -154,15 +159,21 @@ export default function AdminTaxonomyPage() {
                 <input value={naName} onChange={e => setNaName(e.target.value)} className="input-field text-sm" placeholder="مثال: عزل بولي يوريا" />
               </div>
               <div>
-                <label className="block text-[11px] font-bold text-gray-500 mb-1">المجموعة (اختياري)</label>
-                <input value={naGroup} onChange={e => setNaGroup(e.target.value)} className="input-field text-sm" placeholder="مفتاح المجموعة أو اتركه فارغاً" />
+                <label htmlFor="na-group" className="block text-[12px] font-bold text-gray-600 mb-1">المجموعة</label>
+                <select id="na-group" value={naGroup} onChange={e => setNaGroup(e.target.value)} className="input-field text-sm">
+                  <option value="">متنوّع (بلا مجموعة)</option>
+                  {Object.entries(GROUP_LABELS).map(([k, g]) => <option key={k} value={k}>{g.ar}</option>)}
+                </select>
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-[11px] font-bold text-gray-500 mb-1">الكلمات المفتاحية (مفصولة بفواصل)</label>
                 <textarea value={naKw} onChange={e => setNaKw(e.target.value)} rows={2} className="input-field text-sm" placeholder="بولي يوريا، polyurea، عزل رش" />
               </div>
             </div>
-            {naMsg && <div className="text-xs text-amber-600 mt-2">{naMsg}</div>}
+            <label className="mt-3 flex items-center gap-2 text-sm font-bold text-[#0B2438] min-h-[44px]">
+              <input type="checkbox" checked={naActive} onChange={e => setNaActive(e.target.checked)} className="w-5 h-5" /> مفعّل (يظهر في القوائم ويُوجَّه إليه)
+            </label>
+            {naMsg && <div role="alert" className="text-[13px] text-red-700 mt-2">{naMsg}</div>}
             <button onClick={addNew} disabled={naBusy} className="mt-3 text-sm font-bold text-white px-5 py-2 rounded-xl disabled:opacity-50" style={{ background: '#0F6E56' }}>
               {naBusy ? '...' : 'إضافة'}
             </button>

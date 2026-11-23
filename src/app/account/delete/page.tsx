@@ -29,6 +29,10 @@ const C: Record<string, any> = {
     button: 'احذف حسابي نهائياً', deleting: 'جارٍ الحذف…',
     done: 'تم حذف حسابك. شكراً لاستخدامك تسعيرك.',
     adminErr: 'لا يمكن حذف حساب مدير المنصة من هنا.', err: 'تعذّر حذف الحساب. حاول مرة أخرى أو راسل الدعم.',
+    delHome: ['اسمك ورقم جوالك وعنوانك وموقعك.', 'المسودات والإشعارات.', 'رموز الإشعارات على أجهزتك، وبيانات الدخول، فلا يمكن الدخول إلى الحساب بعدها.', 'تُلغى طلباتك المفتوحة.'],
+    keepHome: ['سجلّات مشترياتك المكتملة (الفواتير والمراسلات المرتبطة بها) تبقى لدى البائع باسم «حساب محذوف»، لأنها جزء من سجلّاته.', 'البيانات التي يُلزمنا النظام بحفظها، مثل بيانات الفواتير الضريبية، تُحفظ للمدة التي يحددها النظام ثم تُحذف.'],
+    activeDeals: (n: number) => `لديك ${n} صفقة قيد التنفيذ. أكملها أو تواصل مع الطرف الآخر قبل الحذف، لأن الحذف يوقف المراسلة والتأكيدات فيها.`,
+    backHome: 'العودة إلى الصفحة الرئيسية',
   },
   en: {
     title: 'Delete your account', home: 'Home',
@@ -45,6 +49,10 @@ const C: Record<string, any> = {
     button: 'Delete my account permanently', deleting: 'Deleting…',
     done: 'Your account has been deleted. Thank you for using Taseerak.',
     adminErr: 'A platform admin account cannot be deleted here.', err: 'Could not delete the account. Try again or contact support.',
+    delHome: ['Your name, phone number, address and location.', 'Drafts and notifications.', 'Your devices’ notification tokens and your sign-in, so the account can no longer be used.', 'Your open requests are cancelled.'],
+    keepHome: ['Your completed purchases (invoices and the messages about them) stay with the seller under the name "Deleted account", because they are part of their records.', 'Data the law requires us to keep, such as tax-invoice data, is kept for the legally required period and then deleted.'],
+    activeDeals: (n: number) => `You have ${n} deal(s) in progress. Finish them or talk to the other party before deleting: deleting stops the messages and confirmations in them.`,
+    backHome: 'Back to the home page',
   },
   ur: {
     title: 'اکاؤنٹ حذف کریں', home: 'مرکزی صفحہ',
@@ -61,6 +69,10 @@ const C: Record<string, any> = {
     button: 'میرا اکاؤنٹ مستقل حذف کریں', deleting: 'حذف ہو رہا ہے…',
     done: 'آپ کا اکاؤنٹ حذف ہو گیا۔ تسعیرک استعمال کرنے کا شکریہ۔',
     adminErr: 'پلیٹ فارم ایڈمن کا اکاؤنٹ یہاں سے حذف نہیں ہو سکتا۔', err: 'اکاؤنٹ حذف نہیں ہو سکا۔ دوبارہ کوشش کریں یا سپورٹ سے رابطہ کریں۔',
+    delHome: ['آپ کا نام، فون نمبر، پتہ اور مقام۔', 'ڈرافٹ اور اطلاعات۔', 'آپ کے آلات کے اطلاعاتی ٹوکن اور لاگ اِن، اس کے بعد اکاؤنٹ استعمال نہیں ہو سکتا۔', 'آپ کی کھلی درخواستیں منسوخ ہو جاتی ہیں۔'],
+    keepHome: ['آپ کی مکمل خریداریاں (انوائس اور متعلقہ پیغامات) بیچنے والے کے پاس «حذف شدہ اکاؤنٹ» کے نام سے رہتی ہیں کیونکہ وہ اس کے ریکارڈ کا حصہ ہیں۔', 'جو ڈیٹا قانوناً رکھنا لازم ہے، جیسے ٹیکس انوائس کا ڈیٹا، مقررہ مدت تک رکھا جاتا ہے پھر حذف کر دیا جاتا ہے۔'],
+    activeDeals: (n: number) => `آپ کے ${n} سودے جاری ہیں۔ حذف کرنے سے پہلے انہیں مکمل کریں یا دوسرے فریق سے بات کریں، کیونکہ حذف کرنے سے ان میں پیغامات اور تصدیقات رک جاتی ہیں۔`,
+    backHome: 'مرکزی صفحے پر واپس جائیں',
   },
 }
 
@@ -72,9 +84,25 @@ export default function DeleteAccountPage() {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  // role-based lists (a home buyer has no purchase orders or business name) and a warning when deals are still running (UX-100)
+  const [homeBuyer, setHomeBuyer] = useState(false)
+  const [activeDeals, setActiveDeals] = useState(0)
 
   useEffect(() => {
-    createClient().auth.getSession().then(({ data }) => setSignedIn(!!data.session))
+    const sb = createClient()
+    sb.auth.getSession().then(async ({ data }) => {
+      setSignedIn(!!data.session)
+      const uid = data.session?.user?.id
+      if (!uid) return
+      try {
+        const { data: p } = await sb.from('profiles').select('role, buyer_type').eq('id', uid).maybeSingle()
+        setHomeBuyer(p?.role === 'contractor' && p?.buyer_type === 'individual')
+      } catch {}
+      try {
+        const { data: n, error } = await sb.rpc('my_active_deal_count')
+        if (!error && typeof n === 'number') setActiveDeals(n)
+      } catch {}
+    })
   }, [])
 
   async function remove() {
@@ -116,12 +144,15 @@ export default function DeleteAccountPage() {
           <a href={`mailto:${OPERATOR.email}`} dir="ltr" className="inline-block font-mono text-base font-bold text-[#8F6820] hover:underline select-all break-all">{OPERATOR.email}</a>
           <p className="text-xs text-gray-500 mt-1">{t.mailHint}</p>
         </section>
-        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={t.del} /></section>
-        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.keepTitle}</h2><List items={t.keep} /></section>
+        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.delTitle}</h2><List items={homeBuyer ? t.delHome : t.del} /></section>
+        <section><h2 className="text-base font-bold mb-1.5" style={{ color: '#0B2438' }}>{t.keepTitle}</h2><List items={homeBuyer ? t.keepHome : t.keep} /></section>
 
         <div className="bg-white rounded-2xl border border-red-100 p-5">
           {done ? (
-            <p className="text-sm font-bold text-[#0F6E56]" role="status"><Glyph e="✅" /> {t.done}</p>
+            <div className="space-y-3">
+              <p className="text-sm font-bold text-[#0F6E56]" role="status"><Glyph e="✅" /> {t.done}</p>
+              <a href="/" className="btn-navy">{t.backHome}</a>
+            </div>
           ) : signedIn === false ? (
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <p className="text-sm text-gray-600">{t.signedOut}</p>
@@ -129,11 +160,14 @@ export default function DeleteAccountPage() {
             </div>
           ) : signedIn ? (
             <div className="space-y-3">
+              {activeDeals > 0 && (
+                <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="alert">{t.activeDeals(activeDeals)}</div>
+              )}
               <label className="block text-sm font-semibold text-gray-700" htmlFor="confirm-word">{t.confirmLabel}</label>
               <input id="confirm-word" value={word} onChange={e => setWord(e.target.value)} className="input-field max-w-xs" autoComplete="off" />
               {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
               <button type="button" onClick={remove} disabled={busy || word.trim().toUpperCase() !== t.confirmWord}
-                className="min-h-[44px] px-5 rounded-xl text-sm font-bold text-white bg-red-700 hover:bg-red-800 disabled:opacity-40">
+                className="btn-danger text-sm">
                 {busy ? t.deleting : t.button}
               </button>
               {/* a way back without deleting (UX-184) */}

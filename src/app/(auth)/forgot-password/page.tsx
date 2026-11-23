@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useTranslation } from '@/i18n'
 import Logo from '@/components/shared/Logo'
@@ -19,6 +19,7 @@ const txt = {
     sentSub: 'إذا كان {email} مسجّلاً لدينا فستصلك رسالة فيها رابط لتعيين كلمة مرور جديدة. تفقّد مجلد الرسائل غير المرغوب فيها أيضاً.',
     phoneQ: 'سجّلت برقم جوالك؟', phoneA: 'لا تحتاج كلمة مرور: ادخل برمز يصلك على جوالك.', phoneBtn: 'الدخول برقم الجوال',
     err: 'تعذّر الإرسال، تأكد من البريد وحاول مرة أخرى',
+    notArrived: 'لم تصلك الرسالة؟', resend: 'أعد الإرسال', resendIn: 'أعد الإرسال بعد {s} ثانية', editEmail: 'تعديل البريد',
   },
   en: {
     title: 'Forgot your password?', sub: 'Enter your email and we will send you a reset link',
@@ -28,6 +29,7 @@ const txt = {
     sentSub: 'If {email} is registered with us, you will get a message with a link to set a new password. Check your spam folder too.',
     phoneQ: 'Signed up with your mobile number?', phoneA: 'You do not need a password: sign in with a code sent to your mobile.', phoneBtn: 'Sign in with my mobile',
     err: 'Could not send. Check the email and try again',
+    notArrived: 'Did the message not arrive?', resend: 'Send it again', resendIn: 'Send again in {s} s', editEmail: 'Change the email',
   },
   ur: {
     title: 'پاسورڈ بھول گئے؟', sub: 'اپنا ای میل درج کریں، ہم ری سیٹ لنک بھیجیں گے',
@@ -37,6 +39,7 @@ const txt = {
     sentSub: 'اگر {email} ہمارے پاس رجسٹرڈ ہے تو آپ کو نیا پاسورڈ مقرر کرنے کے لنک والا پیغام ملے گا۔ اسپام فولڈر بھی دیکھیں۔',
     phoneQ: 'موبائل نمبر سے رجسٹر کیا تھا؟', phoneA: 'پاسورڈ کی ضرورت نہیں: موبائل پر آنے والے کوڈ سے سائن اِن کریں۔', phoneBtn: 'موبائل نمبر سے سائن اِن',
     err: 'بھیجنے میں ناکامی، دوبارہ کوشش کریں',
+    notArrived: 'پیغام نہیں ملا؟', resend: 'دوبارہ بھیجیں', resendIn: '{s} سیکنڈ بعد دوبارہ بھیجیں', editEmail: 'ای میل تبدیل کریں',
   },
 }
 
@@ -49,6 +52,18 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('')
   const [captchaToken, setCaptchaToken] = useState('')
   const captchaRef = useRef<any>(null)
+  // «send again» opens after 60 s; «change the email» goes back to the form with the address kept (UX-101)
+  const [wait, setWait] = useState(0)
+  useEffect(() => {
+    if (wait <= 0) return
+    const id = setTimeout(() => setWait(w => w - 1), 1000)
+    return () => clearTimeout(id)
+  }, [wait])
+  const emailRef = useRef<HTMLInputElement | null>(null)
+  function backToForm(focus: boolean) {
+    setSent(false); setError(''); setCaptchaToken('')
+    if (focus) setTimeout(() => emailRef.current?.focus(), 50)
+  }
 
   async function handleSubmit(e: any) {
     e.preventDefault()
@@ -60,7 +75,7 @@ export default function ForgotPasswordPage() {
         captchaToken: captchaToken || undefined,
       })
       if (err) { captchaRef.current?.reset(); setCaptchaToken(''); setError(t.err); setLoading(false); return }
-      setSent(true)
+      setSent(true); setWait(60)
     } catch { captchaRef.current?.reset(); setCaptchaToken(''); setError(t.err) }
     setLoading(false)
   }
@@ -83,6 +98,16 @@ export default function ForgotPasswordPage() {
               <div className="text-5xl mb-4"><Glyph e="📬" /></div>
               <h2 className="text-xl font-bold text-[#0B2438] mb-2">{t.sentTitle}</h2>
               <p className="text-sm text-gray-700 mb-6">{t.sentSub.split('{email}')[0]}<span dir="ltr" className="font-bold">{email}</span>{t.sentSub.split('{email}')[1]}</p>
+              <div className="mb-5 rounded-xl bg-[#F5F7FA] border border-gray-200 p-3 text-sm text-gray-700">
+                <div className="font-bold text-[#0B2438] mb-1">{t.notArrived}</div>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <button type="button" disabled={wait > 0} onClick={() => backToForm(false)}
+                    className="min-h-[44px] px-4 rounded-xl font-bold text-[#071827] bg-[#D4A543] disabled:opacity-50">
+                    {wait > 0 ? t.resendIn.replace('{s}', String(wait)) : t.resend}
+                  </button>
+                  <button type="button" onClick={() => backToForm(true)} className="min-h-[44px] px-4 rounded-xl font-bold text-[#0B2438] border border-gray-200 bg-white hover:bg-gray-50">{t.editEmail}</button>
+                </div>
+              </div>
               <Link href="/login?m=email" className="inline-flex items-center justify-center w-full min-h-[48px] rounded-xl font-bold text-white text-sm" style={{ background: '#0B2438' }}>{t.back}</Link>
             </div>
           ) : (
@@ -92,7 +117,7 @@ export default function ForgotPasswordPage() {
               {error && <div role="alert" className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-4"><Glyph e="⚠" /> {error}</div>}
               <form onSubmit={handleSubmit}>
                 <label htmlFor="fp-email" className="block text-xs font-bold text-gray-500 mb-1.5">{t.email}</label>
-                <input id="fp-email" type="email" autoComplete="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-4" placeholder="info@company.com" required disabled={loading} />
+                <input id="fp-email" ref={emailRef} type="email" autoComplete="email" dir="ltr" value={email} onChange={e => setEmail(e.target.value)} className="input-field mb-4" placeholder="info@company.com" required disabled={loading} />
                 <div className="flex justify-center mb-5">
                   <Turnstile ref={captchaRef} siteKey={TURNSTILE_SITE_KEY} onToken={setCaptchaToken} dir={dir} />
                 </div>

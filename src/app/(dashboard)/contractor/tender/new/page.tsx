@@ -255,7 +255,7 @@ export default function NewTenderPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-[#0B2438]">{L('New tender', 'نیا ٹینڈر', 'مناقصة جديدة')}</h1>
           <p className="text-sm text-gray-600 mt-1 leading-relaxed">
             {L('Upload the bill of quantities, the specifications and the drawings. They are read in your browser; every number is linked to its source, every inconsistency is flagged, and nothing goes to suppliers until you approve it.',
-              'BOQ، تفصیلات اور ڈرائنگز اپلوڈ کریں۔ ہر عدد اپنے ماخذ سے جڑا ہے، ہر تضاد نشان زد ہوتا ہے، اور آپ کی منظوری کے بغیر کچھ سپلائرز کو نہیں جاتا۔',
+              'مقداروں کا جدول، تفصیلات اور ڈرائنگز اپ لوڈ کریں۔ فائلیں آپ کے براؤزر میں پڑھی جاتی ہیں؛ ہر عدد اپنے ماخذ سے جڑا ہے، ہر تضاد پر انتباہ دیا جاتا ہے، اور آپ کی منظوری سے پہلے کچھ سپلائرز کو نہیں جاتا۔',
               'ارفع جدول الكميات والمواصفات والمخططات. تُقرأ الملفات في متصفحك، ويُربط كل رقم بمصدره، ويُنبَّه إلى كل تعارض، ولا يُرسل شيء للموردين قبل اعتمادك.')}
           </p>
           <p className="text-sm text-gray-600 mt-2">
@@ -266,27 +266,28 @@ export default function NewTenderPage() {
 
         {allowed === false && (
           <div className="bg-white rounded-2xl border border-[#D4A543]/40 p-6 text-center">
-            <p className="text-sm text-gray-700 mb-3">{L('Tender pricing is for verified companies.', 'یہ تصدیق شدہ کمپنیوں کے لیے ہے۔', 'تسعير المناقصات متاح لحسابات الشركات الموثّقة.')}</p>
-            <Link href="/settings" className="inline-block px-5 py-2.5 rounded-xl font-bold text-white text-sm bg-[#0B2438]">{L('Verify my commercial registration', 'تجارتی رجسٹریشن کی تصدیق', 'وثّق سجلك التجاري')}</Link>
+            <p className="text-sm text-gray-700 mb-3">{L('Tender pricing is for company accounts verified by their commercial registration.', 'ٹینڈر کی قیمت تجارتی رجسٹریشن سے تصدیق شدہ کمپنی اکاؤنٹس کے لیے دستیاب ہے۔', 'تسعير المناقصات متاح لحسابات الشركات الموثّقة بالسجل التجاري.')}</p>
+            <Link href="/settings" className="inline-flex items-center min-h-11 px-5 py-2.5 rounded-xl font-bold text-white text-sm bg-[#0B2438]">{L('Verify my commercial registration', 'تجارتی رجسٹریشن کی تصدیق', 'وثّق سجلك التجاري')}</Link>
           </div>
         )}
 
         {allowed !== false && (<>
           <label className="block bg-white rounded-2xl border border-gray-200 p-4">
             <span className="block text-sm font-bold text-[#0B2438] mb-1.5">{L('Tender name', 'ٹینڈر کا نام', 'اسم المناقصة')}</span>
-            <input value={title} onChange={(e: any) => setTitle(e.target.value.slice(0, 200))} className="input-field" placeholder={L('e.g. Energy centre — stage 4', 'مثلاً انرجی سینٹر', 'مثال: مركز الطاقة — المرحلة الرابعة')} />
+            <input value={title} onChange={(e: any) => setTitle(e.target.value.slice(0, 200))} className="input-field" placeholder={L('e.g. Energy centre — stage 4', 'مثلاً: انرجی سینٹر — چوتھا مرحلہ', 'مثال: مركز الطاقة — المرحلة الرابعة')} />
+            <span className="block text-xs text-gray-500 mt-1"><Glyph e="🔒" /> {L('Only you see this name; it is never sent to suppliers.', 'یہ نام صرف آپ دیکھتے ہیں؛ یہ کبھی سپلائرز کو نہیں بھیجا جاتا۔', 'يظهر هذا الاسم لك وحدك، ولا يُرسل إلى الموردين أبداً.')}</span>
           </label>
 
           {/* BOQ */}
           <section className="bg-white rounded-2xl border border-gray-200 p-4 space-y-3">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h2 className="font-bold text-[#0B2438]"><Glyph e="📋" /> {L('1. Bill of quantities (Excel)', '1. BOQ (ایکسل)', '1. جدول الكميات (Excel)')}</h2>
+              <h2 className="font-bold text-[#0B2438]"><Glyph e="📋" /> {L('1. Bill of quantities (Excel)', '1. مقداروں کا جدول (Excel)', '1. جدول الكميات (Excel)')}</h2>
               <label className="min-h-11 inline-flex items-center px-4 py-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 text-sm font-bold text-[#8F6820] cursor-pointer">
                 {boq ? L('Replace', 'تبدیل کریں', 'استبدال') : L('Choose file', 'فائل منتخب کریں', 'اختر الملف')}
                 <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={(e: any) => { onBoq(e.target.files?.[0] || null); e.target.value = '' }} />
               </label>
             </div>
-            {!boq && <p className="text-xs text-gray-500">{L('Required. Up to 15 MB.', 'ضروری۔ 15 MB تک۔', 'مطلوب. حتى 15 ميجابايت.')}</p>}
+            {!boq && <p className="text-xs text-gray-500">{L('Required. Up to 15 MB.', 'ضروری۔ 15 میگا بائٹ تک۔', 'مطلوب. حتى 15 ميجابايت.')}</p>}
             {boqError && (
               <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
                 {boqError}
@@ -302,17 +303,17 @@ export default function NewTenderPage() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="font-semibold text-gray-800 break-all">{boq.file.name} <span className="text-gray-500 font-normal">· {fmtSize(boq.file.size)}</span></div>
                   {boq.status !== 'reading' && !saving && (
-                    <button type="button" onClick={() => { setBoq(null); setBoqError('') }} className="min-h-10 px-2 text-xs font-bold text-gray-500 hover:underline shrink-0">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
+                    <button type="button" onClick={() => { setBoq(null); setBoqError('') }} className="min-h-11 px-2 text-xs font-bold text-gray-600 hover:underline shrink-0">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                   )}
                 </div>
                 {boq.status === 'reading' && <p className="text-gray-600 mt-1">{L('Reading…', 'پڑھا جا رہا ہے…', 'جارٍ القراءة…')}</p>}
                 {boq.status === 'error' && <p className="text-red-600 mt-1">{boq.error}</p>}
                 {boq.status === 'done' && boq.stats && (
                   <div className="mt-2 space-y-1 text-gray-700">
-                    <p>{L(`${boq.stats.sheets_read.length} trade sheets read, ${boq.stats.sheets_skipped.length} skipped (cover, summary, collections).`, `${boq.stats.sheets_read.length} شیٹس پڑھی گئیں، ${boq.stats.sheets_skipped.length} چھوڑی گئیں۔`, `أوراق الأعمال المقروءة: ${arSheets(boq.stats.sheets_read.length)}، والمتجاهَلة: ${arSheets(boq.stats.sheets_skipped.length)} (الغلاف والملخص وأوراق التجميع).`)}</p>
+                    <p>{L(`${boq.stats.sheets_read.length} trade sheets read, ${boq.stats.sheets_skipped.length} skipped (cover, summary, collections).`, `کاموں کی ${boq.stats.sheets_read.length} شیٹس پڑھی گئیں، ${boq.stats.sheets_skipped.length} چھوڑ دی گئیں (سرورق، خلاصہ اور مجموعے کی شیٹس)۔`, `أوراق الأعمال المقروءة: ${arSheets(boq.stats.sheets_read.length)}، والمتجاهَلة: ${arSheets(boq.stats.sheets_skipped.length)} (الغلاف والملخص وأوراق التجميع).`)}</p>
                     <p className="font-semibold">{L(`${boq.items.length} items`, `${boq.items.length} آئٹمز`, arItems(boq.items.length))}: {(['material', 'works', 'provisional'] as const).map(k => `${kindLabel(k, L)} ${byKind?.[k] || 0}`).join(' · ')}</p>
-                    <p>{L(`${boqCodes} drawing codes, ${boq.sections} headings.`, `${boqCodes} کوڈز، ${boq.sections} سرخیاں۔`, `رموز المخططات: ${arCodes(boqCodes)}، والعناوين: ${arHeadings(boq.sections)}.`)}</p>
-                    {boq.items.length === 0 && <p className="text-red-600">{L('No priced rows found (no «Unit / Qty» header).', 'کوئی آئٹم نہیں ملا۔', 'لم يُعثر على بنود (لا يوجد عنوان «الوحدة / الكمية»).')}</p>}
+                    <p>{L(`${boqCodes} drawing codes, ${boq.sections} headings.`, `ڈرائنگ کے ${boqCodes} کوڈز، ${boq.sections} سرخیاں۔`, `رموز المخططات: ${arCodes(boqCodes)}، والعناوين: ${arHeadings(boq.sections)}.`)}</p>
+                    {boq.items.length === 0 && <p className="text-red-600">{L('No priced rows found (no «Unit / Qty» header).', 'کوئی آئٹم نہیں ملا («یونٹ / مقدار» کی سرخی موجود نہیں)۔', 'لم يُعثر على بنود (لا يوجد عنوان «الوحدة / الكمية»).')}</p>}
                   </div>
                 )}
               </div>
@@ -329,14 +330,15 @@ export default function NewTenderPage() {
                   <input type="file" accept=".pdf,application/pdf" multiple className="hidden" onChange={(e: any) => { addPdfs(e.target.files, kind); e.target.value = '' }} />
                 </label>
               </div>
-              <p className="text-xs text-gray-500">{L('Optional. Any size: large files are read here page by page; files above 15 MB are not uploaded, only their text.', 'اختیاری۔ کوئی بھی سائز۔', 'اختياري. أي حجم: تُقرأ الملفات الكبيرة هنا صفحةً صفحة، وما يزيد على 15 ميجابايت لا يُرفع، بل نصّه المستخرج فقط.')}</p>
+              <p className="text-xs text-gray-500">{L('Optional. Any size: large files are read here page by page; files above 15 MB are not uploaded, only their text.', 'اختیاری۔ کوئی بھی سائز: بڑی فائلیں یہیں صفحہ بہ صفحہ پڑھی جاتی ہیں؛ 15 میگا بائٹ سے بڑی فائلیں اپ لوڈ نہیں ہوتیں، صرف ان کا نکالا گیا متن۔', 'اختياري. أي حجم: تُقرأ الملفات الكبيرة هنا صفحةً صفحة، وما يزيد على 15 ميجابايت لا يُرفع، بل نصّه المستخرج فقط.')}</p>
               {pdfError[kind] && <div className="rounded-xl border border-red-200 bg-red-50 p-2.5 text-sm text-red-700">{pdfError[kind]}</div>}
               {jobs.filter(j => j.kind === kind).map(j => (
                 <div key={j.id} className="rounded-xl bg-gray-50 p-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-gray-800 break-all">{j.file.name} <span className="text-gray-500 font-normal">· {fmtSize(j.file.size)}</span></span>
                     {j.status !== 'reading' && !saving && (
-                      <button type="button" onClick={() => setJobs(js => js.filter(x => x.id !== j.id))} className="min-h-10 px-2 text-xs font-bold text-gray-500 hover:underline shrink-0">{L('Remove', 'ہٹائیں', 'إزالة')}</button>
+                      <button type="button" onClick={() => setJobs(js => js.filter(x => x.id !== j.id))} className="min-h-11 px-2 text-xs font-bold text-gray-600 hover:underline shrink-0">
+{L('Remove', 'ہٹائیں', 'إزالة')}</button>
                     )}
                   </div>
                   {j.status === 'queued' && <p className="text-gray-500 mt-1">{L('Waiting…', 'انتظار…', 'في الانتظار…')}</p>}
@@ -350,14 +352,15 @@ export default function NewTenderPage() {
                   {j.status === 'done' && j.data && (
                     <div className="mt-1.5 space-y-1 text-gray-700">
                       <p>{L(`${j.data.numPages} pages read.`, `${j.data.numPages} صفحات پڑھے گئے۔`, `المقروء: ${arPages(j.data.numPages)}.`)}
-                        {j.data.emptyPages.length > 0 && <span className="text-amber-700"> {L(`${j.data.emptyPages.length} pages have no text (scans): not read.`, `${j.data.emptyPages.length} صفحات میں متن نہیں۔`, `بلا نص (ممسوحة ضوئياً) ولم تُقرأ: ${arPages(j.data.emptyPages.length)}.`)}</span>}
+                        {j.data.emptyPages.length > 0 && <span className="text-[#8F6820]"> {L(`${j.data.emptyPages.length} pages have no text (scans): not read.`, `${j.data.emptyPages.length} صفحات میں متن نہیں (اسکین شدہ)، اس لیے نہیں پڑھے گئے۔`, `بلا نص (ممسوحة ضوئياً) ولم تُقرأ: ${arPages(j.data.emptyPages.length)}.`)}</span>}
                       </p>
-                      {j.kind === 'spec' && j.index && <p>{L(`${j.index.sections.filter(s => s.level === 0).length} sections, ${j.index.sections.length} headings found.`, `${j.index.sections.length} سرخیاں ملیں۔`, `الأقسام: ${j.index.sections.filter(s => s.level === 0).length}، والعناوين: ${arHeadings(j.index.sections.length)}.`)}</p>}
+                      {j.kind === 'spec' && j.index && <p>{L(`${j.index.sections.filter(s => s.level === 0).length} sections, ${j.index.sections.length} headings found.`, `${j.index.sections.filter(s => s.level === 0).length} حصے اور ${j.index.sections.length} سرخیاں ملیں۔`, `الأقسام: ${j.index.sections.filter(s => s.level === 0).length}، والعناوين: ${arHeadings(j.index.sections.length)}.`)}</p>}
                       {j.kind === 'spec' && j.index?.codes && <p className="text-[#0F6E56] font-semibold">{L(`Code coordination matrix: ${Object.keys(j.index.codes).length} codes linked to their sections.`, `کوڈ میٹرکس: ${Object.keys(j.index.codes).length} کوڈ اپنے سیکشن سے منسلک۔`, `جدول تنسيق الرموز: رُبط ${arCodes(Object.keys(j.index.codes).length)} بأقسام المواصفات.`)}</p>}
                       {j.kind === 'drawing' && (j.drawings || []).map(d => (
                         <p key={d.page}>
                           <b>{d.sheet_no || L(`Page ${d.page}`, `صفحہ ${d.page}`, `الصفحة ${d.page}`)}</b>{d.title ? ` — ${d.title}` : ''}
-                          {' · '}{L(`${d.rooms.length} rooms, ${d.tags.reduce((s, t) => s + t.count, 0)} tags (${d.tags.length} codes), ${Object.keys(d.legend).length} legend entries`, `${d.rooms.length} کمرے، ${d.tags.length} کوڈز`, `الغرف: ${d.rooms.length}، الوسوم: ${d.tags.reduce((s, t) => s + t.count, 0)} (${arCodes(d.tags.length)})، بنود المفتاح: ${Object.keys(d.legend).length}`)}
+                          {' · '}{L(`${d.rooms.length} rooms, ${d.tags.reduce((s, t) => s + t.count, 0)} tags (${d.tags.length} codes), ${Object.keys(d.legend).length} legend entries`, `${d.rooms.length} کمرے، ${d.tags.reduce((s, t) => s + t.count, 0)} ٹیگز (${d.tags.length} کوڈز)، لیجنڈ کے ${Object.keys(d.legend).length} اندراجات`
+, `الغرف: ${d.rooms.length}، الوسوم: ${d.tags.reduce((s, t) => s + t.count, 0)} (${arCodes(d.tags.length)})، بنود المفتاح: ${Object.keys(d.legend).length}`)}
                         </p>
                       ))}
                       {j.file.size > MAX_ORIGINAL_BYTES && <p className="text-[#8F6820] font-semibold">{L('Only the extracted text is saved because the file is large; keep the original with you.', 'فائل بڑی ہے، صرف متن محفوظ ہوگا؛ اصل اپنے پاس رکھیں۔', 'حُفظ النص المستخرج فقط لأن الملف كبير؛ احتفظ بالأصل لديك.')}</p>}
@@ -374,10 +377,20 @@ export default function NewTenderPage() {
             <p className="text-sm text-gray-600">
               {reading ? L('Reading files… you can keep adding files. Stay on this page: leaving stops the reading.', 'فائلیں پڑھی جا رہی ہیں… اس صفحے پر رہیں: صفحہ چھوڑنے سے پڑھنا رک جائے گا۔', 'جارٍ قراءة الملفات… يمكنك متابعة إضافة الملفات. ابقَ في هذه الصفحة، فمغادرتها توقف القراءة.')
                 : saving ? saveMsg
-                : L(`Ready: BOQ ${boq?.status === 'done' ? '✓' : '—'} · specifications ${doneSpecs.length} · drawings ${doneDrawings.length}`, `تیار: BOQ · تفصیلات ${doneSpecs.length} · ڈرائنگز ${doneDrawings.length}`, `الجاهز: جدول الكميات ${boq?.status === 'done' ? '✓' : '—'} · المواصفات ${doneSpecs.length} · المخططات ${doneDrawings.length}`)}
+                : <>{L('Ready: BOQ', 'تیار: مقداروں کا جدول', 'الجاهز: جدول الكميات')} {boq?.status === 'done' ? <Glyph e="✓" /> : '—'}{L(` · specifications ${doneSpecs.length} · drawings ${doneDrawings.length}`, ` · تفصیلات ${doneSpecs.length} · ڈرائنگز ${doneDrawings.length}`, ` · المواصفات ${doneSpecs.length} · المخططات ${doneDrawings.length}`)}</>}
+              {/* a disabled button always says why (UX-142) */}
+              {!canSave && !reading && !saving && (
+                <span className="block text-xs font-semibold text-[#8F6820] mt-1">
+                  {!title.trim()
+                    ? L('Write the tender name to continue.', 'جاری رکھنے کے لیے ٹینڈر کا نام لکھیں۔', 'اكتب اسم المناقصة للمتابعة.')
+                    : !(boq?.status === 'done' && boq.items.length > 0)
+                      ? L('Upload a bill of quantities in Excel with priced rows to continue.', 'جاری رکھنے کے لیے Excel میں مقداروں کا جدول اپ لوڈ کریں جس میں آئٹمز ہوں۔', 'ارفع جدول كميات بصيغة Excel يحتوي بنوداً للمتابعة.')
+                      : ''}
+                </span>
+              )}
             </p>
             <button type="button" disabled={!canSave} onClick={save} className="min-h-11 px-6 py-3 rounded-xl font-bold text-sm text-[#071827] disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
-              {saving ? L('Saving…', 'محفوظ…', 'جارٍ الحفظ…') : L('Save and open the review', 'محفوظ کریں اور جائزہ کھولیں', 'احفظ وافتح المراجعة')}
+              {saving ? L('Saving…', 'محفوظ کیا جا رہا ہے…', 'جارٍ الحفظ…') : L('Save and open the review', 'محفوظ کریں اور جائزہ کھولیں', 'احفظ وافتح المراجعة')}
             </button>
           </div>
         </>)}

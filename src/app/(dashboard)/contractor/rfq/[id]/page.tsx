@@ -12,14 +12,15 @@ import { SECTOR_LABELS, UNIT_OPTIONS, getProductLabel, getUnitLabelLong, detectS
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { useTranslation } from '@/i18n'
 import { waLink } from '@/lib/wa'
-import { offerComparable, lineComparable, vatTag, showsVatBreakdown, totalLabel, priceBasisLabel } from '@/lib/vat'
+import { offerComparable, lineComparable, vatTag, showsVatBreakdown, totalLabel, priceBasisLabel, sarLabel, buyerLinePrice, preVatNote } from '@/lib/vat'
+import EnablePush from '@/components/shared/EnablePush'
 import { installTotalOf } from '@/lib/installation'
 import { fileHref } from '@/lib/fileHref'
 import AppShell from '@/components/shared/AppShell'
 import { getNav } from '@/lib/nav'
 import { formatDateTime, formatTimeLeft, deadlineUrgency, urgencyStyle, isExpired, rfqPurgeInfo } from '@/lib/deadline'
 import { supplierScore, approvalLabel } from '@/lib/supplierScore'
-import { dealStage } from '@/lib/dealStage'
+import { dealStage, rfqStatusLabel } from '@/lib/dealStage'
 import { TIERS, tierLabel, normTier, sourceLabel, availabilityLabel, isDirectSource, sourceIcon, availabilityIcon, tierIcon } from '@/lib/sellers'
 import { rfqRefLine, rfqDesc, rfqRef } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
@@ -70,9 +71,10 @@ export default function RFQDetailPage() {
   const ensureVerified = useEnsureVerified()
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   // non-direct price: one phrase, not two labels side by side (owner read them as contradicting; app parity)
-  const srcPhrase = (k: any) => L(`Sourced price: ${sourceLabel(k, locale)}`, `منتقل قیمت: ${sourceLabel(k, locale)}`, `سعر منقول ${sourceLabel(k, locale)}`)
+  // UX-138: «مصدر البضاعة: …» everywhere (was «سعر منقول», not understood)
+  const srcPhrase = (k: any) => L(`Goods source: ${sourceLabel(k, locale)}`, `سامان کا ماخذ: ${sourceLabel(k, locale)}`, `مصدر البضاعة: ${sourceLabel(k, locale)}`)
   const dloc = locale === 'en' ? 'en-GB' : locale === 'ur' ? 'ur-PK-u-nu-latn' : 'ar-SA-u-ca-gregory-nu-latn'
-  const SAR = L('SAR', 'SAR', 'ر.س')
+  const SAR = sarLabel(locale) // UX-140: one currency name per language
   const secLabel = (k: string) => (locale !== 'ar' && SECTOR_I18N[locale]?.[k]) || (SECTOR_LABELS as any)[k] || k
   // a home buyer («لبيتي»): plain words, long unit names, clean Arabic names, no sector chips
   const [home, setHome] = useState(false)
@@ -80,6 +82,7 @@ export default function RFQDetailPage() {
   const pname = (n: string) => (home && locale === 'ar' ? cleanArName(n || '') : getProductLabel(n || '', locale))
   const unitL = (u: string) => getUnitLabelLong(u, locale)
   const money = (n: number) => (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })
+  const money2 = (n: number) => (Number(n) || 0).toLocaleString('en-US', { maximumFractionDigits: 2 })
   const BACKOUT = { cancelLabel: L('Go back', 'واپس', 'تراجع') }
   // inline messages instead of the browser alert (UX-149)
   const [toast, setToast] = useState<{ t: string; tone: 'err' | 'info' } | null>(null)
@@ -87,8 +90,13 @@ export default function RFQDetailPage() {
   const notify = (t: string, tone: 'err' | 'info' = 'err') => {
     setToast({ t, tone })
     if (toastTimer.current) clearTimeout(toastTimer.current)
-    toastTimer.current = setTimeout(() => setToast(null), 9000)
+    toastTimer.current = setTimeout(() => setToast(null), tone === 'info' ? 6000 : 9000) // UX-050: info 6 s
   }
+  // UX-168: a new offer that is now the cheapest is announced with a «اعرضه» button
+  const [cheapNote, setCheapNote] = useState<{ t: string; offerId: string } | null>(null)
+  // UX-051: the source shop's area of each pricing agent's offer, fetched once per offer for the matrix rows
+  const [sources, setSources] = useState<Record<string, any>>({})
+  const sourceAsked = useRef<Set<string>>(new Set())
   const [justFinalized, setJustFinalized] = useState(false) // «تمّ، وهذا ما يحدث بعد ذلك» (UX-017)
   const seenOfferIds = useRef<Set<string> | null>(null)
   const [freshIds, setFreshIds] = useState<Set<string>>(new Set()) // a live offer gets a gold frame for 4 s (UX-196)
@@ -210,8 +218,24 @@ export default function RFQDetailPage() {
       // a live offer: frame the new card in gold for 4 s (UX-196)
       if (seenOfferIds.current) {
         const fresh = new Set<string>(list.map((o: any) => o.id).filter((x: string) => !seenOfferIds.current!.has(x)))
-        if (fresh.size) { setFreshIds(fresh); setTimeout(() => setFreshIds(new Set()), 4000) }
+        if (fresh.size) {
+          setFreshIds(fresh); setTimeout(() => setFreshIds(new Set()), 4000)
+          // UX-168: the new offer is now the cheapest (whole-offer basis, still in play)
+          const live = list.filter((o: any) => o.status !== 'rejected')
+          if (live.length > 1) {
+            const cheapest = live.reduce((a: any, b: any) => (offerComparable(b) < offerComparable(a) ? b : a))
+            if (fresh.has(cheapest.id)) {
+              const amt = Math.round(offerComparable(cheapest)).toLocaleString('en-US')
+              setCheapNote({ offerId: cheapest.id, t: L(`A new offer arrived and it is now the lowest: ${amt} SAR`, `نئی آفر آئی ہے اور اب یہ سب سے کم ہے: ${amt} ریال`, `وصل عرض جديد، وهو الآن الأقل سعراً: ${amt} ر.س`) })
+            }
+          }
+        }
       }
+      // UX-051: one source lookup per pricing agent's offer (the matrix rows reuse it)
+      list.filter((o: any) => normTier(o.supplier?.supplier_tier) === 'independent' && !sourceAsked.current.has(o.id)).forEach((o: any) => {
+        sourceAsked.current.add(o.id)
+        supabase.rpc('get_offer_source', { p_offer_id: o.id }).then(({ data }: any) => { if (data) setSources(m => ({ ...m, [o.id]: data })) }, () => {})
+      })
       seenOfferIds.current = new Set(list.map((o: any) => o.id))
       // UX-066: the buyer home counts only offers not seen yet (same key as contractor/page.tsx)
       try { const k = 'tsk_seen_offers_v1'; const v = JSON.parse(localStorage.getItem(k) || '{}') || {}; v[id as string] = list.length; localStorage.setItem(k, JSON.stringify(v)) } catch {}
@@ -220,8 +244,11 @@ export default function RFQDetailPage() {
       loadOwnerBudgets(supabase, id as string).then(setBudgets)
       if ((awardRows || []).length) loadSavings()
       if (rfqData) {
+        // UX-080: the market sample needs 3 different suppliers when the RPC says how many (server
+        // side normalises to before-VAT); the buyer compares each offer's before-VAT unit price with it
         const mp = ((similarOffers as any[]) || []).find((m: any) => m.product_name === rfqData.product_name && (!m.unit || m.unit === rfqData.unit))
-        if (mp && Number(mp.avg_price) > 0) setMarketAvg(Math.round(Number(mp.avg_price)))
+        const enough = !mp || mp.supplier_count == null || Number(mp.supplier_count) >= 3
+        if (mp && enough && Number(mp.avg_price) > 0) setMarketAvg(Math.round(Number(mp.avg_price)))
       }
       setLoading(false)
 
@@ -313,7 +340,9 @@ export default function RFQDetailPage() {
   async function saveBudget() {
     if (!budgetEdit) return
     const next: Record<number, ItemBudget> = { ...budgets }
-    const p = parseBudget(budgetEdit.v)
+    const typed = parseBudget(budgetEdit.v)
+    // UX-052: a home buyer types what they pay (with VAT); the budget is stored before VAT as always
+    const p = typed != null && home ? Math.round((typed / 1.15) * 100) / 100 : typed
     if (p == null) delete next[budgetEdit.idx]
     else next[budgetEdit.idx] = { item_index: budgetEdit.idx, budget_unit_price: p, budget_visible: budgetEdit.vis }
     setBudgetSaving(true)
@@ -337,6 +366,39 @@ export default function RFQDetailPage() {
       return withInst ? { ...withInst, fellBack: false } : { ...bids[0], fellBack: true }
     }
     return bids[0] || null
+  }
+  const extrasOf = (o: any) => (Array.isArray(o?.extra_charges) ? o.extra_charges : []).reduce((t: number, e: any) => t + (Number(e.amount) || 0), 0)
+  // The chosen offers per supplier (summary, sticky bar and the confirm dialog use the same numbers).
+  // Amounts on what the buyer pays (VAT where the seller charges it). A supplier whose priced lines were
+  // all chosen counts its delivery/charges in the total; otherwise those charges are pending: the
+  // supplier confirms them (never higher) after the confirmation (191, UX-047).
+  function choiceTotals() {
+    const bySupplier: Record<string, any> = {}
+    Object.values(awards || {}).forEach((a: any) => {
+      if (!bySupplier[a.supplier_id]) {
+        const off = offers.find((o: any) => o.id === a.offer_id)
+        bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد'), phone: awardedContacts[a.supplier_id], offerId: a.offer_id, off, noVat: !!off && !showsVatBreakdown(off), vatIncluded: !!off?.vat_included, net: 0, gross: 0, count: 0 }
+      }
+      const line = Number(a.total) || 0
+      const v = bySupplier[a.supplier_id]
+      v.net += v.noVat ? line : v.vatIncluded ? line / 1.15 : line
+      v.gross += v.noVat ? line : v.vatIncluded ? line : line * 1.15
+      v.count += 1
+    })
+    const list: any[] = Object.values(bySupplier)
+    for (const v of list) {
+      const ex = extrasOf(v.off)
+      const priced = (Array.isArray(v.off?.item_prices) ? v.off.item_prices : []).filter((e: any) => Number(e.total) > 0).length
+      if (ex > 0 && v.count >= priced) {
+        v.net += v.noVat ? ex : v.vatIncluded ? ex / 1.15 : ex
+        v.gross += v.noVat ? ex : v.vatIncluded ? ex : ex * 1.15
+        v.exIncluded = lineComparable(ex, v.off)
+      } else if (ex > 0) v.exPending = lineComparable(ex, v.off)
+    }
+    const grand = list.reduce((s: number, v: any) => s + v.gross, 0)
+    const grandNet = list.reduce((s: number, v: any) => s + v.net, 0)
+    const pending = list.reduce((s: number, v: any) => s + (Number(v.exPending) || 0), 0)
+    return { list, grand, grandNet, pending }
   }
   const [pickingAll, setPickingAll] = useState(false)
   const [openBid, setOpenBid] = useState<string | null>(null) // «التفاصيل» of one bid row
@@ -414,6 +476,12 @@ export default function RFQDetailPage() {
       'Confirm your choices? We will tell the suppliers you chose, open a deal with each, and close the request.',
       'اپنے انتخاب کی تصدیق کریں؟ ہم منتخب سپلائرز کو بتا دیں گے، ہر ایک کے ساتھ ڈیل کھلے گی اور درخواست بند ہو جائے گی۔',
       'تأكيد اختيار العروض؟ سنُبلغ الموردين الذين اخترتهم، وتُفتح صفقة مع كل مورد، ويُغلق الطلب.'))
+    // the amount and any pending delivery charges in the dialog too (UX-047)
+    const tot = choiceTotals()
+    if (tot.grand > 0) parts.push(L(
+      `Amount so far: ${money(tot.grand)} SAR${tot.pending >= 1 ? ` + delivery charges up to ${money(tot.pending)} SAR, confirmed by the supplier after you confirm` : ''}.`,
+      `اب تک کی رقم: ${money(tot.grand)} ریال${tot.pending >= 1 ? ` + ڈیلیوری چارجز زیادہ سے زیادہ ${money(tot.pending)} ریال، جو سپلائر تصدیق کے بعد کنفرم کرے گا` : ''}۔`,
+      `المبلغ حتى الآن: ${money(tot.grand)} ر.س${tot.pending >= 1 ? ` + رسوم توصيل حتى ${money(tot.pending)} ر.س يؤكّدها المورد بعد التأكيد` : ''}.`))
     if (!(await askConfirm(parts.join('\n\n'), {
       okLabel: missing.length ? L('Confirm and close the request', 'تصدیق کریں اور درخواست بند کریں', 'تأكيد وإغلاق الطلب') : L('Confirm the chosen offers', 'منتخب آفرز کی تصدیق کریں', 'تأكيد اختيار العروض'),
       ...BACKOUT,
@@ -449,6 +517,10 @@ export default function RFQDetailPage() {
   }
 
   async function doSaveEdit() {
+    // UX-139: an empty or invalid quantity is never replaced silently
+    if (!multiItems() && !(parseFloat(toLatinNumber(String(editQty ?? '')).replace('٫', '.')) > 0)) {
+      notify(L('Enter a valid quantity.', 'درست مقدار درج کریں۔', 'أدخل كمية صحيحة.')); setShowEditWarning(false); return
+    }
     const supabase = createClient()
     const patch: any = multiItems() ? { notes: editNotes } : {
       notes: editNotes,
@@ -472,6 +544,14 @@ export default function RFQDetailPage() {
     if (dropped) setOffers([])
     setEditing(false)
     setShowEditWarning(false)
+  }
+
+  // UX-069: add one day to a deadline that ends within 24 h
+  const endsSoon = !!rfq?.expires_at && !isExpired(rfq.expires_at) && new Date(rfq.expires_at).getTime() - Date.now() < 24 * 3600 * 1000
+  function openEdit() {
+    setEditName(rfq.product_name || ''); setEditQty(rfq.quantity ?? ''); setEditUnit(rfq.unit || '')
+    setEditSpec(rfq.specification || ''); setEditNotes(rfq.notes || '')
+    setEditing(true)
   }
 
   async function cancelRfq() {
@@ -506,6 +586,12 @@ export default function RFQDetailPage() {
   const rfqOpen = rfq.status === 'open' && !expired
   const awardedN = Object.keys(awards || {}).length
   const dealDone = !!acceptedOffer || (rfq.status === 'closed' && awardedN > 0)
+  // UX-004: the server accepts a choice while the request is open, even after the pricing deadline
+  const canChoose = rfq.status === 'open'
+  // UX-048: «اكتملت الصفقة» only when every deal of this request is paid and confirmed
+  const acceptedList = offers.filter((o: any) => o.status === 'accepted')
+  const dealComplete = dealDone && acceptedList.length > 0 && acceptedList.every((o: any) => dealStage(o, 'buyer', locale).done)
+  const statusInfo = rfqStatusLabel(rfq, { dealStarted: dealDone, dealComplete, hasOffers: offers.some((o: any) => o.status !== 'rejected'), expired }, locale)
 
   // Filtered + sorted offers for display; a declined offer always goes last (UX-175).
   const displayedOffers = [...offers]
@@ -516,6 +602,7 @@ export default function RFQDetailPage() {
       if (ra !== rb) return ra - rb
       if (sortBy === 'price_desc') return offerComparable(b) - offerComparable(a)
       if (sortBy === 'delivery') return (Number(a.delivery_days) || 99999) - (Number(b.delivery_days) || 99999)
+      if (sortBy === 'nearest') return ((offerDistanceKm(a, refGeo) ?? 9e9) - (offerDistanceKm(b, refGeo) ?? 9e9)) || (offerComparable(a) - offerComparable(b)) // UX-170
       if (sortBy === 'rating') return (supplierScore(b.supplier, supplierStats[b.supplier_id]) - supplierScore(a.supplier, supplierStats[a.supplier_id])) || (offerComparable(a) - offerComparable(b))
       return offerComparable(a) - offerComparable(b) // price_asc (default), VAT-inclusive basis (B4)
     })
@@ -542,13 +629,51 @@ export default function RFQDetailPage() {
     return <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={strong ? { background: '#0B2438', color: '#fff' } : mid ? { background: '#D4A543', color: '#071827' } : { background: '#4B5563', color: '#fff' }}>{L(`Performance ${sc}/100`, `کارکردگی ${sc}/100`, `مؤشر الأداء ${sc}/100`)}</span>
   }
   const reached = Number(coverage?.reached) || 0
+  // UX-047: the pending delivery charges show in the sticky bar too
+  const totals = choiceTotals()
+  // UX-069: no offers yet → what is happening and what the buyer can do (not a repeat of the tracker)
+  const noOffersCard = (
+    <div className="bg-white rounded-xl p-5 sm:p-6 border border-gray-100">
+      <div className="flex items-start gap-3">
+        <span className="text-3xl text-[#8F6820] shrink-0"><Glyph e="⏳" /></span>
+        <div className="min-w-0">
+          <h4 className="font-bold text-gray-900">{L('Your request is with the suppliers now', 'آپ کی درخواست اب سپلائرز کے پاس ہے', 'طلبك لدى الموردين الآن')}</h4>
+          <p className="text-sm text-gray-600 mt-0.5">{rfq.status === 'open'
+            ? L('Offers usually arrive within the pricing time. Meanwhile you can:', 'آفرز عموماً قیمت کی مہلت میں آتی ہیں۔ تب تک آپ یہ کر سکتے ہیں:', 'تصل العروض عادةً خلال مهلة التسعير. وإلى ذلك الحين يمكنك:')
+            : L('No supplier sent an offer on this request.', 'اس درخواست پر کسی سپلائر نے آفر نہیں بھیجی۔', 'لم يرسل أي مورد عرضاً على هذا الطلب.')}</p>
+        </div>
+      </div>
+      {rfq.status === 'open' && (
+        <div className="mt-3 space-y-2">
+          <EnablePush variant="nudge" />
+          <div className="flex flex-wrap gap-2">
+            {endsSoon && (
+              <button type="button" onClick={() => extendDeadline(1)} disabled={extending}
+                className="min-h-11 px-4 rounded-xl text-sm font-bold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>
+                <Glyph e="⏱" /> {extending ? '…' : L('Add a day to the pricing time', 'قیمت کی مہلت میں ایک دن بڑھائیں', 'أضف يوماً لمهلة التسعير')}
+              </button>
+            )}
+            <button type="button" onClick={() => { openEdit(); setTimeout(() => document.getElementById('rfq-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
+              className="min-h-11 px-4 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5">
+              <Glyph e="✏" /> {isMulti
+                ? L('Add details to the notes for more accurate prices', 'زیادہ درست قیمتوں کے لیے نوٹس میں تفصیل شامل کریں', 'أضف تفاصيل في الملاحظات لتصلك أسعار أدق')
+                : L('Add specifications for more accurate prices', 'زیادہ درست قیمتوں کے لیے اسپیسیفکیشن شامل کریں', 'أضف مواصفات لتصلك أسعار أدق')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+  // UX-168: a home buyer gets one line that sums up the offers
+  const fastest = activeOffers.filter((o: any) => Number(o.delivery_days) > 0).sort((a: any, b: any) => Number(a.delivery_days) - Number(b.delivery_days))[0]
+  const cheapestOffer = activeOffers.length ? activeOffers.reduce((a: any, b: any) => (offerComparable(b) < offerComparable(a) ? b : a)) : null
   const stepIdx = dealDone ? 3 : activeOffers.length > 0 ? 2 : 1 // the tracker's current step (UX-186)
 
   return (
     <AppShell title={L('Request details', 'درخواست کی تفصیل', 'تفاصيل الطلب')} nav={getNav('contractor', locale, '/contractor/rfqs')} dir={dir}>
       <div className="max-w-5xl mx-auto">
         {toast && (
-          <div role={toast.tone === 'err' ? 'alert' : 'status'} className={`fixed inset-x-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] lg:bottom-6 z-[70] max-w-lg mx-auto flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg ${toast.tone === 'err' ? 'border-red-200 bg-red-50 text-red-800' : 'border-[#0B2438]/20 bg-white text-[#0B2438]'}`}>
+          <div role={toast.tone === 'err' ? 'alert' : 'status'} className={`fixed inset-x-4 ${stickyConfirm ? 'bottom-[calc(10rem+env(safe-area-inset-bottom))] lg:bottom-24' : 'bottom-[calc(5.5rem+env(safe-area-inset-bottom))] lg:bottom-6'} z-[70] max-w-lg mx-auto flex items-start justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold shadow-lg ${toast.tone === 'err' ? 'border-red-200 bg-red-50 text-red-800' : 'border-[#0B2438]/20 bg-white text-[#0B2438]'}`}>
             <span className="leading-relaxed">{toast.t}</span>
             <button type="button" onClick={() => setToast(null)} className="min-w-11 min-h-11 -m-3 text-lg" aria-label={L('Close', 'بند کریں', 'إغلاق')}>×</button>
           </div>
@@ -557,6 +682,16 @@ export default function RFQDetailPage() {
           <div role="status" className="mb-4 flex items-center justify-between gap-3 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/10 px-4 py-2 text-sm font-semibold text-[#0B2438]">
             <span><Glyph e="🔔" /> {liveNote}</span>
             <button type="button" onClick={() => setLiveNote('')} className="min-w-11 min-h-11 -my-2 text-lg leading-none" aria-label={L('Close', 'بند کریں', 'إغلاق')}>×</button>
+          </div>
+        )}
+        {/* UX-168: a new offer that is now the lowest */}
+        {cheapNote && (
+          <div role="status" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#D4A543] bg-[#D4A543]/10 px-4 py-2 text-sm font-bold text-[#0B2438]">
+            <span>{cheapNote.t}</span>
+            <span className="flex items-center gap-1">
+              <Link href={`/contractor/rfq/${id}/offer/${cheapNote.offerId}`} className="inline-flex items-center min-h-11 px-4 rounded-xl text-sm font-bold border border-[#0B2438] text-[#0B2438] bg-white">{L('View it', 'دیکھیں', 'اعرضه')}</Link>
+              <button type="button" onClick={() => setCheapNote(null)} className="min-w-11 min-h-11 text-lg leading-none" aria-label={L('Close', 'بند کریں', 'إغلاق')}>×</button>
+            </span>
           </div>
         )}
         {/* «تمّ، وهذا ما يحدث بعد ذلك» after confirming the choices (UX-017) */}
@@ -573,8 +708,11 @@ export default function RFQDetailPage() {
           if (!uncovered.length) return null
           return (
             <div role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <div className="font-bold"><Glyph e="🔎" /> {L('We are finding suppliers for part of your request', 'ہم آپ کی درخواست کے کچھ حصے کے لیے سپلائرز تلاش کر رہے ہیں', 'نبحث لك عن موردين لجزء من طلبك')}</div>
-              <div className="mt-1 leading-relaxed">{L(`No registered supplier covers yet: ${uncovered.join(', ')}. Our team has been alerted and will look for one; we will notify you when offers arrive.`, `ابھی کوئی رجسٹرڈ سپلائر نہیں: ${uncovered.join('، ')}۔ ہماری ٹیم تلاش کر رہی ہے۔`, `لا يوجد حالياً مورد مسجَّل لـ: ${uncovered.join('، ')}. أُبلغ فريقنا وسيبحث لك عن مورد، وسنُعلمك عند وصول العروض.`)}</div>
+              {/* UX-070: one promise for an uncovered material, the same sentence as the request page */}
+              <div className="leading-relaxed"><Glyph e="🔎" /> {L(
+                `There is no registered supplier yet for «${uncovered.join(', ')}». We told our team to find you one, and we will let you know as soon as an offer on it arrives.`,
+                `«${uncovered.join('، ')}» کے لیے ابھی کوئی رجسٹرڈ سپلائر نہیں۔ ہم نے اپنی ٹیم کو بتا دیا ہے کہ آپ کے لیے سپلائر تلاش کرے، اور اس پر آفر آتے ہی ہم آپ کو بتائیں گے۔`,
+                `لا يوجد بعد مورد مسجّل لـ«${uncovered.join('، ')}». أبلغنا فريقنا ليبحث لك عن مورد، وسنُعلمك فور وصول عرض عليه.`)}</div>
             </div>
           )
         })()}
@@ -588,9 +726,11 @@ export default function RFQDetailPage() {
           <ol className="mb-4 grid grid-cols-4 gap-1.5 sm:gap-2 rounded-2xl border border-gray-100 bg-white p-3 sm:p-4 text-center text-xs">
             {[
               L('Sent', 'بھیجی گئی', 'أُرسل'),
-              reached > 0 ? L(`Reached ${reached} supplier${reached === 1 ? '' : 's'}`, `${reached} سپلائرز تک پہنچی`, `وصل إلى ${arCount(reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')}`) : L('Reached suppliers', 'سپلائرز تک پہنچی', 'وصل إلى الموردين'),
+              reached > 0 ? L(`Reached ${reached} supplier${reached === 1 ? '' : 's'}`, `${reached} سپلائرز تک پہنچی`, `وصل إلى ${arCount(reached, 'مورد واحد', 'موردَين', 'موردين', 'مورداً')}`)
+                : coverage ? L('Finding suppliers for you', 'آپ کے لیے سپلائرز تلاش ہو رہے ہیں', 'نبحث لك عن موردين') // UX-139: never «وصل» with zero
+                : L('Reached suppliers', 'سپلائرز تک پہنچی', 'وصل إلى الموردين'),
               activeOffers.length > 0 ? L(`${activeOffers.length} offer${activeOffers.length === 1 ? '' : 's'}`, `${activeOffers.length} آفرز`, (activeOffers.length <= 2 ? arCount(activeOffers.length, 'وصل عرض واحد', 'وصل عرضان', '', '') : 'وصل ' + arCount(activeOffers.length, '', '', 'عروض', 'عرضاً'))) : L('Offers', 'آفرز', 'العروض'),
-              L('Supplier chosen', 'سپلائر منتخب', 'اخترت المورد'),
+              dealDone ? L('Supplier chosen', 'سپلائر منتخب', 'اخترت المورد') : L('Choose the supplier', 'سپلائر کا انتخاب', 'اختيار المورد'), // UX-048
             ].map((lbl, i) => {
               const done = i < stepIdx || (i === 3 && dealDone)
               const cur = i === stepIdx && !dealDone
@@ -609,7 +749,7 @@ export default function RFQDetailPage() {
         )}
 
         {/* the request card */}
-        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 mb-4">
+        <div id="rfq-card" className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 mb-4 scroll-mt-24">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
             <div className="min-w-0">
               <div className="text-xs font-bold text-[#8F6820] font-mono" dir="auto">{rfqRefLine(rfq, locale)}</div>
@@ -622,16 +762,15 @@ export default function RFQDetailPage() {
                       : secLabel(rfq.sector)}
                   </span>
                 )}
+                {/* UX-048: one status name everywhere (rfqStatusLabel) */}
                 <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                  dealDone ? 'bg-emerald-100 text-emerald-800' :
-                  rfq.status === 'open' && !expired ? 'bg-[#D4A543]/15 text-[#0B2438]' :
-                  rfq.status === 'cancelled' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-700'
+                  statusInfo.key === 'deal_done' ? 'bg-emerald-100 text-emerald-800' :
+                  statusInfo.key === 'deal_ongoing' ? 'bg-[#0B2438]/10 text-[#0B2438]' :
+                  statusInfo.key === 'open' ? 'bg-[#D4A543]/15 text-[#0B2438]' :
+                  statusInfo.key === 'expired_choose' || statusInfo.key === 'expired_empty' ? 'bg-amber-100 text-amber-900' :
+                  statusInfo.key === 'cancelled' ? 'bg-red-50 text-red-700' : 'bg-gray-100 text-gray-700'
                 }`}>
-                  {dealDone ? L('Deal done', 'ڈیل مکمل', 'تمّت الصفقة')
-                    : rfq.status === 'open' && !expired ? L('Open for offers', 'آفرز کے لیے کھلی', 'مفتوح للعروض')
-                    : rfq.status === 'cancelled' ? L('Cancelled', 'منسوخ', 'ملغى')
-                    : rfq.status === 'open' ? L('Pricing time ended', 'قیمت کی مہلت ختم', 'انتهت مهلة التسعير')
-                    : rfq.status === 'closed' ? L('Closed', 'بند', 'مغلق') : L('Expired', 'ختم', 'منتهٍ')}
+                  {statusInfo.label}
                 </span>
                 {rfq.status === 'open' && rfq.expires_at && !expired && (() => {
                   const u = deadlineUrgency(rfq.expires_at); const st = urgencyStyle(u)
@@ -673,19 +812,21 @@ export default function RFQDetailPage() {
               )}
             </div>
             {rfq.status === 'open' && !editing && (
-              <div className="flex gap-2 sm:shrink-0">
-                <button type="button" onClick={() => {
-                    setEditName(rfq.product_name || ''); setEditQty(rfq.quantity ?? ''); setEditUnit(rfq.unit || '')
-                    setEditSpec(rfq.specification || ''); setEditNotes(rfq.notes || '')
-                    setEditing(true)
-                  }}
-                  className="min-h-11 text-sm text-[#0B2438] border border-[#0B2438]/20 px-4 rounded-xl hover:bg-[#0B2438]/5 transition-colors">
-                  <Glyph e="✏" /> {L('Edit', 'ترمیم', 'تعديل')}
-                </button>
-                <button type="button" onClick={cancelRfq}
-                  className="min-h-11 text-sm text-red-700 border border-red-200 px-4 rounded-xl hover:bg-red-50 transition-colors">
-                  {L('Cancel request', 'درخواست منسوخ کریں', 'إلغاء الطلب')}
-                </button>
+              <div className="flex flex-col gap-1 sm:shrink-0 sm:items-end">
+                <div className="flex gap-2">
+                  <button type="button" onClick={openEdit}
+                    className="min-h-11 text-sm text-[#0B2438] border border-[#0B2438]/20 px-4 rounded-xl hover:bg-[#0B2438]/5 transition-colors">
+                    <Glyph e="✏" /> {L('Edit', 'ترمیم', 'تعديل')}
+                  </button>
+                  {/* UX-139: a request with a chosen material cannot be cancelled: no button that fails */}
+                  {!awardedN && !acceptedOffer && (
+                    <button type="button" onClick={cancelRfq}
+                      className="min-h-11 text-sm text-red-700 border border-red-200 px-4 rounded-xl hover:bg-red-50 transition-colors">
+                      {L('Cancel request', 'درخواست منسوخ کریں', 'إلغاء الطلب')}
+                    </button>
+                  )}
+                </div>
+                {awardedN > 0 && <p className="text-xs text-gray-600 max-w-[16rem] sm:text-end">{L('To cancel, undo your choices first.', 'منسوخ کرنے کے لیے پہلے اپنا انتخاب واپس لیں۔', 'لإلغاء الطلب ألغِ اختياراتك أولاً.')}</p>}
               </div>
             )}
           </div>
@@ -838,7 +979,10 @@ export default function RFQDetailPage() {
         )}
         {rfq.status === 'open' && expired && !awardedN && !acceptedOffer && (
           <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-            <Glyph e="⏱" /> {L('The pricing time has ended. Extend it to receive more offers.', 'قیمت کی مہلت ختم ہو گئی۔ مزید آفرز کے لیے مہلت بڑھائیں۔', 'انتهت مهلة التسعير. مدّد المهلة لتصلك عروض أخرى.')}
+            {/* UX-004: choosing still works after the deadline while the request is open */}
+            <Glyph e="⏱" /> {activeOffers.length > 0
+              ? L('The pricing deadline has passed. You can choose one of the offers received, or extend the deadline to get more offers.', 'قیمت کی مہلت ختم ہو گئی۔ آپ موصول آفرز میں سے کوئی منتخب کر سکتے ہیں، یا مزید آفرز کے لیے مہلت بڑھا سکتے ہیں۔', 'انتهت مهلة التسعير، ويمكنك اختيار أحد العروض الواردة أو تمديد المهلة لتصلك عروض أخرى.')
+              : L('The pricing deadline has passed. Extend it to receive offers.', 'قیمت کی مہلت ختم ہو گئی۔ آفرز کے لیے مہلت بڑھائیں۔', 'انتهت مهلة التسعير. مدّد المهلة لتصلك العروض.')}
           </div>
         )}
 
@@ -865,7 +1009,6 @@ export default function RFQDetailPage() {
             // by name only for old offers without line numbers (two «حديد تسليح» lines must not share a price)
             return list.find((ip: any) => ip.item_index === idx) || (list.some((ip: any) => ip.item_index != null) ? undefined : list.find((ip: any) => ip.product_name === it.product_name && (!it.sub_category || (ip.sub_category || null) === (it.sub_category || null))))
           }
-          const extrasOf = (o: any) => (Array.isArray(o?.extra_charges) ? o.extra_charges : []).reduce((t: number, e: any) => t + (Number(e.amount) || 0), 0)
 
           // ── one supplier for every material vs the cheapest mix (UX-188) ──
           const full = activeOffers.filter((o: any) => items.every((it: any, idx: number) => Number(entryFor(o, it, idx)?.total) > 0))
@@ -879,40 +1022,16 @@ export default function RFQDetailPage() {
           const allOnSingle = !!single && items.every((_: any, idx: number) => awards[idx]?.offer_id === single.o.id)
           const showSingle = rfq.status === 'open' && !!single && mixOffers.length > 1 && mixPicks.length === items.length && !allOnSingle
 
-          // ── the summary of the choices, per supplier ──
-          const bySupplier: Record<string, any> = {}
-          Object.values(awards).forEach((a: any) => {
-            if (!bySupplier[a.supplier_id]) {
-              const off = offers.find((o: any) => o.id === a.offer_id)
-              bySupplier[a.supplier_id] = { name: off?.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد'), phone: awardedContacts[a.supplier_id], offerId: a.offer_id, off, noVat: !!off && !showsVatBreakdown(off), vatIncluded: !!off?.vat_included, net: 0, gross: 0, count: 0 }
-            }
-            // same basis as the cards: amounts shown with VAT where the seller charges it
-            const line = Number(a.total) || 0
-            const v = bySupplier[a.supplier_id]
-            v.net += v.noVat ? line : v.vatIncluded ? line / 1.15 : line
-            v.gross += v.noVat ? line : v.vatIncluded ? line : line * 1.15
-            v.count += 1
-          })
-          const list: any[] = Object.values(bySupplier)
-          // delivery / other charges (191): all of a supplier's priced lines chosen → they count in the
-          // total; only some → the supplier confirms the charges for those lines after confirmation
-          for (const v of list) {
-            const ex = extrasOf(v.off)
-            const priced = (Array.isArray(v.off?.item_prices) ? v.off.item_prices : []).filter((e: any) => Number(e.total) > 0).length
-            if (ex > 0 && v.count >= priced) {
-              v.net += v.noVat ? ex : v.vatIncluded ? ex / 1.15 : ex
-              v.gross += v.noVat ? ex : v.vatIncluded ? ex : ex * 1.15
-              v.exIncluded = ex
-            } else if (ex > 0) v.exPending = ex
-          }
-          const grand = list.reduce((s: number, v: any) => s + v.gross, 0)
-          const grandNet = list.reduce((s: number, v: any) => s + v.net, 0)
+          // ── the summary of the choices, per supplier (choiceTotals: the same numbers in the dialog) ──
+          const { list, grand, grandNet, pending } = totals
           const vatAmt = grand - grandNet
           const allNoVat = list.length > 0 && list.every((v: any) => v.noVat)
           const mixedVat = list.some((v: any) => v.noVat) && !allNoVat
           const nItems = items.length
           const countMaterials = (n: number) => L(`${n} material${n === 1 ? '' : 's'}`, `${n} اشیاء`, arCount(n, 'مادة واحدة', 'مادتان', 'مواد', 'مادة'))
           const countSuppliers = (n: number) => L(`${n} supplier${n === 1 ? '' : 's'}`, `${n} سپلائرز`, arCount(n, 'مورد واحد', 'موردان', 'موردين', 'مورداً'))
+          // after «من» (genitive): «من موردَين» (UX-139)
+          const countSuppliersGen = (n: number) => L(`${n} supplier${n === 1 ? '' : 's'}`, `${n} سپلائرز`, arCount(n, 'مورد واحد', 'موردَين', 'موردين', 'مورداً'))
           const sortLabel = awardSort === 'rated' ? L('Top rated', 'بہترین کارکردگی', 'الأعلى تقييماً') : awardSort === 'fastest' ? L('Fastest', 'سب سے تیز', 'الأسرع') : awardSort === 'nearest' ? L('Nearest', 'سب سے قریب', 'الأقرب') : L('Cheapest', 'سب سے سستا', 'الأرخص')
           const chosenBadge = (
             finalized
@@ -960,7 +1079,7 @@ export default function RFQDetailPage() {
 
             {/* one supplier for every material (UX-188): gold for a home buyer, secondary for a business */}
             {showSingle && single && (
-              <div className={`mb-3 rounded-xl p-3 sm:p-4 border ${home ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white'}`}>
+              <div className={`mb-3 rounded-xl p-3 sm:p-4 border ${home && !awardedN ? 'border-[#D4A543] bg-[#D4A543]/10' : 'border-gray-200 bg-white'}`}>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="min-w-0 text-sm">
                     <div className="font-bold text-[#0B2438]">{L('One supplier for every material', 'تمام اشیاء کے لیے ایک سپلائر', 'مورد واحد لكل المواد')}: {single.o.supplier?.company_name_ar || L('Supplier', 'سپلائر', 'مورد')}</div>
@@ -969,12 +1088,12 @@ export default function RFQDetailPage() {
                       <div className="text-xs text-gray-600 mt-0.5">{L(
                         `Picking the cheapest saves ${money(single.total - mixTotal)} SAR, but from ${mixOffers.length} suppliers with several deliveries.`,
                         `سب سے سستا چننے سے ${money(single.total - mixTotal)} ریال بچتے ہیں، لیکن ${mixOffers.length} سپلائرز اور کئی ڈیلیوریوں کے ساتھ۔`,
-                        `اختيار الأرخص يوفّر ${money(single.total - mixTotal)} ر.س، لكن من ${countSuppliers(mixOffers.length)} وبعدة توصيلات.`)}</div>
+                        `اختيار الأرخص يوفّر ${money(single.total - mixTotal)} ر.س، لكن من ${countSuppliersGen(mixOffers.length)} وبعدة توصيلات.`)}</div>
                     )}
                   </div>
                   <button type="button" disabled={pickingAll} onClick={() => awardOfferAll(single.o.id)}
-                    className={`min-h-11 px-4 rounded-xl text-sm font-extrabold shrink-0 disabled:opacity-60 ${home ? '' : 'border border-[#0B2438]/30 text-[#0B2438] bg-white'}`}
-                    style={home ? { background: '#D4A543', color: '#071827' } : undefined}>
+                    className={`min-h-11 px-4 rounded-xl text-sm font-extrabold shrink-0 disabled:opacity-60 ${home && !awardedN ? '' : 'border border-[#0B2438] text-[#0B2438] bg-white'}`}
+                    style={home && !awardedN ? { background: '#D4A543', color: '#071827' } : undefined}>
                     {L('Choose this supplier for all', 'سب کے لیے یہ سپلائر منتخب کریں', 'اختر هذا المورد لكل المواد')}
                   </button>
                 </div>
@@ -983,19 +1102,15 @@ export default function RFQDetailPage() {
             {activeOffers.length > 0 && rfq.status === 'open' && items.some((it: any, idx: number) => !awards[idx] && cheapestFor(it, idx, activeOffers)) && (
               <div className="mb-3">
               <button type="button" onClick={() => awardCheapestAll(activeOffers)} disabled={pickingAll}
-                className={`w-full min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-60 ${home && showSingle ? 'border border-[#0B2438]/30 text-[#0B2438] bg-white' : 'text-[#071827]'}`}
-                style={home && showSingle ? undefined : { background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
+                className={`w-full min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-60 ${(home && showSingle) || awardedN > 0 ? 'border border-[#0B2438] text-[#0B2438] bg-white' : 'text-[#071827]'}`}
+                style={(home && showSingle) || awardedN > 0 ? undefined : { background: 'linear-gradient(135deg,#F5C55B,#D4A543)' }}>
                 {pickingAll ? L('Selecting…', 'منتخب ہو رہا ہے…', 'جارٍ الاختيار…') : L('Pick the cheapest for every item', 'ہر چیز کی سب سے سستی منتخب کریں', 'اختر الأرخص لكل المواد')}
               </button>
               <p className="text-xs text-gray-600 text-center mt-1">{L('You can change any item after.', 'بعد میں آپ کوئی بھی چیز بدل سکتے ہیں۔', 'ويمكنك تغيير أي مادة بعدها.')}</p>
               </div>
             )}
             {activeOffers.length === 0 ? (
-              <div className="bg-white rounded-xl p-8 border border-gray-100 text-center">
-                <div className="text-4xl mb-3"><Glyph e="⏳" /></div>
-                <h4 className="font-bold text-gray-900 mb-1">{L('No offers yet', 'ابھی کوئی آفر نہیں آئی', 'لم تصل عروض بعد')}</h4>
-                <p className="text-sm text-gray-600">{L('We will tell you as soon as an offer arrives', 'کوئی بھی آفر آتے ہی ہم آپ کو بتائیں گے', 'سنُبلغك فور وصول أي عرض')}</p>
-              </div>
+              noOffersCard
             ) : (
               <div className="space-y-3">
                 {items.map((it: any, idx: number) => {
@@ -1034,7 +1149,7 @@ export default function RFQDetailPage() {
                         const be = budgetEdit
                         if (be && be.idx === idx) return (
                           <div className="px-4 py-2 border-b border-gray-100 space-y-2">
-                            <BudgetField value={be.v} visible={be.vis} unit={unitL(it.unit)} locale={locale}
+                            <BudgetField home={home} value={be.v} visible={be.vis} unit={unitL(it.unit)} locale={locale}
                               onChange={(v, vis) => setBudgetEdit({ idx, v, vis })} />
                             <div className="flex gap-2">
                               <button type="button" onClick={saveBudget} disabled={budgetSaving} className="min-h-11 text-sm px-4 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>{budgetSaving ? '…' : L('Save', 'محفوظ کریں', 'حفظ')}</button>
@@ -1046,12 +1161,15 @@ export default function RFQDetailPage() {
                         return (
                           <div className="px-4 py-1.5 border-b border-gray-100 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                             {bg ? (<>
-                              <span className="font-semibold text-gray-700">{L('Your budget', 'آپ کا بجٹ', 'ميزانيتك')}: {L('up to', 'تک', 'حتى')} {bg.budget_unit_price.toLocaleString('en-US')} {SAR} / {unitL(it.unit)} <span className="text-gray-500 font-normal">({L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')})</span></span>
+                              {home
+                                // UX-052: a home buyer sees the most they pay per unit (with VAT)
+                                ? <span className="font-semibold text-gray-700">{L('Most you pay per unit', 'فی یونٹ زیادہ سے زیادہ ادائیگی', 'أقصى مبلغ تدفعه للوحدة')}: {money(bg.budget_unit_price * 1.15)} {SAR} / {unitL(it.unit)}</span>
+                                : <span className="font-semibold text-gray-700">{L('Your budget', 'آپ کا بجٹ', 'ميزانيتك')}: {L('up to', 'تک', 'حتى')} {bg.budget_unit_price.toLocaleString('en-US')} {SAR} / {unitL(it.unit)} <span className="text-gray-500 font-normal">({L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')})</span></span>}
                               <span className={`px-1.5 py-0.5 rounded-full font-bold ${bg.budget_visible ? 'bg-amber-50 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{bg.budget_visible ? L('Shown to suppliers', 'سپلائرز کو نظر آتا ہے', 'ظاهرة للموردين') : L('Only you see it', 'صرف آپ دیکھتے ہیں', 'تراها أنت فقط')}</span>
                             </>) : null}
                             {rfq.status === 'open' && (
-                              <button type="button" onClick={() => setBudgetEdit({ idx, v: bg ? String(bg.budget_unit_price) : '', vis: !!bg?.budget_visible })} className="min-h-8 font-bold text-[#8F6820] hover:underline">
-                                {bg ? L('Edit', 'ترمیم', 'تعديل') : '+ ' + L('My budget per unit (optional)', 'فی یونٹ میرا بجٹ (اختیاری)', 'ميزانيتي للوحدة (اختياري)')}
+                              <button type="button" onClick={() => setBudgetEdit({ idx, v: bg ? String(home ? Math.round(bg.budget_unit_price * 1.15 * 100) / 100 : bg.budget_unit_price) : '', vis: !!bg?.budget_visible })} className="min-h-11 font-bold text-[#8F6820] hover:underline">
+                                {bg ? L('Edit', 'ترمیم', 'تعديل') : '+ ' + (home ? L('Most you pay per unit (optional)', 'فی یونٹ زیادہ سے زیادہ ادائیگی (اختیاری)', 'أقصى مبلغ تدفعه للوحدة (اختياري)') : L('My budget per unit (optional)', 'فی یونٹ میرا بجٹ (اختیاری)', 'ميزانيتي للوحدة (اختياري)'))}
                               </button>
                             )}
                           </div>
@@ -1100,6 +1218,14 @@ export default function RFQDetailPage() {
                                     {(b.entry.source_type || b.offer.source_type) && !isDirectSource(b.entry.source_type || b.offer.source_type) && (
                                       <span className="text-xs font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-800"><SellerIcon name={sourceIcon(b.entry.source_type || b.offer.source_type)} /> {srcPhrase(b.entry.source_type || b.offer.source_type)}</span>
                                     )}
+                                    {/* UX-051: a pricing agent's source shop (area only before the deal; fetched once per offer) */}
+                                    {sources[b.offer.id] && (() => {
+                                      const d = sources[b.offer.id]
+                                      const where = [d.area, d.city].filter(Boolean).join('، ')
+                                      return <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-700">{d.revealed && d.name
+                                        ? L(`Source shop: ${d.name}`, `ماخذ دکان: ${d.name}`, `المحل المصدر: ${d.name}`)
+                                        : where ? L(`Source shop in ${where}`, `ماخذ دکان: ${where}`, `المحل المصدر في ${where}`) : L('Pricing agent', 'قیمت ایجنٹ', 'وسيط تسعير')}</span>
+                                    })()}
                                     <button type="button" aria-expanded={open} onClick={() => setOpenBid(open ? null : `${idx}:${b.offer.id}`)} className="min-h-8 inline-flex items-center gap-0.5 text-xs font-bold text-[#8F6820] hover:underline">
                                       {open ? <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />} {open ? L('Less', 'کم', 'إخفاء') : L('More about the supplier', 'سپلائر کے بارے میں مزید', 'المزيد عن المورد')}
                                     </button>
@@ -1116,7 +1242,7 @@ export default function RFQDetailPage() {
                                     </div>
                                   )}
                                   <div className="text-xs text-gray-600 flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                                    {Number(b.entry.unit_price) > 0 && <span>{Number(b.entry.unit_price).toLocaleString('en-US')} {SAR} / {unitL(b.entry.unit || it.unit)}</span>}
+                                    {Number(b.entry.unit_price) > 0 && <span>{money2(buyerLinePrice(b.entry.unit_price, b.offer, home))} {SAR} / {unitL(b.entry.unit || it.unit)}{!home && preVatNote(b.offer, locale) ? ' ' + preVatNote(b.offer, locale) : ''}</span>}
                                     {Number(b.entry.delivery_days ?? b.offer.delivery_days) > 0 ? <span><Glyph e="🚚" /> {L(`Within ${daysText(b.entry.delivery_days ?? b.offer.delivery_days, locale)}`, `${daysText(b.entry.delivery_days ?? b.offer.delivery_days, locale)} میں`, `خلال ${daysText(b.entry.delivery_days ?? b.offer.delivery_days, locale)}`)}</span> : null}
                                     {b.offer.payment_terms ? <span><Glyph e="💳" /> {paymentTermsLabel(b.offer.payment_terms, locale)}</span> : null}
                                     {b.offer.supplier?.city && <span><Glyph e="📍" /> {b.offer.supplier.city}</span>}
@@ -1136,7 +1262,10 @@ export default function RFQDetailPage() {
                                       const q = Number(b.entry.quantity ?? it.quantity) || 1
                                       const unit = Number(b.entry.unit_price) > 0 ? Number(b.entry.unit_price) : Number(b.entry.total || 0) / q
                                       if (!(unit > 0)) return null
-                                      const over = overBudget(preVatUnit(unit, b.offer), budgets[idx].budget_unit_price, q)
+                                      // UX-052: a home buyer compares what they pay (with VAT) with their maximum (stored before VAT)
+                                      const over = home
+                                        ? overBudget(lineComparable(unit, b.offer), budgets[idx].budget_unit_price * 1.15, q)
+                                        : overBudget(preVatUnit(unit, b.offer), budgets[idx].budget_unit_price, q)
                                       return over > 0
                                         ? <div className="text-xs font-bold text-red-700">{L(`Over your budget by ${money(over)} SAR`, `آپ کے بجٹ سے ${money(over)} ریال زیادہ`, `أعلى من ميزانيتك بـ ${money(over)} ر.س`)}</div>
                                         : <div className="text-xs font-bold text-[#0F6E56]">{L('Within your budget', 'آپ کے بجٹ میں', 'ضمن ميزانيتك')}</div>
@@ -1144,7 +1273,7 @@ export default function RFQDetailPage() {
                                   </div>
                                   {isAwarded ? chosenBadge : rfq.status === 'open' ? (
                                     <button type="button" onClick={() => awardItem(idx, b.offer.id)} disabled={awarding === `${idx}:${b.offer.id}`}
-                                      className="min-h-11 text-sm px-4 rounded-xl font-bold disabled:opacity-50 whitespace-nowrap" style={{ background: '#D4A543', color: '#071827' }}>
+                                      className="min-h-11 text-sm px-4 rounded-xl font-bold disabled:opacity-50 whitespace-nowrap border border-[#0B2438] text-[#0B2438] bg-white hover:bg-[#0B2438]/5">
                                       {awarding === `${idx}:${b.offer.id}` ? '…' : L('Choose', 'منتخب کریں', 'اختر هذا العرض')}
                                     </button>
                                   ) : null}
@@ -1155,7 +1284,7 @@ export default function RFQDetailPage() {
                           {bids.length > TOP_N && (
                             <button type="button" onClick={() => setAllBidsFor(m => ({ ...m, [idx]: !m[idx] }))}
                               className="w-full min-h-11 px-4 text-xs font-bold text-[#8F6820] hover:bg-[#D4A543]/5">
-                              {allBidsFor[idx] ? L('Show the best 3 only', 'صرف بہترین 3', 'اعرض أفضل 3 فقط') : L(`Show all offers (${bids.length})`, `تمام آفرز (${bids.length})`, `عرض كل العروض (${bids.length})`)}
+                              {allBidsFor[idx] ? L('Show the best 3 only', 'صرف بہترین 3', 'اعرض أفضل 3 فقط') : L(`Show all offers (${bids.length})`, `تمام آفرز (${bids.length})`, `اعرض كل العروض (${bids.length})`)}
                             </button>
                           )}
                         </div>
@@ -1170,11 +1299,14 @@ export default function RFQDetailPage() {
                 })}
 
                 {/* «وفّرت X ريال»: compared with the highest quote for each chosen item (owner 2026-11-14) */}
+                {/* UX-139: before confirming it is «ستوفّر نحو …» in gold; green «وفّرت» only once confirmed */}
                 {awardedN > 0 && savings && savings.saved >= 1 && (
-                  <div className="rounded-xl px-4 py-3 border flex items-center gap-3" style={{ background: '#E7F4EF', borderColor: '#0F6E5633' }}>
-                    <span className="w-9 h-9 rounded-full grid place-items-center shrink-0 text-white font-extrabold" style={{ background: '#0F6E56' }}><Glyph e="💰" /></span>
+                  <div className="rounded-xl px-4 py-3 border flex items-center gap-3" style={finalized ? { background: '#E7F4EF', borderColor: '#0F6E5633' } : { background: '#FFF8E8', borderColor: '#D4A54366' }}>
+                    <span className="w-9 h-9 rounded-full grid place-items-center shrink-0 font-extrabold" style={finalized ? { background: '#0F6E56', color: '#fff' } : { background: '#D4A543', color: '#071827' }}><Glyph e="💰" /></span>
                     <div className="min-w-0">
-                      <div className="font-extrabold text-[15px]" style={{ color: '#0F6E56' }}>{L(`You saved ${money(savings.saved)} SAR`, `آپ نے ${money(savings.saved)} ریال بچائے`, `وفّرت ${money(savings.saved)} ر.س`)}</div>
+                      <div className="font-extrabold text-[15px]" style={{ color: finalized ? '#0F6E56' : '#8F6820' }}>{finalized
+                        ? L(`You saved ${money(savings.saved)} SAR`, `آپ نے ${money(savings.saved)} ریال بچائے`, `وفّرت ${money(savings.saved)} ر.س`)
+                        : L(`You will save about ${money(savings.saved)} SAR when you confirm`, `تصدیق پر آپ تقریباً ${money(savings.saved)} ریال بچائیں گے`, `ستوفّر نحو ${money(savings.saved)} ر.س عند التأكيد`)}</div>
                       <div className="text-xs text-gray-700">{L('Compared with the highest offer for each material you chose.', 'ہر منتخب چیز کی سب سے زیادہ آفر کے مقابلے میں۔', 'مقارنةً بأعلى عرض لكل مادة اخترتها.')}</div>
                     </div>
                   </div>
@@ -1183,7 +1315,8 @@ export default function RFQDetailPage() {
                 {/* the sticky confirm bar above the phone's bottom bar (UX-014) */}
                 {awardedN > 0 && !finalized && (
                   <div className="sticky bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-3 z-30 rounded-xl border border-[#D4A543]/60 bg-white shadow-lg px-3 py-2.5 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-bold text-[#0B2438]">{L(`Chosen ${awardedN} of ${nItems}`, `${nItems} میں سے ${awardedN} منتخب`, `اخترت ${awardedN} من ${nItems}`)} · {money(grand)} {SAR}</span>
+                    <span className="text-sm font-bold text-[#0B2438]">{L(`Chosen ${awardedN} of ${nItems}`, `${nItems} میں سے ${awardedN} منتخب`, `اخترت ${awardedN} من ${nItems}`)} · {money(grand)} {SAR}
+                      {pending >= 1 && <span className="block text-xs font-semibold text-gray-600">{L(`+ delivery charges up to ${money(pending)} SAR, confirmed by the supplier after you confirm`, `+ ڈیلیوری چارجز زیادہ سے زیادہ ${money(pending)} ریال، سپلائر تصدیق کے بعد کنفرم کرے گا`, `+ رسوم توصيل حتى ${money(pending)} ر.س يؤكّدها المورد بعد التأكيد`)}</span>}</span>
                     <button type="button" onClick={finalizeAwards} disabled={finalizing} className="min-h-11 px-4 rounded-xl text-sm font-extrabold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
                       {finalizing ? '…' : L('Confirm the chosen offers', 'منتخب آفرز کی تصدیق کریں', 'تأكيد اختيار العروض')}
                     </button>
@@ -1209,7 +1342,7 @@ export default function RFQDetailPage() {
                       </div>
                     ))}
                     <div className="flex items-center justify-between font-extrabold mt-2 pt-1 gap-2">
-                      <span>{home ? L('The amount you pay', 'آپ کی ادا کردہ رقم', 'المبلغ الذي تدفعه') : allNoVat || mixedVat ? L('Total', 'کل', 'الإجمالي') : L('Total incl. 15% VAT', 'کل رقم (15% VAT سمیت)', 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)')}</span><span className="text-lg" style={{ color: '#F5C55B' }}>{money(grand)} {SAR}</span>
+                      <span>{pending >= 1 ? L('Amount so far', 'اب تک کی رقم', 'المبلغ حتى الآن') : home ? L('The amount you pay', 'آپ کی ادا کردہ رقم', 'المبلغ الذي تدفعه') : allNoVat || mixedVat ? L('Total', 'کل', 'الإجمالي') : L('Total incl. 15% VAT', 'کل رقم (15% VAT سمیت)', 'الإجمالي (يشمل ضريبة القيمة المضافة 15%)')}</span><span className="text-lg" style={{ color: '#F5C55B' }}>{money(grand)} {SAR}</span>
                     </div>
                     {!allNoVat && vatAmt >= 1 && (
                       <div className="text-xs text-white/70 text-end">
@@ -1219,6 +1352,9 @@ export default function RFQDetailPage() {
                           : `${L('Before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')} ${money(grandNet)} ${SAR} · ${L('VAT 15%', 'ٹیکس 15%', 'الضريبة 15%')} ${money(vatAmt)} ${SAR}`}
                       </div>
                     )}
+                    {pending >= 1 && !finalized && (
+                      <p className="text-xs font-semibold text-amber-200 mt-1 text-end">{L(`+ delivery charges up to ${money(pending)} SAR, confirmed by the supplier after you confirm`, `+ ڈیلیوری چارجز زیادہ سے زیادہ ${money(pending)} ریال، سپلائر تصدیق کے بعد کنفرم کرے گا`, `+ رسوم توصيل حتى ${money(pending)} ر.س يؤكّدها المورد بعد التأكيد`)}</p>
+                    )}
                     {!finalized && awardedN < nItems && (
                       <p className="text-xs font-semibold text-amber-200 mt-2">{L(`You chose ${awardedN} of ${nItems} materials; the rest will not be ordered.`, `آپ نے ${nItems} میں سے ${awardedN} اشیاء منتخب کیں؛ باقی آرڈر نہیں ہوں گی۔`, `اخترت ${awardedN} من ${nItems} مواد، والمواد الباقية لن تُطلب.`)}</p>
                     )}
@@ -1226,7 +1362,7 @@ export default function RFQDetailPage() {
                       <p className="text-xs text-emerald-200 mt-3">{L('Confirmed. Open each supplier’s deal to follow delivery, receipt and payment.', 'کنفرم ہو گیا۔ ڈیلیوری، وصولی اور ادائیگی کے لیے ہر سپلائر کی ڈیل کھولیں۔', 'تمّ التأكيد. افتح صفقة كل مورد لمتابعة التسليم والاستلام والدفع.')}</p>
                     ) : (
                       <button type="button" onClick={finalizeAwards} disabled={finalizing}
-                        className="w-full mt-3 min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-50 transition-all hover:shadow" style={{ background: '#D4A543', color: '#071827' }}>
+                        className="w-full mt-3 min-h-12 rounded-xl font-extrabold text-sm disabled:opacity-50 transition-all hover:shadow bg-white text-[#0B2438]">{/* UX-049: the sticky bar keeps the one gold confirm */}
                         {finalizing ? '…' : L('Confirm the chosen offers', 'منتخب آفرز کی تصدیق کریں', 'تأكيد اختيار العروض')}
                       </button>
                     )}
@@ -1248,7 +1384,7 @@ export default function RFQDetailPage() {
           <h3 className="text-sm font-bold text-gray-900">{L('Offers', 'آفرز', 'العروض')} ({offers.length})</h3>
           {marketAvg && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-              <span className="text-xs text-amber-800"><Glyph e="📊" /> {L('Market average:', 'مارکیٹ اوسط:', 'متوسط السوق:')}</span>
+              <span className="text-xs text-amber-800"><Glyph e="📊" /> {L('Market average before VAT:', 'VAT سے پہلے مارکیٹ اوسط:', 'متوسط السوق قبل الضريبة:')}</span>
               <span className="text-sm font-bold text-amber-900">{marketAvg?.toLocaleString('en-US')} {SAR} / {unitL(rfq.unit) || L('unit', 'یونٹ', 'وحدة')}</span>
             </div>
           )}
@@ -1257,7 +1393,7 @@ export default function RFQDetailPage() {
           <div className="flex items-center gap-2 mb-3 flex-wrap">
             <span className="text-xs font-bold text-gray-700">{L('Best 3 by:', 'بہترین 3:', 'أفضل 3 حسب:')}</span>
             <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 text-xs font-semibold">
-              {([['price_asc', L('Cheapest', 'سب سے سستا', 'الأرخص')], ['rating', L('Top rated', 'بہترین کارکردگی', 'الأعلى تقييماً')], ['delivery', L('Fastest', 'سب سے تیز', 'الأسرع')]] as [string, string][]).map(([k, l]) => (
+              {([['price_asc', L('Cheapest', 'سب سے سستا', 'الأرخص')], ['rating', L('Top rated', 'بہترین کارکردگی', 'الأعلى تقييماً')], ['delivery', L('Fastest', 'سب سے تیز', 'الأسرع')], ...(canSortNearest ? [['nearest', L('Nearest', 'سب سے قریب', 'الأقرب')]] : [])] as [string, string][]).map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setSortBy(k)} aria-pressed={sortBy === k}
                   className={`min-h-10 px-3 rounded-lg transition-all ${sortBy === k ? 'bg-white shadow-sm text-[#0B2438]' : 'text-gray-600'}`}>{l}</button>
               ))}
@@ -1270,6 +1406,15 @@ export default function RFQDetailPage() {
               className={`min-h-11 text-xs px-3 rounded-xl border font-semibold transition-all ${onlyVerified ? 'border-[#D4A543] bg-[#D4A543]/15 text-[#0B2438]' : 'bg-white text-gray-700 border-gray-200'}`}>
               <Glyph e="🛡" /> {L('Verified only', 'صرف تصدیق شدہ', 'موثّق فقط')}</button>
             {(onlyVerified || tierFilter) && <span className="text-xs text-gray-600">({displayedOffers.length} {L('of', 'میں سے', 'من')} {offers.length})</span>}
+          </div>
+        )}
+
+        {/* UX-168: a home buyer gets one line that sums up the offers */}
+        {home && activeOffers.length > 1 && cheapestOffer && (
+          <div className="mb-3 rounded-xl border border-[#D4A543]/50 bg-[#D4A543]/5 px-4 py-3 text-sm text-[#0B2438]">
+            <span className="font-bold">{L(`You have ${activeOffers.length} offers`, `آپ کو ${activeOffers.length} آفرز ملیں`, `وصلك ${arCount(activeOffers.length, 'عرض واحد', 'عرضان', 'عروض', 'عرضاً')}`)}</span>
+            {': '}{L(`the lowest ${money(offerComparable(cheapestOffer))} SAR`, `سب سے کم ${money(offerComparable(cheapestOffer))} ریال`, `أقلّها ${money(offerComparable(cheapestOffer))} ر.س`)}
+            {fastest ? L(`, the fastest within ${daysText(fastest.delivery_days, locale)}`, `، سب سے تیز ${daysText(fastest.delivery_days, locale)} میں`, `، وأسرعها خلال ${daysText(fastest.delivery_days, locale)}`) : ''}.
           </div>
         )}
 
@@ -1303,11 +1448,7 @@ export default function RFQDetailPage() {
         )}
 
         {offers.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 border border-gray-100 text-center">
-            <div className="text-4xl mb-3"><Glyph e="⏳" /></div>
-            <h4 className="font-bold text-gray-900 mb-1">{L('No offers yet', 'ابھی کوئی آفر نہیں آئی', 'لم تصل عروض بعد')}</h4>
-            <p className="text-sm text-gray-600">{L('We will tell you as soon as an offer arrives', 'کوئی بھی آفر آتے ہی ہم آپ کو بتائیں گے', 'سنُبلغك فور وصول أي عرض')}</p>
-          </div>
+          noOffersCard
         ) : (
           <div className="space-y-3">
             {displayedOffers.slice(0, showAllOffers ? undefined : TOP_N).map((offer: any, i: number) => {
@@ -1345,7 +1486,7 @@ export default function RFQDetailPage() {
                         {/* where the price comes from: a sourced quote is never shown as a direct one */}
                         {offer.source_type && (!isDirectSource(offer.source_type) || offerMore[offer.id]) && (
                           <span className={`badge text-xs ${isDirectSource(offer.source_type) ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}
-                            title={isDirectSource(offer.source_type) ? L('Direct price from the supplier', 'سپلائر سے براہ راست قیمت', 'سعر مباشر من المورد') : L('Price sourced elsewhere, not from the supplier’s stock', 'یہ قیمت کسی دوسرے ذریعے سے ہے، سپلائر کے اسٹاک سے نہیں', 'سعر منقول من مصدر آخر وليس من مخزون المورد')}>
+                            title={isDirectSource(offer.source_type) ? L('Direct price from the supplier', 'سپلائر سے براہ راست قیمت', 'سعر مباشر من المورد') : L('The goods come from another source, not the supplier’s own stock', 'سامان کسی دوسرے ذریعے سے ہے، سپلائر کے اپنے اسٹاک سے نہیں', 'مصدر البضاعة جهة أخرى، وليس مخزون المورد')}>
                             {isDirectSource(offer.source_type) ? <><SellerIcon name="check" /> {L('Direct from the supplier', 'سپلائر سے براہ راست', 'مباشر من المورد')}</> : <><SellerIcon name={sourceIcon(offer.source_type)} /> {srcPhrase(offer.source_type)}</>}
                           </span>
                         )}
@@ -1406,7 +1547,7 @@ export default function RFQDetailPage() {
                     {home ? (<>
                       <div className="text-xs text-gray-600">{L('The amount you pay', 'آپ کی ادا کردہ رقم', 'المبلغ الذي تدفعه')}</div>
                       <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{money(comparable)} {SAR}</div>
-                      <div className="text-xs text-gray-600 whitespace-normal sm:max-w-[14rem]">{vatTag(offer, locale)}{exSum > 0 ? ` · ${L(`includes delivery ${money(exSum)} SAR`, `ڈیلیوری ${money(exSum)} ریال شامل`, `يشمل التوصيل ${money(exSum)} ر.س`)}` : ''}</div>
+                      <div className="text-xs text-gray-600 whitespace-normal sm:max-w-[14rem]">{vatTag(offer, locale)}{exSum > 0 ? ` · ${L(`includes delivery ${money(lineComparable(exSum, offer))} SAR`, `ڈیلیوری ${money(lineComparable(exSum, offer))} ریال شامل`, `يشمل التوصيل ${money(lineComparable(exSum, offer))} ر.س`)}` : ''}</div>
                     </>) : (<>
                       <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{money(comparable)} <span className="text-sm">{SAR}</span></div>
                       <div className="text-xs text-gray-600 whitespace-normal sm:max-w-[14rem]">{vatTag(offer, locale)}</div>
@@ -1414,8 +1555,10 @@ export default function RFQDetailPage() {
                     </>)}
                     {!rejected && above >= 1 && minPrice > 0 && <div className="text-xs text-gray-600">{L(`${money(above)} SAR above the lowest (${Math.round(above / minPrice * 100)}%)`, `سب سے کم سے ${money(above)} ریال زیادہ (${Math.round(above / minPrice * 100)}%)`, `أعلى من أقل عرض بـ ${money(above)} ر.س (${Math.round(above / minPrice * 100)}%)`)}</div>}
                     {marketAvg && Number(offer.unit_price) > 0 && (() => {
-                      const diff = Math.abs(((offer.unit_price - marketAvg) / marketAvg * 100)).toFixed(0)
-                      const isLow = offer.unit_price < marketAvg
+                      // UX-080: both sides before VAT
+                      const upPre = preVatUnit(Number(offer.unit_price), offer)
+                      const diff = Math.abs(((upPre - marketAvg) / marketAvg * 100)).toFixed(0)
+                      const isLow = upPre < marketAvg
                       return (
                         <div className={`text-xs font-bold mt-0.5 ${isLow ? 'text-[#0F6E56]' : 'text-amber-800'}`}>
                           {isLow ? `${diff}% ${L('below market', 'مارکیٹ سے کم', 'دون السوق')}` : `${diff}% ${L('above market', 'مارکیٹ سے زیادہ', 'فوق السوق')}`}
@@ -1426,7 +1569,7 @@ export default function RFQDetailPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 mb-3">
-                  {Number(offer.unit_price) > 0 && <span>{L('Unit price:', 'فی یونٹ قیمت:', 'سعر الوحدة:')} {Number(offer.unit_price).toLocaleString('en-US')} {SAR}</span>}
+                  {Number(offer.unit_price) > 0 && <span>{L('Unit price:', 'فی یونٹ قیمت:', 'سعر الوحدة:')} {money2(buyerLinePrice(offer.unit_price, offer, home))} {SAR}{!home && preVatNote(offer, locale) ? ' ' + preVatNote(offer, locale) : ''}</span>}
                   {Number(offer.delivery_days) > 0 && <span><Glyph e="🚚" /> {L('Delivery:', 'ڈیلیوری:', 'التوصيل:')} {L(`within ${daysText(offer.delivery_days, locale)}`, `${daysText(offer.delivery_days, locale)} میں`, `خلال ${daysText(offer.delivery_days, locale)}`)}</span>}
                   {offer.payment_terms && <span><Glyph e="💳" /> {paymentTermsLabel(offer.payment_terms, locale)}</span>}
                 </div>
@@ -1435,17 +1578,17 @@ export default function RFQDetailPage() {
                 {Array.isArray(offer.item_prices) && offer.item_prices.length > 0 && (
                   <div className="border border-gray-200 rounded-lg overflow-hidden mb-2">
                     <div className="bg-gray-50 px-2.5 py-1.5 text-xs font-bold text-gray-600 flex justify-between gap-2">
-                      <span><Glyph e="🧾" /> {L('Item pricing', 'آئٹمز کی قیمتیں', 'تسعير المواد')} ({offer.item_prices.length})</span><span>{home ? L('Price', 'قیمت', 'السعر') : priceBasisLabel(offer, locale)}</span>
+                      <span><Glyph e="🧾" /> {L('Item pricing', 'آئٹمز کی قیمتیں', 'تسعير المواد')} ({offer.item_prices.length})</span><span>{home ? L('What you pay', 'آپ کی ادائیگی', 'المبلغ الذي تدفعه') : priceBasisLabel(offer, locale)}</span>
                     </div>
                     {offer.item_prices.map((it: any, idx: number) => (
                       <div key={idx} className="px-2.5 py-1.5 border-t border-gray-100 flex items-center justify-between gap-3 text-xs">
                         <span className="text-gray-700 min-w-0">
                           {it.attachment_url && <span title={L('Has a catalog', 'کیٹلاگ موجود ہے', 'يوجد كتالوج')}><Glyph e="📎" /> </span>}
-                          {pname(it.product_name)} <span className="text-gray-500">({Number(it.unit_price) > 0 ? `${Number(it.unit_price).toLocaleString('en-US')} × ` : ''}{(Number(it.quantity) || 0).toLocaleString('en-US')} {unitL(it.unit)})</span>
-                          {it.install_offered === true && <span className="text-[#0F6E56] font-semibold"> · {L('incl. installation', 'تنصیب سمیت', 'يشمل التركيب')}{installTotalOf(it) > 0 ? ` ${installTotalOf(it).toLocaleString('en-US')}` : ''}</span>}
+                          {pname(it.product_name)} <span className="text-gray-500">({Number(it.unit_price) > 0 ? `${money2(buyerLinePrice(it.unit_price, offer, home))} × ` : ''}{(Number(it.quantity) || 0).toLocaleString('en-US')} {unitL(it.unit)})</span>
+                          {it.install_offered === true && <span className="text-[#0F6E56] font-semibold"> · {L('incl. installation', 'تنصیب سمیت', 'يشمل التركيب')}{installTotalOf(it) > 0 ? ` ${money2(buyerLinePrice(installTotalOf(it), offer, home))}` : ''}</span>}
                           {it.install_offered === false && <span className="text-gray-500"> · {L('without installation', 'تنصیب کے بغیر', 'بدون تركيب')}</span>}
                         </span>
-                        <span className="font-bold text-gray-900 whitespace-nowrap">{(Number(it.total) || 0).toLocaleString('en-US')} {SAR}</span>
+                        <span className="font-bold text-gray-900 whitespace-nowrap">{money2(buyerLinePrice(it.total, offer, home))} {SAR}</span>
                       </div>
                     ))}
                   </div>
@@ -1507,7 +1650,7 @@ export default function RFQDetailPage() {
                   {L('Full offer', 'پوری آفر', 'العرض كاملاً')} <span aria-hidden="true">{FWD}</span>
                 </Link>
 
-                {offer.status === 'pending' && rfqOpen && (
+                {offer.status === 'pending' && canChoose && (
                   <div className="flex gap-2">
                     <button type="button" onClick={() => acceptOffer(offer.id)} disabled={!!acceptingId} aria-busy={acceptingId === offer.id}
                       className="flex-1 min-h-11 rounded-xl text-sm font-extrabold transition-colors disabled:opacity-60 disabled:cursor-not-allowed" style={{ background: '#D4A543', color: '#071827' }}>
@@ -1560,7 +1703,7 @@ export default function RFQDetailPage() {
             {displayedOffers.length > TOP_N && (
               <button type="button" onClick={() => setShowAllOffers(v => !v)}
                 className="w-full min-h-12 rounded-xl border-2 border-dashed border-[#D4A543]/60 text-sm font-bold text-[#8F6820] hover:bg-[#D4A543]/5">
-                {showAllOffers ? L('Show the best 3 only', 'صرف بہترین 3', 'اعرض أفضل 3 فقط') : L(`Show all offers (${displayedOffers.length})`, `تمام آفرز (${displayedOffers.length})`, `عرض كل العروض (${displayedOffers.length})`)}
+                {showAllOffers ? L('Show the best 3 only', 'صرف بہترین 3', 'اعرض أفضل 3 فقط') : L(`Show all offers (${displayedOffers.length})`, `تمام آفرز (${displayedOffers.length})`, `اعرض كل العروض (${displayedOffers.length})`)}
               </button>
             )}
           </div>
