@@ -418,6 +418,9 @@ export default function SupplierRFQPage() {
             if (!oe && (r === 'price' || r === 'delivery' || r === 'other')) setLostReason(r)
             const gb = typeof oc === 'object' && oc ? oc.gap_band : null
             if (!oe && (gb === 'lt5' || gb === 'lt10' || gb === 'gt10')) setGapBand(gb)
+            if (!oe && r === 'price') Promise.resolve(supabase.rpc('my_offer_gap_band', { p_offer_id: offerData.id })).then(({ data: g, error: ge }: any) => {
+              if (!ge && (g === 'lt5' || g === 'lt10' || g === 'gt10')) setGapBand(g)
+            }, () => {})
           }, () => {})
         }
         if (offerData.status === 'accepted') {
