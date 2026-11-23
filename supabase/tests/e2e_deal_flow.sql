@@ -14,7 +14,7 @@ declare
   company uuid := '58a5ac07-ec0d-4da8-a932-0379ff679416';
   emp     uuid := 'e6e39fc0-293a-41b2-847e-938964a705ab';
   v_rfq uuid; v_offer uuid; v_offer2 uuid; v_conv uuid; v_tok text; v_ref bigint;
-  r jsonb; n int; t text; ok int := 0; bad int := 0; log text := '';
+  r jsonb; n int; n2 int; t text; ok int := 0; bad int := 0; log text := '';
 begin
   -- helpers are inline: as(uid) = switch the JWT subject; chk = record a result
   -- 219: run with phone verification required, the test accounts verified (all rolled back)
@@ -119,6 +119,14 @@ begin
   reset role;
   select count(*) into n from offers where id = v_offer2 and submitted_by = emp;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL employee offer'; end if;
+  -- 265 (UX-027/UX-124): a team member gets no second copy of a new request, but does get reduction requests
+  insert into notifications (user_id, type, title, body, data) values
+    (company, 'new_rfq', 'e2e', 'e2e', jsonb_build_object('rfq_id', 'e2e-fanout')),
+    (company, 'new_message', 'e2e', 'e2e', jsonb_build_object('rfq_id', 'e2e-fanout', 'kind', 'reduction_request')),
+    (company, 'new_message', 'e2e', 'e2e', jsonb_build_object('rfq_id', 'e2e-fanout'));
+  select count(*) filter (where type = 'new_rfq'), count(*) filter (where type = 'new_message') into n, n2
+    from notifications where user_id = emp and data->>'rfq_id' = 'e2e-fanout';
+  if n = 0 and n2 = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL team fan-out new_rfq=' || n || ' messages=' || n2; end if;
 
   -- 6. buyer awards item 0 to the shop and finalizes
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
@@ -150,6 +158,19 @@ begin
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL award notification count=' || n; end if;
   select count(*) into n from notifications where user_id = emp and type = 'offer_rejected' and data->>'offer_id' = v_offer2::text;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL team copy of rejection'; end if;
+  -- 265 (UX-094): the losing company (through its employee) learns why, with no numbers; another seller can't ask
+  perform set_config('request.jwt.claims', json_build_object('sub', emp, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  t := public.my_offer_outcome(v_offer2);
+  if t in ('price', 'delivery', 'other') then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL offer outcome=' || coalesce(t, 'null'); end if;
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  begin
+    perform public.my_offer_outcome(v_offer2);
+    bad := bad + 1; log := log || ' FAIL another seller read an offer outcome';
+  exception when others then ok := ok + 1; end;
+  -- 265 (UX-100): the winning supplier has an active deal before receipt
+  if public.my_active_deal_count() >= 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL active deal count'; end if;
+  reset role;
 
   -- 7. delivery -> invoice -> receipt -> payment
   perform set_config('app.deal_write', 'off', true);
@@ -296,6 +317,34 @@ begin
   select count(*) into n from offers where id = v_offer and total_price = 200 and (item_prices->0->>'total')::numeric = 200
      and (item_prices->0->>'unit_price')::numeric = 20;
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL reduction did not rescale item prices'; end if;
+  -- 265 (UX-028): «تم تخفيض السعر» opens the offer and shows a formatted buyer-facing amount
+  select count(*) into n from notifications where user_id = buyer and data->>'kind' = 'reduction_response'
+     and data->>'offer_id' = v_offer::text and data->>'url' = '/contractor/rfq/' || v_rfq || '/offer/' || v_offer
+     and body ~ '[0-9] ريال[.]$';
+  if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL reduction notice link/amount'; end if;
+  -- 265 (UX-033): «لا أستطيع التخفيض» closes a second reduction request and tells the buyer; another seller can't decline
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform public.request_price_reduction(v_offer, 24, null);
+  perform set_config('request.jwt.claims', json_build_object('sub', company, 'role', 'authenticated')::text, true);
+  begin
+    perform public.decline_price_reduction(v_offer);
+    bad := bad + 1; log := log || ' FAIL another seller declined a reduction';
+  exception when others then ok := ok + 1; end;
+  perform set_config('request.jwt.claims', json_build_object('sub', sup, 'role', 'authenticated')::text, true);
+  perform public.decline_price_reduction(v_offer);
+  reset role;
+  select count(*) into n from offers where id = v_offer and reduction_deadline is null and total_price = 200;
+  select count(*) into n2 from notifications where user_id = buyer and data->>'kind' = 'reduction_declined' and data->>'offer_id' = v_offer::text;
+  if n = 1 and n2 = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL decline reduction offer=' || n || ' notice=' || n2; end if;
+  -- 265 (UX-121): extending the deadline tells the supplier with a readable Riyadh date
+  perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+  perform public.extend_rfq_deadline(v_rfq, now() + interval '5 days');
+  reset role;
+  select count(*) into n from notifications where user_id = sup and type = 'rfq_expiring' and data->>'rfq_id' = v_rfq::text
+     and data->>'kind' = 'deadline_extended' and body like '%الساعة%';
+  if n >= 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL deadline extension notice'; end if;
 
   -- 13. audit 2026-11-01 (migration 183)
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
