@@ -320,7 +320,7 @@ begin
   -- 265 (UX-028): «تم تخفيض السعر» opens the offer and shows a formatted buyer-facing amount
   select count(*) into n from notifications where user_id = buyer and data->>'kind' = 'reduction_response'
      and data->>'offer_id' = v_offer::text and data->>'url' = '/contractor/rfq/' || v_rfq || '/offer/' || v_offer
-     and body ~ '[0-9] ريال[.]$';
+     and body ~ '[0-9] ر[.]س[.]$';
   if n = 1 then ok := ok + 1; else bad := bad + 1; log := log || ' FAIL reduction notice link/amount'; end if;
   -- 265 (UX-033): «لا أستطيع التخفيض» closes a second reduction request and tells the buyer; another seller can't decline
   perform set_config('request.jwt.claims', json_build_object('sub', buyer, 'role', 'authenticated')::text, true);
