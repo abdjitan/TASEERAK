@@ -1,4 +1,5 @@
-// R23 (owner 2026-11-12): optional buyer budget per unit for each RFQ item, BEFORE VAT.
+// R23 (owner 2026-11-12): optional buyer budget per unit for each RFQ item, stored BEFORE VAT
+// (the buyer types and sees it VAT-inclusive: budgetToStored / budgetShown).
 // Stored in rfq_item_budgets (never inside rfqs.items: suppliers can read that row).
 // Hidden from suppliers unless the buyer ticks «أظهرها للموردين».
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -48,7 +49,21 @@ export function preVatUnit(price: number, offer: any): number {
   return offer?.vat_included ? price / 1.15 : price
 }
 
-/** How far over the budget (SAR, before VAT), or 0 when within it. */
+// Owner 2026-11-23: every buyer types and sees the budget VAT-inclusive («أقصى مبلغ للوحدة شامل
+// الضريبة»). The table keeps it BEFORE VAT (suppliers read it that way), so convert at the edges.
+/** A typed VAT-inclusive budget → the stored before-VAT value (2 decimals). */
+export function budgetToStored(typedIncl: number | null): number | null {
+  return typedIncl == null ? null : Math.round((typedIncl / 1.15) * 100) / 100
+}
+/** A stored before-VAT budget → what the buyer sees (VAT-inclusive). Snaps to a whole riyal when the
+ *  2-decimal storage only blurred a typed whole number (150 → 130.43 → 150, not 149.99). */
+export function budgetShown(stored: number): number {
+  const x = (Number(stored) || 0) * 1.15
+  const r = Math.round(x)
+  return Math.abs(x - r) < 0.01 ? r : Math.round(x * 100) / 100
+}
+
+/** How far over the budget (SAR, on the basis of both arguments), or 0 when within it. */
 export function overBudget(unitPreVat: number, budget: number, qty = 1): number {
   const d = (unitPreVat - budget) * (qty || 1)
   return d > 0.005 ? Math.round(d * 100) / 100 : 0

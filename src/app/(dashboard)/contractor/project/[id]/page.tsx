@@ -5,7 +5,7 @@ import Link from 'next/link'
 import PageLoader from '@/components/shared/PageLoader'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { offerComparable, vatTag } from '@/lib/vat'
+import { offerComparable, lineComparable, vatTag } from '@/lib/vat'
 import { askConfirm, notify } from '@/lib/askConfirm'
 import { arCount, daysText, dateLocale } from '@/lib/text'
 import { fileHref } from '@/lib/fileHref'
@@ -376,12 +376,12 @@ export default function ProjectResultsPage() {
                                 </div>
                                 <div className="text-xs text-gray-500 max-w-[180px]">{vatTag(offer, locale)}</div>
                                 {offer.unit_price && (
-                                  <div className="text-xs text-gray-500">{offer.unit_price?.toLocaleString('en-US')} / {getUnitLabel(item.unit, locale)}</div>
+                                  <div className="text-xs text-gray-500">{lineComparable(offer.unit_price, offer).toLocaleString('en-US', { maximumFractionDigits: 2 })} / {getUnitLabel(item.unit, locale)}</div>
                                 )}
                                 {offer.extra_charges && offer.extra_charges.length > 0 && (
                                   <div className="text-xs text-[#8F6820]"
-                                    title={offer.extra_charges.map((e: any) => `${e.label}: ${Number(e.amount).toLocaleString('en-US')} ${SAR}`).join('  •  ')}>
-                                    {(() => { const x = offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0).toLocaleString('en-US'); return L(`Includes extras worth ${x} ${SAR}`, `${x} ${SAR} کے اضافی اخراجات شامل ہیں`, `يشمل إضافات بقيمة ${x} ${SAR}`) })()} <Glyph e="ℹ" />
+                                    title={offer.extra_charges.map((e: any) => `${e.label}: ${lineComparable(e.amount, offer).toLocaleString('en-US', { maximumFractionDigits: 2 })} ${SAR}`).join('  •  ')}>
+                                    {(() => { const x = lineComparable(offer.extra_charges.reduce((s: any, e: any) => s + (Number(e.amount) || 0), 0), offer).toLocaleString('en-US', { maximumFractionDigits: 2 }); return L(`Includes extras worth ${x} ${SAR}`, `${x} ${SAR} کے اضافی اخراجات شامل ہیں`, `يشمل إضافات بقيمة ${x} ${SAR}`) })()} <Glyph e="ℹ" />
                                   </div>
                                 )}
                               </div>

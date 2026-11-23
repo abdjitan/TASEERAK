@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Check, Pencil, ChevronDown, ChevronUp, X, Lock, Calculator, Paperclip } from 'lucide-react'
-import { parseBudget, saveRfqBudgets, type ItemBudget } from '@/lib/budget'
+import { parseBudget, saveRfqBudgets, budgetToStored, budgetShown, type ItemBudget } from '@/lib/budget'
 import BudgetField from '@/components/rfq/BudgetField'
 import { useCatalogSpecs } from '@/lib/useCatalogSpecs'
 import Link from 'next/link'
@@ -68,7 +68,7 @@ type Line = {
   moreFiles?: { id: string; name: string }[] // owner 2026-10-31: more than one file/photo per line (up to 5 in all)
   spec?: { sector: string; sub: string | null; section?: string } // a «not in the guide» item filed under a specialty by the buyer
   with_install?: boolean // «اطلب السعر مع التركيب» (only on an installable specialty, src/lib/installation.ts)
-  budget?: string         // R23: «ميزانيتي للوحدة قبل الضريبة (اختياري)», SAR; saved to rfq_item_budgets, never in items
+  budget?: string         // R23: «أقصى مبلغ للوحدة شامل الضريبة (اختياري)», SAR incl. VAT; saved before VAT to rfq_item_budgets, never in items
   budgetVisible?: boolean // shown to suppliers only when ticked (off by default)
   review?: string[]       // UX-064: what to check on a line read from the text: keys 'qty_missing' | 'qty_guess' | 'unit_guess' (round-2 UX-136)
   prevFiles?: { url: string; name: string }[] // attachments carried from an earlier request («اطلب مرة أخرى», round-2 UX-040), sent as they are
@@ -160,7 +160,7 @@ export default function QuickRequestPage() {
   const [hours, setHours] = useState(48)
   const [notes, setNotes] = useState('')
   const [vatRequired, setVatRequired] = useState(false)
-  // the usual market price per product + unit, before VAT, only with 3+ different suppliers (UX-149)
+  // the usual market price per product + unit (stored before VAT, shown with VAT), only with 3+ different suppliers (UX-149)
   const [market, setMarket] = useState<Record<string, number>>({})
   useEffect(() => {
     createClient().rpc('get_market_prices').then(({ data }: any) => {
@@ -351,7 +351,7 @@ export default function QuickRequestPage() {
             const { data: bs } = await supabase.from('rfq_item_budgets').select('item_index, budget_unit_price, budget_visible').eq('rfq_id', fromId)
             for (const b of bs || []) {
               const ln = back[idx.indexOf(Number(b.item_index))]
-              if (ln && Number(b.budget_unit_price) > 0) { ln.budget = String(b.budget_unit_price); ln.budgetVisible = !!b.budget_visible }
+              if (ln && Number(b.budget_unit_price) > 0) { ln.budget = String(budgetShown(Number(b.budget_unit_price))); ln.budgetVisible = !!b.budget_visible }
             }
           } catch { /* optional */ }
           setLines(prev => [...prev, ...back])
@@ -1100,7 +1100,7 @@ export default function QuickRequestPage() {
         } catch { /* cannot tell: treat as the same */ }
       }
       // R23: per-item budgets go to their own owner-only table (index = position in items); skipped for a stale resend
-      const budgets = sendable.map((l, i) => ({ item_index: i, budget_unit_price: parseBudget(l.budget), budget_visible: !!l.budgetVisible }))
+      const budgets = sendable.map((l, i) => ({ item_index: i, budget_unit_price: budgetToStored(parseBudget(l.budget)), budget_visible: !!l.budgetVisible }))
         .filter(b => b.budget_unit_price != null) as ItemBudget[]
       if (budgets.length && !stale) await saveRfqBudgets(supabase, sentId, budgets)
       deleteDraftBlobs([...photos.map(p => p.id), ...lines.map(l => l.fileId).filter(Boolean) as string[], ...lines.flatMap(l => (l.moreFiles || []).map(m => m.id))])
@@ -1640,18 +1640,12 @@ export default function QuickRequestPage() {
                     const q = parseFloat(l.quantity) || 0
                     const ul = unitLabel(l.unit)
                     const fmt = (n: number) => Math.round(n).toLocaleString('en-US')
-                    // a home buyer reads one VAT-inclusive figure, so offers never look 15% higher (round-4 UX-028)
-                    if (simple) return (
-                      <p className="text-[12px] text-gray-600 leading-relaxed">
-                        {q > 0
-                          ? L(`Usual market price: about ${fmt(avg * q * 1.15)} SAR for your quantity (VAT included).`, `مارکیٹ کی عام قیمت: آپ کی مقدار کے لیے تقریباً ${fmt(avg * q * 1.15)} ریال (VAT سمیت)۔`, `السعر المعتاد في السوق: نحو ${fmt(avg * q * 1.15)} ر.س لكميتك (شامل الضريبة).`)
-                          : L(`Usual market price: about ${fmt(avg * 1.15)} SAR per ${ul} (VAT included).`, `مارکیٹ کی عام قیمت: تقریباً ${fmt(avg * 1.15)} ریال فی ${ul} (VAT سمیت)۔`, `السعر المعتاد في السوق: نحو ${fmt(avg * 1.15)} ر.س لكل ${ul} (شامل الضريبة).`)}
-                      </p>
-                    )
+                    // every buyer reads VAT-inclusive figures, so offers never look 15% higher (round-4 UX-028;
+                    // owner 2026-11-23: business buyers too)
                     return (
                       <p className="text-[12px] text-gray-600 leading-relaxed">
-                        {L(`Usual market price: about ${fmt(avg)} SAR per ${ul} before VAT`, `مارکیٹ کی عام قیمت: تقریباً ${fmt(avg)} ریال فی ${ul} VAT سے پہلے`, `السعر المعتاد في السوق: نحو ${fmt(avg)} ر.س لكل ${ul} قبل الضريبة`)}
-                        {q > 0 ? L(`, about ${fmt(avg * q * 1.15)} SAR for your quantity including VAT`, `، آپ کی مقدار کے لیے VAT سمیت تقریباً ${fmt(avg * q * 1.15)} ریال`, `، أي نحو ${fmt(avg * q * 1.15)} ر.س لكميتك شاملةً الضريبة`) : ''}.
+                        {L(`Usual market price: about ${fmt(avg * 1.15)} SAR per ${ul} incl. VAT`, `مارکیٹ کی عام قیمت: تقریباً ${fmt(avg * 1.15)} ریال فی ${ul} VAT سمیت`, `السعر المعتاد في السوق: نحو ${fmt(avg * 1.15)} ر.س لكل ${ul} شامل الضريبة`)}
+                        {q > 0 ? L(`, about ${fmt(avg * q * 1.15)} SAR for your quantity`, `، آپ کی مقدار کے لیے تقریباً ${fmt(avg * q * 1.15)} ریال`, `، أي نحو ${fmt(avg * q * 1.15)} ر.س لكميتك`) : ''}.
                       </p>
                     )
                   })()}
@@ -2049,7 +2043,7 @@ export default function QuickRequestPage() {
                         )}
                         {bud != null && (
                           <div className="text-[12px] font-bold text-[#8F6820] mt-1">
-                            {L(`Your budget: ${bud} SAR/${unitLabel(l.unit)}`, `آپ کا بجٹ: ${bud} ریال/${unitLabel(l.unit)}`, `ميزانيتك: ${bud} ر.س/${unitLabel(l.unit)}`)}
+                            {L(`Most you pay: ${bud} SAR/${unitLabel(l.unit)} incl. VAT`, `زیادہ سے زیادہ رقم: ${bud} ریال/${unitLabel(l.unit)} VAT سمیت`, `أقصى مبلغ: ${bud} ر.س/${unitLabel(l.unit)} شامل الضريبة`)}
                             {' · '}{l.budgetVisible ? L('visible to suppliers', 'سپلائرز کو نظر آئے گا', 'ظاهرة للموردين') : L('(hidden from suppliers)', '(سپلائرز سے پوشیدہ)', '(مخفية عن الموردين)')}
                           </div>
                         )}

@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 
-// R23 (owner 2026-11-12): optional buyer budget per unit, before VAT. Hidden from suppliers
+// R23 (owner 2026-11-12): optional buyer budget per unit. Hidden from suppliers
 // unless the buyer ticks «أظهرها للموردين» — with a warning that a shown cap invites
 // suppliers to price at it instead of their lowest price.
-// Round-2 UX-052: a home buyer types the most he PAYS per unit (no «قبل الضريبة»); the caller converts.
-export default function BudgetField({ value, visible, unit, locale, onChange, home = false }: {
+// Owner 2026-11-23: every buyer (home or business) types the most he pays per unit, VAT-inclusive;
+// the caller stores it before VAT (budgetToStored) and shows it back with budgetShown.
+// `home` is kept for older callers and no longer changes the wording.
+export default function BudgetField({ value, visible, unit, locale, onChange }: {
   value: string
   visible: boolean
   unit?: string
@@ -17,15 +19,13 @@ export default function BudgetField({ value, visible, unit, locale, onChange, ho
 }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
   const [open, setOpen] = useState(!!value)
-  const label = home
-    ? L('Most you pay per unit (optional)', 'فی یونٹ زیادہ سے زیادہ ادائیگی (اختیاری)', 'أقصى مبلغ تدفعه للوحدة (اختياري)')
-    : L('My budget per unit, before VAT (optional)', 'فی یونٹ میرا بجٹ، VAT سے پہلے (اختیاری)', 'ميزانيتي للوحدة قبل الضريبة (اختياري)')
+  const label = L('Most you pay per unit, incl. VAT (optional)', 'فی یونٹ زیادہ سے زیادہ رقم، VAT سمیت (اختیاری)', 'أقصى مبلغ للوحدة شامل الضريبة (اختياري)')
 
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)}
         className="min-h-11 text-[12px] font-bold px-3 py-1.5 rounded-lg border border-dashed border-gray-300 text-gray-700 hover:bg-gray-50">
-        + {home ? label : L('My budget per unit (optional)', 'فی یونٹ میرا بجٹ (اختیاری)', 'ميزانيتي للوحدة (اختياري)')}
+        + {label}
       </button>
     )
   }

@@ -53,12 +53,14 @@ function money(v: number, l: NotifLocale): string {
   const n = Math.round(v).toLocaleString('en-US')
   return l === 'en' ? `${n} SAR` : l === 'ur' ? `${n} ریال` : `${n} ر.س`
 }
+// Owner 2026-11-23: a buyer never sees an amount before VAT. An older notice that carried a before-VAT
+// amount (vat = 'excl', a VAT-registered seller) is shown with the 15% added, as «شامل الضريبة».
 function vatTag(d: any, l: NotifLocale): string {
   const v = str(d?.vat)
-  if (v === 'incl') return l === 'en' ? ' (incl. VAT)' : l === 'ur' ? ' (VAT سمیت)' : ' (شاملة الضريبة)'
-  if (v === 'excl') return l === 'en' ? ' (before VAT)' : l === 'ur' ? ' (VAT کے بغیر)' : ' (قبل الضريبة)'
+  if (v === 'incl' || v === 'excl') return l === 'en' ? ' (incl. VAT)' : l === 'ur' ? ' (VAT سمیت)' : ' (شامل الضريبة)'
   return ''
 }
+const buyerAmount = (v: number | null, d: any): number | null => (v !== null && str(d?.vat) === 'excl' ? v * 1.15 : v)
 function when(v: any, l: NotifLocale): string | null {
   const s = str(v)
   if (!s) return null
@@ -169,7 +171,7 @@ const OLD_TITLES: Record<string, string> = {
 function body(key: string, d: any, l: NotifLocale): string | null {
   const label = notifRfqLabel(d, l)
   const L = label ? q(label, l) : null
-  const amount = num(d?.amount)
+  const amount = buyerAmount(num(d?.amount), d)
   const amt = amount !== null ? money(amount, l) + vatTag(d, l) : null
   const until = when(d?.until, l)
   const pick = (t: Tri) => t[l]
@@ -275,7 +277,7 @@ function body(key: string, d: any, l: NotifLocale): string | null {
         en: `No offer arrived on ${L}. You can extend the deadline or look for other suppliers from the request page.`,
         ur: `${L} پر کوئی آفر نہیں آئی۔ آپ درخواست کے صفحے سے مدت بڑھا سکتے ہیں یا دوسرے سپلائر تلاش کر سکتے ہیں۔`,
       })
-      const minN = num(d?.min_amount)
+      const minN = buyerAmount(num(d?.min_amount), d)
       if (minN !== null) {
         const m = money(minN, l) + vatTag(d, l)
         return pick({

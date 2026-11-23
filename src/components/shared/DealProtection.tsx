@@ -12,7 +12,7 @@ import { compressImage, DOC_MAX_SIDE } from '@/lib/compressImage'
 import { askConfirm } from '@/lib/askConfirm'
 import { storedBuyerType } from '@/lib/buyerType'
 import { paymentTermsLabel } from '@/lib/paymentTerms'
-import { offerComparable, sellerInvoiceLabel, invoiceGateText, isIndependentOffer, sarLabel } from '@/lib/vat'
+import { offerComparable, sellerInvoiceLabel, invoiceGateText, isIndependentOffer, sarLabel, buyerBasisTag } from '@/lib/vat'
 import { buttonClass } from '@/components/shared/Button'
 import { payDueAt, payDueSoon } from '@/lib/dealStage'
 
@@ -310,7 +310,7 @@ export default function DealProtection({
                 ? (observer ? L('The buyer paid; waiting for the account owner to confirm receiving the amount.', 'خریدار نے ادائیگی کر دی؛ اکاؤنٹ کے مالک کی طرف سے رقم ملنے کی تصدیق کا انتظار ہے۔', 'دفع المشتري، وبانتظار تأكيد صاحب الحساب لاستلام المبلغ.') : L('The buyer says they paid: confirm once you receive the amount.', 'خریدار کے مطابق ادائیگی ہو گئی: رقم ملنے پر تصدیق کریں۔', 'يقول المشتري إنه دفع: أكّد بعد استلامك المبلغ.'))
                 : L('You confirmed payment; waiting for the supplier to confirm receiving it', 'آپ نے ادائیگی کنفرم کر دی؛ سپلائر کی تصدیق کا انتظار ہے', 'أكّدتَ الدفع، وبانتظار تأكيد المورد استلامه')))
             : <>
-                {dealAmount ? <>{L('Amount', 'رقم', 'المبلغ')}: <b className="text-[#0B2438]">{dealAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</b>{extrasPending ? <span className="font-semibold text-[#8F6820]"> {isSupplier ? L('+ delivery charges once you confirm them', '+ آپ کی تصدیق کے بعد ڈیلیوری چارجز', '+ رسوم التوصيل بعد تأكيدك لها') : L('+ delivery charges once the supplier confirms them', '+ سپلائر کی تصدیق کے بعد ڈیلیوری چارجز', '+ رسوم التوصيل بعد تأكيد المورد')}</span> : null}{terms ? ` · ${terms}` : ''}. </> : terms ? <>{terms}. </> : null}
+                {dealAmount ? <>{L('Amount', 'رقم', 'المبلغ')}: <b className="text-[#0B2438]">{dealAmount.toLocaleString('en-US', { maximumFractionDigits: 2 })} {SAR}</b> <span className="text-gray-600">({buyerBasisTag(vo, locale)})</span>{extrasPending ? <span className="font-semibold text-[#8F6820]"> {isSupplier ? L('+ delivery charges once you confirm them', '+ آپ کی تصدیق کے بعد ڈیلیوری چارجز', '+ رسوم التوصيل بعد تأكيدك لها') : L('+ delivery charges once the supplier confirms them', '+ سپلائر کی تصدیق کے بعد ڈیلیوری چارجز', '+ رسوم التوصيل بعد تأكيد المورد')}</span> : null}{terms ? ` · ${terms}` : ''}. </> : terms ? <>{terms}. </> : null}
                 {/* «آجل»: the due date; «مقدّم»: paid before delivery (round-4 UX-034) */}
                 {dueAtPay && <span className="block mt-1 font-bold text-[#0B2438]">{L(`Payment is due on ${dueTextPay}.`, `ادائیگی کی آخری تاریخ: ${dueTextPay}۔`, `الدفع مستحق في ${dueTextPay}.`)}</span>}
                 {advanceDue && (isContractor

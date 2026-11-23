@@ -9,6 +9,7 @@ import { toLatinDigits } from '@/lib/phone'
 import Glyph from '@/components/shared/Glyph'
 import { askConfirm } from '@/lib/askConfirm'
 import { arCount } from '@/lib/text'
+import { lineComparable } from '@/lib/vat'
 
 export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }: { offer: any; locale: string; wonCount?: number; onDone: (o: any) => void }) {
   const L = (en: string, ur: string, ar: string) => (locale === 'en' ? en : locale === 'ur' ? ur : ar)
@@ -19,6 +20,7 @@ export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }
   const num = (v: any) => parseFloat(toLatinDigits(String(v || '')).replace('٫', '.')) || 0
   const max = original.reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0)
   const sum = rows.reduce((s: number, r: any) => s + num(r.amount), 0)
+  const buyerSum = lineComparable(sum, offer) // what the buyer pays for these charges (with VAT, or final)
   const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 })
   const SAR = L('SAR', 'ریال', 'ر.س')
   // the basis of the amounts, said everywhere the cap appears (round-4 UX-128); none for a seller outside VAT
@@ -58,7 +60,9 @@ export default function PartialExtrasConfirm({ offer, locale, wonCount, onDone }
         ))}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 mt-3 text-sm">
-        <span className="text-gray-600">{L('Total charges', 'کل چارجز', 'إجمالي الرسوم')}: <b className={sum > max ? 'text-red-600' : 'text-[#0B2438]'}>{fmt(sum)} {SAR}</b> <span className="text-xs text-gray-600">({L('max', 'زیادہ سے زیادہ', 'الحد الأقصى')} {fmt(max)} {SAR}{basis})</span></span>
+        <span className="text-gray-600">{L('Total charges', 'کل چارجز', 'إجمالي الرسوم')}: <b className={sum > max ? 'text-red-600' : 'text-[#0B2438]'}>{fmt(sum)} {SAR}</b> <span className="text-xs text-gray-600">({L('max', 'زیادہ سے زیادہ', 'الحد الأقصى')} {fmt(max)} {SAR}{basis})</span>
+          {/* owner 2026-11-23: the buyer sees every amount with VAT; say what that is when the seller typed net */}
+          {buyerSum !== sum && <span className="block text-xs text-gray-600">{L(`The buyer sees ${fmt(buyerSum)} SAR incl. VAT`, `خریدار کو ${fmt(buyerSum)} ریال VAT سمیت نظر آئے گا`, `يراها المشتري ${fmt(buyerSum)} ر.س شاملة الضريبة`)}</span>}</span>
         <button type="button" onClick={save} disabled={busy} className="min-h-11 px-4 py-2 rounded-xl text-sm font-extrabold disabled:opacity-50" style={{ background: '#D4A543', color: '#071827' }}>
           {busy ? '…' : L('Confirm charges', 'چارجز کنفرم کریں', 'تأكيد الرسوم')}
         </button>

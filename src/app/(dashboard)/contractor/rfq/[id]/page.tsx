@@ -12,7 +12,7 @@ import { SECTOR_LABELS, UNIT_OPTIONS, getProductLabel, getUnitLabelLong, detectS
 import { productImageUrl, imgFallback } from '@/lib/productImage'
 import { useTranslation } from '@/i18n'
 import { waLink } from '@/lib/wa'
-import { offerComparable, lineComparable, vatTag, showsVatBreakdown, totalLabel, priceBasisLabel, sarLabel, buyerLinePrice, preVatNote } from '@/lib/vat'
+import { offerComparable, lineComparable, vatTag, showsVatBreakdown, totalLabel, priceBasisLabel, sarLabel, buyerLinePrice } from '@/lib/vat'
 import EnablePush from '@/components/shared/EnablePush'
 import { installTotalOf } from '@/lib/installation'
 import { fileHref } from '@/lib/fileHref'
@@ -29,7 +29,7 @@ import { daysText, arCount, arMaterials } from '@/lib/text'
 import { parseNumber } from '@/lib/number' // «2,500» = 2500 (round-4 UX-002)
 import { paymentTermsLabel } from '@/lib/paymentTerms'
 import { realtimeTopic } from '@/lib/realtimeTopic'
-import { loadOwnerBudgets, saveRfqBudgets, parseBudget, preVatUnit, overBudget, type ItemBudget } from '@/lib/budget'
+import { loadOwnerBudgets, saveRfqBudgets, parseBudget, overBudget, budgetToStored, budgetShown, type ItemBudget } from '@/lib/budget'
 import BudgetField from '@/components/rfq/BudgetField'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { dbMessage } from '@/lib/dbMessage'
@@ -369,8 +369,8 @@ export default function RFQDetailPage() {
     if (!budgetEdit) return
     const next: Record<number, ItemBudget> = { ...budgets }
     const typed = parseBudget(budgetEdit.v)
-    // UX-052: a home buyer types what they pay (with VAT); the budget is stored before VAT as always
-    const p = typed != null && home ? Math.round((typed / 1.15) * 100) / 100 : typed
+    // owner 2026-11-23: every buyer types what they pay (with VAT); the budget is stored before VAT as always
+    const p = budgetToStored(typed)
     if (p == null) delete next[budgetEdit.idx]
     else next[budgetEdit.idx] = { item_index: budgetEdit.idx, budget_unit_price: p, budget_visible: budgetEdit.vis }
     setBudgetSaving(true)
@@ -1273,7 +1273,7 @@ export default function RFQDetailPage() {
                         const be = budgetEdit
                         if (be && be.idx === idx) return (
                           <div className="px-4 py-2 border-b border-gray-100 space-y-2">
-                            <BudgetField home={home} value={be.v} visible={be.vis} unit={unitL(it.unit)} locale={locale}
+                            <BudgetField value={be.v} visible={be.vis} unit={unitL(it.unit)} locale={locale}
                               onChange={(v, vis) => setBudgetEdit({ idx, v, vis })} />
                             <div className="flex gap-2">
                               <button type="button" onClick={saveBudget} disabled={budgetSaving} className="min-h-11 text-sm px-4 rounded-xl font-semibold text-white disabled:opacity-50" style={{ background: '#0B2438' }}>{budgetSaving ? '…' : L('Save', 'محفوظ کریں', 'حفظ')}</button>
@@ -1285,15 +1285,13 @@ export default function RFQDetailPage() {
                         return (
                           <div className="px-4 py-1.5 border-b border-gray-100 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
                             {bg ? (<>
-                              {home
-                                // UX-052: a home buyer sees the most they pay per unit (with VAT)
-                                ? <span className="font-semibold text-gray-700">{L('Most you pay per unit', 'فی یونٹ زیادہ سے زیادہ ادائیگی', 'أقصى مبلغ تدفعه للوحدة')}: {money2(bg.budget_unit_price * 1.15)} {SAR} / {unitL(it.unit)}</span>
-                                : <span className="font-semibold text-gray-700">{L('Your budget', 'آپ کا بجٹ', 'ميزانيتك')}: {L('up to', 'تک', 'حتى')} {bg.budget_unit_price.toLocaleString('en-US')} {SAR} / {unitL(it.unit)} <span className="text-gray-500 font-normal">({L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')})</span></span>}
+                              {/* owner 2026-11-23: every buyer sees the most they pay per unit, VAT-inclusive */}
+                              <span className="font-semibold text-gray-700">{L('Most you pay per unit', 'فی یونٹ زیادہ سے زیادہ رقم', 'أقصى مبلغ للوحدة')}: {money2(budgetShown(bg.budget_unit_price))} {SAR} / {unitL(it.unit)} <span className="text-gray-500 font-normal">({L('incl. VAT', 'VAT سمیت', 'شامل الضريبة')})</span></span>
                               <span className={`px-1.5 py-0.5 rounded-full font-bold ${bg.budget_visible ? 'bg-amber-50 text-amber-800' : 'bg-gray-100 text-gray-600'}`}>{bg.budget_visible ? L('Shown to suppliers', 'سپلائرز کو نظر آتا ہے', 'ظاهرة للموردين') : L('Only you see it', 'صرف آپ دیکھتے ہیں', 'تراها أنت فقط')}</span>
                             </>) : null}
                             {rfq.status === 'open' && (
-                              <button type="button" onClick={() => setBudgetEdit({ idx, v: bg ? String(home ? Math.round(bg.budget_unit_price * 1.15 * 100) / 100 : bg.budget_unit_price) : '', vis: !!bg?.budget_visible })} className="min-h-11 font-bold text-[#8F6820] hover:underline">
-                                {bg ? L('Edit', 'ترمیم', 'تعديل') : '+ ' + (home ? L('Most you pay per unit (optional)', 'فی یونٹ زیادہ سے زیادہ ادائیگی (اختیاری)', 'أقصى مبلغ تدفعه للوحدة (اختياري)') : L('My budget per unit (optional)', 'فی یونٹ میرا بجٹ (اختیاری)', 'ميزانيتي للوحدة (اختياري)'))}
+                              <button type="button" onClick={() => setBudgetEdit({ idx, v: bg ? String(budgetShown(bg.budget_unit_price)) : '', vis: !!bg?.budget_visible })} className="min-h-11 font-bold text-[#8F6820] hover:underline">
+                                {bg ? L('Edit', 'ترمیم', 'تعديل') : '+ ' + L('Most you pay per unit, incl. VAT (optional)', 'فی یونٹ زیادہ سے زیادہ رقم، VAT سمیت (اختیاری)', 'أقصى مبلغ للوحدة شامل الضريبة (اختياري)')}
                               </button>
                             )}
                           </div>
@@ -1368,7 +1366,7 @@ export default function RFQDetailPage() {
                                     </div>
                                   )}
                                   <div className="text-xs text-gray-600 flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                                    {Number(b.entry.unit_price) > 0 && <span>{money2(buyerLinePrice(b.entry.unit_price, b.offer, home))} {SAR} / {unitL(b.entry.unit || it.unit)}{!home && preVatNote(b.offer, locale) ? ' ' + preVatNote(b.offer, locale) : ''}</span>}
+                                    {Number(b.entry.unit_price) > 0 && <span>{money2(buyerLinePrice(b.entry.unit_price, b.offer))} {SAR} / {unitL(b.entry.unit || it.unit)}</span>}
                                     {Number(b.entry.delivery_days ?? b.offer.delivery_days) > 0 ? <span><Glyph e="🚚" /> {L(`Within ${daysText(b.entry.delivery_days ?? b.offer.delivery_days, locale)}`, `${daysText(b.entry.delivery_days ?? b.offer.delivery_days, locale)} میں`, `خلال ${daysText(b.entry.delivery_days ?? b.offer.delivery_days, locale)}`)}</span> : null}
                                     {b.offer.payment_terms ? <span><Glyph e="💳" /> {paymentTermsLabel(b.offer.payment_terms, locale)}</span> : null}
                                     {b.offer.supplier?.city && <span><Glyph e="📍" /> {b.offer.supplier.city}</span>}
@@ -1393,10 +1391,9 @@ export default function RFQDetailPage() {
                                       const q = Number(b.entry.quantity ?? it.quantity) || 1
                                       const unit = Number(b.entry.unit_price) > 0 ? Number(b.entry.unit_price) : Number(b.entry.total || 0) / q
                                       if (!(unit > 0)) return null
-                                      // UX-052: a home buyer compares what they pay (with VAT) with their maximum (stored before VAT)
-                                      const over = home
-                                        ? overBudget(lineComparable(unit, b.offer), budgets[idx].budget_unit_price * 1.15, q)
-                                        : overBudget(preVatUnit(unit, b.offer), budgets[idx].budget_unit_price, q)
+                                      // owner 2026-11-23: every buyer compares what they pay (with VAT, or a final price)
+                                      // with their VAT-inclusive maximum (stored before VAT)
+                                      const over = overBudget(lineComparable(unit, b.offer), budgetShown(budgets[idx].budget_unit_price), q)
                                       return over > 0
                                         ? <div className="text-xs font-bold text-red-700">{L(`Over your budget by ${money(over)} SAR`, `آپ کے بجٹ سے ${money(over)} ریال زیادہ`, `أعلى من ميزانيتك بـ ${money(over)} ر.س`)}</div>
                                         : <div className="text-xs font-bold text-[#0F6E56]">{L('Within your budget', 'آپ کے بجٹ میں', 'ضمن ميزانيتك')}</div>
@@ -1479,8 +1476,8 @@ export default function RFQDetailPage() {
                       <div className="text-xs text-white/70 text-end">
                         {mixedVat
                           ? L(`of which VAT ${money(vatAmt)} SAR, on the offers of VAT-registered suppliers only`, `جس میں VAT ${money(vatAmt)} ریال، صرف رجسٹرڈ سپلائرز کی آفرز پر`, `منها ضريبة القيمة المضافة ${money(vatAmt)} ر.س على عروض الموردين المسجّلين فقط`)
-                          : home ? L(`includes VAT ${money(vatAmt)} SAR`, `VAT ${money(vatAmt)} ریال شامل`, `يشمل ضريبة القيمة المضافة ${money(vatAmt)} ر.س`)
-                          : `${L('Before VAT', 'ٹیکس سے پہلے', 'قبل الضريبة')} ${money(grandNet)} ${SAR} · ${L('VAT 15%', 'ٹیکس 15%', 'الضريبة 15%')} ${money(vatAmt)} ${SAR}`}
+                          // owner 2026-11-23: every buyer sees the VAT-inclusive total; the net/VAT split is on the tax invoice
+                          : L(`includes VAT ${money(vatAmt)} SAR`, `VAT ${money(vatAmt)} ریال شامل`, `يشمل ضريبة القيمة المضافة ${money(vatAmt)} ر.س`)}
                       </div>
                     )}
                     {pending >= 1 && !finalized && (
@@ -1515,8 +1512,8 @@ export default function RFQDetailPage() {
           <h3 className="text-sm font-bold text-gray-900">{L('Offers', 'آفرز', 'العروض')} ({offers.length})</h3>
           {marketAvg && (
             <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-              <span className="text-xs text-amber-800"><Glyph e="📊" /> {home ? L('Market average incl. VAT:', 'VAT سمیت مارکیٹ اوسط:', 'متوسط السوق شاملاً الضريبة:') : L('Market average before VAT:', 'VAT سے پہلے مارکیٹ اوسط:', 'متوسط السوق قبل الضريبة:')}</span>
-              <span className="text-sm font-bold text-amber-900">{money(home ? marketAvg * 1.15 : marketAvg)} {SAR} / {unitL(rfq.unit) || L('unit', 'یونٹ', 'وحدة')}</span>
+              <span className="text-xs text-amber-800"><Glyph e="📊" /> {L('Market average incl. VAT:', 'VAT سمیت مارکیٹ اوسط:', 'متوسط السوق شامل الضريبة:')}</span>
+              <span className="text-sm font-bold text-amber-900">{money(marketAvg * 1.15)} {SAR} / {unitL(rfq.unit) || L('unit', 'یونٹ', 'وحدة')}</span>
             </div>
           )}
         </div>
@@ -1693,6 +1690,7 @@ export default function RFQDetailPage() {
                     </div>
                   </div>
                   <div className="sm:text-end sm:shrink-0">
+                    {/* owner 2026-11-23: every buyer sees what they pay (VAT-inclusive, or a final price) */}
                     {home ? (<>
                       <div className="text-xs text-gray-600">{L('The amount you pay', 'آپ کی ادا کردہ رقم', 'المبلغ الذي تدفعه')}</div>
                       <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{money(comparable)} {SAR}</div>
@@ -1700,16 +1698,16 @@ export default function RFQDetailPage() {
                     </>) : (<>
                       <div className="text-xl font-bold" style={{ color: '#0B2438' }}>{money(comparable)} <span className="text-sm">{SAR}</span></div>
                       <div className="text-xs text-gray-600 whitespace-normal sm:max-w-[14rem]">{vatTag(offer, locale)}</div>
-                      {showsVatBreakdown(offer) && !offer.vat_included && <div className="text-xs text-gray-600">{L('before VAT', 'VAT سے پہلے', 'قبل الضريبة')} {Number(offer.total_price || 0).toLocaleString('en-US')}</div>}
                     </>)}
                     {!rejected && above >= 1 && minPrice > 0 && <div className="text-xs text-gray-600">{L(`${money(above)} SAR above the lowest (${Math.round(above / minPrice * 100)}%)`, `سب سے کم سے ${money(above)} ریال زیادہ (${Math.round(above / minPrice * 100)}%)`, `أعلى من أقل عرض بـ ${money(above)} ر.س (${Math.round(above / minPrice * 100)}%)`)}</div>}
                     {marketAvg && Number(offer.unit_price) > 0 && (() => {
-                      // UX-080: both sides before VAT
-                      const upPre = preVatUnit(Number(offer.unit_price), offer)
-                      const diffN = Math.abs((upPre - marketAvg) / marketAvg * 100)
+                      // owner 2026-11-23: both sides as the buyer pays them (the market average is shown incl. VAT)
+                      const upPay = lineComparable(Number(offer.unit_price), offer)
+                      const mkPay = marketAvg * 1.15
+                      const diffN = Math.abs((upPay - mkPay) / mkPay * 100)
                       if (diffN < 1) return null // never «0%» (round-4 UX-124)
                       const diff = diffN.toFixed(0)
-                      const isLow = upPre < marketAvg
+                      const isLow = upPay < mkPay
                       return (
                         <div className={`text-xs font-bold mt-0.5 ${isLow ? 'text-[#0F6E56]' : 'text-amber-800'}`}>
                           {isLow ? `${diff}% ${L('below market', 'مارکیٹ سے کم', 'دون السوق')}` : `${diff}% ${L('above market', 'مارکیٹ سے زیادہ', 'فوق السوق')}`}
@@ -1720,7 +1718,7 @@ export default function RFQDetailPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600 mb-3">
-                  {Number(offer.unit_price) > 0 && <span>{L('Unit price:', 'فی یونٹ قیمت:', 'سعر الوحدة:')} {money2(buyerLinePrice(offer.unit_price, offer, home))} {SAR}{!home && preVatNote(offer, locale) ? ' ' + preVatNote(offer, locale) : ''}</span>}
+                  {Number(offer.unit_price) > 0 && <span>{L('Unit price:', 'فی یونٹ قیمت:', 'سعر الوحدة:')} {money2(buyerLinePrice(offer.unit_price, offer))} {SAR}</span>}
                   {Number(offer.delivery_days) > 0 && <span><Glyph e="🚚" /> {L('Delivery:', 'ڈیلیوری:', 'التوصيل:')} {L(`within ${daysText(offer.delivery_days, locale)}`, `${daysText(offer.delivery_days, locale)} میں`, `خلال ${daysText(offer.delivery_days, locale)}`)}</span>}
                   {offer.payment_terms && <span><Glyph e="💳" /> {paymentTermsLabel(offer.payment_terms, locale)}</span>}
                 </div>
@@ -1735,11 +1733,11 @@ export default function RFQDetailPage() {
                       <div key={idx} className="px-2.5 py-1.5 border-t border-gray-100 flex items-center justify-between gap-3 text-xs">
                         <span className="text-gray-700 min-w-0">
                           {it.attachment_url && <span title={L('Has a catalog', 'کیٹلاگ موجود ہے', 'يوجد كتالوج')}><Glyph e="📎" /> </span>}
-                          {pname(it.product_name)} <span className="text-gray-500">({Number(it.unit_price) > 0 ? `${money2(buyerLinePrice(it.unit_price, offer, home))} × ` : ''}{(Number(it.quantity) || 0).toLocaleString('en-US')} {unitL(it.unit)})</span>
-                          {it.install_offered === true && <span className="text-[#0F6E56] font-semibold"> · {L('incl. installation', 'تنصیب سمیت', 'يشمل التركيب')}{installTotalOf(it) > 0 ? ` ${money2(buyerLinePrice(installTotalOf(it), offer, home))}` : ''}</span>}
+                          {pname(it.product_name)} <span className="text-gray-500">({Number(it.unit_price) > 0 ? `${money2(buyerLinePrice(it.unit_price, offer))} × ` : ''}{(Number(it.quantity) || 0).toLocaleString('en-US')} {unitL(it.unit)})</span>
+                          {it.install_offered === true && <span className="text-[#0F6E56] font-semibold"> · {L('incl. installation', 'تنصیب سمیت', 'يشمل التركيب')}{installTotalOf(it) > 0 ? ` ${money2(buyerLinePrice(installTotalOf(it), offer))}` : ''}</span>}
                           {it.install_offered === false && <span className="text-gray-500"> · {L('without installation', 'تنصیب کے بغیر', 'بدون تركيب')}</span>}
                         </span>
-                        <span className="font-bold text-gray-900 whitespace-nowrap">{money2(buyerLinePrice(it.total, offer, home))} {SAR}</span>
+                        <span className="font-bold text-gray-900 whitespace-nowrap">{money2(buyerLinePrice(it.total, offer))} {SAR}</span>
                       </div>
                     ))}
                   </div>
@@ -1747,16 +1745,15 @@ export default function RFQDetailPage() {
 
                 {/* the bill: goods + charges, then one clear total (UX-019) */}
                 {exList.length > 0 && !home && (() => {
+                  // owner 2026-11-23: every line on the buyer's basis (with VAT, or final), so they add up to the total
                   const goods = (Number(offer.total_price) || 0) - exSum
-                  const netBasis = showsVatBreakdown(offer) && !offer.vat_included
                   return (
                     <div className="bg-amber-50 border border-amber-100 rounded-lg p-2.5 mb-2 text-xs">
-                      <div className="flex justify-between text-gray-700"><span>{L('Goods', 'مال', 'البضاعة')}</span><span>{goods.toLocaleString('en-US')} {SAR}</span></div>
+                      <div className="flex justify-between text-gray-700"><span>{L('Goods', 'مال', 'البضاعة')}</span><span>{money2(lineComparable(goods, offer))} {SAR}</span></div>
                       {exList.map((e: any, idx: number) => (
-                        <div key={idx} className="flex justify-between text-amber-900"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString('en-US')} {SAR}</span></div>
+                        <div key={idx} className="flex justify-between text-amber-900"><span>+ {e.label}</span><span>{money2(lineComparable(e.amount, offer))} {SAR}</span></div>
                       ))}
-                      {netBasis && <div className="flex justify-between text-gray-700 border-t border-amber-200 mt-1 pt-1"><span>{L('Subtotal before VAT', 'VAT سے پہلے کل', 'المجموع قبل الضريبة')}</span><span>{Number(offer.total_price).toLocaleString('en-US')} {SAR}</span></div>}
-                      <div className={`flex justify-between font-bold text-gray-900 ${netBasis ? '' : 'border-t border-amber-200 mt-1 pt-1'}`}><span>{totalLabel(offer, locale)}</span><span>{money(comparable)} {SAR}</span></div>
+                      <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>{totalLabel(offer, locale)}</span><span>{money(comparable)} {SAR}</span></div>
                     </div>
                   )
                 })()}

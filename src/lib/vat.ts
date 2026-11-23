@@ -56,11 +56,17 @@ export function totalLabel(o: any, locale: string): string {
 export const netOf = (total: any, o: any) =>
   showsVatBreakdown(o) && o?.vat_included ? (Number(total) || 0) / (1 + VAT_RATE) : Number(total) || 0
 
-// The heading of a price column on the buyer's side (UX-019): the line prices are shown as the seller entered them.
+// The heading of a price column on the buyer's side. Owner 2026-11-23: every price a buyer sees includes
+// VAT (buyerLinePrice), so the heading says «شامل الضريبة», or «سعر نهائي» for a seller without a VAT number.
 export function priceBasisLabel(o: any, locale: string): string {
-  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Price' : locale === 'ur' ? 'قیمت' : 'السعر'
-  if (o?.vat_included) return locale === 'en' ? 'Price incl. VAT' : locale === 'ur' ? 'قیمت (VAT سمیت)' : 'السعر شاملاً الضريبة'
-  return locale === 'en' ? 'Price before VAT' : locale === 'ur' ? 'قیمت (VAT سے پہلے)' : 'السعر قبل الضريبة'
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'Final price' : locale === 'ur' ? 'حتمی قیمت' : 'سعر نهائي'
+  return locale === 'en' ? 'Price incl. VAT' : locale === 'ur' ? 'قیمت (VAT سمیت)' : 'السعر شامل الضريبة'
+}
+
+// The short basis tag after a buyer-facing amount: «شامل الضريبة», or «سعر نهائي» (no VAT number, no VAT added).
+export function buyerBasisTag(o: any, locale: string): string {
+  if (!showsVatBreakdown(o)) return locale === 'en' ? 'final price' : locale === 'ur' ? 'حتمی قیمت' : 'سعر نهائي'
+  return locale === 'en' ? 'incl. VAT' : locale === 'ur' ? 'VAT سمیت' : 'شامل الضريبة'
 }
 
 // The seller's invoice on a deal, named by who the seller is (UX-025, legal): a seller without a VAT
@@ -86,13 +92,12 @@ export function invoiceGateText(o: any, locale: string): string {
 // The currency name, one per language everywhere (UX-140): «ر.س» / «SAR» / «ریال».
 export const sarLabel = (locale: string): string => (locale === 'en' ? 'SAR' : locale === 'ur' ? 'ریال' : 'ر.س')
 
-// A line or unit price on the buyer's basis (UX-005): a home buyer sees every number as what they pay
-// (lineComparable), so the lines add up to the total; a business sees the price as the seller entered it.
-export const buyerLinePrice = (amount: any, o: any, home: boolean): number =>
-  home ? lineComparable(amount, o) : Number(amount) || 0
+// A line or unit price on the buyer's basis. Owner 2026-11-23: EVERY buyer (home, contractor, company)
+// sees each number as what they pay (lineComparable: VAT-inclusive, or the final price of a seller without
+// a VAT number), so the lines add up to the total. The third argument is kept for older callers; ignored.
+export const buyerLinePrice = (amount: any, o: any, _home?: boolean): number => lineComparable(amount, o)
 
-// «(قبل الضريبة)» after a business buyer's line price when it differs from the VAT-inclusive total (UX-005).
-export function preVatNote(o: any, locale: string): string {
-  if (!showsVatBreakdown(o) || o?.vat_included) return ''
-  return locale === 'en' ? '(before VAT)' : locale === 'ur' ? '(VAT سے پہلے)' : '(قبل الضريبة)'
+// Retired 2026-11-23 (a buyer never sees a price before VAT): always empty, kept for older callers.
+export function preVatNote(_o: any, _locale: string): string {
+  return ''
 }

@@ -17,7 +17,7 @@ import { tierLabel, sourceLabel, availabilityLabel, isDirectSource, sourceIcon, 
 import { rfqRefLine, rfqDesc } from '@/lib/rfqName'
 import SellerIcon from '@/components/shared/SellerIcon'
 import Glyph from '@/components/shared/Glyph'
-import { vatStatusOf, totalLabel, offerComparable, vatTag, priceBasisLabel, sarLabel, buyerLinePrice, preVatNote, lineComparable } from '@/lib/vat'
+import { vatStatusOf, totalLabel, offerComparable, vatTag, priceBasisLabel, sarLabel, buyerLinePrice, lineComparable } from '@/lib/vat'
 import { installTotalOf, materialTotalOf } from '@/lib/installation'
 import { SourceShopBadge } from '@/components/rfq/SourceShop'
 import { dbMessage } from '@/lib/dbMessage'
@@ -340,7 +340,7 @@ export default function OfferDetailPage() {
         {/* price and delivery */}
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <h2 className="font-bold text-sm mb-3" style={{ color: '#0B2438' }}><Glyph e="💰" /> {L('Price and delivery', 'قیمت اور ڈیلیوری', 'السعر والتوصيل')}</h2>
-          {!isMulti && <Row label={L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')} value={Number(offer.unit_price) > 0 ? `${fmt(buyerLinePrice(offer.unit_price, offer, home))} ${SAR}${!home && preVatNote(offer, locale) ? ' ' + preVatNote(offer, locale) : ''}` : null} />}
+          {!isMulti && <Row label={L('Unit price', 'فی یونٹ قیمت', 'سعر الوحدة')} value={Number(offer.unit_price) > 0 ? `${fmt(buyerLinePrice(offer.unit_price, offer))} ${SAR}` : null} />}
           <Row label={L('Delivery time', 'ڈیلیوری کا وقت', 'مدة التوصيل')} value={Number(offer.delivery_days) > 0 ? L(`Within ${daysText(offer.delivery_days, locale)}`, `${daysText(offer.delivery_days, locale)} میں`, `خلال ${daysText(offer.delivery_days, locale)}`) : null} />
 
           {/* per-item pricing */}
@@ -356,17 +356,17 @@ export default function OfferDetailPage() {
                       <div className="font-semibold text-gray-800">{pname(it.product_name)}</div>
                       <div className="text-xs text-gray-500">
                         {Number(it.unit_price) > 0
-                          ? `${fmt(buyerLinePrice(it.unit_price, offer, home))} ${SAR} × ${(Number(it.quantity) || 0).toLocaleString('en-US')} ${unitL(it.unit)}`
+                          ? `${fmt(buyerLinePrice(it.unit_price, offer))} ${SAR} × ${(Number(it.quantity) || 0).toLocaleString('en-US')} ${unitL(it.unit)}`
                           : `${(Number(it.quantity) || 0).toLocaleString('en-US')} ${unitL(it.unit)}`}
                       </div>
                     </div>
-                    <div className="font-bold text-gray-900 whitespace-nowrap">{fmt(buyerLinePrice(it.total, offer, home))} {SAR}</div>
+                    <div className="font-bold text-gray-900 whitespace-nowrap">{fmt(buyerLinePrice(it.total, offer))} {SAR}</div>
                   </div>
                   {/* «with installation»: the line total split into material + installation */}
                   {it.install_offered === true && (
                     <div className="mt-1.5 rounded-lg bg-[#0F6E56]/5 px-2 py-1.5 text-xs space-y-0.5">
-                      <div className="flex justify-between gap-2 text-gray-600"><span>{L('Material', 'سامان', 'المادة')}</span><span>{fmt(buyerLinePrice(materialTotalOf(it), offer, home))} {SAR}</span></div>
-                      <div className="flex justify-between gap-2 font-semibold text-[#0F6E56]"><span><Glyph e="🔧" /> {L('Installation', 'تنصیب', 'التركيب')}</span><span>{installTotalOf(it) > 0 ? `${fmt(buyerLinePrice(installTotalOf(it), offer, home))} ${SAR}` : L('included in the price', 'قیمت میں شامل', 'مشمول في السعر')}</span></div>
+                      <div className="flex justify-between gap-2 text-gray-600"><span>{L('Material', 'سامان', 'المادة')}</span><span>{fmt(buyerLinePrice(materialTotalOf(it), offer))} {SAR}</span></div>
+                      <div className="flex justify-between gap-2 font-semibold text-[#0F6E56]"><span><Glyph e="🔧" /> {L('Installation', 'تنصیب', 'التركيب')}</span><span>{installTotalOf(it) > 0 ? `${fmt(buyerLinePrice(installTotalOf(it), offer))} ${SAR}` : L('included in the price', 'قیمت میں شامل', 'مشمول في السعر')}</span></div>
                     </div>
                   )}
                   {it.install_offered === false && <p className="text-xs font-semibold text-gray-600 mt-1">{L('Without installation (the supplier does not install)', 'تنصیب کے بغیر (سپلائر تنصیب نہیں کرتا)', 'بدون تركيب (المورد لا يقدّم التركيب)')}</p>}
@@ -382,7 +382,7 @@ export default function OfferDetailPage() {
             </div>
           )}
 
-          {/* the totals: one number for a home buyer; for a business the net, the VAT and the total (UX-019) */}
+          {/* the totals: one number for a home buyer; for a business the lines, the VAT-inclusive total and the VAT in it (UX-019) */}
           <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 my-3 text-sm">
             {home ? (
               <>
@@ -390,24 +390,21 @@ export default function OfferDetailPage() {
                 <div className="text-xs text-gray-600 mt-0.5">{vatTag(offer, locale)}{exSum > 0 ? ` · ${L(`includes delivery and charges ${fmt(lineComparable(exSum, offer))} SAR`, `ڈیلیوری اور چارجز ${fmt(lineComparable(exSum, offer))} ریال شامل`, `يشمل التوصيل والرسوم ${fmt(lineComparable(exSum, offer))} ر.س`)}` : ''}</div>
               </>
             ) : (<>
-              <div className="flex justify-between text-gray-600"><span>{ip.length > 0 ? L('Goods total', 'مال کا کل', 'إجمالي البضاعة') : L('Goods', 'مال', 'البضاعة')}</span><span>{goods.toLocaleString('en-US')} {SAR}</span></div>
+              {/* owner 2026-11-23: every amount as the buyer pays it (with VAT, or the final price of a seller
+                  without a VAT number), so the lines add up to the total; the net/VAT split is on the tax invoice */}
+              <div className="flex justify-between text-gray-600"><span>{ip.length > 0 ? L('Goods total', 'مال کا کل', 'إجمالي البضاعة') : L('Goods', 'مال', 'البضاعة')}</span><span>{fmt(lineComparable(goods, offer))} {SAR}</span></div>
               {exList.map((e: any, i: any) => (
-                <div key={i} className="flex justify-between text-amber-800"><span>+ {e.label}</span><span>{Number(e.amount).toLocaleString('en-US')} {SAR}</span></div>
+                <div key={i} className="flex justify-between text-amber-800"><span>+ {e.label}</span><span>{fmt(lineComparable(e.amount, offer))} {SAR}</span></div>
               ))}
               {(() => {
-                const entered = Number(offer.total_price) || 0
+                const total = offerComparable(offer)
                 // a seller without a VAT number: one final amount, no VAT line (Saudi VAT rules)
                 if (vatStatusOf(offer) !== 'registered') return (
-                  <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>{totalLabel(offer, locale)}</span><span>{fmt(entered)} {SAR}</span></div>
+                  <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>{totalLabel(offer, locale)}</span><span>{fmt(total)} {SAR}</span></div>
                 )
-                if (offer.vat_included) return (<>
-                  <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>{totalLabel(offer, locale)}</span><span>{fmt(entered)} {SAR}</span></div>
-                  <div className="flex justify-between text-xs text-gray-600"><span>{L('of which VAT 15%', 'جس میں VAT 15%', 'منها ضريبة القيمة المضافة 15%')}</span><span>{fmt(entered - entered / 1.15)} {SAR}</span></div>
-                </>)
                 return (<>
-                  <div className="flex justify-between text-gray-600 border-t border-amber-200 mt-1.5 pt-1.5"><span>{L('Subtotal before VAT', 'VAT سے پہلے کل', 'المجموع قبل الضريبة')}</span><span>{fmt(entered)} {SAR}</span></div>
-                  <div className="flex justify-between text-gray-600"><span>{L('VAT 15%', 'ویٹ (VAT) 15%', 'ضريبة القيمة المضافة 15%')}</span><span>+ {fmt(entered * 0.15)} {SAR}</span></div>
-                  <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1 pt-1"><span>{totalLabel(offer, locale)}</span><span>{fmt(offerComparable(offer))} {SAR}</span></div>
+                  <div className="flex justify-between font-bold text-gray-900 border-t border-amber-200 mt-1.5 pt-1.5"><span>{totalLabel(offer, locale)}</span><span>{fmt(total)} {SAR}</span></div>
+                  <div className="flex justify-between text-xs text-gray-600"><span>{L('of which VAT 15%', 'جس میں VAT 15%', 'منها ضريبة القيمة المضافة 15%')}</span><span>{fmt(total - total / 1.15)} {SAR}</span></div>
                 </>)
               })()}
             </>)}
